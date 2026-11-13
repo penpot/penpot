@@ -340,6 +340,15 @@
         [(dwt/move-shapes-to-frame #{copy-id} parent-id index cell)]
         [(dwsh/relocate-shapes #{copy-id} parent-id index)]))
 
+    (instance? n/RenameComponent op)
+    ;; the assets panel's rename
+    (let [shape (tm/shape-by-id situation (tm/target-shape-id situation (:target op)))]
+      [(dwl/rename-component-and-main-instance (:component-id shape) (:value op))])
+
+    (instance? n/AnnotateComponent op)
+    (let [shape (tm/shape-by-id situation (tm/target-shape-id situation (:target op)))]
+      [(dw/update-component-annotation (:component-id shape) (:annotation op))])
+
     (instance? n/RestoreComponent op)
     [(dwl/restore-component (:id (tm/file situation))
                             (n/deleted-component-id situation (:deletion op)))]

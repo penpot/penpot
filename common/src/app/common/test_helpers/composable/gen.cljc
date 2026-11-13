@@ -403,6 +403,15 @@
                               :duplicate (and (top-copy shape) (< (count objects) (get situation :shape-budget 120))
                                               (cld/allow-duplicate? objects shape))
                               :nest (and (top-copy shape) (not (overridden (:id shape))))
+                              ;; a shape a main holds, other than its root: a plain shape
+                              ;; or a nested copy head, which no copy around it holds
+                              :rename (and (ctk/main-instance? shape) (not (:variant-id shape))
+                                           (live-component shape))
+                              :annotate (and (ctk/main-instance? shape) (live-component shape))
+                              :move (and (not (ctk/main-instance? shape))
+                                         (or (nil? (:shape-ref shape)) (ctk/instance-head? shape))
+                                         (not (ctn/has-any-copy-parent? objects shape))
+                                         (some ctk/main-instance? (cfh/get-parents objects (:id shape))))
                               :delete (ctk/main-instance? shape)
                               (:swap :switch) (and (copy-head shape) (live-component shape))
                               :variant-property (ctk/is-variant-container? shape)
@@ -465,6 +474,22 @@
                                   (not (ctn/invalid-structure-for-component?
                                         objects parent-shape [(:shape entry)] false libraries)))]
                    (assoc entry :into (:path parent) :parent (:shape parent))))
+      ;; into a board or group of the same main, of another, or of the page,
+      ;; or to the page itself
+      :move (vec (for [entry eligible
+                       :let [shape (:shape entry)
+                             own (set (cfh/get-children-ids-with-self objects (:id shape)))]
+                       parent (cons {:path [:root] :shape (get objects uuid/zero)} (tree situation))
+                       :let [parent-shape (:shape parent)]
+                       :when (and (#{:frame :group} (:type parent-shape))
+                                  (not (contains? own (:id parent-shape)))
+                                  (not= (:parent-id shape) (:id parent-shape))
+                                  (not (ctk/in-component-copy? parent-shape))
+                                  (not (ctn/has-any-copy-parent? objects parent-shape))
+                                  (not (ctk/is-variant-container? parent-shape))
+                                  (not (ctn/invalid-structure-for-component?
+                                        objects parent-shape [shape] false libraries)))]
+                   (assoc entry :into (:path parent) :parent parent-shape)))
       eligible)))
 
 (def library-source-kinds
@@ -611,6 +636,18 @@
 (def grid-cell-edits
   [{:align-self :end} {:justify-self :center} {:align-self :center :justify-self :end}
    {:align-self :auto :justify-self :auto}])
+
+(def rename-values
+  "Names the assets panel gives a component: the name typed, the main root's
+   name, and the component's path and name."
+  [["Group / Label" "Group / Label" "Group" "Label"]
+   ["Label" "Label" "" "Label"]
+   [" Other/Label " "Other / Label" "Other" "Label"]
+   ["Group/Sub / Label" "Group / Sub / Label" "Group / Sub" "Label"]])
+
+(def annotations
+  "Annotations a component is given; nil removes it."
+  ["Note" "Another note" nil])
 
 (def structure-edits
   "Structure actions: the action and, for a bool, its type."
@@ -848,7 +885,11 @@
                  :unapply-token (n/unapply-token target token-name)
                  :remove-child (n/remove-child target)
                  :duplicate (n/duplicate target)
-                 :nest (n/nest-copy target (constantly (get-in selected [:parent :id])))
+                 (:nest :move) (n/nest-copy target (constantly (get-in selected [:parent :id])))
+                 :rename (n/rename-component target (first (nth rename-values (mod (or (nth tuple 3 nil) 0)
+                                                                                   (count rename-values)))))
+                 :annotate (n/annotate-component target (nth annotations (mod (or (nth tuple 3 nil) 0)
+                                                                              (count annotations))))
                  :delete (n/delete-component target)
                  :swap (n/swap-shape target (constantly (get-in selected [:destination :shape :component-id])))
                  :switch (n/switch-variant target (:variant-value selected) :pos (:variant-pos selected))
@@ -1080,6 +1121,11 @@
       :token-value (shadow/edit-token-value model objects token-name token-value)
       :update-main (shadow/update-main model objects (all-objects after) id)
       :detach (shadow/detach model objects (all-objects after) id)
+      ;; a move resets the shape's constraints to its new parent's defaults,
+      ;; which an override of them now holds
+      :move (cond-> model
+              (get-in model [id :constraints-group])
+              (assoc-in [id :constraints-group] (shadow/values (get (all-objects after) id) :constraints-group)))
       :nest (let [parent (get objects (tm/target-shape-id before (:into op)))]
               (if (:blocked parent)
                 (shadow/edit model shape :blocked true)
@@ -1328,6 +1374,29 @@
           (let [head (tm/shape-by-id after (get-in resolved [:shape :id]))]
             (when-not (= (get-in resolved [:destination :component-id]) (:component-id head))
               (oracle/fail :I9 {:phase :requested-component :kind kind}))))
+        (when (#{:rename :annotate} kind)
+          (let [head (tm/shape-by-id after (get-in resolved [:shape :id]))
+                component (get-in (tm/file after) [:data :components (:component-id head)])]
+            (if (= kind :rename)
+              (let [[_ shape-name path name] (d/seek #(= (first %) (get-in resolved [:op :value])) rename-values)]
+                (when-not (= [shape-name path name] [(:name head) (:path component) (:name component)])
+                  (oracle/fail :I9 {:phase :requested-rename :expected [shape-name path name]
+                                    :actual [(:name head) (:path component) (:name component)]})))
+              (when-not (= (get-in resolved [:op :annotation]) (:annotation component))
+                (oracle/fail :I9 {:phase :requested-annotation :expected (get-in resolved [:op :annotation])
+                                  :actual (:annotation component)})))))
+        ;; only an annotation edit, or its undo or redo, changes an annotation
+        (when-not (#{:annotate :undo :redo :library-undo :library-redo} kind)
+          (let [annotations (fn [situation]
+                              (into {} (for [file (cons (tm/file situation) (vals (tm/aux-files situation)))
+                                             [id component] (get-in file [:data :components])]
+                                         [[(:id file) id] (:annotation component)])))
+                before (annotations situation)
+                kept (annotations after)
+                changed (filterv #(and (contains? kept %) (not= (get before %) (get kept %))) (keys before))]
+            (when (seq changed)
+              (oracle/fail :I9 {:phase :kept-annotation :components changed
+                                :before (select-keys before changed) :after (select-keys kept changed)}))))
         (when (#{:text :text-style :library-text :library-text-style} kind)
           (let [after (if library-id (source-context after library-id) after)
                 actual (tm/shape-by-id after (get-in resolved [:shape :id]))
@@ -1585,7 +1654,7 @@
 (def structure-kinds
   [:edit :reset :update-main :detach :sync :undo :redo :text :text-style :add-child
    :remove-child :duplicate :nest :delete :restore :resize :rotate :style :transform
-   :grid-direction :grid-cell])
+   :grid-direction :grid-cell :move :rename :annotate])
 
 (def structure-program-gen
   (gen/let [components (gen/choose 2 3)

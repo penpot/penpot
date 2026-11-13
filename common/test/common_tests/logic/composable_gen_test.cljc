@@ -4227,3 +4227,29 @@
                                     :rich-variants false :layout-children true :grid-empty false
                                     :layout-copies false :text false}]
                        :ops [[:remove-child 7] [:grid-direction 13 0 7 1] [:grid-cell 0 0 0 1] [:update-main 17]]}))))
+
+(t/deftest generated-moves-take-shapes-between-parents-of-mains
+  ;; a shape a main holds moves to the page, into another main, or within
+  ;; its own; copies follow on sync, and undo and redo restore it
+  (t/is (map? (cg/run {:world [2 1 {:text true :layout nil}]
+                       :ops [[:move 0 0 0] [:sync] [:move 3 0 0] [:undo] [:redo]]})))
+  (t/is (map? (cg/run {:world [2 1 {:text true :layout :flex :layout-children true}]
+                       :ops [[:add-child 0] [:move 5 0 0] [:move 11 0 0] [:sync]]}))))
+
+(t/deftest generated-renames-give-a-component-a-path
+  ;; the assets panel's rename splits the normalized name into the
+  ;; component's path and name, and gives the main root the whole name
+  (t/is (map? (cg/run {:world [2 1 {:text true :layout nil}]
+                       :ops [[:rename 0 0 0] [:rename 1 0 2] [:rename 0 0 3] [:undo] [:sync]]}))))
+
+(t/deftest generated-annotations-survive-delete-and-restore
+  ;; only an annotation edit changes a component's annotation
+  (t/is (map? (cg/run {:world [2 1 {:text true :layout nil}]
+                       :ops [[:annotate 0 0 0] [:delete 0] [:restore 0] [:annotate 1 0 2] [:undo] [:redo]]}))))
+
+(t/deftest generated-a-hidden-fill-child-of-a-grid-copy-keeps-the-size-it-was-given
+  ;; a hidden layout child keeps the size its layout last gave it, which
+  ;; sync may give back to its main's: the layout gives it again once shown
+  (t/is (map? (cg/run {:world [3 1 {:text true :text-styles false :layout :grid :layout-children true
+                                    :layout-item-margins false :grid-square false :grid-empty false}]
+                       :ops [[:delete 8] [:style 0 29 1] [:style 4 1 3]]}))))
