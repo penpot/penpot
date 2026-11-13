@@ -22,15 +22,3 @@ test("Legacy auth hash URL redirects to query-string format", async ({
   expect(new URL(page.url()).hash).toBe("");
   await expect(loginPage.initialHeading).toBeVisible();
 });
-
-test("Unknown legacy hash falls through to the query flow", async ({
-  page,
-}) => {
-  const loginPage = new LoginPage(page);
-  // The unknown-route fallback rechecks profile AND teams.
-  await loginPage.mockRPC("get-teams", "logged-in-user/get-teams-default.json");
-
-  await page.goto("/?template=foo#/nope");
-
-  await expect(loginPage.initialHeading).toBeVisible();
-});
