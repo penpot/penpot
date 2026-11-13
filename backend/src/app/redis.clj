@@ -38,6 +38,7 @@
    io.lettuce.core.RedisCommandInterruptedException
    io.lettuce.core.RedisCommandTimeoutException
    io.lettuce.core.RedisException
+   io.lettuce.core.RedisReadOnlyException
    io.lettuce.core.RedisURI
    io.lettuce.core.resource.ClientResources
    io.lettuce.core.resource.DefaultClientResources
@@ -515,6 +516,10 @@
 (defn timeout-exception?
   [cause]
   (instance? RedisCommandTimeoutException cause))
+
+(defn readonly-exception?
+  [cause]
+  (instance? RedisReadOnlyException cause))
 
 (defn expire
   [conn key seconds]

@@ -248,6 +248,19 @@
         (with-meta result
           {::job job})))))
 
+(defn- reconnect
+  [{:keys [::rds/conn ::wrk/tenant] :as cfg}]
+  (try
+    (let [new-conn (rds/connect cfg)]
+      (rds/close conn)
+      (assoc cfg ::rds/conn new-conn))
+    (catch Exception cause
+      (l/err :hint "unable to reconnect to redis (will retry in some instants)"
+             ::l/context (cf/logging-context)
+             :tenant tenant
+             :cause cause)
+      cfg)))
+
 (defn- run-worker-loop
   [{:keys [::rds/conn ::timeout ::queue ::wrk/tenant] :as cfg}]
   (letfn [(handle-job-retry [{:keys [error delay-ms inc-by] :or {inc-by 1 delay-ms 1000} :as result}]
@@ -333,25 +346,39 @@
             [_ payload] (rds/blpop conn [key] timeout)]
         (some-> payload
                 decode-payload
-                run-job-loop))
+                run-job-loop)
+        cfg)
 
       (catch InterruptedException cause
         (throw cause))
 
       (catch Exception cause
-        (if (rds/timeout-exception? cause)
+        (cond
+          (rds/timeout-exception? cause)
           (do
             (l/err :hint "redis pop operation timeout, consider increasing redis timeout (will retry in some instants)"
                    ::l/context (cf/logging-context)
                    :tenant tenant
                    :timeout timeout
                    :cause cause)
-            (px/sleep timeout))
+            (px/sleep timeout)
+            cfg)
 
-          (l/err :hint "unhandled exception"
-                 ::l/context (cf/logging-context)
-                 :tenant tenant
-                 :cause cause))))))
+          (rds/readonly-exception? cause)
+          (do
+            (l/wrn :hint "redis is read-only, reconnecting (will retry in some instants)"
+                   :tenant tenant
+                   :cause cause)
+            (px/sleep timeout)
+            (reconnect cfg))
+
+          :else
+          (do
+            (l/err :hint "unhandled exception"
+                   ::l/context (cf/logging-context)
+                   :tenant tenant
+                   :cause cause)
+            cfg))))))
 
 (defn- start-thread
   [{:keys [::id ::queue ::wrk/tenant] :as cfg}]
@@ -359,16 +386,17 @@
     {:name (str "penpot/job-runner/" id)}
     (l/inf :hint "started" :id id :tenant tenant :queue queue)
 
-    (let [rconn (rds/connect cfg)]
+    (let [rconn (volatile! (rds/connect cfg))]
       (try
         (loop [cfg (-> cfg
-                       (assoc ::rds/conn rconn)
+                       (assoc ::rds/conn @rconn)
                        (assoc ::timeout (ct/duration "5s")))]
           (when (px/interrupted?)
             (throw (InterruptedException. "interrupted")))
 
-          (run-worker-loop cfg)
-          (recur cfg))
+          (let [cfg (run-worker-loop cfg)]
+            (vreset! rconn (::rds/conn cfg))
+            (recur cfg)))
 
         (catch InterruptedException _
           (l/dbg :hint "interrupted"
@@ -383,7 +411,7 @@
                  :queue queue
                  :cause cause))
         (finally
-          (.close ^AutoCloseable rconn)
+          (.close ^AutoCloseable @rconn)
           (l/inf :hint "terminated"
                  :id id
                  :tenant tenant
