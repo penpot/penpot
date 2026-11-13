@@ -9,6 +9,7 @@
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.nitrate :as dnt]
+   [app.main.data.profile :as dprof]
    [app.main.refs :as refs]
    [app.main.router :as rt]
    [app.main.store :as st]
@@ -131,11 +132,13 @@
           :is-highlighted false}]))))
 
 (mf/defc nitrate-enterprise-banner*
-  [{:keys [on-click button-label]}]
-  (let [collapsed* (mf/use-state false)
-        collapsed? (deref collapsed*)
+  [{:keys [on-click button-label profile]}]
+  (let [collapsed? (true? (get-in profile [:props :promotional-banner-collapsed]))
         toggle-collapse
-        (mf/use-fn #(swap! collapsed* not))]
+        (mf/use-fn
+         (mf/deps collapsed?)
+         #(st/emit! (dprof/update-profile-props
+                     {:promotional-banner-collapsed (not collapsed?)})))]
 
     [:div {:class (stl/css-case :nitrate-banner true
                                 :nitrate-enterprise-banner true
@@ -269,7 +272,8 @@
        ;; Banner for Professional/Unlimited users outside an organization
        (when show-unlock-features?
          [:> nitrate-enterprise-banner*
-          {:on-click handle-click
+          {:profile profile
+           :on-click handle-click
            :button-label (if (:subscription profile)
                            (tr "subscription.dashboard.banner.upgrade-nitrate")
                            (tr "nitrate.form.try-free"))}]))
