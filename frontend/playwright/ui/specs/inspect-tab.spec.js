@@ -461,44 +461,68 @@ test.describe("Inspect tab - Styles", () => {
     });
   });
 
-  test("Change color space and ensure fill and shorthand changes", async ({
-    page,
-  }) => {
+  test("Copy and colour space", async ({ page }) => {
     const workspacePage = new WasmWorkspacePage(page);
     await setupFile(workspacePage);
 
-    await selectLayer(workspacePage, shapeToLayerName.fill.solid);
-    await openInspectTab(workspacePage);
-    const panel = await getPanelByTitle(workspacePage, "Fill");
-    await expect(panel).toBeVisible();
+    await test.step("Copy one property", async () => {
+      await selectLayer(workspacePage, shapeToLayerName.flex);
+      await openInspectTab(workspacePage);
 
-    const propertyRow = panel.getByTestId("property-row");
-    const backgroundRow = propertyRow.filter({
-      hasText: "Background",
+      const panel = await getPanelByTitle(workspacePage, "Layout");
+      await expectPanelRows(panel, 1);
+
+      await copyPropertyFromPropertyRow(panel, "Display");
+
+      const shorthand = await page.evaluate(() =>
+        navigator.clipboard.readText(),
+      );
+      expect(shorthand).toBe("display: flex;");
     });
-    await expect(backgroundRow).toBeVisible();
 
-    // Ensure initial value and copied value are in HEX format
-    await expect(backgroundRow).toContainText("#0438d5 100%");
+    await test.step("Copy the shorthand", async () => {
+      await selectLayer(workspacePage, shapeToLayerName.shadow);
 
-    await copyPropertyFromPropertyRow(panel, "Background");
+      const panel = await getPanelByTitle(workspacePage, "Shadow");
+      await expectPanelRows(panel, 2);
 
-    const backgroundHEX = await page.evaluate(() =>
-      navigator.clipboard.readText(),
-    );
-    expect(backgroundHEX).toContain("background: #0438d5FF;");
+      await copyShorthand(panel);
 
-    // Change color space to RGBA
-    await selectColorSpace(workspacePage, "rgba");
+      const shorthand = await page.evaluate(() =>
+        navigator.clipboard.readText(),
+      );
+      expect(shorthand).toBe("box-shadow: 4px 4px 4px 0px #00000033;");
+    });
 
-    // Ensure new value and copied value are in RGBA format
-    await expect(backgroundRow).toContainText("4, 56, 213, 1");
+    // The colour space is a view setting for the sidebar, so the step that
+    // changes it runs last.
+    await test.step("Colour space changes the value and the copy", async () => {
+      await selectLayer(workspacePage, shapeToLayerName.fill.solid);
 
-    await copyPropertyFromPropertyRow(panel, "Background");
-    const backgroundRGBA = await page.evaluate(() =>
-      navigator.clipboard.readText(),
-    );
-    expect(backgroundRGBA).toContain("background: rgba(4, 56, 213, 1);");
+      const panel = await getPanelByTitle(workspacePage, "Fill");
+      await expectPanelRows(panel, 1);
+
+      const backgroundRow = panel
+        .getByTestId("property-row")
+        .filter({ hasText: "Background" });
+      await expect(backgroundRow).toContainText("#0438d5 100%");
+
+      await copyPropertyFromPropertyRow(panel, "Background");
+      const backgroundHEX = await page.evaluate(() =>
+        navigator.clipboard.readText(),
+      );
+      expect(backgroundHEX).toContain("background: #0438d5FF;");
+
+      await selectColorSpace(workspacePage, "rgba");
+
+      await expect(backgroundRow).toContainText("4, 56, 213, 1");
+
+      await copyPropertyFromPropertyRow(panel, "Background");
+      const backgroundRGBA = await page.evaluate(() =>
+        navigator.clipboard.readText(),
+      );
+      expect(backgroundRGBA).toContain("background: rgba(4, 56, 213, 1);");
+    });
   });
 
   test.describe("Inspect tab - Stroke", () => {
@@ -615,43 +639,6 @@ test.describe("Inspect tab - Styles", () => {
 
         await expect(panel.getByRole("presentation")).toBeVisible();
       });
-    });
-  });
-
-  test.describe("Copy properties", () => {
-    test("Copy single property", async ({ page }) => {
-      const workspacePage = new WasmWorkspacePage(page);
-      await setupFile(workspacePage);
-
-      await selectLayer(workspacePage, shapeToLayerName.flex);
-      await openInspectTab(workspacePage);
-
-      const panel = await getPanelByTitle(workspacePage, "Layout");
-      await expect(panel).toBeVisible();
-
-      await copyPropertyFromPropertyRow(panel, "Display");
-
-      const shorthand = await page.evaluate(() =>
-        navigator.clipboard.readText(),
-      );
-      expect(shorthand).toBe("display: flex;");
-    });
-    test("Copy shorthand - multiple properties", async ({ page }) => {
-      const workspacePage = new WasmWorkspacePage(page);
-      await setupFile(workspacePage);
-
-      await selectLayer(workspacePage, shapeToLayerName.shadow);
-      await openInspectTab(workspacePage);
-
-      const panel = await getPanelByTitle(workspacePage, "Shadow");
-      await expect(panel).toBeVisible();
-
-      await copyShorthand(panel);
-
-      const shorthand = await page.evaluate(() =>
-        navigator.clipboard.readText(),
-      );
-      expect(shorthand).toBe("box-shadow: 4px 4px 4px 0px #00000033;");
     });
   });
 });
