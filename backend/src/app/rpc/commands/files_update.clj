@@ -552,6 +552,46 @@
       (l/error :hint "file validation error"
                :cause cause))))
 
+(defn- get-added-page-ids
+  "Ids of the pages that `:add-page` changes carry whole under `:page`.
+
+  That form has no top-level `:id`, so `extract-affected-ids` cannot see the
+  page and `validate-file-affected` does not check it. Pages whose `:id` is
+  not a uuid are skipped: `process-changes` accepts them and there is nothing
+  to look up in the resulting file."
+  [changes]
+  (into []
+        (comp (keep (fn [{:keys [type id page]}]
+                      (when (and (= type :add-page)
+                                 (nil? id)
+                                 (uuid? (:id page)))
+                        (:id page))))
+              (distinct))
+        changes))
+
+(defn- validate-added-pages
+  "Referential check of the pages added through the `{:page ...}` form of
+  `:add-page`. Returns the errors, or nil when no such page was added."
+  [file libs changes]
+  (when-let [page-ids (seq (get-added-page-ids changes))]
+    (val/validate-file-affected file libs
+                                (mapv (fn [id] {:type :add-page :id id})
+                                      page-ids))))
+
+(defn- soft-validate-added-pages!
+  "Logs the errors of `validate-added-pages` instead of raising them."
+  [file libs changes]
+  (try
+    (when-let [errors (validate-added-pages file libs changes)]
+      (l/error :hint "added page validation error"
+               :file-id (str (:id file))
+               :page-ids (->> errors (map :page-id) distinct (mapv str))
+               :codes (->> errors (map :code) distinct (mapv name))))
+    (catch Throwable cause
+      (l/error :hint "added page validation error"
+               :file-id (str (:id file))
+               :cause cause))))
+
 (defmacro ^:private with-validation-timing
   "Runs `body` and records its time as the validation step `step-key`
   (`step-label` in the metric), also when it throws."
@@ -567,6 +607,15 @@
   modify."
   [cfg file libs changes skip-validate]
   (binding [pmap/*tracked* nil]
+    ;; Pages added through the `{:page ...}` form have no top-level `:id`,
+    ;; so the affected checks below do not see them. Check them here in
+    ;; soft mode, whenever libraries are resolved for a referential
+    ;; check, until the hard check learns to collect them.
+    (when (and (or (contains? cf/flags :file-validation)
+                   (contains? cf/flags :soft-file-validation))
+               (not skip-validate))
+      (soft-validate-added-pages! file libs changes))
+
     (when (contains? cf/flags :soft-file-validation)
       (with-validation-timing cfg :soft-validate-affected-ms "soft-validate-affected"
         (soft-validate-file! file libs changes)))
