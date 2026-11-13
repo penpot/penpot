@@ -104,8 +104,20 @@ fn init_tracks(track: &[GridTrack], size: f32) -> Vec<TrackData> {
         .collect()
 }
 
+/// The size a track takes for `shape` along its axis: that of its margin box,
+/// as CSS sizes tracks.
 fn min_size(column: bool, shape: &Shape, bounds: &HashMap<Uuid, Bounds>) -> f32 {
-    if column && shape.is_layout_horizontal_fill() {
+    let margins = shape
+        .layout_item
+        .map(|i| {
+            if column {
+                i.margin_left + i.margin_right
+            } else {
+                i.margin_top + i.margin_bottom
+            }
+        })
+        .unwrap_or(0.0);
+    let size = if column && shape.is_layout_horizontal_fill() {
         shape.layout_item.and_then(|i| i.min_w).unwrap_or(MIN_SIZE)
     } else if !column && shape.is_layout_vertical_fill() {
         shape.layout_item.and_then(|i| i.min_h).unwrap_or(MIN_SIZE)
@@ -115,7 +127,8 @@ fn min_size(column: bool, shape: &Shape, bounds: &HashMap<Uuid, Bounds>) -> f32 
     } else {
         let bounds = bounds.find(shape);
         bounds.height()
-    }
+    };
+    size + margins
 }
 
 // Go through cells to adjust auto sizes for span=1. Base is the max of its children
@@ -695,6 +708,31 @@ fn child_frame_aabb(child_bounds: &Bounds, hv: Vector, vv: Vector) -> (f32, f32,
     (h_min, v_min, h_max - h_min, v_max - v_min)
 }
 
+/// Where a child sits in its cell along one axis.
+#[derive(Clone, Copy)]
+enum CellAlignment {
+    Start,
+    Center,
+    End,
+}
+
+/// The offset of a child of `child_size` in a cell of `cell_size` along one
+/// axis, as CSS places its margin box: after its start margin, centered with
+/// its margins, or before its end margin.
+fn cell_offset(
+    alignment: CellAlignment,
+    cell_size: f32,
+    child_size: f32,
+    margin_start: f32,
+    margin_end: f32,
+) -> f32 {
+    match alignment {
+        CellAlignment::Start => margin_start,
+        CellAlignment::Center => (cell_size - child_size + margin_start - margin_end) / 2.0,
+        CellAlignment::End => cell_size - child_size - margin_end,
+    }
+}
+
 fn child_position(
     child: &Shape,
     layout_bounds: &Bounds,
@@ -716,14 +754,15 @@ fn child_position(
     // reduces to max_x-min_x / max_y-min_y, so non-rotated layouts are unaffected.
     let (_, _, child_width, child_height) = child_frame_aabb(child_bounds, hv, vv);
 
-    let vpos = match (cell.align_self, layout_data.align_items) {
-        (Some(AlignSelf::Start), _) => margin_top,
-        (Some(AlignSelf::Center), _) => (cell.height - child_height) / 2.0,
-        (Some(AlignSelf::End), _) => margin_bottom + cell.height - child_height,
-        (_, AlignItems::Center) => (cell.height - child_height) / 2.0,
-        (_, AlignItems::End) => margin_bottom + cell.height - child_height,
-        _ => margin_top,
+    let valign = match (cell.align_self, layout_data.align_items) {
+        (Some(AlignSelf::Start), _) => CellAlignment::Start,
+        (Some(AlignSelf::Center), _) => CellAlignment::Center,
+        (Some(AlignSelf::End), _) => CellAlignment::End,
+        (_, AlignItems::Center) => CellAlignment::Center,
+        (_, AlignItems::End) => CellAlignment::End,
+        _ => CellAlignment::Start,
     };
+    let vpos = cell_offset(valign, cell.height, child_height, margin_top, margin_bottom);
 
     let vpos = if child.is_layout_vertical_fill() {
         margin_top
@@ -731,14 +770,15 @@ fn child_position(
         vpos
     };
 
-    let hpos = match (cell.justify_self, layout_data.justify_items) {
-        (Some(JustifySelf::Start), _) => margin_left,
-        (Some(JustifySelf::Center), _) => (cell.width - child_width) / 2.0,
-        (Some(JustifySelf::End), _) => margin_right + cell.width - child_width,
-        (_, JustifyItems::Center) => (cell.width - child_width) / 2.0,
-        (_, JustifyItems::End) => margin_right + cell.width - child_width,
-        _ => margin_left,
+    let halign = match (cell.justify_self, layout_data.justify_items) {
+        (Some(JustifySelf::Start), _) => CellAlignment::Start,
+        (Some(JustifySelf::Center), _) => CellAlignment::Center,
+        (Some(JustifySelf::End), _) => CellAlignment::End,
+        (_, JustifyItems::Center) => CellAlignment::Center,
+        (_, JustifyItems::End) => CellAlignment::End,
+        _ => CellAlignment::Start,
     };
+    let hpos = cell_offset(halign, cell.width, child_width, margin_left, margin_right);
 
     let hpos = if child.is_layout_horizontal_fill() {
         margin_left
@@ -966,6 +1006,20 @@ mod tests {
             row_gap: 4.0,
             column_gap: 4.0,
         }
+    }
+
+    #[test]
+    fn test_cell_offset_places_the_margin_box() {
+        assert_eq!(cell_offset(CellAlignment::Start, 30.0, 56.0, 5.0, 3.0), 5.0);
+        assert_eq!(
+            cell_offset(CellAlignment::Center, 30.0, 56.0, 5.0, 0.0),
+            -10.5
+        );
+        assert_eq!(
+            cell_offset(CellAlignment::Center, 100.0, 40.0, 7.0, 3.0),
+            32.0
+        );
+        assert_eq!(cell_offset(CellAlignment::End, 100.0, 40.0, 7.0, 3.0), 57.0);
     }
 
     #[test]
