@@ -309,85 +309,35 @@ test.describe("Inspect tab - Styles", () => {
     });
   });
 
-  test.describe("Inspect tab - Shadow", () => {
-    test("Shape Shadow - Single shadow", async ({ page }) => {
-      const workspacePage = new WasmWorkspacePage(page);
-      await setupFile(workspacePage);
+  test("Shadow and blur", async ({ page }) => {
+    const workspacePage = new WasmWorkspacePage(page);
+    await setupFile(workspacePage);
 
+    await test.step("Single shadow", async () => {
       await selectLayer(workspacePage, shapeToLayerName.shadow);
       await openInspectTab(workspacePage);
 
       const panel = await getPanelByTitle(workspacePage, "Shadow");
-      await expect(panel).toBeVisible();
-
-      const propertyRow = panel.getByTestId("property-row");
-      const propertyRowCount = await propertyRow.count();
-
-      expect(propertyRowCount).toBeGreaterThanOrEqual(2);
+      await expectPanelRows(panel, 2);
     });
 
-    test("Shape Shadow - Multiple shadow", async ({ page }) => {
-      const workspacePage = new WasmWorkspacePage(page);
-      await setupFile(workspacePage);
-
+    await test.step("Multiple shadows", async () => {
       await selectLayer(workspacePage, shapeToLayerName.shadowMultiple);
-      await openInspectTab(workspacePage);
 
       const panel = await getPanelByTitle(workspacePage, "Shadow");
-      await expect(panel).toBeVisible();
-
-      const propertyRow = panel.getByTestId("property-row");
-      const propertyRowCount = await propertyRow.count();
-
-      expect(propertyRowCount).toBeGreaterThanOrEqual(4);
+      await expectPanelRows(panel, 4);
     });
 
-    // FIXME: flaky/random (depends on trace ?)
-    test.skip("Shape Shadow - Composite shadow", async ({ page }) => {
-      const workspacePage = new WasmWorkspacePage(page);
-      await setupFile(workspacePage);
+    await test.step("Blur", async () => {
+      await selectLayer(workspacePage, shapeToLayerName.blur);
 
-      await selectLayer(workspacePage, shapeToLayerName.shadowComposite);
-      await openInspectTab(workspacePage);
-
-      const panel = await getPanelByTitle(workspacePage, "Shadow");
-      await expect(panel).toBeVisible();
-
-      const propertyRow = panel.getByTestId("property-row");
-      const propertyRowCount = await propertyRow.count();
-
-      expect(propertyRowCount).toBeGreaterThanOrEqual(3);
-
-      const compositeShadowRow = propertyRow.first();
-      await compositeShadowRow.waitFor();
-
-      await expect(compositeShadowRow).toBeVisible();
-
-      const compositeShadowTerm = compositeShadowRow.locator("dt");
-
-      const compositeShadowDefinition = compositeShadowRow.locator("dd");
-
-      expect(compositeShadowTerm).toHaveText("Shadow", { exact: true });
-      expect(compositeShadowDefinition).toContainText("shadowToken");
+      const panel = await getPanelByTitle(workspacePage, "Blur");
+      await expectPanelRows(panel, 1);
     });
   });
 
-  test("Shape - Blur", async ({ page }) => {
-    const workspacePage = new WasmWorkspacePage(page);
-    await setupFile(workspacePage);
-
-    await selectLayer(workspacePage, shapeToLayerName.blur);
-
-    await openInspectTab(workspacePage);
-
-    const panel = await getPanelByTitle(workspacePage, "Blur");
-    await expect(panel).toBeVisible();
-
-    const propertyRow = panel.getByTestId("property-row");
-    const propertyRowCount = await propertyRow.count();
-
-    expect(propertyRowCount).toBeGreaterThanOrEqual(1);
-  });
+  // The two blur cases below mutate the selected shape with controls that
+  // live in the Design tab, so they keep a page load of their own.
 
   test("Shape - Blur on not svg compatible shape", async ({ page }) => {
     const workspacePage = new WasmWorkspacePage(page);
@@ -402,12 +352,7 @@ test.describe("Inspect tab - Styles", () => {
     await openInspectTab(workspacePage);
 
     const panel = await getPanelByTitle(workspacePage, "Blur");
-    await expect(panel).toBeVisible();
-
-    const propertyRow = panel.getByTestId("property-row");
-    const propertyRowCount = await propertyRow.count();
-
-    expect(propertyRowCount).toBeGreaterThanOrEqual(1);
+    await expectPanelRows(panel, 1);
   });
 
   test("Shape - Background Blur on not svg compatible shape", async ({
@@ -431,12 +376,34 @@ test.describe("Inspect tab - Styles", () => {
     await openInspectTab(workspacePage);
 
     const panel = await getPanelByTitle(workspacePage, "Blur");
+    await expectPanelRows(panel, 1);
+  });
+
+  // FIXME: flaky/random (depends on trace ?)
+  test.skip("Shape Shadow - Composite shadow", async ({ page }) => {
+    const workspacePage = new WasmWorkspacePage(page);
+    await setupFile(workspacePage);
+
+    await selectLayer(workspacePage, shapeToLayerName.shadowComposite);
+    await openInspectTab(workspacePage);
+
+    const panel = await getPanelByTitle(workspacePage, "Shadow");
     await expect(panel).toBeVisible();
 
     const propertyRow = panel.getByTestId("property-row");
-    const propertyRowCount = await propertyRow.count();
+    await expect.poll(() => propertyRow.count()).toBeGreaterThanOrEqual(3);
 
-    expect(propertyRowCount).toBeGreaterThanOrEqual(1);
+    const compositeShadowRow = propertyRow.first();
+    await compositeShadowRow.waitFor();
+
+    await expect(compositeShadowRow).toBeVisible();
+
+    const compositeShadowTerm = compositeShadowRow.locator("dt");
+
+    const compositeShadowDefinition = compositeShadowRow.locator("dd");
+
+    await expect(compositeShadowTerm).toHaveText("Shadow", { exact: true });
+    await expect(compositeShadowDefinition).toContainText("shadowToken");
   });
 
   test.describe("Inspect tab - Fill", () => {
