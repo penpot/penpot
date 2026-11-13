@@ -22,7 +22,7 @@ node scripts/nrepl-eval.mjs [options] [<code>]
 | `--frontend` | Connect to frontend nREPL (port 3447) | — |
 | `-p, --port PORT` | nREPL server port | `6064` |
 | `-H, --host HOST` | nREPL server host | `127.0.0.1` |
-| `-t, --timeout MS` | Timeout in milliseconds | `120000` |
+| `-t, --timeout MS` | Timeout in milliseconds; the evaluation is interrupted | `120000` |
 | `--reset-session` | Discard stored session and start fresh | — |
 | `-e, --last-error` | Evaluate `*e` to retrieve the last exception | — |
 | `-h, --help` | Show help message | — |
@@ -38,6 +38,8 @@ node scripts/nrepl-eval.mjs [options] [<code>]
    to pick up changes.
 3. **Inspect the last exception** after a failed evaluation — use `-e` to
    print the error stored in `*e`.
+4. **Reach the backend test JVM** on port 6067, for code the wrappers do not
+   expose (see "Backend test JVM" below).
 
 ## Workflow
 
@@ -52,11 +54,26 @@ carries across calls automatically:
 # => 42
 ```
 
-Reset the session to start fresh:
+A session dies with the JVM that owns it. The client detects the
+`unknown-session` status, discards the stored id, clones a new session and
+reruns the code once, so a restarted JVM needs no manual repair.
+
+Discard a live session on purpose (stale defs, the wrong `in-ns`):
 
 ```bash
 ./scripts/nrepl-eval.mjs --reset-session '(def x 0)'
 ```
+
+### Exit status
+
+- `0`: the code evaluated.
+- `1`: the code threw, the call timed out, the server was unreachable, or the
+  arguments are invalid.
+
+Closing the connection does not stop work on the server, so a timeout sends an
+`interrupt` for the running evaluation first and reports it once the server
+acknowledges (message ends with `(interrupted)`). `-e` evaluates `*e`, the last
+exception the session caught.
 
 ### Evaluate code
 
@@ -135,14 +152,36 @@ The `#'` reader macro resolves to `(var ...)`, giving you direct access to
 the var regardless of its visibility modifier. The syntax is `#'` followed 
 by the fully qualified symbol.
 
+## Backend test JVM (port 6067)
+
+`backend/scripts/test-repl` keeps an nREPL server on port 6067 in the devenv
+container, on the backend test classpath with `PENPOT_FLAGS=enable-backend-asserts`.
+From inside the container, `-p 6067` reaches it:
+
+```bash
+docker exec -u penpot -w /home/penpot/penpot penpot-devenv-ws0-main \
+  scripts/nrepl-eval.mjs -p 6067 "(user/run-tests! 'backend-tests.my-ns-test)"
+```
+
+Prefer `backend/scripts/test-repl test` or `eval`, which start the JVM on
+demand, take the per-workspace lock and normalise the exit codes; the raw port
+is for code those wrappers do not expose. See `mem:backend/testing` for the
+test JVM's own rules.
+
 ## Key Principles
 
 - **Default port is 6064** — just pass code directly, no `-p` needed when
   your nREPL server is on 6064. Use `--backend` (6064) or `--frontend` (3447)
   as quick aliases. Use `-p <PORT>` for any other port.
 - **Always use `:reload`** when requiring namespaces to pick up file changes.
-- **Session is reused** across invocations — defs, in-ns, and var bindings
-  persist. Use `--reset-session` to clear.
-- **Do not start any server** — the tool connects to an existing nREPL
-  server, it is not the agent's responsibility to start the nREPL server
-  (assume the server is already running on the specified port).
+- **Session is reused:** defs, in-ns, and var bindings persist across
+  invocations. A dead session heals itself (new clone, one retry), so
+  `--reset-session` is for discarding state deliberately.
+- **A failed evaluation exits 1:** test runners and shell scripts can rely on
+  it. A timeout interrupts the evaluation instead of leaving it running.
+- **Never restart through the client:** `(restart-all)` on the live backend
+  restarts the server the client is talking to, and no reply arrives. In the
+  test JVM, `(restart)` and `(restart-all)` start a dev backend inside it.
+- **Do not start the dev nREPL server:** the tool connects to an existing
+  nREPL server on the given port. The one JVM it may assume is the test JVM
+  that `backend/scripts/test-repl` starts (6067).

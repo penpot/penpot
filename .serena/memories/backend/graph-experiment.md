@@ -625,9 +625,9 @@
 ## Development Commands
 
 - Run backend commands from the `backend/` directory.
-- Run focused parity tests with `clojure -M:dev:test --focus backend-tests.graph-sync-parity-test`.
-- Run focused binder tests with `clojure -M:dev:test --focus backend-tests.graph-binder-gate-test`.
-- Run the backend test suite with `clojure -M:dev:test`.
+- Run focused parity tests with `scripts/test-repl test backend-tests.graph-sync-parity-test` (inside the devenv container; `mem:backend/testing`).
+- Run focused binder tests with `scripts/test-repl test backend-tests.graph-binder-gate-test`.
+- Run the whole backend suite with `scripts/test-repl test`; before a commit use the cold `scripts/ci backend --test`.
 - Examine Clojure formatting with `pnpm run check-fmt:clj`.
 - Run backend Clojure lint with `pnpm run lint:clj`.
 - Write test output to a file before reading or filtering it.

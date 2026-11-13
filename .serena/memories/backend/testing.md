@@ -6,14 +6,33 @@ JVM `clojure.test` (kaocha runner) under `backend/test/backend_tests/`.
 - Test DB/Redis come from the `PENPOT_TEST_*` env vars already set in the shell (`PENPOT_TEST_DATABASE_URI`, `PENPOT_TEST_REDIS_URI`, ...); per instance they point at `penpot_test` / `penpot_test_wsN` and valkey DB `6+N` (`mem:devenv/core`). Do not override them with values copied from CI logs or other sources unless the user asks (e.g. "use a temporary database"); the CI env (`redis://redis/1`, `postgresql://postgres/penpot_test`) only works inside the CI docker network.
 - The test database may have migrations applied from newer versions (it is shared dev infra). Reinitializing it — `dropdb`/`createdb` of the `PENPOT_TEST_*` database only — is explicitly permitted when that blocks a test run; never drop the main `penpot` database or another instance's test database.
 - All CLI commands must be executed from the `backend/` subdirectory.
-- Tests are invoked directly via `clojure -M:dev:test` (kaocha) — there is no pnpm wrapper. Kaocha auto-discovers test namespaces, so no runner registration is needed.
-- **Preferred way to run them: `scripts/ci <module> --test`**, which runs lint, tests and format per module and writes a log per task under `.ci-logs/`. It exports `PENPOT_FLAGS` with `enable-backend-asserts` appended, so use it rather than calling `clojure -M:dev:test` by hand.
-- **Why the flag matters:** `clojure.core/assert` is elided at compile time when `*assert*` is false, and `app.config` only sets that var from the flags when it loads. The test fixture redefines the flags after that, so they never reach it: without the flag the suite runs with every assertion compiled out, and a test that depends on an assert only means something with it set. `scripts/ci` and `tests-backend.yml` export the flag (GitHub Actions sets it too). When running the suite directly — including a `--focus` run — the command is `PENPOT_FLAGS="enable-backend-asserts" clojure -M:dev:test`.
+- Kaocha auto-discovers test namespaces, so no runner registration is needed.
 - Coverage: if code is added or modified in `src/`, corresponding tests in `test/backend_tests/` must be added or updated.
-- Isolated run: `clojure -M:dev:test --focus backend-tests.my-ns-test` for a specific test namespace, or `clojure -M:dev:test --focus backend-tests.my-ns-test/my-test-var` for a specific test var.
-- Multiple focus symbols are supported by REPEATING the flag (kaocha accumulates them, last-wins does not apply): `clojure -M:dev:test --focus backend-tests.ns-one --focus backend-tests.ns-two` — preferred over a shell loop of isolated runs.
-- Regression run: `clojure -M:dev:test` to ensure no regressions in related functional areas.
-- If you need to filter output, tee to a temp file first: `clojure -M:dev:test 2>&1 | tee /tmp/penpot-test-output.txt`.
+- Two paths: `backend/scripts/test-repl` keeps a warm JVM for the edit-and-rerun loop, and `clojure -M:dev:test` runs kaocha cold (no pnpm wrapper) for CI parity before a commit.
+
+## Warm test JVM (the loop)
+
+- `backend/scripts/test-repl test backend-tests.my-ns-test` runs a namespace; `test backend-tests.my-ns-test/my-test-var` runs one var, and several ids run in turn. No id runs every backend test (`user/run-tests!` selects `^backend-tests.*-test$`).
+- Run it in the devenv container from the host: `docker exec -u penpot -w /home/penpot/penpot/backend penpot-devenv-ws0-main scripts/test-repl test backend-tests.my-ns-test` (`penpot-devenv-wsN-main` on wsN). A harness connected to the devenv MCP server has the same through the `clj_test` and `clj_eval` tools.
+- Cost: about 0.5 s for a small namespace warm, against about 16 s cold. The first call starts the JVM and loads every namespace (about 20 s).
+- The JVM starts with `PENPOT_FLAGS=enable-backend-asserts`, as CI does. Each run reloads the changed namespaces with tools.namespace, then runs `clojure.test` in a fixed (hash) order, not kaocha's random one.
+- Exit status: 0 when every test passed, 1 on a failing test, an evaluation error or a timeout, 2 when the JVM cannot start. `PENPOT_TEST_REPL_TIMEOUT` (seconds, default 1800) caps each call.
+- `backend/scripts/test-repl eval '(form)'` evaluates in the same JVM; `start`, `stop` and `status` manage it.
+- After a `deps.edn` change run `backend/scripts/test-repl stop`: the classpath is fixed at start, so the next call starts a fresh JVM.
+- Runs take turns through a lock per workspace, because agents in one workspace share that workspace's test database. A second call waits for the lock; it does not start a second JVM.
+- Never call `(restart)` or `(restart-all)` in the test JVM: either would start a whole dev backend inside the test process.
+- A def made by hand in the test JVM dies when a reload reloads its namespace.
+
+## Cold path (CI parity, before a commit)
+
+- Before a commit, and to replay a CI order: `scripts/ci backend --test` from the repo root. It runs kaocha (random order) and writes `.ci-logs/backend-test.log`.
+- Kaocha prints the seed on failure; `PENPOT_FLAGS=enable-backend-asserts clojure -M:dev:test --seed N` from `backend/` replays that order for the same ids.
+- Focus a namespace or a var with `--focus`, and repeat the flag to accumulate ids (kaocha unions them, last-wins does not apply): `PENPOT_FLAGS="enable-backend-asserts" clojure -M:dev:test --focus backend-tests.ns-one --focus backend-tests.ns-two`.
+- **Why the flag matters:** `clojure.core/assert` is elided at compile time when `*assert*` is false, and `app.config` only sets that var from the flags when it loads. The test fixture redefines the flags after that, so they never reach it: without the flag the suite runs with every assertion compiled out, and a test that depends on an assert only means something with it set. `scripts/ci` and `tests-backend.yml` export the flag (GitHub Actions sets it too), and `test-repl` starts its JVM with it. A hand-run kaocha, focused or not, needs the flag on the command line.
+- If you need to filter output, tee to a temp file first: `PENPOT_FLAGS="enable-backend-asserts" clojure -M:dev:test 2>&1 | tee /tmp/penpot-test-output.txt`.
+
+## Test system and helpers
+
 - RPC test helpers `command!`/`management-command!` split the data map: qualified keys become server params, unqualified keys become request body params. To inject request-level context (headers, `:app.http/auth-key-id`, ip), pass a map under `:app.http/request` metadata; non-map `IRequest` stubs fall back to a dummy request.
 - The test system is `main/system-config` + `main/worker-config` with the
   components that must not run in the background dropped: HTTP, the srepl,

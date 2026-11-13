@@ -86,10 +86,17 @@
 
 ;; --- Development Stuff
 
+(def ^:private all-tests #"^backend-tests.*-test$")
+
 (defn- run-tests
-  ([] (run-tests #"^backend-tests.*-test$"))
+  "Reload the changed namespaces, then run the tests `o` names: a regex
+  over namespace names, a namespace symbol, or a var symbol. Returns
+  the `clojure.test` counters, and throws when the reload fails."
+  ([] (run-tests all-tests))
   ([o]
-   (repl/refresh)
+   (let [result (repl/refresh)]
+     (when (instance? Throwable result)
+       (throw result)))
    (cond
      (instance? java.util.regex.Pattern o)
      (test/run-all-tests o)
@@ -97,8 +104,24 @@
      (symbol? o)
      (if-let [sns (namespace o)]
        (do (require (symbol sns))
-           (test/test-vars [(resolve o)]))
+           (binding [test/*report-counters* (ref test/*initial-report-counters*)]
+             (test/test-vars [(resolve o)])
+             @test/*report-counters*))
        (test/test-ns o)))))
+
+(defn run-tests!
+  "Run `run-tests` on each target in turn, or on every backend test
+  when there is none, and throw when a test fails or errors. A caller
+  over nREPL, such as `scripts/test-repl`, then gets a non-zero exit."
+  [& targets]
+  (let [summary (->> (or (seq targets) [all-tests])
+                     (mapv #(select-keys (run-tests %) [:test :pass :fail :error]))
+                     (apply merge-with +))]
+    (when (pos? (+ (:fail summary 0) (:error summary 0)))
+      (throw (ex-info (format "%d failures, %d errors in %d tests"
+                              (:fail summary 0) (:error summary 0) (:test summary 0))
+                      summary)))
+    summary))
 
 (defn- start
   []
