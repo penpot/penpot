@@ -2587,7 +2587,14 @@
                  (add-inherited-grid-cells shape-before)
                  (assign-inherited-grid-cells shape-before objects shape-main))
              ;; Take cells from main and remap the shapes to assign it to the copy
-             (copy-grid-cells shape-copy shape-main objects))))
+             (-> shape-copy
+                 ;; the tracks it does not override are its main's, which the
+                 ;; children sync adds before removing others may have grown
+                 (cond-> (or (not omit-touched?) (not (ctk/touched-group? shape-copy :layout-grid-rows)))
+                   (assoc :layout-grid-rows (:layout-grid-rows shape-main)))
+                 (cond-> (or (not omit-touched?) (not (ctk/touched-group? shape-copy :layout-grid-columns)))
+                   (assoc :layout-grid-columns (:layout-grid-columns shape-main)))
+                 (copy-grid-cells shape-main objects)))))
        {:ignore-touched true :with-objects? true})))
 
 (defn- update-grid-main-attrs

@@ -4253,3 +4253,10 @@
   (t/is (map? (cg/run {:world [3 1 {:text true :text-styles false :layout :grid :layout-children true
                                     :layout-item-margins false :grid-square false :grid-empty false}]
                        :ops [[:delete 8] [:style 0 29 1] [:style 4 1 3]]}))))
+
+(t/deftest generated-grouping-in-a-full-grid-main-leaves-its-copies-tracks
+  ;; sync adds the group's copy before it removes the shapes the group
+  ;; took, which grows the copy's columns; the copy ends with its main's
+  (t/is (map? (cg/run {:world [1 0 {:variants true :rich-variants true :text true :layout :grid
+                                    :layout-copies false :layout-children true}]
+                       :ops [[:add-child] [:style 0 35 1] [:add-child] [:add-child 8] [:structure 12 0 3]]}))))
