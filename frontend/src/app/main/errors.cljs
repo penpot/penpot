@@ -16,6 +16,7 @@
    [app.main.data.nitrate :as dnt]
    [app.main.data.notifications :as ntf]
    [app.main.data.workspace :as-alias dw]
+   [app.main.features :as features]
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.main.store :as st]
@@ -410,7 +411,8 @@
               :hint hint
               :href (rt/get-current-href)
               :report report
-              :occurrences occurrences})))
+              :occurrences occurrences
+              :renderer (features/get-active-renderer @st/state)})))
 
 (defn submit-report
   "Report the error report to the audit log subsystem, subject to the
