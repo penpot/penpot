@@ -825,8 +825,18 @@
                                   (or (ctf/find-ref-shape file container libraries shape :include-deleted? true) main)
                                   main)
                          expected (comparable-values source shape group)
-                         actual (comparable-values shape shape group)]]
-             (when-not (= expected actual)
+                         actual (comparable-values shape shape group)
+                         ;; a grid grows default tracks after its last along its flow
+                         ;; to hold children without a free slot
+                         grown? (and (= group (if (= :column (:layout-grid-dir shape))
+                                                :layout-grid-rows :layout-grid-columns))
+                                     (let [wanted (vec (get expected group))
+                                           tracks (vec (get actual group))]
+                                       (and (> (count tracks) (count wanted))
+                                            (= wanted (subvec tracks 0 (count wanted)))
+                                            (every? #(= {:type :flex :value 1} %)
+                                                    (subvec tracks (count wanted))))))]]
+             (when-not (or (= expected actual) grown?)
                (fail :I4 {:shape (:name shape) :group group
                           :expected expected :actual actual})))
            (when (= :text (:type shape))

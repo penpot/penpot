@@ -204,22 +204,22 @@
                     (and (#{:flip-x :flip-y} key) (#{:group :bool} (:type expected))
                          (contains? expected :parent-id))
                     (same-state? (cond-> (get expected key)
-                                  (and (= :points key) (= :bool (:type expected)) (contains? expected :parent-id))
-                                  corner-order)
-                                (cond-> (get actual key)
-                                  (and (= :points key) (= :bool (:type expected)) (contains? expected :parent-id))
-                                  corner-order)
-                                ;; a bool or path stores its segments in single precision, and
-                                ;; a bool or group computes its bounds again from its children
-                                (if (and (contains? expected :parent-id) (#{:bool :path :group} (:type expected)))
-                                  (max tolerance 1e-4)
-                                  tolerance)
-                                (or geometry?
-                                    (and (contains? expected :parent-id)
-                                         (or (contains? #{:x :y :width :height :rotation :points
-                                                          :selrect :transform :transform-inverse} key)
-                                             ;; the segments of a bool or path are its geometry
-                                             (and (= :content key) (#{:bool :path} (:type expected)))))))))
+                                   (and (= :points key) (= :bool (:type expected)) (contains? expected :parent-id))
+                                   corner-order)
+                                 (cond-> (get actual key)
+                                   (and (= :points key) (= :bool (:type expected)) (contains? expected :parent-id))
+                                   corner-order)
+                                 ;; a bool or path stores its segments in single precision, and
+                                 ;; a bool or group computes its bounds again from its children
+                                 (if (and (contains? expected :parent-id) (#{:bool :path :group} (:type expected)))
+                                   (max tolerance 1e-4)
+                                   tolerance)
+                                 (or geometry?
+                                     (and (contains? expected :parent-id)
+                                          (or (contains? #{:x :y :width :height :rotation :points
+                                                           :selrect :transform :transform-inverse} key)
+                                              ;; the segments of a bool or path are its geometry
+                                              (and (= :content key) (#{:bool :path} (:type expected)))))))))
                  (keys expected))
 
          (and (sequential? expected) (sequential? actual) (= (count expected) (count actual)))
