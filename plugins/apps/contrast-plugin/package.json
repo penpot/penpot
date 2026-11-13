@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "ng build contrast-plugin && pnpm run build:plugin",
+    "build": "pnpm run build:plugin && ng build contrast-plugin",
     "build:dev": "ng build contrast-plugin --configuration development",
     "build:plugin": "node ../../tools/scripts/build-plugin.mjs --plugin=contrast-plugin",
     "watch": "node ../../tools/scripts/build-plugin.mjs --plugin=contrast-plugin --watch",

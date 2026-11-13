@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "ng build lorem-ipsum-plugin && pnpm run build:plugin",
+    "build": "pnpm run build:plugin && ng build lorem-ipsum-plugin",
     "build:dev": "ng build lorem-ipsum-plugin --configuration development",
     "build:plugin": "node ../../tools/scripts/build-plugin.mjs --plugin=lorem-ipsum-plugin",
     "watch": "node ../../tools/scripts/build-plugin.mjs --plugin=lorem-ipsum-plugin --watch",

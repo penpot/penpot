@@ -56,7 +56,7 @@ Penpot uses anonymous telemetries from the self-hosted instances to improve the 
 Consider sharing these anonymous telemetries enabling the corresponding flag:
 
 ```bash
-PENPOT_FLAGS: [...] enable-telemetries
+PENPOT_FLAGS: [...] enable-telemetry
 ```
 
 ## Registration and authentication

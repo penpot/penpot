@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "ng build table-plugin && pnpm run build:plugin",
+    "build": "pnpm run build:plugin && ng build table-plugin",
     "build:dev": "ng build table-plugin --configuration development",
     "build:plugin": "node ../../tools/scripts/build-plugin.mjs --plugin=table-plugin",
     "watch": "node ../../tools/scripts/build-plugin.mjs --plugin=table-plugin --watch",

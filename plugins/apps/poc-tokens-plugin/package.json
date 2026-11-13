@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "ng build poc-tokens-plugin && pnpm run build:plugin",
+    "build": "pnpm run build:plugin && ng build poc-tokens-plugin",
     "build:dev": "ng build poc-tokens-plugin --configuration development",
     "build:plugin": "node ../../tools/scripts/build-plugin.mjs --plugin=poc-tokens-plugin",
     "watch": "node ../../tools/scripts/build-plugin.mjs --plugin=poc-tokens-plugin --watch",

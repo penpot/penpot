@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "ng build rename-layers-plugin && pnpm run build:plugin",
+    "build": "pnpm run build:plugin && ng build rename-layers-plugin",
     "build:dev": "ng build rename-layers-plugin --configuration development",
     "build:plugin": "node ../../tools/scripts/build-plugin.mjs --plugin=rename-layers-plugin",
     "watch": "node ../../tools/scripts/build-plugin.mjs --plugin=rename-layers-plugin --watch",
