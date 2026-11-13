@@ -103,6 +103,42 @@ const getPanelByTitle = async (workspacePage, title) => {
   return panel;
 };
 
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/**
+ * Finds a layer row by its exact name. `getByText` matches substrings, and
+ * the fixture has names that are prefixes of others ("shape - text" and
+ * "shape - text - token - composite"), so the match has to be anchored.
+ * The tree capitalises the first letter, hence the case-insensitive pattern.
+ * @param {WasmWorkspacePage} workspacePage - The workspace page instance
+ * @param {string} layerName - The exact name of the layer row
+ */
+const getLayerRow = (workspacePage, layerName) =>
+  workspacePage.layers
+    .getByTestId("layer-row")
+    .filter({ hasText: new RegExp(`^${escapeRegExp(layerName)}$`, "i") })
+    .first();
+
+/**
+ * Expands a layer row when it is collapsed. The layer tree keeps its state
+ * across selections, so clicking an already expanded toggle would collapse
+ * the children the next selection needs.
+ * @param {WasmWorkspacePage} workspacePage - The workspace page instance
+ * @param {string} layerName - The name of the layer whose children to show
+ */
+const expandLayer = async (workspacePage, layerName) => {
+  const toggle = getLayerRow(workspacePage, layerName).getByTestId(
+    "toggle-content",
+  );
+
+  await expect(toggle).toBeVisible();
+
+  if ((await toggle.getAttribute("aria-expanded")) !== "true") {
+    await toggle.click();
+    await expect(toggle).toHaveAttribute("aria-expanded", "true");
+  }
+};
+
 /**
  * Selects a layer in the layers panel
  * @param {WasmWorkspacePage} workspacePage - The workspace page instance
@@ -110,26 +146,33 @@ const getPanelByTitle = async (workspacePage, title) => {
  * @param {string} parentLayerName - The name of the parent layer to expand (optional)
  */
 const selectLayer = async (workspacePage, layerName, parentLayerName) => {
-  await workspacePage.clickToggableLayer("Board");
+  await expandLayer(workspacePage, "Board");
   if (parentLayerName) {
-    await workspacePage.clickToggableLayer(parentLayerName);
+    await expandLayer(workspacePage, parentLayerName);
   }
-  await workspacePage.clickLeafLayer(layerName);
-  await workspacePage.page.waitForTimeout(500);
+
+  await getLayerRow(workspacePage, layerName).click();
+
+  const selectedLayer = workspacePage.page
+    .getByTestId("layer-tree")
+    .getByRole("checkbox", { checked: true })
+    .first();
+  await expect(selectedLayer).toHaveText(layerName, { ignoreCase: true });
 };
 
 /**
- * Opens the Inspect tab
+ * Opens the Inspect tab and waits for its panels to render
  * @param {WasmWorkspacePage} workspacePage - The workspace page instance
  */
-
 const openInspectTab = async (workspacePage) => {
   const inspectButton = workspacePage.page.getByRole("tab", {
     name: "Inspect",
   });
   await inspectButton.waitFor();
   await inspectButton.click();
-  await workspacePage.page.waitForTimeout(500);
+
+  const sidebar = workspacePage.page.getByTestId("right-sidebar");
+  await expect(sidebar.getByRole("article").first()).toBeVisible();
 };
 
 /**
@@ -325,8 +368,12 @@ test.describe("Inspect tab - Styles", () => {
 
     await selectLayer(workspacePage, shapeToLayerName.blur);
 
-    await workspacePage.page.getByRole('combobox', { name: 'Blur type select' }).click();
-    await workspacePage.page.getByRole('option', { name: 'Background blur' }).click();
+    await workspacePage.page
+      .getByRole("combobox", { name: "Blur type select" })
+      .click();
+    await workspacePage.page
+      .getByRole("option", { name: "Background blur" })
+      .click();
     await workspacePage.page.getByTestId("add-stroke").click();
     await workspacePage.page.getByTestId("stroke.alignment").click();
     await workspacePage.page.getByRole("option", { name: "Center" }).click();
