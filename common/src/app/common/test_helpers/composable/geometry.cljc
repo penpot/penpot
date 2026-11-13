@@ -173,3 +173,20 @@
         (gsh/transform-shape child (gsh/calc-child-modifiers parent child modifiers false
                                                              (:points child) (:points parent)
                                                              (delay (:points resized))))))))
+
+(defn ordered-corners
+  "The corners `points` of a group or bool, which keeps them in any order,
+   by their angle around their centre: it holds whatever the shape's size,
+   turn or noise, where an order by position swaps the corners of a tiny or
+   turned shape."
+  [points]
+  (when (seq points)
+    (let [cx (/ (reduce + (map :x points)) (count points))
+          cy (/ (reduce + (map :y points)) (count points))
+          ;; angles to the ten-thousandth of a radian, rounded before they wrap,
+          ;; so a corner level with the centre sorts first whichever side the
+          ;; single precision noise of a bool puts it
+          turn (Math/round (* 2e4 Math/PI))]
+      (sort-by (fn [{:keys [x y]}]
+                 (mod (Math/round (* 1e4 (Math/atan2 (- y cy) (- x cx)))) turn))
+               points))))

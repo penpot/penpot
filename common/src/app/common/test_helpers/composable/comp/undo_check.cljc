@@ -38,6 +38,7 @@
    [app.common.geom.point :as gpt]
    [app.common.math :as mth]
    [app.common.test-helpers.composable.core :as tm]
+   [app.common.test-helpers.composable.geometry :as geom]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.normalize :as thn]
    [clojure.test :as t]
@@ -170,10 +171,10 @@
                                     #{} (constantly nil)))))))
 
 (defn- corner-order
-  "The corners of a bool by their rounded position: a bool computes them
-   again from its children, in any order."
+  "The corners of a bool, which it computes again from its children in any
+   order (`geom/ordered-corners`)."
   [points]
-  (sort-by (juxt #(Math/round (* 100.0 (:x %))) #(Math/round (* 100.0 (:y %)))) points))
+  (geom/ordered-corners points))
 
 (defn same-state?
   "Compare exact data with an absolute tolerance only in shape geometry.
@@ -198,6 +199,10 @@
                     ;; a bool computes its segments from its children, in an order
                     ;; that depends on how it computed them; its children are compared
                     (and (= :content key) (= :bool (:type expected)) (contains? expected :parent-id))
+                    ;; fitting a group or bool to its children clears its flip flags,
+                    ;; which its transform and corners still show
+                    (and (#{:flip-x :flip-y} key) (#{:group :bool} (:type expected))
+                         (contains? expected :parent-id))
                     (same-state? (cond-> (get expected key)
                                   (and (= :points key) (= :bool (:type expected)) (contains? expected :parent-id))
                                   corner-order)

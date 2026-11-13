@@ -193,13 +193,13 @@
                ;; a group or bool takes its corners from its children: at its
                ;; expected corners, its turn and flips say nothing more
                derived (and (#{:group :bool} (:type shape))
-                            (let [order (partial sort-by (juxt #(Math/round (* 100.0 (:x %)))
-                                                               #(Math/round (* 100.0 (:y %)))))]
-                              (gsh/close-attrs? :points (order (:points shape)) (order (:points expected)) 0.01)))
+                            (or (nil? (:points expected))
+                                (gsh/close-attrs? :points (geom/ordered-corners (:points shape))
+                                                  (geom/ordered-corners (:points expected)) 0.01)))
                ;; an unskewed transform carries the turn and the mirror: an
                ;; expected rotation and flips match when they decompose it,
                ;; whichever rotation and flips the shape stores for it
-               oriented (when (and (not placed) (:transform shape) (geom/rigid? shape)
+               oriented (when (and (not placed) (not derived) (:transform shape) (geom/rigid? shape)
                                    (number? (:rotation expected))
                                    (contains? expected :flip-x) (contains? expected :flip-y))
                           (geom/decomposes? (merge shape (select-keys expected [:rotation :flip-x :flip-y]))))
@@ -215,9 +215,17 @@
                               (update :rotation + 180))
                           expected)]
            (and (if placed
-                  ;; a size the layout gives keeps the first corner
-                  (if (seq sized)
+                  (cond
+                    ;; a group or bool keeps its corners in any order
+                    (#{:group :bool} (:type shape))
+                    (gsh/close-attrs? :points (geom/ordered-corners (:points shape))
+                                      (geom/ordered-corners (:points placed)) 0.01)
+
+                    ;; a size the layout gives keeps the first corner
+                    (seq sized)
                     (gsh/close-attrs? :points [(first (:points shape))] [(first (:points placed))] 0.01)
+
+                    :else
                     (gsh/close-attrs? :points (:points shape) (:points placed) 0.01))
                   true)
                 (if (some? oriented) oriented true)
@@ -678,6 +686,9 @@
          (if (and (contains? groups :swap-group)
                   (not (contains? groups :geometry-group))
                   (resized? id)
+                  ;; a layout sizes and places its children, not their constraints
+                  (not (and (ctl/any-layout-immediate-child? after shape)
+                            (not (ctl/position-absolute? shape))))
                   (some? origin)
                   (:shape-ref origin)
                   (not (contains? (get model (:id origin)) :geometry-group)))

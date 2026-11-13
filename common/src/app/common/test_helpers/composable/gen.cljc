@@ -814,13 +814,18 @@
                               (n/edit-grid target :cell (assoc (select-keys cell [:row :column]) :props props)))
                  (:transform :library-transform) (let [action (nth [:move :width :height :rotate :flip-x :flip-y]
                                                                    (mod (or (nth tuple 2 nil) 0) 6))
-                                                       value (or (nth tuple 3 nil) 0)]
-                                                   (n/transform-shape target action
+                                                       value (or (nth tuple 3 nil) 0)
+                                                       shape (:shape selected)]
+                                                   ;; resizing a copy bool stays out until its
+                                                   ;; stored orientation is reliable (F518)
+                                                   (when-not (and (#{:width :height} action)
+                                                                  (= :bool (:type shape)) (:shape-ref shape))
+                                                     (n/transform-shape target action
                                                                       (case action
                                                                         :move [(* 5 (inc (mod value 4))) (* -3 (inc (mod value 3)))]
                                                                         (:width :height) (+ 80 (* 20 (mod value 6)))
                                                                         :rotate (* 45 (inc (mod value 4)))
-                                                                        nil)))
+                                                                        nil))))
                  :library-edit (n/change-property target property value)
                  :library-add-child (n/add-child target (keyword (str "library-generated-" (count (:applied situation))))
                                                  :width 20 :height 20 :x 10 :y 10)
