@@ -287,6 +287,34 @@
       (t/is (nil? (th/db-get :team {:id (:id team)} {::db/remove-deleted false})))
       (t/is (empty? (:call-args-list @audit-mock))))))
 
+(t/deftest gc-deletes-file-data-and-touches-its-storage-object
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)})
+        sobject (sto/put-object! (::sto/storage th/*system*)
+                                 {::sto/content (sto/content "file-data")
+                                  :content-type "application/octet-stream"
+                                  :bucket "file-data"
+                                  :file-id (:id file)
+                                  :id (:id file)})]
+
+    ;; `main` always carries `id = file_id`: mark the real row as deleted
+    ;; instead of inventing a second main row.
+    (th/db-update! :file-data
+                   {:backend "storage"
+                    :data nil
+                    :storage-object-id (:id sobject)
+                    :deleted-at (ct/in-past "30m")}
+                   {:file-id (:id file) :id (:id file)})
+
+    (th/run-task! :objects-gc {})
+
+    (t/testing "the row is purged"
+      (t/is (nil? (th/db-get :file-data {:file-id (:id file) :id (:id file)}))))
+
+    (t/testing "the storage object is touched for the storage GC"
+      (t/is (some? (:touched-at (th/db-get :storage-object {:id (:id sobject)})))))))
+
 (t/deftest gc-emits-events-only-for-committed-chunks
   (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
     (with-redefs [cf/flags (conj cf/flags :audit-log)]

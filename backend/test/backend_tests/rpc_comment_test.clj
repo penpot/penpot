@@ -15,6 +15,7 @@
    [app.rpc.commands.comments :as comments]
    [app.rpc.cond :as cond]
    [app.rpc.quotes :as-alias quotes]
+   [app.storage :as sto]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
    [datoteka.fs :as fs]
@@ -1058,3 +1059,28 @@
                               :team-id (:id team)})]
         (t/is (th/success? out))
         (t/is (= 0 (count (:result out))))))))
+
+(t/deftest internal-file-map-for-comments-omits-the-storage-object-id
+  ;; The comments module builds its file map through `comments/get-file`; the
+  ;; storage pointer is internal bookkeeping and must not travel in it. The
+  ;; RPC responses never embed the file map, so this pins the internal choke
+  ;; point instead.
+  (let [profile (th/create-profile* 1 {:is-active true})
+        team    (th/create-team* 1 {:profile-id (:id profile)})
+        project (th/create-project* 1 {:team-id (:id team)
+                                       :profile-id (:id profile)})
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:id project)})
+        page-id (get-in file [:data :pages 0])
+        sobject (sto/put-object! (::sto/storage th/*system*)
+                                 {::sto/content (sto/content "sobject")
+                                  :content-type "application/octet-stream"
+                                  :bucket "file-data"
+                                  :file-id (:id file)
+                                  :id (:id file)})
+        _       (th/db-update! :file-data {:storage-object-id (:id sobject)}
+                               {:file-id (:id file)
+                                :id (:id file)})
+        result  ((deref #'comments/get-file) th/*system* (:id file) page-id)]
+
+    (t/is (not (contains? result :storage-object-id)))))

@@ -108,16 +108,13 @@
 (def sql:exists-file-data-refs
   "SELECT EXISTS (
      SELECT 1 FROM file_data
-      WHERE file_id = ?
-        AND id = ?
-        AND metadata->>'storage-ref-id' = ?::text
+      WHERE storage_object_id = ?
    ) AS has_refs")
 
 (defn- has-file-data-refs?
   [conn sobject]
-  (let [{:keys [file-id id]} (:metadata sobject)]
-    (-> (db/exec-one! conn [sql:exists-file-data-refs file-id id (:id sobject)])
-        (get :has-refs))))
+  (-> (db/exec-one! conn [sql:exists-file-data-refs (:id sobject)])
+      (get :has-refs)))
 
 (def ^:private sql:mark-freeze-in-bulk
   "UPDATE storage_object

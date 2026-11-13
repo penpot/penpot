@@ -23,6 +23,7 @@
    [app.features.fdata :as fdata]
    [app.http :as http]
    [app.loggers.audit :as-alias audit]
+   [app.redis :as rds]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
    [app.storage :as sto]
@@ -68,7 +69,8 @@
       (let [result (:result out)]
         (t/is (uuid? file-id))
         (t/is (= (:name data) (:name result)))
-        (t/is (= proj-id (:project-id result)))))
+        (t/is (= proj-id (:project-id result)))
+        (t/is (not (contains? result :storage-object-id)))))
 
     (t/testing "rename file"
       (let [data {::th/type :rename-file
@@ -923,6 +925,68 @@
       (t/is (nil? (:error out)))
       (t/is (false? (-> out :result :is-shared))))))
 
+(t/deftest unsharing-a-library-touches-the-consumer-storage-object
+  ;; Regression: the absorption used to build a partial file map that dropped
+  ;; `:storage-object-id`, so the offloaded blob of the consumer was never
+  ;; touched and the storage GC could not reclaim it.
+  (let [profile  (th/create-profile* 1 {:is-active true})
+        library  (th/create-file* 1 {:profile-id (:id profile)
+                                     :project-id (:default-project-id profile)
+                                     :is-shared true})
+        consumer (th/create-file* 2 {:profile-id (:id profile)
+                                     :project-id (:default-project-id profile)})]
+
+    (th/link-file-to-library* {:file-id (:id consumer)
+                               :library-id (:id library)})
+
+    (th/run-task! :offload-file-data {:file-id (:id consumer)})
+    (th/run-task! :storage-gc-touched {:skip-delay true})
+
+    (let [sobject (:storage-object-id (th/db-get :file-data {:file-id (:id consumer)
+                                                             :id (:id consumer)}))]
+      (t/is (uuid? sobject))
+      (t/is (nil? (:touched-at (th/db-get :storage-object {:id sobject}
+                                          {::db/remove-deleted false}))))
+
+      (let [out (th/command! {::th/type :set-file-shared
+                              ::rpc/profile-id (:id profile)
+                              :id (:id library)
+                              :is-shared false})]
+        (t/is (nil? (:error out)))
+
+        (t/testing "the absorbed file rewrites its data and touches the old object"
+          (let [row (th/db-get :file-data {:file-id (:id consumer) :id (:id consumer)})]
+            (t/is (= "db" (:backend row)))
+            (t/is (nil? (:storage-object-id row)))
+            (t/is (some? (:touched-at (th/db-get :storage-object {:id sobject}
+                                                 {::db/remove-deleted false}))))))))))
+
+(t/deftest get-file-does-not-expose-the-storage-pointer
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)})]
+
+    (th/run-task! :offload-file-data {:file-id (:id file)})
+    (t/is (uuid? (:storage-object-id (th/db-get :file-data {:file-id (:id file)
+                                                            :id (:id file)}))))
+
+    ;; A row the migration does not backfill keeps the old pointer in the
+    ;; metadata. The metadata schema is open, so it would travel in the
+    ;; response unless `file->response` strips it.
+    (th/db-update! :file-data
+                   {:metadata (db/json {"storage-ref-id" (str (uuid/next))})}
+                   {:file-id (:id file) :id (:id file)})
+
+    (let [out (th/command! {::th/type :get-file
+                            ::rpc/profile-id (:id profile)
+                            :id (:id file)})]
+      (t/is (nil? (:error out)))
+      (t/is (= (:id file) (-> out :result :id)))
+      (t/testing "the internal storage object id never reaches the client"
+        (t/is (not (contains? (:result out) :storage-object-id))))
+      (t/testing "a residual metadata pointer does not reach the client"
+        (t/is (not (contains? (:metadata (:result out)) :storage-ref-id)))))))
+
 (t/deftest permissions-checks-link-to-library-1
   (let [profile1 (th/create-profile* 1)
         profile2 (th/create-profile* 2)
@@ -1606,14 +1670,13 @@
       (t/is (every? #(nil? (:data %)) rows))
       (t/is (every? #(= "storage" (:backend %)) rows)))
 
-    (let [file    (-> (th/db-get :file-data {:id (:id file) :type "main"})
-                      (update :metadata fdata/decode-metadata))
+    (let [file    (th/db-get :file-data {:id (:id file) :type "main"})
           storage (sto/resolve th/*system*)]
       ;; (pp/pprint file)
       (t/is (= "storage" (:backend file)))
       (t/is (nil? (:data file)))
 
-      (let [sobj (sto/get-object storage (-> file :metadata :storage-ref-id))]
+      (let [sobj (sto/get-object storage (:storage-object-id file))]
         (vreset! sobject sobj)
         ;; (pp/pprint (meta sobj))
         (t/is (= "file-data" (:bucket (meta sobj))))
@@ -3049,6 +3112,36 @@
                               :id slink-id})]
         (t/is (nil? (:error out)))))))
 
+(t/deftest get-file-fragment-returns-only-public-fields
+  (let [profile  (th/create-profile* 1 {:is-active true})
+        file     (th/create-file* 1 {:profile-id (:id profile)
+                                     :project-id (:default-project-id profile)})
+        fragment (first (th/db-query :file-data {:file-id (:id file)
+                                                 :type "fragment"}))]
+
+    (t/is (uuid? (:id fragment)))
+
+    (t/testing "a fragment on hot storage resolves"
+      (let [out (th/command! {::th/type :get-file-fragment
+                              ::rpc/profile-id (:id profile)
+                              :file-id (:id file)
+                              :fragment-id (:id fragment)})]
+        (t/is (nil? (:error out)))
+        (let [result (:result out)]
+          (t/is (contains? result :data))
+          (t/is (= #{:id :file-id :created-at :data}
+                   (set (keys result)))))))
+
+    (t/testing "a fragment moved to cold storage still resolves"
+      (th/run-task! :offload-file-data {:file-id (:id file)})
+      (let [out (th/command! {::th/type :get-file-fragment
+                              ::rpc/profile-id (:id profile)
+                              :file-id (:id file)
+                              :fragment-id (:id fragment)})]
+        (t/is (nil? (:error out)))
+        (t/is (contains? (:result out) :data))
+        (t/is (not (contains? (:result out) :storage-object-id)))))))
+
 (t/deftest share-link-fragment-access-denied
   (let [owner   (th/create-profile* 1 {:is-active true})
         viewer  (th/create-profile* 2 {:is-active true})
@@ -3272,3 +3365,71 @@
                                   :team-id (:default-team-id profile)}))]
     (t/is (th/success? out))
     (t/is (= #{(:id file2)} (into #{} (map :id) (:result out))))))
+
+(t/deftest get-team-shared-files-does-not-expose-the-storage-pointer
+  (let [profile (th/create-profile* 1 {:is-active true})
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared true})]
+
+    (th/run-task! :offload-file-data {:file-id (:id file)})
+
+    (let [out    (th/command! {::th/type :get-team-shared-files
+                               ::rpc/profile-id (:id profile)
+                               :team-id (:default-team-id profile)})
+          result (:result out)]
+      (t/is (nil? (:error out)))
+      (t/is (= #{(:id file)} (into #{} (map :id) result)))
+      (t/is (every? #(not (contains? % :storage-object-id)) result)))))
+
+(t/deftest save-reads-the-file-row-for-update
+  ;; The save persists the map it read, so the read holds the `file` row from
+  ;; the read to the write, with the exclusive lock: the migration-on-read
+  ;; re-read cannot upgrade a shared one and deadlock with another reader.
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+        page-id (first (get-in file [:data :pages]))
+        [_ sqls] (th/read-recording-sql
+                  #(update-file! :profile-id (:id profile)
+                                 :file-id (:id file)
+                                 :revn 0
+                                 :changes [(th/add-rect-change page-id (uuid/random))]))]
+    (t/is (some #(= (str bfc/sql:get-file " FOR UPDATE of f") %) sqls))
+    (t/is (not-any? #(str/includes? % "FOR SHARE") sqls))))
+
+(t/deftest get-team-shared-files-does-not-return-the-applied-migrations
+  ;; The applied migrations are read bookkeeping for the write path: this
+  ;; summary is not where a client completes a read, so both cache paths strip
+  ;; the key. The recorded SQL proves which path ran: a miss reads the file, a
+  ;; hit reads the row only.
+  (let [profile (th/create-profile* 1 {:is-active true})
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared true})
+        shared  (fn []
+                  (th/command! {::th/type :get-team-shared-files
+                                ::rpc/profile-id (:id profile)
+                                :team-id (:default-team-id profile)}))]
+    ;; Redis is not reset between tests and the helper builds deterministic
+    ;; file ids: drop the entry so the first call is a real cache miss.
+    (rds/run! th/*system*
+              (fn [{:keys [::rds/conn]}]
+                (rds/del conn (files/file-summary-cache-key (:id file)))))
+    (with-redefs [cf/flags (conj cf/flags :redis-cache)]
+      (let [[miss sqls-miss] (th/read-recording-sql shared)
+            [hit  sqls-hit]  (th/read-recording-sql shared)]
+        (t/is (= [bfc/sql:get-file] sqls-miss))
+        (t/is (= [bfc/sql:get-file-without-data] sqls-hit))
+
+        (t/testing "the cache miss does not carry the applied migrations"
+          (t/is (nil? (:error miss)))
+          (t/is (= #{(:id file)} (into #{} (map :id) (:result miss))))
+          (t/is (every? #(not (contains? % :migrations)) (:result miss))))
+
+        (t/testing "the cache hit does not carry the applied migrations"
+          (t/is (nil? (:error hit)))
+          (t/is (= (into #{} (map :id) (:result miss))
+                   (into #{} (map :id) (:result hit))))
+          (t/is (every? #(not (contains? % :migrations)) (:result hit))))))))

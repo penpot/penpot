@@ -88,7 +88,9 @@
                                fmeds)]
         (db/insert! conn :file-media-object params ::db/return-keys false))
 
-      file)))
+      ;; The storage pointer of the source file is internal bookkeeping: the
+      ;; new file does not inherit it, and it never leaves the backend.
+      (bfc/file->response file))))
 
 (def ^:private
   schema:duplicate-file

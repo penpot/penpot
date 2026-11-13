@@ -801,6 +801,95 @@
         (t/is (cfo/token-applied? token-radius shape [:r1 :r2 :r3 :r4]))
         (t/is (cfo/token-applied? token-opacity shape [:opacity]))))))
 
+(t/deftest embed-assets-loads-the-library-components
+  ;; The library is read without `:realize?`, so its `:components` is an
+  ;; unloaded pointer map: `absorb-assets` walks it with `vals`, which calls
+  ;; `load!`, and that raises when no loader is bound. The absorb has to run
+  ;; under the library's own loader. This is a pre-existing failure, not a
+  ;; regression of the migration-on-read work: the migration path returns the
+  ;; pointer already loaded by the reattach comparison.
+  (let [profile      (th/create-profile* 1)
+        library      (th/create-file* 1 {:profile-id (:id profile)
+                                         :project-id (:default-project-id profile)
+                                         :is-shared true})
+        file         (th/create-file* 2 {:profile-id (:id profile)
+                                         :project-id (:default-project-id profile)})
+        lib-page     (first (get-in library [:data :pages]))
+        file-page    (first (get-in file [:data :pages]))
+        component-id (uuid/random)
+        main-id      (uuid/random)
+        copy-id      (uuid/random)]
+
+    (th/link-file-to-library* {:file-id (:id file) :library-id (:id library)})
+
+    ;; The library owns one component.
+    (update-file!
+     :file-id (:id library)
+     :profile-id (:id profile)
+     :changes
+     [{:type :add-obj
+       :page-id lib-page
+       :id main-id
+       :parent-id uuid/zero
+       :frame-id uuid/zero
+       :components-v2 true
+       :obj (cts/setup-shape
+             {:id main-id
+              :name "Board"
+              :frame-id uuid/zero
+              :parent-id uuid/zero
+              :type :frame
+              :main-instance true
+              :component-root true
+              :component-file (:id library)
+              :component-id component-id})}
+      {:type :add-component
+       :path ""
+       :name "Board"
+       :main-instance-id main-id
+       :main-instance-page lib-page
+       :id component-id
+       :anotation nil}])
+
+    ;; The file instances it, so the absorb has a usage to embed.
+    (update-file!
+     :file-id (:id file)
+     :profile-id (:id profile)
+     :changes
+     [{:type :add-obj
+       :page-id file-page
+       :id copy-id
+       :parent-id uuid/zero
+       :frame-id uuid/zero
+       :components-v2 true
+       :obj (cts/setup-shape
+             {:id copy-id
+              :name "Board"
+              :frame-id uuid/zero
+              :parent-id uuid/zero
+              :type :frame
+              :main-instance false
+              :component-root true
+              :component-file (:id library)
+              :component-id component-id})}])
+
+    (t/testing "a plain library is absorbed"
+      (let [file-data (-> (bfc/get-file th/*system* (:id file) :realize? true) :data)
+            result    (bfc/embed-assets th/*system* file-data (:id file))]
+        (t/is (contains? (:components result) component-id))))
+
+    (t/testing "a library that needed a migration is absorbed too"
+      ;; The scenario the review reported. It works even without the loader,
+      ;; because `reattach-unchanged` loads the pointers it puts back; it
+      ;; stays pinned so a future reattach that stops loading does not
+      ;; silently break the absorb.
+      (th/db-delete! :file-migration
+                     {:file-id (:id library)
+                      :name "0031-migrate-stroke-width-token-attr"})
+      (let [file-data (-> (bfc/get-file th/*system* (:id file) :realize? true) :data)
+            result    (bfc/embed-assets th/*system* file-data (:id file))]
+        (t/is (contains? (:components result) component-id))))))
+
 (t/deftest export-detach-libraries-preserves-own-tokens-and-status
   (let [profile (th/create-profile* 1)
         {:keys [library file page-id shape-id token-radius token-opacity]}
@@ -1410,26 +1499,23 @@
         (t/is (some? file-res))
         (t/is (= 1 (count (:done file-res))))))))
 
-(t/deftest link-later-overwrite-import-no-resolution
+(t/deftest import-rejects-an-in-place-import
+  ;; The in-place import was removed: it never carried the previous storage
+  ;; pointer, so it could leave the replaced object unreclaimed. A caller that
+  ;; still sets `::bfc/file-id` fails instead of importing as new files.
   (let [{:keys [profile file-id team-id]} (import-sample-file)
-        output (tmp/tempfile :suffix ".zip")]
-    ;; Export file with link-later
-    (v3/export-files!
-     (-> th/*system*
-         (assoc ::bfc/file-ids #{file-id})
-         (assoc ::bfc/export-type :link-later)
-         (assoc ::bfc/output (io/output-stream output))))
-
-    ;; Import with overwrite (file-id set)
-    (let [result (-> th/*system*
+        output (tmp/tempfile :suffix ".zip")
+        cause  (try
+                 (-> th/*system*
                      (assoc ::bfc/project-id (:default-project-id profile))
                      (assoc ::bfc/profile-id (:id profile))
                      (assoc ::bfc/team-id team-id)
                      (assoc ::bfc/file-id file-id)
                      (assoc ::bfc/input output)
-                     (v3/import-files!))]
-      ;; Overwrite should have empty resolution
-      (t/is (= {} (:resolution result))))))
+                     (v3/import-files!))
+                 nil
+                 (catch clojure.lang.ExceptionInfo cause cause))]
+    (t/is (= :not-supported (:code (ex-data cause))))))
 
 ;; -----------------------------------------------------------------------------
 ;; Category 2: Cross-Team Migration
@@ -3082,17 +3168,51 @@
                  (:object-id thumb)))
         (t/is (some? (:media-id thumb)))))))
 
-(t/deftest get-file-without-data-rejects-locks
-  ;; Locking is incompatible with `load-data? false`: the guard fires
-  ;; before any query, so no DB row is needed. Regression test for the
-  ;; `lock-for-share?`/`lock-for-share?` typo that left `lock-for-update?`
-  ;; unchecked. NOTE: the guard is an unconditional `when`/`throw` in
-  ;; `get-file*` (not an `assert`), so this test is not flag-dependent:
-  ;; it behaves the same with or without `enable-backend-asserts`.
-  (doseq [opt [:lock-for-share? :lock-for-update? :skip-locked?]]
+(t/deftest get-file-without-data-can-lock
+  ;; Locking is legal without loading the data: the row-only query selects
+  ;; directly from `file`, so `FOR UPDATE`/`FOR SHARE` apply to the row and
+  ;; the lock lives until the enclosing transaction ends. `SKIP LOCKED` only
+  ;; modifies a locking read, so on its own it is ignored. The SQL is pinned
+  ;; because a plain `SELECT` also returns the row: the lock clause is what
+  ;; serializes with the other writers.
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)})]
+    (doseq [[opt sql] {:lock-for-share?  (str bfc/sql:get-file-without-data " FOR SHARE of f")
+                       :lock-for-update? (str bfc/sql:get-file-without-data " FOR UPDATE of f")
+                       :skip-locked?     bfc/sql:get-file-without-data}]
+      (let [[row sqls] (th/read-recording-sql
+                        #(bfc/get-file th/*system* (:id file) :load-data? false opt true))]
+        (t/is (= (:id file) (:id row)))
+        (t/is (nil? (:data row)))
+        (t/is (= [sql] sqls))))))
+
+(t/deftest get-file-rejects-realize-without-data
+  ;; `:realize?` walks the decoded data; asking for it without loading or
+  ;; decoding the data is a caller bug. The guard fires before any query, so
+  ;; no file row is needed.
+  (let [id (uuid/random)]
     (t/is (thrown? IllegalArgumentException
-                   (bfc/get-file th/*system* (uuid/random)
-                                 :load-data? false opt true)))))
+                   (bfc/get-file th/*system* id :realize? true :decode? false)))
+    (t/is (thrown? IllegalArgumentException
+                   (bfc/get-file th/*system* id :realize? true :load-data? false)))))
+
+(t/deftest get-file-rejects-a-shared-lock-with-data
+  ;; The probe inherits the caller's lock and the migration branch re-reads
+  ;; with FOR UPDATE, so a shared lock on a data read is a lock upgrade. The
+  ;; guard fires before any query, so no row is needed.
+  (t/is (thrown? IllegalArgumentException
+                 (bfc/get-file th/*system* (uuid/random) :lock-for-share? true))))
+
+(t/deftest get-file-rejects-a-bare-pool-or-connection
+  ;; The read opens a transaction (unless it is read-only) and resolves the
+  ;; cfg, so it takes a cfg map only: a bare pool or connection is a caller
+  ;; bug. The guard is an `IllegalArgumentException`, not an `assert`, which
+  ;; is elided when the backend runs without `:backend-asserts`.
+  (let [id (uuid/random)]
+    (t/is (thrown? IllegalArgumentException (bfc/get-file th/*pool* id)))
+    (with-open [conn (db/open th/*system*)]
+      (t/is (thrown? IllegalArgumentException (bfc/get-file conn id))))))
 
 ;; --- Library relations security tests
 

@@ -837,7 +837,8 @@
 (t/deftest migration-keeps-unchanged-page-fragments
   ;; Applying a pending migration on read keeps the fragment ids of the
   ;; pages the migration does not change; a page it changes gets a new
-  ;; id. The caller still receives realized data, not pointers.
+  ;; id. The read returns decoded data with pointers for the pages the
+  ;; migration does not change; `:realize?` is what returns it plain.
   (let [profile (th/create-profile* 1)
         file    (th/create-file* 1 {:profile-id (:id profile)
                                     :project-id (:default-project-id profile)
@@ -865,7 +866,9 @@
 
       (let [returned (db/tx-run! th/*system*
                                  (fn [cfg] (bfc/get-file cfg file-id)))]
-        (t/is (not (pmap/pointer-map? (get-in returned [:data :pages-index page-a]))))
+        ;; The migration changed page-b, so it comes plain; page-a keeps
+        ;; its pointer (and its fragment id) until someone realizes it.
+        (t/is (pmap/pointer-map? (get-in returned [:data :pages-index page-a])))
         (t/is (not (pmap/pointer-map? (get-in returned [:data :pages-index page-b]))))
         (t/is (not (fmg/need-migration? returned)))
 

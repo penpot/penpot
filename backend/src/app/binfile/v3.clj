@@ -988,8 +988,7 @@
                :old-id (str (:id item))
                ::l/sync? true)
 
-        (db/insert! conn :file-media-object params
-                    ::db/on-conflict-do-nothing? (::bfc/overwrite cfg))))
+        (db/insert! conn :file-media-object params)))
 
     (doseq [[index item] (d/enumerate thumbnails)]
       (let [media-id  (bfc/lookup-index (:media-id item))
@@ -1305,56 +1304,6 @@
       {:file-ids   file-ids
        :resolution resolution})))
 
-(defn- invalidate-thumbnails
-  [cfg file-id]
-  (let [storage (sto/resolve cfg ::db/reuse-conn true)
-
-        sql-1
-        (str "update file_tagged_object_thumbnail "
-             "   set deleted_at = now() "
-             " where file_id=? returning media_id")
-
-        sql-2
-        (str "update file_thumbnail "
-             "   set deleted_at = now() "
-             " where file_id=? returning media_id")]
-
-    (run! #(sto/touch-object! storage %)
-          (sequence
-           (keep :media-id)
-           (concat
-            (db/exec! cfg [sql-1 file-id])
-            (db/exec! cfg [sql-2 file-id]))))))
-
-(defn- import-file-and-overwrite*
-  [{:keys [::manifest ::bfc/file-id] :as cfg}]
-
-  (when (not= 1 (count (:files manifest)))
-    (ex/raise :type :validation
-              :code :invalid-condition
-              :hint "unable to perform in-place update with binfile containing more than 1 file"
-              :manifest manifest))
-
-  (bfc/configure-import-transaction cfg)
-
-  (let [ref-file (bfc/get-minimal-file cfg file-id ::db/for-update true)
-        file     (first (get manifest :files))
-        cfg      (assoc cfg ::bfc/overwrite true)]
-
-    (vswap! bfc/*state* update :index assoc (:id file) file-id)
-
-    (binding [bfc/*options* cfg
-              bfc/*reference-file* ref-file]
-
-      (import-storage-objects cfg)
-      (import-file cfg file {:current 1 :total 1})
-
-      (invalidate-thumbnails cfg file-id)
-      (bfm/apply-pending-migrations! cfg)
-
-      {:file-ids   [file-id]
-       :resolution {}})))
-
 (defn- import-files
   [{:keys [::bfc/timestamp ::bfc/input] :or {timestamp (ct/now)} :as cfg}]
 
@@ -1405,9 +1354,7 @@
     (tap-progress cfg {:section :manifest})
 
     (binding [bfc/*state* (volatile! {:media [] :index {}})]
-      (if (::bfc/file-id cfg)
-        (db/tx-run! cfg import-file-and-overwrite*)
-        (db/tx-run! cfg import-files*)))))
+      (db/tx-run! cfg import-files*))))
 
 ;; --- PUBLIC API
 
@@ -1475,6 +1422,12 @@
 
 (defn import-files!
   [{:keys [::bfc/input] :as cfg}]
+
+  (when (::bfc/file-id cfg)
+    (ex/raise :type :validation
+              :code :not-supported
+              :hint "in-place import is not supported"
+              :file-id (::bfc/file-id cfg)))
 
   (assert
    (and (uuid? (::bfc/profile-id cfg))

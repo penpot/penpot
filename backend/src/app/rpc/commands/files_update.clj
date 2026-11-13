@@ -438,9 +438,15 @@
           :modified-at (or timestamp (ct/now))}}))))
 
 (defn get-file
-  "Get not-decoded file, only decodes the features set."
+  "Get not-decoded file, only decodes the features set.
+
+  The read takes the `file` row with FOR UPDATE: the save persists the
+  map it read, so it must hold the row from the read to the write. The
+  lock is exclusive, not shared, because the migration-on-read path may
+  re-read the same row with FOR UPDATE, and a shared lock that upgrades
+  deadlocks two concurrent readers."
   [cfg id]
-  (bfc/get-file cfg id :decode? false :lock-for-share? true))
+  (bfc/get-file cfg id :decode? false :lock-for-update? true))
 
 (defn persist-file!
   "Function responsible of persisting already encoded file. Should be
