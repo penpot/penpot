@@ -222,7 +222,8 @@
 
 (defn invalidate-all
   "Delete all sessions for a given profile. Used when a profile is deleted
-  to ensure immediate access revocation across all devices."
+  or a password is recovered, to ensure immediate access revocation across
+  all devices."
   [cfg profile-id]
   (let [sql "delete from http_session_v2 where profile_id = ?"]
     (-> (db/exec-one! cfg [sql profile-id])

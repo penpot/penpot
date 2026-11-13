@@ -10,6 +10,7 @@
    [app.auth.login-lockout :as lol]
    [app.common.flags :as flags]
    [app.common.generic-pool :as gpool]
+   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.http.session :as session]
    [app.loggers.audit :as-alias audit]
@@ -17,6 +18,7 @@
    [app.rpc.commands.auth :as auth]
    [app.rpc.commands.ldap :as ldap-cmd]
    [app.storage :as sto]
+   [app.tokens :as tokens]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
    [datoteka.io :as io]
@@ -27,6 +29,103 @@
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
+
+(t/deftest recover-profile-invalidates-existing-sessions
+  "Regression: password recovery must delete the victim's server-side
+  sessions, otherwise a previously captured cookie keeps working
+  (GHSA-3j2p-qr45-q365)."
+  (let [prof    (th/create-profile* 1)
+        manager (::session/manager th/*system*)
+        sid1    (uuid/random)
+        sid2    (uuid/random)
+        _       (th/db-exec-one! ["INSERT INTO http_session_v2 (id, profile_id, user_agent) VALUES (?, ?, ?)"
+                                  sid1 (:id prof) "agent-1"])
+        _       (th/db-exec-one! ["INSERT INTO http_session_v2 (id, profile_id, user_agent) VALUES (?, ?, ?)"
+                                  sid2 (:id prof) "agent-2"])
+        token   (tokens/generate th/*system*
+                                 {:iss :password-recovery
+                                  :exp (ct/in-future "15m")
+                                  :profile-id (:id prof)})]
+    (with-mocks [_ {:target 'app.email/send-template :return nil}]
+      (let [out (th/command! {::th/type :recover-profile
+                              :token token
+                              :password "Foobar12!"})]
+        (t/is (nil? (:error out)))))
+    (t/is (nil? (session/read-session manager sid1))
+          "recover-profile must delete the victim's sessions (GHSA-3j2p-qr45-q365)")
+    (t/is (nil? (session/read-session manager sid2))
+          "recover-profile must delete the victim's sessions (GHSA-3j2p-qr45-q365)")))
+
+(t/deftest recover-profile-keeps-other-profiles-sessions
+  (let [prof-a  (th/create-profile* 1)
+        prof-b  (th/create-profile* 2)
+        manager (::session/manager th/*system*)
+        sid-a   (uuid/random)
+        sid-b   (uuid/random)
+        _       (th/db-exec-one! ["INSERT INTO http_session_v2 (id, profile_id, user_agent) VALUES (?, ?, ?)"
+                                  sid-a (:id prof-a) "agent-a"])
+        _       (th/db-exec-one! ["INSERT INTO http_session_v2 (id, profile_id, user_agent) VALUES (?, ?, ?)"
+                                  sid-b (:id prof-b) "agent-b"])
+        token   (tokens/generate th/*system*
+                                 {:iss :password-recovery
+                                  :exp (ct/in-future "15m")
+                                  :profile-id (:id prof-a)})]
+    (with-mocks [_ {:target 'app.email/send-template :return nil}]
+      (let [out (th/command! {::th/type :recover-profile
+                              :token token
+                              :password "Foobar12!"})]
+        (t/is (nil? (:error out)))))
+    (t/is (nil? (session/read-session manager sid-a)))
+    (t/is (some? (session/read-session manager sid-b))
+          "sessions of other profiles must survive the recovery")))
+
+(t/deftest recover-profile-failure-keeps-sessions
+  "A failed recovery (token with the wrong issuer) is rejected before any
+  write: sessions and password must stay untouched."
+  (let [prof    (th/create-profile* 1)
+        manager (::session/manager th/*system*)
+        sid     (uuid/random)
+        _       (th/db-exec-one! ["INSERT INTO http_session_v2 (id, profile_id, user_agent) VALUES (?, ?, ?)"
+                                  sid (:id prof) "agent-1"])
+        before  (:password (th/db-exec-one! ["SELECT password FROM profile WHERE id = ?" (:id prof)]))
+        token   (tokens/generate th/*system*
+                                 {:iss :authentication
+                                  :exp (ct/in-future "15m")
+                                  :profile-id (:id prof)})]
+    (with-mocks [_ {:target 'app.email/send-template :return nil}]
+      (let [out (th/command! {::th/type :recover-profile
+                              :token token
+                              :password "Foobar12!"})]
+        (t/is (some? (:error out)))))
+    (t/is (some? (session/read-session manager sid))
+          "a failed recovery must not delete sessions")
+    (t/is (= before (:password (th/db-exec-one! ["SELECT password FROM profile WHERE id = ?" (:id prof)])))
+          "a failed recovery must not change the password")))
+
+(t/deftest recover-profile-rollback-keeps-password-and-sessions
+  "A failure after the password UPDATE rolls the transaction back, so the
+  captured session and the old password both survive
+  (GHSA-3j2p-qr45-q365)."
+  (let [prof    (th/create-profile* 1)
+        manager (::session/manager th/*system*)
+        sid     (uuid/random)
+        _       (th/db-exec-one! ["INSERT INTO http_session_v2 (id, profile_id, user_agent) VALUES (?, ?, ?)"
+                                  sid (:id prof) "agent-1"])
+        before  (:password (th/db-exec-one! ["SELECT password FROM profile WHERE id = ?" (:id prof)]))
+        token   (tokens/generate th/*system*
+                                 {:iss :password-recovery
+                                  :exp (ct/in-future "15m")
+                                  :profile-id (:id prof)})]
+    (with-mocks [_ {:target 'app.email/send-template
+                    :throw (ex-info "smtp down" {})}]
+      (let [out (th/command! {::th/type :recover-profile
+                              :token token
+                              :password "Foobar12!"})]
+        (t/is (some? (:error out)))))
+    (t/is (some? (session/read-session manager sid))
+          "a rolled-back recovery must not delete sessions")
+    (t/is (= before (:password (th/db-exec-one! ["SELECT password FROM profile WHERE id = ?" (:id prof)])))
+          "a rolled-back recovery must not change the password")))
 
 (t/deftest logout-invalidates-current-session
   (let [prof    (th/create-profile* 1)

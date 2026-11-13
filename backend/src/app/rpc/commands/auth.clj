@@ -201,6 +201,11 @@
     (let [profile (some->> (validate-token token)
                            (update-password conn))]
       (when profile
+        ;; Recovery must revoke every existing session: a previously
+        ;; captured cookie otherwise keeps working after the password
+        ;; change (GHSA-3j2p-qr45-q365). Runs inside the same transaction
+        ;; as the password update (::db/transaction true).
+        (session/invalidate-all cfg (:id profile))
         (login-lockout/clear-attempts! cfg (:id profile))
         (eml/send-template cfg {::eml/reuse-conn true
                                 ::eml/template "password-changed"
