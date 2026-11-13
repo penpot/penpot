@@ -3205,12 +3205,14 @@
                  (bfc/get-file th/*system* (uuid/random) :lock-for-share? true))))
 
 (t/deftest get-file-rejects-a-bare-pool-or-connection
-  ;; The read opens its own transaction and resolves the cfg, so it takes a
-  ;; cfg map only: a bare pool or connection is a caller bug.
+  ;; The read opens a transaction (unless it is read-only) and resolves the
+  ;; cfg, so it takes a cfg map only: a bare pool or connection is a caller
+  ;; bug. The guard is an `IllegalArgumentException`, not an `assert`, which
+  ;; is elided when the backend runs without `:backend-asserts`.
   (let [id (uuid/random)]
-    (t/is (thrown? AssertionError (bfc/get-file th/*pool* id)))
+    (t/is (thrown? IllegalArgumentException (bfc/get-file th/*pool* id)))
     (with-open [conn (db/open th/*system*)]
-      (t/is (thrown? AssertionError (bfc/get-file conn id))))))
+      (t/is (thrown? IllegalArgumentException (bfc/get-file conn id))))))
 
 ;; --- Library relations security tests
 

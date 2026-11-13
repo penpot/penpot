@@ -327,3 +327,39 @@
           (t/is (empty? (th/db-query :file-migration
                                      {:file-id file-id
                                       :name migration-name}))))))))
+
+(t/deftest read-only-cfg-migration-never-writes
+  ;; A cfg marked `::db/read-only` migrates in memory too: `db/tx-run!` opens
+  ;; the transaction read-only, `get-file*` sees the connection read-only and
+  ;; takes the no-persist branch. The config flag that fills this key is
+  ;; legacy, but the key is set by hand (objects-gc, the REPL), so the read
+  ;; must keep working under it.
+  (with-redefs [cf/get (th/config-get-mock {:file-data-backend "storage"})]
+    (let [{:keys [file-id page-id]} (create-file!)
+          pointer (:storage-object-id (file-data-row file-id))]
+
+      (force-migration! file-id)
+
+      (let [returned (db/tx-run! (assoc th/*system* ::db/read-only true)
+                                 (fn [cfg] (bfc/get-file cfg file-id)))]
+
+        (t/testing "the read returns migrated data"
+          (t/is (not (pmap/pointer-map? (get-in returned [:data :pages-index page-id])))))
+
+        (t/testing "nothing is persisted"
+          (t/is (= pointer (:storage-object-id (file-data-row file-id))))
+          (t/is (empty? (th/db-query :file-migration
+                                     {:file-id file-id
+                                      :name migration-name}))))))))
+
+(t/deftest read-only-read-does-not-open-a-transaction
+  ;; A read-only read takes no lock and writes nothing, so `get-file` runs it
+  ;; on a plain connection instead of opening a transaction of its own. The
+  ;; redefinition proves both directions: the same call without the option
+  ;; does open one.
+  (let [{:keys [file-id]} (create-file!)]
+    (with-redefs [db/tx-run! (fn [& _]
+                               (throw (ex-info "opened a transaction" {})))]
+      (t/is (some? (bfc/get-file th/*system* file-id :read-only? true)))
+      (t/is (thrown? clojure.lang.ExceptionInfo
+                     (bfc/get-file th/*system* file-id))))))

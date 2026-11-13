@@ -408,8 +408,11 @@
 
   Runs inside a transaction: it joins the caller's when the cfg already
   carries a connection and opens one otherwise, so the migration write
-  commits with the read. Accepts a cfg map only: a bare pool or a
-  connection raises.
+  commits with the read. A read-only read (`:read-only?`) takes no lock and
+  writes nothing, so it runs on a plain connection instead of opening a
+  transaction of its own; with a cfg that already carries a connection it
+  still joins the caller's. Accepts a cfg map only: a bare pool or a
+  connection raises `IllegalArgumentException`.
 
   Useful when you have plan to apply massive or not surgical
   operations on file, because it removes the overhead of lazy fetching
@@ -424,13 +427,21 @@
   - `:migrate?` applies the pending migrations on read (default true).
   - `:load-migrations?` resolves the applied migrations on a row read
     (default true).
-  - `:lock-for-update?`, `:skip-locked?`, `:include-deleted?`,
-    `:throw-if-not-exists?` and `:read-only?` are the usual read knobs.
+  - `:read-only?` applies the pending migrations in memory only and skips
+    the transaction. It does not take a lock.
+  - `:lock-for-update?`, `:skip-locked?`, `:include-deleted?` and
+    `:throw-if-not-exists?` are the usual read knobs. A lock needs a
+    read-write transaction from the caller: PostgreSQL rejects row locks in
+    a read-only transaction.
   - `:persist-after-migration?` is internal: `get-file*` turns it off
     for the in-memory migration of a read-only context. Do not pass it."
   [cfg file-id & {:as opts}]
-  (assert (map? cfg) "expected cfg map, not a pool or a connection")
-  (db/tx-run! cfg get-file* file-id opts))
+  (when-not (map? cfg)
+    (throw (IllegalArgumentException.
+            "expected cfg map, not a pool or a connection")))
+  (if (:read-only? opts)
+    (db/run! cfg get-file* file-id opts)
+    (db/tx-run! cfg get-file* file-id opts)))
 
 (defn clean-file-features
   [file]
