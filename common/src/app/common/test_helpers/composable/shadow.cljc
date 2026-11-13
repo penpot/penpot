@@ -628,8 +628,16 @@
    (fn [result id groups]
      (let [old (get before id)
            shape (get after id)
-           parent (get before (:parent-id old))
-           new-parent (get after (:parent-id shape))]
+           ;; a group or bool takes its bounds and turn from its children,
+           ;; so they take their place from the board around it
+           board (fn [objects shape]
+                   (let [parent (get objects (:parent-id shape))
+                         frame  (get objects (:frame-id shape))]
+                     (if (and (#{:group :bool} (:type parent)) (not (ctl/any-layout? frame)))
+                       frame
+                       parent)))
+           parent (when old (board before old))
+           new-parent (when shape (board after shape))]
        (if (and (:geometry-group groups) old shape
                 (= (:parent-id old) (:parent-id shape)) parent new-parent)
          (if-let [expected (authored-placement (:geometry-group groups) new-parent)]
