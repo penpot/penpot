@@ -489,3 +489,25 @@
     ;; (100 - 40 + 7 - 3) / 2 and (30 - 56 + 5 - 0) / 2
     (t/is (mth/close? 32.0 (:x corner) 0.01))
     (t/is (mth/close? -10.5 (:y corner) 0.01))))
+
+(t/deftest grid-that-hugs-sizes-its-percent-tracks-by-content
+  ;; percentages of a size the grid takes from them would never settle
+  (let [child-id (uuid/next)
+        cell-id  (uuid/next)
+        frame    (-> (make-grid-frame :layout-grid-columns [{:type :percent :value 50.0}]
+                                      :layout-grid-rows [{:type :fixed :value 30.0}]
+                                      :layout-item-h-sizing :auto
+                                      :width 200 :height 30)
+                     (assoc :shapes [child-id]
+                            :layout-grid-cells {cell-id {:id cell-id :row 1 :column 1 :row-span 1 :column-span 1
+                                                         :position :manual :align-self :auto :justify-self :auto
+                                                         :shapes [child-id]}}))
+        child    (cts/setup-shape {:id child-id :type :rect :x 0 :y 0 :width 40 :height 20
+                                   :parent-id (:id frame) :frame-id (:id frame)})
+        objects  {uuid/zero (cts/setup-shape {:id uuid/zero :type :frame :x 0 :y 0 :width 1000 :height 1000
+                                              :shapes [(:id frame)]})
+                  (:id frame) (assoc frame :parent-id uuid/zero :frame-id uuid/zero)
+                  child-id child}
+        tree     (gm/set-objects-modifiers {(:id frame) {:modifiers (ctm/reflow-modifiers)}} objects)
+        resized  (gsh/transform-shape (get objects (:id frame)) (get-in tree [(:id frame) :modifiers]))]
+    (t/is (mth/close? 40.0 (:width (:selrect resized)) 0.01))))
