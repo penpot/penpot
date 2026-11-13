@@ -550,11 +550,17 @@
                             (gpt/point (-> root-inst :selrect :x) (-> root-inst :selrect :y)))]
     (gsh/move shape delta)))
 
+(declare flips)
+
 (defn- close-geometry?
+  "Whether `shape` and `other` have the same geometry: a bool keeps its
+   corners in one order whatever its flips, so they count too."
   [shape other]
   (and (gsh/close-attrs? :selrect (:selrect shape) (:selrect other))
        (gsh/close-attrs? :points (:points shape) (:points other))
-       (mth/close? (:content-scale shape 1) (:content-scale other 1))))
+       (mth/close? (:content-scale shape 1) (:content-scale other 1))
+       (or (not (#{:group :bool} (:type shape)))
+           (= (flips shape) (flips other)))))
 
 (defn- authored-constraints
   "The constraints that the copy shapes `ids` author, by the id of the main
