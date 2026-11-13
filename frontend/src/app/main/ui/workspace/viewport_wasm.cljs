@@ -20,6 +20,7 @@
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.variants :as dwv]
+   [app.main.errors :as errors]
    [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -69,6 +70,20 @@
    [rumext.v2 :as mf]))
 
 ;; --- Viewport
+
+(defn call-renderer!
+  "Calls `f` when the renderer takes calls: the WebGL context is live, not
+  lost and not reloading. A WASM error thrown by `f` goes to the app error
+  handler, as a failed render frame does, instead of the React error
+  boundary, which would replace the workspace with the error page."
+  [f]
+  (when (wasm.api/initialized?)
+    (try
+      (f)
+      (catch :default cause
+        (if (= :wasm-error (:type (ex-data cause)))
+          (do (errors/on-error cause) nil)
+          (throw cause))))))
 
 (defn- apply-modifiers-to-objects
   [objects modifiers]
@@ -503,11 +518,13 @@
           (let [content (-> active-editor-state
                             (ted/get-editor-current-content)
                             (ted/export-content))]
-            (wselect/use-shape edition)
-            (wasm.api/set-shape-text-content edition content)
-            (let [dimension (wasm.api/get-text-dimensions)]
-              (st/emit! (dwt/resize-text-editor edition dimension))
-              (wasm.api/request-render "content"))))))
+            (call-renderer!
+             (fn []
+               (wselect/use-shape edition)
+               (wasm.api/set-shape-text-content edition content)
+               (let [dimension (wasm.api/get-text-dimensions)]
+                 (st/emit! (dwt/resize-text-editor edition dimension))
+                 (wasm.api/request-render "content"))))))))
 
     (mf/with-effect [@canvas-init?]
       (when @canvas-init?
@@ -521,8 +538,10 @@
 
     (mf/with-effect [vport]
       (when (and @canvas-init? @initialized?)
-        (wasm.api/resize-canvas! (mf/ref-val canvas-ref))
-        (wasm.api/set-view-box zoom vbox)))
+        (call-renderer!
+         (fn []
+           (wasm.api/resize-canvas! (mf/ref-val canvas-ref))
+           (wasm.api/set-view-box zoom vbox)))))
 
     (mf/with-effect [@canvas-init? preview-blend]
       (when (and @canvas-init? preview-blend)
@@ -530,30 +549,32 @@
 
     (mf/with-effect [@canvas-init? vern zoom vbox background]
       (when @canvas-init?
-        (if (not @initialized?)
-          (do
-            (mf/set-ref-val! last-vern-ref vern)
-            ;; Initial file open uses the same transition workflow as page switches,
-            ;; but with a solid background-color blurred placeholder.
-            (wasm.api/start-initial-load-transition! background)
-            ;; Keep the blurred previous-page preview (page switch) or
-            ;; blank canvas (first load) visible while shapes load.
-            ;; The loading overlay is suppressed because on-shapes-ready
-            ;; is set.
-            (wasm.api/initialize-viewport base-objects zoom vbox
-                                          :background background
-                                          :on-shapes-ready
-                                          (fn []
-                                            ;; The target page's shapes are now loaded; arm
-                                            ;; the transition so the next full frame (the one
-                                            ;; that actually shows this page) removes the blur.
-                                            (wasm.api/arm-page-transition-end!)
-                                            (st/emit! (dw/update-page-position-data))))
-            (reset! initialized? true))
+        (call-renderer!
+         (fn []
+           (if (not @initialized?)
+             (do
+               (mf/set-ref-val! last-vern-ref vern)
+               ;; Initial file open uses the same transition workflow as page switches,
+               ;; but with a solid background-color blurred placeholder.
+               (wasm.api/start-initial-load-transition! background)
+               ;; Keep the blurred previous-page preview (page switch) or
+               ;; blank canvas (first load) visible while shapes load.
+               ;; The loading overlay is suppressed because on-shapes-ready
+               ;; is set.
+               (wasm.api/initialize-viewport base-objects zoom vbox
+                                             :background background
+                                             :on-shapes-ready
+                                             (fn []
+                                               ;; The target page's shapes are now loaded; arm
+                                               ;; the transition so the next full frame (the one
+                                               ;; that actually shows this page) removes the blur.
+                                               (wasm.api/arm-page-transition-end!)
+                                               (st/emit! (dw/update-page-position-data))))
+               (reset! initialized? true))
 
-          (when (and (some? vern) (not= vern (mf/ref-val last-vern-ref)))
-            (wasm.api/initialize-viewport base-objects zoom vbox :background background)
-            (mf/set-ref-val! last-vern-ref vern)))))
+             (when (and (some? vern) (not= vern (mf/ref-val last-vern-ref)))
+               (wasm.api/initialize-viewport base-objects zoom vbox :background background)
+               (mf/set-ref-val! last-vern-ref vern)))))))
 
     (mf/with-effect [focus]
       (when (and @canvas-init? @initialized?)
@@ -563,7 +584,7 @@
 
     (mf/with-effect [background]
       (when (and @canvas-init? @initialized?)
-        (wasm.api/set-canvas-background background)))
+        (call-renderer! #(wasm.api/set-canvas-background background))))
 
     ;; Grid overlay: `clear-grid` must run only when the overlay was shown and is now off
     ;; (e.g. leave grid frame, or `page-transition?`). Do not call it on every
@@ -571,19 +592,19 @@
     (mf/with-effect [@canvas-init? hover-grid?]
       (when @canvas-init?
         (when (and (not hover-grid?) (mf/ref-val prev-hover-grid-shown?-ref))
-          (wasm.api/clear-grid))
+          (call-renderer! wasm.api/clear-grid))
         (mf/set-ref-val! prev-hover-grid-shown?-ref hover-grid?)))
 
     (mf/with-effect [@canvas-init? has-grid? hover-grid?
                      (if (and has-grid? hover-grid?) @hover-top-frame-id ::no-grid-hover-id)]
       (when (and @canvas-init? hover-grid?)
-        (wasm.api/show-grid @hover-top-frame-id)))
+        (call-renderer! #(wasm.api/show-grid @hover-top-frame-id))))
 
     ;; Rulers-wasm: push visibility / offsets / selection band into the
     ;; render-wasm overlay (always active, no feature flag).
     (mf/with-effect [@canvas-init?]
       (when @canvas-init?
-        (wasm.api/push-ruler-theme-colors!)
+        (call-renderer! wasm.api/push-ruler-theme-colors!)
         (theme/add-color-scheme-listener!
          (fn []
            (wasm.api/push-ruler-theme-colors!)
@@ -594,7 +615,7 @@
     ;; theme (purple on light, teal on dark) instead of a hardcoded default.
     (mf/with-effect [@canvas-init?]
       (when @canvas-init?
-        (wasm.api/text-editor-apply-theme)
+        (call-renderer! wasm.api/text-editor-apply-theme)
         (theme/add-color-scheme-listener!
          (fn []
            (wasm.api/text-editor-apply-theme)
@@ -609,37 +630,43 @@
     ;; e.g. when the text editor opens at high zoom).
     (mf/with-effect [@canvas-init? frame-visible?]
       (when @canvas-init?
-        (wasm.api/set-rulers-frame-visible! frame-visible?)
-        (wasm.api/render-from-backbuffer!)))
+        (call-renderer!
+         (fn []
+           (wasm.api/set-rulers-frame-visible! frame-visible?)
+           (wasm.api/render-from-backbuffer!)))))
 
     (mf/with-effect [@canvas-init? show-rulers?]
       (when @canvas-init?
-        (wasm.api/set-rulers-visible! show-rulers?)
-        (wasm.api/render-from-backbuffer!)))
+        (call-renderer!
+         (fn []
+           (wasm.api/set-rulers-visible! show-rulers?)
+           (wasm.api/render-from-backbuffer!)))))
 
     (mf/with-effect [@canvas-init? show-rulers? offset-x offset-y]
       (when (and @canvas-init? show-rulers?)
-        (wasm.api/set-rulers-offsets! offset-x offset-y)))
+        (call-renderer! #(wasm.api/set-rulers-offsets! offset-x offset-y))))
 
     (mf/with-effect [@canvas-init? show-rulers?
                      (some-> ruler-selection :x) (some-> ruler-selection :y)
                      (some-> ruler-selection :width) (some-> ruler-selection :height)]
       (when (and @canvas-init? show-rulers?)
-        (wasm.api/set-rulers-selection! ruler-selection)
-        (wasm.api/render-from-backbuffer!)))
+        (call-renderer!
+         (fn []
+           (wasm.api/set-rulers-selection! ruler-selection)
+           (wasm.api/render-from-backbuffer!)))))
 
     ;; Paint background + rulers instantly, before shapes finish loading. Runs
     ;; after the ruler push effects so the WASM ruler state is already set.
     (mf/with-effect [@canvas-init? page-id]
       (when @canvas-init?
-        (wasm.api/render-ui-only)))
+        (call-renderer! wasm.api/render-ui-only)))
 
     ;; Ruler guides: push the WASM-visible guide set to the render engine.
     ;; `wasm-guides` is also passed to the SVG overlay for index-based hit
     ;; testing — it must stay in sync with what we serialize here.
     (mf/with-effect [@canvas-init? wasm-guides objects]
       (when @canvas-init?
-        (wasm.api/set-guides wasm-guides objects)))
+        (call-renderer! #(wasm.api/set-guides wasm-guides objects))))
 
     (hooks/setup-dom-events zoom disable-paste-ref in-viewport-ref read-only? drawing-tool path-drawing?)
     (hooks/setup-viewport-size vport viewport-ref)
@@ -652,14 +679,17 @@
 
     (mf/with-effect [path-editing? edition @initialized?]
       (when (and path-editing? edition @initialized?)
-        (wselect/use-shape edition)
-        (wasm.api/set-shape-hidden true)
-        (wasm.api/request-render "start-path-edition")
+        (call-renderer!
+         (fn []
+           (wselect/use-shape edition)
+           (wasm.api/set-shape-hidden true)
+           (wasm.api/request-render "start-path-edition")))
         (fn []
-          (when (wasm.api/initialized?)
-            (wselect/use-shape edition)
-            (wasm.api/set-shape-hidden false)
-            (wasm.api/request-render "stop-path-edition")))))
+          (call-renderer!
+           (fn []
+             (wselect/use-shape edition)
+             (wasm.api/set-shape-hidden false)
+             (wasm.api/request-render "stop-path-edition"))))))
 
     [:div {:class (dm/str @cursor " " (stl/css :viewport)) :style #js {"--zoom" zoom} :data-testid "viewport"}
 
