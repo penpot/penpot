@@ -175,12 +175,42 @@
           (t/is (= {:authorized false
                     :redirect-uri redirect-uri}
                    (:result out)))
-          (t/is (= #{:dest-url :organization-id} (set (keys @redirect-options))))
+          (t/is (= #{:dest-url :organization-id :origin} (set (keys @redirect-options))))
           (t/is (= "https://penpot.example.com/#/workspace" (str (:dest-url @redirect-options))))
           (t/is (nil? (:organization-id @redirect-options)))
+          (t/is (nil? (:origin @redirect-options)))
           (t/is (= {:profile-id (:id team-owner)
                     :organization-id organization-id}
                    @started-event)))))))
+
+(t/deftest check-nitrate-sso-passes-trusted-origin
+  (let [team-owner       (th/create-profile* 1 {:is-active true})
+        team             (th/create-team* 1 {:profile-id (:id team-owner)})
+        organization-id  (uuid/random)
+        redirect-options (atom nil)
+        params           {::th/type :check-nitrate-sso
+                          ::rpc/profile-id (:id team-owner)
+                          :team-id (:id team)
+                          :url "https://alt.example.com/#/workspace"}]
+    (binding [cf/flags (conj cf/flags :admin-console)]
+      (with-redefs [cf/config (assoc cf/config
+                                     :public-uri "http://localhost:3449"
+                                     :trusted-origins #{"https://alt.example.com"})
+                    nitrate/call
+                    (active-sso-call-mock
+                     (:id team)
+                     organization-id
+                     (:id team-owner))
+                    oidc/build-organization-sso-auth-redirect-uri
+                    (fn [_cfg _sso & options]
+                      (reset! redirect-options (apply hash-map options))
+                      "https://idp.example.com/authorize")
+                    oidc/submit-organization-sso-auth-started-event
+                    (constantly nil)]
+        (let [out (th/command-through-middleware!
+                   params {:headers {"origin" "https://alt.example.com"}})]
+          (t/is (th/success? out))
+          (t/is (= "https://alt.example.com" (:origin @redirect-options))))))))
 
 (t/deftest check-nitrate-sso-reports-redirect-failure
   (let [profile         (th/create-profile* 1 {:is-active true})

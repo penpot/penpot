@@ -251,3 +251,75 @@
                                       :redirect_uri "https://attacker.example/callback"}))]
     (t/is (= 400 (::yres/status reply)))
     (t/is (nil? (get-in reply [::yres/headers "location"])))))
+
+(t/deftest trusted-origin-flow
+  (binding [cf/config (assoc cf/config
+                             :public-uri "http://localhost:3449"
+                             :trusted-origins #{"https://alt.example.com"})]
+    (let [alt "https://alt.example.com"]
+      ;; Discovery honors a trusted Origin and ignores anything else.
+      (doseq [{:keys [origin expected]} [{:origin alt :expected alt}
+                                         {:origin "https://evil.example.com"
+                                          :expected "http://localhost:3449"}
+                                         {:origin nil
+                                          :expected "http://localhost:3449"}]]
+        (let [headers  (cond-> {} (some? origin) (assoc "origin" origin))
+              metadata (body (request "/.well-known/oauth-authorization-server/api/mcp/oauth"
+                                      :headers headers))
+              resource (body (request "/api/mcp/oauth/resource" :headers headers))]
+          (t/is (= (str expected "/api/mcp/oauth") (:issuer metadata)) origin)
+          (t/is (= (str expected "/mcp/stream") (:resource resource)) origin)))
+      ;; An unlisted Origin keeps the canonical approval redirect.
+      (let [client (clients/register! th/*system* {:redirect_uris ["https://example.com/callback"]
+                                                   :token_endpoint_auth_method "none"})
+            params {:client_id (:client_id client)
+                    :redirect_uri (first (:redirect_uris client))
+                    :response_type "code" :scope "mcp"
+                    :resource (oauth/resource)
+                    :state "client-state"
+                    :code_challenge (state/digest (apply str (repeat 43 "a")))
+                    :code_challenge_method "S256"}
+            reply  (request "/api/mcp/oauth/authorize"
+                            :headers {"origin" "https://evil.example.com"}
+                            :query (form params))]
+        (t/is (= 303 (::yres/status reply)))
+        (t/is (str/starts-with? (get-in reply [::yres/headers "location"])
+                                "http://localhost:3449/?screen=mcp-authorize")))
+      ;; Full flow on the alternate base: authorize, approve and exchange.
+      (let [profile  (th/create-profile* 1 {:is-active true})
+            cookies  (login-cookie profile)
+            client   (clients/register! th/*system* {:redirect_uris ["https://example.com/callback"]
+                                                     :token_endpoint_auth_method "none"})
+            reply    (request "/api/mcp/oauth/authorize"
+                              :headers {"origin" alt}
+                              :query (form {:client_id (:client_id client)
+                                            :redirect_uri (first (:redirect_uris client))
+                                            :response_type "code" :scope "mcp"
+                                            :resource (str alt "/mcp/stream")
+                                            :state "client-state"
+                                            :code_challenge (state/digest (apply str (repeat 43 "a")))
+                                            :code_challenge_method "S256"}))
+            location (get-in reply [::yres/headers "location"])
+            handle   (get (uri/query-string->map (.getQuery (java.net.URI. location)))
+                          :request)
+            details  (body (request "/api/mcp/oauth/request"
+                                    :query (form {:request handle}) :cookies cookies))
+            submit   #(request "/api/mcp/oauth/decision" :method :post :cookies cookies
+                               :headers {"content-type" "application/x-www-form-urlencoded"
+                                         "origin" alt}
+                               :body-bytes (form %))
+            approved (submit {:request handle :decision "approve" :csrf (:csrf details)})
+            params   (uri/query-string->map
+                      (.getQuery (java.net.URI. (:redirect-uri (body approved)))))
+            exchange {:grant_type "authorization_code" :code (:code params)
+                      :client_id (:client_id client) :redirect_uri "https://example.com/callback"
+                      :resource (str alt "/mcp/stream")
+                      :code_verifier (apply str (repeat 43 "a"))}
+            token    (request "/api/mcp/oauth/token" :method :post
+                              :headers {"content-type" "application/x-www-form-urlencoded"}
+                              :body-bytes (form exchange))]
+        (t/is (= 303 (::yres/status reply)))
+        (t/is (str/starts-with? location (str alt "/?screen=mcp-authorize")))
+        (t/is (= 200 (::yres/status approved)))
+        (t/is (= (str alt "/api/mcp/oauth") (:iss params)))
+        (t/is (= 200 (::yres/status token)))))))

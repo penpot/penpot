@@ -17,7 +17,8 @@
    [app.rpc :as-alias rpc]
    [app.util.blob :as blob]
    [backend-tests.helpers :as th]
-   [clojure.test :as t]))
+   [clojure.test :as t]
+   [promesa.exec :as px]))
 
 (defn- with-validation
   [next]
@@ -282,18 +283,52 @@
 
 (defn- update-file-logged
   "Updates the file and returns the response in `:out` and, in `:rejected`,
-  the props of the log record of the rejection, if any."
+  the props of the log record of the rejection, if any. The record is waited
+  for before the watch is removed: the logging API emits asynchronously, so it
+  can land after `update-file` has answered, and a watch already gone loses it
+  for good."
   [ctx params]
-  (let [records (atom [])
-        out     (try
-                  (add-watch l/log-record ::capture
-                             (fn [_ _ _ record] (swap! records conj record)))
-                  (update-file ctx params)
-                  (finally
-                    (remove-watch l/log-record ::capture)))]
-    {:out      out
-     :rejected (some-> (wait-for-record records "update-file commit rejected")
-                       ::l/props)}))
+  (let [records (atom [])]
+    (add-watch l/log-record ::capture
+               (fn [_ _ _ record] (swap! records conj record)))
+    (try
+      (let [out (update-file ctx params)]
+        {:out      out
+         :rejected (some-> (wait-for-record records "update-file commit rejected")
+                           ::l/props)})
+      (finally
+        (remove-watch l/log-record ::capture)))))
+
+(defn- delayed-log-executor
+  "An executor that waits `ms` before starting every task, standing in for the
+  logger thread picking a record up after the request that wrote it. Returns
+  the executor and the pool behind it; the caller shuts the pool down."
+  [ms]
+  (let [pool (px/single-executor :factory (px/thread-factory :name "test/logger"))]
+    {:pool pool
+     :exec (reify java.util.concurrent.Executor
+             (execute [_ task]
+               (px/exec pool (fn []
+                               (Thread/sleep (long ms))
+                               (.run ^Runnable task)))))}))
+
+(t/deftest keeps-the-record-of-a-rejection-the-logger-writes-late
+  ;; The logging API emits asynchronously, so the record of the rejection can
+  ;; land after `update-file` answers and a watch removed with the request
+  ;; loses it: the assertions on the logged props then read nil.
+  (let [{:keys [page-id] :as ctx} (create-file)
+        shape-a (uuid/next)
+        _       (update-file ctx {:changes [(th/add-rect-change page-id shape-a)]})
+        commit1 (commit (break-parent page-id shape-a))
+        {:keys [pool exec]} (delayed-log-executor 300)]
+    (try
+      (with-redefs [l/*default-executor* (delay exec)]
+        (let [{:keys [rejected]}
+              (update-file-logged ctx {:revn 1 :changes-with-metadata [commit1]})]
+          (t/is (= 0 (:attempts rejected)))
+          (t/is (= 1 (:commits rejected)))))
+      (finally
+        (px/shutdown-now pool)))))
 
 (t/deftest bisects-the-commits-to-find-the-invalid-one
   (let [{:keys [page-id] :as ctx} (create-file)
