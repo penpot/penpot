@@ -17,6 +17,7 @@ You are working on the GitHub project `penpot/penpot`, a monorepo.
   - Before `git commit` → `mem:workflow/creating-commits` (subject/body format, 80-char body wrapping enforced by `scripts/check-commit`, `AI-assisted-by: model-name` trailer)
   - Before `gh issue create` → `mem:workflow/creating-issues` (title derivation, body template, labels, Issue Type)
   - Before `gh pr create` / `gh pr edit` → `mem:workflow/creating-prs` (title format, body structure, "Note:" line)
+  - Before merging a Renovate PR → `mem:workflow/merging-renovate-prs` (why GitHub adds the `Co-authored-by` trailer, the `merge-renovate-pr` helper, the manual fallback)
 - Before updating `CHANGES.md` → `mem:workflow/updating-changelog` (sources of truth, entry rules, the `:boom:`/`:rocket:` label contracts, pre-flight checks, anomaly report)
 - Before a repo-wide pnpm version update → `mem:workflow/updating-pnpm` (workspace layout, `scripts/sync-pnpm-version` flow, the stamp-missing-field and ignored-builds gotchas, verification steps)
 - Before a Node version update → `mem:workflow/updating-node` (the six pin sites in `.nvmrc`, the devenv and image Dockerfiles and the plugins-deploy workflows, the DHI tag and digest rules, what to verify)

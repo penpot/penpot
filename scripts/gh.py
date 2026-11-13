@@ -11,6 +11,7 @@ Subcommands:
   prs         Fetch details for one or more PRs (by number or milestone)
   advisories  List or inspect GitHub security advisories
   link-issue  Explicitly link a GitHub issue to a pull request
+  merge-renovate-pr  Squash-merge a Renovate PR with an explicit commit message
 
 Usage:
   python3 scripts/gh.py issues <milestone-title>            (default: state=closed)
@@ -34,6 +35,8 @@ Usage:
   python3 scripts/gh.py advisories --patched-version 2.19.1 (filter by patched version)
   python3 scripts/gh.py advisories GHSA-xvj6-fh9w-gjw7     (single advisory detail)
   python3 scripts/gh.py link-issue 11235 11243
+  python3 scripts/gh.py merge-renovate-pr 13031 --dry-run (preview the commit message)
+  python3 scripts/gh.py merge-renovate-pr 13031
 
 Prerequisites:
   - gh CLI authenticated (gh auth status)
@@ -42,9 +45,11 @@ Prerequisites:
 
 import argparse
 import json
+import pathlib
 import re
 import subprocess
 import sys
+import tempfile
 import time
 from typing import Any
 
@@ -1073,6 +1078,303 @@ def cmd_advisories(args: argparse.Namespace) -> None:
 
 
 # ─────────────────────────────────────────────
+#  Subcommand: merge-renovate-pr
+# ─────────────────────────────────────────────
+
+# Renovate PRs are opened by the GitHub App, which shows up as
+# ``app/penpot-renovate``; the bot user is accepted too so the check keeps
+# working if the deployment switches authentication.
+RENOVATE_AUTHORS = (
+    "app/penpot-renovate",
+    "penpot-renovate[bot]",
+    "renovate[bot]",
+)
+
+PR_VIEW_FIELDS = (
+    "number,title,state,isDraft,author,commits,mergeable,reviewDecision"
+)
+
+# Same exemptions as scripts/check-commit: trailers and URLs cannot be
+# wrapped without losing meaning.
+MAX_BODY_LINE = 80
+TRAILER_LINE_PATTERN = re.compile(
+    r"^(Signed-off-by|Co-developed-by|Reviewed-by|Acked-by|Tested-by|"
+    r"Reported-by|Suggested-by|AI-assisted-by):"
+)
+URL_LINE_PATTERN = re.compile(r"https?://\S+")
+CO_AUTHORED_BY_PATTERN = re.compile(r"^\s*Co-authored-by\s*:", re.IGNORECASE)
+LIST_ITEM_PATTERN = re.compile(r"^(\s*)([-*+]|\d+\.)\s+(.*)$")
+
+CHECK_COMMIT = pathlib.Path(__file__).resolve().parent / "check-commit"
+
+
+def has_co_authored_by(message: str) -> bool:
+    """Return True if any line is the forbidden ``Co-authored-by`` trailer."""
+    return any(
+        CO_AUTHORED_BY_PATTERN.match(line) for line in message.splitlines()
+    )
+
+
+def strip_co_authored_by(message: str) -> str:
+    """Drop every ``Co-authored-by`` line and any trailing blank lines."""
+    lines = [
+        line
+        for line in message.splitlines()
+        if not CO_AUTHORED_BY_PATTERN.match(line)
+    ]
+    while lines and not lines[-1].strip():
+        lines.pop()
+    return "\n".join(lines)
+
+
+def wrap_line(line: str, limit: int = MAX_BODY_LINE) -> list[str]:
+    """Wrap one body line at ``limit`` characters.
+
+    Trailers and lines carrying a URL stay untouched, and list items keep
+    their marker with a hanging indent on the continuation lines. A token
+    with no space before the limit cannot be wrapped and is left as is.
+    """
+    if len(line) <= limit:
+        return [line]
+    if TRAILER_LINE_PATTERN.match(line):
+        return [line]
+    if URL_LINE_PATTERN.search(line):
+        return [line]
+
+    item = LIST_ITEM_PATTERN.match(line)
+    if item:
+        first_prefix = f"{item.group(1)}{item.group(2)} "
+        continuation_prefix = " " * len(first_prefix)
+        text = item.group(3)
+    else:
+        indent = " " * (len(line) - len(line.lstrip(" ")))
+        first_prefix = indent
+        continuation_prefix = indent
+        text = line.lstrip(" ")
+
+    words = text.split()
+    if not words:
+        return [line]
+
+    wrapped: list[str] = []
+    prefix = first_prefix
+    current = prefix
+    for word in words:
+        if current == prefix:
+            current = prefix + word
+        elif len(current) + 1 + len(word) <= limit:
+            current = f"{current} {word}"
+        else:
+            wrapped.append(current)
+            prefix = continuation_prefix
+            current = prefix + word
+    wrapped.append(current)
+    return wrapped
+
+
+def wrap_commit_body(body: str, limit: int = MAX_BODY_LINE) -> str:
+    """Wrap every body line that exceeds ``limit``."""
+    lines: list[str] = []
+    for line in body.splitlines():
+        lines.extend(wrap_line(line, limit))
+    while lines and not lines[-1].strip():
+        lines.pop()
+    return "\n".join(lines)
+
+
+def build_merge_message(title: str, commit_message: str) -> tuple[str, str]:
+    """Build the squash message from the PR title and the branch commit.
+
+    The subject is always the PR title, so the landed commit matches the
+    title format. The body keeps the branch commit text (dependency list and
+    trailers) but loses any ``Co-authored-by`` line and gets its long lines
+    rewrapped, which is what GitHub's generated message gets wrong.
+    """
+    lines = commit_message.splitlines()
+    body = "\n".join(lines[1:]) if lines else ""
+    return title.strip(), wrap_commit_body(strip_co_authored_by(body))
+
+
+def compose_commit_message(subject: str, body: str) -> str:
+    """Join subject and body with the mandatory blank line."""
+    body = body.strip("\n")
+    return f"{subject}\n\n{body}" if body else subject
+
+
+def commit_message_from_api(commit: dict) -> str:
+    """Rebuild a commit message from ``gh pr view --json commits`` fields."""
+    headline = commit.get("messageHeadline") or ""
+    body = commit.get("messageBody") or ""
+    return f"{headline}\n\n{body}" if body else headline
+
+
+def fetch_pull_request(number: int) -> dict:
+    """Fetch the fields needed to build and validate the merge message."""
+    stdout = run_gh_command(
+        [
+            "gh", "pr", "view", str(number),
+            "--repo", REPO,
+            "--json", PR_VIEW_FIELDS,
+        ]
+    )
+    return json.loads(stdout)
+
+
+def renovate_pr_problems(
+    pr: dict, *, dry_run: bool, require_approval: bool
+) -> list[str]:
+    """Return the reasons why this PR must not be merged (empty when fine).
+
+    The author and commit-count checks always apply; state, draft, conflict
+    and approval checks are skipped on ``--dry-run`` so the message can be
+    previewed for an already merged PR.
+    """
+    problems: list[str] = []
+    number = pr.get("number")
+    author = (pr.get("author") or {}).get("login") or "unknown"
+
+    if author not in RENOVATE_AUTHORS:
+        problems.append(
+            f"PR #{number} was not opened by Renovate (author: {author})"
+        )
+
+    commits = pr.get("commits") or []
+    if len(commits) != 1:
+        problems.append(
+            f"PR #{number} has {len(commits)} commits; expected exactly 1"
+        )
+
+    if dry_run:
+        return problems
+
+    if pr.get("state") != "OPEN":
+        problems.append(f"PR #{number} is not open (state: {pr.get('state')})")
+    if pr.get("isDraft"):
+        problems.append(f"PR #{number} is a draft")
+    if pr.get("mergeable") == "CONFLICTING":
+        problems.append(f"PR #{number} has merge conflicts")
+    if require_approval and (pr.get("reviewDecision") or "") != "APPROVED":
+        problems.append(
+            f"PR #{number} has no approving review; pass --no-approval-check "
+            "to merge anyway"
+        )
+    return problems
+
+
+def validate_commit_message_file(path: str) -> tuple[bool, str]:
+    """Run scripts/check-commit against a message file."""
+    result = subprocess.run(
+        [str(CHECK_COMMIT), "-m", path],
+        capture_output=True,
+        text=True,
+    )
+    output = (result.stdout + result.stderr).strip()
+    return result.returncode == 0, output
+
+
+def verify_merged_commit(number: int) -> None:
+    """Read the landed commit back and flag a surviving co-author trailer."""
+    stdout = run_gh_command(
+        [
+            "gh", "pr", "view", str(number),
+            "--repo", REPO,
+            "--json", "mergeCommit",
+        ]
+    )
+    merge_commit = json.loads(stdout).get("mergeCommit") or {}
+    oid = merge_commit.get("oid") or ""
+    if not oid:
+        print(
+            "WARNING: merge commit not found; the commit message was "
+            "not verified.",
+            file=sys.stderr,
+        )
+        return
+
+    commit = run_gh_rest(f"repos/{REPO}/commits/{oid}")
+    landed = commit.get("commit") or {}
+    message = landed.get("message") or ""
+    if has_co_authored_by(message):
+        print(
+            f"WARNING: {oid[:10]} still contains a Co-authored-by trailer.",
+            file=sys.stderr,
+        )
+        print(
+            "GitHub added it despite the explicit message; see "
+            "mem:workflow/merging-renovate-prs.",
+            file=sys.stderr,
+        )
+        sys.exit(2)
+
+    print(f"Merged as {oid[:10]}; commit message is clean.", file=sys.stderr)
+
+
+def cmd_merge_renovate_pr(args: argparse.Namespace) -> None:
+    """Handle the ``merge-renovate-pr`` subcommand."""
+    print(f"Fetching pull request #{args.number}...", file=sys.stderr)
+    try:
+        pr = fetch_pull_request(args.number)
+    except GhCommandFailed as err:
+        fail_gh(err.stderr)
+
+    problems = renovate_pr_problems(
+        pr,
+        dry_run=args.dry_run,
+        require_approval=not args.no_approval_check,
+    )
+    if problems:
+        for problem in problems:
+            print(f"ERROR: {problem}", file=sys.stderr)
+        sys.exit(1)
+
+    subject, body = build_merge_message(
+        pr.get("title") or "",
+        commit_message_from_api((pr.get("commits") or [{}])[0]),
+    )
+    message = compose_commit_message(subject, body)
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        message_file = pathlib.Path(tmpdir) / "commit-message.txt"
+        message_file.write_text(f"{message}\n", encoding="utf-8")
+        ok, output = validate_commit_message_file(str(message_file))
+        if not ok:
+            print(
+                "ERROR: the generated commit message fails "
+                "scripts/check-commit:",
+                file=sys.stderr,
+            )
+            print(output, file=sys.stderr)
+            sys.exit(1)
+
+        if args.dry_run:
+            print("Commit message that would be used:\n")
+            print(message)
+            print("\nMerge command:", file=sys.stderr)
+            print(
+                f"  gh pr merge {args.number} --repo {REPO} --squash "
+                f"--subject {json.dumps(subject)} --body-file <message-file>",
+                file=sys.stderr,
+            )
+            return
+
+        print(f"Merging pull request #{args.number}...", file=sys.stderr)
+        try:
+            run_gh_command(
+                [
+                    "gh", "pr", "merge", str(args.number),
+                    "--repo", REPO,
+                    "--squash",
+                    "--subject", subject,
+                    "--body-file", str(message_file),
+                ]
+            )
+        except GhCommandFailed as err:
+            fail_gh(err.stderr)
+
+    verify_merged_commit(args.number)
+
+
+# ─────────────────────────────────────────────
 #  CLI entrypoint
 # ─────────────────────────────────────────────
 
@@ -1145,6 +1447,22 @@ def main() -> None:
     p_link.add_argument("issue_number", type=int, help="Issue number")
     p_link.add_argument("pr_number", type=int, help="Pull request number")
     p_link.set_defaults(func=cmd_link_issue)
+
+    # --- merge-renovate-pr ---
+    p_merge = sub.add_parser(
+        "merge-renovate-pr",
+        help="Squash-merge a Renovate PR with an explicit commit message",
+    )
+    p_merge.add_argument("number", type=int, help="Pull request number")
+    p_merge.add_argument(
+        "--dry-run", action="store_true",
+        help="Print the commit message and the merge command; change nothing"
+    )
+    p_merge.add_argument(
+        "--no-approval-check", action="store_true",
+        help="Merge even when the PR has no approving review"
+    )
+    p_merge.set_defaults(func=cmd_merge_renovate_pr)
 
     # --- issue (by-number lookup) ---
     p_issue = sub.add_parser(

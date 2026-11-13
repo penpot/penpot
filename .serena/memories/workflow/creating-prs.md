@@ -44,6 +44,10 @@ Policy: `CONTRIBUTING.md` → "Merging", under "Pull Requests".
 - Ask for it only when every commit on the branch is self-contained (builds
   and passes lint on its own). Default to squash unless the user asks for
   the opposite.
+- Renovate PRs: merge with `python3 scripts/gh.py merge-renovate-pr <PR>`.
+  GitHub's generated squash message adds a forbidden `Co-authored-by`
+  trailer and keeps unwrapped dependency lines, which fails the push check.
+  See `mem:workflow/merging-renovate-prs`.
 
 ## Description Body
 
