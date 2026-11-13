@@ -14,11 +14,18 @@
 
   What a worker needs to rebuild the export travels in a payload key of its
   own, never in the job record: the record is served to clients, and the
-  payload holds the session token (sealed, see `app.util.crypto`)."
+  payload holds the session token (sealed, see `app.util.crypto`).
+
+  A job is queued at most once. Enqueueing takes an `enqueued` marker for
+  the job id with `SET NX`; the marker lives while the job waits or is
+  claimed, and goes when the job leaves (`ack!`, `remove-queued!`) or
+  expires. A second enqueue of the same id finds the marker and is dropped,
+  so two workers never get the same job from two pushes."
   (:require
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.transit :as t]
+   [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.instance :as instance]
    [app.redis :as redis]
@@ -36,6 +43,10 @@
 (defn payload-key
   [job-id]
   (redis/->key "payload." job-id))
+
+(defn enqueued-key
+  [job-id]
+  (redis/->key "enqueued." job-id))
 
 (defn- ttl
   []
@@ -58,14 +69,39 @@
                              :hint "too many queued export jobs"))
                  n))))
 
+(defn- invalid-job-id
+  [id]
+  (p/rejected (ex/error :type :validation
+                        :code :invalid-job-id
+                        :hint (str "invalid export job id: " (pr-str id)))))
+
 (defn enqueue!
   "Stores what a worker needs to run `job` and queues its id.
-  `payload` is `{:cmd :params :auth-token}`."
+  `payload` is `{:cmd :params :auth-token}`.
+
+  Resolves to true when the job was queued, false when the same id is
+  already queued or claimed (nothing is written then, so the first payload
+  stays). Rejects with `:invalid-job-id` unless the id is a UUID."
   [{:keys [id] :as _job} payload]
-  (let [payload (update payload :auth-token #(some-> % crypto/encrypt))]
-    (p/do
-      (redis/set-ex! (payload-key id) (t/encode-str payload) (ttl))
-      (redis/rpush! (queue-key) (str id)))))
+  (if-let [id (uuid/coerce id)]
+    (let [marker (enqueued-key id)]
+      (->> (redis/set-nx-ex! marker "1" (ttl))
+           (p/mcat (fn [fresh?]
+                     (if-not fresh?
+                       (do (l/dbg :hint "export job already queued, not queueing again" :job-id (str id))
+                           (p/resolved false))
+                       (let [payload (update payload :auth-token #(some-> % crypto/encrypt))]
+                         (->> (p/do
+                                (redis/set-ex! (payload-key id) (t/encode-str payload) (ttl))
+                                (redis/rpush! (queue-key) (str id))
+                                true)
+                              ;; Not queued after all: drop the marker, or it
+                              ;; would turn away a retry until it expired.
+                              (p/merr (fn [cause]
+                                        (->> (redis/del! marker)
+                                             (p/merr (constantly (p/resolved nil)))
+                                             (p/mcat (fn [_] (p/rejected cause)))))))))))))
+    (invalid-job-id id)))
 
 (defn payload
   "The payload of a queued job, token opened, or nil when it expired."
@@ -87,7 +123,8 @@
   [job-id]
   (->> (p/do
          (redis/lrem! (processing-key instance/id) (str job-id))
-         (redis/del! (payload-key job-id)))
+         (redis/del! (payload-key job-id))
+         (redis/del! (enqueued-key job-id)))
        (p/merr (fn [cause]
                  (l/warn :hint "unable to release claimed job" :job-id (str job-id) :cause cause)
                  (p/resolved nil)))))
@@ -99,7 +136,9 @@
   (->> (redis/lrem! (queue-key) (str job-id))
        (p/mcat (fn [n]
                  (if (pos? n)
-                   (->> (redis/del! (payload-key job-id))
+                   (->> (p/do
+                          (redis/del! (payload-key job-id))
+                          (redis/del! (enqueued-key job-id)))
                         (p/fmap (constantly true)))
                    (p/resolved false))))))
 

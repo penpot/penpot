@@ -11,6 +11,7 @@
    [clojure.string :as str]
    [clojure.tools.cli :refer [parse-opts]]
    [exporter-tests.crypto-test]
+   [exporter-tests.duplicate-job-test]
    [exporter-tests.export-shapes-test]
    [exporter-tests.jobs-test]
    [exporter-tests.queue-test]
@@ -24,6 +25,7 @@
 
 (def test-namespaces
   ['exporter-tests.crypto-test
+   'exporter-tests.duplicate-job-test
    'exporter-tests.export-shapes-test
    'exporter-tests.jobs-test
    'exporter-tests.queue-test

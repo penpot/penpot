@@ -1,0 +1,21 @@
+$ clojure -M:dev:shadow-cljs compile test
+Cloning: https://github.com/funcool/datoteka
+Checking out: https://github.com/funcool/datoteka at 3372f3ab33034030a6118de74592b9fb22d8c7d0
+[:test] Compiling ...
+[:test] Build completed. (345 files, 51 compiled, 1 warnings, 34.75s)
+
+[1m------ WARNING #1 - :undeclared-var --------------------------------------------[0m
+ File: /src/exporter/test/exporter_tests/duplicate_job_test.cljs:208:40
+--------------------------------------------------------------------------------
+[2m 205 |              (p/let [a   (new-job!)[0m
+[2m 206 |                      b   (new-job!)[0m
+[2m 207 |                      c   (new-job!)[0m
+[1m 208 |                      _   (p/loop [[job & more] [a b a c b]][0m
+----------------------------------------------^---------------------------------
+ [33;1mUse of undeclared Var exporter-tests.duplicate-job-test/&[0m
+--------------------------------------------------------------------------------
+[2m 209 |                            (when job[0m
+[2m 210 |                              (p/let [_ (attempt #(queue/enqueue! job payload))][0m
+[2m 211 |                                (p/recur more))))[0m
+[2m 212 |                      ids (queued-ids)][0m
+--------------------------------------------------------------------------------

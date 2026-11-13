@@ -1,0 +1,50 @@
+usermod: no changes
+  ▸ exporter-tests.queue-test/claim-takes-the-oldest-job-and-holds-it
+INF 04:54:33.6400 [app.config] hint="exporter key initialized", key="ASwdQ**************************************"
+INF 04:54:33.6420 [app.util.shell] hint="tmptdir setup", path="/tmp/penpot"
+INF 04:54:33.7220 [app.redis] hint="redis connection established", uri="redis://dupjob-valkey/0", role="subscriber"
+INF 04:54:33.7230 [app.redis] hint="redis connection established", uri="redis://dupjob-valkey/0", role="commands"
+INF 04:54:33.7390 [app.redis] hint="redis connection established", uri="redis://dupjob-valkey/0", role="blocking"
+  ▸ exporter-tests.queue-test/claim-resolves-nil-when-the-queue-stays-empty
+  ▸ exporter-tests.queue-test/payload-keeps-params-and-seals-the-token
+  ▸ exporter-tests.queue-test/ack-releases-the-claim-and-the-payload
+  ▸ exporter-tests.queue-test/reap-puts-a-dead-instance-jobs-first-in-line
+WRN 04:54:34.8360 [app.jobs.queue] hint="requeued jobs of a lost instance", instance="dead-c7c60156-2ded-808e-8008-f0149393485b", count=1
+  ▸ exporter-tests.queue-test/reap-leaves-live-instances-alone
+  ▸ exporter-tests.queue-test/full-queue-rejects-new-work
+  ▸ exporter-tests.queue-test/cancelling-a-queued-job-takes-it-off-the-queue
+  ▸ exporter-tests.queue-test/cancel-sent-before-a-worker-registers-the-job-still-lands
+  ▸ exporter-tests.queue-test/lost-job-is-requeued-until-it-runs-out-of-attempts
+ERR 04:54:34.8590 [app.jobs] hint="export job failed", job-id="c7c60156-2ded-808e-8008-f0149399f64a", reason="export worker lost"
+  ▸ exporter-tests.queue-test/claim-race-two-workers-grab-only-one-wins
+  ▸ exporter-tests.queue-test/retry-after-simulated-failure
+WRN 04:54:35.9780 [app.jobs.queue] hint="requeued jobs of a lost instance", instance="crashed-c7c60156-2ded-808e-8008-f01494b198b3", count=1
+  ▸ exporter-tests.queue-test/dead-letter-once-max-attempts-hit
+ERR 04:54:35.9890 [app.jobs] hint="export job failed", job-id="c7c60156-2ded-808e-8008-f01494b4b47f", reason="export worker lost"
+  ▸ exporter-tests.queue-test/worker-claims-runs-and-releases-a-job
+INF 04:54:35.9940 [app.jobs.worker] hint="export queue worker started", capacity=4
+DBG 04:54:35.9950 [app.jobs.worker] hint="claimed export job", job-id="c7c60156-2ded-808e-8008-f01494b61281"
+ERR 04:54:35.9990 [app.jobs] hint="export job failed", job-id="c7c60156-2ded-808e-8008-f01494b61281"
+  Error: No matching clause: no-such-command
+      at Object.app$handlers$export$prepare [as prepare] (file:///src/exporter/target/tests/cljs-runtime/app.handlers.export.js:59:8)
+      at file:///src/exporter/target/tests/cljs-runtime/app.handlers.export.js:243:39
+      at file:///src/exporter/target/tests/cljs-runtime/app.handlers.export.js:83:110
+      at Object.resolve (file:///src/exporter/target/tests/cljs-runtime/promesa.impl.js:102:97)
+      at processNextTick (file:///src/exporter/target/tests/cljs-runtime/promesa.impl.promise.js:181:25)
+      at file:///src/exporter/target/tests/cljs-runtime/promesa.impl.promise.js:108:29
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+WRN 04:54:36.0020 [app.jobs.worker] hint="claimed job did not finish cleanly", job-id="c7c60156-2ded-808e-8008-f01494b61281"
+  Error: No matching clause: no-such-command
+      at Object.app$handlers$export$prepare [as prepare] (file:///src/exporter/target/tests/cljs-runtime/app.handlers.export.js:59:8)
+      at file:///src/exporter/target/tests/cljs-runtime/app.handlers.export.js:243:39
+      at file:///src/exporter/target/tests/cljs-runtime/app.handlers.export.js:83:110
+      at Object.resolve (file:///src/exporter/target/tests/cljs-runtime/promesa.impl.js:102:97)
+      at processNextTick (file:///src/exporter/target/tests/cljs-runtime/promesa.impl.promise.js:181:25)
+      at file:///src/exporter/target/tests/cljs-runtime/promesa.impl.promise.js:108:29
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+  ▸ exporter-tests.queue-test/worker-pulls-a-job-runs-it-and-records-the-result
+DBG 04:54:36.2610 [app.jobs.worker] hint="claimed export job", job-id="c7c60156-2ded-808e-8008-f01494f935d5"
+INF 04:54:36.2620 [app.jobs.worker] hint="export queue worker started", capacity=4
+
+Ran 15 tests containing 49 assertions.
+0 failures, 0 errors.

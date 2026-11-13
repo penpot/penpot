@@ -1,0 +1,195 @@
+usermod: no changes
+### crypto-test
+  ▸ exporter-tests.crypto-test/sealed-value-opens-to-the-original
+  ▸ exporter-tests.crypto-test/sealed-value-does-not-contain-the-plaintext
+  ▸ exporter-tests.crypto-test/sealing-twice-gives-different-values
+  ▸ exporter-tests.crypto-test/altered-value-is-rejected
+  ▸ exporter-tests.crypto-test/malformed-value-is-rejected
+
+Ran 5 tests containing 5 assertions.
+0 failures, 0 errors.
+exit=0
+### duplicate-job-test
+  ▸ exporter-tests.duplicate-job-test/each-new-job-gets-its-own-unique-id
+INF 05:02:46.5970 [app.config] hint="exporter key initialized", key="ASwdQ**************************************"
+INF 05:02:46.5980 [app.util.shell] hint="tmptdir setup", path="/tmp/penpot"
+INF 05:02:46.6670 [app.redis] hint="redis connection established", uri="redis://dupjob-valkey/0", role="subscriber"
+INF 05:02:46.6690 [app.redis] hint="redis connection established", uri="redis://dupjob-valkey/0", role="commands"
+  ▸ exporter-tests.duplicate-job-test/a-valid-new-job-is-added-to-the-queue
+  ▸ exporter-tests.duplicate-job-test/enqueuing-the-same-job-twice-keeps-a-single-entry
+DBG 05:02:46.6960 [app.jobs.queue] hint="export job already queued, not queueing again", job-id="8ec95de5-d7e0-807f-8008-f01673e97cae"
+  ▸ exporter-tests.duplicate-job-test/a-separate-request-reusing-an-existing-id-is-not-queued-again
+DBG 05:02:46.7000 [app.jobs.queue] hint="export job already queued, not queueing again", job-id="8ec95de5-d7e0-807f-8008-f01673ea9bf9"
+  ▸ exporter-tests.duplicate-job-test/concurrent-enqueues-of-the-same-job-keep-a-single-entry
+DBG 05:02:46.7050 [app.jobs.queue] hint="export job already queued, not queueing again", job-id="8ec95de5-d7e0-807f-8008-f01673eb892f"
+DBG 05:02:46.7060 [app.jobs.queue] hint="export job already queued, not queueing again", job-id="8ec95de5-d7e0-807f-8008-f01673eb892f"
+DBG 05:02:46.7060 [app.jobs.queue] hint="export job already queued, not queueing again", job-id="8ec95de5-d7e0-807f-8008-f01673eb892f"
+DBG 05:02:46.7060 [app.jobs.queue] hint="export job already queued, not queueing again", job-id="8ec95de5-d7e0-807f-8008-f01673eb892f"
+  ▸ exporter-tests.duplicate-job-test/a-job-already-claimed-by-a-worker-is-not-queued-again
+INF 05:02:46.7110 [app.redis] hint="redis connection established", uri="redis://dupjob-valkey/0", role="blocking"
+DBG 05:02:46.7140 [app.jobs.queue] hint="export job already queued, not queueing again", job-id="8ec95de5-d7e0-807f-8008-f01673ed0a11"
+  ▸ exporter-tests.duplicate-job-test/different-jobs-are-all-accepted-in-order
+  ▸ exporter-tests.duplicate-job-test/queue-holds-one-entry-per-id-after-mixed-adds
+
+FAIL in (queue-holds-one-entry-per-id-after-mixed-adds) (exporter_tests/duplicate_job_test.cljs:213:22)
+expected: (= [(str (:id a)) (str (:id b)) (str (:id c))] ids)
+  actual: (not (= ["8ec95de5-d7e0-807f-8008-f01673f0b78d" "8ec95de5-d7e0-807f-8008-f01673f0b790" "8ec95de5-d7e0-807f-8008-f01673f0f18b"] ["8ec95de5-d7e0-807f-8008-f01673f0b78d"]))
+
+FAIL in (queue-holds-one-entry-per-id-after-mixed-adds) (exporter_tests/duplicate_job_test.cljs:215:22)
+expected: (= 3 (count ids))
+  actual: (not (= 3 1))
+  ▸ exporter-tests.duplicate-job-test/a-null-job-id-is-rejected
+  ▸ exporter-tests.duplicate-job-test/a-job-without-an-id-is-rejected
+  ▸ exporter-tests.duplicate-job-test/a-blank-job-id-is-rejected
+  ▸ exporter-tests.duplicate-job-test/a-non-uuid-job-id-is-rejected
+  ▸ exporter-tests.duplicate-job-test/a-rejected-id-leaves-existing-jobs-in-place
+
+Ran 13 tests containing 31 assertions.
+2 failures, 0 errors.
+exit=1
+### export-shapes-test
+  ▸ exporter-tests.export-shapes-test/browser-exports-are-chunked
+
+Ran 1 tests containing 2 assertions.
+0 failures, 0 errors.
+exit=0
+### jobs-test
+  ▸ exporter-tests.jobs-test/progress-does-not-resurrect-a-finished-job
+INF 05:02:53.1820 [app.config] hint="exporter key initialized", key="ASwdQ**************************************"
+INF 05:02:53.1840 [app.util.shell] hint="tmptdir setup", path="/tmp/penpot"
+WRN 05:02:53.1920 [app.jobs.store] hint="job record not persisted, no redis connection", job-id="3c715d03-b80e-8029-8008-f0167a4018eb", state="queued"
+WRN 05:02:53.1950 [app.jobs.store] hint="job record not persisted, no redis connection", job-id="3c715d03-b80e-8029-8008-f0167a4018eb", state="processing"
+ERR 05:02:53.1960 [app.jobs] hint="export job failed", job-id="3c715d03-b80e-8029-8008-f0167a4018eb"
+  Data:
+  {}
+  
+  Error: boom
+      at new cljs$core$ExceptionInfo (file:///src/exporter/target/tests/cljs-runtime/cljs.core.js:37389:10)
+      at cljs$core$ex_info.cljs$core$IFn$_invoke$arity$3 (file:///src/exporter/target/tests/cljs-runtime/cljs.core.js:37450:9)
+      at cljs$core$ex_info.cljs$core$IFn$_invoke$arity$2 (file:///src/exporter/target/tests/cljs-runtime/cljs.core.js:37446:26)
+      at file:///src/exporter/target/tests/cljs-runtime/exporter_tests.jobs_test.js:70:192
+      at Object.resolve (file:///src/exporter/target/tests/cljs-runtime/promesa.impl.js:102:97)
+      at processNextTick (file:///src/exporter/target/tests/cljs-runtime/promesa.impl.promise.js:181:25)
+      at transition (file:///src/exporter/target/tests/cljs-runtime/promesa.impl.promise.js:255:12)
+      at PromiseImpl.resolve (file:///src/exporter/target/tests/cljs-runtime/promesa.impl.promise.js:73:9)
+      at Object.complete (file:///src/exporter/target/tests/cljs-runtime/promesa.impl.promise.js:159:18)
+      at Object.complete (file:///src/exporter/target/tests/cljs-runtime/promesa.impl.promise.js:234:16)
+WRN 05:02:53.1980 [app.jobs.store] hint="job record not persisted, no redis connection", job-id="3c715d03-b80e-8029-8008-f0167a4018eb", state="failed"
+  ▸ exporter-tests.jobs-test/first-terminal-state-wins
+WRN 05:02:53.2000 [app.jobs.store] hint="job record not persisted, no redis connection", job-id="3c715d03-b80e-8029-8008-f0167a44000e", state="queued"
+WRN 05:02:53.2020 [app.jobs.store] hint="job record not persisted, no redis connection", job-id="3c715d03-b80e-8029-8008-f0167a44000e", state="processing"
+WRN 05:02:53.2040 [app.jobs.store] hint="job record not persisted, no redis connection", job-id="3c715d03-b80e-8029-8008-f0167a44000e", state="cancelled"
+ERR 05:02:53.2040 [app.jobs] hint="export job failed", job-id="3c715d03-b80e-8029-8008-f0167a44000e"
+  Data:
+  {}
+  
+  Error: too late
+      at new cljs$core$ExceptionInfo (file:///src/exporter/target/tests/cljs-runtime/cljs.core.js:37389:10)
+      at cljs$core$ex_info.cljs$core$IFn$_invoke$arity$3 (file:///src/exporter/target/tests/cljs-runtime/cljs.core.js:37450:9)
+      at cljs$core$ex_info.cljs$core$IFn$_invoke$arity$2 (file:///src/exporter/target/tests/cljs-runtime/cljs.core.js:37446:26)
+      at file:///src/exporter/target/tests/cljs-runtime/exporter_tests.jobs_test.js:210:94
+      at Object.resolve (file:///src/exporter/target/tests/cljs-runtime/promesa.impl.js:102:97)
+      at processNextTick (file:///src/exporter/target/tests/cljs-runtime/promesa.impl.promise.js:181:25)
+      at transition (file:///src/exporter/target/tests/cljs-runtime/promesa.impl.promise.js:255:12)
+      at PromiseImpl.resolve (file:///src/exporter/target/tests/cljs-runtime/promesa.impl.promise.js:73:9)
+      at Object.complete (file:///src/exporter/target/tests/cljs-runtime/promesa.impl.promise.js:159:18)
+      at Object.complete (file:///src/exporter/target/tests/cljs-runtime/promesa.impl.promise.js:234:16)
+  ▸ exporter-tests.jobs-test/cancel-is-recorded-before-the-callbacks-run
+WRN 05:02:53.2050 [app.jobs.store] hint="job record not persisted, no redis connection", job-id="3c715d03-b80e-8029-8008-f0167a457da6", state="queued"
+WRN 05:02:53.2070 [app.jobs.store] hint="job record not persisted, no redis connection", job-id="3c715d03-b80e-8029-8008-f0167a457da6", state="cancelled"
+  ▸ exporter-tests.jobs-test/writes-stop-once-the-job-is-released
+WRN 05:02:53.2080 [app.jobs.store] hint="job record not persisted, no redis connection", job-id="3c715d03-b80e-8029-8008-f0167a45c129", state="queued"
+WRN 05:02:53.2090 [app.jobs.store] hint="job record not persisted, no redis connection", job-id="3c715d03-b80e-8029-8008-f0167a45c129", state="processing"
+WRN 05:02:53.2100 [app.jobs.store] hint="job record not persisted, no redis connection", job-id="3c715d03-b80e-8029-8008-f0167a45c129", state="done"
+
+Ran 4 tests containing 9 assertions.
+0 failures, 0 errors.
+exit=0
+### queue-test
+  ▸ exporter-tests.queue-test/claim-takes-the-oldest-job-and-holds-it
+INF 05:02:56.9650 [app.config] hint="exporter key initialized", key="ASwdQ**************************************"
+INF 05:02:56.9660 [app.util.shell] hint="tmptdir setup", path="/tmp/penpot"
+INF 05:02:56.9970 [app.redis] hint="redis connection established", uri="redis://dupjob-valkey/0", role="subscriber"
+INF 05:02:57.0050 [app.redis] hint="redis connection established", uri="redis://dupjob-valkey/0", role="commands"
+INF 05:02:57.0270 [app.redis] hint="redis connection established", uri="redis://dupjob-valkey/0", role="blocking"
+  ▸ exporter-tests.queue-test/claim-resolves-nil-when-the-queue-stays-empty
+  ▸ exporter-tests.queue-test/payload-keeps-params-and-seals-the-token
+  ▸ exporter-tests.queue-test/ack-releases-the-claim-and-the-payload
+  ▸ exporter-tests.queue-test/reap-puts-a-dead-instance-jobs-first-in-line
+WRN 05:02:58.2050 [app.jobs.queue] hint="requeued jobs of a lost instance", instance="dead-a0c77f42-1899-8050-8008-f0167f249863", count=1
+  ▸ exporter-tests.queue-test/reap-leaves-live-instances-alone
+  ▸ exporter-tests.queue-test/full-queue-rejects-new-work
+  ▸ exporter-tests.queue-test/cancelling-a-queued-job-takes-it-off-the-queue
+  ▸ exporter-tests.queue-test/cancel-sent-before-a-worker-registers-the-job-still-lands
+  ▸ exporter-tests.queue-test/lost-job-is-requeued-until-it-runs-out-of-attempts
+ERR 05:02:58.2490 [app.jobs] hint="export job failed", job-id="a0c77f42-1899-8050-8008-f0167f30c766", reason="export worker lost"
+  ▸ exporter-tests.queue-test/claim-race-two-workers-grab-only-one-wins
+  ▸ exporter-tests.queue-test/retry-after-simulated-failure
+WRN 05:02:59.3450 [app.jobs.queue] hint="requeued jobs of a lost instance", instance="crashed-a0c77f42-1899-8050-8008-f01680428253", count=1
+  ▸ exporter-tests.queue-test/dead-letter-once-max-attempts-hit
+ERR 05:02:59.3540 [app.jobs] hint="export job failed", job-id="a0c77f42-1899-8050-8008-f0168045d2ee", reason="export worker lost"
+  ▸ exporter-tests.queue-test/worker-claims-runs-and-releases-a-job
+INF 05:02:59.3630 [app.jobs.worker] hint="export queue worker started", capacity=4
+DBG 05:02:59.3640 [app.jobs.worker] hint="claimed export job", job-id="a0c77f42-1899-8050-8008-f0168047817f"
+ERR 05:02:59.3690 [app.jobs] hint="export job failed", job-id="a0c77f42-1899-8050-8008-f0168047817f"
+  Error: No matching clause: no-such-command
+      at Object.app$handlers$export$prepare [as prepare] (file:///src/exporter/target/tests/cljs-runtime/app.handlers.export.js:59:8)
+      at file:///src/exporter/target/tests/cljs-runtime/app.handlers.export.js:243:39
+      at file:///src/exporter/target/tests/cljs-runtime/app.handlers.export.js:83:110
+      at Object.resolve (file:///src/exporter/target/tests/cljs-runtime/promesa.impl.js:102:97)
+      at processNextTick (file:///src/exporter/target/tests/cljs-runtime/promesa.impl.promise.js:181:25)
+      at file:///src/exporter/target/tests/cljs-runtime/promesa.impl.promise.js:108:29
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+WRN 05:02:59.3710 [app.jobs.worker] hint="claimed job did not finish cleanly", job-id="a0c77f42-1899-8050-8008-f0168047817f"
+  Error: No matching clause: no-such-command
+      at Object.app$handlers$export$prepare [as prepare] (file:///src/exporter/target/tests/cljs-runtime/app.handlers.export.js:59:8)
+      at file:///src/exporter/target/tests/cljs-runtime/app.handlers.export.js:243:39
+      at file:///src/exporter/target/tests/cljs-runtime/app.handlers.export.js:83:110
+      at Object.resolve (file:///src/exporter/target/tests/cljs-runtime/promesa.impl.js:102:97)
+      at processNextTick (file:///src/exporter/target/tests/cljs-runtime/promesa.impl.promise.js:181:25)
+      at file:///src/exporter/target/tests/cljs-runtime/promesa.impl.promise.js:108:29
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+  ▸ exporter-tests.queue-test/worker-pulls-a-job-runs-it-and-records-the-result
+DBG 05:02:59.6360 [app.jobs.worker] hint="claimed export job", job-id="a0c77f42-1899-8050-8008-f016808a7ecc"
+INF 05:02:59.6380 [app.jobs.worker] hint="export queue worker started", capacity=4
+
+Ran 15 tests containing 49 assertions.
+0 failures, 0 errors.
+exit=0
+### scheduler-test
+  ▸ exporter-tests.scheduler-test/headless-jobs-wait-for-a-render-worker
+INF 05:03:02.7570 [app.config] hint="exporter key initialized", key="ASwdQ**************************************"
+INF 05:03:02.7600 [app.util.shell] hint="tmptdir setup", path="/tmp/penpot"
+WRN 05:03:02.7700 [app.jobs.store] hint="job record not persisted, no redis connection", job-id="f112c269-a501-8034-8008-f016839a4f81", state="queued"
+WRN 05:03:02.7720 [app.jobs.store] hint="job record not persisted, no redis connection", job-id="f112c269-a501-8034-8008-f016839cfd82", state="queued"
+DBG 05:03:02.7740 [app.jobs.scheduler] hint="export job queued", job-id="f112c269-a501-8034-8008-f016839cfd82"
+WRN 05:03:02.7750 [app.jobs.store] hint="job record not persisted, no redis connection", job-id="f112c269-a501-8034-8008-f016839a4f81", state="processing"
+WRN 05:03:02.7870 [app.jobs.store] hint="job record not persisted, no redis connection", job-id="f112c269-a501-8034-8008-f016839cfd82", state="processing"
+  ▸ exporter-tests.scheduler-test/a-browser-job-is-not-held-back-by-the-worker-pool
+WRN 05:03:02.7890 [app.jobs.store] hint="job record not persisted, no redis connection", job-id="f112c269-a501-8034-8008-f01683a10835", state="queued"
+WRN 05:03:02.7900 [app.jobs.store] hint="job record not persisted, no redis connection", job-id="f112c269-a501-8034-8008-f01683a16c1a", state="queued"
+WRN 05:03:02.7930 [app.jobs.store] hint="job record not persisted, no redis connection", job-id="f112c269-a501-8034-8008-f01683a10835", state="processing"
+WRN 05:03:02.7930 [app.jobs.store] hint="job record not persisted, no redis connection", job-id="f112c269-a501-8034-8008-f01683a16c1a", state="processing"
+
+Ran 2 tests containing 5 assertions.
+0 failures, 0 errors.
+exit=0
+### shell-test
+  ▸ exporter-tests.shell-test/execfile-does-not-interpret-shell-metacharacters
+INF 05:03:05.9210 [app.config] hint="exporter key initialized", key="ASwdQ**************************************"
+INF 05:03:05.9230 [app.util.shell] hint="tmptdir setup", path="/tmp/penpot"
+  ▸ exporter-tests.shell-test/malicious-color-fails-validation
+  ▸ exporter-tests.shell-test/execfile-does-not-execute-injected-commands
+
+Ran 3 tests containing 5 assertions.
+0 failures, 0 errors.
+exit=0
+### wasm-pool-test
+  ▸ exporter-tests.wasm-pool-test/releases-the-worker-when-the-body-succeeds
+INF 05:03:11.0200 [app.config] hint="exporter key initialized", key="ASwdQ**************************************"
+INF 05:03:11.0240 [app.util.shell] hint="tmptdir setup", path="/tmp/penpot"
+  ▸ exporter-tests.wasm-pool-test/gives-the-worker-back-when-the-body-throws-synchronously
+
+Ran 2 tests containing 7 assertions.
+0 failures, 0 errors.
+exit=0

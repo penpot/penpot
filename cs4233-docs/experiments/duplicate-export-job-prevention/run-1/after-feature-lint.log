@@ -1,0 +1,6 @@
+$ clj-kondo --fail-level error --parallel --lint src/ test/
+test/exporter_tests/duplicate_job_test.cljs:208:36: error: Unresolved symbol: job [:unresolved-symbol]
+test/exporter_tests/duplicate_job_test.cljs:208:40: error: Unresolved symbol: & [:unresolved-symbol]
+test/exporter_tests/duplicate_job_test.cljs:208:42: error: Unresolved symbol: more [:unresolved-symbol]
+linting took 505ms, errors: 3, warnings: 0
+[ELIFECYCLE] Command failed with exit code 3.

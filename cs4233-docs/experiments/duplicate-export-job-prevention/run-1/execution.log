@@ -1,0 +1,124 @@
+usermod: no changes
+$ clojure -M:dev:shadow-cljs compile test
+Cloning: https://github.com/funcool/datoteka
+Checking out: https://github.com/funcool/datoteka at 3372f3ab33034030a6118de74592b9fb22d8c7d0
+[:test] Compiling ...
+[:test] Build completed. (345 files, 290 compiled, 1 warnings, 82.79s)
+
+[1m------ WARNING #1 - :undeclared-var --------------------------------------------[0m
+ File: /src/exporter/test/exporter_tests/duplicate_job_test.cljs:208:40
+--------------------------------------------------------------------------------
+[2m 205 |              (p/let [a   (new-job!)[0m
+[2m 206 |                      b   (new-job!)[0m
+[2m 207 |                      c   (new-job!)[0m
+[1m 208 |                      _   (p/loop [[job & more] [a b a c b]][0m
+----------------------------------------------^---------------------------------
+ [33;1mUse of undeclared Var exporter-tests.duplicate-job-test/&[0m
+--------------------------------------------------------------------------------
+[2m 209 |                            (when job[0m
+[2m 210 |                              (p/let [_ (attempt #(queue/enqueue! job payload))][0m
+[2m 211 |                                (p/recur more))))[0m
+[2m 212 |                      ids (queued-ids)][0m
+--------------------------------------------------------------------------------
+  ▸ exporter-tests.duplicate-job-test/each-new-job-gets-its-own-unique-id
+INF 04:53:51.4240 [app.config] hint="exporter key initialized", key="ASwdQ**************************************"
+INF 04:53:51.4270 [app.util.shell] hint="tmptdir setup", path="/tmp/penpot"
+INF 04:53:51.4820 [app.redis] hint="redis connection established", uri="redis://dupjob-valkey/0", role="commands"
+INF 04:53:51.4860 [app.redis] hint="redis connection established", uri="redis://dupjob-valkey/0", role="subscriber"
+  ▸ exporter-tests.duplicate-job-test/a-valid-new-job-is-added-to-the-queue
+  ▸ exporter-tests.duplicate-job-test/enqueuing-the-same-job-twice-keeps-a-single-entry
+
+FAIL in (enqueuing-the-same-job-twice-keeps-a-single-entry) (exporter_tests/duplicate_job_test.cljs:137:22)
+expected: (= 1 (occurrences ids (:id job)))
+  actual: (not (= 1 2))
+
+FAIL in (enqueuing-the-same-job-twice-keeps-a-single-entry) (exporter_tests/duplicate_job_test.cljs:138:22)
+expected: (= 1 depth)
+  actual: (not (= 1 2))
+  ▸ exporter-tests.duplicate-job-test/a-separate-request-reusing-an-existing-id-is-not-queued-again
+
+FAIL in (a-separate-request-reusing-an-existing-id-is-not-queued-again) (exporter_tests/duplicate_job_test.cljs:151:22)
+expected: (= [(str (:id job))] ids)
+  actual: (not (= ["16bb179e-d8da-80e9-8008-f014695e7c56"] ["16bb179e-d8da-80e9-8008-f014695e7c56" "16bb179e-d8da-80e9-8008-f014695e7c56"]))
+  ▸ exporter-tests.duplicate-job-test/concurrent-enqueues-of-the-same-job-keep-a-single-entry
+
+FAIL in (concurrent-enqueues-of-the-same-job-keep-a-single-entry) (exporter_tests/duplicate_job_test.cljs:162:22)
+expected: (= 1 (occurrences ids (:id job)))
+  actual: (not (= 1 5))
+
+FAIL in (concurrent-enqueues-of-the-same-job-keep-a-single-entry) (exporter_tests/duplicate_job_test.cljs:163:22)
+expected: (= 1 (count ids))
+  actual: (not (= 1 5))
+  ▸ exporter-tests.duplicate-job-test/a-job-already-claimed-by-a-worker-is-not-queued-again
+INF 04:53:51.6340 [app.redis] hint="redis connection established", uri="redis://dupjob-valkey/0", role="blocking"
+
+FAIL in (a-job-already-claimed-by-a-worker-is-not-queued-again) (exporter_tests/duplicate_job_test.cljs:177:22)
+the claimed job must not be waiting on the queue a second time
+expected: (= 0 (occurrences ids (:id job)))
+  actual: (not (= 0 1))
+  ▸ exporter-tests.duplicate-job-test/different-jobs-are-all-accepted-in-order
+  ▸ exporter-tests.duplicate-job-test/queue-holds-one-entry-per-id-after-mixed-adds
+
+FAIL in (queue-holds-one-entry-per-id-after-mixed-adds) (exporter_tests/duplicate_job_test.cljs:213:22)
+expected: (= [(str (:id a)) (str (:id b)) (str (:id c))] ids)
+  actual: (not (= ["16bb179e-d8da-80e9-8008-f01469698a59" "16bb179e-d8da-80e9-8008-f0146969ce86" "16bb179e-d8da-80e9-8008-f014696a2db6"] ["16bb179e-d8da-80e9-8008-f01469698a59"]))
+
+FAIL in (queue-holds-one-entry-per-id-after-mixed-adds) (exporter_tests/duplicate_job_test.cljs:215:22)
+expected: (= 3 (count ids))
+  actual: (not (= 3 1))
+  ▸ exporter-tests.duplicate-job-test/a-null-job-id-is-rejected
+
+FAIL in (a-null-job-id-is-rejected) (exporter_tests/duplicate_job_test.cljs:223:11)
+nil id must be rejected
+expected: (some? (:error result))
+  actual: (not (some? nil))
+
+FAIL in (a-null-job-id-is-rejected) (exporter_tests/duplicate_job_test.cljs:224:11)
+nil id must not leave anything on the queue
+expected: (= [] ids)
+  actual: (not (= [] [""]))
+  ▸ exporter-tests.duplicate-job-test/a-job-without-an-id-is-rejected
+
+FAIL in (a-job-without-an-id-is-rejected) (exporter_tests/duplicate_job_test.cljs:223:11)
+missing id must be rejected
+expected: (some? (:error result))
+  actual: (not (some? nil))
+
+FAIL in (a-job-without-an-id-is-rejected) (exporter_tests/duplicate_job_test.cljs:224:11)
+missing id must not leave anything on the queue
+expected: (= [] ids)
+  actual: (not (= [] [""]))
+  ▸ exporter-tests.duplicate-job-test/a-blank-job-id-is-rejected
+
+FAIL in (a-blank-job-id-is-rejected) (exporter_tests/duplicate_job_test.cljs:223:11)
+blank id must be rejected
+expected: (some? (:error result))
+  actual: (not (some? nil))
+
+FAIL in (a-blank-job-id-is-rejected) (exporter_tests/duplicate_job_test.cljs:224:11)
+blank id must not leave anything on the queue
+expected: (= [] ids)
+  actual: (not (= [] [""]))
+  ▸ exporter-tests.duplicate-job-test/a-non-uuid-job-id-is-rejected
+
+FAIL in (a-non-uuid-job-id-is-rejected) (exporter_tests/duplicate_job_test.cljs:223:11)
+non-uuid id must be rejected
+expected: (some? (:error result))
+  actual: (not (some? nil))
+
+FAIL in (a-non-uuid-job-id-is-rejected) (exporter_tests/duplicate_job_test.cljs:224:11)
+non-uuid id must not leave anything on the queue
+expected: (= [] ids)
+  actual: (not (= [] ["not-a-uuid"]))
+  ▸ exporter-tests.duplicate-job-test/a-rejected-id-leaves-existing-jobs-in-place
+
+FAIL in (a-rejected-id-leaves-existing-jobs-in-place) (exporter_tests/duplicate_job_test.cljs:259:22)
+expected: (some? (:error result))
+  actual: (not (some? nil))
+
+FAIL in (a-rejected-id-leaves-existing-jobs-in-place) (exporter_tests/duplicate_job_test.cljs:260:22)
+expected: (= [(str (:id job))] ids)
+  actual: (not (= ["16bb179e-d8da-80e9-8008-f014696f1d78"] ["16bb179e-d8da-80e9-8008-f014696f1d78" ""]))
+
+Ran 13 tests containing 31 assertions.
+18 failures, 0 errors.

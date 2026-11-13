@@ -194,6 +194,14 @@
   [k value seconds]
   (with-client (fn [^js client] (.set client k value "EX" seconds))))
 
+(defn set-nx-ex!
+  "Writes `value` at `k`, expiring after `seconds`, only when `k` does not
+  exist yet. Resolves to true when it was written, false when `k` was
+  already there. Atomic, so of two concurrent callers only one gets true."
+  [k value seconds]
+  (->> (with-client (fn [^js client] (.set client k value "EX" seconds "NX")))
+       (p/fmap (fn [result] (= "OK" result)))))
+
 (defn key-exists?
   [k]
   (->> (with-client-lenient (fn [^js client] (.exists client k)))

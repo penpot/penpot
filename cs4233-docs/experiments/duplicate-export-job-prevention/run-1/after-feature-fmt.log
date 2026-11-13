@@ -1,0 +1,2 @@
+$ cljfmt check --parallel=true src/ test/
+All source files formatted correctly

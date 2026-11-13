@@ -1,0 +1,85 @@
+  ▸ exporter-tests.crypto-test/sealed-value-opens-to-the-original
+  ▸ exporter-tests.crypto-test/sealed-value-does-not-contain-the-plaintext
+  ▸ exporter-tests.crypto-test/sealing-twice-gives-different-values
+  ▸ exporter-tests.crypto-test/altered-value-is-rejected
+  ▸ exporter-tests.crypto-test/malformed-value-is-rejected
+  ▸ exporter-tests.duplicate-job-test/each-new-job-gets-its-own-unique-id
+INF 05:01:38.8250 [app.config] hint="exporter key initialized", key="ASwdQ**************************************"
+INF 05:01:38.8270 [app.util.shell] hint="tmptdir setup", path="/tmp/penpot"
+INF 05:01:38.8620 [app.redis] hint="redis connection established", uri="redis://dupjob-valkey/0", role="commands"
+INF 05:01:38.8640 [app.redis] hint="redis connection established", uri="redis://dupjob-valkey/0", role="subscriber"
+  ▸ exporter-tests.duplicate-job-test/a-valid-new-job-is-added-to-the-queue
+  ▸ exporter-tests.duplicate-job-test/enqueuing-the-same-job-twice-keeps-a-single-entry
+DBG 05:01:38.9670 [app.jobs.queue] hint="export job already queued, not queueing again", job-id="f5ccdfa4-f581-8039-8008-f01631c4a860"
+  ▸ exporter-tests.duplicate-job-test/a-separate-request-reusing-an-existing-id-is-not-queued-again
+DBG 05:01:38.9750 [app.jobs.queue] hint="export job already queued, not queueing again", job-id="f5ccdfa4-f581-8039-8008-f01631c6d028"
+  ▸ exporter-tests.duplicate-job-test/concurrent-enqueues-of-the-same-job-keep-a-single-entry
+DBG 05:01:38.9820 [app.jobs.queue] hint="export job already queued, not queueing again", job-id="f5ccdfa4-f581-8039-8008-f01631c8ba15"
+DBG 05:01:38.9820 [app.jobs.queue] hint="export job already queued, not queueing again", job-id="f5ccdfa4-f581-8039-8008-f01631c8ba15"
+DBG 05:01:38.9830 [app.jobs.queue] hint="export job already queued, not queueing again", job-id="f5ccdfa4-f581-8039-8008-f01631c8ba15"
+DBG 05:01:38.9830 [app.jobs.queue] hint="export job already queued, not queueing again", job-id="f5ccdfa4-f581-8039-8008-f01631c8ba15"
+  ▸ exporter-tests.duplicate-job-test/a-job-already-claimed-by-a-worker-is-not-queued-again
+INF 05:01:38.9900 [app.redis] hint="redis connection established", uri="redis://dupjob-valkey/0", role="blocking"
+DBG 05:01:38.9930 [app.jobs.queue] hint="export job already queued, not queueing again", job-id="f5ccdfa4-f581-8039-8008-f01631ca5926"
+  ▸ exporter-tests.duplicate-job-test/different-jobs-are-all-accepted-in-order
+  ▸ exporter-tests.duplicate-job-test/queue-holds-one-entry-per-id-after-mixed-adds
+
+FAIL in (queue-holds-one-entry-per-id-after-mixed-adds) (exporter_tests/duplicate_job_test.cljs:213:22)
+expected: (= [(str (:id a)) (str (:id b)) (str (:id c))] ids)
+  actual: (not (= ["f5ccdfa4-f581-8039-8008-f01631cea9f4" "f5ccdfa4-f581-8039-8008-f01631ced699" "f5ccdfa4-f581-8039-8008-f01631cf016f"] ["f5ccdfa4-f581-8039-8008-f01631cea9f4"]))
+
+FAIL in (queue-holds-one-entry-per-id-after-mixed-adds) (exporter_tests/duplicate_job_test.cljs:215:22)
+expected: (= 3 (count ids))
+  actual: (not (= 3 1))
+  ▸ exporter-tests.duplicate-job-test/a-null-job-id-is-rejected
+  ▸ exporter-tests.duplicate-job-test/a-job-without-an-id-is-rejected
+  ▸ exporter-tests.duplicate-job-test/a-blank-job-id-is-rejected
+  ▸ exporter-tests.duplicate-job-test/a-non-uuid-job-id-is-rejected
+  ▸ exporter-tests.duplicate-job-test/a-rejected-id-leaves-existing-jobs-in-place
+  ▸ exporter-tests.shell-test/execfile-does-not-interpret-shell-metacharacters
+WRN 05:01:39.0720 [app.redis] hint="connection closed", role="blocking"
+WRN 05:01:39.0720 [app.redis] hint="client ended, no more connections will be attempted", role="blocking"
+WRN 05:01:39.0750 [app.redis] hint="connection closed", role="subscriber"
+WRN 05:01:39.0760 [app.redis] hint="client ended, no more connections will be attempted", role="subscriber"
+WRN 05:01:39.0770 [app.redis] hint="connection closed", role="commands"
+WRN 05:01:39.0770 [app.redis] hint="client ended, no more connections will be attempted", role="commands"
+  ▸ exporter-tests.shell-test/malicious-color-fails-validation
+  ▸ exporter-tests.shell-test/execfile-does-not-execute-injected-commands
+  ▸ exporter-tests.export-shapes-test/browser-exports-are-chunked
+  ▸ exporter-tests.scheduler-test/headless-jobs-wait-for-a-render-worker
+WRN 05:01:39.1270 [app.jobs.store] hint="job record not persisted, no redis connection", job-id="f5ccdfa4-f581-8039-8008-f01631ed49bf", state="queued"
+WRN 05:01:39.1280 [app.jobs.store] hint="job record not persisted, no redis connection", job-id="f5ccdfa4-f581-8039-8008-f01631ee1a0e", state="queued"
+DBG 05:01:39.1300 [app.jobs.scheduler] hint="export job queued", job-id="f5ccdfa4-f581-8039-8008-f01631ee1a0e"
+WRN 05:01:39.1300 [app.jobs.store] hint="job record not persisted, no redis connection", job-id="f5ccdfa4-f581-8039-8008-f01631ed49bf", state="processing"
+WRN 05:01:39.1430 [app.jobs.store] hint="job record not persisted, no redis connection", job-id="f5ccdfa4-f581-8039-8008-f01631ee1a0e", state="processing"
+  ▸ exporter-tests.scheduler-test/a-browser-job-is-not-held-back-by-the-worker-pool
+WRN 05:01:39.1450 [app.jobs.store] hint="job record not persisted, no redis connection", job-id="f5ccdfa4-f581-8039-8008-f01631f21869", state="queued"
+WRN 05:01:39.1460 [app.jobs.store] hint="job record not persisted, no redis connection", job-id="f5ccdfa4-f581-8039-8008-f01631f2a7aa", state="queued"
+WRN 05:01:39.1490 [app.jobs.store] hint="job record not persisted, no redis connection", job-id="f5ccdfa4-f581-8039-8008-f01631f21869", state="processing"
+WRN 05:01:39.1490 [app.jobs.store] hint="job record not persisted, no redis connection", job-id="f5ccdfa4-f581-8039-8008-f01631f2a7aa", state="processing"
+  ▸ exporter-tests.wasm-pool-test/releases-the-worker-when-the-body-succeeds
+  ▸ exporter-tests.wasm-pool-test/gives-the-worker-back-when-the-body-throws-synchronously
+  ▸ exporter-tests.renderer-svg-test/creates-the-correct-gradient-element
+  ▸ exporter-tests.renderer-svg-test/exporter-honours-svg-attr-fills
+node:fs:621
+  return binding.open(
+                 ^
+
+Error: ENOENT: no such file or directory, open '/src/exporter/resources/wasm/render-wasm.wasm'
+    at Object.openSync (node:fs:621:18)
+    at Module.readFileSync (node:fs:487:35)
+    at app$wasm$init_BANG_.cljs$core$IFn$_invoke$arity$2 (file:///src/exporter/target/tests/cljs-runtime/app.wasm.js:68:48)
+    at app$wasm$init_BANG_.cljs$core$IFn$_invoke$arity$0 (file:///src/exporter/target/tests/cljs-runtime/app.wasm.js:61:28)
+    at file:///src/exporter/target/tests/cljs-runtime/exporter_tests.renderer_svg_test.js:199:24
+    at Object.cljs$core$IFn$_invoke$arity$1 (file:///src/exporter/target/tests/cljs-runtime/exporter_tests.renderer_svg_test.js:200:3)
+    at cljs$test$run_block (file:///src/exporter/target/tests/cljs-runtime/cljs.test.js:394:49)
+    at file:///src/exporter/target/tests/cljs-runtime/cljs.test.js:381:143
+    at Object.cljs$core$IDeref$_deref$arity$1 (file:///src/exporter/target/tests/cljs-runtime/cljs.core.js:34645:111)
+    at Object.cljs$core$_deref [as _deref] (file:///src/exporter/target/tests/cljs-runtime/cljs.core.js:2488:10) {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/src/exporter/resources/wasm/render-wasm.wasm'
+}
+
+Node.js v24.22.2
