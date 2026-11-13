@@ -683,11 +683,14 @@
       ;; a group or bool takes its bounds from its children, which sync places
       ;; one by one: a move or resize of its bounds carries nothing, and it
       ;; fits them again
-      (and (seq ids) (or moved? resized?)
-           (mth/close? (or (:rotation before) 0) (or (:rotation after) 0) 1e-10)
-           (= (boolean (:flip-x before)) (boolean (:flip-x after)))
-           (= (boolean (:flip-y before)) (boolean (:flip-y after)))
-           (#{:group :bool} (:type before)))
+      (and (seq ids)
+           (#{:group :bool} (:type before))
+           (or (and (or moved? resized?)
+                    (mth/close? (or (:rotation before) 0) (or (:rotation after) 0) 1e-10)
+                    (= (boolean (:flip-x before)) (boolean (:flip-x after)))
+                    (= (boolean (:flip-y before)) (boolean (:flip-y after))))
+               ;; a masked group takes all its geometry from its mask
+               (:masked-group before)))
       (let [refit {:type :reg-objects :shapes [(:id before)]}]
         (pcb/add-changes changes container [refit] [refit]))
 

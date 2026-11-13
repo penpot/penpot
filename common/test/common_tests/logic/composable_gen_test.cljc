@@ -2524,6 +2524,12 @@
                                     :layout-copies false :layout-children false}]
                        :ops [[:structure 0 4] [:transform 0 4 0 2]]}))))
 
+(t/deftest flipping-the-mask-of-a-copy-group-flips-the-group-for-good
+  (t/is (map? (cg/run {:world [3 1 {:variants true :rich-variants true :text true :layout :grid
+                                    :layout-copies false :layout-children false}]
+                       :ops [[:remove-child 9] [:add-child 7] [:delete 7] [:add-child] [:undo]
+                             [:structure 10 1] [:transform 10 5 0 2]]}))))
+
 (t/deftest settling-a-bool-in-a-grid-copy-twice-keeps-its-shapes-in-place
   (t/is (map? (cg/run {:world [3 0 {:variants true :rich-variants true :text true :layout :grid
                                     :layout-copies true :layout-children true}]
