@@ -59,7 +59,7 @@
   [data objects variant-id]
   (->> (find-variant-components data objects variant-id)
        (mapcat :variant-properties)
-       (group-by :name)
+       (ctv/group-properties-by-name)
        (mapv (fn [[k v]]
                (let [mdata (reduce merge {} (map meta v))]
                  (with-meta {:name k
