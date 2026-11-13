@@ -66,7 +66,7 @@ RUN set -ex; \
 
 FROM base AS setup-node
 
-ENV NODE_VERSION=v24.22.2 \
+ENV NODE_VERSION=v24.22.3 \
     PNPM_VERSION=12.18.0 \
     PATH=/opt/node/bin:$PATH
 
@@ -76,14 +76,14 @@ RUN set -eux; \
        aarch64|arm64) \
          OPENSSL_ARCH='linux-aarch64'; \
          BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-arm64.tar.gz"; \
-         NODE_SHA256='95c264150aceb7f3437a29fd6984924f5f8d1511ea3cbd6c508b83f6c555dae2'; \
+         NODE_SHA256='261af2af250dfd7e9f25cf151d1b2713a0adf8f10a9ad116c4947f68627affe8'; \
          PNPM_ARCH='arm64'; \
          PNPM_SHA256='700bd1aa4028465b80e62b7c5bec8455be60bbafaf53a3262a4ab8e2057712ac'; \
          ;; \
        amd64|x86_64) \
          OPENSSL_ARCH='linux-x86_64'; \
          BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-x64.tar.gz"; \
-         NODE_SHA256='361718c444e49af2ca5a110c83ba6a8901143f23ab285ebbef0341f391f482a9'; \
+         NODE_SHA256='061ec3e3062115705b56b51fa9cc330ab50d34b6969387d4e4b1a50c6809acc2'; \
          PNPM_ARCH='x64'; \
          PNPM_SHA256='3726060e236c0db3e7124c0a5af123c840ba0cb76682149b63ea0baf290017c2'; \
          ;; \
