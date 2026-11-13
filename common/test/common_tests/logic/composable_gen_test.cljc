@@ -2514,6 +2514,11 @@
                        :ops [[:delete 11] [:detach 5] [:swap 10] [:add-child] [:structure 0 6 3] [:nest 11]
                              [:transform 2 0 0 7] [:detach 13]]}))))
 
+(t/deftest removing-the-mask-of-a-main-unmasks-its-copies-without-overriding-them
+  (t/is (map? (cg/run {:world [1 0 {:variants true :rich-variants true :text false :layout :grid
+                                    :layout-copies false :layout-children false}]
+                       :ops [[:structure 1 1 1] [:remove-child 1]]}))))
+
 (t/deftest settling-a-bool-in-a-grid-copy-twice-keeps-its-shapes-in-place
   (t/is (map? (cg/run {:world [3 0 {:variants true :rich-variants true :text true :layout :grid
                                     :layout-copies true :layout-children true}]

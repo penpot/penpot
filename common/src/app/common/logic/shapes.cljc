@@ -484,9 +484,11 @@
                                             shape))
                                         {:ignore-touched true :with-objects? true})
                      (pcb/resize-parents all-parents)
+                     ;; a copy's group unmasked as its main's is no override
                      (pcb/update-shapes groups-to-unmask
                                         (fn [shape]
-                                          (assoc shape :masked-group false)))
+                                          (assoc shape :masked-group false))
+                                        {:ignore-touched (boolean ignore-touched)})
                      (pcb/update-shapes (map :id interacting-shapes)
                                         (fn [shape]
                                           (d/update-when shape :interactions
