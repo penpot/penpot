@@ -2554,11 +2554,12 @@
       plus)))
 
 (defn- flips
-  "The flips of `shape`: its flags, or for a group or bool, which takes its
-   bounds from its children and keeps no flags, whether its transform
-   mirrors, as a horizontal flip."
+  "The flips of `shape`: its flags, or for a group, which takes its bounds
+   from its children and clears its flags while its transform keeps the
+   mirror, whether its transform mirrors, as a horizontal flip. A bool keeps
+   its flags while fitting it resets its transform."
   [shape]
-  (if (#{:group :bool} (:type shape))
+  (if (= :group (:type shape))
     (let [{:keys [a b c d]} (axes-matrix shape)]
       {:flip-x (neg? (- (* a d) (* b c))) :flip-y false})
     {:flip-x (boolean (:flip-x shape)) :flip-y (boolean (:flip-y shape))}))
@@ -2568,7 +2569,11 @@
    `target`'s; the lengths of the axes are left to constraints. Compose flip
    flags with the roots, independent of rotation step size."
   [head target center]
-  (let [head-flips   (flips head)
+  (let [;; a bool keeps its turn and flips while fitting it resets its
+        ;; transform, so its orientation comes from them
+        head         (cond-> head (= :bool (:type head)) (unskewed))
+        target       (cond-> target (= :bool (:type target)) (unskewed))
+        head-flips   (flips head)
         target-flips (flips target)
         flip-x?      (not= (:flip-x head-flips) (:flip-x target-flips))
         flip-y?      (not= (:flip-y head-flips) (:flip-y target-flips))]
