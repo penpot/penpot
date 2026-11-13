@@ -1146,14 +1146,16 @@
             head (get after-objects new-head)
             main (get after-objects (:shape-ref head))
             model (shadow/duplicate model objects id (:objects (thf/current-page (tm/file after))) new-head)]
-        ;; a copy pasted on the page keeps the orientation and size it showed,
-        ;; which its main's need not be
+        ;; a copy pasted on the page keeps the geometry it showed: what it
+        ;; authored, now where it lands, and the orientation and size another
+        ;; parent gave it, which its main's need not be
         (cond-> model
           (and (= kind :paste) head main (:shape-ref head)
-               (not (get-in model [new-head :geometry-group]))
-               (or (not (gmt/close? (or (:transform head) (gmt/matrix)) (or (:transform main) (gmt/matrix))))
-                   (not (mth/close? (:width (:selrect head)) (:width (:selrect main)) 0.01))
-                   (not (mth/close? (:height (:selrect head)) (:height (:selrect main)) 0.01))))
+               (or (get-in model [new-head :geometry-group])
+                   (and (not (cfh/root? (get objects (:parent-id shape))))
+                        (or (not (gmt/close? (or (:transform head) (gmt/matrix)) (or (:transform main) (gmt/matrix))))
+                            (not (mth/close? (:width (:selrect head)) (:width (:selrect main)) 0.01))
+                            (not (mth/close? (:height (:selrect head)) (:height (:selrect main)) 0.01))))))
           (assoc-in [new-head :geometry-group] (shadow/author-geometry head nil))))
       (:swap :switch)
       (let [after-objects (all-objects after)

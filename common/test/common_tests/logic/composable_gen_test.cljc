@@ -4286,3 +4286,11 @@
                                     :rich-variants true :layout-children false :grid-empty false
                                     :layout-copies true :text true}]
                        :ops [[:style 14 11 1] [:text-style 14 0 1] [:nest 7] [:switch 9] [:switch 9]]}))))
+
+(t/deftest generated-a-copy-shape-ungrouped-into-a-grid-is-placed-by-it
+  ;; a copy shape that authored its place, then taken into a grid board by
+  ;; an ungroup of its main, is placed by that grid
+  (t/is (map? (cg/run {:world [2 2 {:variants true :rich-variants true :text true :layout :grid
+                                    :layout-copies true :layout-children false}]
+                       :ops [[:transform 7 0 0 8] [:detach 6 0 0 0] [:add-child 0] [:structure 0 2 0]
+                             [:sync 0 0 0 0]]}))))
