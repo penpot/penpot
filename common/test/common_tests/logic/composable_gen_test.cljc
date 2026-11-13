@@ -4268,3 +4268,13 @@
                        :ops [[:edit 1 1 1 :copy-head] [:paste 2] [:paste 0] [:sync] [:undo] [:redo]]})))
   (t/is (map? (cg/run {:world [2 1 {:text true :layout :flex :layout-children true}]
                        :ops [[:paste 1] [:paste 5] [:edit 0 0 1] [:sync]]}))))
+
+(t/deftest generated-a-pasted-copy-keeps-the-orientation-its-main-parent-gave-it
+  ;; a nested copy pasted out of a flipped or turned main keeps the
+  ;; orientation it showed as its own geometry
+  (t/is (map? (cg/run {:world [1 2 {:text false :text-styles false :layout :grid :layout-children false
+                                    :layout-item-margins false :grid-square false :grid-empty false}]
+                       :ops [[:transform 19 17 0 4] [:detach] [:update-main] [:delete] [:restore] [:paste 14]]})))
+  (t/is (map? (cg/run {:world [2 0 {:tokens false :variants true :rich-variants true :text true :layout :flex
+                                    :layout-copies false}]
+                       :ops [[:rotate 3] [:nest 7] [:update-main] [:paste 9]]}))))
