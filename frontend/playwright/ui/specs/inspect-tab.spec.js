@@ -502,95 +502,59 @@ test.describe("Inspect tab - Styles", () => {
   });
 
   test.describe("Inspect tab - Stroke", () => {
-    test("Shape - Stroke - Solid", async ({ page }) => {
+    test("Stroke", async ({ page }) => {
       const workspacePage = new WasmWorkspacePage(page);
       await setupFile(workspacePage);
 
-      await selectLayer(workspacePage, shapeToLayerName.stroke.solid);
-      await openInspectTab(workspacePage);
-      const panel = await getPanelByTitle(workspacePage, "Stroke");
-      await expect(panel).toBeVisible();
+      await test.step("Solid", async () => {
+        await selectLayer(workspacePage, shapeToLayerName.stroke.solid);
+        await openInspectTab(workspacePage);
 
-      const propertyRow = panel.getByTestId("property-row");
-      const propertyRowCount = await propertyRow.count();
-
-      expect(propertyRowCount).toBeGreaterThanOrEqual(1);
-    });
-
-    test("Shape - Stroke - Gradient", async ({ page }) => {
-      const workspacePage = new WasmWorkspacePage(page);
-      await setupFile(workspacePage);
-
-      await selectLayer(workspacePage, shapeToLayerName.stroke.gradient);
-      await openInspectTab(workspacePage);
-      const panel = await getPanelByTitle(workspacePage, "Stroke");
-      await expect(panel).toBeVisible();
-
-      const propertyRow = panel.getByTestId("property-row");
-      const propertyRowCount = await propertyRow.count();
-
-      expect(propertyRowCount).toBeGreaterThanOrEqual(1);
-    });
-
-    test("Shape - Stroke - Image", async ({ page }) => {
-      const workspacePage = new WasmWorkspacePage(page);
-      await setupFile(workspacePage);
-
-      await selectLayer(workspacePage, shapeToLayerName.stroke.image);
-      await openInspectTab(workspacePage);
-      const panel = await getPanelByTitle(workspacePage, "Stroke");
-      await expect(panel).toBeVisible();
-
-      const propertyRow = panel.getByTestId("property-row");
-      const propertyRowCount = await propertyRow.count();
-
-      expect(propertyRowCount).toBeGreaterThanOrEqual(1);
-
-      const imagePreview = panel.getByRole("img", {
-        name: "Preview of the shape's fill",
+        const panel = await getPanelByTitle(workspacePage, "Stroke");
+        await expectPanelRows(panel, 1);
       });
-      await expect(imagePreview).toBeVisible();
-    });
 
-    test("Shape - Stroke - Multiple", async ({ page }) => {
-      const workspacePage = new WasmWorkspacePage(page);
-      await setupFile(workspacePage);
+      await test.step("Gradient", async () => {
+        await selectLayer(workspacePage, shapeToLayerName.stroke.gradient);
 
-      await selectLayer(workspacePage, shapeToLayerName.stroke.multiple);
-      await openInspectTab(workspacePage);
-      const panel = await getPanelByTitle(workspacePage, "Stroke");
-      await expect(panel).toBeVisible();
-
-      const propertyRow = panel.getByTestId("property-row");
-      const propertyRowCount = await propertyRow.count();
-
-      expect(propertyRowCount).toBeGreaterThanOrEqual(3);
-
-      const imagePreview = panel.getByRole("img", {
-        name: "Preview of the shape's fill",
+        const panel = await getPanelByTitle(workspacePage, "Stroke");
+        await expectPanelRows(panel, 1);
       });
-      await expect(imagePreview).toBeVisible();
-    });
 
-    test("Shape - Stroke - Token", async ({ page }) => {
-      const workspacePage = new WasmWorkspacePage(page);
-      await setupFile(workspacePage);
+      await test.step("Image", async () => {
+        await selectLayer(workspacePage, shapeToLayerName.stroke.image);
 
-      await selectLayer(workspacePage, shapeToLayerName.stroke.token);
-      await openInspectTab(workspacePage);
-      const panel = await getPanelByTitle(workspacePage, "Stroke");
-      await expect(panel).toBeVisible();
+        const panel = await getPanelByTitle(workspacePage, "Stroke");
+        await expectPanelRows(panel, 1);
 
-      const propertyRow = panel.getByTestId("property-row");
-      const propertyRowCount = await propertyRow.count();
-
-      expect(propertyRowCount).toBeGreaterThanOrEqual(1);
-
-      const fillToken = propertyRow.filter({
-        hasText: "Border color",
+        await expect(
+          panel.getByRole("img", { name: "Preview of the shape's fill" }),
+        ).toBeVisible();
       });
-      expect(fillToken).toContainText("primary");
-      await expect(fillToken).toBeVisible();
+
+      await test.step("Multiple", async () => {
+        await selectLayer(workspacePage, shapeToLayerName.stroke.multiple);
+
+        const panel = await getPanelByTitle(workspacePage, "Stroke");
+        await expectPanelRows(panel, 3);
+
+        await expect(
+          panel.getByRole("img", { name: "Preview of the shape's fill" }),
+        ).toBeVisible();
+      });
+
+      await test.step("Token", async () => {
+        await selectLayer(workspacePage, shapeToLayerName.stroke.token);
+
+        const panel = await getPanelByTitle(workspacePage, "Stroke");
+        await expectPanelRows(panel, 1);
+
+        const borderColorRow = panel
+          .getByTestId("property-row")
+          .filter({ hasText: "Border color" });
+        await expect(borderColorRow).toContainText("primary");
+        await expect(borderColorRow).toBeVisible();
+      });
     });
   });
 
