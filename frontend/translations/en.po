@@ -7198,6 +7198,10 @@ msgstr[1] "%s graphics"
 msgid "workspace.libraries.in-this-file"
 msgstr "LIBRARIES IN THIS FILE"
 
+#: src/app/main/ui/workspace/libraries.cljs:934
+msgid "workspace.libraries.inherited-from"
+msgstr "Inherited from %s. To remove it, disconnect %s."
+
 #: src/app/main/ui/workspace/libraries.cljs:1161, src/app/main/ui/workspace/libraries.cljs:1165, src/app/main/ui/workspace/libraries.cljs:1183
 msgid "workspace.libraries.libraries"
 msgstr "LIBRARIES"
@@ -7305,6 +7309,10 @@ msgstr "see all changes"
 #: src/app/main/ui/workspace/libraries.cljs:1163, src/app/main/ui/workspace/libraries.cljs:1167
 msgid "workspace.libraries.updates"
 msgstr "UPDATES"
+
+#: src/app/main/ui/workspace/libraries.cljs:936
+msgid "workspace.libraries.used-by"
+msgstr "Used by %s. To remove it, disconnect %s first."
 
 #: src/app/main/ui/ds/notifications/shared/notification_pill.cljs:61
 msgid "workspace.notification-pill.detail"

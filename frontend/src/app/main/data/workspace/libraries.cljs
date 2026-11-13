@@ -1817,8 +1817,30 @@
                    (d/index-by :id))))))
 
 
+(defn- library-loaded
+  "Stores `file`, a library of `file-id`, with its `:is-indirect` flag. A
+  library can be requested twice when links overlap, once because the
+  user linked it and once because another library brings it in. The
+  direct link wins whichever answer lands last. Only a flag recorded for
+  `file-id` counts: `:files` outlives the workspace, and a library can be
+  direct in the file visited before and indirect in this one."
+  [file-id file indirect?]
+  (ptk/reify ::library-loaded
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [known        (get-in state [:files (:id file)])
+            known-direct? (and (= file-id (:library-of known))
+                               (false? (:is-indirect known)))]
+        (update state :files assoc (:id file)
+                (assoc file
+                       :library-of file-id
+                       :is-indirect (and indirect? (not known-direct?))))))))
+
 (defn- load-library-file
-  [file-id library-id]
+  "Loads a library of `file-id`. `indirect?` tells whether it is there
+  only because another library uses it, like the flag the libraries
+  fetched when the workspace opens carry."
+  [file-id library-id indirect?]
   (ptk/reify ::load-library-file
     ptk/WatchEvent
     (watch [_ state _]
@@ -1828,7 +1850,7 @@
               (rx/merge-map fpmap/resolve-file)
               (rx/mapcat (fn [file]
                            (rx/of
-                            (libraries-fetched file-id [file])))))
+                            (library-loaded file-id file indirect?)))))
          (->> (rp/cmd! :get-file-object-thumbnails {:file-id library-id :tag "component"})
               (rx/map (fn [thumbnails]
                         (fn [state]
@@ -1863,7 +1885,7 @@
                               (as-> libraries-to-load $
                                 (remove loaded-libraries $)
                                 (conj $ library-id)
-                                (map #(load-library-file file-id %) $))))
+                                (map #(load-library-file file-id % (not= % library-id)) $))))
               (rx/catch (fn [cause]
                           (let [error (ex-data cause)]
                             (if (= (:code error) :circular-library-reference)

@@ -40,6 +40,7 @@
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.ds.product.empty-state :refer [empty-state*]]
+   [app.main.ui.ds.tooltip.tooltip :refer [tooltip*]]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.tokens.import-from-library]
@@ -158,6 +159,58 @@
       (reduce #(visit %1 %2 nil) $ (sort-by-name (filter root? libraries)))
       (reduce #(visit %1 %2 nil) $ (sort-by-name libraries))
       (first $))))
+
+(defn- linked-users
+  [{:keys [connected-to]} libraries-by-id]
+  (into [] (keep libraries-by-id) connected-to))
+
+(defn- removable-users
+  "The linked libraries to disconnect to release `library`: those that use
+  it, directly or through other libraries, and that either are linked to
+  the file directly or are used by no linked library. A directly linked
+  library stays until it is disconnected, even when another one uses it.
+  Empty when the libraries only use each other in a cycle."
+  [library libraries-by-id]
+  (loop [pending   (linked-users library libraries-by-id)
+         seen      #{(:id library)}
+         removable []]
+    (if-let [user (first pending)]
+      (if (contains? seen (:id user))
+        (recur (rest pending) seen removable)
+        (let [users (linked-users user libraries-by-id)]
+          (recur (into (rest pending) users)
+                 (conj seen (:id user))
+                 (cond-> removable
+                   (or (empty? users) (false? (:is-indirect user)))
+                   (conj user)))))
+      removable)))
+
+(defn library-disconnect-hint
+  "Why a linked library cannot be disconnected from this file, or nil when
+  it can. A library that another linked library uses stays connected as
+  long as that one does. Returns `{:reason :inherited}` for a nested
+  library, with the name of its parent, and `{:reason :used-by}` for a
+  direct one, with the name of the first library by name that uses it.
+
+  Both carry `:removable`, the names of the libraries to disconnect to
+  release this one, sorted by name. The parent can be nested itself, a
+  library can have several parents, and a parent can be linked directly
+  as well. In a cycle nothing is removable, and `:removable` holds the
+  name given in `:library-name`. `libraries-by-id` indexes the linked
+  libraries by id."
+  [{:keys [nested? parent-name] :as library} libraries-by-id]
+  (let [users (linked-users library libraries-by-id)]
+    (when (seq users)
+      (let [library-name (if nested?
+                           parent-name
+                           (->> users (sort-by (comp str/lower :name)) first :name))
+            removable    (->> (removable-users library libraries-by-id)
+                              (map :name)
+                              (sort-by str/lower)
+                              (vec))]
+        {:reason (if nested? :inherited :used-by)
+         :library-name library-name
+         :removable (if (seq removable) removable [library-name])}))))
 
 (defn- describe-library
   [components-count graphics-count colors-count typography-count]
@@ -732,9 +785,9 @@
                (map #(assoc % :connected-to (find-connected-to (:id %))))
                (sort-linked-libraries)))
 
-        linked-libraries-ids
+        libraries-by-id
         (mf/with-memo [linked-libraries]
-          (into #{} d/xf:map-id linked-libraries))
+          (d/index-by :id linked-libraries))
 
         unlink-library
         (mf/use-fn
@@ -865,8 +918,10 @@
                        :class       (stl/css :title-spacing-lib)
                        :title-class (stl/css :connected-libraries-title)}]
        (if (seq linked-libraries)
-         (for [{:keys [id name data connected-to nested? parent-name] :as library} linked-libraries]
-           (let [disabled?          (some #(contains? linked-libraries-ids %) connected-to)
+         (for [{:keys [id name data nested? parent-name] :as library} linked-libraries]
+           (let [hint               (library-disconnect-hint library libraries-by-id)
+                 hint-library       (:library-name hint)
+                 hint-removable     (str/join ", " (:removable hint))
                  can-import-tokens? (and (has-tokens? library)
                                          (cfo/editable-tokens? local-library)
                                          (contains? cf/flags :token-import-from-library))]
@@ -904,13 +959,24 @@
                      :variant "secondary"
                      :on-click import-tokens}]))
 
-               [:> icon-button* {:type "button"
-                                 :aria-label (tr "workspace.libraries.unlink-library-btn")
-                                 :icon i/detach
-                                 :data-library-id (dm/str id)
-                                 :variant "secondary"
-                                 :disabled disabled?
-                                 :on-click unlink-library}]]]))
+               (if (some? hint)
+                 [:> tooltip* {:class (stl/css :library-locked)
+                               :tab-index 0
+                               :data-testid "library-locked"
+                               :content (case (:reason hint)
+                                          :inherited (tr "workspace.libraries.inherited-from"
+                                                         hint-library hint-removable)
+                                          :used-by (tr "workspace.libraries.used-by"
+                                                       hint-library hint-removable))}
+                  [:> icon* {:icon-id (case (:reason hint)
+                                        :inherited i/arrow-up
+                                        :used-by i/info)}]]
+                 [:> icon-button* {:type "button"
+                                   :aria-label (tr "workspace.libraries.unlink-library-btn")
+                                   :icon i/detach
+                                   :data-library-id (dm/str id)
+                                   :variant "secondary"
+                                   :on-click unlink-library}])]]))
          [:div {:class (stl/css :shared-libraries-empty)}
           [:> text* {:class (stl/css :empty-libraries-text)
                      :as "span"

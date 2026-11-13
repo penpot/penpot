@@ -6,6 +6,7 @@
 
 (ns frontend-tests.ui.workspace-libraries-test
   (:require
+   [app.common.data :as d]
    [app.main.ui.workspace.libraries :as wl]
    [cljs.test :as t :include-macros true]))
 
@@ -99,3 +100,80 @@
     (t/is (= [[:a false nil]
               [:b false nil]]
              (summarize (wl/sort-linked-libraries libraries))))))
+
+(defn- disconnect-hints
+  "The disconnect hint of every library, by id, once sorted as the
+  Libraries modal shows them."
+  [libraries]
+  (let [sorted (wl/sort-linked-libraries libraries)
+        by-id  (d/index-by :id sorted)]
+    (into {} (map (juxt :id #(wl/library-disconnect-hint % by-id))) sorted)))
+
+(t/deftest library-disconnect-hint-none-when-no-linked-library-uses-it
+  ;; Only the file uses it, so the user can disconnect it
+  (t/is (= {:a nil}
+           (disconnect-hints [(lib :a false [:file])]))))
+
+(t/deftest library-disconnect-hint-nested-library-is-inherited-from-its-parent
+  ;; file -> a -> b: b stays while a is connected
+  (t/is (= {:a nil
+            :b {:reason :inherited :library-name "a" :removable ["a"]}}
+           (disconnect-hints [(lib :a false [:file])
+                              (lib :b true [:a])]))))
+
+(t/deftest library-disconnect-hint-direct-library-is-used-by-another-one
+  ;; file -> a, b; a -> b: b is linked directly but a needs it
+  (t/is (= {:a nil
+            :b {:reason :used-by :library-name "a" :removable ["a"]}}
+           (disconnect-hints [(lib :a false [:file])
+                              (lib :b false [:file :a])]))))
+
+(t/deftest library-disconnect-hint-names-the-first-user-by-name
+  (t/is (= {:c {:reason :used-by :library-name "a" :removable ["a" "b"]}
+            :a nil
+            :b nil}
+           (disconnect-hints [(lib :c false [:file :b :a])
+                              (lib :b false [:file])
+                              (lib :a false [:file])]))))
+
+(t/deftest library-disconnect-hint-ignores-users-that-are-not-linked
+  ;; `other` uses a, but it is not one of the file's libraries
+  (t/is (= {:a nil}
+           (disconnect-hints [(lib :a false [:file :other])]))))
+
+(t/deftest library-disconnect-hint-shared-dependency-lists-every-removable-parent
+  ;; file -> a, b; a -> c; b -> c: disconnecting a alone leaves c linked
+  ;; through b, so both have to go
+  (t/is (= {:a nil
+            :b nil
+            :c {:reason :inherited :library-name "a" :removable ["a" "b"]}}
+           (disconnect-hints [(lib :a false [:file])
+                              (lib :b false [:file])
+                              (lib :c true [:a :b])]))))
+
+(t/deftest library-disconnect-hint-deep-chain-points-to-the-removable-library
+  ;; file -> a -> b -> c: b is nested too and has no button, so the
+  ;; removal step names a, the only library the user can disconnect
+  (t/is (= {:a nil
+            :b {:reason :inherited :library-name "a" :removable ["a"]}
+            :c {:reason :inherited :library-name "b" :removable ["a"]}}
+           (disconnect-hints [(lib :c true [:b])
+                              (lib :b true [:a])
+                              (lib :a false [:file])]))))
+
+(t/deftest library-disconnect-hint-lists-a-directly-linked-intermediate-library
+  ;; file -> a, b; a -> b -> c: disconnecting a leaves the direct link to b,
+  ;; which keeps c, so b has to go as well. b only becomes removable once a is gone.
+  (t/is (= {:a nil
+            :b {:reason :used-by :library-name "a" :removable ["a"]}
+            :c {:reason :inherited :library-name "b" :removable ["a" "b"]}}
+           (disconnect-hints [(lib :a false [:file])
+                              (lib :b false [:file :a])
+                              (lib :c true [:b])]))))
+
+(t/deftest library-disconnect-hint-cycle-falls-back-to-the-parent
+  ;; a <-> b, nothing removable: name the parent rather than nothing
+  (t/is (= {:a {:reason :used-by :library-name "b" :removable ["b"]}
+            :b {:reason :inherited :library-name "a" :removable ["a"]}}
+           (disconnect-hints [(lib :a true [:b])
+                              (lib :b true [:a])]))))
