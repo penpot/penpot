@@ -8,6 +8,7 @@ Each change is a map such as `{:type ... :id ... :page-id ...}`. Common families
 
 - `:add-obj`, `:mod-obj`, `:del-obj`: shape lifecycle. `:mod-obj` contains `:operations`, commonly `{:type :set :attr ... :val ... :ignore-geometry ... :ignore-touched ...}` or `{:type :set-touched ...}`.
 - `:add-component`, `:mod-component`, `:del-component`: component/library metadata.
+- Shapes stored inside the component record (deleted components keep them in `:objects`) are never written as a whole map: `mod-component` carries only component metadata by default, and shapes travel as `:mod-obj`/`:add-obj`/`:del-obj` changes scoped with `:component-id`. `pcb/update-component` has an `:objects? true` option for the two repairs that move or clear that key, and `ctkl/mod-component` reads an absent `:objects` as "leave the stored shapes alone" (only an explicit `nil` drops them). Before this, one component swap resent the full object map of every deleted component it touched (~6 MB in the request); do not reintroduce it.
 - `:add-children`, `:remove-children`, `:reg-objects`: tree and object-map edits.
 - `:set-option`, `:add-page`, `:mov-page`, and related file/page metadata changes.
 
@@ -21,7 +22,7 @@ High-value builder operations:
 - `pcb/with-page-id`, `pcb/with-objects`, `pcb/with-library-data`: set context for following operations.
 - `pcb/update-shapes ids update-fn`: emits `:mod-obj` with diff-derived `:set` ops. Options include `{:with-objects? true}`, `{:ignore-touched true}`, and `{:attrs #{...}}`.
 - `pcb/add-objects`, `pcb/change-parent`, `pcb/remove-objects`, `pcb/resize-parents`: shape/tree edits.
-- `pcb/add-component`, `pcb/update-component`, `pcb/mod-component`: component/library edits.
+- `pcb/add-component`, `pcb/update-component`, `pcb/mod-component`: component/library edits. Repairs that fix shapes inside a component use `pcb/with-container` + `pcb/with-objects` + `pcb/update-shapes` so the changes come out scoped with `:component-id`.
 - `pcb/set-translation? true`: marks the whole change set as translation-only, which lets component sync skip expensive work.
 
 ## Applying changes in tests

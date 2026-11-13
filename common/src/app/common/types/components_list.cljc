@@ -41,7 +41,7 @@
       variant-properties (update-in [:components id] assoc :variant-properties variant-properties))))
 
 (defn mod-component
-  [file-data {:keys [id name path main-instance-id main-instance-page objects annotation variant-id variant-properties modified-at]}]
+  [file-data {:keys [id name path main-instance-id main-instance-page objects annotation variant-id variant-properties modified-at] :as change}]
   (d/update-in-when file-data [:components id]
                     (fn [component]
                       (let [new-comp (cond-> component
@@ -57,10 +57,14 @@
                                        (some? main-instance-page)
                                        (assoc :main-instance-page main-instance-page)
 
-                                       (some? objects)
+                                       ;; An absent `:objects` key means "leave the stored
+                                       ;; shapes alone", only an explicit `nil` drops them.
+                                       ;; Without this distinction a metadata-only change
+                                       ;; would wipe the shapes of a deleted component.
+                                       (and (contains? change :objects) (some? objects))
                                        (assoc :objects objects)
 
-                                       (nil? objects)
+                                       (and (contains? change :objects) (nil? objects))
                                        (dissoc :objects)
 
                                        (some? modified-at)
