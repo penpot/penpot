@@ -652,6 +652,10 @@
            (when (kbd/enter? event)
              (on-export-shapes event))))
 
+        on-export-selection
+        (mf/use-fn
+         #(st/emit! (de/export-selected-shapes {:origin "workspace:menu"})))
+
         on-export-file
         (mf/use-fn
          (mf/deps file)
@@ -728,6 +732,13 @@
       [:span {:class (stl/css :item-name)}
        (tr "dashboard.export-shapes")]
       [:> shortcuts* {:id :export-shapes}]]
+
+     [:> dropdown-menu-item* {:class (stl/css :base-menu-item :submenu-item)
+                              :on-click    on-export-selection
+                              :id          "file-menu-export-selection"}
+      [:span {:class (stl/css :item-name)}
+       (tr "workspace.export-selection")]
+      [:> shortcuts* {:id :export-selection}]]
 
      [:> dropdown-menu-item* {:class (stl/css :base-menu-item :submenu-item)
                               :on-click    on-export-file
