@@ -2612,6 +2612,18 @@
                              [:rotate 23 0 0 0] [:style 26 29 1] [:combine 25 0 0 0] [:variant-property 0 0 0 0]
                              [:switch 16]]}))))
 
+(t/deftest a-flipped-turned-copy-switches-without-losing-its-geometry
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout nil :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies true :text true}]
+                       :ops [[:transform 0 4 0 17] [:rotate 0 0 0 0] [:switch 0]]}))))
+
+(t/deftest a-turned-pushed-copy-made-a-variant-keeps-a-valid-file
+  (t/is (map? (cg/run {:world [3 2 {:variants true :text-styles true :layout nil :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies true :text true}]
+                       :ops [[:rotate 7 0 0 0] [:update-main 0 0 0 0] [:make-variant 19 0 0 0] [:style 0 29 4 0]]}))))
+
 (t/deftest settling-a-bool-in-a-grid-copy-twice-keeps-its-shapes-in-place
   (t/is (map? (cg/run {:world [3 0 {:variants true :rich-variants true :text true :layout :grid
                                     :layout-copies true :layout-children true}]
