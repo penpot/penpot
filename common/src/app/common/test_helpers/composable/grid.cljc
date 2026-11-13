@@ -270,8 +270,16 @@
          ;; inherited tracks that shrink move or shorten the cells
          shrunk?       (and prior context
                             (or (< (:rows context) (:rows prior)) (< (:columns context) (:columns prior))))
+         ;; a default cell past the shrunk tracks gives its children back, to
+         ;; take a free cell or a grown track; the others are fitted
+         beyond?       (fn [cell]
+                         (and (= :auto (:position cell))
+                              (= 1 (:row-span cell) (:column-span cell))
+                              (contains? #{nil :auto} (:align-self cell))
+                              (contains? #{nil :auto} (:justify-self cell))
+                              (or (> (:row cell) (:rows context)) (> (:column cell) (:columns context)))))
          cells         (cond
-                         shrunk? (fit-cells trimmed (:rows context) (:columns context)
+                         shrunk? (fit-cells (into [] (remove beyond?) trimmed) (:rows context) (:columns context)
                                             (or (:direction context) (:layout-grid-dir shape) :row))
                          context (extend-cells trimmed prior context)
                          :else   trimmed)

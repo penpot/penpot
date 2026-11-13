@@ -821,11 +821,11 @@
                                                    (when-not (and (#{:width :height} action)
                                                                   (= :bool (:type shape)) (:shape-ref shape))
                                                      (n/transform-shape target action
-                                                                      (case action
-                                                                        :move [(* 5 (inc (mod value 4))) (* -3 (inc (mod value 3)))]
-                                                                        (:width :height) (+ 80 (* 20 (mod value 6)))
-                                                                        :rotate (* 45 (inc (mod value 4)))
-                                                                        nil))))
+                                                                        (case action
+                                                                          :move [(* 5 (inc (mod value 4))) (* -3 (inc (mod value 3)))]
+                                                                          (:width :height) (+ 80 (* 20 (mod value 6)))
+                                                                          :rotate (* 45 (inc (mod value 4)))
+                                                                          nil))))
                  :library-edit (n/change-property target property value)
                  :library-add-child (n/add-child target (keyword (str "library-generated-" (count (:applied situation))))
                                                  :width 20 :height 20 :x 10 :y 10)
@@ -1287,7 +1287,7 @@
             nil))
         (case kind
           :apply-token (when-not (n/has-token? (tm/shape-by-id after (get-in resolved [:shape :id]))
-                                                (:token-name resolved) (:token-value resolved))
+                                               (:token-name resolved) (:token-value resolved))
                          (oracle/fail :I9 {:phase :requested-token :token (:token-name resolved)}))
           :unapply-token (when (seq (n/token-corners (tm/shape-by-id after (get-in resolved [:shape :id]))
                                                      (:token-name resolved)))
