@@ -1865,28 +1865,34 @@
                                                      :ignore-touched true}]}))
           (pcb/apply-changes-local)))))
 
+(def ^:private token-sync-attrs
+  "The sync attrs that have token attrs, paired with them."
+  (into []
+        (comp (remove #(= :layout-grid-cells %))
+              (keep (fn [attr]
+                      (when-let [token-attrs (seq (cto/shape-attr->token-attrs attr))]
+                        [attr token-attrs]))))
+        (keys ctk/sync-attrs)))
+
 (defn- generate-update-tokens
   [changes container dest-shape origin-shape touched omit-touched? valid-attrs]
   ;; valid-attrs is a set of attrs to consider on the update. If it is nil, it will consider all the attrs
-  (let [attrs
-        (->> (keys ctk/sync-attrs)
-             ;; We don't update the flex-child attrs
-             (remove #(= :layout-grid-cells %)))
-
-        applied-tokens
-        (reduce (fn [applied-tokens attr]
-                  (let [sync-group  (or (ctk/resolve-sync-group (:type origin-shape) attr)
-                                        (ctk/resolve-sync-group (:type dest-shape) attr))
-                        token-attrs (cto/shape-attr->token-attrs attr)]
-                    (if  (and (or (not omit-touched?) (not (touched sync-group)))
-                              (or (empty? valid-attrs) (contains? valid-attrs attr)))
-                      (into applied-tokens token-attrs)
-                      applied-tokens)))
-                #{}
-                attrs)]
-    (cond-> changes
-      (seq applied-tokens)
-      (update-tokens container dest-shape origin-shape applied-tokens))))
+  (if (and (empty? (:applied-tokens origin-shape))
+           (empty? (:applied-tokens dest-shape)))
+    changes
+    (let [applied-tokens
+          (reduce (fn [applied-tokens [attr token-attrs]]
+                    (let [sync-group (or (ctk/resolve-sync-group (:type origin-shape) attr)
+                                         (ctk/resolve-sync-group (:type dest-shape) attr))]
+                      (if (and (or (not omit-touched?) (not (touched sync-group)))
+                               (or (empty? valid-attrs) (contains? valid-attrs attr)))
+                        (into applied-tokens token-attrs)
+                        applied-tokens)))
+                  #{}
+                  token-sync-attrs)]
+      (cond-> changes
+        (seq applied-tokens)
+        (update-tokens container dest-shape origin-shape applied-tokens)))))
 
 (defn- add-update-attr-changes
   [changes dest-shape container roperations uoperations]
