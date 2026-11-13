@@ -12,6 +12,7 @@
    [frontend-tests.data.auth-test]
    [frontend-tests.data.comments-batches-test]
    [frontend-tests.data.comments-filters-test]
+   [frontend-tests.data.common-test]
    [frontend-tests.data.dashboard-test]
    [frontend-tests.data.event-test]
    [frontend-tests.data.exports-assets-test]
@@ -217,6 +218,7 @@
    'frontend-tests.data.auth-test
    'frontend-tests.data.comments-batches-test
    'frontend-tests.data.comments-filters-test
+   'frontend-tests.data.common-test
    'frontend-tests.data.dashboard-test
    'frontend-tests.data.event-test
    'frontend-tests.data.fix-deleted-fonts-test

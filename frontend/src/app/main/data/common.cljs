@@ -13,6 +13,7 @@
    [app.common.time :as ct]
    [app.common.types.organization :as cto]
    [app.common.types.team :as ctt]
+   [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
@@ -405,6 +406,26 @@
 ;; NAVEGATION EVENTS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- resolve-team-id
+  "The team a team scoped navigation must carry: the UUID the caller
+  passes, the team initialized in the store, the team of the route
+  already on screen, or the profile default. A navigation carries a nil
+  id only when none of the four exists.
+
+  The route goes before the profile default on purpose: the emitters that
+  run from a team screen know the team the user is looking at, and the
+  personal team would open their file under another team.
+
+  `team-container*` raises `:not-found :invalid-team-id` for a dashboard
+  or workspace route without a valid id, and `:not-found` is not reported
+  to the error pipeline, so a navigation that loses the id ends on the
+  not-found page without leaving a trace."
+  [state team-id]
+  (or (when (uuid? team-id) team-id)
+      (:current-team-id state)
+      (some-> (rt/get-query-param (rt/get-params state) :team-id) uuid/parse*)
+      (dm/get-in state [:profile :default-team-id])))
+
 (defn go-to-feedback
   []
   (ptk/reify ::go-to-feedback
@@ -420,7 +441,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [profile    (get state :profile)
-            team-id    (or team-id (:current-team-id state))
+            team-id    (resolve-team-id state team-id)
             project-id (if (= project-id :default)
                          (:default-project-id profile)
                          project-id)
@@ -434,7 +455,7 @@
   (ptk/reify ::go-to-dashboard-search
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [team-id (:current-team-id state)]
+      (let [team-id (resolve-team-id state nil)]
         (rx/merge
          (->> (rx/of (rt/nav :dashboard-search
                              {:team-id team-id
@@ -454,7 +475,7 @@
   (ptk/reify ::go-to-dashboard-libraries
     ptk/WatchEvent
     (watch [_ state _]
-      (let [team-id (or team-id (:current-team-id state))]
+      (let [team-id (resolve-team-id state team-id)]
         (rx/of (rt/nav :dashboard-libraries {:team-id team-id}))))))
 
 
@@ -463,7 +484,7 @@
   (ptk/reify ::go-to-dashboard-fonts
     ptk/WatchEvent
     (watch [_ state _]
-      (let [team-id (or team-id (:current-team-id state))]
+      (let [team-id (resolve-team-id state team-id)]
         (rx/of (rt/nav :dashboard-fonts {:team-id team-id}))))))
 
 (defn go-to-dashboard-recent
@@ -472,15 +493,9 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [profile (get state :profile)
-            team-id (cond
-                      (= :default team-id)
+            team-id (if (= :default team-id)
                       (:default-team-id profile)
-
-                      (uuid? team-id)
-                      team-id
-
-                      :else
-                      (:current-team-id state))
+                      (resolve-team-id state team-id))
             params  {:team-id team-id}]
         (rx/of (modal/hide)
                (rt/nav :dashboard-recent params options))))))
@@ -490,7 +505,7 @@
   (ptk/reify ::go-to-dashboard-members
     ptk/WatchEvent
     (watch [_ state _]
-      (let [team-id (:current-team-id state)]
+      (let [team-id (resolve-team-id state nil)]
         (rx/of (rt/nav :dashboard-members {:team-id team-id}))))))
 
 (defn go-to-dashboard-invitations
@@ -498,7 +513,7 @@
   (ptk/reify ::go-to-dashboard-invitations
     ptk/WatchEvent
     (watch [_ state _]
-      (let [team-id (:current-team-id state)]
+      (let [team-id (resolve-team-id state nil)]
         (rx/of (rt/nav :dashboard-invitations {:team-id team-id}))))))
 
 (defn go-to-dashboard-webhooks
@@ -506,7 +521,7 @@
   (ptk/reify ::go-to-dashboard-webhooks
     ptk/WatchEvent
     (watch [_ state _]
-      (let [team-id (:current-team-id state)]
+      (let [team-id (resolve-team-id state nil)]
         (rx/of (rt/nav :dashboard-webhooks {:team-id team-id}))))))
 
 (defn go-to-dashboard-settings
@@ -514,7 +529,7 @@
   (ptk/reify ::go-to-dashboard-settings
     ptk/WatchEvent
     (watch [_ state _]
-      (let [team-id (:current-team-id state)]
+      (let [team-id (resolve-team-id state nil)]
         (rx/of (rt/nav :dashboard-settings {:team-id team-id}))))))
 
 (defn go-to-workspace
@@ -522,7 +537,7 @@
   (ptk/reify ::go-to-workspace
     ptk/WatchEvent
     (watch [_ state _]
-      (let [team-id (or team-id (:current-team-id state))
+      (let [team-id (resolve-team-id state team-id)
             file-id (or file-id (:current-file-id state))
             page-id (or page-id (:current-page-id state)
                         (-> (dsh/lookup-file-data state file-id)
@@ -575,15 +590,9 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [profile (get state :profile)
-            team-id (cond
-                      (= :default team-id)
+            team-id (if (= :default team-id)
                       (:default-team-id profile)
-
-                      (uuid? team-id)
-                      team-id
-
-                      :else
-                      (:current-team-id state))
+                      (resolve-team-id state team-id))
             params  {:team-id team-id}]
         (rx/of (modal/hide)
                (rt/nav :dashboard-deleted params options))))))
