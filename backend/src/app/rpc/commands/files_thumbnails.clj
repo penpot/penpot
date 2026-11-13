@@ -107,16 +107,18 @@
 
 (defn- get-thumbnail-frame
   "Find the frame marked to be used as thumbnail, loading pages lazily.
-  The returned frame has the :page-id assoc'ed."
+  Returns a [frame page-id] pair instead of stamping the page-id onto
+  the frame itself."
   [data]
   (d/seek some?
           (for [page (-> data :pages-index vals)
-                :let [page (cond-> page (pmap/pointer-map? page) deref)]]
-            (some-> (d/seek #(and (cfh/frame-shape? %)
-                                  (or (:use-for-thumbnail %)
-                                      (:use-for-thumbnail? %))) ; NOTE: backward comp (remove on v1.21)
-                            (get-thumbnail-frame-candidates (:objects page)))
-                    (assoc :page-id (:id page))))))
+                :let [page  (cond-> page (pmap/pointer-map? page) deref)
+                      frame (d/seek #(and (cfh/frame-shape? %)
+                                          (or (:use-for-thumbnail %)
+                                              (:use-for-thumbnail? %))) ; NOTE: backward comp (remove on v1.21)
+                                    (get-thumbnail-frame-candidates (:objects page)))]
+                :when frame]
+            [frame (:id page)])))
 
 (defn get-file-data-for-thumbnail
   [{:keys [::db/conn] :as cfg} {:keys [data id] :as file} strip-frames-with-thumbnails]
@@ -168,9 +170,9 @@
                 objects)))]
 
     (fdata/with-pointers cfg id
-      (let [frame     (get-thumbnail-frame data)
+      (let [[frame page-id] (get-thumbnail-frame data)
             frame-id  (:id frame)
-            page-id   (or (:page-id frame)
+            page-id   (or page-id
                           (-> data :pages first))
 
             page      (dm/get-in data [:pages-index page-id])
