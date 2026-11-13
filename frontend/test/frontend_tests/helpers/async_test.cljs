@@ -14,6 +14,7 @@
    [cljs.test :as t :include-macros true]
    [clojure.string :as str]
    [frontend-tests.helpers.async :as async]
+   [frontend-tests.helpers.mock :as mock]
    [potok.v2.core :as ptk]))
 
 ;; The old budget: 50 event-loop turns. A delivery after it used to be lost.
@@ -108,6 +109,21 @@
     ;; A safety net at 10x the 100 ms ceiling, so a hung wait fails instead of
     ;; stalling the run; it does not measure precision.
     (t/is (< (- (inst-ms (ct/now)) started) 1000) "bounded by the ceiling")))
+
+(t/deftest ^:async a-frozen-clock-still-times-out-in-real-time
+  ;; The watchdog fixtures freeze `ct/now`: the ceiling must be real time,
+  ;; so a never-true wait still fails instead of hanging on a frozen clock.
+  (let [failures (atom nil)
+        started  (js/Date.now)]
+    (binding [t/*current-env* (t/empty-env ::silent)]
+      (await (mock/with-mocks*
+               {ct/now (mock/stub (fn [] (ct/inst 0)))}
+               (await (async/wait-for (constantly false)
+                                      "the impossible on a frozen clock"
+                                      {:timeout-ms 100}))))
+      (reset! failures (get-in (t/get-current-env) [:report-counters :fail])))
+    (t/is (= 1 @failures) "one failure, not one per turn")
+    (t/is (< (- (js/Date.now) started) 1000) "bounded by the ceiling")))
 
 (t/deftest ^:async an-immediate-predicate-does-not-yield
   (let [{:keys [ran? stop]} (turn-probe)]

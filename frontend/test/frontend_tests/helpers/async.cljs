@@ -17,7 +17,6 @@
     order, so awaiting the last scheduled delivery observes every effect
     scheduled before it."
   (:require
-   [app.common.time :as ct]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
    [potok.v2.core :as ptk]))
@@ -86,14 +85,20 @@
   a signal it is the poll budget."
   5000)
 
+(defn- ^:async poll
+  [pred msg expired?]
+  (cond
+    (pred)    nil
+    @expired? (t/is false (str "Timed out waiting for: " msg))
+    :else     (do (await (settle))
+                  (await (poll pred msg expired?)))))
+
 (defn- ^:async wait-poll
-  [pred msg deadline]
-  (if (pred)
-    nil
-    (if (>= (inst-ms (ct/now)) deadline)
-      (t/is false (str "Timed out waiting for: " msg))
-      (do (await (settle))
-          (await (wait-poll pred msg deadline))))))
+  [pred msg timeout-ms]
+  (let [expired? (atom false)
+        timer    (js/setTimeout #(reset! expired? true) timeout-ms)]
+    (await (poll pred msg expired?))
+    (js/clearTimeout timer)))
 
 (defn- cause-text
   "Readable, bounded text for a signal error: its message when it has one,
@@ -111,11 +116,11 @@
 (defn- wait-signal
   "Resolves when `pred` holds, re-checking it on every emission of `signal`.
 
-  The deadline only bounds failure: it records the failure and resolves, so
+  The timeout only bounds failure: it records the failure and resolves, so
   the caller never hangs. A signal that ends or fails without the predicate
   holding is reported with its own reason. The subscription is disposed on
   every path."
-  [pred msg signal deadline]
+  [pred msg signal timeout-ms]
   (js/Promise.
    (fn [resolve]
      (let [done?  (atom false)
@@ -137,7 +142,7 @@
                       (resolve nil)))]
        (reset! timer*
                (js/setTimeout #(fail (str "Timed out waiting for: " msg))
-                              (max 0 (- deadline (inst-ms (ct/now))))))
+                              timeout-ms))
        (reset! sub*
                (rx/subs!
                 (fn [_] (when (pred) (finish)))
@@ -171,10 +176,9 @@
   [pred msg & [{:keys [signal timeout-ms]
                 :or   {timeout-ms default-timeout-ms}}]]
   (when-not (pred)
-    (let [deadline (+ (inst-ms (ct/now)) timeout-ms)]
-      (if (some? signal)
-        (await (wait-signal pred msg signal deadline))
-        (await (wait-poll pred msg deadline))))))
+    (if (some? signal)
+      (await (wait-signal pred msg signal timeout-ms))
+      (await (wait-poll pred msg timeout-ms)))))
 
 (defn wait-for-store
   "Resolves once `pred` holds over `store`, re-checking it on every store
