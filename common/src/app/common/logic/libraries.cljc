@@ -1146,26 +1146,69 @@
 
         initial-root?  (:component-root shape-inst)
 
+        ;; The component name is normalized (path separators with one space at
+        ;; each side), so the name synced to the main instance root must be
+        ;; normalized too. Otherwise the root would not match the component's
+        ;; path+name and the file would fail :invalid-main-instance-name.
+        rename?        (and (some? component)
+                            (contains? (:touched shape-inst) :name-group))
+        original-name  (:name shape-inst)
+        clean-name     (when rename?
+                         (cpn/clean-path original-name))
+        shape-inst     (cond-> shape-inst
+                         (some? clean-name)
+                         (assoc :name clean-name))
+
         root-inst      shape-inst
         root-main      (ctf/get-component-root library component)
 
-        changes        (cond-> changes
-                         (and component (contains? (:touched shape-inst) :name-group))
-                         (generate-rename-component (:component-id shape-inst) (:name shape-inst) library))]
+        ;; When the synced shape is itself the component's main instance root,
+        ;; `find-remote-shape` returns nil and the recursive sync never reaches
+        ;; it, so it must be renamed explicitly to keep it matching the
+        ;; component's path+name.
+        main-root?     (and (some? component)
+                            (= (:id shape-inst) (:main-instance-id component)))
 
-    (if component
-      (generate-sync-shape-inverse-recursive changes
-                                             container
-                                             shape-inst
-                                             component
-                                             library
-                                             file
-                                             libraries
-                                             shape-main
-                                             root-inst
-                                             root-main
-                                             initial-root?)
-      changes)))
+        changes        (cond-> changes
+                         (some? clean-name)
+                         (generate-rename-component (:component-id shape-inst) clean-name library))
+
+        changes        (if component
+                         (generate-sync-shape-inverse-recursive changes
+                                                                container
+                                                                shape-inst
+                                                                component
+                                                                library
+                                                                file
+                                                                libraries
+                                                                shape-main
+                                                                root-inst
+                                                                root-main
+                                                                initial-root?)
+                         changes)
+
+        changes        (cond-> changes
+                         (and (some? clean-name)
+                              main-root?
+                              (not= clean-name original-name))
+                         (-> (update :redo-changes conj
+                                     (make-change container
+                                                  {:type :mod-obj
+                                                   :id (:id shape-inst)
+                                                   :local-change? true
+                                                   :operations [{:type :set
+                                                                 :attr :name
+                                                                 :val clean-name}]}))
+                             (update :undo-changes conj
+                                     (make-change container
+                                                  {:type :mod-obj
+                                                   :id (:id shape-inst)
+                                                   :local-change? true
+                                                   :operations [{:type :set
+                                                                 :attr :name
+                                                                 :val original-name}]}))))]
+
+    changes))
 
 (defn- generate-sync-shape-inverse-recursive
   [changes container shape-inst component library file libraries shape-main root-inst root-main initial-root?]
@@ -2694,10 +2737,20 @@
 
         [path name] (cpn/split-group-name name)
 
+        ;; The name of the main instance root must match the path+name of the
+        ;; component. The component name is normalized here (via split-group-name),
+        ;; so the root shape name must be normalized too. Otherwise creating a
+        ;; component from a shape with an unnormalized name (e.g. "Group/Subgroup")
+        ;; would leave a main instance failing :invalid-main-instance-name.
+        normalized-name (cpn/merge-path-item path name)
+
         [root-shape updated-shapes]
-        (ctn/convert-shape-in-component root objects file-id)
+        (ctn/convert-shape-in-component (assoc root :name normalized-name) objects file-id)
 
         changes     (-> changes
+                        (cond-> (not= normalized-name (:name root))
+                          (pcb/update-shapes [(:id root)] #(assoc % :name normalized-name)
+                                             {:ignore-touched true}))
                         (pcb/add-component (:id root-shape)
                                            path
                                            name

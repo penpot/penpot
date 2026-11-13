@@ -8,16 +8,20 @@
   (:require
    [app.common.data :as d]
    [app.common.files.changes-builder :as pcb]
+   [app.common.files.validate :as cfv]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
+   [app.common.path-names :as cpn]
    [app.common.test-helpers.components :as thc]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
    [app.common.types.component :as ctk]
+   [app.common.types.components-list :as ctkl]
+   [app.common.types.container :as ctn]
    [app.common.types.shape-tree :as ctst]
    [clojure.test :as t]))
 
@@ -539,3 +543,64 @@
     ;; A position-only change in the main component must not propagate to copies
     ;; and therefore must produce no redo-changes.
     (t/is (empty? (:redo-changes sync-changes)))))
+
+(defn- run-sync-inverse
+  "Run the inverse sync on `shape-tag`, which has been renamed to an
+   unnormalized name, and return the resulting main root and component
+   names, and the updated file."
+  [shape-tag]
+  (let [file       (-> (thf/sample-file :file1)
+                       (tho/add-simple-component-with-copy :component1
+                                                           :main-root
+                                                           :main-child
+                                                           :copy-root)
+                       (tho/change-shape shape-tag #(update % :touched (fnil conj #{}) :name-group))
+                       (ths/update-shape shape-tag :name "Group/Subgroup"))
+        page       (thf/current-page file)
+        container  (ctn/make-container page :page)
+        changes    (-> (pcb/empty-changes)
+                       (pcb/with-container container)
+                       (cll/generate-sync-shape-inverse (:data file)
+                                                        {(:id file) file}
+                                                        container
+                                                        (thi/id shape-tag)))
+        file'      (thf/apply-changes file changes)
+        main-root' (ths/get-shape file' :main-root)
+        component' (ctkl/get-component (:data file') (thi/id :component1))]
+    [(:name main-root')
+     (cpn/merge-path-item (:path component') (:name component'))
+     file']))
+
+(t/deftest test-sync-inverse-normalizes-copy-name
+  (t/testing "syncing an unnormalized copy name keeps the component and its main root matching"
+    (let [file       (-> (thf/sample-file :file1)
+                         (tho/add-simple-component-with-copy :component1
+                                                             :main-root
+                                                             :main-child
+                                                             :copy-root)
+                         (tho/change-shape :copy-root #(update % :touched (fnil conj #{}) :name-group))
+                         (ths/update-shape :copy-root :name "Group/Subgroup"))
+          page       (thf/current-page file)
+          container  (ctn/make-container page :page)
+          changes    (-> (pcb/empty-changes)
+                         (pcb/with-container container)
+                         (cll/generate-sync-shape-inverse (:data file)
+                                                          {(:id file) file}
+                                                          container
+                                                          (thi/id :copy-root)))
+          file'      (thf/apply-changes file changes)
+          main-root' (ths/get-shape file' :main-root)
+          component' (ctkl/get-component (:data file') (thi/id :component1))]
+
+      ;; ==== Check
+      (t/is (= "Group / Subgroup" (:name main-root')))
+      (t/is (= "Group / Subgroup" (cpn/merge-path-item (:path component') (:name component'))))
+      (t/is (nil? (cfv/validate-file file' {}))))))
+
+(t/deftest test-sync-inverse-normalizes-main-name
+  (t/testing "syncing an unnormalized main name keeps the component and the main root matching"
+    (let [[main-root-name component-name file'] (run-sync-inverse :main-root)]
+      ;; ==== Check
+      (t/is (= "Group / Subgroup" main-root-name))
+      (t/is (= "Group / Subgroup" component-name))
+      (t/is (nil? (cfv/validate-file file' {}))))))
