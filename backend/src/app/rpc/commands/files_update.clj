@@ -147,6 +147,48 @@
       (contains? token-change-types type)
       (contains? file-change-types type)))
 
+;; --- METRICS
+
+(defn- record-metric!
+  "Record a metric on the cfg's metrics instance. A cfg without one
+  records nothing, so callers outside the service (scripts, tests)
+  work unchanged."
+  [cfg params]
+  (when-let [metrics (::mtx/metrics cfg)]
+    (when (mtx/metrics? metrics)
+      (mtx/run! metrics params))))
+
+(defn- refusal-code
+  "Bounded label for the error that refused a save: the `:code` of its
+  ex-data, the `:type` when it carries no code, or `unknown`.
+
+  Both are keywords written in this codebase, so the label set stays
+  bounded by the source."
+  [cause]
+  (let [data (ex-data cause)
+        code (or (:code data) (:type data))]
+    (if (keyword? code) (name code) "unknown")))
+
+(defn- refusal-stage
+  "Bounded label for the stage a refused save had reached, read from the
+  step timings that `apply-changes` and `validate-file` record in
+  `finally` forms: a step's timing is present whether it completed or
+  raised, so the furthest step present is the one that raised, or the
+  last one before the failing step. Only the first attempt, with all the
+  changes, records timings: the retries of `apply-commits` do not.
+
+  `changes` covers the change-application step, the change schema
+  checks included. A failing file version check comes before it and
+  reports `pre-changes`. The hard referential gate is the last step
+  before the write whenever `:file-schema-validation` is off, so a
+  write failure reports `referential`."
+  [timings]
+  (cond
+    (nil? (:process-changes-ms timings))   "pre-changes"
+    (nil? (:validate-affected-ms timings)) "changes"
+    (nil? (:validate-schema-ms timings))   "referential"
+    :else                                  "schema"))
+
 ;; Not a real editor session: file-change messages with this id are
 ;; delivered to every connected session, including the saver.
 (def repair-session-id
@@ -158,11 +200,9 @@
 
 (defn- record-repair-outcome
   [cfg outcome]
-  (when-let [metrics (::mtx/metrics cfg)]
-    (when (mtx/metrics? metrics)
-      (mtx/run! metrics {:id :update-file-repair
-                         :labels [(name outcome)]
-                         :inc 1}))))
+  (record-metric! cfg {:id :update-file-repair
+                       :labels [(name outcome)]
+                       :inc 1}))
 
 (defn- error-codes
   [errors]
@@ -186,7 +226,7 @@
    ::doc/module :files
    ::doc/added "1.17"
    ::db/transaction true}
-  [{:keys [::mtx/metrics ::db/conn] :as cfg}
+  [{:keys [::db/conn] :as cfg}
    {:keys [::rpc/profile-id id changes changes-with-metadata] :as params}]
 
   (files/check-edition-permissions! conn profile-id id)
@@ -219,7 +259,9 @@
                      (assoc :commits commits))
 
         cfg      (assoc cfg ::timestamp (ct/now)
-                        ::validation-timings (atom {}))
+                        ::validation-timings (atom {})
+                        ::incoming-revn (:revn params)
+                        ::stored-revn (:revn file))
 
         tpoint   (ct/tpoint)]
 
@@ -239,6 +281,13 @@
                 :context {:incoming-revn (:revn params)
                           :stored-revn (:revn file)}))
 
+    ;; The save passed the revision check with a revn behind the stored
+    ;; head: the server accepts it and folds it on top of changes its
+    ;; client had not received.
+    (when (< (::incoming-revn cfg)
+             (::stored-revn cfg))
+      (record-metric! cfg {:id :update-file-lagged :inc 1}))
+
     ;; When newly computed features does not match exactly with the
     ;; features defined on team row, we update it
     (when-let [features (-> features
@@ -255,7 +304,7 @@
                     {::db/return-keys false})))
 
 
-    (mtx/run! metrics {:id :update-file-changes :inc (count changes)})
+    (record-metric! cfg {:id :update-file-changes :inc (count changes)})
 
     (binding [l/*context* (some-> (meta params)
                                   (get :app.http/request)
@@ -283,6 +332,10 @@
           ;; (`handle-response`), so timings collected before a hard
           ;; validation failure would be lost without this inline log.
           (let [timings @(::validation-timings cfg)]
+            (record-metric! cfg {:id :update-file-refused
+                                 :labels [(refusal-stage timings)
+                                          (refusal-code cause)]
+                                 :inc 1})
             (l/dbg :hint "update-file"
                    :file-id (str (:id file))
                    :project-id (str (:project-id file))
@@ -527,30 +580,77 @@
 
     (apply update-fn cfg file args)))
 
+(defn- deepest-explain-error
+  "The entry of a malli explain whose `:path` is the longest, or nil."
+  [cause]
+  (->> (-> cause ex-data ::sm/explain :errors)
+       (filter #(seq (:path %)))
+       (sort-by #(count (:path %)))
+       last))
+
+(defn- schema-failure-reason
+  "Bounded label for a soft schema failure: the deepest keyword of the
+  `:path` of the deepest explain entry, which is the schema key that
+  failed (`type` for a shape whose type is invalid, `objects` for a nil
+  object map). Indices and other non-keyword path elements are skipped
+  so the label set stays small."
+  [error]
+  (let [key (->> (:path error) (filter keyword?) last)]
+    (if (keyword? key) (name key) "unknown")))
+
+(defn- referential-failure-code
+  "The code of the first error `validate-file-affected!` reported, kept
+  within its closed `error-codes` set, or `:unknown`."
+  [cause]
+  (let [code (-> cause ex-data :details first :code)]
+    (if (contains? val/error-codes code) code :unknown)))
+
 (defn- soft-validate-file-schema!
-  [file changes]
+  [cfg file changes]
   (try
     (val/validate-file-schema-affected! file changes)
     (catch Throwable cause
-      (l/error :hint "file schema validation error" :cause cause))))
+      (let [error (deepest-explain-error cause)]
+        (record-metric! cfg {:id :update-file-soft-failure
+                             :labels ["schema" (schema-failure-reason error)]
+                             :inc 1})
+        (l/error :hint "file schema validation error"
+                 :file-id (str (:id file))
+                 :incoming-revn (::incoming-revn cfg)
+                 :stored-revn (::stored-revn cfg)
+                 :code (refusal-code cause)
+                 ;; Schema path and instance path of the deepest explain
+                 ;; entry: keywords, ids, and indices only.
+                 :path (some-> error :path vec)
+                 :in (some-> error :in vec)
+                 :cause cause)))))
 
 (defn- record-validation-timing
   [cfg step-key step-label elapsed-ms]
-  (when-let [metrics (::mtx/metrics cfg)]
-    (when (mtx/metrics? metrics)
-      (mtx/run! metrics {:id :update-file-validation-timing
-                         :labels [step-label]
-                         :val (double elapsed-ms)})))
+  (record-metric! cfg {:id :update-file-validation-timing
+                       :labels [step-label]
+                       :val (double elapsed-ms)})
   (when-let [timings (::validation-timings cfg)]
     (swap! timings assoc step-key elapsed-ms)))
 
 (defn- soft-validate-file!
-  [file libs changes]
+  [cfg file libs changes]
   (try
     (val/validate-file-affected! file libs changes)
     (catch Throwable cause
-      (l/error :hint "file validation error"
-               :cause cause))))
+      (let [code  (referential-failure-code cause)
+            error (-> cause ex-data :details first)]
+        (record-metric! cfg {:id :update-file-soft-failure
+                             :labels ["affected" (name code)]
+                             :inc 1})
+        (l/error :hint "file validation error"
+                 :file-id (str (:id file))
+                 :incoming-revn (::incoming-revn cfg)
+                 :stored-revn (::stored-revn cfg)
+                 :code (name code)
+                 :page-id (some-> error :page-id str)
+                 :shape-id (some-> error :shape-id str)
+                 :cause cause)))))
 
 (defmacro ^:private with-validation-timing
   "Runs `body` and records its time as the validation step `step-key`
@@ -569,11 +669,11 @@
   (binding [pmap/*tracked* nil]
     (when (contains? cf/flags :soft-file-validation)
       (with-validation-timing cfg :soft-validate-affected-ms "soft-validate-affected"
-        (soft-validate-file! file libs changes)))
+        (soft-validate-file! cfg file libs changes)))
 
     (when (contains? cf/flags :soft-file-schema-validation)
       (with-validation-timing cfg :soft-validate-schema-ms "soft-validate-schema"
-        (soft-validate-file-schema! file changes)))
+        (soft-validate-file-schema! cfg file changes)))
 
     (when (and (contains? cf/flags :file-validation)
                (not skip-validate))
