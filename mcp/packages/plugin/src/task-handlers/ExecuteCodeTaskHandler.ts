@@ -44,20 +44,22 @@ export class ExecuteCodeTaskHandler extends TaskHandler<ExecuteCodeTaskParams> {
 
         // set the flags naturalChildOrdering and throwValidationErrors to true during code execution.
         let originalNaturalChildOrdering: any, originalThrowValidationErrors: any;
-        if (penpot.flags) {
-            originalNaturalChildOrdering = penpot.flags.naturalChildOrdering;
-            penpot.flags.naturalChildOrdering = true;
-            originalThrowValidationErrors = penpot.flags.throwValidationErrors;
-            penpot.flags.throwValidationErrors = true;
-        } else {
+        if (!penpot.flags || typeof penpot.waitForSave !== "function") {
             throw new Error(
-                "You are using a version of the Penpot MCP server which is incompatible " +
-                    "with the connected Penpot version. " +
+                "The connected Penpot build is missing Plugin API support that this MCP " +
+                    "plugin needs (for example `penpot.waitForSave`), or the MCP plugin is " +
+                    "too new for that Penpot. Upgrade Penpot (and its plugins-runtime) so " +
+                    "they match this MCP version. " +
                     "Read the documentation for instructions on which version to use: " +
                     "https://github.com/penpot/penpot/tree/develop/mcp\n" +
                     "If you are an LLM, tell the user about this!"
             );
         }
+
+        originalNaturalChildOrdering = penpot.flags.naturalChildOrdering;
+        penpot.flags.naturalChildOrdering = true;
+        originalThrowValidationErrors = penpot.flags.throwValidationErrors;
+        penpot.flags.throwValidationErrors = true;
 
         let result: any;
         try {
@@ -92,6 +94,9 @@ export class ExecuteCodeTaskHandler extends TaskHandler<ExecuteCodeTaskParams> {
         if (result instanceof Uint8Array) {
             result = ExecuteCodeTaskHandler.encodeBytesAsBase64Envelope(result);
         }
+
+        // Wait for the save outside any swallow catch: a failed or rolled-back save must fail the task.
+        await penpot.waitForSave();
 
         // return result and captured log
         let resultData: ExecuteCodeTaskResultData<any> = {

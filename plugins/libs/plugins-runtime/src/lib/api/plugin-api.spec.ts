@@ -37,6 +37,8 @@ describe('Plugin api', () => {
         theme: 'dark',
         addListener: vi.fn().mockReturnValueOnce(Symbol()),
         removeListener: vi.fn(),
+        waitForSave: vi.fn().mockResolvedValue(undefined),
+        waitForLayoutUpdate: vi.fn().mockResolvedValue(undefined),
       },
     };
   }
@@ -183,6 +185,30 @@ describe('Plugin api', () => {
 
       await expect(penpotMgmt.listTeams()).rejects.toBe(error);
       await expect(penpotMgmt.getFile('file-id')).rejects.toBe(error);
+    });
+  });
+
+  describe('waitForSave', () => {
+    it('forwards to plugin.context.waitForSave', async () => {
+      await expect(api.penpot.waitForSave(1234)).resolves.toBeUndefined();
+      expect(pluginManager.context.waitForSave).toHaveBeenCalledWith(1234);
+    });
+
+    it('requires content:read', () => {
+      const waitForSave = vi.fn().mockResolvedValue(undefined);
+      const { penpot } = createApi({
+        ...pluginManager,
+        manifest: {
+          ...pluginManager.manifest,
+          permissions: [],
+        },
+        context: { ...pluginManager.context, waitForSave },
+      } as any);
+
+      expect(() => penpot.waitForSave(100)).toThrow(
+        'Permission content:read is not granted',
+      );
+      expect(waitForSave).not.toHaveBeenCalled();
     });
   });
 

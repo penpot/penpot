@@ -1630,6 +1630,19 @@ export interface Context {
    * rejected with an Error, both on timeout and on an invalid timeout value.
    */
   waitForLayoutUpdate(timeout?: number): Promise<void>;
+
+  /**
+   * This method returns a promise that will be resolved when pending file
+   * changes have been saved to the backend, or when there is nothing to save.
+   * It force-flushes the persistence buffer first when work is pending.
+   * @param timeout Maximum time to wait, in milliseconds. If the timeout
+   * elapses before the save settles, the promise is rejected. Defaults to
+   * 90000; the promise never waits indefinitely.
+   * @return The promise to be resolved when the save has settled. It is
+   * rejected with an Error on save failure, when changes are rolled back
+   * during the wait, on timeout, or on an invalid timeout value.
+   */
+  waitForSave(timeout?: number): Promise<void>;
 }
 
 /**
