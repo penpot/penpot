@@ -559,82 +559,62 @@ test.describe("Inspect tab - Styles", () => {
   });
 
   test.describe("Inspect tab - Typography", () => {
-    test("Text - simple", async ({ page }) => {
+    test("Typography", async ({ page }) => {
       const workspacePage = new WasmWorkspacePage(page);
       await setupFile(workspacePage);
 
-      await selectLayer(workspacePage, shapeToLayerName.text.simple);
-      await openInspectTab(workspacePage);
-      const panel = await getPanelByTitle(workspacePage, "Text");
-      await expect(panel).toBeVisible();
+      await test.step("Simple text", async () => {
+        await selectLayer(workspacePage, shapeToLayerName.text.simple);
+        await openInspectTab(workspacePage);
 
-      const propertyRow = panel.getByTestId("property-row");
-      const propertyRowCount = await propertyRow.count();
-
-      expect(propertyRowCount).toBeGreaterThanOrEqual(1);
-
-      const textPreview = panel.getByRole("presentation");
-      await expect(textPreview).toBeVisible();
-    });
-
-    test("Text - token", async ({ page }) => {
-      const workspacePage = new WasmWorkspacePage(page);
-      await setupFile(workspacePage);
-
-      await selectLayer(workspacePage, shapeToLayerName.text.token);
-      await openInspectTab(workspacePage);
-      const panel = await getPanelByTitle(workspacePage, "Text");
-      await expect(panel).toBeVisible();
-
-      const propertyRow = panel.getByTestId("property-row");
-      const propertyRowCount = await propertyRow.count();
-
-      expect(propertyRowCount).toBeGreaterThanOrEqual(1);
-
-      // Test with multiple tokens
-      const fontFamilyToken = propertyRow.filter({
-        hasText: "Font family",
+        const panel = await getPanelByTitle(workspacePage, "Text");
+        await expectPanelRows(panel, 1);
+        await expect(panel.getByRole("presentation")).toBeVisible();
       });
-      await expect(fontFamilyToken).toBeVisible();
-      expect(fontFamilyToken).toContainText("font.sans");
 
-      const fontSizeToken = propertyRow.filter({
-        hasText: "Font size",
+      await test.step("Tokens", async () => {
+        await selectLayer(workspacePage, shapeToLayerName.text.token);
+
+        const panel = await getPanelByTitle(workspacePage, "Text");
+        await expectPanelRows(panel, 1);
+
+        const propertyRow = panel.getByTestId("property-row");
+
+        const fontFamilyToken = propertyRow.filter({
+          hasText: "Font family",
+        });
+        await expect(fontFamilyToken).toBeVisible();
+        await expect(fontFamilyToken).toContainText("font.sans");
+
+        const fontSizeToken = propertyRow.filter({
+          hasText: "Font size",
+        });
+        await expect(fontSizeToken).toBeVisible();
+        await expect(fontSizeToken).toContainText("medium");
+
+        const fontWeightToken = propertyRow.filter({
+          hasText: "Font weight",
+        });
+        await expect(fontWeightToken).toBeVisible();
+        await expect(fontWeightToken).toContainText("bold");
+
+        await expect(panel.getByRole("presentation")).toBeVisible();
       });
-      await expect(fontSizeToken).toBeVisible();
-      expect(fontSizeToken).toContainText("medium");
 
-      const fontWeightToken = propertyRow.filter({
-        hasText: "Font weight",
+      await test.step("Composite token", async () => {
+        await selectLayer(workspacePage, shapeToLayerName.text.compositeToken);
+
+        const panel = await getPanelByTitle(workspacePage, "Text");
+        await expectPanelRows(panel, 1);
+
+        const compositeTypographyRow = panel
+          .getByTestId("property-row")
+          .filter({ hasText: "Typography" });
+        await expect(compositeTypographyRow).toBeVisible();
+        await expect(compositeTypographyRow).toContainText("body");
+
+        await expect(panel.getByRole("presentation")).toBeVisible();
       });
-      await expect(fontWeightToken).toBeVisible();
-      expect(fontWeightToken).toContainText("bold");
-
-      const textPreview = panel.getByRole("presentation");
-      await expect(textPreview).toBeVisible();
-    });
-    test("Text - composite token", async ({ page }) => {
-      const workspacePage = new WasmWorkspacePage(page);
-      await setupFile(workspacePage);
-
-      await selectLayer(workspacePage, shapeToLayerName.text.compositeToken);
-      await openInspectTab(workspacePage);
-      const panel = await getPanelByTitle(workspacePage, "Text");
-      await expect(panel).toBeVisible();
-
-      const propertyRow = panel.getByTestId("property-row");
-      const propertyRowCount = await propertyRow.count();
-
-      expect(propertyRowCount).toBeGreaterThanOrEqual(1);
-
-      const compositeTypographyRow = propertyRow.filter({
-        hasText: "Typography",
-      });
-      await expect(compositeTypographyRow).toBeVisible();
-      expect(compositeTypographyRow).toContainText("body");
-
-      const textPreview = panel.getByRole("presentation");
-      await expect(textPreview).toBeVisible();
     });
   });
 
