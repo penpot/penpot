@@ -1014,9 +1014,12 @@
           (dwu/commit-undo-transaction undo-id)))))))
 
 (defn launch-component-sync
-  "Launch a sync of the current file and of the library file of the given component."
+  "Launch a sync of the current file and of the library file of the given
+  component, or set of components. `sync-attrs`, if given, narrows the
+  attrs the sync compares (see `cll/changed-sync-attrs`)."
   ([component-id file-id] (launch-component-sync component-id file-id nil))
-  ([component-id file-id undo-group]
+  ([component-id file-id undo-group] (launch-component-sync component-id file-id undo-group nil))
+  ([component-id file-id undo-group sync-attrs]
    (ptk/reify ::launch-component-sync
      ptk/WatchEvent
      (watch [_ state _]
@@ -1026,9 +1029,9 @@
              undo-group      (or undo-group (uuid/next))]
          (rx/of
           (dwu/start-undo-transaction undo-id)
-          (sync-file current-file-id file-id :components component-id undo-group)
+          (sync-file current-file-id file-id :components component-id undo-group sync-attrs)
           (when (not= current-file-id file-id)
-            (sync-file file-id file-id :components component-id undo-group))
+            (sync-file file-id file-id :components component-id undo-group sync-attrs))
           (dwu/commit-undo-transaction undo-id)))))))
 
 (defn update-component-thumbnail
@@ -1297,18 +1300,21 @@
 
   If it's known that only one asset has changed, you can give its
   type and id, and only shapes that use it will be synced, thus avoiding
-  a lot of unneeded checks."
+  a lot of unneeded checks. For components, the id can also be a set."
   ([file-id library-id]
    (sync-file file-id library-id nil nil))
   ([file-id library-id asset-type asset-id]
    (sync-file file-id library-id asset-type asset-id nil))
   ([file-id library-id asset-type asset-id undo-group]
+   (sync-file file-id library-id asset-type asset-id undo-group nil))
+  ([file-id library-id asset-type asset-id undo-group sync-attrs]
    (dm/assert! (uuid? file-id))
    (dm/assert! (uuid? library-id))
    (dm/assert! (or (nil? asset-type)
                    (contains? valid-asset-types asset-type)))
    (dm/assert! (or (nil? asset-id)
-                   (uuid? asset-id)))
+                   (uuid? asset-id)
+                   (and (= asset-type :components) (set? asset-id))))
    (let [;; The sync date this sync replaced, if it replaced one
          synced-at (volatile! ::unchanged)]
      (ptk/reify ::sync-file
@@ -1333,15 +1339,16 @@
                  libraries       (dsh/lookup-libraries state)
                  current-file-id (:current-file-id state)
 
-                 changes         (cll/generate-sync-file-changes
-                                  (pcb/empty-changes it)
-                                  undo-group
-                                  asset-type
-                                  file-id
-                                  asset-id
-                                  library-id
-                                  libraries
-                                  current-file-id)
+                 changes         (binding [cll/*sync-attrs* sync-attrs]
+                                   (cll/generate-sync-file-changes
+                                    (pcb/empty-changes it)
+                                    undo-group
+                                    asset-type
+                                    file-id
+                                    asset-id
+                                    library-id
+                                    libraries
+                                    current-file-id))
 
                  find-frames     (fn [change]
                                    (->> (ch/frames-changed ldata change)
@@ -1533,18 +1540,17 @@
                                     :ignore-save-lock true}))))))
 
 (defn component-changed
-  "Notify that the component with the given id has changed, so it needs to be updated
-   in the current file and in the copies. And also update its thumbnails."
-  [component-id file-id undo-group]
+  "Notify that the component with the given id has changed, so its thumbnails
+  are updated. The sync of its copies is launched apart, see
+  `watch-component-changes`."
+  [component-id file-id]
   (ptk/reify ::component-changed
     cljs.core/IDeref
     (-deref [_] [component-id file-id])
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/of
-       (touch-component component-id)
-       (launch-component-sync component-id file-id undo-group)))))
+      (rx/of (touch-component component-id)))))
 
 (defn watch-component-changes
   "Watch the state for changes that affect to any main instance. If a change is detected will call
@@ -1635,26 +1641,43 @@
                     (log/info :hint "detected component changes"
                               :ids (map str changed-components)
                               :undo-group undo-group)
-                    (map #(vector ::component-changed % (:id old-data) undo-group)
-                         changed-components))
+                    (let [sync-attrs (cll/changed-sync-attrs changes)]
+                      (map #(vector ::component-changed % (:id old-data) undo-group sync-attrs)
+                           changed-components)))
 
                   :else
                   ;; Undos only bump :modified-at.
                   (map #(vector ::touch-component %) changed-components))))
 
             ;; One event per distinct component change in the batch, each
-            ;; commit checked against the file data right before it
+            ;; commit checked against the file data right before it, and
+            ;; one sync per file and undo group for all its components
             get-component-events
             (fn [batch]
-              (->> batch
-                   (mapcat (fn [[[event _] old-data]]
-                             (get-component-changes old-data event)))
-                   (distinct)
-                   (map (fn [[type component-id file-id undo-group]]
-                          (if (= type ::component-changed)
-                            (component-changed component-id file-id undo-group)
-                            (touch-component component-id))))
-                   (rx/from)))
+              (let [entries (->> batch
+                                 (mapcat (fn [[[event _] old-data]]
+                                           (get-component-changes old-data event)))
+                                 (distinct))
+                    syncs   (->> entries
+                                 (filter #(= ::component-changed (first %)))
+                                 (group-by (fn [[_ _ file-id undo-group]] [file-id undo-group]))
+                                 (map (fn [[[file-id undo-group] entries]]
+                                        (let [sync-attrs (map #(nth % 4) entries)]
+                                          (launch-component-sync
+                                           (into #{} (map second) entries)
+                                           file-id
+                                           undo-group
+                                           (when (every? some? sync-attrs)
+                                             (filterv (into #{} cat sync-attrs)
+                                                      cll/updatable-attrs)))))))]
+                (rx/from
+                 (concat
+                  (map (fn [[type component-id file-id]]
+                         (if (= type ::component-changed)
+                           (component-changed component-id file-id)
+                           (touch-component component-id)))
+                       entries)
+                  syncs))))
 
             component-events-s
             (->> commit-batches-s

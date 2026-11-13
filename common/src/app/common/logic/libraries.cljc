@@ -58,6 +58,43 @@
        ;; We don't do automatic update of the `layout-grid-cells` property.
        (remove #(= :layout-grid-cells %))))
 
+(def ^:dynamic *sync-attrs*
+  "The attrs `update-attrs` compares, when bound. Nil compares every
+  updatable attr."
+  nil)
+
+;; Sync groups whose attrs are copied as they are: no geometry, text
+;; layout or structure depends on them.
+(def ^:private style-sync-groups
+  #{:fill-group :stroke-group :radius-group :shadow-group :blur-group
+    :layer-effects-group :name-group :visibility-group :modifiable-group
+    :exports-group})
+
+(defn- attr-sync-groups
+  [attr]
+  (let [group (get ctk/sync-attrs attr)]
+    (if (map? group) (set (vals group)) #{group})))
+
+(defn changed-sync-attrs
+  "The updatable attrs a sync caused by `changes` needs to compare, or
+  nil for all of them. Only changes that set attrs of style groups narrow
+  it; geometry, text, structure or link changes need the full sync."
+  [changes]
+  (let [operations (mapcat :operations changes)]
+    (when (and (every? #(= :mod-obj (:type %)) changes)
+               (every? #(= :set (:type %)) operations))
+      (let [attrs (into #{}
+                        (comp (map :attr)
+                              (filter ctk/component-attr?)
+                              ;; Synced apart, by every `update-attrs`
+                              (remove #{:applied-tokens}))
+                        operations)]
+        (when (every? #(contains? ctk/sync-attrs %) attrs)
+          (let [groups (into #{} (mapcat attr-sync-groups) attrs)]
+            (when (set/subset? groups style-sync-groups)
+              (filterv #(seq (set/intersection groups (attr-sync-groups %)))
+                       updatable-attrs))))))))
+
 ;; Attrs whose value drifts by float noise when a shape is moved; they
 ;; are compared with tolerance during sync. The rest compare exactly.
 (def ^:private drifting-geometry-attrs
@@ -537,7 +574,7 @@
    (generate-sync-file changes file-id asset-type asset-id library-id libraries current-file-id false))
   ([changes file-id asset-type asset-id library-id libraries current-file-id early-return?]
    (assert (contains? #{:colors :components :typographies} asset-type))
-   (assert (or (nil? asset-id) (uuid? asset-id)))
+   (assert (or (nil? asset-id) (uuid? asset-id) (set? asset-id)))
    (assert (uuid? file-id))
    (assert (uuid? library-id))
 
@@ -579,7 +616,7 @@
    (generate-sync-library changes file-id asset-type asset-id library-id libraries current-file-id false))
   ([changes file-id asset-type asset-id library-id libraries current-file-id early-return?]
    (assert (contains? #{:colors :components :typographies} asset-type))
-   (assert (or (nil? asset-id) (uuid? asset-id)))
+   (assert (or (nil? asset-id) (uuid? asset-id) (set? asset-id)))
    (assert (uuid? file-id))
    (assert (uuid? library-id))
 
@@ -651,8 +688,15 @@
 
 (defmethod uses-assets? :components
   [_ component-id shape library-id]
-  (if (nil? component-id)
+  (cond
+    (nil? component-id)
     (ctk/uses-library-components? shape library-id)
+
+    (set? component-id)
+    (and (ctk/uses-library-components? shape library-id)
+         (contains? component-id (:component-id shape)))
+
+    :else
     (ctk/instance-of? shape library-id component-id)))
 
 (defmethod uses-assets? :colors
@@ -2051,7 +2095,7 @@
         origin-shape (reposition-shape origin-shape origin-root dest-root)
         touched      (get dest-shape :touched #{})]
 
-    (loop [attrs updatable-attrs
+    (loop [attrs (or *sync-attrs* updatable-attrs)
            roperations []
            uoperations '()]
 

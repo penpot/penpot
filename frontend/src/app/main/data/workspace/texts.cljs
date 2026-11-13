@@ -733,61 +733,69 @@
   [content]
   (txt/transform-nodes (some-fn txt/is-text-node? txt/is-paragraph-node?) migrate-node content))
 
-(defn update-text-with-function
-  ([id update-node-fn] (update-text-with-function id update-node-fn nil))
-  ([id update-node-fn options]
+(defn update-texts-with-function
+  "Apply `update-node-fn` to the text nodes of the text shapes in `ids` (or
+  of the children of the groups in `ids`) in a single update."
+  ([ids update-node-fn] (update-texts-with-function ids update-node-fn nil))
+  ([ids update-node-fn options]
    (ptk/reify ::update-text-with-function
      ptk/UpdateEvent
      (update [_ state]
        ;; This is only called when `[:workspace-editor-state id]` is set, this property
        ;; keeps a Draft.js EditorState object.
-       (d/update-in-when state [:workspace-editor-state id] ted/update-editor-current-inline-styles-fn (comp update-node-fn migrate-node)))
+       (reduce (fn [state id]
+                 (d/update-in-when state [:workspace-editor-state id] ted/update-editor-current-inline-styles-fn (comp update-node-fn migrate-node)))
+               state
+               ids))
 
      ptk/WatchEvent
      (watch [_ state _]
-       (when (or
-              (and (features/active-feature? state "text-editor/v2")
-                   (nil? (:workspace-editor state)))
-              (and (not (features/active-feature? state "text-editor/v2"))
-                   (nil? (get-in state [:workspace-editor-state id]))))
-         (let [page-id      (or (get options :page-id)
-                                (get state :current-page-id))
-               objects      (dsh/lookup-page-objects state page-id)
-               shape        (get objects id)
-               update-node? (some-fn txt/is-text-node? txt/is-paragraph-node?)
+       (let [v2?      (features/active-feature? state "text-editor/v2")
+             free-ids (cond
+                        (not v2?)                    (remove #(some? (get-in state [:workspace-editor-state %])) ids)
+                        (nil? (:workspace-editor state)) ids)]
+         (when (seq free-ids)
+           (let [page-id      (or (get options :page-id)
+                                  (get state :current-page-id))
+                 objects      (dsh/lookup-page-objects state page-id)
+                 update-node? (some-fn txt/is-text-node? txt/is-paragraph-node?)
 
-               shape-ids
-               (cond
-                 (cfh/text-shape? shape)  [id]
-                 (cfh/group-shape? shape) (cfh/get-children-ids objects id))
+                 shape-ids
+                 (into []
+                       (mapcat (fn [id]
+                                 (let [shape (get objects id)]
+                                   (cond
+                                     (cfh/text-shape? shape)  [id]
+                                     (cfh/group-shape? shape) (cfh/get-children-ids objects id)))))
+                       free-ids)
 
-               update-content
-               (fn [content]
-                 (->> content
-                      (migrate-content)
-                      (txt/transform-nodes update-node? update-node-fn)))
+                 update-content
+                 (fn [content]
+                   (->> content
+                        (migrate-content)
+                        (txt/transform-nodes update-node? update-node-fn)))
 
-               update-shape
-               (fn [shape]
-                 (-> shape
-                     (dissoc :fills)
-                     (d/update-when :content update-content)))]
+                 update-shape
+                 (fn [shape]
+                   (-> shape
+                       (dissoc :fills)
+                       (d/update-when :content update-content)))]
 
-           (rx/concat (rx/of (dwsh/update-shapes shape-ids update-shape options))
-                      (when (features/active-feature? state "text-editor-wasm/v1")
-                        ;; Transform each span so add-fill preserves its existing fills.
-                        (let [result (wasm.api/apply-styles-to-selection
-                                      (comp update-node-fn migrate-node)
-                                      {:with-fills? true})]
-                          (when result
-                            (rx/of (v2-update-text-shape-content
-                                    (:shape-id result)
-                                    (:content result)
-                                    :update-name? true)
-                                   ;; Refresh the panel now, not only after a reselect.
-                                   (dwt-v3/v3-update-text-editor-styles
-                                    (:shape-id result)
-                                    {:fills (:fills result)})))))))))
+             (rx/concat (rx/of (dwsh/update-shapes shape-ids update-shape options))
+                        (when (features/active-feature? state "text-editor-wasm/v1")
+                          ;; Transform each span so add-fill preserves its existing fills.
+                          (let [result (wasm.api/apply-styles-to-selection
+                                        (comp update-node-fn migrate-node)
+                                        {:with-fills? true})]
+                            (when result
+                              (rx/of (v2-update-text-shape-content
+                                      (:shape-id result)
+                                      (:content result)
+                                      :update-name? true)
+                                     ;; Refresh the panel now, not only after a reselect.
+                                     (dwt-v3/v3-update-text-editor-styles
+                                      (:shape-id result)
+                                      {:fills (:fills result)}))))))))))
 
      ptk/EffectEvent
      (effect [_ state _]
@@ -798,6 +806,11 @@
                                   ((comp update-node-fn migrate-node))
                                   (styles/attrs->styles))]
              (editor.v2/applyStylesToSelection instance styles))))))))
+
+(defn update-text-with-function
+  ([id update-node-fn] (update-text-with-function id update-node-fn nil))
+  ([id update-node-fn options]
+   (update-texts-with-function [id] update-node-fn options)))
 
 ;; --- RESIZE UTILS
 

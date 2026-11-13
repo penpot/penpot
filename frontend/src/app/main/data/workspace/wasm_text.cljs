@@ -113,7 +113,7 @@
   (ptk/reify ::resize-wasm-text-debounce-commit
     ptk/WatchEvent
     (watch [_ state _]
-      (let [ids (get state ::resize-wasm-text-debounce-ids)
+      (let [ids (distinct (get state ::resize-wasm-text-debounce-ids))
             {:keys [undo-group undo-id skip-component-sync?]} (get state ::resize-wasm-text-debounce-opts)
             objects (dsh/lookup-page-objects state)
 
@@ -155,86 +155,90 @@
 ;; are processed at the same time and not one-by-one. This will improve
 ;; performance because it's better to make only one layout calculation instead
 ;; of (potentialy) hundreds.
-(defn resize-wasm-text-debounce-inner
-  ([id]
-   (resize-wasm-text-debounce-inner id nil))
-  ([id opts]
-   (let [cur-event   (js/Symbol)
-         reflow-task (wrf/task :text-resize [id])]
-     (ptk/reify ::resize-wasm-text-debounce-inner
-       ptk/UpdateEvent
-       (update [_ state]
-         (-> state
-             (update ::resize-wasm-text-debounce-ids (fnil conj []) id)
-             (update ::resize-wasm-text-reflow-tasks (fnil conj []) reflow-task)
-             (cond-> (seq opts)
-               (update ::resize-wasm-text-debounce-opts merge-resize-debounce-opts opts))
-             (cond-> (nil? (::resize-wasm-text-debounce-event state))
-               (assoc ::resize-wasm-text-debounce-event cur-event))))
+(defn- resize-wasm-text-debounce-inner
+  [ids opts]
+  (let [cur-event   (js/Symbol)
+        reflow-task (wrf/task :text-resize ids)]
+    (ptk/reify ::resize-wasm-text-debounce-inner
+      ptk/UpdateEvent
+      (update [_ state]
+        (-> state
+            (update ::resize-wasm-text-debounce-ids (fnil into []) ids)
+            (update ::resize-wasm-text-reflow-tasks (fnil conj []) reflow-task)
+            (cond-> (seq opts)
+              (update ::resize-wasm-text-debounce-opts merge-resize-debounce-opts opts))
+            (cond-> (nil? (::resize-wasm-text-debounce-event state))
+              (assoc ::resize-wasm-text-debounce-event cur-event))))
 
-       ptk/WatchEvent
-       (watch [_ state stream]
-         (wrf/start! reflow-task)
-         (if (= (::resize-wasm-text-debounce-event state) cur-event)
-           (let [stopper (->> stream (rx/filter (ptk/type? ::dw/finalize-workspace)))]
-             (rx/concat
-              (rx/merge
-               (->> stream
-                    (rx/filter (ptk/type? ::resize-wasm-text-debounce-inner))
-                    (rx/debounce debounce-resize-text-time)
-                    (rx/take 1)
-                    (rx/map (fn [_] (resize-wasm-text-debounce-commit)))
-                    (rx/take-until stopper))
-               (rx/of (resize-wasm-text-debounce-inner id opts)))
-              ;; Cleanup, reached both after the commit and when the stopper
-              ;; cancels the debounce, so the batch always drains and stays
-              ;; pending until the resize is applied. All exact tasks in the
-              ;; batch are retained in state and finished by the cleanup.
-              (rx/of (fn [state]
-                       (wrf/finish-tasks! (::resize-wasm-text-reflow-tasks state))
-                       (dissoc state
-                               ::resize-wasm-text-debounce-ids
-                               ::resize-wasm-text-reflow-tasks
-                               ::resize-wasm-text-debounce-opts
-                               ::resize-wasm-text-debounce-event)))))
-           (rx/empty)))))))
+      ptk/WatchEvent
+      (watch [_ state stream]
+        (wrf/start! reflow-task)
+        (if (= (::resize-wasm-text-debounce-event state) cur-event)
+          (let [stopper (->> stream (rx/filter (ptk/type? ::dw/finalize-workspace)))]
+            (rx/concat
+             (rx/merge
+              (->> stream
+                   (rx/filter (ptk/type? ::resize-wasm-text-debounce-inner))
+                   (rx/debounce debounce-resize-text-time)
+                   (rx/take 1)
+                   (rx/map (fn [_] (resize-wasm-text-debounce-commit)))
+                   (rx/take-until stopper))
+              (rx/of (resize-wasm-text-debounce-inner ids opts)))
+             ;; Cleanup, reached both after the commit and when the stopper
+             ;; cancels the debounce, so the batch always drains and stays
+             ;; pending until the resize is applied. All exact tasks in the
+             ;; batch are retained in state and finished by the cleanup.
+             (rx/of (fn [state]
+                      (wrf/finish-tasks! (::resize-wasm-text-reflow-tasks state))
+                      (dissoc state
+                              ::resize-wasm-text-debounce-ids
+                              ::resize-wasm-text-reflow-tasks
+                              ::resize-wasm-text-debounce-opts
+                              ::resize-wasm-text-debounce-event)))))
+          (rx/empty))))))
+
+(defn- fonts-ready?
+  [content]
+  (every? #(wasm.fonts/font-ready? (wasm.fonts/make-font-data %))
+          (wasm.fonts/get-content-fonts content)))
+
+(defn- resize-wasm-text-debounce*
+  "Queue the resize of the texts in `ids` that are in the current page, all
+  in one debounced batch. Texts whose fonts are not loaded yet are retried
+  after 20 msecs."
+  [ids {:keys [undo-group undo-id skip-component-sync?] :as opts}]
+  (ptk/reify ::resize-wasm-text-debounce
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [objects   (dsh/lookup-page-objects state (:current-page-id state))
+            ids       (into [] (comp (distinct) (filter #(contains? objects %))) ids)
+            {ready true waiting false}
+            (group-by #(fonts-ready? (dm/get-in objects [% :content])) ids)
+            pass-opts (when (or (some? undo-group) (some? undo-id) skip-component-sync?)
+                        (cond-> {}
+                          (some? undo-group) (assoc :undo-group undo-group)
+                          (some? undo-id) (assoc :undo-id undo-id)
+                          skip-component-sync? (assoc :skip-component-sync? true)))]
+
+        ;; Holds the shapes pending across the font-retry loop: the retried
+        ;; event opens its task before this one drains, so the task set never
+        ;; becomes empty in between.
+        (wrf/with-pending
+          :text-resize ids
+          (rx/merge
+           (if (seq ready)
+             (rx/of (resize-wasm-text-debounce-inner ready pass-opts))
+             (rx/empty))
+           (if (seq waiting)
+             (->> (rx/of (resize-wasm-text-debounce* waiting opts))
+                  (rx/delay 20))
+             (rx/empty))))))))
 
 (defn resize-wasm-text-debounce
   ([id]
    (resize-wasm-text-debounce id nil))
-  ([id {:keys [undo-group undo-id skip-component-sync?] :as opts}]
-   (ptk/reify ::resize-wasm-text-debounce
-     ptk/WatchEvent
-     (watch [_ state _]
-       (let [page-id (:current-page-id state)
-             objects (dsh/lookup-page-objects state page-id)
-             content (dm/get-in objects [id :content])
-             fonts   (wasm.fonts/get-content-fonts content)
-
-             fonts-ready?
-             (->> fonts
-                  (every?
-                   (fn [font]
-                     (let [font-data (wasm.fonts/make-font-data font)]
-                       (wasm.fonts/font-ready? font-data)))))
-
-             resize-wasm-stream
-             (if fonts-ready?
-               (let [pass-opts (when (or (some? undo-group) (some? undo-id) skip-component-sync?)
-                                 (cond-> {}
-                                   (some? undo-group) (assoc :undo-group undo-group)
-                                   (some? undo-id) (assoc :undo-id undo-id)
-                                   skip-component-sync? (assoc :skip-component-sync? true)))]
-                 (rx/of (resize-wasm-text-debounce-inner id pass-opts)))
-
-               ;; Fonts not loaded; retry after 20 msecs
-               (->> (rx/of (resize-wasm-text-debounce id opts))
-                    (rx/delay 20)))]
-
-         ;; Holds the shape pending across the font-retry loop: the retried
-         ;; event opens its task before this one drains, so the task set never
-         ;; becomes empty in between.
-         (wrf/with-pending :text-resize [id] resize-wasm-stream))))))
+  ([id opts]
+   (resize-wasm-text-debounce* [id] opts)))
 
 (defn resize-wasm-text-all
   "Resize all text shapes (auto-width/auto-height) from a collection of ids."
@@ -245,8 +249,7 @@
      ptk/WatchEvent
      (watch [_ state stream]
        (let [resize-stream
-             (->> (rx/from ids)
-                  (rx/map #(resize-wasm-text-debounce % opts)))
+             (rx/of (resize-wasm-text-debounce* ids opts))
 
              buffer-finished-stream
              (->> (rx/merge

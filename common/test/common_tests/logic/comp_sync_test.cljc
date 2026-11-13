@@ -1184,3 +1184,97 @@
       (t/is (= "Group / Subgroup" main-root-name))
       (t/is (= "Group / Subgroup" component-name))
       (t/is (nil? (cfv/validate-file file' {}))))))
+
+(defn- change-fills
+  [file label color]
+  (let [page  (thf/current-page file)
+        shape (ths/get-shape file label)]
+    (thf/apply-changes
+     file
+     (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                 #{(:id shape)}
+                                 #(assoc % :fills (ths/sample-fills-color :fill-color color))
+                                 (:objects page)
+                                 {}))))
+
+(defn- sync-components
+  [file component-ids]
+  (thf/apply-changes
+   file
+   (cll/generate-sync-file-changes (pcb/empty-changes)
+                                   nil
+                                   :components
+                                   (:id file)
+                                   component-ids
+                                   (:id file)
+                                   {(:id file) file}
+                                   (:id file))))
+
+(t/deftest test-sync-a-set-of-components
+  (let [;; ==== Setup
+        file  (-> (thf/sample-file :file1)
+                  (tho/add-simple-component-with-copy :component1 :main-root1 :main-child1 :copy-root1
+                                                      :copy-root-params {:children-labels [:copy-child1]})
+                  (tho/add-simple-component-with-copy :component2 :main-root2 :main-child2 :copy-root2
+                                                      :copy-root-params {:children-labels [:copy-child2]})
+                  (change-fills :main-child1 "#fabada")
+                  (change-fills :main-child2 "#bada55"))
+
+        ;; ==== Action
+        file' (sync-components file #{(thi/id :component1) (thi/id :component2)})]
+
+    ;; ==== Check
+    (t/is (= "#fabada" (-> (ths/get-shape file' :copy-child1) :fills first :fill-color)))
+    (t/is (= "#bada55" (-> (ths/get-shape file' :copy-child2) :fills first :fill-color)))))
+
+(t/deftest test-sync-a-set-skips-other-components
+  (let [;; ==== Setup
+        file  (-> (thf/sample-file :file1)
+                  (tho/add-simple-component-with-copy :component1 :main-root1 :main-child1 :copy-root1
+                                                      :copy-root-params {:children-labels [:copy-child1]})
+                  (tho/add-simple-component-with-copy :component2 :main-root2 :main-child2 :copy-root2
+                                                      :copy-root-params {:children-labels [:copy-child2]})
+                  (change-fills :main-child1 "#fabada")
+                  (change-fills :main-child2 "#bada55"))
+        color (-> (ths/get-shape file :copy-child2) :fills first :fill-color)
+
+        ;; ==== Action
+        file' (sync-components file #{(thi/id :component1)})]
+
+    ;; ==== Check
+    (t/is (= "#fabada" (-> (ths/get-shape file' :copy-child1) :fills first :fill-color)))
+    (t/is (= color (-> (ths/get-shape file' :copy-child2) :fills first :fill-color)))))
+
+(t/deftest test-changed-sync-attrs
+  (let [mod-obj (fn [& attrs]
+                  {:type :mod-obj
+                   :operations (mapv (fn [attr] {:type :set :attr attr}) attrs)})
+        fills   (cll/changed-sync-attrs [(mod-obj :fills :applied-tokens)])]
+    (t/is (some #{:fills} fills))
+    (t/is (not (some #{:width} fills)))
+    (t/is (not (some #{:strokes} fills)))
+    (t/is (some #{:strokes} (cll/changed-sync-attrs [(mod-obj :fills) (mod-obj :strokes)])))
+    (t/is (nil? (cll/changed-sync-attrs [(mod-obj :fills :width)])))
+    (t/is (nil? (cll/changed-sync-attrs [(mod-obj :fills :content)])))
+    (t/is (nil? (cll/changed-sync-attrs [(mod-obj :component-id)])))
+    (t/is (nil? (cll/changed-sync-attrs [(mod-obj :fills) {:type :add-obj}])))
+    (t/is (nil? (cll/changed-sync-attrs [{:type :mod-obj
+                                          :operations [{:type :set-touched :touched nil}]}])))))
+
+(t/deftest test-sync-narrowed-to-changed-attrs
+  (let [;; ==== Setup
+        file  (-> (thf/sample-file :file1)
+                  (tho/add-simple-component-with-copy :component1 :main-root :main-child :copy-root
+                                                      :copy-root-params {:children-labels [:copy-child]})
+                  (change-fills :main-child "#fabada")
+                  (ths/update-shape :main-child :name "Renamed"))
+
+        ;; ==== Action
+        file' (binding [cll/*sync-attrs* (cll/changed-sync-attrs
+                                          [{:type :mod-obj :operations [{:type :set :attr :fills}]}])]
+                (sync-components file (thi/id :component1)))
+        copy-child' (ths/get-shape file' :copy-child)]
+
+    ;; ==== Check
+    (t/is (= "#fabada" (-> copy-child' :fills first :fill-color)))
+    (t/is (not= "Renamed" (:name copy-child')))))

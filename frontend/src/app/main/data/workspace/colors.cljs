@@ -129,10 +129,8 @@
         [text-ids shape-ids]
         (split-text-shapes objects ids)]
 
-    (rx/concat
-     (->> (rx/from text-ids)
-          (rx/map #(dwt/update-text-with-function % transform options)))
-     (rx/of (dwsh/update-shapes shape-ids transform options)))))
+    (rx/of (dwt/update-texts-with-function text-ids transform options)
+           (dwsh/update-shapes shape-ids transform options))))
 
 (defn transform-fill
   "A low level function that creates a shape fill transformations stream"
@@ -185,9 +183,8 @@
             (fn [object]
               (update object :fills types.fills/update d/reorder from-pos to-space-between-pos))]
 
-        (rx/concat
-         (rx/from (map #(dwt/update-text-with-function % transform-attrs) text-ids))
-         (rx/of (dwsh/update-shapes shape-ids transform-attrs)))))))
+        (rx/of (dwt/update-texts-with-function text-ids transform-attrs)
+               (dwsh/update-shapes shape-ids transform-attrs))))))
 
 (defn change-fill
   ([ids color position]

@@ -100,6 +100,46 @@
        (ptk/emit! store (dwpg/finalize-page (:id file) (cthf/current-page-id file)))
        (await (async/settle))))))
 
+;; Scenario: one commit changes the fills of the mains of two components.
+;; Proves: both copies get the new fills through a single sync.
+(t/deftest ^:async mains-changed-together-sync-in-one-batch
+  (let [file  (-> (setup-file)
+                  (ctho/add-simple-component-with-copy :component2
+                                                       :main-root2
+                                                       :main-child2
+                                                       :copy-root2
+                                                       :copy-root-params {:children-labels [:copy-child2]}))
+        store (ths/setup-store file)
+        syncs (atom 0)
+        fill  (fn [label]
+                (-> (ths/get-file-from-state @store)
+                    (cths/get-shape label)
+                    :fills first :fill-color))]
+    (await
+     (mock/with-mocks*
+       {refs/workspace-data      (l/derived dsh/lookup-file-data store)
+        st/state                 store
+        dwt.wasm/render-thumbnail noop-render-thumbnail}
+
+       (let [sub (->> (ptk/input-stream store)
+                      (rx/filter (ptk/type? ::dwl/launch-component-sync))
+                      (rx/subs! (fn [_] (swap! syncs inc))))]
+         (ptk/emit! store (dwl/watch-component-changes))
+         (ptk/emit! store
+                    (dwsh/update-shapes [(cthi/id :main-child) (cthi/id :main-child2)]
+                                        #(assoc % :fills [{:fill-color "#ff0000"
+                                                           :fill-opacity 1}])))
+
+         (await (async/wait-for-store store
+                                      #(and (= "#ff0000" (fill :copy-child))
+                                            (= "#ff0000" (fill :copy-child2)))
+                                      "both copies to get the new fills"))
+         (t/is (= 1 @syncs) "one sync for both components")
+         (rx/dispose! sub))
+
+       (ptk/emit! store (dwpg/finalize-page (:id file) (cthf/current-page-id file)))
+       (await (async/settle))))))
+
 ;; Scenario: a rollback reverts the opacity of the main's child. A rollback
 ;; is not a commit, so the change watch sees no component change.
 ;; Proves: the component's thumbnail is rendered again and uploaded, so
