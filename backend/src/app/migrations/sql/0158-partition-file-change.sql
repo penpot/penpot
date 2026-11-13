@@ -22,6 +22,10 @@
 -- they are rewritten. That is why no constraint ties the two together: the
 -- day `kind` is the source of truth, the constraint would have to go.
 --
+-- It stays nullable on purpose: the previous version inserts without it,
+-- and a rollback to that version has to keep writing. The `NOT NULL` comes
+-- in a later migration, once the rollback window is closed.
+--
 -- The old table is kept aside as `file_change_legacy`: a frozen copy of the
 -- previous layout. It is dropped by hand, days later (or right here, when it
 -- is empty: on a new instance there is nothing to keep).
@@ -127,7 +131,10 @@ CREATE TABLE file_change (
   deleted_at    timestamptz,
   migrations    text[],
   locked_by     uuid,
-  kind          smallint NOT NULL,
+  -- Nullable on purpose: the previous version inserts without `kind`, and
+  -- a rollback to it has to keep writing. The `NOT NULL` comes in a later
+  -- migration, once the rollback window is closed.
+  kind          smallint,
   CONSTRAINT file_change_kind_check CHECK (kind IN (1, 2))
 ) PARTITION BY HASH (file_id);
 

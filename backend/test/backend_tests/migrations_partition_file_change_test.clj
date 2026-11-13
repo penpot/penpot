@@ -7,8 +7,8 @@
 (ns backend-tests.migrations-partition-file-change-test
   "Covers the data copy of 0158-partition-file-change: the rows of the old
   table move to the partitioned one with their columns in place, the `kind`
-  comes from the label (1 snapshot, 2 revision), and the legacy table keeps
-  the rows."
+  comes from the label (1 snapshot, 2 revision), it stays nullable so a
+  rollback keeps writing, and the legacy table keeps the rows."
 
   (:require
    [app.common.time :as ct]
@@ -188,7 +188,22 @@
                                                       AND attname IN ('data_ref_id', 'data_backend')"])
                                   (mapv :name)))))
 
+                  (t/testing "kind stays nullable so a rollback keeps writing"
+                    ;; The previous version inserts without `kind`: the column
+                    ;; must accept NULL, like the runbook's staging column.
+                    (t/is (false? (:notnull (db/exec-one! conn ["SELECT attnotnull AS notnull
+                                                                   FROM pg_attribute
+                                                                  WHERE attrelid = 'file_change'::regclass
+                                                                    AND attname = 'kind'"]))))
+                    (let [rb-id (uuid/next)]
+                      (db/insert! conn :file-change {:id rb-id :file-id fid :revn 99})
+                      (t/is (nil? (:kind (db/exec-one! conn ["SELECT kind
+                                                               FROM file_change
+                                                              WHERE file_id = ? AND id = ?"
+                                                             fid rb-id]))))))
+
                   (db/exec! conn [(str "DROP SCHEMA " schema " CASCADE")])))))
+
 
 (t/deftest drops-the-legacy-table-when-it-is-empty
   ;; On a new instance there is nothing to keep: the migration leaves no
