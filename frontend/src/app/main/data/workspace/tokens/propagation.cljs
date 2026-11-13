@@ -98,8 +98,11 @@
   (->> (map (fn [[value attrs]] [attrs {value #{object-id}}]) attrs-values-map)
        (into {})))
 
-(defn- collect-shapes-update-info [resolved-tokens objects]
-  (loop [items (seq objects)
+(defn- collect-shapes-update-info
+  "Collect the token updates of `shapes`, a seq of [id shape] entries of
+  `objects`."
+  [resolved-tokens objects shapes]
+  (loop [items (seq shapes)
          frame-ids #{}
          text-ids []
          tokens {}]
@@ -151,27 +154,49 @@
                       (pcb/with-page page)
                       (pcb/mod-page {:background color})))))))))
 
+(defn- scoped-shapes
+  "Entries of `objects` for the shapes in `root-ids` and all their descendants."
+  [objects root-ids]
+  (into []
+        (comp (mapcat #(cfh/get-children-ids-with-self objects %))
+              (distinct)
+              (keep (fn [id]
+                      (when-let [shape (get objects id)]
+                        [id shape]))))
+        root-ids))
+
 (defn propagate-tokens
   "Propagate tokens values to all shapes and page backgrounds where they
-  are applied"
-  [state resolved-tokens]
+  are applied. A non-nil `scope` of `:page-id` and `:root-ids` limits it
+  to those shapes and their descendants in that page."
+  [state resolved-tokens {scope-page-id :page-id root-ids :root-ids :as scope}]
   (let [file-id         (get state :current-file-id)
         current-page-id (get state :current-page-id)
         fdata           (dsh/lookup-file-data state file-id)
+        scoped?         (some? scope)
         tpoint          (ct/tpoint-ms)]
 
-    (l/inf :status "START" :hint "propagate-tokens")
-    (->> (rx/concat
-          (rx/of current-page-id)
-          (->> (rx/from (:pages fdata))
-               (rx/filter (fn [id] (not= id current-page-id)))))
+    (l/inf :status "START" :hint "propagate-tokens" :scoped scoped?)
+    (->> (if scoped?
+           (rx/of scope-page-id)
+           (rx/concat
+            (rx/of current-page-id)
+            (->> (rx/from (:pages fdata))
+                 (rx/filter (fn [id] (not= id current-page-id))))))
          (rx/mapcat
           (fn [page-id]
             (let [page
                   (dsh/get-page fdata page-id)
 
+                  objects
+                  (:objects page)
+
                   [attrs frame-ids text-ids]
-                  (collect-shapes-update-info resolved-tokens (:objects page))
+                  (collect-shapes-update-info resolved-tokens
+                                              objects
+                                              (if scoped?
+                                                (scoped-shapes objects root-ids)
+                                                objects))
 
                   actions
                   (actionize-shapes-update-info page-id attrs)
@@ -189,7 +214,7 @@
                (when (seq observable) (apply rx/merge observable))
                (when (seq normal) (rx/concat-all (rx/of normal)))
 
-               (when (:background-token page)
+               (when (and (not scoped?) (:background-token page))
                  (rx/of (update-canvas-background page-id resolved-tokens)))
 
                (->> (rx/from frame-ids)
@@ -208,32 +233,38 @@
               (l/inf :status "END" :hint "propagate-tokens" :elapsed elapsed)))))))
 
 (defn propagate-workspace-tokens
-  []
-  (ptk/reify ::propagate-workspace-tokens
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [tokens-lib    (dsh/lookup-tokens-lib state)
-            tokens-status (dsh/lookup-tokens-status state)]
-        (when (and tokens-lib tokens-status)
-          (when-let [tokens-tree (cfo/get-tokens-in-active-sets tokens-status tokens-lib)]
-            (->> (if (contains? cf/flags :tokenscript)
-                   (rx/of (-> (ts/resolve-tokens tokens-tree)
-                              (d/update-vals #(update % :resolved-value ts/tokenscript-symbols->penpot-unit))))
-                   (sd/resolve-tokens tokens-tree))
-                 (rx/mapcat
-                  (fn [sd-tokens]
-                    (let [undo-id (js/Symbol)]
-                      (rx/concat
-                       (rx/of (dwu/start-undo-transaction undo-id :timeout false))
+  "Apply the resolved values of the active tokens to the shapes that use
+  them. Without `scope` it covers every page of the file. A `scope` of
+  `:page-id` and `:root-ids` limits it to those shapes and their
+  descendants."
+  ([]
+   (propagate-workspace-tokens nil))
+  ([scope]
+   (ptk/reify ::propagate-workspace-tokens
+     ptk/WatchEvent
+     (watch [_ state _]
+       (let [tokens-lib    (dsh/lookup-tokens-lib state)
+             tokens-status (dsh/lookup-tokens-status state)]
+         (when (and tokens-lib tokens-status)
+           (when-let [tokens-tree (cfo/get-tokens-in-active-sets tokens-status tokens-lib)]
+             (->> (if (contains? cf/flags :tokenscript)
+                    (rx/of (-> (ts/resolve-tokens tokens-tree)
+                               (d/update-vals #(update % :resolved-value ts/tokenscript-symbols->penpot-unit))))
+                    (sd/resolve-tokens tokens-tree))
+                  (rx/mapcat
+                   (fn [sd-tokens]
+                     (let [undo-id (js/Symbol)]
+                       (rx/concat
+                        (rx/of (dwu/start-undo-transaction undo-id :timeout false))
 
-                       ;; FIXME: now the tokens propagations is done by accumulating the update-shapes
-                       ;; into a single commit-changes. This is not really the best way, the token application
-                       ;; should be done with a changes_builder and sending only one `commit-changes` instead
-                       ;; of creating lots of `update-shapes`.
-                       (rx/of (dwsh/update-shapes-buffer-start))
-                       (->> (propagate-tokens state sd-tokens)
-                            (rx/catch #(rx/concat
-                                        (rx/of (dwsh/update-shapes-buffer-stop))
-                                        (rx/throw %))))
-                       (rx/of (dwsh/update-shapes-buffer-stop))
-                       (rx/of (dwu/commit-undo-transaction undo-id)))))))))))))
+                        ;; FIXME: now the tokens propagations is done by accumulating the update-shapes
+                        ;; into a single commit-changes. This is not really the best way, the token application
+                        ;; should be done with a changes_builder and sending only one `commit-changes` instead
+                        ;; of creating lots of `update-shapes`.
+                        (rx/of (dwsh/update-shapes-buffer-start))
+                        (->> (propagate-tokens state sd-tokens scope)
+                             (rx/catch #(rx/concat
+                                         (rx/of (dwsh/update-shapes-buffer-stop))
+                                         (rx/throw %))))
+                        (rx/of (dwsh/update-shapes-buffer-stop))
+                        (rx/of (dwu/commit-undo-transaction undo-id))))))))))))))
