@@ -33,6 +33,63 @@ This repository thus contains not only the MCP server implementation itself
 but also the supporting Penpot MCP Plugin 
 (see section [Repository Structure](#repository-structure) below).
 
+## Browser-independent document reads
+
+`get_document` reads saved document structure through the Penpot backend. It
+needs no editor tab, plugin connection, or selected file. Existing plugin tools,
+including `execute_code` and image exports, still need their plugin connection.
+
+Set `PENPOT_MCP_BACKEND_URI` to the trusted Penpot instance base URI (not an API
+method URL). Both the backend and MCP server must include this feature. The tool
+is not registered when the URI is unset. Authenticate with the existing MCP OAuth
+flow, or use an MCP token in the MCP URL's `userToken` parameter. Personal access
+tokens and browser sessions do not authorize this endpoint. The backend must
+have `enable-mcp` or `enable-access-tokens` enabled.
+
+Use `resource` to select a read, then carry the returned IDs forward:
+
+| Resource | Required arguments | Result |
+| --- | --- | --- |
+| `teams` | none | Accessible teams |
+| `projects` | `id`: team ID | Live projects in the team |
+| `files` | `id`: project ID | Live files, with revision/version numbers |
+| `pages` | `id`: file ID | Page IDs and names in document order |
+| `shapes` | `id`: file ID, `pageId`: page ID | Shape IDs, names, types, parent/frame IDs and bounds |
+
+Responses are JSON with `items` and `nextOffset` (`null` when complete). `limit`
+defaults to 100 and must be between 1 and 100. Pass `nextOffset` as `offset` to
+continue. Pages and shapes also return `fileId` and `snapshot`: pass the same
+snapshot on subsequent reads of that file, including page-to-shape traversal.
+A nonzero offset requires a snapshot for these two resources. If the file changes,
+the backend returns HTTP 409; discard earlier results and restart without the old
+snapshot. Each request reads one database snapshot. Discovery lists use ascending
+team creation time or descending project/file modification time, with ascending
+UUID strings to break ties. They are not frozen
+across requests and can change while a client walks them.
+
+The backend enforces permissions on every call and hides missing and inaccessible
+objects behind the same not-found response. Blocked and inactive profiles cannot
+read. With admin-console organization SSO enabled, each scoped team is checked
+using the existing SSO authorization contract. MCP tokens have no SSO session, so
+SSO-protected resources are denied (HTTP 401), not silently bypassed. Team discovery
+fails as a whole if any listed team requires SSO; it does not return a partial list.
+Browser SSO cookies and cached browser authorizations do not authorize these reads.
+Reads do not persist file migrations. Names and geometry are summaries, not
+a full Plugin API object model: text content, styles, assets, sibling ordering and
+unsaved editor changes are outside this first version. No tool runs JavaScript on
+the backend or changes designs.
+
+The MCP client limits backend responses to 2 MB and uses a 10-second timeout,
+without automatic retries or redirects. The backend returns at most 100 summaries,
+but valid page/shape reads still load the saved file to resolve its data and
+migrations; this is not a streaming file reader. Missing/stale continuation
+snapshots and SSO denials are rejected before that hydration. Discovery still
+loads and sorts the complete accessible list, and team discovery checks SSO for
+every listed team before pagination. Smaller limits bound the response, not this
+work. Existing backend concurrency limits apply when enabled; this tool has no
+dedicated large-document limiter. Use smaller limits if a response exceeds the
+byte budget.
+
 ## Demonstration
 
 [![Video](https://v32155.1blu.de/penpot/PenpotFest2025_thumbnail.png)](https://v32155.1blu.de/penpot/PenpotFest2025.mp4)
@@ -51,7 +108,7 @@ but also the supporting Penpot MCP Plugin
 > should be considered instead. 
 > Please refer to the [MCP usage instructions in the help center](https://help.penpot.app/mcp/).
 
-To run the Penpot MCP server locally, you must
+To use the plugin-backed tools locally, you must
  * run the MCP server and connect your AI client to it,
  * run the web server providing the Penpot MCP plugin, and
  * open the Penpot MCP plugin in Penpot and connect it to the MCP server. 
@@ -302,12 +359,14 @@ The Penpot MCP server can be configured using environment variables.
 | `PENPOT_MCP_EXPORT_SHAPE_MAX_PARALLEL_REQUESTS`  | Maximum number of parallel export shape requests (multi-user mode only).                                                                                                                                                                                                    | `0` (no limit) |
 | `PENPOT_MCP_AUTH_URI` | Public base URL of the MCP authorization service, e.g. `https://penpot.example/api/mcp/oauth`. Set to enable OAuth; requires `--multi-user`. Use HTTPS (HTTP is allowed on loopback for development), without credentials, query parameters, or a fragment. | (unset; OAuth disabled) |
 | `PENPOT_MCP_REDIS_URI`                           | Redis connection URI (e.g. `redis://host:6379`) enabling multi-instance horizontal scaling via Redis pub/sub task routing (multi-user mode only). When unset, the server runs in single-instance mode, requiring the plugin and MCP client to connect to the same instance. | (unset)        |
-| `PENPOT_MCP_BACKEND_URI` | Penpot instance base URI. Setting a nonblank value enables tools that communicate with the Penpot backend (currently only the `submit_feedback` tool). The MCP server appends suffixes such as `api/main/methods/send-mcp-feedback`. Backend interactions require MCP user tokens to be provided.  | (unset) |
+| `PENPOT_MCP_BACKEND_URI` | Penpot instance base URI. Setting a nonblank value enables tools that communicate with the Penpot backend (`submit_feedback` and `get_document`). The MCP server appends suffixes such as `api/main/methods/send-mcp-feedback`. Backend interactions require MCP user tokens to be provided.  | (unset) |
 
 ### Backend Configuration
 
-If `PENPOT_MCP_BACKEND_URI` is set, the backend must itself be configured correspondingly, i.e. set
-the following variables for the backend process:
+Backend tools require `enable-mcp` or `enable-access-tokens` on the backend.
+`get_document` also requires a backend version that includes the document RPC; it
+does not need an email inbox or SMTP. Only `submit_feedback` needs the following
+backend setting and the existing SMTP configuration:
 
 | Environment Variable | Description | Default |
 |----------------------|-------------|---------|

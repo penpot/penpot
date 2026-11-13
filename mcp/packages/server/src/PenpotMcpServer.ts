@@ -10,6 +10,7 @@ import { RedisBridge } from "./RedisBridge";
 import { ConfigurationLoader } from "./ConfigurationLoader";
 import { PenpotBackendClient } from "./PenpotBackendClient";
 import { SubmitFeedbackTool } from "./tools/SubmitFeedbackTool";
+import { GetDocumentTool } from "./tools/GetDocumentTool";
 import { createLogger } from "./logger";
 import { Tool } from "./Tool";
 import { HighLevelOverviewTool } from "./tools/HighLevelOverviewTool";
@@ -277,7 +278,8 @@ export class PenpotMcpServer {
         }
         const backendUri = process.env.PENPOT_MCP_BACKEND_URI?.trim();
         if (backendUri) {
-            toolInstances.push(new SubmitFeedbackTool(this, new PenpotBackendClient(backendUri)));
+            const backend = new PenpotBackendClient(backendUri);
+            toolInstances.push(new SubmitFeedbackTool(this, backend), new GetDocumentTool(this, backend));
         }
         if (shouldRegisterDeveloperTools(this.isDevEnv(), this.isMultiUserMode())) {
             const nreplClient = new NreplClient();
