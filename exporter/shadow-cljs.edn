@@ -24,7 +24,8 @@
     :output-wrapper false}
 
    :release
-   {:compiler-options
+   {:closure-defines {app.common.data.macros/lazy-delay? true}
+    :compiler-options
     {:fn-invoke-direct true
      :source-map true
      :optimizations #shadow/env ["PENPOT_BUILD_OPTIMIZATIONS" :as :keyword :default :simple]

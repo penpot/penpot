@@ -16,6 +16,7 @@
    [common-tests.attrs-test]
    [common-tests.buffer-test]
    [common-tests.colors-test]
+   [common-tests.data-macros-test]
    [common-tests.data-test]
    [common-tests.exceptions-test]
    [common-tests.files-builder-test]
@@ -132,6 +133,7 @@
    'common-tests.attrs-test
    'common-tests.buffer-test
    'common-tests.colors-test
+   'common-tests.data-macros-test
    'common-tests.data-test
    'common-tests.exceptions-test
    'common-tests.files-builder-test

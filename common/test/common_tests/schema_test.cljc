@@ -7,6 +7,7 @@
 (ns common-tests.schema-test
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]
    [app.common.uuid :as uuid]
@@ -283,3 +284,43 @@
 
     (t/testing "generate"
       (t/is (true? (sm/validate ::sm/user-provided-uuid (sg/generate ::sm/user-provided-uuid)))))))
+
+(defn- catch-error
+  [f]
+  (try
+    (f)
+    nil
+    (catch #?(:clj Throwable :cljs :default) cause
+      cause)))
+
+(defn- lazy-resolution?
+  "Mirrors the build mode check performed by `app.common.data.macros/lazy-delay`."
+  []
+  #?(:clj  false
+     :cljs dm/lazy-delay?))
+
+(t/deftest test-check-fn
+  (t/testing "returns the value when it is valid"
+    (let [check (sm/check-fn ::sm/uuid)]
+      (t/is (= uuid/zero (check uuid/zero)))))
+
+  (t/testing "raises with the explain data when the value is invalid"
+    (let [check (sm/check-fn ::sm/uuid :hint "invalid uuid"
+                             :type :custom :code :custom-code)
+          cause (catch-error #(check "not-a-uuid"))
+          data  (ex-data cause)]
+      (t/is (some? cause))
+      (t/is (= "invalid uuid" (ex-message cause)))
+      (t/is (= :custom (:type data)))
+      (t/is (= :custom-code (:code data)))
+      (t/is (= "invalid uuid" (:hint data)))
+      (t/is (map? (::sm/explain data)))))
+
+  (t/testing "resolves the schema definition according to the build mode"
+    ;; A schema that does not exist raises only when it is resolved, so this
+    ;; checks when the resolution happens: on `check-fn` on non production
+    ;; builds, on the first call of the returned function on production ones.
+    (let [check (catch-error #(sm/check-fn ::unknown-schema))]
+      (if (lazy-resolution?)
+        (t/is (some? (catch-error #(check ::anything))))
+        (t/is (some? check))))))

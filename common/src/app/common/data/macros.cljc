@@ -123,6 +123,27 @@
     (list 'js* (c/str "(~{}?." (str/snake prop) "?? ~{})") obj (list 'cljs.core/get obj prop))
     (list `c/get obj prop)))
 
+#?(:cljs (goog-define lazy-delay? false))
+
+(defmacro lazy-delay
+  "Like `delay`, but only lazy when the build asks for it.
+
+  With the default value of `lazy-delay?` the expression is evaluated
+  immediately, so errors raised while computing it (an invalid schema
+  definition, for instance) surface when the namespace is loaded instead of
+  on the first deref. Production builds set `lazy-delay?` to `true` through
+  `:closure-defines`; then the expression is fully deferred and the compiler
+  drops the eager branch. On the JVM the expression is always evaluated
+  immediately."
+  [expr]
+  (if (:ns &env)
+    `(if lazy-delay?
+       (delay ~expr)
+       (let [value# ~expr]
+         (delay value#)))
+    `(let [value# ~expr]
+       (delay value#))))
+
 (defn runtime-assert
   [hint f]
   (try
