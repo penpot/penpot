@@ -1030,8 +1030,12 @@
                     :resize (ctm/change-size shape nil (:value op))
                     :rotate (n/geometry-modifiers shape :rotate (:angle op))
                     (:transform :library-transform) (n/geometry-modifiers shape (:action op) (:value op)))
-        tree (gm/set-objects-modifiers {(:id shape) {:modifiers modifiers}} objects)]
-    (gsh/transform-shape shape (get-in tree [(:id shape) :modifiers]))))
+        parent (get objects (:parent-id shape))
+        ;; the mask of a group passes its change to the group and back, so
+        ;; the tree would apply it twice; only its group places it
+        mask? (and (:masked-group parent) (= (:id shape) (first (:shapes parent))))
+        tree (when-not mask? (gm/set-objects-modifiers {(:id shape) {:modifiers modifiers}} objects))]
+    (gsh/transform-shape shape (if mask? modifiers (get-in tree [(:id shape) :modifiers])))))
 
 (defn- kind-file
   "The file an operation edits: the library `library-id`, or the current one."

@@ -194,7 +194,11 @@
 
          (and (map? expected) (map? actual) (= (set (keys expected)) (set (keys actual))))
          (every? (fn [key]
-                   (same-state? (cond-> (get expected key)
+                   (or
+                    ;; a bool computes its segments from its children, in an order
+                    ;; that depends on how it computed them; its children are compared
+                    (and (= :content key) (= :bool (:type expected)) (contains? expected :parent-id))
+                    (same-state? (cond-> (get expected key)
                                   (and (= :points key) (= :bool (:type expected)) (contains? expected :parent-id))
                                   corner-order)
                                 (cond-> (get actual key)
@@ -210,7 +214,7 @@
                                          (or (contains? #{:x :y :width :height :rotation :points
                                                           :selrect :transform :transform-inverse} key)
                                              ;; the segments of a bool or path are its geometry
-                                             (and (= :content key) (#{:bool :path} (:type expected))))))))
+                                             (and (= :content key) (#{:bool :path} (:type expected)))))))))
                  (keys expected))
 
          (and (sequential? expected) (sequential? actual) (= (count expected) (count actual)))

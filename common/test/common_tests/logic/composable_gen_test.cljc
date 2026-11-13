@@ -2530,6 +2530,11 @@
                        :ops [[:remove-child 9] [:add-child 7] [:delete 7] [:add-child] [:undo]
                              [:structure 10 1] [:transform 10 5 0 2]]}))))
 
+(t/deftest undoing-an-update-main-compares-a-bool-by-its-children-not-its-segments
+  (t/is (map? (cg/run {:world [1 1 {:variants false :rich-variants false :text false :layout nil
+                                    :layout-copies false :layout-children false}]
+                       :ops [[:transform 0 5 0 3] [:structure 0 5] [:update-main]]}))))
+
 (t/deftest settling-a-bool-in-a-grid-copy-twice-keeps-its-shapes-in-place
   (t/is (map? (cg/run {:world [3 0 {:variants true :rich-variants true :text true :layout :grid
                                     :layout-copies true :layout-children true}]
