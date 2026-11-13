@@ -130,3 +130,67 @@
         copy-child' (ths/get-shape file' :copy-child)]
     (t/is (= #{:content-group :text-content-structure} (:touched copy-child')))))
 
+(t/deftest test-text-copy-width-marks-geometry-without-ignore-touched
+  (let [;; ==== Setup
+        file       (-> (thf/sample-file :file1)
+                       (tho/add-frame-with-text :main-root :main-child "hello world")
+                       (thc/make-component :component1 :main-root)
+                       (thc/instantiate-component :component1 :copy-root {:children-labels [:copy-child]}))
+        page       (thf/current-page file)
+        copy-child (ths/get-shape file :copy-child)
+
+        ;; ==== Action — documents set-shape-attr: :width marks :geometry-group
+        changes     (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                                #{(:id copy-child)}
+                                                (fn [shape]
+                                                  (assoc shape :width (+ (:width shape) 40)))
+                                                (:objects page)
+                                                {})
+
+        file'       (thf/apply-changes file changes)
+        copy-child' (ths/get-shape file' :copy-child)]
+    (t/is (contains? (:touched copy-child') :geometry-group))))
+
+(t/deftest test-text-copy-width-with-ignore-touched-skips-geometry
+  (let [;; ==== Setup
+        file       (-> (thf/sample-file :file1)
+                       (tho/add-frame-with-text :main-root :main-child "hello world")
+                       (thc/make-component :component1 :main-root)
+                       (thc/instantiate-component :component1 :copy-root {:children-labels [:copy-child]}))
+        page       (thf/current-page file)
+        copy-child (ths/get-shape file :copy-child)
+
+        ;; ==== Action — contract for content-driven auto-resize commits
+        changes     (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                                #{(:id copy-child)}
+                                                (fn [shape]
+                                                  (assoc shape :width (+ (:width shape) 40)))
+                                                (:objects page)
+                                                {:ignore-touched true})
+
+        file'       (thf/apply-changes file changes)
+        copy-child' (ths/get-shape file' :copy-child)]
+    (t/is (not (contains? (:touched copy-child') :geometry-group)))))
+
+(t/deftest test-text-copy-auto-height-height-with-ignore-touched-skips-geometry
+  (let [;; ==== Setup
+        file       (-> (thf/sample-file :file1)
+                       (tho/add-frame-with-text :main-root :main-child "hello world"
+                                                :child-params {:grow-type :auto-height})
+                       (thc/make-component :component1 :main-root)
+                       (thc/instantiate-component :component1 :copy-root {:children-labels [:copy-child]}))
+        page       (thf/current-page file)
+        copy-child (ths/get-shape file :copy-child)
+
+        changes     (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                                #{(:id copy-child)}
+                                                (fn [shape]
+                                                  (assoc shape :height (+ (:height shape) 20)))
+                                                (:objects page)
+                                                {:ignore-touched true})
+
+        file'       (thf/apply-changes file changes)
+        copy-child' (ths/get-shape file' :copy-child)]
+    (t/is (= :auto-height (:grow-type copy-child')))
+    (t/is (not (contains? (:touched copy-child') :geometry-group)))))
+

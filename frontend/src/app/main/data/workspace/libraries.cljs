@@ -1229,6 +1229,22 @@
          (remove uuid/zero?))
         (:redo-changes changes)))
 
+(defn- sync-auto-grow-text-ids-on-page
+  "Auto-grow text ids from sync redo-changes on `page-id`, resolved against
+  pre-commit `objects`. Off-page, non-text, and :fixed ids are excluded."
+  [changes page-id objects]
+  (into []
+        (comp
+         (filter #(= page-id (:page-id %)))
+         (keep :id)
+         (remove uuid/zero?)
+         (filter (fn [id]
+                   (when-let [shape (get objects id)]
+                     (and (cfh/text-shape? shape)
+                          (not= :fixed (:grow-type shape))))))
+         (distinct))
+        (:redo-changes changes)))
+
 (defn set-updating-library
   [updating?]
   (ptk/reify ::set-updating-library
@@ -1239,30 +1255,55 @@
         (dissoc state :updating-library)))))
 
 (defn- sync-file-frontend-events
-  [file-id changes updated-frames undo-group]
-  (rx/concat
-   (rx/of (set-updating-library false)
-          (ntf/hide {:tag :sync-dialog}))
-   (when (seq (:redo-changes changes))
-     (rx/of (dch/commit-changes changes)))
-   (when-not (empty? updated-frames)
-     (let [frames-by-page (group-by :page-id updated-frames)]
-       (rx/merge
-        ;; Emit one layout/update event for each page.
-        (->> frames-by-page
-             (map (fn [[page-id frames]]
+  "Commit sync changes, schedule current-page auto-grow text remasure, then
+  layout. Remasure heals box size only; it does not clear a stale
+  :geometry-group flag. Keep per-page updated-frames layout and
+  thumbnail clears."
+  [file-id changes updated-frames undo-group current-page-id objects wasm?]
+  (let [remasure-ids (when (and wasm? (some? current-page-id))
+                       (sync-auto-grow-text-ids-on-page changes current-page-id objects))
+        frames-by-page (group-by :page-id updated-frames)
+        ;; Remasure-only layout when the current page has texts to heal but
+        ;; no synced frames entry (covers empty updated-frames too).
+        remasure-only-layout? (and (seq remasure-ids)
+                                   (nil? (get frames-by-page current-page-id)))]
+    (rx/concat
+     (rx/of (set-updating-library false)
+            (ntf/hide {:tag :sync-dialog}))
+     (when (seq (:redo-changes changes))
+       (rx/of (dch/commit-changes changes)))
+     ;; Schedule remasure before layout (swap pattern: debounce ~40ms vs
+     ;; layout buffer ~100ms).
+     (when (seq remasure-ids)
+       (rx/of (dwwt/resize-wasm-text-all remasure-ids
+                                         {:skip-component-sync? true
+                                          :undo-group undo-group})))
+     (rx/merge
+      ;; Per-page layout for synced frames; merge remasure ids into the
+      ;; current page so hug sees the post-remasure box.
+      (->> frames-by-page
+           (map (fn [[page-id frames]]
+                  (let [ids (cond-> (mapv :id frames)
+                              (and (= page-id current-page-id)
+                                   (seq remasure-ids))
+                              (into remasure-ids))]
                     (ptk/data-event :layout/update
                                     {:page-id page-id
-                                     :ids (map :id frames)
-                                     :undo-group undo-group})))
-             (rx/from))
-        (->> (rx/from updated-frames)
-             (rx/mapcat
-              (fn [shape]
-                (rx/of
-                 (dwt/clear-thumbnail file-id (:page-id shape) (:id shape) "frame")
-                 (when-not (= (:frame-id shape) uuid/zero)
-                   (dwt/clear-thumbnail file-id (:page-id shape) (:frame-id shape) "frame")))))))))))
+                                     :ids ids
+                                     :undo-group undo-group}))))
+           (rx/from))
+      (when remasure-only-layout?
+        (rx/of (ptk/data-event :layout/update
+                               {:page-id current-page-id
+                                :ids remasure-ids
+                                :undo-group undo-group})))
+      (->> (rx/from updated-frames)
+           (rx/mapcat
+            (fn [shape]
+              (rx/of
+               (dwt/clear-thumbnail file-id (:page-id shape) (:id shape) "frame")
+               (when-not (= (:frame-id shape) uuid/zero)
+                 (dwt/clear-thumbnail file-id (:page-id shape) (:frame-id shape) "frame"))))))))))
 
 (defn- mark-library-synced
   "Tells the backend that `file-id` is synced with `library-id`. Only the
@@ -1353,9 +1394,17 @@
 
                  pending-ids     (sync-file-pending-ids file-id changes)
 
+                 current-page-id (:current-page-id state)
+
                  frontend-sync
                  (sync-file-frontend-events
-                  file-id changes updated-frames undo-group)]
+                  file-id
+                  changes
+                  updated-frames
+                  undo-group
+                  current-page-id
+                  (dsh/lookup-page-objects state file-id current-page-id)
+                  (features/active-feature? state "render-wasm/v1"))]
 
              (log/debug :msg "SYNC-FILE finished" :js/rchanges (log-changes
                                                                 (:redo-changes changes)
