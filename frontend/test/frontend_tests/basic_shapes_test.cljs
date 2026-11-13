@@ -71,11 +71,66 @@
                stroke' (first (:strokes shape1'))]
 
            ;; ==== Check
-           ;; (println stroke')
            (t/is (some? shape1'))
-           (t/is (= (:stroke-alignment stroke') :inner))
+           ;; Old shapes without stroke-alignment are rendered as if it is
+           ;; centered (Taiga #7673); an unrelated color change must not
+           ;; switch the effective alignment to the new-stroke default.
+           (t/is (= (:stroke-alignment stroke') :center))
            (t/is (= (:stroke-color stroke') "#FABADA"))
            (t/is (= (:stroke-width stroke') 2))))))))
+
+(t/deftest test-update-stroke-attrs-preserves-missing-alignment
+  ;; Existing strokes without :stroke-alignment keep effective :center
+  ;; on the change-stroke-attrs path; explicit alignments are untouched.
+  (t/async
+    done
+    (let [store (ths/setup-store
+                 (-> (cthf/sample-file :file1 :page-label :page1)
+                     (cths/add-sample-shape :shape1 :strokes [{:stroke-color "#000000"
+                                                               :stroke-opacity 1
+                                                               :stroke-width 2}])
+                     (cths/add-sample-shape :shape2 :strokes [{:stroke-color "#000000"
+                                                               :stroke-opacity 1
+                                                               :stroke-width 2
+                                                               :stroke-alignment :inner}])
+                     (cths/add-sample-shape :shape3 :strokes [{:stroke-color "#000000"
+                                                               :stroke-opacity 1
+                                                               :stroke-width 2
+                                                               :stroke-alignment :outer}])))
+          events [(dc/change-stroke-attrs #{(cthi/id :shape1)} {:stroke-width 4} 0)
+                  (dc/change-stroke-attrs #{(cthi/id :shape2)} {:stroke-width 4} 0)
+                  (dc/change-stroke-attrs #{(cthi/id :shape3)} {:stroke-width 4} 0)]]
+      (ths/run-store
+       store done events
+       (fn [new-state]
+         (let [objects  (dsh/lookup-page-objects new-state)
+               stroke1' (first (:strokes (get objects (cthi/id :shape1))))
+               stroke2' (first (:strokes (get objects (cthi/id :shape2))))
+               stroke3' (first (:strokes (get objects (cthi/id :shape3))))]
+           (t/is (= (:stroke-alignment stroke1') :center))
+           (t/is (= (:stroke-width stroke1') 4))
+           (t/is (= (:stroke-alignment stroke2') :inner))
+           (t/is (= (:stroke-alignment stroke3') :outer))))))))
+
+(t/deftest test-new-stroke-keeps-inner-default
+  ;; A shape with no strokes at all still gets the current new-stroke
+  ;; default (:inner); the fix must not revert the new-stroke default
+  ;; to :center.
+  (t/async
+    done
+    (let [store (ths/setup-store
+                 (-> (cthf/sample-file :file1 :page-label :page1)
+                     (cths/add-sample-shape :shape1 :strokes [])))
+          events [(dc/change-stroke-color #{(cthi/id :shape1)} {:color "#FABADA"} 0)]]
+      (ths/run-store
+       store done events
+       (fn [new-state]
+         (let [objects (dsh/lookup-page-objects new-state)
+               shape1' (get objects (cthi/id :shape1))
+               stroke' (first (:strokes shape1'))]
+           (t/is (some? shape1'))
+           (t/is (= (:stroke-alignment stroke') :inner))
+           (t/is (= (:stroke-color stroke') "#FABADA"))))))))
 (t/deftest test-update-stroke-color-preserves-dash-gap
   ;; Custom dash/gap on a dashed stroke describe stroke geometry, not color;
   ;; a stroke color change must preserve them (issue #11549).

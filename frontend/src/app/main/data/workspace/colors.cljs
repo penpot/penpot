@@ -347,8 +347,13 @@
 ;; FIXME: this function initializes an empty stroke, maybe we can move
 ;; it to common.types
 (defn- build-stroke-style-attrs
+  "Completes the stroke style attributes, preserving the effective
+  `:center` alignment of existing strokes that have no explicit
+  `:stroke-alignment` (e.g. strokes imported from SVG). Genuinely new
+  strokes (nil) keep the current `:inner` default."
   [stroke]
-  (let [attrs (select-keys stroke stroke-style-attrs)]
+  (let [existing-stroke? (some? stroke)
+        attrs            (select-keys stroke stroke-style-attrs)]
     (cond-> attrs
       (not (contains? attrs :stroke-width))
       (assoc :stroke-width 1)
@@ -357,7 +362,7 @@
       (assoc :stroke-style :solid)
 
       (not (contains? attrs :stroke-alignment))
-      (assoc :stroke-alignment :inner)
+      (assoc :stroke-alignment (if existing-stroke? :center :inner))
 
       :always
       (d/without-nils))))
