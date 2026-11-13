@@ -28,6 +28,18 @@
     type
     "professional"))
 
+(defn get-team-plan-type
+  [team]
+  (if (some? (dm/get-in team [:organization :id]))
+    "enterprise"
+    (get-subscription-type (:subscription team))))
+
+(defn show-team-plan?
+  [is-owner team]
+  (not (and is-owner
+            (nil? (dm/get-in team [:organization :id]))
+            (= "enterprise" (get-subscription-type (:subscription team))))))
+
 (mf/defc cta-power-up*
   [{:keys [top-title top-description bottom-description bottom-button bottom-button-href has-dropdown is-highlighted]}]
   (let [show-data* (mf/use-state false)
@@ -118,8 +130,46 @@
           :has-dropdown false
           :is-highlighted false}]))))
 
+(mf/defc nitrate-enterprise-banner*
+  [{:keys [on-click button-label]}]
+  (let [collapsed* (mf/use-state false)
+        collapsed? (deref collapsed*)
+        toggle-collapse
+        (mf/use-fn #(swap! collapsed* not))]
+
+    [:div {:class (stl/css-case :nitrate-banner true
+                                :nitrate-enterprise-banner true
+                                :collapsed collapsed?)}
+     [:button {:class (stl/css :nitrate-enterprise-toggle)
+               :type "button"
+               :aria-controls "nitrate-enterprise-content"
+               :aria-expanded (not collapsed?)
+               :on-click toggle-collapse}
+      [:> icon* {:icon-id i/pencil
+                 :size "m"
+                 :class (stl/css :nitrate-enterprise-pencil)
+                 :aria-hidden true}]
+      [:span {:class (stl/css :nitrate-enterprise-title)}
+       (tr "subscription.dashboard.banner.unlock-enterprise")]
+      [:> icon* {:icon-id i/arrow-down
+                 :size "m"
+                 :class (stl/css :nitrate-enterprise-chevron)
+                 :aria-hidden true}]]
+     [:div {:id "nitrate-enterprise-content"
+            :class (stl/css :nitrate-enterprise-panel)
+            :aria-hidden collapsed?}
+      [:div {:class (stl/css :nitrate-enterprise-panel-inner)}
+       [:span {:class (stl/css :nitrate-enterprise-description)}
+        (tr "subscription.dashboard.banner.unlock-features-description")]
+       [:> button* {:variant "primary"
+                    :type "button"
+                    :class (stl/css :nitrate-bottom-button)
+                    :on-click on-click
+                    :disabled collapsed?}
+        button-label]]]]))
+
 (mf/defc nitrate-sidebar*
-  [{:keys [profile teams]}]
+  [{:keys [profile teams team]}]
   (let [nitrate?              (dnt/is-valid-license? profile)
         nitrate-license       (:subscription profile)
         manual-license?       (:manual nitrate-license)
@@ -150,6 +200,12 @@
 
         subscription-type
         (if nitrate? (:type nitrate-license) (get-subscription-type (-> profile :props :subscription)))
+
+        show-unlock-features?
+        (and (contains? cf/flags :admin-console)
+             (not nitrate?)
+             (contains? #{"professional" "unlimited"} subscription-type)
+             (nil? (dm/get-in team [:organization :id])))
 
         team-count (count teams)
 
@@ -210,19 +266,13 @@
                       :class (stl/css :nitrate-bottom-button)
                       :on-click handle-go-to-cc} (tr "nitrate.activation-success.create-organization")]]]
 
-       ;; Banner for users without nitrate license
-       (when (not nitrate?)
-         [:div {:class (stl/css :nitrate-banner :highlighted)}
-          [:div {:class (stl/css :nitrate-content)}
-           [:span {:class (stl/css :nitrate-title)} (tr "subscription.dashboard.banner.unlock-features")]]
-          [:div {:class (stl/css :nitrate-content)}
-           [:span {:class (stl/css :nitrate-info)} (tr "subscription.dashboard.banner.unlock-features-description-text")]
-           [:> button* {:variant "primary"
-                        :type "button"
-                        :class (stl/css :nitrate-bottom-button)
-                        :on-click handle-click} (if (:subscription profile)
-                                                  (tr "subscription.dashboard.banner.upgrade-nitrate")
-                                                  (tr "nitrate.form.try-free"))]]]))
+       ;; Banner for Professional/Unlimited users outside an organization
+       (when show-unlock-features?
+         [:> nitrate-enterprise-banner*
+          {:on-click handle-click
+           :button-label (if (:subscription profile)
+                           (tr "subscription.dashboard.banner.upgrade-nitrate")
+                           (tr "nitrate.form.try-free"))}]))
 
      ;; Banner for users with nitrate license almost expired or expired
      (when show-subscription-warning?
@@ -272,6 +322,7 @@
   [{:keys [is-owner team]}]
   (let [subscription          (:subscription team)
         subscription-type     (get-subscription-type subscription)
+        team-plan-type        (get-team-plan-type team)
         subscription-is-trial (= "trialing" (:status subscription))
 
         go-to-manage-subscription
@@ -286,22 +337,23 @@
                  href (str "payments/subscriptions/show?returnUrl=" href)]
              (st/emit! (rt/nav-raw :href href)))))]
 
-    [:div {:class (stl/css :team)}
-     [:div {:class (stl/css :team-label)}
-      (tr "subscription.dashboard.team-plan")]
-     [:span {:class (stl/css :team-text)}
-      (case subscription-type
-        "professional" (tr "subscription.settings.professional")
-        "unlimited" (if subscription-is-trial
-                      (tr "subscription.settings.unlimited-trial")
-                      (tr "subscription.settings.unlimited"))
+    (when (show-team-plan? is-owner team)
+      [:div {:class (stl/css :team)}
+       [:div {:class (stl/css :team-label)}
+        (tr "subscription.dashboard.team-plan")]
+       [:span {:class (stl/css :team-text)}
+        (case team-plan-type
+          "professional" (tr "subscription.settings.professional")
+          "unlimited" (if subscription-is-trial
+                        (tr "subscription.settings.unlimited-trial")
+                        (tr "subscription.settings.unlimited"))
 
-        "enterprise" (tr "subscription.settings.enterprise"))]
-     (when (and is-owner (not= subscription-type "professional"))
-       [:button {:class (stl/css :manage-subscription-link)
-                 :on-click go-to-manage-subscription
-                 :data-testid "manage-subscription-link"}
-        (tr "subscription.settings.manage-your-subscription")])]))
+          "enterprise" (tr "subscription.settings.enterprise"))]
+       (when (and is-owner (not= subscription-type "professional"))
+         [:button {:class (stl/css :manage-subscription-link)
+                   :on-click go-to-manage-subscription
+                   :data-testid "manage-subscription-link"}
+          (tr "subscription.settings.manage-your-subscription")])])))
 
 (mf/defc menu-team-icon*
   [{:keys [subscription-type]}]

@@ -482,9 +482,11 @@
         (bfm/apply-pending-migrations! cfg)
 
         ;; Knowing that the ids of the created files are in index,
-        ;; just lookup them and return them in the same shape as v3.
+        ;; just lookup them and return them in the same shape as v3. The
+        ;; metadata of an old package may repeat a file id, so the answer
+        ;; carries one id per imported file.
         (let [files (-> bfc/*state* deref :files)]
-          {:file-ids (into [] (keep #(get-in @bfc/*state* [:index %])) files)})))))
+          {:file-ids (into [] (comp (keep #(get-in @bfc/*state* [:index %])) (distinct)) files)})))))
 
 (defmethod read-import :v1
   [options]
@@ -510,89 +512,114 @@
 
 (defmethod read-section :v1/files
   [{:keys [::bfc/input ::bfc/project-id ::bfc/name] :as system}]
-  (doseq [[idx expected-file-id] (d/enumerate (-> bfc/*state* deref :files))]
-    (let [file       (read-obj! input)
-          media      (read-obj! input)
+  (let [imported (volatile! #{})]
+    (doseq [[idx expected-file-id] (d/enumerate (-> bfc/*state* deref :files))]
+      (let [file    (read-obj! input)
+            media   (read-obj! input)
+            file-id (:id file)]
 
-          file-id    (:id file)
-          file-id'   (bfc/lookup-index file-id)
+        (when (not= file-id expected-file-id)
+          (ex/raise :type :validation
+                    :code :inconsistent-penpot-file
+                    :found-id file-id
+                    :expected-id expected-file-id
+                    :hint "the penpot file seems corrupt, found unexpected uuid (file-id)"))
 
-          file       (bfc/clean-file-features file)
-          thumbnails (:thumbnails file)]
+        (if (contains? @imported file-id)
+          ;; Old exports could repeat a file id in the metadata (the file was
+          ;; also one of its own libraries). The entry is read above to keep
+          ;; the stream in sync, but the file is imported only once.
+          (l/warn :hint "ignoring repeated file entry"
+                  :file-id (str file-id)
+                  ::l/sync? true)
 
-      (when (not= file-id expected-file-id)
-        (ex/raise :type :validation
-                  :code :inconsistent-penpot-file
-                  :found-id file-id
-                  :expected-id expected-file-id
-                  :hint "the penpot file seems corrupt, found unexpected uuid (file-id)"))
+          (let [file-id'   (bfc/lookup-index file-id)
+                file       (bfc/clean-file-features file)
+                thumbnails (:thumbnails file)]
 
-      (l/dbg :hint "processing file"
-             :id (str file-id)
-             :features (:features file)
-             :version (-> file :data :version)
-             :media (count media)
-             :thumbnails (count thumbnails)
-             ::l/sync? true)
+            (vswap! imported conj file-id)
 
-      (when (seq thumbnails)
-        (let [thumbnails (remap-thumbnails thumbnails file-id')]
-          (l/dbg :hint "updated index with thumbnails"
-                 :total (count thumbnails)
-                 ::l/sync? true)
-          (vswap! bfc/*state* update :thumbnails bfc/into-vec thumbnails)))
+            (l/dbg :hint "processing file"
+                   :id (str file-id)
+                   :features (:features file)
+                   :version (-> file :data :version)
+                   :media (count media)
+                   :thumbnails (count thumbnails)
+                   ::l/sync? true)
 
-      (when (seq media)
-        ;; Update index with media
-        (l/dbg :hint "update index with media" :total (count media) ::l/sync? true)
-        (vswap! bfc/*state* update :index bfc/update-index (map :id media))
+            (when (seq thumbnails)
+              (let [thumbnails (remap-thumbnails thumbnails file-id')]
+                (l/dbg :hint "updated index with thumbnails"
+                       :total (count thumbnails)
+                       ::l/sync? true)
+                (vswap! bfc/*state* update :thumbnails bfc/into-vec thumbnails)))
 
-        ;; Store file media for later insertion
-        (l/dbg :hint "update media references" ::l/sync? true)
-        (vswap! bfc/*state* update :media into (map #(update % :id bfc/lookup-index)) media))
+            (when (seq media)
+              ;; Update index with media
+              (l/dbg :hint "update index with media" :total (count media) ::l/sync? true)
+              (vswap! bfc/*state* update :index bfc/update-index (map :id media))
 
-      (let [file (-> file
-                     (assoc :id file-id')
-                     (cond-> (and (= idx 0) (some? name))
-                       (assoc :name name))
-                     (assoc :project-id project-id)
-                     (dissoc :thumbnails))
-            file  (bfc/process-file system file)]
+              ;; Store file media for later insertion
+              (l/dbg :hint "update media references" ::l/sync? true)
+              (vswap! bfc/*state* update :media into (map #(update % :id bfc/lookup-index)) media))
 
-        ;; All features that are enabled and requires explicit migration are
-        ;; added to the state for a posterior migration step.
-        (doseq [feature (-> (::bfc/features system)
-                            (set/difference cfeat/no-migration-features)
-                            (set/difference (:features file)))]
-          (vswap! bfc/*state* update :pending-to-migrate (fnil conj []) [feature file-id']))
+            (let [file (-> file
+                           (assoc :id file-id')
+                           (cond-> (and (= idx 0) (some? name))
+                             (assoc :name name))
+                           (assoc :project-id project-id)
+                           (dissoc :thumbnails))
+                  file (bfc/process-file system file)]
 
-        (l/dbg :hint "create file" :id (str file-id') ::l/sync? true)
-        (bfc/save-file! system file ::db/return-keys false)
+              ;; All features that are enabled and requires explicit migration
+              ;; are added to the state for a posterior migration step.
+              (doseq [feature (-> (::bfc/features system)
+                                  (set/difference cfeat/no-migration-features)
+                                  (set/difference (:features file)))]
+                (vswap! bfc/*state* update :pending-to-migrate (fnil conj []) [feature file-id']))
 
-        file-id'))))
+              (l/dbg :hint "create file" :id (str file-id') ::l/sync? true)
+              (bfc/save-file! system file ::db/return-keys false)
+
+              file-id')))))))
 
 (defmethod read-section :v1/rels
-  [{:keys [::db/conn ::bfc/input ::bfc/timestamp]}]
-  (let [rels (read-obj! input)
+  [{:keys [::db/conn ::bfc/input ::bfc/timestamp] :as cfg}]
+  (let [rels (->> (read-obj! input)
+                  (sort-by (fn [{:keys [file-id library-file-id]}]
+                             [(str file-id) (str library-file-id)])))
         ids  (into #{} (-> bfc/*state* deref :files))]
-    ;; Insert all file relations
     (doseq [{:keys [library-file-id] :as rel} rels]
       (let [rel (-> rel
                     (update :file-id bfc/lookup-index)
                     (update :library-file-id bfc/lookup-index))]
 
         (if (contains? ids library-file-id)
-          (do
-            (l/dbg :hint "create file library link"
-                   :file-id (:file-id rel)
-                   :lib-id (:library-file-id rel)
-                   ::l/sync? true)
-            (let [rel-params (dissoc rel :synced-at)]
-              (db/insert! conn :file-library-rel rel-params)
-              (bfc/upsert-file-library-sync! conn {:file-id (:file-id rel-params)
-                                                   :library-file-id (:library-file-id rel-params)
-                                                   :synced-at (or (:synced-at rel)
-                                                                  timestamp)})))
+          (case (bfc/library-link-status cfg (:file-id rel) (:library-file-id rel))
+            :self-link
+            (l/warn :hint "ignoring self-referencing library link"
+                    :file-id (:file-id rel)
+                    :lib-id (:library-file-id rel)
+                    ::l/sync? true)
+
+            :circular
+            (l/warn :hint "ignoring circular library link"
+                    :file-id (:file-id rel)
+                    :lib-id (:library-file-id rel)
+                    ::l/sync? true)
+
+            :ok
+            (do
+              (l/dbg :hint "create file library link"
+                     :file-id (:file-id rel)
+                     :lib-id (:library-file-id rel)
+                     ::l/sync? true)
+              (let [rel-params (dissoc rel :synced-at)]
+                (db/insert! conn :file-library-rel rel-params)
+                (bfc/upsert-file-library-sync! conn {:file-id (:file-id rel-params)
+                                                     :library-file-id (:library-file-id rel-params)
+                                                     :synced-at (or (:synced-at rel)
+                                                                    timestamp)}))))
 
           (l/warn :hint "ignoring file library link"
                   :file-id (:file-id rel)

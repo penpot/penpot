@@ -203,6 +203,46 @@
            (await (async/settle))
            (t/is (empty? @events))))))))
 
+(t/deftest ^:async main-instance-of-a-deleted-component-is-null
+  (let [file  (file-with-deleted-component)
+        store (ths/setup-store file {:renderer :svg})]
+    (await
+     (mock/with-mocks*
+       {st/state                  store
+        shape/lib-component-proxy library/lib-component-proxy}
+       (let [copy      (shape/shape-proxy plugin-id (:id file) (thi/id :main-page) (thi/id :copy))
+             component (.component copy)]
+         (t/is (some? component))
+         (t/is (nil? (.mainInstance component))))))))
+
+(t/deftest ^:async component-root-of-a-copy-on-another-page-than-its-main
+  (let [file  (-> (cthf/sample-file :file :page-label :main-page)
+                  (cths/add-sample-shape :main :type :frame)
+                  (cths/add-sample-shape :child :parent-label :main)
+                  (cthc/make-component :component :main)
+                  (cthf/add-sample-page :other-page)
+                  (cthc/instantiate-component :component :copy :children-labels [:copy-child]))
+        store (ths/setup-store file {:renderer :svg})]
+    (await
+     (mock/with-mocks*
+       {st/state store}
+       (let [copy-child (shape/shape-proxy plugin-id (:id file) (thi/id :other-page) (thi/id :copy-child))
+             root       (.componentRoot copy-child)]
+         (t/is (= (str (thi/id :copy)) (.-id root)))
+         (t/is (= (str (thi/id :copy)) (.-id (.componentHead copy-child)))))))))
+
+(t/deftest ^:async component-of-a-copy-whose-library-is-missing-is-null
+  (let [file  (-> (file-with-component)
+                  (cths/update-shape :copy :component-file (uuid/next)))
+        store (ths/setup-store file {:renderer :svg})]
+    (await
+     (mock/with-mocks*
+       {st/state                  store
+        shape/lib-component-proxy library/lib-component-proxy}
+       (let [copy (shape/shape-proxy plugin-id (:id file) (thi/id :main-page) (thi/id :copy))]
+         (t/is (nil? (.component copy)))
+         (t/is (= (str (thi/id :copy)) (.-id (.componentRoot copy)))))))))
+
 (t/deftest library-asset-proxies-expose-library-id
   (let [file-id (random-uuid)
         id      (random-uuid)]

@@ -81,7 +81,7 @@ python3 scripts/gh.py prs --milestone "2.16.0" --state all
 
 Fetch issue details by number in batches of 50 (same input styles as `prs`: numbers, `--file`, `--stdin`). No filters. A dead number fails its whole batch (unlike PRs, issues error instead of resolving to null), so the batch falls back to one-by-one lookups and reports misses as `{"number", "error": "not_found"}`. Any other failure aborts.
 
-**Output**: JSON array to stdout; progress to stderr.
+**Output**: JSON array to stdout; progress to stderr. Each issue carries the shared issue fields plus `body` and `parent` (`number`, `issue_type`, `milestone`, or null); `changelog.py dev-only-bugs` reads both.
 
 ### `comments`
 

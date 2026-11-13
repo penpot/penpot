@@ -39,6 +39,7 @@
   `[.data[\"pages-index\"][] | {id, name}]`, etc."
   (:require
    [app.binfile.common :as bfc]
+   [app.common.exceptions :as ex]
    [app.common.json :as json]
    [app.db :as db]
    [app.features.file-snapshots :as fsnap]
@@ -183,16 +184,23 @@
 (defn get-snapshot-json
   "Return a snapshot as JSON (realized). For nREPL.
 
-  Takes the same `format` and `output` as `get-file-json`."
+  Takes the same `format` and `output` as `get-file-json`. It raises when the
+  file has no snapshot with that id."
   [system file-id snapshot-id & {:keys [format output] :or {format :full}}]
   (let [snapshot (db/run! system
                           (fn [cfg]
                             (fsnap/get-snapshot cfg file-id snapshot-id)))
-        data   (case format
-                 :full    snapshot
-                 :data    (:data snapshot)
-                 :summary (summarize-data (:data snapshot))
-                 :pages   (:pages (summarize-data (:data snapshot))))]
+        data     (if snapshot
+                   (case format
+                     :full    snapshot
+                     :data    (:data snapshot)
+                     :summary (summarize-data (:data snapshot))
+                     :pages   (:pages (summarize-data (:data snapshot))))
+                   (ex/raise :type :not-found
+                             :code :snapshot-not-found
+                             :hint "unable to find snapshot with the provided id"
+                             :snapshot-id snapshot-id
+                             :file-id file-id))]
     (write-output (data->json data) output)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

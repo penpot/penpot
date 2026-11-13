@@ -5,7 +5,12 @@ import type { AbstractPluginTask } from "../PluginTask";
 import { RemotePluginTask } from "../RemotePluginTask";
 import type { RedisBridge, SessionClaim, SessionDiscoveryResponse } from "../RedisBridge";
 import { createLogger } from "../logger";
-import { SessionDiscoveryError, TaskDispatcher, type TaskDispatchHost } from "./TaskDispatcher";
+import {
+    InvalidDiscoveryResponseError,
+    SessionDiscoveryError,
+    TaskDispatcher,
+    type TaskDispatchHost,
+} from "./TaskDispatcher";
 
 /** Routes tasks over Redis and discovers live sessions across MCP instances. */
 export class MultiInstanceTaskDispatcher extends TaskDispatcher {
@@ -44,10 +49,10 @@ export class MultiInstanceTaskDispatcher extends TaskDispatcher {
             resolve = res;
             reject = rej;
         });
-        const fail = () => {
+        const fail = (error: SessionDiscoveryError) => {
             if (!settled) {
                 settled = true;
-                reject(new SessionDiscoveryError());
+                reject(error);
             }
         };
         const complete = () => {
@@ -56,8 +61,18 @@ export class MultiInstanceTaskDispatcher extends TaskDispatcher {
                 resolve(this.uniqueSessions([...responses.values()].flat()));
             }
         };
-        const timeout = setTimeout(fail, this.discoveryTimeoutMs);
-        this.pendingDiscoveries.set(requestId, fail);
+        const timeout = setTimeout(
+            () =>
+                fail(
+                    new SessionDiscoveryError(
+                        `not every MCP server instance replied within ${this.discoveryTimeoutMs}ms`
+                    )
+                ),
+            this.discoveryTimeoutMs
+        );
+        this.pendingDiscoveries.set(requestId, () =>
+            fail(new SessionDiscoveryError("the MCP server is shutting down", "You can retry the request."))
+        );
         const releaseResponses = () => {
             void this.redisBridge
                 .unsubscribeFromDiscoveryResponses(requestId)
@@ -65,18 +80,29 @@ export class MultiInstanceTaskDispatcher extends TaskDispatcher {
         };
         // Replies can arrive before publish returns its recipient count.
         void this.redisBridge
-            .sendDiscoveryRequest(token, requestId, (response: SessionDiscoveryResponse) => {
-                if (settled) return;
-                responses.set(response.instanceId, response.sessions);
-                complete();
-            })
+            .sendDiscoveryRequest(
+                token,
+                requestId,
+                (response: SessionDiscoveryResponse) => {
+                    if (settled) return;
+                    responses.set(response.instanceId, response.sessions);
+                    complete();
+                },
+                (error) => fail(new InvalidDiscoveryResponseError(error))
+            )
             .then((count) => {
                 expectedResponses = count;
                 complete();
                 // A slow subscribe/publish may finish after the discovery timeout.
                 if (settled) releaseResponses();
             })
-            .catch(fail);
+            .catch((error) =>
+                fail(
+                    new SessionDiscoveryError(
+                        `the Redis request failed (${error instanceof Error ? error.message : error})`
+                    )
+                )
+            );
         try {
             return await result;
         } finally {

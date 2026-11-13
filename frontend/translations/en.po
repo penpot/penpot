@@ -376,6 +376,10 @@ msgstr "Create new organization"
 msgid "dashboard.create-new-team"
 msgstr "Create new team"
 
+#: src/app/main/ui/dashboard/team_form.cljs:122
+msgid "dashboard.create-team-in-organization"
+msgstr "Create new team in %s"
+
 #: src/app/main/ui/workspace/main_menu.cljs:712
 msgid "dashboard.create-version-menu"
 msgstr "Pin this version"
@@ -5806,14 +5810,12 @@ msgid "subscription.dashboard.banner.subscription-expired"
 msgstr "Your Enterprise subscription has expired. (%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:217
-msgid "subscription.dashboard.banner.unlock-features"
-msgstr "Unlock Enterprise features"
+msgid "subscription.dashboard.banner.unlock-enterprise"
+msgstr "Unlock Enterprise"
 
 #: src/app/main/ui/dashboard/subscription.cljs:219
-msgid "subscription.dashboard.banner.unlock-features-description-text"
-msgstr ""
-"Set fine-grained permissions and stay in control, without compromising the "
-"open-source freedom your team loves."
+msgid "subscription.dashboard.banner.unlock-features-description"
+msgstr "For organizations that need advanced governance, centralized administration, and secure collaboration."
 
 #: src/app/main/ui/dashboard/subscription.cljs:224
 msgid "subscription.dashboard.banner.upgrade-nitrate"
@@ -8563,6 +8565,10 @@ msgstr "Discover [more plugins](%s)"
 #: src/app/main/ui/workspace/plugins.cljs:251
 msgid "workspace.plugins.empty-plugins"
 msgstr "No plugins installed yet"
+
+#: src/app/main/data/plugins.cljs, src/app/main/ui/dashboard.cljs, src/app/main/ui/workspace/plugins.cljs
+msgid "workspace.plugins.error.global-not-allowed"
+msgstr "Plugins that work outside a file can only be installed from localhost for now."
 
 #: src/app/main/ui/workspace/plugins.cljs:237
 msgid "workspace.plugins.error.manifest"

@@ -2749,6 +2749,43 @@
       (let [edata (-> out :error ex-data)]
         (t/is (= :circular-library-reference (:code edata)))))))
 
+(t/deftest link-file-to-library-self-reference
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)})]
+    (let [out (th/command! {::th/type :link-file-to-library
+                            ::rpc/profile-id (:id profile)
+                            :file-id (:id file)
+                            :library-id (:id file)})]
+      (t/is (th/ex-info? (:error out)))
+      (t/is (th/ex-of-type? (:error out) :validation))
+      (t/is (= :invalid-library (:code (ex-data (:error out))))))))
+
+(t/deftest permissions-check-precedes-circular-library-check
+  ;; A caller without edition permission must get `:not-found`, not the
+  ;; circular error: the permission checks run before the cycle check, so
+  ;; the dependency structure of files the caller cannot read never leaks.
+  (let [profile1 (th/create-profile* 1)
+        profile2 (th/create-profile* 2)
+        file1    (th/create-file* 1 {:profile-id (:id profile1)
+                                     :project-id (:default-project-id profile1)
+                                     :is-shared true})
+        file2    (th/create-file* 2 {:profile-id (:id profile1)
+                                     :project-id (:default-project-id profile1)
+                                     :is-shared true})
+        file3    (th/create-file* 3 {:profile-id (:id profile1)
+                                     :project-id (:default-project-id profile1)
+                                     :is-shared true})]
+    ;; file3 -> file2 -> file1 makes linking file1 -> file3 circular
+    (th/link-file-to-library* {:file-id (:id file3) :library-id (:id file2)})
+    (th/link-file-to-library* {:file-id (:id file2) :library-id (:id file1)})
+    (let [out (th/command! {::th/type :link-file-to-library
+                            ::rpc/profile-id (:id profile2)
+                            :file-id (:id file1)
+                            :library-id (:id file3)})]
+      (t/is (th/ex-info? (:error out)))
+      (t/is (th/ex-of-type? (:error out) :not-found)))))
+
 (t/deftest get-file-etag-includes-deleted-at
   (let [profile-id (uuid/random)
         file1      {:modified-at (ct/now)

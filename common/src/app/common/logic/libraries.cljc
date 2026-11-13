@@ -58,6 +58,44 @@
        ;; We don't do automatic update of the `layout-grid-cells` property.
        (remove #(= :layout-grid-cells %))))
 
+;; Attrs whose value drifts by float noise when a shape is moved; they
+;; are compared with tolerance during sync. The rest compare exactly.
+(def ^:private drifting-geometry-attrs
+  #{:x :y :width :height :selrect :points})
+
+(defn- position-data-close?
+  "Compares text position-data entry by entry: numbers with tolerance,
+  every other field (fills, fonts, text) exactly."
+  [a b]
+  (let [a (vec a)
+        b (vec b)]
+    (and (= (count a) (count b))
+         (every? true? (map mth/close-map? a b)))))
+
+(defn- attr-equal?
+  [attr origin-shape dest-shape]
+  (let [origin-val (get origin-shape attr)
+        dest-val   (get dest-shape attr)]
+    (or (= origin-val dest-val)
+        (cond
+          ;; close-attrs? zips :points and would ignore a length mismatch
+          (= :points attr)
+          (and (= (count origin-val) (count dest-val))
+               (gsh/close-attrs? attr origin-val dest-val))
+
+          (contains? drifting-geometry-attrs attr)
+          (gsh/close-attrs? attr origin-val dest-val)
+
+          (and (= :content attr)
+               (or (cfh/path-shape? origin-shape) (cfh/bool-shape? origin-shape)))
+          (segment/content-close? origin-val dest-val)
+
+          (= :position-data attr)
+          (position-data-close? origin-val dest-val)
+
+          :else
+          false))))
+
 ;; Flex-child layout attrs synced between main and copy (interactions are only kept on swap)
 (def ^:private flex-child-attrs
   (disj ctk/swap-keep-attrs :interactions))
@@ -1993,7 +2031,7 @@
                 reset-pos-data?
                 (and (cfh/text-shape? origin-shape)
                      (= attr :position-data)
-                     (not= (:position-data origin-shape) (:position-data dest-shape))
+                     (not (attr-equal? :position-data origin-shape dest-shape))
                      (touched :geometry-group))
 
                 ;; On texts, when we want to omit the touched attrs, both text (the actual letters)
@@ -2007,7 +2045,7 @@
                      (touched sync-group))
 
                 skip-operations?
-                (or (= (get origin-shape attr) (get dest-shape attr))
+                (or (attr-equal? attr origin-shape dest-shape)
                     (and (touched sync-group)
                          omit-touched?
                          ;; When it is a text-partial-change, we should generate operations
@@ -2728,7 +2766,8 @@
                                            page-id
                                            nil
                                            variant-id
-                                           props))]
+                                           props
+                                           {:apply-changes-local-library? true}))]
     [root-shape changes]))
 
 (defn generate-add-component
@@ -3165,6 +3204,7 @@
            is-component-main?     (ctk/main-instance? obj)
            subinstance-head?      (ctk/subinstance-head? obj)
            instance-root?         (ctk/instance-root? obj)
+           parent-not-in-copy     (not (ctk/in-component-copy? parent))
 
            into-component?        (and duplicating-component?
                                        (ctn/in-any-component? objects parent))
@@ -3173,6 +3213,8 @@
                                     level-delta
                                     (ctn/get-nesting-level-delta objects obj parent))
            new-shape-ref          (ctf/advance-shape-ref nil page libraries obj level-delta {:include-deleted? true})
+
+
 
            regenerate-component
            (fn [changes shape]
@@ -3188,7 +3230,8 @@
 
                (cond-> (and (not instance-root?)
                             subinstance-head?
-                            remove-swap-slot?)
+                            remove-swap-slot?
+                            parent-not-in-copy)
                  (ctk/remove-swap-slot))
 
                (dissoc :shapes
@@ -3239,6 +3282,25 @@
            changes (cond-> changes
                      (and is-component-root? is-component-main?)
                      (regenerate-component new-obj))
+
+           ;; Unknown-component paste into a variant set: align props/names
+           ;; after regenerate. Reload the shape so we use the new component-id.
+           ;; Prefit the component name/path to the container so
+           ;; create-new-properties-from-variant does not treat the component
+           ;; full name as a former set name and inflate properties (add-name?).
+           changes (cond-> changes
+                     (and is-component-root?
+                          is-component-main?
+                          (ctk/is-variant-container? parent))
+                     (as-> $
+                           (let [shape         (get (pcb/get-objects $) (:id new-obj))
+                                 [cpath cname] (cpn/split-group-name (:name parent))
+                                 changes       (pcb/update-component
+                                                $
+                                                (:component-id shape)
+                                                #(assoc % :name cname :path cpath)
+                                                {:apply-changes-local-library? true})]
+                             (clvp/generate-make-shapes-variant changes [shape] parent))))
 
            ;; This is needed for the recursive call to find the new object as parent
            page' (ctst/add-shape (:id new-obj)

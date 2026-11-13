@@ -57,61 +57,75 @@
     (update [_ state]
       (update-in state [:workspace-local :open-plugins] (fnil disj #{}) id))))
 
+(defn- global-blocked?
+  "True, after warning the user, when the plugin asks for global scope
+  or management permissions it is not allowed to have."
+  [plugin]
+  (when (and (preg/global-requested? plugin)
+             (not (preg/global-allowed? plugin)))
+    (log/warn :hint "Global plugins can only be loaded from localhost"
+              :plugin-id (:plugin-id plugin)
+              :host (:host plugin))
+    (st/emit! (ntf/warn (tr "workspace.plugins.error.global-not-allowed")))
+    true))
+
 (defn start-plugin!
-  [{:keys [plugin-id name version description host code permissions allow-background scope]} ^js extensions]
-  (let [load-plugin (unchecked-get ug/global "ɵloadPlugin")]
-    (if (fn? load-plugin)
-      (-> (load-plugin
-           #js {:pluginId plugin-id
-                :name name
-                :version version
-                :description description
-                :host host
-                :code code
-                :allowBackground (boolean allow-background)
-                :scope scope
-                :permissions (apply array permissions)}
-           nil
-           extensions)
+  [{:keys [plugin-id name version description host code permissions allow-background scope] :as plugin} ^js extensions]
+  (when-not (global-blocked? plugin)
+    (let [load-plugin (unchecked-get ug/global "ɵloadPlugin")]
+      (if (fn? load-plugin)
+        (-> (load-plugin
+             #js {:pluginId plugin-id
+                  :name name
+                  :version version
+                  :description description
+                  :host host
+                  :code code
+                  :allowBackground (boolean allow-background)
+                  :scope scope
+                  :permissions (apply array permissions)}
+             nil
+             extensions)
 
-          (p/catch (fn [cause]
-                     (ex/print-throwable cause :prefix "Plugin Error")
-                     (errors/flash :cause cause :type :handled))))
+            (p/catch (fn [cause]
+                       (ex/print-throwable cause :prefix "Plugin Error")
+                       (errors/flash :cause cause :type :handled))))
 
-      (log/warn :hint "Plugin runtime not initialized yet"
-                :plugin-id plugin-id
-                :action "start-plugin!"))))
-
-(defn- load-plugin!
-  [{:keys [plugin-id name version description host code icon permissions scope]}]
-  (st/emit! (pflag/initialize plugin-id version)
-            (save-current-plugin plugin-id))
-
-  (let [load-plugin (unchecked-get ug/global "ɵloadPlugin")]
-    (if (fn? load-plugin)
-      (-> (load-plugin
-           #js {:pluginId plugin-id
-                :name name
-                :description description
-                :version version
-                :host host
-                :code code
-                :icon icon
-                :scope scope
-                :permissions (apply array permissions)}
-           (fn []
-             (st/emit! (remove-current-plugin plugin-id))))
-
-          (p/catch (fn [cause]
-                     (st/emit! (remove-current-plugin plugin-id))
-                     (ex/print-throwable cause :prefix "Plugin Error")
-                     (errors/flash :cause cause :type :handled))))
-
-      (do
         (log/warn :hint "Plugin runtime not initialized yet"
                   :plugin-id plugin-id
-                  :action "load-plugin!")
-        (st/emit! (remove-current-plugin plugin-id))))))
+                  :action "start-plugin!")))))
+
+(defn- load-plugin!
+  [{:keys [plugin-id name version description host code icon permissions scope] :as plugin}]
+  (when-not (global-blocked? plugin)
+    (st/emit! (pflag/initialize plugin-id version)
+              (save-current-plugin plugin-id))
+
+    (let [load-plugin (unchecked-get ug/global "ɵloadPlugin")]
+      (if (fn? load-plugin)
+        (-> (load-plugin
+             #js {:pluginId plugin-id
+                  :name name
+                  :description description
+                  :version version
+                  :host host
+                  :code code
+                  :icon icon
+                  :scope scope
+                  :permissions (apply array permissions)}
+             (fn []
+               (st/emit! (remove-current-plugin plugin-id))))
+
+            (p/catch (fn [cause]
+                       (st/emit! (remove-current-plugin plugin-id))
+                       (ex/print-throwable cause :prefix "Plugin Error")
+                       (errors/flash :cause cause :type :handled))))
+
+        (do
+          (log/warn :hint "Plugin runtime not initialized yet"
+                    :plugin-id plugin-id
+                    :action "load-plugin!")
+          (st/emit! (remove-current-plugin plugin-id)))))))
 
 (defn open-plugin!
   [{:keys [url] :as manifest} user-can-edit?]
@@ -154,10 +168,12 @@
                 ;; Manifests match exactly - safe to load
                 :else
                 (load-plugin! manifest))))
-          (fn [_err]
+          (fn [err]
             ;; Error fetching the manifest - can't verify integrity
             ;; Show error instead of loading potentially tampered code
-            (st/emit! (ntf/warn (tr "workspace.plugins.error.unreachable"))))))
+            (st/emit! (ntf/warn (if (= ::preg/global-not-allowed (:type (ex-data err)))
+                                  (tr "workspace.plugins.error.global-not-allowed")
+                                  (tr "workspace.plugins.error.unreachable")))))))
     ;; Bundled plugins (no URL) - trusted, load directly
     (load-plugin! manifest)))
 

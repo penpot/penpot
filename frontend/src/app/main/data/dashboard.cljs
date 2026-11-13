@@ -373,7 +373,7 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (let [params {:id id :name name}]
+      (let [params (with-meta {:id id :name name} (meta params))]
         (->> (rp/cmd! :rename-project params)
              (rx/ignore))))))
 
@@ -435,7 +435,7 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (let [params (select-keys params [:id :name])]
+      (let [params (with-meta (select-keys params [:id :name]) (meta params))]
         (->> (rp/cmd! :rename-file params)
              (rx/ignore))))))
 
@@ -460,15 +460,18 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (let [params {:id id :is-shared is-shared}]
+      (let [mdata  (meta params)
+            origin (::ev/origin mdata "dashboard")]
         (rx/concat
-         (->> (rp/cmd! :set-file-shared params)
+         (->> (rp/cmd! :set-file-shared (with-meta {:id id :is-shared is-shared} mdata))
               (rx/ignore))
          (when is-shared
            (->> (rp/cmd! :get-file-summary {:id id})
                 (rx/map (fn [summary]
                           (when (-> summary :variants :count pos?)
-                            (ev/event {::ev/name "set-file-variants-shared" ::ev/origin "dashboard"})))))))))))
+                            (ev/event (merge {::ev/name "set-file-variants-shared"
+                                              ::ev/origin origin}
+                                             (select-keys mdata [::ev/context])))))))))))))
 
 (defn set-file-thumbnail
   [file-id thumbnail-id]

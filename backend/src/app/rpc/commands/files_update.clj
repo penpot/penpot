@@ -21,6 +21,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.features.fdata :as fdata]
+   [app.features.file-changes :as fchanges]
    [app.features.file-snapshots :as fsnap]
    [app.features.logical-deletion :as ldel]
    [app.http.errors :as errors]
@@ -371,6 +372,7 @@
         (when repair
           (db/insert! conn :file-change
                       {:id (uuid/next)
+                       :kind fchanges/revision-kind
                        :session-id repair-session-id
                        :profile-id profile-id
                        :created-at timestamp
@@ -379,7 +381,6 @@
                        :file-id (:id file)
                        :revn (:revn repair)
                        :version (:version file)
-                       :features (into-array (:features file))
                        :changes (blob/encode (:changes repair))}
                       {::db/return-keys false})
           (l/wrn :hint "file auto-repaired"
@@ -391,8 +392,13 @@
 
         ;; Insert change (xlog) with deleted_at in a future data for
         ;; make them automatically eleggible for GC once they expires
+        ;;
+        ;; The revision carries only the delta of the save: the features of the
+        ;; file are not repeated here (nobody reads them from a revision, and
+        ;; they are duplicated on every save).
         (db/insert! conn :file-change
                     {:id (uuid/next)
+                     :kind fchanges/revision-kind
                      :session-id session-id
                      :profile-id profile-id
                      :created-at change-created-at
@@ -401,7 +407,6 @@
                      :file-id (:id file)
                      :revn (:revn file)
                      :version (:version file)
-                     :features (into-array (:features file))
                      :changes (blob/encode changes)}
                     {::db/return-keys false})
 

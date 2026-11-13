@@ -160,10 +160,8 @@
             (let [page-id (:current-page-id state)
                   data    (dsh/lookup-file-data state)
                   objects (-> (dsh/get-page data page-id)
-                              (get :objects))
-
-                  components (cfv/find-variant-components data objects (:id shape))]
-              (into {} (map (juxt :id :variant-properties) components))))
+                              (get :objects))]
+              (cfv/collect-variant-properties data objects shape)))
 
 
           ;; Collects all the items together and split images into a
@@ -179,7 +177,8 @@
               (some? images)
               (update :images into images)
 
-              (ctk/is-variant-container? item)
+              (or (ctk/is-variant-container? item)
+                  (ctk/is-variant-main? item))
               (update :variant-properties merge (collect-variants state item))))
 
           (maybe-translate [shape objects parent-frame-id]

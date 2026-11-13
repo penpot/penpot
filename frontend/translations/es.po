@@ -382,6 +382,10 @@ msgstr "Crear nueva organización"
 msgid "dashboard.create-new-team"
 msgstr "Crear nuevo equipo"
 
+#: src/app/main/ui/dashboard/team_form.cljs:122
+msgid "dashboard.create-team-in-organization"
+msgstr "Crea un nuevo equipo en %s"
+
 #: src/app/main/ui/workspace/main_menu.cljs:712
 msgid "dashboard.create-version-menu"
 msgstr "Guardar esta versión"
@@ -5856,14 +5860,12 @@ msgid "subscription.dashboard.banner.subscription-expired"
 msgstr "Tu suscripción Enterprise ha caducado. (%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:217
-msgid "subscription.dashboard.banner.unlock-features"
-msgstr "Desbloquea las funciones Enterprise"
+msgid "subscription.dashboard.banner.unlock-enterprise"
+msgstr "Desbloquea Enterprise"
 
 #: src/app/main/ui/dashboard/subscription.cljs:219
-msgid "subscription.dashboard.banner.unlock-features-description-text"
-msgstr ""
-"Establece permisos detallados y mantén el control, sin renunciar a la "
-"libertad del código abierto que tanto valora tu equipo."
+msgid "subscription.dashboard.banner.unlock-features-description"
+msgstr "Para organizaciones que necesitan una gobernanza avanzada, una administración centralizada y una colaboración segura."
 
 #: src/app/main/ui/dashboard/subscription.cljs:224
 msgid "subscription.dashboard.banner.upgrade-nitrate"
@@ -8640,6 +8642,10 @@ msgstr "Descubre [más extensiones](%s)"
 #: src/app/main/ui/workspace/plugins.cljs:251
 msgid "workspace.plugins.empty-plugins"
 msgstr "No se encuentran extensiones"
+
+#: src/app/main/data/plugins.cljs, src/app/main/ui/dashboard.cljs, src/app/main/ui/workspace/plugins.cljs
+msgid "workspace.plugins.error.global-not-allowed"
+msgstr "Por ahora, las extensiones que funcionan fuera de un archivo solo se pueden instalar desde localhost."
 
 #: src/app/main/ui/workspace/plugins.cljs:237
 msgid "workspace.plugins.error.manifest"

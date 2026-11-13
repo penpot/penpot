@@ -83,7 +83,7 @@
 (mf/defc team-form-modal
   {::mf/register modal/components
    ::mf/register-as :team-form}
-  [{:keys [team organization-id] :as props}]
+  [{:keys [team organization-id organization-name]}]
   (let [initial (mf/use-memo
                  (mf/deps team organization-id)
                  (fn []
@@ -117,7 +117,9 @@
           [:h2 {:class (stl/css :modal-title)}
            (tr "labels.rename-team")]
           [:h2 {:class (stl/css :modal-title)}
-           (tr "labels.create-team")])
+           (if organization-name
+             (tr "dashboard.create-team-in-organization" organization-name)
+             (tr "labels.create-team"))])
 
         [:> icon-button* {:variant "ghost"
                           :tooltip-class (stl/css :modal-close-btn)

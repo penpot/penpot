@@ -9,6 +9,7 @@
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.db :as db]
+   [app.features.file-changes :as fchanges]
    [app.rpc.commands.files :as files]
    [app.srepl.main :as srepl]
    [app.storage :as sto]
@@ -130,3 +131,29 @@
       (srepl/restore-team! (:id team)))
 
     (t/is (nil? (:deleted-at (find-object sobject))))))
+
+(t/deftest restoring-a-file-updates-its-file-changes
+  ;; Restoring a file brings its file changes back to life, and that mutation
+  ;; has to be observable through `updated_at`, the watermark used by the
+  ;; online partitioning copy of `file_change`.
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)})
+
+        stale-at #inst "2020-01-01T00:00:00.000Z"
+
+        _       (th/db-insert! :file-change
+                               {:file-id (:id file)
+                                :label "v1"
+                                :kind fchanges/snapshot-kind
+                                :deleted-at (ct/in-past {:days 1})
+                                :updated-at stale-at})]
+
+    (restore-file! (:id file))
+
+    (let [change (th/db-get :file-change {:file-id (:id file)}
+                            {::db/remove-deleted false})]
+      (t/is (nil? (:deleted-at change)))
+      (t/is (pos? (- (inst-ms (:updated-at change))
+                     (inst-ms stale-at)))
+            "updated_at must be bumped by the restore"))))

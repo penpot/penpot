@@ -205,8 +205,11 @@
         (db/delete! cfg :file-data
                     {:id id :file-id file-id :type "snapshot"}
                     {::db/return-keys false})
+        ;; every mutation of `file_change` moves `updated_at`: the partition
+        ;; runbook uses it as the watermark of the delta passes
         (db/update! cfg :file-change
-                    {:data data}
+                    {:data data
+                     :updated-at (ct/now)}
                     {:file-id file-id :id id}
                     {::db/return-keys false}))
 

@@ -10,6 +10,7 @@ import {
     UnclaimedRollbacksMessage,
 } from "@penpot/mcp-common";
 import { createLogger } from "./logger";
+import { penpotSessionSchema } from "./PenpotSessionSchema";
 import type { PenpotMcpServer } from "./PenpotMcpServer";
 import type { RedisBridge } from "./RedisBridge";
 import type { PenpotConnection, PluginLivenessState } from "./PenpotConnection";
@@ -39,12 +40,7 @@ export const HEARTBEAT_STALE_THRESHOLD_MS = 30000;
 
 const connectionInitSchema = z.object({
     type: z.literal("initialize"),
-    session: z.object({
-        sessionId: z.string().min(1).max(128),
-        fileId: z.string().min(1).max(128).nullable(),
-        fileName: z.string().nullable(),
-        workspaceState: z.enum(["none", "loading", "ready"]).optional(),
-    }),
+    session: penpotSessionSchema,
 });
 
 /**
@@ -191,9 +187,7 @@ export class PluginBridge implements TaskDispatchHost {
                     }
                     connection.frozen = false;
                     if (message?.type === "context-update") {
-                        const context = connectionInitSchema.shape.session
-                            .omit({ sessionId: true })
-                            .parse(message.context);
+                        const context = penpotSessionSchema.omit({ sessionId: true }).parse(message.context);
                         Object.assign(connection.session, context);
                         return;
                     }

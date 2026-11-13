@@ -403,6 +403,51 @@
       (t/is (nil? (:error out)))
       (assert-font-variant-result params (:result out)))))
 
+(t/deftest create-font-variant-persists-variant-name
+  "The optional :variant-name is stored and returned by get-font-variants."
+  (with-mocks [_mock {:target 'app.rpc.quotes/check! :return nil}]
+    (let [prof       (th/create-profile* 1 {:is-active true})
+          team-id    (:default-team-id prof)
+          font-id    (uuid/custom 10 34)
+          font-bytes (-> (io/resource "backend_tests/test_files/font-1.ttf") (io/read*))
+          session-id (upload-font-chunked! prof font-bytes "font/ttf" (* 4 1024 1024))
+          out        (th/command! {::th/type        :create-font-variant
+                                   ::rpc/profile-id (:id prof)
+                                   :team-id         team-id
+                                   :font-id         font-id
+                                   :font-family     "variant-name-font"
+                                   :font-weight     600
+                                   :font-style      "normal"
+                                   :variant-name    "SemiBold"
+                                   :uploads         {"font/ttf" session-id}})]
+      (t/is (th/success? out))
+      (t/is (= "SemiBold" (-> out :result :variant-name)))
+
+      (let [variants (-> (th/command! {::th/type        :get-font-variants
+                                       ::rpc/profile-id (:id prof)
+                                       :team-id         team-id})
+                         :result)
+            variant  (first (filter #(= font-id (:font-id %)) variants))]
+        (t/is (= "SemiBold" (:variant-name variant)))))
+
+    ;; An explicit nil must be accepted (the param is optional).
+    (let [prof       (th/create-profile* 2 {:is-active true})
+          team-id    (:default-team-id prof)
+          font-id    (uuid/custom 10 35)
+          font-bytes (-> (io/resource "backend_tests/test_files/font-1.ttf") (io/read*))
+          session-id (upload-font-chunked! prof font-bytes "font/ttf" (* 4 1024 1024))
+          out        (th/command! {::th/type        :create-font-variant
+                                   ::rpc/profile-id (:id prof)
+                                   :team-id         team-id
+                                   :font-id         font-id
+                                   :font-family     "variant-name-nil"
+                                   :font-weight     400
+                                   :font-style      "normal"
+                                   :variant-name    nil
+                                   :uploads         {"font/ttf" session-id}})]
+      (t/is (th/success? out))
+      (t/is (nil? (-> out :result :variant-name))))))
+
 ;; -----------------------------------------------------------------------
 ;; Error cases
 ;; -----------------------------------------------------------------------

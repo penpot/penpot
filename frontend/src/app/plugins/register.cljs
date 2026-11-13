@@ -16,6 +16,7 @@
    [app.main.store :as st]
    [app.util.object :as obj]
    [beicon.v2.core :as rx]
+   [cuerdas.core :as str]
    [promesa.core :as p]))
 
 ;; Needs to be here because moving it to `app.main.data.workspace.mcp` will
@@ -28,6 +29,33 @@
     "allow:global" "manage:projects" "manage:teams" "manage:delete"
     ;; Keeps the rollbacks not reported yet across reloads
     "allow:localstorage"})
+
+;; Permissions only granted to plugins that pass `global-allowed?`
+(def global-permissions
+  #{"allow:global" "manage:projects" "manage:teams" "manage:delete"})
+
+(def ^:private local-hosts
+  #{"localhost" "127.0.0.1" "[::1]" "::1"})
+
+(defn- local-url?
+  "True when the url host is a loopback name, ignoring case and a
+  trailing dot."
+  [url]
+  (contains? local-hosts (some-> url u/uri :host str/lower (str/rtrim "."))))
+
+(defn global-requested?
+  "True when the plugin asks for global scope or a management permission."
+  [{:keys [scope permissions]}]
+  (or (= "global" scope)
+      (boolean (some global-permissions permissions))))
+
+(defn global-allowed?
+  "True when the plugin may run with global scope and use the management
+  API. The feature is still in progress, so only the bundled MCP plugin
+  and plugins served from localhost get it."
+  [{:keys [plugin-id host]}]
+  (or (= plugin-id mcp-plugin-id)
+      (local-url? host)))
 
 ;; Promise that resolves when plugins runtime is initialized.
 ;; Lives here to avoid circular dependency: workspace.mcp -> app.plugins -> app.plugins.api -> workspace
@@ -121,9 +149,18 @@
           :code code
           :icon icon
           :permissions (into #{} (map str) permissions)})]
-    (if (sm/validate ctp/schema:registry-entry manifest)
-      manifest
-      (.error js/console (clj->js (sm/explain ctp/schema:registry-entry manifest))))))
+    (cond
+      (not (sm/validate ctp/schema:registry-entry manifest))
+      (.error js/console (clj->js (sm/explain ctp/schema:registry-entry manifest)))
+
+      (and (global-requested? manifest)
+           (not (global-allowed? manifest)))
+      (throw (ex-info "Global plugins can only be loaded from localhost"
+                      {:type ::global-not-allowed
+                       :host origin}))
+
+      :else
+      manifest)))
 
 (defn subscribe-registry!
   "Subscribes f, called with no arguments on every registry change.
@@ -273,13 +310,16 @@
                          (.error js/console "Failed to remove plugin:" err))))))))
 
 (defn has-permission?
-  "True when the plugin was granted `permission`."
+  "True when the plugin was granted `permission`. The permissions in
+  `global-permissions` also need the plugin to pass `global-allowed?`."
   [plugin-id permission]
   (cond
     (= plugin-id "00000000-0000-0000-0000-000000000000") true
     (= plugin-id mcp-plugin-id) (contains? mcp-permissions permission)
-    :else (let [{:keys [permissions]} (dm/get-in @registry [:data plugin-id])]
-            (contains? permissions permission))))
+    :else (let [{:keys [permissions] :as plugin} (dm/get-in @registry [:data plugin-id])]
+            (and (contains? permissions permission)
+                 (or (not (contains? global-permissions permission))
+                     (global-allowed? plugin))))))
 
 (defn- read-only-reason
   "Why plugin writes must fail in `state`, or nil when they can go ahead.

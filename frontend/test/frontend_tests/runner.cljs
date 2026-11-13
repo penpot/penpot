@@ -17,6 +17,7 @@
    [frontend-tests.data.exports-assets-test]
    [frontend-tests.data.exports-files-test]
    [frontend-tests.data.fix-deleted-fonts-test]
+   [frontend-tests.data.fonts-test]
    [frontend-tests.data.imports-test]
    [frontend-tests.data.jobs-test]
    [frontend-tests.data.modal-test]
@@ -102,6 +103,7 @@
    [frontend-tests.plugins.read-only-test]
    [frontend-tests.plugins.register-test]
    [frontend-tests.plugins.shape-bugfixes-test]
+   [frontend-tests.plugins.system-events-test]
    [frontend-tests.plugins.text-test]
    [frontend-tests.plugins.tokens-test]
    [frontend-tests.plugins.user-test]
@@ -171,6 +173,7 @@
    [frontend-tests.ui.sortable-auto-scroll-test]
    [frontend-tests.ui.static-test]
    [frontend-tests.ui.stroke-menu-test]
+   [frontend-tests.ui.subscription-test]
    [frontend-tests.ui.team-container-test]
    [frontend-tests.ui.text-attrs-multiple-test]
    [frontend-tests.ui.viewport-top-bar-test]
@@ -230,6 +233,7 @@
    'frontend-tests.data.store-test
    'frontend-tests.data.exports-assets-test
    'frontend-tests.data.exports-files-test
+   'frontend-tests.data.fonts-test
    'frontend-tests.data.imports-test
    'frontend-tests.data.jobs-test
    'frontend-tests.worker.exports-test
@@ -308,6 +312,7 @@
    'frontend-tests.plugins.read-only-test
    'frontend-tests.plugins.register-test
    'frontend-tests.plugins.shape-bugfixes-test
+   'frontend-tests.plugins.system-events-test
    'frontend-tests.plugins.text-test
    'frontend-tests.plugins.tokens-test
    'frontend-tests.plugins.user-test
@@ -378,6 +383,7 @@
    'frontend-tests.ui.sortable-auto-scroll-test
    'frontend-tests.ui.static-test
    'frontend-tests.ui.stroke-menu-test
+   'frontend-tests.ui.subscription-test
    'frontend-tests.ui.team-container-test
    'frontend-tests.ui.text-attrs-multiple-test
    'frontend-tests.ui.viewport-top-bar-test

@@ -32,6 +32,19 @@ PR titles follow commit title conventions:
 
 See `mem:workflow/creating-commits` for emoji codes. Squash merge uses the PR title as the final commit subject, so title format matters.
 
+## Merge Strategy
+
+Policy: `CONTRIBUTING.md` → "Merging", under "Pull Requests".
+
+- Squash merge is the default, so the PR's own commits never reach `main`
+  and the PR title becomes the landed subject.
+- A regular merge is possible on request only. The request is the **first
+  line** of the PR body, above the `**Note:**` line:
+  `> **Merge:** do not squash; each commit is self-contained.`
+- Ask for it only when every commit on the branch is self-contained (builds
+  and passes lint on its own). Default to squash unless the user asks for
+  the opposite.
+
 ## Description Body
 
 Include concise sections covering:
@@ -60,6 +73,8 @@ PR descriptions follow this structure:
 ```
 
 The "Note:" line is required at the top. Adjust if this is a manual (non-AI) PR.
+When the PR requests a regular merge instead of a squash merge, its
+`**Merge:**` line goes above the `**Note:**` line (see Merge Strategy).
 
 ## Writing Principles
 

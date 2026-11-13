@@ -1240,11 +1240,10 @@
   (check-edition-permissions! conn profile-id library-id)
   (check-library-team-ownership! conn file-id library-id)
 
-  (let [transitive-deps (bfc/get-libraries cfg [library-id])]
-    (when (contains? transitive-deps file-id)
-      (ex/raise :type :validation
-                :code :circular-library-reference
-                :hint "linking this library would create a circular dependency")))
+  (when (= :circular (bfc/library-link-status cfg file-id library-id))
+    (ex/raise :type :validation
+              :code :circular-library-reference
+              :hint "linking this library would create a circular dependency"))
 
   (link-file-to-library conn params)
   (bfc/get-libraries cfg [library-id]))
@@ -1401,7 +1400,9 @@
   ;; for ever. Rows that still carry a legacy payload without a label are
   ;; garbage that no read path reaches; 0157-migrate-legacy-file-data deletes
   ;; them, so they must keep their date and go with the collector.
-  "UPDATE file_change SET deleted_at = null
+  ;; Every write moves `updated_at`: the delta passes copy the rows whose
+  ;; `updated_at` changed, so a restore that left it stale could be missed.
+  "UPDATE file_change SET deleted_at = null, updated_at = now()
     WHERE file_id = ANY(?::uuid[])
       AND label IS NOT NULL")
 
