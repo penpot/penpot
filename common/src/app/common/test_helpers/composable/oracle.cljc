@@ -106,8 +106,12 @@
                     (or (not (mth/close? (mod (or (:rotation shape) 0) 360) 0))
                         (not (mth/close? (or b 0) 0 1e-6))
                         (not (mth/close? (or c 0) 0 1e-6))))
-        width-owned (or width-owned turned)
-        height-owned (or height-owned turned)]
+        ;; the shapes of a group or bool a layout sizes are sized with it
+        parent (get objects (:parent-id shape))
+        sized-by-parent (when (#{:group :bool} (:type parent))
+                          (derived-attributes objects parent))
+        width-owned (or width-owned turned (contains? sized-by-parent :width))
+        height-owned (or height-owned turned (contains? sized-by-parent :height))]
     (cond-> #{}
       layout-child (into #{:x :y})
       width-owned (conj :width)
@@ -537,6 +541,10 @@
          auto-width   (and (= :text (:type ownership)) (= :auto-width (:grow-type ownership)))
          auto-height  (and (= :text (:type ownership)) (#{:auto-width :auto-height} (:grow-type ownership)))
          derived      (derived-attributes objects ownership)
+         ;; a layout that sizes the group or bool around the shape places it too
+         group-sized  (let [parent (get objects (:parent-id ownership))]
+                        (and (#{:group :bool} (:type parent))
+                             (some #{:width :height} (derived-attributes objects parent))))
          width-owned  (contains? derived :width)
          height-owned (contains? derived :height)
          ;; Both flags and a half turn decompose the transform neither does.
@@ -571,7 +579,7 @@
        (and (not layout-child) auto-height
             (not (gsh/close-attrs? :points [(first (:points shape))]
                                    [(first (:points expected))] 0.01))) (conj :position)
-       (and (not layout-child) (not auto-width) (not auto-height)
+       (and (not layout-child) (not auto-width) (not auto-height) (not group-sized)
             ;; a bool computes its corners from its segments, in their order
             (not (if (or (= :bool (:type shape)) in-group?)
                    (gsh/close-attrs? :points (geom/ordered-corners (:points shape))

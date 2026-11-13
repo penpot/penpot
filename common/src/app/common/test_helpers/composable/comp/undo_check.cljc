@@ -176,6 +176,13 @@
   [points]
   (geom/ordered-corners points))
 
+(defn- any-corner-order?
+  "Whether the corners of `shape` are compared in any order: a bool computes
+   them again from its children, and a masked group takes those of its mask."
+  [shape]
+  (and (contains? shape :parent-id)
+       (or (= :bool (:type shape)) (:masked-group shape))))
+
 (defn same-state?
   "Compare exact data with an absolute tolerance only in shape geometry.
    Undo defaults to 1e-10; design equivalence can supply its own tolerance."
@@ -204,10 +211,10 @@
                     (and (#{:flip-x :flip-y} key) (#{:group :bool} (:type expected))
                          (contains? expected :parent-id))
                     (same-state? (cond-> (get expected key)
-                                   (and (= :points key) (= :bool (:type expected)) (contains? expected :parent-id))
+                                   (and (= :points key) (any-corner-order? expected))
                                    corner-order)
                                  (cond-> (get actual key)
-                                   (and (= :points key) (= :bool (:type expected)) (contains? expected :parent-id))
+                                   (and (= :points key) (any-corner-order? expected))
                                    corner-order)
                                  ;; a bool or path stores its segments in single precision, and
                                  ;; a bool or group computes its bounds again from its children
