@@ -340,6 +340,12 @@
           deleted-at
           (ct/plus timestamp (ct/duration {:hours 1}))
 
+          ;; The id of the change row (xlog) goes to the audit event
+          ;; too: a consumer that reads the event needs to know what the
+          ;; save changed, and that row is the only place with it.
+          file-change-id
+          (uuid/next)
+
           repair
           (::repair file)
 
@@ -397,7 +403,7 @@
         ;; file are not repeated here (nobody reads them from a revision, and
         ;; they are duplicated on every save).
         (db/insert! conn :file-change
-                    {:id (uuid/next)
+                    {:id file-change-id
                      :kind fchanges/revision-kind
                      :session-id session-id
                      :profile-id profile-id
@@ -424,18 +430,25 @@
                    (some? rejected)
                    (assoc :rejected rejected))
         {::audit/replace-props
-         {:id          (:id file)
-          :name        (:name file)
-          :features    (:features file)
-          :project-id  (:project-id file)
-          :team-id     (:team-id file)
-          ;; NOTE: `file` carries the post-update revn here (`revn`
-          ;; above is the pre-update one kept for the response), and
-          ;; `modified-at` mirrors `persist-file!`: same `::timestamp`
-          ;; fallback, so both agree to the millisecond when the
-          ;; request timestamp exists.
-          :revn        (if saved? (:revn file) revn)
-          :modified-at (or timestamp (ct/now))}}))))
+         (cond-> {:id          (:id file)
+                  :name        (:name file)
+                  :features    (:features file)
+                  :project-id  (:project-id file)
+                  :team-id     (:team-id file)
+                  ;; NOTE: `file` carries the post-update revn here (`revn`
+                  ;; above is the pre-update one kept for the response), and
+                  ;; `modified-at` mirrors `persist-file!`: same `::timestamp`
+                  ;; fallback, so both agree to the millisecond when the
+                  ;; request timestamp exists.
+                  :revn        (if saved? (:revn file) revn)
+                  :modified-at (or timestamp (ct/now))}
+
+           ;; The id of the change row inserted above: what the save
+           ;; changed lives in that row, not in the event. A fully rejected
+           ;; save writes no row, and an id that resolves to nothing cannot
+           ;; be told apart from one the GC already purged.
+           saved?
+           (assoc :file-change-id file-change-id))}))))
 
 (defn get-file
   "Get not-decoded file, only decodes the features set."

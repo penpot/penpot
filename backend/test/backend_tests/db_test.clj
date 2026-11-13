@@ -88,3 +88,93 @@
                           ["SELECT current_setting('enable_partitionwise_join') AS partitionwise_join"])]
 
     (t/is (= "on" (:partitionwise-join row)))))
+
+(t/deftest session-locks-are-held-per-connection
+  (let [classid 730000
+        objid   1]
+    (with-open [a (db/open th/*pool*)
+                b (db/open th/*pool*)]
+      (t/testing "the first connection takes it, the second cannot"
+        (t/is (true? (db/session-try-lock a classid objid)))
+        (t/is (false? (db/session-try-lock b classid objid))))
+      (t/testing "releasing it lets the other take it"
+        (t/is (true? (db/session-unlock a classid objid)))
+        (t/is (true? (db/session-try-lock b classid objid)))
+        (t/is (true? (db/session-unlock b classid objid)))))))
+
+(t/deftest session-locks-keep-the-two-key-space-apart
+  ;; PostgreSQL documents the split: a bigint key is shown with its
+  ;; high-order half in classid, its low-order half in objid and
+  ;; objsubid 1, while a two-int key keeps both numbers and objsubid 2.
+  ;; The two forms are therefore different locks even with the same
+  ;; numbers, which is what the consumers rely on to never block a file
+  ;; update. The test proves each step instead of assuming it.
+  (let [classid    730000
+        objid      2
+        bigint-key (+ (* (long classid) 4294967296) objid)]
+    (with-open [a (db/open th/*pool*)
+                b (db/open th/*pool*)
+                c (db/open th/*pool*)]
+      (t/testing "the one-key form really holds that identity"
+        (t/is (true? (:lock (db/exec-one! a ["select pg_try_advisory_lock(?::bigint) as lock"
+                                             bigint-key]))))
+        (t/is (false? (:lock (db/exec-one! b ["select pg_try_advisory_lock(?::bigint) as lock"
+                                              bigint-key])))))
+
+      (t/testing "PostgreSQL displays that bigint as the (classid, objid) pair"
+        (let [{:keys [classid objid objsubid]}
+              (db/exec-one! a ["select classid, objid, objsubid from pg_locks
+                                 where pid = pg_backend_pid()
+                                   and locktype = 'advisory'
+                                   and objsubid = 1
+                                   and granted"])]
+          (t/is (= [730000 2 1] [classid objid objsubid]))
+          ;; and the displayed halves reassemble to the same bigint
+          (t/is (= bigint-key (+ (* (long classid) 4294967296) objid)))))
+
+      (t/testing "the same numbers in the two-key form are another lock"
+        (t/is (true? (db/session-try-lock c classid objid)))
+        (t/is (true? (db/session-unlock c classid objid))))
+
+      (t/is (true? (:lock (db/exec-one! a ["select pg_advisory_unlock(?::bigint) as lock"
+                                           bigint-key])))))))
+
+(t/deftest session-locks-reject-a-key-that-is-not-int4
+  (with-open [a (db/open th/*pool*)]
+    (t/is (thrown? IllegalArgumentException
+                   (db/session-try-lock a uuid/zero 1)))
+    (t/is (thrown? IllegalArgumentException
+                   (db/session-unlock a 730000 uuid/zero)))
+    (t/is (thrown? IllegalArgumentException
+                   (db/session-try-lock a 730000 (inc Integer/MAX_VALUE))))))
+
+(t/deftest session-unlock-all-releases-every-lock-of-the-connection
+  (let [classid 730000]
+    (with-open [a (db/open th/*pool*)
+                b (db/open th/*pool*)]
+      (t/is (true? (db/session-try-lock a classid 1)))
+      (t/is (true? (db/session-try-lock a classid 2)))
+      (t/is (false? (db/session-try-lock b classid 1)))
+      (db/session-unlock-all a)
+      (t/is (true? (db/session-try-lock b classid 1)))
+      (t/is (true? (db/session-try-lock b classid 2)))
+      (db/session-unlock-all b))))
+
+(t/deftest session-unlock-answers-false-for-a-lock-not-held
+  (with-open [a (db/open th/*pool*)]
+    (t/is (false? (db/session-unlock a 730000 3)))))
+
+(t/deftest own-transaction-drops-the-connection-and-the-read-only-flag
+  ;; The contract has two halves: the write must not join the caller's
+  ;; connection, and it must be writable even when the caller is
+  ;; read-only (`::db/read-only` dropped).
+  (let [caller-conn (Object.)
+        cfg         {::db/pool th/*pool*
+                     ::db/conn caller-conn
+                     ::db/read-only true}]
+    (t/testing "the connection and the read-only flag are gone"
+      (t/is (= {::db/pool th/*pool*} (db/own-transaction cfg))))
+    (t/testing "so the write opens its own transaction on another connection"
+      (db/tx-run! (db/own-transaction cfg)
+                  (fn [{:keys [::db/conn]}]
+                    (t/is (not (identical? conn caller-conn))))))))

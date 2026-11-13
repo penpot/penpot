@@ -219,13 +219,14 @@ keeps msgbus Pub/Sub channels (collab broadcasts, team-org notifications,
 file-summary cache, rate-limit counters) isolated.
 
 Background workers (`enable-backend-worker`) run only on ws0 — ws1+ overlays
-disable it. ws1+ RPC handlers still enqueue tasks into the shared Postgres
-`task` table; ws0's dispatcher claims them via `FOR UPDATE SKIP LOCKED` and
+disable it. ws1+ RPC handlers still enqueue jobs into the shared Postgres
+`job` table; ws0's dispatcher claims them via `FOR UPDATE SKIP LOCKED` and
 runs them against the shared DB and RustFS. Workers are fire-and-forget:
-`wrk/submit!` inserts a row and returns; RPC handlers never wait on
+`jobs/submit` inserts a row and returns; RPC handlers never wait on
 completion. The "ws0 only" policy avoids multi-instance worker races (cron
-dedup is best-effort across instances, `wrk/submit!` `dedupe` is racy across
-submitters).
+dedup is best-effort across instances; the dedupe and exclusivity of
+`jobs/submit` are resolved by unique indexes, so the submits themselves do
+not race).
 
 Each workspace is independent and can be started and stopped in any order.
 Shared infrastructure shuts down only when no instances remain running.

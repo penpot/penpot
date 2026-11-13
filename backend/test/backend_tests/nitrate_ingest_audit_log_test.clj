@@ -85,3 +85,27 @@
           (t/is (string? (:tracked-at e1')))
           (t/is (= (str now) (:created-at e1')))
           (t/is (= (str team-id) (str (get-in e1' [:props :team-id])))))))))
+
+(t/deftest ingest-audit-log-rejects-a-redirect
+  ;; A 3xx is a configuration error, not an empty success: it surfaces a
+  ;; typed error instead of the :malli.core/invalid-schema that a nil schema
+  ;; throws while building the coercer.
+  (binding [cf/flags  (conj cf/flags :admin-console)
+            cf/config (assoc cf/config :admin-console-uri "http://ac.example/admin-console/")]
+    (with-mocks [http-mock {:target 'app.http.client/req
+                            :return {:status 302
+                                     :headers {"location" "http://ac.example/admin-console/api/audit-log"}
+                                     :body ""}}]
+      (let [client (ig/init-key :app.nitrate/client
+                                {::http/client       (Object.)
+                                 ::setup/shared-keys {:admin-console "test-shared-key"}})
+            cfg    {:app.nitrate/client client}
+            err    (try
+                     (nitrate/call cfg :ingest-audit-log
+                                   {::rpc/profile-id (uuid/next)
+                                    :events []})
+                     nil
+                     (catch clojure.lang.ExceptionInfo e e))]
+        (t/is (= 1 (:call-count @http-mock)))
+        (t/is (= :nitrate-http-error (:type (ex-data err))))
+        (t/is (= 302 (:status (ex-data err))))))))

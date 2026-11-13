@@ -212,6 +212,13 @@
           :else
           (f cfg params))))))
 
+;; Only the methods that declare `::db/transaction true` get a transaction;
+;; every wrapper applied after this point in `wrap` runs outside it. That is
+;; the case of `wrap-audit`: the event is written after the command commits,
+;; so a failure there cannot roll the action back and the client gets an
+;; error over committed work. Making the transaction the default for every
+;; command, so the audit event can move inside it, is project P8 in TODO.md
+;; and is out of scope here.
 (defn- wrap-db-transaction
   [_ f mdata]
   (if (::db/transaction mdata)
