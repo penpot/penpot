@@ -8,6 +8,7 @@
   (:require
    [app.common.time :as ct]
    [app.common.uri :as u]
+   [app.config :as cf]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.nitrate :as dnt]
@@ -367,7 +368,7 @@
         state   {:teams {(:id team) team}}]
     (await
      (mock/with-mocks*
-       {rt/get-current-href (mock/stub (constantly "http://localhost/#/dashboard"))
+       {rt/get-current-token (mock/stub (constantly "?screen=dashboard&team-id=1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d"))
         rp/cmd! (mock/stub
                  (fn [cmd _params]
                    (case cmd
@@ -394,3 +395,32 @@
     (t/is (= ::dt/fetch-teams (ptk/type (first emitted))))
     (t/is (= {:modal-show [:no-permission-modal {:type :no-organizations-create}]}
              (second emitted)))))
+
+(def ^:private sso-query-string
+  "screen=workspace&team-id=1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d")
+
+(defn- ^:async observe-retry-organization-sso
+  "Runs `retry-organization-sso` with the given answer from the backend and
+  resolves to the uri the user is sent to."
+  [rpc-answer]
+  (let [emitted (atom [])
+        event   (dnt/retry-organization-sso {:team-id "team-1"
+                                             :organization-id "org-1"
+                                             :query-string sso-query-string})]
+    (await
+     (mock/with-mocks*
+       {rp/cmd! (mock/stub (fn [_cmd _params] (rx/of rpc-answer)))}
+       (await (async/observe (ptk/watch event {} nil)
+                             :on-next #(swap! emitted conj %)))))
+    ;; `nav-raw` exposes its destination through `@event`.
+    (-> @emitted first deref :uri)))
+
+(t/deftest ^:async retry-organization-sso-lands-on-the-route-of-the-token
+  (t/testing "without a redirect uri the user goes back to the route of the token"
+    (let [target (await (observe-retry-organization-sso {:authorized true}))]
+      (t/is (= (str cf/public-uri "?" sso-query-string) target))))
+
+  (t/testing "the redirect uri of the backend wins over the route of the token"
+    (let [target (await (observe-retry-organization-sso {:authorized false
+                                                         :redirect-uri "https://idp.example.com/authorize"}))]
+      (t/is (= "https://idp.example.com/authorize" target)))))

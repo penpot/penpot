@@ -804,11 +804,11 @@
   [{:keys [organization-id team-id] :as error}]
   (when-not @sso-renewal-pending?
     (vreset! sso-renewal-pending? true)
-    (let [dest-url (rt/get-current-href)]
+    (let [query-string (rt/get-current-query-string)]
       (->> (dnt/check-organization-sso
             {:organization-id organization-id
              :team-id team-id
-             :dest-url dest-url})
+             :query-string query-string})
            ;; Release the guard however the check ends, including an
            ;; unsubscription or a completion without a result: a stuck guard
            ;; would silently drop every later rejection.

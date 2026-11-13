@@ -11,6 +11,7 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.main.data.auth :as da :refer [is-authenticated?]]
    [app.main.data.common :as dcm]
    [app.main.data.nitrate :as dnt]
@@ -524,11 +525,13 @@
   SSO exchange with the identity provider fails."
   {::mf/private true}
   [{:keys [organization-id team-id profile is-workspace is-dashboard organization-name]}]
-  (let [clean-url
+  (let [clean-query-string
         (mf/with-memo []
-          (-> (rt/get-current-href)
+          (-> (rt/get-current-token)
               (dom/remove-query-param :sso-error)
               (dom/remove-query-param :organization-id)))
+
+        clean-url (str cf/public-uri clean-query-string)
 
         _ (mf/with-effect []
             ;; Consume the marker once: scrub it from the URL bar so a
@@ -545,14 +548,14 @@
 
         on-retry
         (mf/use-fn
-         (mf/deps organization-id team-id clean-url)
+         (mf/deps organization-id team-id clean-query-string)
          (fn []
            (st/emit! (rt/assign-exception nil))
            (if (or team-id organization-id)
              ;; Retry with team-id and/or organization-id to trigger SSO check
              (st/emit! (dnt/retry-organization-sso {:team-id team-id
                                                     :organization-id organization-id
-                                                    :dest-url clean-url}))
+                                                    :query-string (rt/token->query-string clean-query-string)}))
              ;; Fallback: just navigate to clean URL
              (st/emit! (rt/nav-raw :uri clean-url)))))]
 

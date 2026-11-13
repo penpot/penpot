@@ -412,8 +412,11 @@
               :add-method "move-existing-team-to-organization"
               :subscription-status subscription-status})
             pending-id   (str (uuid/next))
-            callback-url (dom/append-query-param (rt/get-current-href)
-                                                 :pending-action-id pending-id)
+            ;; The callback travels as a query string; the token is kept in
+            ;; its own shape because `append-query-param` works on URLs.
+            callback-query-string (-> (rt/get-current-token)
+                                      (dom/append-query-param :pending-action-id pending-id)
+                                      rt/token->query-string)
             ;; The permissions may have changed in Nitrate since the modal
             ;; was opened: refresh them and explain why the action failed.
             on-error
@@ -428,7 +431,8 @@
         (rx/concat
          (when-not skip-audit?
            (rx/of audit-event))
-         (->> (rp/cmd! :check-nitrate-sso {:organization-id organization-id :url callback-url})
+         (->> (rp/cmd! :check-nitrate-sso {:organization-id organization-id
+                                           :query-string callback-query-string})
               (rx/mapcat
                (fn [{:keys [authorized redirect-uri]}]
                  (if authorized
@@ -446,32 +450,36 @@
 
 (defn check-organization-sso
   "Asks the backend whether the organization SSO gate can be satisfied for
-  `dest-url`, returning an observable of the raw `:check-nitrate-sso`
-  result: `:authorized` with a `:reason` of `:sso-satisfied` or
-  `:no-team-access`, or `:authorized false` with a `:redirect-uri` (nil
-  when SSO is required but the provider is unusable). Failures are not
-  caught, so a network blip stays a network error for the caller to
-  handle instead of masquerading as an answer."
-  [{:keys [team-id organization-id dest-url]}]
+  `query-string` (the route params of the client, `screen=…&params`, without
+  the separator), returning an observable of the raw `:check-nitrate-sso`
+  result: `:authorized` with a `:reason` of `:sso-satisfied`,
+  `:no-team-access` or `:no-organization-access`, or `:authorized false` with
+  a `:redirect-uri` (nil when SSO is required but the provider is unusable).
+  Failures are not caught, so a network blip stays a network error for the
+  caller to handle instead of masquerading as an answer."
+  [{:keys [team-id organization-id query-string]}]
   (rp/cmd! :check-nitrate-sso (d/without-nils {:team-id team-id
                                                :organization-id organization-id
-                                               :url dest-url})))
+                                               :query-string query-string})))
 
 (defn retry-organization-sso
   "Retries the organization SSO login flow after a failed attempt, reusing
   the same check-nitrate-sso RPC used elsewhere to move the user through
   the organization's identity provider. Passing `team-id` enables the
   backend's non-member short-circuit. Falls back to navigating straight
-  to `dest-url` when no fresh SSO redirect is needed or available."
-  [{:keys [dest-url] :as params}]
-  (ptk/reify ::retry-organization-sso
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (->> (check-organization-sso params)
-           (rx/map (fn [{:keys [redirect-uri]}]
-                     (rt/nav-raw :uri (or redirect-uri dest-url))))
-           (rx/catch (fn [_]
-                       (rx/of (rt/nav-raw :uri dest-url))))))))
+  to the route of `query-string` when no fresh SSO redirect is needed or
+  available."
+  [{:keys [query-string] :as params}]
+  (let [dest-url (cond-> (str cf/public-uri)
+                   (seq query-string) (str "?" query-string))]
+    (ptk/reify ::retry-organization-sso
+      ptk/WatchEvent
+      (watch [_ _ _]
+        (->> (check-organization-sso params)
+             (rx/map (fn [{:keys [redirect-uri]}]
+                       (rt/nav-raw :uri (or redirect-uri dest-url))))
+             (rx/catch (fn [_]
+                         (rx/of (rt/nav-raw :uri dest-url)))))))))
 
 (defn- fetch-organizations-allowed
   "Returns an rx observable of an `organizations-allowed` map (organization-id -> boolean).

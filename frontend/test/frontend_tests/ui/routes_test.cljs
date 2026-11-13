@@ -38,15 +38,17 @@
                    (fn [command params]
                      (t/is (= :check-nitrate-sso command))
                      (t/is (= team-id (:team-id params)))
+                     (t/is (= "screen=workspace&team-id=1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d"
+                              (:query-string params)))
                      (swap! rpc-calls inc)
                      (rx/of {:authorized true})))
          st/emit! (mock/stub
                    (fn [& emitted]
                      (swap! events into emitted)))}
         (fn [done']
-          (#'routes/check-sso-and-navigate match true "https://penpot.example.com/#/workspace")
+          (#'routes/check-sso-and-navigate match true "screen=workspace&team-id=1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d")
           (reset! now (ct/plus @now #js {:minutes 4 :seconds 59}))
-          (#'routes/check-sso-and-navigate match true "https://penpot.example.com/#/workspace")
+          (#'routes/check-sso-and-navigate match true "screen=workspace&team-id=1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d")
           (t/is (= 1 @rpc-calls))
           (t/is (= 2 (count @events)))
           (done'))
@@ -67,9 +69,9 @@
                      (rx/of {:authorized true})))
          st/emit! mock/noop}
         (fn [done']
-          (#'routes/check-sso-and-navigate match true "https://penpot.example.com/#/workspace")
+          (#'routes/check-sso-and-navigate match true "screen=workspace&team-id=1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d")
           (reset! now (ct/plus @now #js {:minutes 5}))
-          (#'routes/check-sso-and-navigate match true "https://penpot.example.com/#/workspace")
+          (#'routes/check-sso-and-navigate match true "screen=workspace&team-id=1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d")
           (t/is (= 2 @rpc-calls))
           (done'))
         done))))
@@ -91,8 +93,8 @@
                    (fn [& emitted]
                      (swap! events into emitted)))}
         (fn [done']
-          (#'routes/check-sso-and-navigate match true "https://penpot.example.com/#/workspace")
-          (#'routes/check-sso-and-navigate match true "https://penpot.example.com/#/workspace")
+          (#'routes/check-sso-and-navigate match true "screen=workspace&team-id=1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d")
+          (#'routes/check-sso-and-navigate match true "screen=workspace&team-id=1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d")
           (t/is (= 2 @rpc-calls))
           (t/is (= 2 (count @events)))
           (done'))

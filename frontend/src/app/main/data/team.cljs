@@ -48,7 +48,7 @@
   (if (or (not (contains? cf/flags :admin-console))
           (= team-id default-team-id))
     (rx/of team-id)
-    (->> (rp/cmd! :check-nitrate-sso {:team-id team-id :url (rt/get-current-href)})
+    (->> (rp/cmd! :check-nitrate-sso {:team-id team-id :query-string (rt/get-current-query-string)})
          (rx/map (fn [{:keys [authorized]}]
                    (if authorized team-id default-team-id))))))
 

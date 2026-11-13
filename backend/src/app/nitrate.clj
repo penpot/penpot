@@ -716,12 +716,19 @@
                           :organization-id (:organization-id params)}))
     team))
 
+(defn- organization-membership
+  "The membership of `profile-id` in `organization-id`, as Nitrate reports it.
+  The profile travels in the path of the Nitrate endpoint, so no acting
+  profile is sent."
+  [cfg profile-id organization-id]
+  (call cfg :get-organization-membership {:profile-id      profile-id
+                                          :organization-id organization-id}))
+
 (defn assert-membership
   "Verifies that the user is a member of the organization.
   Raises an exception if the organization doesn't exist or the user is not a member."
   [cfg profile-id organization-id]
-  (let [membership (call cfg :get-organization-membership {:profile-id profile-id
-                                                           :organization-id organization-id})]
+  (let [membership (organization-membership cfg profile-id organization-id)]
     (when-not (:organization-id membership)
       (ex/raise :type :validation
                 :code :organization-does-not-exist))
@@ -729,3 +736,18 @@
     (when-not (:is-member membership)
       (ex/raise :type :validation
                 :code :user-doesnt-belong-organization))))
+
+(defn organization-access?
+  "True when `profile-id` may act for `organization-id`: it is a member of
+  the organization or its owner.
+
+  The organization id reaches the backend from the client, so the flows that
+  take one have to check it: without this check any authenticated profile
+  could start a flow for an organization it does not belong to."
+  [cfg profile-id organization-id]
+  (let [membership (organization-membership cfg profile-id organization-id)]
+    (if (:is-member membership)
+      true
+      (= (:owner-id (call cfg :get-organization-summary {:organization-id organization-id
+                                                         ::rpc/profile-id profile-id}))
+         profile-id))))

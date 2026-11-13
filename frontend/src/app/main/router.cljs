@@ -192,8 +192,15 @@
       (ts/asap (partial dom/reload-current-window force?)))))
 
 (defn nav-raw
-  [& {:keys [href uri]}]
+  "Navigate to a raw URL, out of the router.
+
+   The destination is exposed through `@event`, like `navigate` does, so
+   listeners and tests can tell where the user is being sent."
+  [& {:keys [href uri] :as props}]
   (ptk/reify ::nav-raw
+    IDeref
+    (-deref [_] props)
+
     ptk/EffectEvent
     (effect [_ _ _]
       (cond
@@ -207,6 +214,31 @@
   []
   (.-href globals/location))
 
+(defn token->query-string
+  "The query string of `token`, without the `?` that separates it from the
+  path. The history token is `location.search`, so it carries that delimiter;
+  a query string does not, and this is what the organization SSO RPC takes: the
+  server joins it under its own public URI and puts the separator back."
+  [token]
+  (let [token (or token "")]
+    (if (str/starts-with? token "?")
+      (subs token 1)
+      token)))
+
+(defn get-current-token
+  "Return the current history token: the query string that carries the route,
+  with the leading `?` that separates it from the path. The application
+  concatenates it over the base path, so it keeps the delimiter; use
+  `get-current-query-string` for the value the SSO flow sends to the backend.
+  The server builds the destination URL out of that one, so the client never
+  chooses the origin of it."
+  []
+  (bhistory/get-token))
+
+(defn get-current-query-string
+  "The query string of the current route (see `token->query-string`)."
+  []
+  (token->query-string (get-current-token)))
 
 ;; --- History API
 
