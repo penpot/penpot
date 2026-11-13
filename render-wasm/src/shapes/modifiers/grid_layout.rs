@@ -97,8 +97,8 @@ fn init_tracks(track: &[GridTrack], size: f32) -> Vec<TrackData> {
                 value: t.value,
                 size,
                 max_size,
-                anchor_start: Point::default(),
-                anchor_end: Point::default(),
+                anchor_start: Point::new(0.0, 0.0),
+                anchor_end: Point::new(0.0, 0.0),
             }
         })
         .collect()
@@ -412,10 +412,12 @@ fn stretch_tracks(
         return;
     }
 
+    // An empty track list has no gap
+    let gaps = tracks.len().saturating_sub(1) as f32;
     let tot_gap: f32 = if column {
-        layout_data.column_gap * (tracks.len() - 1) as f32
+        layout_data.column_gap * gaps
     } else {
-        layout_data.row_gap * (tracks.len() - 1) as f32
+        layout_data.row_gap * gaps
     };
 
     // Total size already used
@@ -499,6 +501,8 @@ fn assign_anchors(
             let effective_gap = (pad_size - tot_track_length) / tracks.len() as f32;
             (padding_start + effective_gap / 2.0, effective_gap)
         }
+        // Fewer than two tracks leave no space between them to share
+        AlignContent::SpaceBetween if tracks.len() < 2 => (padding_start, gap),
         AlignContent::SpaceBetween => (
             padding_start,
             f32::max(
@@ -948,6 +952,56 @@ pub fn reflow_grid_layout(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn space_between_layout() -> LayoutData {
+        LayoutData {
+            align_items: AlignItems::Start,
+            align_content: AlignContent::SpaceBetween,
+            justify_items: JustifyItems::Start,
+            justify_content: JustifyContent::SpaceBetween,
+            padding_top: 0.0,
+            padding_right: 0.0,
+            padding_bottom: 0.0,
+            padding_left: 0.0,
+            row_gap: 4.0,
+            column_gap: 4.0,
+        }
+    }
+
+    #[test]
+    fn test_space_between_without_tracks_places_nothing() {
+        let bounds = Bounds::new(
+            Point::new(0.0, 0.0),
+            Point::new(100.0, 0.0),
+            Point::new(100.0, 100.0),
+            Point::new(0.0, 100.0),
+        );
+        let mut tracks: Vec<TrackData> = vec![];
+        assign_anchors(true, &space_between_layout(), &bounds, &mut tracks);
+        assign_anchors(false, &space_between_layout(), &bounds, &mut tracks);
+        assert!(tracks.is_empty());
+    }
+
+    #[test]
+    fn test_space_between_with_one_track_starts_it_at_the_padding() {
+        let bounds = Bounds::new(
+            Point::new(0.0, 0.0),
+            Point::new(100.0, 0.0),
+            Point::new(100.0, 100.0),
+            Point::new(0.0, 100.0),
+        );
+        let mut tracks = vec![TrackData {
+            track_type: GridTrackType::Fixed,
+            value: 30.0,
+            size: 30.0,
+            max_size: 30.0,
+            anchor_start: Point::new(0.0, 0.0),
+            anchor_end: Point::new(0.0, 0.0),
+        }];
+        assign_anchors(true, &space_between_layout(), &bounds, &mut tracks);
+        assert!((tracks[0].anchor_start.x - 0.0).abs() < 0.01);
+        assert!((tracks[0].anchor_end.x - 30.0).abs() < 0.01);
+    }
 
     #[test]
     fn test_child_frame_aabb_in_a_skewed_frame() {
