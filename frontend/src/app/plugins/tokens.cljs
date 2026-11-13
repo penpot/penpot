@@ -148,43 +148,33 @@
     :shadow (ctob/convert-dtcg-shadow-composite value)
     value))
 
-(defn- resolution-tokens
-  "Tokens used to resolve references for a token in `set-id`: every token in
-  the library, with the tokens of `set-id` taking precedence."
-  [tokens-lib set-id]
-  (merge (ctob/get-all-tokens-map tokens-lib)
-         (ctob/get-tokens tokens-lib set-id)))
-
 (defn- resolved-without-errors?
   [resolved]
   (and (contains? resolved :resolved-value)
        (empty? (:errors resolved))))
 
 (defn- valid-token-candidate?
+  "Whether `token` of `set-id` with `attrs` is valid. The candidate is
+  resolved as a draft against every set of the library with `set-id` on
+  top, without the token's current name, like the token forms do."
   [file-id set-id token attrs]
   (let [tokens-lib (u/locate-tokens-lib file-id)
         candidate  (merge (datafy token) attrs)
-        tokens     (-> (resolution-tokens tokens-lib set-id)
-                       (dissoc (:name token))
-                       (assoc (:name candidate) candidate))
-        resolved   (get (ts/resolve-tokens tokens) (:name candidate))]
+        sets       (-> (cfo/get-token-sets-for-edit tokens-lib set-id)
+                       (cfo/without-token (:name token)))
+        resolved   (ts/resolve-draft sets candidate)]
     (and (sm/validate (token-name-schema file-id set-id token) (:name candidate))
          (sm/validate (cfo/make-token-value-schema (:type candidate)) (:value candidate))
          (or (nil? (:description candidate))
              (sm/validate cfo/schema:token-description (:description candidate)))
          (resolved-without-errors? resolved))))
 
-;; Last resolution result, reused while the tokens library and set are unchanged
-(def ^:private resolution-cache (atom nil))
-
 (defn- resolve-set-tokens
+  "Tokens of the library resolved for `set-id`: every set of the library
+  with `set-id` on top. Repeated calls with an unchanged library are
+  answered from the resolver's cache."
   [tokens-lib set-id]
-  (let [{:keys [lib set resolved]} @resolution-cache]
-    (if (and (identical? lib tokens-lib) (= set set-id))
-      resolved
-      (let [resolved (ts/resolve-tokens (resolution-tokens tokens-lib set-id))]
-        (reset! resolution-cache {:lib tokens-lib :set set-id :resolved resolved})
-        resolved))))
+  (ts/resolve-sets (cfo/get-token-sets-for-edit tokens-lib set-id)))
 
 (defn valid-token-resolution?
   "Checks that an existing token resolves without errors, which is the only
@@ -280,8 +270,8 @@
     (into-array (map shadow-entry->js entries))))
 
 (defn- get-resolved-value
-  [token tokens-tree]
-  (let [resolved-tokens (ts/resolve-tokens tokens-tree)
+  [token sets]
+  (let [resolved-tokens (ts/resolve-sets sets)
         resolved-token  (get resolved-tokens (:name token))
         resolved-value  (:resolved-value resolved-token)]
     (cond
@@ -385,9 +375,8 @@
      (fn [_]
        (let [token           (u/locate-token file-id set-id id)
              tokens-lib      (u/locate-tokens-lib file-id)
-             tokens-status   (u/locate-tokens-status file-id)
-             tokens-tree     (cfo/get-tokens-in-active-sets tokens-status tokens-lib)]
-         (get-resolved-value token tokens-tree)))}
+             tokens-status   (u/locate-tokens-status file-id)]
+         (get-resolved-value token (cfo/get-active-token-sets tokens-status tokens-lib))))}
 
     :resolvedValueString
     {:this true
@@ -396,9 +385,8 @@
      (fn [_]
        (let [token           (u/locate-token file-id set-id id)
              tokens-lib      (u/locate-tokens-lib file-id)
-             tokens-status   (u/locate-tokens-status file-id)
-             tokens-tree     (cfo/get-tokens-in-active-sets tokens-status tokens-lib)]
-         (str (get-resolved-value token tokens-tree))))}
+             tokens-status   (u/locate-tokens-status file-id)]
+         (str (get-resolved-value token (cfo/get-active-token-sets tokens-status tokens-lib)))))}
 
     :description
     {:this true
