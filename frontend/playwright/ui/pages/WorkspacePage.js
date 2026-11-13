@@ -256,6 +256,23 @@ export class WorkspacePage extends BaseWebSocketPage {
     }
   }
 
+  // Reload the workspace keeping the mocked backend: the socket registry
+  // still holds the mock of the document that is about to be destroyed, and
+  // the new document's socket has to be reopened. `waitForPageName` is false
+  // for reloads that keep the sidebar on Assets or Tokens: there the sitemap
+  // page name is not rendered, so the canvas is the settle signal.
+  async reloadWorkspace({ pageName = "Page 1", waitForPageName = true } = {}) {
+    MockWebSocketHelper.clear();
+    await this.page.reload();
+    this.#ws = await this.waitForNotificationsWebSocket();
+    await this.#ws.mockOpen();
+    if (waitForPageName) {
+      await this.#waitForWebSocketReadiness(pageName);
+    } else {
+      await expect(this.viewport).toBeVisible({ timeout: 30000 });
+    }
+  }
+
   async #waitForWebSocketReadiness(pageName) {
     // TODO: find a better event to settle whether the app is ready to receive notifications via ws
     await expect(this.pageName).toHaveText(pageName, { timeout: 30000 })

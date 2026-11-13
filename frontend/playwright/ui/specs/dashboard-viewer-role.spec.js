@@ -1,6 +1,11 @@
 import { test, expect } from "@playwright/test";
 import DashboardPage from "../pages/DashboardPage";
 
+// A viewer's permission is not a frontend rule: `:can-edit` arrives in the
+// `get-teams` payload and the dashboard components read it inline, so there is
+// no pure predicate to move to a unit test. These tests keep the browser proof
+// and walk the sections a viewer reaches from the sidebar.
+
 test.beforeEach(async ({ page }) => {
   await DashboardPage.init(page);
 
@@ -11,21 +16,7 @@ test.beforeEach(async ({ page }) => {
   );
 });
 
-test("User can't create a new project", async ({ page }) => {
-  const dashboardPage = new DashboardPage(page);
-  await dashboardPage.goToDashboard();
-  await expect(dashboardPage.addProjectButton).toBeHidden();
-});
-
-test("User has an empty placeholder", async ({ page }) => {
-  const dashboardPage = new DashboardPage(page);
-  await dashboardPage.goToDashboard();
-  await expect(
-    dashboardPage.page.getByTestId("empty-placeholder"),
-  ).toBeVisible();
-});
-
-test("User hasn't context menu options for edit file", async ({ page }) => {
+test("A viewer sees no project or file edit affordances", async ({ page }) => {
   await DashboardPage.mockRPC(
     page,
     "get-all-projects",
@@ -34,29 +25,42 @@ test("User hasn't context menu options for edit file", async ({ page }) => {
 
   const dashboardPage = new DashboardPage(page);
   await dashboardPage.setupDrafts();
-  await dashboardPage.goToDrafts();
+  await dashboardPage.goToDashboard();
 
-  const button = dashboardPage.page.getByRole("button", { name: /New File 2/ });
-  await button.click();
-  await button.click({ button: "right" });
+  await test.step("no project creation in the recent files section", async () => {
+    await expect(dashboardPage.addProjectButton).toHaveCount(0);
+    await expect(
+      dashboardPage.page.getByTestId("empty-placeholder"),
+    ).toBeVisible();
+  });
 
-  await expect(dashboardPage.page.getByText("rename")).toBeHidden();
-  await expect(dashboardPage.page.getByText("duplicate")).toBeHidden();
-  await expect(
-    dashboardPage.page.getByText("add as shared library"),
-  ).toBeHidden();
-  await expect(dashboardPage.page.getByText("delete")).toBeHidden();
+  await test.step("no file creation in the drafts section", async () => {
+    await dashboardPage.sidebar.getByText("Drafts", { exact: true }).click();
+    await expect(dashboardPage.mainHeading).toHaveText("Drafts");
+    await expect(page.getByTestId("new-file")).toHaveCount(0);
+  });
+
+  await test.step("no edit options in the file context menu", async () => {
+    const button = page.getByRole("button", { name: /New File 2/ });
+    await button.click();
+    await button.click({ button: "right" });
+
+    // A viewer keeps the two unconditional items (open in a new tab and
+    // download). Anything gated by `can-edit` that leaks into the menu makes
+    // this count grow, which is what the four labels below only describe.
+    await expect(page.getByRole("menuitem")).toHaveCount(2);
+
+    await expect(page.getByText("rename")).toBeHidden();
+    await expect(page.getByText("duplicate")).toBeHidden();
+    await expect(page.getByText("add as shared library")).toBeHidden();
+    await expect(page.getByText("delete")).toBeHidden();
+  });
 });
 
-test("User hasn't create file button", async ({ page }) => {
+test("A viewer cannot add a custom font", async ({ page }) => {
   const dashboardPage = new DashboardPage(page);
-  await dashboardPage.setupDrafts();
-  await dashboardPage.goToDrafts();
-  await expect(dashboardPage.page.getByText("+ New File")).toBeHidden();
-});
 
-test("User hasn't add font button", async ({ page }) => {
-  const dashboardPage = new DashboardPage(page);
   await dashboardPage.goToFonts();
-  await expect(dashboardPage.page.getByText("add custom font")).toBeHidden();
+
+  await expect(page.getByTestId("add-custom-font")).toHaveCount(0);
 });
