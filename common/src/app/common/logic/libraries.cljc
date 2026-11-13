@@ -1152,8 +1152,9 @@
         ;; path+name and the file would fail :invalid-main-instance-name.
         rename?        (and (some? component)
                             (contains? (:touched shape-inst) :name-group))
+        original-name  (:name shape-inst)
         clean-name     (when rename?
-                         (cpn/clean-path (:name shape-inst)))
+                         (cpn/clean-path original-name))
         shape-inst     (cond-> shape-inst
                          (some? clean-name)
                          (assoc :name clean-name))
@@ -1189,8 +1190,7 @@
         changes        (cond-> changes
                          (and (some? clean-name)
                               main-root?
-                              (some? root-main)
-                              (not= clean-name (:name root-main)))
+                              (not= clean-name original-name))
                          (-> (update :redo-changes conj
                                      (make-change container
                                                   {:type :mod-obj
@@ -1206,7 +1206,7 @@
                                                    :local-change? true
                                                    :operations [{:type :set
                                                                  :attr :name
-                                                                 :val (:name root-main)}]}))))]
+                                                                 :val original-name}]}))))]
 
     changes))
 
