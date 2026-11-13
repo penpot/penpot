@@ -45,6 +45,54 @@ describe('Platform', () => {
     });
   });
 
+  describe('Location', () => {
+    // Parses a query string by hand: the plugin sandbox may not expose `URL`.
+    function queryParams(href: string): Record<string, string> {
+      const query = href.split('?')[1] ?? '';
+      const params: Record<string, string> = {};
+      for (const pair of query.split('&').filter(Boolean)) {
+        const [key, value = ''] = pair.split('=');
+        params[decodeURIComponent(key)] = decodeURIComponent(
+          value.replace(/\+/g, ' '),
+        );
+      }
+      return params;
+    }
+
+    test('baseUrl is an absolute instance URL ending in a slash', (ctx) => {
+      const { baseUrl } = ctx.penpot.location;
+      expect(/^https?:\/\/[^/?#]+(\/[^?#]*)?$/.test(baseUrl)).toBe(true);
+      expect(baseUrl.endsWith('/')).toBe(true);
+    });
+
+    test('href links to the open file and page', (ctx) => {
+      const { baseUrl, href } = ctx.penpot.location;
+      const file = ctx.penpot.currentFile;
+      const page = ctx.penpot.currentPage;
+      expect(file).not.toBeNull();
+      expect(page).not.toBeNull();
+      expect(href.startsWith(baseUrl + '?')).toBe(true);
+
+      const params = queryParams(href);
+      expect(params['screen']).toBe('workspace');
+      expect(params['file-id']).toBe(file!.id);
+      expect(params['page-id']).toBe(page!.id);
+      expect(params['team-id']).toBe(ctx.penpotMgmt.workspace.teamId);
+    });
+
+    test('params match the query of href', (ctx) => {
+      const { href, params } = ctx.penpot.location;
+      expect(params).toEqual(queryParams(href));
+    });
+
+    test('each read returns a new snapshot', (ctx) => {
+      const first = ctx.penpot.location;
+      const second = ctx.penpot.location;
+      expect(first === second).toBe(false);
+      expect(first).toEqual(second);
+    });
+  });
+
   describe('History', () => {
     test('undo block begin and finish wrap operations', (ctx) => {
       const block = ctx.penpot.history.undoBlockBegin();

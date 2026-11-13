@@ -250,4 +250,38 @@ describe('Plugin api', () => {
       expect(currentSelection).toEqual(selection);
     });
   });
+
+  describe('location', () => {
+    const location = {
+      baseUrl: 'https://design.penpot.app/',
+      href: 'https://design.penpot.app/?screen=dashboard-recent&team-id=t',
+      params: { screen: 'dashboard-recent', 'team-id': 't' },
+    };
+
+    it('returns the location while no workspace is ready', () => {
+      const { penpot } = createApi({
+        ...pluginManager,
+        manifest: { ...pluginManager.manifest, scope: 'global' },
+        context: {
+          ...pluginManager.context,
+          location,
+          management: { workspace: { status: 'none' } },
+        },
+      } as any);
+
+      expect(penpot.location).toEqual(location);
+    });
+
+    it('requires content:read', () => {
+      const { penpot } = createApi({
+        ...pluginManager,
+        manifest: { ...pluginManager.manifest, permissions: [] },
+        context: { ...pluginManager.context, location },
+      } as any);
+
+      expect(() => penpot.location).toThrow(
+        'Permission content:read is not granted',
+      );
+    });
+  });
 });

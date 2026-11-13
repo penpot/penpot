@@ -74,6 +74,7 @@
       "verticalPadding",
       "verticalSizing"
     ],
+    "ContentRollback": ["fileIds", "pageIds", "shapeIds"],
     "Context": [
       "activeUsers",
       "alignHorizontal",
@@ -103,6 +104,7 @@
       "history",
       "library",
       "localStorage",
+      "location",
       "openPage",
       "openViewer",
       "replaceColor",
@@ -135,6 +137,7 @@
     "Dissolve": ["duration", "easing", "type"],
     "Ellipse": ["fills", "type"],
     "EventsMap": [
+      "contentrollback",
       "contentsave",
       "filechange",
       "finish",
@@ -373,9 +376,12 @@
     "Path": ["commands", "d", "fills", "type"],
     "PathCommand": ["command", "params"],
     "Penpot": ["closePlugin", "off", "on", "ui", "utils"],
+    "PenpotLocation": ["baseUrl", "href", "params"],
     "PenpotMgmt": [
       "createTeam",
       "getFile",
+      "listDeletedFiles",
+      "listDeletedProjects",
       "listProjects",
       "listTeams",
       "off",
@@ -399,11 +405,13 @@
       "fileCount",
       "id",
       "isDefault",
+      "listDeletedFiles",
       "listFiles",
       "moveTo",
       "name",
       "pinned",
       "remove",
+      "restore",
       "teamId"
     ],
     "ProjectFile": [
@@ -415,6 +423,7 @@
       "open",
       "projectId",
       "remove",
+      "restore",
       "shared",
       "teamId"
     ],
@@ -528,9 +537,10 @@
       "createProject",
       "id",
       "isDefault",
+      "listDeletedFiles",
+      "listDeletedProjects",
       "listProjects",
-      "name",
-      "remove"
+      "name"
     ],
     "Text": [
       "align",
@@ -2145,6 +2155,26 @@
         "array": false
       }
     },
+    "ContentRollback": {
+      "fileIds": {
+        "decl": "ContentRollback",
+        "kind": "get",
+        "type": null,
+        "array": true
+      },
+      "pageIds": {
+        "decl": "ContentRollback",
+        "kind": "get",
+        "type": null,
+        "array": true
+      },
+      "shapeIds": {
+        "decl": "ContentRollback",
+        "kind": "get",
+        "type": null,
+        "array": true
+      }
+    },
     "Context": {
       "management": {
         "decl": "Context",
@@ -2222,6 +2252,12 @@
         "decl": "Context",
         "kind": "get",
         "type": "Theme",
+        "array": false
+      },
+      "location": {
+        "decl": "Context",
+        "kind": "get",
+        "type": "PenpotLocation",
         "array": false
       },
       "localStorage": {
@@ -3044,6 +3080,12 @@
         "decl": "EventsMap",
         "kind": "get",
         "type": null,
+        "array": false
+      },
+      "contentrollback": {
+        "decl": "EventsMap",
+        "kind": "get",
+        "type": "ContentRollback",
         "array": false
       }
     },
@@ -6670,6 +6712,12 @@
         "type": "Theme",
         "array": false
       },
+      "location": {
+        "decl": "Context",
+        "kind": "get",
+        "type": "PenpotLocation",
+        "array": false
+      },
       "localStorage": {
         "decl": "Context",
         "kind": "get",
@@ -6845,6 +6893,26 @@
         "array": false
       }
     },
+    "PenpotLocation": {
+      "baseUrl": {
+        "decl": "PenpotLocation",
+        "kind": "get",
+        "type": null,
+        "array": false
+      },
+      "href": {
+        "decl": "PenpotLocation",
+        "kind": "get",
+        "type": null,
+        "array": false
+      },
+      "params": {
+        "decl": "PenpotLocation",
+        "kind": "get",
+        "type": null,
+        "array": false
+      }
+    },
     "PenpotMgmt": {
       "workspace": {
         "decl": "PenpotMgmt",
@@ -6868,6 +6936,18 @@
         "decl": "PenpotMgmt",
         "kind": "method",
         "type": "Project",
+        "array": true
+      },
+      "listDeletedProjects": {
+        "decl": "PenpotMgmt",
+        "kind": "method",
+        "type": "Project",
+        "array": true
+      },
+      "listDeletedFiles": {
+        "decl": "PenpotMgmt",
+        "kind": "method",
+        "type": "ProjectFile",
         "array": true
       },
       "getFile": {
@@ -6998,6 +7078,18 @@
         "type": "ProjectFile",
         "array": true
       },
+      "listDeletedFiles": {
+        "decl": "Project",
+        "kind": "method",
+        "type": "ProjectFile",
+        "array": true
+      },
+      "restore": {
+        "decl": "Project",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
       "createFile": {
         "decl": "Project",
         "kind": "method",
@@ -7061,6 +7153,12 @@
         "array": false
       },
       "open": {
+        "decl": "ProjectFile",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
+      "restore": {
         "decl": "ProjectFile",
         "kind": "method",
         "type": null,
@@ -8752,16 +8850,22 @@
         "type": "Project",
         "array": true
       },
+      "listDeletedProjects": {
+        "decl": "Team",
+        "kind": "method",
+        "type": "Project",
+        "array": true
+      },
+      "listDeletedFiles": {
+        "decl": "Team",
+        "kind": "method",
+        "type": "ProjectFile",
+        "array": true
+      },
       "createProject": {
         "decl": "Team",
         "kind": "method",
         "type": "Project",
-        "array": false
-      },
-      "remove": {
-        "decl": "Team",
-        "kind": "method",
-        "type": null,
         "array": false
       }
     },

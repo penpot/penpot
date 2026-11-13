@@ -43,6 +43,7 @@
    [app.plugins.history :as history]
    [app.plugins.library :as library]
    [app.plugins.local-storage :as local-storage]
+   [app.plugins.location :as location]
    [app.plugins.management :as management]
    [app.plugins.page :as page]
    [app.plugins.parser :as parser]
@@ -112,6 +113,9 @@
     :theme
     {:this true
      :get #(.getTheme ^js %)}
+
+    :location
+    {:get (fn [] (clj->js (location/location @st/state)))}
 
     :localStorage
     {:this true
