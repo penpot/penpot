@@ -405,6 +405,13 @@
                               :nest (and (top-copy shape) (not (overridden (:id shape))))
                               ;; a shape a main holds, other than its root: a plain shape
                               ;; or a nested copy head, which no copy around it holds
+                              ;; a top copy, or a plain shape a main holds: nothing in it
+                              ;; leaves a copy level, so the clipboard advances no ref
+                              :paste (and (< (count objects) (get situation :shape-budget 120))
+                                          (or (top-copy shape)
+                                              (and (nil? (:shape-ref shape))
+                                                   (not (ctk/main-instance? shape))
+                                                   (some ctk/main-instance? (cfh/get-parents objects (:id shape))))))
                               :rename (and (ctk/main-instance? shape) (not (:variant-id shape))
                                            (live-component shape))
                               :annotate (and (ctk/main-instance? shape) (live-component shape))
@@ -886,6 +893,7 @@
                  :remove-child (n/remove-child target)
                  :duplicate (n/duplicate target)
                  (:nest :move) (n/nest-copy target (constantly (get-in selected [:parent :id])))
+                 :paste (n/paste-to-root target)
                  :rename (n/rename-component target (first (nth rename-values (mod (or (nth tuple 3 nil) 0)
                                                                                    (count rename-values)))))
                  :annotate (n/annotate-component target (nth annotations (mod (or (nth tuple 3 nil) 0)
@@ -1132,9 +1140,9 @@
                 model))
       (:text :text-style) (shadow/edit-text model shape (:content (n/text-edit-commit shape (:edit op) (:value op)))
                                             (some? (:typography op)))
-      :duplicate (shadow/duplicate model objects id
-                                   (:objects (thf/current-page (tm/file after)))
-                                   (:new-head (n/applied-result op (tm/file before) (tm/file after))))
+      (:duplicate :paste) (shadow/duplicate model objects id
+                                            (:objects (thf/current-page (tm/file after)))
+                                            (:new-head (n/applied-result op (tm/file before) (tm/file after))))
       (:swap :switch)
       (let [after-objects (all-objects after)
             old-main (get-in (cf/libraries before) [(:component-file shape) :data :components
@@ -1654,7 +1662,7 @@
 (def structure-kinds
   [:edit :reset :update-main :detach :sync :undo :redo :text :text-style :add-child
    :remove-child :duplicate :nest :delete :restore :resize :rotate :style :transform
-   :grid-direction :grid-cell :move :rename :annotate])
+   :grid-direction :grid-cell :move :rename :annotate :paste])
 
 (def structure-program-gen
   (gen/let [components (gen/choose 2 3)
