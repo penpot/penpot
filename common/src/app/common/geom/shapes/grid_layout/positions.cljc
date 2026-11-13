@@ -185,8 +185,8 @@
             :center
             [(gpt/add origin-v (vv (/ child-height 2)))
              (-> (gpo/project-point cell-bounds :v (gpo/center cell-bounds))
-                 (gpt/add (vv top-m))
-                 (gpt/subtract (vv bottom-m)))]
+                 (gpt/add (vv (/ top-m 2)))
+                 (gpt/subtract (vv (/ bottom-m 2))))]
 
             [origin-v
              (gpt/add (first cell-bounds) (vv top-m))])]

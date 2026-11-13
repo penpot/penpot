@@ -8,12 +8,15 @@
   (:require
    ;; Requiring modifiers triggers the side-effect that wires
    ;; -child-min-width / -child-min-height into grid layout-data.
-   [app.common.geom.modifiers]
+   [app.common.geom.modifiers :as gm]
    [app.common.geom.rect :as grc]
+   [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.grid-layout.layout-data :as gld]
    [app.common.geom.shapes.grid-layout.params :as glparams]
    [app.common.math :as mth]
+   [app.common.types.modifiers :as ctm]
    [app.common.types.shape :as cts]
+   [app.common.uuid :as uuid]
    [clojure.test :as t]))
 
 ;; ---------------------------------------------------------------------------
@@ -458,3 +461,31 @@
                                 (update :layout-grid-cells #(map (fn [cell] (dissoc cell :id)) (vals %)))
                                 (update :layout-grid-cells (partial sort-by (juxt :row :column)))))]
     (t/is (= (shape empty) (shape params)))))
+
+(t/deftest grid-centers-a-child-with-half-its-margins
+  ;; a child centered in its cell centers its margin box, as CSS does
+  (let [child-id (uuid/next)
+        frame    (make-grid-frame :layout-align-items :center :layout-justify-items :center
+                                  :layout-grid-columns [{:type :fixed :value 100.0}]
+                                  :layout-grid-rows [{:type :fixed :value 30.0}]
+                                  :width 100 :height 30)
+        cell-id  (uuid/next)
+        frame    (assoc frame
+                        :shapes [child-id]
+                        :layout-grid-cells {cell-id {:id cell-id :row 1 :column 1 :row-span 1 :column-span 1
+                                                     :position :manual :align-self :auto :justify-self :auto
+                                                     :shapes [child-id]}})
+        child    (cts/setup-shape {:id child-id :type :rect :x 0 :y 0 :width 40 :height 56
+                                   :parent-id (:id frame) :frame-id (:id frame)
+                                   :layout-item-margin-type :multiple
+                                   :layout-item-margin {:m1 5 :m2 3 :m3 0 :m4 7}})
+        objects  {uuid/zero (cts/setup-shape {:id uuid/zero :type :frame :x 0 :y 0 :width 1000 :height 1000
+                                              :shapes [(:id frame)]})
+                  (:id frame) (assoc frame :parent-id uuid/zero :frame-id uuid/zero)
+                  child-id child}
+        tree     (gm/set-objects-modifiers {(:id frame) {:modifiers (ctm/reflow-modifiers)}} objects)
+        moved    (gsh/transform-shape child (get-in tree [child-id :modifiers]))
+        corner   (first (:points moved))]
+    ;; (100 - 40 + 7 - 3) / 2 and (30 - 56 + 5 - 0) / 2
+    (t/is (mth/close? 32.0 (:x corner) 0.01))
+    (t/is (mth/close? -10.5 (:y corner) 0.01))))
