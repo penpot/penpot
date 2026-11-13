@@ -2604,6 +2604,14 @@
                                     :layout-copies false :text false}]
                        :ops [[:duplicate] [:swap] [:resize] [:resize 2] [:style 0 9 1] [:edit 2 0 0 1] [:update-main 2]]}))))
 
+(t/deftest a-switch-carries-no-size-the-old-layout-gave-a-child
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout :flex :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies true :text true}]
+                       :ops [[:combine 20] [:switch 0] [:add-variant 0] [:switch 0] [:combine 16 0 0 0]
+                             [:rotate 23 0 0 0] [:style 26 29 1] [:combine 25 0 0 0] [:variant-property 0 0 0 0]
+                             [:switch 16]]}))))
+
 (t/deftest settling-a-bool-in-a-grid-copy-twice-keeps-its-shapes-in-place
   (t/is (map? (cg/run {:world [3 0 {:variants true :rich-variants true :text true :layout :grid
                                     :layout-copies true :layout-children true}]

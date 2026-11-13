@@ -93,14 +93,16 @@
   [prev-shape           ; The shape before the switch
    current-shape        ; The shape after the switch (a clean copy)
    origin-shape         ; The original shape
+   owned                ; The dimensions the layout of the shape before gave it
    attr]
   ;; Each dimension keeps the copy's size when both variants agree on it,
-  ;; and takes the new variant's otherwise (selrect and points follow)
+  ;; and takes the new variant's otherwise (selrect and points follow); a
+  ;; size the copy's layout gave it is no override
   (let [size   (fn [dimension]
                  (let [prev    (get prev-shape dimension)
                        current (get current-shape dimension)
                        origin  (get origin-shape dimension)]
-                   (if (mth/close? origin current) prev current)))
+                   (if (and (mth/close? origin current) (not (contains? owned dimension))) prev current)))
         width  (size :width)
         height (size :height)
         ;; the turn and flips the switch carries, when both variants agree on them
@@ -194,7 +196,7 @@
    where `origin-ref-shape`, the main shape before the switch, and the new
    copy agree on the attribute (decision (a) of the component contract);
    geometry carries the override's size at the new position."
-  [current-shape previous-shape origin-ref-shape touched text-auto? attr]
+  [current-shape previous-shape origin-ref-shape touched text-auto? owned attr]
   (let [sync-group
         (ctk/resolve-sync-group (:type previous-shape) attr)
 
@@ -297,7 +299,7 @@
             ;; Both scalar dimensions and composite geometry must describe
             ;; the same result when only one dimension carries an override.
             (contains? #{:points :selrect :width :height} attr)
-            (switch-size-change-value previous-shape current-shape origin-ref-shape attr)
+            (switch-size-change-value previous-shape current-shape origin-ref-shape owned attr)
 
             :else
             (get previous-shape attr)))]
@@ -361,7 +363,9 @@
   ;; and it's the source shape that may have touched elements, and we only want
   ;; to copy those touched elements.
   [changes current-shape previous-shape current-root prev-root origin-ref-shape container]
-  (let [;; We need to sync only the position relative to the origin of the component.
+  (let [;; the dimensions the layout of the copy gave it before the switch
+        owned          (cll/layout-sized (:objects container) previous-shape)
+        ;; We need to sync only the position relative to the origin of the component.
         ;; (see cll/update-attrs for a full explanation)
         previous-shape (-> previous-shape
                            (cll/resize-with-parent (get (:objects container) (:parent-id previous-shape))
@@ -378,7 +382,7 @@
         [roperations uoperations]
         (-> (cll/attr-operations current-shape
                                  #(switch-attr-operations current-shape previous-shape origin-ref-shape
-                                                          touched text-auto? %)
+                                                          touched text-auto? owned %)
                                  attrs)
             (reoriented-operations current-shape previous-shape))
 
