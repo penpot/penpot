@@ -2598,6 +2598,12 @@
                                     :layout-copies false :text true}]
                        :ops [[:grid-cell 13] [:grid-track 0 0 11] [:grid-track 0 3] [:add-child 8] [:grid-track 0 2]]}))))
 
+(t/deftest an-authored-size-follows-a-resize-of-its-main-through-its-constraint
+  (t/is (map? (cg/run {:world [1 0 {:variants true :layout :grid :layout-item-margins false :grid-square false
+                                    :rich-variants false :layout-children false :grid-empty false
+                                    :layout-copies false :text false}]
+                       :ops [[:duplicate] [:swap] [:resize] [:resize 2] [:style 0 9 1] [:edit 2 0 0 1] [:update-main 2]]}))))
+
 (t/deftest settling-a-bool-in-a-grid-copy-twice-keeps-its-shapes-in-place
   (t/is (map? (cg/run {:world [3 0 {:variants true :rich-variants true :text true :layout :grid
                                     :layout-copies true :layout-children true}]

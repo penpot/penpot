@@ -190,6 +190,10 @@
                         parent)
                placed (when (and objects (not (:sized? (::position (meta expected)))))
                         (authored-placement expected parent shape))
+               ;; an authored size follows its parent's later resizes through its
+               ;; constraints too, though its place is not authored
+               sized-placed (when (and objects (:sized? (::position (meta expected))))
+                              (authored-placement expected parent shape))
                ;; a group or bool takes its corners from its children: at its
                ;; expected corners, its turn and flips say nothing more
                derived (and (#{:group :bool} (:type shape))
@@ -241,6 +245,8 @@
                               ;; a recorded place sizes it through its constraints as its parent resizes
                               (and (#{:width :height} key) placed (number? actual))
                               (mth/close? (get placed key) actual 0.01)
+                              (and (#{:width :height} key) sized-placed (number? actual))
+                              (mth/close? (get sized-placed key) actual 0.01)
                               (#{:flip-x :flip-y} key) (= (boolean value) (boolean actual))
                               ;; under one flip, either order of turn and flip stores the opposite turn
                               (and (= :rotation key) (number? value) (number? actual)
