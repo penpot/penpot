@@ -1216,7 +1216,7 @@
                     :only-main (fn [changes child-main]
                                  (remove-shape changes child-main main-container))
                     :inverse?  true})
-                  (reorder-main-children shape-main children-inst @added main-container))
+                  (reorder-main-children shape-main shape-inst children-inst @added main-container))
 
         (ctsl/grid-layout? shape-main)
         (update-grid-main-attrs shape-main shape-inst children-inst @added main-container)))))
@@ -1224,9 +1224,18 @@
 (defn- reorder-main-children
   "Order the children of `shape-main` as the copy's `children-inst`, each by
   the main shape it pairs with or the one `added` for it, in one change that
-  its undo reverts."
-  [changes shape-main children-inst added main-container]
-  (let [order (into [] (keep #(get added (:id %) (:shape-ref %))) children-inst)
+  its undo reverts. A main that is a grid copy with its own cells, once it
+  takes the copy's, orders them as they flow in those cells, as sync orders
+  such a copy."
+  [changes shape-main shape-inst children-inst added main-container]
+  (let [own-flow? (and (:shape-ref shape-main) (ctsl/grid-layout? shape-main) (ctsl/grid-layout? shape-inst)
+                       (or (ctk/touched-group? shape-main :layout-grid-cells)
+                           (ctk/touched-group? shape-inst :layout-grid-cells)))
+        children-inst (if own-flow?
+                        (let [by-id (d/index-by :id children-inst)]
+                          (into [] (keep by-id) (:shapes (ctsl/reorder-grid-children shape-inst))))
+                        children-inst)
+        order (into [] (keep #(get added (:id %) (:shape-ref %))) children-inst)
         reorder (fn [shapes]
                   {:type :reorder-children
                    :parent-id (:id shape-main)
