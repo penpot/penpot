@@ -84,21 +84,26 @@
                                     WHERE attrelid = 'file_change'::regclass
                                       AND attname = 'data'"])
                 (mapv :type))))
-  (t/is (true? (query "SELECT attnotnull AS notnull
+  ;; Nullable on purpose: a rollback to the previous version inserts
+  ;; without `kind` and has to keep writing (migration 0158).
+  (t/is (false? (query "SELECT attnotnull AS notnull
                           FROM pg_attribute
                          WHERE attrelid = 'file_change'::regclass
                            AND attname = 'kind'"))))
 
-(t/deftest inserting-a-row-without-a-kind-fails
-  ;; The column has no default on purpose: an insert that forgets it has to
-  ;; fail instead of storing the wrong kind silently.
+(t/deftest inserting-a-row-without-a-kind-succeeds
+  ;; The column is nullable on purpose: the previous version inserts without
+  ;; it, and a rollback to that version has to keep writing. The backfill of
+  ;; a later NOT NULL migration turns these NULLs into 1/2.
   (let [profile (th/create-profile* 1)
         file    (th/create-file* 1 {:profile-id (:id profile)
                                     :project-id (:default-project-id profile)})]
-    (t/is (thrown? java.sql.SQLException
-                   (db/exec! th/*pool* ["INSERT INTO file_change (file_id, id)
-                                           VALUES (?, gen_random_uuid())"
-                                        (:id file)])))))
+    (db/exec! th/*pool* ["INSERT INTO file_change (file_id, id)
+                             VALUES (?, gen_random_uuid())"
+                         (:id file)])
+    (t/is (nil? (query "SELECT kind AS k
+                          FROM file_change
+                         WHERE file_id = ?" (:id file))))))
 
 (t/deftest inserting-a-row-with-an-unknown-kind-fails
   (let [profile (th/create-profile* 1)
