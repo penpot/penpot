@@ -2538,6 +2538,33 @@ test.describe("Tokens tab - edition", () => {
     await expect(valueField).toHaveValue(/^rgba(.*)$/);
   });
 
+  test("BUG: 12672 Edit form shows the resolved color of an alias token", async ({
+    page,
+  }) => {
+    const { tokensUpdateCreateModal, tokensSidebar, tokenContextMenuForToken } =
+      await setupTokensFileRender(page, {
+        file: "workspace/get-file-tokens-color-alias.json",
+      });
+
+    await unfoldTokenType(tokensSidebar, "color");
+
+    const aliasToken = tokensSidebar.getByRole("button", { name: "alias" });
+    await aliasToken.click({ button: "right" });
+    await expect(tokenContextMenuForToken).toBeVisible();
+    await tokenContextMenuForToken.getByText("Edit token").click();
+    await expect(tokensUpdateCreateModal).toBeVisible();
+
+    await expect(tokensUpdateCreateModal.getByLabel("Value")).toHaveValue(
+      "{color.primary}",
+    );
+
+    const swatchColor = tokensUpdateCreateModal
+      .getByTestId("token-form-color-bullet")
+      .locator("div[style*='background']")
+      .first();
+    await expect(swatchColor).toHaveCSS("background-color", "rgb(255, 0, 0)");
+  });
+
   test("User sees self-reference error when editing a token to create a circular reference", async ({
     page,
   }) => {
