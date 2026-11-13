@@ -212,6 +212,19 @@
           (recur (concat (rest pending) (map second hits)) (into result hits)))
         result))))
 
+(defn- assign-ungrouped-cells
+  "`grid` with the cells of the children an ungroup brings into it assigned.
+   A copy with its own cells gives its free cells to them in the layer
+   order of its main, as sync does, which is the reverse of the order the
+   main's grid flows them in."
+  [grid objects]
+  (if (ctk/touched-group? grid :layout-grid-cells)
+    (-> grid
+        (update :shapes (comp vec reverse))
+        (ctl/assign-cells objects)
+        (assoc :shapes (:shapes grid)))
+    (ctl/assign-cells grid objects)))
+
 (defn- ungroup-shape-changes
   "The changes that ungroup the group, bool or board `shape-id` of the
    page `page-id`, whose shapes are `objects`; `options` of the moves and
@@ -228,7 +241,7 @@
 
     (cond-> changes
       (and changes (ctl/grid-layout? objects (:parent-id shape)))
-      (pcb/update-shapes [(:parent-id shape)] ctl/assign-cells
+      (pcb/update-shapes [(:parent-id shape)] assign-ungrouped-cells
                          (merge {:with-objects? true} (select-keys options [:ignore-touched]))))))
 
 (defn generate-ungroup-changes

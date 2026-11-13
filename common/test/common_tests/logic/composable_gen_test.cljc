@@ -4307,3 +4307,11 @@
                                     :grid-square false :library true :rich-variants true :layout-children false
                                     :grid-empty false :layout-copies false :text true}]
                        :ops [[:switch 11] [:switch 5] [:nest 17] [:add-child 15] [:rotate 15] [:style 12 9 1] [:paste 12]]}))))
+
+(t/deftest generated-an-ungroup-fills-a-grid-copy-with-its-own-cells-in-main-layer-order
+  ;; shapes an ungroup in a grid main brings into a copy with its own cells
+  ;; take its free cells in the main's layer order, as sync gives them
+  (t/is (map? (cg/run {:world [2 2 {:variants true :rich-variants true :text true :layout :grid
+                                    :layout-copies true :layout-children true}]
+                       :ops [[:add-child 8] [:structure 2 4 15] [:grid-direction 0 0 0 1] [:grid-cell 0 0 0 1]
+                             [:add-child 0] [:structure 0 2 0]]}))))
