@@ -12,7 +12,7 @@
    [app.main.constants :refer [max-input-length]]
    [app.main.ui.ds.controls.select :refer [handle-focus-change]]
    [app.main.ui.ds.controls.shared.options-dropdown :refer [options-dropdown* schema:option]]
-   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon* icon-list] :as i]
    [app.util.dom :as dom]
    [app.util.globals :as globals]
    [app.util.keyboard :as kbd]
@@ -23,6 +23,9 @@
    [rumext.v2.util :as mfu])
   (:import goog.events.EventType))
 
+(def ^:private schema:icon
+  [:and :string [:fn #(contains? icon-list %)]])
+
 (def ^:private schema:combobox
   [:map
    [:id {:optional true} :string]
@@ -30,6 +33,7 @@
    [:class {:optional true} :string]
    [:max-length {:optional true} :int]
    [:placeholder {:optional true} :string]
+   [:icon {:optional true} [:maybe schema:icon]]
    [:disabled {:optional true} :boolean]
    [:default-selected {:optional true} :string]
    [:select-only {:optional true} :boolean]
@@ -39,7 +43,7 @@
 
 (mf/defc combobox*
   {::mf/schema schema:combobox}
-  [{:keys [id options class placeholder disabled has-error default-selected select-only max-length empty-to-end on-change] :rest props}]
+  [{:keys [id options class placeholder icon disabled has-error default-selected select-only max-length empty-to-end on-change] :rest props}]
   (let [;; NOTE: we use mfu/bean here for transparently handle
         ;; options provide as clojure data structures or javascript
         ;; plain objects and lists.
@@ -239,8 +243,9 @@
             (d/seek #(= selected-id (get % :id)) options)))
 
         icon
-        (when selected-option
-          (get selected-option :icon))
+        (or (when selected-option
+              (get selected-option :icon))
+            icon)
 
         avatar
         (when selected-option
