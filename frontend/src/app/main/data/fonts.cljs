@@ -18,6 +18,7 @@
    [app.main.fonts :as fonts]
    [app.main.repo :as rp]
    [app.main.store :as st]
+   [app.main.worker :as mw]
    [app.util.i18n :refer [tr]]
    [app.util.storage :as storage]
    [app.util.webapi :as wa]
@@ -84,6 +85,17 @@
     (watch [_ _ _]
       (->> (rp/cmd! :get-font-variants {:team-id team-id})
            (rx/map fonts-fetched)))))
+
+(defn- sync-worker-fonts
+  "Store watcher that sends the worker the team's custom fonts each
+  time they change. The worker's render looks them up in its own
+  store, which nothing else fills."
+  [_ _ old-state new-state]
+  (let [fonts (:fonts new-state)]
+    (when-not (identical? fonts (:fonts old-state))
+      (mw/emit! {:cmd :fonts/sync :fonts fonts}))))
+
+(add-watch st/state ::sync-worker-fonts sync-worker-fonts)
 
 (defn upload-font-variant
   "Uploads a single font variant item using the chunked upload API.
