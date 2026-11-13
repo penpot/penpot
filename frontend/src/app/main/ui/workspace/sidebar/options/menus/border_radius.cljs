@@ -108,17 +108,18 @@
                                {:reg-objects? true
                                 :attrs [:r1 :r2 :r3 :r4]})))
 
+        ;; a flipped shape stores the corner it shows under another name
         change-one-radius
         (mf/use-fn
          (mf/deps ids)
-         (fn [update-fn attr]
+         (fn [update-fn _attr]
            (dwsh/update-shapes ids
                                (fn [shape]
                                  (if (ctsr/has-radius? shape)
                                    (update-fn shape)
                                    shape))
                                {:reg-objects? true
-                                :attrs [attr]})))
+                                :attrs [:r1 :r2 :r3 :r4]})))
 
         toggle-radius-mode
         (mf/use-fn

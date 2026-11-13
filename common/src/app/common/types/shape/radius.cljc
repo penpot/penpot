@@ -44,14 +44,20 @@
     (can-get-border-radius? shape)
     (assoc :r1 value :r2 value :r3 value :r4 value)))
 
+(defn shown-corner
+  "The corner `attr` of `shape` as the shape shows it, mirrored by its flips;
+   the same mirroring takes a shown corner to the one it stores."
+  [shape attr]
+  (cond->> attr
+    (:flip-x shape)
+    (get {:r1 :r2 :r2 :r1 :r3 :r4 :r4 :r3})
+
+    (:flip-y shape)
+    (get {:r1 :r4 :r2 :r3 :r3 :r2 :r4 :r1})))
+
 (defn set-radius-to-single-corner
   [shape attr value]
-  (let [attr (cond->> attr
-               (:flip-x shape)
-               (get {:r1 :r2 :r2 :r1 :r3 :r4 :r4 :r3})
-
-               (:flip-y shape)
-               (get {:r1 :r4 :r2 :r3 :r3 :r2 :r4 :r1}))]
+  (let [attr (shown-corner shape attr)]
     ;; Only Apply changes to shapes that support border Radius
     (cond-> shape
       (can-get-border-radius? shape)

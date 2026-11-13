@@ -20,6 +20,7 @@
    [app.common.types.pages-list :as ctpl]
    [app.common.types.shape.interactions :as ctsi]
    [app.common.types.shape.layout :as ctl]
+   [app.common.types.shape.radius :as ctsr]
    [app.common.types.shape.token :as ctst]
    [app.common.types.text :as ctt]
    [app.common.types.token :as cto]
@@ -64,6 +65,9 @@
                                    (not (zero? changed-item-index))
                                    (= (first (get shape attr))
                                       (first (get (get new-objects shape-id) attr)))))
+                ;; a radius token names a corner as the shape shows it
+                attr        (cond->> attr
+                              (contains? #{:r1 :r2 :r3 :r4} attr) (ctsr/shown-corner shape))
                 token-attrs (when-not later-item?
                               (if (and (cfh/text-shape? shape) (= attr :content))
                                 (text-changed-attrs shape)
