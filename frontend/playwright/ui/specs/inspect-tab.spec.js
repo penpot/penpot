@@ -406,137 +406,99 @@ test.describe("Inspect tab - Styles", () => {
     await expect(compositeShadowDefinition).toContainText("shadowToken");
   });
 
-  test.describe("Inspect tab - Fill", () => {
-    test("Shape - Fill - Solid", async ({ page }) => {
-      const workspacePage = new WasmWorkspacePage(page);
-      await setupFile(workspacePage);
+  test("Fill", async ({ page }) => {
+    const workspacePage = new WasmWorkspacePage(page);
+    await setupFile(workspacePage);
 
+    await test.step("Solid", async () => {
       await selectLayer(workspacePage, shapeToLayerName.fill.solid);
       await openInspectTab(workspacePage);
+
       const panel = await getPanelByTitle(workspacePage, "Fill");
-      await expect(panel).toBeVisible();
-
-      const propertyRow = panel.getByTestId("property-row");
-      const propertyRowCount = await propertyRow.count();
-
-      expect(propertyRowCount).toBeGreaterThanOrEqual(1);
+      await expectPanelRows(panel, 1);
     });
 
-    test("Change color space and ensure fill and shorthand changes", async ({
-      page,
-    }) => {
-      const workspacePage = new WasmWorkspacePage(page);
-      await setupFile(workspacePage);
-
-      await selectLayer(workspacePage, shapeToLayerName.fill.solid);
-      await openInspectTab(workspacePage);
-      const panel = await getPanelByTitle(workspacePage, "Fill");
-      await expect(panel).toBeVisible();
-
-      const propertyRow = panel.getByTestId("property-row");
-      const backgroundRow = propertyRow.filter({
-        hasText: "Background",
-      });
-      await expect(backgroundRow).toBeVisible();
-
-      // Ensure initial value and copied value are in HEX format
-      expect(backgroundRow).toContainText("#0438d5 100%");
-
-      await copyPropertyFromPropertyRow(panel, "Background");
-
-      const backgroundHEX = await page.evaluate(() =>
-        navigator.clipboard.readText(),
-      );
-      expect(backgroundHEX).toContain("background: #0438d5FF;");
-
-      // Change color space to RGBA
-      await selectColorSpace(workspacePage, "rgba");
-
-      // Ensure new value and copied value are in RGBA format
-      expect(backgroundRow).toContainText("4, 56, 213, 1");
-
-      await copyPropertyFromPropertyRow(panel, "Background");
-      const backgroundRGBA = await page.evaluate(() =>
-        navigator.clipboard.readText(),
-      );
-      expect(backgroundRGBA).toContain("background: rgba(4, 56, 213, 1);");
-    });
-
-    test("Shape - Fill - Gradient", async ({ page }) => {
-      const workspacePage = new WasmWorkspacePage(page);
-      await setupFile(workspacePage);
-
+    await test.step("Gradient", async () => {
       await selectLayer(workspacePage, shapeToLayerName.fill.gradient);
-      await openInspectTab(workspacePage);
+
       const panel = await getPanelByTitle(workspacePage, "Fill");
-      await expect(panel).toBeVisible();
-
-      const propertyRow = panel.getByTestId("property-row");
-      const propertyRowCount = await propertyRow.count();
-
-      expect(propertyRowCount).toBeGreaterThanOrEqual(1);
+      await expectPanelRows(panel, 1);
     });
 
-    test("Shape - Fill - Image", async ({ page }) => {
-      const workspacePage = new WasmWorkspacePage(page);
-      await setupFile(workspacePage);
-
+    await test.step("Image", async () => {
       await selectLayer(workspacePage, shapeToLayerName.fill.image);
-      await openInspectTab(workspacePage);
+
       const panel = await getPanelByTitle(workspacePage, "Fill");
-      await expect(panel).toBeVisible();
+      await expectPanelRows(panel, 1);
 
-      const propertyRow = panel.getByTestId("property-row");
-      const propertyRowCount = await propertyRow.count();
-
-      expect(propertyRowCount).toBeGreaterThanOrEqual(1);
-
-      const imagePreview = panel.getByRole("img", {
-        name: "Preview of the shape's fill",
-      });
-      await expect(imagePreview).toBeVisible();
+      await expect(
+        panel.getByRole("img", { name: "Preview of the shape's fill" }),
+      ).toBeVisible();
     });
 
-    test("Shape - Fill - Multiple", async ({ page }) => {
-      const workspacePage = new WasmWorkspacePage(page);
-      await setupFile(workspacePage);
-
+    await test.step("Multiple", async () => {
       await selectLayer(workspacePage, shapeToLayerName.fill.multiple);
-      await openInspectTab(workspacePage);
+
       const panel = await getPanelByTitle(workspacePage, "Fill");
-      await expect(panel).toBeVisible();
+      await expectPanelRows(panel, 3);
 
-      const propertyRow = panel.getByTestId("property-row");
-      const propertyRowCount = await propertyRow.count();
-
-      expect(propertyRowCount).toBeGreaterThanOrEqual(3);
-
-      const imagePreview = panel.getByRole("img", {
-        name: "Preview of the shape's fill",
-      });
-      await expect(imagePreview).toBeVisible();
+      await expect(
+        panel.getByRole("img", { name: "Preview of the shape's fill" }),
+      ).toBeVisible();
     });
 
-    test("Shape - Fill - Token", async ({ page }) => {
-      const workspacePage = new WasmWorkspacePage(page);
-      await setupFile(workspacePage);
-
+    await test.step("Token", async () => {
       await selectLayer(workspacePage, shapeToLayerName.fill.token);
-      await openInspectTab(workspacePage);
+
       const panel = await getPanelByTitle(workspacePage, "Fill");
-      await expect(panel).toBeVisible();
+      await expectPanelRows(panel, 1);
 
-      const propertyRow = panel.getByTestId("property-row");
-      const propertyRowCount = await propertyRow.count();
-
-      expect(propertyRowCount).toBeGreaterThanOrEqual(1);
-
-      const fillToken = propertyRow.filter({
-        hasText: "Background",
-      });
-      expect(fillToken).toContainText("primary");
-      await expect(fillToken).toBeVisible();
+      const backgroundRow = panel
+        .getByTestId("property-row")
+        .filter({ hasText: "Background" });
+      await expect(backgroundRow).toContainText("primary");
+      await expect(backgroundRow).toBeVisible();
     });
+  });
+
+  test("Change color space and ensure fill and shorthand changes", async ({
+    page,
+  }) => {
+    const workspacePage = new WasmWorkspacePage(page);
+    await setupFile(workspacePage);
+
+    await selectLayer(workspacePage, shapeToLayerName.fill.solid);
+    await openInspectTab(workspacePage);
+    const panel = await getPanelByTitle(workspacePage, "Fill");
+    await expect(panel).toBeVisible();
+
+    const propertyRow = panel.getByTestId("property-row");
+    const backgroundRow = propertyRow.filter({
+      hasText: "Background",
+    });
+    await expect(backgroundRow).toBeVisible();
+
+    // Ensure initial value and copied value are in HEX format
+    await expect(backgroundRow).toContainText("#0438d5 100%");
+
+    await copyPropertyFromPropertyRow(panel, "Background");
+
+    const backgroundHEX = await page.evaluate(() =>
+      navigator.clipboard.readText(),
+    );
+    expect(backgroundHEX).toContain("background: #0438d5FF;");
+
+    // Change color space to RGBA
+    await selectColorSpace(workspacePage, "rgba");
+
+    // Ensure new value and copied value are in RGBA format
+    await expect(backgroundRow).toContainText("4, 56, 213, 1");
+
+    await copyPropertyFromPropertyRow(panel, "Background");
+    const backgroundRGBA = await page.evaluate(() =>
+      navigator.clipboard.readText(),
+    );
+    expect(backgroundRGBA).toContain("background: rgba(4, 56, 213, 1);");
   });
 
   test.describe("Inspect tab - Stroke", () => {
