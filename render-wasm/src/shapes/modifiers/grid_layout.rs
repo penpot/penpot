@@ -67,7 +67,7 @@ pub fn calculate_tracks(
         &grid_data.rows
     };
 
-    let mut tracks = init_tracks(grid_tracks, layout_size);
+    let mut tracks = init_tracks(grid_tracks, layout_size, auto_layout);
     set_auto_base_size(is_column, &mut tracks, cells, shapes, bounds);
     set_auto_multi_span(is_column, &mut tracks, cells, shapes, bounds);
     set_flex_multi_span(is_column, layout_data, &mut tracks, cells, shapes, bounds);
@@ -83,17 +83,25 @@ pub fn calculate_tracks(
     tracks
 }
 
-fn init_tracks(track: &[GridTrack], size: f32) -> Vec<TrackData> {
+/// The tracks of one axis at their initial sizes. A grid that hugs its
+/// content along the axis sizes its percent tracks by their content, as
+/// their percentages would depend on its own size.
+fn init_tracks(track: &[GridTrack], size: f32, auto_layout: bool) -> Vec<TrackData> {
     track
         .iter()
         .map(|t| {
-            let (size, max_size) = match t.track_type {
+            let track_type = if auto_layout && t.track_type == GridTrackType::Percent {
+                GridTrackType::Auto
+            } else {
+                t.track_type
+            };
+            let (size, max_size) = match track_type {
                 GridTrackType::Fixed => (t.value, t.value),
                 GridTrackType::Percent => (size * t.value / 100.0, size * t.value / 100.0),
                 _ => (MIN_SIZE, MAX_SIZE),
             };
             TrackData {
-                track_type: t.track_type,
+                track_type,
                 value: t.value,
                 size,
                 max_size,
@@ -1006,6 +1014,19 @@ mod tests {
             row_gap: 4.0,
             column_gap: 4.0,
         }
+    }
+
+    #[test]
+    fn test_init_tracks_sizes_percent_tracks_by_content_while_hugging() {
+        let tracks = vec![GridTrack {
+            track_type: GridTrackType::Percent,
+            value: 50.0,
+        }];
+        let fixed = init_tracks(&tracks, 200.0, false);
+        assert_eq!(fixed[0].size, 100.0);
+        let hugging = init_tracks(&tracks, 200.0, true);
+        assert!(hugging[0].track_type == GridTrackType::Auto);
+        assert_eq!(hugging[0].size, MIN_SIZE);
     }
 
     #[test]

@@ -437,12 +437,19 @@
                children)
 
          ;; Initialize tracks
+         ;; a grid that hugs its content along an axis sizes its percent tracks
+         ;; there by their content, as their percentages would depend on its size
+         hugged
+         (fn [tracks hug?]
+           (cond->> tracks
+             hug? (mapv #(cond-> % (= :percent (:type %)) (assoc :type :auto :value nil)))))
+
          column-tracks
-         (->> layout-grid-columns
+         (->> (hugged layout-grid-columns auto-width?)
               (mapv (partial calculate-initial-track-size bound-width)))
 
          row-tracks
-         (->> layout-grid-rows
+         (->> (hugged layout-grid-rows auto-height?)
               (mapv (partial calculate-initial-track-size bound-height)))
 
          ;; Go through cells to adjust auto sizes for span=1. Base is the max of its children
