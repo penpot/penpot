@@ -2215,7 +2215,7 @@
           (= (boolean (:flip-x shape)) (flip? :flip-x))
           (= (boolean (:flip-y shape)) (flip? :flip-y))))))
 
-(defn- layout-sized
+(defn layout-sized
   "The dimensions a layout gives `shape`: those it fills in its layout
    parent or hugs as a layout itself, and both once it is turned in a
    layout parent, which resizes it along its own axes."
