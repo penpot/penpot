@@ -2,6 +2,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.types.token :as cto]
+   [app.main.data.workspace.tokens.format :as dwtf]
    [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]))
 
@@ -125,6 +126,14 @@
   [error token-name]
   (let [translated-string (tr "errors.tokens.name-collision" token-name)]
     (= error translated-string)))
+
+(defn show-hint-on-open?
+  "True when an untouched field (form just opened) shows the resolved
+  value: only when it differs from the written one, so a plain `16`
+  gets no `Resolved value: 16` hint."
+  [input-value resolved-value]
+  (not= (str/lower (str/trim (dwtf/format-token-value input-value)))
+        (str/lower (str/trim (dwtf/format-token-value resolved-value)))))
 
 (defn- referenced-token-name
   "Name of the token `reference` points to, when `reference` is exactly

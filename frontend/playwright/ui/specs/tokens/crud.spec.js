@@ -2538,31 +2538,74 @@ test.describe("Tokens tab - edition", () => {
     await expect(valueField).toHaveValue(/^rgba(.*)$/);
   });
 
-  test("BUG: 12672 Edit form shows the resolved color of an alias token", async ({
-    page,
-  }) => {
-    const { tokensUpdateCreateModal, tokensSidebar, tokenContextMenuForToken } =
-      await setupTokensFileRender(page, {
-        file: "workspace/get-file-tokens-color-alias.json",
-      });
+  const openEditTokenForm = async (setup, type, name) => {
+    const { tokensSidebar, tokenContextMenuForToken, tokensUpdateCreateModal } =
+      setup;
+    const kebabType = type.replace(/\s/g, "-");
 
-    await unfoldTokenType(tokensSidebar, "color");
-
-    const aliasToken = tokensSidebar.getByRole("button", { name: "alias" });
-    await aliasToken.click({ button: "right" });
+    await unfoldTokenType(tokensSidebar, type);
+    await tokensSidebar
+      .getByTestId(`section-${kebabType}`)
+      .getByRole("button", { name })
+      .first()
+      .click({ button: "right" });
     await expect(tokenContextMenuForToken).toBeVisible();
     await tokenContextMenuForToken.getByText("Edit token").click();
     await expect(tokensUpdateCreateModal).toBeVisible();
+  };
+
+  test("BUG: 12672 Edit form shows the resolved color of an alias token", async ({
+    page,
+  }) => {
+    const setup = await setupTokensFileRender(page, {
+      file: "workspace/get-file-tokens-alias.json",
+    });
+    const { tokensUpdateCreateModal } = setup;
+
+    await openEditTokenForm(setup, "color", "alias");
 
     await expect(tokensUpdateCreateModal.getByLabel("Value")).toHaveValue(
       "{color.primary}",
     );
+    await expect(
+      tokensUpdateCreateModal.getByText("Resolved value: #ff0000"),
+    ).toBeVisible();
 
     const swatchColor = tokensUpdateCreateModal
       .getByTestId("token-form-color-bullet")
       .locator("div[style*='background']")
       .first();
     await expect(swatchColor).toHaveCSS("background-color", "rgb(255, 0, 0)");
+  });
+
+  test("BUG: 12788 Edit form shows the resolved value of an alias token on open", async ({
+    page,
+  }) => {
+    const setup = await setupTokensFileRender(page, {
+      file: "workspace/get-file-tokens-alias.json",
+    });
+    const { tokensUpdateCreateModal } = setup;
+    const resolvedValue = tokensUpdateCreateModal.getByText("Resolved value:");
+
+    // Font size alias
+    await openEditTokenForm(setup, "font size", "alias");
+    await expect(
+      tokensUpdateCreateModal.getByText("Resolved value: 16"),
+    ).toBeVisible();
+    await page.keyboard.press("Escape");
+
+    // Font size with a plain value: no hint repeating the value
+    await openEditTokenForm(setup, "font size", "base");
+    await expect(tokensUpdateCreateModal.getByLabel("Value")).toHaveValue("16");
+    await expect(resolvedValue).not.toBeVisible();
+    await page.keyboard.press("Escape");
+
+    // Typography alias
+    await openEditTokenForm(setup, "typography", "alias");
+    await expect(resolvedValue).toBeVisible();
+    await expect(
+      tokensUpdateCreateModal.getByText("Font Size: 18"),
+    ).toBeVisible();
   });
 
   test("User sees self-reference error when editing a token to create a circular reference", async ({

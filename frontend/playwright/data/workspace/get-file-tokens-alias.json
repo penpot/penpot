@@ -186,6 +186,64 @@
                                                         "~:modified-at": "~m1779204586592"
                                                     }
                                                 }
+                                            ],
+                                            [
+                                                "font-size.base",
+                                                {
+                                                    "~#penpot/token": {
+                                                        "~:id": "~u1dc5cafc-6d57-808d-8008-0b7af8181203",
+                                                        "~:name": "font-size.base",
+                                                        "~:type": "~:font-size",
+                                                        "~:value": "16",
+                                                        "~:description": "",
+                                                        "~:modified-at": "~m1779204586592"
+                                                    }
+                                                }
+                                            ],
+                                            [
+                                                "font-size.alias",
+                                                {
+                                                    "~#penpot/token": {
+                                                        "~:id": "~u1dc5cafc-6d57-808d-8008-0b7af8181204",
+                                                        "~:name": "font-size.alias",
+                                                        "~:type": "~:font-size",
+                                                        "~:value": "{font-size.base}",
+                                                        "~:description": "",
+                                                        "~:modified-at": "~m1779204586592"
+                                                    }
+                                                }
+                                            ],
+                                            [
+                                                "typography.base",
+                                                {
+                                                    "~#penpot/token": {
+                                                        "~:id": "~u1dc5cafc-6d57-808d-8008-0b7af8181205",
+                                                        "~:name": "typography.base",
+                                                        "~:type": "~:typography",
+                                                        "~:value": {
+                                                            "~:font-family": [
+                                                                "Roboto"
+                                                            ],
+                                                            "~:font-size": "18",
+                                                            "~:font-weight": "bold"
+                                                        },
+                                                        "~:description": "",
+                                                        "~:modified-at": "~m1779204586592"
+                                                    }
+                                                }
+                                            ],
+                                            [
+                                                "typography.alias",
+                                                {
+                                                    "~#penpot/token": {
+                                                        "~:id": "~u1dc5cafc-6d57-808d-8008-0b7af8181206",
+                                                        "~:name": "typography.alias",
+                                                        "~:type": "~:typography",
+                                                        "~:value": "{typography.base}",
+                                                        "~:description": "",
+                                                        "~:modified-at": "~m1779204586592"
+                                                    }
+                                                }
                                             ]
                                         ]
                                     }

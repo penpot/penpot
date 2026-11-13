@@ -282,11 +282,13 @@
                       (rx/subs! (fn [{:keys [error value]}]
                                   (let [touched? (get-in @form [:touched input-name])]
                                     (cond
-                                      ;; Untouched field (form just opened): keep the
-                                      ;; resolved color for the swatch, but show no hint
+                                      ;; Untouched field (form just opened)
                                       (not touched?)
                                       (when-not error
-                                        (swap! form assoc-in [:data :color-result] value))
+                                        (swap! form assoc-in [:data :color-result] value)
+                                        (when (csu/show-hint-on-open? (get-in @form [:data input-name]) value)
+                                          (reset! hint* {:message (tr "workspace.tokens.resolved-value" (dwtf/format-token-value value))
+                                                         :type "hint"})))
 
                                       error
                                       (if (csu/group-name-conflict-error? error token-name)
