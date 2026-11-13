@@ -38,7 +38,9 @@
    [app.util.blob :as blob]
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
-   [clojure.set :as set]))
+   [app.worker :as-alias wrk]
+   [clojure.set :as set]
+   [promesa.exec :as px]))
 
 (declare ^:private get-lagged-changes)
 (declare ^:private send-notifications!)
@@ -48,6 +50,7 @@
 (declare ^:private process-changes-and-validate)
 (declare ^:private take-snapshot?)
 (declare ^:private invalidate-caches!)
+(declare ^:private schedule-cache-invalidation)
 
 ;; PUBLIC API; intended to be used outside of this module
 (declare update-file!)
@@ -371,8 +374,10 @@
 
       (persist-file! cfg (dissoc file ::repair))
 
+      ;; Best effort: a slow, unavailable or failing cache must never delay
+      ;; nor fail the save, so the invalidation runs outside of this request.
       (when (contains? cf/flags :redis-cache)
-        (invalidate-caches! cfg file))
+        (schedule-cache-invalidation cfg (:id file)))
 
       ;; Send asynchronous notifications
       (when repair
@@ -428,6 +433,21 @@
   (rds/run! cfg (fn [{:keys [::rds/conn]}]
                   (let [key (files/file-summary-cache-key id)]
                     (rds/del conn key)))))
+
+(defn- schedule-cache-invalidation
+  "Schedule a best effort invalidation of the file-summary cache entry of the
+  file id. The task runs on the worker executor because a slow, unavailable
+  or failing redis must never delay nor fail an `update-file` request; a lost
+  invalidation only leaves a stale summary until the cache TTL expires."
+  [{:keys [::wrk/executor] :as cfg} id]
+  (px/exec executor
+           (fn []
+             (try
+               (invalidate-caches! (select-keys cfg [::rds/pool]) {:id id})
+               (catch Throwable cause
+                 (l/warn :hint "unable to invalidate file-summary cache"
+                         :file-id (str id)
+                         :cause cause))))))
 
 (defn- attach-snapshot
   "Attach snapshot data to the file. This should be called before the
