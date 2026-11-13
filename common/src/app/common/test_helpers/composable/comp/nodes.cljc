@@ -251,6 +251,74 @@
   [target property value]
   (tm/assign-id (->ChangeProperty target property value)))
 
+;; ---------------------------------------------------------------------------
+;; rename-component — the assets panel's rename of a component
+;;
+;; As the frontend's `rename-component-and-main-instance`: the component takes
+;; the normalized name, split into its path and name, and its main root the
+;; whole normalized name.
+;; ---------------------------------------------------------------------------
+
+(defrecord RenameComponent [target value]
+  IComponentOperation
+  (op-kind [_] :user)
+
+  tm/IOperation
+  (apply-to [this situation]
+    (let [the-file (tm/file situation)
+          shape-id (tm/target-shape-id situation target)
+          page     (thf/current-page the-file)
+          shape    (get-in page [:objects shape-id])
+          name     (cpn/normalize-path-name value)
+          changes  (-> (pcb/empty-changes nil (:id page))
+                       (cll/generate-rename-component (:component-id shape) name (:data the-file))
+                       (cls/generate-update-shapes #{shape-id} #(assoc % :name name) (:objects page) {}))
+          file'    (thf/apply-changes the-file changes)]
+      (-> situation
+          (tm/with-file file')
+          (record-changes changes)
+          (tm/record-application this {:target target :value value})))))
+
+(defn rename-component
+  "Constructor for the rename-component operation: rename the component of
+   the main root `target` names to `value`, from the assets panel."
+  [target value]
+  (tm/assign-id (->RenameComponent target value)))
+
+;; ---------------------------------------------------------------------------
+;; annotate-component — set or remove a component's annotation
+;;
+;; As the frontend's `update-component-annotation`: a nil annotation removes
+;; it.
+;; ---------------------------------------------------------------------------
+
+(defrecord AnnotateComponent [target annotation]
+  IComponentOperation
+  (op-kind [_] :user)
+
+  tm/IOperation
+  (apply-to [this situation]
+    (let [the-file (tm/file situation)
+          shape    (tm/shape-by-id situation (tm/target-shape-id situation target))
+          changes  (-> (pcb/empty-changes nil)
+                       (pcb/with-library-data (:data the-file))
+                       (pcb/update-component (:component-id shape)
+                                             #(when %
+                                                (if (nil? annotation)
+                                                  (dissoc % :annotation)
+                                                  (assoc % :annotation annotation)))))
+          file'    (thf/apply-changes the-file changes)]
+      (-> situation
+          (tm/with-file file')
+          (record-changes changes)
+          (tm/record-application this {:target target :annotation annotation})))))
+
+(defn annotate-component
+  "Constructor for the annotate-component operation: set the annotation of
+   the component of the main root `target` names, or remove it when nil."
+  [target annotation]
+  (tm/assign-id (->AnnotateComponent target annotation)))
+
 (declare libraries)
 
 (defrecord EditGrid [target action value]
@@ -1371,9 +1439,9 @@
           (tm/record-application this {:copy copy :into into :cell cell})))))
 
 (defn nest-copy
-  "Constructor for the nest-copy operation: move the copy head `copy` names
-   under the shape `into` names, as its last child, or into the grid cell
-   `cell` ([row column]) when given."
+  "Constructor for the nest-copy operation: move the shape `copy` names (a
+   copy head, or any shape a main holds) under the shape `into` names, as its
+   last child, or into the grid cell `cell` ([row column]) when given."
   [copy into & {:keys [cell]}]
   (tm/assign-id (->NestCopy copy into cell)))
 

@@ -251,6 +251,14 @@
                                                                          (and free-head-placement (:component-id shape) (:shape-ref shape)
                                                                               (= 1 (count (ctn/get-parent-copy-heads objects shape)))))
                                                                      (into #{:x :y :points :selrect}))))
+                                             ;; a hidden layout child keeps the size its layout last gave
+                                             ;; it, which the layout gives again once it is shown
+                                             (cond-> (and (untracked-position? objects shape)
+                                                          (or (#{:fill :auto} (:layout-item-h-sizing shape))
+                                                              (#{:fill :auto} (:layout-item-v-sizing shape))))
+                                               (as-> snapshot (cond-> (dissoc snapshot :transform :transform-inverse)
+                                                                (#{:fill :auto} (:layout-item-h-sizing shape)) (dissoc :width)
+                                                                (#{:fill :auto} (:layout-item-v-sizing shape)) (dissoc :height))))
                                              (update :constraints-h #(or % (gsh/default-constraints-h shape)))
                                              (update :constraints-v #(or % (gsh/default-constraints-v shape)))
                                              ;; a deleted component keeps its objects as stored, and sync
@@ -863,8 +871,12 @@
          (when-not (or (contains? touched :geometry-group) (#{:group :bool} (:type shape)))
            (let [expected (expected-geometry file container libraries shape
                                              #(cf/reference-libraries situation %))
+                 untracked? (untracked-position? (:objects page) shape)
                  attrs (cond-> (geometry-differences (:objects page) shape expected)
-                         (untracked-position? (:objects page) shape) (disj :points :position))]
+                         untracked? (disj :points :position)
+                         ;; nor is the size its layout gives it, which it gives again once shown
+                         (and untracked? (#{:fill :auto} (:layout-item-h-sizing shape))) (disj :width)
+                         (and untracked? (#{:fill :auto} (:layout-item-v-sizing shape))) (disj :height))]
              (when (seq attrs)
                (fail :I4 {:shape (:name shape) :group :geometry-group :attrs attrs
                           :expected (select-keys expected [:width :height :points])
