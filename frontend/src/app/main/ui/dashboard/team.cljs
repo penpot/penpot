@@ -1779,4 +1779,6 @@
           (tr "labels.num-of-files" (i18n/c (:files stats)))]]]
 
        (when (contains? cfg/flags :subscriptions)
-         [:> team* {:is-owner (:is-owner permissions) :team team}])]]]))
+         [:> team* {:is-owner (:is-owner permissions)
+                    :team team
+                    :profile profile}])]]]))
