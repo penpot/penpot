@@ -9,9 +9,14 @@
    with the WASM render engine laying the shapes out. The page loads the
    engine on a canvas and fetches the programs from `programs-uri`; each
    program replays as the frontend generated tests replay it, and the
-   results go to the console and to `globalThis.wasmReplay`."
+   results go to the console and to `globalThis.wasmReplay`.
+
+   Query parameters: `programs` names the file, `start` the first index,
+   `engine=plain` replays with the WASM engine off, and `debug` logs the
+   targets, the WASM layouts and the shapes of a failing program."
   (:require
    [app.common.test-helpers.composable.comp.nodes :as n]
+   [app.common.test-helpers.composable.core :as tm]
    [app.main.data.helpers :as dsh]
    [app.main.store :as st]
    [app.render-wasm.api :as wasm.api]
@@ -21,12 +26,21 @@
    [frontend-tests.composable-tests.interpreter :as ftm]
    [promesa.core :as p]))
 
+(defn- query-param
+  [name]
+  (.get (js/URLSearchParams. (.. js/globalThis -location -search)) name))
+
 (defn- programs-uri
   "The programs file the page names in its `programs` query parameter: EDN
    in a `.js` file, the only kind the development server serves there."
   []
-  (let [params (js/URLSearchParams. (.. js/globalThis -location -search))]
-    (str "/js/test-wasm/" (or (.get params "programs") "programs.js"))))
+  (str "/js/test-wasm/" (or (query-param "programs") "programs.js")))
+
+(defn- plain-engine?
+  "Whether the page names the `plain` engine, replaying the programs with
+   the WASM engine off, as the frontend generated tests replay them."
+  []
+  (= "plain" (query-param "engine")))
 
 (def ^:private plain-install! ftm/install!)
 
@@ -58,6 +72,9 @@
    editing session, which the headless page does not have, so the edit goes
    through the SVG editor's commit and the engine lays out what follows."
   [op situation]
+  (when (and (query-param "debug") (some? (:target op)))
+    (js/console.log "WASM-REPLAY target" (pr-str (type op))
+                    (pr-str (try (tm/target-shape-id situation (:target op)) (catch :default _ nil)))))
   (let [events (plain-op->events op situation)]
     (if (instance? n/EditText op)
       (-> [#(update % :features disj "render-wasm/v1")]
@@ -74,7 +91,10 @@
 (defn- counted-propagate
   [entries snap-pixel? snap-ignore-axis]
   (swap! wasm-layouts inc)
-  (plain-propagate entries snap-pixel? snap-ignore-axis))
+  (let [result (plain-propagate entries snap-pixel? snap-ignore-axis)]
+    (when (query-param "debug")
+      (js/console.log "WASM-REPLAY propagate" (pr-str entries) "=>" (pr-str result)))
+    result))
 
 (def ^:private plain-step! ftm/run-generated-step)
 
@@ -83,6 +103,20 @@
   [live op]
   (js/console.log "WASM-REPLAY step" (pr-str (type op)))
   (plain-step! live op))
+
+(defn- log-shapes!
+  "Log the shapes of the current page when the page names the `debug` query
+   parameter: name, type, parent, rectangle, transform and touched groups."
+  []
+  (when (query-param "debug")
+    (let [objects (dsh/lookup-page-objects @st/state)]
+      (doseq [shape (sort-by :name (vals objects))]
+        (js/console.log "WASM-REPLAY shape"
+                        (pr-str [(:name shape) (:type shape) (:id shape)
+                                 (:name (get objects (:parent-id shape)))
+                                 (some-> (:selrect shape) (select-keys [:x :y :width :height]))
+                                 (:transform shape) (:touched shape)
+                                 (:shape-ref shape) (:layout shape)]))))))
 
 (defn- ^:async replay
   "Replay `program`, returning its failures and errors."
@@ -93,7 +127,8 @@
     (await (gt/replay-program program))
     (catch :default cause
       (js/console.log "WASM-REPLAY error" (ex-message cause) (some-> (.-stack cause) (subs 0 1500)))
-      (t/do-report {:type :error :message (ex-message cause) :actual cause}))
+      (t/do-report {:type :error :message (ex-message cause) :actual cause})
+      (log-shapes!))
     (finally
       (remove-watch st/state ::wasm-objects)
       ((:after ftm/fixture))))
@@ -101,8 +136,10 @@
     (select-keys counters [:pass :fail :error])))
 
 (defn- ^:async run-programs
+  "Replay `programs` from the index the page names in its `start` query
+   parameter, or from the first."
   [programs]
-  (loop [index 0 results []]
+  (loop [index (or (some-> (query-param "start") js/parseInt) 0) results []]
     (if (< index (count programs))
       (let [program (nth programs index)
             result  (await (replay program))]
@@ -121,10 +158,11 @@
   "Load the WASM engine on a canvas of the page, then replay the programs."
   []
   (enable-console-print!)
-  (set! ftm/install! wasm-install!)
   (set! ftm/run-generated-step logged-step!)
-  (set! ftm/op->events svg-text-events)
-  (set! wasm.api/propagate-modifiers counted-propagate)
+  (when-not (plain-engine?)
+    (set! ftm/install! wasm-install!)
+    (set! ftm/op->events svg-text-events)
+    (set! wasm.api/propagate-modifiers counted-propagate))
   (.addEventListener js/globalThis "unhandledrejection"
                      #(js/console.log "WASM-REPLAY unhandled" (str (.-reason %))))
   (p/let [_      @wasm.api/module
@@ -135,5 +173,6 @@
           ready  (wasm.api/init-canvas-context canvas)
           resp   (js/fetch (programs-uri))
           text   (.text resp)]
-    (js/console.log "WASM-REPLAY engine" (if ready "ready" "not ready"))
+    (js/console.log "WASM-REPLAY engine" (if ready "ready" "not ready")
+                    (if (plain-engine?) "(off)" "(on)"))
     (run-programs (reader/read-string text))))
