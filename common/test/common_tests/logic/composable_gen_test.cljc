@@ -4315,3 +4315,16 @@
                                     :layout-copies true :layout-children true}]
                        :ops [[:add-child 8] [:structure 2 4 15] [:grid-direction 0 0 0 1] [:grid-cell 0 0 0 1]
                              [:add-child 0] [:structure 0 2 0]]}))))
+
+(t/deftest generated-a-resize-authors-the-size-it-gives-a-swapped-head
+  ;; a resize of a copy board that scales its swapped child through its
+  ;; constraint authors the child's new size, which later syncs keep
+  (t/is (map? (cg/run {:world [1 0 {:variants true :text-styles false :scale false :layout :grid
+                                    :variant-diff false :grid-square false :copies 3 :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies false :text false}]
+                       :ops [[:switch] [:add-child] [:style 4 9 1] [:switch 4] [:switch] [:resize 1]]})))
+  (t/is (map? (cg/run {:world [1 0 {:variants true :text-styles false :layout :flex :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies false :text false}]
+                       :ops [[:delete 5] [:restore] [:add-variant] [:switch] [:add-variant] [:variant-property 0 1]
+                             [:switch 13] [:style 5 8 7] [:add-variant]]}))))
