@@ -118,7 +118,10 @@
     (= group :layout-grid-cells) {:layout-grid-cells (grid/get-cells shape)}
     (contains? text-groups group)
     {:content (:content shape)}
-    :else (cond-> (into {} (map #(vector % (get shape %))) (get attributes group))
+    ;; no fills or strokes show as an empty list or none at all
+    :else (cond-> (into {} (map #(vector % (cond-> (get shape %)
+                                             (#{:fills :strokes} %) (or []))))
+                        (get attributes group))
             ;; the tokens a shape applies to its corners go with their radius
             (= group :radius-group)
             (assoc :applied-tokens (not-empty (select-keys (:applied-tokens shape) n/radius-attrs))))))
@@ -668,11 +671,10 @@
    model model))
 
 (defn sync-scaled-heads
-  "A copy shape that a sync resizes sizes its subtree through constraints.
-  An untouched swapped head in it that the resize gives another size
-  authors that size, placed in its parent. The resize starts at the
-  topmost resized ancestor of the head: a sync resizes only a copy shape
-  without authored geometry."
+  "A copy shape that a sync or a transform resizes sizes its subtree through
+  constraints. An untouched swapped head in it that the resize gives another
+  size authors that size, placed in its parent. The resize starts at the
+  topmost resized ancestor of the head."
   [model before after]
   (let [sized-alike? #(let [a (geom/boxed %1) b (geom/boxed %2)]
                         (and (mth/close? (:width a) (:width b))
@@ -699,8 +701,7 @@
                   (not (and (ctl/any-layout-immediate-child? after shape)
                             (not (ctl/position-absolute? shape))))
                   (some? origin)
-                  (:shape-ref origin)
-                  (not (contains? (get model (:id origin)) :geometry-group)))
+                  (:shape-ref origin))
            (assoc-in result [id :geometry-group] (author-geometry shape parent))
            result)))
      model model)))

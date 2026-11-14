@@ -259,6 +259,9 @@
                                                (as-> snapshot (cond-> (dissoc snapshot :transform :transform-inverse)
                                                                 (#{:fill :auto} (:layout-item-h-sizing shape)) (dissoc :width)
                                                                 (#{:fill :auto} (:layout-item-v-sizing shape)) (dissoc :height))))
+                                             ;; no fills or strokes show as an empty list or none at all
+                                             (update :fills #(or % []))
+                                             (update :strokes #(or % []))
                                              (update :constraints-h #(or % (gsh/default-constraints-h shape)))
                                              (update :constraints-v #(or % (gsh/default-constraints-v shape)))
                                              ;; a deleted component keeps its objects as stored, and sync
