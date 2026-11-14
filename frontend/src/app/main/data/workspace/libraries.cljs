@@ -453,13 +453,18 @@
 
         (when (and (some? clean-name) component)
           (let [shape-id (:main-instance-id component)
-                page-id  (:main-instance-page component)]
+                page-id  (:main-instance-page component)
+                undo-id  (js/Symbol)]
 
+            ;; the component and its main root are renamed in one undo step
             (rx/concat
-             (rx/of (rename-component component-id clean-name))
+             (rx/of (dwu/start-undo-transaction undo-id)
+                    (rename-component component-id clean-name))
 
              (when (and shape-id page-id)
-               (rx/of (dwsh/update-shapes [shape-id] #(assoc % :name clean-name) {:page-id page-id :stack-undo? true}))))))))))
+               (rx/of (dwsh/update-shapes [shape-id] #(assoc % :name clean-name) {:page-id page-id :stack-undo? true})))
+
+             (rx/of (dwu/commit-undo-transaction undo-id)))))))))
 
 (defn duplicate-component
   "Create a new component copied from the one with the given id."
