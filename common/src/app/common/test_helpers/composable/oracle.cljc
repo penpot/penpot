@@ -259,6 +259,11 @@
                                                (as-> snapshot (cond-> (dissoc snapshot :transform :transform-inverse)
                                                                 (#{:fill :auto} (:layout-item-h-sizing shape)) (dissoc :width)
                                                                 (#{:fill :auto} (:layout-item-v-sizing shape)) (dissoc :height))))
+                                             ;; a bool shows its segments; its transform and the order of
+                                             ;; its corners say nothing its flags and segments do not
+                                             (cond-> (= :bool (:type shape))
+                                               (-> (dissoc :transform :transform-inverse)
+                                                   (d/update-when :points geom/ordered-corners)))
                                              ;; no fills or strokes show as an empty list or none at all
                                              (update :fills #(or % []))
                                              (update :strokes #(or % []))

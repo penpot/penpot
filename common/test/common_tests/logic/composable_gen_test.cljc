@@ -4338,3 +4338,11 @@
   (t/is (map? (cg/run {:world [2 0 {:variants true :rich-variants true :text true :layout :grid
                                     :layout-copies false :layout-children false}]
                        :ops [[:duplicate] [:structure 0 4] [:swap 7] [:rotate 11] [:transform 1 11 0 12]]}))))
+
+(t/deftest generated-a-bool-in-a-flipped-board-shows-its-segments
+  ;; a turned bool in a flipped board may store a transform that does not
+  ;; mirror, while its flags and segments show it as its board turns it
+  (t/is (map? (cg/run {:world [2 1 {:variants true :rich-variants true :text true :layout nil
+                                    :layout-copies true :layout-children false}]
+                       :ops [[:remove-child 0 0 0 0] [:add-child 1] [:structure 0 4 0] [:transform 0 16 0 3]
+                             [:rotate 0 0 0 0] [:rotate 1 0 0 0]]}))))
