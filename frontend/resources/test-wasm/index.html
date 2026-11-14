@@ -1,0 +1,15 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>WASM replay</title>
+    <script src="/js/config.js"></script>
+    <script src="/js/polyfills.js"></script>
+  </head>
+  <body>
+    <script type="module">
+      import "/js/test-wasm/libs.js";
+      const mod = await import("/js/test-wasm/test-wasm.js");
+    </script>
+  </body>
+</html>

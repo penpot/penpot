@@ -40,7 +40,7 @@
                     (when-let [id (get by-path path)] [id (grid/remap-groups groups ids-map)]))))
           (cg/forest (:situation state)))))
 
-(defn- ^:async replay-program
+(defn ^:async replay-program
   "Replay a JVM-shrunk EDN program against the async frontend. The pure
    runner chooses targets independently and both must make the same choices."
   [{:keys [world ops] :as program}]

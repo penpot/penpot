@@ -34,6 +34,7 @@
     "lint:js": "exit 0",
     "lint:scss": "pnpm exec stylelint '{src,resources}/**/*.scss'",
     "build:test": "pnpm run build:wasm && clojure -M:dev:shadow-cljs compile test",
+    "build:test-wasm": "clojure -M:dev:shadow-cljs compile test-wasm && node ./scripts/build-test-wasm.js && clojure -M scripts/test-wasm-programs.clj",
     "test": "pnpm run build:test && node target/tests/test.js",
     "test:quiet": "node ./scripts/test-quiet.js",
     "test:storybook": "vitest run --project=storybook",
