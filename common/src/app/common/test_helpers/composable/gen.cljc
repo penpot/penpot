@@ -877,9 +877,12 @@
                                                     (thtx/restyle text :size (nth [14 18 24] (mod (or (nth tuple 3 nil) 0) 3))))]
                                          (n/edit-text target :content text))
                  (:text-style :library-text-style)
-                 (let [typography? (and (= 8 (mod (or (nth tuple 2 nil) 0) (count text-style-edits)))
-                                        (odd? (or (nth tuple 3 nil) 0)))
-                       file-id (or (:library-id selected) (:id (tm/file situation)))
+                 (let [file-id (or (:library-id selected) (:id (tm/file situation)))
+                       ;; a typography applies only when the file holds it
+                       typography? (and (= 8 (mod (or (nth tuple 2 nil) 0) (count text-style-edits)))
+                                        (odd? (or (nth tuple 3 nil) 0))
+                                        (contains? (get-in (cf/all-files situation) [file-id :data :typographies])
+                                                   (thi/id :generated-typography)))
                        content (cond-> (edit-text-style (:shape selected) (nth tuple 2 nil) (nth tuple 3 nil))
                                  (and typography? (:library-id selected))
                                  (thtx/restyle :typography-ref-file file-id))]

@@ -308,7 +308,14 @@
                        :let [path (conj path :component index)]]
                  (swap! names assoc component-id path)
                  (when (:objects component)
-                   (name-tree names (:objects component) (:main-instance-id component) (conj path :main)))))]
+                   (name-tree names (:objects component) (:main-instance-id component) (conj path :main))
+                   ;; a deleted component keeps the ids of the board that held
+                   ;; its main, which may be gone, as a variant container is
+                   ;; once the variant is undone
+                   (let [main (get (:objects component) (:main-instance-id component))]
+                     (doseq [id [(:variant-id component) (:variant-id main) (:frame-id main) (:parent-id main)]
+                             :when (and (some? id) (not (contains? @names id)))]
+                       (swap! names assoc id (conj path :retained-container)))))))]
        (doseq [[file-index [_ file]] (map-indexed vector files)]
          (name-file ids file [:file file-index]))
        (when (:accepted-libraries situation)
@@ -359,6 +366,37 @@
                            (paired-matrix-effects actual expected) 0.01)
            (every? #(equivalent? (get expected %) (get actual %)) (keys expected))))
     (uc/same-state? expected actual 0.01)))
+
+(defn inequivalence
+  "The path of the first place where `expected` and `actual` are not
+   `equivalent?`, with the two values there, or nil."
+  ([expected actual] (inequivalence expected actual []))
+  ([expected actual path]
+   (cond
+     (equivalent? expected actual)
+     nil
+
+     (and (map? expected) (map? actual)
+          (= (set (keys expected)) (set (keys actual)))
+          (not (and (contains? expected :parent-id) (contains? actual :parent-id))))
+     (or (some #(inequivalence (get expected %) (get actual %) (conj path %)) (keys expected))
+         {:path path :expected expected :actual actual})
+
+     (and (map? expected) (map? actual) (= (set (keys expected)) (set (keys actual))))
+     (let [paired-expected (paired-matrix-effects expected actual)
+           paired-actual   (paired-matrix-effects actual expected)]
+       (or (some (fn [k]
+                   (when-not (uc/same-state? (get paired-expected k) (get paired-actual k) 0.01)
+                     {:path (conj path k) :expected (get paired-expected k) :actual (get paired-actual k)}))
+                 (keys paired-expected))
+           {:path path :expected paired-expected :actual paired-actual}))
+
+     (and (map? expected) (map? actual))
+     {:path path
+      :keys [(remove (set (keys actual)) (keys expected)) (remove (set (keys expected)) (keys actual))]}
+
+     :else
+     {:path path :expected expected :actual actual})))
 
 (defn- constraint-derived-attributes
   "The dimensions a constraint ties to the parent. Under a plain parent the

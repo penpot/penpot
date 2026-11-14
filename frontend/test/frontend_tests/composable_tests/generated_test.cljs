@@ -93,6 +93,7 @@
                     actual (oracle/canonical next-live parity)]
                 (t/is (true? (oracle/equivalent? expected actual))
                       (str "Backend mismatch at " tuple "; replay " (pr-str program)
+                           "; first " (pr-str (oracle/inequivalence expected actual))
                            "; diff " (pr-str (thn/diff expected actual)))))
               (t/is (empty? (uc/failures next-live)) (pr-str (uc/failures next-live)))
               (recur next-state next-live (rest tuples))))
