@@ -9,11 +9,14 @@ const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 // `getByText` matches substrings, and the pencil and the curve both name their
 // shape "Path", so the row has to be anchored and the row count has to grow.
-function layerRow(workspace, name) {
+function exactRows(workspace, name) {
   return workspace.layers
     .getByTestId("layer-row")
-    .filter({ hasText: new RegExp(`^${escapeRegExp(name)}$`) })
-    .first();
+    .filter({ hasText: new RegExp(`^${escapeRegExp(name)}$`) });
+}
+
+function layerRow(workspace, name) {
+  return exactRows(workspace, name).first();
 }
 
 // A finished path stays in edition mode, and the path edition bar replaces the
@@ -98,7 +101,7 @@ test("Each toolbar tool creates its shape", async ({ page }) => {
     await expect(rows).toHaveCount(before + 1);
   });
 
-  // The curve keeps its tool armed after drawing (drawing/common.cljs:138),
+  // The curve keeps its tool armed after drawing (drawing/common.cljs:133),
   // so it goes last: the next tool click would not take effect.
   await test.step("curve from the path flyout", async () => {
     const before = await rows.count();
@@ -110,7 +113,9 @@ test("Each toolbar tool creates its shape", async ({ page }) => {
     await workspace.clickAndMove(520, 320, 620, 380);
     await page.keyboard.press("Enter");
 
-    await expect(layerRow(workspace, "Path")).toBeVisible();
+    // `layerRow` returns the pencil's path, which already existed; counting the
+    // exact rows is what proves the curve created another one with that name.
+    await expect(exactRows(workspace, "Path")).toHaveCount(2);
     await expect(rows).toHaveCount(before + 1);
   });
 });
