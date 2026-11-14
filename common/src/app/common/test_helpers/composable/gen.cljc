@@ -878,12 +878,14 @@
                                          (n/edit-text target :content text))
                  (:text-style :library-text-style)
                  (let [file-id (or (:library-id selected) (:id (tm/file situation)))
-                       ;; a typography applies only when the file holds it
-                       typography? (and (= 8 (mod (or (nth tuple 2 nil) 0) (count text-style-edits)))
-                                        (odd? (or (nth tuple 3 nil) 0))
-                                        (contains? (get-in (cf/all-files situation) [file-id :data :typographies])
-                                                   (thi/id :generated-typography)))
-                       content (cond-> (edit-text-style (:shape selected) (nth tuple 2 nil) (nth tuple 3 nil))
+                       typography-edit? (= 8 (mod (or (nth tuple 2 nil) 0) (count text-style-edits)))
+                       ;; a typography applies only when the file holds it;
+                       ;; without one the edit clears the typography
+                       held?   (contains? (get-in (cf/all-files situation) [file-id :data :typographies])
+                                          (thi/id :generated-typography))
+                       value   (if (and typography-edit? (not held?)) 0 (nth tuple 3 nil))
+                       typography? (and typography-edit? held? (odd? (or value 0)))
+                       content (cond-> (edit-text-style (:shape selected) (nth tuple 2 nil) value)
                                  (and typography? (:library-id selected))
                                  (thtx/restyle :typography-ref-file file-id))]
                    (n/edit-text target :content content
