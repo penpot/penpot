@@ -1116,3 +1116,9 @@
                                :layout-copies true :layout-children true}]
                   :ops [[:rotate 16 0 7 0] [:grid-direction 0 0 0 1] [:grid-cell 0 10 0 1] [:add-child 0]
                         [:structure 3 6 15] [:grid-direction 0 0 0 1] [:grid-cell 0 4 2 1]]})))
+
+(t/deftest ^:async generated-a-token-value-edit-and-its-propagation-undo-together
+  ;; the token form commits the edit and its propagation as one undo step
+  (await (replay {:world [1 0 {:tokens true :variants true :rich-variants false :text false
+                               :layout :flex :layout-copies false}]
+                  :ops [[:transform 0 10 0 8] [:apply-token 12 11] [:style 12 3 0 1] [:token-value 0 2]]})))
