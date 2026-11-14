@@ -33,7 +33,10 @@
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.bool :as dwb]
+   [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.path.shapes-to-path :as dwps]
    [app.main.data.workspace.reflow :as wrf]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shape-layout :as dwsl]
@@ -164,11 +167,11 @@
           [(dwsl/update-layout-child [id] (select-keys shape [:layout-item-margin
                                                               :layout-item-margin-type]))])
 
-        (:layout-item-margin-type :layout-item-align-self
-                                  :layout-item-h-sizing :layout-item-v-sizing
-                                  :layout-item-min-w :layout-item-max-w
-                                  :layout-item-min-h :layout-item-max-h
-                                  :layout-item-absolute :layout-item-z-index)
+        (:layout-item-margin :layout-item-margin-type :layout-item-align-self
+                             :layout-item-h-sizing :layout-item-v-sizing
+                             :layout-item-min-w :layout-item-max-w
+                             :layout-item-min-h :layout-item-max-h
+                             :layout-item-absolute :layout-item-z-index)
         [(dwsl/update-layout-child [id] {property value})]
 
         ;; the layers panel's rename, which renames a main's component too
@@ -177,7 +180,8 @@
 
         ;; Container controls use the sidebar transaction and reflow event.
         (:layout-flex-dir :layout-wrap-type :layout-justify-content
-                          :layout-align-content :layout-gap-type :layout-padding-type :layout-justify-items)
+                          :layout-align-content :layout-gap-type :layout-padding-type :layout-justify-items
+                          :layout-gap :layout-padding :layout-align-items)
         [(dwsl/update-layout [id] {property value})]
 
         [(dwsh/update-shapes #{id} (fn [shape] (n/set-property shape property value)))]))
@@ -235,6 +239,35 @@
                            (n/swap-target-file-id situation to)
                            (n/swap-target-id situation to)
                            (boolean keep-touched?))])
+
+    (instance? n/EditStructure op)
+    ;; the context menu's group, mask, bool and path actions on the shapes
+    ;; the operation names
+    (let [{:keys [action targets params]} op
+          ids (mapv #(tm/target-shape-id situation %) targets)]
+      (case action
+        :group   [(dwg/group-shapes nil ids)]
+        :mask    [(dwg/mask-group ids)]
+        :ungroup [(dwg/ungroup-shapes ids)]
+        :unmask  [(dwg/unmask-group ids)]
+        :bool    [(dwb/create-bool (:bool-type params) :ids ids)]
+        :path    [(dwps/convert-selected-to-path ids)]))
+
+    (instance? n/EditGridTrack op)
+    ;; the grid editor's track menu, and its merge of the cells of an area
+    (let [{:keys [target action value]} op
+          id (tm/target-shape-id situation target)
+          {:keys [type index track to move-content? row column row-span column-span]} value]
+      (case action
+        :add     [(dwsl/add-layout-track [id] type track index)]
+        :remove  [(dwsl/remove-layout-track [id] type index)]
+        :resize  [(dwsl/change-layout-track [id] type index track)]
+        :reorder [(dwsl/reorder-layout-track [id] type index to move-content?)]
+        :merge   (let [cells (->> (vals (:layout-grid-cells (tm/shape-by-id situation id)))
+                                  (filter #(and (<= row (:row %) (+ row row-span -1))
+                                                (<= column (:column %) (+ column column-span -1))))
+                                  (mapv :id))]
+                   [(dwsl/merge-cells id cells)])))
 
     (instance? n/MoveToCell op)
     ;; the board's new cells, as a canvas drop commits them

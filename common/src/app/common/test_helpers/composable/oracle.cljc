@@ -386,8 +386,10 @@
      (let [paired-expected (paired-matrix-effects expected actual)
            paired-actual   (paired-matrix-effects actual expected)]
        (or (some (fn [k]
-                   (when-not (uc/same-state? (get paired-expected k) (get paired-actual k) 0.01)
-                     {:path (conj path k) :expected (get paired-expected k) :actual (get paired-actual k)}))
+                   ;; each key within the shape, whose geometry takes the tolerance
+                   (let [slice #(select-keys % [k :parent-id :type])]
+                     (when-not (uc/same-state? (slice paired-expected) (slice paired-actual) 0.01)
+                       {:path (conj path k) :expected (get paired-expected k) :actual (get paired-actual k)})))
                  (keys paired-expected))
            {:path path :expected paired-expected :actual paired-actual}))
 

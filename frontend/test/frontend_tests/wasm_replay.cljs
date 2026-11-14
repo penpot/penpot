@@ -13,8 +13,9 @@
 
    Query parameters: `programs` names the file or `edn` holds the programs,
    `start` the first index, `engine=plain` replays with the WASM engine off,
-   and `debug` logs the targets, the WASM layouts and the shapes each
-   program ends with."
+   `debug` logs the targets, the WASM layouts and the shapes each program
+   ends with, and `watch` logs the events and the moves of the shapes the
+   operations target."
   (:require
    [app.common.test-helpers.composable.comp.nodes :as n]
    [app.common.test-helpers.composable.core :as tm]
@@ -88,6 +89,10 @@
   ([id] (kept-text-size id nil))
   ([_ _] (ptk/reify ::kept-text-size)))
 
+(def ^:private watched
+  "The ids of the shapes the replayed operations target."
+  (atom #{}))
+
 (def ^:private plain-op->events ftm/op->events)
 
 (defn- replay-events
@@ -97,6 +102,9 @@
    headless page does not have, so the edit goes through the SVG editor's
    commit and the engine lays out what follows."
   [op situation]
+  (when (and (query-param "watch") (some? (:target op)))
+    (when-let [id (try (tm/target-shape-id situation (:target op)) (catch :default _ nil))]
+      (swap! watched conj id)))
   (when (and (query-param "debug") (some? (:target op)))
     (js/console.log "WASM-REPLAY target" (pr-str (type op))
                     (pr-str (try (tm/target-shape-id situation (:target op)) (catch :default _ nil)))))
@@ -192,6 +200,25 @@
                         :layouts @wasm-layouts}))
         results))))
 
+(defn- watch-shape!
+  "Log the events the store handles and each change of the place of the
+   shapes the replayed operations target."
+  []
+  (rx/sub! st/stream #(js/console.log "WASM-REPLAY event" (str (ptk/type %))))
+  (add-watch st/state ::watch-shape
+             (fn [_ _ old state]
+               (let [objects  (dsh/lookup-page-objects state)
+                     previous (dsh/lookup-page-objects old)]
+                 (when-not (identical? objects previous)
+                   (doseq [[id shape] objects
+                           :when (contains? @watched id)
+                           :let [before (get previous id)]
+                           :when (not= (:selrect shape) (:selrect before))]
+                     (js/console.log "WASM-REPLAY watch" (:name shape)
+                                     (pr-str (select-keys (:selrect before) [:x :y :width :height]))
+                                     "->" (pr-str (select-keys (:selrect shape) [:x :y :width :height]))
+                                     (pr-str (:touched shape)))))))))
+
 (defn ^:export init
   "Load the WASM engine on a canvas of the page, then replay the programs."
   []
@@ -205,6 +232,8 @@
         (set! dwwt/resize-wasm-text kept-text-size)
         (set! dwwt/resize-wasm-text-debounce kept-text-size)
         (set! dwwt/resize-wasm-text-all kept-text-size)))
+  (when (query-param "watch")
+    (watch-shape!))
   (.addEventListener js/globalThis "unhandledrejection"
                      #(js/console.log "WASM-REPLAY unhandled" (str (.-reason %))))
   (p/let [_      @wasm.api/module
