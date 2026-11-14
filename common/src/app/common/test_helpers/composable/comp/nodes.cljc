@@ -1384,7 +1384,14 @@
                                                         (gpt/point 0 0)
                                                         libs
                                                         (:data the-file)
-                                                        (:id the-file)))
+                                                        (:id the-file))
+                        ;; as the clipboard's paste, each added shape has fill and stroke lists
+                        (pcb/amend-changes (fn [change]
+                                             (cond-> change
+                                               (= :add-obj (:type change))
+                                               (update :obj #(-> %
+                                                                 (update :fills (fnil vec []))
+                                                                 (update :strokes (fnil vec []))))))))
           file'     (thf/apply-changes the-file changes :validate? false)]
       (-> situation
           (tm/with-file file')
