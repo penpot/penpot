@@ -551,6 +551,35 @@
       (pcb/update-shapes authored #(update % :touched ctk/set-touched-group :geometry-group)
                          {:ignore-touched true}))))
 
+(defn- author-resized-swapped-heads
+  "Make authored the geometry of the untouched swapped heads below the
+   copy shapes `ids` that a transform resized through their constraints:
+   sync would give them their own component's size again, which only a
+   change of the head itself may do. A layout sizes its children itself."
+  [changes before ids]
+  (let [objects (pcb/get-objects changes)
+        resized? (fn [id]
+                   (let [old (get before id) shape (get objects id)]
+                     (and old shape
+                          (not (and (mth/close? (-> old :selrect :width) (-> shape :selrect :width))
+                                    (mth/close? (-> old :selrect :height) (-> shape :selrect :height)))))))
+        heads (into []
+                    (comp (filter #(and (:shape-ref (get objects %)) (resized? %)))
+                          (mapcat #(cfh/get-children-ids objects %))
+                          (distinct)
+                          (filter (fn [id]
+                                    (let [shape (get objects id)]
+                                      (and (ctk/swapped? shape)
+                                           (not (ctk/touched-group? shape :geometry-group))
+                                           (resized? id)
+                                           (not (and (ctsl/any-layout-immediate-child? objects shape)
+                                                     (not (ctsl/position-absolute? shape)))))))))
+                    ids)]
+    (cond-> changes
+      (seq heads)
+      (pcb/update-shapes heads #(update % :touched ctk/set-touched-group :geometry-group)
+                         {:ignore-touched true}))))
+
 (defn generate-sync-transformed-placement
   "Settle copy descendants after a reflection and untouched swapped heads
    after a parent turn, in the transform's change group. Reflection can
@@ -608,7 +637,8 @@
                            shape)))
                      {:ignore-touched true})))
                 changes roots)
-        (author-laid-group-arrangement before ids))))
+        (author-laid-group-arrangement before ids)
+        (author-resized-swapped-heads before ids))))
 
 (defn- sync-copy-shape
   "Sync the copy shape `shape-inst` from `shape-main`, the main shape it
