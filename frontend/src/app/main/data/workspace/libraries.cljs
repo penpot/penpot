@@ -1597,6 +1597,16 @@
                 (component-sync-events state component-id file-id undo-group)
                 [(dwu/commit-undo-transaction undo-id)]))))))
 
+(defn- main-ancestor
+  "The main instance `shape` is or lies inside, through any copies nested in
+  it, or nil."
+  [objects shape]
+  (loop [shape shape]
+    (cond
+      (or (nil? shape) (cfh/root? shape)) nil
+      (ctk/main-instance? shape)          shape
+      :else                               (recur (get objects (:parent-id shape))))))
+
 (defn- moves-whole-mains?
   "Whether the `changes` of a translation commit, applied on the file
   `data`, move only shapes outside mains, or whole mains: every shape they
@@ -1606,9 +1616,9 @@
             (let [objects (dm/get-in data [:pages-index page-id :objects])
                   ids     (into #{} (map :id) changes)]
               (every? (fn [id]
-                        (let [root (ctn/get-component-shape objects (get objects id) {:allow-main? true})]
-                          (or (not (ctk/main-instance? root))
-                              (contains? ids (:id root)))))
+                        (let [main (main-ancestor objects (get objects id))]
+                          (or (nil? main)
+                              (contains? ids (:id main)))))
                       ids)))
           (group-by :page-id (filter #(= :mod-obj (:type %)) changes))))
 

@@ -111,6 +111,16 @@
                   (t/is open?)
                   (t/is (= red (ftm/fill-of :copy-child)))))))
 
+(t/deftest translation-of-a-copy-nested-in-a-main-syncs-the-copies
+  ;; a copy placed in a main is part of it: moving it is an edit of the main
+  (t/async done
+    (ftm/install! (setup/nested-component-with-copy))
+    (st/emit! (ftm/fill-commit :main2-nested-head red {:translation? true}))
+    (-> (pwrf/wait-for-layout-update nil 2000)
+        (.then #(t/is (= red (ftm/fill-of :copy2-child))))
+        (.catch #(t/is false (str "the wait threw: " %)))
+        (.finally done))))
+
 (t/deftest derived-commit-leaves-nothing-pending
   (t/async done
     (run-commit done {:skip-component-sync? true} dropped)))
