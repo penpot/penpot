@@ -291,10 +291,11 @@
                                nil {:data (:data preview)}))]
       (t/is (= preview-data live)))))
 
-(t/deftest user-snapshot-of-file-needing-migration-is-materialized
-  ;; A file with pending migrations cannot share fragments: the
-  ;; migration path realizes the data, so the stored snapshot holds
-  ;; plain maps. This pins the shape so it cannot drift silently.
+(t/deftest user-snapshot-of-file-needing-migration-shares-fragments
+  ;; A file with pending migrations is migrated on read before the snapshot
+  ;; is taken. The read keeps the pointers of the pages the migration does
+  ;; not change, so the snapshot shares those fragments with the live file
+  ;; like any other snapshot instead of storing a materialized copy.
   (let [profile (th/create-profile* 1)
         file    (th/create-file* 1 {:profile-id (:id profile)
                                     :project-id (:default-project-id profile)
@@ -309,7 +310,11 @@
           snap-id (:id (:result out))
           snap    (fsnap/get-snapshot th/*system* file-id snap-id)]
       (t/is (uuid? snap-id))
-      (t/is (empty? (fdata/get-used-pointer-ids (:data snap))))
+      (let [snap-pointers (fdata/get-used-pointer-ids (:data snap))
+            live-pointers (fdata/get-used-pointer-ids
+                           (:data (bfc/get-file th/*system* file-id)))]
+        (t/is (seq snap-pointers))
+        (t/is (every? live-pointers snap-pointers)))
       ;; ...while preview keeps working on the migrated content.
       (let [preview (th/command! {::th/type :get-file-snapshot
                                   ::rpc/profile-id (:id profile)
@@ -402,29 +407,69 @@
         (t/is (nil? (:error out)))
         (t/is (true? (:result out)))))))
 
+(t/deftest snapshot-creation-reads-the-file-row-for-update
+  ;; The read inherits the caller's lock, and the migration-on-read path may
+  ;; re-read the same row with FOR UPDATE. A shared lock would be an upgrade,
+  ;; and two concurrent readers can deadlock there. The read of the command
+  ;; takes the exclusive lock.
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+        [out sqls] (th/read-recording-sql
+                    #(th/command! {::th/type :create-file-snapshot
+                                   ::rpc/profile-id (:id profile)
+                                   :file-id (:id file)
+                                   :label "pinned"}))]
+    (t/is (nil? (:error out)))
+    (t/is (uuid? (get-in out [:result :id])))
+    (t/is (= [(str bfc/sql:get-file " FOR UPDATE of f")]
+             sqls))))
+
+(t/deftest restore-backup-reads-the-file-row-for-update
+  ;; The backup read is the same reader as the snapshot creation, so it also
+  ;; takes the exclusive lock: the migration-on-read re-read cannot upgrade a
+  ;; shared one and deadlock with a concurrent reader.
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+        snap-id (:id (:result (th/command! {::th/type :create-file-snapshot
+                                            ::rpc/profile-id (:id profile)
+                                            :file-id (:id file)
+                                            :label "v1"})))
+        [out sqls] (th/read-recording-sql
+                    #(th/command! {::th/type :restore-file-snapshot
+                                   ::rpc/profile-id (:id profile)
+                                   :file-id (:id file)
+                                   :id snap-id}))]
+    (t/is (nil? (:error out)))
+    (t/is (some #(= (str bfc/sql:get-file " FOR UPDATE of f") %) sqls))
+    (t/is (not-any? #(str/includes? % "FOR SHARE") sqls))))
+
 (t/deftest snapshot-creation-serializes-with-file-gc
   ;; A user snapshot shares fragment rows with the live file, so its
   ;; creation must serialize with a concurrent :file-gc pass (which
   ;; takes FOR UPDATE + SKIP LOCKED on the file row): creation holds
-  ;; FOR SHARE, the GC skips locked files instead of racing it.
+  ;; FOR UPDATE, the GC skips locked files instead of racing it.
   (let [profile (th/create-profile* 1)
         file    (th/create-file* 1 {:profile-id (:id profile)
                                     :project-id (:default-project-id profile)
                                     :is-shared false})
         file-id (:id file)]
 
-    (t/testing "gc skips a file locked for share"
+    (t/testing "gc skips a file locked for update"
       (db/tx-run! th/*system*
                   (fn [cfg]
-                    ;; Hold FOR SHARE to commit, like create-file-snapshot does.
-                    (bfc/get-file cfg file-id :lock-for-share? true)
+                    ;; Hold FOR UPDATE to commit, like create-file-snapshot does.
+                    (bfc/get-file cfg file-id :lock-for-update? true)
                     ;; The GC uses SKIP LOCKED on a different connection, so it
                     ;; must skip instead of blocking or marking.
                     (t/is (not (th/run-task! :file-gc {:file-id file-id}))))))
 
     (t/testing "creation cannot slip between gc scan and mark"
       ;; Deterministic interleaving: pause the GC right after its
-      ;; snapshot scan, then create a snapshot. With the FOR SHARE lock
+      ;; snapshot scan, then create a snapshot. With the FOR UPDATE lock
       ;; the creation waits at the read and sees post-GC fragment ids;
       ;; without it, it reads pre-GC ids and pins a fragment the pass
       ;; is about to mark.
@@ -451,7 +496,7 @@
             (t/is (= true (deref scan-started 10000 ::timeout)))
             (let [created (future (do-create))]
               ;; The creation must not reach the insert while the GC
-              ;; pass holds the file row: with FOR SHARE it waits at the
+              ;; pass holds the file row: with FOR UPDATE it waits at the
               ;; read instead of snapshotting pre-GC fragment ids.
               (t/is (= ::timeout (deref reached-insert 10000 ::timeout)))
               (deliver release-scan true)
@@ -487,7 +532,7 @@
 (t/deftest restore-backup-serializes-with-file-gc
   ;; The backup snapshot taken by restore shares fragment rows with
   ;; the live file, so its creation must serialize with a concurrent
-  ;; :file-gc pass, like ::create-file-snapshot does: with FOR SHARE
+  ;; :file-gc pass, like ::create-file-snapshot does: with FOR UPDATE
   ;; held by the GC pass, the restore waits at the locked read instead
   ;; of snapshotting pre-GC fragment ids that the pass is about to
   ;; mark as deleted.

@@ -95,7 +95,6 @@
 
 (def schema:file-metadata
   [:map {:title "Metadata"}
-   [:storage-ref-id {:optional true} ::sm/uuid]
    [:generated-by {:optional true} :string]
    [:referer {:optional true} :string]])
 
