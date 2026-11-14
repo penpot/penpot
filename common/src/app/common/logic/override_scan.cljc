@@ -13,10 +13,14 @@
   (:require
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
+   [app.common.geom.matrix :as gmt]
+   [app.common.geom.shapes :as gsh]
    [app.common.logic.libraries :as cll]
+   [app.common.math :as mth]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
-   [app.common.types.shape.layout :as ctl]))
+   [app.common.types.shape.layout :as ctl]
+   [app.common.types.text :as txt]))
 
 (defn- derived-geometry?
   "Whether the geometry of `shape` is not the main's to give: the size of a
@@ -26,6 +30,33 @@
            (not= :fixed (:grow-type shape)))
       (and (ctl/any-layout-immediate-child? objects shape)
            (not (ctl/position-absolute? shape)))))
+
+(defn- close-data?
+  "Whether `a` and `b` are equal but for numbers within a hundredth."
+  [a b]
+  (cond
+    (and (number? a) (number? b)) (mth/close? a b 0.01)
+    (and (map? a) (map? b)) (and (= (set (keys a)) (set (keys b)))
+                                 (every? #(close-data? (get a %) (get b %)) (keys a)))
+    (and (sequential? a) (sequential? b)) (and (= (count a) (count b))
+                                               (every? true? (map close-data? a b)))
+    :else (= a b)))
+
+(defn- same-value?
+  "Whether `a` and `b`, values of `attr`, show the same: geometry within a
+   hundredth of a pixel, which sync writes back with float noise, the
+   segments of a path alike, and texts whose letters and styles show the
+   same (`txt/override-groups`)."
+  [attr a b]
+  (cond
+    (and (number? a) (number? b)) (mth/close? a b 0.01)
+    (#{:points :selrect} attr) (and (some? a) (some? b) (gsh/close-attrs? attr a b 0.01))
+    (and (gmt/matrix? a) (gmt/matrix? b)) (gmt/close? a b)
+    (and (= :content attr) (map? a) (map? b))
+    (empty? (txt/override-groups a b))
+    (and (= :content attr) (some? a) (some? b))
+    (close-data? (vec a) (vec b))
+    :else (= a b)))
 
 (defn- change-findings
   "The findings of a change of a sync of the file `data`: for a change of
@@ -38,6 +69,7 @@
       (let [shape (get objects id)
             attrs (into #{}
                         (comp (filter #(= :set (:type %)))
+                              (remove #(same-value? (:attr %) (get shape (:attr %)) (:val %)))
                               (map :attr)
                               (remove #{:position-data})
                               (filter #(some? (ctk/resolve-sync-group (:type shape) %)))
