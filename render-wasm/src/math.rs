@@ -214,11 +214,7 @@ impl Bounds {
             result = -result;
         }
 
-        if self.flip_y() {
-            result = -result;
-        }
-
-        if self.flip_x() {
+        if self.mirrored() {
             result = -result;
         }
 
@@ -239,11 +235,7 @@ impl Bounds {
             result = -result;
         }
 
-        if self.flip_y() {
-            result = -result;
-        }
-
-        if self.flip_x() {
+        if self.mirrored() {
             result = -result;
         }
 
@@ -264,11 +256,7 @@ impl Bounds {
             result = -result;
         }
 
-        if self.flip_y() {
-            result = -result;
-        }
-
-        if self.flip_x() {
+        if self.mirrored() {
             result = -result;
         }
 
@@ -289,11 +277,7 @@ impl Bounds {
             result = -result;
         }
 
-        if self.flip_y() {
-            result = -result;
-        }
-
-        if self.flip_x() {
+        if self.mirrored() {
             result = -result;
         }
 
@@ -340,16 +324,12 @@ impl Bounds {
         Some(target_points_matrix)
     }
 
-    // TODO: Probably we can improve performance here removing the access
-    pub fn flip_x(&self) -> bool {
+    /// Whether the box is a mirror image of an upright one: its matrix's
+    /// determinant is negative. Unlike the signs of the diagonal, this holds
+    /// for a box turned a quarter, whose diagonal is float noise.
+    pub fn mirrored(&self) -> bool {
         let m = self.transform_matrix().unwrap_or_default();
-        m.scale_x() < 0.0
-    }
-
-    // TODO: Probably we can improve performance here removing the access
-    pub fn flip_y(&self) -> bool {
-        let m = self.transform_matrix().unwrap_or_default();
-        m.scale_y() < 0.0
+        m.scale_x() * m.scale_y() - m.skew_x() * m.skew_y() < 0.0
     }
 
     pub fn to_rect(self) -> Rect {
@@ -564,6 +544,36 @@ mod tests {
         assert_eq!(b1.top(Point::new(4.0, 8.0)), 7.0);
         assert_eq!(b1.right(Point::new(7.0, 6.0),), 1.0);
         assert_eq!(b1.bottom(Point::new(7.0, 6.0),), 4.0);
+    }
+
+    #[test]
+    fn test_bounds_distances_of_a_turned_and_flipped_box() {
+        // A 100x100 box at (100, 100) turned a quarter around its center, then
+        // flipped horizontally around it: the turn leaves its matrix's diagonal
+        // at float noise, so only its determinant tells that it is mirrored.
+        let center = Point::new(150.0, 150.0);
+        let mut turn = Matrix::rotate_deg(90.0);
+        turn.pre_translate(Vector::new(-center.x, -center.y));
+        turn.post_translate(Vector::new(center.x, center.y));
+        let mut flip = Matrix::scale((-1.0, 1.0));
+        flip.pre_translate(Vector::new(-center.x, -center.y));
+        flip.post_translate(Vector::new(center.x, center.y));
+
+        let rect = Rect::from_xywh(100.0, 100.0, 100.0, 100.0);
+        let turned = Bounds::from_rect(&rect).transform(&turn);
+        let flipped = turned.transform(&flip);
+        let child = Bounds::from_rect(&Rect::from_xywh(120.0, 130.0, 10.0, 10.0));
+
+        assert!(!turned.mirrored());
+        assert!(flipped.mirrored());
+
+        // the child flipped with its box keeps its distances to the box's sides
+        let flipped_child = child.transform(&turn).transform(&flip);
+        let turned_child = child.transform(&turn);
+        assert!((turned.left(turned_child.nw) - flipped.left(flipped_child.nw)).abs() < 0.01);
+        assert!((turned.top(turned_child.nw) - flipped.top(flipped_child.nw)).abs() < 0.01);
+        assert!((turned.right(turned_child.ne) - flipped.right(flipped_child.ne)).abs() < 0.01);
+        assert!((turned.bottom(turned_child.sw) - flipped.bottom(flipped_child.sw)).abs() < 0.01);
     }
 
     #[test]
