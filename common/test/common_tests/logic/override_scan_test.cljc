@@ -39,6 +39,17 @@
                :attrs  #{:fills}}]
              (map #(select-keys % [:id :groups :attrs]) findings)))))
 
+(t/deftest float-noise-is-not-a-difference
+  ;; sync writes the geometry back within a hundredth of a pixel
+  (let [file (file-with-copy)
+        x    (:x (ths/get-shape file :copy-child))
+        file (-> file
+                 (ths/update-shape :copy-child :x (+ x 0.001))
+                 (ths/update-shape :copy-child :touched nil))]
+    (t/is (empty? (clos/scan file {})))
+    (t/testing "a pixel is a difference"
+      (t/is (seq (clos/scan (ths/update-shape file :copy-child :x (+ x 1)) {}))))))
+
 (t/deftest an-override-is-not-a-difference
   (let [file (-> (file-with-copy)
                  (ths/update-shape :copy-child :fills (red-fills)))]
