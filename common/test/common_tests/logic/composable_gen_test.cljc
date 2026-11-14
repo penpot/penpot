@@ -4308,6 +4308,16 @@
                                     :grid-empty false :layout-copies false :text true}]
                        :ops [[:switch 11] [:switch 5] [:nest 17] [:add-child 15] [:rotate 15] [:style 12 9 1] [:paste 12]]}))))
 
+(t/deftest generated-an-ungroup-gives-a-grid-copy-with-its-own-cells-its-main-tracks
+  ;; a grid copy with its own cells and direction but its main's tracks
+  ;; takes the tracks an ungroup in the main adds before placing the shapes
+  ;; it brings in
+  (t/is (map? (cg/run {:world [3 1 {:variants true :rich-variants true :text true :layout :grid
+                                    :layout-copies true :layout-children true}]
+                       :ops [[:detach 0 0 0 0] [:detach 17 0 0 0] [:grid-direction 2 0 0 1]
+                             [:grid-cell 2 0 0 1] [:grid-direction 12 0 3 0] [:add-child 0]
+                             [:structure 7 2 0]]}))))
+
 (t/deftest generated-an-ungroup-fills-a-grid-copy-with-its-own-cells-in-main-layer-order
   ;; shapes an ungroup in a grid main brings into a copy with its own cells
   ;; take its free cells in the main's layer order, as sync gives them
