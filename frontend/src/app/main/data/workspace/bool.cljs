@@ -30,7 +30,10 @@
                          (dsh/process-selected objects))]
         (when-let [[shape changes] (clb/generate-create-bool it page-id objects ids type force-shape-id)]
           (rx/of (dch/commit-changes changes)
-                 (dws/select-shapes (d/ordered-set (:id shape)))))))))
+                 (dws/select-shapes (d/ordered-set (:id shape)))
+                 ;; the bool takes the bounds of its result, which the layout it
+                 ;; is in places again
+                 (ptk/data-event :layout/update {:ids [(:parent-id shape)]})))))))
 
 (defn group-to-bool
   [shape-id type]

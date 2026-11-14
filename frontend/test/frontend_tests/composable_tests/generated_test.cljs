@@ -1109,3 +1109,10 @@
   (await (replay {:world [2 0 {:variants false :rich-variants false :text true :layout :flex
                                :layout-copies false :layout-children true}]
                   :ops [[:structure 11 1 13] [:structure 0 3]]})))
+
+(t/deftest ^:async generated-a-bool-in-a-grid-is-placed-by-it
+  ;; a bool takes the bounds of its result, which the grid it is in places
+  (await (replay {:world [3 0 {:variants true :rich-variants true :text true :layout :grid
+                               :layout-copies true :layout-children true}]
+                  :ops [[:rotate 16 0 7 0] [:grid-direction 0 0 0 1] [:grid-cell 0 10 0 1] [:add-child 0]
+                        [:structure 3 6 15] [:grid-direction 0 0 0 1] [:grid-cell 0 4 2 1]]})))
