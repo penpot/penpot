@@ -149,11 +149,7 @@
         justify-items   (-> (get shape :layout-justify-items) sr/translate-layout-justify-items)
         justify-content (-> (get shape :layout-justify-content) sr/translate-layout-justify-content)
         wrap-type       (-> (get shape :layout-wrap-type) sr/translate-layout-wrap-type)
-        padding         (get shape :layout-padding)
-        padding-top     (get padding :p1 0)
-        padding-right   (get padding :p2 0)
-        padding-bottom  (get padding :p3 0)
-        padding-left    (get padding :p4 0)]
+        [padding-top padding-right padding-bottom padding-left] (ctl/paddings shape)]
     (buf/write-u8 dview offset dir)
     (buf/write-u8 dview (+ offset 1) align-items)
     (buf/write-u8 dview (+ offset 2) align-content)
@@ -170,11 +166,7 @@
 
 (defn- write-layout-item!
   [dview offset shape]
-  (let [margins       (get shape :layout-item-margin)
-        margin-top    (get margins :m1 0)
-        margin-right  (get margins :m2 0)
-        margin-bottom (get margins :m3 0)
-        margin-left   (get margins :m4 0)
+  (let [[margin-top margin-right margin-bottom margin-left] (ctl/child-margins shape)
         h-sizing      (-> (get shape :layout-item-h-sizing) sr/translate-layout-sizing)
         v-sizing      (-> (get shape :layout-item-v-sizing) sr/translate-layout-sizing)
         align-self    (-> (get shape :layout-item-align-self) sr/translate-align-self)
