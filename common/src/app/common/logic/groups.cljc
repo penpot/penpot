@@ -212,14 +212,32 @@
           (recur (concat (rest pending) (map second hits)) (into result hits)))
         result))))
 
+(defn- with-ref-tracks
+  "`grid` with the tracks of `ref-grid` on the axes it does not override,
+   adding the cells of the tracks it lacks."
+  [grid ref-grid]
+  (letfn [(follow [grid attr add-track]
+            (let [tracks (get ref-grid attr)
+                  own    (get grid attr)]
+              (if (or (ctk/touched-group? grid attr) (< (count tracks) (count own)))
+                grid
+                (-> (reduce add-track grid (drop (count own) tracks))
+                    (assoc attr tracks)))))]
+    (-> grid
+        (follow :layout-grid-rows ctl/add-grid-row)
+        (follow :layout-grid-columns ctl/add-grid-column))))
+
 (defn- assign-ungrouped-cells
   "`grid` with the cells of the children an ungroup brings into it assigned.
-   A copy with its own cells gives its free cells to them in the layer
-   order of its main, as sync does, which is the reverse of the order the
-   main's grid flows them in."
-  [grid objects]
+   A copy with its own cells first takes the tracks of `ref-grid`, the grid
+   it refers to as the ungroup leaves it, on the axes it does not override;
+   then it gives its free cells to them in the layer order of its main, as
+   sync does, which is the reverse of the order the main's grid flows them
+   in."
+  [grid objects ref-grid]
   (if (ctk/touched-group? grid :layout-grid-cells)
     (-> grid
+        (cond-> (some? ref-grid) (with-ref-tracks ref-grid))
         (update :shapes (comp vec reverse))
         (ctl/assign-cells objects)
         (assoc :shapes (:shapes grid)))
@@ -228,8 +246,8 @@
 (defn- ungroup-shape-changes
   "The changes that ungroup the group, bool or board `shape-id` of the
    page `page-id`, whose shapes are `objects`; `options` of the moves and
-   removals."
-  [it page-id objects shape-id options]
+   removals. `ref-grids` holds the grids the ungroups before left, by id."
+  [it page-id objects shape-id options ref-grids]
   (let [shape (get objects shape-id)
         changes
         (cond
@@ -241,8 +259,18 @@
 
     (cond-> changes
       (and changes (ctl/grid-layout? objects (:parent-id shape)))
-      (pcb/update-shapes [(:parent-id shape)] assign-ungrouped-cells
+      (pcb/update-shapes [(:parent-id shape)]
+                         (fn [grid objects]
+                           (assign-ungrouped-cells grid objects (get ref-grids (:shape-ref grid))))
                          (merge {:with-objects? true} (select-keys options [:ignore-touched]))))))
+
+(defn- ungrouped-grid
+  "The grid board that held the shape `shape-id` of `objects`, as `changes`
+   leave it, or nil."
+  [changes objects shape-id]
+  (let [parent-id (:parent-id (get objects shape-id))]
+    (when (and changes (ctl/grid-layout? objects parent-id))
+      (get (pcb/get-objects (pcb/apply-changes-local changes)) parent-id))))
 
 (defn generate-ungroup-changes
   "The changes that ungroup the groups, bools and boards of `ids`, which
@@ -253,15 +281,24 @@
    (generate-ungroup-changes it page-id objects ids nil))
   ([it page-id objects ids pages-index]
    (let [copies       (copies-of pages-index ids)
-         changes-list (concat
-                       (keep #(ungroup-shape-changes it page-id objects % nil) ids)
-                       (keep (fn [[copy-page-id id]]
-                               (let [copy-objects (if (= copy-page-id page-id)
-                                                    objects
-                                                    (get-in pages-index [copy-page-id :objects]))]
-                                 (ungroup-shape-changes it copy-page-id copy-objects id
-                                                        {:allow-altering-copies true :ignore-touched true})))
-                             copies))]
+         ;; mains first, then each copy after the shape it refers to, so a
+         ;; copy's grid finds the one it refers to as its ungroup left it
+         targets      (concat (map (fn [id] [page-id id nil]) ids)
+                              (map (fn [[copy-page-id id]]
+                                     [copy-page-id id {:allow-altering-copies true :ignore-touched true}])
+                                   copies))
+         changes-list (->> targets
+                           (reduce (fn [[changes-list ref-grids] [target-page-id id options]]
+                                     (let [target-objects (if (= target-page-id page-id)
+                                                            objects
+                                                            (get-in pages-index [target-page-id :objects]))
+                                           changes        (ungroup-shape-changes it target-page-id target-objects
+                                                                                 id options ref-grids)
+                                           grid           (ungrouped-grid changes target-objects id)]
+                                       [(cond-> changes-list changes (conj changes))
+                                        (cond-> ref-grids grid (assoc (:id grid) grid))]))
+                                   [[] {}])
+                           first)]
      {:redo-changes (vec (mapcat :redo-changes changes-list))
       :undo-changes (vec (mapcat :undo-changes changes-list))
       :origin it})))
