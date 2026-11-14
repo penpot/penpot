@@ -17,7 +17,8 @@ pub fn calculate_resize(
         ConstraintH::LeftRight => {
             let left = parent_before.left(child_before.nw);
             let right = parent_before.right(child_before.ne);
-            let target_width = parent_after.width() - left - right;
+            // the length between the sides, which may have crossed
+            let target_width = (parent_after.width() - left - right).abs();
             target_width / f32::max(0.01, child_after.width())
         }
         _ => 1.0,
@@ -30,7 +31,8 @@ pub fn calculate_resize(
         ConstraintV::TopBottom => {
             let top = parent_before.top(child_before.nw);
             let bottom = parent_before.bottom(child_before.sw);
-            let target_height = parent_after.height() - top - bottom;
+            // the length between the sides, which may have crossed
+            let target_height = (parent_after.height() - top - bottom).abs();
             target_height / f32::max(0.01, child_after.height())
         }
         _ => 1.0,
@@ -164,4 +166,32 @@ pub fn propagate_shape_constraints(
     }
 
     Ok(transform)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::math::Rect;
+
+    #[test]
+    fn test_left_right_child_of_a_board_narrower_than_its_margins_keeps_its_side() {
+        // a 50 wide child 60 from the left and 30 from the right of a 140 wide
+        // board: at 80 wide, its sides would cross, and it is sized by the
+        // length between them, as the layout engine sizes it, not mirrored
+        let parent_before = Bounds::from_rect(&Rect::from_xywh(0.0, 0.0, 140.0, 100.0));
+        let parent_after = Bounds::from_rect(&Rect::from_xywh(0.0, 0.0, 80.0, 100.0));
+        let child = Bounds::from_rect(&Rect::from_xywh(60.0, 0.0, 50.0, 50.0));
+
+        let (scale_width, _) = calculate_resize(
+            ConstraintH::LeftRight,
+            ConstraintV::Top,
+            &parent_before,
+            &parent_after,
+            &child,
+            &child,
+        )
+        .unwrap();
+
+        assert!((scale_width - 0.2).abs() < 0.001);
+    }
 }
