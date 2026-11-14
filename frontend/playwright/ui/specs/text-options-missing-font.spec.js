@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { WorkspacePage } from "../pages/WorkspacePage";
+import { MockWebSocketHelper } from "../../helpers/MockWebSocketHelper";
 
 // ---------------------------------------------------------------------------
 // The "Create typography style" button (workspace.options.convert-to-typography)
@@ -42,7 +43,11 @@ function textSection(workspace) {
 const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 // `getByText` matches substrings, and this fixture has "Text with no
-// typography" as a prefix of "Text with no typography two".
+// typography" as a prefix of "Text with no typography two". The anchored
+// match assumes the row shows only the layer name: with the `:show-ids` or
+// `:show-touched` debug flags the row appends text to the same node
+// (layer_name.cljs:138-146), and no locator survives `:show-ids` because the
+// name and the id share a text node.
 function layerRow(workspace, name) {
   return workspace.layers
     .getByTestId("layer-row")
@@ -105,7 +110,16 @@ test("The font of the shape decides the button", async ({ page }) => {
       "get-font-variants?team-id=*",
       "render-wasm/get-font-variants-custom-fonts.json",
     );
+    // The socket registry is keyed by URL and still holds the mock of the
+    // document that is about to be destroyed, so it has to be cleared before
+    // the reload; `goToWorkspace` then waits for the new document's socket
+    // (back in CONNECTING) and opens it.
+    MockWebSocketHelper.clear();
     await page.reload();
+    await workspace.goToWorkspace({
+      fileId: CUSTOM_FONTS_FILE.id,
+      pageId: CUSTOM_FONTS_FILE.pageId,
+    });
 
     await workspace.clickLeafLayer("Penpot & Dragons");
 

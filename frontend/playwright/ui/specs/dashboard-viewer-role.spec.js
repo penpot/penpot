@@ -37,13 +37,18 @@ test("A viewer sees no project or file edit affordances", async ({ page }) => {
   await test.step("no file creation in the drafts section", async () => {
     await dashboardPage.sidebar.getByText("Drafts", { exact: true }).click();
     await expect(dashboardPage.mainHeading).toHaveText("Drafts");
-    await expect(page.getByText("+ New File")).toBeHidden();
+    await expect(page.getByTestId("new-file")).toHaveCount(0);
   });
 
   await test.step("no edit options in the file context menu", async () => {
     const button = page.getByRole("button", { name: /New File 2/ });
     await button.click();
     await button.click({ button: "right" });
+
+    // A viewer keeps the two unconditional items (open in a new tab and
+    // download). Anything gated by `can-edit` that leaks into the menu makes
+    // this count grow, which is what the four labels below only describe.
+    await expect(page.getByRole("menuitem")).toHaveCount(2);
 
     await expect(page.getByText("rename")).toBeHidden();
     await expect(page.getByText("duplicate")).toBeHidden();

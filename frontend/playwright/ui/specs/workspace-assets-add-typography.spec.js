@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { WorkspacePage } from "../pages/WorkspacePage";
+import { MockWebSocketHelper } from "../../helpers/MockWebSocketHelper";
 
 // ---------------------------------------------------------------------------
 // The "Add typography" button in the local library typographies section
@@ -65,10 +66,19 @@ test("The font of the selected text decides the button", async ({ page }) => {
       "get-font-variants?team-id=*",
       "workspace/get-font-variants-empty.json",
     );
+    // Three separate problems after the reload. First, the socket registry
+    // still holds the mock of the document that is about to be destroyed, so
+    // it has to be cleared before reloading. Second, the new document's mock
+    // is back in CONNECTING and the app would drop notifications until it
+    // opens; `goToWorkspace` skips the navigation because the file has not
+    // changed and opens it. Third, the sidebar restores the Assets tab, so
+    // the layer tree does not exist until it goes back to Layers.
+    MockWebSocketHelper.clear();
     await page.reload();
-
-    // The sidebar keeps the Assets tab across the reload, so it has to go
-    // back to Layers before the tree rows exist.
+    await workspace.goToWorkspace({
+      fileId: CUSTOM_FONTS_FILE.id,
+      pageId: CUSTOM_FONTS_FILE.pageId,
+    });
     await workspace.clickLayers();
     await workspace.clickLeafLayer("Penpot & Dragons");
     await workspace.clickAssets();
