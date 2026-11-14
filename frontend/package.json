@@ -38,6 +38,7 @@
     "lint:scss": "pnpm exec stylelint '{src,resources}/**/*.scss'",
     "build:test": "pnpm run build:wasm && clojure -M:dev:shadow-cljs compile test",
     "build:renderer-benchmarks:tests": "clojure -M:dev:shadow-cljs compile performance-tests",
+    "build:test-wasm": "clojure -M:dev:shadow-cljs compile test-wasm && node ./scripts/build-test-wasm.js && clojure -M scripts/test-wasm-programs.clj",
     "test": "pnpm run build:test && node target/tests/test.js",
     "test:quiet": "node ./scripts/test-quiet.js",
     "test:renderer-benchmarks": "pnpm run build:renderer-benchmarks:tests && node target/performance-tests/test.js",

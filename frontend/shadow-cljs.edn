@@ -163,6 +163,20 @@
    {:test {:init-fn frontend-tests.runner/init
            :prepend-js ";if (typeof globalThis.navigator?.userAgent === 'undefined') { globalThis.navigator = {userAgent: ''}; };"}}}
 
+  :test-wasm
+  {:target :esm
+   :output-dir "resources/public/js/test-wasm/"
+   :asset-path "/js/test-wasm"
+   :runtime :browser
+   :js-options {:entry-keys ["module" "browser" "main"]
+                :export-conditions ["module" "import", "browser" "require" "default"]
+                :js-provider :external
+                :external-index "target/test-wasm-index.js"
+                :external-index-format :esm}
+   :modules {:test-wasm {:init-fn frontend-tests.wasm-replay/init}}
+   :compiler-options {:output-feature-set :es2020
+                      :warnings {:fn-deprecated false}}}
+
   :bench
   {:target :node-script
    :output-to "target/bench.js"
