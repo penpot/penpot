@@ -70,7 +70,8 @@
    :compiler-options
    {:output-feature-set :es2020
     :output-wrapper false
-    :warnings {:fn-deprecated false}}
+    :warnings {:fn-deprecated false}
+    :closure-defines {app.config/devenv-mode #shadow/env ["PENPOT_DEVENV" :as :bool :default false]}}
 
    :release
    {:closure-defines {goog.DEBUG false

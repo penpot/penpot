@@ -73,10 +73,26 @@
     :browser
     :webworker))
 
+;; --- Compile-time devenv switch
+;;
+;; Set to true only by the devenv containers (PENPOT_DEVENV=true in
+;; docker-compose.main.yml); production builds leave the default. When true,
+;; the frontend disables the admin-console by default; `enable-admin-console`
+;; in the user's `config.js` re-enables it (user flags parse after the
+;; injected default and the last flag wins).
+(goog-define devenv-mode false)
+
+(defn- apply-devenv-defaults
+  "Prepends the devenv default `disable-admin-console` before the user flags.
+  User flags are parsed after it, so `enable-admin-console` wins."
+  [devenv? flags]
+  (if devenv? (concat [:disable-admin-console] flags) flags))
+
 (defn- parse-flags
   [global]
   (let [flags (obj/get global "penpotFlags" "")
-        flags (sequence (map keyword) (str/words flags))]
+        flags (sequence (map keyword) (str/words flags))
+        flags (apply-devenv-defaults devenv-mode flags)]
     (flags/parse flags/default flags)))
 
 (defn- parse-version

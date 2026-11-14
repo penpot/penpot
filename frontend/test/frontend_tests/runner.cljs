@@ -8,6 +8,7 @@
    [frontend-tests.browser-history-test]
    [frontend-tests.code-gen-style-test]
    [frontend-tests.composable-tests.comp.sync-test]
+   [frontend-tests.config-test]
    [frontend-tests.copy-as-svg-test]
    [frontend-tests.data.auth-test]
    [frontend-tests.data.comments-batches-test]
@@ -208,6 +209,7 @@
   ['frontend-tests.basic-shapes-test
    'frontend-tests.code-gen-style-test
    'frontend-tests.composable-tests.comp.sync-test
+   'frontend-tests.config-test
    'frontend-tests.copy-as-svg-test
    'frontend-tests.data.auth-test
    'frontend-tests.data.comments-batches-test
