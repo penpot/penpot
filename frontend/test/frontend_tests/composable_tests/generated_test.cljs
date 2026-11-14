@@ -1102,3 +1102,10 @@
                         [:delete 8 0 0 0] [:swap 15 0 0 0] [:edit 14 0 0 0]
                         [:resize 4 0 0 0] [:resize 0 0 0 0] [:nest 4 0 0 0]
                         [:rotate 5 0 0 0] [:update-main 14 0 0 0] [:duplicate 0 0 0 0]]})))
+
+(t/deftest ^:async generated-an-unmask-in-a-flex-main-places-the-group-again
+  ;; an unmasked group takes the bounds of all its children, which the flex
+  ;; it is in places again
+  (await (replay {:world [2 0 {:variants false :rich-variants false :text true :layout :flex
+                               :layout-copies false :layout-children true}]
+                  :ops [[:structure 11 1 13] [:structure 0 3]]})))

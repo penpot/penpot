@@ -119,8 +119,11 @@
      (watch [it state _]
        (let [page-id  (:current-page-id state)
              objects  (dsh/lookup-page-objects state page-id)
+             ids      (d/nilv ids (dsh/lookup-selected state))
+             ;; an unmasked group takes the bounds of all its children, which
+             ;; the layout it is in places again
+             parents  (into #{} (keep #(:parent-id (get objects %))) ids)
+             changes  (clg/generate-unmask-changes it page-id objects ids)]
 
-             changes  (clg/generate-unmask-changes it page-id objects
-                                                   (d/nilv ids (dsh/lookup-selected state)))]
-
-         (rx/of (dch/commit-changes changes)))))))
+         (rx/of (dch/commit-changes changes)
+                (ptk/data-event :layout/update {:ids parents})))))))
