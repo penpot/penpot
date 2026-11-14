@@ -380,6 +380,18 @@
     (t/is (nil? (:error out)))
     (get-in out [:result :data])))
 
+(defn- get-pointer-realized-data
+  "The file data a client that declares no feature receives: pointers
+  materialized and `ObjectsMap` kept as is (objects-map is not negotiated).
+
+  Runs inside a transaction: resolving a cold-storage fragment reuses the
+  connection."
+  [file-id]
+  (db/tx-run! th/*system*
+              (fn [cfg]
+                (let [file (fdata/realize-pointers cfg (bfc/get-file cfg file-id))]
+                  (:data file)))))
+
 (t/deftest offloaded-file-reads-identically
   (let [profile  (th/create-profile* 1 {:is-active true})
         file     (create-file 1 profile)
@@ -387,7 +399,7 @@
         shape-id (uuid/next)]
     (add-page-with-rect profile file page-id shape-id)
 
-    (let [before-bfc (:data (bfc/get-file th/*system* (:id file) {:realize? true}))
+    (let [before-bfc (get-pointer-realized-data (:id file))
           before-rpc (get-file-data profile (:id file))]
 
       (t/is (some? (get-in before-bfc [:pages-index page-id :objects shape-id])))
@@ -398,8 +410,7 @@
         (t/is (every? #(= "storage" (:backend %)) (remove :deleted-at (db-rows (:id file))))))
 
       (t/testing "direct read resolves cold storage transparently"
-        (t/is (= before-bfc
-                 (:data (bfc/get-file th/*system* (:id file) {:realize? true})))))
+        (t/is (= before-bfc (get-pointer-realized-data (:id file)))))
 
       (t/testing "rpc read resolves cold storage transparently"
         (t/is (= before-rpc (get-file-data profile (:id file))))))))

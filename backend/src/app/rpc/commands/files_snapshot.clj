@@ -56,7 +56,7 @@
    ::sm/params schema:get-file-snapshot
    ::sm/result files/schema:file-with-permissions
    ::db/transaction true}
-  [cfg {:keys [::rpc/profile-id file-id id features] :as params}]
+  [cfg {:keys [::rpc/profile-id file-id id]}]
   (let [perms (perms/get-file-read-permissions cfg profile-id file-id)]
     (files/check-read-permissions! perms)
     (let [snapshot (fsnap/get-snapshot cfg file-id id)]
@@ -72,7 +72,12 @@
       ;; Snapshots may hold pointer-mapped pages shared with the live
       ;; file, so materialize them here: the preview UI applies the
       ;; response straight into state and cannot resolve pointers.
-      ;; NOTE: the loader binds the live file-id, not the snapshot id.
+      ;; NOTE: pointers resolve with the file id in their own metadata, so a
+      ;; snapshot needs no live file id to materialize.
+      ;;
+      ;; `fdata/objects-map` is not negotiated here either (see
+      ;; `get-file`): the feature is consolidated and the client always
+      ;; decodes `ObjectsMap`, so the materialized page keeps it.
       ;;
       ;; A snapshot taken while a migration was pending stores the old
       ;; format. Apply the pending migrations in memory, the same pure
@@ -83,21 +88,13 @@
       ;; regenerated from the snapshot's version.
       (let [base-file (bfc/get-file cfg file-id :load-data? false)
             snapshot  (assoc snapshot :id file-id)
-            file      (if (fmg/need-migration? snapshot)
-                        (let [file (fdata/realize cfg snapshot)]
-                          (fmg/migrate-file
-                           file
-                           (delay (bfc/get-resolved-file-libraries cfg file))))
-                        (update snapshot :data
-                                #(fdata/realize-pointers cfg file-id %)))
-            ;; Works like in `get-file`: a client that does not declare
-            ;; `fdata/objects-map` gets plain objects. The historical
-            ;; feature set is deliberately not checked against the
-            ;; enabled one: a version may predate a feature change.
-            file      (if (and (contains? (:features file) "fdata/objects-map")
-                               (not (contains? features "fdata/objects-map")))
-                        (fdata/realize-objects cfg file)
-                        file)]
+            file      (fdata/with-pointers cfg
+                        (if (fmg/need-migration? snapshot)
+                          (let [file (fdata/realize cfg snapshot)]
+                            (fmg/migrate-file
+                             file
+                             (delay (bfc/get-resolved-file-libraries cfg file))))
+                          (fdata/realize-pointers cfg snapshot)))]
         (-> base-file
             (assoc :data (:data file))
             (assoc :version (:version file))

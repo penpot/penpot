@@ -255,9 +255,13 @@
   (if-let [file (get-file cfg props)]
     ;; Every fragment load goes through `with-pointers`. Each pointer
     ;; instance loads its content once (`loaded?`), and the replacement
-    ;; instances `clean-file` creates already carry their content, so
-    ;; the pass reads each fragment once without a separate cache.
-    (feat.fdata/with-pointers cfg file-id
+    ;; instances `clean-file` creates already carry their content, so the
+    ;; live file reads each fragment once with no separate cache. The
+    ;; snapshot scan is not the same: each row decodes its own pointer
+    ;; instances, so a fragment shared by N snapshots is read N times.
+    ;; That repeated read is assumed on purpose; this pass is monolithic
+    ;; and will be split into smaller collectors before optimizing it.
+    (feat.fdata/with-pointers cfg
       (let [liveness (collect-snapshot-liveness cfg file-id)
             original (feat.fdata/original-pointers (:data file))
             file (->> file

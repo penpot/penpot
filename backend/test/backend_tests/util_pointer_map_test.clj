@@ -87,7 +87,7 @@
   (t/testing "tracking modifying not modified"
     (binding [pmap/*tracked* (atom {})
               pmap/*load-fn* (constantly {})]
-      (let [obj1 (pmap/create uuid/zero {})
+      (let [obj1 (pmap/create uuid/zero {:file-id uuid/zero})
             obj2 (assoc obj1 :a 1)]
         (t/is (pmap/modified? obj2))
         (t/is (not (pmap/modified? obj1)))
@@ -107,7 +107,7 @@
   (t/testing "loading"
     (binding [pmap/*tracked* (atom {})
               pmap/*load-fn* (constantly {:a 1})]
-      (let [obj1 (pmap/create uuid/zero {})]
+      (let [obj1 (pmap/create uuid/zero {:file-id uuid/zero})]
         (t/is (not (pmap/modified? obj1)))
         (t/is (= 1 (count obj1)))
         (t/is (= uuid/zero (pmap/get-id obj1)))
@@ -122,9 +122,9 @@
   (t/testing "with-meta"
     (binding [pmap/*tracked* (atom {})
               pmap/*load-fn* (constantly {})]
-      (let [obj1 (pmap/create uuid/zero {})
+      (let [obj1 (pmap/create uuid/zero {:file-id uuid/zero})
             obj2 (with-meta obj1 {:foo :bar})
-            obj3 (with-meta obj1 {})]
+            obj3 (with-meta obj1 {:file-id uuid/zero})]
         ;; A metadata change is a new pointer: fresh id and tracked, so
         ;; the fragment row is never rewritten under the same id.
         (t/is (pmap/modified? obj2))
@@ -133,4 +133,30 @@
         ;; The same metadata keeps the pointer untouched.
         (t/is (not (pmap/modified? obj3)))
         (t/is (= (pmap/get-id obj1) (pmap/get-id obj3)))))))
+
+(t/deftest file-id-metadata
+  (t/testing "wrap copies the bound metadata"
+    (binding [pmap/*metadata* {:file-id uuid/zero}]
+      (let [obj (pmap/wrap {})]
+        (t/is (= uuid/zero (:file-id (meta obj))))
+        (t/is (some? (:created-at (meta obj)))))))
+
+  (t/testing "the loader receives the file id of the pointer"
+    (let [calls (atom [])]
+      (binding [pmap/*load-fn* (fn [file-id id]
+                                 (swap! calls conj [file-id id])
+                                 {:a 1})
+                pmap/*tracked* (atom {})]
+        (let [obj (pmap/create uuid/zero {:file-id uuid/zero})]
+          (t/is (= 1 (count obj)))
+          (t/is (= [[uuid/zero uuid/zero]] @calls))))))
+
+  (t/testing "a pointer without file id fails before asking the loader"
+    (binding [pmap/*load-fn* (constantly {})]
+      (let [obj (pmap/create uuid/zero {})]
+        (try
+          (deref obj)
+          (t/is false "expected a pointer-without-file-id error")
+          (catch clojure.lang.ExceptionInfo cause
+            (t/is (= :pointer-without-file-id (:code (ex-data cause))))))))))
 

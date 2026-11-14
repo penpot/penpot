@@ -309,7 +309,7 @@
   [{:keys [::db/conn ::timestamp] :as cfg}
    {:keys [profile-id file team features changes commits session-id skip-validate] :as params}]
 
-  (fdata/with-tracked-pointers cfg (:id file)
+  (fdata/with-tracked-pointers cfg
 
     (let [file (assoc file :features
                       (-> features
@@ -510,26 +510,27 @@
         take-snapshot?
         (take-snapshot? file)
 
+        ;; Captured before anything mutates the data: the migration runs on
+        ;; plain data and the pages it does not change must keep their
+        ;; original fragment ids on persist, instead of being re-wrapped
+        ;; with fresh ones. Nothing is loaded here.
+        original
+        (fdata/original-pointers (:data file))
+
         ;; Attach the snapshot before migrating: a migration can rebuild a
         ;; page and give its PointerMap a new id with `modified?` set, and a
         ;; snapshot taken after that would keep the very pointer the save
         ;; then rewrites, ending up with post-save content.
-        ;;
-        ;; For avoid unnecesary overhead of creating multiple
-        ;; pointers and handly internally with objects map in their
-        ;; worst case (when probably all shapes and all pointers
-        ;; will be readed in any case), we just realize/resolve them
-        ;; before applying the migration to the file
         file
         (cond-> file
-          ;; need-migration?
-          ;; (->> (fdata/realize cfg))
-
           take-snapshot?
           (->> (attach-snapshot))
 
           need-migration?
-          (fmg/migrate-file libs))]
+          (fmg/migrate-file libs)
+
+          need-migration?
+          (->> (fdata/reattach-unchanged original)))]
 
     (apply update-fn cfg file args)))
 
@@ -572,7 +573,7 @@
   "Validates the entities `changes` affect and the schema of the data they
   modify."
   [cfg file libs changes skip-validate]
-  (binding [pmap/*tracked* nil]
+  (fdata/with-untracked
     (when (contains? cf/flags :soft-file-validation)
       (with-validation-timing cfg :soft-validate-affected-ms "soft-validate-affected"
         (soft-validate-file! file libs changes)))
@@ -672,7 +673,7 @@
   `changes` touch, before they are applied."
   [file libs changes skip-validate]
   (try
-    (binding [pmap/*tracked* nil]
+    (fdata/with-untracked
       (when (and (contains? cf/flags :file-validation)
                  (not skip-validate))
         (val/validate-file-affected! file libs changes))
@@ -785,7 +786,7 @@
   (let [libs (or libs {})]
     (try
       (let [pre-errors
-            (binding [pmap/*tracked* nil]
+            (fdata/with-untracked
               (val/validate-file-affected original libs changes))]
 
         (when (empty? pre-errors)
@@ -798,7 +799,7 @@
                 (cfr/repair-file-until-valid
                  original libs
                  (fn [file applied]
-                   (binding [pmap/*tracked* nil]
+                   (fdata/with-untracked
                      (val/validate-file-affected file libs (into applied changes))))
                  :initial-errors pre-errors))
 
@@ -817,7 +818,7 @@
                                          (d/without-nils)))))
                 scope    (into repair-changes changes)]
 
-            (binding [pmap/*tracked* nil]
+            (fdata/with-untracked
               (val/validate-file-affected! repaired libs scope)
 
               (when (contains? cf/flags :file-schema-validation)

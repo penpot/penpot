@@ -24,6 +24,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.features.fdata :as fdata]
    [app.features.file-migrations :as feat.fmig]
    [app.health :as health]
    [app.http.session :as session]
@@ -786,13 +787,14 @@
     (db/tx-run! (assoc cfg ::db/rollback true)
                 (fn [cfg]
                   ;; Validation walks every page and component, so the
-                  ;; file is read realized; the library map is built
-                  ;; from the file (not its id) and its own loader
-                  ;; resolves each library's pointers.
+                  ;; file is read realized. The libraries stay lazy; the
+                  ;; loader is bound while validating because walking a
+                  ;; library derefs its pointers.
                   (let [file (bfc/get-file cfg file-id :realize? true)
                         libs (bfc/get-resolved-file-libraries cfg file)]
                     (if file
-                      (let [errors (cfv/validate-file file libs)]
+                      (let [errors (fdata/with-pointers cfg
+                                     (cfv/validate-file file libs))]
                         {::yres/status  200
                          ::yres/headers {"content-type" "text/plain"}
                          ::yres/body    (if (empty? errors)

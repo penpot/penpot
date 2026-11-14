@@ -22,20 +22,30 @@
   be regenerated, and is resposability of the hashmap user to properly
   garbage collect the unused/unreferenced objects.
 
+  The metadata always carries the `:file-id` of the file the pointer
+  belongs to (see `app.features.fdata/enable-pointer-map`): fragment
+  rows are keyed by `(file_id, id)`, so a pointer cannot be resolved
+  without it, and the loader takes both from the pointer instead of
+  relying on a per-file binding.
+
   For properly work it requires some dynamic vars binded to
   appropriate values:
 
   - *load-fn*: when you instantatiate an object by ID, on first access
     to the contents of the hash-map will try to load the real data by
-    calling the function binded to that dynamic var.
+    calling the function binded to that dynamic var with the pointer's
+    `:file-id` and its id.
 
   - *tracked*: when you instantiate an object or modify it, it is updated
     on the atom (holding a hashmap) binded to this var; if no binding is
     available, no tracking is performed. Tracking is needed for finally
     persist to external storage all modified objects.
-  "
+
+  - *metadata*: extra metadata attached to every pointer created while
+    it is binded; it is how the current file id reaches `wrap`."
 
   (:require
+   [app.common.exceptions :as ex]
    [app.common.fressian :as fres]
    [app.common.time :as ct]
    [app.common.transit :as t]
@@ -91,7 +101,13 @@
     (when-not *load-fn*
       (throw (UnsupportedOperationException. "load is not supported when *load-fn* is not bind")))
 
-    (when-let [data (*load-fn* id)]
+    (when-not (:file-id mdata)
+      (ex/raise :type :internal
+                :code :pointer-without-file-id
+                :hint "pointer metadata has no :file-id"
+                :id id))
+
+    (when-let [data (*load-fn* (:file-id mdata) id)]
       (set! odata data))
 
     (set! loaded? true)
@@ -244,7 +260,7 @@
     (do
       (some-> *tracked* (swap! assoc (get-id data) data))
       data)
-    (let [mdata (assoc (meta data) :created-at (ct/now))
+    (let [mdata (assoc (merge *metadata* (meta data)) :created-at (ct/now))
           id    (uuid/next)
           pmap  (PointerMap. id
                              mdata

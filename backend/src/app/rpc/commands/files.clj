@@ -215,13 +215,12 @@
           (feat.fdata/realize-pointers cfg file)
           file)
 
-        ;; This operation is needed for backward comapatibility with
-        ;; frontends that does not support objects-map mechanism; this
-        ;; just converts all objects map instaces to plain maps
-        (if (and (contains? (:features file) "fdata/objects-map")
-                 (not (contains? (:features params) "fdata/objects-map")))
-          (feat.fdata/realize-objects cfg file)
-          file)
+        ;; `fdata/objects-map` is not negotiated: the feature is
+        ;; consolidated and every client decodes `ObjectsMap` through its
+        ;; transit handler. Converting it here rewrites the page map, and
+        ;; doing that on a page that is still a pointer produces a fresh
+        ;; fragment id with no row behind it (a read never persists), so
+        ;; the client would get a 404 for every page.
 
         ;; The storage pointer is internal bookkeeping: it never leaves the
         ;; backend in a response.
@@ -243,6 +242,17 @@
    [:share-id {:optional true} ::sm/uuid]])
 
 (defn- get-file-fragment
+  "Read one fragment of a file for the client that holds its pointer.
+
+  This is the public contract for fragments and it serves unmarked rows
+  only: a row that `file-gc` marked as deleted is rejected with
+  `:not-found`, even though the internal loader (`fdata/load-pointer`)
+  still reads it until `objects-gc` purges it. The asymmetry is
+  deliberate. Marking is computed from the current main data and every
+  unpurged snapshot, so a client that read the current revision never
+  holds a pointer to a marked row; the internal loader tolerates them
+  because maintenance operations (delete, absorb, restore) need pointers
+  that are marked but not purged yet."
   [cfg file-id fragment-id]
   ;; Resolve through the file data backend: a fragment can live on cold
   ;; storage, and reading its row directly would hand `nil` to `blob/decode`.
@@ -443,7 +453,7 @@
                   (cfeat/check-client-features! (:features params))
                   (cfeat/check-file-features! (:features file)))
 
-        page  (feat.fdata/with-pointers cfg file-id
+        page  (feat.fdata/with-pointers cfg
                 (let [page (dm/get-in file [:data :pages-index resolved-page-id])]
                   (if (pmap/pointer-map? page)
                     (deref page)
@@ -574,7 +584,7 @@
         calculate-from-db
         (fn []
           (let [file   (bfc/get-file cfg id)
-                result (feat.fdata/with-pointers cfg id
+                result (feat.fdata/with-pointers cfg
                          (calculate-library-summary file))]
             ;; The storage pointer is internal bookkeeping: this summary is an
             ;; RPC response and must not expose it. The applied migrations go
@@ -706,7 +716,7 @@
 (defn- get-file-stats
   [{:keys [::db/conn] :as cfg} file-id]
   (let [file    (bfc/get-file cfg file-id)
-        base    (feat.fdata/with-pointers cfg file-id
+        base    (feat.fdata/with-pointers cfg
                   (cfs/calc-file-stats (:data file)))
         lib-cnt (get-file-stats-library-counts conn file-id)]
     (-> base
@@ -795,7 +805,7 @@
   (bfc/check-file-exists cfg file-id)
   (check-read-permissions! cfg profile-id file-id)
   (let [{:keys [data]} (bfc/get-file cfg file-id)]
-    (feat.fdata/with-pointers cfg file-id
+    (feat.fdata/with-pointers cfg
       (when-let [tokens-lib (cfo/get-tokens-lib data)]
         (ctob/export-dtcg-json tokens-lib (cfo/get-tokens-status data))))))
 
@@ -1014,7 +1024,7 @@
   (assert (db/connection-map? cfg)
           "expected cfg with valid connection")
 
-  (feat.fdata/with-tracked-pointers cfg file-id
+  (feat.fdata/with-tracked-pointers cfg
     (let [file (-> (bfc/get-file cfg file-id
                                  :include-deleted? true
                                  :lock-for-update? true)

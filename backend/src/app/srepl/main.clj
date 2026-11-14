@@ -549,7 +549,8 @@
                 (fn [system]
                   (let [file (bfc/get-file system file-id)
                         libs (bfc/get-resolved-file-libraries system file)]
-                    (cfv/validate-file file libs))))))
+                    (fdata/with-pointers system
+                      (cfv/validate-file file libs)))))))
 
 (defn validate-file-schema
   "Validate structure, referencial integrity and semantic coherence of

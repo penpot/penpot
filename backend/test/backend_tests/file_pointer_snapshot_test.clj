@@ -253,16 +253,25 @@
 
 (t/deftest pointer-context-contract
   ;; The invariant the whole backend relies on: a pointer can only be
-  ;; derefed while a loader is bound; with-pointers binds the loader
-  ;; for the given file.
-  (let [pointer (pmap/create (uuid/next) {})]
+  ;; derefed while a loader is bound; `with-pointers` binds it, and the
+  ;; loader takes the file from the pointer's own metadata.
+  (let [file-id (uuid/next)
+        pointer (pmap/create (uuid/next) {:file-id file-id})]
     (t/is (thrown? UnsupportedOperationException (deref pointer)))
-    (fdata/with-pointers th/*system* (uuid/random)
+    (fdata/with-pointers th/*system*
       (try
         (deref pointer)
         (t/is false "expected a fragment-not-found error")
         (catch clojure.lang.ExceptionInfo cause
-          (t/is (= :fragment-not-found (:code (ex-data cause)))))))))
+          (t/is (= :fragment-not-found (:code (ex-data cause)))))))
+    (t/testing "a pointer without :file-id fails before asking the loader"
+      (let [pointer (pmap/create (uuid/next) {})]
+        (fdata/with-pointers th/*system*
+          (try
+            (deref pointer)
+            (t/is false "expected a pointer-without-file-id error")
+            (catch clojure.lang.ExceptionInfo cause
+              (t/is (= :pointer-without-file-id (:code (ex-data cause)))))))))))
 
 (t/deftest restore-returns-snapshot-content
   ;; Snapshot, modify the page so the old fragment is snapshot-only,
@@ -666,7 +675,7 @@
                                  (add-rect-changes page-a 45)))
 
     (let [ids-before (page-pointer-ids file-id)
-          page       (fdata/with-pointers th/*system* file-id
+          page       (fdata/with-pointers th/*system*
                        (deref (get-in (:data (bfc/get-file th/*system* file-id))
                                       [:pages-index page-a])))]
 
@@ -888,6 +897,49 @@
         (t/is (= ids-after (page-pointer-ids file-id)))
         (t/is (not (fmg/need-migration? returned)))))))
 
+(t/deftest save-migration-keeps-unchanged-page-fragments
+  ;; A save that triggers a pending migration keeps the fragment ids of the
+  ;; pages the migration does not change; only the page it changes gets a new
+  ;; one. `update-file` reads the file with `:decode? false`, so the migration
+  ;; runs in the save path and not on the read.
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+        file-id (:id file)
+        page-a  (uuid/random)
+        page-b  (uuid/random)]
+
+    (update-file! :profile-id (:id profile)
+                  :file-id file-id
+                  :revn 0
+                  :changes [{:type :add-page :name "a" :id page-a}
+                            {:type :add-page :name "b" :id page-b}
+                            (first (add-rect-change page-a (uuid/random)))
+                            (-> (first (add-rect-change page-b (uuid/random)))
+                                (update :obj assoc :applied-tokens
+                                        {:stroke-width "token"}))])
+
+    (let [ids-before (page-pointer-ids file-id)]
+      (t/is (contains? ids-before page-a))
+      (t/is (contains? ids-before page-b))
+
+      ;; Force the 0031 migration on the next save.
+      (th/db-delete! :file-migration
+                     {:file-id file-id
+                      :name "0031-migrate-stroke-width-token-attr"})
+
+      (update-file! :profile-id (:id profile)
+                    :file-id file-id
+                    :revn 1
+                    :changes (add-rect-change page-b (uuid/random)))
+
+      (let [ids-after (page-pointer-ids file-id)]
+        (t/is (= (get ids-before page-a) (get ids-after page-a)))
+        (t/is (not= (get ids-before page-b) (get ids-after page-b))))
+
+      (t/is (not (fmg/need-migration? (bfc/get-file th/*system* file-id)))))))
+
 (t/deftest migration-read-only-keeps-fragments-untouched
   ;; A read-only migration returns realized data but does not persist:
   ;; the stored pointers and the pending migration stay as they were.
@@ -925,11 +977,10 @@
                               {:file-id file-id
                                :name "0031-migrate-stroke-width-token-attr"}))))))
 
-(t/deftest libraries-load-their-pages-with-their-own-loader
-  ;; Fragment rows are keyed by (file_id, id), and every caller binds the
-  ;; loader of the file it works on. A library's pages must therefore come
-  ;; back from the library loader already readable, or the first deref
-  ;; under the consumer's loader asks the wrong file for the fragment.
+(t/deftest libraries-stay-lazy-and-resolve-their-own-fragments
+  ;; A library is read lazily: its pages stay as pointers until something
+  ;; walks them, and each pointer resolves itself with the file id in its
+  ;; metadata (fragment rows are keyed by (file_id, id)).
   (let [profile  (th/create-profile* 1)
         library  (th/create-file* 1 {:profile-id (:id profile)
                                      :project-id (:default-project-id profile)
@@ -950,16 +1001,27 @@
     ;; Precondition: the library stores the page as a fragment pointer.
     (t/is (contains? (page-pointer-ids (:id library)) lib-page))
 
-    (let [page (db/tx-run! th/*system*
-                           (fn [cfg]
-                             (fdata/with-pointers cfg (:id file)
-                               (let [consumer (bfc/get-file cfg (:id file))
-                                     libs     (bfc/get-resolved-file-libraries cfg consumer)]
-                                 (-> (get libs (:id library))
-                                     (get-in [:data :pages-index lib-page])
-                                     (fdata/realize-entry))))))]
-      (t/is (= lib-page (:id page)))
-      (t/is (contains? (:objects page) uuid/zero)))))
+    (db/tx-run! th/*system*
+                (fn [cfg]
+                  (let [loads (atom 0)
+                        load  fdata/load-pointer]
+                    (with-redefs [fdata/load-pointer
+                                  (fn [cfg file-id id]
+                                    (swap! loads inc)
+                                    (load cfg file-id id))]
+                      (fdata/with-pointers cfg
+                        (let [consumer (bfc/get-file cfg (:id file))
+                              libs     (bfc/get-resolved-file-libraries cfg consumer)
+                              page     (get-in (get libs (:id library))
+                                               [:data :pages-index lib-page])]
+                          ;; Resolving the library does not materialize it.
+                          (t/is (pmap/pointer-map? page))
+                          (t/is (not (pmap/loaded? page)))
+                          ;; The page resolves with the library's own file id:
+                          ;; exactly one fragment is loaded, not the whole
+                          ;; library.
+                          (t/is (= lib-page (:id @page)))
+                          (t/is (= 1 @loads))))))))))
 
 (t/deftest feature-off-keeps-plain-snapshots-and-gc
   ;; The feature is disabled by default (`fdata/pointer-map` is not in

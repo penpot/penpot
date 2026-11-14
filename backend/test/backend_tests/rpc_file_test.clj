@@ -14,6 +14,7 @@
    [app.common.pprint :as pp]
    [app.common.thumbnails :as thc]
    [app.common.time :as ct]
+   [app.common.types.objects-map :as omap]
    [app.common.types.page :as ctp]
    [app.common.types.shape :as cts]
    [app.common.types.tokens-lib :as ctob]
@@ -29,6 +30,7 @@
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
    [app.storage :as sto]
+   [app.util.pointer-map :as pmap]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
    [cuerdas.core :as str]))
@@ -3113,6 +3115,67 @@
                               ::rpc/profile-id (:id owner)
                               :id slink-id})]
         (t/is (nil? (:error out)))))))
+
+(t/deftest get-file-keeps-the-stored-pointer-without-objects-map-feature
+  ;; `fdata/objects-map` is not negotiated. A client that declares
+  ;; pointer-map but not objects-map makes the server skip both
+  ;; realizations: the page arrives as its stored pointer, with the very
+  ;; id persisted in the main blob. Converting the objects of a page that
+  ;; is still a pointer would give it a fresh id with no row behind it.
+  (let [profile (th/create-profile* 1 {:is-active true})
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+        file-id (:id file)
+        page-id (first (get-in file [:data :pages]))]
+
+    ;; The save unions the client features into the file, so it ends up
+    ;; with both pointer-map and objects-map and every page wrapped.
+    (update-file! :profile-id (:id profile)
+                  :file-id file-id
+                  :revn 0
+                  :changes [{:type :add-page :name "extra" :id (uuid/random)}])
+
+    (let [before (-> (bfc/get-file th/*system* file-id)
+                     (get-in [:data :pages-index page-id])
+                     (pmap/get-id))
+          out    (th/command! {::th/type :get-file
+                               ::rpc/profile-id (:id profile)
+                               :id file-id
+                               :features (disj cfeat/supported-features
+                                               "fdata/objects-map")})]
+
+      (t/is (nil? (:error out)))
+      (let [page (get-in out [:result :data :pages-index page-id])]
+        (t/is (= before (pmap/get-id page)))))))
+
+(t/deftest get-file-keeps-objects-map-for-a-client-without-the-features
+  ;; A client that declares neither feature gets the pages materialized,
+  ;; but their objects stay as an `ObjectsMap`: the server never converts
+  ;; that structure any more.
+  (let [profile (th/create-profile* 1 {:is-active true})
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+        file-id (:id file)
+        page-id (first (get-in file [:data :pages]))]
+
+    (update-file! :profile-id (:id profile)
+                  :file-id file-id
+                  :revn 0
+                  :changes [{:type :add-page :name "extra" :id (uuid/random)}])
+
+    (let [out (th/command! {::th/type :get-file
+                            ::rpc/profile-id (:id profile)
+                            :id file-id
+                            :features (disj cfeat/supported-features
+                                            "fdata/pointer-map"
+                                            "fdata/objects-map")})]
+
+      (t/is (nil? (:error out)))
+      (let [page (get-in out [:result :data :pages-index page-id])]
+        (t/is (not (pmap/pointer-map? page)))
+        (t/is (omap/objects-map? (:objects page)))))))
 
 (t/deftest get-file-fragment-returns-only-public-fields
   (let [profile  (th/create-profile* 1 {:is-active true})
