@@ -1,17 +1,18 @@
 import { test, expect } from "@playwright/test";
 import { WorkspacePage } from "../pages/WorkspacePage";
-import { WasmWorkspacePage } from "../pages/WasmWorkspacePage";
 
 // ---------------------------------------------------------------------------
 // The "Create typography style" button (workspace.options.convert-to-typography)
-// in the text options sidebar is only shown when ALL of these hold for the
+// in the text options sidebar is rendered when none of these hold for the
 // selected text shape(s) (src/app/main/ui/workspace/sidebar/options/menus/text.cljs):
-//   (and (some? font) (not typography) (not multiple?) (not applied-token-name))
-// Each test below isolates one condition that must independently hide it:
-//   - font missing (font-id not registered in app.main.fonts/fontsdb)
-//   - a typography asset is applied (typography-ref-id set)
-//   - multiple shapes are selected with differing attributes
-//   - a typography design token is applied (applied-tokens :typography)
+//
+//   (when (and (not typography) (not multiple?) (not applied-token-name)) ...)
+//
+// A missing font is a different state: the button stays, its aria-label
+// becomes the font-not-available message and it is disabled.
+//
+// The first test covers the font state, the second one each condition of the
+// `when`.
 // ---------------------------------------------------------------------------
 
 function convertToTypographyButton(workspace) {
@@ -24,6 +25,35 @@ function fontNotAvailableButton(workspace) {
   return workspace.rightSidebar.getByRole("button", {
     name: /no longer available/,
   });
+}
+
+// Matches the button in either state, so "absent" cannot be satisfied by a
+// rename.
+function typographyButtonAnyState(workspace) {
+  return workspace.rightSidebar.getByRole("button", {
+    name: /Create typography style|no longer available/,
+  });
+}
+
+function textSection(workspace) {
+  return workspace.rightSidebar.getByRole("region", { name: "Text section" });
+}
+
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+// `getByText` matches substrings, and this fixture has "Text with no
+// typography" as a prefix of "Text with no typography two".
+function layerRow(workspace, name) {
+  return workspace.layers
+    .getByTestId("layer-row")
+    .filter({ hasText: new RegExp(`^${escapeRegExp(name)}$`) })
+    .first();
+}
+
+async function clickLayer(workspace, name, options = {}) {
+  const row = layerRow(workspace, name);
+  await row.click(options);
+  await expect(row).toHaveAttribute("aria-checked", "true");
 }
 
 // Fixture render-wasm/get-file-text-custom-fonts.json has a text shape
@@ -85,124 +115,61 @@ test("The font of the shape decides the button", async ({ page }) => {
   });
 });
 
-test.describe("typography asset applied", () => {
-  // multiselection-typography.json: "Text with typography asset one" has a
-  // typography-ref-id pointing at an in-file typography asset (font
-  // gfont-agdasima, a built-in Google font that resolves with no extra
-  // mocking), and is not multi-selected or token-applied.
-  const FILE = {
-    id: "c7ce0794-0992-8105-8004-38f280443849",
-    pageId: "1062e0a0-8fe0-80ae-8007-e70b4993f5f0",
-  };
+// multiselection-typography.json holds, in the same page, a plain text, one
+// with an in-file typography asset, and one with a typography token applied.
+// The three ineligible cases share one page load; each step selects another
+// layer.
+const SHARED_FILE = {
+  id: "c7ce0794-0992-8105-8004-38f280443849",
+  pageId: "1062e0a0-8fe0-80ae-8007-e70b4993f5f0",
+};
 
-  test.beforeEach(async ({ page }) => {
-    await WorkspacePage.init(page);
+test("Ineligible selections hide the button", async ({ page }) => {
+  await WorkspacePage.init(page);
+
+  const workspace = new WorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockRPC(
+    /get\-file\?/,
+    "workspace/multiselection-typography.json",
+  );
+  await workspace.goToWorkspace({
+    fileId: SHARED_FILE.id,
+    pageId: SHARED_FILE.pageId,
   });
 
-  test("Create typography style button is hidden when a typography asset is applied", async ({
-    page,
-  }) => {
-    const workspace = new WorkspacePage(page);
-    await workspace.setupEmptyFile();
-    await workspace.mockRPC(
-      /get\-file\?/,
-      "workspace/multiselection-typography.json",
-    );
-    await workspace.goToWorkspace({ fileId: FILE.id, pageId: FILE.pageId });
+  await test.step("a plain text keeps the button", async () => {
+    await clickLayer(workspace, "Text with no typography");
 
-    await workspace.clickLeafLayer("Text with typography asset one");
-
-    // Sanity check: the text options panel did render for this shape - the
-    // button is specifically hidden by the applied typography, not because
-    // the whole panel failed to show up.
-    await expect(
-      workspace.rightSidebar.getByRole("region", { name: "Text section" }),
-    ).toBeVisible();
-    await expect(convertToTypographyButton(workspace)).not.toBeVisible();
-  });
-});
-
-test.describe("multiple selection", () => {
-  // get-file-text-multiple-selection.json has two text shapes sharing the
-  // same (resolvable, built-in) font-id but differing font-size, with no
-  // typography or token applied - so selecting both together isolates
-  // `multiple?` becoming true without also making the font unresolved.
-  const FILE = {
-    id: "434b0541-fa2f-802f-8006-6a827d964a9b",
-    pageId: "434b0541-fa2f-802f-8006-6a827d964a9c",
-  };
-
-  test.beforeEach(async ({ page }) => {
-    await WorkspacePage.init(page);
+    await expect(convertToTypographyButton(workspace)).toBeEnabled();
   });
 
-  test("Create typography style button is hidden when multiple shapes with different values are selected", async ({
-    page,
-  }) => {
-    const workspace = new WorkspacePage(page);
-    await workspace.setupEmptyFile();
-    await workspace.mockRPC(
-      /get\-file\?/,
-      "workspace/get-file-text-multiple-selection.json",
-    );
-    await workspace.goToWorkspace({ fileId: FILE.id, pageId: FILE.pageId });
+  await test.step("an applied typography asset hides it", async () => {
+    await clickLayer(workspace, "Text with typography asset one");
 
-    await workspace.clickLeafLayer("Text multiple selection one");
-    await expect(convertToTypographyButton(workspace)).toBeVisible();
+    await expect(textSection(workspace)).toBeVisible();
+    await expect(typographyButtonAnyState(workspace)).toHaveCount(0);
+  });
 
-    await workspace.clickLeafLayer("Text multiple selection two", {
+  await test.step("an applied typography token hides it", async () => {
+    await clickLayer(workspace, "Text with typography token one");
+
+    await expect(textSection(workspace)).toBeVisible();
+    await expect(typographyButtonAnyState(workspace)).toHaveCount(0);
+  });
+
+  await test.step("several selected texts hide it", async () => {
+    await clickLayer(workspace, "Text with no typography");
+    await clickLayer(workspace, "Text with no typography two", {
       modifiers: ["Shift"],
     });
 
-    await expect(convertToTypographyButton(workspace)).not.toBeVisible();
-  });
-});
-
-test.describe("typography token applied", () => {
-  // get-file-token-tooltip.json: "Text with token" has a typography design
-  // token applied (applied-tokens :typography) using font gfont-arizonia (a
-  // built-in Google font that resolves with no extra mocking).
-  test.beforeEach(async ({ page }) => {
-    await WasmWorkspacePage.init(page);
-    await WasmWorkspacePage.mockRPC(page, "get-teams", "get-teams-tokens.json");
-  });
-
-  test("Create typography style button is hidden when a typography token is applied", async ({
-    page,
-  }) => {
-    const workspace = new WasmWorkspacePage(page);
-    await workspace.mockConfigFlags(["enable-feature-token-input"]);
-    await workspace.setupEmptyFile();
-    await workspace.mockRPC("get-team?id=*", "workspace/get-team-tokens.json");
-    await workspace.mockRPC(
-      /get\-file\?/,
-      "workspace/get-file-token-tooltip.json",
-    );
-    await workspace.mockRPC(
-      /get\-file\-fragment\?/,
-      "workspace/get-file-fragment-tokens.json",
-    );
-    await workspace.mockRPC(
-      "update-file?id=*",
-      "workspace/update-file-create-rect.json",
-    );
-    await workspace.goToWorkspace({
-      fileId: "c7ce0794-0992-8105-8004-38f280443849",
-      pageId: "4530574a-7a0a-807b-8008-0107b2c4628e",
-    });
-
-    await page.getByRole("tab", { name: "Layers" }).click();
-    await workspace.layers
-      .getByTestId("layer-row")
-      .filter({ hasText: "Text with token" })
-      .click();
-
-    // Sanity check: the text options panel did render for this shape - the
-    // button is specifically hidden by the applied token, not because the
-    // whole panel failed to show up.
     await expect(
-      workspace.rightSidebar.getByRole("region", { name: "Text section" }),
-    ).toBeVisible();
-    await expect(convertToTypographyButton(workspace)).not.toBeVisible();
+      layerRow(workspace, "Text with no typography"),
+    ).toHaveAttribute("aria-checked", "true");
+    await expect(
+      layerRow(workspace, "Text with no typography two"),
+    ).toHaveAttribute("aria-checked", "true");
+    await expect(typographyButtonAnyState(workspace)).toHaveCount(0);
   });
 });
