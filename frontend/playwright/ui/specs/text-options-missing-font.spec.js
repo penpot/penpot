@@ -20,61 +20,68 @@ function convertToTypographyButton(workspace) {
   });
 }
 
-test.describe("font missing", () => {
-  // Fixture render-wasm/get-file-text-custom-fonts.json has a text shape
-  // ("Penpot & Dragons") using a custom team font-id and no typography/token
-  // applied - otherwise exactly the state that reveals the button once its
-  // font resolves. Toggling the get-font-variants mock between "the team owns
-  // this font" and "empty" simulates the font being present vs. missing.
-  const FILE = {
-    id: "434b0541-fa2f-802f-8006-59827d964a9b",
-    pageId: "434b0541-fa2f-802f-8006-59827d964a9c",
-  };
-
-  test.beforeEach(async ({ page }) => {
-    await WorkspacePage.init(page);
+function fontNotAvailableButton(workspace) {
+  return workspace.rightSidebar.getByRole("button", {
+    name: /no longer available/,
   });
+}
 
-  test("Create typography style button is hidden when the shape font is missing", async ({
-    page,
-  }) => {
-    const workspace = new WorkspacePage(page);
-    await workspace.setupEmptyFile();
-    await workspace.mockRPC(
-      /get\-file\?/,
-      "render-wasm/get-file-text-custom-fonts.json",
-    );
+// Fixture render-wasm/get-file-text-custom-fonts.json has a text shape
+// ("Penpot & Dragons") using a custom team font-id and no typography/token
+// applied - otherwise exactly the state that reveals the button once its
+// font resolves. Toggling the get-font-variants mock between "the team owns
+// this font" and "empty" simulates the font being present vs. missing.
+const CUSTOM_FONTS_FILE = {
+  id: "434b0541-fa2f-802f-8006-59827d964a9b",
+  pageId: "434b0541-fa2f-802f-8006-59827d964a9c",
+};
+
+test("The font of the shape decides the button", async ({ page }) => {
+  await WorkspacePage.init(page);
+
+  const workspace = new WorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockRPC(
+    /get\-file\?/,
+    "render-wasm/get-file-text-custom-fonts.json",
+  );
+
+  await test.step("font missing", async () => {
     // The team does not own the shape's custom font, so it can't be resolved.
     await workspace.mockRPC(
       "get-font-variants?team-id=*",
       "workspace/get-font-variants-empty.json",
     );
-    await workspace.goToWorkspace({ fileId: FILE.id, pageId: FILE.pageId });
+    await workspace.goToWorkspace({
+      fileId: CUSTOM_FONTS_FILE.id,
+      pageId: CUSTOM_FONTS_FILE.pageId,
+    });
 
     await workspace.clickLeafLayer("Penpot & Dragons");
 
-    await expect(convertToTypographyButton(workspace)).not.toBeVisible();
+    // The button is not removed: its label explains the missing font and it
+    // is disabled. Asserting only that the "Create typography style" locator
+    // is hidden passed for the wrong reason, because the label is what
+    // changes.
+    await expect(fontNotAvailableButton(workspace)).toBeVisible();
+    await expect(fontNotAvailableButton(workspace)).toBeDisabled();
+    await expect(convertToTypographyButton(workspace)).toHaveCount(0);
   });
 
-  test("Create typography style button is visible once the shape font resolves", async ({
-    page,
-  }) => {
-    const workspace = new WorkspacePage(page);
-    await workspace.setupEmptyFile();
-    await workspace.mockRPC(
-      /get\-file\?/,
-      "render-wasm/get-file-text-custom-fonts.json",
-    );
-    // The team owns the shape's custom font, so it resolves normally.
+  await test.step("font resolved", async () => {
+    // The team owns the shape's custom font, so it resolves normally. The
+    // last matching route wins, and the reload fetches the variants again.
     await workspace.mockRPC(
       "get-font-variants?team-id=*",
       "render-wasm/get-font-variants-custom-fonts.json",
     );
-    await workspace.goToWorkspace({ fileId: FILE.id, pageId: FILE.pageId });
+    await page.reload();
 
     await workspace.clickLeafLayer("Penpot & Dragons");
 
     await expect(convertToTypographyButton(workspace)).toBeVisible();
+    await expect(convertToTypographyButton(workspace)).toBeEnabled();
+    await expect(fontNotAvailableButton(workspace)).toHaveCount(0);
   });
 });
 
