@@ -63,7 +63,16 @@
              (map #(get-in % [:run :font-weight]) (:letters letters))))
     (t/testing "a paragraph with no letters keeps its run"
       (t/is (= [false true false] (map #(contains? % :empty-run) (:paragraphs letters))))
-      (t/is (nil? (some :children (:paragraphs letters)))))))
+      (t/is (nil? (some :children (:paragraphs letters)))))
+    (t/testing "and its index among the runs"
+      (t/is (= 2 (get-in letters [:paragraphs 1 :empty-ri])))
+      (t/is (:empty? (get-in letters [:runs 2]))))))
+
+(t/deftest a-copy-ending-in-an-empty-paragraph-is-compared-with-its-main
+  ;; the empty paragraph's run is the last of the copy's runs
+  (let [main (thtx/content [[["Label"]]])
+        copy (thtx/content [[["Copy"]] [[""]]])]
+    (t/is (contains? (cttx/override-groups main copy) :text-content-text))))
 
 (t/deftest letters-build-the-content-back
   (doseq [text [[[["Hello world"]]]

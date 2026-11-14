@@ -703,11 +703,13 @@
               no-letters? (not (some #(seq (:text % "")) (:children paragraph)))
               node      (dissoc paragraph :children)]
           (if no-letters?
-            (let [run (-> paragraph :children first (dissoc :text))]
+            (let [run (-> paragraph :children first (dissoc :text))
+                  ;; its index in `runs`, taken before the run is added to them
+                  ri  (count runs)]
               (recur (inc i)
                      (conj! runs {:paragraph i :node run :empty? true})
                      letters
-                     (conj! paragraphs' (assoc node :empty-run run :empty-ri (count runs)))))
+                     (conj! paragraphs' (assoc node :empty-run run :empty-ri ri))))
             (recur (inc i) runs letters (conj! paragraphs' node))))))))
 
 (defn letters->content
