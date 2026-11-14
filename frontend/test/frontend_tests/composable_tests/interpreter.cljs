@@ -294,13 +294,17 @@
                           :on-update-shape dwta/update-shape-radius})])
 
     (instance? n/EditTokenValue op)
-    ;; as the token form commits an edit: the token, then its propagation
-    (let [data  (:data (current-file))
-          lib   (cfo/get-tokens-lib data)
+    ;; as the token form commits an edit: the token, then its propagation,
+    ;; in one undo step
+    (let [data      (:data (current-file))
+          lib       (cfo/get-tokens-lib data)
           token-set (ctob/get-set-by-name lib "composable")
-          token (ctob/get-token-by-name lib "composable" (:token-name op))]
-      [(dwtl/update-token (ctob/get-id token-set) (:id token) {:value (:value op)})
-       (dwtp/propagate-workspace-tokens)])
+          token     (ctob/get-token-by-name lib "composable" (:token-name op))
+          undo-id   (js/Symbol)]
+      [(dwu/start-undo-transaction undo-id)
+       (dwtl/update-token (ctob/get-id token-set) (:id token) {:value (:value op)})
+       (dwtp/propagate-workspace-tokens)
+       (dwu/commit-undo-transaction undo-id)])
 
     (instance? n/UnapplyToken op)
     [(dwta/unapply-token {:shape-ids  [(tm/target-shape-id situation (:target op))]

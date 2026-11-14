@@ -21,6 +21,7 @@
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.data.workspace.tokens.propagation :as dwtp]
    [app.main.data.workspace.tokens.remapping :as remap]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as muc]
@@ -203,15 +204,19 @@
         (mf/use-fn
          (mf/deps token token-type)
          (fn [valid-token new-name old-name description]
-           (st/emit!
-            (dwtl/toggle-nested-token-path token-type new-name)
-            (dwtl/update-token (:id token)
-                               {:name new-name
-                                :value (:value valid-token)
-                                :description description})
-            (remap/remap-tokens old-name new-name)
-            (dwtp/propagate-workspace-tokens)
-            (modal/hide!))))
+           ;; the edit and its propagation are one undo step
+           (let [undo-id (js/Symbol)]
+             (st/emit!
+              (dwu/start-undo-transaction undo-id)
+              (dwtl/toggle-nested-token-path token-type new-name)
+              (dwtl/update-token (:id token)
+                                 {:name new-name
+                                  :value (:value valid-token)
+                                  :description description})
+              (remap/remap-tokens old-name new-name)
+              (dwtp/propagate-workspace-tokens)
+              (dwu/commit-undo-transaction undo-id)
+              (modal/hide!)))))
 
         on-rename-token
         (mf/use-fn
@@ -262,8 +267,11 @@
                                              (ctob/make-token {:name name
                                                                :type token-type
                                                                :value (:value valid-token)
-                                                               :description description}))]
+                                                               :description description}))
+                                 ;; the edit and its propagation are one undo step
+                                 undo-id   (js/Symbol)]
                              (st/emit!
+                              (dwu/start-undo-transaction undo-id)
                               (if is-create
                                 (dwtl/create-token new-token)
                                 (dwtl/update-token (:id token)
@@ -272,6 +280,7 @@
                                                     :description description}))
                               (dwtl/open-token-type (:type token))
                               (dwtp/propagate-workspace-tokens)
+                              (dwu/commit-undo-transaction undo-id)
                               (when is-create
                                 (scroll-token-type-section-on-create (:id new-token)))
                               (modal/hide!)))))))
