@@ -644,9 +644,18 @@
                 snap-pixel?
                 (and (not ignore-snap-pixel) (contains? (:workspace-layout state) :snap-pixel-grid))
 
+                ;; a layout places the shapes in its flow, so moving one is
+                ;; for the engine to lay out, not a translation to splat
+                laid-out?
+                (some (fn [id]
+                        (let [shape (get objects id)]
+                          (and (ctl/any-layout-immediate-child? objects shape)
+                               (not (ctl/position-absolute? shape)))))
+                      (keys modif-tree))
+
                 transforms
                 (cond
-                  (and translation? (not snap-pixel?))
+                  (and translation? (not snap-pixel?) (not laid-out?))
                   ;; Mirror WASM `propagate_modifiers` in CLJS: splat the
                   ;; translation matrix onto every descendant. Without
                   ;; this step the commit would only touch the dragged
