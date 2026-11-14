@@ -757,6 +757,25 @@ POSTGRES_USER: penpot
 POSTGRES_PASSWORD: penpot
 ```
 
+#### Connection pool
+
+The backend keeps a pool of database connections. Its size can be tuned with:
+
+```bash
+# Backend
+PENPOT_DATABASE_MIN_POOL_SIZE: 0
+PENPOT_DATABASE_MAX_POOL_SIZE: 60
+```
+
+The values above are the defaults. The pool keeps at least `MIN_POOL_SIZE` idle
+connections open and never opens more than `MAX_POOL_SIZE`, growing only under load
+and closing idle connections after two minutes. A minimum larger than the maximum is
+capped at the maximum.
+
+If the PostgreSQL server is shared with other applications, make sure
+`PENPOT_DATABASE_MAX_POOL_SIZE` plus the connections used by everything else stays below
+the server's `max_connections` (100 by default).
+
 ### Storage
 
 Storage refers to storing the user uploaded different objects in Penpot (assets, file data,...).
