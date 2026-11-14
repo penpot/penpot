@@ -4328,3 +4328,13 @@
                                     :layout-children false :grid-empty false :layout-copies false :text false}]
                        :ops [[:delete 5] [:restore] [:add-variant] [:switch] [:add-variant] [:variant-property 0 1]
                              [:switch 13] [:style 5 8 7] [:add-variant]]}))))
+
+(t/deftest generated-a-flipped-turned-bool-gives-its-children-its-orientation
+  ;; a bool that a sync fits keeps its turn and flips; its children take
+  ;; the turn before the flips, as the flip of a turned shape stores them
+  (t/is (map? (cg/run {:world [2 0 {:variants true :rich-variants true :text true :layout :grid
+                                    :layout-copies false :layout-children true}]
+                       :ops [[:add-child 12] [:structure 23 5 7] [:rotate] [:switch] [:transform 2 22 0 27]]})))
+  (t/is (map? (cg/run {:world [2 0 {:variants true :rich-variants true :text true :layout :grid
+                                    :layout-copies false :layout-children false}]
+                       :ops [[:duplicate] [:structure 0 4] [:swap 7] [:rotate 11] [:transform 1 11 0 12]]}))))
