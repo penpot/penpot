@@ -331,8 +331,9 @@
   display: block;
 }
 
-.connected-to-values-legacy {
+.connected-to-values {
   color: var(--color-foreground-primary);
+  overflow-wrap: anywhere;
 }
 
 .hint-line {
