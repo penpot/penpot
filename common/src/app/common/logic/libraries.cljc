@@ -727,7 +727,11 @@
         ;; how close the axes of `m` are to those of the shape
         closeness (fn [m] (+ (* (:a m) (:a axes)) (* (:b m) (:b axes))
                              (* (:c m) (:c axes)) (* (:d m) (:d axes))))
-        transform (max-key closeness (gmt/multiply turn flips) (gmt/multiply flips turn))]
+        turned    (gmt/multiply turn flips)
+        flipped   (gmt/multiply flips turn)
+        ;; axes that tell neither apart, as those of a bool fitting resets,
+        ;; take the turn before the flips, as a flip of a turned shape stores
+        transform (if (>= (closeness turned) (closeness flipped)) turned flipped)]
     (assoc shape :transform transform :transform-inverse (gmt/inverse transform))))
 
 (defn- layout-skewed?
