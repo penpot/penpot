@@ -694,6 +694,12 @@
         (t/is (contains? tokens :stroke-width-top))
         (t/is (contains? tokens :stroke-width-bottom)))
 
+      ;; The migration branch materializes the pointers only: the objects
+      ;; keep the `ObjectsMap` structure, like in an already-migrated
+      ;; snapshot.
+      (t/is (omap/objects-map?
+             (get-in out [:result :data :pages-index page-id :objects])))
+
       ;; The preview declared the migrated set in the payload.
       (t/is (contains? (set (get-in out [:result :migrations]))
                        "0031-migrate-stroke-width-token-attr")))

@@ -22,11 +22,13 @@
   be regenerated, and is resposability of the hashmap user to properly
   garbage collect the unused/unreferenced objects.
 
-  The metadata always carries the `:file-id` of the file the pointer
-  belongs to (see `app.features.fdata/enable-pointer-map`): fragment
-  rows are keyed by `(file_id, id)`, so a pointer cannot be resolved
-  without it, and the loader takes both from the pointer instead of
-  relying on a per-file binding.
+  The pointers created by `app.features.fdata/enable-pointer-map` carry
+  the `:file-id` of the file they belong to in their metadata: fragment
+  rows are keyed by `(file_id, id)`, so a pointer without it cannot be
+  resolved, and the loader takes both from the pointer instead of
+  relying on a per-file binding. Change pointer metadata with
+  `vary-meta`, which merges over the current map and keeps the file id;
+  `with-meta` replaces the whole metadata and drops it.
 
   For properly work it requires some dynamic vars binded to
   appropriate values:
@@ -149,6 +151,9 @@
     (or mdata {}))
 
   (withMeta [_ mdata']
+    ;; The metadata replaces the previous one, so `with-meta` drops the
+    ;; `:file-id` and the pointer becomes unresolvable; use `vary-meta` to
+    ;; change pointer metadata (it merges over the current map).
     (let [changed? (not= mdata mdata')
           ;; A fragment row never changes after it is written, so a
           ;; metadata change is a new pointer (fresh id + tracked), like
@@ -260,7 +265,9 @@
     (do
       (some-> *tracked* (swap! assoc (get-id data) data))
       data)
-    (let [mdata (assoc (merge *metadata* (meta data)) :created-at (ct/now))
+    ;; The bound metadata wins: the file that wraps the pointer is the one
+    ;; that writes its fragment row, so its `:file-id` is authoritative.
+    (let [mdata (assoc (merge (meta data) *metadata*) :created-at (ct/now))
           id    (uuid/next)
           pmap  (PointerMap. id
                              mdata

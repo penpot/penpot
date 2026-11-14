@@ -70,27 +70,31 @@
       ;; the snapshot data so the client receives the same shape as a
       ;; normal get-file response but with historical page/object content.
       ;; Snapshots may hold pointer-mapped pages shared with the live
-      ;; file, so materialize them here: the preview UI applies the
+      ;; file, so the pointers are materialized: the preview UI applies the
       ;; response straight into state and cannot resolve pointers.
       ;; NOTE: pointers resolve with the file id in their own metadata, so a
       ;; snapshot needs no live file id to materialize.
       ;;
       ;; `fdata/objects-map` is not negotiated here either (see
       ;; `get-file`): the feature is consolidated and the client always
-      ;; decodes `ObjectsMap`, so the materialized page keeps it.
+      ;; decodes `ObjectsMap`, so the pages keep it in both branches.
       ;;
       ;; A snapshot taken while a migration was pending stores the old
       ;; format. Apply the pending migrations in memory, the same pure
       ;; step a normal read runs, and never persist them: the stored
       ;; version keeps its data and restoring it re-migrates on the
-      ;; next read. `decode-snapshot` hands an ordered set, which is
+      ;; next read. Only the pointers are materialized for the migration;
+      ;; realizing the objects too would give this branch a different
+      ;; shape than an already-migrated snapshot.
+      ;;
+      ;; `decode-snapshot` hands an ordered set, which is
       ;; what `need-migration?`/`migrate` require; a stored NULL is
       ;; regenerated from the snapshot's version.
       (let [base-file (bfc/get-file cfg file-id :load-data? false)
             snapshot  (assoc snapshot :id file-id)
             file      (fdata/with-pointers cfg
                         (if (fmg/need-migration? snapshot)
-                          (let [file (fdata/realize cfg snapshot)]
+                          (let [file (fdata/realize-pointers cfg snapshot)]
                             (fmg/migrate-file
                              file
                              (delay (bfc/get-resolved-file-libraries cfg file))))

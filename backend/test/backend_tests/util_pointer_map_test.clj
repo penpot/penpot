@@ -7,18 +7,10 @@
 (ns backend-tests.util-pointer-map-test
   (:require
    [app.common.fressian :as fres]
-   [app.common.spec :as us]
    [app.common.transit :as transit]
-   [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.util.pointer-map :as pmap]
-   [backend-tests.helpers :as th]
-   [clojure.pprint :refer [pprint]]
-   [clojure.spec.alpha :as s]
-   [clojure.test :as t]
-   [clojure.test.check.clojure-test :refer [defspec]]
-   [clojure.test.check.generators :as gen]
-   [clojure.test.check.properties :as props]))
+   [clojure.test :as t]))
 
 (t/deftest basic-operations
   (t/testing "assoc"
@@ -130,9 +122,22 @@
         (t/is (pmap/modified? obj2))
         (t/is (not= (pmap/get-id obj1) (pmap/get-id obj2)))
         (t/is (contains? @pmap/*tracked* (pmap/get-id obj2)))
+        ;; `with-meta` replaces the metadata, so the file id is gone: that
+        ;; is the documented sharp edge of the protocol.
+        (t/is (nil? (:file-id (meta obj2))))
         ;; The same metadata keeps the pointer untouched.
         (t/is (not (pmap/modified? obj3)))
-        (t/is (= (pmap/get-id obj1) (pmap/get-id obj3)))))))
+        (t/is (= (pmap/get-id obj1) (pmap/get-id obj3))))))
+
+  (t/testing "vary-meta keeps the file id"
+    (binding [pmap/*tracked* (atom {})]
+      (let [obj1 (pmap/create uuid/zero {:file-id uuid/zero})
+            obj2 (vary-meta obj1 assoc :foo :bar)]
+        (t/is (= uuid/zero (:file-id (meta obj2))))
+        (t/is (= :bar (:foo (meta obj2))))
+        (t/is (pmap/modified? obj2))
+        (t/is (not= (pmap/get-id obj1) (pmap/get-id obj2)))
+        (t/is (contains? @pmap/*tracked* (pmap/get-id obj2)))))))
 
 (t/deftest file-id-metadata
   (t/testing "wrap copies the bound metadata"
@@ -159,4 +164,27 @@
           (t/is false "expected a pointer-without-file-id error")
           (catch clojure.lang.ExceptionInfo cause
             (t/is (= :pointer-without-file-id (:code (ex-data cause))))))))))
+
+(t/deftest serialization-roundtrip
+  ;; The persistence handlers carry the id and the metadata by hand, so
+  ;; the `:file-id` has to survive both encodings for a pointer to be
+  ;; resolvable after a read. `:created-at` is stored with millisecond
+  ;; precision by the handlers, so only its presence is asserted.
+  (let [obj (binding [pmap/*metadata* {:file-id uuid/zero}
+                      pmap/*tracked* (atom {})]
+              (pmap/wrap {}))]
+
+    (t/testing "fressian keeps the id and the metadata"
+      (let [obj' (fres/decode (fres/encode obj))]
+        (t/is (pmap/pointer-map? obj'))
+        (t/is (= (pmap/get-id obj) (pmap/get-id obj')))
+        (t/is (= uuid/zero (:file-id (meta obj'))))
+        (t/is (some? (:created-at (meta obj'))))))
+
+    (t/testing "transit keeps the id and the metadata"
+      (let [ptr (transit/decode (transit/encode obj))]
+        (t/is (transit/pointer? ptr))
+        (t/is (= (pmap/get-id obj) @ptr))
+        (t/is (= uuid/zero (:file-id (meta ptr))))
+        (t/is (some? (:created-at (meta ptr))))))))
 

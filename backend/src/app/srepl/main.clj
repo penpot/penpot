@@ -561,7 +561,8 @@
                 (fn [system]
                   (try
                     (let [file (bfc/get-file system file-id)]
-                      (cfv/validate-file-schema! file)
+                      (fdata/with-pointers system
+                        (cfv/validate-file-schema! file))
                       (println "OK"))
                     (catch Exception cause
                       (if-let [explain (-> cause ex-data ::sm/explain)]

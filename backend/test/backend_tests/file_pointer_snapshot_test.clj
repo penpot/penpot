@@ -725,7 +725,7 @@
     ;; maps, drop the feature and persist through the same encode path.
     (db/tx-run! th/*system*
                 (fn [cfg]
-                  (fdata/with-tracked-pointers cfg file-id
+                  (fdata/with-tracked-pointers cfg
                     (let [file (bfc/get-file cfg file-id)
                           file (fdata/disable-objects-map file)]
                       (bfc/update-file! cfg file)))))

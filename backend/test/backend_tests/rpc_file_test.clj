@@ -3177,6 +3177,42 @@
         (t/is (not (pmap/pointer-map? page)))
         (t/is (omap/objects-map? (:objects page)))))))
 
+(t/deftest get-file-fragment-rejects-a-marked-fragment
+  ;; Public contract: the RPC serves unmarked rows only. The internal
+  ;; loader still reads a row that a `file-gc` pass marked, because the
+  ;; mark is a liveness hypothesis that maintenance operations refute and
+  ;; only `objects-gc` purges the row.
+  (let [profile  (th/create-profile* 1 {:is-active true})
+        file     (th/create-file* 1 {:profile-id (:id profile)
+                                     :project-id (:default-project-id profile)})
+        fragment (first (th/db-query :file-data {:file-id (:id file)
+                                                 :type "fragment"}))]
+    (t/is (uuid? (:id fragment)))
+
+    ;; Mark it the way a file-gc pass does.
+    (th/db-update! :file-data
+                   {:deleted-at (ct/now)}
+                   {:file-id (:id file)
+                    :id (:id fragment)
+                    :type "fragment"})
+
+    (t/testing "the internal loader still reads the marked row"
+      (let [data (db/tx-run! th/*system*
+                             (fn [cfg]
+                               (fdata/load-pointer cfg (:id file) (:id fragment))))]
+        (t/is (map? data))
+        (t/is (contains? data :objects))))
+
+    (t/testing "the public RPC rejects it"
+      (let [out (th/command! {::th/type :get-file-fragment
+                              ::rpc/profile-id (:id profile)
+                              :file-id (:id file)
+                              :fragment-id (:id fragment)})
+            err (:error out)]
+        (t/is (th/ex-info? err))
+        (t/is (= :not-found (:type (ex-data err))))
+        (t/is (= :object-not-found (:code (ex-data err))))))))
+
 (t/deftest get-file-fragment-returns-only-public-fields
   (let [profile  (th/create-profile* 1 {:is-active true})
         file     (th/create-file* 1 {:profile-id (:id profile)
