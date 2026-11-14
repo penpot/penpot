@@ -4308,6 +4308,13 @@
                                     :grid-empty false :layout-copies false :text true}]
                        :ops [[:switch 11] [:switch 5] [:nest 17] [:add-child 15] [:rotate 15] [:style 12 9 1] [:paste 12]]}))))
 
+(t/deftest generated-an-absolute-fill-board-in-a-grid-keeps-its-size
+  ;; a grid board set to fill a grid cell and then made absolute is no longer
+  ;; filled by that grid: its layout settles at its size
+  (t/is (map? (cg/run {:world [2 1 {:variants true :text-styles true :layout :grid :library true
+                                    :rich-variants true :layout-children true :layout-copies true :text true}]
+                       :ops [[:remove-child 5 0 0 0] [:style 2 29 1] [:style 5 35 1]]}))))
+
 (t/deftest generated-an-ungroup-gives-a-grid-copy-with-its-own-cells-its-main-tracks
   ;; a grid copy with its own cells and direction but its main's tracks
   ;; takes the tracks an ungroup in the main adds before placing the shapes

@@ -223,7 +223,8 @@
   "Calculates the modifiers to adjust the bounds for auto-width/auto-height
    shapes. A fill child of a grid takes the size of its content, unless it
    is turned in the grid: the grid's fill then sizes it along the grid's
-   axes, and its content's size counts as its minimum there."
+   axes, and its content's size counts as its minimum there. An absolute
+   child keeps its size: the grid does not fill it."
   [objects bounds parent]
   (let [parent-id     (:id parent)
         parent-bounds (get bounds parent-id)
@@ -250,7 +251,9 @@
                       (remove ctl/position-absolute?)
                       (remove gco/invalid-geometry?))
 
+        ;; an absolute child is neither placed nor filled by the grid
         grid-fill?   (and (ctl/grid-layout? objects (:parent-id parent))
+                          (not (ctl/position-absolute? parent))
                           (not (turned-in-parent? objects bounds parent-id)))
         auto?        (or (ctl/auto? parent)
                          (and grid-fill? (ctl/fill? parent)))
