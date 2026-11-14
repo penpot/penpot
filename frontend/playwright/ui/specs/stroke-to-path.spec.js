@@ -10,71 +10,122 @@ test.beforeEach(async ({ page }) => {
   ]);
 });
 
+// Every one of the nine shapes in the fixture carries a stroke, one per
+// geometry (rectangle, ellipse, path) and alignment (center, inner, outer).
 async function setupShapesWithStrokes(page) {
   const workspace = new WasmWorkspacePage(page);
   await workspace.setupEmptyFile();
   await workspace.mockGetFile("workspace/shapes-with-strokes.json");
-  await workspace.mockRPC(
-    "update-file?id=*",
-    "workspace/shapes-with-strokes.json",
-  );
   await workspace.goToWorkspace();
   await workspace.waitForFirstRender();
   return workspace;
 }
 
-async function strokeToPath(workspace, page, shapeName, expectedStrokeName) {
-  await workspace.clickLayers();
-  await workspace.clickLeafLayer(shapeName, { button: "right" });
-  await page.getByText("Stroke to path").click();
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-  await expect(
-    workspace.layers.getByText(expectedStrokeName),
-  ).toBeVisible();
-  await expect(workspace.layers.getByText(shapeName).first()).toBeVisible();
+// `getByText` matches substrings and the conversion names the derived path
+// "<shape> (stroke)", so an unanchored lookup can click the child and then
+// assert a row that already existed. The anchored match assumes the row shows
+// only the layer name: with the debug flags on, the row appends text to the
+// same node (layer_name.cljs:138-146).
+function layerRow(workspace, name) {
+  return workspace.layers
+    .getByTestId("layer-row")
+    .filter({ hasText: new RegExp(`^${escapeRegExp(name)}$`) })
+    .first();
 }
 
-test("Stroke to path: rectangle with center stroke", async ({ page }) => {
-  const workspace = await setupShapesWithStrokes(page);
-  await strokeToPath(workspace, page, "rectangle-center", "rectangle-center (stroke)");
-});
+async function strokeToPath(page, workspace, shapeName, strokeName) {
+  const row = layerRow(workspace, shapeName);
+  await expect(row).toBeVisible();
+  const rowsBefore = await workspace.layers.getByTestId("layer-row").count();
 
-test("Stroke to path: rectangle with inner stroke", async ({ page }) => {
-  const workspace = await setupShapesWithStrokes(page);
-  await strokeToPath(workspace, page, "rectangle-inner", "rectangle-inner (stroke)");
-});
+  await row.click({ button: "right" });
+  // The menu entry converts the current selection, and a right click selects
+  // the shape before the menu opens (data/workspace.cljs:1299-1302). The
+  // guard is what attributes the conversion to this row instead of a stale
+  // selection or a "(stroke)" child.
+  await expect(row).toHaveAttribute("aria-checked", "true");
 
-test("Stroke to path: rectangle with outer stroke", async ({ page }) => {
-  const workspace = await setupShapesWithStrokes(page);
-  await strokeToPath(workspace, page, "rectangle-outer", "rectangle-outer (stroke)");
-});
+  await page.getByText("Stroke to path").click();
 
-test("Stroke to path: circle with center stroke", async ({ page }) => {
-  const workspace = await setupShapesWithStrokes(page);
-  await strokeToPath(workspace, page, "ellipse-center", "ellipse-center (stroke)");
-});
+  await expect(layerRow(workspace, strokeName)).toBeVisible();
+  await expect(layerRow(workspace, shapeName)).toBeVisible();
+  await expect(workspace.layers.getByTestId("layer-row")).toHaveCount(
+    rowsBefore + 1,
+  );
+  await expect(page.getByTestId("context-menu")).toBeHidden();
+}
 
-test("Stroke to path: circle with inner stroke", async ({ page }) => {
+test("Stroke to path converts each stroked shape into a path", async ({
+  page,
+}) => {
   const workspace = await setupShapesWithStrokes(page);
-  await strokeToPath(workspace, page, "ellipse-inner", "ellipse-inner (stroke)");
-});
+  await workspace.clickLayers();
 
-test("Stroke to path: circle with outer stroke", async ({ page }) => {
-  const workspace = await setupShapesWithStrokes(page);
-  await strokeToPath(workspace, page, "ellipse-outer", "ellipse-outer (stroke)");
-});
+  await test.step("rectangle with center stroke", async () => {
+    await strokeToPath(
+      page,
+      workspace,
+      "rectangle-center",
+      "rectangle-center (stroke)",
+    );
+  });
 
-test("Stroke to path: path with center stroke", async ({ page }) => {
-  const workspace = await setupShapesWithStrokes(page);
-  await strokeToPath(workspace, page, "path-center", "path-center (stroke)");
-});
+  await test.step("rectangle with inner stroke", async () => {
+    await strokeToPath(
+      page,
+      workspace,
+      "rectangle-inner",
+      "rectangle-inner (stroke)",
+    );
+  });
 
-test("Stroke to path: path with inner stroke", async ({ page }) => {
-  const workspace = await setupShapesWithStrokes(page);
-  await strokeToPath(workspace, page, "path-inner", "path-inner (stroke)");
-});
+  await test.step("rectangle with outer stroke", async () => {
+    await strokeToPath(
+      page,
+      workspace,
+      "rectangle-outer",
+      "rectangle-outer (stroke)",
+    );
+  });
 
-test("Stroke to path: path with outer stroke", async ({ page }) => {
-  const workspace = await setupShapesWithStrokes(page);
-  await strokeToPath(workspace, page, "path-outer", "path-outer (stroke)");
+  await test.step("circle with center stroke", async () => {
+    await strokeToPath(
+      page,
+      workspace,
+      "ellipse-center",
+      "ellipse-center (stroke)",
+    );
+  });
+
+  await test.step("circle with inner stroke", async () => {
+    await strokeToPath(
+      page,
+      workspace,
+      "ellipse-inner",
+      "ellipse-inner (stroke)",
+    );
+  });
+
+  await test.step("circle with outer stroke", async () => {
+    await strokeToPath(
+      page,
+      workspace,
+      "ellipse-outer",
+      "ellipse-outer (stroke)",
+    );
+  });
+
+  await test.step("path with center stroke", async () => {
+    await strokeToPath(page, workspace, "path-center", "path-center (stroke)");
+  });
+
+  await test.step("path with inner stroke", async () => {
+    await strokeToPath(page, workspace, "path-inner", "path-inner (stroke)");
+  });
+
+  await test.step("path with outer stroke", async () => {
+    await strokeToPath(page, workspace, "path-outer", "path-outer (stroke)");
+  });
 });

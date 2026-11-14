@@ -5,12 +5,13 @@ test.beforeEach(async ({ page }) => {
   await WasmWorkspacePage.init(page);
 });
 
-// Fix for https://tree.taiga.io/project/penpot/issue/8593
-test("Bug 8593 - Grid layout three dots button visible on hover in grid editor", async ({
+// Fix for https://tree.taiga.io/project/penpot/issue/8593 and
+// https://tree.taiga.io/project/penpot/issue/9042
+test("The grid layout editor shows the track options and its unit dropdown", async ({
   page,
 }) => {
   const workspacePage = new WasmWorkspacePage(page);
-  await workspacePage.setupEmptyFile(page);
+  await workspacePage.setupEmptyFile();
   await workspacePage.mockRPC(/get\-file\?/, "workspace/get-file-9042.json");
   await workspacePage.mockRPC(
     "get-file-fragment?file-id=*&fragment-id=*",
@@ -24,56 +25,42 @@ test("Bug 8593 - Grid layout three dots button visible on hover in grid editor",
   await workspacePage.clickLeafLayer("Board");
   await workspacePage.expectSelectedLayer("Board");
 
-  // Zoom in so tracks are wide enough (>= 110px) for the three-dots button to render.
-  // Board is 200x200 with 2 columns (100px each); zoom 2x makes them 200px.
-  await workspacePage.page.keyboard.press("Control+=");
-  await workspacePage.page.keyboard.press("Control+=");
-  await workspacePage.page.waitForTimeout(200);
+  // The options button is only rendered with a track of 110 px or more
+  // (`medium-size-limit` in grid_layout_editor.cljs) and the board tracks are
+  // 100 px wide, so two zoom steps take them over the limit. That is the
+  // condition the assertions below wait for, so no sleep is needed.
+  await page.keyboard.press("Control+=");
+  await page.keyboard.press("Control+=");
 
-  // Enter grid editing mode
-  const layoutContainer = workspacePage.page.getByTestId("inspect-layout");
-  await layoutContainer.getByRole("button", { name: "Edit grid" }).click();
-  await workspacePage.page.waitForTimeout(500);
+  // "Edit grid" toggles the editor, so it is clicked once for both cases.
+  await page
+    .getByTestId("inspect-layout")
+    .getByRole("button", { name: "Edit grid" })
+    .click();
 
-  // The three-dots button should always exist in the DOM when track is large enough.
-  // Previously it was only rendered when JS hover state was true (broken in WebKit/Safari).
-  // Now it is always rendered and shown/hidden via CSS :hover.
-  const gridEditorButton = workspacePage.page.getByTestId("grid-track-options-btn").first();
-  await expect(gridEditorButton).toBeAttached();
+  await test.step("hovering a track shows its options button", async () => {
+    // The button lives in the DOM and CSS :hover shows it, which works in every
+    // browser; before it was only rendered from the JS hover state (broken in
+    // WebKit). It is hidden with `opacity: 0`, and Playwright's `toBeVisible`
+    // ignores opacity, so the assertions read the computed value instead.
+    const gridEditorButton = page.getByTestId("grid-track-options-btn").first();
+    await expect(gridEditorButton).toBeAttached();
+    await expect(gridEditorButton).toHaveCSS("opacity", "0");
 
-  // Hover over the track wrapper; CSS :hover should make the button visible.
-  // This approach works in all browsers including WebKit/Safari.
-  const gridEditorWrapper = workspacePage.page.getByTestId("grid-track-editor-wrapper").first();
-  await gridEditorWrapper.hover();
-  await expect(gridEditorButton).toBeVisible();
-});
-
-// Fix for https://tree.taiga.io/project/penpot/issue/9042
-test("Bug 9042 - Measurement unit dropdowns for columns are cut off in grid layout edit mode", async ({
-  page,
-}) => {
-  const workspacePage = new WasmWorkspacePage(page);
-  await workspacePage.setupEmptyFile(page);
-  await workspacePage.mockRPC(/get\-file\?/, "workspace/get-file-9042.json");
-  await workspacePage.mockRPC(
-    "get-file-fragment?file-id=*&fragment-id=*",
-    "workspace/get-file-fragment-9042.json",
-  );
-
-  await workspacePage.goToWorkspace({
-    fileId: "af2494d0-39ba-8184-8005-230696f6df5c",
-    pageId: "af2494d0-39ba-8184-8005-230696f6df5d",
+    const gridEditorWrapper = page
+      .getByTestId("grid-track-editor-wrapper")
+      .first();
+    await gridEditorWrapper.hover();
+    await expect(gridEditorButton).toHaveCSS("opacity", "1");
   });
-  await workspacePage.clickLeafLayer("Board");
-  await workspacePage.expectSelectedLayer("Board");
 
-  const layoutContainer = workspacePage.page.getByTestId("inspect-layout");
-  await layoutContainer.getByRole("button", { name: "Edit grid" }).click();
-  const rowsContainer = workspacePage.page.getByTestId("inspect-layout-rows");
-  await rowsContainer.click();
+  await test.step("the unit dropdown is not cut off", async () => {
+    const rowsContainer = page.getByTestId("inspect-layout-rows");
+    await rowsContainer.click();
 
-  await rowsContainer.getByText("FR").nth(2).click();
-  await expect(rowsContainer.getByText("%")).toBeInViewport();
+    await rowsContainer.getByText("FR").nth(2).click();
+    await expect(rowsContainer.getByText("%")).toBeInViewport();
+  });
 });
 
 test("[Taiga #9116] Copy CSS background color in the selected format in the INSPECT tab", async ({
@@ -152,7 +139,9 @@ test("[Taiga #10630] [INSPECT] Style assets not being displayed on info tab", as
   await workspacePage.clickAssets();
   await workspacePage.mockRPC(/get\-file\?/, "workspace/get-file-library.json");
   await workspacePage.openLibrariesModal();
-  await workspacePage.librariesModal.getByRole("tab", { name: "Libraries" }).click();
+  await workspacePage.librariesModal
+    .getByRole("tab", { name: "Libraries" })
+    .click();
   await workspacePage.clickLibrary("Testing library 1");
   await workspacePage.closeLibrariesModal();
 
