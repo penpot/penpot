@@ -36,6 +36,7 @@
   {:status :loading
    :data nil
    :editing nil
+   :menu nil
    :preview-id nil})
 
 (declare fetch-versions)
@@ -57,6 +58,27 @@
     ptk/UpdateEvent
     (update [_ state]
       (update state :workspace-versions merge version-state))))
+
+(defn open-menu
+  "Record `id` as the open menu of the History panel, so the panel
+  knows that the next Escape belongs to the menu."
+  [id]
+  (ptk/reify ::open-menu
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-versions :menu] id))))
+
+(defn close-menu
+  "Forget the open menu `id`. Leaves the state alone when another menu
+  is open already: opening a menu closes the previous one, and the two
+  events can arrive in any order."
+  [id]
+  (ptk/reify ::close-menu
+    ptk/UpdateEvent
+    (update [_ state]
+      (if (= id (dm/get-in state [:workspace-versions :menu]))
+        (assoc-in state [:workspace-versions :menu] nil)
+        state))))
 
 (defn fetch-versions
   []
