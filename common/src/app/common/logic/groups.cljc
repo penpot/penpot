@@ -163,7 +163,9 @@
      (-> (pcb/empty-changes it page-id)
          (pcb/with-objects objects)
          (pcb/change-parent parent-id children index-in-parent options)
-         (pcb/remove-objects [(:id group)] options)))))
+         (pcb/remove-objects [(:id group)] options)
+         ;; a group or bool around takes the shapes as they now are
+         (pcb/resize-parents [parent-id])))))
 
 (defn remove-frame-changes
   ([it page-id frame objects]
@@ -182,7 +184,9 @@
          (cond-> (ctl/any-layout? frame)
            (pcb/update-shapes (:shapes frame) ctl/remove-layout-item-data (select-keys options [:ignore-touched])))
          (pcb/change-parent parent-id children idx-in-parent options)
-         (pcb/remove-objects [(:id frame)] options)))))
+         (pcb/remove-objects [(:id frame)] options)
+         ;; a group or bool around takes the shapes as they now are
+         (pcb/resize-parents [parent-id])))))
 
 (defn ungroup-ids
   "The shapes of `ids` an ungroup takes apart: not inside a copy, not a
