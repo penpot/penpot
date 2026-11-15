@@ -294,11 +294,13 @@
 (defn add-text-component-with-copy
   "Add the component :component1, whose main :main-root holds the text
    :main-child written as `text`, and its copy :copy-root, whose text is
-   :copy-child."
-  [file text]
+   :copy-child. `frame-params` and `child-params` add to the main's board
+   and text, as their size."
+  [file text & {:keys [frame-params child-params]}]
   (-> file
       (tho/add-frame-with-text :main-root :main-child ""
-                               :child-params {:content (content text)})
+                               :frame-params frame-params
+                               :child-params (merge {:content (content text)} child-params))
       (thc/make-component :component1 :main-root)
       (thc/instantiate-component :component1 :copy-root {:children-labels [:copy-child]})))
 
