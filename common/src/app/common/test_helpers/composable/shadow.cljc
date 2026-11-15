@@ -990,9 +990,10 @@
                                                (not-empty (merge (apply dissoc (:applied-tokens placed) carried)
                                                                  (select-keys (:applied-tokens old) carried))))
                                         ;; a carried geometry sits in the new parent, whose later
-                                        ;; resizes move and size it through its constraints
-                                        (and (= :geometry-group group) new-parent (not root?))
-                                        (vary-meta assoc ::position {:shape shape :parent new-parent :sized? false})))))))
+                                        ;; resizes move and size it through its constraints; the
+                                        ;; head's place is its position's, so only its size follows
+                                        (and (= :geometry-group group) new-parent)
+                                        (vary-meta assoc ::position {:shape shape :parent new-parent :sized? root?})))))))
                     result (cond->> (dissoc groups :swap-group)
                              ;; the head carries only its own layout item overrides
                              (= root-id (:id shape))
