@@ -572,6 +572,12 @@
                                 (not (same-value? shape :constraints-group (values content-main :constraints-group))))
                            (assoc :constraints-group (values shape :constraints-group))
 
+                           ;; a shape below a pushed swap keeps the constraints the copy showed
+                           (and content? (not pushed-swap?) content-main
+                                (= (:component-id ref) (:component-id content-main))
+                                (not (same-value? shape :constraints-group (values content-main :constraints-group))))
+                           (assoc :constraints-group (values shape :constraints-group))
+
                            (seq placement)
                            (merge (into {} (map (fn [group]
                                                   [group (if (= :geometry-group group) geometry (values shape group))]))

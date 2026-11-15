@@ -1459,6 +1459,17 @@
       (and main (some #(not= (get shape %) (get main %)) [:constraints-h :constraints-v :fixed-scroll]))
       (update :touched ctk/set-touched-group :constraints-group))))
 
+(defn- author-pushed-constraints
+  "A shape pushed below a swap keeps the constraints the copy showed,
+   authored when they differ from those of its new `reference`."
+  [shape reference]
+  (cond-> shape
+    (and reference
+         (some #(not= (cond-> (get shape %) (= % :fixed-scroll) boolean)
+                      (cond-> (get reference %) (= % :fixed-scroll) boolean))
+               [:constraints-h :constraints-v :fixed-scroll]))
+    (update :touched ctk/set-touched-group :constraints-group)))
+
 (defn- same-pushed-value?
   "Whether a pushed shape's `value` of `attr` shows as its reference's
    `other`: no fills or strokes and an empty list of them look the same."
@@ -1615,7 +1626,9 @@
                     (let [shape (cond-> (follow-position shape)
                                   (and (= (:id shape) (:id new-head)) (seq placement))
                                   (update :touched (fnil into #{}) placement))]
-                      (author-pushed-content shape (get position-objects (:shape-ref shape)))))
+                      (cond-> (author-pushed-content shape (get position-objects (:shape-ref shape)))
+                        (not= (:id shape) (:id new-head))
+                        (author-pushed-constraints (get position-objects (:shape-ref shape))))))
                   positioned))
           new-shapes)
 

@@ -2469,6 +2469,16 @@
                                     :layout-copies false}]
                        :ops [[:transform 0 10 0 8] [:apply-token 12 11] [:style 12 3 0 1] [:token-value 0 2]]}))))
 
+(t/deftest an-update-main-of-a-swap-keeps-the-constraints-its-children-showed
+  ;; a swap pushed inside a copy of the main takes the place of a board whose
+  ;; icon scrolls fixed; the pushed icon keeps the copy's constraints as an
+  ;; override of its new reference
+  (t/is (map? (cg/run {:world [3 2 {:variants true :text-styles true :layout nil :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies true :text true}]
+                       :ops [[:variant-property 0 9 3 0] [:switch 4] [:combine 2] [:switch 8] [:style 11 7 1]
+                             [:update-main 2 0 0 0]]}))))
+
 (t/deftest a-token-edit-keeps-the-square-corner-of-a-mirrored-copy
   ;; a copy mirrored horizontally takes its main's radius tokens on the
   ;; corners it shows them on, so a token edit leaves the corner its main
