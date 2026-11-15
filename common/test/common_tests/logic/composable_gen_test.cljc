@@ -1595,8 +1595,16 @@
   (t/is (thrown? #?(:clj Exception :cljs js/Error)
                  (cg/run {:world [2 0] :ops [[:restore 0]]}))))
 
-;; programs each random composition test draws, enough for every kind to reach its coverage share
-(def ^:private coverage-programs 50)
+;; programs each random composition test draws: on the JVM enough for every
+;; kind to reach its coverage share; in JS a parity check of the same code
+(def ^:private coverage-programs #?(:clj 50 :cljs 15))
+
+(defn- coverage-errors
+  "The coverage errors of `cg/coverage-errors` on the JVM, whose programs
+   are enough to tell them; none in JS, whose fewer programs are not."
+  [& args]
+  #?(:clj (apply cg/coverage-errors args)
+     :cljs (do args [])))
 
 (t/deftest random-compositions
   (let [coverage (atom {})
@@ -1607,8 +1615,8 @@
      :max-size 30
      :default-num coverage-programs)
     (println "Component operation coverage:" (pr-str @coverage))
-    (t/is (empty? (cg/coverage-errors @coverage [:edit :reset :update-main :detach :sync :undo :redo]))
-          (pr-str (cg/coverage-errors @coverage [:edit :reset :update-main :detach :sync :undo :redo])))))
+    (t/is (empty? (coverage-errors @coverage [:edit :reset :update-main :detach :sync :undo :redo]))
+          (pr-str (coverage-errors @coverage [:edit :reset :update-main :detach :sync :undo :redo])))))
 
 (t/deftest random-structure-compositions
   (let [coverage (atom {})
@@ -1619,8 +1627,8 @@
      :max-size 30
      :default-num coverage-programs)
     (println "Structure operation coverage:" (pr-str @coverage))
-    (t/is (empty? (cg/coverage-errors @coverage cg/structure-kinds))
-          (pr-str (cg/coverage-errors @coverage cg/structure-kinds)))))
+    (t/is (empty? (coverage-errors @coverage cg/structure-kinds))
+          (pr-str (coverage-errors @coverage cg/structure-kinds)))))
 
 (t/deftest partial-sync-keeps-independent-components-pending
   (let [situation (cg/world [3 0])
@@ -1669,8 +1677,8 @@
      :max-size 30
      :default-num coverage-programs)
     (println "Swap operation coverage:" (pr-str @coverage))
-    (t/is (empty? (cg/coverage-errors @coverage cg/swap-kinds))
-          (pr-str (cg/coverage-errors @coverage cg/swap-kinds)))))
+    (t/is (empty? (coverage-errors @coverage cg/swap-kinds))
+          (pr-str (coverage-errors @coverage cg/swap-kinds)))))
 
 (t/deftest generated-variant-set-edits-cover-every-edit
   (let [spec [2 2 {:variants true :rich-variants true}]
@@ -2350,8 +2358,8 @@
      :max-size 30
      :default-num coverage-programs)
     (println "Variant operation coverage:" (pr-str @coverage))
-    (t/is (empty? (cg/coverage-errors @coverage cg/variant-coverage-kinds))
-          (pr-str (cg/coverage-errors @coverage cg/variant-coverage-kinds)))))
+    (t/is (empty? (coverage-errors @coverage cg/variant-coverage-kinds))
+          (pr-str (coverage-errors @coverage cg/variant-coverage-kinds)))))
 
 (t/deftest centring-a-nested-copy-after-its-copy-resized-keeps-its-children-in-place
   (t/is (map? (cg/run {:world [1 0 {:variants true :text-styles false :library-variants false :stale-libraries false
@@ -2678,8 +2686,8 @@
      :max-size 30
      :default-num coverage-programs)
     (println "Shape structure operation coverage:" (pr-str @coverage))
-    (t/is (empty? (cg/coverage-errors @coverage cg/shape-structure-coverage-kinds))
-          (pr-str (cg/coverage-errors @coverage cg/shape-structure-coverage-kinds)))))
+    (t/is (empty? (coverage-errors @coverage cg/shape-structure-coverage-kinds))
+          (pr-str (coverage-errors @coverage cg/shape-structure-coverage-kinds)))))
 
 (t/deftest random-grid-compositions
   (let [coverage (atom {})
@@ -2690,8 +2698,8 @@
      :max-size 30
      :default-num coverage-programs)
     (println "Grid operation coverage:" (pr-str @coverage))
-    (t/is (empty? (cg/coverage-errors @coverage cg/grid-coverage-kinds))
-          (pr-str (cg/coverage-errors @coverage cg/grid-coverage-kinds)))))
+    (t/is (empty? (coverage-errors @coverage cg/grid-coverage-kinds))
+          (pr-str (coverage-errors @coverage cg/grid-coverage-kinds)))))
 
 (t/deftest random-token-compositions
   (let [coverage (atom {})
@@ -2702,8 +2710,8 @@
      :max-size 30
      :default-num coverage-programs)
     (println "Token operation coverage:" (pr-str @coverage))
-    (t/is (empty? (cg/coverage-errors @coverage cg/token-coverage-kinds))
-          (pr-str (cg/coverage-errors @coverage cg/token-coverage-kinds)))))
+    (t/is (empty? (coverage-errors @coverage cg/token-coverage-kinds))
+          (pr-str (coverage-errors @coverage cg/token-coverage-kinds)))))
 
 (t/deftest random-scale-compositions
   ;; scale programs run several times longer than the others; the gates draw more
@@ -2715,8 +2723,8 @@
      :max-size 30
      :default-num 12)
     (println "Scale operation coverage:" (pr-str @coverage))
-    (t/is (empty? (cg/coverage-errors @coverage cg/scale-coverage-kinds))
-          (pr-str (cg/coverage-errors @coverage cg/scale-coverage-kinds)))))
+    (t/is (empty? (coverage-errors @coverage cg/scale-coverage-kinds))
+          (pr-str (coverage-errors @coverage cg/scale-coverage-kinds)))))
 
 (t/deftest random-renames-leave-variant-management-to-its-own-operations
   (let [situation (cg/world [2 2 {:variants true}])
@@ -2777,8 +2785,8 @@
      :max-size 30
      :default-num coverage-programs)
     (println "Library operation coverage:" (pr-str @coverage))
-    (t/is (empty? (cg/coverage-errors @coverage cg/library-kinds))
-          (pr-str (cg/coverage-errors @coverage cg/library-kinds)))))
+    (t/is (empty? (coverage-errors @coverage cg/library-kinds))
+          (pr-str (coverage-errors @coverage cg/library-kinds)))))
 
 (t/deftest random-stale-library-compositions
   (let [coverage (atom {})
@@ -2789,8 +2797,8 @@
      :max-size 30
      :default-num coverage-programs)
     (println "Stale library operation coverage:" (pr-str @coverage))
-    (t/is (empty? (cg/coverage-errors @coverage cg/stale-library-coverage-kinds #{:sync}))
-          (pr-str (cg/coverage-errors @coverage cg/stale-library-coverage-kinds #{:sync})))))
+    (t/is (empty? (coverage-errors @coverage cg/stale-library-coverage-kinds #{:sync}))
+          (pr-str (coverage-errors @coverage cg/stale-library-coverage-kinds #{:sync})))))
 
 (t/deftest random-library-dependency-compositions
   (let [coverage (atom {})
@@ -2801,8 +2809,8 @@
      :max-size 30
      :default-num coverage-programs)
     (println "Library dependency operation coverage:" (pr-str @coverage))
-    (t/is (empty? (cg/coverage-errors @coverage cg/dependency-kinds #{:sync}))
-          (pr-str (cg/coverage-errors @coverage cg/dependency-kinds #{:sync})))))
+    (t/is (empty? (coverage-errors @coverage cg/dependency-kinds #{:sync}))
+          (pr-str (coverage-errors @coverage cg/dependency-kinds #{:sync})))))
 
 (t/deftest update-main-moves-an-authored-swap-to-the-replaced-main-shape
   (let [result (cg/run {:world [2 1 {:library true :variants true}]
@@ -4307,6 +4315,13 @@
                                     :grid-square false :library true :rich-variants true :layout-children false
                                     :grid-empty false :layout-copies false :text true}]
                        :ops [[:switch 11] [:switch 5] [:nest 17] [:add-child 15] [:rotate 15] [:style 12 9 1] [:paste 12]]}))))
+
+(t/deftest generated-a-moved-board-keeps-the-geometry-it-shows-in-a-turned-parent
+  ;; a board that authored its geometry, moved into a turned main board,
+  ;; keeps where and how it shows; the main's copies show it alike
+  (t/is (map? (cg/run {:world [2 1 {:text true}]
+                       :ops [[:move 0 0 0 0] [:resize 8 0 0 0] [:rotate 0 0 0 0] [:remove-child 0 0 0 0]
+                             [:update-main 0] [:move 1 0 0 0]]}))))
 
 (t/deftest generated-an-update-main-of-a-pasted-swap-authors-no-empty-fills
   ;; a pasted copy holds empty fill and stroke lists where its main holds

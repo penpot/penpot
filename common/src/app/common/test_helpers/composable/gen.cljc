@@ -1139,10 +1139,16 @@
       :update-main (shadow/update-main model objects (all-objects after) id)
       :detach (shadow/detach model objects (all-objects after) id)
       ;; a move resets the shape's constraints to its new parent's defaults,
-      ;; which an override of them now holds
-      :move (cond-> model
-              (get-in model [id :constraints-group])
-              (assoc-in [id :constraints-group] (shadow/values (get (all-objects after) id) :constraints-group)))
+      ;; which an override of them now holds; a move keeps where the shape
+      ;; shows, so the geometry it authored is now that, in its new parent
+      :move (let [moved (get (all-objects after) id)]
+              (cond-> model
+                (get-in model [id :constraints-group])
+                (assoc-in [id :constraints-group] (shadow/values moved :constraints-group))
+
+                (get-in model [id :geometry-group])
+                (assoc-in [id :geometry-group]
+                          (shadow/author-geometry moved (get (all-objects after) (:frame-id moved))))))
       :nest (let [parent (get objects (tm/target-shape-id before (:into op)))]
               (if (:blocked parent)
                 (shadow/edit model shape :blocked true)
