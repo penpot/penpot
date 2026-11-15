@@ -2543,6 +2543,44 @@
                     {})]
     (cfcp/convert-text-overrides data libraries)))
 
+(defmethod migrate-data "0043-repair-svg-attr-maps"
+  ;; Some imported files hold an svg attribute other than `:style` as a map
+  ;; an old reader split out of its text, as `{:url(#filter_2) nil}` for
+  ;; `filter: url(#filter_2)`, which the attribute schema, taking only
+  ;; scalars there, rejects. A reference to one of the shape's defs becomes
+  ;; that reference again, to the defs id as stored, which 0037 may have
+  ;; kebab-cased in the map; any other map value drops.
+  [data _]
+  (letfn [(id-key [id]
+            (-> (str id) (str/replace #"^[#-]+" "") (str/replace "_" "-") (str/lower)))
+
+          (def-reference [shape value]
+            (when-let [[_ id] (re-find #"url\(#?([^)\s\"]+)\)" (pr-str value))]
+              (when-let [def-id (some #(when (= (id-key %) (id-key id)) %) (keys (:svg-defs shape)))]
+                (str "url(#" def-id ")"))))
+
+          (repair-attrs [shape attrs]
+            (reduce-kv (fn [attrs k v]
+                         (if (and (map? v) (not= k :style))
+                           (if-let [reference (def-reference shape v)]
+                             (assoc attrs k reference)
+                             (dissoc attrs k))
+                           attrs))
+                       attrs
+                       attrs))
+
+          (migrate-shape [shape]
+            (if (map? (:svg-attrs shape))
+              (update shape :svg-attrs #(repair-attrs shape %))
+              shape))
+
+          (migrate-container [container]
+            (d/update-when container :objects d/update-vals migrate-shape))]
+
+    (-> data
+        (update :pages-index d/update-vals migrate-container)
+        (d/update-when :components d/update-vals migrate-container))))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -2640,4 +2678,5 @@
          "0039-align-variant-component-names"
          "0040-convert-swap-slots-to-swap-groups"
          "0041-recompute-text-overrides"
-         "0042-recompute-content-group-alone"]))
+         "0042-recompute-content-group-alone"
+         "0043-repair-svg-attr-maps"]))
