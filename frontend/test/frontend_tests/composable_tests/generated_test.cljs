@@ -1124,6 +1124,13 @@
   (await (replay {:world [2 2 {:variants true :text true :layout :grid :layout-copies true}]
                   :ops [[:detach 6 0 0 0] [:structure 0 2 0]]})))
 
+(t/deftest ^:async generated-an-update-main-of-a-grid-direction-orders-the-main-by-it
+  ;; the main takes the copy's column direction and its layout reflows,
+  ;; ordering its children by their cells in that direction
+  (await (replay {:world [3 2 {:variants true :layout :grid :grid-square true :layout-children true :text true}]
+                  :ops [[:make-variant] [:make-variant 6] [:combine] [:make-variant 11] [:combine]
+                        [:remove-child 9] [:grid-direction 0 0 13] [:update-main]]})))
+
 (t/deftest ^:async generated-a-detach-under-an-unaccepted-child-removal-leaves-it-plain
   ;; the loaded library no longer has the nested copy's child main, so the
   ;; detach leaves that child plain until the consumer accepts the library
