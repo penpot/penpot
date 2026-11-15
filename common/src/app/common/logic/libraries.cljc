@@ -1531,6 +1531,13 @@
       (and main (some #(not= (get shape %) (get main %)) [:constraints-h :constraints-v :fixed-scroll]))
       (update :touched ctk/set-touched-group :constraints-group))))
 
+(defn- same-pushed-value?
+  "Whether a pushed shape's `value` of `attr` shows as its reference's
+   `other`: no fills or strokes and an empty list of them look the same."
+  [attr value other]
+  (or (= value other)
+      (and (#{:fills :strokes} attr) (empty? value) (empty? other))))
+
 (defn- author-pushed-content
   "Taking a new content reference makes the pushed differences authored.
    Placement still follows the position, and existing overrides survive."
@@ -1545,7 +1552,7 @@
                                             (not (contains? placement-groups group))
                                             (not= attr :position-data)
                                             (not (and text? (= attr :content)))
-                                            (not= (get shape attr) (get reference attr)))
+                                            (not (same-pushed-value? attr (get shape attr) (get reference attr))))
                                    group))))
                        updatable-attrs)
           text-groups (when text?

@@ -4308,6 +4308,13 @@
                                     :grid-empty false :layout-copies false :text true}]
                        :ops [[:switch 11] [:switch 5] [:nest 17] [:add-child 15] [:rotate 15] [:style 12 9 1] [:paste 12]]}))))
 
+(t/deftest generated-an-update-main-of-a-pasted-swap-authors-no-empty-fills
+  ;; a pasted copy holds empty fill and stroke lists where its main holds
+  ;; none; pushing it to the main overrides nothing the two show alike
+  (t/is (map? (cg/run {:world [3 2 {:variants true :rich-variants true}]
+                       :ops [[:variant-property 0 16 0 0] [:switch 12] [:remove-child 0 0 0 0]
+                             [:add-variant 0 0 0 0] [:paste 12 0 0 0] [:update-main 3 0 0 0]]}))))
+
 (t/deftest generated-an-absolute-fill-board-in-a-grid-keeps-its-size
   ;; a grid board set to fill a grid cell and then made absolute is no longer
   ;; filled by that grid: its layout settles at its size
