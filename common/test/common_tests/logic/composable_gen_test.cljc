@@ -1597,7 +1597,7 @@
 
 ;; programs each random composition test draws: on the JVM enough for every
 ;; kind to reach its coverage share; in JS a parity check of the same code
-(def ^:private coverage-programs #?(:clj 50 :cljs 15))
+(def ^:private coverage-programs #?(:clj 100 :cljs 15))
 
 (defn- coverage-errors
   "The coverage errors of `cg/coverage-errors` on the JVM, whose programs
@@ -2468,6 +2468,14 @@
   (t/is (map? (cg/run {:world [1 0 {:tokens true :variants true :rich-variants false :text false :layout :flex
                                     :layout-copies false}]
                        :ops [[:transform 0 10 0 8] [:apply-token 12 11] [:style 12 3 0 1] [:token-value 0 2]]}))))
+
+(t/deftest a-switched-head-in-a-copy-scales-with-its-parent
+  ;; the head authors the size the switch carried, which its copy parent's
+  ;; later resize scales through its constraint
+  (t/is (map? (cg/run {:world [2 2 {:tokens true :variants true :rich-variants true :text true :layout nil
+                                    :layout-copies true}]
+                       :ops [[:paste 10 0 0 0] [:nest 12 0 0 0] [:nest 16 0 0 0] [:style 17 9 6 0] [:move 0 0 0 0]
+                             [:resize 3 0 0 0] [:move 0 0 0 0] [:switch 15 0 0 0] [:resize 17 0 0 0]]}))))
 
 (t/deftest an-update-main-of-a-swap-keeps-the-constraints-its-children-showed
   ;; a swap pushed inside a copy of the main takes the place of a board whose
