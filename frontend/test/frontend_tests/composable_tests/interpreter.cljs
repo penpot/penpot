@@ -967,7 +967,9 @@
   [situation op]
   (let [index-before (undo-index)
         items-before (get-in @st/state [:workspace-undo :items])
-        after        (await (run-ops situation [op]))]
+        after        (cond-> (await (run-ops situation [op]))
+                       (instance? n/Detach op)
+                       (some-> (n/record-unlinked-children (tm/target-shape-id situation (:target op)))))]
     (if-not (and after (:accepted-libraries situation))
       after
       (let [index-after (undo-index)
@@ -1005,11 +1007,13 @@
                                 (cf/remember-copies file-id file-id dependents authored)))
 
                           (instance? n/SyncFromLibrary op)
-                          (let [source (or (:source op) (n/library-id situation))]
-                            (-> after
-                                (assoc-in [:accepted-libraries file-id source] (get inputs source))
-                                (cf/remember-copies file-id source
-                                                    (set (keys (get-in inputs [source :data :components]))) inputs)))
+                          ;; the copies take this library as loaded and keep the
+                          ;; versions of the others they had accepted
+                          (let [source (or (:source op) (n/library-id situation))
+                                after  (assoc-in after [:accepted-libraries file-id source] (get inputs source))]
+                            (cf/remember-copies after file-id source
+                                                (set (keys (get-in inputs [source :data :components])))
+                                                (merge inputs (get-in after [:accepted-libraries file-id]))))
 
                           (or (instance? n/ResetOverrides op)
                               (instance? n/SwapShape op)
@@ -1019,6 +1023,10 @@
                                                            (n/switch-pos situation op)
                                                            (n/switch-value situation op))))
                           (cf/remember-subtree after file-id (tm/target-shape-id situation (:target op)) inputs)
+
+                          (instance? n/Duplicate op)
+                          (cf/inherit-references after file-id (tm/target-shape-id situation (:target op))
+                                                 (:new-head (n/applied-result op (tm/file situation) (tm/file after))))
 
                           :else after)
                 patches (get-reference-patches (get-generated-references situation) (get-generated-references after))

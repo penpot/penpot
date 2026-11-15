@@ -1097,6 +1097,17 @@
 ;; one nesting level up (`mem:common/component-sync-contract`).
 ;; ---------------------------------------------------------------------------
 
+(defn record-unlinked-children
+  "Record the copy children under the detached head `shape-id` that the
+   detach left as plain shapes: their parent stays linked, but the loaded
+   library no longer has their main."
+  [situation shape-id]
+  (let [objects  (:objects (thf/current-page (tm/file situation)))
+        unlinked (filter #(and (nil? (get-in objects [% :shape-ref]))
+                               (some? (get-in objects [(get-in objects [% :parent-id]) :shape-ref])))
+                         (cfh/get-children-ids objects shape-id))]
+    (update situation ::unlinked-children (fnil into #{}) unlinked)))
+
 (defrecord Detach [target]
   IComponentOperation
   (op-kind [_] :user)
@@ -1111,15 +1122,10 @@
                                                   (:data the-file)
                                                   (:id page)
                                                   (libraries situation))
-          file'    (thf/apply-changes the-file changes :validate? false)
-          objects  (:objects (thf/current-page file'))
-          ;; copy children whose main the loaded library no longer has
-          unlinked (filter #(and (nil? (get-in objects [% :shape-ref]))
-                                 (some? (get-in objects [(get-in objects [% :parent-id]) :shape-ref])))
-                           (cfh/get-children-ids objects shape-id))]
+          file'    (thf/apply-changes the-file changes :validate? false)]
       (-> situation
           (tm/with-file file')
-          (update ::unlinked-children (fnil into #{}) unlinked)
+          (record-unlinked-children shape-id)
           (record-changes changes)
           (tm/record-application this {:target target :detached shape-id})))))
 
