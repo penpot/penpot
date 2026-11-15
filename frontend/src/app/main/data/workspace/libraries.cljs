@@ -895,13 +895,28 @@
                                               (:redo-changes nonlocal-changes)
                                               fdata))
 
-             (rx/of
-              (when (seq (:redo-changes local-changes))
-                (dch/commit-changes (assoc local-changes
-                                           :file-id (:id file))))
-              (when (seq (:redo-changes nonlocal-changes))
-                (dch/commit-changes (assoc nonlocal-changes
-                                           :file-id (:component-file shape))))))))))))
+             (rx/concat
+              (rx/of
+               (when (seq (:redo-changes local-changes))
+                 (dch/commit-changes (assoc local-changes
+                                            :file-id (:id file))))
+               (when (seq (:redo-changes nonlocal-changes))
+                 (dch/commit-changes (assoc nonlocal-changes
+                                            :file-id (:component-file shape)))))
+              ;; the layouts it changes in this file, the main's among them
+              ;; when its component is local, reflow as those of the copies
+              ;; a sync changes
+              (->> (cond-> (:redo-changes local-changes)
+                     (= (:component-file shape) (:id file))
+                     (into (:redo-changes nonlocal-changes)))
+                   (mapcat #(map (fn [frame] [(:page-id %) (:id frame)]) (ch/frames-changed fdata %)))
+                   (distinct)
+                   (group-by first)
+                   (map (fn [[page-id frames]]
+                          (ptk/data-event :layout/update {:page-id page-id
+                                                          :ids (mapv second frames)
+                                                          :undo-group undo-group})))
+                   (rx/from))))))))))
 
 (defn- update-component-thumbnail-sync
   [state component-id file-id tag]

@@ -32,8 +32,8 @@
  :case-aj-reflow-after-nested-sync-is-its-own-undo-step
  [{:transcript " {:component \"main\", :id sync-main-component}\n   {:component \"main\", :level 0, :outer sync-main-outercomp-0}\n   {:component \"main\", :level 1, :outer sync-main-outercomp-1}\n   {:component \"main\", :copy sync-main-copyhead-0}\n   {:target #fn, :property :fills, :value \"#0000ff\"}\n   {:times 1}", :states ["43ca8b2de80a51fc" "32b45a5ac7536b08" "7104bfaccd42cd3b"]}]
  :case-ak-update-main-pushes-grid-cells
- [{:transcript " {:target :copy-child, :to :other, :keep-touched? false}\n   {:board :copy-root, :child :copy-child, :row 1, :column 3}\n   {:target :copy-root}", :states ["66a66d6e7afac79f" "9865d4f8003e91ef" "2d73539548abb75a" "5e5d65dc5416e495"]}
-  {:transcript "one-of -> \n   {:board :copy-root, :child :copy-child, :row 1, :column 3}\n   {:target :copy-root}", :states ["9900a7f71dc0cb5f" "de66ab1c3d4cc157" "6b5ff9fd86e2aa87"]}]
+ [{:transcript " {:target :copy-child, :to :other, :keep-touched? false}\n   {:board :copy-root, :child :copy-child, :row 1, :column 3}\n   {:target :copy-root}", :states ["66a66d6e7afac79f" "9865d4f8003e91ef" "0cc5767e36a94c5f" "651536b251bb091e"]}
+  {:transcript "one-of -> \n   {:board :copy-root, :child :copy-child, :row 1, :column 3}\n   {:target :copy-root}", :states ["9900a7f71dc0cb5f" "81db7be5574979e3" "980b0668f5421831"]}]
  :case-al-update-main-renames-the-component
  [{:transcript " {:target :copy-root, :property :name, :value \"Renamed\"}\n   {:target :copy-instance, :property :name, :value \"Renamed child\"}\n   {:target :copy-root}", :states ["d4e11348047fc1e1" "0021aeab497d25e6" "c0aa5a2b915a7542" "ca23729038aec91f"]}
   {:transcript " {:target :copy-root, :property :name, :value \"Renamed\"}\n  one-of -> \n   {:target :copy-root}", :states ["d4e11348047fc1e1" "409795fc3e2bb3a7" "6a882f51aaf16306"]}]
