@@ -49,10 +49,13 @@ test("Multiselection shows the mixed value of every sidebar section", async ({
   const firstRow = rows.nth(0);
   const secondRow = rows.nth(1);
 
-  // The rows flip before the sidebar re-renders for the new selection, and a
-  // value typed into that stale render is written to every shape of the
-  // previous one. Width has a value only while the sidebar shows one shape, so
-  // it is the sync point that makes the next edit apply to the right shape.
+  // The rows flip before the sidebar re-renders for the new selection: the
+  // options panel is throttled and the selection arrives through a deferred
+  // render, so a value typed into that stale render is written to every shape
+  // of the previous selection. After a multi-selection the stale `Width` is
+  // still "Mixed", so this waits for the multi -> single transition only. A
+  // change from one single shape to another needs its own wait on the value it
+  // expects before editing.
   const waitForSingleShape = async () => {
     await expect(widthInput).not.toHaveAttribute("placeholder", "Mixed");
   };
