@@ -1118,6 +1118,25 @@
                   :ops [[:rotate 16 0 7 0] [:grid-direction 0 0 0 1] [:grid-cell 0 10 0 1] [:add-child 0]
                         [:structure 3 6 15] [:grid-direction 0 0 0 1] [:grid-cell 0 4 2 1]]})))
 
+(t/deftest ^:async generated-a-detach-under-an-unaccepted-child-removal-leaves-it-plain
+  ;; the loaded library no longer has the nested copy's child main, so the
+  ;; detach leaves that child plain until the consumer accepts the library
+  (await (replay {:world [2 0 {:variants true :stale-libraries true :library true :rich-variants true}]
+                  :ops [[:library-delete 0 0 0 0] [:library-restore 0 0 0 0] [:library-remove-child 3 0 0 0]
+                        [:detach 11 0 0 0] [:library-undo] [:library-redo]]})))
+
+(t/deftest ^:async generated-a-duplicate-of-a-copy-back-on-its-older-library-keeps-it
+  ;; after an undone library sync, a duplicate of a copy holds the values of
+  ;; the library version the copy is back on
+  (await (replay {:world [2 0 {:variants true :library-variants true :stale-libraries true :library true}]
+                  :ops [[:library-edit 2 0 0] [:library-sync] [:undo 0 0 0 0] [:duplicate 15 0 0 0]]})))
+
+(t/deftest ^:async generated-a-library-sync-keeps-another-librarys-pending-turn-out
+  ;; a sync from one library takes it as loaded and keeps the version of the
+  ;; other library the consumer had accepted
+  (await (replay {:world [2 1 {:library true :stale-libraries true :library-dependency true :library-text true}]
+                  :ops [[:swap 4 0 0 0] [:swap 9 0 0 0] [:library-transform 5 3 4 0] [:library-sync 0 0 0 0]]})))
+
 (t/deftest ^:async generated-a-token-value-edit-and-its-propagation-undo-together
   ;; the token form commits the edit and its propagation as one undo step
   (await (replay {:world [1 0 {:tokens true :variants true :rich-variants false :text false
