@@ -28,8 +28,38 @@ async function setupWorkspaceWithFrames(workspacePage) {
   });
 }
 
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+// `getByText` matches substrings anywhere on the page; the row is anchored so a
+// click lands on the frame the step names and not on a shape that contains it.
+function layerRow(workspacePage, name) {
+  return workspacePage.layers
+    .getByTestId("layer-row")
+    .filter({ hasText: new RegExp(`^${escapeRegExp(name)}$`) });
+}
+
+// The "file" entry of the main menu has a stable id, so it does not depend on
+// which text on the page happens to contain the word. "Export shapes" always
+// renders, and it is the anchor that proves the submenu really opened: without
+// it, every assertion about the frames entry would also pass on a closed menu.
+async function openFileMenu(page) {
+  await page.getByRole("button", { name: "Main menu" }).click();
+  await page.locator("#file-menu-file").click();
+  await expect(page.locator("#file-menu-export-shapes")).toBeVisible();
+}
+
+async function openExportFramesDialog(page) {
+  await openFileMenu(page);
+  await page.locator("#file-menu-export-frames").click();
+  await expect(page.getByText("Export as PDF")).toBeVisible();
+}
+
+const cancelButton = (page) => page.getByRole("button", { name: "Cancel" });
+const exportButton = (page) =>
+  page.getByRole("button", { name: "Export", exact: true });
+
 test.describe("Export frames to PDF", () => {
-  test("Export frames menu option is NOT visible when page has no frames", async ({
+  test("The file menu hides the PDF export when the page has no frames", async ({
     page,
   }) => {
     const workspacePage = new WasmWorkspacePage(page);
@@ -37,163 +67,87 @@ test.describe("Export frames to PDF", () => {
 
     await workspacePage.goToWorkspace();
 
-    // Open main menu
-    await page.getByRole("button", { name: "Main menu" }).click();
-    await page.getByText("file").last().click();
+    await openFileMenu(page);
 
-    // The "Export frames to PDF" option should NOT be visible when there are no frames
-    await expect(page.locator("#file-menu-export-frames")).not.toBeVisible();
+    // The entry renders only when the page has frames, so it is absent from the
+    // DOM rather than hidden; the visible anchor above is what makes this
+    // assertion meaningful.
+    await expect(page.locator("#file-menu-export-frames")).toHaveCount(0);
   });
 
-  test("Export frames menu option is visible when there are frames (even if not selected)", async ({
+  test("The export frames dialog lists the frames and lets the user deselect them", async ({
     page,
   }) => {
     const workspacePage = new WasmWorkspacePage(page);
     await setupWorkspaceWithFrames(workspacePage);
 
-    // Open main menu
-    await page.getByRole("button", { name: "Main menu" }).click();
-    await page.getByText("file").last().click();
+    const boardOne = layerRow(workspacePage, "Board 1");
+    const boardTwo = layerRow(workspacePage, "Board 2");
 
-    // The "Export frames to PDF" option should be visible when there are frames on the page
-    await expect(page.locator("#file-menu-export-frames")).toBeVisible();
-  });
+    // One dialog row per frame; they are the only buttons named after a board.
+    const dialogRow = (name) => page.getByRole("button", { name });
 
-  test("Export frames modal shows all frames when none are selected", async ({
-    page,
-  }) => {
-    const workspacePage = new WasmWorkspacePage(page);
-    await setupWorkspaceWithFrames(workspacePage);
+    await test.step("the file menu offers the PDF export", async () => {
+      await openFileMenu(page);
 
-    // Don't select any frame
-
-    // Open main menu
-    await page.getByRole("button", { name: "Main menu" }).click();
-    await page.getByText("file").last().click();
-
-    // Click on "Export frames to PDF"
-    await page.locator("#file-menu-export-frames").click();
-
-    // The modal title should be correct
-    await expect(page.getByText("Export as PDF")).toBeVisible();
-
-    // Both frames should appear in the list
-    await expect(page.getByRole("button", { name: "Board 1" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Board 2" })).toBeVisible();
-
-    // The selection counter should show "2 of 2"
-    await expect(page.getByText("2 of 2 elements selected")).toBeVisible();
-  });
-
-  test("Export frames modal shows only the selected frames", async ({
-    page,
-  }) => {
-    const workspacePage = new WasmWorkspacePage(page);
-    await setupWorkspaceWithFrames(workspacePage);
-
-    // Select Frame 1
-    await workspacePage.clickLeafLayer("Board 1");
-
-    // Open main menu
-    await page.getByRole("button", { name: "Main menu" }).click();
-    await page.getByText("file").last().click();
-
-    // Click on "Export frames to PDF"
-    await page.locator("#file-menu-export-frames").click();
-
-    // The modal title should be correct
-    await expect(page.getByText("Export as PDF")).toBeVisible();
-
-    // Only Frame 1 should appear in the list
-    // await page.getByRole("button", { name: "Board 1" }),
-    await expect(page.getByRole("button", { name: "Board 1" })).toBeVisible();
-    await expect(
-      page.getByRole("button", { name: "Board 2" }),
-    ).not.toBeVisible();
-
-    // The selection counter should show "1 of 1"
-    await expect(page.getByText("1 of 1 elements selected")).toBeVisible();
-  });
-
-  test("User can deselect frames in the export modal", async ({ page }) => {
-    const workspacePage = new WasmWorkspacePage(page);
-    await setupWorkspaceWithFrames(workspacePage);
-
-    // Select Frame 1
-    await workspacePage.clickLeafLayer("Board 1");
-
-    // Add Frame 2 to selection
-    await page.keyboard.down("Shift");
-    await workspacePage.clickLeafLayer("Board 2");
-    await page.keyboard.up("Shift");
-
-    // Open main menu and click export
-    await page.getByRole("button", { name: "Main menu" }).click();
-    await page.getByText("file").last().click();
-    await page.locator("#file-menu-export-frames").click();
-
-    // The modal should appear with 2 frames
-    await expect(page.getByText("2 of 2 elements selected")).toBeVisible();
-
-    // Click on the checkbox next to Frame 1 to deselect it
-    await page.getByRole("button", { name: "Board 1" }).click();
-
-    // Now only 1 frame should be selected
-    await expect(page.getByText("1 of 2 elements selected")).toBeVisible();
-
-    // The export button should still be enabled
-    const exportButton = page.getByRole("button", {
-      name: "Export",
-      exact: true,
+      // Frames exist, so the entry is offered even with nothing selected.
+      await expect(page.locator("#file-menu-export-frames")).toBeVisible();
+      await page.locator("#file-menu-export-frames").click();
+      await expect(page.getByText("Export as PDF")).toBeVisible();
     });
-    await expect(exportButton).toBeEnabled();
-  });
 
-  test("Export button is disabled when all frames are deselected", async ({
-    page,
-  }) => {
-    const workspacePage = new WasmWorkspacePage(page);
-    await setupWorkspaceWithFrames(workspacePage);
+    await test.step("no selection lists every frame", async () => {
+      await expect(dialogRow("Board 1")).toBeVisible();
+      await expect(dialogRow("Board 2")).toBeVisible();
+      await expect(page.getByText("2 of 2 elements selected")).toBeVisible();
+      await expect(exportButton(page)).toBeEnabled();
 
-    // Select Frame 1
-    await workspacePage.clickLeafLayer("Board 1");
+      await cancelButton(page).click();
+      await expect(page.getByText("Export as PDF")).not.toBeVisible();
+    });
 
-    // Open main menu and click export
-    await page.getByRole("button", { name: "Main menu" }).click();
-    await page.getByText("file").last().click();
-    await page.locator("#file-menu-export-frames").click();
+    await test.step("a selected frame is the only row", async () => {
+      await boardOne.click();
+      await expect(boardOne).toHaveAttribute("aria-checked", "true");
 
-    // Deselect the frame
-    await page.getByRole("button", { name: "Board 1" }).click();
+      await openExportFramesDialog(page);
+      await expect(page.getByText("1 of 1 elements selected")).toBeVisible();
+      await expect(dialogRow("Board 1")).toBeVisible();
+      await expect(dialogRow("Board 2")).toHaveCount(0);
 
-    // Now 0 frames are selected
-    await expect(page.getByText("0 of 1 elements selected")).toBeVisible();
+      await cancelButton(page).click();
+      await expect(page.getByText("Export as PDF")).not.toBeVisible();
+    });
 
-    // // The export button should be disabled
-    await expect(
-      page.getByRole("button", { name: "Export", exact: true }),
-    ).toBeDisabled();
-  });
+    await test.step("deselecting one frame keeps the export enabled", async () => {
+      await boardOne.click();
+      await boardTwo.click({ modifiers: ["Shift"] });
+      await expect(boardOne).toHaveAttribute("aria-checked", "true");
+      await expect(boardTwo).toHaveAttribute("aria-checked", "true");
 
-  test("User can cancel the export modal", async ({ page }) => {
-    const workspacePage = new WasmWorkspacePage(page);
-    await setupWorkspaceWithFrames(workspacePage);
+      await openExportFramesDialog(page);
+      await expect(page.getByText("2 of 2 elements selected")).toBeVisible();
 
-    // Select Frame 1
-    await workspacePage.clickLeafLayer("Board 1");
+      await dialogRow("Board 1").click();
+      await expect(page.getByText("1 of 2 elements selected")).toBeVisible();
+      await expect(exportButton(page)).toBeEnabled();
 
-    // Open main menu and click export
-    await page.getByRole("button", { name: "Main menu" }).click();
-    await page.getByText("file").last().click();
-    await page.locator("#file-menu-export-frames").click();
+      await cancelButton(page).click();
+      await expect(page.getByText("Export as PDF")).not.toBeVisible();
+    });
 
-    // Now only 1 frame should be selected
-    await expect(page.getByText("1 of 1 elements selected")).toBeVisible();
+    await test.step("deselecting every frame disables the export", async () => {
+      await boardOne.click();
+      await expect(boardOne).toHaveAttribute("aria-checked", "true");
+      await expect(boardTwo).toHaveAttribute("aria-checked", "false");
 
-    // Click cancel
-    await page.getByRole("button", { name: "Cancel" }).click();
+      await openExportFramesDialog(page);
+      await dialogRow("Board 1").click();
+      await expect(page.getByText("0 of 1 elements selected")).toBeVisible();
+      await expect(exportButton(page)).toBeDisabled();
 
-    // The modal should be hidden
-    await expect(page.getByText("0 of 1 elements selected")).not.toBeVisible();
+      await cancelButton(page).click();
+      await expect(page.getByText("Export as PDF")).not.toBeVisible();
+    });
   });
 });
