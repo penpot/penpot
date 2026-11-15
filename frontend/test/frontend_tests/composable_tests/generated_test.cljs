@@ -21,6 +21,7 @@
    [app.main.repo :as rp]
    [app.main.store :as st]
    [beicon.v2.core :as rx]
+   [cljs.reader :as reader]
    [cljs.test :as t :include-macros true]
    [clojure.test.check.generators :as gen]
    [frontend-tests.composable-tests.interpreter :as ftm]
@@ -1122,3 +1123,22 @@
   (await (replay {:world [1 0 {:tokens true :variants true :rich-variants false :text false
                                :layout :flex :layout-copies false}]
                   :ops [[:transform 0 10 0 8] [:apply-token 12 11] [:style 12 3 0 1] [:token-value 0 2]]})))
+
+(t/deftest ^:async programs-of-a-file-replay-through-the-frontend
+  ;; the programs of the EDN file `PENPOT_REPLAY_PROGRAMS` names, when it
+  ;; names one, each replayed and reported on its own
+  (when-let [path (unchecked-get (.-env js/process) "PENPOT_REPLAY_PROGRAMS")]
+    (let [programs (try
+                     (reader/read-string (str (.readFileSync (.getBuiltinModule js/process "fs") path)))
+                     (catch :default cause
+                       (js/console.log "REPLAY-FILE unreadable" (ex-message cause))
+                       []))]
+      (loop [index 0]
+        (when (< index (count programs))
+          (let [before (:report-counters (t/get-current-env))]
+            (await (replay (nth programs index)))
+            (let [after (:report-counters (t/get-current-env))]
+              (js/console.log "REPLAY-FILE" index
+                              (pr-str (merge-with - (select-keys after [:pass :fail :error])
+                                                  (select-keys before [:pass :fail :error]))))))
+          (recur (inc index)))))))

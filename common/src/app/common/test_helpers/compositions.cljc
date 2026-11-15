@@ -86,7 +86,10 @@
 
 (defn add-frame-with-text
   [file frame-label child-label text & {:keys [frame-params child-params]}]
-  (let [shape (-> (cts/setup-shape {:type :text :x 0 :y 0 :grow-type :auto-width})
+  (let [;; the geometry `child-params` gives goes into the setup, which derives
+        ;; the shape's corners from it
+        shape (-> (cts/setup-shape (merge {:type :text :x 0 :y 0 :grow-type :auto-width}
+                                          (select-keys child-params [:x :y :width :height])))
                   (update :content txt/change-text text)
                   (assoc :position-data nil
                          :parent-label frame-label))]

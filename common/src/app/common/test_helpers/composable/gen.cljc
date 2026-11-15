@@ -328,7 +328,11 @@
                             s)]
                     (cond-> s
                       (:text opts)
-                      (tm/with-file (-> (thtx/add-text-component-with-copy (tm/file s) [[["Hello world"]]])
+                      ;; a board and a text of a measurable size: the turns and moves
+                      ;; of a hundredth of a pixel are float noise
+                      (tm/with-file (-> (thtx/add-text-component-with-copy (tm/file s) [[["Hello world"]]]
+                                                                           :frame-params {:width 100 :height 100}
+                                                                           :child-params {:width 100 :height 20})
                                         (cond-> (:text-styles opts)
                                           (ths/add-sample-typography :generated-typography
                                                                      :font-id "gfont-roboto" :font-family "Roboto"
