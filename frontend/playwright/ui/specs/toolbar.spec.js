@@ -75,9 +75,10 @@ test("Each toolbar tool creates its shape", async ({ page }) => {
     const before = await rows.count();
 
     await workspace.selectToolbarTool(workspace, "Path (P)");
-    // The pencil places one node per click and finishes on Enter
-    // (data/workspace/path/drawing.cljs:457-477), so a drag leaves a single
-    // node behind and the drawing is discarded.
+    // The pencil places one node per click (data/workspace/path/drawing.cljs:
+    // 278-320) and finishes on Enter (data/workspace/path/shortcuts.cljs:
+    // 182-185), so a drag leaves a single node behind and the drawing is
+    // discarded.
     await workspace.clickAt(120, 320);
     await workspace.clickAt(300, 380);
     await page.keyboard.press("Enter");

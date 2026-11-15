@@ -63,10 +63,12 @@ test("The canvas color picker opens by its swatch and shows the HSB inputs", asy
   });
 });
 
+// Fix for https://tree.taiga.io/project/penpot/issue/10089 and
+// https://tree.taiga.io/project/penpot/issue/10756
 test("The fill picker changes alpha and accepts SVG image fills", async ({
   page,
 }) => {
-  const workspacePage = await openRectangleFill(page);
+  await openRectangleFill(page);
 
   // The alpha case asserts the initial 100, so it runs before the case that
   // replaces the solid fill with an image.
