@@ -1118,6 +1118,12 @@
                   :ops [[:rotate 16 0 7 0] [:grid-direction 0 0 0 1] [:grid-cell 0 10 0 1] [:add-child 0]
                         [:structure 3 6 15] [:grid-direction 0 0 0 1] [:grid-cell 0 4 2 1]]})))
 
+(t/deftest ^:async generated-an-ungroup-in-a-grid-main-undoes-in-one-step
+  ;; the copies' repositioning, synced from the layout update after the
+  ;; ungroup, undoes with the ungroup
+  (await (replay {:world [2 2 {:variants true :text true :layout :grid :layout-copies true}]
+                  :ops [[:detach 6 0 0 0] [:structure 0 2 0]]})))
+
 (t/deftest ^:async generated-a-detach-under-an-unaccepted-child-removal-leaves-it-plain
   ;; the loaded library no longer has the nested copy's child main, so the
   ;; detach leaves that child plain until the consumer accepts the library

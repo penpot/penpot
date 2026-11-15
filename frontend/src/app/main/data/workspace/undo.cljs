@@ -199,9 +199,13 @@
                                     (take (inc index) (get-in state [:workspace-undo :items])))))]
         (cond
           ;; A delayed derived change still belongs to its primary action,
-          ;; even after another edit or transaction has started.
+          ;; even after another edit or transaction has started. An entry
+          ;; that holds the group only among the groups stacked into it
+          ;; takes the change too: undo walks entries by their own group.
           (and (some? group-index)
-               (or stack? (< group-index index) transaction))
+               (or stack? (< group-index index) transaction
+                   (not= (:undo-group entry)
+                         (get-in state [:workspace-undo :items group-index :undo-group]))))
           (stack-undo-entry state entry group-index)
 
           (and (get-in state [:workspace-undo :transaction])
