@@ -156,3 +156,22 @@
         objects (objects (thf/apply-changes file changes))]
     (t/is (= (-> (get objects (:id shape)) :selrect ((juxt :x :y :width :height)))
              (-> (get objects id) :selrect ((juxt :x :y :width :height)))))))
+
+(t/deftest ungrouping-a-group-in-a-bool-combines-its-shapes-again
+  (let [file    (-> (thf/sample-file :file1)
+                    (ths/add-sample-shape :rect-a :width 50 :height 50)
+                    (ths/add-sample-shape :rect-b :width 70 :height 25))
+        page    (thf/current-page file)
+        ;; the bool its shapes make without the group
+        [direct changes] (clb/generate-create-bool nil (:id page) (:objects page)
+                                                   [(thi/id :rect-a) (thi/id :rect-b)] :difference nil)
+        expected (:content (get (objects (thf/apply-changes file changes)) (:id direct)))
+        [id file] (group file [:rect-a :rect-b])
+        page    (thf/current-page file)
+        [shape changes] (clb/generate-create-bool nil (:id page) (:objects page) [id] :difference nil)
+        file    (thf/apply-changes file changes)
+        page    (thf/current-page file)
+        file    (thf/apply-changes file (clg/generate-ungroup-changes nil (:id page) (:objects page) [id]))
+        bool    (get (objects file) (:id shape))]
+    (t/is (= #{(thi/id :rect-a) (thi/id :rect-b)} (set (:shapes bool))))
+    (t/is (= (str expected) (str (:content bool))))))

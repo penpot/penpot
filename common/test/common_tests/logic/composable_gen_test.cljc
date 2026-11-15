@@ -2469,6 +2469,14 @@
                                     :layout-copies false}]
                        :ops [[:transform 0 10 0 8] [:apply-token 12 11] [:style 12 3 0 1] [:token-value 0 2]]}))))
 
+(t/deftest an-ungroup-in-a-bool-combines-its-shapes-again
+  ;; ungrouping the group a bool combines makes the bool combine its shapes,
+  ;; so undoing a later edit gives the state before it
+  (t/is (map? (cg/run {:world [2 0 {:variants true :rich-variants true :text true :layout nil :layout-copies true
+                                    :layout-children false}]
+                       :ops [[:delete 3 0 0 0] [:structure 3 0 7 0] [:add-child 2] [:structure 2 5 0] [:delete 2]
+                             [:restore 2] [:swap 2 0 0 0] [:structure 3 2 0 0] [:text-style 2 0 1]]}))))
+
 (t/deftest a-switched-head-in-a-copy-scales-with-its-parent
   ;; the head authors the size the switch carried, which its copy parent's
   ;; later resize scales through its constraint
