@@ -15,7 +15,8 @@
    [app.common.geom.shapes.common :as gco]
    [app.common.math :as mth]
    [app.common.types.modifiers :as ctm]
-   [app.common.types.path :as path]))
+   [app.common.types.path :as path]
+   [app.common.types.shape.radius :as ctsr]))
 
 #?(:clj (set! *warn-on-reflection* true))
 
@@ -342,6 +343,10 @@
 
       flip-y?
       (update :flip-y not)
+
+      ;; the radius tokens keep to the corners they apply to
+      (and (or flip-x? flip-y?) (seq (:applied-tokens shape)))
+      (update :applied-tokens ctsr/mirror-token-corners flip-x? flip-y?)
 
       ;; Negate rotation only when an odd number of axes are flipped,
       ;; since flipping both axes is equivalent to a 180° rotation and

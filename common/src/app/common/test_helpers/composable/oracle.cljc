@@ -29,6 +29,7 @@
    [app.common.types.file :as ctf]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape.layout :as ctl]
+   [app.common.types.shape.radius :as ctsr]
    [app.common.types.text :as txt]
    [clojure.walk :as walk]))
 
@@ -649,11 +650,18 @@
                :shape (:name actual) :expected expected :actual actual})))
 
 (defn- comparable-values
+  "The values of `group` in `shape`, as the shape `context` would hold them:
+   radius tokens name the corners as `context` shows them."
   [shape context group]
-  (let [shape (if (= group :constraints-group)
+  (let [shape (case group
+                :constraints-group
                 (cond-> (update shape :fixed-scroll boolean)
                   (nil? (:constraints-h shape)) (assoc :constraints-h (gsh/default-constraints-h context))
                   (nil? (:constraints-v shape)) (assoc :constraints-v (gsh/default-constraints-v context)))
+
+                :radius-group
+                (update shape :applied-tokens ctsr/tokens-in-orientation shape context)
+
                 shape)]
     (shadow/values shape group)))
 

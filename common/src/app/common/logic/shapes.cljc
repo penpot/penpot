@@ -110,9 +110,14 @@
                    (fn [changes id]
                      ;; a shape the transform leaves untouched changes only
                      ;; as a consequence of it: no attribute touches
-                     (let [opts {:attrs attrs
+                     (let [ignore (or (true? (get ignore-tree id)) ignore-touched)
+                           opts {:attrs attrs
                                  :ignore-geometry? (get ignore-tree id)
-                                 :ignore-touched (or (true? (get ignore-tree id)) ignore-touched)
+                                 ;; the radius tokens a flip moves with their
+                                 ;; corners are no override
+                                 :ignore-touched (if (and (not ignore) (contains? attrs :applied-tokens))
+                                                   #{:applied-tokens}
+                                                   ignore)
                                  :with-objects? with-objects?}]
                        (pcb/update-shapes changes [id] update-fn (d/without-nils opts))))
                    (cond-> changes

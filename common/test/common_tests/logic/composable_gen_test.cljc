@@ -2469,6 +2469,15 @@
                                     :layout-copies false}]
                        :ops [[:transform 0 10 0 8] [:apply-token 12 11] [:style 12 3 0 1] [:token-value 0 2]]}))))
 
+(t/deftest a-token-edit-keeps-the-square-corner-of-a-mirrored-copy
+  ;; a copy mirrored horizontally takes its main's radius tokens on the
+  ;; corners it shows them on, so a token edit leaves the corner its main
+  ;; keeps square by hand alone
+  (t/is (map? (cg/run {:world [2 0 {:tokens true :variants true :rich-variants true :text true :layout nil
+                                    :layout-copies true}]
+                       :ops [[:apply-token 2 5] [:token-value 0 5 1] [:apply-token 0 0] [:style 0 3 0 1]
+                             [:transform 0 4 0 3] [:apply-token 0 2] [:token-value 0 2 1]]}))))
+
 (t/deftest switching-a-copy-carries-the-radius-tokens-it-applied
   (t/is (map? (cg/run {:world [1 0 {:tokens true :variants true :rich-variants false :text false :layout :flex
                                     :layout-copies false}]

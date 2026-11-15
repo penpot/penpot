@@ -36,6 +36,7 @@
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctsl]
+   [app.common.types.shape.radius :as ctsr]
    [app.common.types.text :as txt]
    [app.common.types.token :as cto]
    [app.common.types.typography :as cty]
@@ -1875,13 +1876,22 @@
                          [(set-remote-synced remote-synced?)]
                          [(set-remote-synced (:remote-synced shape))])))))
 
+(defn oriented-by
+  "`shape` with the flips the `:set` operations `roperations` leave on it."
+  [shape roperations]
+  (reduce (fn [shape {:keys [type attr val]}]
+            (cond-> shape (and (= :set type) (#{:flip-x :flip-y} attr)) (assoc attr val)))
+          shape roperations))
+
 (defn- update-tokens
   "Token synchronization algorithm. Copy the applied tokens that have changed
    in the origin shape to the dest shape (applying or removing as necessary).
 
-   Only the given token attributes are synced."
-  [changes container dest-shape orig-shape token-attrs]
-  (let [orig-tokens  (get orig-shape :applied-tokens {})
+   Only the given token attributes are synced. A radius token names a corner
+  as its shape shows it, so the tokens of both shapes take the orientation
+  of `oriented`, the dest shape with the flips the sync leaves on it."
+  [changes container dest-shape orig-shape token-attrs oriented]
+  (let [orig-tokens  (ctsr/tokens-in-orientation (get orig-shape :applied-tokens {}) orig-shape oriented)
         dest-tokens  (get dest-shape :applied-tokens {})
         dest-tokens' (reduce (fn [dest-tokens' token-attr]
                                (let [orig-token (get orig-tokens token-attr)
@@ -1891,7 +1901,7 @@
                                    (if (nil? orig-token)
                                      (dissoc dest-tokens' token-attr)
                                      (assoc dest-tokens' token-attr orig-token)))))
-                             dest-tokens
+                             (ctsr/tokens-in-orientation dest-tokens dest-shape oriented)
                              token-attrs)
         set-tokens   (fn [tokens]
                        {:type :mod-obj
@@ -1918,8 +1928,9 @@
   "Copy into `dest-shape` the tokens `origin-shape` applies to the attributes
   it syncs: with `omit-touched?`, only those whose group is not in `touched`;
   with `valid-attrs`, only those attributes (all when nil). Nothing to copy
-  or remove when neither shape applies tokens."
-  [changes container dest-shape origin-shape touched omit-touched? valid-attrs]
+  or remove when neither shape applies tokens. `oriented` is the dest shape
+  with the flips the sync leaves on it."
+  [changes container dest-shape origin-shape touched omit-touched? valid-attrs oriented]
   (if (and (empty? (:applied-tokens origin-shape))
            (empty? (:applied-tokens dest-shape)))
     changes
@@ -1942,7 +1953,7 @@
                      token-attrs-by-sync-attr)]
       (cond-> changes
         (seq applied-tokens)
-        (update-tokens container dest-shape origin-shape applied-tokens)))))
+        (update-tokens container dest-shape origin-shape applied-tokens oriented)))))
 
 (def ^:private derived-geometry-attrs
   "The geometry a group or bool takes from its children."
@@ -2192,7 +2203,9 @@
         [roperations uoperations]
         (attr-operations dest-shape
                          #(when-not (and content-only? (contains? placement-attrs %))
-                            (sync-attr-operations dest-shape origin-shape touched omit-touched? %)))]
+                            (sync-attr-operations dest-shape origin-shape touched omit-touched? %)))
+
+        oriented      (oriented-by dest-shape roperations)]
 
     (cond-> changes
       (seq roperations)
@@ -2202,7 +2215,7 @@
       :always
       (check-swapped-main dest-shape origin-shape)
       :always
-      (generate-update-tokens container dest-shape origin-shape touched omit-touched? valid-attrs))))
+      (generate-update-tokens container dest-shape origin-shape touched omit-touched? valid-attrs oriented))))
 
 (defn- propagate-attrs
   "Helper that puts the origin attributes (attrs) into dest but only if
