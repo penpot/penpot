@@ -410,7 +410,8 @@
     (cond-> changes
       (> (count roperations) 1)
       (-> (cll/add-update-attr-changes current-shape container roperations uoperations)
-          (cll/generate-update-tokens container current-shape previous-shape touched false updated-attrs)))))
+          (cll/generate-update-tokens container current-shape previous-shape touched false updated-attrs
+                                      (cll/oriented-by current-shape roperations))))))
 
 (defn- generate-keep-orientation
   "Give the new head of a swap, and its subtree, the flips and the rotation

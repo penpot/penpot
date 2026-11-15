@@ -8,6 +8,9 @@
   (:require
    [app.common.data :as d]
    [app.common.files.changes-builder :as pcb]
+   [app.common.geom.point :as gpt]
+   [app.common.geom.shapes :as gsh]
+   [app.common.logic.placement :as clp]
    [app.common.logic.shapes :as cls]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
@@ -15,6 +18,7 @@
    [app.common.test-helpers.shapes :as ths]
    [app.common.test-helpers.tokens :as tht]
    [app.common.types.container :as ctn]
+   [app.common.types.modifiers :as ctm]
    [app.common.types.text :as txt]
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
@@ -378,6 +382,23 @@
         rect'   (ths/get-shape (thf/apply-changes file changes) :rect)]
     (t/is (= 8 (:r2 rect')))
     (t/is (empty? (:applied-tokens rect')))))
+
+(t/deftest a-flip-moves-a-radius-token-with-its-corner
+  (let [file    (-> (thf/sample-file :file1)
+                    (ths/add-sample-shape :rect :type :rect :r1 8
+                                          :applied-tokens {:r1 "radius.s"}))
+        page    (thf/current-page file)
+        rect    (ths/get-shape file :rect)
+        flip    #(gsh/transform-shape % (ctm/resize-modifiers (gpt/point -1 1) (gsh/shape->center %)))
+        changes (-> (pcb/empty-changes nil)
+                    (pcb/with-page page)
+                    (pcb/with-objects (:objects page))
+                    (cls/generate-update-shapes [(:id rect)] flip (:objects page) {:attrs clp/transform-attrs}))
+        rect'   (ths/get-shape (thf/apply-changes file changes) :rect)]
+    ;; the corner it stores as the first shows second once flipped
+    (t/is (true? (:flip-x rect')))
+    (t/is (= 8 (:r1 rect')))
+    (t/is (= {:r2 "radius.s"} (:applied-tokens rect')))))
 
 (t/deftest unapply-only-changed-per-side-token
   (let [file    (-> (setup-file)

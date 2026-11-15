@@ -64,7 +64,9 @@
     :layout-grid-columns
     :layout-grid-rows
     :fills
-    :fill-image})
+    :fill-image
+    ;; a flip moves the radius tokens with their corners
+    :applied-tokens})
 
 (defn- check-delta
   "If the shape is a component instance, check whether the transformation is a
