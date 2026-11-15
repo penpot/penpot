@@ -332,6 +332,33 @@
                                 (t/is (= 1 (get-in state [:workspace-undo :index])))
                                 (t/is (= "C" (:name (dsh/lookup-page state page-id))))))))
 
+;; Scenario: an ungroup commits (g1), the layout update after it stacks onto
+;; its entry with a group of its own (g2), and the component sync that update
+;; causes commits later under g2 without stacking. Proves: the sync joins the
+;; same entry, so one Ctrl+Z undoes all three; a separate entry under g2
+;; would be undone alone, as undo walks entries by their own group.
+(t/deftest a-delayed-commit-joins-the-entry-its-group-was-stacked-into
+  (let [page-id (uuid/next)
+        [g1 g2] (repeatedly 2 uuid/next)
+        state   (reduce #(ptk/update %2 %1)
+                        {}
+                        [(dwu/append-undo (entry page-id "A" g1) false)
+                         (dwu/append-undo (entry page-id "B" g2) true)
+                         (dwu/append-undo (entry page-id "C" g2) false)])]
+    (t/is (= 1 (count (get-in state [:workspace-undo :items]))))
+    (t/is (= ["A" "B" "C"] (mapv :name (get-in state [:workspace-undo :items 0 :redo-changes]))))))
+
+;; Scenario: two commits of one group in a row, without stacking. Proves:
+;; they keep separate entries, which undo walks together by their group.
+(t/deftest adjacent-commits-of-one-group-keep-their-entries
+  (let [page-id (uuid/next)
+        g1      (uuid/next)
+        state   (reduce #(ptk/update %2 %1)
+                        {}
+                        [(dwu/append-undo (entry page-id "A" g1) false)
+                         (dwu/append-undo (entry page-id "B" g1) false)])]
+    (t/is (= 2 (count (get-in state [:workspace-undo :items]))))))
+
 ;; Scenario: the user presses Ctrl+Z on a page rename. Proves: the commit it
 ;; makes can be undone (its undo changes redo the rename) and names the index
 ;; the history moved from, so a rollback can put both back.
