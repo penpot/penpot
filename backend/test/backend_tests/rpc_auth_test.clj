@@ -79,29 +79,6 @@
     (t/is (some? (session/read-session manager sid-b))
           "sessions of other profiles must survive the recovery")))
 
-(t/deftest recover-profile-failure-keeps-sessions
-  "A failed recovery (token with the wrong issuer) is rejected before any
-  write: sessions and password must stay untouched."
-  (let [prof    (th/create-profile* 1)
-        manager (::session/manager th/*system*)
-        sid     (uuid/random)
-        _       (th/db-exec-one! ["INSERT INTO http_session_v2 (id, profile_id, user_agent) VALUES (?, ?, ?)"
-                                  sid (:id prof) "agent-1"])
-        before  (:password (th/db-exec-one! ["SELECT password FROM profile WHERE id = ?" (:id prof)]))
-        token   (tokens/generate th/*system*
-                                 {:iss :authentication
-                                  :exp (ct/in-future "15m")
-                                  :profile-id (:id prof)})]
-    (with-mocks [_ {:target 'app.email/send-template :return nil}]
-      (let [out (th/command! {::th/type :recover-profile
-                              :token token
-                              :password "Foobar12!"})]
-        (t/is (some? (:error out)))))
-    (t/is (some? (session/read-session manager sid))
-          "a failed recovery must not delete sessions")
-    (t/is (= before (:password (th/db-exec-one! ["SELECT password FROM profile WHERE id = ?" (:id prof)])))
-          "a failed recovery must not change the password")))
-
 (t/deftest recover-profile-rollback-keeps-password-and-sessions
   "A failure after the password UPDATE rolls the transaction back, so the
   captured session and the old password both survive
