@@ -12,7 +12,9 @@
    [app.common.record :as crc]
    [app.common.schema :as sm]
    [app.common.types.fills :as types.fills]
+   [app.common.types.shape.text :as ctst]
    [app.common.types.text :as txt]
+   [app.common.types.text.cjk-layout :as cjk]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.texts :as dwt]
    [app.main.data.workspace.wasm-text :as dwwt]
@@ -30,7 +32,7 @@
 
 (def ^:private text-decoration-re #"underline|line-through|none")
 (def ^:private text-direction-re #"ltr|rtl")
-(def ^:private text-align-re #"left|center|right|justify")
+(def ^:private text-align-re #"left|center|right|justify|distribute")
 (def ^:private vertical-align-re #"top|center|bottom")
 
 (defn- font-data
@@ -89,6 +91,117 @@
               continue? (or (> from end) (>= end to))]
           (recur (when continue? (rest styles)) taking? to result))
         result))))
+
+(def ^:private cjk-range-defaults
+  ;; A range without ruby reports null to plugins.
+  (assoc cjk/span-attr-defaults :ruby nil))
+
+(defn- shape-cjk-value
+  "Value of a CJK span `attr` over a whole text shape proxy, with unset
+   spans at their default: 'mixed' when spans differ."
+  [shape-proxy attr]
+  (let [default (get cjk-range-defaults attr)
+        values  (->> (-> shape-proxy u/proxy->shape :content)
+                     (txt/node-seq txt/is-text-node?)
+                     (map #(get % attr default)))]
+    (if (seq values) (u/mixed-value values) default)))
+
+(defn- whole-shape-value
+  "Value of a whole-shape paragraph `attr` (writing mode, orientation): the
+   first paragraph's, which every paragraph shares, or the default."
+  [shape-proxy attr]
+  (-> shape-proxy u/proxy->shape :content (cjk/whole-shape-attr attr) (d/nilv (cjk/enum-default attr))))
+
+(defn- range-cjk-value
+  "Value of a CJK span `attr` over a text range proxy's characters."
+  [range-proxy start end attr]
+  (let [default (get cjk-range-defaults attr)]
+    (->> (-> range-proxy u/proxy->shape :content (content-range->text+styles start end))
+         (map #(get % attr default))
+         (u/mixed-value))))
+
+(defn- enum-value?
+  "Validator accepting the values of the CJK layout enum `attr`."
+  [attr]
+  (fn [value]
+    (cjk/valid-enum-value? attr value)))
+
+(defn- optional-string?
+  [value]
+  (or (nil? value) (string? value)))
+
+(defn- language-tag?
+  "Validator for a text language: a BCP 47 tag, or nil or '' to remove it."
+  [value]
+  (or (nil? value)
+      (= "" value)
+      (sm/validate ctst/schema:text-language value)))
+
+(defn- language-attrs
+  "Update attrs for a language value; nil or '' removes the language."
+  [attrs]
+  (update attrs :text-language not-empty))
+
+(defn- attr-setter
+  "Property setter that checks `valid?` and the plugin's write access before
+   emitting `(update-event self attrs)` with `{attr value}`."
+  [plugin-id page-id prop attr valid? update-event]
+  (fn [self value]
+    (cond
+      (not (valid? value))
+      (u/not-valid plugin-id prop value)
+
+      (not (r/check-permission plugin-id "content:write"))
+      (u/not-valid plugin-id prop "Plugin doesn't have 'content:write' permission")
+
+      (not (u/page-active? page-id))
+      (u/not-valid plugin-id prop "Cannot modify a page that is not currently active")
+
+      :else
+      (st/emit! (update-event self {attr value})))))
+
+(defn- range-attr-setter
+  "Setter of a span attribute over the characters [start, end) of shape `id`."
+  [plugin-id page-id id start end prop attr valid?]
+  (attr-setter plugin-id page-id prop attr valid?
+               (fn [_ attrs] (dwt/update-text-range id start end attrs))))
+
+(defn- shape-attr-setter
+  "Setter of a text attribute over the whole text shape."
+  [plugin-id page-id prop attr valid?]
+  (attr-setter plugin-id page-id prop attr valid?
+               (fn [self attrs] (dwt/update-attrs (obj/get self "$id") attrs))))
+
+(def ^:private multi-span-annotation-message
+  "A ruby reading or warichu note must cover characters of a single text span")
+
+(defn- annotating?
+  "True when setting `attr` to `value` adds a ruby reading or a warichu note."
+  [attr value]
+  (case attr
+    :ruby    (and (string? value) (not (str/blank? value)))
+    :warichu (= "warichu" value)
+    false))
+
+(defn- annotation-setter
+  "Wraps `setter` so a reading or note is only added over characters [start,
+   end) of one text span: copying it to several spans would repeat it."
+  [plugin-id prop attr start end setter]
+  (fn [self value]
+    (if (and (annotating? attr value)
+             (not (dwt/single-span-range? (-> self u/proxy->shape :content) start end)))
+      (u/not-valid plugin-id prop multi-span-annotation-message)
+      (setter self value))))
+
+(defn- range-annotation-setter
+  [plugin-id page-id id start end prop attr valid?]
+  (annotation-setter plugin-id prop attr start end
+                     (range-attr-setter plugin-id page-id id start end prop attr valid?)))
+
+(defn- shape-annotation-setter
+  [plugin-id page-id prop attr valid?]
+  (annotation-setter plugin-id prop attr 0 ##Inf
+                     (shape-attr-setter plugin-id page-id prop attr valid?)))
 
 (defn text-range-proxy?
   [range]
@@ -361,6 +474,87 @@
 
          :else
          (st/emit! (dwt/update-text-range id start end {:text-decoration value}))))}
+
+    :fontFeatures
+    {:this true
+     :get (fn [self] (range-cjk-value self start end :font-features))
+     :set (range-attr-setter plugin-id page-id id start end :fontFeatures :font-features (enum-value? :font-features))}
+
+    :textCombineUpright
+    {:this true
+     :get (fn [self] (range-cjk-value self start end :text-combine-upright))
+     :set (range-attr-setter plugin-id page-id id start end :textCombineUpright :text-combine-upright (enum-value? :text-combine-upright))}
+
+    :textEmphasis
+    {:this true
+     :get (fn [self] (range-cjk-value self start end :text-emphasis))
+     :set (range-attr-setter plugin-id page-id id start end :textEmphasis :text-emphasis (enum-value? :text-emphasis))}
+
+    :textEmphasisPosition
+    {:this true
+     :get (fn [self] (range-cjk-value self start end :text-emphasis-position))
+     :set (range-attr-setter plugin-id page-id id start end :textEmphasisPosition :text-emphasis-position (enum-value? :text-emphasis-position))}
+
+    :textUnderlinePosition
+    {:this true
+     :get (fn [self] (range-cjk-value self start end :text-underline-position))
+     :set (range-attr-setter plugin-id page-id id start end :textUnderlinePosition :text-underline-position (enum-value? :text-underline-position))}
+
+    :warichu
+    {:this true
+     :get (fn [self] (range-cjk-value self start end :warichu))
+     :set (range-annotation-setter plugin-id page-id id start end :warichu :warichu (enum-value? :warichu))}
+
+    :annotationClearance
+    {:this true
+     :get (fn [self] (range-cjk-value self start end :annotation-clearance))
+     :set (range-attr-setter plugin-id page-id id start end :annotationClearance :annotation-clearance (enum-value? :annotation-clearance))}
+
+    :ruby
+    {:this true
+     :get (fn [self] (range-cjk-value self start end :ruby))
+     :set (range-annotation-setter plugin-id page-id id start end :ruby :ruby optional-string?)}
+
+    :rubyHidden
+    {:this true
+     :get (fn [self] (range-cjk-value self start end :ruby-hidden))
+     :set (range-attr-setter plugin-id page-id id start end :rubyHidden :ruby-hidden boolean?)}
+
+    :rubyZhuyin
+    {:this true
+     :get (fn [self] (range-cjk-value self start end :ruby-zhuyin))
+     :set (range-attr-setter plugin-id page-id id start end :rubyZhuyin :ruby-zhuyin boolean?)}
+
+    :rubySize
+    {:this true
+     :get (fn [self] (range-cjk-value self start end :ruby-size))
+     :set (range-attr-setter plugin-id page-id id start end :rubySize :ruby-size (enum-value? :ruby-size))}
+
+    :rubyAlign
+    {:this true
+     :get (fn [self] (range-cjk-value self start end :ruby-align))
+     :set (range-attr-setter plugin-id page-id id start end :rubyAlign :ruby-align (enum-value? :ruby-align))}
+
+    :rubyOverhang
+    {:this true
+     :get (fn [self] (range-cjk-value self start end :ruby-overhang))
+     :set (range-attr-setter plugin-id page-id id start end :rubyOverhang :ruby-overhang (enum-value? :ruby-overhang))}
+
+    :rubySide
+    {:this true
+     :get (fn [self] (range-cjk-value self start end :ruby-side))
+     :set (range-attr-setter plugin-id page-id id start end :rubySide :ruby-side (enum-value? :ruby-side))}
+
+    :lang
+    {:this true
+     :get
+     (fn [self]
+       (->> (-> self u/proxy->shape :content (content-range->text+styles start end))
+            (map :text-language)
+            (u/mixed-value)))
+     :set
+     (attr-setter plugin-id page-id :lang :text-language language-tag?
+                  (fn [_ attrs] (dwt/update-text-range id start end (language-attrs attrs))))}
 
     :direction
     {:this true
@@ -756,6 +950,95 @@
 
             :else
             (st/emit! (dwt/update-attrs id {:vertical-align value})))))}
+
+     {:name "lineAdjustment"
+      :get #(-> % u/proxy->shape text-props :line-adjustment
+                (d/nilv (cjk/enum-default :line-adjustment)))
+      :set
+      (fn [self value]
+        (let [id (obj/get self "$id")]
+          (cond
+            (not (cjk/valid-enum-value? :line-adjustment value))
+            (u/not-valid plugin-id :lineAdjustment value)
+
+            (not (r/check-permission plugin-id "content:write"))
+            (u/not-valid plugin-id :lineAdjustment "Plugin doesn't have 'content:write' permission")
+
+            (not (u/page-active? page-id))
+            (u/not-valid plugin-id :lineAdjustment "Cannot modify a page that is not currently active")
+
+            :else
+            (st/emit! (dwt/update-attrs id {:line-adjustment value})))))}
+
+     {:name "writingMode"
+      :get #(whole-shape-value % :writing-mode)
+      :set (shape-attr-setter plugin-id page-id :writingMode :writing-mode (enum-value? :writing-mode))}
+
+     {:name "textOrientation"
+      :get #(whole-shape-value % :text-orientation)
+      :set (shape-attr-setter plugin-id page-id :textOrientation :text-orientation (enum-value? :text-orientation))}
+
+     {:name "textCombineUpright"
+      :get #(shape-cjk-value % :text-combine-upright)
+      :set (shape-attr-setter plugin-id page-id :textCombineUpright :text-combine-upright (enum-value? :text-combine-upright))}
+
+     {:name "textEmphasis"
+      :get #(shape-cjk-value % :text-emphasis)
+      :set (shape-attr-setter plugin-id page-id :textEmphasis :text-emphasis (enum-value? :text-emphasis))}
+
+     {:name "textEmphasisPosition"
+      :get #(shape-cjk-value % :text-emphasis-position)
+      :set (shape-attr-setter plugin-id page-id :textEmphasisPosition :text-emphasis-position (enum-value? :text-emphasis-position))}
+
+     {:name "textUnderlinePosition"
+      :get #(shape-cjk-value % :text-underline-position)
+      :set (shape-attr-setter plugin-id page-id :textUnderlinePosition :text-underline-position (enum-value? :text-underline-position))}
+
+     {:name "warichu"
+      :get #(shape-cjk-value % :warichu)
+      :set (shape-annotation-setter plugin-id page-id :warichu :warichu (enum-value? :warichu))}
+
+     {:name "fontFeatures"
+      :get #(shape-cjk-value % :font-features)
+      :set (shape-attr-setter plugin-id page-id :fontFeatures :font-features (enum-value? :font-features))}
+
+     {:name "annotationClearance"
+      :get #(shape-cjk-value % :annotation-clearance)
+      :set (shape-attr-setter plugin-id page-id :annotationClearance :annotation-clearance (enum-value? :annotation-clearance))}
+
+     {:name "ruby"
+      :get #(shape-cjk-value % :ruby)
+      :set (shape-annotation-setter plugin-id page-id :ruby :ruby optional-string?)}
+
+     {:name "rubyHidden"
+      :get #(shape-cjk-value % :ruby-hidden)
+      :set (shape-attr-setter plugin-id page-id :rubyHidden :ruby-hidden boolean?)}
+
+     {:name "rubyZhuyin"
+      :get #(shape-cjk-value % :ruby-zhuyin)
+      :set (shape-attr-setter plugin-id page-id :rubyZhuyin :ruby-zhuyin boolean?)}
+
+     {:name "rubySize"
+      :get #(shape-cjk-value % :ruby-size)
+      :set (shape-attr-setter plugin-id page-id :rubySize :ruby-size (enum-value? :ruby-size))}
+
+     {:name "rubyAlign"
+      :get #(shape-cjk-value % :ruby-align)
+      :set (shape-attr-setter plugin-id page-id :rubyAlign :ruby-align (enum-value? :ruby-align))}
+
+     {:name "rubyOverhang"
+      :get #(shape-cjk-value % :ruby-overhang)
+      :set (shape-attr-setter plugin-id page-id :rubyOverhang :ruby-overhang (enum-value? :ruby-overhang))}
+
+     {:name "rubySide"
+      :get #(shape-cjk-value % :ruby-side)
+      :set (shape-attr-setter plugin-id page-id :rubySide :ruby-side (enum-value? :ruby-side))}
+
+     {:name "lang"
+      :get #(-> % u/proxy->shape text-props :text-language format/format-mixed)
+      :set (attr-setter plugin-id page-id :lang :text-language language-tag?
+                        (fn [self attrs]
+                          (dwt/update-attrs (obj/get self "$id") (language-attrs attrs))))}
 
      {:name "textBounds"
       :get #(-> % u/proxy->shape gst/shape->bounds format/format-geom-rect)})))
