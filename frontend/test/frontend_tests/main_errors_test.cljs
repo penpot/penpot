@@ -588,6 +588,9 @@
 ;; being told they have no access to the file.
 ;; ---------------------------------------------------------------------------
 
+(def ^:private workspace-query-string
+  "screen=workspace&team-id=b8f8bb52-8b70-8144-8004-4a5085f0bdc9")
+
 (def ^:private workspace-href
   "https://penpot.example.com/#/workspace?team-id=b8f8bb52-8b70-8144-8004-4a5085f0bdc9")
 
@@ -609,7 +612,8 @@
                             (fn [_command _params]
                               (rx/of {:authorized false
                                       :redirect-uri "https://idp.example.com/authorize"})))
-          rt/get-current-href (constantly workspace-href)
+          rt/get-current-href   (constantly workspace-href)
+          rt/get-current-query-string (constantly workspace-query-string)
           st/emit!         (mock/stub (fn [& emitted] (swap! events into emitted)))}
          (errors/on-error (sso-required-error))
          (await (async/settle))
@@ -625,14 +629,15 @@
                               (swap! rpc-calls conj {:command command :params params})
                               (rx/of {:authorized false
                                       :redirect-uri "https://idp.example.com/authorize"})))
-          rt/get-current-href (constantly workspace-href)
+          rt/get-current-href   (constantly workspace-href)
+          rt/get-current-query-string (constantly workspace-query-string)
           st/emit!         mock/noop}
          (errors/on-error (sso-required-error))
          (await (async/settle))
          (t/is (= [{:command :check-nitrate-sso
                     :params {:team-id "b8f8bb52-8b70-8144-8004-4a5085f0bdc9"
                              :organization-id organization-id
-                             :url workspace-href}}]
+                             :query-string workspace-query-string}}]
                   @rpc-calls)))))))
 
 (t/deftest ^:async already-satisfied-organization-sso-retries-the-location
@@ -643,7 +648,8 @@
          {rp/cmd!          (mock/stub
                             (fn [_command _params]
                               (rx/of {:authorized true :reason :sso-satisfied})))
-          rt/get-current-href (constantly workspace-href)
+          rt/get-current-href   (constantly workspace-href)
+          rt/get-current-query-string (constantly workspace-query-string)
           st/emit!         (mock/stub (fn [& emitted] (swap! events into emitted)))}
          (errors/on-error (sso-required-error))
          (await (async/settle))
@@ -657,7 +663,8 @@
          {rp/cmd!          (mock/stub
                             (fn [_command _params]
                               (rx/of {:authorized false :redirect-uri nil})))
-          rt/get-current-href (constantly workspace-href)
+          rt/get-current-href   (constantly workspace-href)
+          rt/get-current-query-string (constantly workspace-query-string)
           rt/assign-exception (fn [error]
                                 (reset! assigned* error)
                                 (ptk/data-event ::assigned error))}
@@ -675,7 +682,8 @@
          {rp/cmd!          (mock/stub
                             (fn [_command _params]
                               (rx/of {:authorized true :reason :no-team-access})))
-          rt/get-current-href (constantly workspace-href)
+          rt/get-current-href   (constantly workspace-href)
+          rt/get-current-query-string (constantly workspace-query-string)
           rt/assign-exception (fn [error]
                                 (reset! assigned* error)
                                 (ptk/data-event ::assigned error))}
@@ -690,7 +698,8 @@
       (await
        (mock/with-mocks*
          {rp/cmd!          (mock/stub (fn [_command _params] (rx/of {:authorized true})))
-          rt/get-current-href (constantly workspace-href)
+          rt/get-current-href   (constantly workspace-href)
+          rt/get-current-query-string (constantly workspace-query-string)
           rt/assign-exception (fn [error] (ptk/data-event ::assigned error))
           st/async-emit!   (fn [& emitted] (swap! events into emitted))}
          (errors/on-error (sso-required-error))
@@ -706,7 +715,8 @@
          {rp/cmd!          (mock/stub (fn [_command _params]
                                         (swap! rpc-calls inc)
                                         (rx/empty)))
-          rt/get-current-href (constantly workspace-href)
+          rt/get-current-href   (constantly workspace-href)
+          rt/get-current-query-string (constantly workspace-query-string)
           rt/assign-exception (fn [error]
                                 (reset! assigned* error)
                                 (ptk/data-event ::assigned error))}
@@ -724,7 +734,8 @@
          {rp/cmd!          (mock/stub (fn [_command _params]
                                         (swap! rpc-calls inc)
                                         (rx/empty)))
-          rt/get-current-href (constantly workspace-href)
+          rt/get-current-href   (constantly workspace-href)
+          rt/get-current-query-string (constantly workspace-query-string)
           st/emit!         mock/noop}
          (errors/on-error (sso-required-error))
          (errors/on-error (sso-required-error))
@@ -758,6 +769,8 @@
 
           rt/get-current-href
           (constantly workspace-href)
+          rt/get-current-query-string
+          (constantly workspace-query-string)
 
           rt/assign-exception
           (fn [error]
@@ -1015,7 +1028,8 @@
                                (fn [_command _params]
                                  (rx/of {:authorized false
                                          :redirect-uri "https://idp.example.com/authorize"})))
-          rt/get-current-href (constantly workspace-href)
+          rt/get-current-href   (constantly workspace-href)
+          rt/get-current-query-string (constantly workspace-query-string)
           st/emit!            (mock/stub (fn [& emitted] (swap! events into emitted)))}
          (errors/flash-persistence (ex-info "SSO required" (sso-required-error)))
          (await (async/settle))

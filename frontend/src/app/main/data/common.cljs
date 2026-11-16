@@ -237,8 +237,8 @@
 
 (defn- check-team-sso
   [team-id]
-  (let [url (rt/get-current-href)]
-    (->> (rp/cmd! :check-nitrate-sso {:team-id team-id :url url})
+  (let [query-string (rt/get-current-query-string)]
+    (->> (rp/cmd! :check-nitrate-sso {:team-id team-id :query-string query-string})
          (rx/mapcat (fn [{:keys [authorized redirect-uri]}]
                       (if authorized
                         (rx/empty)
