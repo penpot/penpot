@@ -52,6 +52,7 @@
    [frontend-tests.data.workspace-shortcuts-test]
    [frontend-tests.data.workspace-texts-test]
    [frontend-tests.data.workspace-thumbnails-test]
+   [frontend-tests.data.workspace-thumbnails-wasm-test]
    [frontend-tests.data.workspace-undo-test]
    [frontend-tests.data.workspace-undo-translation-test]
    [frontend-tests.data.workspace-variant-rename-test]
@@ -196,6 +197,7 @@
    [frontend-tests.util.code-gen-markup-svg-wasm-test]
    [frontend-tests.util.dom.dnd-test]
    [frontend-tests.worker-snap-test]
+   [frontend-tests.worker.component-thumbnails-test]
    [frontend-tests.worker.exports-test]
    [frontend-tests.worker.index-test]
    [frontend-tests.worker.messages-test]
@@ -241,6 +243,7 @@
    'frontend-tests.data.fonts-test
    'frontend-tests.data.imports-test
    'frontend-tests.data.jobs-test
+   'frontend-tests.worker.component-thumbnails-test
    'frontend-tests.worker.exports-test
    'frontend-tests.worker.index-test
    'frontend-tests.worker.messages-test
@@ -265,6 +268,7 @@
    'frontend-tests.data.workspace-shortcuts-test
    'frontend-tests.data.workspace-texts-test
    'frontend-tests.data.workspace-thumbnails-test
+   'frontend-tests.data.workspace-thumbnails-wasm-test
    'frontend-tests.data.workspace-undo-test
    'frontend-tests.data.workspace-undo-translation-test
    'frontend-tests.data.workspace-variant-rename-test

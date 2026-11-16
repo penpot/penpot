@@ -423,8 +423,7 @@
 
                 ;; When activated the wasm rendering we need to recreate its thumbnail on creation
                 (if (features/active-feature? state "render-wasm/v1")
-                  (rx/of (dwt.wasm/render-thumbnail file-id page-id (:id root))
-                         (dwt.wasm/persist-thumbnail file-id page-id (:id root)))
+                  (rx/of (dwt.wasm/render-thumbnail file-id page-id (:id root) :persist? true))
                   (rx/empty)))))))))))
 
 (defn add-component
@@ -971,8 +970,8 @@
         page-id   (:main-instance-page component)
         root-id   (:main-instance-id component)]
     (if (features/active-feature? state "render-wasm/v1")
-      ;; WASM: render immediately, UI only — server persist happens
-      ;; on the debounced path (update-component-thumbnail). Frame
+      ;; WASM: ask the worker to render it for the UI, without uploading;
+      ;; the debounced path (update-component-thumbnail) uploads it. Frame
       ;; thumbnails are only shown by the SVG viewport.
       (when (= tag "component")
         (dwt.wasm/render-thumbnail file-id page-id root-id))
@@ -1701,14 +1700,18 @@
                 component-events-s
 
                 ;; WASM only: render the thumbnail on every component
-                ;; change so single edits (fill, etc.) update instantly.
+                ;; change so single edits (fill, etc.) update without waiting
+                ;; for the 5 s idle upload.
                 ;; Non-WASM persists on every render, so it stays on the
                 ;; debounced path below to avoid per-edit backend posts.
                 (if (features/active-feature? state "render-wasm/v1")
-                  (->> component-events-s
-                       (rx/filter (ptk/type? ::component-changed))
-                       (rx/map deref)
-                       (rx/map render-component-thumbnail-event))
+                  (rx/merge
+                   (->> component-events-s
+                        (rx/filter (ptk/type? ::component-changed))
+                        (rx/map deref)
+                        (rx/map render-component-thumbnail-event))
+                   ;; Shows the thumbnails the worker renders
+                   (dwt.wasm/component-thumbnail-events))
                   (rx/empty))
 
                 ;; Persist to the server in batches, 5s after the user
