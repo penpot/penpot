@@ -111,6 +111,29 @@ const findVariantNoWait = (workspacePage, index) => {
   };
 };
 
+// The layer rows are draggable and drop a click now and then while the document
+// settles, and copy/cut/duplicate act on the selection as it is at that moment,
+// so retry the click until the row reports the selection.
+const selectRow = async (row) => {
+  await expect(async () => {
+    await row.click();
+    await expect(row).toHaveAttribute("aria-checked", "true", {
+      timeout: 1000,
+    });
+  }).toPass({ timeout: 10000 });
+};
+
+// A container keeps its children rows in the tree only while it is expanded, and
+// clicking the toggle of an already expanded container collapses it: a duplicate
+// or a paste can inherit the expanded state, so check it before clicking.
+const expandContainer = async (container) => {
+  const toggle = container.getByTestId("toggle-content");
+  if ((await toggle.getAttribute("aria-expanded")) !== "true") {
+    await toggle.click();
+  }
+  await expect(toggle).toHaveAttribute("aria-expanded", "true");
+};
+
 const validateVariant = async (variant) => {
   //The variant container exists and is visible
   await expect(variant.container).toBeVisible();
@@ -164,11 +187,19 @@ test("User duplicates a variant container", async ({ page }) => {
 
   const variant = await findVariant(workspacePage, 0);
 
-  // Select the variant container
-  await variant.container.click();
+  // Select the variant container; Ctrl+D duplicates whatever is selected.
+  await selectRow(variant.container);
 
   //Duplicate the variant container
   await workspacePage.page.keyboard.press("ControlOrMeta+d");
+
+  // Assert the second container appears before building the locators, so a slow
+  // duplication fails here with a count, not with a long wait inside a helper.
+  const containerRows = workspacePage.layers
+    .getByTestId("layer-row")
+    .filter({ hasText: "Rectangle" })
+    .filter({ has: page.getByTestId("icon-component") });
+  await expect(containerRows).toHaveCount(2);
 
   // The copy is inserted above the original: index 0 is the duplicate and index
   // 1 is the original, checked by comparing the rows' ids with the one the
@@ -176,8 +207,9 @@ test("User duplicates a variant container", async ({ page }) => {
   const variant_original = await findVariant(workspacePage, 1);
   const variant_duplicate = await findVariant(workspacePage, 0);
 
-  // Expand the layers
-  await variant_duplicate.container.getByRole("button").first().click();
+  // Expand the layers; the original may have lost its expansion in the meantime.
+  await expandContainer(variant_duplicate.container);
+  await expandContainer(variant_original.container);
 
   // The variants are valid
   await validateVariant(variant_original);
@@ -195,12 +227,16 @@ test("User copy paste a variant container", async ({ page }) => {
 
   const variant = findVariantNoWait(workspacePage, 0);
 
-  // Copy the variant container
-  await workspacePage.clickLeafLayer("Rectangle");
+  // Copy the variant container itself. `clickLeafLayer` matches the text as a
+  // substring and clicks the first match, and this tree also holds the shapes
+  // named Rectangle inside the variants, so it can select the wrong one.
+  await selectRow(variant.container);
   await workspacePage.copy("keyboard");
 
-  // Paste the variant container
-  await workspacePage.clickAt(400, 400);
+  // Deselect and place the pointer without clicking: a click here could select a
+  // shape and send the paste inside it.
+  await page.keyboard.press("Escape");
+  await workspacePage.viewport.hover({ position: { x: 400, y: 400 } });
   await workspacePage.paste("keyboard");
 
   const variants = workspacePage.layers.getByText("Rectangle");
@@ -212,10 +248,8 @@ test("User copy paste a variant container", async ({ page }) => {
 
   // Expand the layers
   await variantDuplicate.container.waitFor();
-  await variantDuplicate.container.locator("button").first().click();
+  await expandContainer(variantDuplicate.container);
 
-  // // The variants are valid
-  // // await variantOriginal.container.waitFor();
   await validateVariant(variantOriginal);
   await validateVariant(variantDuplicate);
 });
@@ -226,20 +260,22 @@ test("User cut paste a variant container", async ({ page }) => {
 
   const variant = await findVariant(workspacePage, 0);
 
-  // Select the variant container
-  await variant.container.click();
+  // Select the variant container; Ctrl+X cuts whatever is selected.
+  await selectRow(variant.container);
 
   //Cut the variant container
   await workspacePage.cut("keyboard");
 
-  //Paste the variant container
-  await workspacePage.clickAt(500, 500);
+  // Deselect and place the pointer in empty canvas without clicking, so the paste
+  // cannot land inside a shape that the click selected.
+  await page.keyboard.press("Escape");
+  await workspacePage.viewport.hover({ position: { x: 500, y: 500 } });
   await workspacePage.paste("keyboard");
 
   const variantPasted = await findVariant(workspacePage, 0);
 
   // Expand the layers
-  await workspacePage.clickToggableLayer("Rectangle");
+  await expandContainer(variantPasted.container);
 
   // The variants are valid
   await validateVariant(variantPasted);
@@ -297,13 +333,14 @@ test("User copy paste a variant", async ({ page }) => {
   const variant = await findVariant(workspacePage, 0);
 
   // Select the variant1
-  await variant.variant1.click();
+  await selectRow(variant.variant1);
 
   // Copy the variant
   await workspacePage.copy("keyboard");
 
-  // Paste the variant
-  await workspacePage.clickAt(500, 500);
+  // Deselect and place the pointer in empty canvas, for the same reason as above.
+  await page.keyboard.press("Escape");
+  await workspacePage.viewport.hover({ position: { x: 500, y: 500 } });
   await workspacePage.paste("keyboard");
 
   const copy = await workspacePage.layers
@@ -322,13 +359,15 @@ test("User cut paste a variant outside the container", async ({ page }) => {
   const variant = await findVariant(workspacePage, 0);
 
   // Select the variant1
-  await variant.variant1.click();
+  await selectRow(variant.variant1);
 
   //Cut the variant
   await workspacePage.cut("keyboard");
 
-  //Paste the variant
-  await workspacePage.clickAt(500, 500);
+  // Deselect and place the pointer in empty canvas, so the paste does not land
+  // inside a shape that the click could have selected.
+  await page.keyboard.press("Escape");
+  await workspacePage.viewport.hover({ position: { x: 500, y: 500 } });
   await workspacePage.paste("keyboard");
 
   const component = await workspacePage.layers
