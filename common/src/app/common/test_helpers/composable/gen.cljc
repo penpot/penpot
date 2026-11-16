@@ -1004,6 +1004,7 @@
                   (shadow/parent-orientation (all-objects situation) (all-objects settled))
                   (shadow/layout-released (all-objects situation) (all-objects settled))
                   (shadow/sync-scaled-heads (all-objects situation) (all-objects settled))
+                  (shadow/radius-orientation (all-objects situation) (all-objects settled))
                   (settle-model settled true))
         all (into (set (synchronizable-components situation)) (r/pending-components situation))
         full-before (r/settle situation all)
@@ -1085,10 +1086,11 @@
                     (:transform :library-transform) (n/geometry-modifiers shape (:action op) (:value op)))
         parent (get objects (:parent-id shape))
         ;; the mask of a group passes its change to the group and back, so
-        ;; the tree would apply it twice; only its group places it
+        ;; the tree would apply it twice; its group takes the change, which
+        ;; a layout around the group may place again
         mask? (and (:masked-group parent) (= (:id shape) (first (:shapes parent))))
-        tree (when-not mask? (gm/set-objects-modifiers {(:id shape) {:modifiers modifiers}} objects))]
-    (gsh/transform-shape shape (if mask? modifiers (get-in tree [(:id shape) :modifiers])))))
+        tree (gm/set-objects-modifiers {(if mask? (:id parent) (:id shape)) {:modifiers modifiers}} objects)]
+    (gsh/transform-shape shape (get-in tree [(if mask? (:id parent) (:id shape)) :modifiers]))))
 
 (defn- kind-file
   "The file an operation edits: the library `library-id`, or the current one."
@@ -1141,8 +1143,13 @@
       ;; a move resets the shape's constraints to its new parent's defaults,
       ;; which an override of them now holds; a move keeps where the shape
       ;; shows, so the geometry it authored is now that, in its new parent
-      :move (let [moved (get (all-objects after) id)]
+      :move (let [moved (get (all-objects after) id)
+                  parent (get objects (tm/target-shape-id before (:into op)))]
               (cond-> model
+                ;; as a nest: a shape moved into a blocked parent is blocked
+                (:blocked parent)
+                (shadow/edit shape :blocked true)
+
                 (get-in model [id :constraints-group])
                 (assoc-in [id :constraints-group] (shadow/values moved :constraints-group))
 
@@ -1159,7 +1166,12 @@
       (let [after-objects (all-objects after)
             new-head (:new-head (n/applied-result op (tm/file before) (tm/file after)))
             head (get after-objects new-head)
-            main (get after-objects (:shape-ref head))
+            ;; its main as the file accepted it, which a stale library's
+            ;; loaded version need not be
+            main (or (when head
+                       (get (into {} (mapcat cf/object-trees) (vals (cf/reference-libraries after head)))
+                            (:shape-ref head)))
+                     (get after-objects (:shape-ref head)))
             model (shadow/duplicate model objects id (:objects (thf/current-page (tm/file after))) new-head)]
         ;; a copy pasted on the page keeps the geometry it showed: what it
         ;; authored, now where it lands, and the orientation and size another
@@ -1365,7 +1377,8 @@
                          (not (#{:undo :redo} kind))
                          (-> (shadow/parent-orientation (all-objects situation) (all-objects after))
                              (shadow/layout-released (all-objects situation) (all-objects after))
-                             (shadow/sync-scaled-heads (all-objects situation) (all-objects after))))
+                             (shadow/sync-scaled-heads (all-objects situation) (all-objects after))
+                             (shadow/radius-orientation (all-objects situation) (all-objects after))))
             next-model (settle-model next-model after (empty? (r/pending-components after)))
             meaningful (not (oracle/equivalent? (oracle/design-snapshot situation {:free-head-placement false})
                                                 (oracle/design-snapshot after {:free-head-placement false})))

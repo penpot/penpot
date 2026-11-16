@@ -646,6 +646,19 @@
    model
    model))
 
+(defn radius-orientation
+  "A flip moves a shape's radius tokens with the corners they apply to, so
+   the radius a copy authored names them as it shows them after it."
+  [model before after]
+  (reduce-kv
+   (fn [result id groups]
+     (let [old (get before id)
+           new (get after id)]
+       (if (and old new (get-in groups [:radius-group :applied-tokens]))
+         (update-in result [id :radius-group :applied-tokens] ctsr/tokens-in-orientation old new)
+         result)))
+   model model))
+
 (defn parent-orientation
   "Authored child geometry moves with its parent's orientation. Compare the
    parent frames, without reading the child's resulting geometry."
