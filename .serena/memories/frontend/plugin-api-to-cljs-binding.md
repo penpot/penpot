@@ -15,6 +15,9 @@
 ## Runtime initialization and permissions
 
 - The frontend initializes `@penpot/plugins-runtime` only after `features/initialize` and only when feature `plugins/runtime` is active. It also installs the runtime `isPluginError` predicate into frontend error handling.
+- `app.plugins/init-plugins-runtime` returns whether `ɵloadPlugin` was installed. It calls `preg/signal-runtime-ready` even on failure: `workspace.cljs` waits on that promise before `mcp/init`, so skipping it hangs MCP initialization forever.
+- When SES bootstrap fails, `app.plugins` emits one `plugins-runtime-unavailable` telemetry event (with the SES error message), and `app.main.data.plugins/load-plugin!` shows the lazy `plugins.runtime-unavailable` toast when the user opens a plugin. `start-plugin!` (MCP path) stays silent by design.
+- Runtime availability is detected by the existing `(fn? (unchecked-get global "ɵloadPlugin"))` check; do not add a second mechanism.
 - Manifest parsing expands write permissions to read permissions (`content:write` => `content:read`, etc.). Permission checks also allow the all-zero plugin id and the hard-coded MCP plugin id.
 - Manifest URL origin differs by manifest version: v1 clears the path; v2 joins `.` to the plugin URL. Existing plugin ids are reused by matching manifest name and host.
 - The MCP plugin id is defined in `app.plugins.register` to avoid a circular dependency with workspace MCP code.

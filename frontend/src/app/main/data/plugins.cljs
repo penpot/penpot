@@ -109,7 +109,8 @@
         (log/warn :hint "Plugin runtime not initialized yet"
                   :plugin-id plugin-id
                   :action "load-plugin!")
-        (st/emit! (remove-current-plugin plugin-id))))))
+        (st/emit! (remove-current-plugin plugin-id)
+                  (ntf/warn (tr "plugins.runtime-unavailable")))))))
 
 (defn open-plugin!
   [{:keys [url] :as manifest} user-can-edit?]
