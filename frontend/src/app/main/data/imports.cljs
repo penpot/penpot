@@ -15,6 +15,7 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.json :as json]
+   [app.common.logging :as log]
    [app.common.schema :as sm]
    [app.common.uuid :as uuid]
    [app.main.data.jobs :as dj]
@@ -25,8 +26,7 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.zip :as uz]
    [beicon.v2.core :as rx]
-   [cuerdas.core :as str]
-   [promesa.core :as p]))
+   [cuerdas.core :as str]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MESSAGES OF A FAILURE
@@ -157,25 +157,43 @@
    {:files {} :objects {} :references []}
    entries))
 
+(defn- read-reference
+  "The metadata of one of the media or the thumbnails of a file, decoded,
+  paired with the file it belongs to. A reference that cannot be read is
+  unknown, never a failure of the package: it only leaves the size of its
+  file unknown."
+  [file-id entry]
+  (->> (rx/from (uz/read-as-text entry))
+       (rx/map (fn [text] [file-id (json/decode text)]))
+       (rx/catch (fn [cause]
+                   (log/warn :msg "cannot read a reference of the package"
+                             :file-id file-id
+                             :entry (.-filename ^js entry)
+                             :cause cause)
+                   (rx/of [file-id ::unreadable])))))
+
 (defn- read-objects
   "The objects every file of a container references, read from the
-  metadata of its media and its thumbnails."
+  metadata of its media and its thumbnails, one entry at a time.
+
+  Every read opens its own decompression stream and the container of a
+  big file can hold thousands of references: reading them all at once
+  opens thousands of streams and is what breaks the analysis on the
+  browsers that cannot keep up with them."
   [references]
-  (->> (map (fn [[file-id entry]]
-              (->> (uz/read-as-text entry)
-                   (p/fmap (fn [text] [file-id (json/decode text)]))))
-            references)
-       (p/all)
-       (p/fmap
-        (fn [decoded]
-          (reduce (fn [result [file-id data]]
-                    (->> [:media-id :thumbnail-id]
-                         (keep #(get data %))
-                         (reduce (fn [result object-id]
-                                   (update result file-id (fnil conj #{}) object-id))
-                                 result)))
-                  {}
-                  decoded)))))
+  (->> (rx/from references)
+       (rx/mapcat (fn [[file-id entry]]
+                    (read-reference file-id entry)))
+       (rx/reduce
+        (fn [[referenced unreadable] [file-id data]]
+          (if (= ::unreadable data)
+            [referenced (conj unreadable file-id)]
+            [(reduce (fn [referenced object-id]
+                       (update referenced file-id (fnil conj #{}) object-id))
+                     referenced
+                     (keep #(get data %) [:media-id :thumbnail-id]))
+             unreadable]))
+        [{} #{}])))
 
 (defn- file-sizes
   "How much every file of a container occupies inside it: its own entries
@@ -186,13 +204,17 @@
   [entries]
   (let [{:keys [files objects references]} (index-container entries)]
     (->> (read-objects references)
-         (p/fmap
-          (fn [referenced]
-            (reduce-kv (fn [sizes file-id object-ids]
-                         (update sizes file-id (fnil + 0)
-                                 (reduce + 0 (keep objects object-ids))))
-                       files
-                       referenced))))))
+         (rx/map
+          (fn [[referenced unreadable]]
+            (let [sizes (reduce-kv (fn [sizes file-id object-ids]
+                                     (update sizes file-id (fnil + 0)
+                                             (reduce + 0 (keep objects object-ids))))
+                                   files
+                                   referenced)]
+              ;; a file with a reference that could not be read has no
+              ;; size at all: a number that misses one of its objects is
+              ;; worse than no number
+              (reduce dissoc sizes unreadable)))))))
 
 (defn- analyze-file
   "The entries of one file the user dropped: one per file of a version 3
@@ -215,9 +237,8 @@
                                   (rx/merge-map
                                    (fn [manifest]
                                      (if (= (:type manifest) "penpot/export-files")
-                                       (->> (uz/get-entries zip-reader)
-                                            (p/mcat file-sizes)
-                                            (rx/from)
+                                       (->> (rx/from (uz/get-entries zip-reader))
+                                            (rx/mapcat file-sizes)
                                             (rx/map (fn [sizes]
                                                       (-> file
                                                           (assoc :type :binfile-v3)
