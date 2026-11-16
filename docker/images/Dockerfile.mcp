@@ -1,4 +1,4 @@
-FROM dhi.io/node:24.22.3-debian13-dev@sha256:aee95f16dcc8154cf8c1269aeb793b70b147a70178dd5c90c33dd8e5ae5c2fac AS build
+FROM dhi.io/node:24.22.3-debian13-dev@sha256:dee4bb11f4cb32ad31000287af8795f772ac801338a166a0e9fbbadd9674a2f8 AS build
 LABEL maintainer="Penpot <docker@penpot.app>"
 
 ENV DEBIAN_FRONTEND=noninteractive

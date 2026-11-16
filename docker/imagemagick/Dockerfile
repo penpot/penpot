@@ -1,4 +1,4 @@
-FROM dhi.io/debian-base:trixie-debian13-dev@sha256:9e9caa90d9ef807a54a5cef570d83263715cfcb6f3e7342bc0625c80e3b258b8 AS build
+FROM dhi.io/debian-base:trixie-debian13-dev@sha256:f90fd43cdf3dd94840b4dc3a2a39fd2a08578e40e7895535e2e20a1275ba6013 AS build
 LABEL maintainer="Penpot <docker@penpot.app>"
 
 ENV LANG='C.UTF-8' \
@@ -74,7 +74,7 @@ RUN set -ex; \
     rm -rf /var/lib/apt/lists/*
 
 
-FROM dhi.io/debian-base:trixie-debian13@sha256:9cef3908bf94dd0766ce46d9f550a84924ead114123c2255c78e286c6fcd088c AS image
+FROM dhi.io/debian-base:trixie-debian13@sha256:e3e8512202bb7d8a7093905a3615408784beba909b3cd61d3bb49367f5cfa448 AS image
 LABEL maintainer="Penpot <docker@penpot.app>"
 
 ENV LANG='C.UTF-8' \
