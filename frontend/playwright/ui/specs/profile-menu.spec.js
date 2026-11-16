@@ -5,7 +5,7 @@ test.beforeEach(async ({ page }) => {
   await DashboardPage.init(page);
 });
 
-test("Navigate to penpot changelog from profile menu", async ({ page }) => {
+test("The profile menu links to the Penpot changelog", async ({ page }) => {
   const dashboardPage = new DashboardPage(page);
   await dashboardPage.goToDashboard();
 
@@ -13,17 +13,15 @@ test("Navigate to penpot changelog from profile menu", async ({ page }) => {
   const aboutPenpotItem = page.getByText("About Penpot");
   await aboutPenpotItem.hover();
 
-  const changelogSubmenuItem = page.getByText("Penpot Changelog");
+  const changelogSubmenuItem = page.getByRole("menuitem", {
+    name: "Penpot Changelog",
+  });
   await expect(changelogSubmenuItem).toBeVisible();
 
-  // Listen for the new page (tab) that opens when clicking "Penpot Changelog"
-  const [newPage] = await Promise.all([
-    page.context().waitForEvent("page"),
-    changelogSubmenuItem.click(),
-  ]);
-
-  await newPage.waitForLoadState();
-  await expect(newPage).toHaveURL(
+  // The item opens the changelog with `open-new-window` and carries the URL
+  // in `data-url`; asserting that attribute keeps the suite off github.com.
+  await expect(changelogSubmenuItem).toHaveAttribute(
+    "data-url",
     "https://github.com/penpot/penpot/blob/develop/CHANGES.md",
   );
 });

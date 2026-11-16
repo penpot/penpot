@@ -64,8 +64,6 @@ test.describe("Constraints", () => {
       "constraint-h-select",
     );
     await expect(constraintHDropdown).toContainText("Mixed");
-
-    expect(false);
   });
 });
 
@@ -349,7 +347,7 @@ test.describe("Background blur", () => {
     await expect(backgroundBlurLabel).toBeVisible();
 
     const layerBlurLabel = blurSection.getByText("Layer blur");
-    await expect(layerBlurLabel).toBeVisible(); 
+    await expect(layerBlurLabel).toBeVisible();
   });
 
   test("Show background blur disabled when flag is not active", async ({

@@ -18,8 +18,12 @@ const checkInputFieldWithError = async (
 };
 
 const checkInputFieldWithoutError = async (inputLocator) => {
-  expect(await inputLocator.getAttribute("aria-invalid")).toBeNull();
-  expect(await inputLocator.getAttribute("aria-describedby")).toBeNull();
+  // Poll instead of reading once: after a fill, the validation state is
+  // re-rendered and a one-shot read could see the previous error.
+  await expect.poll(() => inputLocator.getAttribute("aria-invalid")).toBeNull();
+  await expect
+    .poll(() => inputLocator.getAttribute("aria-describedby"))
+    .toBeNull();
 };
 
 test.beforeEach(async ({ page }) => {
@@ -164,7 +168,8 @@ test.describe("Tokens: Themes modal", () => {
     await groupInput.fill("New Group name");
     await nameInput.fill("New Theme name");
 
-    await checkInputFieldWithoutError(tokenThemeUpdateCreateModal);
+    await checkInputFieldWithoutError(groupInput);
+    await checkInputFieldWithoutError(nameInput);
     await expect(saveButton).not.toBeDisabled();
 
     await saveButton.click();
@@ -204,7 +209,8 @@ test.describe("Tokens: Themes modal", () => {
     await groupInput.fill("New Group name");
     await nameInput.fill("New Theme name");
 
-    await checkInputFieldWithoutError(tokenThemeUpdateCreateModal);
+    await checkInputFieldWithoutError(groupInput);
+    await checkInputFieldWithoutError(nameInput);
     await expect(saveButton).not.toBeDisabled();
 
     await saveButton.click();
@@ -250,17 +256,16 @@ test.describe("Tokens: Themes modal", () => {
     await groupInput.fill("Core"); // Valid because "Core / Light" theme already exists
     await nameInput.fill("Light"); // but it's the same theme we are editing
 
-    await checkInputFieldWithoutError(tokenThemeUpdateCreateModal);
+    await checkInputFieldWithoutError(groupInput);
+    await checkInputFieldWithoutError(nameInput);
     await expect(saveButton).not.toBeDisabled();
 
     await nameInput.fill("Changed Theme name"); // New names should be also valid
     await groupInput.fill("Changed Group name");
 
-    await checkInputFieldWithoutError(tokenThemeUpdateCreateModal);
+    await checkInputFieldWithoutError(groupInput);
+    await checkInputFieldWithoutError(nameInput);
     await expect(saveButton).not.toBeDisabled();
-
-    expect(await nameInput.getAttribute("aria-invalid")).toBeNull();
-    expect(await nameInput.getAttribute("aria-describedby")).toBeNull();
 
     const checkboxes = await tokenThemeUpdateCreateModal
       .locator('[role="checkbox"]')

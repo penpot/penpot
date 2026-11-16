@@ -20,6 +20,8 @@ test("Comment is shown with scroll and valid position", async ({ page }) => {
   await viewer.showComments();
   await viewer.showCommentsThread(1);
   await expect(viewer.page.getByRole("textbox")).toBeVisible();
+  // The bubble toggles its thread: clicking the open one closes it, and the
+  // second bubble would otherwise be covered by the panel of the first.
   await viewer.showCommentsThread(1);
   await viewer.showCommentsThread(2);
   await expect(viewer.page.getByRole("textbox")).toBeVisible();

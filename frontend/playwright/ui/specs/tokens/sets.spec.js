@@ -1,27 +1,35 @@
 import { test, expect } from "@playwright/test";
 import { BaseWebSocketPage } from "../../pages/BaseWebSocketPage";
 import { WasmWorkspacePage } from "../../pages/WasmWorkspacePage";
-import { setupEmptyTokensFileRender, setupTokensFileRender, createSet, changeSetInput } from "./helpers";
+import {
+  setupEmptyTokensFileRender,
+  setupTokensFileRender,
+  createSet,
+  changeSetInput,
+} from "./helpers";
 
 test.beforeEach(async ({ page }) => {
-  await WasmWorkspacePage.init(page);  
+  await WasmWorkspacePage.init(page);
   await BaseWebSocketPage.mockRPC(page, "get-teams", "get-teams-tokens.json");
 });
 
 test.describe("Tokens: Sets Tab", () => {
-
   const assertEmptySetsList = async (el) => {
-    const buttons = await el.getByRole("button").allTextContents();
-    const filteredButtons = buttons.filter((text) => text === "Create one.");
-    await expect(filteredButtons.length).toEqual(2); // We assume there are no themes, so we have two "Create one" buttons.
+    // We assume there are no themes, so there are two "Create one" buttons.
+    await expect(
+      el.getByRole("button", { name: "Create one.", exact: true }),
+    ).toHaveCount(2);
   };
 
   const assertSetsList = async (el, sets) => {
-    const buttons = await el.getByRole("button").allTextContents();
-    const filteredButtons = buttons.filter(
-      (text) => text && text !== "Create one.",
-    );
-    await expect(filteredButtons).toEqual(sets);
+    // Poll instead of comparing one snapshot: the tree is re-rendered after
+    // each edit, and the filter keeps the values the caller asserts.
+    await expect
+      .poll(async () => {
+        const buttons = await el.getByRole("button").allTextContents();
+        return buttons.filter((text) => text && text !== "Create one.");
+      })
+      .toEqual(sets);
   };
 
   test("User creates sets tree structure by entering a set path", async ({

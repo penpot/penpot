@@ -41,7 +41,6 @@ test.describe("Login form", () => {
     await loginPage.fillEmailAndPasswordInputs("foo@example.com", "loremipsum");
     await loginPage.clickLoginButton();
 
-    await page.waitForURL(/screen=dashboard/);
     await expect(loginPage.page).toHaveURL(/screen=dashboard/);
   });
 

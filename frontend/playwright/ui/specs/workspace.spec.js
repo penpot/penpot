@@ -447,7 +447,21 @@ test("Copy/paste properties", async ({ page, context }) => {
   );
   await expect(boardChildren).toBeVisible();
 
-  await boardChildren.getByText("Rectangle").click({ button: "right" });
+  // The effect of a paste is read on the layer opacity: `:opacity` is one of
+  // the copied properties and travels to every shape type, and the layer
+  // section shows it as a text input, so each paste has a text value to
+  // assert. A gradient would only be observable through the swatch style.
+  const opacityInput = workspacePage.rightSidebar
+    .getByRole("region", { name: "Layer menu section" })
+    .getByRole("textbox", { name: "Opacity", exact: true });
+
+  const sourceRectangle = boardChildren.getByText("Rectangle");
+  await sourceRectangle.click();
+  await opacityInput.fill("50");
+  await opacityInput.blur();
+  await expect(opacityInput).toHaveValue("50");
+
+  await sourceRectangle.click({ button: "right" });
   await page.getByText("Copy/Paste as").hover();
   await page.getByText("Copy properties").click();
 
@@ -457,14 +471,22 @@ test("Copy/paste properties", async ({ page, context }) => {
     .click({ button: "right" });
   await page.getByText("Copy/Paste as").hover();
   await page.getByText("Paste properties").click();
+  await expect(opacityInput).toHaveValue("50");
 
-  await page.getByText("Rectangle").first().click({ button: "right" });
+  // The rectangle inside the board is the copy source; the one at the root is
+  // the target of this paste, so the assertion is not trivially true.
+  await workspacePage.layers
+    .getByText("Rectangle")
+    .last()
+    .click({ button: "right" });
   await page.getByText("Copy/Paste as").hover();
   await page.getByText("Paste properties").click();
+  await expect(opacityInput).toHaveValue("50");
 
   await page.getByText("Board").nth(2).click({ button: "right" });
   await page.getByText("Copy/Paste as").hover();
   await page.getByText("Paste properties").click();
+  await expect(opacityInput).toHaveValue("50");
 
   await page
     .getByTestId("layer-item")
@@ -474,10 +496,12 @@ test("Copy/paste properties", async ({ page, context }) => {
     .click({ button: "right" });
   await page.getByText("Copy/Paste as").hover();
   await page.getByText("Paste properties").click();
+  await expect(opacityInput).toHaveValue("50");
 
   await page.getByText("Ellipse").click({ button: "right" });
   await page.getByText("Copy/Paste as").hover();
   await page.getByText("Paste properties").click();
+  await expect(opacityInput).toHaveValue("50");
 });
 
 test("[Taiga #9929] Paste text in workspace", async ({ page, context }) => {
@@ -488,9 +512,14 @@ test("[Taiga #9929] Paste text in workspace", async ({ page, context }) => {
   await page.evaluate(() => navigator.clipboard.writeText("Lorem ipsum dolor"));
   await workspacePage.viewport.click({ button: "right" });
   await page.getByText(/^Paste/i).click();
-  await workspacePage.viewport
-    .getByRole("textbox")
-    .getByText("Lorem ipsum dolor");
+
+  // The paste creates a text shape named after the pasted text, which is the
+  // signal `text-editor-v2.spec.js` uses after stopping the edition. This path
+  // does not enter edition under the WASM profile, so the editor surface never
+  // appears and the layers tree is what proves the paste.
+  await expect(
+    workspacePage.layers.getByText("Lorem ipsum dolor"),
+  ).toBeVisible();
 });
 
 // I've skipped this test because it doesn't make sense with the new render.
