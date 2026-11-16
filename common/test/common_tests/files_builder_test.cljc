@@ -123,6 +123,34 @@
         shape (fb/get-shape state shape-id)]
     (t/is (= "Group / Subgroup / Name" (:name shape)))))
 
+(t/deftest add-shape-uniquifies-default-names
+  (let [file-id  (uuid/next)
+        page-id  (uuid/next)
+        board-a  (uuid/next)
+        board-b  (uuid/next)
+        state    (-> (fb/create-state)
+                     (fb/add-file {:id file-id :name "Test file"})
+                     (fb/add-page {:id page-id :name "Page 1"})
+                     (fb/add-board {:id board-a :x 0 :y 0 :width 10 :height 10})
+                     (fb/add-board {:id board-b :x 20 :y 0 :width 10 :height 10}))]
+    (t/is (= "Board" (:name (fb/get-shape state board-a))))
+    (t/is (= "Board-1" (:name (fb/get-shape state board-b))))))
+
+(t/deftest add-shape-uniquifies-names-that-clean-to-the-same-path
+  (let [file-id  (uuid/next)
+        page-id  (uuid/next)
+        shape-a  (uuid/next)
+        shape-b  (uuid/next)
+        state    (-> (fb/create-state)
+                     (fb/add-file {:id file-id :name "Test file"})
+                     (fb/add-page {:id page-id :name "Page 1"})
+                     (fb/add-shape {:id shape-a :type :frame :name "Group/Name"
+                                    :x 0 :y 0 :width 10 :height 10})
+                     (fb/add-shape {:id shape-b :type :frame :name "Group  /  Name"
+                                    :x 20 :y 0 :width 10 :height 10}))]
+    (t/is (= "Group / Name" (:name (fb/get-shape state shape-a))))
+    (t/is (= "Group / Name-1" (:name (fb/get-shape state shape-b))))))
+
 (t/deftest add-component-renames-frame-to-match-component
   (t/testing "the main instance frame name is aligned with the component's path+name"
     (let [file-id      (uuid/next)
