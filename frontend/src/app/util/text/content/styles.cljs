@@ -22,11 +22,15 @@
 
 (def mapping
   {:fills [encode decode]
+   :ruby-zhuyin [encode decode]
    :typography-ref-id [encode decode]
    :typography-ref-file [encode decode]
    :font-id [identity identity]
    :font-variant-id [identity identity]
-   :vertical-align [identity identity]})
+   :vertical-align [identity identity]
+   ;; Keep canonical enum values intact in the DOM editor's style data.
+   :text-emphasis-position [identity identity]
+   :text-underline-position [identity identity]})
 
 (defn normalize-style-value
   "This function adds units to style values"

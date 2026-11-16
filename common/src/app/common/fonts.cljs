@@ -163,7 +163,10 @@
 
 (def ^:private unicode-ranges
   {:japanese    #"[\u3040-\u30FF\u31F0-\u31FF\uFF66-\uFF9F]"
-   :chinese     #"[\u4E00-\u9FFF\u3400-\u4DBF]"
+   ;; Han ideographs, shared by all CJK languages; see `resolve-ambiguous-cjk`.
+   :han         #"[\u4E00-\u9FFF\u3400-\u4DBF\uF900-\uFAFF]"
+   ;; CJK punctuation and half/full-width forms, shared; see `resolve-ambiguous-cjk`.
+   :cjk-punctuation #"[\u3000-\u303F\uFF01-\uFF65\uFFE0-\uFFEE]"
    :korean      #"[\uAC00-\uD7AF]"
    :arabic      #"[\u0600-\u06FF\u0750-\u077F\u0870-\u089F\u08A0-\u08FF]"
    :cyrillic    #"[\u0400-\u04FF\u0500-\u052F\u2DE0-\u2DFF\uA640-\uA69F]"
@@ -241,6 +244,41 @@
              used
              unicode-ranges))
 
+(defn- language->cjk-font
+  "CJK font class implied by a BCP 47 language tag or an app locale
+   (`ja`, `zh-Hant-TW`, `zh_hant`), or nil for a non-CJK language."
+  [language]
+  (let [[primary & subtags] (str/split (str/lower (str language)) #"[-_]")
+        subtags             (set subtags)]
+    (case primary
+      "ja" :japanese
+      "ko" :korean
+      "zh" (cond
+             (some subtags ["hk" "mo"])   :chinese-hongkong
+             (some subtags ["tw" "hant"]) :chinese-traditional
+             :else                        :chinese)
+      nil)))
+
+(defn resolve-ambiguous-cjk
+  "Resolves the ambiguous CJK classes (:han, :cjk-punctuation) to a
+   concrete font class: a CJK paragraph `language` wins, then an
+   unambiguous script in the same content (kana implies Japanese, hangul
+   implies Korean), then the app `locale`; Chinese is the final default.
+   `language` and `locale` are nil when unset."
+  [langs language locale]
+  (if (or (contains? langs :han)
+          (contains? langs :cjk-punctuation))
+    (let [resolved (or (language->cjk-font language)
+                       (cond
+                         (contains? langs :japanese) :japanese
+                         (contains? langs :korean)   :korean)
+                       (language->cjk-font locale)
+                       :chinese)]
+      (-> langs
+          (disj :han :cjk-punctuation)
+          (conj resolved)))
+    langs))
+
 (defn add-emoji-font
   [fonts]
   (conj fonts {:font-id "gfont-noto-color-emoji"
@@ -253,6 +291,8 @@
 (def noto-fonts
   {:japanese    {:font-id "gfont-noto-sans-jp"            :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
    :chinese     {:font-id "gfont-noto-sans-sc"            :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
+   :chinese-traditional {:font-id "gfont-noto-sans-tc"    :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
+   :chinese-hongkong {:font-id "gfont-noto-sans-hk"       :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
    :korean      {:font-id "gfont-noto-sans-kr"            :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
    :arabic      {:font-id "gfont-noto-sans-arabic"        :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
    :cyrillic    {:font-id "gfont-noto-sans"               :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
