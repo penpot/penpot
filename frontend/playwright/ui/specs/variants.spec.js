@@ -14,13 +14,12 @@ test.afterEach(async ({ context }) => {
   await context.clearPermissions();
 });
 
+// One `setupEmptyFile` only: a second call registered `get-team?id=*` again and,
+// because the route added last wins (`WorkspacePage.js:286-290`), it cancelled
+// the variants team fixture that used to sit between the two calls. These tests
+// have always run with the default team, so that fixture is gone and the
+// effective mocks stay the same.
 const setupVariantsFile = async (workspacePage) => {
-  await workspacePage.setupEmptyFile();
-  await workspacePage.mockRPC(
-    "get-team?id=*",
-    "workspace/get-team-variants.json",
-  );
-
   await workspacePage.setupEmptyFile();
   await workspacePage.mockRPC(
     /get\-file\?/,
@@ -52,6 +51,17 @@ const setupVariantsFileWithVariant = async (workspacePage) => {
     .filter({ hasText: "Rectangle" })
     .getByTestId("icon-component")
     .waitFor();
+};
+
+// A shape is only a component once its layer row shows the component icon; this
+// is the condition the fixed three seconds used to stand in for.
+const waitForComponentIcon = async (workspacePage, name) => {
+  await expect(
+    workspacePage.layers
+      .getByTestId("layer-row")
+      .filter({ hasText: name })
+      .getByTestId("icon-component"),
+  ).toBeVisible();
 };
 
 const findVariant = async (workspacePage, index) => {
@@ -165,7 +175,10 @@ test("User duplicates a variant container", async ({ page }) => {
   //Duplicate the variant container
   await workspacePage.page.keyboard.press("ControlOrMeta+d");
 
-  const variant_original = await findVariant(workspacePage, 1); // On duplicate, the new item is the first
+  // The copy is inserted above the original: index 0 is the duplicate and index
+  // 1 is the original, checked by comparing the rows' ids with the one the
+  // container had before duplicating.
+  const variant_original = await findVariant(workspacePage, 1);
   const variant_duplicate = await findVariant(workspacePage, 0);
 
   // Expand the layers
@@ -198,6 +211,7 @@ test("User copy paste a variant container", async ({ page }) => {
   const variants = workspacePage.layers.getByText("Rectangle");
   await expect(variants).toHaveCount(2);
 
+  // As with the duplicate, the pasted container is inserted above the original.
   const variantDuplicate = findVariantNoWait(workspacePage, 0);
   const variantOriginal = findVariantNoWait(workspacePage, 1);
 
@@ -380,87 +394,55 @@ test("User cut paste a component inside a variant", async ({ page }) => {
   await expect(variant3).toBeVisible();
 });
 
-test("User cut paste a component with path inside a variant", async ({
-  page,
-}) => {
+test("User takes a component with a path into a variant", async ({ page }) => {
   const workspacePage = new WasmWorkspacePage(page);
   await setupVariantsFileWithVariant(workspacePage);
 
   const variant = await findVariant(workspacePage, 0);
 
-  // Create a component
-  await workspacePage.selectToolFromFlyout(workspacePage, {
-    triggerToolName: "Rectangle (R)",
-    targetToolName: "Ellipse (E)",
+  const variantNamed = (name) =>
+    workspacePage.layers
+      .getByTestId("layer-row")
+      .filter({ has: workspacePage.page.getByText(name) })
+      .filter({ has: workspacePage.page.getByTestId("icon-variant") });
+
+  const createNamedComponent = async () => {
+    await workspacePage.selectToolFromFlyout(workspacePage, {
+      triggerToolName: "Rectangle (R)",
+      targetToolName: "Ellipse (E)",
+    });
+    await workspacePage.clickWithDragViewportAt(500, 500, 20, 20);
+    await workspacePage.clickLeafLayer("Ellipse");
+    await workspacePage.page.keyboard.press("ControlOrMeta+k");
+    await waitForComponentIcon(workspacePage, "Ellipse");
+
+    await workspacePage.layers.getByText("Ellipse").dblclick();
+    await workspacePage.page
+      .getByTestId("layer-item")
+      .getByRole("textbox")
+      .pressSequentially("button / hover");
+    await workspacePage.page.keyboard.press("Enter");
+    await expect(
+      workspacePage.layers.getByText("button / hover"),
+    ).toBeVisible();
+  };
+
+  // The drag moves the component away from where it was created, so the second
+  // one can be drawn at the same coordinates. The row count is what proves each
+  // step put its own component into the container.
+  await test.step("drag and drop", async () => {
+    await createNamedComponent();
+    await workspacePage.clickWithDragViewportAt(510, 510, 200, 0);
+    await expect(variantNamed("button, hover")).toHaveCount(1);
   });
-  await workspacePage.clickWithDragViewportAt(500, 500, 20, 20);
-  await workspacePage.clickLeafLayer("Ellipse");
-  await workspacePage.page.keyboard.press("ControlOrMeta+k");
-  await workspacePage.page.waitForTimeout(3000);
 
-  // Rename the component
-  await workspacePage.layers.getByText("Ellipse").dblclick();
-  await workspacePage.page
-    .getByTestId("layer-item")
-    .getByRole("textbox")
-    .pressSequentially("button / hover");
-  await workspacePage.page.keyboard.press("Enter");
-  await workspacePage.page.waitForTimeout(3000);
-
-  // Cut the component
-  await workspacePage.cut("keyboard");
-
-  // Paste the component inside the variant
-  await variant.container.click();
-  await workspacePage.paste("keyboard");
-
-  const variant3 = await workspacePage.layers
-    .getByTestId("layer-row")
-    .filter({ has: workspacePage.page.getByText("button, hover") })
-    .filter({ has: workspacePage.page.getByTestId("icon-variant") })
-    .first();
-
-  //The new variant exists and is visible
-  await expect(variant3).toBeVisible();
-});
-
-test("User drag and drop a component with path inside a variant", async ({
-  page,
-}) => {
-  const workspacePage = new WasmWorkspacePage(page);
-  await setupVariantsFileWithVariant(workspacePage);
-
-  const variant = findVariantNoWait(workspacePage, 0);
-
-  //Create a component
-  await workspacePage.selectToolFromFlyout(workspacePage, {
-    triggerToolName: "Rectangle (R)",
-    targetToolName: "Ellipse (E)",
+  await test.step("cut and paste", async () => {
+    await createNamedComponent();
+    await workspacePage.cut("keyboard");
+    await variant.container.click();
+    await workspacePage.paste("keyboard");
+    await expect(variantNamed("button, hover")).toHaveCount(2);
   });
-  await workspacePage.clickWithDragViewportAt(500, 500, 20, 20);
-  await workspacePage.clickLeafLayer("Ellipse");
-  await workspacePage.page.keyboard.press("ControlOrMeta+k");
-  await workspacePage.page.waitForTimeout(3000);
-
-  //Rename the component
-  await workspacePage.layers.getByText("Ellipse").dblclick();
-  await workspacePage.page
-    .getByTestId("layer-item")
-    .getByRole("textbox")
-    .pressSequentially("button / hover");
-  await workspacePage.page.keyboard.press("Enter");
-
-  //Drag and drop the component the component
-  await workspacePage.clickWithDragViewportAt(510, 510, 200, 0);
-
-  const variant3 = await workspacePage.layers
-    .getByTestId("layer-row")
-    .filter({ has: workspacePage.page.getByText("button, hover") })
-    .filter({ has: workspacePage.page.getByTestId("icon-variant") })
-    .first();
-
-  //The new variant exists and is visible
-  await expect(variant3).toBeVisible();
 });
 
 test("User cut paste a variant into another container", async ({ page }) => {
