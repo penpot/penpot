@@ -634,7 +634,7 @@ PROD_ENV_RE = re.compile(
     r"\b(?:production|pro|main|saas|design\.penpot\.app|self[- ]?hosted?)\b",
     re.IGNORECASE,
 )
-VERSION_RE = re.compile(r"\b(\d+)\.(\d+)(?:\.\d+)?")
+VERSION_RE = re.compile(r"\b(\d+)\.(\d+)(?:\.(\d+))?")
 
 
 def version_field(body: str | None) -> str:
@@ -643,12 +643,21 @@ def version_field(body: str | None) -> str:
     return " ".join(match.group(1).split()) if match else ""
 
 
+def full_version(match: tuple[str, ...]) -> tuple[int, int, int]:
+    """Normalize a version regex match to (major, minor, patch)."""
+    major, minor, patch = match
+    return (int(major), int(minor), int(patch) if patch else 0)
+
+
 def only_unreleased_envs(text: str, milestone: str) -> bool:
     """True when the version text names unreleased environments only:
-    hourly, develop, staging, PRE or a version of this milestone. Any
+    hourly, develop, staging, PRE or exactly this milestone. Any
     production hint or other version number keeps the bug in the changelog."""
-    current = tuple(milestone.split(".")[:2])
-    versions = [m for m in VERSION_RE.findall(text)]
+    current_match = VERSION_RE.search(milestone)
+    if current_match is None:
+        raise ValueError(f"milestone {milestone!r} is not a semver version")
+    current = full_version(current_match.groups())
+    versions = [full_version(m) for m in VERSION_RE.findall(text)]
     dev = bool(DEV_ENV_RE.search(text)) or current in versions
     prod = bool(PROD_ENV_RE.search(text)) or any(v != current for v in versions)
     return dev and not prod

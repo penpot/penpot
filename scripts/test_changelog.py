@@ -692,6 +692,18 @@ class OnlyUnreleasedEnvsTests(unittest.TestCase):
             with self.subTest(text=text):
                 self.assertFalse(self.check(text))
 
+    def test_released_patch_of_the_same_minor_is_production(self):
+        # 2.19.0/2.19.1 are released versions, not this milestone (2.19.2):
+        # any version other than the milestone itself keeps the bug in.
+        for text in ["2.19.0 and later", "2.19.1", "2.19.0-RC1", "since 2.16"]:
+            with self.subTest(text=text):
+                self.assertFalse(ch.only_unreleased_envs(text, "2.19.2"))
+
+    def test_milestone_version_itself_is_unreleased(self):
+        for text in ["2.19.2", "2.19.2-RC1 (develop)"]:
+            with self.subTest(text=text):
+                self.assertTrue(ch.only_unreleased_envs(text, "2.19.2"))
+
 
 class FindDevOnlyBugsTests(unittest.TestCase):
     def test_splits_auto_and_suggested(self):
