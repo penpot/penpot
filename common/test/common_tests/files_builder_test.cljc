@@ -151,6 +151,26 @@
     (t/is (= "Group / Name" (:name (fb/get-shape state shape-a))))
     (t/is (= "Group / Name-1" (:name (fb/get-shape state shape-b))))))
 
+(t/deftest add-shape-uniquifies-names-used-by-component-roots
+  (let [file-id      (uuid/next)
+        page-id      (uuid/next)
+        frame-id     (uuid/next)
+        component-id (uuid/next)
+        shape-id     (uuid/next)
+        state        (-> (fb/create-state)
+                         (fb/add-file {:id file-id :name "Test file"})
+                         (fb/add-page {:id page-id :name "Page 1"})
+                         (fb/add-board {:id frame-id :name "Draft"
+                                        :x 0 :y 0 :width 10 :height 10})
+                         (fb/add-component {:component-id component-id
+                                            :name "Button"
+                                            :path "Forms"})
+                         (fb/close-board)
+                         (fb/add-shape {:id shape-id :type :frame :name "Forms/Button"
+                                        :x 20 :y 0 :width 10 :height 10}))]
+    (t/is (= "Forms / Button" (:name (fb/get-shape state frame-id))))
+    (t/is (= "Forms / Button-1" (:name (fb/get-shape state shape-id))))))
+
 (t/deftest add-component-renames-frame-to-match-component
   (t/testing "the main instance frame name is aligned with the component's path+name"
     (let [file-id      (uuid/next)
