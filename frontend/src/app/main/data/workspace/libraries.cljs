@@ -1933,3 +1933,31 @@
            (rx/mapcat (fn [_]
                         (rp/cmd! :get-file-libraries {:file-id file-id})))
            (rx/map (partial cleanup-unlinked-libraries file-id))))))
+
+(defn broken-library-error?
+  "True when `cause` comes from the backend failing to load a library
+  file. Transport and transient errors (network, gateway, offline,
+  rate limit) do not count, so they never disconnect a library."
+  [cause]
+  (= :server-error (:type (ex-data cause))))
+
+(defn library-load-failed
+  "Handles a library of `file-id` that fails to load, so a single
+  broken library does not break the whole file: a directly connected
+  library is disconnected and the user is told; an indirect one is only
+  dropped from the state."
+  [file-id {:keys [id name is-indirect]} cause]
+  (ptk/reify ::library-load-failed
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (log/error :hint "unable to load library"
+                 :file-id (str file-id)
+                 :library-id (str id)
+                 :cause cause)
+      (if is-indirect
+        (rx/of (ptk/reify ::drop-broken-library
+                 ptk/UpdateEvent
+                 (update [_ state]
+                   (update state :files dissoc id))))
+        (rx/of (unlink-file-from-library file-id id)
+               (ntf/warn (tr "workspace.libraries.broken-library-disconnected" name)))))))

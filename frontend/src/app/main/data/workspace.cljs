@@ -190,15 +190,20 @@
                        (rx/merge
                         (->> (rx/from libraries)
                              (rx/merge-map
-                              (fn [{:keys [id synced-at is-indirect]}]
+                              (fn [{:keys [id synced-at is-indirect] :as library}]
                                 (->> (rp/cmd! :get-file {:id id :features features})
                                      (rx/map (fn [file]
                                                (-> file
                                                    (assoc :synced-at synced-at)
                                                    (assoc :library-of file-id)
-                                                   (assoc :is-indirect is-indirect)))))))
-                             (rx/mapcat resolve-file)
-                             (rx/map library-resolved))
+                                                   (assoc :is-indirect is-indirect))))
+                                     (rx/mapcat resolve-file)
+                                     (rx/map library-resolved)
+                                     ;; A broken library must not break the whole file
+                                     (rx/catch (fn [cause]
+                                                 (if (dwl/broken-library-error? cause)
+                                                   (rx/of (dwl/library-load-failed file-id library cause))
+                                                   (rx/throw cause))))))))
                         (->> (rx/from libraries)
                              (rx/map :id)
                              (rx/mapcat (fn [file-id]
