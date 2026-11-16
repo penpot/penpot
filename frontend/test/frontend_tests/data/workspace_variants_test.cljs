@@ -35,6 +35,26 @@
       (thv/add-variant-two-properties :v01 :c01 :m01 :c02 :m02)
       (cthf/add-sample-page :page2)))
 
+(defn- nine-property-file-with-empty-middle
+  "Nine properties; Property 5 is empty on every variant."
+  []
+  (let [names  (mapv #(str "Property " %) (range 1 10))
+        props1 (mapv (fn [n i]
+                       {:name n :value (if (= i 4) "" (str "a" (inc i)))})
+                     names
+                     (range))
+        props2 (mapv (fn [n i]
+                       {:name n :value (if (= i 4) "" (str "b" (inc i)))})
+                     names
+                     (range))]
+    (-> (cthf/sample-file :file1 :page-label :page1)
+        (thv/add-variant :v01 :c01 :m01 :c02 :m02)
+        (cthc/update-component :c01 {:variant-properties props1})
+        (cthc/update-component :c02 {:variant-properties props2})
+        (cths/update-shape :m01 :variant-name (ctv/properties-to-name props1))
+        (cths/update-shape :m02 :variant-name (ctv/properties-to-name props2))
+        (cthf/add-sample-page :page2))))
+
 (defn- run
   [file events done assert-fn]
   (ths/run-store
@@ -123,6 +143,24 @@
                (t/is (= "active" (-> props first :value)))
                (t/is (= "crítica" (-> props second :value)))
                (t/is (= (ctv/properties-to-name props) (variant-name file :m01)))))))))
+
+(t/deftest remove-empty-properties-preserves-order-past-eight
+  (t/async
+    done
+    (let [file       (nine-property-file-with-empty-middle)
+          variant-id (cthi/id :v01)
+          expected   ["Property 1" "Property 2" "Property 3" "Property 4"
+                      "Property 6" "Property 7" "Property 8" "Property 9"]]
+      (run file
+           [(dwv/remove-empty-properties variant-id)]
+           done
+           (fn [state]
+             (let [file   (ths/get-file-from-state state)
+                   names1 (mapv :name (:variant-properties (cthc/get-component file :c01)))
+                   names2 (mapv :name (:variant-properties (cthc/get-component file :c02)))]
+               (t/is (= expected names1))
+               (t/is (= expected names2))
+               (t/is (not-any? #(= "Property 5" %) names1))))))))
 
 (t/deftest update-property-name-from-another-page
   (t/async

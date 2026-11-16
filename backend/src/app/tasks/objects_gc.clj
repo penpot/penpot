@@ -613,7 +613,7 @@
     ORDER BY deleted_at ASC")
 
 (def ^:private sql:lock-file-data
-  "SELECT file_id, id, type, deleted_at, metadata, backend
+  "SELECT file_id, id, type, deleted_at, backend, storage_object_id
      FROM file_data
     WHERE (file_id, id) IN (SELECT file_id, id FROM unnest(?::uuid[], ?::uuid[]) AS u(file_id, id))
       AND deleted_at IS NOT NULL
@@ -630,11 +630,10 @@
                   (let [file-ids (db/create-array conn "uuid" (map :file-id rows))
                         ids      (db/create-array conn "uuid" (map :id rows))]
                     (->> (db/exec! conn [sql:lock-file-data file-ids ids threshold])
-                         (reduce (fn [total {:keys [file-id id type deleted-at metadata backend]}]
+                         (reduce (fn [total {:keys [file-id id type deleted-at backend storage-object-id]}]
 
-                                   (some->> metadata
-                                            (fdata/decode-metadata)
-                                            (fdata/process-metadata cfg))
+                                   (some->> storage-object-id
+                                            (fdata/touch-storage-object cfg))
 
                                    (l/trc :obj "file-data"
                                           :id (str id)

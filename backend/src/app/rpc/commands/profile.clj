@@ -70,6 +70,7 @@
    [:onboarding-questions {:optional true} [:map-of :keyword :string]]
    [:onboarding-questions-answered {:optional true} ::sm/boolean]
    [:nitrate-onboarding-viewed {:optional true} ::sm/boolean]
+   [:promotional-banner-collapsed {:optional true} ::sm/boolean]
    [:v2-info-shown {:optional true} ::sm/boolean]
    [:release-notes-viewed {:optional true}
     [::sm/text {:max 100}]]

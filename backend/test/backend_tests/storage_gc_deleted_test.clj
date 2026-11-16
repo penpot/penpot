@@ -6,6 +6,7 @@
 
 (ns backend-tests.storage-gc-deleted-test
   (:require
+   [app.common.logging :as l]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.db :as db]
@@ -155,3 +156,75 @@
 
     (t/testing "the objects after the failed chunk are gone"
       (t/is (every? #(nil? (find-object (:id %))) recent)))))
+
+(defn- blocked-by-file-data!
+  "Puts an object referenced by a `file_data` row, so the `NO ACTION`
+  foreign key of `storage_object_id` refuses the physical delete."
+  [file-id]
+  (let [blocked (put-object! (ct/in-past "30m"))]
+    ;; `main` always carries `id = file_id`: point the real row at the object
+    ;; instead of inventing a second main row.
+    (th/db-update! :file-data
+                   {:backend "storage"
+                    :data nil
+                    :storage-object-id (:id blocked)}
+                   {:file-id file-id :id file-id})
+    blocked))
+
+(def ^:private blocked-chunk-hint
+  "chunk deletion blocked by a live reference; fix the reference and let the next run reclaim the chunk")
+
+(defn- blocked-chunk-log
+  "The first captured error record with the blocked-chunk hint, waiting for it
+  because logging is asynchronous."
+  [records]
+  (let [deadline (+ (System/currentTimeMillis) 30000)]
+    (loop []
+      (let [record (first (filter (fn [record]
+                                    (and (= :error (::l/level record))
+                                         (= blocked-chunk-hint
+                                            (get (::l/props record) :hint))))
+                                  @records))]
+        (cond
+          record record
+          (> (System/currentTimeMillis) deadline) nil
+          :else (do (Thread/sleep 10) (recur)))))))
+
+(t/deftest file-data-reference-blocks-its-chunk
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)})
+
+        ;; The blocked object goes first in `deleted_at` order, so it lands in
+        ;; the first chunk with the objects that fill it up. The last object
+        ;; lands in the next chunk: it proves the run kept going.
+        blocked (blocked-by-file-data! (:id file))
+        others  (mapv (fn [_] (put-object! (ct/in-past "20m"))) (range (dec chunk-size)))
+        last-id (:id (put-object! (ct/in-past "5m")))
+
+        records (atom [])
+        _       (add-watch l/log-record ::capture
+                           (fn [_ _ _ record] (swap! records conj record)))
+        result  (try
+                  (th/run-task! :storage-gc-deleted {})
+                  (finally
+                    (remove-watch l/log-record ::capture)))]
+
+    (t/testing "the run finishes and only the object of the second chunk is deleted"
+      (t/is (= 1 (:deleted result))))
+
+    (t/testing "the object referenced by the file data row is still alive"
+      (t/is (some? (find-object (:id blocked)))))
+
+    (t/testing "the other objects of the failed chunk are still alive"
+      (t/is (every? #(some? (find-object (:id %))) others)))
+
+    (t/testing "the blocked chunk names the constraint that blocks it"
+      (let [record (blocked-chunk-log records)]
+        (t/is (some? record))
+        (t/is (= "file_data_storage_object_id_fkey"
+                 (get (::l/props record) :constraint)))
+        (t/is (= "file_data" (get (::l/props record) :table)))))
+
+    (t/testing "the object of the next chunk is gone"
+      (t/is (nil? (find-object last-id))))))

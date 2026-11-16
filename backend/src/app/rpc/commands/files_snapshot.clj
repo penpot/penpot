@@ -126,12 +126,15 @@
   ;; every unpurged snapshot as a liveness root, and readers
   ;; (get-file-snapshot, restore!, reduce-snapshots) resolve pointers
   ;; on demand.
-  ;; NOTE: the file is read with FOR SHARE inside this transaction so
+  ;; NOTE: the file is read with FOR UPDATE inside this transaction so
   ;; snapshot creation serializes with a concurrent :file-gc pass
-  ;; (which takes FOR UPDATE + SKIP LOCKED on the same row). Without
-  ;; the lock, a version pinned mid-pass could reference fragment rows
-  ;; the pass is recreating.
-  (let [file    (bfc/get-file cfg file-id :lock-for-share? true)
+  ;; (which takes FOR UPDATE + SKIP LOCKED on the same row) and with a
+  ;; concurrent save. Without the lock, a version pinned mid-pass could
+  ;; reference fragment rows the pass is recreating. The lock is
+  ;; exclusive, not shared, because the migration-on-read path may
+  ;; re-read the same row with FOR UPDATE; holding a shared lock while
+  ;; asking for the exclusive one deadlocks two concurrent readers.
+  (let [file    (bfc/get-file cfg file-id :lock-for-update? true)
         project (db/get-by-id cfg :project (:project-id file))]
 
     (-> cfg
@@ -167,12 +170,14 @@
         delay (ldel/get-deletion-delay team)
 
         ;; Create backup snapshot of the current state (committed immediately
-        ;; independent of the restore outcome). The read takes FOR SHARE so a
+        ;; independent of the restore outcome). The read takes FOR UPDATE so a
         ;; concurrent :file-gc pass (which holds FOR UPDATE + SKIP LOCKED on the
         ;; file row) either finishes first -- and we snapshot the new fragments --
         ;; or skips the file and retries later. Without the lock, the backup
         ;; could reference fragments the pass is about to mark as deleted,
-        ;; breaking the backup permanently.
+        ;; breaking the backup permanently. The lock is exclusive because the
+        ;; migration-on-read path may re-read the row with FOR UPDATE: a shared
+        ;; lock that upgrades deadlocks two concurrent readers.
         ;;
         ;; The backup read also provides the revn the guard below compares
         ;; against. An edit committed before this read is captured in the
@@ -181,7 +186,7 @@
         backup-revn
         (db/tx-run! cfg
                     (fn [cfg]
-                      (let [file (bfc/get-file cfg file-id :lock-for-share? true)]
+                      (let [file (bfc/get-file cfg file-id :lock-for-update? true)]
                         (fsnap/create! cfg file
                                        {:profile-id profile-id
                                         :deleted-at (ct/in-future delay)

@@ -541,7 +541,10 @@
     :fn (mg/resource "app/migrations/sql/0158-del-forbidden-file-library-rels.sql")}
 
    {:name "0158-partition-file-change"
-    :fn (mg/resource "app/migrations/sql/0158-partition-file-change.sql")}])
+    :fn (mg/resource "app/migrations/sql/0158-partition-file-change.sql")}
+
+   {:name "0159-add-file-data-storage-object-id"
+    :fn (mg/resource "app/migrations/sql/0159-add-file-data-storage-object-id.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]

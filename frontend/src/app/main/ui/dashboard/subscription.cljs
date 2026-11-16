@@ -9,6 +9,7 @@
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.nitrate :as dnt]
+   [app.main.data.profile :as dprof]
    [app.main.refs :as refs]
    [app.main.router :as rt]
    [app.main.store :as st]
@@ -34,11 +35,18 @@
     "enterprise"
     (get-subscription-type (:subscription team))))
 
+(defn get-profile-subscription-type
+  [profile]
+  (if (dnt/is-valid-license? profile)
+    (dm/get-in profile [:subscription :type])
+    (get-subscription-type (dm/get-in profile [:props :subscription]))))
+
 (defn show-team-plan?
-  [is-owner team]
+  [is-owner team profile]
   (not (and is-owner
             (nil? (dm/get-in team [:organization :id]))
-            (= "enterprise" (get-subscription-type (:subscription team))))))
+            (contains? #{"enterprise" "nitrate"}
+                       (get-profile-subscription-type profile)))))
 
 (mf/defc cta-power-up*
   [{:keys [top-title top-description bottom-description bottom-button bottom-button-href has-dropdown is-highlighted]}]
@@ -131,11 +139,13 @@
           :is-highlighted false}]))))
 
 (mf/defc nitrate-enterprise-banner*
-  [{:keys [on-click button-label]}]
-  (let [collapsed* (mf/use-state false)
-        collapsed? (deref collapsed*)
+  [{:keys [on-click button-label profile]}]
+  (let [collapsed? (true? (get-in profile [:props :promotional-banner-collapsed]))
         toggle-collapse
-        (mf/use-fn #(swap! collapsed* not))]
+        (mf/use-fn
+         (mf/deps collapsed?)
+         #(st/emit! (dprof/update-profile-props
+                     {:promotional-banner-collapsed (not collapsed?)})))]
 
     [:div {:class (stl/css-case :nitrate-banner true
                                 :nitrate-enterprise-banner true
@@ -269,7 +279,8 @@
        ;; Banner for Professional/Unlimited users outside an organization
        (when show-unlock-features?
          [:> nitrate-enterprise-banner*
-          {:on-click handle-click
+          {:profile profile
+           :on-click handle-click
            :button-label (if (:subscription profile)
                            (tr "subscription.dashboard.banner.upgrade-nitrate")
                            (tr "nitrate.form.try-free"))}]))
@@ -299,7 +310,7 @@
   (let [nitrate?              (dnt/is-valid-license? profile)
         nitrate-license       (:subscription profile)
         subscription          (-> profile :props :subscription)
-        subscription-type     (if nitrate? (:type nitrate-license) (get-subscription-type subscription))
+        subscription-type     (get-profile-subscription-type profile)
         subscription-is-trial (= "trialing" (:status (if nitrate? nitrate-license subscription)))
         go-to-subscription    (mf/use-fn #(st/emit! (rt/nav :settings-subscription)))]
     [:button {:class (stl/css :nitrate-current-plan)
@@ -319,7 +330,7 @@
         "enterprise" (tr "subscription.current-plan.enterprise"))]]))
 
 (mf/defc team*
-  [{:keys [is-owner team]}]
+  [{:keys [is-owner team profile]}]
   (let [subscription          (:subscription team)
         subscription-type     (get-subscription-type subscription)
         team-plan-type        (get-team-plan-type team)
@@ -337,7 +348,7 @@
                  href (str "payments/subscriptions/show?returnUrl=" href)]
              (st/emit! (rt/nav-raw :href href)))))]
 
-    (when (show-team-plan? is-owner team)
+    (when (show-team-plan? is-owner team profile)
       [:div {:class (stl/css :team)}
        [:div {:class (stl/css :team-label)}
         (tr "subscription.dashboard.team-plan")]

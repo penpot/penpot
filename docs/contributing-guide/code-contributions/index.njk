@@ -18,10 +18,11 @@ Thinking of contributing to Penpot core but not sure where to start? We’ve mad
 
 <h3 id="code-contributions-pull-requests">Pull requests</h3>
 <p>If you want propose a change or bug fix with the Pull-Request system firstly you should carefully read the <a href="#code-contributions-dco">DCO section</a> and format your commits accordingly.</p>
-<p>If you intend to fix a bug it's fine to submit a pull request right away but we still recommend to file an issue detailing what you're fixing. This is helpful in case we don't accept that specific fix but want to keep track of the issue.</p>
+<p>If you intend to fix a bug please make sure it's attached to an existing issue. Pull requests that have no issue attached will be automatically rejected. Pull requests attached to issues labeled as <code>needs triage</code> or <code>internal</code> will be autorejected as well.</p>
 <p>If you want to implement or start working in a new feature, please open a <b>question</b> / <b>discussion</b> issue for it. No pull-request will be accepted without previous chat about the changes, independently if it is a new feature, already planned feature or small quick win.</p>
+<p>Please do not submit a pull request for an issue that has already been assigned to someone else. It there is no recent activity, feel free to ask for it be assigned to you.</p>
 <p>If is going to be your first pull request, You can learn how from <a href="https://app.egghead.io/playlists/how-to-contribute-to-an-open-source-project-on-github" target="_blank">this free video series</a>.</p>
-<p>We will use the <code class="language-bash">easy fix</code> mark for tag for indicate issues that are easy for beginners.</p>
+<p>We will use the <code class="language-bash">good first issue</code> label to mark issues that are easy to fix for beginners.</p>
 
 <h3 id="code-contributions-commits">Commit message guidelines</h3>
 <p>We have very precise rules over how our git commit messages can be formatted.</p>
@@ -35,7 +36,7 @@ Thinking of contributing to Penpot core but not sure where to start? We’ve mad
 [footer]
 </code>
 </pre>
-<p>Where type is:</p>
+<p>Where type is:</p>   
 <ul>
 <li><g-emoji class="g-emoji" alias="bug" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/1f41b.png"><img class="emoji" alt="bug" height="20" width="20" src="https://github.githubassets.com/images/icons/emoji/unicode/1f41b.png"></g-emoji> <code>:bug:</code> a commit that fixes a bug</li>
 <li><g-emoji class="g-emoji" alias="sparkles" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/2728.png"><img class="emoji" alt="sparkles" height="20" width="20" src="https://github.githubassets.com/images/icons/emoji/unicode/2728.png"></g-emoji> <code>:sparkles:</code> a commit that adds an improvement</li>

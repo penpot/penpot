@@ -8,6 +8,7 @@ How to shape a function in this codebase. Each rule came from a review round; do
 - **Functions that obtain data start with `get-` or `fetch-`.** A reader must see at a glance that the function reads (`get-file`, `get-snapshot`, `get-file-json`); a bare noun hides it (`file-json` says nothing about reading). New helpers that fetch by id follow this, never a `current-` prefix: the id parameter already says which one it is.
 - **`?` marks a predicate, not a data prop.** A var or function that answers a question takes `?` (`export-error?`, `(defn editable? …)`); a map key that names a property does not (`:export-error`, never `:export-error?`), even when its value is a boolean. Existing `?` keys are legacy to remove gradually; do not add a new one.
 - **Do not shape production code for tests.** No return values added just to assert them; assert on the observable effect. When preconditions move, move the tests with them.
+- **All code-facing text MUST be in English** — identifiers, comments, docstrings, test descriptions. No exceptions; see the hard rule in `AGENTS.md`.
 
 Reference implementation: the http metrics samplers in `app.http` (`sample-worker-metrics` / `sample-connector-metrics` are guard-free; `sample-http-metrics` guards at the boundary).
 

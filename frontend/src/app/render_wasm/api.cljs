@@ -33,6 +33,7 @@
    [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
    [app.config :as cf]
+   [app.main.data.event :as-alias ev]
    [app.main.data.helpers :as dsh]
    [app.main.data.notifications :as ntf]
    [app.main.data.render-wasm :as drw]
@@ -2389,6 +2390,17 @@
        (set-render-options! new-dpr)
        (resize-viewbox css-w css-h)))))
 
+(defn- emit-webgl-event
+  "Send a WebGL audit event with the environment details. Built as a plain
+  data event so this namespace does not load `app.main.data.event`, which
+  the worker build cannot run."
+  [event-name props]
+  (st/emit! (ptk/data-event ::ev/event
+                            (merge (webgl/get-environment)
+                                   props
+                                   {::ev/name event-name
+                                    ::ev/origin "workspace"}))))
+
 (defn- on-webgl-context-lost
   [event]
   (dom/prevent-default event)
@@ -2405,7 +2417,8 @@
               :type :toast
               :level :warning
               :timeout 5000}))
-  (st/emit! (drw/context-lost)))
+  (st/emit! (drw/context-lost))
+  (emit-webgl-event "webgl-context-lost" {}))
 
 (defn- on-webgl-context-restored
   [event]
@@ -2422,6 +2435,7 @@
                   ;; only after the full reload so layout/viewport sync runs
                   ;; against a live renderer with `wasm/ready?` true.
                   (st/emit! (drw/context-restored))
+                  (emit-webgl-event "webgl-context-restored" {})
                   (listen-tiles-render-complete-once! end-context-loss-overlay!)
                   (st/async-emit!
                    (ntf/show {:content (tr "webgl.webgl-context-recovered.toast")
@@ -2472,6 +2486,7 @@
         (let [{:keys [context handle]} result]
           (set! wasm/gl-context-handle handle)
           (set! wasm/gl-context context)
+          (webgl/remember-gpu-info context)
 
           ;; `init-context` already ran `_init` through `_set_browser` in
           ;; order. Publish the handles, then mark live before sizing so the
@@ -2609,6 +2624,9 @@
         (p/catch
          (fn [cause]
            (ug/dispatch! (ug/event "penpot:wasm:reload-failed"))
+           (emit-webgl-event "webgl-reload-failed"
+                             {:hint (ex-message cause)
+                              :code (some-> (ex-data cause) :code name)})
            (reset! wasm/reloading? false)
            (reset! wasm/context-lost? true)
            (clear-canvas)

@@ -15,7 +15,7 @@ Subcommands:
 Usage:
   python3 scripts/gh.py issues <milestone-title>            (default: state=closed)
   python3 scripts/gh.py issues "2.16.0" --state all
-  python3 scripts/gh.py issues "2.16.0" --exclude "release blocker,no changelog"
+  python3 scripts/gh.py issues "2.16.0" --exclude "no changelog"
   python3 scripts/gh.py issues "2.16.0" --label "bug"       (include only issues with label)
   python3 scripts/gh.py issues "2.16.0" --label "bug,regression" --exclude "no changelog"
   python3 scripts/gh.py issues "2.16.0" --compare CHANGES.md
@@ -1092,7 +1092,7 @@ def main() -> None:
     )
     p_issues.add_argument(
         "--exclude", "--exclude-labels",
-        help="Comma-separated labels to exclude, e.g. 'release blocker,no changelog'"
+        help="Comma-separated labels to exclude, e.g. 'no changelog'"
     )
     p_issues.add_argument(
         "--label", "--labels",
