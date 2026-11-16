@@ -2,12 +2,29 @@
 
 ### 🚀 Features
 
+- **plugin-types:** Text and text range `align` accept `distribute` to spread
+  characters across every line, including the last line.
+
+- **plugin-types:** Add `rubyZhuyin` to text shapes and ranges for typed Mandarin annotations.
+
+- **plugin-types:** Added independent `textEmphasisPosition` and `textUnderlinePosition` properties to text shapes and ranges.
+
 - **plugin-types, plugins-runtime:** Added `penpot.waitForSave(timeout?)` to wait until pending file changes are saved (or there is nothing to save). Rejects on save failure, rollback during the wait, timeout (default 60000 ms), or an invalid timeout. The Error `code` property is `save-timeout`, `rolled-back`, `save-retrying` (an earlier failed save Penpot keeps retrying) or the save failure code.
 - **plugin-types, plugins-runtime:** `penpotMgmt` returns `Team`, `Project` and `ProjectFile` objects. Assigning `name` renames teams, projects and files, `project.pinned` pins a project and `file.shared` shares a file as a team library; `createProject`, `createFile`, `moveTo`, `duplicate`, `remove` and `restore` live on the objects. Added `penpotMgmt.listTeams`, `penpotMgmt.createTeam`, `penpotMgmt.getFile`, `listDeletedProjects` and `listDeletedFiles`, and the `manage:projects`, `manage:teams` and `manage:delete` permissions. Restoration uses the dashboard's Trash operation; projects need recoverable files and empty projects cannot be restored; the API exposes no permanent deletion method. Team deletion is not exposed.
 - **plugins-runtime, plugin-types**: Added global plugins (`scope: "global"`) that remain active across dashboard and workspace navigation until closed or logged out, with `penpotMgmt` for project and file discovery, file navigation and workspace events. Global scope adds the `allow:global` permission, which users must accept when installing the plugin.
 - **plugin-types, plugins-runtime:** Added `penpot.location` with the instance base URL (`baseUrl`), the URL of the current screen (`href`) and its query params (`params`), in the dashboard and the workspace. Params that carry secrets are left out. Requires `content:read`. Closes #13013.
 - **plugin-types:** Added `file.features`, the sorted features of the open file, including the features active in the session, such as `render-wasm/v1` when the new render engine (WebGL) draws the file. It is `null` for any other file. Closes #13167.
 - **plugin-types:** Added the `contentrollback` event and the `ContentRollback` type. The event fires after the backend rejected some changes and the workspace undid them, with the ids of the files, pages and shapes affected. It fires once the undone data is in the workspace, also when the workspace has to reload the file to undo the changes.
+- **plugin-types**: Added `writingMode` and `textOrientation` properties for text shapes (vertical writing)
+- **plugin-types:** Added `textCombineUpright` property for text shapes (Tate-chu-yoko)
+- **plugin-types:** Added `ruby` property for text shapes (furigana annotation)
+- **plugin-types:** Added `textEmphasis` property for text shapes (emphasis marks / bouten)
+- **plugin-types:** Added `warichu` property for text shapes (inline two-line notes)
+- **plugin-types:** `textCombineUpright` now accepts `digits` (combine runs of up to 4 digits, a lone digit included)
+- **plugin-types:** Added `fontFeatures` (`none`, `palt`, or `vpal`) to text shapes and text ranges.
+- **plugin-types:** Added `annotationClearance` (`none` or `auto`) to text shapes.
+- **plugin-types:** Added `lineAdjustment` (`push-in-first`, `push-out-first` or `push-out-only`) to text shapes: how Japanese lines slightly too long are fitted.
+- **plugin-types:** Added `lang` to text shapes and ranges: the paragraph language as a BCP 47 tag (`ja`, `zh-Hant-HK`, `ko`...), which selects the CJK typesetting rules.
 
 ### 🩹 Fixes
 

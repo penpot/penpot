@@ -4799,12 +4799,146 @@ export interface Text extends ShapeBase {
   /**
    * The horizontal alignment of the text shape. It can be a specific alignment or 'mixed' if multiple alignments are used.
    */
-  align: 'left' | 'center' | 'right' | 'justify' | 'mixed' | null;
+  align:
+    'left' | 'center' | 'right' | 'justify' | 'distribute' | 'mixed' | null;
 
   /**
    * The vertical alignment of the text shape.
    */
   verticalAlign: 'top' | 'center' | 'bottom' | null;
+
+  /**
+   * How lines slightly too long for the box are fitted (JLREQ line
+   * adjustment, Adobe's Kinsoku Type) in Japanese text. `push-in-first` (the
+   * default) squeezes punctuation spacing to keep the next character on the
+   * line; `push-out-first` moves characters to the next line and squeezes
+   * only when line-breaking rules leave no other choice; `push-out-only`
+   * never squeezes. It applies to the whole shape; `align` still decides
+   * what happens to the space a line leaves over.
+   */
+  lineAdjustment: 'push-in-first' | 'push-out-first' | 'push-out-only';
+
+  /**
+   * The writing mode of the text shape: `horizontal-tb` (horizontal lines,
+   * the default) or `vertical-rl` (vertical columns, right to left). It
+   * applies to the whole shape.
+   */
+  writingMode: 'horizontal-tb' | 'vertical-rl';
+
+  /**
+   * Character orientation in vertical writing: `mixed` (the default) turns
+   * non-CJK runs sideways; `upright` keeps every character upright. It
+   * applies to the whole shape, so `mixed` is always the orientation value,
+   * never a report of differing values.
+   */
+  textOrientation: 'mixed' | 'upright';
+
+  /**
+   * Tate-chu-yoko: sets text upright as one block in vertical writing. `all`
+   * combines the whole span; `digits` combines runs of up to 4 digits, so a
+   * lone digit stands upright (`digits2`/`digits3` cap the run at 2/3);
+   * `none` (the default) turns it off. Returns 'mixed' if text spans use
+   * different values.
+   */
+  textCombineUpright:
+    'none' | 'all' | 'digits' | 'digits2' | 'digits3' | 'mixed';
+
+  /**
+   * Emphasis marks (圏点 / bouten) beside each base character, as in CSS
+   * `text-emphasis-style`. `none` (the default) removes them.
+   * Returns 'mixed' if text spans use different values.
+   */
+  textEmphasis:
+    | 'none'
+    | 'filled-dot'
+    | 'open-dot'
+    | 'filled-circle'
+    | 'open-circle'
+    | 'filled-sesame'
+    | 'open-sesame'
+    | 'mixed';
+
+  /**
+   * Warichu (割注): sets the text as two half-size lines in one line position.
+   * `none` (the default) turns it off. Setting `warichu` on a text with more
+   * than one text span is rejected: use a `TextRange` inside one span.
+   * Returns 'mixed' if text spans use different values.
+   */
+  warichu: 'none' | 'warichu' | 'mixed';
+
+  /** Emphasis position in horizontal and vertical text; auto uses the language default. */
+  textEmphasisPosition:
+    | 'auto'
+    | 'over-right'
+    | 'over-left'
+    | 'under-right'
+    | 'under-left'
+    | 'mixed';
+
+  /** Underline depth and vertical side; independent of emphasis and readings. */
+  textUnderlinePosition:
+    | 'auto'
+    | 'under'
+    | 'left'
+    | 'right'
+    | 'under-left'
+    | 'under-right'
+    | 'mixed';
+
+  /**
+   * OpenType proportional metrics for Japanese text: `palt` for horizontal
+   * writing, `vpal` for vertical. `none` (the default) turns them off.
+   * Returns 'mixed' if text spans use different values.
+   */
+  fontFeatures: 'none' | 'palt' | 'vpal' | 'mixed';
+
+  /**
+   * Room for annotations. `auto` adds the ruby (at its size) and the
+   * emphasis marks to the line height, or the column width in vertical
+   * text; `none` (the default) keeps the set line height, so annotations sit
+   * in the gap between lines. Returns 'mixed' if text spans use different
+   * values.
+   */
+  annotationClearance: 'none' | 'auto' | 'mixed';
+
+  /**
+   * Ruby (furigana) annotation text for the base text, as one group reading.
+   * Set a string to annotate the whole text, or `null` or `''` to remove it.
+   * Adding a reading to a text with more than one text span is rejected: use
+   * a `TextRange` inside one span. Returns 'mixed' if text spans carry
+   * different ruby values.
+   */
+  ruby: string | 'mixed' | null;
+
+  /** Whether the ruby reading is hidden; `false` by default. */
+  rubyHidden: boolean | 'mixed';
+
+  /** Ruby size relative to the base text: `half` (default), `third` or `quarter`. */
+  rubySize: 'half' | 'third' | 'quarter' | 'mixed';
+
+  /** How ruby glyphs spread over the base text; defaults to `space-around`. */
+  rubyAlign: 'space-around' | 'center' | 'start' | 'space-between' | 'mixed';
+
+  /** Whether ruby may extend past its base text: `auto` (default) or `none`. */
+  rubyOverhang: 'auto' | 'none' | 'mixed';
+
+  /** Set one Han base and one typed Mandarin syllable as upright right-side Zhuyin. */
+  rubyZhuyin: boolean | 'mixed';
+
+  /** Ruby side: `over` (above or right, the default) or `under` (below or left). */
+  rubySide: 'over' | 'under' | 'mixed';
+
+  /**
+   * Language of the text as a BCP 47 tag, like the HTML `lang` attribute.
+   * Japanese (`ja`), Chinese (`zh-Hans`, `zh-Hant`, or with a region:
+   * `zh-Hans-CN`, `zh-Hant-TW`, `zh-Hant-HK`...) and Korean (`ko`) tags
+   * select their typesetting rules: line breaking, punctuation spacing, the
+   * default emphasis position and localized glyph forms. Other tags are
+   * stored without rules. `null` (the default) applies none; set `null` or
+   * `''` to remove it. It belongs to paragraphs: setting it applies
+   * to every paragraph. Returns 'mixed' if paragraphs use different values.
+   */
+  lang: string | 'mixed' | null;
 
   /**
    * Return the bounding box for the text as a (x, y, width, height) rectangle
@@ -4907,6 +5041,106 @@ export interface TextRange {
   textDecoration: 'underline' | 'line-through' | 'none' | 'mixed' | null;
 
   /**
+   * Combines the range upright in vertical writing. Returns 'mixed' when the
+   * range contains different span values.
+   */
+  textCombineUpright:
+    'none' | 'all' | 'digits' | 'digits2' | 'digits3' | 'mixed' | null;
+
+  /**
+   * Emphasis marks (圏点 / bouten) applied to the range. Returns 'mixed' when
+   * the range contains different span values.
+   */
+  textEmphasis:
+    | 'none'
+    | 'filled-dot'
+    | 'open-dot'
+    | 'filled-circle'
+    | 'open-circle'
+    | 'filled-sesame'
+    | 'open-sesame'
+    | 'mixed'
+    | null;
+
+  /** Warichu applied to the range, or 'mixed' for different span values. */
+  warichu: 'none' | 'warichu' | 'mixed' | null;
+
+  /** Emphasis position in horizontal and vertical text; auto uses the language default. */
+  textEmphasisPosition:
+    | 'auto'
+    | 'over-right'
+    | 'over-left'
+    | 'under-right'
+    | 'under-left'
+    | 'mixed'
+    | null;
+
+  /** Underline depth and vertical side; independent of emphasis and readings. */
+  textUnderlinePosition:
+    | 'auto'
+    | 'under'
+    | 'left'
+    | 'right'
+    | 'under-left'
+    | 'under-right'
+    | 'mixed'
+    | null;
+
+  /**
+   * OpenType proportional metrics for the range: `palt` (horizontal), `vpal`
+   * (vertical) or `none`. Returns 'mixed' for different span values.
+   */
+  fontFeatures: 'none' | 'palt' | 'vpal' | 'mixed' | null;
+
+  /**
+   * Room for annotations in the range. `auto` adds the ruby (at its size)
+   * and the emphasis marks to the line height, or the column width in
+   * vertical text; `none` (the default) keeps the set line height. Returns
+   * 'mixed' for different span values.
+   */
+  annotationClearance: 'none' | 'auto' | 'mixed' | null;
+
+  /**
+   * Ruby (furigana) annotation for the text range, as one group reading.
+   * Set `null` to remove it. A reading must cover characters of a single
+   * text span; a range that covers several spans is rejected. Returns
+   * 'mixed' if the range contains different ruby values.
+   */
+  ruby: string | 'mixed' | null;
+
+  /** Whether the ruby reading of the range is hidden; `false` by default. */
+  rubyHidden: boolean | 'mixed' | null;
+
+  /** Ruby size relative to the base text: `half` (default), `third` or `quarter`. */
+  rubySize: 'half' | 'third' | 'quarter' | 'mixed' | null;
+
+  /** How ruby glyphs spread over the base text; defaults to `space-around`. */
+  rubyAlign:
+    'space-around' | 'center' | 'start' | 'space-between' | 'mixed' | null;
+
+  /** Whether ruby may extend past its base text: `auto` (default) or `none`. */
+  rubyOverhang: 'auto' | 'none' | 'mixed' | null;
+
+  /** Set one Han base and one typed Mandarin syllable as upright right-side Zhuyin. */
+  rubyZhuyin: boolean | 'mixed' | null;
+
+  /** Ruby side: `over` (above or right, the default) or `under` (below or left). */
+  rubySide: 'over' | 'under' | 'mixed' | null;
+
+  /**
+   * Language of the text as a BCP 47 tag, like the HTML `lang` attribute.
+   * Japanese (`ja`), Chinese (`zh-Hans`, `zh-Hant`, or with a region:
+   * `zh-Hans-CN`, `zh-Hant-TW`, `zh-Hant-HK`...) and Korean (`ko`) tags
+   * select their typesetting rules: line breaking, punctuation spacing, the
+   * default emphasis position and localized glyph forms. Other tags are
+   * stored without rules. `null` (the default) applies none; set `null` or
+   * `''` to remove it. It belongs to paragraphs: setting it applies
+   * to every paragraph the range touches. Returns 'mixed' if those
+   * paragraphs use different values.
+   */
+  lang: string | 'mixed' | null;
+
+  /**
    * The text direction for the text range. It can be a specific direction or 'mixed' if multiple directions are used.
    */
   direction: 'ltr' | 'rtl' | 'mixed' | null;
@@ -4919,7 +5153,8 @@ export interface TextRange {
   /**
    * The horizontal alignment of the text range. It can be a specific alignment or 'mixed' if multiple alignments are used.
    */
-  align: 'left' | 'center' | 'right' | 'justify' | 'mixed' | null;
+  align:
+    'left' | 'center' | 'right' | 'justify' | 'distribute' | 'mixed' | null;
 
   /**
    * The vertical alignment of the text range. It can be a specific alignment or 'mixed' if multiple alignments are used.
