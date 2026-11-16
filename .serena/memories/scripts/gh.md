@@ -40,7 +40,7 @@ python3 scripts/gh.py issues "2.16.0" --label "bug"
 python3 scripts/gh.py issues "2.16.0" --label "bug,regression"
 
 # Exclude by label
-python3 scripts/gh.py issues "2.16.0" --exclude "release blocker,no changelog"
+python3 scripts/gh.py issues "2.16.0" --exclude "no changelog"
 
 # Show only issues NOT yet in CHANGES.md
 python3 scripts/gh.py issues "2.16.0" --compare CHANGES.md

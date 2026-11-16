@@ -28,7 +28,7 @@ Editing `CHANGES.md` happens only on explicit request or as part of the release 
 - **Security fixes come from advisories**: an advisory whose `patched_versions` include the version becomes a `:lock:` entry (section 7). `triage`, `draft` and `published` are all valid states; the advisory may still be unpublished when the changelog is written. A security fix may also carry a regular bug issue; both entries are legal and independent (the issue lives in `:bug:` as any other bug).
 - **Two labels override the Issue Type**: `breaking change` → an entry only under `:boom:`, never in its regular section; `release highlight` → an extra entry under `:rocket:` on top of its regular entry.
 - **Only closed issues**. An open issue in the milestone is not generated, even if someone added a provisional entry by hand before the merge.
-- **Excluded issues**: `no changelog`, `release blocker`, `Task` issue type, `Rejected` project status.
+- **Excluded issues**: `no changelog`, `Task` issue type, `Rejected` project status. `release blocker` is a workflow label (the issue blocks the release), not a changelog exclusion: bugs carrying it are analyzed by `dev-only-bugs` (section 8, step 3), and closed non-bug issues carrying it are reviewed by hand (section 8, step 3).
 - **Bugs that never reached production** stay out: a bug found and fixed while building a feature of the same, unreleased version never affected users. The team rarely labels them, so the flow finds them with `dev-only-bugs` and labels them `no changelog` (section 8, step 3).
 - **Excluded PRs**: a PR with `release blocker` or `no issue required` does not bring an entry of its own.
 - **An issue with no milestone** belongs to another (probably private) project: it is neither changelog candidate nor anomaly.
@@ -159,10 +159,11 @@ Generated from the advisories that declare the version in `patched_versions`; ne
 ## 8. Flow
 
 1. **Confirm the version** (a semver string such as `2.19.0`) with the user when it is not obvious.
-2. **Fetch the milestone issues**: `python3 scripts/gh.py issues "<VERSION>" --exclude "release blocker,no changelog"` (closed by default; add `--state all` only to inspect open issues). `gh.py` already drops `Task` and `Rejected`; pass `--include-tasks` / `--include-rejected` only to inspect them. To find what is missing from an existing section, add `--compare CHANGES.md`.
-3. **Keep out bugs that never reached production**: `python3 scripts/changelog.py dev-only-bugs "<VERSION>"` lists them; add `--apply` to label the sure ones `no changelog` on GitHub, then re-fetch step 2. The label puts the decision on the issue, so it survives a regeneration.
+2. **Fetch the milestone issues**: `python3 scripts/gh.py issues "<VERSION>" --exclude "no changelog"` (closed by default; add `--state all` only to inspect open issues). `gh.py` already drops `Task` and `Rejected`; pass `--include-tasks` / `--include-rejected` only to inspect them. To find what is missing from an existing section, add `--compare CHANGES.md`.
+3. **Keep out bugs that never reached production**: `python3 scripts/changelog.py dev-only-bugs "<VERSION>"` lists them; add `--apply` to label the sure ones `no changelog` on GitHub, then re-fetch step 2. The label puts the decision on the issue, so it survives a regeneration. Bugs carrying `release blocker` are analyzed like any other bug.
    - **Sure**: a bug whose parent issue is a `Feature` or `Enhancement` of the same milestone. `--apply` labels these.
    - **Candidates**: a bug whose parent is an epic of the same milestone, that carries the `regression` label, or whose "Affected versions" / "Environment" field names only hourly, develop, staging, PRE or a version of this milestone. `regression` also marks regressions users hit in production, and the field says where the bug was seen, not since when it exists, so never label these yourself: show them to the user, who labels the ones they confirm. The anomaly report lists them too (section 10).
+   - **Closed non-bug issues carrying `release blocker`** have no automatic check: `python3 scripts/gh.py issues "<VERSION>" --label "release blocker" --exclude "no changelog"` lists them (closed, non-Task). Show them to the user: the internal ones get the `no changelog` label, the rest keep their entry.
 4. **Fetch PR details when needed**: `python3 scripts/gh.py prs <numbers...>` (also `--milestone`). Use it for the PR author, labels and merge state.
 5. **Categorize** by Issue Type and the two labels (section 2), and **build the descriptions** (section 4).
 6. **Verify PR merge status** before writing: `python3 scripts/changelog.py check-merged <PR numbers...>`. Only merged PRs go in the changelog; if a closing PR was closed unmerged, look for the PR that superseded it.
@@ -179,7 +180,7 @@ Re-fetch the milestone (do not trust cached data) and fix these in `CHANGES.md` 
 
 1. **Duplicate across versions** → remove it from the current section; the earlier version wins for backports. The same holds after merging a patch branch into `staging`: the fix keeps its released patch entry and leaves the newer, unreleased section (the merge conflict in `CHANGES.md` is resolved by keeping both sections, newest first, minus the duplicate).
 2. **Stale milestone assignment** (the issue moved out of this milestone) → remove the entry.
-3. **Newly applied exclusion labels** (`no changelog`, `release blocker`) → remove the entry.
+3. **Newly applied exclusion labels** (`no changelog`) → remove the entry. (`release blocker` is not an exclusion label; it never removes an entry by itself.)
 4. **Issue no longer closed, deleted, or now `Rejected`** → remove the entry.
 5. **Unmerged or moved PR reference** → fix the reference or remove the entry. A PR merged in a different milestone is an anomaly (section 10); do not remove it silently.
 6. **Issue Type changed** → to `Task`: remove the entry; to another type: move the entry to that type's section.

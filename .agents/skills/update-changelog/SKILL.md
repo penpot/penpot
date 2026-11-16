@@ -37,7 +37,8 @@ memory; it does not repeat it.
 ## Commands
 
 ```bash
-python3 scripts/gh.py issues "<VERSION>" --exclude "release blocker,no changelog"
+python3 scripts/gh.py issues "<VERSION>" --exclude "no changelog"
+python3 scripts/gh.py issues "<VERSION>" --label "release blocker" --exclude "no changelog"  # closed non-bug residue to review by hand
 python3 scripts/gh.py advisories --patched-version "<VERSION>"
 python3 scripts/changelog.py dev-only-bugs "<VERSION>"            # list bugs that never reached production
 python3 scripts/changelog.py dev-only-bugs "<VERSION>" --apply    # label the sure ones `no changelog`

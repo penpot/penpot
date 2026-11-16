@@ -131,8 +131,13 @@ class IssueExcludedTests(unittest.TestCase):
         self.assertTrue(ch.issue_excluded(self.issue(state="OPEN")))
         self.assertTrue(ch.issue_excluded(self.issue(issue_type="Task")))
         self.assertTrue(ch.issue_excluded(self.issue(project_status="Rejected")))
-        self.assertTrue(ch.issue_excluded(self.issue(labels=["release blocker"])))
         self.assertTrue(ch.issue_excluded(self.issue(labels=["no changelog"])))
+
+    def test_keeps_a_release_blocker_issue(self):
+        # `release blocker` marks work that blocks the release; it is not a
+        # changelog exclusion. Bugs go through dev-only-bugs, anything else is
+        # a human call in the pre-flight.
+        self.assertFalse(ch.issue_excluded(self.issue(labels=["release blocker"])))
 
 
 class RenderBoomEntryTests(unittest.TestCase):
@@ -707,10 +712,13 @@ class FindDevOnlyBugsTests(unittest.TestCase):
             {**bug(8, parent={"number": 10, "issue_type": "Feature", "milestone": "2.19.0"}),
              "issue_type": "Enhancement"},
             bug(9, body="### Affected versions\n\n2.18.2\n", labels=["regression"]),
+            bug(10, parent={"number": 10, "issue_type": "Feature", "milestone": "2.19.0"},
+                labels=["release blocker"]),
+            bug(11, body="### Affected versions\n\nhourly\n", labels=["release blocker"]),
         ]
         auto, suggested = ch.find_dev_only_bugs("2.19.0", issues)
-        self.assertEqual([e["issue"] for e in auto], [1, 2])
-        self.assertEqual([e["issue"] for e in suggested], [3, 5, 9])
+        self.assertEqual([e["issue"] for e in auto], [1, 2, 10])
+        self.assertEqual([e["issue"] for e in suggested], [3, 5, 9, 11])
 
 
 if __name__ == "__main__":

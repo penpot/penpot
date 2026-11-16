@@ -45,7 +45,7 @@ GH_PY = Path(__file__).resolve().parent / "gh.py"
 BOOM_HEADING = "### :boom: Breaking changes & Deprecations"
 SECURITY_HEADING = "### :lock: Security fixes"
 BREAKING_LABEL = "breaking change"
-EXCLUDED_LABELS = {"release blocker", "no changelog"}
+EXCLUDED_LABELS = {"no changelog"}
 
 # PR label carried by the security fixes that reference their advisory in the
 # PR body, and the GHSA id pattern used to find that reference.
@@ -658,14 +658,15 @@ def find_dev_only_bugs(milestone: str, issues: list[dict]) -> tuple[list[dict], 
     """Split the milestone's changelog bugs that never reached production.
 
     ``issues`` come from ``gh.py issue`` (they carry ``body`` and
-    ``parent``). Returns ``(auto, suggested)``: ``auto`` bugs are
+    ``parent``). Bugs labelled ``release blocker`` are analyzed like any
+    other bug. Returns ``(auto, suggested)``: ``auto`` bugs are
     sub-issues of a Feature or Enhancement of this milestone and get the
     `no changelog` label; ``suggested`` ones need a human to confirm."""
     auto, suggested = [], []
     for issue in issues:
         if issue.get("issue_type") != "Bug" or issue.get("state") != "CLOSED":
             continue
-        if {"no changelog", "release blocker"} & set(issue.get("labels", [])):
+        if "no changelog" in set(issue.get("labels", [])):
             continue
         parent = issue.get("parent") or {}
         entry = {"issue": issue["number"], "issue_title": issue.get("title", "")}
