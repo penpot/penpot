@@ -4,6 +4,18 @@ import { MockWebSocketHelper } from "../../helpers/MockWebSocketHelper";
 import { BaseWebSocketPage } from "./BaseWebSocketPage";
 import { Transit } from "../../helpers/Transit";
 
+// Shapes are copied as a transit-encoded JSON string in `text/plain`
+// (`clipboard.cljs`), so the clipboard content tells a shape paste from a text
+// paste without looking at the editor state.
+const looksLikeShapePayload = (content) => {
+  try {
+    JSON.parse(content);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 export class WorkspacePage extends BaseWebSocketPage {
   static TextEditor = class TextEditor {
     constructor(workspacePage) {
@@ -109,8 +121,12 @@ export class WorkspacePage extends BaseWebSocketPage {
 
     async waitForIdle(options) {
       await this.page.evaluate(
-        (options) => new Promise(
-          (resolve) => globalThis.requestIdleCallback(resolve, options)), options);
+        (options) =>
+          new Promise((resolve) =>
+            globalThis.requestIdleCallback(resolve, options),
+          ),
+        options,
+      );
     }
   };
 
@@ -256,7 +272,7 @@ export class WorkspacePage extends BaseWebSocketPage {
 
   async #waitForWebSocketReadiness(pageName) {
     // TODO: find a better event to settle whether the app is ready to receive notifications via ws
-    await expect(this.pageName).toHaveText(pageName, { timeout: 30000 })
+    await expect(this.pageName).toHaveText(pageName, { timeout: 30000 });
   }
 
   async sendPresenceMessage(fixture) {
@@ -341,6 +357,9 @@ export class WorkspacePage extends BaseWebSocketPage {
   }
 
   async clickWithDragViewportAt(x, y, width, height) {
+    // The canvas applies the drawing tool a moment after it is selected and
+    // nothing in the DOM exposes it; without the wait the drag creates no
+    // shape. Same 100 ms the helper always had.
     await this.page.waitForTimeout(100);
     const box = await this.viewport.boundingBox();
     if (!box) throw new Error("Viewport not visible");
@@ -358,6 +377,10 @@ export class WorkspacePage extends BaseWebSocketPage {
   }
 
   async clickAt(x, y) {
+    // The app applies a keyboard command or a selection change to the canvas a
+    // moment later, and nothing in the DOM exposes it. Without the wait the
+    // click is dropped (a text box is not created, a deselected board is not
+    // reselected). Same 100 ms the helper always had.
     await this.page.waitForTimeout(100);
     await this.viewport.hover({ position: { x, y } });
     await this.page.mouse.down();
@@ -373,6 +396,8 @@ export class WorkspacePage extends BaseWebSocketPage {
    * @param {number} y2
    */
   async clickAndMove(x1, y1, x2, y2) {
+    // Same moment as `clickAt`: the drawing handler applies after the tool is
+    // selected, and without the wait the drag creates no shape.
     await this.page.waitForTimeout(100);
     await this.viewport.hover({ position: { x: x1, y: y1 } });
     await this.page.mouse.down();
@@ -389,16 +414,15 @@ export class WorkspacePage extends BaseWebSocketPage {
    * @param {number} x2
    * @param {number} y2
    * @param {string} initialText
-   * @param {*} [options]
    */
-  async createTextShape(x1, y1, x2, y2, initialText, options) {
-    const timeToWait = options?.timeToWait ?? 100;
+  async createTextShape(x1, y1, x2, y2, initialText) {
     await this.page.keyboard.press("T");
-    await this.page.waitForTimeout(timeToWait);
+    await expect(this.textShapeButton).toHaveAttribute("aria-pressed", "true");
+    // The button turns pressed before the canvas applies the tool, and the
+    // button state does not cover that; the wait is the same 100 ms the helper
+    // always had.
+    await this.page.waitForTimeout(100);
 
-    const layersCountBefore = await this.layers
-      .getByTestId("layer-row")
-      .count();
     await this.clickAndMove(x1, y1, x2, y2);
 
     if (initialText) {
@@ -415,12 +439,12 @@ export class WorkspacePage extends BaseWebSocketPage {
    * @param {number} x
    * @param {number} y
    * @param {string} [initialText]
-   * @param {*} [options]
    */
-  async createAutoWidthTextShape(x, y, initialText, options) {
-    const timeToWait = options?.timeToWait ?? 100;
+  async createAutoWidthTextShape(x, y, initialText) {
     await this.page.keyboard.press("T");
-    await this.page.waitForTimeout(timeToWait);
+    await expect(this.textShapeButton).toHaveAttribute("aria-pressed", "true");
+    // Same wait as `createTextShape`.
+    await this.page.waitForTimeout(100);
 
     await this.clickAt(x, y);
 
@@ -469,7 +493,9 @@ export class WorkspacePage extends BaseWebSocketPage {
       { timeout: 1000 },
     );
 
-    await this.page.waitForTimeout(3000);
+    // The cut empties the selection as soon as the app applies it, long before
+    // the debounced persistence request (3 s) is sent.
+    await expect.poll(() => this.#selectedLayerIds()).toHaveLength(0);
   }
 
   /**
@@ -483,11 +509,38 @@ export class WorkspacePage extends BaseWebSocketPage {
       await this.viewport.click({ button: "right" });
       return this.page.getByText("Paste", { exact: true }).click();
     }
+
+    // A text paste lands inside the editor and is only persisted when the
+    // edition ends, so its signal is the editor content. A shape paste
+    // selects the new shape right away.
+    const content = await this.page.evaluate(() =>
+      navigator.clipboard.readText(),
+    );
+    const shapePaste = looksLikeShapePayload(content);
+    const before = await this.#selectedLayerIds();
+
     await this.page.keyboard.press("ControlOrMeta+V");
-    await this.page.waitForTimeout(3000);
+
+    if (!shapePaste) {
+      // A text paste has three different end states (a new shape, text
+      // inserted in the open editor, the editor closing on commit) and the
+      // editor surface is not always present, so there is no single observable
+      // here yet; the text is persisted on commit, which the caller forces.
+      await this.page.waitForTimeout(3000);
+    } else {
+      // The pasted shape becomes the selection as soon as the app applies it,
+      // long before the debounced persistence request (3 s) is sent.
+      await expect
+        .poll(async () => {
+          const now = await this.#selectedLayerIds();
+          return now.length > 0 && now.join() !== before.join();
+        })
+        .toBe(true);
+    }
   }
 
   async panOnViewportAt(x, y, width, height) {
+    // Same drawing-handler wait as the other mouse helpers.
     await this.page.waitForTimeout(100);
     await this.viewport.hover({ position: { x, y } });
     await this.page.mouse.down({ button: "middle" });
@@ -520,8 +573,6 @@ export class WorkspacePage extends BaseWebSocketPage {
       .first();
 
     await trigger.hover();
-    // Flyout opening is delayed by 350ms in the toolbar component.
-    await workspacePage.page.waitForTimeout(450);
     await expect(trigger).toHaveAttribute("aria-expanded", "true");
     await option.waitFor({ state: "visible" });
     await option.click();
@@ -534,11 +585,41 @@ export class WorkspacePage extends BaseWebSocketPage {
     await this.page.mouse.up();
   }
 
+  async #selectedLayerIds() {
+    // A CSS selector on the row is much cheaper than a role query, and this
+    // runs on every layer click.
+    return this.layers
+      .locator('[data-testid="layer-row"][aria-checked="true"]')
+      .evaluateAll((rows) => rows.map((row) => row.id));
+  }
+
   async clickLeafLayer(name, clickOptions = {}, index = 0) {
-    const layer = this.layers.getByText(name).nth(index);
-    await layer.waitFor();
-    await layer.click(clickOptions);
-    await this.page.waitForTimeout(500);
+    const cell = this.layers.getByText(name).nth(index);
+    await cell.waitFor();
+    const row = cell.locator(
+      "xpath=ancestor::div[@data-testid='layer-row'][1]",
+    );
+    const before = await this.#selectedLayerIds();
+
+    await cell.click(clickOptions);
+
+    // The click may check this row, select another one (a shift-click selects
+    // the range up to the shared parent) or keep the selection (a second click
+    // on the same row). The barrier is that the app processed it: this row is
+    // checked or the selection changed. The right sidebar has no generic
+    // signal, so each test asserts the value it needs.
+    await expect
+      .poll(async () => {
+        if ((await row.getAttribute("aria-checked")) === "true") return true;
+        const now = await this.#selectedLayerIds();
+        return now.join() !== before.join();
+      })
+      .toBe(true);
+
+    // The click updates the row first; the canvas and the undo pipeline
+    // finish later and nothing in the DOM exposes it. Without the wait the
+    // next interaction (Escape, a canvas click) is dropped.
+    await this.page.waitForTimeout(100);
   }
 
   async doubleClickLeafLayer(name, clickOptions = {}) {

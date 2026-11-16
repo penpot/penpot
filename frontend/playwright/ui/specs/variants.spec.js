@@ -52,9 +52,14 @@ const setupVariantsFileWithVariant = async (workspacePage) => {
 
   await workspacePage.clickLeafLayer("Rectangle");
   await workspacePage.page.keyboard.press("ControlOrMeta+k");
-  await workspacePage.page.waitForTimeout(500);
+  await waitForComponentIcon(workspacePage, "Rectangle");
   await workspacePage.page.keyboard.press("ControlOrMeta+k");
-  await workspacePage.page.waitForTimeout(500);
+  await expect(
+    workspacePage.layers
+      .getByTestId("layer-row")
+      .filter({ hasText: "Value 1" })
+      .getByTestId("icon-variant"),
+  ).toHaveCount(1);
 
   await waitForComponentIcon(workspacePage, "Rectangle");
 };
