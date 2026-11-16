@@ -1980,8 +1980,11 @@
   it to them meanwhile, while it keeps the transform the change gave it,
   rewrites geometry the change did not touch."
   [changes dest-shape container roperations uoperations]
-  (let [update-parents {:type :reg-objects
-                        :shapes (cfh/get-parent-ids (:objects container) (:id dest-shape))}
+  (let [;; a masked group takes all its geometry from its mask, so it fits
+        ;; its mask again after taking its main's
+        update-parents {:type :reg-objects
+                        :shapes (cond->> (vec (cfh/get-parent-ids (:objects container) (:id dest-shape)))
+                                  (:masked-group dest-shape) (into [(:id dest-shape)]))}
         undone         (into #{} (map :attr) uoperations)
         uoperations    (cond-> (vec uoperations)
                          (and (#{:group :bool} (:type dest-shape))
