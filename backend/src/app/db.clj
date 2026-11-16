@@ -57,7 +57,9 @@
 
 (def ^:private schema:pool-options
   [:map {:title "pool-options"}
-   [::connect-timeout {:optional true} ::sm/int]
+   [::connection-timeout {:optional true} ::sm/int]
+   [::idle-timeout {:optional true} ::sm/int]
+   [::max-lifetime {:optional true} ::sm/int]
    [::max-size {:optional true} ::sm/int]
    [::min-size {:optional true} ::sm/int]
    [::name {:optional true} :keyword]
