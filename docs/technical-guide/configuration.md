@@ -270,7 +270,11 @@ PENPOT_OIDC_USER_INFO_SOURCE:
 __Since version 2.1.2__
 
 Allows users to register and login with oidc without having to previously
-register with another method.
+register with another method. It also works with password login disabled
+(`disable-login-with-password`): OIDC registration only needs this flag,
+not password login. An invitation link also works as a substitute for
+this flag: an invited user can register with OIDC even with both
+registration flags disabled.
 
 ```bash
 PENPOT_FLAGS: [...] enable-oidc-registration
@@ -756,6 +760,25 @@ POSTGRES_DATABASE: penpot
 POSTGRES_USER: penpot
 POSTGRES_PASSWORD: penpot
 ```
+
+#### Connection pool
+
+The backend keeps a pool of database connections. Its size can be tuned with:
+
+```bash
+# Backend
+PENPOT_DATABASE_MIN_POOL_SIZE: 0
+PENPOT_DATABASE_MAX_POOL_SIZE: 60
+```
+
+The values above are the defaults. The pool keeps at least `MIN_POOL_SIZE` idle
+connections open and never opens more than `MAX_POOL_SIZE`, growing only under load
+and closing idle connections after two minutes. A minimum larger than the maximum is
+capped at the maximum.
+
+If the PostgreSQL server is shared with other applications, make sure
+`PENPOT_DATABASE_MAX_POOL_SIZE` plus the connections used by everything else stays below
+the server's `max_connections` (100 by default).
 
 ### Storage
 
