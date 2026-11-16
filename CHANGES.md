@@ -111,6 +111,17 @@ If you upgrade blindly: on fresh databases and small instances the startup migra
 - Fix workspace memory growing on every page switch with the WebGL renderer [#13028](https://github.com/penpot/penpot/issues/13028) (PR: [#12877](https://github.com/penpot/penpot/pull/12877))
 - Fix workspace showing React error #310 when the team container renders without a team id (by @filipsajdak) [#12728](https://github.com/penpot/penpot/issues/12728) (PR: [#12920](https://github.com/penpot/penpot/pull/12920))
 
+## 2.19.2
+
+### :bug: Bugs fixed
+
+- Fix referential integrity error when copying component variants with nested components across libraries and teams [#10704](https://github.com/penpot/penpot/issues/10704) (PR: [#12928](https://github.com/penpot/penpot/pull/12928))
+- Fix migration 0033 inserting nil shape entries for dangling child references that blocked file opening [#12936](https://github.com/penpot/penpot/issues/12936) (PR: [#12979](https://github.com/penpot/penpot/pull/12979))
+- Fix switching a variant and adding a component instance taking over 10 seconds in files with many token-styled shapes [#13019](https://github.com/penpot/penpot/issues/13019) (PR: [#13021](https://github.com/penpot/penpot/pull/13021))
+- Fix autosave failing after uploading an SVG as a component in the assets panel, and on other mains named unlike their component [#12773](https://github.com/penpot/penpot/issues/12773) (PR: [#12794](https://github.com/penpot/penpot/pull/12794))
+- Fix `enable-oidc-registration` not working when password login is disabled [#12964](https://github.com/penpot/penpot/issues/12964) (PR: [#12974](https://github.com/penpot/penpot/pull/12974))
+- Fix self-hosted backend opening 60 database connections at startup and keeping them open while idle (by @UsamaSadiq) [#12622](https://github.com/penpot/penpot/issues/12622) (PR: [#13052](https://github.com/penpot/penpot/pull/13052))
+
 ## 2.19.1
 
 ### :lock: Security fixes
