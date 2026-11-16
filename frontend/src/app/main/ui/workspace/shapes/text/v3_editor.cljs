@@ -152,6 +152,13 @@
     (or (.-isComposing native)
         (= 229 (.-keyCode event)))))
 
+(defn- editor-escape?
+  [^js event ime-key?]
+  (and (kbd/esc? event)
+       (not ime-key?)
+       (not (.-isComposing event))
+       (not= 229 (.-keyCode event))))
+
 (defn- secondary-button?
   "True for a secondary click, which opens the context menu: the right button,
    or the macOS Ctrl+Click that stands in for it and reports button 0."
@@ -197,6 +204,10 @@
         ;; True between compositionstart and compositionend: history restores
         ;; and shortcuts wait until the IME commits or cancels.
         composing-ref (mf/use-ref false)
+
+        ;; Native IMEs can end composition before the cancelling key's key-up.
+        ;; Remember its key-down so that Escape only cancels the preedit.
+        ime-key-ref (mf/use-ref false)
 
         ;; Number of characters the browser is about to replace via marked text
         ;; (macOS press-and-hold accent menu). Set on `beforeinput`, consumed on
@@ -302,6 +313,9 @@
         on-key-down
         (mf/use-fn
          (fn [^js event]
+           (mf/set-ref-val! ime-key-ref
+                            (or (mf/ref-val composing-ref)
+                                (composing-event? event)))
            (when (and (text-editor/text-editor-has-focus?)
                       (not (mf/ref-val composing-ref))
                       (not (composing-event? event)))
@@ -637,11 +651,14 @@
        (let [on-key-up (fn [event]
                          (when (kbd/esc? event)
                            (dom/stop-propagation event)
-                           ;; With the menu open, Escape only closes it (checked
-                           ;; in the DOM: the store may already be cleared).
-                           (if (some? (dom/query menu-selector))
-                             (st/emit! dw/hide-context-menu)
-                             (st/emit! (dw/clear-edition-mode)))))]
+                           (when (editor-escape? event
+                                                 (or (mf/ref-val composing-ref)
+                                                     (mf/ref-val ime-key-ref)))
+                             ;; With the menu open, Escape only closes it (checked
+                             ;; in the DOM: the store may already be cleared).
+                             (if (some? (dom/query menu-selector))
+                               (st/emit! dw/hide-context-menu)
+                               (st/emit! (dw/clear-edition-mode))))))]
          (.addEventListener js/document "keyup" on-key-up)
          #(.removeEventListener js/document "keyup" on-key-up))))
 
