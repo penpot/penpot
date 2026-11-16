@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { bootstrapSES } from './bootstrap.js';
 
+// Intentional snapshot of the production options in bootstrap.ts: if they
+// change, this test must fail. Do not replace this literal with an import.
 const REPAIR_OPTIONS = {
   evalTaming: 'unsafeEval',
   stackFiltering: 'verbose',
@@ -110,7 +112,9 @@ describe('plugins runtime entry point', () => {
       const runtime = await import('../index.js');
 
       expect(runtime.getPluginsRuntimeError()).toBe(error);
-      expect(() => runtime.initPluginsRuntime(() => ({} as never))).not.toThrow();
+      expect(() =>
+        runtime.initPluginsRuntime(() => ({}) as never),
+      ).not.toThrow();
       for (const key of runtimeKeys) {
         expect(globalAny[key]).toBeUndefined();
       }

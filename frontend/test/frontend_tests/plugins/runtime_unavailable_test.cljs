@@ -23,7 +23,7 @@
    :code ""})
 
 (defn- with-load-plugin
-  "Calls dp/load-plugin! with a mocked st/emit! and the given ɵloadPlugin
+  "Calls dp/open-plugin! with a mocked st/emit! and the given ɵloadPlugin
   value on the global object, returning the emitted events."
   [load-plugin-fn]
   (let [global        ug/global
@@ -35,7 +35,7 @@
       (obj/unset! global "ɵloadPlugin"))
     (-> (mock/with-mocks*
           {st/emit! (fn [event & events] (swap! emitted into (cons event events)))}
-          (dp/load-plugin! test-manifest))
+          (dp/open-plugin! test-manifest nil))
         (p/then (fn [_] @emitted))
         (p/finally (fn []
                      (if had-plugin?
