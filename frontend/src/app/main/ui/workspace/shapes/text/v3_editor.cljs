@@ -19,10 +19,13 @@
    [app.main.store :as st]
    [app.main.ui.css-cursors :as cur]
    [app.main.ui.hooks.wasm-effect :refer [with-wasm-effect]]
+   [app.main.ui.workspace.shapes.text.ime-debug :as ime-debug]
    [app.render-wasm.api :as wasm.api]
    [app.render-wasm.text-editor :as text-editor]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
+   [app.util.text.geometry :as text.geom]
+   [app.util.text.writing-mode :as wm]
    [app.util.timers :as ts]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
@@ -185,12 +188,163 @@
 
   Mousetrap's `stopCallback` drops every keystroke whose target is
   contentEditable, so without the `mousetrap` class (as in V1/V2) the text
-  shortcuts (Ctrl+B, Ctrl+I, …) never reach the dispatcher."
-  [rotation]
-  (dm/str "mousetrap "
-          (cur/get-dynamic "text" rotation)
-          " "
-          (stl/css :text-editor-container)))
+  shortcuts (Ctrl+B, Ctrl+I, …) never reach the dispatcher. The hover cursor
+  lives on the overlay: the surface is pointer-events:none."
+  []
+  (dm/str "mousetrap " (stl/css :text-editor-container)))
+
+(def ^:private ime-surface-collapse
+  "Inline-axis scale of the capture surface to limit DOM caret drift."
+  0.001)
+
+(defn- macos-vertical-ime-scale
+  "Keep composition characters nonempty after Chromium rounds screen bounds."
+  [^js node font-size]
+  (let [matrix (some-> node (.closest "foreignObject") (.getScreenCTM))
+        zoom   (if matrix (js/Math.hypot (.-c matrix) (.-d matrix)) 1)]
+    ;; Chromium derives vertical character height from integer caret positions.
+    ;; scaleY(0.001) makes most of those heights zero, leaving the native macOS
+    ;; IME without usable character bounds. Allow 1.5 screen pixels per character,
+    ;; including a margin for fractional layout/zoom rounding.
+    (max ime-surface-collapse (/ 1.5 (max 0.001 (* font-size zoom))))))
+
+(defn- update-ime-caret!
+  "Move the hidden capture surface onto the WASM caret so the IME candidate
+  window opens next to the edited text. Returns the caret rect with its
+  writing direction, or nil when there is none yet.
+
+  Call only while idle, never during or right before a composition: real
+  IMEs (ibus-mozc) abort and commit on any mutation of the composing
+  element, including style writes on the keydown-229 before
+  compositionstart. So the surface follows the caret after every
+  caret-affecting operation, and during a composition only its wrapper
+  moves (see `follow-ime-caret!`).
+
+  The IME anchors its window to the DOM caret inside the surface. The
+  surface is compressed along the inline axis to limit the advance of its
+  retained text (see `keep-input-alive`) and composition; the block axis
+  keeps the caret cell size. macOS vertical characters retain nonempty
+  screen bounds so its native IME can anchor to them. In vertical text the
+  surface (`vertical-rl`, `line-height: 1`) aligns its caret cell with the
+  text column on Windows and on macOS outside Safari. Safari has been observed
+  to show horizontal candidates for vertical text, so it keeps the surface
+  right of the column, like Linux where candidates open below the caret.
+
+  `origin` holds the pointer overlay's top-left and width, in the
+  same page space as the caret rect."
+  [^js node ^js wrapper origin]
+  (when (and (some? node) (some? origin))
+    (when-let [{:keys [x y width height] :as rect} (text-editor/text-editor-get-cursor-rect)]
+      (let [style (.-style node)
+            macos-vertical? (and (:vertical? origin) (cf/check-platform? :macos))]
+        ;; Unlike overflow:hidden, clip is not a scroll container. Long
+        ;; compositions must not scroll the capture surface away from its anchor.
+        (set! (.-overflow style) (if macos-vertical? "clip" ""))
+        (if (:vertical? origin)
+          (do
+            (set! (.-writingMode style) "vertical-rl")
+            (set! (.-fontSize style) (dm/str width "px"))
+            (set! (.-lineHeight style) "1")
+            (set! (.-transformOrigin style) "100% 0")
+            (set! (.-transform style)
+                  (dm/str "scaleY(" (if macos-vertical?
+                                      (macos-vertical-ime-scale node width)
+                                      ime-surface-collapse) ")"))
+            ;; vertical-rl puts the DOM caret in the surface's rightmost cell.
+            ;; Safari's horizontal candidate window needs an anchor beside
+            ;; the column. Windows and non-Safari macOS use the column itself.
+            (let [right (if (or (cf/check-platform? :windows)
+                                (and macos-vertical? (not (cf/check-browser? :safari))))
+                          (+ x width)
+                          (+ x (* 2.15 width)))]
+              (set! (.-left style) (dm/str (- right (:x origin) (:width origin)) "px"))))
+          (do
+            (set! (.-writingMode style) "")
+            (set! (.-fontSize style) (dm/str height "px"))
+            (set! (.-lineHeight style) "")
+            (set! (.-transformOrigin style) "0 0")
+            (set! (.-transform style) (dm/str "scaleX(" ime-surface-collapse ")"))
+            (set! (.-left style) (dm/str (- x (:x origin)) "px"))))
+        (set! (.-top style) (dm/str (- y (:y origin)) "px"))
+        (when (some? wrapper)
+          (set! (.. wrapper -style -transform) "")
+          (set! (.. wrapper -style -left) "")
+          (set! (.. wrapper -style -top) ""))
+        (assoc rect :vertical? (:vertical? origin))))))
+
+(defn- ime-overlay-padding
+  "Space around the text overlay for the hidden vertical IME anchor."
+  [vertical? viewport-width]
+  (cond
+    (not vertical?) {:left 0 :right 0}
+    (cf/check-platform? :macos) {:left viewport-width
+                                 :right (if (cf/check-browser? :safari) viewport-width 0)}
+    :else {:left 0 :right viewport-width}))
+
+(defn- text-before-selection
+  "UTF-16 length of the surface text before the DOM selection focus, or nil
+  when the selection is not inside `node`. Reading it mutates nothing."
+  [^js node]
+  (let [sel (.getSelection js/window)]
+    (when (and (some? node) (some? sel) (pos? (.-rangeCount sel))
+               (.contains node (.-focusNode sel)))
+      (let [range (.createRange js/document)]
+        (.setStart range node 0)
+        (.setEnd range (.-focusNode sel) (.-focusOffset sel))
+        (.-length (.toString range))))))
+
+(defn changed-span-end
+  "Code point index, in `new-text`, where the part that differs from
+  `old-text` ends: a newly typed kana or a newly picked candidate."
+  [old-text new-text]
+  (let [old    (js/Array.from old-text)
+        new    (js/Array.from new-text)
+        n-old  (.-length old)
+        n-new  (.-length new)
+        prefix (loop [i 0]
+                 (if (and (< i n-old) (< i n-new) (= (aget old i) (aget new i)))
+                   (recur (inc i))
+                   i))
+        suffix (loop [i 0]
+                 (if (and (< i (- n-old prefix))
+                          (< i (- n-new prefix))
+                          (= (aget old (- n-old 1 i)) (aget new (- n-new 1 i))))
+                   (recur (inc i))
+                   i))]
+    (- n-new suffix)))
+
+(def ^:private follow-ime-cursor?
+  "True where the composition caret tracks the IME cursor (the DOM selection)
+  instead of the end of the changed text.
+
+  Chromium on Linux hands the caret bounds to GTK input methods only while
+  dispatching a key event. A caret move caused by the IME's reply arrives
+  after the key release when the IME is slow (mozc prediction on Tab), so
+  the candidate window keeps its old position until the next key. The IME
+  cursor stays on the active clause while cycling candidates, so the window
+  never needs that late update."
+  (and (cf/check-platform? :linux)
+       (or (cf/check-browser? :chrome)
+           (cf/check-browser? :edge))))
+
+(defn- follow-ime-caret!
+  "Move the surface wrapper by how far the WASM caret moved from `anchor`,
+  the caret rect the surface was placed on. Writes only the wrapper, never the
+  composing element, so it is safe mid-composition. Returns nil when the caret
+  rect is not available yet."
+  [^js wrapper anchor]
+  (when (and (some? wrapper) (some? anchor))
+    (when-let [{:keys [x y]} (text-editor/text-editor-get-cursor-rect)]
+      (let [dx (- x (:x anchor))
+            dy (- y (:y anchor))]
+        (if (and (:vertical? anchor) (cf/check-platform? :macos))
+          (do
+            ;; Move the wrapper in layout to update the composition bounds
+            ;; that macOS uses to position the native candidate window.
+            (set! (.. wrapper -style -left) (dm/str dx "px"))
+            (set! (.. wrapper -style -top) (dm/str dy "px")))
+          (set! (.. wrapper -style -transform)
+                (dm/str "translate(" dx "px, " dy "px)")))))))
 
 (mf/defc text-editor*
   "Contenteditable element positioned over the text shape to capture input events."
@@ -199,15 +353,9 @@
 
         clip-id   (dm/str "text-edition-clip" shape-id)
 
+        vertical? (wm/vertical-text-content? (:content shape))
+
         contenteditable-ref (mf/use-ref nil)
-
-        ;; True between compositionstart and compositionend: history restores
-        ;; and shortcuts wait until the IME commits or cancels.
-        composing-ref (mf/use-ref false)
-
-        ;; Native IMEs can end composition before the cancelling key's key-up.
-        ;; Remember its key-down so that Escape only cancels the preedit.
-        ime-key-ref (mf/use-ref false)
 
         ;; Number of characters the browser is about to replace via marked text
         ;; (macOS press-and-hold accent menu). Set on `beforeinput`, consumed on
@@ -221,55 +369,195 @@
 
         deferred-press-ref (mf/use-ref nil)
 
+        ;; Pointer overlay top-left and width in page space (see `update-ime-caret!`).
+        origin-ref (mf/use-ref nil)
+
+        ;; True between compositionstart and compositionend; the surface must not move then.
+        composing-ref (mf/use-ref false)
+
+        ;; Native IMEs can end composition before the cancelling key's key-up.
+        ;; Remember its key-down so that Escape only cancels the preedit.
+        ime-key-ref (mf/use-ref false)
+
+        ;; Surface wrapper, moved during a composition (see `follow-ime-caret!`).
+        wrapper-ref (mf/use-ref nil)
+
+        ;; Caret rectangle the surface was last placed on while idle.
+        anchor-ref (mf/use-ref nil)
+
+        ;; Surface UTF-16 length before the composition, and the composition text.
+        composition-base-ref (mf/use-ref 0)
+        composition-text-ref (mf/use-ref "")
+
+        ;; IME cursor offset last read from the DOM selection; nil after a text change.
+        synced-offset-ref (mf/use-ref nil)
+
         fallback-fonts    (wasm.api/fonts-from-text-content (:content shape) false)
         fallback-families (map (fn [font]
                                  (font-family-from-font-id (:font-id font))) fallback-fonts)
 
-        [{:keys [x y width height]} transform]
-        (let [{:keys [width height]} (wasm.api/get-text-dimensions shape-id)
+        [{:keys [x y width height ime-width ime-left]} transform]
+        (let [dimension (wasm.api/get-text-dimensions shape-id)
               selrect-transform (mf/deref refs/workspace-selrect)
               vbox (mf/deref refs/vbox)
               [selrect transform] (dsh/get-selrect selrect-transform shape)
-              selrect-height (:height selrect)
-              selrect-width (:width selrect)
-              max-width (max width selrect-width)
-              max-height (max height selrect-height)
-              ;; During auto-width editing the shape width is trimmed to the content, so an
-              ;; empty text box ends up only a few pixels wide. That is not enough room for
-              ;; the caret and the contenteditable overlay may fail to receive input when it
-              ;; is that small. Expand the overlay by one viewport width for auto-width texts
-              ;; (mirroring the v2 editor) so typing works and the caret is not clipped.
+              live-rect (text.geom/live-rect selrect (:grow-type shape) (:content shape) dimension)
+              ;; Reserve room for composition without changing the capture DOM
+              ;; mid-IME. Vertical columns grow leftward; their inline axis is y.
+              auto-width? (= (:grow-type shape) :auto-width)
+              auto-grow? (not= (:grow-type shape) :fixed)
               viewport-width (or (:width vbox) 0)
-              overlay-width (if (= (:grow-type shape) :auto-width)
-                              (+ max-width viewport-width)
-                              max-width)
-              valign (-> shape :content :vertical-align)
-              y (:y selrect)
-              y (case valign
-                  "bottom" (+ y (- selrect-height height))
-                  "center" (+ y (/ (- selrect-height height) 2))
-                  y)]
-          [(assoc selrect :y y :width overlay-width :height max-height) transform])
+              viewport-height (or (:height vbox) 0)
+              left (min (:x selrect) (:x live-rect))
+              top (min (:y selrect) (:y live-rect))
+              right (max (+ (:x selrect) (:width selrect))
+                         (+ (:x live-rect) (:width live-rect)))
+              bottom (max (+ (:y selrect) (:height selrect))
+                          (+ (:y live-rect) (:height live-rect)))
+              x (if (and vertical? auto-grow?) (- left viewport-width) left)
+              overlay-width (+ (- right x) (if (and (not vertical?) auto-width?) viewport-width 0))
+              overlay-height (+ (- bottom top)
+                                (if (if vertical? auto-width? auto-grow?) viewport-height 0))
+              ime-padding (ime-overlay-padding vertical? viewport-width)
+              y top]
+          ;; Widen the foreignObject (not the clip) toward the IME anchor, or
+          ;; the browser scrolls to reveal the caret and cancels the offset.
+          [(assoc selrect
+                  :x x :y y :width overlay-width :height overlay-height
+                  :ime-width (+ overlay-width (:right ime-padding))
+                  :ime-left (:left ime-padding))
+           transform])
+
+        schedule-ime-caret!
+        (mf/use-fn
+         (fn []
+           ;; Wait two frames for the pending WASM render to rebuild the layout
+           ;; the caret rect reads, then retry: after mount the rect can stay
+           ;; unavailable until the first full layout. Skip while composing.
+           (letfn [(attempt [tries]
+                     (when-not (mf/ref-val composing-ref)
+                       (if-let [rect (update-ime-caret!
+                                      (mf/ref-val contenteditable-ref)
+                                      (mf/ref-val wrapper-ref)
+                                      (mf/ref-val origin-ref))]
+                         (mf/set-ref-val! anchor-ref rect)
+                         (when (pos? tries)
+                           (js/requestAnimationFrame #(attempt (dec tries)))))))]
+             (js/requestAnimationFrame
+              (fn []
+                (js/requestAnimationFrame #(attempt 30)))))))
+
+        schedule-ime-follow!
+        (mf/use-fn
+         (fn []
+           ;; Same wait and retries as `schedule-ime-caret!`: a preview update
+           ;; clears the layout the caret rect reads until the next render.
+           ;; Runs only mid-composition.
+           (letfn [(attempt [tries]
+                     (when (and (mf/ref-val composing-ref)
+                                (nil? (follow-ime-caret!
+                                       (mf/ref-val wrapper-ref)
+                                       (mf/ref-val anchor-ref)))
+                                (pos? tries))
+                       (js/requestAnimationFrame #(attempt (dec tries)))))]
+             (js/requestAnimationFrame
+              (fn []
+                (js/requestAnimationFrame #(attempt 30)))))))
+
+        ;; Moves the WASM caret inside the preview, and the IME window with it.
+        ;; Synchronous: the browser reports caret bounds to the IME right after
+        ;; the update that triggered this.
+        place-composition-caret!
+        (mf/use-fn
+         (fn [offset]
+           (text-editor/text-editor-set-composition-cursor offset)
+           (when (nil? (follow-ime-caret! (mf/ref-val wrapper-ref) (mf/ref-val anchor-ref)))
+             (schedule-ime-follow!))))
+
+        ;; Mirrors the IME cursor (the DOM selection) on the WASM caret when only
+        ;; the cursor moves, e.g. switching clauses. The first read after a text
+        ;; change only sets the baseline (see on-composition-update), except
+        ;; where the caret always tracks the IME cursor (see `follow-ime-cursor?`).
+        sync-composition-cursor!
+        (mf/use-fn
+         (fn []
+           (when (mf/ref-val composing-ref)
+             (when-let [focus (text-before-selection (mf/ref-val contenteditable-ref))]
+               (let [text     (mf/ref-val composition-text-ref)
+                     units    (-> (- focus (mf/ref-val composition-base-ref))
+                                  (max 0)
+                                  (min (count text)))
+                     cursor   (.-length (js/Array.from (subs text 0 units)))
+                     previous (mf/ref-val synced-offset-ref)]
+                 (mf/set-ref-val! synced-offset-ref cursor)
+                 (when (if (some? previous)
+                         (not= cursor previous)
+                         follow-ime-cursor?)
+                   (place-composition-caret! cursor)
+                   (wasm.api/render-text-editor-overlay!)))))))
+
+        ;; In Chromium, .focus() on a contenteditable inside an SVG foreignObject
+        ;; does not reliably fire focus/focusin, so React's on-focus never runs
+        ;; and every caret-rect read is null. This sets the WASM focus itself.
+        focus-editor!
+        (mf/use-fn
+         (mf/deps shape-id)
+         (fn []
+           (when-let [node (mf/ref-val contenteditable-ref)]
+             (when (not= (.-activeElement js/document) node)
+               (.focus node)))
+           ;; Re-focusing resets transient WASM editor state (overtype mode,
+           ;; pending events), so only do it when this shape lacks the focus.
+           (when-not (and (text-editor/text-editor-has-focus?)
+                          (= shape-id (text-editor/text-editor-get-active-shape-id)))
+             (wasm.api/text-editor-focus shape-id))
+           (schedule-ime-caret!)))
 
         on-composition-start
         (mf/use-fn
          (fn [_event]
            (mf/set-ref-val! composing-ref true)
+           (mf/set-ref-val! composition-text-ref "")
+           (mf/set-ref-val! synced-offset-ref nil)
+           (mf/set-ref-val! composition-base-ref
+                            (let [node (mf/ref-val contenteditable-ref)]
+                              (or (text-before-selection node)
+                                  (count (.-textContent node)))))
            ;; IME composition supplies its own text; drop any pending caret style.
            (text-editor/clear-pending-caret-styles!)
            (text-editor/text-editor-composition-start)))
 
         on-composition-update
         (mf/use-fn
+         (mf/deps shape-id)
          (fn [event]
-           ;; IME cancel (e.g. Escape on Linux ibus-mozc) fires compositionupdate
-           ;; with an empty string; that must reach WASM to clear the preview text.
+           ;; IME cancel (e.g. Escape in ibus-mozc) fires compositionupdate with
+           ;; an empty string; WASM needs it to clear the preview.
+           ;;
+           ;; The browser owns the capture surface mid-composition, so this
+           ;; handler must not touch it: no clearing, no style writes, no store
+           ;; dispatch. A store sync re-renders this component, and that makes
+           ;; a real IME commit the pending kana and restart (typing "ni"
+           ;; commits ん then い, not に). WASM keeps the preview in its own
+           ;; state; the store syncs on compositionend. Only the surface wrapper
+           ;; moves, so the IME window follows the WASM caret.
+           ;;
+           ;; The caret goes to the end of the changed part: a typed kana, a
+           ;; converted word, or a candidate picked in any clause. Where it
+           ;; tracks the IME cursor instead, `on-input` places it once the DOM
+           ;; selection holds that cursor.
            (let [data (.-data event)]
              (when (some? data)
-               (text-editor/text-editor-composition-update data)
-               (sync-wasm-text-editor-content!)
-               (wasm.api/request-render-preserving-target "text-composition"))
-             (reset-input-node (mf/ref-val contenteditable-ref)))))
+               (let [previous (mf/ref-val composition-text-ref)]
+                 (mf/set-ref-val! composition-text-ref data)
+                 (mf/set-ref-val! synced-offset-ref nil)
+                 (text-editor/text-editor-composition-update data)
+                 ;; The preview never reaches the store, so request its
+                 ;; fallback faces here or it shows missing glyphs until commit.
+                 (wasm.api/load-composition-fonts! shape-id data)
+                 (when-not follow-ime-cursor?
+                   (place-composition-caret! (changed-span-end previous data)))
+                 (wasm.api/request-render-preserving-target "text-composition"))))))
 
         on-composition-end
         (mf/use-fn
@@ -279,7 +567,9 @@
              (wasm.api/finish-text-editor-composition data)
              (sync-wasm-text-editor-content!)
              (wasm.api/request-render-preserving-target "text-composition"))
-           (reset-input-node (mf/ref-val contenteditable-ref))))
+           (reset-input-node (mf/ref-val contenteditable-ref))
+           ;; Move the surface onto the caret, now past the committed text.
+           (schedule-ime-caret!)))
 
         on-paste
         (mf/use-fn
@@ -288,7 +578,8 @@
            (when-let [data (.-clipboardData event)]
              (st/emit! (dwt/v3-paste (.getData data "text/html")
                                      (.getData data "text/plain"))))
-           (reset-input-node (mf/ref-val contenteditable-ref))))
+           (reset-input-node (mf/ref-val contenteditable-ref))
+           (schedule-ime-caret!)))
 
         on-copy
         (mf/use-fn
@@ -308,7 +599,8 @@
                (text-editor/text-editor-delete-backward)
                (sync-wasm-text-editor-content!)
                (wasm.api/request-render-preserving-target "text-cut"))
-             (reset-input-node (mf/ref-val contenteditable-ref)))))
+             (reset-input-node (mf/ref-val contenteditable-ref))
+             (schedule-ime-caret!))))
 
         on-key-down
         (mf/use-fn
@@ -316,6 +608,10 @@
            (mf/set-ref-val! ime-key-ref
                             (or (mf/ref-val composing-ref)
                                 (composing-event? event)))
+           ;; IME keydowns (keyCode 229) must not touch the surface: the IME
+           ;; already owns it, and even a style write before compositionstart
+           ;; makes ibus abort and commit. The surface already sits on the
+           ;; caret (see `update-ime-caret!`).
            (when (and (text-editor/text-editor-has-focus?)
                       (not (mf/ref-val composing-ref))
                       (not (composing-event? event)))
@@ -419,10 +715,12 @@
                    (text-editor/text-editor-move-cursor 5 ctrl? shift?)
                    (wasm.api/render-text-editor-overlay!))
 
-                 ;; Let contenteditable handle text input via on-input, which
-                 ;; needs an editable browser selection.
-                 :else
-                 (ensure-input-caret (mf/ref-val contenteditable-ref)))))))
+                 ;; Let contenteditable handle text input via on-input with an editable selection.
+                 :else (ensure-input-caret (mf/ref-val contenteditable-ref)))
+               ;; A handled key may move the caret; keep the surface on it for
+               ;; the next IME sequence. Character keys also reschedule from
+               ;; on-input after the insert.
+               (schedule-ime-caret!)))))
 
         ;; Native `beforeinput` listener (see the use-effect that registers it).
         ;; We use the native event, not React's synthetic `onBeforeInput`, because
@@ -461,6 +759,9 @@
            (let [native-event (.-nativeEvent event)
                  input-type   (.-inputType native-event)
                  data         (.-data native-event)]
+             ;; The DOM now holds the updated composition and its IME cursor.
+             (when (= input-type "insertCompositionText")
+               (sync-composition-cursor!))
              ;; Skip composition-related input events - composition-end handles those
              (when (and (not (composing-event? event))
                         (not= input-type "insertCompositionText"))
@@ -483,11 +784,17 @@
                ;; IMPORTANT: do NOT clear the surface here (see keep-input-alive):
                ;; the browser must retain the just-typed character so the macOS
                ;; accent menu can replace it on the next input.
-               (keep-input-alive (mf/ref-val contenteditable-ref))))))
+               (keep-input-alive (mf/ref-val contenteditable-ref))
+               (schedule-ime-caret!)))))
 
         on-pointer-down
         (mf/use-fn
          (fn [^js event]
+           ;; The capture surface is pointer-events:none, so focus it here.
+           ;; preventDefault stops mousedown from moving focus to the body,
+           ;; which would blur the surface.
+           (dom/prevent-default event)
+           (focus-editor!)
            (when-not (secondary-button? event)
              (let [native-event (dom/event->native-event event)
                    off-pt       (dom/get-offset-position native-event)]
@@ -532,7 +839,8 @@
                ;; Without a drag there is no pointer selection to close; the
                ;; caret is placed by `on-click`.
                (when dragging?
-                 (wasm.api/render-text-editor-overlay!))))))
+                 (wasm.api/render-text-editor-overlay!))
+               (schedule-ime-caret!)))))
 
         on-click
         (mf/use-fn
@@ -556,7 +864,8 @@
                  :else
                  (do
                    (wasm.api/text-editor-set-cursor-from-offset off-pt)
-                   (wasm.api/render-text-editor-overlay!)))))))
+                   (wasm.api/render-text-editor-overlay!)))
+               (schedule-ime-caret!)))))
 
         on-double-click
         (mf/use-fn
@@ -565,7 +874,8 @@
                  off-pt (dom/get-offset-position native-event)]
              (wasm.api/text-editor-select-word-boundary off-pt)
              (ensure-input-caret (mf/ref-val contenteditable-ref))
-             (wasm.api/render-text-editor-overlay!))))
+             (wasm.api/render-text-editor-overlay!)
+             (schedule-ime-caret!))))
 
         on-context-menu
         (mf/use-fn
@@ -584,7 +894,8 @@
                  ;; on every other path that moves it.
                  (text-editor/clear-pending-caret-styles!)
                  (wasm.api/text-editor-set-cursor-from-offset off-pt)
-                 (wasm.api/render-text-editor-overlay!)))
+                 (wasm.api/render-text-editor-overlay!)
+                 (schedule-ime-caret!)))
              ;; Deferred: the dropdown closes itself on a document `contextmenu`,
              ;; which would close the menu this very event is opening.
              (ts/schedule
@@ -596,19 +907,8 @@
         on-focus
         (mf/use-fn
          (fn [^js _event]
-           (wasm.api/text-editor-focus shape-id)))
-
-        ;; Focus the input and the WASM editor if something took the focus
-        ;; while the edition stays open (e.g. a workspace menu).
-        focus-editor!
-        (mf/use-fn
-         (mf/deps shape-id)
-         (fn []
-           (when-let [node (mf/ref-val contenteditable-ref)]
-             (when (not= (.-activeElement js/document) node)
-               (.focus node)))
-           (when-not (text-editor/text-editor-has-focus?)
-             (wasm.api/text-editor-focus shape-id))))
+           (wasm.api/text-editor-focus shape-id)
+           (schedule-ime-caret!)))
 
         on-blur
         (mf/use-fn
@@ -621,9 +921,17 @@
              (wasm.api/text-editor-blur))))
 
         style #js {:pointerEvents "all"
+                   ;; Keep pointer offsets relative to the text shape when
+                   ;; the foreignObject extends left for the macOS IME anchor.
+                   :position "relative"
+                   :left (dm/str ime-left "px")
+                   :width (dm/str ime-width "px")
                    "--editor-container-width" (dm/str width "px")
                    "--editor-container-height" (dm/str height "px")
                    "--fallback-families" (if (seq fallback-families) (dm/str (str/join ", " fallback-families)) "sourcesanspro")}]
+
+    ;; Keep the caret-translation origin in sync with the current render.
+    (mf/set-ref-val! origin-ref {:x x :y y :width ime-width :vertical? vertical?})
 
     ;; The workspace leaves undo to the active editor. Handle the same events
     ;; for keyboard shortcuts, native history input and workspace menu actions.
@@ -640,7 +948,8 @@
                                 (focus-editor!)
                                 (st/emit! (dwt/v3-restore-history
                                            (if (ptk/type? ::dwu/undo event) :undo :redo)))
-                                (reset-input-node (mf/ref-val contenteditable-ref))))))]
+                                (reset-input-node (mf/ref-val contenteditable-ref))
+                                (schedule-ime-caret!)))))]
          #(rx/dispose! subscription))))
 
     ;; Exit on Escape via a document key-up listener (like v2). On key-down the trailing
@@ -662,6 +971,14 @@
          (.addEventListener js/document "keyup" on-key-up)
          #(.removeEventListener js/document "keyup" on-key-up))))
 
+    ;; The IME cursor can move inside the composition without changing its
+    ;; text (e.g. switching clauses), which only shows as a selection change.
+    (mf/use-effect
+     (mf/deps sync-composition-cursor!)
+     (fn []
+       (.addEventListener js/document "selectionchange" sync-composition-cursor!)
+       #(.removeEventListener js/document "selectionchange" sync-composition-cursor!)))
+
     ;; Register the native `beforeinput` listener. React's synthetic
     ;; `onBeforeInput` does not expose `getTargetRanges()`, even with
     ;; nativeEvent (it's fully synthetic, composed of other two events).
@@ -680,9 +997,10 @@
       ;; Group the whole editing session (edits, reflow resizes, finalize) into a single
       ;; undo entry. Nested transactions (e.g. style shortcuts) are ref-counted and fold in.
       (st/emit! (dwu/start-undo-transaction shape-id :timeout nil))
-      (when-let [node (mf/ref-val contenteditable-ref)]
-        ;; Focus and select all text on mount (this will trigger on-focus)
-        (.focus node)
+      (when (some? (mf/ref-val contenteditable-ref))
+        ;; Focus and select all text on mount. `focus-editor!` establishes the
+        ;; WASM focus explicitly; select-all is a no-op without it.
+        (focus-editor!)
         ;; Guarded apart so a recoverable error still returns the cleanup below,
         ;; which commits the undo transaction opened above.
         (errors/wrap-wasm-effect
@@ -723,40 +1041,46 @@
     [:g.text-editor {:clip-path (dm/fmt "url(#%)" clip-id)
                      :transform (dm/str transform)
                      :data-testid "text-editor"}
+     [:> ime-debug/overlay* {:input-ref contenteditable-ref
+                             :composing-ref composing-ref
+                             :composition-text-ref composition-text-ref
+                             :composition-base-ref composition-base-ref}]
      [:defs
       [:clipPath {:id clip-id}
        [:rect {:x x :y y :width width :height height}]]]
 
-     [:foreignObject {:x x :y y :width width :height height}
+     [:foreignObject {:x (- x ime-left) :y y :width (+ ime-width ime-left) :height height}
       [:div {:on-click on-click
              :on-double-click on-double-click
              :on-pointer-down on-pointer-down
              :on-pointer-move on-pointer-move
              :on-pointer-up on-pointer-up
              :on-context-menu on-context-menu
-             :class (stl/css :text-editor)
+             ;; The hover cursor lives here: the capture surface is pointer-events:none.
+             :class (dm/str (cur/get-text (:rotation shape) vertical?)
+                            " "
+                            (stl/css :text-editor))
              :style style}
-       [:div
-        {:ref contenteditable-ref
-         :contentEditable true
-         :suppressContentEditableWarning true
-         ;; The surface retains typed text between keystrokes (see
-         ;; keep-input-alive), so disable text assistance that would otherwise
-         ;; rewrite that retained text and desync the WASM editor.
-         ;; NOTE: this was already not working in v1/v2
-         :spellCheck false
-         :autoCorrect "off"
-         :autoCapitalize "off"
-         :on-composition-start on-composition-start
-         :on-composition-update on-composition-update
-         :on-composition-end on-composition-end
-         :on-key-down on-key-down
-         :on-input on-input
-         :on-paste on-paste
-         :on-copy on-copy
-         :on-cut on-cut
-         :on-focus on-focus
-         :on-blur on-blur
-         :id "text-editor-wasm-input"
-         :class (input-surface-class (:rotation shape))
-         :data-testid "text-editor-container"}]]]]))
+       [:div {:ref wrapper-ref
+              :class (stl/css :ime-anchor)}
+        [:div
+         {:ref contenteditable-ref
+          :contentEditable true
+          :suppressContentEditableWarning true
+          ;; Text assistance would rewrite the retained text (see keep-input-alive).
+          :spellCheck false
+          :autoCorrect "off"
+          :autoCapitalize "off"
+          :on-composition-start on-composition-start
+          :on-composition-update on-composition-update
+          :on-composition-end on-composition-end
+          :on-key-down on-key-down
+          :on-input on-input
+          :on-paste on-paste
+          :on-copy on-copy
+          :on-cut on-cut
+          :on-focus on-focus
+          :on-blur on-blur
+          :id "text-editor-wasm-input"
+          :class (input-surface-class)
+          :data-testid "text-editor-container"}]]]]]))

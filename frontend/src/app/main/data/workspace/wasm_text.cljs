@@ -24,10 +24,18 @@
    [app.main.data.workspace.undo :as dwu]
    [app.render-wasm.api :as wasm.api]
    [app.render-wasm.api.fonts :as wasm.fonts]
+   [app.util.text.geometry :as text.geom]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
 (def debounce-resize-text-time 40)
+
+(defn resolve-text-size
+  "Selects the axes controlled by WASM for a text grow type. Vertical
+  auto-height keeps the physical height as its wrap budget and grows width."
+  [selrect grow-type content dimension]
+  (when (or (= :fixed grow-type) (some? dimension))
+    (text.geom/resolve-size selrect grow-type content dimension)))
 
 (defn get-wasm-text-new-size
   "Computes the new {width, height} for a text shape from WASM text layout.
@@ -51,25 +59,18 @@
        (wasm.api/set-shape-text-images id content))
      (let [dimension (when (not= :fixed grow-type)
                        (wasm.api/get-text-dimensions))]
-       ;; nil dimension = shape not present in WASM state; skip the resize.
-       (when (or (= :fixed grow-type) (some? dimension))
-         {:width  (if (#{:fixed :auto-height} grow-type)
-                    (:width selrect)
-                    (:width dimension))
-          :height (if (= :fixed grow-type)
-                    (:height selrect)
-                    (:height dimension))})))))
+       (resolve-text-size selrect grow-type content dimension)))))
 
 (defn resize-wasm-text-modifiers
   ([shape]
    (resize-wasm-text-modifiers shape (:content shape)))
 
-  ([{:keys [id points selrect] :as shape} content]
+  ([{:keys [id selrect] :as shape} content]
    (when-let [new-size (get-wasm-text-new-size shape content)]
      (let [width-scale  (/ (:width new-size) (:width selrect))
            height-scale (/ (:height new-size) (:height selrect))
            resize-v     (gpt/point width-scale height-scale)
-           origin       (first points)]
+           origin       (text.geom/resize-origin (assoc shape :content content))]
        {id
         {:modifiers
          (ctm/resize-modifiers
@@ -280,3 +281,5 @@
                        (rx/empty)
                        resize-stream)))))
            resize-stream))))))
+
+
