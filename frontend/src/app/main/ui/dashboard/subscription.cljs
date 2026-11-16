@@ -42,11 +42,13 @@
     (get-subscription-type (dm/get-in profile [:props :subscription]))))
 
 (defn show-team-plan?
-  [is-owner team profile]
-  (not (and is-owner
-            (nil? (dm/get-in team [:organization :id]))
-            (contains? #{"enterprise" "nitrate"}
-                       (get-profile-subscription-type profile)))))
+  "The plan of a team outside an organization is the plan of its owner,
+  which the backend puts in the team `:subscription`. It is hidden from
+  every member when the owner has an Enterprise or Nitrate plan."
+  [team]
+  (or (some? (dm/get-in team [:organization :id]))
+      (not (contains? #{"enterprise" "nitrate"}
+                      (get-subscription-type (:subscription team))))))
 
 (mf/defc cta-power-up*
   [{:keys [top-title top-description bottom-description bottom-button bottom-button-href has-dropdown is-highlighted]}]
@@ -330,7 +332,7 @@
         "enterprise" (tr "subscription.current-plan.enterprise"))]]))
 
 (mf/defc team*
-  [{:keys [is-owner team profile]}]
+  [{:keys [is-owner team]}]
   (let [subscription          (:subscription team)
         subscription-type     (get-subscription-type subscription)
         team-plan-type        (get-team-plan-type team)
@@ -348,7 +350,7 @@
                  href (str "payments/subscriptions/show?returnUrl=" href)]
              (st/emit! (rt/nav-raw :href href)))))]
 
-    (when (show-team-plan? is-owner team profile)
+    (when (show-team-plan? team)
       [:div {:class (stl/css :team)}
        [:div {:class (stl/css :team-label)}
         (tr "subscription.dashboard.team-plan")]

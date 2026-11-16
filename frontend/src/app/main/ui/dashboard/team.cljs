@@ -1780,5 +1780,4 @@
 
        (when (contains? cfg/flags :subscriptions)
          [:> team* {:is-owner (:is-owner permissions)
-                    :team team
-                    :profile profile}])]]]))
+                    :team team}])]]]))
