@@ -665,7 +665,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (mf/defc invitation-role-selector*
-  [{:keys [role status on-change can-invite?]}]
+  [{:keys [role status on-change can-invite]}]
   (let [show?   (mf/use-state false)
         label   (cond
                   (= role :owner)  (tr "labels.owner")
@@ -686,7 +686,7 @@
              (on-change role event))))]
 
     [:*
-     (if (and can-invite? (= status :pending))
+     (if (and ^boolean can-invite (= status :pending))
        [:button {:class (stl/css :rol-selector :has-priv)
                  :type "button"
                  :aria-haspopup "listbox"
@@ -724,7 +724,7 @@
 
 (mf/defc invitation-actions*
   {::mf/private true}
-  [{:keys [invitation team-id is-owner? can-invite?]}]
+  [{:keys [invitation team-id is-owner? can-invite]}]
   (let [email    (:email invitation)
         copied*  (mf/use-state false)
         copied?  (deref copied*)
@@ -770,7 +770,7 @@
               (-> (dtm/copy-invitation-link params)
                   (with-meta {::ev/origin :team}))))))]
 
-    (when (invitation-link-copyable? can-invite? is-owner? (:role invitation))
+    (when (invitation-link-copyable? can-invite is-owner? (:role invitation))
       [:> icon-button* {:variant "ghost"
                         :aria-label (tr "labels.copy-invitation-link")
                         :on-click on-copy
@@ -779,7 +779,7 @@
 (mf/defc invitation-row*
   {::mf/wrap [mf/memo]
    ::mf/private true}
-  [{:keys [invitation team-id selected on-select-change is-owner? can-invite?]}]
+  [{:keys [invitation team-id selected on-select-change is-owner? can-invite]}]
 
   (let [expired? (:expired invitation)
         email    (:email invitation)
@@ -815,7 +815,7 @@
      [:div {:class (stl/css :table-field :field-email)}
       ;; Selecting an invitation only leads to resending or deleting it, and
       ;; both need the organization invite policy.
-      (if ^boolean can-invite?
+      (if ^boolean can-invite
         [:div {:class (stl/css :input-wrapper)}
          [:label
           [:span {:class (stl/css-case :input-checkbox true
@@ -835,7 +835,7 @@
       [:> invitation-role-selector*
        {:role role
         :status status
-        :can-invite? can-invite?
+        :can-invite can-invite
         :on-change on-change-role}]]
 
      [:div {:class (stl/css :table-field :field-status)}
@@ -846,11 +846,11 @@
        {:invitation invitation
         :team-id team-id
         :is-owner? is-owner?
-        :can-invite? can-invite?}]]]))
+        :can-invite can-invite}]]]))
 
 (mf/defc empty-invitation-table*
   {::mf/private true}
-  [{:keys [team can-invite?]}]
+  [{:keys [team can-invite]}]
   (let
    [route                (mf/deref refs/route)
     invite-email         (-> route :query-params :invite-email)
@@ -869,10 +869,10 @@
                           [:> button* {:variant "primary"
                                        :class (stl/css :btn-empty-invitations)
                                        :on-click on-invite-member
-                                       :disabled (not can-invite?)
+                                       :disabled (not can-invite)
                                        :data-testid "invite-member"}
                            (tr "dashboard.invite-profile")])]
-       (if ^boolean can-invite?
+       (if ^boolean can-invite
          invite-button
          [:> tooltip* {:content (tr "dashboard.invite-profile-disabled")
                        :id "empty-invite-member-disabled-tooltip"
@@ -1278,14 +1278,14 @@
                                     "arrow-down")
                             :on-click on-order-by-status}]]]
         (if (empty? @invitations)
-          [:> empty-invitation-table* {:team team :can-invite? can-invite?}]
+          [:> empty-invitation-table* {:team team :can-invite can-invite?}]
           [:div {:class (stl/css :table-rows)}
            (for [invitation @invitations]
              [:> invitation-row*
               {:key (:email invitation)
                :invitation invitation
                :is-owner? is-owner?
-               :can-invite? can-invite?
+               :can-invite can-invite?
                :team-id team-id
                :selected selected
                :on-select-change on-select-change}])])])]))
