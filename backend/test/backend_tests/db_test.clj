@@ -36,6 +36,40 @@
         (do (Thread/sleep 10)
             (recur (dec attempt)))))))
 
+(t/deftest pool-passes-prepared-statement-cache-properties
+  ;; The driver reads dataSourceProperties through Properties.getProperty,
+  ;; which keeps only String values, so the wiring must set them as strings.
+  (let [metrics (ig/init-key :app.metrics/metrics {:default {}})
+        init-pool (fn [opts]
+                    (ig/init-key :app.db/pool
+                                 (merge {:app.db/uri (java.net.URI. "postgresql://localhost/test")
+                                         :app.metrics/metrics metrics
+                                         :app.db/name :test-prepared-statement-cache}
+                                        opts)))]
+    (t/testing "absent keys stay absent (the driver defaults apply)"
+      (let [ds (init-pool {})]
+        (t/is (empty? (.getDataSourceProperties ^HikariDataSource ds)))
+        (.close ^HikariDataSource ds)))
+    (t/testing "configured keys reach the driver as strings"
+      (let [ds (init-pool {:app.db/prepare-threshold 1
+                           :app.db/prepared-statement-cache-queries 512
+                           :app.db/prepared-statement-cache-size 10485760})
+            props (.getDataSourceProperties ^HikariDataSource ds)]
+        (t/is (= "1" (.getProperty props "prepareThreshold")))
+        (t/is (= "512" (.getProperty props "preparedStatementCacheQueries")))
+        (t/is (= "10" (.getProperty props "preparedStatementCacheSizeMiB")))
+        (.close ^HikariDataSource ds)))
+    (t/testing "a positive sub-MiB size rounds up so the cache stays enabled"
+      (let [ds (init-pool {:app.db/prepared-statement-cache-size 1})]
+        (t/is (= "1" (.getProperty (.getDataSourceProperties ^HikariDataSource ds)
+                                   "preparedStatementCacheSizeMiB")))
+        (.close ^HikariDataSource ds)))
+    (t/testing "zero size disables the cache"
+      (let [ds (init-pool {:app.db/prepared-statement-cache-size 0})]
+        (t/is (= "0" (.getProperty (.getDataSourceProperties ^HikariDataSource ds)
+                                   "preparedStatementCacheSizeMiB")))
+        (.close ^HikariDataSource ds)))))
+
 (t/deftest pool-requires-metrics
   ;; Metrics is required by the pool schema: a pool wired without it
   ;; fails at the boundary (AssertionError when asserts are enabled) or

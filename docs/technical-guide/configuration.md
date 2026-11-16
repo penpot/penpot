@@ -780,6 +780,33 @@ If the PostgreSQL server is shared with other applications, make sure
 `PENPOT_DATABASE_MAX_POOL_SIZE` plus the connections used by everything else stays below
 the server's `max_connections` (100 by default).
 
+#### Prepared statement cache
+
+Every connection keeps a server-side cache of prepared statements: compiled queries whose
+plan the server can reuse, which saves the parse and the plan on every repeated query.
+The cache is on by default; you only need these settings to tune it or to turn it off:
+
+```bash
+# Backend
+PENPOT_DATABASE_PREPARE_THRESHOLD: 5
+PENPOT_DATABASE_PREPARED_STATEMENT_CACHE_QUERIES: 256
+PENPOT_DATABASE_PREPARED_STATEMENT_CACHE_SIZE: 5242880
+```
+
+The values above are the driver defaults. `PENPOT_DATABASE_PREPARE_THRESHOLD` is how many
+times a query runs on a connection before the driver prepares it server-side: `0` disables
+server-side prepared statements entirely, `-1` forces binary mode. After the threshold, the
+connection caches up to `PENPOT_DATABASE_PREPARED_STATEMENT_CACHE_QUERIES` prepared queries,
+using at most `PENPOT_DATABASE_PREPARED_STATEMENT_CACHE_SIZE` bytes per connection (the size
+is rounded up to whole MiB for the driver; `0` disables the size). With 60 connections, the
+ceiling is 60 × the size. Leave a variable unset and the driver default applies.
+
+To watch the cache, query `pg_prepared_statements` on the server; the backend exports no
+metric for it. The driver drops the cache on schema changes by itself (`flushCacheOnDdl`
+stays at its default), so migrations do not serve stale plans. If you ever place a
+transaction-pooling connection pooler such as PgBouncer between the backend and PostgreSQL,
+server-side prepared statements break: set `PENPOT_DATABASE_PREPARE_THRESHOLD` to `0` instead.
+
 ### Storage
 
 Storage refers to storing the user uploaded different objects in Penpot (assets, file data,...).
