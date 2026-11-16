@@ -1,5 +1,33 @@
 # CHANGELOG
 
+## 2.21.0
+
+### :boom: Breaking changes & Deprecations
+
+### :lock: Security fixes
+
+- Fix real-time collaboration WebSocket never re-validates file access after `:subscribe-file`, letting revoked users keep receiving live edit content (https://github.com/penpot/penpot/security/advisories/GHSA-m53j-2766-6jqw) (PR: [#12189](https://github.com/penpot/penpot/pull/12189))
+
+### :tada: Features
+
+- Auto-link libraries during import based on slugified name [#9263](https://github.com/penpot/penpot/issues/9263) (PR: [#9958](https://github.com/penpot/penpot/pull/9958))
+- Implement basic bullet lists [#12630](https://github.com/penpot/penpot/issues/12630) (PR: [#12720](https://github.com/penpot/penpot/pull/12720))
+
+### :sparkles: Enhancements
+
+- Improve performance of payload decoding in the workspace (by @lukel97) [#12916](https://github.com/penpot/penpot/issues/12916) (PR: [#12704](https://github.com/penpot/penpot/pull/12704))
+- Keep the search when changing library in the Swap component menu (by @desty) [#12335](https://github.com/penpot/penpot/issues/12335) (PR: [#12873](https://github.com/penpot/penpot/pull/12873))
+
+### :bug: Bugs
+
+- Fix workspace stuttering when switching pages in a large file (by @lukel97) [#12917](https://github.com/penpot/penpot/issues/12917) (PR: [#12811](https://github.com/penpot/penpot/pull/12811))
+- Fix workspace freezes when undoing or redoing a move of a board with many components (by @lukel97) [#12913](https://github.com/penpot/penpot/issues/12913) (PR: [#12870](https://github.com/penpot/penpot/pull/12870))
+- Fix dashboard freezes for about a second after duplicating a large file (by @lukel97) [#12914](https://github.com/penpot/penpot/issues/12914) (PR: [#12911](https://github.com/penpot/penpot/pull/12911))
+- Fix not being able to collapse a token set group after reordering it [#12625](https://github.com/penpot/penpot/issues/12625) (PR: [#12671](https://github.com/penpot/penpot/pull/12671))
+- Fix slow variant switch with the WebGL renderer [#12968](https://github.com/penpot/penpot/issues/12968) (PR: [#12985](https://github.com/penpot/penpot/pull/12985))
+- Fix login page GitHub logo showing with low contrast in the light theme [#12938](https://github.com/penpot/penpot/issues/12938) (PR: [#12943](https://github.com/penpot/penpot/pull/12943))
+- Fix leak and black screen on wasm-critical errors [#12977](https://github.com/penpot/penpot/issues/12977) (PR: [#12978](https://github.com/penpot/penpot/pull/12978))
+
 ## 2.20.0
 
 ### :boom: Breaking changes & Deprecations
@@ -33,10 +61,6 @@ If you upgrade blindly: on fresh databases and small instances the startup migra
 
 - Allow MCP to work with multiple open Penpot files [#11759](https://github.com/penpot/penpot/issues/11759)
 - Allow MCP to access and manage Penpot Dashboard resources [#11761](https://github.com/penpot/penpot/issues/11761)
-
-### :lock: Security fixes
-
-- Fix real-time collaboration WebSocket never re-validates file access after `:subscribe-file`, letting revoked users keep receiving live edit content (https://github.com/penpot/penpot/security/advisories/GHSA-m53j-2766-6jqw)
 
 ### :tada: Features
 
