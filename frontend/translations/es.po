@@ -198,6 +198,10 @@ msgstr "(actual)"
 msgid "common.share-link.destroy-link"
 msgstr "Eliminar enlace"
 
+#: src/app/main/data/common.cljs:74
+msgid "common.share-link.destroy-not-owner"
+msgstr "Sólo puedes eliminar los enlaces que has creado."
+
 #: src/app/main/ui/viewer/share_link.cljs:223
 msgid "common.share-link.get-link"
 msgstr "Obtener enlace"
@@ -206,9 +210,17 @@ msgstr "Obtener enlace"
 msgid "common.share-link.link-copied-success"
 msgstr "Enlace copiado satisfactoriamente"
 
+#: src/app/main/ui/viewer/share_link.cljs:237
+msgid "common.share-link.links-title"
+msgstr "Enlaces de este archivo"
+
 #: src/app/main/ui/viewer/share_link.cljs:236
 msgid "common.share-link.manage-ops"
 msgstr "Gestionar permisos"
+
+#: src/app/main/ui/viewer/share_link.cljs:136
+msgid "common.share-link.no-pages"
+msgstr "Sin páginas"
 
 #: src/app/main/ui/viewer/share_link.cljs:282
 msgid "common.share-link.page-shared"

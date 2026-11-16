@@ -203,7 +203,10 @@
     :link-preview
 
     ;; Shows the "link later" option on the files export modal.
-    :export-link-later})
+    :export-link-later
+
+    ;; Shared links visibility, expiration date, and password.
+    :shared-links})
 
 (def all-flags
   (set/union email login varia))
