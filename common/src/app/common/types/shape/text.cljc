@@ -7,7 +7,8 @@
 (ns app.common.types.shape.text
   (:require
    [app.common.schema :as sm]
-   [app.common.types.fills :refer [schema:fills]]))
+   [app.common.types.fills :refer [schema:fills]]
+   [app.common.types.text.cjk-layout :as cjk]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SCHEMA
@@ -15,10 +16,22 @@
 
 (def node-types #{"root" "paragraph-set" "paragraph"})
 
+;; Values of a CJK layout enum attr; paragraphs set the orientation
+;; of the whole shape and spans carry a copy.
+(defn- schema:cjk-enum
+  [attr]
+  (into [:enum] (get cjk/enum-values attr)))
+
+;; BCP 47 shaped language tag of a paragraph, as the HTML `lang` attribute.
+(def schema:text-language
+  [:re {:gen/elements ["ja" "zh-Hans" "zh-Hant-TW" "ko" "en-GB"]}
+   #"^(?:[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*|[xXiI](?:-[A-Za-z0-9]{1,8})+)$"])
+
 (def schema:content
   [:map
    [:type [:= "root"]]
    [:key {:optional true} :string]
+   [:line-adjustment {:optional true} (schema:cjk-enum :line-adjustment)]
    [:children
     [:vector {:min 1 :gen/max 2 :gen/min 1}
      [:map
@@ -36,6 +49,12 @@
          [:font-style {:optional true} ::sm/text]
          [:font-weight {:optional true} ::sm/text]
          [:direction {:optional true} ::sm/text]
+         ;; Paragraph language selects typography; it never follows the UI locale.
+         [:text-language {:optional true} schema:text-language]
+         ;; Word mode keeps punctuation rules; retain the old POC value on reload.
+         [:korean-wrap {:optional true} (schema:cjk-enum :korean-wrap)]
+         [:writing-mode {:optional true} (schema:cjk-enum :writing-mode)]
+         [:text-orientation {:optional true} (schema:cjk-enum :text-orientation)]
          [:text-decoration {:optional true} ::sm/text]
          [:text-transform {:optional true} ::sm/text]
          [:typography-ref-id {:optional true} [:maybe ::sm/uuid]]
@@ -52,6 +71,22 @@
             [:font-style {:optional true} ::sm/text]
             [:font-weight {:optional true} ::sm/text]
             [:direction {:optional true} ::sm/text]
+            [:text-combine-upright {:optional true} (schema:cjk-enum :text-combine-upright)]
+            [:text-emphasis {:optional true} (schema:cjk-enum :text-emphasis)]
+            [:text-emphasis-position {:optional true} (schema:cjk-enum :text-emphasis-position)]
+            [:text-underline-position {:optional true} (schema:cjk-enum :text-underline-position)]
+            [:ruby {:optional true} :string]
+            [:ruby-group {:optional true} :string]
+            [:ruby-hidden {:optional true} :boolean]
+            [:ruby-zhuyin {:optional true} :boolean]
+            [:ruby-size {:optional true} (schema:cjk-enum :ruby-size)]
+            [:ruby-align {:optional true} (schema:cjk-enum :ruby-align)]
+            [:ruby-overhang {:optional true} (schema:cjk-enum :ruby-overhang)]
+            [:ruby-side {:optional true} (schema:cjk-enum :ruby-side)]
+            [:warichu {:optional true} (schema:cjk-enum :warichu)]
+            [:font-features {:optional true} (schema:cjk-enum :font-features)]
+            [:annotation-clearance {:optional true} (schema:cjk-enum :annotation-clearance)]
+            [:text-orientation {:optional true} (schema:cjk-enum :text-orientation)]
             [:text-decoration {:optional true} ::sm/text]
             [:text-transform {:optional true} ::sm/text]
             [:typography-ref-id {:optional true} [:maybe ::sm/uuid]]
@@ -73,6 +108,21 @@
     [:font-style {:optional true} ::sm/text]
     [:font-weight {:optional true} ::sm/text]
     [:rtl {:optional true} :boolean]
+    [:writing-mode {:optional true} ::sm/text]
+    [:text-orientation {:optional true} ::sm/text]
+    [:text-combine-upright {:optional true} ::sm/text]
+    [:emphasis-mark {:optional true} :boolean]
+    [:zhuyin-glyph {:optional true} :boolean]
+    [:ruby {:optional true} :string]
+    ;; A horizontal reading over several strips of its base spans them all.
+    [:ruby-x {:optional true} ::sm/safe-number]
+    [:ruby-width {:optional true} ::sm/safe-number]
+    [:ruby-size {:optional true} ::sm/text]
+    [:ruby-align {:optional true} ::sm/text]
+    [:ruby-overhang {:optional true} ::sm/text]
+    [:ruby-side {:optional true} ::sm/text]
+    [:warichu {:optional true} ::sm/text]
+    [:font-features {:optional true} ::sm/text]
     [:text {:optional true} :string]
     [:text-decoration {:optional true} ::sm/text]
     [:text-transform {:optional true} ::sm/text]]])

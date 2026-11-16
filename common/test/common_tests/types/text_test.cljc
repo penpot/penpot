@@ -8,13 +8,22 @@
   (:require
 
    [app.common.types.shape :as cts]
+   [app.common.types.shape.text :as ctst]
    [app.common.types.text :as cttx]
+   [app.common.types.text.cjk-layout :as cjk]
    [clojure.test :as t :include-macros true]))
 
 (def content-base
   (-> (cts/setup-shape {:type :text :x 0 :y 0 :grow-type :auto-width})
       (get :content)
       (cttx/change-text "hello world")))
+
+(t/deftest distributed-alignment-is-a-persisted-paragraph-style
+  (t/is (contains? cts/text-align-types "distribute"))
+  (let [content (assoc-in content-base [:children 0 :children 0 :text-align] "distribute")]
+    (t/is (ctst/valid-content? content))
+    (t/is (= "distribute"
+             (get-in (cttx/change-text content "한글") [:children 0 :children 0 :text-align])))))
 
 ;; Normal happy-path changes
 
@@ -368,3 +377,291 @@
 
     (t/is (every? #(= % "14") original-font-sizes))
     (t/is (every? #(= % "32") updated-font-sizes))))
+
+(defn- with-span-attrs
+  [attrs]
+  (update-in content-base [:children 0 :children 0 :children 0] merge attrs))
+
+(defn- with-paragraph-attrs
+  [attrs]
+  (update-in content-base [:children 0 :children 0] merge attrs))
+
+(t/deftest paragraph-language-and-experimental-korean-wrap
+  (doseq [language ["ja" "zh-Hans" "zh-Hant-TW" "ko" "en-GB"]]
+    (t/is (ctst/valid-content?
+           (with-paragraph-attrs {:text-language language
+                                  :korean-wrap "spaces-only"}))))
+  (doseq [attrs [{:text-language 42}
+                 {:text-language "zh_Hans"}
+                 {:text-language ""}
+                 {:korean-wrap "keep-all"}]]
+    (t/is (not (ctst/valid-content? (with-paragraph-attrs attrs))) (pr-str attrs)))
+  (t/is (contains? (set cttx/paragraph-attrs) :text-language))
+  (t/is (not (contains? (set cjk/vertical-writing-attrs) :text-language))))
+
+(t/deftest japanese-span-attrs-accept-supported-values
+  (t/is (ctst/valid-content?
+         (with-span-attrs {:text-combine-upright "digits2"
+                           :text-emphasis "open-sesame"
+                           :ruby "かんじ"
+                           :ruby-hidden true
+                           :ruby-zhuyin true
+                           :ruby-size "quarter"
+                           :ruby-align "space-between"
+                           :ruby-overhang "none"
+                           :ruby-side "under"
+                           :warichu "warichu"
+                           :font-features "vpal"
+                           :annotation-clearance "auto"
+                           :text-orientation "upright"})))
+  (t/is (ctst/valid-content?
+         (with-paragraph-attrs {:writing-mode "vertical-rl" :text-orientation "mixed"}))))
+
+(t/deftest japanese-attrs-reject-unknown-values
+  (doseq [attrs [{:text-combine-upright "digits5"}
+                 {:text-emphasis "dot"}
+                 {:ruby-hidden "yes"}
+                 {:ruby-zhuyin "yes"}
+                 {:ruby-size "full"}
+                 {:ruby-align "end"}
+                 {:ruby-overhang "always"}
+                 {:ruby-side "left"}
+                 {:warichu "yes"}
+                 {:font-features "kern"}
+                 {:annotation-clearance "max"}
+                 {:text-orientation "sideways"}]]
+    (t/is (not (ctst/valid-content? (with-span-attrs attrs))) (pr-str attrs)))
+  (t/is (not (ctst/valid-content? (with-paragraph-attrs {:writing-mode "vertical-lr"})))))
+
+(t/deftest digit-combine-segments-combine-short-digit-runs
+  (t/is (= [["平成" false] ["31" true] ["年" false]]
+           (cjk/digit-combine-segments "平成31年" "digits2")))
+  (t/is (= [["第" false] ["１２３" true]]
+           (cjk/digit-combine-segments "第１２３" "digits3")))
+  (t/is (= [["12345" false]] (cjk/digit-combine-segments "12345" "digits")))
+  (t/is (= [["1" true]] (cjk/digit-combine-segments "1" "digits")))
+  (t/is (= [["2" true] ["月" false] ["5" true] ["日" false]]
+           (cjk/digit-combine-segments "2月5日" "digits2")))
+  (t/is (nil? (cjk/digit-combine-segments "31" "all"))))
+
+(t/deftest western-reading-test
+  (t/is (true? (cjk/western-reading? "editor")))
+  (t/is (true? (cjk/western-reading? "gross domestic product")))
+  (t/is (false? (cjk/western-reading? "エディター")))
+  (t/is (false? (cjk/western-reading? "ＧＤＰ")))
+  (t/is (false? (cjk/western-reading? "かnji")))
+  (t/is (false? (cjk/western-reading? "")))
+  (t/is (false? (cjk/western-reading? nil))))
+
+(t/deftest schema-accepts-every-japanese-enum-value
+  (doseq [[attr values] (dissoc cjk/enum-values :writing-mode :line-adjustment)
+          value         values]
+    (t/is (ctst/valid-content? (with-span-attrs {attr value})) (pr-str attr value)))
+  (doseq [value (:writing-mode cjk/enum-values)]
+    (t/is (ctst/valid-content? (with-paragraph-attrs {:writing-mode value})) value))
+  (doseq [value (:line-adjustment cjk/enum-values)]
+    (t/is (ctst/valid-content? (assoc content-base :line-adjustment value)) value))
+  (t/is (not (ctst/valid-content? (assoc content-base :line-adjustment "squeeze")))))
+
+(t/deftest japanese-enum-defaults-are-the-first-values
+  (t/is (= "horizontal-tb" (cjk/enum-default :writing-mode)))
+  (t/is (= "space-around" (cjk/enum-default :ruby-align)))
+  (t/is (= "auto" (cjk/enum-default :ruby-overhang)))
+  (t/is (= "push-in-first" (cjk/enum-default :line-adjustment)))
+  (t/is (= {:writing-mode "horizontal-tb" :text-orientation "mixed"}
+           cjk/paragraph-attr-defaults)))
+
+(t/deftest span-attr-defaults-cover-every-span-attr
+  (t/is (= (set cjk/span-attrs) (set (keys cjk/span-attr-defaults))))
+  (t/is (= "" (:ruby cjk/span-attr-defaults)))
+  (t/is (false? (:ruby-hidden cjk/span-attr-defaults)))
+  (t/is (= "half" (:ruby-size cjk/span-attr-defaults))))
+
+(t/deftest valid-enum-value-checks-the-attr-values
+  (t/is (cjk/valid-enum-value? :ruby-side "under"))
+  (t/is (not (cjk/valid-enum-value? :ruby-side "left")))
+  (t/is (not (cjk/valid-enum-value? :ruby-side nil))))
+
+(t/deftest digit-combine-covers-the-digits-values-only
+  (t/is (every? cjk/digit-combine? ["digits" "digits2" "digits3"]))
+  (t/is (not-any? cjk/digit-combine? ["none" "all" nil])))
+
+(t/deftest warichu-notes-show-no-ruby
+  (t/is (= "かん" (cjk/visible-ruby {:text "漢字" :ruby "かん"})))
+  (t/is (nil? (cjk/visible-ruby {:text "漢字" :ruby "かん" :warichu "warichu"})))
+  (t/is (nil? (cjk/visible-ruby {:text "漢字" :ruby "かん" :ruby-hidden true}))))
+
+(t/deftest ruby-span-is-true-for-hidden-readings
+  (t/is (cjk/ruby-span? {:ruby "かん" :ruby-hidden true}))
+  (t/is (not (cjk/ruby-span? {:ruby " "})))
+  (t/is (not (cjk/ruby-span? {}))))
+
+(t/deftest whole-shape-attr-reads-the-first-paragraph
+  (let [content {:type "root"
+                 :children [{:type "paragraph-set"
+                             :children [{:type "paragraph" :writing-mode "vertical-rl"
+                                         :children [{:text "a"}]}
+                                        {:type "paragraph" :writing-mode "horizontal-tb"
+                                         :children [{:text "b"}]}]}]}]
+    (t/is (= "vertical-rl" (cjk/whole-shape-attr content :writing-mode)))
+    (t/is (nil? (cjk/whole-shape-attr content :text-orientation)))))
+
+(t/deftest regional-chinese-and-korean-word-profiles-validate
+  (doseq [language ["zh-Hans-CN" "zh-Hant-CN" "zh-Hant-TW" "zh-Hant-HK" "ko-KR"]]
+    (t/is (ctst/valid-content?
+           (with-paragraph-attrs {:text-language language :korean-wrap "keep-words"})))))
+
+
+(t/deftest annotation-position-enums-are-independent-span-styles
+  (doseq [[attr values] [[:text-emphasis-position ["auto" "over-right" "over-left" "under-right" "under-left"]]
+                         [:text-underline-position ["auto" "under" "left" "right" "under-left" "under-right"]]]]
+    (t/is (= "auto" (cjk/enum-default attr)))
+    (t/is (some #{attr} cjk/span-attrs))
+    (doseq [value values]
+      (t/is (cjk/valid-enum-value? attr value))
+      (t/is (ctst/valid-content? (with-span-attrs {attr value}))))
+    (t/is (not (ctst/valid-content? (with-span-attrs {attr "invalid"}))))
+    (t/is (not (cjk/valid-enum-value? attr "invalid")))))
+
+(t/deftest zhuyin-validates-one-han-base-and-one-mandarin-syllable
+  (doseq [base ["你" "中" "𠀀" "中︀"]]
+    (t/is (cjk/zhuyin-base? base)))
+  (doseq [base [nil "" "你好" "a" "한" "ㄋ"]]
+    (t/is (not (cjk/zhuyin-base? base))))
+  (doseq [reading ["ㄓ" "ㄋㄧˇ" "ㄓㄨㄤˋ" "˙ㄉㄜ" "ㄉㄜ˙" "ㄇㄚˉ"]]
+    (t/is (cjk/zhuyin-reading? reading)))
+  (doseq [reading [nil "" "nǐ" "ˇ" "ㄋˇㄧ" "ㄋㄧˇˋ" "ㄋ ㄧ" "ㄅㄆㄇㄈ"]]
+    (t/is (not (cjk/zhuyin-reading? reading))))
+  (t/is (false? (:ruby-zhuyin cjk/span-attr-defaults))))
+
+(t/deftest zhuyin-neutral-tone-is-above-and-other-tones-are-outside-the-last-symbol
+  (let [[neutral first-symbol second-symbol] (cjk/zhuyin-slots "˙ㄉㄜ")
+        [first-normal last-normal tone] (cjk/zhuyin-slots "ㄋㄧˇ")]
+    (t/is (< (:y neutral) (:y first-symbol) (:y second-symbol)))
+    (t/is (= (:x neutral) (:x first-symbol) (:x second-symbol)))
+    (t/is (< (:y first-normal) (:y last-normal)))
+    (t/is (> (:x tone) (:x last-normal)))
+    (t/is (< (:y tone) (:y last-normal)))))
+
+(t/deftest merge-equal-spans-joins-neighbours-with-the-same-style
+  (t/testing "a missing attr equals its default, CJK defaults included"
+    (t/is (= [{:text "2027" :text-combine-upright "all"}]
+             (cttx/merge-equal-spans [{:text "2" :text-combine-upright "all"}
+                                      {:text "027" :text-combine-upright "all"}])))
+    (t/is (= [{:text "abcd" :font-size 14}]
+             (cttx/merge-equal-spans [{:text "ab" :font-size 14}
+                                      {:text "cd" :text-combine-upright "none" :ruby nil}]))))
+
+  (t/testing "spans with different styles stay apart"
+    (t/is (= [{:text "ab"} {:text "cd" :font-weight "700"} {:text "ef"}]
+             (cttx/merge-equal-spans [{:text "ab"} {:text "cd" :font-weight "700"} {:text "ef"}]))))
+
+  (t/testing "readings and warichu notes are never joined, even when equal"
+    (let [spans [{:text "人" :ruby "hito"} {:text "々" :ruby "hito"} {:text "x"}]]
+      (t/is (= spans (cttx/merge-equal-spans spans))))
+    (let [spans [{:text "注" :warichu "warichu"} {:text "釈" :warichu "warichu"}]]
+      (t/is (= spans (cttx/merge-equal-spans spans)))))
+
+  (t/testing "no spans give no spans"
+    (t/is (= [] (cttx/merge-equal-spans [])))))
+
+(defn- cjk-content
+  "One paragraph with a span carrying the CJK attrs of every language."
+  [paragraph-attrs]
+  {:type "root"
+   :line-adjustment "push-out-first"
+   :children
+   [{:type "paragraph-set"
+     :children
+     [(merge {:type "paragraph"
+              :writing-mode "vertical-rl"
+              :text-orientation "upright"
+              :text-align "distribute"
+              :korean-wrap "keep-words"
+              :children [{:text "日本"
+                          :ruby "にほん"
+                          :ruby-zhuyin true
+                          :text-combine-upright "digits"
+                          :text-emphasis-position "over-left"
+                          :warichu "warichu"
+                          :font-features "palt"}]}
+             paragraph-attrs)]}]})
+
+(defn- first-paragraph
+  [content]
+  (get-in content [:children 0 :children 0]))
+
+(t/deftest language-family-follows-the-primary-subtag
+  (t/is (= :japanese (cjk/language-family "ja-JP")))
+  (t/is (= :chinese (cjk/language-family "zh-Hant-TW")))
+  (t/is (= :korean (cjk/language-family "KO-kr")))
+  (t/is (nil? (cjk/language-family "en-GB")))
+  (t/is (nil? (cjk/language-family :multiple)))
+  (t/is (nil? (cjk/language-family nil))))
+
+(t/deftest text-without-language-renders-horizontal-and-plain
+  (let [content   (cjk-content {})
+        active    (cjk/active-content content)
+        paragraph (first-paragraph active)]
+    (t/is (not (contains? paragraph :writing-mode)))
+    (t/is (not (contains? paragraph :text-orientation)))
+    (t/is (= "left" (:text-align paragraph)))
+    (t/is (not (contains? paragraph :korean-wrap)))
+    (t/is (= {:text "日本"} (first (:children paragraph))))
+    (t/is (not (contains? active :line-adjustment)))
+    (t/is (nil? (cjk/active-writing-mode content)))
+    (t/is (= content (cjk-content {})) "the stored content keeps every attr")))
+
+(t/deftest each-language-renders-only-its-own-attrs
+  (let [span #(first (:children (first-paragraph %)))]
+    (let [active (cjk/active-content (cjk-content {:text-language "ja"}))]
+      (t/is (= {:text "日本" :ruby "にほん" :text-combine-upright "digits"
+                :warichu "warichu" :font-features "palt"}
+               (span active)))
+      (t/is (= "push-out-first" (:line-adjustment active)))
+      (t/is (= "vertical-rl" (:writing-mode (first-paragraph active))))
+      (t/is (= "distribute" (:text-align (first-paragraph active))))
+      (t/is (not (contains? (first-paragraph active) :korean-wrap))))
+    (let [active (cjk/active-content (cjk-content {:text-language "zh-Hant-TW"}))]
+      (t/is (= {:text "日本" :ruby "にほん" :ruby-zhuyin true :text-emphasis-position "over-left"}
+               (span active)))
+      (t/is (not (contains? active :line-adjustment))))
+    (let [active (cjk/active-content (cjk-content {:text-language "ko"}))]
+      (t/is (= {:text "日本"} (span active)))
+      (t/is (= "keep-words" (:korean-wrap (first-paragraph active))))
+      (t/is (= "vertical-rl" (:writing-mode (first-paragraph active)))))))
+
+(defn- reading
+  ([text ruby] {:text text :ruby ruby})
+  ([text ruby group] {:text text :ruby ruby :ruby-group group}))
+
+(t/deftest a-reading-joins-the-spans-of-its-group
+  (let [nodes [(reading "日" "にほん" "g")
+               (assoc (reading "本" "にほん" "g") :text-emphasis "filled-sesame")
+               {:text "語"}]]
+    (t/is (cjk/ruby-joins-previous? (first nodes) (second nodes)))
+    (t/is (= [[0 2]] (cjk/ruby-groups nodes)))
+    (t/is (= [[0 2] [2 3]] (cjk/ruby-base-runs nodes)))))
+
+(t/deftest neighbours-with-the-same-reading-stay-apart-without-a-group
+  (let [nodes [(reading "天" "tiān") (reading "天" "tiān")]]
+    (t/is (not (cjk/ruby-joins-previous? (first nodes) (second nodes))))
+    (t/is (= [[0 1] [1 2]] (cjk/ruby-groups nodes)))
+    (t/is (= [[0 1] [1 2]] (cjk/ruby-base-runs nodes)))))
+
+(t/deftest a-group-joins-only-the-same-reading
+  (t/is (= [[0 1] [1 2]]
+           (cjk/ruby-groups [(reading "日" "に" "g") (reading "本" "ほん" "g")])))
+  (t/is (= [[0 1] [1 2]]
+           (cjk/ruby-groups [(reading "日" "にほん" "a") (reading "本" "にほん" "b")]))))
+
+(t/deftest zhuyin-and-warichu-spans-never-join
+  (t/is (= [[0 1] [1 2]]
+           (cjk/ruby-groups [(assoc (reading "天" "ㄊㄧㄢ" "g") :ruby-zhuyin true)
+                             (assoc (reading "天" "ㄊㄧㄢ" "g") :ruby-zhuyin true)])))
+  (t/is (not (cjk/ruby-joins-previous? (reading "割" "わり" "g")
+                                       (assoc (reading "注" "わり" "g") :warichu "warichu")))))
+
+(t/deftest the-ruby-group-is-text-content-not-style
+  (t/is (some #{:ruby-group} cjk/text-content-attrs))
+  (t/is (= "" (:ruby-group cjk/span-attr-defaults))))

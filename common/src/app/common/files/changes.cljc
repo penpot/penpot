@@ -28,6 +28,7 @@
    [app.common.types.path :as path]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
+   [app.common.types.shape.text :as ctsx]
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.tokens-status :as ctos]
@@ -434,6 +435,11 @@
      [:to-path [:vector :string]]
      [:before-path [:maybe [:vector :string]]]
      [:before-group [:maybe :boolean]]]]
+
+   [:set-default-text-language
+    [:map {:title "SetDefaultTextLanguage"}
+     [:type [:= :set-default-text-language]]
+     [:language [:maybe ctsx/schema:text-language]]]]
 
    [:set-base-font-size
     [:map {:title "ModBaseFontSize"}
@@ -1159,6 +1165,10 @@
       (cfo/update-tokens-lib ctob/move-set-group from-path to-path before-path before-group)))
 
 ;; === Design Tokens configuration
+
+(defmethod process-change :set-default-text-language
+  [data {:keys [language]}]
+  (ctf/set-default-text-language data language))
 
 (defmethod process-change :set-base-font-size
   [data {:keys [base-font-size]}]

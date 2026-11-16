@@ -8,7 +8,11 @@
   (:require
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
-   [app.common.types.text :as txt]))
+   [app.common.types.text :as txt]
+   [app.common.types.text.cjk-layout :as cjk]))
+
+(def ^:private language-paragraph-attrs
+  (set cjk/language-paragraph-attrs))
 
 (defn- get-attr
   [obj attr]
@@ -41,6 +45,11 @@
             (get (:selrect obj) attr)
             :multiple)
           (get obj attr ::unset)))
+
+      ;; A text without language differs from one with a language, so an
+      ;; absent value must count when reporting mixed text selections.
+      (contains? language-paragraph-attrs attr)
+      (get obj attr)
 
       :else
       (get obj attr ::unset))))

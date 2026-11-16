@@ -167,6 +167,7 @@
     ;; Show WASM renderer info label (hidden by default).
     :render-wasm-info
     :render-switch
+    :cjk-support
     :hide-release-modal
     :subscriptions
     :inspect-styles

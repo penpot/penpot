@@ -252,6 +252,23 @@
                 "The parent must use the updated bounds of both children")
           (assert-idempotent data changes))))))
 
+(t/deftest default-text-language-round-trips-through-undo
+  (let [data (assoc (make-file-data (uuid/custom 2 2) (uuid/custom 1 1))
+                    :options {:base-font-size "16"})]
+    (doseq [[before after] [[nil "ja"] ["ja" "zh-Hant-TW"] ["ko" nil]]]
+      (let [data     (ctf/set-default-text-language data before)
+            changes  (-> (pcb/empty-changes)
+                         (pcb/with-file-data data)
+                         (pcb/set-default-text-language after))
+            edited   (ch/process-changes data (:redo-changes changes))
+            restored (ch/process-changes edited (:undo-changes changes))]
+        (t/is (every? ch/valid-change? (:redo-changes changes)))
+        (t/is (= after (ctf/get-default-text-language edited)))
+        (t/is (= data restored))
+        (t/is (= "16" (get-in edited [:options :base-font-size])))
+        (t/is (sm/validate ctf/schema:options (:options edited))))))
+  (t/is (not (ch/valid-change? {:type :set-default-text-language :language "not a tag!"}))))
+
 (t/deftest add-obj
   (let [file-id (uuid/custom 2 2)
         page-id (uuid/custom 1 1)

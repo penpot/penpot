@@ -12,6 +12,7 @@
     [app.common.math :as mth]
     [app.common.types.color :as clr]
     [app.common.types.fills :as types.fills]
+    [app.common.types.text.cjk-layout :as cjk]
     [clojure.set :as set]
     [clojure.walk :as walk]
     [cuerdas.core :as str]))
@@ -49,6 +50,10 @@
 
 (def text-valign-attrs
   [:vertical-align])
+
+;; How the shape fits lines slightly too long (see `cjk/enum-values`).
+(def text-line-adjustment-attrs
+  [:line-adjustment])
 
 (def text-decoration-attrs
   [:text-decoration])
@@ -97,21 +102,29 @@
   [:grow-type])
 
 (def root-attrs
-  text-valign-attrs)
+  (d/concat-vec text-valign-attrs text-line-adjustment-attrs))
 
 (def paragraph-attrs
   (d/concat-vec
    text-align-attrs
-   text-direction-attrs))
+   text-direction-attrs
+   cjk/language-paragraph-attrs
+   cjk/vertical-writing-attrs))
 
 (def text-node-attrs
   (d/concat-vec
    text-typography-attrs
    text-font-attrs
    text-spacing-attrs
+   cjk/span-attrs
    text-decoration-attrs
    text-transform-attrs
    text-fills))
+
+(def text-node-style-attrs
+  "Text node attrs that style characters, without the attrs the characters
+   own (ruby reading, warichu)."
+  (vec (remove (set cjk/text-content-attrs) text-node-attrs)))
 
 (def text-span-attrs
   "Inline text span attrs. Line-height is paragraph-level in the DOM editor;
@@ -233,6 +246,41 @@
         (transform item)
         item))
     root)))
+
+(defn- span-style
+  "The text node attrs of `span` that differ from their default value, with
+   legacy numeric values as strings."
+  [span]
+  (reduce (fn [style attr]
+            (let [value (get span attr)
+                  value (if (number? value) (str value) value)]
+              (if (or (nil? value)
+                      (and (or (string? value) (coll? value)) (empty? value))
+                      (= value (get default-text-attrs attr))
+                      (= value (get cjk/span-attr-defaults attr)))
+                style
+                (assoc style attr value))))
+          {}
+          text-node-attrs))
+
+(defn- mergeable-spans?
+  [a b]
+  (and (not (cjk/annotated-span? a))
+       (not (cjk/annotated-span? b))
+       (= (span-style a) (span-style b))))
+
+(defn merge-equal-spans
+  "Joins neighbouring `spans` of a paragraph that have the same style, so
+   span boundaries only exist where the style changes. Spans with a ruby
+   reading or a warichu note are never joined: each one is its own group."
+  [spans]
+  (reduce (fn [result span]
+            (let [prev (peek result)]
+              (if (and (some? prev) (mergeable-spans? prev span))
+                (conj (pop result) (update prev :text str (:text span)))
+                (conj result span))))
+          []
+          spans))
 
 (defn update-text-content
   [shape pred-fn update-fn attrs]

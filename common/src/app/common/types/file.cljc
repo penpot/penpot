@@ -28,6 +28,7 @@
    [app.common.types.plugins :refer [schema:plugin-data]]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
+   [app.common.types.shape.text :as ctsx]
    [app.common.types.text :as txt]
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.tokens-status :as ctos]
@@ -77,7 +78,9 @@
 (def schema:options
   [:map {:title "FileOptions"}
    [:components-v2 {:optional true} ::sm/boolean]
-   [:base-font-size {:optional true} :string]])
+   [:base-font-size {:optional true} :string]
+   ;; Language new text layers take (see `get-default-text-language`).
+   [:text-language {:optional true} ctsx/schema:text-language]])
 
 (def schema:data
   [:map {:title "FileData"}
@@ -1272,6 +1275,21 @@
 (defn set-base-font-size
   [file-data base-font-size]
   (assoc-in file-data [:options :base-font-size] base-font-size))
+
+;; Default text language
+
+(defn get-default-text-language
+  "Language (a BCP 47 tag) the new text layers of the file take, or nil.
+  Existing texts store their own language and do not follow it."
+  [file-data]
+  (get-in file-data [:options :text-language]))
+
+(defn set-default-text-language
+  "Set the file text language; nil removes it."
+  [file-data language]
+  (if (some? language)
+    (assoc-in file-data [:options :text-language] language)
+    (d/update-in-when file-data [:options] dissoc :text-language)))
 
 
 ;; Ref Chains
