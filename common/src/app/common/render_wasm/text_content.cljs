@@ -6,8 +6,9 @@
 
 (ns app.common.render-wasm.text-content
   "Single source of truth for writing a text shape's content into the WASM design
-  state. The binary layout ([num-spans][paragraph attrs][span attrs][text]) is
-  identical for the workspace and the headless exporter, and so is the font-id
+  state. The binary layout is [num-spans][paragraph attrs][span attrs][text]
+  [ruby-text][language], identical for the workspace and headless exporter.
+  Both hosts also share the font-id
   -> uuid mapping (`cfnt/font-id->uuid`). Only *variant* resolution differs —
   the workspace has a loaded fonts DB, the exporter does not — so that part is
   injected via the `opts` map passed to `write-shape-text!`.
@@ -21,11 +22,12 @@
    [app.common.render-wasm.serializers :as sr]
    [app.common.render-wasm.wasm :as wasm]
    [app.common.types.fills.impl :as types.fills.impl]
+   [app.common.types.text.cjk-layout :as cjk]
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]))
 
-(def ^:const PARAGRAPH-ATTR-U8-SIZE 12)
-(def ^:const SPAN-ATTR-U8-SIZE 64)
+(def ^:const PARAGRAPH-ATTR-U8-SIZE 20)
+(def ^:const SPAN-ATTR-U8-SIZE 80)
 (def ^:const MAX-TEXT-FILLS types.fills.impl/MAX-FILLS)
 
 (def ^:private default-font-size 14)
@@ -75,6 +77,13 @@
 
 ;; --- binary writers --------------------------------------------------------
 
+(defn- span-ruby
+  "Ruby annotation text sent to WASM; hidden ruby is omitted."
+  [span]
+  (if (true? (:ruby-hidden span))
+    ""
+    (d/nilv (:ruby span) "")))
+
 (defn- encode-text
   "Into an UTF8 buffer. Returns an ArrayBuffer instance."
   [text]
@@ -104,12 +113,15 @@
 
 (defn- write-paragraph
   [offset dview paragraph]
-  (let [text-align      (sr/translate-text-align (get paragraph :text-align))
-        text-direction  (sr/translate-text-direction (get paragraph :text-direction))
-        text-decoration (sr/translate-text-decoration (get paragraph :text-decoration))
-        text-transform  (sr/translate-text-transform (get paragraph :text-transform))
-        line-height     (serialize-line-height (get paragraph :line-height))
-        letter-spacing  (serialize-letter-spacing (get paragraph :letter-spacing))]
+  (let [text-align       (sr/translate-text-align (get paragraph :text-align))
+        text-direction   (sr/translate-text-direction (get paragraph :text-direction))
+        text-decoration  (sr/translate-text-decoration (get paragraph :text-decoration))
+        text-transform   (sr/translate-text-transform (get paragraph :text-transform))
+        writing-mode     (sr/translate-text-layout-enum :writing-mode (get paragraph :writing-mode))
+        text-orientation (sr/translate-text-layout-enum :text-orientation (get paragraph :text-orientation))
+        korean-wrap      (sr/translate-text-layout-enum :korean-wrap (get paragraph :korean-wrap))
+        line-height      (serialize-line-height (get paragraph :line-height))
+        letter-spacing   (serialize-letter-spacing (get paragraph :letter-spacing))]
     (-> offset
         (mem/write-u8 dview text-align)
         (mem/write-u8 dview text-direction)
@@ -117,6 +129,12 @@
         (mem/write-u8 dview text-transform)
         (mem/write-f32 dview line-height)
         (mem/write-f32 dview letter-spacing)
+        (mem/write-u8 dview writing-mode)
+        (mem/write-u8 dview text-orientation)
+        (mem/write-u8 dview korean-wrap)
+        ;; Padding that aligns the u32 language length
+        (mem/write-u8 dview 0)
+        (mem/write-u32 dview (mem/size (encode-text (d/nilv (:text-language paragraph) ""))))
         (mem/assert-written offset PARAGRAPH-ATTR-U8-SIZE))))
 
 (defn- write-spans
@@ -125,7 +143,7 @@
         paragraph-font-weight (-> paragraph :font-weight serialize-font-weight)
         paragraph-line-height (serialize-line-height (get paragraph :line-height))]
     (reduce
-     (fn [offset span]
+     (fn [offset [previous span]]
        (let [font-style      (sr/translate-font-style (get span :font-style "normal"))
              font-size       (serialize-font-size (get span :font-size paragraph-font-size))
              line-height     (serialize-line-height (get span :line-height) paragraph-line-height)
@@ -135,6 +153,8 @@
              font-family     (hash (get span :font-family "sourcesanspro"))
              text-buffer     (encode-text (get span :text ""))
              text-length     (mem/size text-buffer)
+             ruby-buffer     (encode-text (span-ruby span))
+             ruby-length     (mem/size ruby-buffer)
              fills           (take MAX-TEXT-FILLS (get span :fills []))
              font-variant-id (get span :font-variant-id)
              font-variant-id (if (uuid? font-variant-id) font-variant-id uuid/zero)
@@ -146,12 +166,43 @@
                                  (sr/translate-text-transform "none"))
              text-direction  (or (sr/translate-text-direction (:text-direction span))
                                  (sr/translate-text-direction (:text-direction paragraph))
-                                 (sr/translate-text-direction "ltr"))]
+                                 (sr/translate-text-direction "ltr"))
+             text-orientation     (sr/translate-text-layout-enum
+                                   :text-orientation
+                                   (get span :text-orientation (get paragraph :text-orientation)))
+             text-combine-upright (sr/translate-text-layout-enum :text-combine-upright (get span :text-combine-upright))
+             text-emphasis        (sr/translate-text-layout-enum :text-emphasis (get span :text-emphasis))
+             warichu              (sr/translate-text-layout-enum :warichu (get span :warichu))
+             font-features        (sr/translate-text-layout-enum :font-features (get span :font-features))
+             annotation-clearance (sr/translate-text-layout-enum :annotation-clearance (get span :annotation-clearance))
+             ruby-size            (sr/translate-text-layout-enum :ruby-size (get span :ruby-size))
+             ruby-align           (sr/translate-text-layout-enum :ruby-align (get span :ruby-align))
+             ruby-overhang        (sr/translate-text-layout-enum :ruby-overhang (get span :ruby-overhang))
+             ruby-side            (sr/translate-text-layout-enum :ruby-side (get span :ruby-side))
+             emphasis-position    (sr/translate-text-layout-enum :text-emphasis-position (get span :text-emphasis-position))
+             underline-position   (sr/translate-text-layout-enum :text-underline-position (get span :text-underline-position))]
          (-> offset
              (mem/write-u8 dview font-style)
              (mem/write-u8 dview text-decoration)
              (mem/write-u8 dview text-transform)
              (mem/write-u8 dview text-direction)
+             (mem/write-u8 dview text-orientation)
+             (mem/write-u8 dview text-combine-upright)
+             (mem/write-u8 dview text-emphasis)
+             (mem/write-u8 dview warichu)
+             (mem/write-u8 dview font-features)
+             (mem/write-u8 dview annotation-clearance)
+             (mem/write-u8 dview ruby-size)
+             (mem/write-u8 dview ruby-align)
+             (mem/write-u8 dview ruby-overhang)
+             ;; Bit 1 selects Zhuyin; bit 2 joins the span to the reading of
+             ;; the span before it (`cjk/ruby-groups`).
+             (mem/write-u8 dview (bit-or ruby-side
+                                         (if (true? (:ruby-zhuyin span)) 2 0)
+                                         (if (cjk/ruby-joins-previous? previous span) 4 0)))
+             ;; Use the former padding bytes; the span header stays the same size.
+             (mem/write-u8 dview emphasis-position)
+             (mem/write-u8 dview underline-position)
              (mem/write-f32 dview font-size)
              (mem/write-f32 dview line-height)
              (mem/write-f32 dview letter-spacing)
@@ -160,15 +211,18 @@
              (mem/write-i32 dview font-family)
              (mem/write-uuid dview (d/nilv font-variant-id uuid/zero))
              (mem/write-i32 dview text-length)
+             (mem/write-i32 dview ruby-length)
              (mem/write-i32 dview (count fills))
              (mem/assert-written offset SPAN-ATTR-U8-SIZE)
              (write-span-fills dview fills))))
      offset
-     spans)))
+     (map vector (cons nil spans) spans))))
 
 (defn write-shape-text!
   "Writes one paragraph's spans + text into WASM and appends it to the current
-  shape via `_set_shape_text_content`.
+  shape via `_set_shape_text_content`. Ruby annotations are concatenated per
+  span, in span order, after the base text; the reader splits them using the
+  per-span byte lengths.
 
   `opts` injects host-specific font handling:
    - `:normalize-font-id` (string font-id -> wasm uuid) defaults to the shared
@@ -181,21 +235,26 @@
                          :or   {normalize-font-id   cfnt/font-id->uuid
                                 normalize-paragraph identity
                                 normalize-span      (fn [span _paragraph] span)}}]
-  (let [paragraph     (normalize-paragraph paragraph)
-        spans         (map #(normalize-span % paragraph) spans)
-        num-spans     (count spans)
-        fills-size    (* types.fills.impl/FILL-U8-SIZE MAX-TEXT-FILLS)
-        metadata-size (+ PARAGRAPH-ATTR-U8-SIZE
-                         (* num-spans (+ SPAN-ATTR-U8-SIZE fills-size)))
-        text-buffer   (encode-text text)
-        text-size     (mem/size text-buffer)
-        total-size    (+ 4 metadata-size text-size)
-        offset        (mem/alloc total-size)
-        heapu8        (mem/get-heap-u8)
-        dview         (mem/get-data-view)]
+  (let [paragraph        (normalize-paragraph paragraph)
+        spans            (map #(normalize-span % paragraph) spans)
+        num-spans        (count spans)
+        fills-size       (* types.fills.impl/FILL-U8-SIZE MAX-TEXT-FILLS)
+        metadata-size    (+ PARAGRAPH-ATTR-U8-SIZE
+                            (* num-spans (+ SPAN-ATTR-U8-SIZE fills-size)))
+        text-buffer      (encode-text text)
+        text-size        (mem/size text-buffer)
+        ruby-buffer      (encode-text (apply str (map span-ruby spans)))
+        ruby-size        (mem/size ruby-buffer)
+        language-buffer  (encode-text (d/nilv (:text-language paragraph) ""))
+        total-size       (+ 4 metadata-size text-size ruby-size (mem/size language-buffer))
+        offset           (mem/alloc total-size)
+        heapu8           (mem/get-heap-u8)
+        dview            (mem/get-data-view)]
     (-> offset
         (mem/write-u32 dview num-spans)
         (write-paragraph dview paragraph)
         (write-spans dview spans paragraph normalize-font-id)
-        (mem/write-buffer heapu8 text-buffer))
+        (mem/write-buffer heapu8 text-buffer)
+        (mem/write-buffer heapu8 ruby-buffer)
+        (mem/write-buffer heapu8 language-buffer))
     (h/call wasm/internal-module "_set_shape_text_content")))

@@ -9,7 +9,9 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.text :as legacy.txt]
+   [app.common.types.text.cjk-layout :as cjk]
    [app.main.ui.shapes.text.styles :as sts]
+   [app.util.text.writing-mode :as wm]
    [rumext.v2 :as mf]))
 
 (mf/defc render-text*
@@ -18,9 +20,60 @@
         style (if (= text "")
                 (sts/generate-text-styles shape parent)
                 (sts/generate-text-styles shape node))
-        class (when is-code (:$id node))]
-    [:span.text-node {:style style :class class}
-     (if (= text "") "\u00A0" text)]))
+        class (when is-code (:$id node))
+        ruby  (cjk/visible-ruby node)]
+    (cond
+      (and (true? (:ruby-zhuyin node)) (cjk/zhuyin-base? text) (cjk/zhuyin-reading? ruby))
+      [:span {:style #js {:display "inline-block" :position "relative"
+                          :width "1.6em" :height "1em" :verticalAlign "middle"
+                          :writingMode "horizontal-tb" :direction "ltr"
+                          :fontSize (.-fontSize style) :fontFamily (.-fontFamily style)
+                          :fontWeight (.-fontWeight style) :fontStyle (.-fontStyle style)}
+              :class (when is-code (dm/str class "-ruby"))}
+       [:span.text-node {:style style :class class} (sts/text-children text node)]
+       (for [[idx slot] (d/enumerate (cjk/zhuyin-slots ruby))]
+         [:span {:key idx :style #js {:position "absolute" :writingMode "horizontal-tb"
+                                      :left (dm/str (+ 1 (:x slot)) "em")
+                                      :top (dm/str (:y slot) "em")
+                                      :transform "translate(-50%, -50%)" :lineHeight 1}}
+          [:span {:style #js {:fontSize "0.3em"}} (:text slot)]])]
+
+      (some? ruby)
+      [:ruby.ruby-node {:style (sts/generate-ruby-container-styles node)
+                        :class (when is-code (dm/str class "-ruby"))}
+       [:span.text-node {:style style :class class} (sts/text-children text node)]
+       [:rt {:style (sts/generate-ruby-styles shape node)
+             :class (when is-code (dm/str class "-rt"))}
+        ruby]]
+      :else
+      [:span.text-node {:style style :class class}
+       (if (= text "") "\u00A0" (sts/text-children text node))])))
+
+(mf/defc render-ruby-group*
+  "One reading over the text `nodes` of its base (`cjk/ruby-groups`), each
+  node with its own style. The first node holds the reading."
+  {::mf/private true}
+  [{:keys [nodes shape is-code]}]
+  (let [node  (first nodes)
+        class (when is-code (:$id node))
+        ruby  (cjk/visible-ruby node)]
+    (if (some? ruby)
+      [:ruby.ruby-node {:style (sts/generate-ruby-container-styles node)
+                        :class (when is-code (dm/str class "-ruby"))}
+       (for [[index node] (d/enumerate nodes)]
+         [:span.text-node {:key index
+                           :style (sts/generate-text-styles shape node)
+                           :class (when is-code (:$id node))}
+          (sts/text-children (:text node) node)])
+       [:rt {:style (sts/generate-ruby-styles shape node)
+             :class (when is-code (dm/str class "-rt"))}
+        ruby]]
+      [:*
+       (for [[index node] (d/enumerate nodes)]
+         [:span.text-node {:key index
+                           :style (sts/generate-text-styles shape node)
+                           :class (when is-code (:$id node))}
+          (sts/text-children (:text node) node)])])))
 
 (mf/defc render-root*
   [{:keys [node children shape is-code]}]
@@ -45,11 +98,48 @@
         dir   (:text-direction node "auto")]
     [:p.paragraph {:style style :dir dir :class class} children]))
 
+(declare render-node*)
+
+(defn- render-ruby-runs
+  "Text nodes of `paragraph`, with the nodes of a ruby base spanning several
+  of them (`cjk/ruby-base-runs`) drawn under one reading."
+  [props paragraph is-code]
+  (let [children (vec (:children paragraph))]
+    (for [[start end] (cjk/ruby-base-runs children)]
+      (if (= (inc start) end)
+        (mf/html
+         [:> render-node*
+          (mf/spread-props props
+                           {:node (nth children start)
+                            :parent paragraph
+                            :index start
+                            :key start})])
+        (mf/html
+         [:> render-ruby-group* {:key start
+                                 :nodes (subvec children start end)
+                                 :shape (unchecked-get props "shape")
+                                 :is-code is-code}])))))
+
+(defn- render-children
+  "Child elements of `parent`. The text nodes of a paragraph are grouped by
+  ruby base."
+  [props parent is-code]
+  (if (= "paragraph" (:type parent))
+    (render-ruby-runs props parent is-code)
+    (for [[index child-node] (d/enumerate (:children parent))]
+      (mf/html
+       [:> render-node*
+        (mf/spread-props props
+                         {:node child-node
+                          :parent parent
+                          :index index
+                          :key index})]))))
+
 ;; -- Text nodes
 (mf/defc render-node*
   {::mf/props :obj}
   [{:keys [node is-code] :as props}]
-  (let [{:keys [type text children] :as parent} node]
+  (let [{:keys [type text]} node]
     (if (string? text)
       [:> render-text* props]
       (let [component (case type
@@ -59,21 +149,20 @@
                         nil)]
         (when component
           [:> component props
-           (for [[index child-node] (d/enumerate children)]
-             [:> render-node*
-              (mf/spread-props props
-                               {:node child-node
-                                :parent parent
-                                :index index
-                                :key index
-                                :is-code is-code})])])))))
+           (render-children props node is-code)])))))
 
 (mf/defc text-shape*
   {::mf/forward-ref true}
   [{:keys [shape grow-type is-code]} ref]
   (let [{:keys [id x y width height content]} shape
 
-        content (if is-code (legacy.txt/index-content content) content)
+        ;; Generated code keeps the writing mode whatever the renderer.
+        content (if is-code
+                  (legacy.txt/index-content content)
+                  (wm/renderable-content content))
+
+        ;; Vertical text anchors columns to the box edges, so it skips the oversized auto-grow box.
+        vertical? (wm/vertical-text-content? content)
 
         style
         (when-not is-code
@@ -81,8 +170,8 @@
                :left 0
                :top 0
                :background "white"
-               :width  (if (#{:auto-width} grow-type) 100000 width)
-               :height (if (#{:auto-height :auto-width} grow-type) 100000 height)})]
+               :width  (if (and (not vertical?) (#{:auto-width} grow-type)) 100000 width)
+               :height (if (and (not vertical?) (#{:auto-height :auto-width} grow-type)) 100000 height)})]
 
     [:div.text-node-html
      {:id (dm/str "html-text-node-" id)

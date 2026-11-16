@@ -15,6 +15,7 @@
    [app.common.text :as legacy.txt]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.text :as types.text]
+   [app.common.types.text.cjk-layout :as cjk]
    [app.main.ui.shapes.text.styles :as sts]
    [app.util.code-gen.common :as cgc]
    [app.util.code-gen.style-css-formats :refer [format-value format-shadow->css]]
@@ -221,13 +222,19 @@ body {
        (shape->css-properties objects properties options)
        (format-css-properties options))))
 
+;; Custom properties generated code keeps; the others carry renderer state.
+(def ^:private code-custom-properties
+  #{"--paragraph-line-height"})
+
 (defn format-js-styles
   [properties _options]
   (format-css-properties
    (->> (.keys js/Object properties)
-        (remove #(str/starts-with? % "--"))
+        (filter #(or (not (str/starts-with? % "--"))
+                     (contains? code-custom-properties %)))
         (mapv (fn [key]
-                [(str/kebab key) (unchecked-get properties key)])))
+                [(if (str/starts-with? key "--") key (str/kebab key))
+                 (unchecked-get properties key)])))
    nil))
 
 (defn node->css
@@ -249,14 +256,51 @@ body {
      (dm/str shape-selector " ." (:$id node))
      (format-js-styles properties nil))))
 
+(defn- ruby-css
+  "Rules for the ruby wrapper and annotation of a text node with a visible
+   reading, or nil."
+  [shape shape-selector node]
+  (when (and (types.text/is-text-node? node) (cjk/visible-ruby node))
+    (dm/fmt
+     ".% {\n%\n}\n.% {\n%\n}"
+     (dm/str shape-selector " ." (:$id node) "-ruby")
+     (format-js-styles (sts/generate-ruby-container-styles node) nil)
+     (dm/str shape-selector " ." (:$id node) "-rt")
+     (format-js-styles (sts/generate-ruby-styles shape node) nil))))
+
+(defn- tcy-css
+  "Rule for the combined digit runs of `digits` tate-chu-yoko spans, or nil."
+  [shape shape-selector]
+  (when (some #(cjk/digit-combine? (:text-combine-upright %))
+              (types.text/node-seq types.text/is-text-node? (:content shape)))
+    (dm/fmt ".% .tcy {\n%\n}" shape-selector (format-js-styles sts/tcy-run-style nil))))
+
+(defn- joined-ruby-ids
+  "Ids of the text nodes that continue the reading of an earlier node
+  (`cjk/ruby-groups`): the markup draws one reading per base, under the
+  wrapper of its first node."
+  [content]
+  (into #{}
+        (comp (filter types.text/is-paragraph-node?)
+              (mapcat (fn [paragraph]
+                        (let [nodes (vec (:children paragraph))]
+                          (for [[start end] (cjk/ruby-groups nodes)
+                                index (range (inc start) end)]
+                            (:$id (nth nodes index)))))))
+        (types.text/node-seq content)))
+
 (defn generate-text-css
   [shape]
-  (let [selector (cgc/shape->selector shape)]
-    (->> shape
-         :content
-         (legacy.txt/index-content)
-         (types.text/node-seq)
-         (map #(node->css shape selector %))
+  (let [selector   (cgc/shape->selector shape)
+        content    (legacy.txt/index-content (:content shape))
+        joined     (joined-ruby-ids content)
+        node-rules (mapcat (fn [node]
+                             [(node->css shape selector node)
+                              (when-not (contains? joined (:$id node))
+                                (ruby-css shape selector node))])
+                           (types.text/node-seq content))]
+    (->> (cons (tcy-css shape selector) node-rules)
+         (remove nil?)
          (str/join "\n"))))
 
 (defn get-shape-css-selector

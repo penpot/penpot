@@ -30,6 +30,7 @@
    [app.util.text-editor :as ted]
    [app.util.text-svg-position :as tsp]
    [app.util.text.content :as content]
+   [app.util.text.writing-mode :as wm]
    [promesa.core :as p]
    [rumext.v2 :as mf]))
 
@@ -251,11 +252,22 @@
         phases*         (mf/use-state #(copy-heal-phases text-shapes))
         phases          (deref phases*)
 
+        ;; Vertical texts already measured as horizontal (see `stale-layout?`).
+        remeasured-ref  (mf/use-ref #{})
+
+        ;; A vertical text keeps the position data the WASM renderer computed
+        ;; for its columns; measure it once more as horizontal text.
+        stale-layout?
+        (fn [id]
+          (and (not (contains? (mf/ref-val remeasured-ref) id))
+               (wm/stale-vertical-layout? (:content (get text-shapes id)))))
+
         text-change?
         (fn [id]
-          (text-changed? (get prev-text-shapes id)
-                         (get text-shapes id)
-                         (get phases id)))
+          (or (text-changed? (get prev-text-shapes id)
+                             (get text-shapes id)
+                             (get phases id))
+              (stale-layout? id)))
 
         changed-texts
         (mf/with-memo [text-shapes pending-update phases]
@@ -272,6 +284,7 @@
            ;; Unique to indentify the pending state
            (let [uid (uuid/next)
                  id  (:id shape)]
+             (mf/set-ref-val! remeasured-ref (conj (mf/ref-val remeasured-ref) id))
              (swap! pending-update* assoc uid id)
              ;; Callback refs run at the DOM commit boundary. Track the exact
              ;; measurement promise from that acknowledgement; any resize it
