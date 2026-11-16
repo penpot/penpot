@@ -11,12 +11,16 @@ use std::iter::once;
 mod blend;
 mod blurs;
 mod bools;
+pub mod cjk_chars;
 mod corners;
 mod fills;
 mod fonts;
 mod frames;
+mod gpos_vpal;
 mod groups;
+pub mod jlreq;
 mod layouts;
+pub mod line_breaks;
 pub mod modifiers;
 mod paths;
 mod rects;
@@ -27,7 +31,17 @@ mod strokes;
 mod svg_attrs;
 mod svgraw;
 mod text;
+mod text_allocation;
+mod text_attrs;
+mod text_horizontal;
+pub mod text_paragraph;
 pub mod text_paths;
+pub mod text_policy;
+mod text_ruby;
+mod text_shaping;
+pub mod text_vertical;
+mod text_warichu;
+mod text_zhuyin;
 mod transform;
 
 pub use blend::*;
@@ -49,6 +63,8 @@ pub use strokes::*;
 pub use svg_attrs::*;
 pub use svgraw::*;
 pub use text::*;
+pub use text_attrs::*;
+pub(crate) use text_horizontal::*;
 pub use transform::*;
 
 use crate::math::{self, Bounds, Matrix, Point};
@@ -435,6 +451,7 @@ impl Shape {
 
     pub fn set_vertical_align(&mut self, align: VerticalAlign) {
         self.vertical_align = align;
+        self.invalidate_extrect();
     }
 
     pub fn vertical_align(&self) -> VerticalAlign {
@@ -1545,7 +1562,8 @@ impl Shape {
     pub fn clear_text(&mut self) {
         self.invalidate_extrect();
         if let Type::Text(old_text_content) = &self.shape_type {
-            let new_text_content = TextContent::new(self.selrect, old_text_content.grow_type());
+            let mut new_text_content = TextContent::new(self.selrect, old_text_content.grow_type());
+            new_text_content.set_line_adjustment(old_text_content.line_adjustment());
             self.shape_type = Type::Text(new_text_content);
         }
     }
@@ -2191,6 +2209,16 @@ impl Shape {
             }
         }
         true
+    }
+
+    pub fn drop_shadow_paints(&self) -> Vec<skia_safe::Paint> {
+        self.drop_shadows_visible()
+            .map(|shadow| {
+                let mut paint = skia_safe::Paint::default();
+                paint.set_image_filter(shadow.get_drop_shadow_filter());
+                paint
+            })
+            .collect()
     }
 
     pub fn inner_shadow_paints(&self) -> Vec<skia_safe::Paint> {
