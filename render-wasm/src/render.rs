@@ -439,9 +439,12 @@ pub(crate) struct RenderState {
     pub nested_fills: Vec<Vec<Fill>>,
     pub nested_blurs: Vec<Option<Blur>>, // FIXME: why is this an option?
     pub nested_shadows: Vec<Vec<Shadow>>,
-    /// Cumulative [`Shape::masked_group_filter_reach`] of the masked groups
-    /// being walked: their children cast into tiles they don't touch.
-    masked_group_reach: Vec<f32>,
+    /// How far past the current tile shapes can paint into it, in document
+    /// units: the walker culls against the tile grown by the last entry. Each
+    /// walked frame or group adds its [`Shape::children_reach`]. In a tile
+    /// with a background blur the bottom entry is how far its kernel samples
+    /// the backdrop, capped at the surface margin.
+    group_reach: Vec<f32>,
     pub show_grid: Option<Uuid>,
     pub focus_mode: FocusMode,
     /// Viewer-only whitelist for fixed-scroll layer passes.
@@ -669,7 +672,7 @@ impl RenderState {
             nested_fills: vec![],
             nested_blurs: vec![],
             nested_shadows: vec![],
-            masked_group_reach: vec![],
+            group_reach: vec![],
             show_grid: None,
             focus_mode: FocusMode::new(),
             include_filter: None,
@@ -813,17 +816,12 @@ impl RenderState {
         };
 
         let scale = self.get_scale();
-        let scaled_sigma = radius_to_sigma(blur.value * scale);
-        // Cap sigma so the blur kernel (≈3σ) stays within the tile margin.
-        // This prevents visible seams at tile boundaries when zoomed in.
-        // During export there's no tiling, so skip the cap.
-        let sigma = if self.export_context.is_some() {
-            scaled_sigma
-        } else {
-            let margin = self.surfaces.margins().width as f32;
-            let max_sigma = margin / 3.0;
-            scaled_sigma.min(max_sigma)
-        };
+        // During export there's no tiling, so skip the margin cap.
+        let margin = self
+            .export_context
+            .is_none()
+            .then(|| self.surfaces.margins().width as f32);
+        let sigma = Self::background_blur_sigma(blur, scale, margin);
 
         let blur_filter =
             match skia::image_filters::blur((sigma, sigma), skia::TileMode::Clamp, None, None) {
@@ -2200,6 +2198,53 @@ impl RenderState {
         self.surfaces.update_render_context(self.render_area, scale);
     }
 
+    /// Device-space sigma of a background blur at `scale`. In a tile it is
+    /// capped so the blur kernel (≈3σ) stays within the tile `margin`, in
+    /// device pixels, which prevents visible seams at tile boundaries when
+    /// zoomed in.
+    fn background_blur_sigma(blur: Blur, scale: f32, margin: Option<f32>) -> f32 {
+        let sigma = radius_to_sigma(blur.value * scale);
+        margin.map_or(sigma, |margin| sigma.min(margin / 3.0))
+    }
+
+    /// How far past `tile_rect` the shapes in `roots` with a visible
+    /// background blur that paint into it sample the backdrop, in document
+    /// units: the widest blur kernel (about 3σ, plus a device pixel), up to
+    /// the tile `margin` in device pixels. `None` when no such shape paints
+    /// into the tile.
+    fn background_blur_in_tile(
+        tree: ShapesPoolRef,
+        roots: impl IntoIterator<Item = Uuid>,
+        tile_rect: Rect,
+        scale: f32,
+        margin: f32,
+    ) -> Option<f32> {
+        let mut reach: Option<f32> = None;
+        let mut pending: Vec<Uuid> = roots.into_iter().collect();
+        while let Some(id) = pending.pop() {
+            let Some(shape) = tree.get(&id) else {
+                continue;
+            };
+            if shape.hidden || !shape.extrect(tree, scale).intersects(tile_rect) {
+                continue;
+            }
+            if let Some(blur) = shape.visible_background_blur() {
+                let sigma = Self::background_blur_sigma(blur, scale, Some(margin));
+                let device_reach = (3.0 * sigma + 1.0).min(margin);
+                reach = Some(reach.unwrap_or(0.0).max(device_reach / scale));
+                if device_reach >= margin {
+                    // No blur in the tile can sample further.
+                    return reach;
+                }
+            }
+            pending.extend(shape.children_ids_iter(false).copied());
+            if shape.is_masked_group() {
+                pending.extend(shape.mask_id().copied());
+            }
+        }
+        reach
+    }
+
     fn rebuild_backbuffer_crop_cache(&mut self, tree: ShapesPoolRef) {
         self.backbuffer_crop_cache.clear();
 
@@ -2455,7 +2500,7 @@ impl RenderState {
         self.nested_fills.clear();
         self.nested_blurs.clear();
         self.nested_shadows.clear();
-        self.masked_group_reach.clear();
+        self.group_reach.clear();
 
         // reorder by distance to the center.
         self.current_tile = None;
@@ -2754,7 +2799,7 @@ impl RenderState {
         let saved_nested_fills = std::mem::take(&mut self.nested_fills);
         let saved_nested_blurs = std::mem::take(&mut self.nested_blurs);
         let saved_nested_shadows = std::mem::take(&mut self.nested_shadows);
-        let saved_masked_group_reach = std::mem::take(&mut self.masked_group_reach);
+        let saved_group_reach = std::mem::take(&mut self.group_reach);
         let saved_ignore_nested_blurs = self.ignore_nested_blurs;
         let saved_preview_mode = self.preview_mode;
 
@@ -2827,7 +2872,7 @@ impl RenderState {
         self.nested_fills = saved_nested_fills;
         self.nested_blurs = saved_nested_blurs;
         self.nested_shadows = saved_nested_shadows;
-        self.masked_group_reach = saved_masked_group_reach;
+        self.group_reach = saved_group_reach;
         self.ignore_nested_blurs = saved_ignore_nested_blurs;
         self.preview_mode = saved_preview_mode;
 
@@ -2963,6 +3008,11 @@ impl RenderState {
         clip_bounds: Option<&ClipStack>,
         target_surface: SurfaceId,
     ) {
+        if matches!(element.shape_type, Type::Frame(_) | Type::Group(_)) {
+            let reach = self.group_reach.last().copied().unwrap_or(0.0) + element.children_reach();
+            self.group_reach.push(reach);
+        }
+
         // Masked groups needs two rendering passes, the first one rendering
         // the content and the second one rendering the mask so we need to do
         // an extra save_layer to keep all the masked group separate from
@@ -2980,10 +3030,6 @@ impl RenderState {
             }
 
             if group.masked {
-                let reach = self.masked_group_reach.last().copied().unwrap_or(0.0)
-                    + element.masked_group_filter_reach();
-                self.masked_group_reach.push(reach);
-
                 // A masked group's blur and shadows are applied as a single
                 // image filter over the whole masked result.
                 let scale = self.get_scale();
@@ -3071,6 +3117,9 @@ impl RenderState {
             if let Type::Group(group) = element.shape_type {
                 if group.masked {
                     self.surfaces.canvas(target_surface).restore();
+                    // Kept through the mask pass: the group's filter also
+                    // carries the mask's children into this tile.
+                    self.group_reach.pop();
                 }
             }
         } else {
@@ -3082,7 +3131,6 @@ impl RenderState {
                 // the blend mode 'destination-in') the content
                 // of the group and the mask.
                 if group.masked {
-                    self.masked_group_reach.pop();
                     self.pending_nodes.push(NodeRenderState {
                         id: element.id,
                         visited_children: true,
@@ -3111,6 +3159,10 @@ impl RenderState {
                     self.nested_fills.pop();
                     self.nested_blurs.pop();
                     self.nested_shadows.pop();
+                    // A masked group pops it after the mask pass instead.
+                    if !element.is_masked_group() {
+                        self.group_reach.pop();
+                    }
                 }
                 _ => {}
             }
@@ -4007,9 +4059,9 @@ impl RenderState {
                 );
 
                 let has_effects = transformed_element.has_effects_that_extend_bounds();
-                let area = match self.masked_group_reach.last() {
-                    Some(&reach) => self.render_area_with_margins.with_outset((reach, reach)),
-                    None => self.render_area_with_margins,
+                let area = match self.group_reach.last() {
+                    Some(&reach) => self.render_area.with_outset((reach, reach)),
+                    None => self.render_area,
                 };
 
                 let is_visible = export
@@ -4408,6 +4460,7 @@ impl RenderState {
             // let's check if there are more pending nodes
             if let Some(next_tile) = self.pending_tiles.pop() {
                 self.update_render_context(next_tile);
+                self.group_reach.clear();
                 // Reset for the new tile. We'll flip it to true if the
                 // tile has shapes, so a later "is_empty=true" reflects
                 // a resumed-from-yield case rather than a genuinely
@@ -4442,10 +4495,21 @@ impl RenderState {
                 // If so, we need ALL root shapes rendered (not just those
                 // assigned to this tile) because the blur snapshots Current
                 // which must contain the shapes behind it.
-                let tile_has_bg_blur = ids.iter().any(|id| {
-                    tree.get(id)
-                        .is_some_and(|s| s.visible_background_blur().is_some())
-                });
+                let bg_blur_reach = if self.options.is_fast_mode() {
+                    None
+                } else {
+                    Self::background_blur_in_tile(
+                        tree,
+                        root_ids.iter().filter(|id| ids.contains(*id)).copied(),
+                        self.render_area,
+                        current_scale,
+                        self.surfaces.margins().width as f32,
+                    )
+                };
+                let tile_has_bg_blur = bg_blur_reach.is_some();
+                if let Some(reach) = bg_blur_reach {
+                    self.group_reach.push(reach);
+                }
 
                 // We only need first level shapes, in the same order as the parent node.
                 //
@@ -4962,6 +5026,7 @@ impl RenderState {
 mod tests {
     use super::*;
     use crate::shapes::{Frame, Group, Rect as RectType};
+    use crate::state::ShapesPool;
 
     fn frame(clip: bool) -> Shape {
         let mut shape = Shape::new(Uuid::new_v4());
@@ -5184,5 +5249,60 @@ mod tests {
             .expect("a clipping shape starts a stack");
 
         assert_eq!(stack[0].0, Rect::from_ltrb(2.0, 2.0, 98.0, 98.0));
+    }
+
+    #[test]
+    fn finds_a_visible_nested_background_blur_in_the_tiles_it_touches() {
+        // A board holding a rect with a background blur at (300, 300)-(400, 400).
+        let mut pool = ShapesPool::new();
+        pool.initialize(2);
+        let board = Uuid::new_v4();
+        let glass = Uuid::new_v4();
+        {
+            let shape = pool.add_shape(board);
+            shape.set_shape_type(Type::Frame(Frame::default()));
+            shape.set_selrect(0.0, 0.0, 1000.0, 1000.0);
+            shape.add_child(glass);
+        }
+        {
+            let shape = pool.add_shape(glass);
+            shape.set_shape_type(Type::Rect(RectType::default()));
+            shape.set_selrect(300.0, 300.0, 400.0, 400.0);
+            shape.set_parent(board);
+        }
+        let blur = |value| Some(Blur::new(BlurType::BackgroundBlur, false, value));
+        let touching = Rect::from_xywh(256.0, 256.0, 256.0, 256.0);
+        let away = Rect::from_xywh(512.0, 512.0, 256.0, 256.0);
+        let reach = |pool: &ShapesPool, tile| {
+            RenderState::background_blur_in_tile(pool, [board], tile, 2.0, 256.0)
+        };
+        let found = |pool: &ShapesPool, tile| reach(pool, tile).is_some();
+        let set_hidden = |pool: &mut ShapesPool, id, hidden| {
+            pool.get_mut(id).expect("shape").set_hidden(hidden);
+        };
+        let set_blur = |pool: &mut ShapesPool, blur| {
+            pool.get_mut(&glass)
+                .expect("glass")
+                .set_background_blur(blur);
+        };
+
+        set_blur(&mut pool, blur(10.0));
+        assert!(found(&pool, touching));
+        assert!(!found(&pool, away));
+
+        set_hidden(&mut pool, &glass, true);
+        assert!(!found(&pool, touching), "hidden shape");
+        set_hidden(&mut pool, &glass, false);
+
+        set_hidden(&mut pool, &board, true);
+        assert!(!found(&pool, touching), "hidden board");
+        set_hidden(&mut pool, &board, false);
+
+        // The reach grows with the blur, up to the margin (256 / 2).
+        let small = reach(&pool, touching).expect("small blur");
+        set_blur(&mut pool, blur(40.0));
+        assert!(reach(&pool, touching).expect("larger blur") > small);
+        set_blur(&mut pool, blur(1000.0));
+        assert_eq!(reach(&pool, touching), Some(128.0));
     }
 }
