@@ -24,7 +24,9 @@
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [app.util.timers :as ts]
+   [beicon.v2.core :as rx]
    [cuerdas.core :as str]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (def caret-blink-interval-ms 250)
@@ -192,6 +194,10 @@
 
         contenteditable-ref (mf/use-ref nil)
 
+        ;; True between compositionstart and compositionend: history restores
+        ;; and shortcuts wait until the IME commits or cancels.
+        composing-ref (mf/use-ref false)
+
         ;; Number of characters the browser is about to replace via marked text
         ;; (macOS press-and-hold accent menu). Set on `beforeinput`, consumed on
         ;; `input`. See on-before-input / on-input.
@@ -237,6 +243,7 @@
         on-composition-start
         (mf/use-fn
          (fn [_event]
+           (mf/set-ref-val! composing-ref true)
            ;; IME composition supplies its own text; drop any pending caret style.
            (text-editor/clear-pending-caret-styles!)
            (text-editor/text-editor-composition-start)))
@@ -256,6 +263,7 @@
         on-composition-end
         (mf/use-fn
          (fn [^js event]
+           (mf/set-ref-val! composing-ref false)
            (let [data (or (.-data event) "")]
              (text-editor/text-editor-composition-end data)
              (sync-wasm-text-editor-content!)
@@ -295,6 +303,7 @@
         (mf/use-fn
          (fn [^js event]
            (when (and (text-editor/text-editor-has-focus?)
+                      (not (mf/ref-val composing-ref))
                       (not (composing-event? event)))
              (let [key    (.-key event)
                    ctrl?  (or (.-ctrlKey event) (.-metaKey event))
@@ -305,6 +314,12 @@
                  (text-editor/clear-pending-caret-styles!))
                (cond
                  ;; NOTE: Escape is handled in a document key-up listener (see effect below).
+
+                 (and ctrl? (contains? #{"z" "y"} (str/lower key)))
+                 (do
+                   (dom/prevent-default event)
+                   (dom/stop-propagation event)
+                   (st/emit! (if (or shift? (= (str/lower key) "y")) dwu/redo dwu/undo)))
 
                  ;; Ctrl+A: select all (key is "a" or "A" depending on platform)
                  (and ctrl? (= (str/lower key) "a"))
@@ -411,6 +426,11 @@
         (mf/use-fn
          (fn [^js native]
            (mf/set-ref-val! pending-replace-ref 0)
+           (when (and (contains? #{"historyUndo" "historyRedo"} (.-inputType native))
+                      (not (mf/ref-val composing-ref))
+                      (not (.-isComposing native)))
+             (dom/prevent-default native)
+             (st/emit! (if (= (.-inputType native) "historyUndo") dwu/undo dwu/redo)))
            (when (and (= (.-inputType native) "insertText")
                       (not (.-isComposing native))
                       (not (text-editor/text-editor-has-selection?)))
@@ -564,6 +584,18 @@
          (fn [^js _event]
            (wasm.api/text-editor-focus shape-id)))
 
+        ;; Focus the input and the WASM editor if something took the focus
+        ;; while the edition stays open (e.g. a workspace menu).
+        focus-editor!
+        (mf/use-fn
+         (mf/deps shape-id)
+         (fn []
+           (when-let [node (mf/ref-val contenteditable-ref)]
+             (when (not= (.-activeElement js/document) node)
+               (.focus node)))
+           (when-not (text-editor/text-editor-has-focus?)
+             (wasm.api/text-editor-focus shape-id))))
+
         on-blur
         (mf/use-fn
          (fn [^js event]
@@ -578,6 +610,24 @@
                    "--editor-container-width" (dm/str width "px")
                    "--editor-container-height" (dm/str height "px")
                    "--fallback-families" (if (seq fallback-families) (dm/str (str/join ", " fallback-families)) "sourcesanspro")}]
+
+    ;; The workspace leaves undo to the active editor. Handle the same events
+    ;; for keyboard shortcuts, native history input and workspace menu actions.
+    ;; A menu takes the focus and blurs the WASM editor, which then ignores the
+    ;; restore: take the focus back first, as the edition is still open.
+    (mf/use-effect
+     (mf/deps focus-editor!)
+     (fn []
+       (let [subscription
+             (->> st/stream
+                  (rx/filter #(or (ptk/type? ::dwu/undo %) (ptk/type? ::dwu/redo %)))
+                  (rx/subs! (fn [event]
+                              (when-not (mf/ref-val composing-ref)
+                                (focus-editor!)
+                                (st/emit! (dwt/v3-restore-history
+                                           (if (ptk/type? ::dwu/undo event) :undo :redo)))
+                                (reset-input-node (mf/ref-val contenteditable-ref))))))]
+         #(rx/dispose! subscription))))
 
     ;; Exit on Escape via a document key-up listener (like v2). On key-down the trailing
     ;; key-up is read as a non-editing Escape and deselects the shape.
