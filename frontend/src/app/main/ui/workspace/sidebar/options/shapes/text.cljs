@@ -10,6 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.text :as txt]
+   [app.common.types.text.cjk-layout :as cjk]
    [app.main.data.workspace.texts :as dwt]
    [app.main.features :as features]
    [app.main.refs :as refs]
@@ -27,7 +28,30 @@
    [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.text :refer [text-menu*]]
+   [app.render-wasm.api :as wasm.api]
+   [app.render-wasm.text-editor :as wasm.text-editor]
    [rumext.v2 :as mf]))
+
+(defn- dom-text-range-selected?
+  [editor]
+  (when editor
+    (let [selection (.getSelection js/window)
+          element   (.-element editor)
+          anchor    (some-> selection .-anchorNode)
+          focus     (some-> selection .-focusNode)]
+      (and selection
+           (not (.-isCollapsed selection))
+           element
+           anchor
+           focus
+           (.contains element anchor)
+           (.contains element focus)))))
+
+(defn- draft-text-range-selected?
+  [editor-state]
+  (when editor-state
+    (let [selection (.getSelection editor-state)]
+      (and selection (not (.isCollapsed selection))))))
 
 (mf/defc options*
   [{:keys [shape libraries file-id page-id]}]
@@ -46,6 +70,19 @@
 
         ids    (mf/with-memo [id] [id])
         shapes (mf/with-memo [shape] [shape])
+
+        ;; The options of the text language replace the design tab while
+        ;; open. A new text range keeps them open; another selection closes
+        ;; them (see the effect below).
+        language-view*      (mf/use-state false)
+        language-view?      (deref language-view*)
+        open-language-view  (mf/use-fn #(reset! language-view* true))
+        close-language-view (mf/use-fn #(reset! language-view* false))
+
+        has-ruby
+        (mf/with-memo [shape]
+          (boolean (some cjk/ruby-span?
+                         (txt/node-seq txt/is-text-node? (:content shape)))))
 
         typographies
         (mf/deref refs/workspace-file-typography)
@@ -128,6 +165,32 @@
         (when text-editor-v2?
           editor)
 
+        text-selection-active
+        (boolean
+         (cond
+           text-editor-wasm?
+           (and (= id (wasm.api/text-editor-get-active-shape-id))
+                (wasm.api/text-editor-has-selection?))
+
+           text-editor-v2?
+           (dom-text-range-selected? editor-instance)
+
+           :else
+           (draft-text-range-selected? editor-state)))
+
+        reading-selection-active
+        (and text-selection-active
+             text-editor-wasm?
+             (wasm.text-editor/reading-selection?
+              (wasm.text-editor/get-cached-content id)
+              (wasm.text-editor/text-editor-get-selection)))
+
+        zhuyin-selection-active
+        (and reading-selection-active
+             (wasm.text-editor/zhuyin-selection?
+              (wasm.text-editor/get-cached-content id)
+              (wasm.text-editor/text-editor-get-selection)))
+
         fill-values
         (dwt/current-text-values
          {:editor-styles editor-styles
@@ -154,87 +217,120 @@
            :editor-state editor-state
            :editor-instance editor-instance
            :shape shape
-           :attrs txt/text-node-attrs}))]
+           :attrs txt/text-node-attrs}))
 
-    [:*
-     [:> layer-menu* {:ids ids
-                      :type type
-                      :applied-tokens applied-tokens
-                      :values layer-values}]
-     [:> measures-menu*
-      {:ids ids
-       :type type
-       :values measure-values
-       :applied-tokens applied-tokens
-       :shapes shapes}]
+        ruby-attrs
+        (conj cjk/ruby-presentation-attrs :annotation-clearance)
 
-     [:> layout-container-menu*
-      {:type type
-       :ids ids
-       :values layout-container-values
-       :applied-tokens applied-tokens
-       :multiple false}]
+        ruby-values
+        (if text-selection-active
+          (select-keys text-values ruby-attrs)
+          (dwt/current-ruby-values
+           {:shape shape
+            :attrs ruby-attrs}))]
 
-     (when (and (= (count ids) 1) is-layout-child? is-grid-parent?)
-       [:> grid-cell/options*
-        {:shape-id (-> (first parents)
-                       :id)
-         :cell (ctl/get-cell-by-shape-id (first parents) (first ids))}])
+    (mf/with-effect [id]
+      (reset! language-view* false))
 
-     (when is-layout-child?
-       [:> layout-item-menu*
+    (if ^boolean language-view?
+      [:> text-menu*
+       {:ids ids
+        :type type
+        :applied-tokens applied-tokens
+        :values text-values
+        :ruby-values ruby-values
+        :text-selection-active text-selection-active
+        :reading-selection-active reading-selection-active
+        :zhuyin-selection-active zhuyin-selection-active
+        :libraries libraries
+        :file-id file-id
+        :typographies typographies
+        :language-view true
+        :on-close-language-view close-language-view
+        :has-ruby has-ruby}]
+      [:*
+       [:> layer-menu* {:ids ids
+                        :type type
+                        :applied-tokens applied-tokens
+                        :values layer-values}]
+       [:> measures-menu*
         {:ids ids
          :type type
-         :values layout-item-values
-         :is-layout-child true
-         :is-flex-parent is-flex-parent?
-         :is-grid-parent is-grid-parent?
+         :values measure-values
          :applied-tokens applied-tokens
-         :shape shape}])
+         :shapes shapes}]
 
-     (when (or (not ^boolean is-layout-child?) ^boolean is-layout-child-absolute?)
-       [:> constraints-menu*
-        {:ids ids
-         :values (select-keys shape constraint-attrs)}])
-
-     [:> text-menu*
-      {:ids ids
-       :type type
-       :applied-tokens applied-tokens
-       :values text-values
-       :libraries libraries
-       :file-id file-id
-       :typographies typographies}]
-
-     [:> fill/fill-menu*
-      {:ids ids
-       :type type
-       :values fill-values
-       :applied-tokens applied-tokens}]
-
-     [:> stroke-menu* {:ids ids
-                       :type type
-                       :values stroke-values
-                       :disable-stroke-style true
-                       :applied-tokens applied-tokens}]
-
-     (when (= :multiple (:fills fill-values))
-       [:> color-selection-menu*
+       [:> layout-container-menu*
         {:type type
-         :shapes shapes
+         :ids ids
+         :values layout-container-values
+         :applied-tokens applied-tokens
+         :multiple false}]
+
+       (when (and (= (count ids) 1) is-layout-child? is-grid-parent?)
+         [:> grid-cell/options*
+          {:shape-id (-> (first parents)
+                         :id)
+           :cell (ctl/get-cell-by-shape-id (first parents) (first ids))}])
+
+       (when is-layout-child?
+         [:> layout-item-menu*
+          {:ids ids
+           :type type
+           :values layout-item-values
+           :is-layout-child true
+           :is-flex-parent is-flex-parent?
+           :is-grid-parent is-grid-parent?
+           :applied-tokens applied-tokens
+           :shape shape}])
+
+       (when (or (not ^boolean is-layout-child?) ^boolean is-layout-child-absolute?)
+         [:> constraints-menu*
+          {:ids ids
+           :values (select-keys shape constraint-attrs)}])
+
+       [:> text-menu*
+        {:ids ids
+         :type type
+         :applied-tokens applied-tokens
+         :values text-values
+         :ruby-values ruby-values
+         :text-selection-active text-selection-active
+         :reading-selection-active reading-selection-active
+         :zhuyin-selection-active zhuyin-selection-active
+         :libraries libraries
          :file-id file-id
-         :libraries libraries}])
+         :typographies typographies
+         :on-open-language-view open-language-view}]
 
-     [:> shadow-menu* {:ids ids :values (get shape :shadow)}]
+       [:> fill/fill-menu*
+        {:ids ids
+         :type type
+         :values fill-values
+         :applied-tokens applied-tokens}]
 
-     [:> blur-menu*
-      {:ids ids
-       :values (select-keys shape [:blur :background-blur])}]
+       [:> stroke-menu* {:ids ids
+                         :type type
+                         :values stroke-values
+                         :disable-stroke-style true
+                         :applied-tokens applied-tokens}]
 
-     [:> exports-menu* {:type type
-                        :ids ids
-                        :shapes shapes
-                        :values (select-keys shape exports-attrs)
-                        :page-id page-id
-                        :file-id file-id}]]))
+       (when (= :multiple (:fills fill-values))
+         [:> color-selection-menu*
+          {:type type
+           :shapes shapes
+           :file-id file-id
+           :libraries libraries}])
 
+       [:> shadow-menu* {:ids ids :values (get shape :shadow)}]
+
+       [:> blur-menu*
+        {:ids ids
+         :values (select-keys shape [:blur :background-blur])}]
+
+       [:> exports-menu* {:type type
+                          :ids ids
+                          :shapes shapes
+                          :values (select-keys shape exports-attrs)
+                          :page-id page-id
+                          :file-id file-id}]])))

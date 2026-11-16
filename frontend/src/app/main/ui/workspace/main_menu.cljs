@@ -46,6 +46,8 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
+   [app.util.text.layout :as tl]
+   [app.util.text.writing-mode :as wm]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
@@ -231,15 +233,95 @@
         [:span {:class (stl/css :feedback :item-name)}
          (tr "labels.give-feedback")]])]))
 
+(mf/defc language-profile-menu*
+  "Menu item showing the language profile `language` (nil for none) and
+  opening the profile list beside it: None, then the profiles grouped by
+  language, the current one checked. `on-select` receives the chosen tag,
+  nil for None. A `disabled` item shows the profile but does not open."
+  {::mf/private true}
+  [{:keys [id label language disabled on-select on-close-all]}]
+  (let [open*    (mf/use-state false)
+        open?    (deref open*)
+        options  (mf/with-memo [language] (tl/language-options language))
+
+        show     (mf/use-fn #(reset! open* true))
+        hide     (mf/use-fn #(reset! open* false))
+
+        toggle
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (swap! open* not)))
+
+        handle-select
+        (mf/use-fn
+         (mf/deps on-select on-close-all)
+         (fn [event]
+           (dom/stop-propagation event)
+           (let [tag (dom/get-data (dom/get-current-target event) "language")]
+             (on-select (when (not= "none" tag) tag))
+             (on-close-all))))]
+
+    [:> dropdown-menu-item* {:class (stl/css-case :base-menu-item true
+                                                  :language-menu-item true
+                                                  :disabled disabled)
+                             :on-click (when-not disabled toggle)
+                             :on-pointer-enter (when-not disabled show)
+                             :on-pointer-leave (when-not disabled hide)
+                             :aria-disabled disabled
+                             :aria-haspopup "menu"
+                             :aria-expanded open?
+                             :id id}
+     [:span {:class (stl/css :item-name)} label]
+     [:span {:class (stl/css :item-value)}
+      (if (some? language)
+        (tl/language-label language)
+        (tr "workspace.header.menu.language-none"))]
+     [:> icon* {:icon-id i/arrow-right
+                :class (stl/css :item-arrow)}]
+
+     (when ^boolean open?
+       [:div {:class (stl/css :language-submenu)}
+        [:ul {:class (stl/css :base-menu :language-submenu-list)
+              :role "menu"}
+         [:> dropdown-menu-item* {:class (stl/css :base-menu-item :submenu-item)
+                                  :data-language "none"
+                                  :on-click handle-select
+                                  :id (str id "-none")}
+          [:span {:class (stl/css :item-name)}
+           (tr "workspace.header.menu.language-none")]
+          (when (nil? language)
+            [:> icon* {:icon-id i/tick :class (stl/css :item-icon)}])]
+
+         (for [{option-id :id :keys [label header selected]} options]
+           (if ^boolean header
+             [:li {:key option-id
+                   :class (stl/css :language-separator)
+                   :role "separator"}]
+             [:> dropdown-menu-item* {:key option-id
+                                      :class (stl/css :base-menu-item :submenu-item)
+                                      :data-language option-id
+                                      :on-click handle-select
+                                      :id (str id "-" option-id)}
+              [:span {:class (stl/css :item-name)} label]
+              (when ^boolean selected
+                [:> icon* {:icon-id i/tick :class (stl/css :item-icon)}])]))]])]))
+
 (mf/defc preferences-menu*
   {::mf/private true
    ::mf/wrap [mf/memo]}
-  [{:keys [layout profile toggle-flag on-close toggle-theme toggle-render]}]
-  (let [renderer (or (-> profile :props :renderer) :svg)
+  [{:keys [layout profile toggle-flag on-close on-close-all toggle-theme toggle-render]}]
+  (let [renderer     (or (-> profile :props :renderer) :svg)
+        cjk-feature? (features/use-feature "cjk-support")
 
         show-nudge-options
         (mf/use-fn
-         #(modal/show! {:type :nudge-option}))]
+         #(modal/show! {:type :nudge-option}))
+
+        on-select-default-language
+        (mf/use-fn
+         (fn [language]
+           (st/emit! (du/update-profile-props {:default-text-language language}))))]
 
     [:> dropdown-menu* {:show true
                         :class (stl/css :base-menu :sub-menu :pos-4)
@@ -317,6 +399,13 @@
                               :data-testid "snap-pixel-grid"
                               :id          "file-menu-nudge"}
       [:span {:class (stl/css :item-name)} (tr "modals.nudge-title")]]
+
+     (when (and ^boolean cjk-feature? ^boolean (wm/vertical-layout-active?))
+       [:> language-profile-menu* {:id "file-menu-default-language"
+                                   :label (tr "workspace.header.menu.option.default-language-profile")
+                                   :language (-> profile :props :default-text-language)
+                                   :on-select on-select-default-language
+                                   :on-close-all on-close-all}])
 
      [:> dropdown-menu-item* {:on-click    toggle-theme
                               :class       (stl/css :base-menu-item :submenu-item)
@@ -568,7 +657,7 @@
 
 (mf/defc file-menu*
   {::mf/private true}
-  [{:keys [on-close file]}]
+  [{:keys [on-close on-close-all file]}]
   (let [file-id      (:id file)
         shared?      (:is-shared file)
 
@@ -583,6 +672,14 @@
 
         perms        (mf/use-ctx ctx/permissions)
         can-edit     (:can-edit perms)
+        cjk-feature? (features/use-feature "cjk-support")
+        file-language (mf/deref refs/file-text-language)
+
+        on-select-language
+        (mf/use-fn
+         (fn [language]
+           (st/emit! (-> (dw/set-default-text-language language)
+                         (vary-meta assoc ::ev/origin "workspace:menu")))))
 
         on-remove-shared
         (mf/use-fn
@@ -700,6 +797,14 @@
                                   :id          "file-menu-add-shared"}
           [:span {:class (stl/css :item-name)}
            (tr "dashboard.add-shared")]]))
+
+     (when (and ^boolean cjk-feature? ^boolean (wm/vertical-layout-active?))
+       [:> language-profile-menu* {:id "file-menu-language"
+                                   :label (tr "workspace.header.menu.option.language")
+                                   :language file-language
+                                   :disabled (not can-edit)
+                                   :on-select on-select-language
+                                   :on-close-all on-close-all}])
 
      (when can-edit
        [:*
@@ -1134,7 +1239,8 @@
      (case selected-sub-menu
        :file
        [:> file-menu* {:file file
-                       :on-close close-sub-menu}]
+                       :on-close close-sub-menu
+                       :on-close-all close-all-menus}]
 
        :edit
        [:> edit-menu* {:on-close close-sub-menu}]
@@ -1152,7 +1258,8 @@
                               :toggle-theme toggle-theme
                               :toggle-render toggle-render
                               :show-shortcuts show-shortcuts
-                              :on-close close-sub-menu}]
+                              :on-close close-sub-menu
+                              :on-close-all close-all-menus}]
 
        :plugins
        [:> plugins-menu* {:open-plugins open-plugins-manager

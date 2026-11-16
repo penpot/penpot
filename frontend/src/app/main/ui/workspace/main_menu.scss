@@ -194,3 +194,49 @@
   background-color: var(--color-background-info);
   color: var(--color-foreground-primary);
 }
+
+// Language profile items (File, Preferences): the current profile shows
+// before the arrow, and the profiles open beside the item. The padding
+// bridges the gap to the item, so moving the pointer there keeps the list
+// open.
+.language-menu-item {
+  position: relative;
+  grid-template-columns: auto 1fr $sz-16;
+  grid-template-areas: "name value arrow";
+  column-gap: var(--sp-s);
+  white-space: nowrap;
+}
+
+.item-value {
+  grid-area: value;
+  justify-self: end;
+  color: var(--menu-shortcut-foreground-color);
+}
+
+.language-submenu {
+  position: absolute;
+  inset-block-start: calc(-1 * (var(--sp-xs) + $b-2));
+  inset-inline-start: 100%;
+  padding-inline-start: var(--sp-s);
+}
+
+// The list sits inside the Language item, so it would inherit the colors
+// that item sets on hover; it takes back the design-token defaults and its
+// own items get their hover again.
+.language-submenu-list {
+  --menu-background-color: var(--color-background-tertiary);
+  --menu-foreground-color: var(--color-foreground-primary);
+  --menu-icon-foreground-color: var(--color-foreground-secondary);
+  --menu-shortcut-foreground-color: var(--color-foreground-secondary);
+
+  position: relative;
+  min-inline-size: $sz-192;
+  margin: 0;
+}
+
+.language-separator {
+  block-size: 0;
+  margin-inline: calc(-1 * var(--sp-xs));
+  border-top: $b-1 solid var(--color-background-quaternary);
+  list-style: none;
+}

@@ -33,7 +33,8 @@
 
 /* Copied from profile.scss .form-container, but without included nested
    rules, since we want custom styles for it */
-.webgl-container {
+.webgl-container,
+.text-language-container {
   display: grid;
   grid-auto-rows: auto;
   gap: var(--sp-s);
@@ -42,6 +43,12 @@
   margin: var(--sp-xxxl) $sz-120; /* FIXME: this should be a proper token */
   border-block-start: $b-1 solid var(--color-background-quaternary);
   color: var(--color-foreground-primary);
+}
+
+.text-language-form {
+  display: grid;
+  gap: var(--sp-s);
+  padding-block-start: var(--sp-l);
 }
 
 .webgl-header {

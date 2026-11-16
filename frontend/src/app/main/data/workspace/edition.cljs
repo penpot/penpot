@@ -64,7 +64,8 @@
                 (not path-editing?)
                 (update :workspace-drawing dissoc :object :lock))
               (dissoc :workspace-grid-edition)
-              (dissoc :workspace-wasm-editor-styles))))
+              (dissoc :workspace-wasm-editor-styles)
+              (dissoc :workspace-wasm-editor-selection-rects))))
 
       ptk/WatchEvent
       (watch [_ _ _]
