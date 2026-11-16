@@ -738,17 +738,17 @@
       (ex/print-throwable cause :prefix "Unexpected Error")
       (flash :cause cause :type :unhandled))))
 
+(def recoverable-wasm-codes
+  "WASM error codes that show a toast; any other code shows the error page."
+  #{:non-blocking :wasm-reload-context-failure :viewer-canvas-failed})
+
 (defmethod ptk/handle-error :wasm-error
   [error]
   (when-let [cause (::instance error)]
     (ex/print-throwable cause)
-    (let [code (get error :code)]
-      (cond
-        (= code :panic)
-        (st/emit! (rt/assign-exception error))
-
-        :else
-        (flash :type :handled :cause cause)))))
+    (if (contains? recoverable-wasm-codes (:code error))
+      (flash :type :handled :cause cause)
+      (st/emit! (rt/assign-exception error)))))
 
 ;; We receive a explicit authentication error; If the uri is for
 ;; workspace, dashboard, viewer or settings, then assign the exception

@@ -1151,3 +1151,48 @@
                   (map (comp ::ev/name deref) (report-events @events)))
                (str type " is reported as handled, not unhandled"))
          (t/is (= 2 (count @events)) (str type " must show one notification")))))))
+
+;; ---------------------------------------------------------------------------
+;; WASM errors
+;; ---------------------------------------------------------------------------
+
+(defn- ^:async handle-wasm-error
+  "Sends a `:wasm-error` with `code` through `on-error`. Resolves to the
+  errors assigned to the error page and the events emitted."
+  [code]
+  (let [events   (atom [])
+        assigned (atom [])
+        cause    (ex-info "WASM Error" {:type :wasm-error :code code :hint "WASM Error"})]
+    (await
+     (mock/with-mocks*
+       {st/emit!              (mock/stub (fn [& emitted] (swap! events into emitted)))
+        rt/get-current-href   (constantly "https://penpot.example.com/#/workspace")
+        rt/assign-exception   (fn [error] (swap! assigned conj error) error)
+        tm/schedule           (mock/stub (fn [f] (f)))
+        st/format-last-events (mock/stub (fn [& _] "(stub last events)"))}
+       (errors/on-error cause)
+       (await (async/settle))))
+    {:assigned @assigned :events @events}))
+
+(t/deftest ^:async non-recoverable-wasm-errors-show-the-error-page
+  ;; Scenario: a panic, a trap with no code and an unknown code.
+  ;; Proves: each shows the error page and no toast.
+  (doseq [code [:panic :wasm-critical :unknown-code]]
+    (errors/reset-report-governor!)
+    (let [{:keys [assigned events]} (await (handle-wasm-error code))]
+      (t/is (= [code] (map :code assigned))
+            (str code " must show the error page"))
+      (t/is (empty? (report-events events))
+            (str code " must not show a toast")))))
+
+(t/deftest ^:async recoverable-wasm-errors-show-a-toast
+  ;; Scenario: WASM errors with a recoverable code. Proves: each shows a
+  ;; handled report and a toast, and keeps the page.
+  (doseq [code [:non-blocking :wasm-reload-context-failure :viewer-canvas-failed]]
+    (errors/reset-report-governor!)
+    (let [{:keys [assigned events]} (await (handle-wasm-error code))]
+      (t/is (empty? assigned)
+            (str code " must not show the error page"))
+      (t/is (= ["handled-exception"]
+               (map (comp ::ev/name deref) (report-events events)))
+            (str code " must show a toast")))))
