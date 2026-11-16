@@ -2495,6 +2495,13 @@
                        :ops [[:variant-property 0 9 3 0] [:switch 4] [:combine 2] [:switch 8] [:style 11 7 1]
                              [:update-main 2 0 0 0]]}))))
 
+(t/deftest a-synced-masked-group-fits-the-mask-its-copy-turned
+  ;; a copy turns the mask of a masked group; a sync gives the group its
+  ;; main's geometry and then fits it to the turned mask again
+  (t/is (map? (cg/run {:world [2 0 {:variants true :rich-variants true :text true :layout nil :layout-copies true
+                                    :layout-children false}]
+                       :ops [[:add-child 1] [:structure 3 1 0] [:transform 2 3 0 2]]}))))
+
 (t/deftest a-pasted-copy-compares-with-the-main-the-file-accepted
   ;; the library widened a main the stale file has not accepted: a copy
   ;; pasted from it shows the accepted size, which is no override
