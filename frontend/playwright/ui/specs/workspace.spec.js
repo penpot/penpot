@@ -431,21 +431,23 @@ test("Copy/paste properties", async ({ page, context }) => {
   // Access to the read/write clipboard necesary for this functionality
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
 
-  // The root board starts collapsed, so the shapes inside it are not in the tree
-  // until it is expanded. Its row is the only one with the `root-board` class;
-  // expand it and wait for the container the right-click below needs.
-  await page
+  // Two rows carry the `root-board` class (the empty board and the one with
+  // shapes) and only the board with children renders a `toggle-content` button,
+  // so the filter picks its expand toggle. The real root frame is not a row.
+  const boardRow = page
     .locator('[data-testid="layer-row"][class*="root-board"]')
-    .getByTestId("toggle-content")
-    .click();
-  await expect(
-    page.getByTestId("children-0eef4dd0-b39b-807a-8005-934805578f93"),
-  ).toBeVisible();
+    .filter({ has: page.getByTestId("toggle-content") });
 
-  await page
-    .getByTestId("children-0eef4dd0-b39b-807a-8005-934805578f93")
-    .getByText("Rectangle")
-    .click({ button: "right" });
+  await boardRow.getByTestId("toggle-content").click();
+
+  // The children container is named after the board's own id, so it does not
+  // need the fixture's uuid written by hand.
+  const boardChildren = page.getByTestId(
+    `children-${await boardRow.getAttribute("id")}`,
+  );
+  await expect(boardChildren).toBeVisible();
+
+  await boardChildren.getByText("Rectangle").click({ button: "right" });
   await page.getByText("Copy/Paste as").hover();
   await page.getByText("Copy properties").click();
 

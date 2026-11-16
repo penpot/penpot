@@ -36,23 +36,6 @@ const setupVariantsFile = async (workspacePage) => {
   });
 };
 
-const setupVariantsFileWithVariant = async (workspacePage) => {
-  await setupVariantsFile(workspacePage);
-
-  await workspacePage.clickLeafLayer("Rectangle");
-  await workspacePage.page.keyboard.press("ControlOrMeta+k");
-  await workspacePage.page.waitForTimeout(500);
-  await workspacePage.page.keyboard.press("ControlOrMeta+k");
-  await workspacePage.page.waitForTimeout(500);
-
-  // We wait until layer-row starts looking like it an component
-  await workspacePage.page
-    .getByTestId("layer-row")
-    .filter({ hasText: "Rectangle" })
-    .getByTestId("icon-component")
-    .waitFor();
-};
-
 // A shape is only a component once its layer row shows the component icon; this
 // is the condition the fixed three seconds used to stand in for.
 const waitForComponentIcon = async (workspacePage, name) => {
@@ -62,6 +45,18 @@ const waitForComponentIcon = async (workspacePage, name) => {
       .filter({ hasText: name })
       .getByTestId("icon-component"),
   ).toBeVisible();
+};
+
+const setupVariantsFileWithVariant = async (workspacePage) => {
+  await setupVariantsFile(workspacePage);
+
+  await workspacePage.clickLeafLayer("Rectangle");
+  await workspacePage.page.keyboard.press("ControlOrMeta+k");
+  await workspacePage.page.waitForTimeout(500);
+  await workspacePage.page.keyboard.press("ControlOrMeta+k");
+  await workspacePage.page.waitForTimeout(500);
+
+  await waitForComponentIcon(workspacePage, "Rectangle");
 };
 
 const findVariant = async (workspacePage, index) => {
@@ -240,7 +235,6 @@ test("User cut paste a variant container", async ({ page }) => {
   //Paste the variant container
   await workspacePage.clickAt(500, 500);
   await workspacePage.paste("keyboard");
-  await workspacePage.page.waitForTimeout(500);
 
   const variantPasted = await findVariant(workspacePage, 0);
 
