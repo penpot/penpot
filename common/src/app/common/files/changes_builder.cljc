@@ -1153,6 +1153,18 @@
                                     :base-font-size previous-font-size})
         (apply-changes-local))))
 
+(defn set-default-text-language
+  [changes language]
+  (assert-file-data! changes)
+  (let [file-data (::file-data (meta changes))
+        previous  (ctf/get-default-text-language file-data)]
+    (-> changes
+        (update :redo-changes conj {:type :set-default-text-language
+                                    :language language})
+        (update :undo-changes conj {:type :set-default-text-language
+                                    :language previous})
+        (apply-changes-local))))
+
 (defn set-tokens-source
   [changes library-id]
   (assert-library! changes)

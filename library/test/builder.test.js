@@ -110,6 +110,44 @@ test("create context with file and page", () => {
   assert.equal(rootShape.id, "00000000-0000-0000-0000-000000000000");
 });
 
+test("create vertical text", () => {
+  const context = penpot.createBuildContext();
+
+  const fileId = context.addFile({name: "file 1"});
+  const pageId = context.addPage({name: "page 1"});
+  const textId = context.addText({
+    name: "Vertical text",
+    x: 10,
+    y: 20,
+    width: 100,
+    height: 200,
+    content: {
+      type: "root",
+      children: [
+        {
+          type: "paragraph-set",
+          children: [
+            {
+              type: "paragraph",
+              writingMode: "vertical-rl",
+              textOrientation: "upright",
+              children: [{text: "縦書き"}],
+            },
+          ],
+        },
+      ],
+    },
+  });
+
+  const internalState = context.getInternalState();
+  const paragraph =
+    internalState.files[fileId].data.pagesIndex[pageId].objects[textId].content
+      .children[0].children[0];
+
+  assert.equal(paragraph.writingMode, "vertical-rl");
+  assert.equal(paragraph.textOrientation, "upright");
+});
+
 test("create context with color", () => {
   const context = penpot.createBuildContext();
 
