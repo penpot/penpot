@@ -199,6 +199,7 @@
    [frontend-tests.worker-snap-test]
    [frontend-tests.worker.component-thumbnails-test]
    [frontend-tests.worker.exports-test]
+   [frontend-tests.worker.fonts-sync-test]
    [frontend-tests.worker.index-test]
    [frontend-tests.worker.messages-test]
    [frontend-tests.worker.trim-test]
@@ -245,6 +246,7 @@
    'frontend-tests.data.jobs-test
    'frontend-tests.worker.component-thumbnails-test
    'frontend-tests.worker.exports-test
+   'frontend-tests.worker.fonts-sync-test
    'frontend-tests.worker.index-test
    'frontend-tests.worker.messages-test
    'frontend-tests.worker.trim-test
