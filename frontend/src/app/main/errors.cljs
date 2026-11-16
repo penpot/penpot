@@ -750,6 +750,30 @@
       (flash :type :handled :cause cause)
       (st/emit! (rt/assign-exception error)))))
 
+(defn- handle-wasm-effect-error
+  [cause]
+  (let [{:keys [type code]} (ex-data cause)]
+    (if (and (= type :wasm-error) (contains? recoverable-wasm-codes code))
+      (on-error cause)
+      (throw cause))))
+
+(defn wrap-wasm-effect
+  "Runs the React effect fn `f` and guards the cleanup fn it returns: a
+  recoverable WASM error goes to `on-error`, any other error is rethrown."
+  [f]
+  (let [result (try
+                 (f)
+                 (catch :default cause
+                   (handle-wasm-effect-error cause)
+                   nil))]
+    (if (fn? result)
+      (fn []
+        (try
+          (result)
+          (catch :default cause
+            (handle-wasm-effect-error cause))))
+      result)))
+
 ;; We receive a explicit authentication error; If the uri is for
 ;; workspace, dashboard, viewer or settings, then assign the exception
 ;; for show the error page. Otherwise this explicitly clears all
