@@ -2495,6 +2495,36 @@
                        :ops [[:variant-property 0 9 3 0] [:switch 4] [:combine 2] [:switch 8] [:style 11 7 1]
                              [:update-main 2 0 0 0]]}))))
 
+(t/deftest a-pasted-copy-compares-with-the-main-the-file-accepted
+  ;; the library widened a main the stale file has not accepted: a copy
+  ;; pasted from it shows the accepted size, which is no override
+  (t/is (map? (cg/run {:world [2 0 {:variants true :text-styles true :library-variants true :stale-libraries true
+                                    :layout nil :layout-item-margins false :grid-square false :library-depth 2
+                                    :library true :rich-variants true :layout-children false :library-text true
+                                    :grid-empty false :layout-copies true :text true}]
+                       :ops [[:library-delete 0] [:library-sync] [:library-restore 0] [:library-sync]
+                             [:library-transform 0 1 4 0] [:paste 23 0 0 0]]}))))
+
+(t/deftest moving-the-mask-of-a-group-a-flex-places-leaves-it-in-place
+  ;; the mask moves its group, which the flex puts back in its place
+  (t/is (map? (cg/run {:world [2 1 {:variants true :rich-variants true :text true :layout :flex
+                                    :layout-copies true :layout-children true}]
+                       :ops [[:add-child 0] [:structure 0 0 0] [:nest 5 0 0 0] [:add-child 0 0 0 0]
+                             [:add-child 6] [:structure 14 1 0] [:transform 6 0 0 12]]}))))
+
+(t/deftest a-copy-moved-into-a-blocked-board-is-blocked
+  ;; as a nest into a blocked parent, a move blocks the copy, an override
+  (t/is (map? (cg/run {:world [3 2 {:text true :text-styles true :layout nil :layout-children false
+                                    :layout-item-margins false :grid-square false :grid-empty false}]
+                       :ops [[:style 0 2 1] [:remove-child 0 0 0 0] [:move 11 0 0 0]]}))))
+
+(t/deftest a-flip-moves-the-radius-tokens-a-copy-authored
+  ;; a copy that set one corner by hand keeps its radius tokens on the
+  ;; corners they apply to once a flip mirrors it
+  (t/is (map? (cg/run {:world [2 0 {:tokens true :variants true :rich-variants true :text true :layout nil
+                                    :layout-copies true}]
+                       :ops [[:apply-token 10 0] [:style 10 3 0 1] [:transform 5 16 0 0]]}))))
+
 (t/deftest a-token-edit-keeps-the-square-corner-of-a-mirrored-copy
   ;; a copy mirrored horizontally takes its main's radius tokens on the
   ;; corners it shows them on, so a token edit leaves the corner its main
