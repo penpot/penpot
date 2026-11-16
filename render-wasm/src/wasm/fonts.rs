@@ -124,3 +124,11 @@ pub extern "C" fn is_font_uploaded(
     let family = FontFamily::new(id, weight, font_style.into());
     get_resources().fonts.has_family(&family, is_emoji)
 }
+
+#[no_mangle]
+pub extern "C" fn mark_font_as_fallback(a: u32, b: u32, c: u32, d: u32, weight: u32, style: u8) {
+    let id = uuid_from_u32_quartet(a, b, c, d);
+    let font_style = RawFontStyle::from(style);
+    let family = FontFamily::new(id, weight, font_style.into());
+    get_resources().fonts.mark_as_fallback(&family);
+}

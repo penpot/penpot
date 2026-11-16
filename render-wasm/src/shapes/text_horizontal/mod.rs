@@ -1,0 +1,451 @@
+// Horizontal CJK layout on top of SkParagraph: the policy's layout texts
+// (break joiners and spacing characters), punctuation and inter-script
+// spacing, offset maps between source, layout and builder text, line
+// adjustment, and the ruby, emphasis and warichu painters.
+
+use crate::shapes::text_paragraph::{LayoutParagraph, SpacedParagraphBuilder};
+
+mod emphasis;
+mod justify;
+mod offsets;
+mod overflow;
+mod ruby;
+mod warichu;
+
+#[cfg(test)]
+mod tests;
+
+pub(crate) use emphasis::*;
+pub(crate) use justify::*;
+pub(crate) use offsets::*;
+pub(crate) use ruby::*;
+pub(crate) use warichu::*;
+
+use super::text::{add_text_with_tabs, Paragraph, TextContent, TextSpan};
+use super::text_attrs::*;
+use super::text_ruby::*;
+use super::text_shaping::{
+    is_upright_char, shape_segment_with_fallbacks, single_glyph_blob, span_font_families, ShapedRun,
+};
+use super::text_warichu::*;
+use crate::globals::get_resources;
+use crate::math::Point;
+use crate::shapes::jlreq::{
+    aki_class, is_cjk_text_char, pair_rule, punctuation_aki_sheds, AkiShed, JlreqClass,
+};
+use crate::shapes::{line_breaks, merge_fills};
+use crate::utils::{get_fallback_fonts, get_font_collection};
+use skia_safe::{
+    self as skia,
+    textlayout::{
+        ParagraphBuilder, ParagraphStyle, PlaceholderAlignment, PlaceholderStyle, RectHeightStyle,
+        RectWidthStyle, TextBaseline,
+    },
+    Canvas, Contains, Font, FontMgr, GlyphId,
+};
+
+/// True when a paragraph with layout texts `texts` needs the Japanese passes:
+/// its policy is Japanese and it has ruby or a CJK text character.
+pub(crate) fn uses_japanese_layout(paragraph: &Paragraph, texts: &[String]) -> bool {
+    paragraph.layout_policy().uses_jlreq()
+        && (paragraph.children().iter().any(TextSpan::has_ruby)
+            || texts.iter().any(|text| text.chars().any(is_cjk_text_char)))
+}
+
+#[cfg(test)]
+pub(crate) fn layout_span_texts(paragraph: &Paragraph) -> (Vec<String>, line_breaks::OffsetMap) {
+    layout_span_texts_with_breaks(paragraph, &[], &[])
+}
+
+fn layout_span_texts_with_breaks(
+    paragraph: &Paragraph,
+    emergency: &[usize],
+    forced: &[usize],
+) -> (Vec<String>, line_breaks::OffsetMap) {
+    let texts: Vec<String> = paragraph
+        .children()
+        .iter()
+        .map(TextSpan::apply_text_transform)
+        .collect();
+    // Text without Japanese characters or ruby keeps plain Skia layout.
+    let policy = paragraph.layout_policy();
+    if policy.plans_breaks() || uses_japanese_layout(paragraph, &texts) {
+        let ruby_breaks: Vec<Option<Vec<usize>>> = paragraph
+            .children()
+            .iter()
+            .map(|span| span.has_ruby().then(Vec::new))
+            .collect();
+        // A base that crosses spans stays whole across their boundaries.
+        let group_of = paragraph.ruby_group_of_spans();
+        let joined: Vec<bool> = group_of
+            .iter()
+            .enumerate()
+            .map(|(index, group)| index > 0 && group.is_some() && *group == group_of[index - 1])
+            .collect();
+        let shifted = line_breaks::apply_policy_with_breaks(
+            &texts,
+            &ruby_breaks,
+            &joined,
+            policy,
+            emergency,
+            forced,
+        );
+        if let Some((shifted, map)) = shifted {
+            return (shifted, map);
+        }
+    }
+    (texts, line_breaks::OffsetMap::default())
+}
+
+/// Advance changes between adjacent characters of the layout `texts`, as
+/// (char index, amount) per span: positive narrows the character, negative
+/// widens it. Japanese sheds JLREQ punctuation aki; the other policies use
+/// their pairwise punctuation compression and script spacing.
+pub(crate) fn horizontal_pair_spacing(
+    paragraph: &Paragraph,
+    texts: &[String],
+) -> Vec<Vec<(usize, f32)>> {
+    if !paragraph.layout_policy().uses_jlreq() {
+        return horizontal_pairwise_spacing(paragraph, texts);
+    }
+    jlreq_aki_sheds(paragraph, texts)
+}
+
+/// (char index, amount) per span of the layout `texts` for the characters
+/// whose advance loses a half-em to `punctuation_aki_sheds`: a closing mark
+/// sheds half of its own em, and the character before an opening bracket
+/// gives up half of the bracket's em. Inserted word joiners are transparent;
+/// `palt` spans set punctuation proportionally.
+fn jlreq_aki_sheds(paragraph: &Paragraph, texts: &[String]) -> Vec<Vec<(usize, f32)>> {
+    let spans = paragraph.children();
+    let half_em = |span: usize| spans.get(span).map_or(0.0, |span| span.font_size * 0.5);
+    // (span, char index in the span text) of every real character.
+    let mut chars: Vec<(usize, usize)> = Vec::new();
+    let mut classes: Vec<Option<JlreqClass>> = Vec::new();
+    for (span_index, text) in texts.iter().enumerate() {
+        let span = spans.get(span_index);
+        let ruby_base = span.is_some_and(TextSpan::has_ruby);
+        let proportional = span.is_some_and(|span| span.font_features == FontFeatures::Palt);
+        for (index, ch) in text.chars().enumerate() {
+            if line_breaks::is_inserted_zero_width(ch) {
+                continue;
+            }
+            chars.push((span_index, index));
+            classes.push(aki_class(ch, ruby_base, proportional));
+        }
+    }
+    let mut sheds: Vec<Vec<(usize, f32)>> = vec![Vec::new(); texts.len()];
+    for (at, shed) in punctuation_aki_sheds(&classes) {
+        let (span, amount_span, index) = match shed {
+            AkiShed::Trailing => (chars[at].0, chars[at].0, chars[at].1),
+            AkiShed::Leading => (chars[at - 1].0, chars[at].0, chars[at - 1].1),
+        };
+        sheds[span].push((index, half_em(amount_span)));
+    }
+    sheds
+}
+
+/// Signed advance changes: positive removes punctuation space, negative adds
+/// the regional Han/Latin gap. Source and builder text stay unchanged.
+fn horizontal_pairwise_spacing(paragraph: &Paragraph, texts: &[String]) -> Vec<Vec<(usize, f32)>> {
+    let mut result = vec![Vec::new(); texts.len()];
+    let policy = paragraph.layout_policy();
+    let mut previous: Option<(usize, usize, char)> = None;
+    for (span, text) in texts.iter().enumerate() {
+        for (index, ch) in text.chars().enumerate() {
+            if line_breaks::is_inserted_zero_width(ch) {
+                continue;
+            }
+            if let Some((before_span, before_index, before)) = previous {
+                let a = &paragraph.children()[before_span];
+                let b = &paragraph.children()[span];
+                if !a.has_ruby() && !b.has_ruby() && !a.is_warichu() && !b.is_warichu() {
+                    let em = a.font_size.min(b.font_size);
+                    let spacing = policy.pair_spacing_em(before, ch, false);
+                    // `palt` already sets punctuation proportionally.
+                    let compression = if a.font_features == FontFeatures::Palt
+                        || b.font_features == FontFeatures::Palt
+                    {
+                        0.0
+                    } else {
+                        spacing.compression
+                    };
+                    let amount = (compression - spacing.script_gap) * em;
+                    if amount != 0.0 {
+                        result[before_span].push((before_index, amount));
+                    }
+                }
+            }
+            previous = Some((span, index, ch));
+        }
+    }
+    result
+}
+
+/// Add a span to a horizontal paragraph builder. A warichu span becomes one
+/// inline placeholder so its two lines wrap as a unit; its glyphs are painted
+/// after layout. The characters at `sheds` (from `horizontal_pair_spacing`)
+/// set narrower by their amounts; `extra` (from `horizontal_ruby_spacing`)
+/// adds letter-spacing to characters.
+pub(crate) fn add_horizontal_span(
+    builder: &mut impl SpacedParagraphBuilder,
+    span: &TextSpan,
+    builder_text: &str,
+    sheds: &[(usize, f32)],
+    extra: &[(usize, f32)],
+    text_style: &skia::textlayout::TextStyle,
+    fonts: &skia::textlayout::FontCollection,
+) {
+    if span.is_warichu() {
+        let builder = builder.paragraph_builder();
+        if builder_text.starts_with(line_breaks::FORCED_LINE_BREAK) {
+            builder.add_text(line_breaks::FORCED_LINE_BREAK.to_string());
+        }
+        let text = span.apply_text_transform();
+        let (first, second) = warichu_text_lines(&text);
+        let mut mini_style = text_style.clone();
+        mini_style.set_font_size(span.font_size * WARICHU_FONT_SCALE);
+        mini_style.set_height(1.0);
+        mini_style.set_height_override(true);
+        mini_style.set_letter_spacing(span.letter_spacing * WARICHU_FONT_SCALE);
+        let measure = |line: &str| mini_paragraph(line, &mini_style, fonts).longest_line();
+        let width = measure(first).max(measure(second)).max(0.01);
+        let height = span.font_size.max(0.01);
+        builder.add_placeholder(&PlaceholderStyle::new(
+            width,
+            height,
+            PlaceholderAlignment::Middle,
+            TextBaseline::Alphabetic,
+            height,
+        ));
+        // SkParagraph does not expose a placeholder's TextStyle through line
+        // metrics. A near-zero, inkless NBSP carries the span style for the
+        // paint pass; the zero-width space after it allows a line break after
+        // the atomic placeholder.
+        let mut anchor_style = text_style.clone();
+        anchor_style.set_font_size(0.01);
+        anchor_style.set_height(0.01);
+        anchor_style.set_height_override(true);
+        anchor_style.set_letter_spacing(0.0);
+        builder.push_style(&anchor_style);
+        builder.add_text(HORIZONTAL_WARICHU_STYLE_ANCHOR.to_string());
+        builder.add_text(HORIZONTAL_WARICHU_BREAK_ANCHOR.to_string());
+    } else {
+        add_text_with_sheds(builder, span, builder_text, sheds, extra, text_style);
+    }
+}
+
+/// Builder UTF-16 window that covers a whole paragraph.
+pub(crate) const FULL_WINDOW: std::ops::Range<usize> = 0..usize::MAX;
+
+/// Part of a span's builder `text` inside the builder UTF-16 `window`, with
+/// the char index of its first character, or None when the span lies
+/// outside the window. A warichu box is atomic: kept whole when it starts
+/// inside the window.
+pub(crate) fn window_slice<'a>(
+    text: &'a str,
+    range: &HorizontalSpanRange,
+    window: &std::ops::Range<usize>,
+) -> Option<(&'a str, usize)> {
+    if range.builder_end <= window.start || range.builder_start >= window.end {
+        return None;
+    }
+    if range.warichu {
+        return (range.builder_start >= window.start).then_some((text, 0));
+    }
+    let mut utf16 = range.builder_start;
+    let mut from = None;
+    let mut to = text.len();
+    for (index, (byte, ch)) in text.char_indices().enumerate() {
+        if from.is_none() && utf16 >= window.start {
+            from = Some((byte, index));
+        }
+        if utf16 >= window.end {
+            to = byte;
+            break;
+        }
+        utf16 += ch.len_utf16();
+    }
+    let (from_byte, from_char) = from?;
+    Some((&text[from_byte..to.max(from_byte)], from_char))
+}
+
+/// Per-char `entries` of a span shifted to a slice starting at char `from`
+/// and `len` chars long.
+pub(crate) fn window_entries(
+    entries: &[(usize, f32)],
+    from: usize,
+    len: usize,
+) -> Vec<(usize, f32)> {
+    entries
+        .iter()
+        .filter(|(index, _)| *index >= from && *index < from + len)
+        .map(|(index, amount)| (index - from, *amount))
+        .collect()
+}
+
+/// Add `text`, adjusting the letter-spacing of single characters so the
+/// builder text stays unchanged: those at `sheds` lose their amount and
+/// those in `extra` take its added spacing. Skia tracks every cluster,
+/// including the zero-width word joiners the kinsoku pass inserts, so those
+/// take no letter-spacing. The builder records how far each adjusted
+/// character departs from the span tracking.
+fn add_text_with_sheds(
+    builder: &mut impl SpacedParagraphBuilder,
+    span: &TextSpan,
+    text: &str,
+    sheds: &[(usize, f32)],
+    extra: &[(usize, f32)],
+    text_style: &skia::textlayout::TextStyle,
+) {
+    let tracking = text_style.letter_spacing();
+    let count = text.chars().count();
+    let mut amounts = vec![(0.0, 0.0); count];
+    for &(index, amount) in extra {
+        if let Some((added, _)) = amounts.get_mut(index) {
+            *added += amount;
+        }
+    }
+    for &(index, amount) in sheds {
+        if let Some((_, shed)) = amounts.get_mut(index) {
+            *shed += amount;
+        }
+    }
+    let mut piece_start = 0;
+    // UTF-16 offset of the span text in the builder, read at the first piece.
+    let mut builder_start = None;
+    let mut utf16 = 0;
+    for (index, (byte, ch)) in text.char_indices().enumerate() {
+        let at = utf16;
+        utf16 += ch.len_utf16();
+        let (added, shed) = amounts[index];
+        let letter_spacing = if line_breaks::is_inserted_zero_width(ch) {
+            0.0
+        } else {
+            tracking + added - shed
+        };
+        if letter_spacing == tracking {
+            continue;
+        }
+        let start = *builder_start.get_or_insert_with(|| {
+            builder
+                .paragraph_builder()
+                .get_text()
+                .encode_utf16()
+                .count()
+        });
+        builder.add_extra_spacing(start + at, letter_spacing - tracking);
+        let mut style = text_style.clone();
+        style.set_letter_spacing(letter_spacing);
+        let end = byte + ch.len_utf8();
+        let paragraph_builder = builder.paragraph_builder();
+        add_text_with_tabs(paragraph_builder, &text[piece_start..byte], span.font_size);
+        paragraph_builder.push_style(&style);
+        paragraph_builder.add_text(&text[byte..end]);
+        paragraph_builder.pop();
+        piece_start = end;
+    }
+    add_text_with_tabs(
+        builder.paragraph_builder(),
+        &text[piece_start..],
+        span.font_size,
+    );
+}
+
+/// The horizontal passes of one paragraph that layout, painting, position
+/// data and the editor share: layout texts, offsets, pair spacing
+/// (punctuation aki and script gaps) and long-ruby spacing. `TextContent::horizontal_plans` caches them.
+pub(crate) struct HorizontalParagraphPlan {
+    pub(crate) texts: Vec<String>,
+    pub(crate) offsets: HorizontalOffsets,
+    pub(crate) pair_spacing: Vec<Vec<(usize, f32)>>,
+    pub(crate) ruby_spacing: HorizontalRubySpacing,
+    emergency_breaks: Vec<usize>,
+    overflow_width: Option<f32>,
+}
+
+impl HorizontalParagraphPlan {
+    pub(crate) fn new(paragraph: &Paragraph) -> Self {
+        Self::with_emergency_breaks(paragraph, &[])
+    }
+
+    pub(super) fn with_emergency_breaks(paragraph: &Paragraph, emergency: &[usize]) -> Self {
+        Self::with_breaks(paragraph, emergency, &[])
+    }
+
+    pub(super) fn with_breaks(
+        paragraph: &Paragraph,
+        emergency: &[usize],
+        forced: &[usize],
+    ) -> Self {
+        let (texts, offset_map) = layout_span_texts_with_breaks(paragraph, emergency, forced);
+        let pair_spacing = horizontal_pair_spacing(paragraph, &texts);
+        let ruby_spacing = horizontal_ruby_spacing(paragraph, &texts, &offset_map);
+        let offsets = HorizontalOffsets::from_layout_texts(paragraph, &texts, offset_map);
+        Self {
+            texts,
+            offsets,
+            pair_spacing,
+            ruby_spacing,
+            emergency_breaks: emergency.to_vec(),
+            overflow_width: None,
+        }
+    }
+}
+
+/// Single-line paragraph for an annotation run. Laid out unbounded: a
+/// re-layout at its own `longest_line()` can wrap the last glyph.
+fn mini_paragraph(
+    text: &str,
+    style: &skia::textlayout::TextStyle,
+    fonts: &skia::textlayout::FontCollection,
+) -> LayoutParagraph {
+    let mut builder = ParagraphBuilder::new(&ParagraphStyle::default(), fonts);
+    builder.push_style(style);
+    builder.add_text(text);
+    let mut paragraph = LayoutParagraph::build(&mut builder);
+    paragraph.layout(f32::MAX);
+    paragraph
+}
+
+pub(crate) fn horizontal_span_style(
+    laid_out: &LayoutParagraph,
+    range: &HorizontalSpanRange,
+) -> Option<skia::textlayout::TextStyle> {
+    // Lines use UTF-16, while their style entries use UTF-8 run starts.
+    // Skia can merge neighboring spans into one run, so an exact lookup at
+    // the later span's anchor may be empty. Recover the preceding style on
+    // the line containing the base, without carrying a style across lines.
+    let lines = laid_out.get_line_metrics();
+    let line = lines.iter().find(|line| {
+        line.start_index <= range.style_anchor_utf16
+            && range.style_anchor_utf16 < line.end_including_newline
+    })?;
+    line.get_style_metrics(0..range.style_anchor_start.saturating_add(1))
+        .last()
+        .map(|(_, metric)| metric.text_style.clone())
+}
+
+/// Top of the em box of a horizontal base laid out in `rect`, whose builder
+/// text starts at UTF-16 `base_start`. Annotations attach to this box: the
+/// ideographic em box (OS/2 typo metrics) of the font that shaped the base,
+/// centred on the line baseline. Skia's tight rect spans the hhea ascent and
+/// descent instead, which in CJK faces reach past the em box.
+pub(crate) fn horizontal_base_em_top(
+    laid_out: &LayoutParagraph,
+    lines: &[skia::textlayout::LineMetrics],
+    base_start: usize,
+    font_size: f32,
+    rect: skia::Rect,
+) -> f32 {
+    let middle = rect.center_y();
+    let Some(line) = lines.iter().find(|line| {
+        let baseline = line.baseline as f32;
+        middle >= baseline - line.ascent as f32 && middle <= baseline + line.descent as f32
+    }) else {
+        return rect.top.max(rect.bottom - font_size);
+    };
+    let font = laid_out.font_at_utf16(base_start.max(line.start_index));
+    let (ascent, descent) = super::text_shaping::upright_centre_metrics(&font);
+    line.baseline as f32 + (ascent + descent - font_size) / 2.0
+}

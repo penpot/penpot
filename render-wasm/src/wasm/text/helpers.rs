@@ -471,10 +471,8 @@ pub fn delete_selection_range(text_content: &mut TextContent, selection: &TextSe
 
         delete_range_in_paragraph(&mut paragraphs[end_paragraph], 0, end.offset);
 
-        let end_para_children = std::mem::take(paragraphs[end_paragraph].children_mut());
-        paragraphs[start.paragraph]
-            .children_mut()
-            .extend(end_para_children);
+        let end_para_children: Vec<_> = std::mem::take(paragraphs[end_paragraph].children_mut());
+        paragraphs[start.paragraph].extend_children(end_para_children);
 
         paragraphs.drain((start.paragraph + 1)..=end_paragraph);
 
@@ -586,10 +584,8 @@ pub fn delete_char_before(
         let paragraphs = text_content.paragraphs_mut();
         let prev_para_len = paragraph_char_count(&paragraphs[prev_para_idx]);
 
-        let current_children = std::mem::take(paragraphs[cursor.paragraph].children_mut());
-        paragraphs[prev_para_idx]
-            .children_mut()
-            .extend(current_children);
+        let current_children: Vec<_> = std::mem::take(paragraphs[cursor.paragraph].children_mut());
+        paragraphs[prev_para_idx].extend_children(current_children);
 
         paragraphs.remove(cursor.paragraph);
 
@@ -760,10 +756,8 @@ pub fn delete_char_after(text_content: &mut TextContent, cursor: &TextPositionWi
         delete_range_in_paragraph(para, cursor.offset, end);
     } else if cursor.paragraph < paragraphs.len() - 1 {
         let next_para_idx = cursor.paragraph + 1;
-        let next_children = std::mem::take(paragraphs[next_para_idx].children_mut());
-        paragraphs[cursor.paragraph]
-            .children_mut()
-            .extend(next_children);
+        let next_children: Vec<_> = std::mem::take(paragraphs[next_para_idx].children_mut());
+        paragraphs[cursor.paragraph].extend_children(next_children);
 
         paragraphs.remove(next_para_idx);
     }
@@ -813,6 +807,11 @@ pub fn split_paragraph_at_cursor(
     let text_direction = para.text_direction();
     let text_decoration = para.text_decoration();
     let text_transform = para.text_transform();
+    let writing_mode = para.writing_mode();
+    let text_orientation = para.text_orientation();
+    let language = para.language().to_owned();
+    let korean_wrap = para.korean_wrap();
+    let source_position = para.source_position();
     let line_height = para.line_height();
     let letter_spacing = para.letter_spacing();
 
@@ -828,7 +827,7 @@ pub fn split_paragraph_at_cursor(
         span.set_text(new_text);
     }
 
-    let new_para = crate::shapes::Paragraph::new(
+    let mut new_para = crate::shapes::Paragraph::new(
         text_align,
         text_direction,
         text_decoration,
@@ -837,6 +836,11 @@ pub fn split_paragraph_at_cursor(
         letter_spacing,
         new_para_children,
     );
+    new_para.set_writing_mode(writing_mode);
+    new_para.set_text_orientation(text_orientation);
+    new_para.set_language(language);
+    new_para.set_korean_wrap(korean_wrap);
+    new_para.set_source_position(source_position);
 
     paragraphs.insert(cursor.paragraph + 1, new_para);
 
@@ -849,6 +853,56 @@ mod tests {
     use crate::math::Rect;
     use crate::shapes::{FontFamily, FontStyle, GrowType, TextAlign, TextSpan};
     use crate::uuid::Uuid;
+
+    #[test]
+    fn paragraph_split_keeps_language_and_korean_wrap() {
+        for wrap in [
+            crate::shapes::text_policy::KoreanWrap::SpacesOnly,
+            crate::shapes::text_policy::KoreanWrap::KeepWords,
+        ] {
+            let mut para = paragraph(&["한국어"]);
+            para.set_language("ko".to_string());
+            para.set_korean_wrap(wrap);
+            let mut content = content(vec![para]);
+            let cursor = TextPositionWithAffinity {
+                paragraph: 0,
+                offset: 1,
+                ..Default::default()
+            };
+            assert!(split_paragraph_at_cursor(&mut content, &cursor));
+            assert_eq!(content.paragraphs().len(), 2);
+            for para in content.paragraphs() {
+                assert_eq!(para.language(), "ko");
+                assert_eq!(para.korean_wrap(), wrap);
+                assert_eq!(para.source_position(), 0);
+                assert!(para.children().iter().all(|span| span.language == "ko"));
+            }
+        }
+    }
+
+    #[test]
+    fn paragraph_merge_inherits_the_surviving_paragraph_language() {
+        let mut first = paragraph(&["中"]);
+        first.set_language("ja".to_string());
+        let mut second = paragraph(&["中"]);
+        second.set_language("ko".to_string());
+        let mut content = content(vec![first, second]);
+        delete_char_after(
+            &mut content,
+            &TextPositionWithAffinity {
+                paragraph: 0,
+                offset: 1,
+                ..Default::default()
+            },
+        );
+        assert_eq!(content.paragraphs().len(), 1);
+        let paragraph = &content.paragraphs()[0];
+        assert_eq!(paragraph.language(), "ja");
+        assert!(paragraph
+            .children()
+            .iter()
+            .all(|span| span.language == "ja"));
+    }
 
     fn span(text: &str) -> TextSpan {
         TextSpan::new(

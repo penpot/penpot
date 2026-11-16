@@ -13,7 +13,7 @@ use crate::error::Result;
 use crate::shapes;
 use crate::shapes::{
     ConstraintH, ConstraintV, Frame, Group, GrowType, Layout, Modifier, PixelPrecision, Shape,
-    TransformEntry, TransformEntrySource, Type,
+    TransformEntry, TransformEntrySource, Type, VerticalAlign,
 };
 use crate::state::{ShapesPoolRef, State};
 use crate::uuid::Uuid;
@@ -269,15 +269,34 @@ fn propagate_transform(
             );
             match text_content.grow_type() {
                 GrowType::AutoHeight => {
+                    let width_before = text_content.size.width;
                     let height_before = text_content.size.height;
-                    let new_height = if width_changed {
+                    let (new_width, new_height) = if text_content.is_vertical() {
+                        // Vertical auto-height keeps the physical height (the
+                        // column wrap axis) and grows width as columns are added.
+                        if height_changed {
+                            let mut clone = text_content.clone();
+                            clone.update_layout(resized_selrect);
+                            (clone.size.width, shape_bounds_after.height())
+                        } else {
+                            (width_before, shape_bounds_after.height())
+                        }
+                    } else if width_changed {
                         let mut clone = text_content.clone();
                         clone.update_layout(resized_selrect);
-                        clone.size.height
+                        (shape_bounds_after.width(), clone.size.height)
                     } else {
-                        height_before
+                        (shape_bounds_after.width(), height_before)
                     };
-                    if !is_close_to(height_before, new_height) && reflowed_shapes.insert(shape.id) {
+                    // Reflow only when the grow axis (the WASM-computed
+                    // dimension) changes; the resize itself sets the wrap
+                    // axis.
+                    let grow_axis_changed = if text_content.is_vertical() {
+                        !is_close_to(width_before, new_width)
+                    } else {
+                        !is_close_to(height_before, new_height)
+                    };
+                    if grow_axis_changed && reflowed_shapes.insert(shape.id) {
                         entries.push_back(Modifier::reflow(shape.id, false));
 
                         if let Some(parent_id) = shape.parent_id {
@@ -288,12 +307,25 @@ fn propagate_transform(
                             }
                         }
                     }
-                    let resize_transform = math::resize_matrix(
+                    let mut resize_transform = math::resize_matrix(
                         &shape_bounds_after,
                         &shape_bounds_after,
-                        shape_bounds_after.width(),
+                        new_width,
                         new_height,
                     );
+                    if text_content.is_vertical() {
+                        // Reflow adds columns toward the block end. Keep the
+                        // right/center/left anchor set by vertical alignment.
+                        let anchor = match shape.vertical_align() {
+                            VerticalAlign::Top => shape_bounds_after.ne,
+                            VerticalAlign::Center => {
+                                (shape_bounds_after.nw + shape_bounds_after.ne) * 0.5
+                            }
+                            VerticalAlign::Bottom => shape_bounds_after.nw,
+                        };
+                        resize_transform
+                            .post_translate(anchor - resize_transform.map_point(anchor));
+                    }
                     shape_bounds_after = shape_bounds_after.transform(&resize_transform);
                     transform.post_concat(&resize_transform);
                 }
@@ -614,6 +646,50 @@ mod tests {
     use crate::math::{Matrix, Point};
     use crate::shapes::*;
     use crate::state::ShapesPool;
+
+    #[test]
+    fn vertical_auto_height_resize_keeps_the_right_edge() {
+        let mut resources =
+            crate::render::RenderResources::try_new_headless().expect("headless resources");
+        let _guard = crate::globals::TestRenderResourcesGuard::install(&mut resources);
+        let rect = math::Rect::from_xywh(10.0, 20.0, 100.0, 200.0);
+        let mut content = TextContent::new(rect, GrowType::AutoHeight);
+        let mut paragraph = Paragraph::new(
+            TextAlign::Left,
+            TextDirection::LTR,
+            None,
+            None,
+            1.2,
+            0.0,
+            vec![TextSpan {
+                text: "あいうえおかきくけこ".to_string(),
+                font_size: 20.0,
+                ..TextSpan::default()
+            }],
+        );
+        paragraph.set_writing_mode(WritingMode::VerticalRl);
+        content.add_paragraph(paragraph);
+        let size = content.update_layout(rect);
+        let id = Uuid::new_v4();
+        let mut state = State::new();
+        state.shapes.initialize(1);
+        let shape = state.shapes.add_shape(id);
+        shape.set_selrect(10.0, 20.0, 10.0 + size.width, 220.0);
+        shape.set_shape_type(Type::Text(content));
+        let before = shape.bounds();
+        let transform = math::resize_matrix(&before, &before, size.width, 60.0);
+        let result = propagate_modifiers(
+            &state,
+            &[TransformEntry::from_input(id, transform)],
+            PixelPrecision::Disabled,
+        )
+        .unwrap();
+        let transform = result.iter().find(|e| e.id == id).unwrap().transform;
+        let after = before.transform(&transform);
+        assert!(after.width() > before.width());
+        assert!(is_close_to(after.height(), 60.0));
+        assert!(is_close_to(after.ne.x, before.ne.x));
+    }
 
     #[test]
     fn test_propagate_shape() {
