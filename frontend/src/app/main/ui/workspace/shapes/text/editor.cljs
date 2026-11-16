@@ -25,6 +25,7 @@
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
    [app.util.text-editor :as ted]
+   [app.util.text.writing-mode :as wm]
    [goog.events :as events]
    [rumext.v2 :as mf]))
 
@@ -36,7 +37,7 @@
   (let [bprops (obj/get props "blockProps")
         data   (obj/get bprops "data")
         style  (sts/generate-paragraph-styles (obj/get bprops "shape")
-                                              (obj/get bprops "data"))
+                                              (wm/renderable-paragraph data))
         dir    (:text-direction data "auto")]
 
 
@@ -247,7 +248,7 @@
               :opacity (when @blurred 0)}
       :on-pointer-down on-pointer-down
       :class (dom/classnames
-              (cur/get-dynamic "text" (:rotation shape)) true
+              (cur/get-text (:rotation shape) (wm/vertical-text-content? content)) true
               :align-top    (= (:vertical-align content "top") "top")
               :align-center (= (:vertical-align content) "center")
               :align-bottom (= (:vertical-align content) "bottom"))}

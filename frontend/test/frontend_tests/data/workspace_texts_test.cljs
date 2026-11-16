@@ -6,20 +6,219 @@
 
 (ns frontend-tests.data.workspace-texts-test
   (:require
+   [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
+   [app.common.geom.shapes :as gsh]
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.shapes :as cths]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape :as cts]
    [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
+   [app.main.data.workspace.drawing.common :as drawing]
+   [app.main.data.workspace.modifiers :as dwm]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.texts :as dwt]
    [app.main.data.workspace.texts-events :as dwte]
+   [app.main.data.workspace.wasm-text :as dwwt]
+   [app.main.ui.shapes.text.styles :as text.styles]
    [app.main.ui.workspace.shapes.text.viewport-texts-html :as vth]
+   [app.util.text.geometry :as text.geom]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.state :as ths]
    [potok.v2.core :as ptk]))
+
+(defn- writing-mode-content
+  "Japanese text content with `writing-mode`: vertical writing needs a CJK
+  language."
+  [writing-mode]
+  {:children [{:children [{:writing-mode writing-mode :text-language "ja"}]}]})
+
+(t/deftest vertical-auto-height-grows-width
+  (with-redefs [cts/wasm-enabled? true]
+    (let [selrect   {:width 100 :height 200}
+          dimension {:width 240 :height 360}
+          content   (writing-mode-content "vertical-rl")]
+      (t/is (= {:width 240 :height 200}
+               (dwwt/resolve-text-size selrect :auto-height content dimension))))))
+
+(t/deftest vertical-writing-without-language-grows-as-horizontal
+  (with-redefs [cts/wasm-enabled? true]
+    (let [content {:children [{:children [{:writing-mode "vertical-rl"}]}]}]
+      (t/is (= {:width 100 :height 360}
+               (dwwt/resolve-text-size {:width 100 :height 200} :auto-height
+                                       content {:width 240 :height 360}))))))
+
+(t/deftest horizontal-auto-height-grows-height
+  (let [selrect   {:width 100 :height 200}
+        dimension {:width 240 :height 360}
+        content   (writing-mode-content "horizontal-tb")]
+    (t/is (= {:width 100 :height 360}
+             (dwwt/resolve-text-size selrect :auto-height content dimension)))))
+
+(t/deftest vertical-auto-grow-keeps-the-block-anchor
+  (with-redefs [cts/wasm-enabled? true]
+    (doseq [[align expected-x] [["top" -90] ["center" -40] ["bottom" 10]]]
+      (let [shape (cts/setup-shape
+                   {:type :text :x 10 :y 20 :width 100 :height 200
+                    :grow-type :auto-height
+                    :content (assoc (writing-mode-content "vertical-rl") :vertical-align align)})
+            resized (with-redefs [dwwt/get-wasm-text-new-size
+                                  (fn ([_] {:width 200 :height 200})
+                                    ([_ _] {:width 200 :height 200}))]
+                      (let [modifiers (dwwt/resize-wasm-text-modifiers shape)]
+                        (gsh/transform-shape shape (get-in modifiers [(:id shape) :modifiers]))))]
+        (t/is (= expected-x (:x resized)) align)
+        (t/is (= 200 (:height resized)) align)))))
+
+(t/deftest live-vertical-bounds-grow-left-and-keep-the-wrap-height
+  (with-redefs [cts/wasm-enabled? true]
+    (let [selrect {:x 10 :y 20 :width 100 :height 200}
+          content (writing-mode-content "vertical-rl")]
+      (t/is (= {:x -130 :y 20 :width 240 :height 200}
+               (text.geom/live-rect selrect :auto-height content {:width 240 :height 360})))
+      (t/is (= {:x -130 :y 20 :width 240 :height 360}
+               (text.geom/live-rect selrect :auto-width content {:width 240 :height 360})))
+      (t/is (= selrect (text.geom/live-rect selrect :fixed content {:width 240 :height 360})))
+      (t/is (= selrect (text.geom/live-rect selrect :auto-width content nil))))))
+
+(t/deftest live-horizontal-bounds-grow-down-and-keep-the-wrap-width
+  (let [selrect {:x 10 :y 20 :width 100 :height 200}
+        content (writing-mode-content "horizontal-tb")]
+    (t/is (= {:x 10 :y 20 :width 100 :height 360}
+             (text.geom/live-rect selrect :auto-height content {:width 240 :height 360})))
+    (t/is (= {:x 10 :y 20 :width 240 :height 360}
+             (text.geom/live-rect selrect :auto-width content {:width 240 :height 360})))))
+
+(t/deftest live-bounds-keep-committed-axes-when-the-measure-is-missing
+  (let [selrect {:x 10 :y 20 :width 100 :height 200}
+        content (writing-mode-content "horizontal-tb")]
+    (t/is (= selrect (text.geom/live-rect selrect :auto-width content {:width 0 :height 0})))
+    (t/is (= selrect (text.geom/live-rect selrect :auto-width content {:width nil :height nil})))
+    (t/is (= {:x 10 :y 20 :width 100 :height 360}
+             (text.geom/live-rect selrect :auto-width content {:width 0 :height 360})))))
+
+(t/deftest vertical-auto-grow-keeps-the-anchor-after-rotation
+  (with-redefs [cts/wasm-enabled? true]
+    (let [base (cts/setup-shape
+                {:type :text :x 10 :y 20 :width 100 :height 200
+                 :grow-type :auto-height :content (writing-mode-content "vertical-rl")})
+          shape (gsh/transform-shape base (ctm/rotation-modifiers base (gpt/point 60 120) 45))
+          resized (with-redefs [dwwt/get-wasm-text-new-size
+                                (fn ([_] {:width 200 :height 200})
+                                  ([_ _] {:width 200 :height 200}))]
+                    (let [modifiers (dwwt/resize-wasm-text-modifiers shape)]
+                      (gsh/transform-shape shape (get-in modifiers [(:id shape) :modifiers]))))]
+      (t/is (gpt/almost-zero? (gpt/subtract (nth (:points shape) 1) (nth (:points resized) 1)))))))
+
+(t/deftest clicking-vertical-text-anchors-its-right-edge-at-the-click
+  (with-redefs [cts/wasm-enabled? true]
+    (let [shape (drawing/click-draw-text
+                 (cts/setup-shape {:type :text :x 100 :y 50 :width 1 :height 1
+                                   :content (writing-mode-content "vertical-rl")}))]
+      (t/is (= 100 (+ (:x shape) (:width shape))))
+      (t/is (= 50 (:y shape)))
+      (t/is (= [4 17] [(:width shape) (:height shape)]))
+      (t/is (= :auto-width (:grow-type shape))))))
+
+(t/deftest clicking-horizontal-text-keeps-its-left-edge-at-the-click
+  (let [shape (drawing/click-draw-text
+               (cts/setup-shape {:type :text :x 100 :y 50 :width 1 :height 1
+                                 :content (writing-mode-content "horizontal-tb")}))]
+    (t/is (= 100 (:x shape)))
+    (t/is (= 50 (:y shape)))
+    (t/is (= [4 17] [(:width shape) (:height shape)]))))
+
+(t/deftest horizontal-auto-grow-keeps-the-block-anchor
+  (doseq [[align expected-y] [["top" 20] ["center" -60] ["bottom" -140]]]
+    (let [shape (cts/setup-shape
+                 {:type :text :x 10 :y 20 :width 100 :height 200
+                  :grow-type :auto-height
+                  :content (assoc (writing-mode-content "horizontal-tb") :vertical-align align)})
+          resized (with-redefs [dwwt/get-wasm-text-new-size
+                                (fn ([_] {:width 100 :height 360})
+                                  ([_ _] {:width 100 :height 360}))]
+                    (let [modifiers (dwwt/resize-wasm-text-modifiers shape)]
+                      (gsh/transform-shape shape (get-in modifiers [(:id shape) :modifiers]))))]
+      (t/is (= expected-y (:y resized)) align))))
+
+(t/deftest vertical-grow-type-resize-axes-are-remapped
+  (t/is (= :auto-height
+           (dwm/next-grow-type :auto-width (gpt/point 1 2) true)))
+  (t/is (= :fixed
+           (dwm/next-grow-type :auto-height (gpt/point 2 1) true)))
+  (t/is (= :auto-height
+           (dwm/next-grow-type :auto-height (gpt/point 1 2) true))))
+
+(t/deftest distributed-alignment-exports-valid-css
+  (let [style (text.styles/generate-paragraph-styles nil {:text-align "distribute"})
+        normal (text.styles/generate-paragraph-styles nil {:text-align "justify"})]
+    (t/is (= "justify" (aget style "textAlign")))
+    (t/is (= "justify" (aget style "textAlignLast")))
+    (t/is (= "inter-character" (aget style "textJustify")))
+    (t/is (nil? (aget normal "textAlignLast")))))
+
+(t/deftest vertical-export-styles-enable-inter-script-spacing
+  (let [vertical   (text.styles/generate-paragraph-styles
+                    nil
+                    {:writing-mode "vertical-rl"
+                     :text-orientation "upright"})
+        horizontal (text.styles/generate-paragraph-styles
+                    nil
+                    {:writing-mode "horizontal-tb"})]
+    (t/is (= "vertical-rl" (aget vertical "writingMode")))
+    (t/is (= "upright" (aget vertical "textOrientation")))
+    (t/is (= "normal" (aget vertical "textAutospace")))
+    (t/is (nil? (aget horizontal "textAutospace")))))
+
+(t/deftest text-export-styles-emit-font-features
+  (let [palt (text.styles/generate-text-styles
+              {:grow-type :fixed}
+              {:font-features "palt"
+               :font-size "20"
+               :fills [{:fill-color "#000000" :fill-opacity 1}]})
+        none (text.styles/generate-text-styles
+              {:grow-type :fixed}
+              {:font-features "none"
+               :font-size "20"
+               :fills [{:fill-color "#000000" :fill-opacity 1}]})]
+    (t/is (= "\"palt\"" (aget palt "fontFeatureSettings")))
+    (t/is (nil? (aget none "fontFeatureSettings")))))
+
+(t/deftest text-export-styles-emit-annotation-clearance
+  (let [style (text.styles/generate-text-styles
+               {:grow-type :fixed}
+               {:annotation-clearance "auto"
+                :line-height "1.2"
+                :ruby "かんじ"
+                :text-emphasis "filled-dot"
+                :font-size "20"
+                :fills [{:fill-color "#000000" :fill-opacity 1}]})]
+    (t/is (nil? (aget style "--annotation-clearance")))
+    (t/is (= "calc(max(var(--paragraph-line-height, 1.2), 1.2) + 1)"
+             (aget style "lineHeight")))))
+
+(t/deftest annotation-clearance-adds-the-ruby-size-to-the-paragraph-line-height
+  (let [style (text.styles/generate-text-styles
+               {:grow-type :fixed}
+               {:annotation-clearance "auto"
+                :ruby "かんじ"
+                :ruby-size "quarter"
+                :font-size "20"
+                :fills [{:fill-color "#000000" :fill-opacity 1}]})
+        paragraph (text.styles/generate-paragraph-styles nil {:line-height "2"})]
+    (t/is (= "calc(var(--paragraph-line-height, 1.2) + 0.25)" (aget style "lineHeight")))
+    (t/is (= "2" (aget paragraph "--paragraph-line-height")))))
+
+(t/deftest annotation-clearance-none-keeps-the-line-height
+  (let [style (text.styles/generate-text-styles
+               {:grow-type :fixed}
+               {:annotation-clearance "none"
+                :ruby "かんじ"
+                :font-size "20"
+                :fills [{:fill-color "#000000" :fill-opacity 1}]})]
+    (t/is (nil? (aget style "lineHeight")))))
 
 ;; ---------------------------------------------------------------------------
 ;; Helpers
@@ -725,3 +924,121 @@
 (t/deftest same-styled-text-sees-a-text-change
   (t/is (not (dwt/same-styled-text? (text-content {:text "Hello" :font-weight "400"})
                                     (text-content {:text "Hello!" :font-weight "400"})))))
+
+(defn- spans-content
+  [& spans]
+  {:type "root"
+   :children [{:type "paragraph-set"
+               :children [{:type "paragraph"
+                           :children (vec spans)}]}]})
+
+(defn- content-spans
+  [shape]
+  (txt/node-seq txt/is-text-node? (:content shape)))
+
+(t/deftest range-style-over-part-of-a-ruby-span-styles-the-whole-span
+  (let [shape  {:type :text
+                :content (spans-content {:text "あ" :font-size "14"}
+                                        {:text "漢字" :font-size "14" :ruby "かんじ"}
+                                        {:text "い" :font-size "14"})}
+        result (dwt/update-text-range-attrs shape 1 2 {:font-size "30"})]
+    (t/is (= [["あ" "14" nil] ["漢字" "30" "かんじ"] ["い" "14" nil]]
+             (mapv (juxt :text :font-size :ruby) (content-spans result))))))
+
+(t/deftest range-style-over-part-of-a-warichu-span-styles-the-whole-span
+  (let [shape  {:type :text
+                :content (spans-content {:text "本文" :font-size "14"}
+                                        {:text "割注" :font-size "14" :warichu "warichu"})}
+        result (dwt/update-text-range-attrs shape 0 3 {:font-size "30"})]
+    (t/is (= [["本文" "30" nil] ["割注" "30" "warichu"]]
+             (mapv (juxt :text :font-size :warichu) (content-spans result))))))
+
+(t/deftest single-span-range-is-false-across-span-boundaries
+  (let [content (spans-content {:text "漢" :font-weight "700"}
+                               {:text "字かな" :font-weight "400"})]
+    (t/is (true? (dwt/single-span-range? content 1 3)))
+    (t/is (false? (dwt/single-span-range? content 0 2)))))
+
+(defn- paragraphs-content
+  [& texts]
+  {:type "root"
+   :children [{:type "paragraph-set"
+               :children (mapv (fn [text]
+                                 {:type "paragraph"
+                                  :children [{:text text :font-size "14"}]})
+                               texts)}]})
+
+(t/deftest range-style-in-a-later-paragraph-uses-document-offsets
+  (let [shape  {:type :text :content (paragraphs-content "東京" "京都")}
+        result (dwt/update-text-range-attrs shape 3 5 {:font-size "30"})]
+    (t/is (= [["東京" "14"] ["京都" "30"]]
+             (mapv (juxt :text :font-size) (content-spans result))))))
+
+(t/deftest range-style-in-the-first-paragraph-leaves-later-paragraphs-alone
+  (let [shape  {:type :text :content (paragraphs-content "東京" "京都")}
+        result (dwt/update-text-range-attrs shape 0 2 {:font-size "30"})]
+    (t/is (= [["東京" "30"] ["京都" "14"]]
+             (mapv (juxt :text :font-size) (content-spans result))))))
+
+(t/deftest single-span-range-counts-each-paragraph-at-its-own-offset
+  (let [content (paragraphs-content "東京" "京都")]
+    (t/is (true? (dwt/single-span-range? content 0 2)))
+    (t/is (true? (dwt/single-span-range? content 3 5)))
+    (t/is (false? (dwt/single-span-range? content 1 4)))))
+
+(t/deftest ruby-presentation-of-several-texts-is-one-shape-update
+  (let [file-id (uuid/next)
+        page-id (uuid/next)
+        ids     [(uuid/next) (uuid/next) (uuid/next)]
+        objects (into {} (map (fn [id] [id {:id id :type :text}])) ids)
+        state   {:current-file-id file-id
+                 :current-page-id page-id
+                 :features #{}
+                 :files {file-id {:data {:pages-index {page-id {:objects objects}}}}}}
+        events  (atom [])]
+    (->> (ptk/watch (dwt/update-all-ruby-presentation ids {:ruby-size "third"}) state nil)
+         (rx/subs! #(swap! events conj %)))
+    (let [updates (filter #(= ::dwsh/update-shapes (ptk/type %)) @events)]
+      (t/is (= 1 (count updates))))))
+
+(defn- spans-of
+  [shape]
+  (->> (:content shape) (txt/node-seq txt/is-text-node?) (mapv #(select-keys % [:text :ruby :text-combine-upright]))))
+
+(defn- one-span-text
+  [text]
+  {:type "root"
+   :children [{:type "paragraph-set"
+               :children [{:type "paragraph"
+                           :children [{:text text :font-size "20"}]}]}]})
+
+(t/deftest update-text-range-joins-spans-left-with-the-same-style
+  (t/testing "the same style set over overlapping ranges ends in one span"
+    (let [shape (-> {:content (one-span-text "ab123c")}
+                    (dwt/update-text-range-attrs 3 5 {:text-combine-upright "all"})
+                    (dwt/update-text-range-attrs 2 5 {:text-combine-upright "all"}))]
+      (t/is (= [{:text "ab"} {:text "123" :text-combine-upright "all"} {:text "c"}]
+               (spans-of shape)))))
+
+  (t/testing "removing per-character readings lets a group reading cover the word"
+    (let [shape (reduce (fn [shape [idx reading]]
+                          (dwt/update-text-range-attrs shape idx (inc idx) {:ruby reading}))
+                        {:content (one-span-text "一盅兩件")}
+                        (map-indexed vector ["jat1" "zung1" "loeng5" "gin6"]))
+          shape (dwt/update-text-range-attrs shape 0 4 {:ruby nil})]
+      (t/is (= [{:text "一盅兩件"}] (spans-of shape)))
+      (t/is (dwt/single-span-range? (:content shape) 0 4)))))
+
+(t/deftest update-text-range-sets-the-language-on-the-paragraphs-it-touches
+  (let [content {:type "root"
+                 :children [{:type "paragraph-set"
+                             :children [{:type "paragraph" :children [{:text "ab" :font-size "20"}]}
+                                        {:type "paragraph" :children [{:text "cd" :font-size "20"}]}]}]}
+        languages (fn [shape]
+                    (->> (:content shape) (txt/node-seq txt/is-paragraph-node?) (mapv :text-language)))
+        shape     (dwt/update-text-range-attrs {:content content} 3 4 {:text-language "ja"})]
+    (t/is (= [nil "ja"] (languages shape)))
+    (t/is (= [{:text "ab"} {:text "cd"}] (spans-of shape))
+          "spans are neither split nor given the language")
+    (t/is (= [nil nil]
+             (languages (dwt/update-text-range-attrs shape 0 5 {:text-language nil}))))))
