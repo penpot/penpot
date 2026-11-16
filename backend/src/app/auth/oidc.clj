@@ -712,13 +712,6 @@
         (u/append-query-param :organization-name organization-name))
       (redirect-response)))
 
-(defn- route-params
-  "The params of `query`, as parsed by the URI helpers (keyword keys). A value
-  that is not a query string but a URL parses into a single key holding the
-  whole thing, so the keys tell one from the other."
-  [query]
-  (u/query-string->map query))
-
 (defn- routable-params?
   "True when `params` are params of a route: at least one, and no key carries
   a scheme, a path or a fragment. `screen=workspace&team-id=…` and the root
@@ -743,22 +736,23 @@
   public URI, which is also where a blank one lands."
   [query-string]
   (try
-    (let [base  (public-uri-base)
-          query (str query-string)]
-      (if (str/blank? query)
+    (let [base   (public-uri-base)
+          query  (str query-string)
+          route  (if (str/starts-with? query "?")
+                   (subs query 1)
+                   query)
+          params (u/query-string->map route)]
+      (cond
+        (str/blank? query)
         base
-        (let [query  (if (str/starts-with? query "?")
-                       (subs query 1)
-                       query)
-              params (route-params query)]
-          (if-not (routable-params? params)
-            (do (l/warn :hint "ignoring a redirect target that is not a route"
-                        :query-string (subs query 0 (min 200 (count query))))
-                base)
-            (let [rendered (u/map->query-string params)]
-              (if (str/blank? rendered)
-                base
-                (str base "?" rendered)))))))
+
+        (not (routable-params? params))
+        (do (l/warn :hint "ignoring a redirect target that is not a route"
+                    :query-string (subs route 0 (min 200 (count route))))
+            base)
+
+        :else
+        (str base "?" (u/map->query-string params))))
     (catch Exception e
       ;; The destination must never break the SSO flow: a query string the
       ;; server cannot parse lands on the public URI instead.

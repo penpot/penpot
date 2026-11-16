@@ -6,6 +6,7 @@
 
 (ns frontend-tests.router-test
   (:require
+   [app.config :as cf]
    [app.main.router :as rt]
    [cljs.test :as t :include-macros true]))
 
@@ -54,6 +55,15 @@
   (t/is (= "screen=workspace" (rt/token->query-string "screen=workspace")))
   (t/is (= "" (rt/token->query-string "")))
   (t/is (= "" (rt/token->query-string nil))))
+
+(t/deftest token->url-joins-the-token-to-the-public-uri
+  (let [base (str cf/public-uri)]
+    (t/is (= (str base "?screen=workspace")
+             (rt/token->url "?screen=workspace")))
+    (t/is (= (str base "?screen=workspace")
+             (rt/token->url "screen=workspace")))
+    (t/is (= base (rt/token->url "")))
+    (t/is (= base (rt/token->url nil)))))
 
 (t/deftest get-current-query-string-comes-from-the-current-token
   (with-redefs [rt/get-current-token (constantly "?screen=workspace&team-id=t1")]

@@ -225,6 +225,16 @@
       (subs token 1)
       token)))
 
+(defn token->url
+  "Build the absolute URL for a route token under `cf/public-uri`. Accepts
+  the token in either shape: with its leading `?` or as a bare query string.
+  A blank token lands on the public URI, without a trailing separator."
+  [token]
+  (let [query-string (token->query-string token)]
+    (if (str/blank? query-string)
+      (str cf/public-uri)
+      (str cf/public-uri "?" query-string))))
+
 (defn get-current-token
   "Return the current history token: the query string that carries the route,
   with the leading `?` that separates it from the path. The application

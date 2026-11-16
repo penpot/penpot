@@ -470,8 +470,7 @@
   to the route of `query-string` when no fresh SSO redirect is needed or
   available."
   [{:keys [query-string] :as params}]
-  (let [dest-url (cond-> (str cf/public-uri)
-                   (seq query-string) (str "?" query-string))]
+  (let [dest-url (rt/token->url query-string)]
     (ptk/reify ::retry-organization-sso
       ptk/WatchEvent
       (watch [_ _ _]
