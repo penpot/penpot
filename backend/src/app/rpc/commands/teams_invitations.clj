@@ -474,6 +474,31 @@
   "The number of invitations can be sent in a single rpc request"
   25)
 
+(defn- check-send-invitations-policy
+  "Raises `:insufficient-permissions` when the organization of the team does
+  not let the profile send invitations. The policy covers the pending
+  invitations too: changing their role, deleting them and minting their token
+  manage the same access that sending one grants.
+
+  Only applies with the `:admin-console` flag. Then it returns the team with
+  its organization info, so the caller reuses the same Nitrate answer."
+  [cfg profile-id team-id perms]
+  (when (contains? cf/flags :admin-console)
+    (let [team         (db/get-by-id cfg :team team-id)
+          ;; Strict lookup: a failed Nitrate call must not skip the
+          ;; organization policy by looking like a team without one.
+          team         (nitrate/add-organization-info-to-team-strict cfg team {::rpc/profile-id profile-id})
+          organization (:organization team)]
+      (when (and organization
+                 (not (cto/allowed? :send-invitations
+                                    {:organization-perms organization
+                                     :profile-id profile-id
+                                     :team-perms perms})))
+        (ex/raise :type :validation
+                  :code :insufficient-permissions
+                  :hint "Organization policy does not allow you to send invitations"))
+      team)))
+
 (sv/defmethod ::create-team-invitations
   "A rpc call that allows to send single or multiple invitations to join the team.
 
@@ -486,12 +511,10 @@
   [cfg {:keys [::rpc/profile-id team-id role emails] :as params}]
   (let [perms    (teams/check-invitation-permissions cfg profile-id team-id)
         profile  (db/get-by-id cfg :profile profile-id)
-        team     (db/get-by-id cfg :team team-id)
-        ;; Strict lookup: a failed Nitrate call must not skip the
-        ;; organization policy below by looking like a team without one.
-        team-with-org (when (contains? cf/flags :admin-console)
-                        (nitrate/add-organization-info-to-team-strict cfg team {::rpc/profile-id profile-id}))
-        organization (:organization team-with-org)
+        ;; Reuse the organization lookup of the policy check, so every
+        ;; organization rule below sees the same Nitrate answer.
+        team     (or (check-send-invitations-policy cfg profile-id team-id perms)
+                     (db/get-by-id cfg :team team-id))
         ;; Determine which format is being used
         using-emails-format? (and emails role)
         ;; Handle both parameter formats
@@ -502,16 +525,6 @@
         invitation-count (if using-emails-format?
                            (count emails)
                            (count (:invitations params)))]
-
-    (when (and (contains? cf/flags :admin-console)
-               organization
-               (not (cto/allowed? :send-invitations
-                                  {:organization-perms organization
-                                   :profile-id profile-id
-                                   :team-perms perms})))
-      (ex/raise :type :validation
-                :code :insufficient-permissions
-                :hint "Organization policy does not allow you to send invitations"))
 
     ;; Don't allow promote to owner to admin users.
     (when (and (not (:is-owner perms))
@@ -536,10 +549,7 @@
     ;; Check if the current profile is allowed to send emails
     (teams/check-profile-muted cfg profile)
 
-    (let [;; Reuse the strict organization lookup made for the policy
-          ;; check above, so every rule sees the same Nitrate answer.
-          team        (or team-with-org team)
-          ;; NOTE: Is important pass RPC method params down to the
+    (let [;; NOTE: Is important pass RPC method params down to the
           ;; `create-team-invitations` because it uses the implicit
           ;; RPC properties from params for fill necessary data on
           ;; emiting an entry to the audit-log
@@ -647,6 +657,9 @@
                 :code :cant-promote-to-owner
                 :hint "only the team owner can get an owner invitation token"))
 
+    ;; Handing out the link invites as much as sending the email does.
+    (check-send-invitations-policy cfg profile-id team-id perms)
+
     (let [member (profile/get-profile-by-email pool (:email-to invit))
           token  (create-invitation-token cfg {:team-id (:team-id invit)
                                                ;; The inviter is the creator of
@@ -678,17 +691,20 @@
 (sv/defmethod ::update-team-invitation-role
   {::doc/added "1.17"
    ::doc/module :teams
-   ::sm/params schema:update-team-invitation-role
-   ::db/transaction true}
-  [{:keys [::db/conn]} {:keys [::rpc/profile-id team-id email role] :as params}]
-  (let [perms (teams/check-invitation-permissions conn profile-id team-id)]
+   ::sm/params schema:update-team-invitation-role}
+  [cfg {:keys [::rpc/profile-id team-id email role] :as params}]
+  (let [perms (teams/check-invitation-permissions cfg profile-id team-id)]
 
     ;; Don't allow promote to owner to admin users.
     (when (and (not (:is-owner perms)) (= role :owner))
       (ex/raise :type :validation
                 :code :cant-promote-to-owner))
 
-    (db/update! conn :team-invitation
+    ;; Checked outside a transaction: it may call Nitrate over HTTP, and the
+    ;; update below is a single statement.
+    (check-send-invitations-policy cfg profile-id team-id perms)
+
+    (db/update! cfg :team-invitation
                 {:role (name role) :updated-at (ct/now)}
                 {:team-id team-id :email-to (profile/clean-email email)})
 
@@ -703,16 +719,19 @@
 
 (sv/defmethod ::delete-team-invitation
   {::doc/added "1.17"
-   ::sm/params schema:delete-team-invition
-   ::db/transaction true}
-  [{:keys [::db/conn]} {:keys [::rpc/profile-id team-id email] :as params}]
-  (teams/check-invitation-permissions conn profile-id team-id)
+   ::sm/params schema:delete-team-invition}
+  [cfg {:keys [::rpc/profile-id team-id email] :as params}]
+  (let [perms (teams/check-invitation-permissions cfg profile-id team-id)]
 
-  (let [invitation (db/delete! conn :team-invitation
-                               {:team-id team-id
-                                :email-to (profile/clean-email email)}
-                               {::db/return-keys true})]
-    (rph/wrap nil {::audit/props {:invitation-id (:id invitation)}})))
+    ;; Checked outside a transaction: it may call Nitrate over HTTP, and the
+    ;; delete below is a single statement.
+    (check-send-invitations-policy cfg profile-id team-id perms)
+
+    (let [invitation (db/delete! cfg :team-invitation
+                                 {:team-id team-id
+                                  :email-to (profile/clean-email email)}
+                                 {::db/return-keys true})]
+      (rph/wrap nil {::audit/props {:invitation-id (:id invitation)}}))))
 
 
 ;; --- Mutation: Request Team Invitation
