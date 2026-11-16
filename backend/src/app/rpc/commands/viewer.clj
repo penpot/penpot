@@ -100,6 +100,58 @@
       (assoc-in [:data :pages-index] {})
       (update-in [:data :components] select-keys (get used-refs id #{}))))
 
+(defn- same-file-refs
+  "Return the ids of this file's components referenced by `shapes`.
+   A reference missing `:component-file` means a same-file reference;
+   library references are handled by `trim-library-data` and skipped."
+  [file-id shapes]
+  (into #{}
+        (keep (fn [shape]
+                (when (and (associative? shape)
+                           (some? (:component-id shape))
+                           (or (nil? (:component-file shape))
+                               (= file-id (:component-file shape))))
+                  (:component-id shape))))
+        shapes))
+
+(defn- component-subtree-shapes
+  "Shapes owned by a primary-file component: the shapes of the stored
+   objects for a deleted component (self-contained), or the subtree of
+   its main instance for a live one (may live on an excluded page; read
+   from the full realized data, never emitted)."
+  [realized-file component]
+  (if (:deleted component)
+    (vals (:objects component))
+    (when-let [objects (get-in realized-file [:data :pages-index
+                                              (:main-instance-page component)
+                                              :objects])]
+      (cfh/get-children-with-self objects (:main-instance-id component)))))
+
+(defn- referenced-component-ids
+  "Return the ids of the primary file's components a share-link viewer of
+   `allowed` pages must receive, which is every component referenced
+   transitively from those pages. References are traced through the full
+   realized data — a component's subtree may live on an excluded page —
+   but only the ids are returned; the emitted bundle carries the trimmed
+   map inline. Terminates on cycles."
+  [realized-file allowed]
+  (let [file-id    (:id realized-file)
+        seed-shapes (->> (vals (select-keys (:pages-index (:data realized-file)) allowed))
+                         (mapcat (comp vals :objects)))]
+    (loop [seen    #{}
+           pending (vec (same-file-refs file-id seed-shapes))]
+      (if (empty? pending)
+        seen
+        (let [comp-id   (peek pending)
+              pending'  (pop pending)]
+          (if (contains? seen comp-id)
+            (recur seen pending')
+            (let [component (get-in realized-file [:data :components comp-id])
+                  extra     (when (some? component)
+                              (same-file-refs file-id (component-subtree-shapes realized-file component)))]
+              (recur (conj seen comp-id)
+                     (into pending' extra)))))))))
+
 (defn obfuscate-email
   "Obfuscate the `email` for share-link members so the viewer only sees a
    partially redacted address. Accepts any string shape (including nil,
@@ -153,9 +205,20 @@
                     (cfeat/check-client-features! (:features params))
                     (cfeat/check-file-features! (:features file)))
 
+        ;; The view-only bundle for a share link carries the primary
+        ;; file's components too: realize once and trim both scopes —
+        ;; the primary file keeps the components reachable from the
+        ;; allowed pages, libraries are trimmed to the components the
+        ;; allowed pages (and those components themselves) reference.
+        file'   (when (= :share-link (:type perms))
+                  (fdata/realize-pointers cfg file))
+
         file    (cond-> file
                   (= :share-link (:type perms))
-                  (update :data remove-not-allowed-pages (:pages perms))
+                  (-> (update :data remove-not-allowed-pages (:pages perms))
+                      (assoc-in [:data :components]
+                                (select-keys (:components (:data file'))
+                                             (referenced-component-ids file' (:pages perms)))))
 
                   :always
                   (update :data select-keys view-only-data-keys))
@@ -171,10 +234,10 @@
         ;; realize each file with its own loader before walking it.
         ;; Membership bundles keep the full libraries.
         libs    (if (= :share-link (:type perms))
-                  (let [file'      (fdata/realize-pointers cfg file)
-                        libs'      (mapv #(fdata/realize-pointers cfg %) libs)
-                        libs-by-id (d/index-by :id libs')
-                        used       (collect-used-library-components (:data file') libs-by-id)]
+                  (let [file''      (update file' :data remove-not-allowed-pages (:pages perms))
+                        libs'       (mapv #(fdata/realize-pointers cfg %) libs)
+                        libs-by-id  (d/index-by :id libs')
+                        used        (collect-used-library-components (:data file'') libs-by-id)]
                     (mapv #(trim-library-data used %) libs'))
                   libs)
 

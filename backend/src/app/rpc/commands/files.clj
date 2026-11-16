@@ -258,10 +258,14 @@
 
 (defn- check-fragment-scope!
   "Checks that the fragment is reachable from the pages authorized by
-  the share-link. Raises a :not-found exception if the fragment is not reachable."
+  the share-link. Raises a :not-found exception if the fragment is not reachable.
+   The file's components pointer is never authorized: it carries the full
+   components map, including the stored shapes of deleted components from
+   pages the link excludes."
   [cfg file-id fragment-id pages]
   (let [fdata (-> (bfc/get-file cfg file-id :read-only? true)
                   (get :data)
+                  (dissoc :components)
                   (update :pages-index select-keys pages))]
     (when-not (contains? (feat.fdata/get-used-pointer-ids fdata) fragment-id)
       (ex/raise :type :not-found
