@@ -172,6 +172,19 @@
   fast."
   500)
 
+(defn- drain-window!
+  "Blocks for up to `ms` draining `ch`, and returns the first message
+  whose `:type` is `type`, or nil when the window passes without one."
+  [ch type ms]
+  (let [deadline (+ (System/currentTimeMillis) ms)]
+    (loop []
+      (let [remain (- deadline (System/currentTimeMillis))]
+        (when (pos? remain)
+          (let [[msg _] (sp/alts! [ch (sp/timeout-chan remain)])]
+            (if (= type (:type msg))
+              msg
+              (recur))))))))
+
 (defn- poll-msg!
   "Drains `ch` for up to `ms`, returning the first message whose `:type`
   is `type`, or nil when none arrives.
@@ -181,17 +194,39 @@
   \"no `:file-change` arrived\" is the property under test, not \"the
   channel stayed empty\"."
   [ch type ms]
-  (let [result (promise)
-        deadline (+ (System/currentTimeMillis) ms)]
+  (let [result (promise)]
     (sp/go
-      (loop []
-        (let [remain (- deadline (System/currentTimeMillis))]
-          (when (pos? remain)
-            (let [[msg _] (sp/alts! [ch (sp/timeout-chan remain)])]
-              (if (= type (:type msg))
-                (deliver result msg)
-                (recur)))))))
+      (when-let [msg (drain-window! ch type ms)]
+        (deliver result msg)))
     (deref result (inc ms) nil)))
+
+(def ^:private delivery-attempts
+  "How many times a positive delivery assertion publishes before giving
+  up. The second attempt only happens when the subscription was not known
+  to redis yet; more than that means the traffic is not flowing at all."
+  3)
+
+(defn- poll-published!
+  "Publishes with `publish!` and returns the first message of `type` that
+  reaches `ch`, publishing again when a window of `ms` passes without one.
+
+  The subscription reaches redis through an asynchronous action, so a
+  message published right after subscribing can be lost before redis knows
+  the subscription, and a single publish makes the test bet on winning
+  that race. Repeating it after a window that saw nothing removes the
+  race without weakening the assertion: the test still proves that the
+  client receives a message it published, and a publish only repeats when
+  the window saw nothing."
+  [ch publish! type ms]
+  (let [result (promise)]
+    (sp/go
+      (loop [attempt 1]
+        (when (<= attempt delivery-attempts)
+          (publish!)
+          (if-let [msg (drain-window! ch type ms)]
+            (deliver result msg)
+            (recur (inc attempt))))))
+    (deref result (+ (* (inc delivery-attempts) ms) 100) nil)))
 
 (defn- open-registered-connection
   "Registers a connection for `profile-id` in the real registry, so the
@@ -343,9 +378,8 @@
             out (:output conn)]
 
         (t/testing "member receives file changes before revocation"
-          (publish file-id change)
-          (t/is (some? (poll-msg! out :file-change
-                                  revocation-timeout-ms))))
+          (t/is (some? (poll-published! out #(publish file-id change)
+                                        :file-change revocation-timeout-ms))))
 
         (t/testing "owner removes the member from the team"
           (let [result (th/command! {::th/type :delete-team-member
@@ -382,9 +416,8 @@
             out (:output conn)]
 
         (t/testing "member receives library changes before revocation"
-          (publish team-id change)
-          (t/is (some? (poll-msg! out :library-change
-                                  revocation-timeout-ms))))
+          (t/is (some? (poll-published! out #(publish team-id change)
+                                        :library-change revocation-timeout-ms))))
 
         (t/testing "member leaves the team"
           (let [result (th/command! {::th/type :leave-team
@@ -428,8 +461,8 @@
           (t/is (th/success? result))))
 
       (t/testing "viewer keeps receiving file changes"
-        (publish file-id change)
-        (t/is (some? (poll-msg! out :file-change revocation-timeout-ms)))))))
+        (t/is (some? (poll-published! out #(publish file-id change)
+                                      :file-change revocation-timeout-ms)))))))
 
 ;; --- REVOCATION WATCHER
 ;;
@@ -584,10 +617,13 @@
     ((get-method ws/handle-message :open) th/*system* wsp nil)
 
     (t/testing "the client does receive its own profile traffic"
-      (mbus/pub! (::mbus/msgbus th/*system*)
-                 :topic (:id profile)
-                 :message {:type :notification :text "hello"})
-      (t/is (some? (poll-msg! output :notification revocation-timeout-ms))))
+      (t/is (some? (poll-published!
+                    output
+                    #(mbus/pub! (::mbus/msgbus th/*system*)
+                                :topic (:id profile)
+                                :message {:type :notification :text "hello"})
+                    :notification
+                    revocation-timeout-ms))))
 
     (t/testing "an internal revocation event never reaches the client"
       (ntf/notify-permissions-changed th/*system* (:id profile))
@@ -872,11 +908,15 @@
           (t/is (some? (subscribed-file conn))))
 
         (t/testing "and traffic still flows"
-          (mbus/pub! (::mbus/msgbus th/*system*)
-                     :topic (:id file)
-                     :message {:type :file-change :file-id (:id file) :revn 3})
-          (t/is (some? (poll-msg! out :file-change
-                                  revocation-timeout-ms))))))))
+          (t/is (some? (poll-published!
+                        out
+                        #(mbus/pub! (::mbus/msgbus th/*system*)
+                                    :topic (:id file)
+                                    :message {:type :file-change
+                                              :file-id (:id file)
+                                              :revn 3})
+                        :file-change
+                        revocation-timeout-ms))))))))
 
 (t/deftest interval-recheck-covers-the-team-subscription-too
   (let [{:keys [editor team]} (editor-in-team! 1 2)]
@@ -1236,3 +1276,19 @@
                       th/*system* (:id editor)))))
         (t/testing "the read-only subscription is gone"
           (t/is (nil? (subscribed-file conn))))))))
+
+;; --- POLLING HELPERS
+
+(t/deftest a-delivery-assertion-republishes-when-the-subscription-lands-late
+  ;; The subscription reaches redis through an asynchronous action, so the
+  ;; first publish of a delivery assertion can be lost before redis knows
+  ;; the subscription. The assertion republishes: this pins that it does,
+  ;; and that it stops as soon as a message arrives.
+  (let [ch        (sp/chan :buf (sp/dropping-buffer 8))
+        published (atom 0)
+        publish!  (fn []
+                    (when (= 2 (swap! published inc))
+                      (sp/put! ch {:type :notification :text "hello"})))]
+    (t/is (some? (poll-published! ch publish! :notification 50)))
+    (t/is (= 2 @published)
+          "the second publish is the last one, once the message arrived")))
