@@ -184,7 +184,7 @@
                                    {::db/remove-deleted false})]
             (t/is (some? payload) (str "payload missing for revn " (:revn row)))
             (t/is (= (:deleted-at row) (:deleted-at payload)))
-            (t/is (= {:changes (blob/decode (:changes row))
+            (t/is (= {:redo-changes (blob/decode (:changes row))
                       :undo-changes []}
                      (blob/decode (:data payload))))))))))
 

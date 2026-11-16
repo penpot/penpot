@@ -15,9 +15,9 @@ Each transaction carries `:redo-changes` and inverse `:undo-changes`. The undo s
 
 ## Persistence
 
-`update-file` carries the forward changes and their inverse: the frontend sends `:changes-with-metadata` (one group per commit, carrying the redo in edit order) and a top-level `:undo-changes` with the inverse of the whole entry, newest commit first. The backend stores both together in the payload of the revision (`file_data`, type `revision`, see `mem:backend/subtleties`); it never interprets the inverse. `file_change.changes` is still written with the forward changes for the readers deployed before the payload existed, and the flat `:changes` parameter is still accepted for the same reason.
+`update-file-v2` is the save contract: the client sends `:commits`, one entry per commit, each with its `:commit-id`, `:redo-changes` (in the order the edits were made) and `:undo-changes` (already newest first inside the commit). The server derives the flat forward list — the one applied and written to `file_change.changes` for the readers deployed before the payload existed — and the inverse of the whole save, newest commit first, because undoing the batch applies the inverse of the newest edit first. Both lists are stored in the payload of the revision (`file_data`, type `revision`, `{:redo-changes :undo-changes}`, see `mem:backend/subtleties`); the server never interprets the inverse. The input is a closed schema: the keys of the old contract (`:changes`, `:changes-with-metadata`, a top-level `:undo-changes`) are rejected.
 
-When the frontend batches several saves into one request, the groups keep the order the edits were made and the merged inverse list goes backwards (the newest commit first), because undoing the batch applies the inverse of the newest edit first. Inside one commit the list is already in that order.
+The deprecated `update-file` keeps its old input (a flat `:changes` or the `:changes-with-metadata` groups, which is what the partial save still needs on the wire) and stores an empty inverse, so a client that has not moved loses the undo of its saves.
 
 ## changes-builder API
 

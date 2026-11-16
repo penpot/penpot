@@ -91,7 +91,7 @@
                   :modified-at created-at
                   :type        (or type "revision")
                   :backend     "db"
-                  :data        (blob/encode {:changes [] :undo-changes []})
+                  :data        (blob/encode {:redo-changes [] :undo-changes []})
                   :deleted-at  deleted-at}
                  {::db/return-keys false}))
 
