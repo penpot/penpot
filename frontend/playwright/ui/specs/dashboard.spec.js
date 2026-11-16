@@ -5,7 +5,9 @@ test.beforeEach(async ({ page }) => {
   await DashboardPage.init(page);
 });
 
-test("The dashboard URL renders the dashboard", async ({ page }) => {
+test("The dashboard does not redirect away from its screen", async ({
+  page,
+}) => {
   const dashboardPage = new DashboardPage(page);
 
   await dashboardPage.goToDashboard();

@@ -5,7 +5,7 @@ test.beforeEach(async ({ page }) => {
   await DashboardPage.init(page);
 });
 
-test("The profile menu links to the Penpot changelog", async ({ page }) => {
+test("The profile menu opens the Penpot changelog", async ({ page }) => {
   const dashboardPage = new DashboardPage(page);
   await dashboardPage.goToDashboard();
 
@@ -18,12 +18,21 @@ test("The profile menu links to the Penpot changelog", async ({ page }) => {
   });
   await expect(changelogSubmenuItem).toBeVisible();
 
-  // The item opens the changelog with `open-new-window` and carries the URL
-  // in `data-url`; asserting that attribute keeps the suite off github.com.
-  await expect(changelogSubmenuItem).toHaveAttribute(
-    "data-url",
-    "https://github.com/penpot/penpot/blob/develop/CHANGES.md",
-  );
+  const changelogUrl =
+    "https://github.com/penpot/penpot/blob/develop/CHANGES.md";
+  await expect(changelogSubmenuItem).toHaveAttribute("data-url", changelogUrl);
+
+  // The item opens that URL in a new tab. Abort the request in place, so the
+  // suite never reaches github.com: the requested address is what proves the
+  // handler wired the attribute to `open-new-window`.
+  let requested = null;
+  await page.context().route("https://github.com/**", (route) => {
+    requested = route.request().url();
+    return route.abort();
+  });
+
+  await changelogSubmenuItem.click();
+  await expect.poll(() => requested).toBe(changelogUrl);
 });
 
 test("Submenu closes when hovering a menu option without submenu", async ({

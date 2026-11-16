@@ -26,6 +26,13 @@ const checkInputFieldWithoutError = async (inputLocator) => {
     .toBeNull();
 };
 
+const checkGroupWithoutError = async (groupInput) => {
+  // The combobox has no ARIA error state: it marks its wrapper with a
+  // `has-error` class, which is the only signal it gives. The wrapper is three
+  // levels up, because the input sits inside the header span of the combobox.
+  await expect(groupInput.locator("../../..")).not.toHaveClass(/has-error/);
+};
+
 test.beforeEach(async ({ page }) => {
   await WasmWorkspacePage.init(page);
   await WasmWorkspacePage.mockConfigFlags(page, [
@@ -168,7 +175,7 @@ test.describe("Tokens: Themes modal", () => {
     await groupInput.fill("New Group name");
     await nameInput.fill("New Theme name");
 
-    await checkInputFieldWithoutError(groupInput);
+    await checkGroupWithoutError(groupInput);
     await checkInputFieldWithoutError(nameInput);
     await expect(saveButton).not.toBeDisabled();
 
@@ -206,10 +213,29 @@ test.describe("Tokens: Themes modal", () => {
     await checkInputFieldWithError(tokenThemeUpdateCreateModal, nameInput);
     await expect(saveButton).toBeDisabled();
 
+    await test.step("a group that clashes with the typed name", async () => {
+      // The combobox commits its value on blur, and React skips the change
+      // event when a fill would leave the same value, so both fields go
+      // through a different value first. The group schema checks the pair
+      // (group, name) and the name schema the reverse, so the name is accepted
+      // before the clashing group is typed.
+      await groupInput.fill("Another group");
+      await groupInput.blur();
+      await nameInput.fill("Another name");
+      await nameInput.fill("Light"); // valid in "Another group"
+      await expect(saveButton).not.toBeDisabled();
+
+      await groupInput.fill("Core"); // "Core / Light" already exists
+      await groupInput.blur();
+
+      await expect(groupInput.locator("../../..")).toHaveClass(/has-error/);
+      await expect(saveButton).not.toBeDisabled();
+    });
+
     await groupInput.fill("New Group name");
     await nameInput.fill("New Theme name");
 
-    await checkInputFieldWithoutError(groupInput);
+    await checkGroupWithoutError(groupInput);
     await checkInputFieldWithoutError(nameInput);
     await expect(saveButton).not.toBeDisabled();
 
@@ -256,14 +282,14 @@ test.describe("Tokens: Themes modal", () => {
     await groupInput.fill("Core"); // Valid because "Core / Light" theme already exists
     await nameInput.fill("Light"); // but it's the same theme we are editing
 
-    await checkInputFieldWithoutError(groupInput);
+    await checkGroupWithoutError(groupInput);
     await checkInputFieldWithoutError(nameInput);
     await expect(saveButton).not.toBeDisabled();
 
     await nameInput.fill("Changed Theme name"); // New names should be also valid
     await groupInput.fill("Changed Group name");
 
-    await checkInputFieldWithoutError(groupInput);
+    await checkGroupWithoutError(groupInput);
     await checkInputFieldWithoutError(nameInput);
     await expect(saveButton).not.toBeDisabled();
 
