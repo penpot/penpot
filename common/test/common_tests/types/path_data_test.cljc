@@ -2545,6 +2545,17 @@
     ;; so we just check it doesn't throw and returns a :path type
     (t/is (some? (:content result)))))
 
+(t/deftest shape-to-path-rect-closes-its-outline
+  ;; as the WASM engine converts it: a stroke joins at the first corner too
+  (doseq [r [0.0 10.0]]
+    (let [shape  {:type :rect :x 0.0 :y 0.0 :width 100.0 :height 50.0
+                  :r1 r :r2 r :r3 r :r4 r
+                  :selrect (make-selrect 0.0 0.0 100.0 50.0)}
+          segs   (vec (:content (path/convert-to-path shape {})))]
+      (t/is (= :move-to (:command (first segs))))
+      (t/is (= :close-path (:command (peek segs))))
+      (t/is (= 1 (count (filter #(= :close-path (:command %)) segs)))))))
+
 (t/deftest shape-to-path-circle
   (let [shape  {:type :circle :x 0.0 :y 0.0 :width 100.0 :height 100.0
                 :selrect (make-selrect 0.0 0.0 100.0 100.0)}

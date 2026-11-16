@@ -310,8 +310,9 @@
                drawing-copy (get-in new-state [:workspace-drawing :object])]
            (t/is (= original-rect stored-shape))
            (t/is (= :path (:type drawing-copy)))
+           ;; the editor edits the converted outline with its subpaths closed
            (t/is (= (path/move-content
-                     (:content (path/convert-to-path original-rect))
+                     (path/close-subpaths (:content (path/convert-to-path original-rect)))
                      delta)
                     (:content drawing-copy)))))))))
 

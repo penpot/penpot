@@ -123,7 +123,8 @@
          (conj (helpers/make-line-to p7))
          (cond-> (not= p7 p8)
            (conj (make-corner-arc p7 p8 :bottom-left r4)))
-         (conj (helpers/make-line-to p1))))))
+         ;; the outline closes, so a stroke joins at its first corner too
+         (conj {:command :close-path :params {}})))))
 
 (defn- rect->path
   "Creates a bezier curve that approximates a rounded corner rectangle"
