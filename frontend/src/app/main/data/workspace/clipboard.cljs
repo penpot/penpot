@@ -589,6 +589,16 @@
     (->> shape-ids
          (filter #(contains? parent-ids %)))))
 
+(defn- get-append-index
+  "Index of the sibling after which the pasted shapes must be inserted to be
+  shown at the end of the parent. Flex layouts keep their children in reverse
+  visual order unless their direction is reversed, so the end of the layout is
+  the beginning of the shapes list."
+  [parent]
+  (if (and (ctl/flex-layout? parent) (not (ctl/reverse? parent)))
+    -1
+    (dec (count (:shapes parent)))))
+
 (defn- any-same-frame-from-selected? [state frame-ids]
   (let [selected (first (dsh/lookup-selected state))]
     (< 0 (count (filter #(= % selected) frame-ids)))))
@@ -883,17 +893,18 @@
                               (gpt/point paste-x paste-y))
 
                       target-index
-                      (if (and (ctl/flex-layout? selected-frame-obj) (ctl/reverse? selected-frame-obj))
-                        (dec 0) ;; Before the first index 0
-                        (count (:shapes selected-frame-obj)))]
+                      (get-append-index selected-frame-obj)]
                   [frame-id delta target-index])
 
                 :else
                 (let [parent-id (:parent-id base)
+                      parent    (get page-objects parent-id)
                       delta     (if in-viewport?
                                   (gpt/subtract position orig-pos)
                                   (gpt/subtract (gpt/point (:selrect base)) orig-pos))]
-                  [parent-id delta index]))))
+                  [parent-id delta (if (ctl/flex-layout? parent)
+                                     (get-append-index parent)
+                                     index)]))))
 
           ;; Change the indexes of the pasted shapes
           (change-add-obj-index [objects selected index change]
@@ -969,13 +980,15 @@
                   [parent-id
                    frame-id]   (ctn/find-valid-parent-and-frame-ids candidate-parent-id page-objects (vals objects) true libraries)
 
+                  parent       (get page-objects parent-id)
+
                   index        (if (= candidate-parent-id parent-id)
                                  index
-                                 0)
+                                 (get-append-index parent))
 
-                  index        (if index
+                  index        (if (some? index)
                                  index
-                                 (dec (count (dm/get-in page-objects [parent-id :shapes]))))
+                                 (get-append-index parent))
 
                   selected     (if (and (ctl/flex-layout? page-objects parent-id) (not (ctl/reverse? page-objects parent-id)))
                                  (into (d/ordered-set) (reverse selected))
