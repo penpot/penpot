@@ -12,6 +12,7 @@
    [app.common.logging :as l]
    [app.common.uri :as u]
    [app.config :as cf]
+   [app.renderer.common :as rc]
    [app.util.mime :as mime]
    [app.util.shell :as sh]
    [promesa.core :as p]))
@@ -56,13 +57,12 @@
                                 (dm/str "@page { size: " width "px " height "px; margin: 0; }\n"
                                         "html, body, #app { margin: 0; padding: 0; width: " width "px; height: " height "px; overflow: visible; }"))))))
 
-          (render-object [page base-uri {:keys [id] :as object}]
-            (p/let [uri  (prepare-uri base-uri id)
+          (render-object [page base-uri object]
+            (p/let [uri  (prepare-uri base-uri (:id object))
                     path (sh/tempfile :prefix "penpot.tmp.pdf." :suffix (mime/get-extension type))]
               (l/info :uri uri)
               (bw/nav! page uri)
-              (p/let [dom (bw/select page (dm/str "#screenshot-" id))]
-                (bw/wait-for dom)
+              (p/let [dom (rc/wait-for-object page object)]
                 (sync-page-size! dom)
                 (bw/screenshot dom {:full-page? true})
                 (bw/sleep page 2000) ; the good old fix with sleep

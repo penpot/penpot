@@ -15,6 +15,7 @@
    [app.common.types.color :as ctc]
    [app.common.uri :as u]
    [app.config :as cf]
+   [app.renderer.common :as rc]
    [app.renderer.svg-gradient :as svg-gradient]
    [app.util.mime :as mime]
    [app.util.shell :as sh]
@@ -287,10 +288,8 @@
                 (p/then (fn [nodes] (p/all (map (partial extract-txt-node page) nodes))))
                 (p/then (fn [nodes] (d/index-by :id nodes)))))
 
-          (extract-svg [page {:keys [id] :as object}]
-            (let [node (bw/select page (str/concat "#screenshot-" id))]
-              (bw/wait-for node)
-              (bw/eval! node (fn [elem] (.-outerHTML ^js elem)))))
+          (extract-svg [node]
+            (bw/eval! node (fn [elem] (.-outerHTML ^js elem))))
 
           (prepare-options [uri]
             #js {:screen #js {:width bw/default-viewport-width
@@ -302,11 +301,10 @@
                  :deviceScaleFactor scale
                  :userAgent bw/default-user-agent})
 
-          (render-object [page {:keys [id] :as object}]
+          (render-object [page object]
             (p/let [path (sh/tempfile :prefix "penpot.tmp.render.svg." :suffix (mime/get-extension type))
-                    node (bw/select page (str/concat "#screenshot-" id))]
-              (bw/wait-for node)
-              (p/let [xmldata (extract-svg page object)
+                    node (rc/wait-for-object page object)]
+              (p/let [xmldata (extract-svg node)
                       txtdata (extract-txt-nodes page object)
                       result  (replace-text-nodes xmldata txtdata)
 

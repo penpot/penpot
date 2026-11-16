@@ -6,6 +6,7 @@
 
 (ns frontend-tests.render-dimensions-test
   (:require
+   [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes.bounds :as gsb]
    [app.common.test-helpers.files :as cthf]
@@ -76,3 +77,20 @@
       (t/is (some? result))
       (t/is (<= (:width result) render/max-export-dimension))
       (t/is (<= (:height result) render/max-export-dimension)))))
+
+(t/deftest export-bounds-fall-back-to-the-stored-selrect
+  (t/testing "Degenerate points do not shrink an export to the 0.01 sentinel"
+    (let [frame  (-> (cts/setup-shape {:type :frame :x 10 :y 20 :width 300 :height 200})
+                     (assoc :points [(gpt/point 10 20)]))
+          bounds (render/get-export-bounds {} frame)]
+      (t/is (= 10 (:x bounds)))
+      (t/is (= 20 (:y bounds)))
+      (t/is (= 300 (:width bounds)))
+      (t/is (= 200 (:height bounds))))))
+
+(t/deftest export-bounds-keep-a-normal-computed-box
+  (t/testing "A box with a real area is returned unchanged"
+    (let [frame  (cts/setup-shape {:type :frame :x 10 :y 20 :width 300 :height 200})
+          bounds (render/get-export-bounds {} frame)]
+      (t/is (= 300 (:width bounds)))
+      (t/is (= 200 (:height bounds))))))

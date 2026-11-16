@@ -11,9 +11,9 @@
    [app.common.logging :as l]
    [app.common.uri :as u]
    [app.config :as cf]
+   [app.renderer.common :as rc]
    [app.util.mime :as mime]
    [app.util.shell :as sh]
-   [cuerdas.core :as str]
    [promesa.core :as p]))
 
 (defn render
@@ -28,10 +28,9 @@
                  :deviceScaleFactor scale
                  :userAgent bw/default-user-agent})
 
-          (render-object [page {:keys [id] :as object}]
+          (render-object [page object]
             (p/let [path (sh/tempfile :prefix "penpot.tmp.bitmap." :suffix (mime/get-extension type))
-                    node (bw/select page (str/concat "#screenshot-" id))]
-              (bw/wait-for node)
+                    node (rc/wait-for-object page object)]
               (case type
                 :png  (bw/screenshot node {:omit-background? true :type type :path path})
                 :jpeg (bw/screenshot node {:omit-background? false :type type :path path})

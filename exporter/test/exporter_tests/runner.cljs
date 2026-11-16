@@ -12,6 +12,7 @@
    [clojure.tools.cli :refer [parse-opts]]
    [exporter-tests.export-shapes-test]
    [exporter-tests.jobs-test]
+   [exporter-tests.renderer-common-test]
    [exporter-tests.renderer-svg-test]
    [exporter-tests.scheduler-test]
    [exporter-tests.shell-test]
@@ -23,6 +24,7 @@
 (def test-namespaces
   ['exporter-tests.export-shapes-test
    'exporter-tests.jobs-test
+   'exporter-tests.renderer-common-test
    'exporter-tests.renderer-svg-test
    'exporter-tests.scheduler-test
    'exporter-tests.shell-test

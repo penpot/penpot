@@ -194,6 +194,24 @@
    (->> [x y width height]
         (map #(ust/format-precision % viewbox-decimal-precision)))))
 
+(def ^:const min-export-size 0.01)
+
+(defn get-export-bounds
+  "Bounds used to size an exported shape.
+
+  `gsb/get-object-bounds` derives the box from the shape points and its
+  children. Stale or degenerate points (a known result of component swaps and
+  plugin-created shapes) collapse the box to the 0.01x0.01 sentinel rect,
+  which renders as an empty, hidden node and makes the exporter time out.
+  Fall back to the shape's stored geometry in that case."
+  [objects object]
+  (let [bounds (gsb/get-object-bounds objects object {:ignore-margin? false})]
+    (if (or (nil? bounds)
+            (<= (dm/get-prop bounds :width) min-export-size)
+            (<= (dm/get-prop bounds :height) min-export-size))
+      (ctm/safe-size-rect object)
+      bounds)))
+
 (defn adapt-root-frame
   [objects object]
   (let [shapes   (cfh/get-immediate-children objects)
@@ -471,7 +489,7 @@
                  skip-children
                  (assoc :shapes []))
 
-        {:keys [width height] :as bounds} (gsb/get-object-bounds objects object {:ignore-margin? false})
+        {:keys [width height] :as bounds} (get-export-bounds objects object)
         vbox (format-viewbox bounds)
         fonts (ff/shape->fonts object objects)
 
@@ -510,7 +528,7 @@
 
         bounds
         (->> shapes
-             (map #(gsb/get-object-bounds objects % {:ignore-margin? false}))
+             (map #(get-export-bounds objects %))
              (grc/join-rects))
 
         {:keys [width height]} bounds
@@ -549,7 +567,7 @@
                  (assoc :shapes []))
 
         {:keys [width height] :as bounds}
-        (gsb/get-object-bounds objects object {:ignore-margin? false})
+        (get-export-bounds objects object)
 
         scale (or scale 1)
         canvas-ref (mf/use-ref nil)]
