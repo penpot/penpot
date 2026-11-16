@@ -1,3 +1,9 @@
+## 1.6.1 (Unreleased)
+
+### 🩹 Fixes
+
+- **plugins-runtime:** A SES `repairIntrinsics` failure at startup (for example, when a browser extension wraps the native `Temporal` global) no longer leaves the whole app blank. Plugins are skipped for that session, the error is logged, and a telemetry event reports the unavailable runtime; the editor, login and sign-up pages load as usual. Plugins work as before in every other environment. When startup fails, SES has already replaced `Function.prototype.toString` in the host realm before throwing, but no intrinsics are hardened and no sandbox is created. Closes #12924.
+
 ## 1.6.0 (2026-11-10)
 
 ### 🚀 Features

@@ -4709,6 +4709,13 @@ msgstr "Start designing"
 msgid "options.deleted-token-with-name"
 msgstr "{%s} token does not exist or has been deleted."
 
+#: src/app/main/data/plugins.cljs:113
+msgid "plugins.runtime-unavailable"
+msgstr ""
+"Plugins are unavailable in this browser. Something in your environment (for "
+"example, an extension such as Tampermonkey) is preventing the plugin "
+"runtime from starting. Disable extensions or reload the page to try again."
+
 #: src/app/plugins/utils.cljs:555
 msgid "plugins.validation.invalid-value"
 msgstr "expected %s, got %s (%s)"
