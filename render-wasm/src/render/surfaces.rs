@@ -1516,27 +1516,30 @@ impl Surfaces {
         // paint.set_color(color);
         // backbuffer_canvas.draw_rect(tile_rect, &paint);
 
+        let dst = skia::Rect::from_xywh(
+            tile_rect.left,
+            tile_rect.top,
+            src_rect_f.width(),
+            src_rect_f.height(),
+        );
+
         // Draw current surface directly to target (no snapshot)
-        self.current.draw(
+        draw_surface_src_rect_to_dst(
+            &mut self.current,
             backbuffer_canvas,
-            (
-                tile_rect.left - src_rect_f.left,
-                tile_rect.top - src_rect_f.top,
-            ),
+            src_rect_f,
+            dst,
             sampling_options,
-            None,
         );
 
         // Also draw to cache for render_from_cache
         if draw_on_cache == DrawOnCache::Yes {
-            self.current.draw(
+            draw_surface_src_rect_to_dst(
+                &mut self.current,
                 self.cache.canvas(),
-                (
-                    tile_rect.left - src_rect_f.left,
-                    tile_rect.top - src_rect_f.top,
-                ),
+                src_rect_f,
+                dst,
                 sampling_options,
-                None,
             );
         }
     }
