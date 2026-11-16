@@ -82,6 +82,32 @@
     (t/is (= [["internal/repair/5"] ["internal/snapshot/0" "internal/snapshot/20"]]
              (mapv #(mapv :label (:snapshots %)) entries)))))
 
+;; Scenario: opening a menu in the History panel closes the one that
+;; was open, and the open and close events can arrive in either order.
+;; Proves: closing a menu that is no longer the open one leaves the open
+;; menu recorded, so the panel still leaves the next Escape to it.
+(t/deftest closing-a-menu-keeps-the-menu-opened-after-it
+  (let [menu-a (uuid/next)
+        menu-b (uuid/next)
+        open-a (ptk/update (versions/open-menu menu-a) {})]
+    (t/is (= menu-a (get-in open-a [:workspace-versions :menu])))
+
+    (t/testing "the close of the previous menu arrives last"
+      (let [state (->> open-a
+                       (ptk/update (versions/open-menu menu-b))
+                       (ptk/update (versions/close-menu menu-a)))]
+        (t/is (= menu-b (get-in state [:workspace-versions :menu])))))
+
+    (t/testing "the close of the previous menu arrives first"
+      (let [state (->> open-a
+                       (ptk/update (versions/close-menu menu-a))
+                       (ptk/update (versions/open-menu menu-b)))]
+        (t/is (= menu-b (get-in state [:workspace-versions :menu])))))
+
+    (t/testing "closing the open menu clears it"
+      (let [state (ptk/update (versions/close-menu menu-a) open-a)]
+        (t/is (nil? (get-in state [:workspace-versions :menu])))))))
+
 (t/deftest leaving-the-workspace-clears-the-preview-flags
   (let [team-id  (uuid/next)
         file-id  (uuid/next)

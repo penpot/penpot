@@ -171,6 +171,82 @@ test("Escape cancels a version rename and keeps History open", async ({
   await page.keyboard.press("Escape");
   await expect(nameInput).toHaveCount(0);
   await openHistoryAssertion(page);
+
+  await page.keyboard.press("Escape");
+  await expect(saveVersionButton(page)).toHaveCount(0);
+});
+
+test("Escape closes History after a rename confirmed with Enter", async ({
+  page,
+}) => {
+  const workspacePage = new WorkspacePage(page);
+  await workspacePage.mockRPC(
+    "get-file-snapshots?file-id=*",
+    "workspace/versions-snapshot-3.json",
+  );
+  await workspacePage.mockRPC(
+    "update-file-snapshot",
+    "workspace/versions-update-snapshot-1.json",
+  );
+  await page.keyboard.press("ControlOrMeta+Alt+h");
+  await openHistoryAssertion(page);
+  await page.getByRole("button", { name: "Open version menu" }).click();
+  await page.getByRole("button", { name: "Rename" }).click();
+  const nameInput = page.getByRole("textbox");
+  await nameInput.fill("Renamed");
+
+  await nameInput.press("Enter");
+  await expect(nameInput).toHaveCount(0);
+
+  await page.keyboard.press("Escape");
+  await expect(saveVersionButton(page)).toHaveCount(0);
+});
+
+test("Escape closes History after a version is deleted", async ({ page }) => {
+  const workspacePage = new WorkspacePage(page);
+  await workspacePage.mockRPC(
+    "get-file-snapshots?file-id=*",
+    "workspace/versions-snapshot-3.json",
+  );
+  await workspacePage.mockRPC("delete-file-snapshot", "", { status: 204 });
+  await page.keyboard.press("ControlOrMeta+Alt+h");
+  await openHistoryAssertion(page);
+  await page.getByRole("button", { name: "Open version menu" }).click();
+  await workspacePage.mockRPC(
+    "get-file-snapshots?file-id=*",
+    "workspace/versions-snapshot-1.json",
+  );
+
+  await page.getByRole("button", { name: "Delete" }).click();
+  await expect(page.getByText("There are no versions yet")).toBeVisible();
+
+  await page.keyboard.press("Escape");
+  await expect(saveVersionButton(page)).toHaveCount(0);
+});
+
+test("Escape closes the autosave menu before the History panel", async ({
+  page,
+}) => {
+  const workspacePage = new WorkspacePage(page);
+  await workspacePage.mockRPC(
+    "get-file-snapshots?file-id=*",
+    "workspace/versions-snapshot-autosave.json",
+  );
+  await page.keyboard.press("ControlOrMeta+Alt+h");
+  await openHistoryAssertion(page);
+  await page.getByRole("button", { name: "Expand snapshots" }).click();
+  // The menu button of a snapshot only shows while its row is hovered.
+  await page.getByRole("listitem").locator("time").hover();
+  await page.getByRole("button", { name: "Open version menu" }).click();
+  const pinItem = page.getByRole("button", { name: "Pin version" });
+  await expect(pinItem).toBeVisible();
+
+  await page.keyboard.press("Escape");
+  await expect(pinItem).toHaveCount(0);
+  await openHistoryAssertion(page);
+
+  await page.keyboard.press("Escape");
+  await expect(saveVersionButton(page)).toHaveCount(0);
 });
 
 test("Escape finishes a path drawn with the shortcuts panel open", async ({

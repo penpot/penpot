@@ -145,6 +145,9 @@
 
         created-by (get profiles (:profile-id entry))
 
+        entry-ref        (mf/use-ref nil)
+        restore-focus-ref (mf/use-ref false)
+
         on-open-menu
         (mf/use-fn #(reset! show-menu? true))
 
@@ -208,15 +211,37 @@
          (fn [event]
            (cond
              (kbd/enter? event)
-             (on-name-input-blur event)
+             (do
+               ;; Focus moves to the menu button while this key is
+               ;; still being handled; without this, the rest of the
+               ;; Enter press would activate the button and open the
+               ;; menu again.
+               (dom/prevent-default event)
+               (mf/set-ref-val! restore-focus-ref true)
+               (on-name-input-blur event))
 
              (kbd/esc? event)
              (when (fn? on-cancel-edit)
+               (mf/set-ref-val! restore-focus-ref true)
                (on-cancel-edit (:id entry) event)))))]
 
     (use-menu-tracking (:id entry) @show-menu?)
 
-    [:li {:class (stl/css :version-entry-wrap)}
+    ;; Ending the rename from the keyboard removes the focused input and
+    ;; leaves focus on the body, outside the History panel, where the
+    ;; next Escape would not reach it. Give focus back to the menu button
+    ;; that started the rename. It runs once the input is gone, so its
+    ;; blur handler cannot rename again.
+    (mf/with-effect [is-editing]
+      (when (and (not ^boolean is-editing)
+                 ^boolean (mf/ref-val restore-focus-ref))
+        (mf/set-ref-val! restore-focus-ref false)
+        (some-> (mf/ref-val entry-ref)
+                (dom/query "button")
+                (dom/focus!))))
+
+    [:li {:ref entry-ref
+          :class (stl/css :version-entry-wrap)}
      [:> milestone* {:label (:label entry)
                      :profile created-by
                      :editing is-editing
