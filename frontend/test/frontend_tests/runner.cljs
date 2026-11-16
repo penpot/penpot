@@ -122,6 +122,7 @@
    [frontend-tests.render-wasm.text-editor-apply-styles-test]
    [frontend-tests.render-wasm.text-editor-caret-color-test]
    [frontend-tests.render-wasm.text-editor-content-range-test]
+   [frontend-tests.render-wasm.text-editor-history-test]
    [frontend-tests.render-wasm.text-paste-test]
    [frontend-tests.render-wasm.webgl-test]
    [frontend-tests.router-test]
@@ -341,6 +342,7 @@
    'frontend-tests.render-wasm.text-editor-apply-styles-test
    'frontend-tests.render-wasm.text-editor-caret-color-test
    'frontend-tests.render-wasm.text-editor-content-range-test
+   'frontend-tests.render-wasm.text-editor-history-test
    'frontend-tests.render-wasm.text-paste-test
    'frontend-tests.render-wasm.webgl-test
    'frontend-tests.browser-history-test
