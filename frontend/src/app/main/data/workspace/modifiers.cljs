@@ -644,13 +644,26 @@
                 snap-pixel?
                 (and (not ignore-snap-pixel) (contains? (:workspace-layout state) :snap-pixel-grid))
 
-                ;; a layout places the shapes in its flow, so moving one is
-                ;; for the engine to lay out, not a translation to splat
+                ;; a layout places the shapes in its flow, and the groups
+                ;; and bools it places take their bounds from their shapes,
+                ;; so moving one is for the engine to lay out, not a
+                ;; translation to splat
                 laid-out?
                 (some (fn [id]
-                        (let [shape (get objects id)]
-                          (and (ctl/any-layout-immediate-child? objects shape)
-                               (not (ctl/position-absolute? shape)))))
+                        (loop [shape (get objects id)]
+                          (cond
+                            (nil? shape)
+                            false
+
+                            (and (ctl/any-layout-immediate-child? objects shape)
+                                 (not (ctl/position-absolute? shape)))
+                            true
+
+                            (cfh/group-like-shape? (get objects (:parent-id shape)))
+                            (recur (get objects (:parent-id shape)))
+
+                            :else
+                            false)))
                       (keys modif-tree))
 
                 transforms
