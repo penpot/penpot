@@ -269,17 +269,17 @@
                      :section [:workspace]
                      :fn #(st/emit! (drp/move-selected :down false))}
 
-   :move-unit-left  {:tooltip ds/right-arrow
+   :move-unit-left  {:tooltip ds/left-arrow
                      :label (fn [] (tr "shortcuts.move-unit-left"))
-                     :command "right"
-                     :section [:workspace]
-                     :fn #(st/emit! (drp/move-selected :right false))}
-
-   :move-unit-right {:tooltip ds/left-arrow
-                     :label (fn [] (tr "shortcuts.move-unit-right"))
                      :command "left"
                      :section [:workspace]
-                     :fn #(st/emit! (drp/move-selected :left false))}})
+                     :fn #(st/emit! (drp/move-selected :left false))}
+
+   :move-unit-right {:tooltip ds/right-arrow
+                     :label (fn [] (tr "shortcuts.move-unit-right"))
+                     :command "right"
+                     :section [:workspace]
+                     :fn #(st/emit! (drp/move-selected :right false))}})
 
 (defn get-tooltip [shortcut]
   (assert (contains? shortcuts shortcut) (str shortcut))
