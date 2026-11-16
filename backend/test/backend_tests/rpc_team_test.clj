@@ -1210,6 +1210,127 @@
         (t/is (= :get-teams-organizations (ffirst @calls)))))))
 
 
+(defn- find-team
+  [teams team-id]
+  (d/seek #(= team-id (:id %)) teams))
+
+(t/deftest get-teams-shows-owner-nitrate-licence-to-every-member
+  (let [member            (th/create-profile* 1 {:is-active true})
+        owner             (th/create-profile* 2 {:is-active true})
+        org-owner         (th/create-profile* 3 {:is-active true})
+        team              (th/create-team* 1 {:profile-id (:id owner)})
+        organization-team (th/create-team* 2 {:profile-id (:id org-owner)})
+        _                 (th/create-team-role* {:team-id (:id team)
+                                                 :profile-id (:id member)
+                                                 :role :editor})
+        _                 (th/create-team-role* {:team-id (:id organization-team)
+                                                 :profile-id (:id member)
+                                                 :role :editor})
+        calls             (atom [])
+        nitrate-call      (fn [_cfg method params]
+                            (swap! calls conj [method params])
+                            (case method
+                              :get-teams-organizations
+                              [{:id (:id organization-team)
+                                :is-your-penpot false
+                                :organization {:id (uuid/random)
+                                               :name "Acme"
+                                               :slug "acme"
+                                               :owner-id (:id org-owner)}}]
+                              :get-subscriptions
+                              [{:profile-id (:id owner) :type "nitrate" :status "trialing"}
+                               {:profile-id (:id org-owner) :type "nitrate" :status "active"}]))
+        params            {::th/type :get-teams
+                           ::rpc/profile-id (:id member)}]
+    (with-redefs [cf/flags (conj cf/flags :admin-console :subscriptions)
+                  nitrate/call nitrate-call]
+      (let [out   (th/command! params)
+            teams (:result out)]
+        (t/is (th/success? out))
+        (t/is (= [:get-teams-organizations :get-subscriptions] (mapv first @calls)))
+        ;; One request with the owners of the teams outside an organization,
+        ;; the member included as owner of its default team.
+        (t/is (= #{(:id owner) (:id member)}
+                 (-> @calls second second :profile-ids set)))
+        (t/is (= {:type "nitrate" :status "trialing"}
+                 (-> (find-team teams (:id team))
+                     :subscription
+                     (select-keys [:type :status]))))
+        ;; A team in an organization keeps the Stripe plan of its owner.
+        (t/is (= "professional"
+                 (-> (find-team teams (:id organization-team)) :subscription :type)))
+        (t/is (= "professional"
+                 (-> (find-team teams (:default-team-id member)) :subscription :type)))))))
+
+(t/deftest get-teams-ignores-owner-nitrate-licence-that-is-not-valid
+  (let [member       (th/create-profile* 1 {:is-active true})
+        owner        (th/create-profile* 2 {:is-active true})
+        team         (th/create-team* 1 {:profile-id (:id owner)})
+        _            (th/create-team-role* {:team-id (:id team)
+                                            :profile-id (:id member)
+                                            :role :editor})
+        nitrate-call (fn [_cfg method _params]
+                       (case method
+                         :get-teams-organizations []
+                         :get-subscriptions [{:profile-id (:id owner)
+                                              :type "nitrate"
+                                              :status "canceled"}]))
+        params       {::th/type :get-teams
+                      ::rpc/profile-id (:id member)}]
+    (with-redefs [cf/flags (conj cf/flags :admin-console :subscriptions)
+                  nitrate/call nitrate-call]
+      (let [out (th/command! params)]
+        (t/is (th/success? out))
+        (t/is (= "professional"
+                 (-> (find-team (:result out) (:id team)) :subscription :type)))))))
+
+(t/deftest get-teams-keeps-stripe-plan-when-owner-licences-fail
+  (let [member       (th/create-profile* 1 {:is-active true})
+        owner        (th/create-profile* 2 {:is-active true})
+        team         (th/create-team* 1 {:profile-id (:id owner)})
+        _            (th/create-team-role* {:team-id (:id team)
+                                            :profile-id (:id member)
+                                            :role :editor})
+        nitrate-call (fn [_cfg method _params]
+                       (case method
+                         :get-teams-organizations []
+                         :get-subscriptions (throw (ex-info "nitrate is down"
+                                                            {:type :nitrate-unavailable}))))
+        params       {::th/type :get-teams
+                      ::rpc/profile-id (:id member)}]
+    (with-redefs [cf/flags (conj cf/flags :admin-console :subscriptions)
+                  nitrate/call nitrate-call]
+      (let [out (th/command! params)]
+        (t/is (th/success? out))
+        (t/is (= "professional"
+                 (-> (find-team (:result out) (:id team)) :subscription :type)))))))
+
+(t/deftest get-team-shows-owner-nitrate-licence-to-a-member
+  (let [member       (th/create-profile* 1 {:is-active true})
+        owner        (th/create-profile* 2 {:is-active true})
+        team         (th/create-team* 1 {:profile-id (:id owner)})
+        _            (th/create-team-role* {:team-id (:id team)
+                                            :profile-id (:id member)
+                                            :role :editor})
+        calls        (atom [])
+        nitrate-call (fn [_cfg method params]
+                       (swap! calls conj [method params])
+                       (case method
+                         :get-team-organization nil
+                         :get-subscriptions [{:profile-id (:id owner)
+                                              :type "nitrate"
+                                              :status "active"}]))
+        params       {::th/type :get-team
+                      ::rpc/profile-id (:id member)
+                      :id (:id team)}]
+    (with-redefs [cf/flags (conj cf/flags :admin-console :subscriptions)
+                  nitrate/call nitrate-call]
+      (let [out (th/command! params)]
+        (t/is (th/success? out))
+        (t/is (= [(:id owner)] (-> (last @calls) second :profile-ids)))
+        (t/is (= "nitrate" (-> out :result :subscription :type)))))))
+
+
 (t/deftest team-deletion-1
   (let [profile1 (th/create-profile* 1 {:is-active true})
         team     (th/create-team* 1 {:profile-id (:id profile1)})

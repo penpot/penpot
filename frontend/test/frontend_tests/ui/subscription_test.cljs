@@ -6,7 +6,6 @@
 
 (ns frontend-tests.ui.subscription-test
   (:require
-   [app.main.data.nitrate :as dnt]
    [app.main.ui.dashboard.subscription :as ds]
    [cljs.test :as t :include-macros true]))
 
@@ -23,45 +22,26 @@
              (ds/get-team-plan-type {:subscription {:type owner-plan
                                                     :status "active"}})))))
 
-(t/deftest owner-enterprise-plan-is-hidden-for-team-outside-organization
-  (t/is (false? (ds/show-team-plan? true
-                                    {:subscription {:type "enterprise"
-                                                    :status "active"}}
-                                    {:props {:subscription {:type "enterprise"
-                                                            :status "active"}}}))))
-
-(t/deftest team-plan-is-visible-for-other-owner-and-organization-cases
+(t/deftest team-plan-is-visible-when-owner-has-professional-or-unlimited-plan
   (doseq [owner-plan ["professional" "unlimited"]]
-    (t/is (true? (ds/show-team-plan? true
-                                     {:subscription {:type owner-plan
-                                                     :status "active"}}
-                                     {:props {:subscription {:type owner-plan
-                                                             :status "active"}}}))))
-  (t/is (true? (ds/show-team-plan? true
-                                   {:subscription {:type "enterprise"
-                                                   :status "active"}
-                                    :organization {:id "org-1"}}
-                                   {:props {:subscription {:type "enterprise"
-                                                           :status "active"}}})))
-  (t/is (true? (ds/show-team-plan? false
-                                   {:subscription {:type "enterprise"
-                                                   :status "active"}}
-                                   {:props {:subscription {:type "enterprise"
-                                                           :status "active"}}}))))
+    (t/is (true? (ds/show-team-plan? {:subscription {:type owner-plan
+                                                     :status "active"}})))))
 
-(t/deftest owner-enterprise-plan-is-detected-even-when-team-subscription-falls-back
-  (t/is (false? (ds/show-team-plan? true
-                                    {:subscription {:type "professional"
-                                                    :status "active"}}
-                                    {:props {:subscription {:type "enterprise"
-                                                            :status "trialing"}}}))))
+(t/deftest team-plan-is-hidden-when-owner-of-team-outside-organization-has-enterprise-plan
+  ;; The team `:subscription` carries the plan of the owner, so the result
+  ;; is the same for the owner and for any other member.
+  (doseq [owner-plan ["enterprise" "nitrate"]
+          status     ["active" "trialing" "past_due"]]
+    (t/is (false? (ds/show-team-plan? {:subscription {:type owner-plan
+                                                      :status status}})))))
 
-(t/deftest nitrate-owner-plan-hides-team-plan-when-team-is-outside-organization
-  (with-redefs [dnt/is-valid-license? (constantly true)]
-    (t/is (false? (ds/show-team-plan? true
-                                      {:subscription {:type "professional"
-                                                      :status "active"}}
-                                      {:subscription {:type "nitrate"
-                                                      :status "active"}
-                                       :props {:subscription {:type "professional"
-                                                              :status "active"}}})))))
+(t/deftest team-plan-is-visible-for-team-in-organization-whatever-the-owner-plan
+  (doseq [owner-plan ["professional" "unlimited" "enterprise" "nitrate"]]
+    (t/is (true? (ds/show-team-plan? {:subscription {:type owner-plan
+                                                     :status "active"}
+                                      :organization {:id "org-1"}})))))
+
+(t/deftest team-plan-is-visible-when-owner-enterprise-plan-is-no-longer-paid
+  (doseq [status ["unpaid" "canceled"]]
+    (t/is (true? (ds/show-team-plan? {:subscription {:type "enterprise"
+                                                     :status status}})))))
