@@ -1,0 +1,160 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "../../../sidebar/common/sidebar.scss" as sidebar;
+@use "ds/typography.scss" as t;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+
+.language-section {
+  @include sidebar.option-grid-structure;
+}
+
+.language-title {
+  position: relative;
+  grid-column: span 8;
+}
+
+.language-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  grid-column: span 8;
+  margin-block-start: var(--sp-xs);
+}
+
+.language-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--sp-xs);
+}
+
+// Looks like the DS select it stands for; it opens the grouped dropdown.
+.language-select {
+  --language-select-background: var(--color-background-tertiary);
+  --language-select-icon-color: var(--color-icon-default);
+  --language-select-outline-color: none;
+
+  @include t.use-typography("body-small");
+
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--sp-xs);
+  block-size: $sz-32;
+  padding: var(--sp-s);
+  border: none;
+  border-radius: $br-8;
+  outline: $b-1 solid var(--language-select-outline-color);
+  background: var(--language-select-background);
+  color: var(--color-foreground-primary);
+  text-align: start;
+  cursor: pointer;
+  appearance: none;
+
+  &:is(:hover, [aria-expanded="true"]) {
+    --language-select-background: var(--color-background-quaternary);
+    --language-select-icon-color: var(--color-foreground-primary);
+  }
+
+  &:focus-visible {
+    --language-select-background: var(--color-background-quaternary);
+    --language-select-outline-color: var(--color-accent-primary);
+  }
+}
+
+.language-name {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  padding-inline-start: var(--sp-xxs);
+}
+
+.mixed .language-name {
+  color: var(--color-foreground-secondary);
+}
+
+.language-arrow {
+  color: var(--language-select-icon-color);
+}
+
+// The profile list spans the row, with white profiles under small grey
+// headers. The parent class wins over the shared list width.
+:is(.language-row, .language-title) .language-dropdown {
+  --menu-foreground-color-rest: var(--color-foreground-primary);
+
+  inline-size: 100%;
+  padding: var(--sp-xs);
+
+  li[role="presentation"] {
+    @include t.use-typography("headline-small");
+
+    font-size: px2rem(11);
+    block-size: $sz-24;
+    color: var(--color-foreground-secondary);
+  }
+}
+
+.icon-options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-xs);
+}
+
+.digit-count {
+  flex: 1;
+  min-inline-size: 0;
+}
+
+// The options of the text language, in a view that replaces the design tab
+// (like editing a grid layout).
+.language-view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  padding-block-end: var(--sp-s);
+}
+
+.language-view-header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  block-size: $sz-32;
+}
+
+.language-view-title {
+  @include t.use-typography("body-medium");
+
+  color: var(--color-foreground-primary);
+}
+
+.language-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+}
+
+.selection-hint {
+  @include t.use-typography("body-small");
+
+  margin: 0;
+  color: var(--color-foreground-secondary);
+}
+
+.language-group-title {
+  @include t.use-typography("body-medium");
+
+  display: flex;
+  align-items: center;
+  block-size: $sz-32;
+  margin: 0;
+  padding: 0;
+  color: var(--color-foreground-primary);
+}

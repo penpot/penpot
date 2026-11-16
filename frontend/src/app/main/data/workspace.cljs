@@ -421,7 +421,7 @@
           (assoc :recent-fonts (:recent-fonts storage/user))
           (assoc :current-file-id file-id)
           (assoc :workspace-presence {})
-          (update :workspace-global dissoc :default-font)
+          (update :workspace-global dissoc :default-font :default-text-language)
           (update :comments-local dcmt/merge-persisted-filters)))
 
     ptk/WatchEvent
@@ -629,13 +629,14 @@
            :current-file-id
            :workspace-editor-state
            :workspace-wasm-editor-styles
+           :workspace-wasm-editor-selection-rects
            :workspace-media-objects
            :workspace-presence
            :workspace-tokens
            :workspace-undo
            :workspace-versions)
           (update :workspace-global dissoc :read-only? :preview-id :default-font
-                  :persistence-lock)
+                  :default-text-language :persistence-lock)
           (assoc-in [:workspace-global :options-mode] :design)
           (update :files d/update-vals #(dissoc % :data))))
 
@@ -697,6 +698,20 @@
 
 (dm/export layout/toggle-layout-flag)
 (dm/export layout/remove-layout-flag)
+
+(defn set-default-text-language
+  "Set the language new text layers of the file take; nil removes it.
+  Existing texts keep theirs. The language remembered for new texts is
+  dropped, so they take the new file language."
+  [language]
+  (ptk/reify ::set-default-text-language
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [changes (-> (pcb/empty-changes it)
+                        (pcb/with-file-data (dsh/lookup-file-data state))
+                        (pcb/set-default-text-language language))]
+        (rx/of (dch/commit-changes changes)
+               (dwtxt/remember-text-language nil))))))
 
 ;; --- Profile
 

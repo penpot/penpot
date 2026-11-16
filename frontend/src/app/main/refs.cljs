@@ -11,6 +11,7 @@
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cph]
    [app.common.files.tokens :as cfo]
+   [app.common.types.file :as ctf]
    [app.common.types.shape-tree :as ctt]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.tokens-lib :as ctob]
@@ -20,6 +21,7 @@
    [app.main.data.workspace.tokens.selected-set :as dwts]
    [app.main.store :as st]
    [app.main.streams :as ms]
+   [app.util.text.layout :as tl]
    [beicon.v2.core :as rx]
    [clojure.string :as str]
    [okulary.core :as l]))
@@ -246,6 +248,10 @@
 (def default-font
   (l/derived :default-font workspace-global))
 
+(def default-text-language
+  "Language the last text option change picked, for the next new texts."
+  (l/derived :default-text-language workspace-global))
+
 (def inspect-expanded
   (l/derived :inspect-expanded workspace-local))
 
@@ -355,6 +361,35 @@
   [ids]
   (l/derived #(into [] (keep (d/getf %)) ids) workspace-page-objects =))
 
+(def file-text-language
+  "Language the new text layers of the open file take."
+  (l/derived ctf/get-default-text-language workspace-data))
+
+(defn texts-language
+  "Language of the texts among `ids` and of the texts inside the groups
+  among them (see `tl/get-texts-language`)."
+  [ids]
+  (l/derived
+   (fn [state]
+     (let [objects  (dsh/lookup-page-objects state)
+           contents (into []
+                          (mapcat
+                           (fn [id]
+                             (let [shape (get objects id)]
+                               (cond
+                                 (cph/text-shape? shape)
+                                 [(:content shape)]
+
+                                 (cph/group-shape? shape)
+                                 (into []
+                                       (comp (map (d/getf objects))
+                                             (filter cph/text-shape?)
+                                             (map :content))
+                                       (cph/get-children-ids objects id))))))
+                          ids)]
+       (tl/get-texts-language contents)))
+   st/state =))
+
 (defn parents-by-ids
   [ids]
   (l/derived
@@ -405,6 +440,9 @@
 
 (def workspace-wasm-editor-styles
   (l/derived :workspace-wasm-editor-styles st/state))
+
+(def workspace-wasm-editor-selection-rects
+  (l/derived :workspace-wasm-editor-selection-rects st/state))
 
 (def workspace-wasm-modifiers
   (let [a (atom nil)]

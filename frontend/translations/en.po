@@ -8405,6 +8405,34 @@ msgstr "Align middle"
 msgid "workspace.options.text-options.align-top"
 msgstr "Align top"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.annotation-clearance"
+msgstr "Clearance"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.annotation-clearance-auto"
+msgstr "Automatic"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_japanese_layout.cljs
+msgid "workspace.options.text-options.line-adjustment"
+msgstr "Line breaking"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_japanese_layout.cljs
+msgid "workspace.options.text-options.line-adjustment-push-in-first"
+msgstr "Push in first"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_japanese_layout.cljs
+msgid "workspace.options.text-options.line-adjustment-push-out-first"
+msgstr "Push out first"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_japanese_layout.cljs
+msgid "workspace.options.text-options.line-adjustment-push-out-only"
+msgstr "Push out only"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.annotation-clearance-none"
+msgstr "Use line height"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:100
 msgid "workspace.options.text-options.direction-ltr"
 msgstr "LTR"
@@ -8412,6 +8440,22 @@ msgstr "LTR"
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:104
 msgid "workspace.options.text-options.direction-rtl"
 msgstr "RTL"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.font-features"
+msgstr "Proportional metrics"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.font-features-none"
+msgstr "None"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.font-features-palt"
+msgstr "Horizontal (palt)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.font-features-vpal"
+msgstr "Vertical (vpal)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:167
 msgid "workspace.options.text-options.grow-auto-height"
@@ -8433,6 +8477,74 @@ msgstr "Letter Spacing"
 msgid "workspace.options.text-options.line-height"
 msgstr "Line height"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.ruby"
+msgstr "Ruby"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.ruby-advanced-options"
+msgstr "Ruby options"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.ruby-align"
+msgstr "Alignment"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.ruby-align-center"
+msgstr "Center"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.ruby-align-space-around"
+msgstr "Space around"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.ruby-align-space-between"
+msgstr "Space between"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.ruby-align-start"
+msgstr "Start"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_japanese_layout.cljs
+msgid "workspace.options.text-options.ruby-hidden"
+msgstr "Hide ruby"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.ruby-overhang"
+msgstr "Overhang"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.ruby-overhang-auto"
+msgstr "Auto"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.ruby-overhang-none"
+msgstr "None"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.ruby-placeholder"
+msgstr "Ruby"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.ruby-side"
+msgstr "Side"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.ruby-size"
+msgstr "Size"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.ruby-size-half"
+msgstr "Half"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.ruby-size-quarter"
+msgstr "Quarter"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.ruby-size-third"
+msgstr "Third"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:212
 msgid "workspace.options.text-options.strikethrough"
 msgstr "Strikethrough (%s)"
@@ -8441,7 +8553,15 @@ msgstr "Strikethrough (%s)"
 msgid "workspace.options.text-options.text-align-center"
 msgstr "Align center"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:77
+#: src/app/main/ui/workspace/sidebar/options/menus/text_cjk_controls.cljs
+msgid "workspace.options.text-options.text-align-distribute"
+msgstr "Distribute"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_cjk_controls.cljs
+msgid "workspace.options.text-options.text-align-distribute-hint"
+msgstr "Spreads the characters of every line, the last one included, across the box. Used in Japanese, Chinese and Korean titles and labels."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.text-align-justify"
 msgstr "Justify"
 
@@ -8452,6 +8572,74 @@ msgstr "Align left"
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:73
 msgid "workspace.options.text-options.text-align-right"
 msgstr "Align right"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-combine-upright-all"
+msgstr "Tate-chu-yoko"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-combine-upright-digits"
+msgstr "Digits"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-combine-upright-digits-2"
+msgstr "Up to 2 digits"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-combine-upright-digits-3"
+msgstr "Up to 3 digits"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-combine-upright-digits-4"
+msgstr "Up to 4 digits"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-combine-upright-digits-count"
+msgstr "Digit count"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-combine-upright-none"
+msgstr "Normal"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-emphasis"
+msgstr "Emphasis marks"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-emphasis-filled-circle"
+msgstr "Filled circle"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-emphasis-filled-dot"
+msgstr "Filled dot"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-emphasis-filled-sesame"
+msgstr "Filled sesame"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-emphasis-none"
+msgstr "None"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-emphasis-open-circle"
+msgstr "Open circle"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-emphasis-open-dot"
+msgstr "Open dot"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-emphasis-open-sesame"
+msgstr "Open sesame"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-orientation-mixed"
+msgstr "Mixed"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-orientation-upright"
+msgstr "Upright"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:509
 msgid "workspace.options.text-options.text-section"
@@ -8472,6 +8660,22 @@ msgstr "Selection text"
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:207
 msgid "workspace.options.text-options.underline"
 msgstr "Underline (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.warichu"
+msgstr "Warichu"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.warichu-none"
+msgstr "Normal"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.writing-mode-horizontal"
+msgstr "Horizontal"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.writing-mode-vertical"
+msgstr "Vertical (right to left)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:788
 msgid "workspace.options.use-play-button"
@@ -9098,6 +9302,50 @@ msgstr "Add page"
 #: src/app/main/ui/workspace/left_header.cljs:100
 msgid "workspace.sitemap"
 msgstr "Sitemap"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+msgid "workspace.text-selection-menu.back"
+msgstr "Back"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+msgid "workspace.text-selection-menu.combine"
+msgstr "Combine"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+msgid "workspace.text-selection-menu.emphasis"
+msgstr "Emphasis"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+msgid "workspace.text-selection-menu.reading"
+msgstr "Reading"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+msgid "workspace.text-selection-menu.reading-hint"
+msgstr "Select text without a reading or warichu, or a whole reading"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+msgid "workspace.text-selection-menu.remove"
+msgstr "Remove"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+msgid "workspace.text-selection-menu.ruby"
+msgstr "Ruby"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+msgid "workspace.text-selection-menu.ruby-options"
+msgstr "Ruby options"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+msgid "workspace.text-selection-menu.single-span-hint"
+msgstr "Select text with a single style, or a whole annotation"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+msgid "workspace.text-selection-menu.title"
+msgstr "Text annotations"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+msgid "workspace.text-selection-menu.warichu"
+msgstr "Warichu"
 
 #: src/app/main/data/workspace/comments.cljs:49
 msgid "workspace.toast.comments-hidden"
@@ -10013,3 +10261,166 @@ msgstr ""
 #: src/app/main/ui/workspace/sidebar/versions.cljs:470
 msgid "workspace.versions.warning.text"
 msgstr "Autosaved versions will be kept for %s days."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.language-japanese"
+msgstr "Japanese"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.language-korean"
+msgstr "Korean"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.korean-wrap"
+msgstr "Line wrapping"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.korean-wrap-syllable"
+msgstr "By syllable"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.korean-wrap-spaces-only"
+msgstr "At spaces (experimental)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.language-chinese-mainland-simplified"
+msgstr "Chinese, Mainland (Simplified)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.language-chinese-mainland-traditional"
+msgstr "Chinese, Mainland (Traditional)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.language-chinese-taiwan"
+msgstr "Chinese, Taiwan"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.language-chinese-hong-kong"
+msgstr "Chinese, Hong Kong"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.korean-wrap-keep-words"
+msgstr "Keep words together"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.pinyin"
+msgstr "Pinyin"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.pinyin-placeholder"
+msgstr "nǐ hǎo"
+
+
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.emphasis-position"
+msgstr "Emphasis position"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.underline-position"
+msgstr "Underline position"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.position-auto"
+msgstr "Automatic"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.position-under"
+msgstr "Below"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.position-left"
+msgstr "Left"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.position-right"
+msgstr "Right"
+
+msgid "workspace.options.text-options.zhuyin"
+msgstr "Zhuyin"
+
+msgid "workspace.options.text-options.zhuyin-placeholder"
+msgstr "e.g. ㄋㄧˇ"
+
+msgid "workspace.options.text-options.chinese-reading-format"
+msgstr "Reading format"
+
+msgid "workspace.options.text-options.zhuyin-selection-hint"
+msgstr "Select one Han character. Enter 1–3 Zhuyin symbols and an optional tone. Symbols stay upright on the right; the neutral tone sits above. Size and position are fixed for this mode."
+
+msgid "workspace.options.text-options.zhuyin-invalid"
+msgstr "Enter 1–3 Zhuyin symbols with at most one tone. Place a neutral tone before or after the symbols; place other tones at the end."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.language"
+msgstr "Language"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.language-none"
+msgstr "None"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.language-options"
+msgstr "Language options"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.language-group-selected-text"
+msgstr "Selected text"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.language-group-layout"
+msgstr "Layout"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.language-group-ruby"
+msgstr "Ruby"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.add-language"
+msgstr "Add language"
+
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.language-group-japanese"
+msgstr "Japanese"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.language-group-korean"
+msgstr "Korean"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.language-group-chinese"
+msgstr "Chinese"
+
+
+#: src/app/main/ui/workspace/main_menu.cljs
+msgid "workspace.header.menu.option.language"
+msgstr "Language profile"
+
+#: src/app/main/ui/workspace/main_menu.cljs
+msgid "workspace.header.menu.option.default-language-profile"
+msgstr "Default language profile"
+
+#: src/app/main/ui/workspace/main_menu.cljs
+msgid "workspace.header.menu.language-none"
+msgstr "None"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.text-language.title"
+msgstr "Language profile"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.text-language.description"
+msgstr "New files start with this profile. Each file can change it in the main menu, under File. Any profile can be applied to any text in the design sidebar."
+
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.text-language.label"
+msgstr "Default profile"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.text-language.none"
+msgstr "None"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_japanese_layout.cljs
+msgid "workspace.options.text-options.position-over"
+msgstr "Above"
