@@ -11,6 +11,7 @@
    [app.common.exceptions :as ex]
    [app.common.features :as cfeat]
    [app.common.files.helpers :as cfh]
+   [app.common.types.file :as ctf]
    [app.common.schema :as sm]
    [app.config :as cf]
    [app.db :as db]
@@ -114,23 +115,12 @@
                   (:component-id shape))))
         shapes))
 
-(defn- component-subtree-shapes
-  "Shapes owned by a primary-file component: the shapes of the stored
-   objects for a deleted component (self-contained), or the subtree of
-   its main instance for a live one (may live on an excluded page; read
-   from the full realized data, never emitted)."
-  [realized-file component]
-  (if (:deleted component)
-    (vals (:objects component))
-    (when-let [objects (get-in realized-file [:data :pages-index
-                                              (:main-instance-page component)
-                                              :objects])]
-      (cfh/get-children-with-self objects (:main-instance-id component)))))
-
 (defn- referenced-component-ids
-  "Return the ids of the primary file's components a share-link viewer of
-   `allowed` pages must receive, which is every component referenced
-   transitively from those pages. References are traced through the full
+  "Return the ids of the primary file's live components a share-link
+   viewer of `allowed` pages must receive: every live component referenced
+   transitively from those pages. A referenced component that is deleted
+   is neither emitted nor expanded; the bundle never carries stored
+   shapes of deleted components. References are traced through the full
    realized data — a component's subtree may live on an excluded page —
    but only the ids are returned; the emitted bundle carries the trimmed
    map inline. Terminates on cycles."
@@ -147,9 +137,12 @@
           (if (contains? seen comp-id)
             (recur seen pending')
             (let [component (get-in realized-file [:data :components comp-id])
-                  extra     (when (some? component)
-                              (same-file-refs file-id (component-subtree-shapes realized-file component)))]
-              (recur (conj seen comp-id)
+                  live?     (and (some? component) (not (:deleted component)))
+                  extra     (when live?
+                              (same-file-refs file-id
+                                              (ctf/get-component-shapes (:data realized-file)
+                                                                        component)))]
+              (recur (if live? (conj seen comp-id) seen)
                      (into pending' extra)))))))))
 
 (defn obfuscate-email
