@@ -94,3 +94,25 @@
           srect    {:x 0 :y 0 :width 100 :height 100}
           result   (gal/adjust-to-viewport viewport srect {:min-zoom 0.5})]
       (t/is (some? result)))))
+
+(t/deftest adjust-to-viewport-min-screen-padding-test
+  (t/testing "Fitted content keeps the minimum margin in screen pixels"
+    (let [viewport  {:width 1000 :height 800}
+          srect     {:x 0 :y 0 :width 8000 :height 6000}
+          result    (gal/adjust-to-viewport viewport srect
+                                            {:padding 40
+                                             :min-screen-padding 40})
+          zoom      (/ (:width viewport) (:width result))
+          left-gap  (* (- (:x srect) (:x result)) zoom)
+          top-gap   (* (- (:y srect) (:y result)) zoom)]
+      (t/is (mth/close? 40 left-gap))
+      (t/is (<= 40 top-gap))))
+
+  (t/testing "Design-space padding is kept when it is larger on screen"
+    (let [viewport {:width 1000 :height 800}
+          srect    {:x 0 :y 0 :width 200 :height 100}
+          expected (gal/adjust-to-viewport viewport srect {:padding 40})
+          result   (gal/adjust-to-viewport viewport srect
+                                           {:padding 40
+                                            :min-screen-padding 40})]
+      (t/is (= expected result)))))
