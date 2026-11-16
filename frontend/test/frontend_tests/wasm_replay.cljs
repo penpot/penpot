@@ -144,7 +144,7 @@
 
 (defn- log-shapes!
   "Log the shapes of the current page at the end of a program when the page
-   names the `debug` query parameter: name, type, id, parent, rectangle,
+   names the `debug` query parameter: name, type, id, parent name and id, rectangle,
    transform, touched groups, shape ref, layout, and a text's characters and
    font weights."
   []
@@ -153,7 +153,7 @@
       (doseq [shape (sort-by :name (vals objects))]
         (js/console.log "WASM-REPLAY shape"
                         (pr-str [(:name shape) (:type shape) (:id shape)
-                                 (:name (get objects (:parent-id shape)))
+                                 (:name (get objects (:parent-id shape))) (:parent-id shape)
                                  (some-> (:selrect shape) (select-keys [:x :y :width :height]))
                                  (:transform shape) (:touched shape)
                                  (:shape-ref shape) (:layout shape)

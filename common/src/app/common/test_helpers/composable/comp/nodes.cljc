@@ -183,22 +183,34 @@
   (::layout-reflow? changes))
 
 (defn get-layout-reflow-changes
-  "Derived layout changes on the current file's pages, after copy inputs sync."
+  "Derived layout changes on the current file's pages, after copy inputs sync.
+   As the frontend's layout update applies them, the copy shapes they move
+   then settle their placement."
   [situation]
-  (reduce (fn [changes [_ page]]
-            (let [ids (into [] (keep #(when (:layout %) (:id %))) (vals (:objects page)))]
-              (if (empty? ids)
-                changes
-                (let [tree (gm/set-objects-modifiers
-                            (into {} (map #(vector % {:modifiers (ctm/reflow-modifiers)})) ids)
-                            (:objects page))
-                      next (cls/generate-update-shapes
-                            (pcb/empty-changes nil (:id page)) (keys tree)
-                            (clp/modifiers-transform tree) (:objects page)
-                            {:ignore-touched true :attrs clp/transform-attrs})]
-                  (pcb/concat-changes changes next)))))
-          (pcb/empty-changes)
-          (get-in (tm/file situation) [:data :pages-index])))
+  (let [file (tm/file situation)]
+    (reduce (fn [changes [_ page]]
+              (let [ids (into [] (keep #(when (:layout %) (:id %))) (vals (:objects page)))]
+                (if (empty? ids)
+                  changes
+                  (let [tree (gm/set-objects-modifiers
+                              (into {} (map #(vector % {:modifiers (ctm/reflow-modifiers)})) ids)
+                              (:objects page))
+                        next (-> (cls/generate-update-shapes
+                                  (pcb/empty-changes nil (:id page)) (keys tree)
+                                  (clp/modifiers-transform tree) (:objects page)
+                                  {:ignore-touched true :attrs clp/transform-attrs})
+                                 (cll/generate-sync-transformed-placement file (cf/libraries situation)
+                                                                          page (:objects page) (keys tree)))]
+                    (pcb/concat-changes changes next)))))
+            (pcb/empty-changes)
+            (get-in file [:data :pages-index]))))
+
+(def ^:private sidebar-layout-child-properties
+  "The properties the sidebar edits as a layout child (`update-layout-child`
+   on the frontend)."
+  #{:margin :layout-item-margin :layout-item-margin-type :layout-item-align-self
+    :layout-item-h-sizing :layout-item-v-sizing :layout-item-min-w :layout-item-max-w
+    :layout-item-min-h :layout-item-max-h :layout-item-absolute :layout-item-z-index})
 
 (defrecord ChangeProperty [target property value]
   IComponentOperation
@@ -227,6 +239,22 @@
                       (cll/generate-author-constraint-places (ctn/make-container page :page)
                                                              (cf/libraries situation)
                                                              (:objects page) #{shape-id})
+
+                      ;; as the sidebar's layout child edit: the children and the
+                      ;; parent take the sizing a hugging layout allows
+                      (contains? sidebar-layout-child-properties property)
+                      (as-> changes
+                            (let [attrs  (set-property {} property value')
+                                  parent (get-in page [:objects (:parent-id shape)])]
+                              (-> changes
+                                  (cls/generate-update-shapes (cfh/get-children-ids (:objects page) shape-id)
+                                                              (partial cls/fix-child-sizing (:objects page) attrs)
+                                                              (:objects page) {})
+                                  (cls/generate-update-shapes [(:id parent)]
+                                                              (fn [parent objects]
+                                                                (cls/fix-parent-sizing parent objects #{shape-id} attrs))
+                                                              (:objects page)
+                                                              {:with-objects? true :skip-grid-reassignment? true}))))
                       (and (= :layout-item-absolute property)
                            (ctl/grid-layout? (get-in page [:objects layout-id])))
                       (pcb/update-shapes [layout-id] ctl/assign-cells

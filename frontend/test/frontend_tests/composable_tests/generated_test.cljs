@@ -1118,6 +1118,23 @@
                   :ops [[:rotate 16 0 7 0] [:grid-direction 0 0 0 1] [:grid-cell 0 10 0 1] [:add-child 0]
                         [:structure 3 6 15] [:grid-direction 0 0 0 1] [:grid-cell 0 4 2 1]]})))
 
+(t/deftest ^:async generated-a-turned-variant-set-to-fill-in-a-hugging-board-keeps-its-turn
+  ;; the sidebar fixes the hugging variant board before the turned variant
+  ;; fills it, as the model does
+  (await (replay {:world [3 2 {:variants true :text-styles true :layout nil :variant-diff false
+                               :layout-item-margins false :grid-square false :rich-variants true
+                               :layout-children false :grid-empty false :layout-copies true :text true}]
+                  :ops [[:rotate 7 0 0 0] [:update-main 0 0 0 0] [:make-variant 19 0 0 0] [:style 0 29 4 0]]})))
+
+(t/deftest ^:async generated-a-turned-fill-swap-settles-like-its-main-after-the-layout
+  ;; the layout of a row fills a swapped head turned with its main, which
+  ;; then settles its placement as the main's
+  (await (replay {:world [2 2 {:variants true :layout :flex :rich-variants true :layout-copies true :text true}]
+                  :ops [[:delete 0] [:restore 0] [:add-variant 0 0 0 0] [:swap 6 0 0 0] [:combine 5 0 0 0]
+                        [:delete 12 0 0 0] [:combine 9 0 0 0] [:nest 0 0 0 0] [:restore 0 0 0 0] [:combine 8]
+                        [:switch 3] [:style 0 30 1] [:detach 1 0 0 0] [:combine 0] [:switch 7] [:nest 4 0 0 0]
+                        [:rotate 2 0 0 0]]})))
+
 (t/deftest ^:async generated-an-ungroup-in-a-grid-main-undoes-in-one-step
   ;; the copies' repositioning, synced from the layout update after the
   ;; ungroup, undoes with the ungroup
