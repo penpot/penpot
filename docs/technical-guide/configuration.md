@@ -957,6 +957,27 @@ PENPOT_INTERNAL_RESOLVER: 127.0.0.11
   names. Defaults to the nameservers found in `/etc/resolv.conf`. `127.0.0.11` is the
   embedded Docker DNS server; use the address of your own resolver on other setups.
 
+### Nginx workers
+
+The frontend container sizes its nginx workers from the CPUs it can use, its CPU quota or
+its cpuset, when they are fewer than the CPUs of the host. Otherwise it starts one worker
+per CPU of the host. Each worker reserves the memory for all its connections when it
+starts, so tune these if the frontend uses more memory than you expect:
+
+```bash
+# Frontend
+PENPOT_HTTP_SERVER_WORKER_PROCESSES: 2
+PENPOT_HTTP_SERVER_WORKER_CONNECTIONS: 2048
+```
+
+- `PENPOT_HTTP_SERVER_WORKER_PROCESSES`: Number of nginx worker processes, a positive
+  integer or `auto` for one per host CPU. Defaults to the CPUs the container can use, with
+  the quota rounded up, or `auto` when it has no limit.
+- `PENPOT_HTTP_SERVER_WORKER_CONNECTIONS`: Maximum simultaneous connections per worker,
+  a positive integer. Defaults to `65535`, which takes about 30 MB of memory per worker.
+
+The container refuses to start if either value is not valid.
+
 ## Other flags
 
 There are other flags that are useful for a more customized Penpot experience. This section has the list of the flags meant

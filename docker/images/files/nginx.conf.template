@@ -1,9 +1,9 @@
-worker_processes auto;
+worker_processes ${PENPOT_HTTP_SERVER_WORKER_PROCESSES};
 pid /tmp/nginx.pid;
 include /etc/nginx/overrides/main.d/*.conf;
 
 events {
-    worker_connections 65535;
+    worker_connections ${PENPOT_HTTP_SERVER_WORKER_CONNECTIONS};
     multi_accept on;
 }
 
