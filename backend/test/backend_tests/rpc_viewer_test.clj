@@ -973,9 +973,23 @@
         (t/is (nil? (:tokens-out-of-date result)))
         (t/is (= #{other-id} (set (keys (:objects result)))))))
 
-    (t/testing "the view only bundle carries the values of the tokens of its pages"
+    (t/testing "the view only bundle carries the values of the tokens, and the names of the pages"
       (let [{:keys [result error]} (th/command! {::th/type :get-view-only-bundle
                                                  ::rpc/profile-id (:id prof)
+                                                 :file-id (:id file)})]
+        (t/is (nil? error))
+        (t/is (= {"radius" 12 "unused" 1} (:tokens-resolved result)))
+        (t/is (= {page-id "Page 1"} (:page-names result)))))
+
+    (t/testing "a share link gets only the values of the tokens of its pages"
+      (let [link (th/command! {::th/type :create-share-link
+                               ::rpc/profile-id (:id prof)
+                               :file-id (:id file)
+                               :pages #{page-id}
+                               :who-comment "all"
+                               :who-inspect "all"})
+            {:keys [result error]} (th/command! {::th/type :get-view-only-bundle
+                                                 :share-id (get-in link [:result :id])
                                                  :file-id (:id file)})]
         (t/is (nil? error))
         (t/is (= {"radius" 12} (:tokens-resolved result)))))))
@@ -1024,14 +1038,27 @@
                   :changes (concat (token-changes set-id tokens)
                                    [(rect-change page-id (uuid/next) {:r1 "radius" :shadow "shadow"})]))
 
-    (t/testing "the view only bundle carries the tokens its pages apply and the ones they reference"
+    (t/testing "the view only bundle of a member carries the active tokens"
       (let [{:keys [result error]} (th/command! {::th/type :get-view-only-bundle
                                                  ::rpc/profile-id (:id prof)
                                                  :file-id (:id file)})]
         (t/is (nil? error))
-        (t/is (= #{"radius" "base" "shadow" "brand"} (set (keys (:tokens result)))))
+        (t/is (= #{"radius" "base" "shadow" "brand" "unused"} (set (keys (:tokens result)))))
         (t/is (= {:name "radius" :type :border-radius :value "{base}"}
                  (get-in result [:tokens "radius"])))))
+
+    (t/testing "the view only bundle of a share link carries the tokens its pages apply and the ones they reference"
+      (let [link (th/command! {::th/type :create-share-link
+                               ::rpc/profile-id (:id prof)
+                               :file-id (:id file)
+                               :pages #{page-id}
+                               :who-comment "all"
+                               :who-inspect "all"})
+            {:keys [result error]} (th/command! {::th/type :get-view-only-bundle
+                                                 :share-id (get-in link [:result :id])
+                                                 :file-id (:id file)})]
+        (t/is (nil? error))
+        (t/is (= #{"radius" "base" "shadow" "brand"} (set (keys (:tokens result)))))))
 
     (t/testing "get-page carries them too, with the rem base of the file"
       (let [{:keys [result error]} (th/command! {::th/type :get-page

@@ -647,7 +647,7 @@
   (let [data     (mf/deref refs/viewer-data)
         pending? (and (some? data) (page-pending? data page-id))]
 
-    ;; The file is fetched once, with every page
+    ;; The file is fetched once; `dv/show-page` shows each page
     (mf/with-effect [file-id share-id]
       (let [params {:file-id file-id
                     :page-id page-id

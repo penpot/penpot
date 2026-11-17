@@ -182,14 +182,20 @@
   (->> (get-root-shapes objects)
        (mapv :id)))
 
+(defn- parents-entry
+  "The parents of `id` in `objects`, with their index and, for the search of
+  a common parent, the set of them and `id`."
+  [objects id]
+  (let [[parents index] (cfh/get-parent-ids-with-index objects id)]
+    [parents index (into #{id} parents)]))
+
 (defn- get-base
   [id-a id-b id-parents]
 
-  (let [[parents-a parents-a-index] (get id-parents id-a)
-        [parents-b parents-b-index] (get id-parents id-b)
+  (let [[parents-a parents-a-index]   (get id-parents id-a)
+        [_ parents-b-index parents-b] (get id-parents id-b)
 
         parents-a (cons id-a parents-a)
-        parents-b (into #{id-b} parents-b)
 
         ;; Search for the common parent (frame or group) in order
         base-id (or (d/seek parents-b parents-a) uuid/zero)
@@ -242,7 +248,7 @@
                  :or   {bottom-frames? false}}]
    ;; Create an index of the parents of the shapes. This will speed the sorting because we use
    ;; this information down the line.
-   (let [id-parents (into {} (map #(vector % (cfh/get-parent-ids-with-index objects %))) ids)]
+   (let [id-parents (into {} (map #(vector % (parents-entry objects %))) ids)]
      (letfn [(comp [id-a id-b]
                (cond
                  (= id-a id-b)
@@ -260,7 +266,7 @@
    (sort-z-index-objects objects items nil))
   ([objects items {:keys [bottom-frames?]
                    :or   {bottom-frames? false}}]
-   (let [id-parents (into {} (map #(vector (dm/get-prop % :id) (cfh/get-parent-ids-with-index objects (dm/get-prop % :id)))) items)]
+   (let [id-parents (into {} (map #(vector (dm/get-prop % :id) (parents-entry objects (dm/get-prop % :id)))) items)]
      (d/unstable-sort
       (fn [obj-a obj-b]
         (let [id-a (dm/get-prop obj-a :id)

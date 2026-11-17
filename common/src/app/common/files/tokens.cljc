@@ -923,24 +923,34 @@
               (mapcat cto/find-token-value-references))
         (tree-seq coll? seq value)))
 
+(defn get-active-tokens
+  "The active tokens of `tokens-lib` (with the tokens status of `file-data`):
+  enough to resolve the values of every page. A map of token name to
+  `{:name :type :value}`."
+  [file-data tokens-lib]
+  (let [tokens-status (get-tokens-status file-data)]
+    (when (and (some? tokens-lib) (some? tokens-status))
+      (not-empty
+       (update-vals (get-tokens-in-active-sets tokens-status tokens-lib)
+                    #(select-keys % [:name :type :value]))))))
+
 (defn get-pages-tokens
   "The active tokens of `tokens-lib` (with the tokens status of `file-data`)
   that the shapes of `pages` apply, and the tokens their values reference:
   enough to resolve the values of those pages. A map of token name to
   `{:name :type :value}`."
   [file-data tokens-lib pages]
-  (let [tokens-status (get-tokens-status file-data)]
-    (when (and (some? tokens-lib) (some? tokens-status))
-      (let [active (get-tokens-in-active-sets tokens-status tokens-lib)]
-        (loop [pending (into [] (mapcat page-token-names) pages)
-               result  {}]
-          (if-let [[token-name & pending] (seq pending)]
-            (let [token (get active token-name)]
-              (if (or (nil? token) (contains? result token-name))
-                (recur pending result)
-                (recur (into (vec pending) (value-references (:value token)))
-                       (assoc result token-name (select-keys token [:name :type :value])))))
-            (not-empty result)))))))
+  (when-let [active (get-active-tokens file-data tokens-lib)]
+    (loop [pending (into [] (comp (mapcat page-token-names) (distinct)) pages)
+           result  {}]
+      (if-let [token-name (peek pending)]
+        (let [pending (pop pending)
+              token   (get active token-name)]
+          (if (or (nil? token) (contains? result token-name))
+            (recur pending result)
+            (recur (into pending (value-references (:value token)))
+                   (assoc result token-name token))))
+        (not-empty result)))))
 
 (defn get-pages-resolved
   "The resolved values saved in `file-data` of the tokens that the shapes of

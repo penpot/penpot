@@ -133,6 +133,17 @@
   [file-id share-id entry]
   (fpmap/resolve-pointer file-id share-id entry))
 
+(defn- page-placeholder
+  "The page `id` of a pointer-mapped file before its fragment is fetched:
+  its id and `name`, with the `pointer` to the fragment in its metadata."
+  [id pointer name]
+  (with-meta {:id id :name name} {::fragment pointer}))
+
+(defn- page-fragment
+  "The pointer to the fragment of `page` when it is a placeholder."
+  [page]
+  (::fragment (meta page)))
+
 (defn- fetch-bundle
   [{:keys [file-id share-id] :as params}]
 
@@ -157,16 +168,18 @@
 
         (->> (rp/cmd! :get-view-only-bundle params')
              (rx/mapcat
-              (fn [bundle]
-                (->> (rx/from (-> bundle :file :data :pages-index seq))
-                     (rx/merge-map
-                      (fn [[_ page :as kp]]
-                        (if (t/pointer? page)
-                          (resolve kp)
-                          (rx/of kp))))
-                     (rx/reduce conj {})
-                     (rx/map (fn [pages-index]
-                               (update-in bundle [:file :data] assoc :pages-index pages-index))))))
+              (fn [{:keys [page-names] :as bundle}]
+                (let [shown-id (or (:page-id params) (-> bundle :file :data :pages first))]
+                  (->> (rx/from (-> bundle :file :data :pages-index seq))
+                       (rx/merge-map
+                        (fn [[id page :as kp]]
+                          (cond
+                            (not (t/pointer? page)) (rx/of kp)
+                            (= id shown-id)         (resolve kp)
+                            :else                   (rx/of [id (page-placeholder id page (get page-names id))]))))
+                       (rx/reduce conj {})
+                       (rx/map (fn [pages-index]
+                                 (update-in bundle [:file :data] assoc :pages-index pages-index)))))))
              (rx/mapcat
               (fn [bundle]
                 (->> (rx/from (-> bundle :file :data seq))
@@ -195,10 +208,12 @@
 (defn- viewer-page
   "The page `page-id` of `file` with the frames the viewer shows."
   [file page-id]
-  (let [page (get-in file [:data :pages-index page-id])]
+  (let [page       (get-in file [:data :pages-index page-id])
+        ;; Sorted once: the frames are the ones not hidden in the viewer
+        all-frames (ctt/get-viewer-frames (:objects page) {:all-frames? true})]
     (assoc page
-           :frames (ctt/get-viewer-frames (:objects page))
-           :all-frames (ctt/get-viewer-frames (:objects page) {:all-frames? true}))))
+           :frames (into [] (remove :hide-in-viewer) all-frames)
+           :all-frames all-frames)))
 
 ;; Applies to the viewer the changes passed as parameters
 ;; will not save the data but just modify the data localy
@@ -341,31 +356,62 @@
              (some? index) (go-to-frame-by-index index)
              :else (go-to-frame-auto)))))
 
-(defn show-page
-  "Event that shows the page `page-id` of the loaded file, or its first
-  one: the file holds every page, so it is prepared here and not fetched
-  again."
-  [{:keys [page-id share-id] :as params}]
-  (ptk/reify ::show-page
+(declare show-page)
+
+(defn- page-fetched
+  "Event that keeps `page`, the fetched fragment of the page `page-id`,
+  and shows it when the route still asks for it (`params` of `show-page`)."
+  [page-id page params]
+  (ptk/reify ::page-fetched
     ptk/UpdateEvent
     (update [_ state]
-      (-> (prepare-page state (or page-id (first (dm/get-in state [:viewer :file :data :pages]))))
-          (assoc-in [:viewer :page-id] page-id)))
+      (let [file-id (dm/get-in state [:viewer :file :id])
+            path    [:data :pages-index page-id]]
+        (if (page-fragment (get-in state (into [:viewer :file] path)))
+          (-> state
+              (assoc-in (into [:viewer :file] path) page)
+              (d/update-in-when [:files file-id] assoc-in path page))
+          state)))
 
     ptk/WatchEvent
     (watch [_ state _]
-      (rx/merge
-       (page-shown state)
-       ;; Only fetch threads for logged-in users
-       (if (some? (:profile state))
-         (rx/of (fetch-comment-threads (assoc params :file-id (:current-file-id state)
-                                              :share-id share-id)))
-         (rx/empty))))))
+      (let [route-id (some-> (rt/get-query-param (dm/get-in state [:route :query-params]) :page-id)
+                             uuid/parse)]
+        (when (= route-id (:page-id params))
+          (rx/of (show-page params)))))))
+
+(defn show-page
+  "Event that shows the page `page-id` of the loaded file, or its first
+  one. A page of a pointer-mapped file is fetched the first time it is
+  shown; the others are prepared here, without fetching the file again."
+  [{:keys [page-id share-id] :as params}]
+  (let [shown-id #(or page-id (first (dm/get-in % [:viewer :file :data :pages])))
+        fragment #(page-fragment (dm/get-in % [:viewer :file :data :pages-index (shown-id %)]))]
+    (ptk/reify ::show-page
+      ptk/UpdateEvent
+      (update [_ state]
+        (if (fragment state)
+          state
+          (-> (prepare-page state (shown-id state))
+              (assoc-in [:viewer :page-id] page-id))))
+
+      ptk/WatchEvent
+      (watch [_ state _]
+        (if-let [pointer (fragment state)]
+          (->> (resolve-viewer-fragment (:current-file-id state) share-id [(shown-id state) pointer])
+               (rx/map (fn [[id page]] (page-fetched id page params))))
+          (rx/merge
+           (page-shown state)
+           ;; Only fetch threads for logged-in users
+           (if (some? (:profile state))
+             (rx/of (fetch-comment-threads (assoc params :file-id (:current-file-id state)
+                                                  :share-id share-id)))
+             (rx/empty))))))))
 
 (defn bundle-fetched
   "Event that keeps the fetched `bundle` with the frames of the page it
-  shows, `page-id` or the first one; the other pages are prepared when they
-  are shown (`show-page`)."
+  shows, `page-id` or the first one; the other pages are fetched, when the
+  file is pointer-mapped, and prepared when they are shown (`show-page`)."
   [{:keys [project file team share-links libraries users permissions thumbnails page-id resolved-tokens] :as bundle}]
   (let [shown-id (or page-id (first (dm/get-in file [:data :pages])))
         pages    (if (contains? (dm/get-in file [:data :pages-index]) shown-id)
