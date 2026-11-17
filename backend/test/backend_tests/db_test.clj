@@ -102,16 +102,28 @@
         (t/is (= "2" (.getProperty (.getDataSourceProperties ^HikariDataSource ds)
                                    "preparedStatementCacheSizeMiB")))
         (.close ^HikariDataSource ds)))
-    (t/testing "zero size disables the cache"
-      (let [ds (init-pool {:app.db/prepared-statement-cache-size 0})]
-        (t/is (= "0" (.getProperty (.getDataSourceProperties ^HikariDataSource ds)
-                                   "preparedStatementCacheSizeMiB")))
-        (.close ^HikariDataSource ds)))
-    (t/testing "zero queries disables the cache"
-      (let [ds (init-pool {:app.db/prepared-statement-cache-queries 0})]
-        (t/is (= "0" (.getProperty (.getDataSourceProperties ^HikariDataSource ds)
-                                   "preparedStatementCacheQueries")))
-        (.close ^HikariDataSource ds)))))
+    (t/testing "the cache limits hold a closed statement in the server"
+      ;; A closed statement stays prepared in the server only while the
+      ;; driver's cache holds it, so counting it in pg_prepared_statements is
+      ;; what tells an accepted property from an effective one.
+      (let [cached? (fn [opts]
+                      (with-connection
+                        (merge {:app.db/prepared-statement-cache-threshold 1} opts)
+                        (fn [conn]
+                          (dotimes [_ 2]
+                            (with-open [stmt (.prepareStatement ^Connection conn "SELECT ?::int AS cache_probe")]
+                              (.setInt stmt 1 1)
+                              (with-open [rs (.executeQuery stmt)] (.next rs))))
+                          (-> (db/exec-one! conn ["SELECT count(*) AS n FROM pg_prepared_statements
+                                                   WHERE statement LIKE '%AS cache_probe'"])
+                              :n
+                              pos?))))]
+        (t/testing "a positive sub-MiB size keeps the cache enabled"
+          (t/is (cached? {:app.db/prepared-statement-cache-size 1})))
+        (t/testing "zero size disables the cache"
+          (t/is (not (cached? {:app.db/prepared-statement-cache-size 0}))))
+        (t/testing "zero queries disables the cache"
+          (t/is (not (cached? {:app.db/prepared-statement-cache-queries 0}))))))))
 
 (t/deftest pool-rejects-a-non-minus-one-negative-threshold
   ;; The pool boundary mirrors app.config: -1 prepares from the first

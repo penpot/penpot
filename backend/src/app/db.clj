@@ -107,7 +107,10 @@
               :credentials (and (contains? cfg ::username)
                                 (contains? cfg ::password))
               :min-size (::min-size cfg)
-              :max-size (::max-size cfg))
+              :max-size (::max-size cfg)
+              :prepared-statement-cache-threshold (::prepared-statement-cache-threshold cfg)
+              :prepared-statement-cache-queries (::prepared-statement-cache-queries cfg)
+              :prepared-statement-cache-size (::prepared-statement-cache-size cfg))
       (create-pool cfg))))
 
 (defmethod ig/halt-key! ::pool
@@ -130,12 +133,12 @@
 ;; drops non-String values silently, so everything is passed as a string.
 ;; preparedStatementCacheSizeMiB only accepts a whole-MiB integer: the
 ;; configured size (bytes) is converted up, so any positive value keeps the
-;; cache enabled and 0 disables the cache.
+;; cache enabled and 0 disables the cache. A query parameter of the same name
+;; in the URI wins over these properties: pgjdbc ignores the Properties value
+;; when the URL carries it.
 (defn- bytes->mib-ceil
   [bytes]
-  (if (pos? bytes)
-    (long (Math/ceil (/ (double bytes) (* 1024 1024))))
-    0))
+  (Math/ceilDiv (long bytes) (* 1024 1024)))
 
 (defn- create-datasource-config
   [{:keys [::uri] :as cfg}]

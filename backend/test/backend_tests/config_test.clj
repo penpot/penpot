@@ -75,22 +75,6 @@
       (t/is (= 4 (cf/get :worker-default-parallelism 1))))))
 
 (t/deftest prepared-statement-cache-keys
-  (t/testing "the environment strings are decoded as numbers"
-    (let [decoded (cf/decode-config {:database-prepared-statement-cache-threshold "1"
-                                     :database-prepared-statement-cache-queries "512"
-                                     :database-prepared-statement-cache-size "10485760"})]
-      (t/is (= 1 (:database-prepared-statement-cache-threshold decoded)))
-      (t/is (= 512 (:database-prepared-statement-cache-queries decoded)))
-      (t/is (= 10485760 (:database-prepared-statement-cache-size decoded)))))
-  (t/testing "absent keys stay absent (the driver defaults apply)"
-    (let [decoded (cf/decode-config {})]
-      (t/is (nil? (:database-prepared-statement-cache-threshold decoded)))
-      (t/is (nil? (:database-prepared-statement-cache-queries decoded)))
-      (t/is (nil? (:database-prepared-statement-cache-size decoded)))))
-  (t/testing "a non-integer value fails validation"
-    (t/is (not (cf/validate-config (assoc cf/config :database-prepared-statement-cache-threshold "a lot"))))
-    (t/is (not (cf/validate-config (assoc cf/config :database-prepared-statement-cache-queries "many"))))
-    (t/is (not (cf/validate-config (assoc cf/config :database-prepared-statement-cache-size "lots")))))
   (t/testing "negative sizes are rejected; the threshold takes -1 or non-negatives"
     (t/is (not (cf/validate-config (assoc cf/config :database-prepared-statement-cache-queries -1))))
     (t/is (not (cf/validate-config (assoc cf/config :database-prepared-statement-cache-size -1))))

@@ -804,7 +804,8 @@ with the threshold at `0`: the connection caches up to
 `PENPOT_DATABASE_PREPARED_STATEMENT_CACHE_SIZE` bytes per connection (the size is rounded
 up to whole MiB for the driver), and setting either of those two to `0` disables the
 cache. With 60 connections, the ceiling is 60 × the size. Leave a variable unset and the
-driver default applies.
+driver default applies. A parameter of the same name in `PENPOT_DATABASE_URI`, such as
+`?prepareThreshold=0`, takes precedence over these variables.
 
 ### Storage
 
