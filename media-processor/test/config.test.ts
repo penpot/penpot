@@ -1,4 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { loadConfig } from "../src/config.js";
 
 describe("loadConfig", () => {
@@ -126,5 +129,53 @@ describe("loadConfig", () => {
     process.env.PENPOT_MEDIA_PROCESSOR_REQUEST_TIMEOUT = "0";
     const config = loadConfig();
     expect(config.requestTimeout).toBe(0);
+  });
+});
+
+describe("shared key file", () => {
+  const keyVars = ["PENPOT_MEDIA_PROCESSOR_SHARED_KEY", "PENPOT_MEDIA_PROCESSOR_SHARED_KEY_FILE", "PENPOT_SECRET_KEY"];
+
+  beforeEach(() => {
+    for (const variable of keyVars) delete process.env[variable];
+  });
+
+  function withKeyFile(content: string, f: (path: string) => void): void {
+    const dir = mkdtempSync(join(tmpdir(), "penpot-mp-key-"));
+    const path = join(dir, "shared-key");
+    writeFileSync(path, content);
+    try {
+      f(path);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  }
+
+  it("reads and trims the key file", () => {
+    withKeyFile("from-file\n", (path) => {
+      process.env.PENPOT_MEDIA_PROCESSOR_SHARED_KEY_FILE = path;
+      expect(loadConfig().sharedKey).toBe("from-file");
+    });
+  });
+
+  it("prefers the explicit key over the file", () => {
+    process.env.PENPOT_MEDIA_PROCESSOR_SHARED_KEY = "explicit";
+    process.env.PENPOT_MEDIA_PROCESSOR_SHARED_KEY_FILE = "/tmp/opencode/penpot-mp-key-does-not-exist";
+    expect(loadConfig().sharedKey).toBe("explicit");
+  });
+
+  it("rejects a missing key file", () => {
+    process.env.PENPOT_MEDIA_PROCESSOR_SHARED_KEY_FILE = "/tmp/opencode/penpot-mp-key-does-not-exist";
+    expect(() => loadConfig()).toThrow(/missing or empty/);
+  });
+
+  it("rejects an empty key file", () => {
+    withKeyFile("  \n\t", (path) => {
+      process.env.PENPOT_MEDIA_PROCESSOR_SHARED_KEY_FILE = path;
+      expect(() => loadConfig()).toThrow(/missing or empty/);
+    });
+  });
+
+  it("keeps sharedKey null when no source is configured", () => {
+    expect(loadConfig().sharedKey).toBeNull();
   });
 });

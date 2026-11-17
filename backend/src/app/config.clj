@@ -147,6 +147,7 @@
     [:flags {:optional true} [::sm/set :string]]
     [:admins {:optional true} [::sm/set ::sm/email]]
     [:secret-key {:optional true} :string]
+    [:secret-key-file {:optional true} :string]
 
     [:tenant {:optional false} schema:tenant]
     [:is-saas ::sm/boolean]
@@ -168,6 +169,10 @@
     [:admin-console-shared-key {:optional true} :string]
     [:nexus-shared-key {:optional true} :string]
     [:media-processor-shared-key {:optional true} :string]
+    [:exporter-shared-key-file {:optional true} :string]
+    [:admin-console-shared-key-file {:optional true} :string]
+    [:nexus-shared-key-file {:optional true} :string]
+    [:media-processor-shared-key-file {:optional true} :string]
     [:management-api-key {:optional true} :string]
 
     [:telemetry-uri {:optional true} :string]
@@ -442,12 +447,48 @@
       (assoc config :file-data-backend "db"))
     config))
 
+(def ^:private key-file->key
+  {:secret-key-file                 :secret-key
+   :exporter-shared-key-file        :exporter-shared-key
+   :admin-console-shared-key-file   :admin-console-shared-key
+   :nexus-shared-key-file           :nexus-shared-key
+   :media-processor-shared-key-file :media-processor-shared-key})
+
+(defn- get-key-file-value
+  "Reads a secret from a file. A blank value is an error: `app.setup` treats a
+  blank shared key as disabled, which would silently remove the credential."
+  [variable path]
+  (let [value (try
+                (some-> (slurp path) (str/trim))
+                (catch Exception _
+                  nil))]
+    (when (or (nil? value) (str/blank? value))
+      (ex/raise :type :validation
+                :code :invalid-key-file
+                :hint "configuration key file is missing or empty"
+                :variable variable
+                :path path))
+    value))
+
+(defn- resolve-key-files
+  [config]
+  (reduce-kv
+   (fn [result file-key key]
+     (if-let [path (c/get config file-key)]
+       (if (contains? result key)
+         result
+         (assoc result key (get-key-file-value file-key path)))
+       result))
+   config
+   key-file->key))
+
 (defn read-config
   "Reads the configuration from environment variables and decodes all
   known values."
   [& {:keys [prefix default] :or {prefix "penpot"}}]
   (->> (read-env prefix)
        (merge default)
+       (resolve-key-files)
        (normalize-tenant)
        (decode-config)
        (normalize-file-data-backend)))

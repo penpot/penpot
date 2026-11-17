@@ -15,7 +15,7 @@
 
 - POST body limit is about 60 MB. Exporter supports `application/transit+json`; request params merge query params and body params.
 - Map response bodies are Transit JSON and force HTTP 200; nil 200 bodies become 204.
-- Auth token comes from cookie `auth-token`, then uploads use Bearer auth plus the management shared key.
+- Auth token comes from cookie `auth-token`, then uploads use Bearer auth plus the management shared key. The key source is `PENPOT_EXPORTER_SHARED_KEY` > `PENPOT_EXPORTER_SHARED_KEY_FILE` (trimmed, fail on empty) > HKDF derivation from `PENPOT_SECRET_KEY`; `:secret-key` is optional when an explicit key or file is supplied, and the four call sites send the same `exporter <management-key>` header.
 - Each export job gets a fresh Playwright browser context. On success, the context closes and the browser returns to the pool; on error, the browser is destroyed instead of reused.
 - Borrow validates browser connection. Pool acquire timeout is about 10s; font loading timeout logs a warning and continues after about 15s.
 

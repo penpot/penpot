@@ -9,6 +9,7 @@
   (:require
    ["node:buffer" :as buffer]
    ["node:crypto" :as crypto]
+   ["node:fs" :as fs]
    ["node:os" :as os]
    ["node:process" :as process]
    [app.common.data :as d]
@@ -41,10 +42,11 @@
 
 (def ^:private schema:config
   [:map {:title "config"}
-   [:secret-key :string]
+   [:secret-key {:optional true} :string]
    [:public-uri {:optional true} ::sm/uri]
    [:internal-uri {:optional true} ::sm/uri]
    [:exporter-shared-key {:optional true} :string]
+   [:exporter-shared-key-file {:optional true} :string]
    [:host {:optional true} :string]
    [:tenant {:optional true} :string]
    [:flags {:optional true} [::sm/set :keyword]]
@@ -75,7 +77,7 @@
   [config]
   (flags/parse (:flags config)))
 
-(defn- read-env
+(defn read-env
   [prefix]
   (let [env    (unchecked-get process "env")
         kwd    (fn [s] (-> (str/kebab s) (str/keyword)))
@@ -90,10 +92,31 @@
             {}
             (js/Object.keys env))))
 
-(defn- prepare-config
+(defn has-key-source?
+  [config]
+  (or (some? (c/get config :exporter-shared-key))
+      (some? (c/get config :secret-key))))
+
+(defn- get-key-file-value
+  [variable path]
+  (let [value (try
+                (some-> (fs/readFileSync path "utf8") (str/trim))
+                (catch :default _
+                  nil))]
+    (when (or (nil? value) (str/blank? value))
+      (throw (js/Error. (str variable " key file is missing or empty: " path))))
+    value))
+
+(defn prepare-config
   []
   (let [env  (read-env "penpot")
         env  (d/without-nils env)
+        env  (if (and (c/get env :exporter-shared-key-file)
+                      (not (c/get env :exporter-shared-key)))
+               (assoc env :exporter-shared-key
+                      (get-key-file-value "PENPOT_EXPORTER_SHARED_KEY_FILE"
+                                          (c/get env :exporter-shared-key-file)))
+               env)
         data (merge defaults env)
         data (decode-config data)]
 
@@ -101,6 +124,10 @@
       (let [explain (explain-config data)]
         (println (sm/humanize-explain explain))
         (process/exit -1)))
+
+    (when-not (has-key-source? data)
+      (println "Either PENPOT_EXPORTER_SHARED_KEY or PENPOT_SECRET_KEY is required")
+      (process/exit -1))
 
     data))
 
@@ -132,11 +159,15 @@
   (or (c/get config :exporter-replica-id)
       (os/hostname)))
 
+(defn get-management-key
+  [config]
+  (or (c/get config :exporter-shared-key)
+      (let [secret-key  (c/get config :secret-key)
+            derived-key (crypto/hkdfSync "blake2b512" secret-key "exporter" "" 32)]
+        (-> (.from buffer/Buffer derived-key)
+            (.toString "base64url")))))
+
 (def management-key
-  (let [key (or (c/get config :exporter-shared-key)
-                (let [secret-key  (c/get config :secret-key)
-                      derived-key (crypto/hkdfSync "blake2b512" secret-key, "exporter" "" 32)]
-                  (-> (.from buffer/Buffer derived-key)
-                      (.toString "base64url"))))]
+  (let [key (get-management-key config)]
     (l/inf :hint "exporter key initialized" :key (d/obfuscate-string key))
     key))

@@ -169,3 +169,61 @@
       (t/is (not (contains? flags :audit-log)))
       (t/is (contains? flags :nexus))
       (t/is (cf/persist-audit-events? flags)))))
+
+;; Key files are the delivery channel for the per-service shared keys written
+;; by an external generator. A direct environment value still wins.
+
+(defn- with-key-file
+  [content f]
+  (let [file (java.io.File/createTempFile "penpot-key" ".txt")]
+    (spit file content)
+    (try
+      (f (.getAbsolutePath file))
+      (finally (.delete file)))))
+
+(t/deftest read-config-reads-key-files
+  (with-key-file "from-file\n"
+    (fn [path]
+      (let [cfg (read-config {:secret-key-file path
+                              :exporter-shared-key-file path
+                              :admin-console-shared-key-file path
+                              :nexus-shared-key-file path
+                              :media-processor-shared-key-file path})]
+        (t/testing "all five key files are read and trimmed"
+          (t/is (= "from-file" (:secret-key cfg)))
+          (t/is (= "from-file" (:exporter-shared-key cfg)))
+          (t/is (= "from-file" (:admin-console-shared-key cfg)))
+          (t/is (= "from-file" (:nexus-shared-key cfg)))
+          (t/is (= "from-file" (:media-processor-shared-key cfg))))))))
+
+(t/deftest read-config-prefers-direct-env-key-over-file
+  (with-key-file "from-file"
+    (fn [path]
+      (let [cfg (read-config {:exporter-shared-key "direct"
+                              :exporter-shared-key-file path})]
+        (t/is (= "direct" (:exporter-shared-key cfg)))))))
+
+(t/deftest read-config-rejects-a-missing-key-file
+  (let [path "/tmp/opencode/penpot-key-file-that-does-not-exist"
+        err (try
+              (read-config {:secret-key-file path})
+              nil
+              (catch Exception e e))]
+    (t/is (some? err))
+    (t/is (= :secret-key-file (:variable (ex-data err))))
+    (t/is (= path (:path (ex-data err))))))
+
+(t/deftest read-config-rejects-an-empty-key-file
+  (with-key-file "  \n\t"
+    (fn [path]
+      (let [err (try
+                  (read-config {:nexus-shared-key-file path})
+                  nil
+                  (catch Exception e e))]
+        (t/is (some? err))
+        (t/is (= :nexus-shared-key-file (:variable (ex-data err))))))))
+
+(t/deftest read-config-without-key-files-is-unchanged
+  (let [cfg (read-config {})]
+    (t/is (nil? (:secret-key cfg)))
+    (t/is (nil? (:exporter-shared-key cfg)))))

@@ -50,7 +50,7 @@ media-processor/
 ### Auth
 - Requests authenticated via `x-shared-key` header using timing-safe comparison
 - When no key configured, all requests rejected with 403
-- Key derived from `PENPOT_SECRET_KEY` via HKDF (blake2b512) or set directly via `PENPOT_MEDIA_PROCESSOR_SHARED_KEY`
+- Key source precedence: `PENPOT_MEDIA_PROCESSOR_SHARED_KEY` > `PENPOT_MEDIA_PROCESSOR_SHARED_KEY_FILE` (trimmed at boot, missing or empty file fails) > HKDF derivation from `PENPOT_SECRET_KEY` (blake2b512). With no source `sharedKey` is null and every request is rejected.
 
 ### Resource Limits
 - Image: max pixels, max width/height enforced before processing

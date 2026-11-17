@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { hkdfSync } from "node:crypto";
+import { readFileSync } from "node:fs";
 import type { AppConfig } from "./types.js";
 
 const envSchema = z.object({
@@ -16,6 +17,7 @@ const envSchema = z.object({
   PENPOT_MEDIA_PROCESSOR_FONT_PROCESS_CPU_TIME: z.coerce.number().int().positive().default(30),
   PENPOT_MEDIA_PROCESSOR_FONT_TIMEOUT: z.coerce.number().int().positive().default(120000),
   PENPOT_MEDIA_PROCESSOR_SHARED_KEY: z.string().optional(),
+  PENPOT_MEDIA_PROCESSOR_SHARED_KEY_FILE: z.string().optional(),
   PENPOT_SECRET_KEY: z.string().optional(),
   PENPOT_MEDIA_PROCESSOR_LOG_LEVEL: z
     .enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"])
@@ -31,12 +33,30 @@ function deriveSharedKey(secret: string): string {
   return Buffer.from(key).toString("base64url");
 }
 
+function readSharedKeyFile(variable: string, path: string): string {
+  let value: string | undefined;
+  try {
+    value = readFileSync(path, "utf8").trim();
+  } catch {
+    // Reported below with the variable and path that failed.
+  }
+  if (!value) {
+    throw new Error(`${variable} key file is missing or empty: ${path}`);
+  }
+  return value;
+}
+
 export function loadConfig(): AppConfig {
   const parsed = envSchema.parse(process.env);
 
   let sharedKey: string | null = null;
   if (parsed.PENPOT_MEDIA_PROCESSOR_SHARED_KEY) {
     sharedKey = parsed.PENPOT_MEDIA_PROCESSOR_SHARED_KEY;
+  } else if (parsed.PENPOT_MEDIA_PROCESSOR_SHARED_KEY_FILE) {
+    sharedKey = readSharedKeyFile(
+      "PENPOT_MEDIA_PROCESSOR_SHARED_KEY_FILE",
+      parsed.PENPOT_MEDIA_PROCESSOR_SHARED_KEY_FILE
+    );
   } else if (parsed.PENPOT_SECRET_KEY) {
     sharedKey = deriveSharedKey(parsed.PENPOT_SECRET_KEY);
   }
