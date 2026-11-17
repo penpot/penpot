@@ -617,3 +617,19 @@
     (t/is (mth/close? 90 (:rotation turned) 0.01))
     (t/is (mth/close? 20 (gpt/distance p1 p2) 1e-6))
     (t/is (mth/close? 20 (gpt/distance p1 p4) 1e-6))))
+
+(t/deftest an-unskewed-turn-that-tells-no-flip-apart-turns-before-it
+  ;; a shape turned 45 degrees without flips, given a horizontal flip: both
+  ;; orders of turn and flip lie as far from its axes, whatever rounding the
+  ;; engine leaves in them, so the turn goes before the flip
+  (let [c (mth/cos (mth/radians 45))]
+    (doseq [[a b cc d] [[c c (- c) c]
+                        [0.7071067811865475 0.7071067811865479 -0.7071067811865479 0.7071067811865479]
+                        [0.7071067811865479 0.7071067811865475 -0.707106781186547 0.7071067811865475]
+                        [0.7071067690849304 0.7071067690849304 -0.7071067690849304 0.7071067690849304]]]
+      (let [shape     {:rotation 45 :flip-x true :flip-y false
+                       :transform (gmt/matrix a b cc d 0 0)}
+            transform (:transform (cll/unskewed shape))]
+        (t/is (gmt/close? (gmt/multiply (gmt/rotate-matrix 45) (gmt/scale-matrix (gpt/point -1 1)))
+                          transform)
+              (pr-str [a b cc d transform]))))))
