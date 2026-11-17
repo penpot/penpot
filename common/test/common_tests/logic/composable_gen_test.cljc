@@ -2495,6 +2495,18 @@
                        :ops [[:variant-property 0 9 3 0] [:switch 4] [:combine 2] [:switch 8] [:style 11 7 1]
                              [:update-main 2 0 0 0]]}))))
 
+(t/deftest an-ungroup-fills-a-grid-copy-of-a-copy-in-its-references-layer-order
+  ;; a bool ungrouped in a grid main whose copy of a copy holds its own
+  ;; cells: the copy's new shapes take its free cells in the layer order of
+  ;; their references, which keep the order the ungroup gives them
+  (t/is (map? (cg/run {:world [3 2 {:variants true :rich-variants true :text true :layout :grid :layout-copies true
+                                    :layout-children true}]
+                       :ops [[:add-child 0] [:structure 2 0 0] [:add-child 0] [:structure 0 0 0] [:delete 0]
+                             [:restore 0] [:add-child 0] [:structure 3 4 15] [:grid-direction 15 0 0 1]
+                             [:grid-cell 15 0 0 1] [:add-child 0] [:structure 12 0 0] [:add-child 0]
+                             [:structure 13 0 0] [:detach 9 0 0 0] [:add-child 0] [:structure 0 0 0]
+                             [:add-child 0] [:structure 9 2 0]]}))))
+
 (t/deftest a-synced-masked-group-fits-the-mask-its-copy-turned
   ;; a copy turns the mask of a masked group; a sync gives the group its
   ;; main's geometry and then fits it to the turned mask again

@@ -235,16 +235,21 @@
   "`grid` with the cells of the children an ungroup brings into it assigned.
    A copy with its own cells first takes the tracks of `ref-grid`, the grid
    it refers to as the ungroup leaves it, on the axes it does not override;
-   then it gives its free cells to them in the layer order of its main, as
-   sync does, which is the reverse of the order the main's grid flows them
-   in."
+   then it gives its free cells to them in the layer order of their
+   references there, as sync adds them, and to the others in the reverse of
+   its own layer order."
   [grid objects ref-grid]
   (if (ctk/touched-group? grid :layout-grid-cells)
-    (-> grid
-        (cond-> (some? ref-grid) (with-ref-tracks ref-grid))
-        (update :shapes (comp vec reverse))
-        (ctl/assign-cells objects)
-        (assoc :shapes (:shapes grid)))
+    (let [;; where the reference of each child sits among the children of `ref-grid`
+          rank (into {} (map-indexed (fn [i id] [id i])) (:shapes ref-grid))]
+      (-> grid
+          (cond-> (some? ref-grid) (with-ref-tracks ref-grid))
+          (assoc :shapes (->> (:shapes grid)
+                              reverse
+                              (sort-by #(get rank (:shape-ref (get objects %)) ##Inf))
+                              vec))
+          (ctl/assign-cells objects)
+          (assoc :shapes (:shapes grid))))
     (ctl/assign-cells grid objects)))
 
 (defn- ungroup-shape-changes
@@ -298,7 +303,10 @@
                                                             (get-in pages-index [target-page-id :objects]))
                                            changes        (ungroup-shape-changes it target-page-id target-objects
                                                                                  id options ref-grids)
-                                           grid           (ungrouped-grid changes target-objects id)]
+                                           grid           (ungrouped-grid changes target-objects id)
+                                           ;; the layout update after the ungroup orders the
+                                           ;; children of a main's grid by their cells
+                                           grid           (cond-> grid (and grid (nil? options)) (ctl/reorder-grid-children))]
                                        [(cond-> changes-list changes (conj changes))
                                         (cond-> ref-grids grid (assoc (:id grid) grid))]))
                                    [[] {}])
