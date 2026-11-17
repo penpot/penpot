@@ -714,17 +714,6 @@
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
 
-(defmethod migrate-data "legacy-36"
-  [data _]
-  (letfn [(update-container [container]
-            (d/update-when container :objects (fn [objects]
-                                                (if (contains? objects nil)
-                                                  (dissoc objects nil)
-                                                  objects))))]
-    (-> data
-        (update :pages-index d/update-vals update-container)
-        (d/update-when :components d/update-vals update-container))))
-
 (defmethod migrate-data "legacy-37"
   [data _]
   (d/without-nils data))
@@ -2354,17 +2343,37 @@
                              (let [shapes' (filterv #(contains? objects %) shapes)]
                                (when (not= shapes shapes')
                                  (l/trc :hint "fix dangling children"
-                                        :container container-id
-                                        :shape-id (:id shape)
+                                        :container (str container-id)
+                                        :shape-id (str (:id shape))
                                         :removed (remove #(contains? objects %) shapes)))
                                shapes'))))
 
           (fix-objects [container-id objects]
-            (update-vals objects (partial fix-shape container-id objects)))
+            (d/update-vals objects (partial fix-shape container-id objects)))
 
           (update-container [container]
             (d/update-when container :objects #(fix-objects (:id container) %)))]
 
+    (-> data
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
+
+(defmethod migrate-data "0036-clear-nil-keys-in-objects"
+  [data _]
+  ;; Soft-delete can leave a nil key in `:objects` (gsh/move on a missing
+  ;; main, then index-by :id). That fails the file schema on duplicate-file
+  ;; (#12336). "legacy-36" did the same cleanup but its id was withdrawn
+  ;; from `available-migrations` below: files that recorded it migrate
+  ;; again through this one.
+  (letfn [(update-container [container]
+            (d/update-when container :objects
+                           (fn [objects]
+                             (if (contains? objects nil)
+                               (do
+                                 (l/trc :hint "clear nil key in objects"
+                                        :container-id (:id container))
+                                 (dissoc objects nil))
+                               objects))))]
     (-> data
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
@@ -2396,7 +2405,6 @@
          "legacy-32"
          "legacy-33"
          "legacy-34"
-         "legacy-36"
          "legacy-37"
          "legacy-38"
          "legacy-39"
@@ -2461,4 +2469,5 @@
          "0032-fix-children-not-in-parent"
          "0033-normalize-main-instance-names"
          "0034-fix-path-content-offset"
-         "0035-fix-dangling-children"]))
+         "0035-fix-dangling-children"
+         "0036-clear-nil-keys-in-objects"]))
