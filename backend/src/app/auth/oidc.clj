@@ -63,14 +63,20 @@
                 auth-uri   (get data :authorization_endpoint)
                 user-uri   (get data :userinfo_endpoint)
                 jwks-uri   (get data :jwks_uri)
-                logout-uri (get data :end_session_endpoint)]
+                logout-uri (get data :end_session_endpoint)
+                issuer     (get data :issuer)]
 
+            ;; OIDC Discovery 1.0 section 4.3: the issuer of the discovery
+            ;; document is the value the ID token `iss` claim is validated
+            ;; against. An explicitly configured issuer wins, so a deployment
+            ;; can pin it (and reject a hijacked discovery document).
             (-> provider
                 (assoc :token-uri token-uri)
                 (assoc :auth-uri  auth-uri)
                 (assoc :user-uri  user-uri)
                 (assoc :jwks-uri jwks-uri)
-                (assoc :logout-uri logout-uri)))
+                (assoc :logout-uri logout-uri)
+                (update :issuer #(or % issuer))))
 
           (raise-invalid-sso-config
            :hint "unable to discover OIDC configuration"
@@ -97,6 +103,7 @@
   []
   (d/without-nils
    {:base-uri         (cf/get :oidc-base-uri)
+    :issuer           (cf/get :oidc-issuer)
     :client-id        (cf/get :oidc-client-id)
     :client-secret    (cf/get :oidc-client-secret)
     :token-uri        (cf/get :oidc-token-uri)
@@ -181,24 +188,35 @@
      :hint "missing params for provider initialization"
      :provider (:id params)))
 
-  (try
-    (if (and (string? (:token-uri params))
-             (string? (:user-uri params))
-             (string? (:auth-uri params)))
-      (populate-jwks cfg params)
-      (let [provider (->> params
-                          (discover-oidc-config cfg)
-                          (populate-jwks cfg))]
-        (with-meta provider {::discovered true})))
+  (let [provider (try
+                   (if (and (string? (:token-uri params))
+                            (string? (:user-uri params))
+                            (string? (:auth-uri params)))
+                     (populate-jwks cfg params)
+                     (let [provider (->> params
+                                         (discover-oidc-config cfg)
+                                         (populate-jwks cfg))]
+                       (with-meta provider {::discovered true})))
 
-    (catch Throwable cause
-      (if (and (ex/error? cause)
-               (= :invalid-sso-config (:code (ex-data cause))))
-        (throw cause)
-        (raise-invalid-sso-config
-         :hint "unexpected exception on configuring provider"
-         :provider (:id params)
-         :cause cause)))))
+                   (catch Throwable cause
+                     (if (and (ex/error? cause)
+                              (= :invalid-sso-config (:code (ex-data cause))))
+                       (throw cause)
+                       (raise-invalid-sso-config
+                        :hint "unexpected exception on configuring provider"
+                        :provider (:id params)
+                        :cause cause))))]
+
+    ;; OIDC Core 3.1.3.7 requires the `iss` claim of the ID token to match
+    ;; the issuer of the provider. With no issuer there is nothing to match
+    ;; it against, so initialization fails closed instead of silently
+    ;; skipping the check.
+    (when-not (string? (:issuer provider))
+      (raise-invalid-sso-config
+       :hint "OIDC provider is missing issuer; rely on discovery or set it explicitly"
+       :provider (:id params)))
+
+    provider))
 
 (defmethod ig/assert-key ::providers/generic
   [_ params]
@@ -231,6 +249,7 @@
    {:client-id        (cf/get :google-client-id)
     :client-secret    (cf/get :google-client-secret)
     :scopes           #{"openid" "email" "profile"}
+    :issuer           "https://accounts.google.com"
     :auth-uri         "https://accounts.google.com/o/oauth2/v2/auth"
     :token-uri        "https://oauth2.googleapis.com/token"
     :user-uri         "https://openidconnect.googleapis.com/v1/userinfo"
@@ -351,6 +370,7 @@
   []
   (let [base (cf/get :gitlab-base-uri "https://gitlab.com")
         opts {:base-uri      base
+              :issuer        base
               :client-id     (cf/get :gitlab-client-id)
               :client-secret (cf/get :gitlab-client-secret)
               :scopes        #{"openid" "profile" "email"}
@@ -418,6 +438,7 @@
 
    [:id [:or :string ::sm/uuid]]
    [:base-uri {:optional true} ::sm/text]
+   [:issuer {:optional true} ::sm/text]
    [:token-uri {:optional true} ::sm/text]
    [:auth-uri {:optional true} ::sm/text]
    [:user-uri {:optional true} ::sm/text]
@@ -572,19 +593,19 @@
 
     (-> response :body json/decode)))
 
+;; Per OIDC core 3.1.3.7: validate iss/aud/exp; failures must propagate
+;; so they cannot be bypassed via the userinfo fallback in `get-info`.
 (defn- get-id-token-claims
   [provider tdata]
-  (try
-    (when (:token/id tdata)
-      (let [{:keys [kid alg]} (jwt/decode-header (:token/id tdata))]
-        (when-let [key (if (str/starts-with? (name alg) "hs")
-                         (:client-secret provider)
-                         (get-in provider [:jwks kid]))]
-
-          (jwt/unsign (:token/id tdata) key {:alg alg}))))
-    (catch Throwable cause
-      (l/warn :hint "unable to get user info from JWT token (unexpected exception)"
-              :cause cause))))
+  (when-let [token (:token/id tdata)]
+    (let [{:keys [kid alg]} (jwt/decode-header token)]
+      (when-let [key (if (str/starts-with? (name alg) "hs")
+                       (:client-secret provider)
+                       (get-in provider [:jwks kid]))]
+        (jwt/unsign token key
+                    (cond-> {:alg alg
+                             :aud (:client-id provider)}
+                      (:issuer provider) (assoc :iss (:issuer provider))))))))
 
 (def ^:private schema:info
   [:map

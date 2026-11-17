@@ -192,6 +192,12 @@ PENPOT_OIDC_TOKEN_URI: <uri>
 PENPOT_OIDC_USER_URI: <uri>
 PENPOT_OIDC_JWKS_URI: <uri>
 
+# Issuer the `iss` claim of the ID token is validated against. Optional: it
+# is taken from the discovery document. It is required when the endpoints
+# above are set explicitly, because then there is no discovery step to read
+# it from.
+PENPOT_OIDC_ISSUER: <uri>
+
 # Optional list of roles that users are required to have. If no role
 # is provided, roles checking  disabled.
 PENPOT_OIDC_ROLES: "role1 role2"
@@ -221,6 +227,17 @@ PENPOT_SSRF_ALLOWED_HOSTS: "<internal-provider-host> <public-provider-host>"
 
 This is commonly required when the provider is reachable from the browser via a public
 URL but from the backend via a different internal hostname.
+<br />
+
+__Since version 2.21.0__
+
+The ID token the provider returns is verified against the issuer of the provider
+(the `iss` claim) and against the configured client id (the `aud` claim). When the
+endpoints are overridden explicitly there is no discovery document to read the
+issuer from, so <code class="language-bash">PENPOT_OIDC_ISSUER</code> must be set.
+Otherwise the provider refuses to initialize and only password login is left. A
+provider that authenticates with discovery needs no extra configuration, and the
+Google and GitLab providers are not affected.
 <br />
 
 __Since version 1.6.0__

@@ -544,7 +544,10 @@
     :fn (mg/resource "app/migrations/sql/0158-partition-file-change.sql")}
 
    {:name "0159-add-file-data-storage-object-id"
-    :fn (mg/resource "app/migrations/sql/0159-add-file-data-storage-object-id.sql")}])
+    :fn (mg/resource "app/migrations/sql/0159-add-file-data-storage-object-id.sql")}
+
+   {:name "0160-add-issuer-to-sso-provider"
+    :fn (mg/resource "app/migrations/sql/0160-add-issuer-to-sso-provider.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]
