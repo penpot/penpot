@@ -90,9 +90,8 @@ pub struct TextContentSize {
 
 const DEFAULT_TEXT_CONTENT_SIZE: f32 = 0.01;
 
-/// Matches `marginRight: "1px"` on `.paragraph-set` in the HTML text renderer
-/// (`frontend/src/app/main/ui/shapes/text/styles.cljs`). DOM `getBoundingClientRect`
-/// includes that margin in auto-width measurements; Skia `longest_line()` does not.
+/// The 1px `marginRight` of `.paragraph-set` (frontend `shapes/text/styles.cljs`), which DOM
+/// auto-width measurements include and Skia `max_intrinsic_width()` does not.
 const PARAGRAPH_SET_MARGIN_RIGHT: f32 = 1.0;
 
 impl TextContentSize {
@@ -648,6 +647,16 @@ impl TextContent {
                     max_y = max_y.max(line_baseline + line.descent as f32);
                     min_x = min_x.min(x + line.left as f32);
                     max_x = max_x.max(x + line.left as f32 + line.width as f32);
+
+                    // line.width drops trailing spaces, which some fonts paint.
+                    for text_box in paragraph.get_rects_for_range(
+                        line.start_index..line.end_index,
+                        RectHeightStyle::Tight,
+                        RectWidthStyle::Tight,
+                    ) {
+                        min_x = min_x.min(x + text_box.rect.left);
+                        max_x = max_x.max(x + text_box.rect.right);
+                    }
                     has_lines = true;
                 }
                 y_accum += paragraph.height();
@@ -1056,7 +1065,8 @@ impl TextContent {
 
     /// Performs an Auto Width text layout.
     fn text_layout_auto_width(&self) -> TextContentLayoutResult {
-        // Left-aligned MAX-width pass: longest_line() is glyph width, not the huge container.
+        // Left-aligned MAX-width pass. max_intrinsic_width() keeps trailing spaces;
+        // longest_line() drops them.
         let mut measure_builders = self.paragraph_builders(
             None,
             false,
@@ -1076,7 +1086,7 @@ impl TextContent {
             .iter()
             .flatten()
             .fold(0.0_f32, |auto_width, paragraph| {
-                f32::max(paragraph.longest_line(), auto_width)
+                f32::max(paragraph.max_intrinsic_width(), auto_width)
             })
             .ceil();
 
@@ -2730,5 +2740,63 @@ mod tests {
         layout.paragraphs = Rc::new(vec![vec![]]);
         layout.clear();
         assert!(layout.needs_update());
+    }
+
+    /// A laid-out 200x100 text at the origin with one paragraph of `text`.
+    fn plain_text_shape(grow_type: GrowType, text: &str) -> Shape {
+        let mut content = TextContent::new(Rect::from_xywh(0.0, 0.0, 200.0, 100.0), grow_type);
+        content.add_paragraph(test_paragraph(&[text]));
+
+        let mut shape = Shape::new(Uuid::nil());
+        shape.set_shape_type(shapes::Type::Text(content));
+        shape.set_selrect(0.0, 0.0, 200.0, 100.0);
+        shape
+    }
+
+    fn auto_width_of(text: &str) -> f32 {
+        let mut content =
+            TextContent::new(Rect::from_xywh(0.0, 0.0, 200.0, 100.0), GrowType::AutoWidth);
+        content.add_paragraph(test_paragraph(&[text]));
+        content
+            .update_layout(Rect::from_xywh(0.0, 0.0, 200.0, 100.0))
+            .width
+    }
+
+    #[test]
+    fn auto_width_includes_trailing_spaces() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let trimmed = auto_width_of("hello");
+        let with_spaces = auto_width_of("hello   ");
+        assert!(
+            with_spaces > trimmed + 3.0,
+            "trimmed: {trimmed}, with spaces: {with_spaces}"
+        );
+    }
+
+    #[test]
+    fn auto_width_counts_leading_and_trailing_spaces_alike() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let leading = auto_width_of("   hello");
+        let trailing = auto_width_of("hello   ");
+        assert!(
+            (leading - trailing).abs() < 1.0,
+            "leading: {leading}, trailing: {trailing}"
+        );
+    }
+
+    #[test]
+    fn extrect_includes_trailing_spaces() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        for grow_type in [GrowType::Fixed, GrowType::AutoHeight] {
+            let trimmed = text_extrect(&plain_text_shape(grow_type, "hello"));
+            let with_spaces = text_extrect(&plain_text_shape(grow_type, "hello   "));
+            assert!(
+                with_spaces.right() > trimmed.right() + 3.0,
+                "{grow_type:?}: trimmed {trimmed:?}, with spaces {with_spaces:?}"
+            );
+        }
     }
 }
