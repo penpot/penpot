@@ -8,6 +8,7 @@
   (:require
    [app.common.files.changes :as ch]
    [app.common.files.changes-builder :as pcb]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.logic.duplicate :as cld]
    [app.common.logic.libraries :as cll]
@@ -157,3 +158,26 @@
       ;; - Change color of the copy you duplicated from, and check that it's NOT PROPAGATED.
       (tho/update-bottom-color :group-3 "#333333" :propagate-fn propagate-all-component-changes)
       (validate #(t/is (= (count-shapes % "rect-simple-1" "#333333") 2)))))
+
+(t/deftest a-pasted-nested-copy-takes-only-the-overrides-of-the-references-it-skips
+  ;; the nested copy of :c2 that a copy of :c3 holds, pasted out of it, refers
+  ;; to the main of :c2, whose nested rect overrides its fill; the pasted rect
+  ;; shows that fill without overriding it, and keeps no touched set
+  (let [file    (-> (thf/sample-file :file1)
+                    (tho/add-two-levels-nested-component-with-copy
+                     :c1 :main1-root :main1-child
+                     :c2 :main2-root :nested-head1
+                     :c3 :main3-root :nested-head2 :nested-subhead2
+                     :copy3
+                     :nested-head1-params {:children-labels [:nested-rect1]}
+                     :copy2-root-params {:children-labels [:copy-head2 :copy-subhead2 :copy-rect]})
+                    (tho/update-color :nested-rect1 "#111111"))
+        page    (thf/current-page file)
+        objects (:objects page)
+        ids     (cfh/get-children-ids-with-self objects (thi/id :copy-head2))
+        copied  (cld/advance-copied-objects file page {(:id file) file}
+                                            (select-keys objects ids) [(thi/id :copy-head2)])
+        rect    (get copied (thi/id :copy-rect))]
+    (t/is (= #{:fill-group} (:touched (get objects (thi/id :nested-rect1)))))
+    (t/is (= (thi/id :nested-rect1) (:shape-ref rect)))
+    (t/is (not (contains? rect :touched)) (pr-str (:touched rect)))))

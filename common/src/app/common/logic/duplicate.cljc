@@ -473,16 +473,22 @@
         advance-shape (fn [level-delta objects shape]
                         (let [new-shape-ref (ctf/advance-shape-ref file page libraries shape level-delta
                                                                    {:include-deleted? true})]
-                          (cond-> objects
-                            (and (some? new-shape-ref) (not= new-shape-ref (:shape-ref shape)))
-                            (-> (assoc-in [(:id shape) :shape-ref] new-shape-ref)
-                                (assoc-in [(:id shape) :touched]
-                                          (set/union
+                          (if (and (some? new-shape-ref) (not= new-shape-ref (:shape-ref shape)))
+                            (let [;; the references between the shape and its new one
+                                  skipped (->> (ctf/get-ref-chain-until-target-ref container libraries shape new-shape-ref)
+                                               rest
+                                               (remove #(= (:id %) new-shape-ref)))
+                                  touched (set/union
                                            (or (:touched shape) #{})
                                            (cli/inherited-touched
                                             shape
-                                            (ctf/get-touched-from-ref-chain-until-target-ref
-                                             container libraries shape new-shape-ref))))))))
+                                            (into #{} (mapcat :touched) skipped)))]
+                              (-> (assoc-in objects [(:id shape) :shape-ref] new-shape-ref)
+                                  ;; a shape with no touched group has no touched set
+                                  (update (:id shape) #(if (seq touched)
+                                                         (assoc % :touched touched)
+                                                         (dissoc % :touched)))))
+                            objects)))
         detach-copy   (fn [objects shape]
                         (reduce #(update %1 %2 ctk/detach-shape)
                                 objects
