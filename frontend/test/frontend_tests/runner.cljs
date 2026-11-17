@@ -139,6 +139,7 @@
    [frontend-tests.tokens.referenced-token-value-test]
    [frontend-tests.tokens.shadow-form-test]
    [frontend-tests.tokens.style-dictionary-test]
+   [frontend-tests.tokens.token-application-test]
    [frontend-tests.tokens.token-errors-test]
    [frontend-tests.tokens.token-group-test]
    [frontend-tests.tokens.token-parsing-test]
@@ -356,6 +357,7 @@
    'frontend-tests.tokens.referenced-token-value-test
    'frontend-tests.tokens.shadow-form-test
    'frontend-tests.tokens.style-dictionary-test
+   'frontend-tests.tokens.token-application-test
    'frontend-tests.tokens.token-errors-test
    'frontend-tests.tokens.token-group-test
    'frontend-tests.tokens.token-parsing-test
