@@ -9,8 +9,15 @@
   renders the batches one at a time, sends each render back and uploads
   the ones asked for."
   (:require
+   [app.common.test-helpers.compositions :as ctho]
+   [app.common.test-helpers.files :as cthf]
+   [app.common.test-helpers.ids-map :as cthi]
+   [app.common.test-helpers.shapes :as cths]
+   [app.common.test-helpers.tokens :as ctht]
    [app.common.thumbnails :as thc]
+   [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
+   [app.main.fonts :as fonts]
    [app.util.http :as http]
    [app.util.webapi :as wapi]
    [app.worker.component-thumbnails :as wct]
@@ -93,3 +100,46 @@
                :object-id (thc/fmt-object-id file-id page-id edited "component")
                :tag "component"}]
              (mapv :query @requests)))))
+
+(t/deftest an-out-of-date-main-is-set-before-it-renders
+  (cthi/reset-idmap!)
+  (let [file    (-> (cthf/sample-file :file)
+                    (ctho/add-frame :root)
+                    (ctht/apply-token-to-shape :root "radius" [:r1] [:r1] 10)
+                    (cths/update-shape :root :token-values {:r1 10}))
+        objects (:objects (cthf/current-page file))
+        root-id (cthi/id :root)
+        request {:page-id (cthf/current-page-id file)
+                 :root-id root-id
+                 :objects (select-keys objects [root-id])}]
+    (t/is (= 50 (get-in (#'wct/set-token-values (assoc request :token-values {"radius" 50}))
+                        [:objects root-id :r1])))
+    (t/is (= request (#'wct/set-token-values request)) "without values it renders as it came")))
+
+(t/deftest ^:async a-main-is-set-with-the-fonts-of-the-team
+  (cthi/reset-idmap!)
+  (let [font    {:id "custom-brand" :family "Brand" :variants [{:id "regular" :weight "400" :style "normal"}]}
+        file    (-> (cthf/sample-file :file)
+                    (ctho/add-text :root "Hello")
+                    (ctht/apply-token-to-shape :root "family" [:font-family] [:font-family] "sourcesanspro")
+                    (cths/update-shape :root :token-values {:font-family ["sourcesanspro"]}))
+        objects (:objects (cthf/current-page file))
+        root-id (cthi/id :root)
+        batches (atom [])]
+    (await
+     (mock/with-mocks*
+       {wwasm/submit (mock/stub (fn [f] (swap! batches conj f) (rx/empty)))
+        wct/render-batch (mock/stub identity)}
+       (impl/handler {:cmd :thumbnails/render-component
+                      :file-id file-id
+                      :page-id (cthf/current-page-id file)
+                      :root-id root-id
+                      :objects (select-keys objects [root-id])
+                      :token-values {"family" ["Brand"]}
+                      :custom-fonts [font]}
+                     nil)
+       (await (async/wait-for #(seq @batches) "the batch"))))
+    (let [[{:keys [objects]}] ((first @batches))]
+      (t/is (every? #(= "custom-brand" (:font-id %))
+                    (txt/node-seq txt/is-text-node? (get-in objects [root-id :content])))))
+    (fonts/register! :custom [])))

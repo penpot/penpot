@@ -12,8 +12,12 @@
    [app.common.test-helpers.compositions :as ctho]
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.ids-map :as cthi]
+   [app.common.test-helpers.tokens :as ctht]
+   [app.main.data.helpers :as dsh]
    [app.main.data.workspace.thumbnails :as dwt]
    [app.main.data.workspace.thumbnails-wasm :as dwt.wasm]
+   [app.main.data.workspace.tokens.application :as dwta]
+   [app.main.data.workspace.tokens.correction :as-alias dwtc]
    [app.main.worker :as mw]
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
@@ -44,6 +48,52 @@
              (mapv #(dissoc % :objects) @sent)))
     (t/is (= #{(cthi/id :root) (cthi/id :child)}
              (set (keys (:objects (first @sent))))))))
+
+(defn- ^:async sent-token-values
+  "The `:token-values` sent for the main `:root` of a file that applies a
+  radius token, with the tokens check snapshot that `snapshot` builds from
+  the state."
+  [snapshot]
+  (cthi/reset-idmap!)
+  (let [file    (-> (ctht/sample-file-with-tokens)
+                    (ctho/add-frame-with-child :root :child)
+                    (ctht/apply-token-to-shape :root "radius" [:r1] [:r1] 10))
+        state   @(ths/setup-store file)
+        state   (assoc state ::dwtc/snapshot (snapshot state))
+        sent    (atom [])]
+    (await
+     (mock/with-mocks*
+       {mw/emit! (mock/stub (fn [message] (swap! sent conj message) (rx/empty)))}
+       (ptk/effect (dwt.wasm/render-thumbnail (:id file) (cthf/current-page-id file) (cthi/id :root))
+                   state nil)))
+    (:token-values (first @sent))))
+
+(def ^:private resolved
+  {"radius" {:resolved-value 50} "unused" {:resolved-value 1}})
+
+(t/deftest ^:async the-values-of-the-tokens-of-the-main-go-with-it
+  (t/is (= {"radius" 50}
+           (await (sent-token-values
+                   (fn [state]
+                     {:tokens-lib (dsh/lookup-tokens-lib state)
+                      :tokens-status (dsh/lookup-tokens-status state)
+                      :base-font-size (dwta/base-font-size state)
+                      :resolved resolved}))))
+        "only the tokens the main applies")
+  (t/is (nil? (await (sent-token-values
+                      (fn [state]
+                        {:tokens-lib nil
+                         :tokens-status (dsh/lookup-tokens-status state)
+                         :base-font-size (dwta/base-font-size state)
+                         :resolved resolved}))))
+        "not when they were resolved for other tokens")
+  (t/is (nil? (await (sent-token-values
+                      (fn [state]
+                        {:tokens-lib (dsh/lookup-tokens-lib state)
+                         :tokens-status (dsh/lookup-tokens-status state)
+                         :base-font-size 20
+                         :resolved resolved}))))
+        "not when they were resolved for another base font size"))
 
 (t/deftest ^:async a-missing-main-sends-nothing
   (cthi/reset-idmap!)
