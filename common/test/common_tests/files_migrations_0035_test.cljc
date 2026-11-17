@@ -190,18 +190,19 @@
             "the frame that exists is kept"))))
 
 ;; ======================================================================
-;; 0035-fix-shape-svg-attrs-and-defs
+;; 0037-fix-shape-svg-attrs-and-defs
 ;; Stored svg attribute keys are kebab-case (issue #11947). Old birth and
 ;; the cleaner era stored camelCase React prop names, which the v3 reader
-;; kebab-ized on import beyond repair. This migration converts once, with
+;; kebab-ized on import beyond repair. This migration converts them with
 ;; the same birth transforms: `:svg-attrs` and `:svg-defs` node attrs go
 ;; through the whitelist+kebab transform, svg-raw `:content` attrs are
-;; kebab-ized spelling-only. It replaces "0021-fix-shape-svg-attrs" (id
-;; withdrawn): files that recorded it migrate again through this one.
+;; kebab-ized spelling-only. It replaces "0021-fix-shape-svg-attrs" and
+;; "0035-fix-shape-svg-attrs-and-defs" (ids withdrawn): files that
+;; recorded either migrate again through this one.
 ;; ======================================================================
 
 (def ^:private migration-id
-  "0035-fix-shape-svg-attrs-and-defs")
+  "0037-fix-shape-svg-attrs-and-defs")
 
 (defn- make-shape
   [shape-id shape]
@@ -496,26 +497,31 @@
     (t/is (= 0 (:x viewbox)))
     (t/is (= 0.01 (:width viewbox)))))
 
-(t/deftest migration-0035-runs-through-file-migration
-  ;; A file that recorded the withdrawn "0021-fix-shape-svg-attrs" (and
-  ;; everything else current) still needs migration: 0021 left
-  ;; `available-migrations`, which re-arms it for 0035.
-  (let [shape-id (uuid/next)
-        file     (ctf/make-file {:name "Legacy camel svg attrs"})
-        page-id  (first (get-in file [:data :pages]))
-        shape    (-> (cts/setup-shape {:id shape-id :type :rect})
-                     (assoc :svg-attrs {:fillRule "evenodd"}))
-        file     (-> file
-                     (assoc :migrations (-> cfm/available-migrations
-                                            (disj migration-id)
-                                            (conj "0021-fix-shape-svg-attrs")))
-                     (assoc-in [:data :pages-index page-id :objects shape-id] shape))
-        file'    (cfm/migrate-file file {})]
-    (t/is (cfm/need-migration? file) "new migration detected")
-    (t/is (not (cfm/need-migration? file')) "new migration recorded")
-    (t/is (contains? (:migrations file') migration-id) "migration id persisted")
-    (t/is (not (contains? cfm/available-migrations "0021-fix-shape-svg-attrs"))
-          "the withdrawn 0021 id stays out: its camel-restoring transform must never run again")
-    (t/is (= "evenodd"
-             (get-in file' [:data :pages-index page-id :objects shape-id :svg-attrs :fill-rule]))
-          "migration repaired file data before schema validation")))
+(t/deftest migration-0037-runs-through-file-migration
+  ;; A file that recorded a withdrawn svg-attrs migration (and everything
+  ;; else current) still needs migration: the withdrawn id left
+  ;; `available-migrations`, which re-arms it for 0037. A file that
+  ;; recorded 0035 holds camelCase keys when a client that loaded it
+  ;; before 0035 ran saved them afterwards (#13107).
+  (doseq [withdrawn ["0021-fix-shape-svg-attrs"
+                     "0035-fix-shape-svg-attrs-and-defs"]]
+    (t/testing withdrawn
+      (let [shape-id (uuid/next)
+            file     (ctf/make-file {:name "Legacy camel svg attrs"})
+            page-id  (first (get-in file [:data :pages]))
+            shape    (-> (cts/setup-shape {:id shape-id :type :rect})
+                         (assoc :svg-attrs {:fillRule "evenodd"}))
+            file     (-> file
+                         (assoc :migrations (-> cfm/available-migrations
+                                                (disj migration-id)
+                                                (conj withdrawn)))
+                         (assoc-in [:data :pages-index page-id :objects shape-id] shape))
+            file'    (cfm/migrate-file file {})]
+        (t/is (cfm/need-migration? file) "new migration detected")
+        (t/is (not (cfm/need-migration? file')) "new migration recorded")
+        (t/is (contains? (:migrations file') migration-id) "migration id persisted")
+        (t/is (not (contains? cfm/available-migrations withdrawn))
+              "the withdrawn id stays out of available-migrations")
+        (t/is (= "evenodd"
+                 (get-in file' [:data :pages-index page-id :objects shape-id :svg-attrs :fill-rule]))
+              "migration repaired file data before schema validation")))))
