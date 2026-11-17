@@ -25,7 +25,7 @@
    [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.sidebar.layer-name :refer [layer-name*]]
    [app.util.dom :as dom]
-   [app.util.i18n :refer [tr]]
+   [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [app.util.shape-icon :as usi]
    [app.util.timers :as ts]
@@ -58,6 +58,18 @@
            (apply st/emit! (map dw/dehighlight-shape leave)))
          (when (seq enter)
            (apply st/emit! (map dw/highlight-shape enter))))))))
+
+(mf/defc layer-comments-count*
+  "The open comment threads that point at the layer, when it has any."
+  {::mf/private true}
+  [{:keys [id]}]
+  (let [counts (mf/deref refs/layer-comment-counts)
+        total  (get counts id 0)]
+    (when (pos? total)
+      [:span {:class (stl/css :comments-count)
+              :title (tr "workspace.sidebar.layers.comments" (i18n/c total))}
+       [:> icon* {:icon-id i/comments :size "s"}]
+       total])))
 
 (mf/defc layer-item-inner*
   [{:keys [item depth parent-size name-ref children ref style rename-id
@@ -176,7 +188,8 @@
                         :variant-error variant-error
                         :component-id component-id
                         :is-hidden hidden?
-                        :on-tab-press on-tab-press}]]
+                        :on-tab-press on-tab-press}]
+       [:> layer-comments-count* {:id id}]]
       (when (not ^boolean is-read-only)
         [:div {:class (stl/css-case
                        :element-actions true

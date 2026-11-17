@@ -23,6 +23,7 @@
    [app.main.data.workspace.shortcuts :as wsc]
    [app.main.data.workspace.text.shortcuts :as tsc]
    [app.main.features :as features]
+   [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.streams :as ms]
    [app.main.ui.css-cursors :as cur]
@@ -92,9 +93,17 @@
       (when (not= size vport)
         (st/emit! (dw/initialize-viewport (dom/get-client-size prnt)))))))
 
+(declare ^:private setup-cursor*)
+
 (defn setup-cursor [cursor alt? mod? space? panning drawing-tool drawing-path? path-editing? path-drag-cursor z? workspace-read-only? can-alt-duplicate?]
+  ;; the task tool rides on the comments tool, with a cursor of its own
+  (let [local      (mf/deref refs/review-local)
+        task-tool? (= :task (:tool local))]
+    (setup-cursor* cursor alt? mod? space? panning drawing-tool drawing-path? path-editing? path-drag-cursor z? workspace-read-only? can-alt-duplicate? task-tool?)))
+
+(defn- setup-cursor* [cursor alt? mod? space? panning drawing-tool drawing-path? path-editing? path-drag-cursor z? workspace-read-only? can-alt-duplicate? task-tool?]
   (mf/use-effect
-   (mf/deps @cursor @alt? @mod? @space? panning drawing-tool drawing-path? path-editing? path-drag-cursor z? workspace-read-only? can-alt-duplicate?)
+   (mf/deps @cursor @alt? @mod? @space? panning drawing-tool drawing-path? path-editing? path-drag-cursor z? workspace-read-only? can-alt-duplicate? task-tool?)
    (fn []
      (let [show-pen? (or (= drawing-tool :path)
                          (and drawing-path?
@@ -111,6 +120,7 @@
              (or panning @space?)            (utils/get-cursor :hand)
              ;; Keep the drag cursor across the viewport.
              (some? path-drag-cursor)        (cur/get-static path-drag-cursor)
+             (and task-tool? (= drawing-tool :comments)) (utils/get-cursor :create-task)
              (= drawing-tool :comments)      (utils/get-cursor :comments)
              (= drawing-tool :frame)         (utils/get-cursor :create-artboard)
              (= drawing-tool :rect)          (utils/get-cursor :create-rectangle)

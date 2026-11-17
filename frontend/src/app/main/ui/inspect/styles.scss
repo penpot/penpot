@@ -11,7 +11,7 @@
 }
 
 .styles-tab-workspace {
-  block-size: calc(100vh - px2rem(180)); // TODO: Fix this hardcoded value
+  block-size: var(--inspect-tab-block-size, calc(100vh - px2rem(180))); // TODO: Fix this hardcoded value
 }
 
 .exports-wrapper {

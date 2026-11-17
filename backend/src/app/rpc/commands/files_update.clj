@@ -14,6 +14,7 @@
    [app.common.files.changes :as cpc]
    [app.common.files.migrations :as fmg]
    [app.common.files.repair :as cfr]
+   [app.common.files.review-activity :as ra]
    [app.common.files.validate :as val]
    [app.common.logging :as l]
    [app.common.schema :as sm]
@@ -329,6 +330,47 @@
                    :reprocess-changes-ms (get timings :reprocess-changes-ms)))
           (throw cause))))))
 
+;; --- Design review activity
+
+(def ^:private sql:get-open-review-of-branch-file
+  "SELECT id FROM file_pull_request
+    WHERE source_file_id = ?
+      AND status = 'open'
+      AND deleted_at IS NULL")
+
+(defn- get-open-review-id
+  "The open design review of a branch file, if it has one."
+  [conn file-id]
+  (:id (db/exec-one! conn [sql:get-open-review-of-branch-file file-id])))
+
+(defn- track-review-activity
+  "Wrap the changes application of a save so it also works out what the
+  save did to each layer it touched, into the volatile `activity`: the
+  touched layers are read before the changes apply and again after (see
+  `app.common.files.review-activity`). Only the changes the save
+  accepted (`::changes`) count: a rejected commit touched nothing."
+  [update-fn activity]
+  (fn [cfg file changes commits skip-validate]
+    (let [before (ra/collect-before (:data file) (ra/touched changes))
+          result (update-fn cfg file changes commits skip-validate)]
+      (vreset! activity (ra/entries before (:data result) (ra/touched (::changes result))))
+      result)))
+
+(defn- record-review-activity
+  "Record the activity of a save of a branch under design review: who
+  saved, the revn the save produced and what it did to each layer. A save
+  that changed no layer records nothing."
+  [conn review-id profile-id {:keys [revn]} entries timestamp]
+  (when (seq entries)
+    (db/insert! conn :file-pull-request-activity
+                {:id (uuid/next)
+                 :pull-request-id review-id
+                 :profile-id profile-id
+                 :revn revn
+                 :entries (blob/encode entries)
+                 :created-at timestamp}
+                {::db/return-keys false})))
+
 (defn- update-file*
   "Internal function, part of the update-file process, that encapsulates
   the changes application offload to a separated thread and emit all
@@ -358,11 +400,22 @@
           revn
           (get file :revn)
 
+          ;; A save of a branch under design review records what it did
+          ;; to each layer, for the activity of the review.
+          review-id
+          (when (:is-branch file)
+            (get-open-review-id conn (:id file)))
+
+          activity
+          (volatile! nil)
+
           file
           (binding [cfeat/*current*  features
                     cfeat/*previous* (:features file)]
             (update-file-data! cfg file
-                               process-changes-and-validate
+                               (if review-id
+                                 (track-review-activity process-changes-and-validate activity)
+                                 process-changes-and-validate)
                                changes commits skip-validate))
 
           ;; Only the accepted changes are stored and broadcast. The xlog
@@ -468,6 +521,10 @@
 
         (when (contains? cf/flags :redis-cache)
           (invalidate-caches! cfg file))
+
+        (when review-id
+          (record-review-activity conn review-id profile-id file @activity
+                                  (or timestamp (ct/now))))
 
         ;; Send asynchronous notifications
         (when repair

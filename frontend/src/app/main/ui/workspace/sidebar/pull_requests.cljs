@@ -2,7 +2,7 @@
 ;; License v. 2.0. If a copy of the MPL was not distributed with this
 ;; file You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.sidebar.pull-requests
   "Pull request UI. A pull request is presented as a STATE of its branch
@@ -19,6 +19,7 @@
    [app.main.data.modal :as modal]
    [app.main.data.team :as dtm]
    [app.main.data.workspace.pull-requests :as dwpr]
+   [app.main.data.workspace.review :as dwrv]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.ds.buttons.button :refer [button*]]
@@ -32,7 +33,8 @@
    [app.main.ui.ds.layout.modal :refer [modal* modal-header* modal-content* modal-footer*]]
    [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
    [app.main.ui.ds.product.avatar :refer [avatar*]]
-   [app.main.ui.ds.product.branch-pill :refer [branch-pill*]]
+   [app.main.ui.ds.product.progress-bar :refer [progress-bar*]]
+   [app.main.ui.ds.tooltip :refer [tooltip*]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
@@ -53,13 +55,15 @@
       "in-review"         :in-review
       :open)))
 
-(def ^:private state->label
-  {:open              "workspace.pull-requests.state.open"
-   :in-review         "workspace.pull-requests.state.in-review"
-   :approved          "workspace.pull-requests.state.approved"
-   :changes-requested "workspace.pull-requests.state.changes-requested"
-   :merged            "workspace.pull-requests.state.merged"
-   :closed            "workspace.pull-requests.state.closed"})
+(defn- state-label
+  [state]
+  (case state
+    :open              (tr "workspace.pull-requests.state.open")
+    :in-review         (tr "workspace.pull-requests.state.in-review")
+    :approved          (tr "workspace.pull-requests.state.approved")
+    :changes-requested (tr "workspace.pull-requests.state.changes-requested")
+    :merged            (tr "workspace.pull-requests.state.merged")
+    :closed            (tr "workspace.pull-requests.state.closed")))
 
 (mf/defc pr-state-badge*
   [{:keys [pr]}]
@@ -71,7 +75,7 @@
                                  :badge-changes (= state :changes-requested)
                                  :badge-merged (= state :merged)
                                  :badge-closed (= state :closed))}
-     (tr (get state->label state))]))
+     (state-label state)]))
 
 (defn current-approvals
   "[current-approvals total-reviewers] of a pull request; stale verdicts
@@ -86,6 +90,7 @@
   counts feed their action buttons)."
   [pr]
   {:id (:file-branch-id pr)
+   :branch-file-id (:source-file-id pr)
    :name (:branch-name pr)
    :status "open"
    :ahead (:ahead pr)
@@ -119,6 +124,16 @@
                          :accept-label (tr "workspace.pull-requests.actions.close")
                          :accept-style :danger
                          :on-accept (fn [_] (st/emit! (dwpr/close-pull-request (:id pr))))})))
+
+;; --- The action of a banner
+
+(mf/defc banner-button*
+  "A quiet action inside a banner on the canvas, with what it does as
+  `children`."
+  [{:keys [class children] :rest props}]
+  (let [props (mf/spread-props props {:class [class (stl/css :banner-button)]
+                                      :type "button"})]
+    [:> :button props children]))
 
 ;; --- Dialog header
 
@@ -246,15 +261,17 @@
               [:> avatar* {:profile member :variant "S"}]
               [:span {:class (stl/css :reviewer-name)} (:fullname member)]
               (when (contains? selected (:id member))
-                [:> i/icon* {:icon-id i/tick :size "s"}])]])])]
+                [:> i/icon* {:icon-id i/tick :size "s" :class (stl/css :reviewer-tick)}])]])])]
 
       [:> context-notification* {:level :info :type :context}
        (tr "workspace.pull-requests.create.info")]]
 
      [:> modal-footer* {:class (stl/css :dialog-footer)}
-      [:> button* {:variant "secondary" :on-click on-close}
+      [:> button* {:class (stl/css :dialog-action)
+                   :variant "secondary" :on-click on-close}
        (tr "labels.cancel")]
-      [:> button* {:variant "primary"
+      [:> button* {:class (stl/css :dialog-action)
+                   :variant "primary"
                    :icon i/git-pull-request-create-arrow
                    :disabled (not valid?)
                    :on-click on-submit}
@@ -333,9 +350,11 @@
                    :rows 3}]]]
 
      [:> modal-footer* {:class (stl/css :dialog-footer)}
-      [:> button* {:variant "secondary" :on-click on-close}
+      [:> button* {:class (stl/css :dialog-action)
+                   :variant "secondary" :on-click on-close}
        (tr "labels.cancel")]
-      [:> button* {:variant "primary"
+      [:> button* {:class (stl/css :dialog-action)
+                   :variant "primary"
                    :on-click on-submit}
        (tr "workspace.pull-requests.review.submit")]]]))
 
@@ -407,7 +426,7 @@
           ;; the route reads branch → target BRANCH (reviews always merge
           ;; into main); the target file name would be redundant here,
           ;; inside the file itself
-          (dm/str (:branch-name pr) " → " (tr "workspace.branches.main"))]
+          (tr "workspace.review.route" (:branch-name pr) (tr "workspace.branches.main"))]
          (when (and open? (:outdated pr))
            [:span {:class (stl/css :pr-badge :badge-outdated)}
             (tr "workspace.pull-requests.badge.outdated")])
@@ -470,117 +489,106 @@
                    :else
                    (tr "workspace.pull-requests.review-state.pending"))]
                 (when-not (str/blank? (:comment review))
-                  [:p {:class (stl/css :reviewer-comment)} (:comment review)])]))]])]
+                  [:> text* {:as "p" :typography t/body-small :class (stl/css :reviewer-comment)}
+                   (:comment review)])]))]])]
 
       (when-not (str/blank? (:description pr))
         [:div {:class (stl/css :pr-info-description-block)}
          [:label {:class (stl/css :field-label)}
           (tr "workspace.pull-requests.info.description")]
-         [:p {:class (stl/css :pr-info-description)} (:description pr)]])]
+         [:> text* {:as "p" :typography t/body-medium :class (stl/css :pr-info-description)}
+          (:description pr)]])]
 
      [:> modal-footer* {:class (stl/css :dialog-footer)}
       (when (and (or author? admin?) open?)
-        [:> button* {:variant "secondary"
+        [:> button* {:class (stl/css :dialog-action)
+                     :variant "secondary"
                      :on-click on-close-pr}
          (tr "workspace.pull-requests.actions.close")])
       (when (and (or author? admin?) closed?)
-        [:> button* {:variant "secondary"
+        [:> button* {:class (stl/css :dialog-action)
+                     :variant "secondary"
                      :on-click on-reopen-pr}
          (tr "workspace.pull-requests.actions.reopen")])
       (when (and open? (not reviewing?))
-        [:> button* {:variant "primary"
+        [:> button* {:class (stl/css :dialog-action)
+                     :variant "primary"
                      :icon i/arrow-up-right
                      :on-click on-open-review}
          (tr "workspace.pull-requests.actions.open-review")])
       (when (and open? can-merge?)
-        [:> button* {:variant "primary"
+        [:> button* {:class (stl/css :dialog-action)
+                     :variant "primary"
                      :icon i/git-merge
                      :on-click on-merge}
          (tr "workspace.pull-requests.actions.merge")])]]))
 
-;; --- Review sandbox banner (replaces the branch banner inside a sandbox)
+;; --- Review bar (replaces the branch banner inside a design review)
 
 (mf/defc pr-review-banner*
+  "The bar at the bottom of the canvas inside a design review: the review
+  being reviewed, the progress of its tasks, its details, the verdict of
+  the reviewer and the way out. The review is read-only; merging and
+  cancelling the review sit behind the menu.
+
+  When the branch moved past what the review shows, its author gets the
+  button that publishes the latest changes; everybody else gets a badge
+  that says the branch has changes they cannot see yet."
   []
-  (let [preview  (mf/deref refs/pull-request-preview)
-        pr       (:info preview)
-        profile  (mf/deref refs/profile)
-        team     (mf/deref refs/team)
-        author?  (= (:created-by pr) (:id profile))
-        reviewer? (some #(= (:profile-id %) (:id profile)) (:reviews pr))
-        ;; merging requires edition permissions on main, not on the open
-        ;; branch file, so the team role tells whether this user could
-        ;; integrate the branch
+  (let [preview    (mf/deref refs/pull-request-preview)
+        pr         (:info preview)
+        profile    (mf/deref refs/profile)
+        team       (mf/deref refs/team)
+        tasks*     (mf/deref refs/tasks)
+        author?    (= (:created-by pr) (:id profile))
+        reviewer?  (some #(= (:profile-id %) (:id profile)) (:reviews pr))
         can-merge? (boolean (get-in team [:permissions :can-edit]))
-        ;; same rule as the details dialog's "Cancel pull request"
         can-cancel? (and (or author? (boolean (get-in team [:permissions :is-admin])))
                          (= "open" (:status pr)))
-        [approvals total] (current-approvals pr)
+        outdated?  (boolean (:outdated pr))
 
-        collapsed*  (mf/use-state false)
-        collapsed?  (deref collapsed*)
-        on-toggle   (mf/use-fn #(swap! collapsed* not))
+        tasks      (mf/with-memo [tasks* pr]
+                     (filterv #(= (:id pr) (:pull-request-id %)) (vals tasks*)))
+        closed     (count (filter #(contains? #{"verified" "wont-do"} (:status %)) tasks))
+        total      (count tasks)
 
-        ;; secondary actions live behind the kebab menu so the banner
-        ;; only exposes the essential ones (compare / review)
         menu-open*     (mf/use-state false)
         menu-open?     (deref menu-open*)
         on-toggle-menu (mf/use-fn #(swap! menu-open* not))
         on-menu-change (mf/use-fn #(reset! menu-open* %))
 
-        on-info
-        (mf/use-fn
-         (mf/deps pr)
-         (fn [_]
-           (reset! menu-open* false)
-           (modal/show! :pull-request-info {:pr pr})))
+        on-details
+        (mf/use-fn #(st/emit! (dwrv/open-details "overview")))
 
-        on-compare
-        (mf/use-fn (mf/deps pr) #(open-compare! pr))
+        on-tasks
+        (mf/use-fn #(st/emit! (dwrv/set-panel-tab :tasks)))
 
         on-review
         (mf/use-fn (mf/deps pr) #(modal/show! :pull-request-review {:pr pr}))
 
         on-exit
-        (mf/use-fn
-         (fn [_]
-           (reset! menu-open* false)
-           (st/emit! (dwpr/exit-pull-request-preview))))
-
-        on-merge
-        (mf/use-fn
-         (mf/deps pr)
-         (fn [_]
-           (reset! menu-open* false)
-           (confirm-merge! pr)))
-
-        on-cancel
-        (mf/use-fn
-         (mf/deps pr)
-         (fn [_]
-           (reset! menu-open* false)
-           (confirm-close! pr)))
+        (mf/use-fn #(st/emit! (dwpr/exit-pull-request-preview)))
 
         on-publish
         (mf/use-fn
          (mf/deps pr)
-         (fn [_]
+         #(st/emit! (dwpr/update-pull-request-snapshot (:id pr))))
+
+        on-menu-action
+        (mf/use-fn
+         (mf/deps pr)
+         (fn [action]
            (reset! menu-open* false)
-           (st/emit! (dwpr/update-pull-request-snapshot (:id pr))
-                     (dwpr/refresh-pull-request-preview-info (:id pr)))))]
+           (case action
+             "compare" (open-compare! pr)
+             "merge"   (confirm-merge! pr)
+             "cancel"  (confirm-close! pr)
+             nil)))]
 
     (when (some? pr)
-      [:div {:class (stl/css-case :pr-banner true
-                                  :is-collapsed collapsed?)}
-       [:button {:class (stl/css :pr-banner-handle)
-                 :title (tr (if collapsed?
-                              "workspace.branches.banner.expand"
-                              "workspace.branches.banner.collapse"))
-                 :aria-label (tr (if collapsed?
-                                   "workspace.branches.banner.expand"
-                                   "workspace.branches.banner.collapse"))
-                 :on-click on-toggle}
-        [:div {:class (stl/css :pr-banner-handle-btn)}]]
+      [:div {:class (stl/css :pr-banner)
+             :role "region"
+             :aria-label (tr "workspace.review.bar.label")}
        [:div {:class (stl/css :pr-banner-content)}
         [:div {:class (stl/css :pr-banner-icon)}
          [:> i/icon* {:icon-id i/git-pull-request-arrow}]]
@@ -588,41 +596,47 @@
          [:span {:class (stl/css :pr-banner-title)}
           (tr "workspace.pull-requests.banner.reviewing")]
          [:span {:class (stl/css :pr-banner-name)} (:title pr)]
-         [:span {:class (stl/css :pr-banner-route)}
-          [:> branch-pill* {:label (:branch-name pr) :is-review true}]
-          [:> i/icon* {:icon-id i/arrow-long-right :size "s"}]
-          [:> branch-pill* {:label (tr "workspace.branches.main") :is-main true}]]]
+         ;; the author publishes them with the button instead
+         (when (and outdated? (not author?))
+           [:> tooltip* {:content (tr "workspace.pull-requests.badge.outdated-hint")
+                         :placement "top"}
+            [:span {:class (stl/css :pr-badge :badge-outdated)}
+             (tr "workspace.pull-requests.badge.outdated")]])]
 
-        [:div {:class (stl/css :pr-banner-badges)}
-         [:> pr-state-badge* {:pr pr}]
-         (when (:outdated pr)
-           [:span {:class (stl/css :pr-badge :badge-outdated)}
-            (tr "workspace.pull-requests.badge.outdated")])
-         (when (pos? (or (:conflicts pr) 0))
-           [:span {:class (stl/css :pr-badge :badge-conflicts)}
-            (tr "workspace.pull-requests.badge.conflicts" (dm/str (:conflicts pr)))])
-         (when (pos? total)
-           [:span {:class (stl/css :pr-banner-approvals)}
-            [:> i/icon* {:icon-id i/tick :size "s"}]
-            (dm/str approvals "/" total)])]
+        [:div {:class (stl/css :pr-banner-separator)}]
+
+        ;; the progress of the tasks shows once the review has any
+        (when (pos? total)
+          [:*
+           [:> banner-button* {:on-click on-tasks}
+            [:> i/icon* {:icon-id i/view-as-list :size "s"}]
+            [:span (tr "workspace.review.bar.tasks" closed total)]
+            [:> progress-bar* {:value closed
+                               :total total
+                               :class (stl/css :pr-banner-progress)
+                               :aria-hidden true}]]
+
+           [:div {:class (stl/css :pr-banner-separator)}]])
 
         [:div {:class (stl/css :pr-banner-actions)}
-         [:> button* {:variant "secondary"
-                      :icon i/git-compare-arrows
-                      :on-click on-compare}
-          (tr "workspace.branches.compare")]
-
+         [:> button* {:variant "secondary" :on-click on-details}
+          (tr "workspace.review.bar.details")]
+         (when (and outdated? author?)
+           [:> tooltip* {:content (tr "workspace.pull-requests.banner.publish-hint")
+                         :placement "top"}
+            [:> button* {:variant "primary" :on-click on-publish}
+             (tr "workspace.pull-requests.banner.publish")]])
          (when reviewer?
-           [:> button* {:variant "primary"
-                        :icon i/tick
-                        :on-click on-review}
-            (tr "workspace.pull-requests.banner.review")])
+           [:> button* {:variant "primary" :on-click on-review}
+            (tr "workspace.review.submit")])
+         [:> button* {:variant "ghost" :on-click on-exit}
+          (tr "workspace.pull-requests.banner.exit")]
 
-         ;; the banner sits at the bottom of the canvas: its menu opens
-         ;; upwards
+         ;; the bar sits at the bottom of the canvas: its menu opens upwards
          [:div {:class (stl/css :pr-banner-menu)}
           [:> menu* {:is-open menu-open?
                      :on-open-change on-menu-change
+                     :on-action on-menu-action
                      :placement "top end"
                      :trigger
                      (mf/html
@@ -631,16 +645,11 @@
                                         :aria-label (tr "labels.options")
                                         :aria-pressed menu-open?
                                         :on-click on-toggle-menu}])}
-           [:> menu-item* {:id "info" :on-action on-info}
-            (tr "workspace.pull-requests.menu.info")]
-           (when (and author? (:outdated pr))
-             [:> menu-item* {:id "publish" :on-action on-publish}
-              (tr "workspace.pull-requests.banner.publish")])
+           [:> menu-item* {:id "compare"}
+            (tr "workspace.branches.compare")]
            (when can-merge?
-             [:> menu-item* {:id "merge" :on-action on-merge}
+             [:> menu-item* {:id "merge"}
               (tr "workspace.pull-requests.actions.merge")])
-           [:> menu-item* {:id "exit" :on-action on-exit}
-            (tr "workspace.pull-requests.banner.exit")]
            (when can-cancel?
-             [:> menu-item* {:id "cancel" :on-action on-cancel}
+             [:> menu-item* {:id "cancel"}
               (tr "workspace.pull-requests.banner.cancel")])]]]]])))

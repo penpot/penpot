@@ -1,0 +1,105 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS SUBSIDIARY SL
+
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+
+.filter-menu {
+  position: relative;
+}
+
+.trigger {
+  --trigger-bg-color: var(--color-background-tertiary);
+
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+  inline-size: 100%;
+  block-size: $sz-32;
+  padding: var(--sp-s);
+  border: none;
+  border-radius: $br-8;
+  background-color: var(--trigger-bg-color);
+  color: var(--color-foreground-primary);
+  cursor: pointer;
+
+  &:hover {
+    --trigger-bg-color: var(--color-background-quaternary);
+  }
+}
+
+.trigger-label {
+  flex-grow: 1;
+  text-align: start;
+}
+
+.trigger-icon {
+  flex-shrink: 0;
+  color: var(--color-foreground-secondary);
+}
+
+.menu {
+  position: absolute;
+  inset-block-start: calc($sz-32 + $b-1);
+  inset-inline-start: 0;
+  z-index: var(--z-index-dropdown);
+  inline-size: 100%;
+  max-block-size: px2rem(300);
+  margin: 0;
+  padding: $b-2;
+  overflow: hidden auto;
+  border: $b-2 solid var(--color-background-quaternary);
+  border-radius: $br-8;
+  background-color: var(--color-background-tertiary);
+  box-shadow: 0 0 px2rem(12) 0 var(--color-shadow-dark);
+  list-style: none;
+}
+
+.item {
+  --item-bg-color: transparent;
+  --item-fg-color: var(--color-foreground-secondary);
+  --item-tick-color: transparent;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-s);
+  inline-size: 100%;
+  block-size: $sz-32;
+  padding: 0 var(--sp-s);
+  border: none;
+  border-radius: $br-6;
+  background-color: var(--item-bg-color);
+  color: var(--item-fg-color);
+  text-align: start;
+  cursor: pointer;
+
+  &:hover {
+    --item-bg-color: var(--color-background-quaternary);
+    --item-fg-color: var(--color-foreground-primary);
+  }
+
+  &.is-selected {
+    --item-fg-color: var(--color-foreground-primary);
+    --item-tick-color: var(--color-foreground-primary);
+  }
+}
+
+.item-label {
+  min-inline-size: 0;
+}
+
+.item-tick {
+  flex-shrink: 0;
+  color: var(--item-tick-color);
+}
+
+.separator {
+  margin-block: var(--sp-xs);
+  margin-inline: calc(-1 * var(--sp-xxs));
+  border-block-start: $b-1 solid var(--color-background-quaternary);
+}

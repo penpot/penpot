@@ -25,6 +25,8 @@
    [app.main.data.workspace.drawing :as dwd]
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.layout :as dwlo]
+   [app.main.data.workspace.review :as dwrv]
+   [app.main.data.workspace.tasks :as dwtk]
    [app.main.data.workspace.viewport-wasm :as dwvw]
    [app.main.data.workspace.zoom :as dwz]
    [app.main.repo :as rp]
@@ -82,6 +84,10 @@
         (cond
           (:draft local)    (rx/of (dcmt/close-thread))
           (:open local)     (rx/of (dcmt/close-thread))
+          (some? (get-in state [:workspace-tasks-local :new]))
+          (rx/of (dwtk/cancel-new-task))
+          (some? (get-in state [:workspace-tasks-local :open]))
+          (rx/of (dwtk/close-task))
           (:expanded local) (rx/of (dcmt/collapse-comment-group))
           ;; Only clear edition / deselect on interrupt while the comments
           ;; tool is active. When comments are merely visible during design,
@@ -113,6 +119,23 @@
 
           (some? (:open local))
           (rx/of (dcmt/close-thread))
+
+          (some? (get-in state [:workspace-tasks-local :new]))
+          (rx/of (dwtk/cancel-new-task))
+
+          (some? (get-in state [:workspace-tasks-local :open]))
+          (rx/of (dwtk/close-task))
+
+          ;; inside a design review the review tool says what a click does;
+          ;; the area tool draws with the pointer instead
+          (dwrv/reviewing? state)
+          (if (= :comment-area (dwrv/get-tool state))
+            (rx/empty)
+            (rx/of (dwrv/handle-canvas-click position)))
+
+          ;; outside a review, "New task" arms the task tool for one click
+          (= :task (dwrv/get-tool state))
+          (rx/of (dwrv/handle-canvas-click position))
 
           :else
           (let [page-id (:current-page-id state)

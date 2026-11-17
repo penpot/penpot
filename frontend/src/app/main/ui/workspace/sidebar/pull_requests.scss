@@ -2,10 +2,11 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC Sucursal en España SL
+// Copyright (c) KALEIDOS SUBSIDIARY SL
 
 @use "ds/_borders.scss" as *;
 @use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
 @use "ds/typography.scss" as *;
 
 // --- State badges
@@ -15,47 +16,37 @@
 
   padding: var(--sp-xxs) var(--sp-s);
   border-radius: $br-12;
+  background-color: var(--pr-badge-bg-color);
+  color: var(--pr-badge-fg-color);
   white-space: nowrap;
 }
 
-.badge-open {
-  color: var(--color-accent-info);
-  background-color: var(--color-background-info);
-}
-
+.badge-open,
 .badge-in-review {
-  color: var(--color-accent-info);
-  background-color: var(--color-background-info);
+  --pr-badge-bg-color: var(--color-background-info);
+  --pr-badge-fg-color: var(--color-accent-info);
 }
 
-.badge-approved {
-  color: var(--color-accent-success);
-  background-color: var(--color-background-success);
-}
-
-.badge-changes {
-  color: var(--color-accent-warning);
-  background-color: var(--color-background-warning);
-}
-
+.badge-approved,
 .badge-merged {
-  color: var(--color-accent-success);
-  background-color: var(--color-background-success);
+  --pr-badge-bg-color: var(--color-background-success);
+  --pr-badge-fg-color: var(--color-accent-success);
+}
+
+.badge-changes,
+.badge-outdated {
+  --pr-badge-bg-color: var(--color-background-warning);
+  --pr-badge-fg-color: var(--color-accent-warning);
 }
 
 .badge-closed {
-  color: var(--color-foreground-secondary);
-  background-color: var(--color-background-tertiary);
-}
-
-.badge-outdated {
-  color: var(--color-accent-warning);
-  background-color: var(--color-background-warning);
+  --pr-badge-bg-color: var(--color-background-tertiary);
+  --pr-badge-fg-color: var(--color-foreground-secondary);
 }
 
 .badge-conflicts {
-  color: var(--color-foreground-error);
-  background-color: var(--color-background-error);
+  --pr-badge-bg-color: var(--color-background-error);
+  --pr-badge-fg-color: var(--color-foreground-error);
 }
 
 // --- Dialogs (create / review / details)
@@ -69,6 +60,8 @@
 }
 
 .dialog-header-icon {
+  --dialog-header-icon-color: var(--color-accent-primary);
+
   display: flex;
   flex-shrink: 0;
   align-items: center;
@@ -76,11 +69,11 @@
   inline-size: $sz-32;
   block-size: $sz-32;
   border-radius: $br-8;
-  color: var(--color-accent-primary);
+  color: var(--dialog-header-icon-color);
   background-color: var(--color-background-tertiary);
 
   &.is-warning {
-    color: var(--color-accent-warning);
+    --dialog-header-icon-color: var(--color-accent-warning);
   }
 }
 
@@ -118,11 +111,10 @@
 // long labels: the row of actions wraps, never the label inside a button
 .dialog-footer {
   flex-wrap: wrap;
+}
 
-  // button: the DS buttons in the footer take no class from this module
-  button {
-    white-space: nowrap;
-  }
+.dialog-action {
+  white-space: nowrap;
 }
 
 .field {
@@ -170,30 +162,33 @@
 }
 
 .reviewer-option {
+  --reviewer-option-bg-color: transparent;
+  --reviewer-option-border-color: transparent;
+
   display: flex;
   align-items: center;
   gap: var(--sp-s);
   inline-size: 100%;
   padding: var(--sp-xs) var(--sp-s);
-  border: $b-1 solid transparent;
+  border: $b-1 solid var(--reviewer-option-border-color);
   border-radius: $br-8;
-  background: none;
+  background: var(--reviewer-option-bg-color);
   cursor: pointer;
   color: var(--color-foreground-primary);
 
   &:hover {
-    background-color: var(--color-background-tertiary);
+    --reviewer-option-bg-color: var(--color-background-tertiary);
   }
 
   &.is-selected {
-    border-color: var(--color-accent-primary);
-    background-color: var(--color-background-tertiary);
+    --reviewer-option-bg-color: var(--color-background-tertiary);
+    --reviewer-option-border-color: var(--color-accent-primary);
   }
+}
 
-  > svg:last-child {
-    margin-inline-start: auto;
-    color: var(--color-accent-primary);
-  }
+.reviewer-tick {
+  margin-inline-start: auto;
+  color: var(--color-accent-primary);
 }
 
 .reviewer-name {
@@ -213,24 +208,27 @@
 }
 
 .verdict-option {
+  --verdict-option-bg-color: transparent;
+  --verdict-option-border-color: var(--color-background-quaternary);
+
   display: flex;
   align-items: center;
   gap: var(--sp-m);
   padding: var(--sp-m);
-  border: $b-1 solid var(--color-background-quaternary);
+  border: $b-1 solid var(--verdict-option-border-color);
   border-radius: $br-8;
-  background: none;
+  background: var(--verdict-option-bg-color);
   cursor: pointer;
   text-align: start;
   color: var(--color-foreground-primary);
 
   &:hover {
-    background-color: var(--color-background-tertiary);
+    --verdict-option-bg-color: var(--color-background-tertiary);
   }
 
   &.is-selected {
-    border-color: var(--color-accent-primary);
-    background-color: var(--color-background-tertiary);
+    --verdict-option-bg-color: var(--color-background-tertiary);
+    --verdict-option-border-color: var(--color-accent-primary);
   }
 }
 
@@ -278,14 +276,17 @@
   min-block-size: 0;
 }
 
+// the same box as the description of a branch (its info dialog), as high
+// as 400px; a longer one scrolls inside
 .pr-info-description {
-  @include use-typography("body-medium");
-
+  max-block-size: px2rem(400);
   margin: 0;
+  padding: var(--sp-s);
+  border-radius: $br-8;
+  background-color: var(--color-background-tertiary);
   color: var(--color-foreground-primary);
   white-space: pre-wrap;
   overflow-y: auto;
-  padding-inline-end: var(--sp-s);
 
   // user content: long words / urls must never push past the card
   overflow-wrap: anywhere;
@@ -354,12 +355,12 @@
 
 .reviewer-stale {
   color: var(--color-foreground-secondary);
+
+  // TODO: the DS typographies have no italic.
   font-style: italic;
 }
 
 .reviewer-comment {
-  @include use-typography("body-small");
-
   flex-basis: 100%;
   margin: 0;
   color: var(--color-foreground-secondary);
@@ -389,49 +390,13 @@
   transition:
     inset-block-end 0.2s,
     block-size 0.2s;
-
-  &.is-collapsed {
-    inset-block-end: 0;
-    block-size: var(--sp-m);
-    border-radius: $br-12 $br-12 0 0;
-
-    .pr-banner-content {
-      block-size: 0;
-      padding-block: 0;
-      visibility: hidden;
-    }
-  }
-}
-
-.pr-banner-handle {
-  position: absolute;
-  inset-inline: 0;
-  inset-block-start: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  block-size: var(--sp-m);
-  border: none;
-  background: none;
-  cursor: pointer;
-  inline-size: 100%;
-  z-index: 1;
-}
-
-.pr-banner-handle-btn {
-  block-size: var(--sp-xs);
-  inline-size: 100%;
-  max-inline-size: $sz-64;
-  padding: 0;
-  border-radius: $br-4;
-  background-color: var(--color-background-quaternary);
 }
 
 .pr-banner-content {
   display: flex;
   align-items: center;
   gap: var(--sp-m);
-  padding: var(--sp-m) var(--sp-m) var(--sp-s);
+  padding: var(--sp-s) var(--sp-m);
 }
 
 .pr-banner-icon {
@@ -454,36 +419,12 @@
   @include use-typography("body-small");
 }
 
-.pr-banner-title,
-.pr-banner-route {
+.pr-banner-title {
   color: var(--color-foreground-secondary);
-}
-
-// branch -> main, as pills, the same way the compare dialog names them
-.pr-banner-route {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-xs);
-  white-space: nowrap;
 }
 
 .pr-banner-name {
   color: var(--color-foreground-primary);
-}
-
-.pr-banner-badges {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-xs);
-}
-
-.pr-banner-approvals {
-  @include use-typography("code-font");
-
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-xxs);
-  color: var(--color-accent-success);
 }
 
 .pr-banner-actions {
@@ -496,4 +437,36 @@
 .pr-banner-menu {
   display: flex;
   align-items: center;
+}
+
+.pr-banner-separator {
+  align-self: stretch;
+  border-inline-start: $b-1 solid var(--color-background-quaternary);
+}
+
+.banner-button {
+  --banner-button-bg-color: transparent;
+  --banner-button-fg-color: var(--color-foreground-secondary);
+
+  @include use-typography("body-small");
+
+  display: inline-flex;
+  align-items: center;
+  gap: var(--banner-button-gap, var(--sp-s));
+  padding: var(--sp-xs) var(--sp-s);
+  border: none;
+  border-radius: $br-8;
+  background: var(--banner-button-bg-color);
+  color: var(--banner-button-fg-color);
+  white-space: nowrap;
+  cursor: pointer;
+
+  &:hover {
+    --banner-button-bg-color: var(--color-background-tertiary);
+    --banner-button-fg-color: var(--color-foreground-primary);
+  }
+}
+
+.pr-banner-progress {
+  inline-size: $sz-64;
 }

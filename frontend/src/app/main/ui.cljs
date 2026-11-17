@@ -197,12 +197,14 @@
              file-id    (some-> params :file-id uuid/parse*)
              page-id    (some-> params :page-id uuid/parse*)
              pr-id      (some-> params :pr-id uuid/parse*)
+             task-id    (some-> params :task-id uuid/parse*)
              layout     (some-> params :layout keyword)]
          [:> team-container* {:team-id team-id}
           [:> workspace-page* {:team-id team-id
                                :file-id file-id
                                :page-id page-id
                                :pr-id pr-id
+                               :task-id task-id
                                :layout-name layout
                                :key file-id}]])
 

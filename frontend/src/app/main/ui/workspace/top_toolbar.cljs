@@ -17,6 +17,7 @@
    [app.main.data.workspace.drawing.common :as dwdc]
    [app.main.data.workspace.media :as dwm]
    [app.main.data.workspace.path.state :as pst]
+   [app.main.data.workspace.review :as dwrv]
    [app.main.data.workspace.shortcuts :as sc]
    [app.main.features :as features]
    [app.main.refs :as refs]
@@ -293,6 +294,65 @@
                                       :ref ref
                                       :on-selected on-selected}]]))
 
+(mf/defc review-toolbar*
+  "The toolbar of the review mode: the review is read-only, so it offers
+  moving around, commenting on a spot or a layer, commenting on an area,
+  creating a task and showing the changes of the branch."
+  {::mf/private true}
+  [{:keys [rulers-enabled toolbar-hidden on-toggle-toolbar]}]
+  (let [local   (mf/deref refs/review-local)
+        drawing (mf/deref refs/selected-drawing-tool)
+        tool    (if (= drawing :comments)
+                  (get local :tool :comment)
+                  :move)
+        changes (some? (:show-changes local))
+
+        on-select-tool
+        (mf/use-fn
+         (fn [event]
+           (let [tool (-> (dom/get-current-target event)
+                          (dom/get-data "tool")
+                          (keyword))]
+             (st/emit! (dwrv/set-tool tool)))))
+
+        on-toggle-changes
+        (mf/use-fn #(st/emit! (dwrv/toggle-changes)))]
+
+    [:div {:role "toolbar"
+           :aria-label (tr "workspace.review.toolbar.label")
+           :tab-index "0"
+           :class (stl/css-case :toolbar true
+                                :no-rulers (not rulers-enabled)
+                                :hidden toolbar-hidden)}
+     [:ul {:class (stl/css :toolbar-options)}
+      (for [[id icon label] [[:move i/move (tr "workspace.review.toolbar.move")]
+                             [:comment i/comments (tr "workspace.review.toolbar.comment")]
+                             [:comment-area i/comment-area (tr "workspace.review.toolbar.comment-area")]
+                             [:task i/view-as-list (tr "workspace.review.toolbar.task")]]]
+        [:li {:key (name id) :class (stl/css :toolbar-option)}
+         [:> icon-button* {:variant "ghost"
+                           :class (stl/css :review-tool)
+                           :tooltip-placement "bottom"
+                           :aria-pressed (= tool id)
+                           :aria-label label
+                           :icon icon
+                           :data-tool (name id)
+                           :on-click on-select-tool}]])
+      [:div {:class (stl/css :toolbar-separator)}]
+      [:li {:class (stl/css :toolbar-option)}
+       [:> icon-button* {:variant "ghost"
+                         :class (stl/css :review-tool)
+                         :tooltip-placement "bottom"
+                         :aria-pressed changes
+                         :aria-label (tr "workspace.review.toolbar.show-changes")
+                         :icon i/shown
+                         :on-click on-toggle-changes}]]]
+     [:button {:title (tr "workspace.toolbar.toggle-toolbar")
+               :aria-label (tr "workspace.toolbar.toggle-toolbar")
+               :class (stl/css :toolbar-handler)
+               :on-click on-toggle-toolbar}
+      [:div {:class (stl/css :toolbar-handler-indicator)}]]]))
+
 (mf/defc top-toolbar*
   {::mf/wrap [mf/memo]}
   [{:keys [layout]}]
@@ -304,6 +364,7 @@
 
         plugins-enabled? (features/active-feature? @st/state "plugins/runtime")
         read-only?       (mf/use-ctx ctx/workspace-read-only?)
+        reviewing?       (some? (mf/deref refs/pull-request-preview))
 
         mcp-conn-status  (get mcp :connection-status)
         mcp-valid-token? (get mcp :token-valid)
@@ -357,7 +418,13 @@
            (dom/blur! (dom/get-target event))
            (st/emit! (dwc/toggle-toolbar-visibility))))]
 
-    (when-not ^boolean read-only?
+    (cond
+      ^boolean reviewing?
+      [:> review-toolbar* {:rulers-enabled rulers-enabled
+                           :toolbar-hidden toolbar-hidden
+                           :on-toggle-toolbar on-toggle-toolbar}]
+
+      (not ^boolean read-only?)
       [:div {:role "toolbar"
              :aria-label (tr "workspace.toolbar.label")
              :tab-index "0"

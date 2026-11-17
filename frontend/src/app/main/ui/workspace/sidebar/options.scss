@@ -31,7 +31,9 @@
 
   /* FIXME: This is hacky and prone to break, we should tackle the whole layout
             of the sidebar differently */
-  --sidebar-element-options-height: calc(100vh - #{$sz-88});
+  // The whole sidebar below its header, unless the panel that holds the
+  // options gives them its own space (`--options-available-height`).
+  --sidebar-element-options-height: var(--options-available-height, calc(100vh - #{$sz-88}));
 
   height: var(--sidebar-element-options-height);
   padding-block-start: var(--sp-s);
@@ -39,7 +41,10 @@
 
 .read-only {
   grid-template-areas: "right-sidebar";
-  padding: var(--sp-s);
+  padding: var(--options-read-only-padding, var(--sp-s));
+
+  // the grid row of `.tool-window` must not grow with what the inspect holds
+  min-block-size: 0;
 }
 
 .design-options,

@@ -7,6 +7,7 @@
 @use "ds/_utils.scss" as *;
 @use "ds/borders.scss" as *;
 @use "ds/_sizes.scss" as *;
+@use "ds/typography.scss" as *;
 
 .layer-row {
   --layer-indentation-size: var(--sp-xxl);
@@ -327,4 +328,15 @@
 .lazy-load-sentinel {
   min-height: 1px;
   pointer-events: none;
+}
+
+.comments-count {
+  @include use-typography("body-small");
+
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--sp-xxs);
+  padding-inline-end: var(--sp-s);
+  color: var(--color-accent-info);
 }

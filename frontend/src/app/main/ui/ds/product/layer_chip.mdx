@@ -1,0 +1,31 @@
+{ /* This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+  Copyright (c) KALEIDOS SUBSIDIARY SL */ }
+
+import { Canvas, Meta } from '@storybook/addon-docs/blocks';
+import * as LayerChip from "./layer_chip.stories";
+
+<Meta title="Product/Review/LayerChip" />
+
+# LayerChip
+
+A chip naming a layer, or what a comment points at.
+
+<Canvas of={LayerChip.AllChips} />
+
+## Variants
+
+`is-lost` marks a layer that was deleted: the chip turns orange and shows
+a warning. `is-struck` also strikes its name through.
+
+## Technical notes
+
+`icon` replaces the board icon, except on a lost layer.
+
+```clj
+[:> layer-chip* {:label "Card form"
+                 :icon i/pin
+                 :is-lost (dwtk/lost? task)}]
+```

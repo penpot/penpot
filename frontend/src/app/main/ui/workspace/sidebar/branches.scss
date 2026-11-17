@@ -170,6 +170,18 @@
   color: var(--color-foreground-primary);
 }
 
+.merge-tasks {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+}
+
+.merge-tasks-more {
+  @include use-typography("body-small");
+
+  color: var(--color-accent-primary);
+}
+
 .merge-summary {
   @include use-typography("body-small");
 
@@ -276,9 +288,11 @@
   min-block-size: $sz-28;
 }
 
+// as high as 400px; a longer description scrolls inside
 .info-desc {
   @include use-typography("body-medium");
 
+  max-block-size: px2rem(400);
   margin: 0;
   padding: var(--sp-s);
   border-radius: $br-8;
@@ -286,6 +300,7 @@
   color: var(--color-foreground-primary);
   white-space: pre-wrap;
   overflow-wrap: break-word;
+  overflow-y: auto;
 }
 
 .info-desc-empty {
@@ -303,6 +318,11 @@
   display: flex;
   flex-direction: column;
   gap: var(--sp-s);
+
+  // room to write: as high as the description may grow while read
+  .info-desc-input {
+    min-block-size: px2rem(400);
+  }
 }
 
 .info-desc-actions {
@@ -374,22 +394,15 @@
 
 .branch-banner {
   position: absolute;
-  inset-block-end: var(--sp-xs);
+
+  // clear of the scroll of the canvas, at the level of the review banner
+  inset-block-end: var(--sp-m);
   inset-inline-start: 50%;
   transform: translateX(-50%);
   max-inline-size: 90vw;
   border-radius: $br-8;
   border: $b-2 solid var(--color-background-quaternary);
   background-color: var(--color-background-primary);
-
-  // The floating colour and typography palette bar hangs from the same bottom
-  // edge of the canvas, and it draws over the banner's controls. The banner
-  // publishes the room it takes from that edge, measured from its own box, as
-  // `--branch-banner-clearance` on the app root
-  // (`branches.cljs::publish-banner-clearance!`), and the palette bar lifts
-  // itself by that value (`workspace/palette.scss`). One measured value, so
-  // the bar follows the banner's collapsed and expanded states and the two
-  // cannot drift apart.
 
   // it must beat the viewport controls, which are raised to z-index 1
   // while a drawing tool is active
@@ -480,6 +493,15 @@
 .branch-banner-title {
   color: var(--color-foreground-primary);
   white-space: nowrap;
+}
+
+.branch-banner-review {
+  color: var(--color-foreground-secondary);
+  white-space: nowrap;
+}
+
+.branch-banner-tasks {
+  --banner-button-gap: var(--sp-xs);
 }
 
 .branch-banner-icon-warning {

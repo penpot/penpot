@@ -2,7 +2,7 @@
 ;; License v. 2.0. If a copy of the MPL was not distributed with this
 ;; file You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.sidebar.branch-review.previews
   "Visual previews of the two sides of a change. The diff carries whole
@@ -138,7 +138,6 @@
   supplies its children (a board or group draws them). `highlight`
   (`{:id :status}`) outlines the layer an added or deleted change is
   about, when `objects` holds it."
-  {::mf/private true}
   [{:keys [shape objects highlight]}]
   (let [{:keys [x y width height]} (shape-bounds shape)
         width   (max 1 width)
@@ -212,20 +211,24 @@
         (case reason
           :absent
           [i/add
-           (tr (if main? "workspace.branches.review.missing.not-in-main"
-                   "workspace.branches.review.missing.not-in-branch"))
-           (tr (if main? "workspace.branches.review.missing.new-in-branch"
-                   "workspace.branches.review.missing.new-in-main"))]
+           (if main?
+             (tr "workspace.branches.review.missing.not-in-main")
+             (tr "workspace.branches.review.missing.not-in-branch"))
+           (if main?
+             (tr "workspace.branches.review.missing.new-in-branch")
+             (tr "workspace.branches.review.missing.new-in-main"))]
           :deleted
           [i/delete
-           (tr (if main? "workspace.branches.review.missing.deleted-in-main"
-                   "workspace.branches.review.missing.deleted-in-branch"))
+           (if main?
+             (tr "workspace.branches.review.missing.deleted-in-main")
+             (tr "workspace.branches.review.missing.deleted-in-branch"))
            nil]
           [i/eye-off
            (tr "workspace.branches.review.missing.no-preview")
            (when (and open-side (not= side open-side))
-             (tr (if main? "workspace.branches.review.missing.open-main"
-                     "workspace.branches.review.missing.open-branch")))])]
+             (if main?
+               (tr "workspace.branches.review.missing.open-main")
+               (tr "workspace.branches.review.missing.open-branch")))])]
     [:div {:class (stl/css :preview-missing)}
      [:> i/icon* {:icon-id icon :size "s" :class (stl/css :preview-missing-icon)}]
      [:> text* {:as "span" :typography t/body-small :class (stl/css :preview-missing-title)} title]

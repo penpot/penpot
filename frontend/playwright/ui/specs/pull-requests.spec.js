@@ -3,8 +3,9 @@ import { WorkspacePage } from "../pages/WorkspacePage";
 
 const PR_ID = "c7ce0794-0992-8105-8004-38f280443999";
 
-const reviewTitle = (page) =>
-  page.getByText("Reviewing the design review", { exact: true });
+// The review bar at the bottom of the canvas: the review's own chrome,
+// which replaces the branch bar while a design review is open.
+const reviewBar = (page) => page.getByRole("region", { name: "Design review" });
 
 test.beforeEach(async ({ page }) => {
   await WorkspacePage.init(page);
@@ -26,31 +27,37 @@ const setupPullRequestSandbox = async (workspacePage) => {
   });
 };
 
-test("opening a file with pr-id shows the review sandbox banner", async ({
-  page,
-}) => {
+test("opening a file with pr-id enters the design review", async ({ page }) => {
   const workspacePage = new WorkspacePage(page);
   await setupPullRequestSandbox(workspacePage);
   await workspacePage.goToWorkspace({ extraParams: `&pr-id=${PR_ID}` });
 
-  await expect(reviewTitle(page)).toBeVisible();
-  await expect(page.getByText("Checkout redesign").first()).toBeVisible();
+  // the review bar names the review being read, and the header trades the
+  // file name for the title of the review
+  const bar = reviewBar(page);
+  await expect(bar).toBeVisible();
+  await expect(
+    bar.getByText("Reviewing the design review", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    bar.getByText("Checkout redesign", { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByTitle("Review: Checkout redesign")).toBeVisible();
 
-  // the route reads as two pills: the branch under review, then main
-  const banner = reviewTitle(page).locator("../../..");
-  await expect(banner.getByText("checkout", { exact: true })).toBeVisible();
-  await expect(banner.getByText("Main", { exact: true })).toBeVisible();
+  // the essentials are visible buttons: the details, the verdict of an
+  // assigned reviewer, and the way out
+  await expect(bar.getByRole("button", { name: "Details" })).toBeVisible();
+  await expect(
+    bar.getByRole("button", { name: "Submit review" }),
+  ).toBeVisible();
+  await expect(bar.getByRole("button", { name: "Exit review" })).toBeVisible();
 
-  // only the essential actions are visible buttons...
-  await expect(page.getByRole("button", { name: "Compare" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Details" })).toBeHidden();
-
-  // ...the rest live behind the kebab menu
-  await banner.getByRole("button", { name: "Options" }).click();
-  await expect(page.getByText("Details")).toBeVisible();
+  // comparing, merging and cancelling live behind the kebab menu
+  await expect(bar.getByRole("button", { name: "Compare" })).toBeHidden();
+  await bar.getByRole("button", { name: "Options" }).click();
+  await expect(page.getByText("Compare", { exact: true })).toBeVisible();
   await expect(page.getByText("Merge to main")).toBeVisible();
-  await expect(page.getByText("Exit review")).toBeVisible();
-  await expect(page.getByText("Try interactions")).toBeHidden();
+  await expect(page.getByText("Cancel review")).toBeVisible();
 });
 
 test("the compare dialog shows the proposed changes", async ({ page }) => {
@@ -58,7 +65,9 @@ test("the compare dialog shows the proposed changes", async ({ page }) => {
   await setupPullRequestSandbox(workspacePage);
   await workspacePage.goToWorkspace({ extraParams: `&pr-id=${PR_ID}` });
 
-  await page.getByRole("button", { name: "Compare" }).click();
+  // comparing is one of the review bar's options
+  await reviewBar(page).getByRole("button", { name: "Options" }).click();
+  await page.getByText("Compare", { exact: true }).click();
 
   // the branching compare dialog is reused to inspect the changes
   await expect(page.getByText("Review changes")).toBeVisible();
@@ -69,7 +78,7 @@ test("accepting the pull request opens the merge dialog", async ({ page }) => {
   await setupPullRequestSandbox(workspacePage);
   await workspacePage.goToWorkspace({ extraParams: `&pr-id=${PR_ID}` });
 
-  const banner = reviewTitle(page).locator("../../..");
+  const banner = reviewBar(page);
   await banner.getByRole("button", { name: "Options" }).click();
   await page.getByText("Merge to main").click();
 
@@ -78,33 +87,60 @@ test("accepting the pull request opens the merge dialog", async ({ page }) => {
   await expect(page.getByText("checkout").first()).toBeVisible();
 });
 
-test("the review behaves like a normal, editable file", async ({ page }) => {
+test("the review is read-only", async ({ page }) => {
   const workspacePage = new WorkspacePage(page);
   await setupPullRequestSandbox(workspacePage);
   await workspacePage.goToWorkspace({ extraParams: `&pr-id=${PR_ID}` });
 
-  await expect(reviewTitle(page)).toBeVisible();
-  // the file is the live branch, opened normally: the design toolbar is
-  // available so reviewers can try and validate anything...
-  await expect(workspacePage.rectShapeButton).toBeVisible();
-  // ...and none of the read-only / inspect affordances kick in
-  await expect(page.getByText("Inspecting code")).toBeHidden();
-  await expect(page.getByText("View only")).toBeHidden();
+  await expect(reviewBar(page)).toBeVisible();
+
+  // the review toolbar replaces the design tools: moving around,
+  // commenting and tasks only, so the canvas offers no way to draw
+  const toolbar = page.getByRole("toolbar", { name: "Review tools" });
+  await expect(toolbar).toBeVisible();
+  for (const tool of [
+    "Move",
+    "Comment",
+    "Comment an area",
+    "Create a task",
+    "Show changes",
+  ]) {
+    await expect(
+      toolbar.getByRole("button", { name: tool, exact: true }),
+    ).toBeVisible();
+  }
+  await expect(workspacePage.rectShapeButton).toBeHidden();
+
+  // and the sidebar flags the file as view only
+  await expect(page.getByText("View only")).toBeVisible();
+
+  // the right panel is the review's: the inspect of the selection, the
+  // comments and the tasks of the review
+  await expect(page.getByRole("tab", { name: "Inspect" })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "Comments (0)" })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "Tasks (0)" })).toBeVisible();
 });
 
-test("an assigned reviewer can submit a verdict from the banner", async ({
+test("an assigned reviewer can submit a verdict from the review bar", async ({
   page,
 }) => {
   const workspacePage = new WorkspacePage(page);
   await setupPullRequestSandbox(workspacePage);
   await workspacePage.goToWorkspace({ extraParams: `&pr-id=${PR_ID}` });
 
-  // the logged-in profile is an assigned reviewer in the fixture
-  await page.getByRole("button", { name: "Review", exact: true }).click();
+  // the logged-in profile is an assigned reviewer in the fixture, so the
+  // bar offers the verdict
+  const bar = reviewBar(page);
+  await bar.getByRole("button", { name: "Submit review" }).click();
 
-  await expect(page.getByText("Submit review").first()).toBeVisible();
-  await page.getByText("Request changes", { exact: true }).click();
-  await page.getByRole("button", { name: "Submit review" }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toBeVisible();
+  await expect(
+    dialog.getByRole("heading", { name: "Submit review" }),
+  ).toBeVisible();
+
+  await dialog.getByRole("button", { name: "Request changes" }).click();
+  await dialog.getByRole("button", { name: "Submit review" }).click();
 
   await expect(page.getByText("Review submitted")).toBeVisible();
 });
@@ -118,7 +154,7 @@ test("closing the pull request asks for confirmation", async ({ page }) => {
   );
   await workspacePage.goToWorkspace({ extraParams: `&pr-id=${PR_ID}` });
 
-  const banner = reviewTitle(page).locator("../../..");
+  const banner = reviewBar(page);
   await banner.getByRole("button", { name: "Options" }).click();
   await page.getByText("Cancel review").click();
 
@@ -164,15 +200,15 @@ test("exiting the review takes the user back to the file", async ({ page }) => {
   await setupPullRequestSandbox(workspacePage);
   await workspacePage.goToWorkspace({ extraParams: `&pr-id=${PR_ID}` });
 
-  await expect(reviewTitle(page)).toBeVisible();
-  const banner = reviewTitle(page).locator("../../..");
+  const banner = reviewBar(page);
+  await expect(banner).toBeVisible();
   await banner.getByRole("button", { name: "Options" }).click();
   await page.getByText("Exit review").click();
 
   // exiting drops the review context and the pr-id param; the file (the
   // live branch) stays as it was
   await expect(page).not.toHaveURL(/pr-id/);
-  await expect(reviewTitle(page)).toBeHidden();
+  await expect(reviewBar(page)).toBeHidden();
 });
 
 test("during a review the header names the branch under review", async ({
@@ -187,9 +223,9 @@ test("during a review the header names the branch under review", async ({
   );
   await workspacePage.goToWorkspace({ extraParams: `&pr-id=${PR_ID}` });
 
-  // the review banner replaces the branch banner, so the header loads the
+  // the review bar replaces the branch bar, so the header loads the
   // branch context itself
-  await expect(reviewTitle(page)).toBeVisible();
+  await expect(reviewBar(page)).toBeVisible();
   await expect(page.getByTitle("On branch checkout from main")).toBeVisible();
 });
 

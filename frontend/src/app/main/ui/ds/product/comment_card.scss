@@ -1,0 +1,89 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS SUBSIDIARY SL
+
+@use "ds/_borders.scss" as *;
+@use "ds/typography.scss" as *;
+
+.comment-card {
+  --comment-card-bg-color: var(--color-background-tertiary);
+  --comment-card-border-color: transparent;
+
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-s);
+  inline-size: 100%;
+  padding: var(--sp-m);
+  border: $b-1 solid var(--comment-card-border-color);
+  border-radius: $br-8;
+  background-color: var(--comment-card-bg-color);
+  color: var(--color-foreground-primary);
+  text-align: start;
+  cursor: pointer;
+
+  &:hover {
+    --comment-card-bg-color: var(--color-background-quaternary);
+  }
+
+  &:focus-visible {
+    outline: $b-1 solid var(--color-accent-primary);
+  }
+
+  &.is-open {
+    --comment-card-border-color: var(--color-accent-primary);
+  }
+
+  &.is-open.is-review {
+    --comment-card-border-color: var(--color-accent-info);
+  }
+
+  &.is-resolved {
+    opacity: 0.7;
+  }
+}
+
+.location {
+  color: var(--color-foreground-secondary);
+}
+
+.author {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+}
+
+.identity {
+  display: flex;
+  flex-direction: column;
+}
+
+.name {
+  color: var(--color-foreground-primary);
+}
+
+.muted {
+  color: var(--color-foreground-secondary);
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-s);
+  inline-size: 100%;
+}
+
+.replies {
+  flex-shrink: 0;
+  color: var(--color-foreground-secondary);
+}
+
+.content {
+  @include use-typography("body-small");
+
+  color: var(--color-foreground-primary);
+  overflow-wrap: anywhere;
+}

@@ -1,0 +1,45 @@
+{ /* This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+  Copyright (c) KALEIDOS SUBSIDIARY SL */ }
+
+import { Canvas, Meta } from '@storybook/addon-docs/blocks';
+import * as CommentCard from "./comment_card.stories";
+
+<Meta title="Product/Review/CommentCard" />
+
+# CommentCard
+
+One comment of a list: where it is, who wrote it and when, its text and
+its replies.
+
+<Canvas of={CommentCard.Default} />
+
+## Variants
+
+`is-open` outlines the comment open on the canvas, in the review colour
+with `is-review`; `is-resolved` fades a settled one. `review` shows the name
+of the design review it belongs to.
+
+<Canvas of={CommentCard.Open} />
+<Canvas of={CommentCard.InAReview} />
+<Canvas of={CommentCard.Resolved} />
+
+## Technical notes
+
+The card is a `role="button"` that reacts to Enter and Space. Two slots
+take elements: `avatar` and `anchor` (a chip with what the comment points
+at). The text of the comment goes in `children`. The caller translates
+`location`, `time` and `replies`.
+
+```clj
+[:> comment-card* {:location "#1 - Board"
+                   :author (:fullname owner)
+                   :time (ct/timeago (:modified-at thread))
+                   :replies (tr "workspace.review.comments.no-replies")
+                   :avatar (mf/html [:> avatar* {:profile owner :variant "M"}])
+                   :anchor (mf/html [:> layer-chip* {:label "Card form"}])
+                   :on-click on-open}
+ (:content thread)]
+```

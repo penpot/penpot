@@ -7,16 +7,23 @@
 (ns app.main.ui.workspace.sidebar.branches
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.time :as ct]
    [app.config :as cf]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.branches :as dwb]
+   [app.main.data.workspace.drawing :as dwd]
+   [app.main.data.workspace.layout :as dwlo]
    [app.main.data.workspace.pull-requests :as dwpr]
+   [app.main.data.workspace.review :as dwrv]
+   [app.main.data.workspace.tasks :as dwtk]
    [app.main.refs :as refs]
+   [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.controls.checkbox :refer [checkbox*]]
    [app.main.ui.ds.controls.input :refer [input*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.layout.menu :refer [menu* menu-item* menu-separator*]]
@@ -26,7 +33,7 @@
    [app.main.ui.ds.product.avatar :refer [avatar*]]
    [app.main.ui.ds.product.empty-state :refer [empty-state*]]
    [app.main.ui.ds.tooltip :refer [tooltip*]]
-   [app.main.ui.hooks.resize :as r]
+   [app.main.ui.workspace.review.tasks :as rvt]
    [app.main.ui.workspace.sidebar.branch-review.common :as brc]
    [app.main.ui.workspace.sidebar.branch-review.compare]
    [app.main.ui.workspace.sidebar.branch-review.conflicts]
@@ -35,6 +42,7 @@
    [app.util.globals :as globals]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
+   [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [goog.events :as events]
    [okulary.core :as l]
@@ -264,6 +272,16 @@
   (let [comment*  (mf/use-state "")
         comment   (deref comment*)
 
+        ;; the open tasks of the branch move to main as they are; their
+        ;; assignees may be told
+        tasks*     (mf/use-state nil)
+        notify*    (mf/use-state true)
+        notify?    (deref notify*)
+        open-tasks (->> (deref tasks*)
+                        (remove dwtk/closed?)
+                        (vec))
+        on-notify  (mf/use-fn #(swap! notify* not))
+
         ;; what goes in and what stays out, when the compare dialog of this
         ;; branch is the one that asked for the merge
         diff-st   (mf/deref branch-diff)
@@ -302,10 +320,19 @@
 
         on-submit
         (mf/use-fn
-         (mf/deps branch comment excluded)
+         (mf/deps branch comment excluded notify? open-tasks)
          (fn [_]
-           (st/emit! (dwb/merge-branch branch {:comment comment :excluded excluded})
+           (st/emit! (dwb/merge-branch branch {:comment comment
+                                               :excluded excluded
+                                               :notify-assignees (boolean (and notify? (seq open-tasks)))})
                      (modal/hide))))]
+
+    (mf/with-effect [branch]
+      (when-let [branch-file-id (:branch-file-id branch)]
+        (when (dwtk/enabled?)
+          (->> (rp/cmd! :get-file-tasks {:file-id branch-file-id})
+               (rx/subs! #(reset! tasks* %)
+                         (fn [_] (reset! tasks* [])))))))
 
     [:> modal* {:is-open true
                 :on-open-change (prui/on-dismiss on-close)}
@@ -336,6 +363,21 @@
                    :on-change on-comment-change
                    :rows 3}]]
 
+      (when (seq open-tasks)
+        [:div {:class (stl/css :merge-tasks)}
+         [:> context-notification* {:level :warning :type :context}
+          (tr "workspace.branches.merge.open-tasks" (i18n/c (count open-tasks)))]
+         [:span {:class (stl/css :field-label)}
+          (tr "workspace.branches.merge.open-tasks-title")]
+         [:> rvt/task-list* {:tasks (vec (take 3 open-tasks))}]
+         (when (> (count open-tasks) 3)
+           [:span {:class (stl/css :merge-tasks-more)}
+            (tr "workspace.branches.merge.more-open-tasks" (i18n/c (- (count open-tasks) 3)))])
+         [:> checkbox* {:id "merge-notify-assignees"
+                        :checked notify?
+                        :on-change on-notify
+                        :label (tr "workspace.branches.merge.notify-assignees")}]])
+
       (if (pos? left-out)
         ;; deleting the branch takes the changes left out with it
         [:> context-notification* {:level :warning :type :context}
@@ -349,7 +391,9 @@
       [:> button* {:variant "primary"
                    :icon i/git-merge
                    :on-click on-submit}
-       (tr "workspace.branches.merge.confirm-accept")]]]))
+       (if (seq open-tasks)
+         (tr "workspace.branches.merge.confirm-anyway")
+         (tr "workspace.branches.merge.confirm-accept"))]]]))
 
 ;; --- Confirmation for relevant branch actions (merge / update / materialize)
 
@@ -463,10 +507,10 @@
                                    :status-merged merged?
                                    :status-archived (= "archived" status)
                                    :status-open (= "open" status))}
-       (tr (case status
-             "merged"   "workspace.branches.info.status.merged"
-             "archived" "workspace.branches.info.status.archived"
-             "workspace.branches.info.status.open"))]]
+       (case status
+         "merged"   (tr "workspace.branches.info.status.merged")
+         "archived" (tr "workspace.branches.info.status.archived")
+         (tr "workspace.branches.info.status.open"))]]
 
      [:> modal-content* {:class (stl/css :dialog-content)}
       ;; description: shown read-only, editable inline by the author
@@ -477,7 +521,7 @@
           [:> button* {:variant "ghost" :on-click on-edit} (tr "labels.edit")])]
        (if (deref editing?)
          [:div {:class (stl/css :info-desc-edit)}
-          [:textarea {:class (stl/css :textarea)
+          [:textarea {:class (stl/css :textarea :info-desc-input)
                       :value desc
                       :on-change on-desc-change
                       :rows 3
@@ -827,9 +871,9 @@
           ;; a merged branch cannot go back to work: its changes are in main
           (when-not merged?
             [:> menu-item* {:id "archive" :on-action on-archive}
-             (tr (if archived?
-                   "workspace.branches.menu.restore"
-                   "workspace.branches.menu.archive"))])
+             (if archived?
+               (tr "workspace.branches.menu.restore")
+               (tr "workspace.branches.menu.archive"))])
           ;; a merged branch has its work in main already: only an open or an
           ;; archived branch can leave the branch engine as an ordinary file
           (when-not merged?
@@ -1019,22 +1063,17 @@
 
 ;; --- Branch context banner (shown while editing a branch)
 
-(defn- publish-banner-clearance!
-  "Publish the room the branch banner takes from the bottom edge of the
-  canvas as `--branch-banner-clearance` on the app root, which the floating
-  colour/typography palette bar reads to lift itself clear (`palette.scss`):
-  the banner and the bar hang from the same edge and the bar draws over the
-  banner's controls. The room is measured from the banner's live box rather
-  than written down, so it follows the banner in both the collapsed and the
-  expanded state, where one fixed offset would be wrong in one of the two."
-  []
-  (when-let [root (dom/get-root)]
-    (when-let [node (dom/get-element "branch-banner")]
-      (let [room (- (:bottom (dom/get-bounding-rect root))
-                    (:top (dom/get-bounding-rect node)))]
-        (dom/set-css-property! root
-                               "--branch-banner-clearance"
-                               (dm/str (max 0 room) "px"))))))
+(defn- canvas-center
+  "The middle of the canvas, in pixels from the left of the window. The bar of
+  the branch centers there and not on the window, or at a usual width it would
+  cover the folded palettes, on the left of the canvas."
+  [vport rulers?]
+  (let [left-sidebar (dom/get-element "left-sidebar-aside")
+        left         (-> (dom/get-data left-sidebar "width")
+                         (d/parse-integer)
+                         (d/nilv 0))
+        rulers       (if rulers? 22 0)]
+    (+ left rulers (/ (- (:width vport) rulers) 2))))
 
 (defn- banner-status
   "What the bottom banner says about the open branch, most pressing
@@ -1093,9 +1132,13 @@
         merged?     (= "merged" (:status ctx))
         archived?   (= "archived" (:status ctx))
 
-        collapsed*  (mf/use-state false)
-        collapsed?  (deref collapsed*)
-        on-toggle   (mf/use-fn #(swap! collapsed* not))
+        ;; it shares its level with the palettes: only one of them is open
+        has-bar?    (some? ctx)
+        vport       (mf/deref refs/workspace-vport)
+        rulers?     (mf/deref refs/rulers?)
+        bottom-bar  (mf/deref refs/bottom-bar)
+        collapsed?  (and (some? bottom-bar) (not= :branch bottom-bar))
+        on-toggle   (mf/use-fn #(st/emit! (dwlo/toggle-bottom-bar :branch)))
 
         ;; persistence status drives a refetch of the change counts on save
         persistence (mf/deref refs/persistence)
@@ -1182,22 +1225,34 @@
              "delete"         (confirm-delete! ctx (:source-file-id ctx))
              nil)))
 
-        ;; publishes the room the banner takes from the bottom of the canvas
-        ;; whenever its box changes size, which is what keeps the floating
-        ;; colour/typography palette bar clear of it in both the collapsed and
-        ;; the expanded state (see `publish-banner-clearance!`)
-        banner-ref (r/use-resize-observer
-                    (mf/use-fn (fn [_ _] (publish-banner-clearance!))))
+        status     (banner-status ctx open-pr)
 
-        status     (banner-status ctx open-pr)]
+        handle-label (if collapsed?
+                       (tr "workspace.branches.banner.expand")
+                       (tr "workspace.branches.banner.collapse"))
+
+        ;; the tasks of the open review that still need the user's work
+        tasks      (mf/deref refs/tasks)
+        my-tasks   (mf/with-memo [tasks open-pr profile]
+                     (when (some? open-pr)
+                       (count (dwtk/tasks-for (dwtk/review-tasks (vals tasks) (:id open-pr))
+                                              (:id profile)))))
+
+        on-my-tasks
+        (mf/use-fn
+         (fn [_]
+           (st/emit! (dwrv/set-panel-tab :tasks)
+                     (dwrv/set-task-filter :mine)
+                     (dwd/select-for-drawing :comments))))]
 
     (mf/with-effect [file-id]
       (when (contains? cf/flags :branching)
         (st/emit! (dwb/fetch-branch-context)))
       ;; the primary action depends on whether the branch already has an
-      ;; open pull request
+      ;; open pull request, and the bar counts the tasks for the user
       (when (dwpr/enabled?)
-        (st/emit! (dwpr/fetch-pull-requests))))
+        (st/emit! (dwpr/fetch-pull-requests)
+                  (dwtk/fetch-tasks))))
 
     ;; refresh the change counts every time a save settles (and when
     ;; returning to the tab, so "main advanced" is surfaced too)
@@ -1212,31 +1267,22 @@
                                    (st/emit! (dwb/fetch-branch-context)))))]
         (fn [] (events/unlistenByKey key))))
 
-    ;; it is cleared when there is no banner to clear, so a file that is not a
-    ;; branch leaves the palette bar on its plain bottom anchor
-    (mf/with-effect [ctx]
-      (if (some? ctx)
-        (publish-banner-clearance!)
-        (dom/unset-css-property! (dom/get-root) "--branch-banner-clearance")))
-
-    ;; the same goes when the banner goes away with the component, so nothing
-    ;; is left behind for the palette bar to clear later
-    (mf/with-effect []
-      (fn [] (dom/unset-css-property! (dom/get-root) "--branch-banner-clearance")))
+    ;; a file that is not a branch has no bar, and the palettes stay as ever
+    (mf/with-effect [has-bar?]
+      (when has-bar?
+        (st/emit! (dwlo/mount-bottom-bars))
+        (fn [] (st/emit! (dwlo/unmount-bottom-bars)))))
 
     (when ctx
       [:div {:id "branch-banner"
-             :ref banner-ref
+             :style (when (some? vport)
+                      #js {"insetInlineStart" (dm/str (canvas-center vport rulers?) "px")})
              :class (stl/css-case :branch-banner true
                                   :branch-banner-merged (or merged? archived?)
                                   :is-collapsed collapsed?)}
        [:button {:class (stl/css :branch-banner-handle)
-                 :title (tr (if collapsed?
-                              "workspace.branches.banner.expand"
-                              "workspace.branches.banner.collapse"))
-                 :aria-label (tr (if collapsed?
-                                   "workspace.branches.banner.expand"
-                                   "workspace.branches.banner.collapse"))
+                 :title handle-label
+                 :aria-label handle-label
                  :on-click on-toggle}
         [:div {:class (stl/css :branch-banner-handle-btn)}]]
        ;; the header row names the branch; the banner says where it
@@ -1246,8 +1292,18 @@
                                     :branch-banner-icon-warning (contains? #{:conflicts :counts-error} (:id status)))}
          [:> i/icon* {:icon-id (:icon status)}]]
         [:div {:class (stl/css :branch-banner-text)}
-         [:span {:class (stl/css :branch-banner-title)} (:label status)]]
+         [:span {:class (stl/css :branch-banner-title)} (:label status)]
+         (when (some? open-pr)
+           [:span {:class (stl/css :branch-banner-review)} (:title open-pr)])]
         [:div {:class (stl/css :branch-banner-separator)}]
+
+        (when (pos? (or my-tasks 0))
+          [:*
+           [:> prui/banner-button* {:class (stl/css :branch-banner-tasks)
+                                    :on-click on-my-tasks}
+            [:> i/icon* {:icon-id i/view-as-list :size "s"}]
+            (tr "workspace.tasks.for-you-count" (i18n/c my-tasks))]
+           [:div {:class (stl/css :branch-banner-separator)}]])
 
         [:div {:class (stl/css :branch-banner-actions)}
          (cond

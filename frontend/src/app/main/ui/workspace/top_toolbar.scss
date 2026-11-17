@@ -7,9 +7,6 @@
 @use "ds/_borders.scss" as *;
 @use "ds/_sizes.scss" as *;
 @use "ds/_utils.scss" as *;
-@use "ds/spacing.scss" as *;
-@use "ds/typography.scss" as t;
-@use "ds/z-index.scss" as *;
 
 .toolbar {
   --toolbar-position-y: #{$sz-28};
@@ -45,6 +42,8 @@
     --toolbar-offset-y: -4px;
 
     block-size: $sz-16;
+
+    // TODO: no DS z-index token for 1.
     z-index: 1;
     border-radius: 0 0 $br-8 $br-8;
     border-block-start: 0;
@@ -128,4 +127,16 @@
   padding: 0;
   border-radius: $br-4;
   background-color: var(--color-accent-default);
+}
+
+// the tools of a design review use the review colour: blue on the tool in
+// use and on hover, instead of the accent of the drawing tools
+.review-tool:hover {
+  --button-hover-bg-color: var(--color-background-quaternary);
+  --button-hover-fg-color: var(--color-accent-info);
+}
+
+.review-tool[aria-pressed="true"] {
+  --button-active-bg-color: var(--color-background-info);
+  --button-active-fg-color: var(--color-accent-info);
 }

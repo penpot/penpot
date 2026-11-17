@@ -40,6 +40,7 @@
     (init-static-cursor-style style "create-polygon" cur/create-polygon)
     (init-static-cursor-style style "create-rectangle" cur/create-rectangle)
     (init-static-cursor-style style "create-shape" cur/create-shape)
+    (init-static-cursor-style style "create-task" cur/create-task)
     (init-static-cursor-style style "draw" cur/draw)
     (init-static-cursor-style style "draw-add" cur/draw-add)
     (init-static-cursor-style style "draw-node" cur/draw-node)

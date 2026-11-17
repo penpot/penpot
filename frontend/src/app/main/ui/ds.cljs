@@ -8,6 +8,7 @@
   (:require
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.buttons.link-button :refer [link-button*]]
    [app.main.ui.ds.controls.checkbox :refer [checkbox*]]
    [app.main.ui.ds.controls.combobox :refer [combobox*]]
    [app.main.ui.ds.controls.input :refer [input*]]
@@ -15,6 +16,7 @@
    [app.main.ui.ds.controls.radio-buttons :refer [radio-buttons*]]
    [app.main.ui.ds.controls.select :refer [select*]]
    [app.main.ui.ds.controls.switch :refer [switch*]]
+   [app.main.ui.ds.controls.textarea :refer [textarea*]]
    [app.main.ui.ds.controls.utilities.hint-message :refer [hint-message*]]
    [app.main.ui.ds.controls.utilities.input-field :refer [input-field*]]
    [app.main.ui.ds.controls.utilities.label :refer [label*]]
@@ -38,17 +40,24 @@
    [app.main.ui.ds.product.branch-row :refer [branch-row*]]
    [app.main.ui.ds.product.branch-status :refer [branch-status*]]
    [app.main.ui.ds.product.change-row :refer [change-row*]]
+   [app.main.ui.ds.product.comment-card :refer [comment-card*]]
    [app.main.ui.ds.product.cta :refer [cta*]]
    [app.main.ui.ds.product.empty-placeholder :refer [empty-placeholder*]]
    [app.main.ui.ds.product.empty-state :refer [empty-state*]]
    [app.main.ui.ds.product.filter-chip :refer [filter-chip*]]
    [app.main.ui.ds.product.input-with-meta :refer [input-with-meta*]]
+   [app.main.ui.ds.product.layer-chip :refer [layer-chip*]]
    [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.ds.product.milestone :refer [milestone*]]
    [app.main.ui.ds.product.milestone-group :refer [milestone-group*]]
    [app.main.ui.ds.product.panel-title :refer [panel-title*]]
    [app.main.ui.ds.product.preview-card :refer [preview-card*]]
+   [app.main.ui.ds.product.progress-bar :refer [progress-bar*]]
+   [app.main.ui.ds.product.review-label :refer [review-label*]]
+   [app.main.ui.ds.product.review-marker :refer [review-marker*]]
    [app.main.ui.ds.product.tag :refer [tag*]]
+   [app.main.ui.ds.product.task-row :refer [task-row*]]
+   [app.main.ui.ds.product.task-status :refer [task-status*]]
    [app.main.ui.ds.storybook :as sb]
    [app.main.ui.ds.tooltip.tooltip :refer [tooltip*]]
    [app.main.ui.ds.utilities.date :refer [date*]]
@@ -97,6 +106,15 @@
     :FilterChip filter-chip*
     :PreviewCard preview-card*
     :Tag tag*
+    :CommentCard comment-card*
+    :LayerChip layer-chip*
+    :LinkButton link-button*
+    :ProgressBar progress-bar*
+    :ReviewLabel review-label*
+    :ReviewMarker review-marker*
+    :Textarea textarea*
+    :TaskRow task-row*
+    :TaskStatus task-status*
     :Milestone milestone*
     :MilestoneGroup milestone-group*
     :Date date*

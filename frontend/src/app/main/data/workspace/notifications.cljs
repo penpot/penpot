@@ -25,6 +25,7 @@
    [app.main.data.workspace.layout :as dwly]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.pull-requests :as dwpr]
+   [app.main.data.workspace.tasks :as dwtk]
    [app.main.data.workspace.texts :as dwt]
    [app.main.router :as rt]
    [app.util.globals :refer [global]]
@@ -169,6 +170,7 @@
     :pull-request-updated          (handle-pull-request-change msg)
     :pull-request-review-submitted (handle-pull-request-change msg)
     :pull-request-closed           (handle-pull-request-change msg)
+    :file-tasks-change             (dwtk/handle-tasks-change msg)
     :notification            (dc/handle-notification msg)
     :team-role-change        (handle-change-team-role msg)
     :team-membership-change  (dc/team-membership-change msg)

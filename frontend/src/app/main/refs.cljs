@@ -55,6 +55,27 @@
   ;; the review banner/actions. nil when no review is active.
   (l/derived #(get % :workspace-pr-preview) st/state))
 
+(def tasks
+  "The tasks of the open file, by id."
+  (l/derived #(get-in % [:workspace-tasks :data]) st/state))
+
+(def task-events
+  "The events of the tasks opened so far, by task id."
+  (l/derived :workspace-task-events st/state))
+
+(def tasks-local
+  "What the user is doing with the tasks: the one open (`:open`), the
+  new one being written (`:new`), the one being linked to another layer
+  (`:relink`)."
+  (l/derived :workspace-tasks-local st/state))
+
+(def review-local
+  "The tool, panel tab, filters and shown change of the review mode."
+  (l/derived :workspace-review-local st/state))
+
+(def review-activity
+  (l/derived :workspace-review-activity st/state))
+
 (def pending-reviews
   ;; dashboard: open pull requests awaiting the current profile's review
   (l/derived #(get % :dashboard-pending-reviews) st/state))
@@ -83,11 +104,19 @@
     (and (contains? #{"merged" "archived"} (get-in ctx [:info :status]))
          (= (:file-id ctx) (:current-file-id state)))))
 
+(defn- reviewing?
+  "True while the open file is shown inside a design review: the review
+  is read-only, the branch is edited outside it."
+  [state]
+  (some? (:workspace-pr-preview state)))
+
 (def permissions
-  "The team permissions, without edition on a merged or archived branch."
+  "The team permissions, without edition on a merged or archived branch
+  nor inside a design review."
   (l/derived (fn [state]
                (cond-> (:permissions (dsh/lookup-team state))
-                 (open-closed-branch? state)
+                 (or (open-closed-branch? state)
+                     (reviewing? state))
                  (assoc :can-edit false)))
              st/state))
 
@@ -99,6 +128,18 @@
 
 (def threads
   (l/derived :comment-threads st/state))
+
+(def layer-comment-counts
+  "How many open comment threads point at each layer, by layer id: the
+  count the layers panel shows next to a layer."
+  (l/derived (fn [threads]
+               (reduce (fn [acc {:keys [anchor-type shape-id is-resolved]}]
+                         (if (and (= :layer anchor-type) (some? shape-id) (not is-resolved))
+                           (update acc shape-id (fnil inc 0))
+                           acc))
+                       {}
+                       (vals threads)))
+             threads))
 
 (def share-links
   (l/derived :share-links st/state))
@@ -196,6 +237,11 @@
 
 (def workspace-global
   (l/derived :workspace-global st/state))
+
+(def bottom-bar
+  "Which bar at the bottom of the canvas of a branch is open, without a branch
+  nil (see `app.main.data.workspace.layout`)."
+  (l/derived :bottom-bar workspace-global))
 
 (def mcp
   (l/derived :mcp st/state))

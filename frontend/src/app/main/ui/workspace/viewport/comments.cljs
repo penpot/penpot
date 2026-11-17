@@ -10,9 +10,12 @@
    [app.common.data.macros :as dm]
    [app.main.data.comments :as dcm]
    [app.main.data.workspace.comments :as dwcm]
+   [app.main.data.workspace.tasks :as dwtk]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.comments :as cmt]
+   [app.main.ui.workspace.review.markers :as rvm]
+   [app.main.ui.workspace.review.tasks :as rvt]
    [app.main.ui.workspace.viewport.rulers :as rulers]
    [rumext.v2 :as mf]))
 
@@ -67,7 +70,8 @@
      {:thread thread
       :viewport viewport
       :position-modifier position-modifier
-      :zoom zoom}]))
+      :zoom zoom
+      :task-section rvt/thread-task-section*}]))
 
 (mf/defc comments-layer*
   {::mf/wrap [mf/memo]}
@@ -84,12 +88,34 @@
         local       (mf/deref refs/comments-local)
 
         threads-map (mf/deref refs/threads)
+        tasks       (mf/deref refs/tasks)
+        objects     (mf/deref refs/workspace-page-objects)
+        review-local (mf/deref refs/review-local)
+        drawing-tool (mf/deref refs/selected-drawing-tool)
+        reviewing?  (some? (mf/deref refs/pull-request-preview))
 
-        threads
+        task-thread-ids
+        (mf/with-memo [tasks]
+          (into #{} (keep :thread-id) (vals tasks)))
+
+        all-threads
         (mf/with-memo [threads-map local profile page-id]
           (->> (vals threads-map)
                (filter #(= (:page-id %) page-id))
                (dcm/apply-filters local profile)))
+
+        ;; the threads of the design reviews and of the tasks have marks of
+        ;; their own (`review-markers*`); the rest are plain bubbles
+        [review-threads threads]
+        (mf/with-memo [all-threads task-thread-ids]
+          ((juxt filterv (comp vec remove))
+           (partial rvm/review-thread? task-thread-ids)
+           all-threads))
+
+        area-tool?
+        (and reviewing?
+             (= :comments drawing-tool)
+             (= :comment-area (get review-local :tool)))
 
         viewport
         (assoc vport :offset-x pos-x :offset-y pos-y)
@@ -103,7 +129,8 @@
            (st/emit! (dcm/create-thread-on-workspace draft))))]
 
     (mf/with-effect [file-id]
-      (st/emit! (dwcm/initialize-comments file-id))
+      (st/emit! (dwcm/initialize-comments file-id)
+                (dwtk/fetch-tasks))
       (fn [] (st/emit! ::dwcm/finalize)))
 
     ;; Any viewport change (pan/zoom) collapses an expanded cluster back.
@@ -124,8 +151,18 @@
                             (dm/fmt "inset(%px 0 0 %px)"
                                     rulers/ruler-area-size
                                     rulers/ruler-area-size))}}
+      (when area-tool?
+        [:> rvm/area-layer* {:vbox vbox :zoom zoom}])
+
       [:div {:class (stl/css :threads)
              :style {:transform (dm/fmt "translate(%px, %px)" pos-x pos-y)}}
+
+       [:> rvm/review-markers* {:threads review-threads
+                                :page-id page-id
+                                :zoom zoom
+                                :open-id (:open local)
+                                :draft (:draft local)
+                                :expanded (:expanded local)}]
 
        (for [thread-group (dwcm/group-bubbles zoom threads)]
          (let [group?    (> (count thread-group) 1)
@@ -160,7 +197,8 @@
          (when-let [thread (get threads-map id)]
            (when (seq (dcm/apply-filters local profile [thread]))
              [:> comment-floating-thread-wrapper*
-              {:thread thread
+              ;; a thread on a layer opens by the layer, wherever it is now
+              {:thread (assoc thread :position (rvm/thread-position objects thread))
                :viewport viewport
                :zoom zoom}])))
 

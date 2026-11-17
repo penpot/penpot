@@ -1,0 +1,333 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS SUBSIDIARY SL
+
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/mixins.scss" as *;
+
+// --- List
+
+.task-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+// --- The task of a comment thread
+
+.thread-task {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+}
+
+// --- Events
+
+.task-event {
+  --task-event-fg-color: var(--color-foreground-primary);
+  --task-event-icon-color: var(--color-accent-info);
+
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-s);
+  padding: var(--sp-s);
+
+  // outlined on the background of the thread, apart from its messages,
+  // which are filled
+  border: $b-1 solid var(--color-background-quaternary);
+  border-radius: $br-8;
+  color: var(--task-event-fg-color);
+
+  &.is-warning {
+    --task-event-fg-color: var(--color-accent-warning);
+    --task-event-icon-color: var(--color-accent-warning);
+  }
+}
+
+.task-event-icon {
+  flex-shrink: 0;
+  color: var(--task-event-icon-color);
+}
+
+.task-event-text {
+  flex: 1;
+  min-inline-size: 0;
+}
+
+.task-event-time {
+  color: var(--color-foreground-primary);
+}
+
+// --- State and next step
+
+.task-state {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+}
+
+.task-state-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-s);
+  min-inline-size: 0;
+}
+
+.task-state-status {
+  flex-shrink: 0;
+}
+
+.task-state-origin {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  min-inline-size: 0;
+}
+
+.task-state-review {
+  min-inline-size: 0;
+}
+
+.task-state-review-title {
+  @include text-ellipsis;
+
+  min-inline-size: 0;
+}
+
+.task-state-text {
+  flex-shrink: 0;
+  color: var(--color-foreground-primary);
+}
+
+.assignee-menu {
+  display: flex;
+
+  // the text of the trigger lines up with the tag above it
+  margin-inline-start: calc(-1 * var(--sp-xs));
+  min-inline-size: 0;
+
+  // the DS menu wraps its trigger in a div with no class to reach: a long name
+  // has to shrink through it and end in an ellipsis
+  > div {
+    min-inline-size: 0;
+  }
+}
+
+// the assignees replace the actions in the same popover, whose edge stays put:
+// a fixed width keeps long names from pushing it out of the screen
+.task-menu {
+  inline-size: $sz-224;
+}
+
+.assignee-trigger {
+  --assignee-trigger-bg-color: transparent;
+
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-xxs);
+  max-inline-size: 100%;
+  padding-inline: var(--sp-xs);
+  border: 0;
+  border-radius: $br-4;
+  background-color: var(--assignee-trigger-bg-color);
+  color: var(--color-foreground-primary);
+  cursor: pointer;
+
+  &:hover,
+  &[aria-expanded="true"] {
+    --assignee-trigger-bg-color: var(--color-background-quaternary);
+  }
+
+  &:focus-visible {
+    outline: $b-1 solid var(--color-accent-primary);
+  }
+}
+
+.assignee-label {
+  @include text-ellipsis;
+
+  min-inline-size: 0;
+}
+
+.assignee-icon {
+  flex-shrink: 0;
+  color: var(--color-foreground-secondary);
+}
+
+.assignee-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+  min-inline-size: 0;
+  inline-size: 100%;
+}
+
+.assignee-name {
+  @include text-ellipsis;
+
+  flex: 1;
+  min-inline-size: 0;
+}
+
+.assignee-tick {
+  flex-shrink: 0;
+  color: var(--color-accent-primary);
+}
+
+.task-next-step {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-m);
+  padding: var(--sp-m);
+  border-radius: $br-8;
+  background-color: var(--color-background-tertiary);
+  color: var(--color-foreground-primary);
+
+  &.is-inline {
+    flex-direction: row;
+    justify-content: flex-end;
+    padding: 0;
+    background: none;
+  }
+}
+
+.task-next-step-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--sp-s);
+}
+
+// --- The card of a mark on the canvas
+
+.task-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-xs);
+}
+
+.task-preview-title {
+  color: var(--color-foreground-primary);
+  overflow-wrap: anywhere;
+}
+
+.task-preview-assignee {
+  color: var(--color-foreground-secondary);
+}
+
+// --- Floating panels on the canvas
+
+.floating-panel {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  inline-size: $sz-284;
+  max-block-size: 60vh;
+  border: $b-1 solid var(--color-background-quaternary);
+  border-radius: $br-8;
+  background-color: var(--color-background-primary);
+  box-shadow: 0 0 px2rem(12) 0 var(--color-shadow-dark);
+  color: var(--color-foreground-primary);
+  overflow: hidden;
+  cursor: auto;
+  pointer-events: auto;
+}
+
+.floating-header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+  padding: var(--sp-s) var(--sp-s) var(--sp-s) var(--sp-m);
+  border-block-end: $b-1 solid var(--color-background-quaternary);
+}
+
+.floating-header-icon {
+  color: var(--color-accent-info);
+}
+
+.floating-title {
+  --floating-title-color: var(--color-foreground-secondary);
+
+  flex: 1;
+  min-inline-size: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--floating-title-color);
+
+  &.is-strong {
+    --floating-title-color: var(--color-foreground-primary);
+  }
+}
+
+.floating-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-m);
+  padding: var(--sp-m);
+  overflow-y: auto;
+}
+
+// --- New task form
+
+.task-title-input {
+  --textarea-resize: none;
+}
+
+.form-hint {
+  margin: 0;
+  color: var(--color-foreground-secondary);
+}
+
+.form-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-s);
+}
+
+.form-label {
+  flex-shrink: 0;
+  color: var(--color-foreground-primary);
+}
+
+.form-select {
+  max-inline-size: $sz-160;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sp-s);
+}
+
+// --- Progress
+
+.progress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+}
+
+.progress-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.progress-label {
+  color: var(--color-foreground-primary);
+}
+
+.progress-bar {
+  --progress-bar-fill-radius: #{$br-4};
+}

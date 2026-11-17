@@ -12,14 +12,20 @@
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.comments :as dwcm]
    [app.main.data.workspace.drawing.common :as dwdc]
+   [app.main.data.workspace.review :as dwrv]
+   [app.main.data.workspace.tasks :as dwtk]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.comments :as cmt]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.context :as ctx]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
+   [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.ds.product.empty-state :refer [empty-state*]]
    [app.main.ui.ds.product.panel-title :refer [panel-title*]]
+   [app.main.ui.workspace.review.panel :refer [comments-tab* tasks-tab*]]
+   [app.main.ui.workspace.review.tasks :as rvt]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
@@ -79,6 +85,8 @@
       [:span {:class (stl/css :icon)}
        [:> icon* {:icon-id i/tick :size "s" :class (stl/css :tick-icon)}]]]]))
 
+(declare comments-tasks-tabs* comments-list*)
+
 (mf/defc comments-sidebar*
   [{:keys [profiles threads page-id from-viewer]}]
   (let [threads-map (mf/deref refs/threads)
@@ -126,46 +134,103 @@
              (st/emit! (with-meta (dcmt/open-thread thread) {::ev/origin "viewer"}))
              (st/emit! (dwcm/navigate-to-comment thread)))))]
 
-    [:div {:class (stl/css-case :comments-section true
-                                :from-viewer from-viewer)}
+    (if (and (not from-viewer) (dwtk/enabled?))
+      [:> comments-tasks-tabs* {:threads (vals threads-map)
+                                :on-close close-section}]
 
-     [:> panel-title* {:class (stl/css :comments-title)
-                       :text (tr "labels.comments")
-                       :on-close close-section}]
+      [:div {:class (stl/css-case :comments-section true
+                                  :from-viewer from-viewer)}
 
-     [:button {:class (stl/css :mode-dropdown-wrapper)
-               :type "button"
-               :aria-haspopup "menu"
-               :aria-expanded options?
-               :on-click toggle-mode-selector}
+       [:> panel-title* {:class (stl/css :comments-title)
+                         :text (tr "labels.comments")
+                         :on-close close-section}]
+       [:> comments-list* {:local local
+                           :options? options?
+                           :state* state*
+                           :from-viewer from-viewer
+                           :toggle-mode-selector toggle-mode-selector
+                           :tgroups tgroups
+                           :on-thread-click on-thread-click
+                           :profiles profiles}]])))
 
-      [:span {:class (stl/css :mode-label)}
-       (case (:mode local)
-         (nil :all) (tr "labels.show-all-comments")
-         :yours     (tr "labels.show-your-comments")
-         :mentions     (tr "labels.show-mentions"))]
-      [:div {:class (stl/css :arrow-icon)}
-       [:> icon* {:icon-id i/arrow-down :size "s" :class (stl/css :arrow-svg)}]]]
+(mf/defc comments-tasks-tabs*
+  "The comments panel of a file with tasks: a tab for its comments and one
+  for its tasks, beside the button that closes the panel."
+  {::mf/private true}
+  [{:keys [threads on-close]}]
+  (let [local   (mf/deref refs/review-local)
+        tasks*  (mf/deref refs/tasks)
+        tab     (get local :panel-tab :comments)
+        tasks   (mf/with-memo [tasks*]
+                  (vec (rvt/visible-tasks tasks*)))
+        tabs    (mf/with-memo [threads tasks]
+                  [{:id "comments"
+                    :label (tr "workspace.review.tab.comments" (count threads))}
+                   {:id "tasks"
+                    :label (tr "workspace.review.tab.tasks" (count tasks))}])
+        on-tab  (mf/use-fn #(st/emit! (dwrv/set-panel-tab (keyword %))))
+        button  (mf/with-memo [on-close]
+                  (mf/html
+                   [:> icon-button* {:variant "ghost"
+                                     :aria-label (tr "labels.close")
+                                     :on-click on-close
+                                     :icon i/close}]))]
 
-     [:& dropdown {:show options?
-                   :on-close #(reset! state* false)}
-      [:& sidebar-options {:local local :from-viewer from-viewer}]]
+    (mf/with-effect []
+      (st/emit! (dwtk/fetch-tasks)))
 
-     [:div {:class (stl/css :comments-section-content)}
+    [:div {:class (stl/css :comments-panel)}
+     [:> tab-switcher* {:tabs tabs
+                        :selected (name tab)
+                        :on-change on-tab
+                        :scrollable-panel true
+                        :action-button-position "end"
+                        :action-button button
+                        :class (stl/css :comments-tabs)}
+      [:div {:class (stl/css :comments-tab-content)}
+       (if (= tab :tasks)
+         [:> tasks-tab* {:tasks tasks :grouped true :show-review true}]
+         [:> comments-tab* {:threads threads :show-page true :show-review true}])]]]))
 
-      (if (seq tgroups)
-        [:div {:class (stl/css :thread-groups)}
+(mf/defc comments-list*
+  "The comment threads of the file, grouped by page, with the selector of
+  which ones to show."
+  {::mf/private true}
+  [{:keys [local options? state* from-viewer toggle-mode-selector tgroups on-thread-click profiles]}]
+  [:*
+   [:button {:class (stl/css :mode-dropdown-wrapper)
+             :type "button"
+             :aria-haspopup "menu"
+             :aria-expanded options?
+             :on-click toggle-mode-selector}
+
+    [:span {:class (stl/css :mode-label)}
+     (case (:mode local)
+       (nil :all) (tr "labels.show-all-comments")
+       :yours     (tr "labels.show-your-comments")
+       :mentions     (tr "labels.show-mentions"))]
+    [:div {:class (stl/css :arrow-icon)}
+     [:> icon* {:icon-id i/arrow-down :size "s" :class (stl/css :arrow-svg)}]]]
+
+   [:& dropdown {:show options?
+                 :on-close #(reset! state* false)}
+    [:& sidebar-options {:local local :from-viewer from-viewer}]]
+
+   [:div {:class (stl/css :comments-section-content)}
+
+    (if (seq tgroups)
+      [:div {:class (stl/css :thread-groups)}
+       [:> cmt/comment-sidebar-thread-group*
+        {:group (first tgroups)
+         :on-thread-click on-thread-click
+         :profiles profiles}]
+       (for [tgroup (rest tgroups)]
          [:> cmt/comment-sidebar-thread-group*
-          {:group (first tgroups)
+          {:group tgroup
            :on-thread-click on-thread-click
-           :profiles profiles}]
-         (for [tgroup (rest tgroups)]
-           [:> cmt/comment-sidebar-thread-group*
-            {:group tgroup
-             :on-thread-click on-thread-click
-             :profiles profiles
-             :key (:page-id tgroup)}])]
+           :profiles profiles
+           :key (:page-id tgroup)}])]
 
-        [:div {:class (stl/css :thread-group-placeholder)}
-         [:> empty-state* {:icon i/comments
-                           :text (tr "labels.no-comments-available")}]])]]))
+      [:div {:class (stl/css :thread-group-placeholder)}
+       [:> empty-state* {:icon i/comments
+                         :text (tr "labels.no-comments-available")}]])]])

@@ -1,0 +1,104 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS SUBSIDIARY SL
+
+.review-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-m);
+  block-size: 100%;
+  min-block-size: 0;
+  padding-block-start: var(--sp-m);
+}
+
+.review-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  padding-inline: var(--sp-m);
+}
+
+.review-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-s);
+}
+
+.review-title {
+  min-inline-size: 0;
+  margin: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--color-foreground-primary);
+}
+
+.review-route {
+  color: var(--color-foreground-secondary);
+}
+
+.review-tabs {
+  --tabs-nav-padding-inline-start: var(--sp-m);
+  --tabs-nav-padding-inline-end: var(--sp-m);
+
+  flex: 1;
+  min-block-size: 0;
+}
+
+// the inspect of the workspace, sized to the room the tab leaves it and with
+// the margins it has there: a review is read-only, but it is no narrower
+.inspect-tab {
+  --options-available-height: 100%;
+  --inspect-block-size: 100%;
+  --inspect-content-display: flex;
+  --inspect-tab-block-size: auto;
+  --options-read-only-padding: var(--sp-s) 0 0;
+
+  block-size: 100%;
+  min-block-size: 0;
+}
+
+.review-tab-content {
+  padding-inline: var(--sp-m);
+}
+
+.tab-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-m);
+  padding-block: var(--sp-m);
+}
+
+.groups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-l);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+}
+
+.group-title {
+  margin: 0;
+  color: var(--color-foreground-secondary);
+
+  // TODO: No exact DS typography match found.
+  // Closest match: headline-small (weight 400 vs 500, line-height 1.3 vs 1.2).
+  text-transform: uppercase;
+}
+
+.empty {
+  padding-block: var(--sp-xxl);
+}
+
+// a full-width DS button does not center its label on its own
+.new-task {
+  justify-content: center;
+  inline-size: 100%;
+}

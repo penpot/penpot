@@ -26,6 +26,7 @@
    [app.main.data.workspace.reflow :as wrf]
    [app.main.data.workspace.reflow.signals :as wrfs]
    [app.main.data.workspace.selection :as dws]
+   [app.main.data.workspace.tasks :as dwtk]
    [app.main.data.workspace.undo :as dwu]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
@@ -401,6 +402,8 @@
          (wrf/cancel-shapes! deleted-ids)
          (rx/of (dwu/start-undo-transaction undo-id)
                 (dc/detach-comment-thread ids)
+                ;; the open tasks of the deleted layers move to their board
+                (dwtk/handle-deleted-shapes objects ids)
                 (dch/commit-changes changes)
                 (ptk/data-event :layout/update {:ids all-parents :undo-group (:undo-group options)})
                 (dwu/commit-undo-transaction undo-id)))))))

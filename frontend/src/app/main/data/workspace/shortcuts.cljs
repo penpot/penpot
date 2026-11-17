@@ -674,6 +674,7 @@
                           :section [:workspace]
                           :fn #(do (r/set-resize-type! :bottom)
                                    (emit-when-no-readonly (dw/remove-layout-flag :hide-palettes)
+                                                          (dw/open-bottom-bar :palette)
                                                           (dw/remove-layout-flag :textpalette)
                                                           (toggle-layout-flag :colorpalette)))}
 
@@ -684,6 +685,7 @@
                           :section [:workspace]
                           :fn #(do (r/set-resize-type! :bottom)
                                    (emit-when-no-readonly (dw/remove-layout-flag :hide-palettes)
+                                                          (dw/open-bottom-bar :palette)
                                                           (dw/remove-layout-flag :colorpalette)
                                                           (toggle-layout-flag :textpalette)))}
 

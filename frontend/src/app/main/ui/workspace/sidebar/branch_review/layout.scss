@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC Sucursal en España SL
+// Copyright (c) KALEIDOS SUBSIDIARY SL
 
 @use "ds/_borders.scss" as *;
 @use "ds/_sizes.scss" as *;
@@ -26,7 +26,7 @@
 .review-modal {
   --review-modal-inline-size: clamp(#{px2rem(960)}, 88vw, #{px2rem(1440)});
   --review-panes-block-size: min(calc(100dvh - #{px2rem(280)}), #{px2rem(880)});
-  --review-list-inline-size: clamp(#{px2rem(320)}, 26%, #{px2rem(400)});
+  --review-list-inline-size: clamp(#{px2rem(320)}, 26%, #{$sz-400});
 
   // the previews grow with the panes: about a third of their height in
   // the detail, about two thirds when expanded, within bounds
@@ -41,7 +41,7 @@
     #{px2rem(600)}
   );
 
-  max-inline-size: min(var(--review-modal-inline-size), calc(100vw - #{px2rem(32)}));
+  max-inline-size: min(var(--review-modal-inline-size), calc(100vw - #{$sz-32}));
   overflow: hidden;
 }
 
@@ -52,6 +52,8 @@
 }
 
 .header-icon {
+  --header-icon-color: var(--color-foreground-secondary);
+
   display: flex;
   flex-shrink: 0;
   align-items: center;
@@ -59,11 +61,11 @@
   inline-size: $sz-32;
   block-size: $sz-32;
   border-radius: $br-8;
-  color: var(--color-foreground-secondary);
+  color: var(--header-icon-color);
   background-color: var(--color-background-tertiary);
 
   &.is-warning {
-    color: var(--color-accent-warning);
+    --header-icon-color: var(--color-accent-warning);
   }
 }
 
@@ -194,6 +196,7 @@
 }
 
 .notice-title {
+  // TODO: 600 is not a weight of the DS typographies.
   font-weight: 600;
 }
 
@@ -249,6 +252,9 @@
   @include text-ellipsis;
 
   color: var(--color-foreground-primary);
+
+  // TODO: No exact DS typography match found.
+  // Closest match: body-small (weight 500 vs 400).
   font-weight: 500;
 }
 

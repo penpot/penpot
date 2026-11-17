@@ -1,0 +1,29 @@
+{ /* This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+  Copyright (c) KALEIDOS SUBSIDIARY SL */ }
+
+import { Canvas, Meta } from '@storybook/addon-docs/blocks';
+import * as Textarea from "./textarea.stories";
+
+<Meta title="Controls/Textarea" />
+
+# Textarea
+
+A text area of several lines.
+
+<Canvas of={Textarea.Default} />
+
+## Technical notes
+
+It takes the props of a `textarea` (`value`, `rows`, `max-length`,
+`placeholder`, `on-change`...). Name it with `aria-label` or a `label`.
+Set `--textarea-resize` through `class` to change how it resizes.
+
+```clj
+[:> textarea* {:value value
+               :rows 3
+               :aria-label (tr "workspace.tasks.title")
+               :on-change on-change}]
+```

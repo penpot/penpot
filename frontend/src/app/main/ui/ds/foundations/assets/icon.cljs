@@ -103,6 +103,7 @@
 (def ^:icon-id collapse "collapse")
 (def ^:icon-id column "column")
 (def ^:icon-id column-reverse "column-reverse")
+(def ^:icon-id comment-area "comment-area")
 (def ^:icon-id comments "comments")
 (def ^:icon-id component "component")
 (def ^:icon-id component-copy "component-copy")

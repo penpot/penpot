@@ -10,6 +10,7 @@
    [frontend-tests.composable-tests.comp.sync-test]
    [frontend-tests.copy-as-svg-test]
    [frontend-tests.data.auth-test]
+   [frontend-tests.data.bottom-bars-test]
    [frontend-tests.data.comments-batches-test]
    [frontend-tests.data.comments-filters-test]
    [frontend-tests.data.dashboard-test]
@@ -48,6 +49,7 @@
    [frontend-tests.data.workspace-path-edition-test]
    [frontend-tests.data.workspace-reflow-test]
    [frontend-tests.data.workspace-shortcuts-test]
+   [frontend-tests.data.workspace-tasks-test]
    [frontend-tests.data.workspace-texts-test]
    [frontend-tests.data.workspace-thumbnails-test]
    [frontend-tests.data.workspace-undo-test]
@@ -164,6 +166,8 @@
    [frontend-tests.ui.measurements-test]
    [frontend-tests.ui.measures-menu-props-test]
    [frontend-tests.ui.organization-team-switch-test]
+   [frontend-tests.ui.review-details-test]
+   [frontend-tests.ui.review-markers-test]
    [frontend-tests.ui.routes-test]
    [frontend-tests.ui.settings-password-schema-test]
    [frontend-tests.ui.settings-shortcuts-test]
@@ -214,6 +218,7 @@
    'frontend-tests.composable-tests.comp.sync-test
    'frontend-tests.copy-as-svg-test
    'frontend-tests.data.auth-test
+   'frontend-tests.data.bottom-bars-test
    'frontend-tests.data.comments-batches-test
    'frontend-tests.data.comments-filters-test
    'frontend-tests.data.dashboard-test
@@ -243,6 +248,7 @@
    'frontend-tests.data.uploads-test
    'frontend-tests.data.viewer-test
    'frontend-tests.data.workspace-branches-test
+   'frontend-tests.data.workspace-tasks-test
    'frontend-tests.data.workspace-colors-test
    'frontend-tests.data.workspace-comments-test
    'frontend-tests.data.workspace-context-menu-test
@@ -366,6 +372,8 @@
    'frontend-tests.ui.inspect-geometry-test
    'frontend-tests.ui.inspect-stroke-tokens-test
    'frontend-tests.ui.jobs-progress-test
+   'frontend-tests.ui.review-details-test
+   'frontend-tests.ui.review-markers-test
    'frontend-tests.ui.layout-container-multiple-test
    'frontend-tests.ui.measurements-test
    'frontend-tests.ui.measures-menu-props-test

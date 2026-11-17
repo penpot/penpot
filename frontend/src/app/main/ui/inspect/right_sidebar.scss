@@ -12,7 +12,11 @@
 .settings-bar-right {
   min-inline-size: px2rem(252);
   inline-size: 100%;
-  block-size: 100vh;
+
+  // a panel that holds the inspect below its own header sets these four
+  // (`--inspect-block-size`, `--inspect-content-display`,
+  // `--inspect-tab-block-size` and `--options-available-height`)
+  block-size: var(--inspect-block-size, 100vh);
   position: relative;
   inset-inline-start: unset;
   inset-inline-end: unset;
@@ -127,6 +131,8 @@
 }
 
 .inspect-content {
+  display: var(--inspect-content-display, block);
+  flex-direction: column;
   overflow: hidden;
 }
 

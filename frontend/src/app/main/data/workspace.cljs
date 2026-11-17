@@ -689,6 +689,8 @@
 ;; --- Layout Flags
 
 (dm/export layout/toggle-layout-flag)
+(dm/export layout/open-bottom-bar)
+(dm/export layout/toggle-bottom-bar)
 (dm/export layout/remove-layout-flag)
 
 ;; --- Profile

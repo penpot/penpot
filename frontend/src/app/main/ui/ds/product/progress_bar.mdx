@@ -1,0 +1,28 @@
+{ /* This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+  Copyright (c) KALEIDOS SUBSIDIARY SL */ }
+
+import { Canvas, Meta } from '@storybook/addon-docs/blocks';
+import * as ProgressBar from "./progress_bar.stories";
+
+<Meta title="Product/Review/ProgressBar" />
+
+# ProgressBar
+
+A thin bar filled by how much of a total is done.
+
+<Canvas of={ProgressBar.Default} />
+
+## Technical notes
+
+It takes the width of its container: size it with `class`. Set
+`--progress-bar-fill-radius` there to round the end of the fill. Add
+`aria-hidden` when text next to it already says the same.
+
+```clj
+[:> progress-bar* {:value closed
+                   :total total
+                   :class (stl/css :tasks-progress)}]
+```

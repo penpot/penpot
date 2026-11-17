@@ -566,7 +566,25 @@
     :fn (mg/resource "app/migrations/sql/0807-del-file-branch-profile-rels.sql")}
 
    {:name "0808-mod-file-branch-project"
-    :fn (mg/resource "app/migrations/sql/0808-mod-file-branch-project.sql")}])
+    :fn (mg/resource "app/migrations/sql/0808-mod-file-branch-project.sql")}
+
+   {:name "0809-mod-comment-thread-add-review-fields"
+    :fn (mg/resource "app/migrations/sql/0809-mod-comment-thread-add-review-fields.sql")}
+
+   {:name "0810-add-file-task-tables"
+    :fn (mg/resource "app/migrations/sql/0810-add-file-task-tables.sql")}
+
+   {:name "0811-add-file-pull-request-activity-table"
+    :fn (mg/resource "app/migrations/sql/0811-add-file-pull-request-activity-table.sql")}
+
+   {:name "0812-mod-file-task-add-position"
+    :fn (mg/resource "app/migrations/sql/0812-mod-file-task-add-position.sql")}
+
+   {:name "0813-mod-file-task-add-comment"
+    :fn (mg/resource "app/migrations/sql/0813-mod-file-task-add-comment.sql")}
+
+   {:name "0814-mod-file-task-give-thread"
+    :fn (mg/resource "app/migrations/sql/0814-mod-file-task-give-thread.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]

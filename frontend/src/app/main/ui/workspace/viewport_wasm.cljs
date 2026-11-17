@@ -27,6 +27,7 @@
    [app.main.ui.flex-controls :as mfc]
    [app.main.ui.hooks :as ui-hooks]
    [app.main.ui.measurements :as msr]
+   [app.main.ui.workspace.review.overlays :refer [review-overlays*]]
    [app.main.ui.workspace.shapes.path.editor :refer [path-editor*]]
    [app.main.ui.workspace.shapes.text.editor :as editor-v1]
    [app.main.ui.workspace.shapes.text.text-edition-outline :refer [text-edition-outline*]]
@@ -349,8 +350,13 @@
 
         disable-events?          (contains? layout :comments)
         comments-mode?           (= drawing-tool :comments)
-        show-comments?           (or comments-mode?
-                                     (contains? layout :display-comments))
+        reviewing?               (some? (mf/deref refs/pull-request-preview))
+        ;; inside a design review the global "show comments" option
+        ;; decides alone: it shows or hides comments and tasks
+        show-comments?           (if reviewing?
+                                   (contains? layout :display-comments)
+                                   (or comments-mode?
+                                       (contains? layout :display-comments)))
         show-cursor-tooltip?     tooltip
         show-draw-area?          drawing-obj
         show-gradient-handlers?  (= (count selected) 1)
@@ -361,7 +367,7 @@
                                       (not panning)
                                       (not edition)
                                       (not drawing-obj)
-                                      (not (#{:comments :path :curve} drawing-tool))
+                                      (not (#{:path :curve} drawing-tool))
                                       (not page-transition?))
 
         show-pixel-grid?         (and (contains? layout :show-pixel-grid)
@@ -693,6 +699,12 @@
                                       :zoom zoom
                                       :show-rulers show-rulers?}])
 
+      ;; the changes of a design review and the layer picker of a task
+      [:> review-overlays* {:vbox vbox
+                            :vport vport
+                            :zoom zoom
+                            :page-id page-id}]
+
       (when picking-color?
         [:> pixel-overlay/pixel-overlay-wasm* {:viewport-ref viewport-ref
                                                :canvas-ref canvas-ref}])]
@@ -795,10 +807,12 @@
                  :zoom zoom}]])]))
 
        (when show-outlines?
+         ;; the comments tool outlines only what asks for it, like the
+         ;; layer of a hovered mark
          [:> outline/shape-outlines*
           {:objects objects-for-outlines
-           :selected selected
-           :hover #{(:id @hover) @frame-hover}
+           :selected (when-not comments-mode? selected)
+           :hover (when-not comments-mode? #{(:id @hover) @frame-hover})
            :highlighted highlighted
            :edition edition
            :zoom zoom}])
