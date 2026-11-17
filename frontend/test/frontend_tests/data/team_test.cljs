@@ -162,7 +162,16 @@
 (t/deftest owner-invitation-link-is-copyable-only-by-the-team-owner
   ;; An admin cannot create nor promote an owner invitation, so the backend
   ;; does not mint its token for them: the action is not offered either.
-  (t/is (true? (dtui/invitation-link-copyable? true :owner)))
-  (t/is (false? (dtui/invitation-link-copyable? false :owner)))
-  (t/is (true? (dtui/invitation-link-copyable? false :editor)))
-  (t/is (true? (dtui/invitation-link-copyable? false :viewer))))
+  (t/is (true? (dtui/invitation-link-copyable? true true :owner)))
+  (t/is (false? (dtui/invitation-link-copyable? true false :owner)))
+  (t/is (true? (dtui/invitation-link-copyable? true false :editor)))
+  (t/is (true? (dtui/invitation-link-copyable? true false :viewer))))
+
+(t/deftest invitation-link-is-not-copyable-without-the-invite-policy
+  ;; The link invites as much as sending the invitation does, so a profile
+  ;; that the organization invite policy leaves out cannot copy it, not even
+  ;; the team owner.
+  (t/is (false? (dtui/invitation-link-copyable? false true :owner)))
+  (t/is (false? (dtui/invitation-link-copyable? false true :editor)))
+  (t/is (false? (dtui/invitation-link-copyable? false false :editor)))
+  (t/is (false? (dtui/invitation-link-copyable? false false :viewer))))

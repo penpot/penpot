@@ -18,6 +18,7 @@
 
 ## Sandbox and global cleanup
 
+- `src/index.ts` calls `bootstrapSES()` (in `src/lib/bootstrap.ts`) at module load. If `repairIntrinsics` throws (e.g. SES 2.2+ rejects a `Temporal` wrapped by a browser extension), the error is caught, `getPluginsRuntimeError()` exposes it, and `initPluginsRuntime` installs no `ɵ*` globals: the frontend app still boots, plugins and MCP are unavailable in that environment. On failure, `Function.prototype.toString` has already been replaced but no intrinsics are hardened and no compartment/sandbox is created — never run plugins on that path.
 - The runtime uses SES compartments. Public API return values are passed through `ses.safeReturn` before crossing back to plugin code.
 - Plugin `fetch` is sanitized: credentials are omitted and Authorization is blanked. The exposed response only includes ok/status/statusText/url/text/json.
 - Timer callbacks are wrapped to mark plugin-originated errors, and timeout/interval IDs are tracked so plugin close can clear them.

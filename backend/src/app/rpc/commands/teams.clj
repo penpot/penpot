@@ -162,7 +162,8 @@
                           WHEN 'professional' THEN 'active'
                           ELSE COALESCE(p.props->'~:subscription'->>'~:status', 'incomplete')
                        END,
-            '~:seats', p.props->'~:subscription'->'~:quantity'
+            '~:seats', p.props->'~:subscription'->'~:quantity',
+            '~:owner-id', '~u' || p.id::text
           ) AS subscription
      FROM team_profile_rel AS tp
      JOIN team AS t ON (t.id = tp.team_id)
@@ -212,8 +213,9 @@
   (dm/with-open [conn (db/open pool)]
     (let [teams (get-teams conn profile-id)]
       (if (contains? cf/flags :admin-console)
-        (->> (nitrate/add-organization-info-to-teams cfg teams params)
-             (remove #(get-in % [:organization :expired-license])))
+        (as-> (nitrate/add-organization-info-to-teams cfg teams params) teams
+          (remove #(get-in % [:organization :expired-license]) teams)
+          (nitrate/add-owner-licence-to-teams cfg teams params))
         teams))))
 
 (def ^:private sql:get-owned-teams
@@ -259,7 +261,8 @@
   [cfg {:keys [::rpc/profile-id id file-id] :as params}]
   (let [team (get-team cfg :profile-id profile-id :team-id id :file-id file-id)]
     (if (contains? cf/flags :admin-console)
-      (nitrate/add-organization-info-to-team cfg team params)
+      (let [team (nitrate/add-organization-info-to-team cfg team params)]
+        (first (nitrate/add-owner-licence-to-teams cfg [team] params)))
       team)))
 
 (defn- get-organization-owner-viewer-team

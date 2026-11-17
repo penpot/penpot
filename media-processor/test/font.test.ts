@@ -11,13 +11,27 @@ let ttfData: Buffer;
 let otfData: Buffer;
 let woffData: Buffer;
 let woff2Data: Buffer;
+let cidOtfData: Buffer;
+
+// Returns numGlyphs from the maxp table of an sfnt font.
+function sfntNumGlyphs(data: Buffer): number {
+  const numTables = data.readUInt16BE(4);
+  for (let i = 0; i < numTables; i++) {
+    const rec = 12 + i * 16;
+    if (data.toString("latin1", rec, rec + 4) === "maxp") {
+      return data.readUInt16BE(data.readUInt32BE(rec + 8) + 4);
+    }
+  }
+  throw new Error("maxp table not found");
+}
 
 beforeAll(async () => {
-  [ttfData, otfData, woffData, woff2Data] = await Promise.all([
+  [ttfData, otfData, woffData, woff2Data, cidOtfData] = await Promise.all([
     readFile(join(FIXTURES, "font-1.ttf")),
     readFile(join(FIXTURES, "font-1.otf")),
     readFile(join(FIXTURES, "font-1.woff")),
     readFile(join(FIXTURES, "font-1.woff2")),
+    readFile(join(FIXTURES, "font-cid.otf")),
   ]);
 });
 
@@ -57,6 +71,13 @@ describe("convertFont", () => {
       const result = await convertFont(otfData, "font/otf", "font/woff");
       expect(result).toBeInstanceOf(Buffer);
       expect(result!.length).toBeGreaterThan(0);
+    });
+
+    it("otf→ttf keeps the glyphs of every CID sub-font", async () => {
+      // font-cid.otf has 5 glyphs split across two CID sub-fonts
+      const result = await convertFont(cidOtfData, "font/otf", "font/ttf");
+      expect(result!.subarray(0, 4).toString("hex")).toBe("00010000");
+      expect(sfntNumGlyphs(result!)).toBeGreaterThanOrEqual(5);
     });
   });
 

@@ -44,7 +44,9 @@
         {sel-w :width sel-h :height} (dm/get-in objects [root-id :selrect])
         longest-side (mth/max (or ext-w sel-w) (or ext-h sel-h))
         scale        (thumbnail-scale longest-side)
-        bytes        (wasm.api/render-shape-pixels root-id scale :png)]
+        ;; A thumbnail is a preview, not an export: never drop the root's
+        ;; fills, even when it hides them on export.
+        bytes        (wasm.api/render-shape-pixels root-id scale :png false)]
     (when (and (some? bytes) (pos? (.-length ^js bytes)))
       (wapi/create-blob bytes "image/png"))))
 

@@ -18,6 +18,7 @@
 - **plugins-runtime:** `Shape.componentRoot()` returns the root of the shape's own component tree. It used to return a shape that pointed at nothing when the copy was on another page or file than its main, and threw when the copy's library was not available.
 - **plugins-runtime:** `LibraryComponent.mainInstance()` returns `null` for a deleted component, instead of a shape with an empty `id` whose `parent` throws.
 - **plugins-runtime**: `TokenFontFamilies.resolvedValue` and the `fontFamilies` member of `TokenTypographyValue` now keep a family whose name has several words (`Hanken Grotesk`) as one entry, instead of splitting it into an array of its words, and keep names with words the resolver would otherwise read as colors or numbers (`Red Hat Display`, `Press Start 2P`) unchanged.
+- **plugins-runtime:** A SES `repairIntrinsics` failure at startup (for example, when a browser extension wraps the native `Temporal` global) no longer leaves the whole app blank. Plugins are skipped for that session, the error is logged, and a telemetry event reports the unavailable runtime; the editor, login and sign-up pages load as usual. Plugins work as before in every other environment. When startup fails, SES has already replaced `Function.prototype.toString` in the host realm before throwing, but no intrinsics are hardened and no sandbox is created. Closes #12924.
 
 ## 1.6.0 (2026-11-10)
 
