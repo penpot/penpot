@@ -21,7 +21,10 @@ function subtree(shape: Shape): Shape[] {
     return [shape, ...children(shape).flatMap(subtree)];
 }
 
-/** Random edits through the real Plugin API, with an independent value model. */
+/**
+ * Smoke coverage of fills and opacity: seeded edits through the real Plugin
+ * API, checked against an independent model of those two fields only.
+ */
 export class OpRandomSequence extends Operation {
     constructor(
         readonly seed: number,
@@ -173,6 +176,6 @@ export class OpRandomSequence extends Operation {
     }
 
     toString(): string {
-        return `random component program, seed ${this.seed}`;
+        return `random fill/opacity smoke program, seed ${this.seed}`;
     }
 }
