@@ -74,29 +74,53 @@
 
     (update-shape-with-content shape content editor-content)))
 
+(defn- measured-auto-size
+  "Measured [width height] of an auto-grow text, or nil when there is nothing
+  to resize."
+  [{:keys [grow-type migrate]} node]
+  (when (contains? #{:auto-height :auto-width} grow-type)
+    (let [{:keys [width height]}
+          (-> (dom/query node ".paragraph-set")
+              (dom/get-bounding-rect))
+
+          width  (mth/ceil width)
+          height (mth/ceil height)]
+      (when (and (not (mth/almost-zero? width))
+                 (not (mth/almost-zero? height))
+                 (not migrate))
+        [width height]))))
+
+(defn- text-heal
+  "How to commit a measured auto-grow text in heal `phase`: nil commits
+  nothing, otherwise a map with the `:next` heal phase, if any.
+  The `:check` phase runs when the page opens: it commits only when the size
+  drifted, so rounding differences between renderers or browsers are not
+  written back on every open. Without a phase the text is committed as
+  usual."
+  [phase shape size]
+  (case phase
+    :check (when (and (some? size) (apply dwt/text-size-drifted? shape size))
+             {})
+    {}))
+
 (defn- update-text-shape
-  [{:keys [grow-type id migrate] :as shape} node]
-  ;; Check if we need to update the size because it's auto-width or auto-height
-  ;; Update the position-data of every text fragment
+  "Measure the text and commit its position-data and auto-grow size as
+  `text-heal` decides for `phase`. Resolves to the next heal phase, if any."
+  [{:keys [id] :as shape} node phase]
   (->> (tsp/calc-position-data id)
        (p/fmap (fn [position-data]
-                 ;; At least one paragraph needs to be inside the bounding box
-                 (when (gsht/overlaps-position-data? shape position-data)
-                   (st/emit! (dwt/update-position-data id position-data)))
+                 (let [size (measured-auto-size shape node)
+                       heal (text-heal phase shape size)]
+                   (when (some? heal)
+                     ;; At least one paragraph needs to be inside the bounding box
+                     (when (gsht/overlaps-position-data? shape position-data)
+                       (st/emit! (dwt/update-position-data id position-data)))
 
-                 (when (contains? #{:auto-height :auto-width} grow-type)
-                   (let [{:keys [width height]}
-                         (-> (dom/query node ".paragraph-set")
-                             (dom/get-bounding-rect))
+                     (when-let [[width height] size]
+                       (st/emit! (dwt/resize-text id width height))))
 
-                         width (mth/ceil width)
-                         height (mth/ceil height)]
-                     (when (and (not (mth/almost-zero? width))
-                                (not (mth/almost-zero? height))
-                                (not migrate))
-                       (st/emit! (dwt/resize-text id width height)))))
-
-                 (st/emit! (dwt/clean-text-modifier id))))
+                   (st/emit! (dwt/clean-text-modifier id))
+                   (:next heal))))
        ;; Log measurement errors and resolve to nil. The returned promise
        ;; stays pending until the measurement settles, so callers keep the
        ;; text mounted while it is measured.
@@ -132,13 +156,19 @@
   [props]
   (let [shape       (obj/get props "shape")
         on-update   (obj/get props "on-update")
+        phase       (obj/get props "phase")
 
+        ;; `phase` is left out of the deps on purpose: a shape change already
+        ;; rebuilds the callback with the current value, and a phase change
+        ;; after a measurement must not measure the text again.
         handle-update
         (mf/use-callback
          (mf/deps shape on-update)
          (fn [node]
            (when (some? node)
-             (on-update shape node))))]
+             (if (some? phase)
+               (on-update shape node phase)
+               (on-update shape node)))))]
 
     [:> html/text-shape* {:key (str "shape-" (:id shape))
                           :ref handle-update
@@ -157,6 +187,37 @@
            (mth/close? (dm/get-prop shape :width) (dm/get-prop other :width))
            (mth/close? (dm/get-prop shape :height) (dm/get-prop other :height)))))
 
+(defn text-phase
+  "Heal phase `shape` is measured in, from `phases`. A text without
+  position-data gets none: it is measured and committed as usual, so it
+  always gets a layout."
+  [phases shape]
+  (when (some? (:position-data shape))
+    (get phases (:id shape))))
+
+(defn text-changed?
+  "True when `new-shape` must be measured, given its previous version and its
+  heal `phase`."
+  [old-shape new-shape phase]
+  (let [remote? (some? (-> new-shape meta :session-id))]
+    (or (and (not remote?) ;; changes caused by a remote peer are not re-calculated
+             (not (text-properties-equal? old-shape new-shape)))
+        ;; When the position data is nil we force to recalculate
+        (nil? (:position-data new-shape))
+        (= :check phase))))
+
+(defn override-copy-heal-phases
+  "Auto-grow texts whose content is overridden on a copy, each in the `:check`
+  heal phase: a component sync can give them the main's size, so they are
+  measured again when the page opens."
+  [text-shapes]
+  (into {}
+        (comp (map val)
+              (filter (comp #{:auto-width :auto-height} :grow-type))
+              (filter #(contains? (:touched %) :content-group))
+              (map (fn [{:keys [id]}] [id :check])))
+        text-shapes))
+
 (mf/defc text-changes-renderer
   {::mf/wrap-props false}
   [props]
@@ -169,19 +230,21 @@
         pending-update* (mf/use-state {})
         pending-update  (deref pending-update*)
 
+        ;; Heal phase per text id. Copies whose text is overridden start in
+        ;; `:check` and are measured on page open: a sync while their page was
+        ;; closed can give them the main's size.
+        phases*         (mf/use-state #(override-copy-heal-phases text-shapes))
+        phases          (deref phases*)
+
         text-change?
         (fn [id]
-          (let [new-shape (get text-shapes id)
-                old-shape (get prev-text-shapes id)
-                remote?   (some? (-> new-shape meta :session-id))]
-
-            (or (and (not remote?) ;; changes caused by a remote peer are not re-calculated
-                     (not (text-properties-equal? old-shape new-shape)))
-                ;; When the position data is nil we force to recalculate
-                (nil? (:position-data new-shape)))))
+          (let [new-shape (get text-shapes id)]
+            (text-changed? (get prev-text-shapes id)
+                           new-shape
+                           (text-phase phases new-shape))))
 
         changed-texts
-        (mf/with-memo [text-shapes pending-update]
+        (mf/with-memo [text-shapes pending-update phases]
           (let [pending-shapes (into #{} (vals pending-update))]
             (->> (keys text-shapes)
                  (filter (fn [id]
@@ -191,7 +254,7 @@
 
         handle-update-shape
         (mf/use-fn
-         (fn [shape node]
+         (fn [shape node phase]
            ;; Unique to indentify the pending state
            (let [uid (uuid/next)
                  id  (:id shape)]
@@ -202,13 +265,20 @@
              (wrf/run-pending!
               :text-measure
               [id]
-              #(-> (update-text-shape shape node)
-                   (p/finally (fn [] (swap! pending-update* dissoc uid))))))))]
+              #(-> (update-text-shape shape node phase)
+                   (p/then (fn [next-phase]
+                             (swap! phases* (fn [phases]
+                                              (if next-phase
+                                                (assoc phases id next-phase)
+                                                (dissoc phases id))))))
+                   (p/finally (fn []
+                                (swap! pending-update* dissoc uid))))))))]
 
     [:.text-changes-renderer
      (for [{:keys [id] :as shape} changed-texts]
        [:& text-container {:key (dm/str "text-container-" id)
                            :shape shape
+                           :phase (text-phase phases shape)
                            :on-update handle-update-shape}])]))
 
 (mf/defc text-modifiers-renderer
