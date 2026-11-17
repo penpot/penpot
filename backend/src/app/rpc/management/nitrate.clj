@@ -1193,7 +1193,7 @@ RETURNING id, deleted_at;")
 (def ^:private schema:get-teams-detail-result
   [:vector schema:team-detail])
 
-(defn- get-teams-detail
+(defn- get-teams-detail-rows
   "Detail rows of the given non-empty team ids, with their photo ids
   resolved to public URLs."
   [conn team-ids]
@@ -1219,7 +1219,7 @@ RETURNING id, deleted_at;")
       []
       (db/run! cfg
                (fn [{:keys [::db/conn]}]
-                 (get-teams-detail conn team-ids))))))
+                 (get-teams-detail-rows conn team-ids))))))
 
 ;; ---- API: get-owned-teams-detail
 
@@ -1263,7 +1263,7 @@ RETURNING id, deleted_at;")
                    (let [member-ids (get-teams-member-ids conn team-ids)]
                      (mapv (fn [{:keys [id] :as team}]
                              (assoc team :member-ids (get member-ids id [])))
-                           (get-teams-detail conn team-ids)))))))))
+                           (get-teams-detail-rows conn team-ids)))))))))
 
 ;; ---- API: check-organization-sso
 
