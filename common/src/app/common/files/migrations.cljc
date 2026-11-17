@@ -2330,13 +2330,13 @@
                              (let [shapes' (filterv #(contains? objects %) shapes)]
                                (when (not= shapes shapes')
                                  (l/trc :hint "fix dangling children"
-                                        :container container-id
-                                        :shape-id (:id shape)
+                                        :container (str container-id)
+                                        :shape-id (str (:id shape))
                                         :removed (remove #(contains? objects %) shapes)))
                                shapes'))))
 
           (fix-objects [container-id objects]
-            (update-vals objects (partial fix-shape container-id objects)))
+            (d/update-vals objects (partial fix-shape container-id objects)))
 
           (update-container [container]
             (d/update-when container :objects #(fix-objects (:id container) %)))]
