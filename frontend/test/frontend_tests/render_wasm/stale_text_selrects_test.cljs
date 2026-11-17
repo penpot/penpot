@@ -22,12 +22,17 @@
    [promesa.core :as p]))
 
 (defn- text-shape
-  [grow-type width height]
-  {:id (uuid/next)
-   :type :text
-   :parent-id uuid/zero
-   :grow-type grow-type
-   :selrect {:x 0 :y 0 :width width :height height}})
+  ([grow-type width height]
+   (text-shape grow-type width height nil))
+  ([grow-type width height attrs]
+   (merge {:id (uuid/next)
+           :type :text
+           :parent-id uuid/zero
+           :grow-type grow-type
+           :width width
+           :height height
+           :selrect {:x 0 :y 0 :width width :height height}}
+          attrs)))
 
 (defn- rect-shape
   []
@@ -132,6 +137,22 @@
                                  {(:id text) {:width 100 :height 34}}))]
     (t/is (empty? (stale-selrect-ids events))
           "fixed text boxes are never resized to their layout")))
+
+(t/deftest ^:async page-load-skips-axes-that-fill-their-layout-parent
+  (let [fill-width  (text-shape :auto-width 200 17 {:layout-item-h-sizing :fill})
+        fill-height (text-shape :auto-height 100 40 {:layout-item-v-sizing :fill})
+        events      (await (load-page (page-objects fill-width fill-height)
+                                      {(:id fill-width)  {:width 44 :height 17}
+                                       (:id fill-height) {:width 100 :height 17}}))]
+    (t/is (empty? (stale-selrect-ids events))
+          "a size set by the layout is not stale")))
+
+(t/deftest ^:async page-load-checks-the-axis-that-does-not-fill
+  (let [text   (text-shape :auto-width 200 17 {:layout-item-h-sizing :fill})
+        events (await (load-page (page-objects text)
+                                 {(:id text) {:width 44 :height 34}}))]
+    (t/is (= #{(:id text)} (stale-selrect-ids events))
+          "the height of a fill-width auto-width text still grows with its content")))
 
 (t/deftest ^:async page-load-skips-texts-waiting-for-a-font
   (let [waiting (text-shape :auto-height 100 17)

@@ -9,19 +9,23 @@
   user action) must not record an undo step, so Ctrl+Z reverts the user's
   own last edit."
   (:require
+   [app.common.math :as mth]
    [app.common.test-helpers.compositions :as ctho]
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.ids-map :as cthi]
    [app.common.test-helpers.shapes :as cths]
    [app.main.data.changes :as dch]
+   [app.main.data.helpers :as dsh]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.texts :as dwt]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.wasm-text :as dwwt]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.async :as async]
    [frontend-tests.helpers.state :as ths]
    [frontend-tests.helpers.wasm :as thw]
+   [frontend-tests.tokens.helpers.state :as tohs]
    [potok.v2.core :as ptk]))
 
 (t/use-fixtures :each
@@ -66,7 +70,11 @@
 
 (def ^:private heal {:skip-component-sync? true :save-undo? false})
 
-(def ^:private user {:skip-component-sync? true})
+;; What the component sync sends when it re-measures the synced copies.
+(def ^:private sync-remeasure {:skip-component-sync? true})
+
+;; A user resize carries no options.
+(def ^:private user nil)
 
 (t/deftest ^:async heal-resize-records-no-undo-step
   (let [{:keys [commit]} (await (batch-commit heal))]
@@ -76,28 +84,67 @@
 (t/deftest ^:async user-resize-keeps-its-undo-step
   (let [{:keys [commit]} (await (batch-commit user))]
     (t/is (true? (:save-undo? commit))
-          "a resize without the flag records undo as today")))
+          "a user resize records undo")
+    (t/is (not (:skip-component-sync? commit))
+          "a user resize syncs to component copies")))
+
+(t/deftest ^:async sync-remeasure-keeps-its-undo-step
+  (let [{:keys [commit]} (await (batch-commit sync-remeasure))]
+    (t/is (true? (:save-undo? commit))
+          "a sync re-measure records undo")
+    (t/is (true? (:skip-component-sync? commit))
+          "a sync re-measure does not start another sync")))
 
 (t/deftest ^:async user-resize-batched-after-a-heal-keeps-its-undo-step
-  (let [{:keys [commit ids]} (await (batch-commit heal nil))]
+  (let [{:keys [commit ids]} (await (batch-commit heal user))]
     (t/is (every? #(touches? commit %) ids)
           "both resizes land in one commit")
     (t/is (true? (:save-undo? commit))
-          "a user resize without options keeps its undo step")))
+          "a user resize without options keeps its undo step")
+    (t/is (not (:skip-component-sync? commit))
+          "a user resize without options still syncs to component copies")))
 
 (t/deftest ^:async heal-batched-after-a-user-resize-keeps-the-undo-step
-  (let [{:keys [commit ids]} (await (batch-commit nil heal))]
+  (let [{:keys [commit ids]} (await (batch-commit user heal))]
     (t/is (every? #(touches? commit %) ids)
           "both resizes land in one commit")
     (t/is (true? (:save-undo? commit))
-          "the user's resize keeps its undo step")))
+          "the user's resize keeps its undo step")
+    (t/is (not (:skip-component-sync? commit))
+          "the user's resize still syncs to component copies")))
+
+(t/deftest ^:async user-resize-batched-after-a-sync-remeasure-still-syncs
+  (let [{:keys [commit ids]} (await (batch-commit sync-remeasure user))]
+    (t/is (every? #(touches? commit %) ids)
+          "both resizes land in one commit")
+    (t/is (true? (:save-undo? commit)))
+    (t/is (not (:skip-component-sync? commit))
+          "the main's new size reaches its copies")))
+
+(t/deftest ^:async sync-remeasure-batched-after-a-user-resize-still-syncs
+  (let [{:keys [commit ids]} (await (batch-commit user sync-remeasure))]
+    (t/is (every? #(touches? commit %) ids)
+          "both resizes land in one commit")
+    (t/is (true? (:save-undo? commit)))
+    (t/is (not (:skip-component-sync? commit))
+          "the main's new size reaches its copies")))
+
+(t/deftest ^:async batch-of-sync-remeasures-skips-the-sync
+  (let [{:keys [commit ids]} (await (batch-commit sync-remeasure sync-remeasure))]
+    (t/is (every? #(touches? commit %) ids)
+          "both re-measures land in one commit")
+    (t/is (true? (:save-undo? commit)))
+    (t/is (true? (:skip-component-sync? commit))
+          "a batch of re-measures does not start another sync")))
 
 (t/deftest ^:async batch-of-heals-records-no-undo-step
   (let [{:keys [commit ids]} (await (batch-commit heal heal))]
     (t/is (every? #(touches? commit %) ids)
           "both heals land in one commit")
     (t/is (false? (:save-undo? commit))
-          "a batch of heals is not added to the undo history")))
+          "a batch of heals is not added to the undo history")
+    (t/is (true? (:skip-component-sync? commit))
+          "a batch of heals does not sync to component copies")))
 
 ;; SVG renderer
 
@@ -124,8 +171,11 @@
           "the heal commit is not added to the undo history")
     (t/is (true? (:skip-component-sync? (first @commits)))
           "the heal does not sync to component copies")
-    (t/is (some #(and (false? (:save-undo? %)) (contains? (set (:ids %)) id)) @layouts)
-          "the parents' reflow is asked for without undo too")))
+    (t/is (some #(and (false? (:save-undo? %))
+                      (true? (:skip-component-sync? %))
+                      (contains? (set (:ids %)) id))
+                @layouts)
+          "the parents' reflow is asked for without undo and without sync too")))
 
 (defn- ^:async svg-mixed-commits
   "Emit `heal-event` for one text and `user-event` for another in the same
@@ -225,12 +275,84 @@
         user   (collect-commits store rect-b)]
     (ptk/emit! store (dwsl/initialize-shape-layout))
     ;; Both updates land in the same 100 ms layout buffer.
-    (ptk/emit! store (ptk/data-event :layout/update {:ids [rect-a] :save-undo? false}))
+    (ptk/emit! store (ptk/data-event :layout/update {:ids [rect-a]
+                                                     :save-undo? false
+                                                     :skip-component-sync? true}))
     (ptk/emit! store (ptk/data-event :layout/update {:ids [rect-b]}))
     (await (async/wait-for #(and (seq @heal) (seq @user)) "a reflow commit for each board"
                            {:max-ticks 400}))
     (ptk/emit! store (dwsl/finalize-shape-layout))
     (t/is (false? (:save-undo? (first @heal)))
           "the reflow of a heal is not added to the undo history")
+    ;; A commit without undo and without this flag would make the component
+    ;; watcher touch the component, so a page open would change it
+    (t/is (true? (:skip-component-sync? (first @heal)))
+          "the reflow of a heal does not change components")
     (t/is (true? (:save-undo? (first @user)))
-          "a user reflow in the same buffer keeps its undo step")))
+          "a user reflow in the same buffer keeps its undo step")
+    (t/is (not (:skip-component-sync? (first @user)))
+          "and still syncs to component copies")))
+
+;; Undo history
+
+(defn- undo-stack
+  [store]
+  (select-keys (:workspace-undo @store) [:items :index]))
+
+(defn- text-size
+  [store id]
+  (-> (dsh/lookup-page-objects @store)
+      (get id)
+      (select-keys [:width :height])))
+
+(defn- ^:async heal-keeps-the-undo-history
+  "Make a user edit on one text with `user-event`, then heal another with
+  `heal-event`, each in its own commit. The heal must leave the undo stack
+  as the user edit left it, and undo must revert the user edit."
+  [renderer user-event heal-event]
+  (let [file         (-> (cthf/sample-file :file1)
+                         (ctho/add-frame-with-text :frame-a :text-a "hello")
+                         (ctho/add-frame-with-text :frame-b :text-b "world"))
+        store        (ths/setup-store file (when renderer {:renderer renderer}))
+        user-id      (:id (cths/get-shape file :text-a))
+        heal-id      (:id (cths/get-shape file :text-b))
+        user-commits (collect-commits store user-id)
+        heal-commits (collect-commits store heal-id)
+        original     (text-size store user-id)]
+    (ptk/emit! store (tohs/watch-undo-stack))
+
+    (ptk/emit! store (user-event user-id))
+    (await (async/wait-for #(and (seq @user-commits) (seq (:items (undo-stack store))))
+                           "an undo entry for the user edit" {:max-ticks 200}))
+    (let [after-user (undo-stack store)
+          edited     (text-size store user-id)]
+      (t/is (not= original edited)
+            "the user edit changes the text size")
+
+      (ptk/emit! store (heal-event heal-id))
+      (await (async/wait-for #(seq @heal-commits) "a heal commit" {:max-ticks 200}))
+      (await (async/settle))
+      (let [healed (text-size store heal-id)]
+        (t/is (= after-user (undo-stack store))
+              "the heal adds no undo entry and does not move the index")
+
+        (ptk/emit! store dwu/undo)
+        (await (async/wait-for #(not= edited (text-size store user-id))
+                               "the undo of the user edit" {:max-ticks 200}))
+        (t/is (and (mth/close? (:width original) (:width (text-size store user-id)))
+                   (mth/close? (:height original) (:height (text-size store user-id))))
+              "undo reverts the user edit")
+        (t/is (= healed (text-size store heal-id))
+              "undo leaves the heal in place")))))
+
+(t/deftest ^:async heal-keeps-the-undo-history-on-wasm
+  (await (heal-keeps-the-undo-history
+          nil
+          #(dwwt/resize-wasm-text-all [%] nil)
+          #(dwwt/resize-wasm-text-all [%] heal))))
+
+(t/deftest ^:async heal-keeps-the-undo-history-on-svg
+  (await (heal-keeps-the-undo-history
+          :svg
+          #(dwt/resize-text % 60 40)
+          #(dwt/resize-text % 50 30 {:save-undo? false}))))

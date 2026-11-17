@@ -74,3 +74,41 @@
           shape        {:points shape-points}
           pd           [{:x 200 :y 200 :width 20 :height 10}]]
       (t/is (false? (gte/overlaps-position-data? shape pd))))))
+
+(t/deftest text-size-drifted-ignores-sub-pixel-gaps
+  (t/is (not (gte/text-size-drifted? {:grow-type :auto-width :width 100 :height 17} 100.5 17.5 1)))
+  (t/is (not (gte/text-size-drifted? {:grow-type :auto-height :width 100 :height 17} 100 17.5 1))))
+
+(t/deftest text-size-drifted-checks-only-the-growing-axis
+  (t/is (not (gte/text-size-drifted? {:grow-type :auto-height :width 100 :height 17} 140 17 1))
+        "auto-height width comes from the box, not the text")
+  (t/is (gte/text-size-drifted? {:grow-type :auto-height :width 100 :height 17} 100 34 1))
+  (t/is (gte/text-size-drifted? {:grow-type :auto-width :width 44 :height 17} 67 17 1))
+  (t/is (gte/text-size-drifted? {:grow-type :auto-width :width 44 :height 17} 44 34 1)
+        "auto-width grows in height too"))
+
+(t/deftest text-size-drifted-treats-exactly-the-tolerance-as-rounding
+  (t/is (not (gte/text-size-drifted? {:grow-type :auto-height :width 100 :height 17} 100 18 1))
+        "a 1px height gap is rounding at a 1px tolerance")
+  (t/is (not (gte/text-size-drifted? {:grow-type :auto-width :width 44 :height 17} 45 17 1))
+        "a 1px width gap is rounding at a 1px tolerance")
+  (t/is (gte/text-size-drifted? {:grow-type :auto-height :width 100 :height 17} 100 17.5 0.1)
+        "a finer tolerance catches a sub-pixel gap"))
+
+(t/deftest text-size-drifted-ignores-an-axis-that-fills-its-parent
+  (t/is (not (gte/text-size-drifted? {:grow-type :auto-height :width 100 :height 40
+                                      :layout-item-v-sizing :fill}
+                                     100 17 1))
+        "a height set by the layout is not drift")
+  (t/is (not (gte/text-size-drifted? {:grow-type :auto-width :width 200 :height 17
+                                      :layout-item-h-sizing :fill}
+                                     44 17 1))
+        "a width set by the layout is not drift")
+  (t/is (gte/text-size-drifted? {:grow-type :auto-width :width 200 :height 17
+                                 :layout-item-h-sizing :fill}
+                                44 34 1)
+        "the axis that does not fill is still checked"))
+
+(t/deftest text-size-drifted-ignores-other-grow-types
+  (t/is (not (gte/text-size-drifted? {:grow-type :fixed :width 100 :height 17} 300 90 1)))
+  (t/is (not (gte/text-size-drifted? {:width 100 :height 17} 300 90 1))))

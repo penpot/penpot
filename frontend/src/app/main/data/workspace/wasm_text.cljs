@@ -104,15 +104,16 @@
 
 (defn- merge-resize-debounce-opts
   "Merge the options of a request into its batch. The batch records no undo
-  step only when every request in it asked for that, so a user resize that
-  lands in the same window keeps its undo entry."
+  step, or skips the component sync, only when every request in it asked
+  for that, so a user resize that lands in the same window keeps its undo
+  entry and still reaches the copies."
   [prev {:keys [undo-group undo-id skip-component-sync? save-undo?]}]
-  (-> (cond-> (or prev {})
-        (some? undo-group) (assoc :undo-group undo-group)
-        (some? undo-id) (assoc :undo-id undo-id)
-        skip-component-sync? (assoc :skip-component-sync? true))
-      (assoc :save-undo? (or (:save-undo? prev false)
-                             (not (false? save-undo?))))))
+  (let [prev (or prev {:skip-component-sync? true :save-undo? false})]
+    (cond-> (assoc prev
+                   :skip-component-sync? (and (:skip-component-sync? prev) (boolean skip-component-sync?))
+                   :save-undo?           (or (:save-undo? prev) (not (false? save-undo?))))
+      (some? undo-group) (assoc :undo-group undo-group)
+      (some? undo-id)    (assoc :undo-id undo-id))))
 
 (defn resize-wasm-text-debounce-commit
   []
@@ -210,7 +211,7 @@
 (defn resize-wasm-text-debounce
   ([id]
    (resize-wasm-text-debounce id nil))
-  ([id {:keys [undo-group undo-id skip-component-sync? save-undo?] :as opts}]
+  ([id opts]
    (ptk/reify ::resize-wasm-text-debounce
      ptk/WatchEvent
      (watch [_ state _]
@@ -228,14 +229,8 @@
 
              resize-wasm-stream
              (if fonts-ready?
-               (let [pass-opts (when (or (some? undo-group) (some? undo-id) skip-component-sync?
-                                         (false? save-undo?))
-                                 (cond-> {}
-                                   (some? undo-group) (assoc :undo-group undo-group)
-                                   (some? undo-id) (assoc :undo-id undo-id)
-                                   skip-component-sync? (assoc :skip-component-sync? true)
-                                   (false? save-undo?) (assoc :save-undo? false)))]
-                 (rx/of (resize-wasm-text-debounce-inner id pass-opts)))
+               ;; `merge-resize-debounce-opts` reads only the keys it knows.
+               (rx/of (resize-wasm-text-debounce-inner id opts))
 
                ;; Fonts not loaded; retry after 20 msecs
                (->> (rx/of (resize-wasm-text-debounce id opts))
