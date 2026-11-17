@@ -47,14 +47,27 @@
                  :on-click on-export}
      (tr "workspace.tokens.export")]]])
 
+(defn- single-file-json
+  "The tokens of the file as one JSON file. Its active themes and sets are
+  the ones activated in this file, not the ones stored in the library."
+  [tokens-lib tokens-status]
+  (when (and tokens-lib tokens-status)
+    (some-> (ctob/export-dtcg-json tokens-lib tokens-status)
+            (json/encode :key-fn identity :indent 2))))
+
+(defn- multi-file-entries
+  "The tokens of the file as one JSON file per set, plus the themes and
+  the metadata, with the active themes and sets of `single-file-json`."
+  [tokens-lib tokens-status]
+  (when (and tokens-lib tokens-status)
+    (ctob/export-dtcg-multi-file tokens-lib tokens-status)))
+
 (mf/defc single-file-tab*
   {::mf/private true}
   []
-  (let [tokens-data (some-> (deref refs/tokens-lib)
-                            (ctob/export-dtcg-json))
-        tokens-json (some-> tokens-data
-                            (json/encode :key-fn identity :indent 2))
-        is-disabled (empty? tokens-data)
+  (let [tokens-json (single-file-json (deref refs/tokens-lib)
+                                      (deref refs/tokens-status))
+        is-disabled (nil? tokens-json)
         on-export
         (mf/use-fn
          (mf/deps tokens-json)
@@ -79,8 +92,8 @@
 (mf/defc multi-file-tab*
   {::mf/private true}
   []
-  (let [files (some->> (deref refs/tokens-lib)
-                       (ctob/export-dtcg-multi-file))
+  (let [files (multi-file-entries (deref refs/tokens-lib)
+                                  (deref refs/tokens-status))
         is-disabled (or (empty? files)
                         (every? (fn [[_ v]] (empty? v)) files))
         on-export
