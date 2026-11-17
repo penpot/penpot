@@ -1254,9 +1254,13 @@
                                           (and keep-name? (ctk/touched-group? shape-inst :name-group))
                                           (conj :name-group))))
                 ;; A previous update is not a reset of the main's authored
-                ;; overrides. Repeating it must retain the groups it pushed.
+                ;; overrides. Repeating it must retain the groups it pushed,
+                ;; and a main that is itself a copy authors the sizing the
+                ;; push fixes.
                 (set-touched shape-main main-container
-                             (set/union (:touched shape-main) (set/difference inst-touched kept-items))))
+                             (cond-> (set/union (:touched shape-main) (set/difference inst-touched kept-items))
+                               (:shape-ref shape-main)
+                               (into (map #(ctk/resolve-sync-group (:type shape-main) %)) (keys fixed)))))
       (ctsl/any-layout? shape-main)
       (update-layout-children main-container shape-main shape-inst
                               #(ctf/get-shape-in-copy container % shape-inst) false)

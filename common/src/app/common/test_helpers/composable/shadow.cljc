@@ -612,6 +612,16 @@
                            (update id merge kept-items)
                            kept-name
                            (assoc-in [id :name-group] kept-name)
+                           ;; a main that is itself a copy authors the layout sizing a
+                           ;; pushed geometry fixes on it, which keeps the pushed size
+                           (and (:shape-ref ref) (contains? groups :geometry-group))
+                           (update (:id ref) merge
+                                   (into {}
+                                         (keep (fn [group]
+                                                 (when (not= (get (get before (:id ref)) group) (get ref group))
+                                                   [group (values ref group)])))
+                                         [:layout-item-h-sizing :layout-item-v-sizing]))
+
                            (and (:shape-ref ref) (seq groups))
                            (update (:id ref)
                                    (fn [main-groups]
