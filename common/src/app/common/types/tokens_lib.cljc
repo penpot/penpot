@@ -1678,7 +1678,7 @@
             (every? empty? (vals sets))
             (and (empty? sets) (empty? themes)))
       (throw (ex-info "the file doesn't contain any tokens"
-                      {:error/code :error.import/invalid-json-data})))
+                      {:error/code :error.import/no-token-files-found})))
 
     (as-> (make-tokens-lib) library
       (reduce-kv (fn [library name tokens]
