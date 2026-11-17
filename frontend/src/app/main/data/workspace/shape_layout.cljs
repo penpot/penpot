@@ -65,7 +65,8 @@
             (if (d/not-empty? ids)
               (let [modif-tree (dwm/create-modif-tree ids (ctm/reflow-modifiers))]
                 ;; the reflow stacks on the latest undo entry, which a
-                ;; transaction of its own would not
+                ;; transaction of its own would not; the layout owns the
+                ;; places it gives, which no placement settle undoes
                 (if (and (features/active-feature? state "render-wasm/v1")
                          (= page-id (:current-page-id state)))
                   (rx/of (dwm/apply-wasm-modifiers modif-tree
@@ -74,7 +75,8 @@
                                                    :skip-component-sync? skip-component-sync?
                                                    :undo-transation? false
                                                    :undo-group undo-group
-                                                   :ignore-touched true))
+                                                   :ignore-touched true
+                                                   :settle-component-placement? false))
                   (rx/of (dwm/apply-modifiers {:page-id page-id
                                                :modifiers modif-tree
                                                :stack-undo? true
@@ -82,7 +84,8 @@
                                                :skip-component-sync? skip-component-sync?
                                                :undo-transation? false
                                                :ignore-touched true
-                                               :undo-group undo-group}))))
+                                               :undo-group undo-group
+                                               :settle-component-placement? false}))))
               (rx/empty))
 
             ;; The apply events above are dispatched and applied synchronously,

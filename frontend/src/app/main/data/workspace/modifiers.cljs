@@ -724,7 +724,7 @@
                     (assoc :undo-group undo-group)
                     (assoc :reg-objects? true)
                     (assoc :ignore-tree ignore-tree)
-                    (assoc :settle-component-placement? true)
+                    (update :settle-component-placement? #(if (some? %) % true))
                     (assoc :translation? translation?)
                     ;; Attributes that can change in the transform. This
                     ;; way we don't have to check all the attributes
@@ -860,7 +860,7 @@
                 (assoc :undo-group undo-group)
                 (assoc :reg-objects? true)
                 (assoc :ignore-tree ignore-tree)
-                (assoc :settle-component-placement? true)
+                (update :settle-component-placement? #(if (some? %) % true))
                 ;; Attributes that can change in the transform. This
                 ;; way we don't have to check all the attributes
                 (assoc :attrs clp/transform-attrs))
