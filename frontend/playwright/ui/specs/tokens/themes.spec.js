@@ -291,4 +291,30 @@ test.describe("Tokens: Themes modal", () => {
       tokenThemeUpdateCreateModal.getByText("Changed Group name"),
     ).toBeVisible();
   });
+
+  test("Clicking a set name ticks and unticks it", async ({ page }) => {
+    const { tokenThemeUpdateCreateModal, workspacePage } =
+      await setupTokensFileRender(page);
+
+    await workspacePage.openTokenThemesModal();
+
+    await tokenThemeUpdateCreateModal
+      .getByText("3 active sets")
+      .first()
+      .click();
+
+    const darkSet = tokenThemeUpdateCreateModal.getByRole("button", {
+      name: "dark",
+      exact: true,
+    });
+    const darkCheckbox = darkSet.getByRole("checkbox");
+
+    await expect(darkCheckbox).not.toBeChecked();
+
+    await darkSet.click();
+    await expect(darkCheckbox).toBeChecked();
+
+    await darkSet.click();
+    await expect(darkCheckbox).not.toBeChecked();
+  });
 });
