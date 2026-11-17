@@ -416,6 +416,49 @@
     (t/is (not (ctk/swapped? head)))
     (t/is (= (thi/id :badge-dot) (:shape-ref dot)))))
 
+(t/deftest paste-out-of-a-swapped-head-reaches-the-nested-copies-of-its-component
+  ;; {:dot-main}   [:name Frame1]          # [Component :dot]
+  ;;     :dot-heart [:name Frame1]         @--> [Component :heart] :heart-main
+  ;; {:badge-main} [:name Frame1]          # [Component :badge]
+  ;;     :badge-dot [:name Frame1]         @--> [Component :dot] :dot-main
+  ;; {:page-main}  [:name Frame1]          # [Component :page]
+  ;;     :inner-copy [:name Frame1]        @--> [Component :card] :card-main
+  ;;         :inner-star [:name Frame1]    @--> [Component :star] :card-star
+  ;; :outer-copy [:name Frame1]            #--> [Component :page] :page-main
+  ;;     :outer-inner [:name Frame1]       @--> [Component :card] :inner-copy
+  ;;         :outer-star [:name Frame1]    @--> [Component :badge] :inner-star (swapped)
+  ;;             <dot>                     @--> [Component :dot] :badge-dot
+  ;;                 <heart>               @--> [Component :heart] (dot-heart, via badge-dot)
+  ;; the dot pasted out of its copy leaves three copy levels, but the swap makes
+  ;; its references reach the main of :dot in two: its heart refers to the
+  ;; heart of that main, not further up to the main of :heart
+  (let [file    (-> (setup)
+                    (tho/add-frame :dot-main)
+                    (thc/instantiate-component :heart :dot-heart :parent-label :dot-main)
+                    (thc/make-component :dot :dot-main)
+                    (tho/add-frame :badge-main)
+                    (thc/instantiate-component :dot :badge-dot :parent-label :badge-main)
+                    (thc/make-component :badge :badge-main)
+                    (tho/add-frame :page-main)
+                    (thc/instantiate-component :card :inner-copy
+                                               :parent-label :page-main
+                                               :children-labels [:inner-star])
+                    (thc/make-component :page :page-main)
+                    (thc/instantiate-component :page :outer-copy
+                                               :children-labels [:outer-inner :outer-star])
+                    (tho/swap-component-in-shape :outer-star :badge)
+                    (thf/validate-file!))
+        dot     (first-child file :outer-star)
+        heart   (ths/get-shape-by-id file (first (:shapes dot)))
+        page    (thf/current-page file)
+        objects (cld/advance-copied-objects file page {(:id file) file}
+                                            (select-keys (:objects page)
+                                                         (cfh/get-children-ids-with-self (:objects page) (:id dot)))
+                                            [(:id dot)])]
+    (t/is (= (thi/id :dot-main) (:shape-ref (get objects (:id dot)))))
+    (t/is (= (thi/id :dot-heart) (:shape-ref (get objects (:id heart)))))))
+
+
 (t/deftest duplicate-keeps-the-swap
   (let [file   (-> (setup)
                    (tho/duplicate-shape :copy)
