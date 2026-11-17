@@ -181,8 +181,19 @@
                                          (when (and (contains? placement-groups group)
                                                     (not= (value shape attr) (value main attr)))
                                            group))))
+                               (keys ctk/sync-attrs))
+        ;; the placement it does not override is the new main's, as it shows
+        ;; it in its old position
+        followed         (into []
+                               (filter (fn [attr]
+                                         (let [group (ctk/resolve-sync-group (:type shape) attr)]
+                                           (and (contains? placement-groups group)
+                                                (not (contains? groups group))
+                                                (not (ctk/touched-group? shape group))))))
                                (keys ctk/sync-attrs))]
-    (cond-> (-> shape
+    (cond-> (-> (reduce (fn [shape attr]
+                          (if (nil? (get main attr)) (dissoc shape attr) (assoc shape attr (get main attr))))
+                        shape followed)
                 (assoc :shape-ref (:id main))
                 (ctk/remove-swap-group))
       (seq groups) (update :touched (fnil into #{}) groups))))

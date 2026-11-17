@@ -374,6 +374,18 @@
     (t/is (not (ctk/swapped? head)))
     (t/is (= (thi/id :heart-rect) (:shape-ref child)))))
 
+(t/deftest paste-gives-a-swapped-head-the-placement-of-its-new-main
+  ;; :copy-star shows the default constraint of its board, which :heart-main
+  ;; states explicitly; out of its copy it overrides none, so it takes the
+  ;; main's as it is, which keeps meaning the same at the page root
+  (let [file    (-> (setup)
+                    (ths/update-shape :heart-main :constraints-h :left))
+        objects (copy-objects file :copy-star)
+        head    (get objects (thi/id :copy-star))]
+    (t/is (= (thi/id :heart-main) (:shape-ref head)))
+    (t/is (= :left (:constraints-h head)))
+    (t/is (not (contains? (:touched head) :constraints-group)))))
+
 (t/deftest paste-advances-a-deeper-swapped-head-by-position
   (let [file    (setup-two-levels)
         dot-id  (:id (first-child file :outer-star))
@@ -457,7 +469,6 @@
                                             [(:id dot)])]
     (t/is (= (thi/id :dot-main) (:shape-ref (get objects (:id dot)))))
     (t/is (= (thi/id :dot-heart) (:shape-ref (get objects (:id heart)))))))
-
 
 (t/deftest duplicate-keeps-the-swap
   (let [file   (-> (setup)
