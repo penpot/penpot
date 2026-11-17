@@ -8,6 +8,7 @@
   "A maintenance task that performs a general purpose garbage collection
   of deleted or unreachable objects."
   (:require
+   [app.common.files.review-activity :as ra]
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.time :as ct]
@@ -18,6 +19,7 @@
    [app.loggers.audit :as audit]
    [app.storage :as sto]
    [app.tasks.delete-object :as dobj]
+   [app.util.blob :as blob]
    [integrant.core :as ig]))
 
 ;; Each proc below streams its pending keys with `db/plan`, a server-side
@@ -132,6 +134,136 @@
                              (db/plan conn [sql:get-upload-sessions threshold stalled-threshold threshold]
                                       {:fetch-size 5}))))))
 
+;; A save of a branch under review records one activity row, and the table
+;; grows for the life of the review. The rows of one person's sitting (the
+;; same review and profile, no gap longer than `ra/default-session-gap-ms`)
+;; fold into one row once the sitting is finished: its entries concatenate
+;; in order, its last revn and timestamp stay. The reading side replays
+;; entries in order, so the fold leaves `net-entries` unchanged.
+
+(def ^:private sql:get-review-activity-groups
+  "SELECT pull_request_id, profile_id
+     FROM file_pull_request_activity
+    WHERE created_at <= ?
+    GROUP BY pull_request_id, profile_id
+    ORDER BY max(created_at) ASC")
+
+;; The profile comparison treats two nulls as equal, so the rows of a
+;; purged author (the cascade set `profile_id` null) group together too.
+;;
+;; No SKIP LOCKED here, unlike the other chunks: skipping a row in the
+;; middle of a sitting would make its neighbours look adjacent, and folding
+;; them in that order would change the entries the reader replays. Wait for
+;; the other transaction instead, so the sitting is read whole.
+(def ^:private sql:lock-review-activity
+  "SELECT id, revn, entries, created_at
+     FROM file_pull_request_activity
+    WHERE pull_request_id = ?
+      AND profile_id IS NOT DISTINCT FROM ?::uuid
+      AND created_at <= ?
+    ORDER BY created_at ASC, id ASC
+      FOR UPDATE")
+
+(def ^:private sql:get-next-review-activity
+  "SELECT created_at
+     FROM file_pull_request_activity
+    WHERE pull_request_id = ?
+      AND profile_id IS NOT DISTINCT FROM ?::uuid
+      AND created_at > ?
+    ORDER BY created_at ASC, id ASC
+    LIMIT 1")
+
+(defn- split-sittings
+  "Cut `rows`, oldest first, into sittings: runs with no gap longer than
+  `gap-ms` between two rows."
+  [rows gap-ms]
+  (reduce (fn [sittings row]
+            (let [sitting (peek sittings)]
+              (if (and (some? sitting)
+                       (<= (- (inst-ms (:created-at row))
+                              (inst-ms (:created-at (peek sitting))))
+                           gap-ms))
+                (conj (pop sittings) (conj sitting row))
+                (conj sittings [row]))))
+          []
+          rows))
+
+(defn- drop-unfinished
+  "Drop the last sitting when the row after the cutoff still joins it: the
+  sitting is still running, so leave it whole and fold it in a later run."
+  [sittings next-row gap-ms]
+  (if (and (some? next-row)
+           (seq sittings)
+           (<= (- (inst-ms (:created-at next-row))
+                  (inst-ms (:created-at (peek (peek sittings)))))
+               gap-ms))
+    (pop sittings)
+    sittings))
+
+(defn- fold-review-activity-pair
+  "Folds every finished sitting of one review and profile into one row."
+  [conn [pull-request-id profile-id] cutoff gap-ms]
+  (let [rows     (db/exec! conn [sql:lock-review-activity
+                                 pull-request-id profile-id cutoff])
+        next-row (db/exec-one! conn [sql:get-next-review-activity
+                                     pull-request-id profile-id cutoff])
+        sittings (-> (split-sittings rows gap-ms)
+                     (drop-unfinished next-row gap-ms))]
+    (reduce (fn [total sitting]
+              (if (= 1 (count sitting))
+                total
+                (let [last-row (peek sitting)
+                      entries  (into []
+                                     (mapcat (comp blob/decode :entries))
+                                     sitting)]
+                  (db/update! conn :file-pull-request-activity
+                              {:entries (blob/encode entries)}
+                              {:id (:id last-row)}
+                              {::db/return-keys false})
+                  (doseq [row (butlast sitting)]
+                    (db/delete! conn :file-pull-request-activity
+                                {:id (:id row)}
+                                {::db/return-keys false}))
+                  (+ total (dec (count sitting))))))
+            0
+            sittings)))
+
+(defn- delete-review-activity-chunk
+  "Folds the finished sittings of a chunk of review and profile pairs."
+  [cfg pairs]
+  (try
+    (db/tx-run! cfg
+                (fn [{:keys [::db/conn ::cutoff ::gap-ms]}]
+                  (reduce (fn [total pair]
+                            (+ total (fold-review-activity-pair conn pair cutoff gap-ms)))
+                          0
+                          pairs)))
+    (catch Throwable cause
+      (l/err :obj "review-activity"
+             :hint "error on chunk deletion, skipping it"
+             :chunk pairs
+             :cause cause)
+      0)))
+
+(defn- delete-review-activity
+  [{:keys [::threshold ::chunk-size] :as cfg}]
+  (let [gap-ms ra/default-session-gap-ms
+        cfg    (assoc cfg
+                      ::gap-ms gap-ms
+                      ::cutoff (ct/minus threshold gap-ms))
+        rf     (fn ([total] total)
+                 ([total chunk]
+                  (let [deleted (delete-review-activity-chunk cfg chunk)]
+                    (jobs/heartbeat cfg)
+                    (+ total deleted))))]
+    (db/tx-run! (assoc cfg ::db/read-only true)
+                (fn [{:keys [::db/conn ::cutoff]}]
+                  (transduce (comp (map (juxt :pull-request-id :profile-id))
+                                   (partition-all chunk-size))
+                             rf 0
+                             (db/plan conn [sql:get-review-activity-groups cutoff]
+                                      {:fetch-size 5}))))))
+
 (def ^:private sql:get-profiles
   "SELECT id FROM profile
     WHERE deleted_at IS NOT NULL
@@ -146,12 +278,28 @@
       FOR UPDATE
      SKIP LOCKED")
 
+(def ^:private sql:defer-task-keys
+  "SET CONSTRAINTS file_task_thread_id_fkey,
+                  file_task_comment_id_fkey,
+                  file_task_assignee_id_fkey,
+                  file_task_created_by_fkey,
+                  file_task_status_changed_by_fkey
+          DEFERRED")
+
 (defn- delete-profiles-chunk
   [cfg ids]
   (try
     (db/tx-run! cfg
                 (fn [{:keys [::db/conn ::threshold ::sto/storage] :as cfg}]
                   (db/exec-one! conn ["SET LOCAL rules.deletion_protection TO off"])
+                  ;; One profile can be the author, the assignee and the
+                  ;; last mover of the same task: the cascading actions
+                  ;; update that row more than once, and Postgres rechecks
+                  ;; every non-null key of a row this transaction already
+                  ;; wrote, before the other actions clear the keys of the
+                  ;; thread and the message the cascades delete. Wait for
+                  ;; the commit, when only the final row is checked.
+                  (db/exec-one! conn [sql:defer-task-keys])
                   (let [ids (db/create-array conn "uuid" ids)]
                     (->> (db/exec! conn [sql:lock-profiles ids threshold])
                          (reduce (fn [total {:keys [id photo-id deleted-at]}]
@@ -777,8 +925,10 @@
 
          ;; NOTE: upload sessions go first: deleting a profile cascades to its
          ;; sessions, which would hit the upload_session_chunk NO ACTION foreign
-         ;; key while mappings still exist.
+         ;; key while mappings still exist. Review activity folds before the
+         ;; profile purge, which nulls the author of the rows.
          total     (+ (delete-upload-sessions cfg)
+                      (delete-review-activity cfg)
                       (delete-profiles cfg)
                       (delete-file-media-objects cfg)
                       (delete-file-object-thumbnails cfg)

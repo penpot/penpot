@@ -6,6 +6,7 @@
 
 (ns backend-tests.objects-gc-test
   (:require
+   [app.common.geom.point :as gpt]
    [app.common.logging :as l]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
@@ -15,6 +16,7 @@
    [app.rpc :as-alias rpc]
    [app.storage :as sto]
    [app.tasks.objects-gc :as ogc]
+   [app.util.blob :as blob]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
    [mockery.core :refer [with-mocks]]))
@@ -161,6 +163,143 @@
     (t/testing "the owned team keeps the deletion date of the profile"
       (t/is (= deleted-at (:deleted-at (th/db-get :team {:id (:default-team-id profile)}
                                                   {::db/remove-deleted false})))))))
+
+(defn- create-review!
+  "An open review of a branch of `file`: the branch and pull request rows
+  the review activity points at."
+  [profile file]
+  (let [branch (th/create-file* 2 {:profile-id (:id profile)
+                                   :project-id (:default-project-id profile)})
+        _      (th/db-update! :file {:is-branch true} {:id (:id branch)})
+        br     (th/db-insert! :file-branch
+                              {:id (uuid/next)
+                               :branch-file-id (:id branch)
+                               :source-file-id (:id file)
+                               :base-revn 0
+                               :created-by (:id profile)
+                               :name "feature-checkout"})]
+    (th/db-insert! :file-pull-request
+                   {:id (uuid/next)
+                    :file-branch-id (:id br)
+                    :source-file-id (:id branch)
+                    :target-file-id (:id file)
+                    :title "Checkout redesign"
+                    :created-by (:id profile)})))
+
+(defn- insert-activity!
+  [profile review revn entries created-at]
+  (th/db-insert! :file-pull-request-activity
+                 {:id (uuid/next)
+                  :pull-request-id (:id review)
+                  :profile-id (:id profile)
+                  :revn revn
+                  :entries (blob/encode entries)
+                  :created-at created-at}))
+
+(t/deftest gc-folds-the-activity-rows-of-a-finished-sitting
+  ;; The rows of one sitting concatenate into its last row, in order, so
+  ;; the reading side replays the same entries; the last revn and the last
+  ;; timestamp stay. A sitting whose last row is newer than the gap is
+  ;; still open and keeps its rows.
+  (let [profile  (th/create-profile* 1)
+        file     (th/create-file* 1 {:profile-id (:id profile)
+                                     :project-id (:default-project-id profile)})
+        review   (create-review! profile file)
+        shape-id (uuid/next)
+        entries  (fn [kind]
+                   [{:id shape-id
+                     :page-id (:id file)
+                     :name "Pay button"
+                     :type :rect
+                     :kind kind}])
+        now      (ct/now)
+        _        (insert-activity! profile review 1 (entries :added)
+                                   (ct/minus now {:minutes 120}))
+        _        (insert-activity! profile review 2 (entries :modified)
+                                   (ct/minus now {:minutes 110}))
+        row3     (insert-activity! profile review 3 (entries :modified)
+                                   (ct/minus now {:minutes 100}))
+        row4     (insert-activity! profile review 4 (entries :modified)
+                                   (ct/minus now {:minutes 10}))
+
+        result   (th/run-task! :objects-gc {})]
+
+    (t/is (pos? (:processed result)))
+
+    (let [rows (sort-by :created-at
+                        (th/db-query :file-pull-request-activity
+                                     {:pull-request-id (:id review)}))]
+      (t/testing "the sitting folds into its last row and the open one stays"
+        (t/is (= 2 (count rows)))
+        (t/is (= [(:id row3) (:id row4)] (mapv :id rows))))
+
+      (t/testing "the folded row concatenates the entries in order"
+        (t/is (= (into [] cat [(entries :added) (entries :modified) (entries :modified)])
+                 (blob/decode (:entries (first rows))))))
+
+      (t/testing "the folded row keeps the last revn and timestamp"
+        (t/is (= 3 (:revn (first rows))))
+        (t/is (= (:created-at row3) (:created-at (first rows)))))
+
+      (t/testing "the open sitting is untouched"
+        (t/is (= 4 (:revn (second rows))))
+        (t/is (= (:created-at row4) (:created-at (second rows))))
+        (t/is (= (entries :modified) (blob/decode (:entries (second rows)))))))))
+
+(t/deftest a-task-that-names-its-author-does-not-block-the-profile-purge
+  ;; A profile that authored a task, was assigned it and moved it is hit by
+  ;; three SET NULL actions on the same row during the purge, which also
+  ;; deletes the thread and the message the task points at. Postgres
+  ;; rechecks the row's keys before those actions clear them; deferring the
+  ;; keys to the commit lets every action run first.
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [author  (th/create-profile* 1 {:is-active true})
+          file    (th/create-file* 1 {:profile-id (:id author)
+                                      :project-id (:default-project-id author)})
+          page-id (-> (th/command! {::th/type :get-file
+                                    ::rpc/profile-id (:id author)
+                                    :id (:id file)})
+                      :result :data :pages first)
+          task    (-> (th/command! {::th/type :create-task
+                                    ::rpc/profile-id (:id author)
+                                    :file-id (:id file)
+                                    :page-id page-id
+                                    :frame-id uuid/zero
+                                    :position (gpt/point 0)
+                                    :title "Use the secondary token"})
+                      :result)]
+
+      (t/is (some? (:id task)))
+
+      (th/db-update! :file-task {:assignee-id (:id author)} {:id (:id task)})
+      (let [out (th/command! {::th/type :set-task-status
+                              ::rpc/profile-id (:id author)
+                              :id (:id task)
+                              :status "done"})]
+        (t/is (nil? (:error out))))
+      (th/db-update! :profile {:deleted-at (ct/in-past "30m")} {:id (:id author)})
+
+      (let [deleted-at (:deleted-at (th/db-get :profile {:id (:id author)}
+                                               {::db/remove-deleted false}))
+            cfg        {::db/pool th/*pool*
+                        ::sto/storage (::sto/storage th/*system*)
+                        ::ogc/threshold deleted-at}
+            total      (#'ogc/delete-profiles-chunk cfg [(:id author)])]
+
+        (t/testing "the chunk purges the profile instead of skipping it"
+          (t/is (= 1 total))
+          (t/is (nil? (th/db-get :profile {:id (:id author)}
+                                 {::db/remove-deleted false}))))
+
+        (t/testing "the task survives with its links and author cleared"
+          (let [row (th/db-get :file-task {:id (:id task)}
+                               {::db/remove-deleted false})]
+            (t/is (some? row))
+            (t/is (nil? (:thread-id row)))
+            (t/is (nil? (:comment-id row)))
+            (t/is (nil? (:created-by row)))
+            (t/is (nil? (:assignee-id row)))
+            (t/is (nil? (:status-changed-by row)))))))))
 
 (t/deftest blocked-chunk-does-not-stop-the-run
   ;; Chunks of one file: the blocked file takes down its own chunk and nothing

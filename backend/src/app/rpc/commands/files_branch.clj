@@ -32,6 +32,7 @@
    [app.db :as db]
    [app.db.sql :as-alias sql]
    [app.features.fdata :as fdata]
+   [app.features.file-changes :as fchanges]
    [app.features.file-snapshots :as fsnap]
    [app.features.logical-deletion :as ldel]
    [app.jobs :as jobs]
@@ -1218,7 +1219,7 @@
                                           :hint "select at least one change to merge"))
 
                    finish-branch!
-                   (fn [ts]
+                   (fn [ts merged-data]
                      ;; record the merge, mark the branch merged and
                      ;; delete it and its file in this same transaction
                      ;; (no client-driven second call, no window where a
@@ -1228,15 +1229,29 @@
                      ;; lines below close.
                      (let [merge-id (record-merge! conn branch {:profile-id profile-id
                                                                 :comment comment
-                                                                :created-at ts})]
-                       ;; the tasks of the branch outlive it: the open ones
-                       ;; keep going on main, the closed ones are its history
-                       (ftask/move-branch-tasks cfg {:branch-file-id branch-file-id
-                                                     :main-id main-id
-                                                     :merge-id merge-id
-                                                     :branch-name (:name branch)
-                                                     :profile-id profile-id
-                                                     :notify-assignees notify-assignees}))
+                                                                :created-at ts})
+                           ;; the tasks of the branch outlive it: the open
+                           ;; ones keep going on main (on the layer the
+                           ;; merge left them), the closed ones are its
+                           ;; history
+                           moved    (ftask/move-branch-tasks cfg {:branch-file-id branch-file-id
+                                                                  :main-id main-id
+                                                                  :merge-id merge-id
+                                                                  :branch-name (:name branch)
+                                                                  :profile-id profile-id
+                                                                  :notify-assignees notify-assignees
+                                                                  :merged-data merged-data
+                                                                  :branch-data branch-data
+                                                                  :base-data base-data})]
+                       ;; main's open clients patch their task list
+                       (when (seq moved)
+                         (vswap! messages conj
+                                 {:topic main-id
+                                  :message (ftask/tasks-change-message
+                                            conn {:file-id main-id
+                                                  :profile-id profile-id
+                                                  :session-id session-id
+                                                  :task-ids (map :id moved)})})))
                      (db/update! conn :file-branch
                                  {:status "merged"
                                   :merged-at ts
@@ -1285,7 +1300,7 @@
                      ;; Nothing to integrate (branch matches main): close the
                      ;; branch without touching main.
                      (let [ts (ct/now)]
-                       (finish-branch! ts)
+                       (finish-branch! ts (:data main-file))
                        (audited {:status :merged :revn (:revn main-file) :source-file-id main-id}
                                 tpoint :merge))
 
@@ -1353,6 +1368,7 @@
                              (db/insert! conn :file-change
                                          {:id (uuid/next)
                                           :session-id session-id
+                                          :kind fchanges/revision-kind
                                           :profile-id profile-id
                                           :created-at ts
                                           :updated-at ts
@@ -1374,7 +1390,7 @@
                              (when (contains? cf/flags :redis-cache)
                                (fupd/invalidate-caches! cfg merged))
 
-                             (finish-branch! ts)
+                             (finish-branch! ts (:data merged))
 
                              (vswap! messages conj
                                      {:topic main-id
@@ -1745,6 +1761,7 @@
                            (db/insert! conn :file-change
                                        {:id (uuid/next)
                                         :session-id session-id
+                                        :kind fchanges/revision-kind
                                         :profile-id profile-id
                                         :created-at ts
                                         :updated-at ts

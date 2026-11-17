@@ -6,6 +6,7 @@
 
 (ns frontend-tests.ui.review-details-test
   (:require
+   [app.common.uuid :as uuid]
    [app.main.data.workspace.review :as dwrv]
    [app.main.ui.workspace.review.common :as rvc]
    [app.main.ui.workspace.review.details :as details]
@@ -13,6 +14,8 @@
    [potok.v2.core :as ptk]))
 
 (def ^:private display-attr @#'details/display-attr)
+
+(def ^:private activity-fetched @#'dwrv/activity-fetched)
 
 (t/deftest a-fill-without-tokens-shows-its-value
   (let [fill-a [{:fill-color "#ff0000" :fill-opacity 1}]
@@ -41,3 +44,24 @@
 (t/deftest every-task-state-has-its-colour
   (t/is (= ["info" "success" "warning" "purple" "error"]
            (mapv rvc/status-tone dwrv/task-statuses))))
+
+(t/deftest the-activity-comes-folded-from-the-server
+  (let [entry     {:id (uuid/random) :page-id (uuid/random) :kind :added}
+        session   {:profile-id (uuid/random)
+                   :start (js/Date.)
+                   :end (js/Date.)
+                   :entries [entry]}
+        last-save {:created-at (js/Date.) :profile-id (uuid/random)}
+        pr-id     (uuid/random)
+        state     (ptk/update (activity-fetched pr-id {:entries [entry]
+                                                       :sessions [session]
+                                                       :people 2
+                                                       :last-save last-save})
+                              {})
+        activity  (:workspace-review-activity state)]
+    (t/is (= :loaded (:status activity)))
+    (t/is (= pr-id (:pr-id activity)))
+    (t/is (= [entry] (:entries activity)))
+    (t/is (= [session] (:sessions activity)))
+    (t/is (= 2 (:people activity)))
+    (t/is (= last-save (:last-save activity)))))

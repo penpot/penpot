@@ -139,3 +139,61 @@
     (t/is (not-any? #(= :get-comment-thread (:cmd %)) calls))
     (t/is (not-any? #{::dcmt/created-thread-on-workspace} seen))
     (t/is (some #{::dwtk/open-task} seen))))
+
+;; --- Changes made to the tasks
+
+(def ^:private session-id (uuid/custom 3 1))
+(def ^:private task-id (uuid/custom 3 2))
+
+(defn- tasks-state
+  "The open file with one task, open on the canvas, in the session
+  `session-id`."
+  []
+  {:current-file-id file-id
+   :session-id session-id
+   :workspace-tasks {:status :loaded
+                     :data {task-id {:id task-id :title "Old title" :status "open"}}}
+   :workspace-tasks-local {:open task-id}})
+
+(defn- ^:async change-handled
+  "Handle the change `message` over the tasks of `tasks-state`: the state
+  it leaves, what it emits and what it asks the server."
+  [message]
+  (let [calls (atom [])
+        seen  (atom [])
+        event (dwtk/handle-tasks-change message)
+        state (ptk/update event (tasks-state))]
+    (await (mock/with-mocks*
+             {rp/cmd! (fake-server calls)}
+             (await (hva/observe (ptk/watch event state (rx/empty))
+                                 {:on-next #(swap! seen conj (ptk/type %))}))))
+    {:state state :calls @calls :seen @seen}))
+
+(defn- change-message
+  [from-session tasks]
+  {:type :file-tasks-change
+   :file-id file-id
+   :session-id from-session
+   :task-ids [task-id]
+   :tasks tasks})
+
+(t/deftest ^:async a-change-from-this-session-does-not-reload-the-list
+  (let [{:keys [state calls seen]}
+        (await (change-handled (change-message session-id [{:id task-id :title "New title" :status "open"}])))]
+    (t/is (empty? seen))
+    (t/is (not-any? #(= :get-file-tasks (:cmd %)) calls))
+    (t/is (= "Old title" (get-in state [:workspace-tasks :data task-id :title])))))
+
+(t/deftest ^:async a-change-from-another-session-patches-the-list
+  (t/testing "the row of the message replaces the task, and the events of the open task are fetched again"
+    (let [{:keys [state calls seen]}
+          (await (change-handled (change-message (uuid/next) [{:id task-id :title "New title" :status "done"}])))]
+      (t/is (= "New title" (get-in state [:workspace-tasks :data task-id :title])))
+      (t/is (= "done" (get-in state [:workspace-tasks :data task-id :status])))
+      (t/is (not-any? #{::dwtk/refresh ::dwtk/fetch-tasks} seen))
+      (t/is (some #{::dwtk/fetch-task-events} seen))
+      (t/is (not-any? #(= :get-file-tasks (:cmd %)) calls))))
+
+  (t/testing "a task named without a row was deleted"
+    (let [{:keys [state]} (await (change-handled (change-message (uuid/next) [])))]
+      (t/is (not (contains? (get-in state [:workspace-tasks :data]) task-id))))))

@@ -206,7 +206,7 @@
         open     (count (remove dwtk/closed? tasks))
         closed   (count (filter dwtk/closed? tasks))
         counts   (:counts pr)
-        last-row (first (:rows activity))]
+        last-save (:last-save activity)]
 
     [:div {:class (stl/css :tab-body)}
      [:div {:class (stl/css :facts)}
@@ -225,10 +225,10 @@
        [:> text* {:as "span" :typography t/body-small :class (stl/css :muted)}
         (tr "workspace.review.details.last-change")]
        [:> text* {:as "span" :typography t/body-small :class (stl/css :fact-value)}
-        (if (some? last-row)
+        (if (some? last-save)
           (tr "workspace.review.details.last-change-by"
-              (ct/timeago (:created-at last-row))
-              (rvc/profile-name profiles (:profile-id last-row)))
+              (ct/timeago (:created-at last-save))
+              (rvc/profile-name profiles (:profile-id last-save)))
           (ct/timeago (:review-updated-at pr)))]]]
 
      (when (and (pos? missing) (= "open" (:status pr)))
@@ -460,7 +460,7 @@
         local    (mf/deref refs/review-local)
         kind     (get local :change-filter :all)
         entries  (:entries activity)
-        people   (count (into #{} (map :profile-id) (:rows activity)))
+        people   (:people activity 0)
         counts   (frequencies (map :kind entries))
         sessions (mf/with-memo [activity kind]
                    (->> (:sessions activity)

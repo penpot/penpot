@@ -15,6 +15,7 @@
    [app.email :as eml]
    [app.msgbus :as mbus]
    [app.rpc :as-alias rpc]
+   [app.util.blob :as blob]
    [backend-tests.helpers :as th]
    [clojure.string :as str]
    [clojure.test :as t]))
@@ -797,3 +798,74 @@
         (t/is (empty? @seen))
         (t/is (empty? (th/db-query :file-pull-request
                                    {:file-branch-id (:id branch)})))))))
+
+(t/deftest activity-folds-every-row-not-the-newest-window
+  (with-redefs [cf/flags (pr-flags)]
+    (let [author   (th/create-profile* 1 {:is-active true})
+          file     (th/create-file* 1 {:profile-id (:id author)
+                                       :project-id (:default-project-id author)})
+          page-id  (-> (th/command! {::th/type :get-file
+                                     ::rpc/profile-id (:id author)
+                                     :id (:id file)})
+                       :result :data :pages first)
+          branch   (create-branch* author file "feature")
+          pr-id    (-> (create-pr* author (:id branch) {}) :result :id)
+          paid-id  (uuid/random)
+          board-id (uuid/random)
+          promo-id (uuid/random)
+          start    (ct/now)
+
+          paid     {:id paid-id :page-id page-id :name "Pay" :type :rect
+                    :frame-id board-id :frame-name "Checkout" :kind :added}
+          promo    {:id promo-id :page-id page-id :name "Promo" :type :rect
+                    :frame-id board-id :frame-name "Checkout" :kind :added}
+          moved    {:id board-id :page-id page-id :name "Checkout" :type :frame
+                    :frame-id uuid/zero :frame-name nil :kind :modified
+                    :attrs {:x [0 10]}}
+          changed  (assoc paid :name "Pay now" :kind :modified
+                          :attrs {:name ["Pay" "Pay now"]})
+
+          row
+          (fn [revn at entries]
+            [(uuid/next) pr-id (:id author) revn
+             (blob/encode entries)
+             at])
+
+          ;; 2001 saves: the oldest one adds the layers and the newest
+          ;; one renames one of them and deletes the other. The saves in
+          ;; between keep the first one outside a 2000-row window, and a
+          ;; gap longer than a sitting opens a second sitting, so the
+          ;; fold crosses one.
+          rows
+          (into [(row 0 start [paid promo])]
+                (concat (map (fn [i]
+                               (row i
+                                    (ct/plus start (ct/duration {:hours 2 :seconds i}))
+                                    [moved]))
+                             (range 1 2000))
+                        [(row 2000
+                              (ct/plus start (ct/duration {:hours 2 :seconds 2000}))
+                              [changed (assoc promo :kind :deleted)])]))]
+
+      (db/insert-many! th/*pool* :file-pull-request-activity
+                       [:id :pull-request-id :profile-id :revn :entries :created-at]
+                       rows
+                       {::db/return-keys false})
+
+      (let [out    (th/command! {::th/type :get-pull-request-activity
+                                 ::rpc/profile-id (:id author)
+                                 :id pr-id})
+            result (:result out)
+            entry  (->> (:entries result)
+                        (some #(when (= paid-id (:id %)) %)))]
+        (t/is (nil? (:error out)))
+        (t/is (= :added (:kind entry))
+              "the oldest save still counts in what the layer ends up as")
+        (t/is (= "Pay now" (:name entry))
+              "the layer keeps the name of its last change")
+        (t/is (not-any? #(= promo-id (:id %)) (:entries result))
+              "a layer added and then deleted is no change")
+        (t/is (= 2 (count (:entries result))))
+        (t/is (= 2 (count (:sessions result))))
+        (t/is (= 1 (:people result)))
+        (t/is (= (:id author) (-> result :last-save :profile-id)))))))

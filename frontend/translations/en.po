@@ -12317,6 +12317,10 @@ msgstr "The task could not be changed. Try again."
 msgid "workspace.tasks.error.comment-has-task"
 msgstr "This comment is a task already."
 
+#: src/app/main/data/workspace/tasks.cljs
+msgid "workspace.tasks.error.layer-deleted"
+msgstr "The tasks of the deleted layers could not be updated. Reload the file to see them."
+
 #: src/app/main/ui/workspace/review/tasks.cljs
 msgid "workspace.tasks.event.assigned"
 msgstr "%s assigned it to %s"
@@ -12324,6 +12328,10 @@ msgstr "%s assigned it to %s"
 #: src/app/main/ui/workspace/review/tasks.cljs
 msgid "workspace.tasks.event.assigned-to-you"
 msgstr "%s made this a task for you"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.event.deleted"
+msgstr "%s deleted the task"
 
 #: src/app/main/ui/workspace/review/tasks.cljs
 msgid "workspace.tasks.event.done"
@@ -12344,6 +12352,10 @@ msgstr "Moved to main with the merge of %s"
 #: src/app/main/ui/workspace/review/tasks.cljs
 msgid "workspace.tasks.event.relinked"
 msgstr "%s linked it to %s"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.event.relinked-area"
+msgstr "%s placed it on the canvas, where its layer was"
 
 #: src/app/main/ui/workspace/review/tasks.cljs
 msgid "workspace.tasks.event.renamed"

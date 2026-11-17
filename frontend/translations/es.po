@@ -12471,6 +12471,10 @@ msgstr "No se pudo cambiar la tarea. Inténtalo de nuevo."
 msgid "workspace.tasks.error.comment-has-task"
 msgstr "Este comentario ya es una tarea."
 
+#: src/app/main/data/workspace/tasks.cljs
+msgid "workspace.tasks.error.layer-deleted"
+msgstr "No se pudieron actualizar las tareas de las capas borradas. Recarga el archivo para verlas."
+
 #: src/app/main/ui/workspace/review/tasks.cljs
 msgid "workspace.tasks.event.assigned"
 msgstr "%s se la asignó a %s"
@@ -12478,6 +12482,10 @@ msgstr "%s se la asignó a %s"
 #: src/app/main/ui/workspace/review/tasks.cljs
 msgid "workspace.tasks.event.assigned-to-you"
 msgstr "%s hizo de esto una tarea para ti"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.event.deleted"
+msgstr "%s borró la tarea"
 
 #: src/app/main/ui/workspace/review/tasks.cljs
 msgid "workspace.tasks.event.done"
@@ -12498,6 +12506,10 @@ msgstr "Pasó a main con la fusión de %s"
 #: src/app/main/ui/workspace/review/tasks.cljs
 msgid "workspace.tasks.event.relinked"
 msgstr "%s la enlazó a %s"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.event.relinked-area"
+msgstr "%s la colocó en el lienzo, donde estaba su capa"
 
 #: src/app/main/ui/workspace/review/tasks.cljs
 msgid "workspace.tasks.event.renamed"

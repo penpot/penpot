@@ -22,9 +22,11 @@
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.schema :as sm]
    [app.common.time :as ct]
+   [app.common.types.shape :as cts]
    [app.common.uri :as uri]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -109,18 +111,96 @@
                   :hint "the assignee must be a member of the team"
                   :profile-id assignee-id)))))
 
+(def ^:private sql:select-tasks
+  "SELECT t.id,
+          t.file_id,
+          t.pull_request_id,
+          coalesce(fpr.title, t.review_title) AS review_title,
+          fpr.status AS review_status,
+          t.thread_id,
+          t.comment_id,
+          ct.seqn AS thread_seqn,
+          t.title,
+          t.status,
+          t.assignee_id,
+          t.created_by,
+          t.page_id,
+          t.frame_id,
+          t.shape_id,
+          t.lost_shape_name,
+          t.position,
+          t.merge_id,
+          t.branch_name,
+          t.status_changed_at,
+          t.status_changed_by,
+          t.created_at,
+          t.updated_at
+     FROM file_task AS t
+     LEFT JOIN file_pull_request AS fpr ON (fpr.id = t.pull_request_id)
+     LEFT JOIN comment_thread AS ct ON (ct.id = t.thread_id)")
+
+(def ^:private sql:get-file-tasks
+  (str sql:select-tasks
+       " WHERE t.file_id = ?
+           AND t.deleted_at IS NULL
+         ORDER BY t.created_at ASC"))
+
+(def ^:private sql:get-file-tasks-by-id
+  (str sql:select-tasks
+       " WHERE t.file_id = ?
+           AND t.id = ANY(?)
+           AND t.deleted_at IS NULL
+         ORDER BY t.created_at ASC"))
+
+(defn tasks-change-message
+  "The message that tells the open clients of `file-id` that its tasks
+  `task-ids` changed. It carries their rows as `get-file-tasks` lists
+  them (a deleted task has none) and the session that made the change:
+  that session skips it, the others patch their list with it. Read it
+  inside the transaction of the change."
+  [conn {:keys [file-id profile-id session-id task-ids]}]
+  (let [task-ids (vec task-ids)]
+    {:type :file-tasks-change
+     :file-id file-id
+     :profile-id profile-id
+     :session-id session-id
+     :task-ids task-ids
+     :tasks (if (seq task-ids)
+              (into []
+                    (map decode-row)
+                    (db/exec! conn [sql:get-file-tasks-by-id file-id
+                                    (db/create-array conn "uuid" task-ids)]))
+              [])}))
+
 (defn- run-and-notify
   "Run `f` in a transaction, then tell the open clients of `file-id` that
-  its tasks changed: the message leaves once the transaction committed,
-  so a client that reloads on it reads the committed state."
-  [{:keys [::mbus/msgbus] :as cfg} file-id profile-id f]
-  (let [result (db/tx-run! cfg f)]
-    (mbus/pub! msgbus
-               :topic file-id
-               :message {:type :file-tasks-change
-                         :file-id file-id
-                         :profile-id profile-id})
+  the tasks `get-ids` names in the result of `f` changed
+  (`tasks-change-message`). The message is read in the transaction and
+  leaves once it committed, so it carries the committed state."
+  [{:keys [::mbus/msgbus] :as cfg} {:keys [file-id] :as context} get-ids f]
+  (let [[result message]
+        (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
+                          (let [result (f cfg)]
+                            [result (tasks-change-message conn (assoc context :task-ids (get-ids result)))])))]
+    (mbus/pub! msgbus :topic file-id :message message)
     result))
+
+(def ^:private sql:lock-file
+  "SELECT id, deleted_at FROM file WHERE id = ? FOR UPDATE")
+
+(defn- lock-file
+  "Lock the row of `file-id` and refuse a deleted file. Task creation and
+  the move of the tasks of a merged branch (`move-branch-tasks`) take
+  this lock: a task created during a merge either lands before the merge
+  reads the tasks of the branch, or waits and finds the branch file
+  deleted."
+  [conn file-id]
+  (let [file (db/exec-one! conn [sql:lock-file file-id])]
+    (when (or (nil? file) (some? (:deleted-at file)))
+      (ex/raise :type :not-found
+                :code :object-not-found
+                :hint "the file of the task does not exist or was deleted"
+                :file-id file-id))))
 
 ;; --- Helpers: emails
 
@@ -158,37 +238,6 @@
 (def ^:private schema:get-file-tasks
   [:map {:title "get-file-tasks"}
    [:file-id ::sm/uuid]])
-
-(def ^:private sql:get-file-tasks
-  "SELECT t.id,
-          t.file_id,
-          t.pull_request_id,
-          coalesce(fpr.title, t.review_title) AS review_title,
-          fpr.status AS review_status,
-          t.thread_id,
-          t.comment_id,
-          ct.seqn AS thread_seqn,
-          t.title,
-          t.status,
-          t.assignee_id,
-          t.created_by,
-          t.page_id,
-          t.frame_id,
-          t.shape_id,
-          t.lost_shape_name,
-          t.position,
-          t.merge_id,
-          t.branch_name,
-          t.status_changed_at,
-          t.status_changed_by,
-          t.created_at,
-          t.updated_at
-     FROM file_task AS t
-     LEFT JOIN file_pull_request AS fpr ON (fpr.id = t.pull_request_id)
-     LEFT JOIN comment_thread AS ct ON (ct.id = t.thread_id)
-    WHERE t.file_id = ?
-      AND t.deleted_at IS NULL
-    ORDER BY t.created_at ASC")
 
 (defn get-file-tasks
   [conn file-id]
@@ -313,12 +362,13 @@
   message it was made from (`thread-id` and `comment-id`), or the first
   message of a new thread that carries its title. A task created in a
   design review belongs to it. The assignee, when there is one, must be
-  a member of the team and is told by email."
+  a member of the team and is told by email. A deleted file takes no
+  task: a merge deletes its branch file (see `lock-file`)."
   {::doc/added "2.16"
    ::webhooks/event? true
    ::sm/params schema:create-task}
-  [cfg {:keys [::rpc/profile-id file-id title page-id frame-id shape-id position assignee-id
-               pull-request-id thread-id comment-id] :as params}]
+  [cfg {:keys [::rpc/profile-id ::rpc/session-id file-id title page-id frame-id shape-id position
+               assignee-id pull-request-id thread-id comment-id] :as params}]
   (check-tasks-enabled)
   (when (str/blank? title)
     (ex/raise :type :validation
@@ -326,8 +376,10 @@
               :hint "task title cannot be blank"))
   (files/check-read-permissions! cfg profile-id file-id)
   (run-and-notify
-   cfg file-id profile-id
+   cfg {:file-id file-id :profile-id profile-id :session-id session-id}
+   (comp vector :id)
    (fn [{:keys [::db/conn] :as cfg}]
+     (lock-file conn file-id)
      (let [team-id (perms/get-team-id-for-file conn file-id)
            review  (when pull-request-id
                      (or (db/exec-one! conn [sql:get-open-review-of-file pull-request-id file-id])
@@ -382,7 +434,7 @@
   task; a new assignee is told by email."
   {::doc/added "2.16"
    ::sm/params schema:update-task}
-  [cfg {:keys [::rpc/profile-id id title] :as params}]
+  [cfg {:keys [::rpc/profile-id ::rpc/session-id id title] :as params}]
   (check-tasks-enabled)
   (when (and (some? title) (str/blank? title))
     (ex/raise :type :validation
@@ -391,7 +443,8 @@
   (let [task (db/run! cfg (fn [{:keys [::db/conn]}] (get-task conn id)))]
     (files/check-read-permissions! cfg profile-id (:file-id task))
     (run-and-notify
-     cfg (:file-id task) profile-id
+     cfg {:file-id (:file-id task) :profile-id profile-id :session-id session-id}
+     (comp vector :id)
      (fn [{:keys [::db/conn] :as cfg}]
        (let [task      (get-task conn id {::sql/for-update true})
              team-id   (perms/get-team-id-for-file conn (:file-id task))
@@ -425,12 +478,13 @@
   {::doc/added "2.16"
    ::webhooks/event? true
    ::sm/params schema:set-task-status}
-  [cfg {:keys [::rpc/profile-id id status]}]
+  [cfg {:keys [::rpc/profile-id ::rpc/session-id id status]}]
   (check-tasks-enabled)
   (let [task (db/run! cfg (fn [{:keys [::db/conn]}] (get-task conn id)))]
     (files/check-read-permissions! cfg profile-id (:file-id task))
     (run-and-notify
-     cfg (:file-id task) profile-id
+     cfg {:file-id (:file-id task) :profile-id profile-id :session-id session-id}
+     (comp vector :id)
      (fn [{:keys [::db/conn]}]
        (let [task (get-task conn id {::sql/for-update true})
              from (:status task)
@@ -454,6 +508,53 @@
                 :status-changed-at ts
                 :status-changed-by profile-id))))))
 
+;; --- Helpers: the thread created with a task
+
+(def ^:private sql:get-first-comment
+  "SELECT id FROM comment
+    WHERE thread_id = ?
+    ORDER BY created_at ASC, id ASC
+    LIMIT 1")
+
+(defn- created-with-task?
+  "The thread of `task` was created with it: the message of the task is
+  the first message of the thread. A thread a task was made from later
+  keeps its own place."
+  [conn {:keys [thread-id comment-id]}]
+  (and (some? thread-id)
+       (some? comment-id)
+       (= comment-id (:id (db/exec-one! conn [sql:get-first-comment thread-id])))))
+
+(defn- move-task-thread
+  "Point the thread created with `task` where the task points now: at the
+  layer `shape-id`; with no layer, at the rectangle `area` of the canvas,
+  or at the spot `position` when there is no area either."
+  [conn task {:keys [frame-id shape-id area position]}]
+  (when (created-with-task? conn task)
+    (db/update! conn :comment-thread
+                (cond
+                  (some? shape-id)
+                  {:frame-id frame-id
+                   :shape-id shape-id
+                   :anchor-type "layer"
+                   :area nil}
+
+                  (some? area)
+                  {:frame-id frame-id
+                   :shape-id nil
+                   :anchor-type "area"
+                   :area (db/tjson area)
+                   :position (db/pgpoint position)}
+
+                  :else
+                  {:frame-id frame-id
+                   :shape-id nil
+                   :anchor-type "canvas"
+                   :area nil
+                   :position (db/pgpoint position)})
+                {:id (:thread-id task)}
+                {::db/return-keys false})))
+
 ;; --- COMMAND: relink-task
 
 (def ^:private schema:relink-task
@@ -467,24 +568,28 @@
 
 (sv/defmethod ::relink-task
   "Point a task at another layer. A task whose layer was deleted stops
-  being lost."
+  being lost. The thread created with the task follows it; a thread the
+  task was made from keeps its place."
   {::doc/added "2.16"
    ::sm/params schema:relink-task}
-  [cfg {:keys [::rpc/profile-id id page-id frame-id shape-id shape-name]}]
+  [cfg {:keys [::rpc/profile-id ::rpc/session-id id page-id frame-id shape-id shape-name]}]
   (check-tasks-enabled)
   (let [task (db/run! cfg (fn [{:keys [::db/conn]}] (get-task conn id)))]
     (files/check-read-permissions! cfg profile-id (:file-id task))
     (run-and-notify
-     cfg (:file-id task) profile-id
+     cfg {:file-id (:file-id task) :profile-id profile-id :session-id session-id}
+     (comp vector :id)
      (fn [{:keys [::db/conn]}]
-       (let [changes {:page-id page-id
+       (let [task    (get-task conn id {::sql/for-update true})
+             changes {:page-id page-id
                       :frame-id frame-id
                       :shape-id shape-id
                       :lost-shape-name nil
                       :updated-at (ct/now)}]
          (db/update! conn :file-task changes {:id id} {::db/return-keys false})
+         (move-task-thread conn task changes)
          (insert-event conn id profile-id "relinked" {:shape-id shape-id :shape-name shape-name})
-         (merge (get-task conn id) changes))))))
+         (merge task changes))))))
 
 ;; --- COMMAND: mark-tasks-layer-deleted
 
@@ -496,13 +601,32 @@
    [:frame-id ::sm/uuid]
    [:frame-name {:optional true} [:maybe [:string {:max 250}]]]
    ;; the layer as it was (the shape and its children), what "restore
-   ;; layer" puts back
-   [:objects {:optional true} [:vector {:max 500} :map]]])
+   ;; layer" puts back; kept only up to `max-restore-objects`
+   [:objects {:optional true} [:vector :map]]])
 
 (def ^:private schema:mark-tasks-layer-deleted
   [:map {:title "mark-tasks-layer-deleted" :closed true}
    [:file-id ::sm/uuid]
-   [:layers [:vector {:min 1 :max 200} schema:deleted-layer]]])
+   [:layers [:vector {:min 1} schema:deleted-layer]]])
+
+(def ^:private max-restore-objects
+  "The most objects of a deleted layer its event keeps for a restore."
+  500)
+
+(def ^:private valid-restore-object?
+  (sm/lazy-validator cts/schema:shape-attrs))
+
+(defn- restore-objects
+  "The objects of a deleted layer its event keeps, what a restore puts
+  back as real layers: none above `max-restore-objects`, and none when
+  one of them is not a valid shape. The client sends them without their
+  children ids (`:shapes`), which a restore rebuilds. Without them the
+  task is lost all the same and no restore is offered."
+  [objects]
+  (when (and (seq objects)
+             (<= (count objects) max-restore-objects)
+             (every? #(valid-restore-object? (update % :shapes (fnil identity []))) objects))
+    objects))
 
 (def ^:private sql:get-tasks-of-layers
   "SELECT * FROM file_task
@@ -517,33 +641,36 @@
   "Tell the server that layers with open tasks were deleted: each task
   moves to the board that held its layer and keeps the name of the lost
   layer until it is linked to another one. The event of each task keeps
-  the deleted layer, so it can be restored later. Returns the tasks it
-  moved."
+  the deleted layer, so it can be restored later, when the layer is small
+  and valid enough (`restore-objects`). Returns the tasks it moved."
   {::doc/added "2.16"
    ::sm/params schema:mark-tasks-layer-deleted}
-  [cfg {:keys [::rpc/profile-id file-id layers]}]
+  [cfg {:keys [::rpc/profile-id ::rpc/session-id file-id layers]}]
   (check-tasks-enabled)
   (files/check-read-permissions! cfg profile-id file-id)
   (run-and-notify
-   cfg file-id profile-id
+   cfg {:file-id file-id :profile-id profile-id :session-id session-id}
+   #(map :id %)
    (fn [{:keys [::db/conn]}]
      (let [by-shape (d/index-by :shape-id layers)
            ids      (db/create-array conn "uuid" (vec (keys by-shape)))
            tasks    (into [] (map decode-row) (db/exec! conn [sql:get-tasks-of-layers file-id ids]))
+           kept     (update-vals by-shape (comp restore-objects :objects))
            ts       (ct/now)]
        (into []
              (map (fn [{:keys [id shape-id] :as task}]
-                    (let [{:keys [shape-name frame-id frame-name objects]} (get by-shape shape-id)
+                    (let [{:keys [shape-name frame-id frame-name]} (get by-shape shape-id)
+                          objects (get kept shape-id)
                           changes {:lost-shape-name shape-name
                                    :frame-id frame-id
                                    :updated-at ts}]
                       (db/update! conn :file-task changes {:id id} {::db/return-keys false})
                       (insert-event conn id profile-id "layer-deleted"
-                                    {:shape-id shape-id
-                                     :shape-name shape-name
-                                     :frame-id frame-id
-                                     :frame-name frame-name
-                                     :objects objects})
+                                    (cond-> {:shape-id shape-id
+                                             :shape-name shape-name
+                                             :frame-id frame-id
+                                             :frame-name frame-name}
+                                      (some? objects) (assoc :objects objects)))
                       (merge task changes))))
              tasks)))))
 
@@ -559,12 +686,13 @@
   task): the task points at it again."
   {::doc/added "2.16"
    ::sm/params schema:mark-task-layer-restored}
-  [cfg {:keys [::rpc/profile-id id frame-id]}]
+  [cfg {:keys [::rpc/profile-id ::rpc/session-id id frame-id]}]
   (check-tasks-enabled)
   (let [task (db/run! cfg (fn [{:keys [::db/conn]}] (get-task conn id)))]
     (files/check-read-permissions! cfg profile-id (:file-id task))
     (run-and-notify
-     cfg (:file-id task) profile-id
+     cfg {:file-id (:file-id task) :profile-id profile-id :session-id session-id}
+     (comp vector :id)
      (fn [{:keys [::db/conn]}]
        (let [changes {:lost-shape-name nil
                       :frame-id frame-id
@@ -582,22 +710,34 @@
    [:id ::sm/uuid]])
 
 (sv/defmethod ::delete-task
-  "Delete a task. Its thread stays: the message the task lived in goes
-  on as a plain comment."
+  "Delete a task. Only its author may; anybody who can read the file may
+  still move it to won't do. A `deleted` event, written before the task
+  goes, records who deleted it. Its thread stays: the message the task
+  lived in goes on as a plain comment."
   {::doc/added "2.16"
    ::sm/params schema:delete-task}
-  [cfg {:keys [::rpc/profile-id id]}]
+  [cfg {:keys [::rpc/profile-id ::rpc/session-id id]}]
   (check-tasks-enabled)
   (let [task (db/run! cfg (fn [{:keys [::db/conn]}] (get-task conn id)))]
     (files/check-read-permissions! cfg profile-id (:file-id task))
+    (when (not= profile-id (:created-by task))
+      (ex/raise :type :validation
+                :code :not-allowed
+                :hint "only the author of a task may delete it"
+                :task-id id))
     (run-and-notify
-     cfg (:file-id task) profile-id
+     cfg {:file-id (:file-id task) :profile-id profile-id :session-id session-id}
+     (constantly [id])
      (fn [{:keys [::db/conn]}]
-       (db/update! conn :file-task
-                   {:deleted-at (ct/now) :updated-at (ct/now)}
-                   {:id id}
-                   {::db/return-keys false})
-       nil))))
+       (let [task (get-task conn id {::sql/for-update true})
+             ts   (ct/now)]
+         ;; the event first: a deleted task is not found any more
+         (insert-event conn id profile-id "deleted" {:title (:title task)})
+         (db/update! conn :file-task
+                     {:deleted-at ts :updated-at ts}
+                     {:id id}
+                     {::db/return-keys false})
+         nil)))))
 
 ;; --- Review counts
 
@@ -692,18 +832,79 @@
                                (uri/map->query-string {:file-id main-id
                                                        :team-id team-id})])})))))
 
+(defn- find-shape
+  [data page-id shape-id]
+  (get-in data [:pages-index page-id :objects shape-id]))
+
+(defn- task-landing
+  "Where an open task of a merged branch lands on main when the merge did
+  not carry its layer: on the immediate parent of the layer when main has
+  it, otherwise on the area of the canvas the layer covered. The layer is
+  read from the branch document, or from the merge base when the branch
+  deleted it; when neither has it, the task keeps its spot of the canvas.
+  Nil when the task stays as it is: it is closed, points at the canvas,
+  its layer reached main, or its page did not."
+  [{:keys [merged-data branch-data base-data]} {:keys [page-id shape-id status position]}]
+  (when (and (some? shape-id)
+             (not (contains? closed-statuses status))
+             (contains? (:pages-index merged-data) page-id)
+             (nil? (find-shape merged-data page-id shape-id)))
+    (let [layer  (or (find-shape branch-data page-id shape-id)
+                     (find-shape base-data page-id shape-id))
+          parent (some->> (:parent-id layer) (find-shape merged-data page-id))]
+      (cond
+        (and (some? parent) (not (cfh/root? parent)))
+        {:shape-id (:id parent)
+         :shape-name (:name parent)
+         :frame-id (if (cfh/frame-shape? parent) (:id parent) (:frame-id parent))}
+
+        (some? layer)
+        (let [{:keys [x y width height]} (:selrect layer)]
+          {:frame-id uuid/zero
+           :area {:x x :y y :width width :height height}
+           ;; the top right corner, where the mark of a task goes
+           :position (gpt/point (+ x width) y)})
+
+        :else
+        {:frame-id uuid/zero
+         :position position}))))
+
+(defn- land-task
+  "Point `task` where `task-landing` puts it, its thread created with it
+  too, and record it as a `relinked` event."
+  [conn profile-id task {:keys [shape-id shape-name frame-id area position] :as landing}]
+  (db/update! conn :file-task
+              (cond-> {:shape-id shape-id
+                       :frame-id frame-id
+                       :lost-shape-name nil}
+                (some? position) (assoc :position (db/pgpoint position)))
+              {:id (:id task)}
+              {::db/return-keys false})
+  (move-task-thread conn task landing)
+  (insert-event conn (:id task) profile-id "relinked"
+                (if (some? shape-id)
+                  {:shape-id shape-id :shape-name shape-name}
+                  {:shape-id nil :area area})))
+
 (defn move-branch-tasks
   "Move every task of the branch file into main, inside the merge
   transaction: the open ones keep going on main, the closed ones stay as
   the history of the branch. Each task keeps the names it shows (the
   review title is refreshed from its pull request, which goes away with
   the branch), records the merge and gets a `moved-to-main` event. The
-  threads of the tasks move with them. When `notify-assignees` is set,
-  the assignees of the open tasks are told by email. Returns the moved
-  tasks."
+  threads of the tasks move with them. An open task whose layer the merge
+  did not carry lands where `task-landing` says, with a `relinked` event,
+  reading the layer in `merged-data`, `branch-data` and `base-data`. When
+  `notify-assignees` is set, the assignees of the open tasks are told by
+  email. Returns the moved tasks.
+
+  The branch file row is locked before the tasks are read, as task
+  creation locks it (`lock-file`): a task created meanwhile is either
+  read here or refused once the merge deleted the branch file."
   [{:keys [::db/conn] :as cfg}
-   {:keys [branch-file-id main-id merge-id branch-name profile-id notify-assignees]}]
-  (let [tasks (db/exec! conn [sql:get-branch-tasks branch-file-id])]
+   {:keys [branch-file-id main-id merge-id branch-name profile-id notify-assignees] :as params}]
+  (db/exec-one! conn [sql:lock-file branch-file-id])
+  (let [tasks (into [] (map decode-row) (db/exec! conn [sql:get-branch-tasks branch-file-id]))]
     (when (seq tasks)
       (let [reviews (->> (keep :pull-request-id tasks)
                          (distinct)
@@ -722,7 +923,9 @@
                       {:id id}
                       {::db/return-keys false})
           (insert-event conn (:id task) profile-id "moved-to-main"
-                        {:merge-id merge-id :branch-name branch-name}))
+                        {:merge-id merge-id :branch-name branch-name})
+          (when-let [landing (task-landing params task)]
+            (land-task conn profile-id task landing)))
         (when notify-assignees
           (let [main (db/get conn :file {:id main-id} {::sql/columns [:name]})]
             (send-tasks-moved-emails cfg
