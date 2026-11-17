@@ -11,6 +11,9 @@ use crate::{
     },
     utils::{get_fallback_fonts, get_font_collection},
 };
+use std::cell::RefCell;
+use std::collections::HashMap;
+
 use skia_safe::{
     self as skia,
     canvas::SaveLayerRec,
@@ -392,6 +395,9 @@ fn paint_from_cached_layout(canvas: &Canvas, shape: &Shape, text_content: &TextC
             continue;
         };
         paragraph.paint(canvas, (x, y_accum));
+        if let Some(glyphs) = text_content.layout.trailing_glyphs.get(index) {
+            draw_trailing_glyphs(canvas, glyphs, (x, y_accum));
+        }
         if draw_decorations {
             if let Some(text_paragraph) = text_content.paragraphs().get(index) {
                 for deco in decoration_segments(paragraph, text_paragraph, x, y_accum) {
@@ -542,6 +548,7 @@ fn paint_text_with_emoji_overlay(
 
     for para in &mut layout_info.paragraphs {
         para.paragraph.paint(canvas, (para.x, para.y));
+        draw_trailing_glyphs(canvas, &para.trailing_glyphs, (para.x, para.y));
 
         if overlay_emoji {
             paint_emoji_overlay(canvas, para);
@@ -1210,6 +1217,251 @@ fn style_metric_at<'a>(
         .rev()
         .find(|(start, _)| *start <= offset)
         .map(|(_, metrics)| *metrics)
+}
+
+/// A whitespace glyph at the end of a line, which Skia lays out but never paints.
+#[derive(Debug, Clone)]
+pub struct TrailingGlyph {
+    pub font: skia::Font,
+    pub glyph: skia::GlyphId,
+    /// Glyph origin relative to the paragraph origin.
+    pub position: Point,
+    pub paint: Paint,
+}
+
+thread_local! {
+    /// Shaped glyph of a whitespace char per typeface; `None` when it draws nothing.
+    static WHITESPACE_GLYPHS: RefCell<HashMap<(u32, char), Option<skia::GlyphId>>> =
+        RefCell::new(HashMap::new());
+}
+
+/// The glyph the font paints for whitespace `ch`, or `None` when it is blank.
+/// Shaping `ch` lets features like `liga` pick it, as they do within a line.
+pub fn visible_whitespace_glyph(font: &skia::Font, ch: char) -> Option<skia::GlyphId> {
+    let key = (font.typeface().unique_id(), ch);
+    if let Some(cached) = WHITESPACE_GLYPHS.with(|cache| cache.borrow().get(&key).copied()) {
+        return cached;
+    }
+    let glyph = skia::shapers::hb::shape_dont_wrap_or_reorder(None)
+        .and_then(|shaper| {
+            shaper.shape_text_blob(&ch.to_string(), font, true, f32::MAX, (0.0, 0.0))
+        })
+        .and_then(|(blob, _)| {
+            skia::TextBlobIter::new(&blob).find_map(|run| run.glyph_indices.first().copied())
+        })
+        .filter(|glyph| {
+            let mut bounds = [Rect::default()];
+            font.get_bounds(&[*glyph], &mut bounds, None);
+            !bounds[0].is_empty()
+        });
+    WHITESPACE_GLYPHS.with(|cache| cache.borrow_mut().insert(key, glyph));
+    glyph
+}
+
+/// A trailing whitespace glyph found before its baseline and paint are known.
+struct TrailingCandidate {
+    line_number: usize,
+    fallback_baseline: f32,
+    offset: usize,
+    left: f32,
+    font: skia::Font,
+    glyph: skia::GlyphId,
+}
+
+/// Visible glyphs for the spaces Skia drops at the end of each line of `skia_paragraph`.
+/// Each takes the paint of a style run of its span, or else of the run before it.
+pub fn trailing_whitespace_glyphs(
+    skia_paragraph: &mut skia::textlayout::Paragraph,
+    text_paragraph: &TextParagraph,
+) -> Vec<TrailingGlyph> {
+    trailing_whitespace_glyphs_with(skia_paragraph, text_paragraph, visible_whitespace_glyph)
+}
+
+/// [`trailing_whitespace_glyphs`] with `glyph_for` choosing each space's glyph.
+pub fn trailing_whitespace_glyphs_with(
+    skia_paragraph: &mut skia::textlayout::Paragraph,
+    text_paragraph: &TextParagraph,
+    glyph_for: impl Fn(&skia::Font, char) -> Option<skia::GlyphId>,
+) -> Vec<TrailingGlyph> {
+    let candidates = trailing_candidates(skia_paragraph, text_paragraph, glyph_for);
+    if candidates.is_empty() {
+        return Vec::new();
+    }
+
+    // Skia paints each line at a rounded baseline, not at `LineMetrics::baseline`.
+    let mut painted_baselines: HashMap<usize, f32> = HashMap::new();
+    skia_paragraph.visit(|line_number, info| {
+        if let Some(info) = info {
+            painted_baselines
+                .entry(line_number)
+                .or_insert(info.origin().y);
+        }
+    });
+
+    let span_ranges = span_utf16_ranges(text_paragraph);
+    let line_metrics = skia_paragraph.get_line_metrics();
+    let runs: Vec<(usize, &StyleMetrics)> = line_metrics
+        .iter()
+        .flat_map(|line| line.get_style_metrics(line.start_index..line.end_index))
+        .collect();
+
+    candidates
+        .into_iter()
+        .filter_map(|candidate| {
+            let style = trailing_style_run(&runs, &span_ranges, candidate.offset)?;
+            let baseline = painted_baselines
+                .get(&candidate.line_number)
+                .copied()
+                .unwrap_or(candidate.fallback_baseline);
+            Some(TrailingGlyph {
+                font: candidate.font,
+                glyph: candidate.glyph,
+                position: Point::new(candidate.left, baseline),
+                paint: text_style_paint(style.text_style),
+            })
+        })
+        .collect()
+}
+
+/// Trailing whitespace of each line whose glyph draws something.
+fn trailing_candidates(
+    skia_paragraph: &skia::textlayout::Paragraph,
+    text_paragraph: &TextParagraph,
+    glyph_for: impl Fn(&skia::Font, char) -> Option<skia::GlyphId>,
+) -> Vec<TrailingCandidate> {
+    // UTF-8 ranges; cheaper than `get_line_metrics`, which copies style runs.
+    let trailing_ranges: Vec<(usize, std::ops::Range<usize>)> = (0..skia_paragraph.line_number())
+        .filter_map(|line_number| {
+            let trimmed = skia_paragraph.get_actual_text_range(line_number, false);
+            let full = skia_paragraph.get_actual_text_range(line_number, true);
+            (full.end > trimmed.end).then_some((line_number, trimmed.end..full.end))
+        })
+        .collect();
+    if trailing_ranges.is_empty() {
+        return Vec::new();
+    }
+
+    // Skia's text, where tabs are U+FFFC placeholders.
+    let text: String = text_paragraph
+        .children()
+        .iter()
+        .flat_map(|span| span.apply_text_transform().chars().collect::<Vec<_>>())
+        .map(|ch| if ch == '\t' { '\u{FFFC}' } else { ch })
+        .collect();
+
+    // UTF-16 offset of `utf8_cursor`; ranges come in text order.
+    let (mut utf8_cursor, mut utf16_cursor) = (0, 0);
+    let mut candidates = Vec::new();
+    for (line_number, range) in trailing_ranges {
+        let Some(trailing) = text.get(range.clone()) else {
+            continue;
+        };
+        let mut fallback_baseline = None;
+        for (index, ch) in trailing.char_indices() {
+            if !ch.is_whitespace() || is_line_break(ch) {
+                continue;
+            }
+            let utf8_offset = range.start + index;
+            let font = skia_paragraph.get_font_at(utf8_offset);
+            let Some(glyph) = glyph_for(&font, ch) else {
+                continue;
+            };
+            let Some(skipped) = text.get(utf8_cursor..utf8_offset) else {
+                continue;
+            };
+            utf16_cursor += skipped.encode_utf16().count();
+            utf8_cursor = utf8_offset;
+            let utf16_offset = utf16_cursor;
+            let Some(text_box) = skia_paragraph
+                .get_rects_for_range(
+                    utf16_offset..utf16_offset + ch.len_utf16(),
+                    skia::textlayout::RectHeightStyle::Tight,
+                    skia::textlayout::RectWidthStyle::Tight,
+                )
+                .into_iter()
+                .next()
+            else {
+                continue;
+            };
+            let fallback_baseline = *fallback_baseline.get_or_insert_with(|| {
+                skia_paragraph
+                    .get_line_metrics_at(line_number)
+                    .map_or(0.0, |line| line.baseline as f32)
+            });
+            candidates.push(TrailingCandidate {
+                line_number,
+                fallback_baseline,
+                offset: utf16_offset,
+                left: text_box.rect.left,
+                font,
+                glyph,
+            });
+        }
+    }
+    candidates
+}
+
+fn span_utf16_ranges(text_paragraph: &TextParagraph) -> Vec<std::ops::Range<usize>> {
+    let mut start = 0;
+    text_paragraph
+        .children()
+        .iter()
+        .map(|span| {
+            let end = start + span.apply_text_transform().encode_utf16().count();
+            let range = start..end;
+            start = end;
+            range
+        })
+        .collect()
+}
+
+fn is_line_break(ch: char) -> bool {
+    matches!(
+        ch,
+        '\n' | '\r' | '\u{000B}' | '\u{000C}' | '\u{0085}' | '\u{2028}' | '\u{2029}'
+    )
+}
+
+/// A style run of the span holding `offset`, or else the run before `offset`.
+fn trailing_style_run<'a>(
+    runs: &[(usize, &'a StyleMetrics<'a>)],
+    span_ranges: &[std::ops::Range<usize>],
+    offset: usize,
+) -> Option<&'a StyleMetrics<'a>> {
+    span_ranges
+        .iter()
+        .find(|span| span.contains(&offset))
+        .and_then(|span| {
+            runs.iter()
+                .rev()
+                .find(|(start, _)| span.contains(start))
+                .map(|(_, metrics)| *metrics)
+        })
+        .or_else(|| style_metric_at(runs, offset))
+}
+
+fn text_style_paint(text_style: &skia::textlayout::TextStyle) -> Paint {
+    if text_style.has_foreground() {
+        return text_style.foreground();
+    }
+    let mut paint = Paint::default();
+    paint.set_anti_alias(true);
+    paint.set_color(text_style.color());
+    paint
+}
+
+/// Paints the glyphs from [`trailing_whitespace_glyphs`] for a paragraph at `origin`.
+pub fn draw_trailing_glyphs(canvas: &Canvas, glyphs: &[TrailingGlyph], origin: impl Into<Point>) {
+    let origin = origin.into();
+    for glyph in glyphs {
+        canvas.draw_glyphs_at(
+            &[glyph.glyph],
+            [Point::default()].as_slice(),
+            origin + glyph.position,
+            &glyph.font,
+            &glyph.paint,
+        );
+    }
 }
 
 /// Decoration bars for one laid out paragraph, in shape coordinates.

@@ -1,4 +1,8 @@
-use crate::render::text::{decoration_segments, list_marker, list_markers};
+use crate::render::text::{
+    decoration_segments, list_marker, list_markers, trailing_whitespace_glyphs, TrailingGlyph,
+};
+#[cfg(test)]
+use crate::render::text::{trailing_whitespace_glyphs_with, visible_whitespace_glyph};
 use crate::{
     math::{Bounds, Matrix, Rect},
     render::{default_font, DEFAULT_EMOJI_FONT},
@@ -253,6 +257,8 @@ pub struct TextContentLayout {
     /// Shared across shape clones (e.g. modifier transforms) so rotation/pan
     /// can paint without rebuilding Skia layout. Cleared builders on clone are OK.
     pub paragraphs: Rc<Vec<Vec<skia::textlayout::Paragraph>>>,
+    /// Trailing whitespace glyphs of each paragraph's first Skia paragraph.
+    pub trailing_glyphs: Rc<Vec<Vec<TrailingGlyph>>>,
     cached_extrect: Cell<Option<CachedExtrect>>,
 }
 
@@ -267,6 +273,7 @@ impl Clone for TextContentLayout {
         Self {
             paragraph_builders: vec![],
             paragraphs: Rc::clone(&self.paragraphs),
+            trailing_glyphs: Rc::clone(&self.trailing_glyphs),
             cached_extrect: Cell::new(self.cached_extrect.get()),
         }
     }
@@ -283,6 +290,7 @@ impl TextContentLayout {
         Self {
             paragraph_builders: vec![],
             paragraphs: Rc::new(Vec::new()),
+            trailing_glyphs: Rc::new(Vec::new()),
             cached_extrect: Cell::new(None),
         }
     }
@@ -290,16 +298,29 @@ impl TextContentLayout {
     pub fn set(
         &mut self,
         paragraph_builders: Vec<ParagraphBuilderGroup>,
-        paragraphs: Vec<Vec<skia::textlayout::Paragraph>>,
+        mut paragraphs: Vec<Vec<skia::textlayout::Paragraph>>,
+        text_paragraphs: &[Paragraph],
     ) {
+        let trailing_glyphs = paragraphs
+            .iter_mut()
+            .zip(text_paragraphs)
+            .map(|(group, text_paragraph)| {
+                group
+                    .first_mut()
+                    .map(|paragraph| trailing_whitespace_glyphs(paragraph, text_paragraph))
+                    .unwrap_or_default()
+            })
+            .collect();
         self.paragraph_builders = paragraph_builders;
         self.paragraphs = Rc::new(paragraphs);
+        self.trailing_glyphs = Rc::new(trailing_glyphs);
         self.cached_extrect.set(None);
     }
 
     pub fn clear(&mut self) {
         self.paragraph_builders.clear();
         self.paragraphs = Rc::new(Vec::new());
+        self.trailing_glyphs = Rc::new(Vec::new());
         self.cached_extrect.set(None);
     }
 
@@ -1247,7 +1268,7 @@ impl TextContent {
         default_width: f32,
         default_height: f32,
     ) {
-        self.layout.set(result.0, result.1);
+        self.layout.set(result.0, result.1, &self.paragraphs);
         self.size
             .copy_finite_size(result.2, default_width, default_height);
         // Paragraph paints (incl. absolute image/gradient shaders) were built
@@ -1947,6 +1968,7 @@ pub struct ParagraphLayout {
     pub x: f32,
     pub y: f32,
     pub decorations: Vec<TextDecorationSegment>,
+    pub trailing_glyphs: Vec<TrailingGlyph>,
     pub marker: Option<ListMarker>,
 }
 
@@ -2015,7 +2037,7 @@ pub fn calculate_text_layout_data(
     let mut previous_markers: Vec<Option<ListMarker>> = Vec::new();
     for (i, group_paragraphs) in built_groups.into_iter().enumerate() {
         // For each paragraph in the group (e.g., fill, stroke, etc.)
-        for (builder_index, skia_paragraph) in group_paragraphs.into_iter().enumerate() {
+        for (builder_index, mut skia_paragraph) in group_paragraphs.into_iter().enumerate() {
             if previous_markers.len() <= builder_index {
                 previous_markers.resize(builder_index + 1, None);
             }
@@ -2023,6 +2045,12 @@ pub fn calculate_text_layout_data(
                 .get(i)
                 .map(|text_paragraph| {
                     decoration_segments(&skia_paragraph, text_paragraph, x, y_accum)
+                })
+                .unwrap_or_default();
+            let trailing_glyphs = text_paragraphs
+                .get(i)
+                .map(|text_paragraph| {
+                    trailing_whitespace_glyphs(&mut skia_paragraph, text_paragraph)
                 })
                 .unwrap_or_default();
             let marker = text_paragraphs.get(i).and_then(|text_paragraph| {
@@ -2043,6 +2071,7 @@ pub fn calculate_text_layout_data(
                 x,
                 y: y_accum,
                 decorations,
+                trailing_glyphs,
                 marker,
             });
         }
@@ -2798,5 +2827,133 @@ mod tests {
                 "{grow_type:?}: trimmed {trimmed:?}, with spaces {with_spaces:?}"
             );
         }
+    }
+
+    /// A fixed `width` text with one paragraph of `spans`, laid out.
+    fn colored_text_content(spans: &[(&str, skia::Color)], width: f32) -> TextContent {
+        let texts: Vec<&str> = spans.iter().map(|(text, _)| *text).collect();
+        let mut paragraph = test_paragraph(&texts);
+        for (span, (_, color)) in paragraph.children_mut().iter_mut().zip(spans) {
+            span.fills = vec![shapes::Fill::Solid(shapes::SolidColor(*color))];
+        }
+        let selrect = Rect::from_xywh(0.0, 0.0, width, 100.0);
+        let mut content = TextContent::new(selrect, GrowType::Fixed);
+        content.add_paragraph(paragraph);
+        content.update_layout(selrect);
+        content
+    }
+
+    /// Trailing glyphs of `spans`, as if the font drew a visible glyph for spaces.
+    fn trailing_glyphs_for(spans: &[(&str, skia::Color)], width: f32) -> Vec<TrailingGlyph> {
+        let content = colored_text_content(spans, width);
+        let mut builders = content.paragraph_builder_group_from_text(None);
+        let mut paragraphs = build_paragraphs_from_paragraph_builders(&mut builders, width);
+        trailing_whitespace_glyphs_with(
+            &mut paragraphs[0][0],
+            &content.paragraphs()[0],
+            |font, ch| Some(font.unichar_to_glyph(ch as i32)),
+        )
+    }
+
+    #[test]
+    fn blank_space_glyphs_are_not_kept() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let content = colored_text_content(&[("hello   ", skia::Color::RED)], 200.0);
+        assert!(content.layout.trailing_glyphs[0].is_empty());
+    }
+
+    #[test]
+    fn visible_whitespace_glyph_skips_blank_glyphs() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let typeface = get_font_collection()
+            .clone()
+            .find_typefaces(&[crate::render::default_font()], skia::FontStyle::normal())
+            .into_iter()
+            .next()
+            .expect("default typeface");
+        let font = skia::Font::from_typeface(typeface, 14.0);
+        assert_eq!(visible_whitespace_glyph(&font, ' '), None);
+        let glyph = visible_whitespace_glyph(&font, 'x');
+        assert!(glyph.is_some());
+        assert_eq!(visible_whitespace_glyph(&font, 'x'), glyph);
+    }
+
+    fn glyph_xs(glyphs: &[TrailingGlyph]) -> Vec<f32> {
+        glyphs.iter().map(|glyph| glyph.position.x).collect()
+    }
+
+    #[test]
+    fn trailing_glyphs_cover_the_spaces_at_the_end_of_a_line() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let glyphs = trailing_glyphs_for(&[("hello   ", skia::Color::RED)], 200.0);
+        let xs = glyph_xs(&glyphs);
+        assert_eq!(glyphs.len(), 3, "{xs:?}");
+        assert!(xs[0] > 20.0, "{xs:?}");
+        assert!(xs.windows(2).all(|pair| pair[0] < pair[1]), "{xs:?}");
+        assert!(glyphs
+            .iter()
+            .all(|glyph| glyph.paint.color() == skia::Color::RED));
+    }
+
+    #[test]
+    fn no_trailing_glyphs_without_trailing_spaces() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        assert!(trailing_glyphs_for(&[("   hello", skia::Color::RED)], 200.0).is_empty());
+        assert!(trailing_glyphs_for(&[("", skia::Color::RED)], 200.0).is_empty());
+    }
+
+    #[test]
+    fn trailing_glyphs_follow_non_ascii_text() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let glyphs = trailing_glyphs_for(&[("ñandú   ", skia::Color::RED)], 200.0);
+        let xs = glyph_xs(&glyphs);
+        assert_eq!(glyphs.len(), 3, "{xs:?}");
+        assert!(xs[0] > 20.0, "{xs:?}");
+    }
+
+    #[test]
+    fn trailing_glyphs_take_the_paint_of_their_span() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let glyphs = trailing_glyphs_for(
+            &[("hello ", skia::Color::RED), ("x   ", skia::Color::BLUE)],
+            200.0,
+        );
+        assert_eq!(glyphs.len(), 3);
+        assert!(glyphs
+            .iter()
+            .all(|glyph| glyph.paint.color() == skia::Color::BLUE));
+    }
+
+    #[test]
+    fn a_span_of_only_trailing_spaces_borrows_the_run_before_it() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let glyphs = trailing_glyphs_for(
+            &[("hello", skia::Color::RED), ("   ", skia::Color::BLUE)],
+            200.0,
+        );
+        assert_eq!(glyphs.len(), 3);
+        assert!(glyphs
+            .iter()
+            .all(|glyph| glyph.paint.color() == skia::Color::RED));
+    }
+
+    #[test]
+    fn trailing_glyphs_include_spaces_at_a_soft_wrap() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let glyphs = trailing_glyphs_for(&[("hello   world", skia::Color::RED)], 40.0);
+        let xs = glyph_xs(&glyphs);
+        assert_eq!(glyphs.len(), 3, "{xs:?}");
+        let first_baseline = glyphs[0].position.y;
+        assert!(glyphs
+            .iter()
+            .all(|glyph| glyph.position.y == first_baseline));
     }
 }
