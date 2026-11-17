@@ -10,12 +10,14 @@
   :skip-component-sync? so box size heals without marking :geometry-group."
   (:require
    [app.common.files.changes-builder :as pcb]
+   [app.common.geom.shapes :as gsh]
    [app.common.logic.shapes :as cls]
    [app.common.test-helpers.components :as cthc]
    [app.common.test-helpers.compositions :as ctho]
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.ids-map :as cthi]
    [app.common.test-helpers.shapes :as cths]
+   [app.common.types.modifiers :as ctm]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.wasm-text :as dwwt]
@@ -51,20 +53,34 @@
       (cthc/instantiate-component :component1 :copy-root
                                   {:children-labels [:copy-child]})))
 
-(defn- bump-main-font-size
-  [file]
+(defn- update-main-text
+  [file update-fn]
   (let [page       (cthf/current-page file)
         main-child (cths/get-shape file :main-child)
         changes    (cls/generate-update-shapes
                     (pcb/empty-changes nil (:id page))
                     #{(:id main-child)}
-                    (fn [shape]
-                      (assoc-in shape
-                                [:content :children 0 :children 0 :children 0 :font-size]
-                                "32"))
+                    update-fn
                     (:objects page)
                     {})]
     (cthf/apply-changes file changes)))
+
+(defn- bump-main-font-size
+  [file]
+  (update-main-text file #(assoc-in % [:content :children 0 :children 0 :children 0 :font-size] "32")))
+
+(defn- recolor-main-text
+  [file]
+  (update-main-text file #(assoc-in % [:content :children 0 :children 0 :children 0 :fills]
+                                    [{:fill-color "#ff0000" :fill-opacity 1}])))
+
+(defn- fade-main-text
+  [file]
+  (update-main-text file #(assoc % :opacity 0.5)))
+
+(defn- widen-main-text
+  [file]
+  (update-main-text file #(gsh/transform-shape % (ctm/change-dimensions-modifiers % :width 300))))
 
 (defn- collect-layout-updates
   "Subscribe before emit; accumulates deref'd `:layout/update` payloads."
@@ -125,3 +141,45 @@
        (fn [_new-state]
          (t/is (empty? @resize-calls)
                "fixed-grow texts must not be scheduled for WASM remasure"))))))
+
+(defn- sync-remeasures
+  "Sync the copy after `change-main` and call `check` with the re-measure
+  requests."
+  [done change-main check]
+  (let [file   (change-main (setup-file :grow-type :auto-height))
+        store  (ths/setup-store file)
+        events [(dwl/sync-file (:id file) (:id file)
+                               :components (cthi/id :component1))]]
+    (ths/run-store store done events (fn [_] (check @resize-calls)))))
+
+(t/deftest test-sync-file-skips-remasure-for-fill-change
+  (t/async
+    done
+    (sync-remeasures done recolor-main-text
+                     (fn [calls]
+                       (t/is (empty? calls)
+                             "a text color change does not change its size")))))
+
+(t/deftest test-sync-file-skips-remasure-for-opacity-change
+  (t/async
+    done
+    (sync-remeasures done fade-main-text
+                     (fn [calls]
+                       (t/is (empty? calls)
+                             "an opacity change does not change the text size")))))
+
+(t/deftest test-sync-file-remasures-auto-height-text-on-font-change
+  (t/async
+    done
+    (sync-remeasures done bump-main-font-size
+                     (fn [calls]
+                       (t/is (= 1 (count calls))
+                             "a font change can change the text size")))))
+
+(t/deftest test-sync-file-remasures-auto-height-text-on-width-change
+  (t/async
+    done
+    (sync-remeasures done widen-main-text
+                     (fn [calls]
+                       (t/is (= 1 (count calls))
+                             "a wider auto-height text can wrap into fewer lines")))))
