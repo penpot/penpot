@@ -92,15 +92,21 @@
 
 (defn- text-heal
   "How to commit a measured auto-grow text in heal `phase`: nil commits
-  nothing, otherwise a map with the `:next` heal phase, if any.
-  The `:check` phase runs when the page opens: it commits only when the size
+  nothing, otherwise a map with the commit `:opts` and the `:next` heal
+  phase, if any.
+  The `:check` phase runs when the page opens. It commits when the size
   drifted, so rounding differences between renderers or browsers are not
-  written back on every open. Without a phase the text is committed as
-  usual."
+  written back on every open, or when the text has no position-data. A heal
+  records no undo step. A resize makes the text be measured again at its new
+  box, in the `:settle` phase, which is part of the heal too. Without a phase
+  the text is committed as usual."
   [phase shape size]
   (case phase
-    :check (when (and (some? size) (apply dwt/text-size-drifted? shape size))
-             {})
+    :check  (let [drifted? (and (some? size) (apply dwt/text-size-drifted? shape size))]
+              (when (or drifted? (nil? (:position-data shape)))
+                (cond-> {:opts {:save-undo? false}}
+                  drifted? (assoc :next :settle))))
+    :settle {:opts {:save-undo? false}}
     {}))
 
 (defn- update-text-shape
@@ -110,14 +116,15 @@
   (->> (tsp/calc-position-data id)
        (p/fmap (fn [position-data]
                  (let [size (measured-auto-size shape node)
-                       heal (text-heal phase shape size)]
+                       heal (text-heal phase shape size)
+                       opts (:opts heal)]
                    (when (some? heal)
                      ;; At least one paragraph needs to be inside the bounding box
                      (when (gsht/overlaps-position-data? shape position-data)
-                       (st/emit! (dwt/update-position-data id position-data)))
+                       (st/emit! (dwt/update-position-data id position-data opts)))
 
                      (when-let [[width height] size]
-                       (st/emit! (dwt/resize-text id width height))))
+                       (st/emit! (dwt/resize-text id width height opts))))
 
                    (st/emit! (dwt/clean-text-modifier id))
                    (:next heal))))
@@ -187,14 +194,6 @@
            (mth/close? (dm/get-prop shape :width) (dm/get-prop other :width))
            (mth/close? (dm/get-prop shape :height) (dm/get-prop other :height)))))
 
-(defn text-phase
-  "Heal phase `shape` is measured in, from `phases`. A text without
-  position-data gets none: it is measured and committed as usual, so it
-  always gets a layout."
-  [phases shape]
-  (when (some? (:position-data shape))
-    (get phases (:id shape))))
-
 (defn text-changed?
   "True when `new-shape` must be measured, given its previous version and its
   heal `phase`."
@@ -232,16 +231,16 @@
 
         ;; Heal phase per text id. Copies whose text is overridden start in
         ;; `:check` and are measured on page open: a sync while their page was
-        ;; closed can give them the main's size.
+        ;; closed can give them the main's size. A text in `:settle` waits for
+        ;; its heal resize to change the shape, which measures it again.
         phases*         (mf/use-state #(override-copy-heal-phases text-shapes))
         phases          (deref phases*)
 
         text-change?
         (fn [id]
-          (let [new-shape (get text-shapes id)]
-            (text-changed? (get prev-text-shapes id)
-                           new-shape
-                           (text-phase phases new-shape))))
+          (text-changed? (get prev-text-shapes id)
+                         (get text-shapes id)
+                         (get phases id)))
 
         changed-texts
         (mf/with-memo [text-shapes pending-update phases]
@@ -278,7 +277,7 @@
      (for [{:keys [id] :as shape} changed-texts]
        [:& text-container {:key (dm/str "text-container-" id)
                            :shape shape
-                           :phase (text-phase phases shape)
+                           :phase (get phases id)
                            :on-update handle-update-shape}])]))
 
 (mf/defc text-modifiers-renderer
