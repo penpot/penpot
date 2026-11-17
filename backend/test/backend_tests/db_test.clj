@@ -79,9 +79,9 @@
         (.close ^HikariDataSource ds)))
     (t/testing "a configured threshold reaches the driver"
       (with-connection {:app.db/prepared-statement-cache-threshold 1}
-                       (fn [conn] (t/is (= 1 (prepare-threshold conn)))))
+        (fn [conn] (t/is (= 1 (prepare-threshold conn)))))
       (with-connection {:app.db/prepared-statement-cache-threshold 0}
-                       (fn [conn] (t/is (= 0 (prepare-threshold conn))))))
+        (fn [conn] (t/is (= 0 (prepare-threshold conn))))))
     (t/testing "a -1 threshold reaches the driver (forceBinary)"
       (let [ds (init-pool {:app.db/prepared-statement-cache-threshold -1})]
         (t/is (= "-1" (.getProperty (.getDataSourceProperties ^HikariDataSource ds)
