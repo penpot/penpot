@@ -256,16 +256,15 @@
                         (feat.fdata/decode-file-data cfg))]
       (select-keys fragment (sm/keys schema:file-fragment)))))
 
-(defn- check-fragment-scope!
+(defn- check-fragment-scope
   "Checks that the fragment is reachable from the pages authorized by
   the share-link. Raises a :not-found exception if the fragment is not reachable.
-   The file's components pointer is never authorized: it carries the full
-   components map, including the stored shapes of deleted components from
-   pages the link excludes."
+  Only the fragments of the link's pages are authorized: root-level pointers
+  (such as the file's components) never pass."
   [cfg file-id fragment-id pages]
   (let [fdata (-> (bfc/get-file cfg file-id :read-only? true)
                   (get :data)
-                  (dissoc :components)
+                  (select-keys [:pages-index])
                   (update :pages-index select-keys pages))]
     (when-not (contains? (feat.fdata/get-used-pointer-ids fdata) fragment-id)
       (ex/raise :type :not-found
@@ -283,7 +282,7 @@
                  (let [perms (perms/get-file-read-permissions cfg profile-id file-id share-id)]
                    (check-read-permissions! perms)
                    (when (= :share-link (:type perms))
-                     (check-fragment-scope! cfg file-id fragment-id (:pages perms)))
+                     (check-fragment-scope cfg file-id fragment-id (:pages perms)))
                    (-> (get-file-fragment cfg file-id fragment-id)
                        (rph/with-http-cache long-cache-duration))))))
 
