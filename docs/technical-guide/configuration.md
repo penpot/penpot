@@ -782,9 +782,11 @@ the server's `max_connections` (100 by default).
 
 #### Prepared statement cache
 
-Every connection keeps a server-side cache of prepared statements: compiled queries whose
-plan the server can reuse, which saves the parse and the plan on every repeated query.
-The cache is on by default; you only need these settings to tune it or to turn it off:
+__Since version 2.20.0__
+
+The driver keeps two things per connection: a cache of parsed queries and, once a query
+runs enough times, a statement prepared in the server whose plan the server can reuse.
+Both are on by default; you only need these settings to tune them or to turn them off:
 
 ```bash
 # Backend
@@ -795,20 +797,14 @@ PENPOT_DATABASE_PREPARED_STATEMENT_CACHE_SIZE: 5242880
 
 The values above are the driver defaults. `PENPOT_DATABASE_PREPARED_STATEMENT_CACHE_THRESHOLD`
 is how many times a query runs on a connection before the driver prepares it server-side:
-`-1` prepares it from the first execution and forces binary transfer, and `0` turns
-server-side prepared statements off, which leaves the cache unused. After the threshold, the
-connection caches up to `PENPOT_DATABASE_PREPARED_STATEMENT_CACHE_QUERIES` prepared queries,
-using at most `PENPOT_DATABASE_PREPARED_STATEMENT_CACHE_SIZE` bytes per connection (the size
-is rounded up to whole MiB for the driver). Setting either of the two cache values to `0`
-disables the cache. With 60 connections, the ceiling is 60 × the size. Leave a variable
-unset and the driver default applies.
-
-To watch the cache, query `pg_prepared_statements` on the server; the backend exports no
-metric for it. The driver drops the cache on schema changes by itself (`flushCacheOnDdl`
-stays at its default), so migrations do not serve stale plans. If you ever place a
-transaction-pooling connection pooler such as PgBouncer between the backend and PostgreSQL,
-server-side prepared statements break: set `PENPOT_DATABASE_PREPARED_STATEMENT_CACHE_THRESHOLD`
-to `0` instead.
+`-1` prepares it from the first execution and forces binary transfer, and `0` stops the
+driver from preparing statements in the server. The cache of parsed queries stays in use
+with the threshold at `0`: the connection caches up to
+`PENPOT_DATABASE_PREPARED_STATEMENT_CACHE_QUERIES` queries, using at most
+`PENPOT_DATABASE_PREPARED_STATEMENT_CACHE_SIZE` bytes per connection (the size is rounded
+up to whole MiB for the driver), and setting either of those two to `0` disables the
+cache. With 60 connections, the ceiling is 60 × the size. Leave a variable unset and the
+driver default applies.
 
 ### Storage
 

@@ -71,9 +71,12 @@
    ;; pgjdbc prepared statement cache. Absent keys mean the driver
    ;; defaults; the size is in bytes and is converted to whole MiB for
    ;; the driver (see create-datasource-config). The threshold is the
-   ;; executions before a statement is server-prepared: 0 disables the
-   ;; cache and -1 prepares it from the first execution.
-   [::prepared-statement-cache-threshold {:optional true} ::sm/int]
+   ;; executions before a statement is server-prepared: 0 stops
+   ;; server-side prepared statements (the cache of parsed queries stays
+   ;; in use) and -1 prepares from the first execution. Any other
+   ;; negative is a typo the driver would clamp to -1, so the schema
+   ;; rejects it.
+   [::prepared-statement-cache-threshold {:optional true} [::sm/int {:min -1}]]
    [::prepared-statement-cache-queries {:optional true} [::sm/int {:min 0}]]
    [::prepared-statement-cache-size {:optional true} [::sm/int {:min 0}]]
    [::mtx/metrics ::mtx/metrics]])

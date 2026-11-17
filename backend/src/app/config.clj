@@ -243,7 +243,7 @@
     ;; pgjdbc prepared statement cache (see app.db). Size is in bytes and is
     ;; converted to the whole MiB the driver accepts. Absent keys mean the
     ;; driver defaults; see docs/technical-guide/configuration.md.
-    [:database-prepared-statement-cache-threshold {:optional true} ::sm/int]
+    [:database-prepared-statement-cache-threshold {:optional true} [::sm/int {:min -1}]]
     [:database-prepared-statement-cache-queries {:optional true} [::sm/int {:min 0}]]
     [:database-prepared-statement-cache-size {:optional true} [::sm/int {:min 0}]]
 
