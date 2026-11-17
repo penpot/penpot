@@ -76,6 +76,23 @@
                                    :worker-default-parallelism 4)]
       (t/is (= 4 (cf/get :worker-default-parallelism 1))))))
 
+(t/deftest prepared-statement-cache-keys
+  (t/testing "negative sizes are rejected; the threshold takes -1 or non-negatives"
+    (t/is (not (cf/validate-config (assoc cf/config :database-prepared-statement-cache-queries -1))))
+    (t/is (not (cf/validate-config (assoc cf/config :database-prepared-statement-cache-size -1))))
+    (t/is (not (cf/validate-config (assoc cf/config :database-prepared-statement-cache-threshold -2))))
+    (t/is (cf/validate-config (assoc cf/config :database-prepared-statement-cache-threshold -1))))
+  (t/testing "a -1 threshold survives the environment decoding and validation"
+    (let [cfg (merge cf/config
+                     (cf/decode-config {:database-prepared-statement-cache-threshold "-1"}))]
+      (t/is (= -1 (:database-prepared-statement-cache-threshold cfg)))
+      (t/is (cf/validate-config cfg))))
+  (t/testing "a decoded -2 threshold fails validation"
+    (let [cfg (merge cf/config
+                     (cf/decode-config {:database-prepared-statement-cache-threshold "-2"}))]
+      (t/is (= -2 (:database-prepared-statement-cache-threshold cfg)))
+      (t/is (not (cf/validate-config cfg))))))
+
 (t/deftest jobs-user-ttl
   (t/testing "the env value is decoded as a duration"
     (let [decoded (cf/decode-config {:jobs-user-ttl "72h"})]
