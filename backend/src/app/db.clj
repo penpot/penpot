@@ -70,8 +70,10 @@
    [::read-only {:optional true} ::sm/boolean]
    ;; pgjdbc prepared statement cache. Absent keys mean the driver
    ;; defaults; the size is in bytes and is converted to whole MiB for
-   ;; the driver (see create-datasource-config).
-   [::prepare-threshold {:optional true} ::sm/int]
+   ;; the driver (see create-datasource-config). The threshold is the
+   ;; executions before a statement is server-prepared: 0 disables the
+   ;; cache and -1 prepares it from the first execution.
+   [::prepared-statement-cache-threshold {:optional true} ::sm/int]
    [::prepared-statement-cache-queries {:optional true} [::sm/int {:min 0}]]
    [::prepared-statement-cache-size {:optional true} [::sm/int {:min 0}]]
    [::mtx/metrics ::mtx/metrics]])
@@ -125,7 +127,7 @@
 ;; drops non-String values silently, so everything is passed as a string.
 ;; preparedStatementCacheSizeMiB only accepts a whole-MiB integer: the
 ;; configured size (bytes) is converted up, so any positive value keeps the
-;; cache enabled and 0 disables it.
+;; cache enabled and 0 disables the cache.
 (defn- bytes->mib-ceil
   [bytes]
   (if (pos? bytes)
@@ -151,7 +153,7 @@
       (.setConnectionInitSql initsql)
       (.setInitializationFailTimeout -1))
 
-    (some->> (::prepare-threshold cfg) (str)
+    (some->> (::prepared-statement-cache-threshold cfg) (str)
              (.addDataSourceProperty config "prepareThreshold"))
     (some->> (::prepared-statement-cache-queries cfg) (str)
              (.addDataSourceProperty config "preparedStatementCacheQueries"))

@@ -425,9 +425,9 @@
     ::db/read-only  (cf/get :database-readonly false)
     ::db/min-size   (cf/get :database-min-pool-size)
     ::db/max-size   (cf/get :database-max-pool-size)
-    ::db/prepare-threshold                (cf/get :database-prepare-threshold)
-    ::db/prepared-statement-cache-queries (cf/get :database-prepared-statement-cache-queries)
-    ::db/prepared-statement-cache-size    (cf/get :database-prepared-statement-cache-size)
+    ::db/prepared-statement-cache-threshold (cf/get :database-prepared-statement-cache-threshold)
+    ::db/prepared-statement-cache-queries   (cf/get :database-prepared-statement-cache-queries)
+    ::db/prepared-statement-cache-size      (cf/get :database-prepared-statement-cache-size)
     ::mtx/metrics   (ig/ref ::mtx/metrics)}
 
    ;; Default netty IO pool (shared between several services)

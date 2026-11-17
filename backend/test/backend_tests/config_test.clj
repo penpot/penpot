@@ -75,26 +75,31 @@
       (t/is (= 4 (cf/get :worker-default-parallelism 1))))))
 
 (t/deftest prepared-statement-cache-keys
-  (t/testing "the size is decoded as bytes"
-    (let [decoded (cf/decode-config {:database-prepare-threshold "1"
+  (t/testing "the environment strings are decoded as numbers"
+    (let [decoded (cf/decode-config {:database-prepared-statement-cache-threshold "1"
                                      :database-prepared-statement-cache-queries "512"
                                      :database-prepared-statement-cache-size "10485760"})]
-      (t/is (= 1 (:database-prepare-threshold decoded)))
+      (t/is (= 1 (:database-prepared-statement-cache-threshold decoded)))
       (t/is (= 512 (:database-prepared-statement-cache-queries decoded)))
       (t/is (= 10485760 (:database-prepared-statement-cache-size decoded)))))
   (t/testing "absent keys stay absent (the driver defaults apply)"
     (let [decoded (cf/decode-config {})]
-      (t/is (nil? (:database-prepare-threshold decoded)))
+      (t/is (nil? (:database-prepared-statement-cache-threshold decoded)))
       (t/is (nil? (:database-prepared-statement-cache-queries decoded)))
       (t/is (nil? (:database-prepared-statement-cache-size decoded)))))
   (t/testing "a non-integer value fails validation"
-    (t/is (not (cf/validate-config (assoc cf/config :database-prepare-threshold "a lot"))))
+    (t/is (not (cf/validate-config (assoc cf/config :database-prepared-statement-cache-threshold "a lot"))))
     (t/is (not (cf/validate-config (assoc cf/config :database-prepared-statement-cache-queries "many"))))
     (t/is (not (cf/validate-config (assoc cf/config :database-prepared-statement-cache-size "lots")))))
-  (t/testing "negative sizes are rejected; a negative prepare threshold is valid (forceBinary)"
+  (t/testing "negative sizes are rejected; a negative threshold is valid (forceBinary)"
     (t/is (not (cf/validate-config (assoc cf/config :database-prepared-statement-cache-queries -1))))
     (t/is (not (cf/validate-config (assoc cf/config :database-prepared-statement-cache-size -1))))
-    (t/is (cf/validate-config (assoc cf/config :database-prepare-threshold -1)))))
+    (t/is (cf/validate-config (assoc cf/config :database-prepared-statement-cache-threshold -1))))
+  (t/testing "a -1 threshold survives the environment decoding and validation"
+    (let [cfg (merge cf/config
+                     (cf/decode-config {:database-prepared-statement-cache-threshold "-1"}))]
+      (t/is (= -1 (:database-prepared-statement-cache-threshold cfg)))
+      (t/is (cf/validate-config cfg)))))
 
 (t/deftest jobs-user-ttl
   (t/testing "the env value is decoded as a duration"

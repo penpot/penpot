@@ -51,13 +51,23 @@
         (t/is (empty? (.getDataSourceProperties ^HikariDataSource ds)))
         (.close ^HikariDataSource ds)))
     (t/testing "configured keys reach the driver as strings"
-      (let [ds (init-pool {:app.db/prepare-threshold 1
+      (let [ds (init-pool {:app.db/prepared-statement-cache-threshold 1
                            :app.db/prepared-statement-cache-queries 512
                            :app.db/prepared-statement-cache-size 10485760})
             props (.getDataSourceProperties ^HikariDataSource ds)]
         (t/is (= "1" (.getProperty props "prepareThreshold")))
         (t/is (= "512" (.getProperty props "preparedStatementCacheQueries")))
         (t/is (= "10" (.getProperty props "preparedStatementCacheSizeMiB")))
+        (.close ^HikariDataSource ds)))
+    (t/testing "a -1 threshold reaches the driver (forceBinary)"
+      (let [ds (init-pool {:app.db/prepared-statement-cache-threshold -1})]
+        (t/is (= "-1" (.getProperty (.getDataSourceProperties ^HikariDataSource ds)
+                                    "prepareThreshold")))
+        (.close ^HikariDataSource ds)))
+    (t/testing "a zero threshold reaches the driver (server-side statements off)"
+      (let [ds (init-pool {:app.db/prepared-statement-cache-threshold 0})]
+        (t/is (= "0" (.getProperty (.getDataSourceProperties ^HikariDataSource ds)
+                                   "prepareThreshold")))
         (.close ^HikariDataSource ds)))
     (t/testing "a positive sub-MiB size rounds up so the cache stays enabled"
       (let [ds (init-pool {:app.db/prepared-statement-cache-size 1})]
