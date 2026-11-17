@@ -764,7 +764,19 @@
                      ordinary? (dissoc :swap-group)
                      gridless? (dissoc :layout-grid-cells)
                      (and (:layout-grid-cells groups) (not gridless?))
-                     (update-in [:layout-grid-cells :layout-grid-cells] grid/settle-cells shape objects context source))]
+                     (update-in [:layout-grid-cells :layout-grid-cells] grid/settle-cells shape objects context source))
+            ;; a grid that grows to hold its children adds default tracks, also
+            ;; to the tracks the copy authors
+            grown (some-> groups :layout-grid-cells :layout-grid-cells meta ::grid/context)
+            pad (fn [tracks n] (into (vec tracks) (repeat (- n (count tracks)) ctl/default-track-value)))
+            groups (cond-> groups
+                     (and grown (:layout-grid-columns groups)
+                          (< (count (get-in groups [:layout-grid-columns :layout-grid-columns])) (:columns grown)))
+                     (update-in [:layout-grid-columns :layout-grid-columns] pad (:columns grown))
+
+                     (and grown (:layout-grid-rows groups)
+                          (< (count (get-in groups [:layout-grid-rows :layout-grid-rows])) (:rows grown)))
+                     (update-in [:layout-grid-rows :layout-grid-rows] pad (:rows grown)))]
         (if (seq groups) (assoc result id groups) (dissoc result id))))
     model model)))
 
