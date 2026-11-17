@@ -147,6 +147,7 @@
     [:flags {:optional true} [::sm/set :string]]
     [:admins {:optional true} [::sm/set ::sm/email]]
     [:secret-key {:optional true} :string]
+    [:secret-key-file {:optional true} :string]
 
     [:tenant {:optional false} schema:tenant]
     [:is-saas ::sm/boolean]
@@ -168,6 +169,10 @@
     [:admin-console-shared-key {:optional true} :string]
     [:nexus-shared-key {:optional true} :string]
     [:media-processor-shared-key {:optional true} :string]
+    [:exporter-shared-key-file {:optional true} :string]
+    [:admin-console-shared-key-file {:optional true} :string]
+    [:nexus-shared-key-file {:optional true} :string]
+    [:media-processor-shared-key-file {:optional true} :string]
     [:management-api-key {:optional true} :string]
 
     [:telemetry-uri {:optional true} :string]
@@ -442,12 +447,68 @@
       (assoc config :file-data-backend "db"))
     config))
 
+(def ^:private key-file->key
+  {:secret-key-file                 :secret-key
+   :exporter-shared-key-file        :exporter-shared-key
+   :admin-console-shared-key-file   :admin-console-shared-key
+   :nexus-shared-key-file           :nexus-shared-key
+   :media-processor-shared-key-file :media-processor-shared-key})
+
+(def ^:private max-key-file-size 4096)
+
+(defn- raise-key-file-error
+  [variable path hint]
+  (ex/raise :type :validation
+            :code :invalid-key-file
+            :hint hint
+            :variable variable
+            :path path))
+
+(defn- get-key-file-value
+  "Reads a secret from a regular file of at most `max-key-file-size` bytes.
+  Internal whitespace is removed so a wrapped base64 value works. A blank
+  value is an error: `app.setup` treats a blank shared key as disabled, which
+  would silently remove the credential."
+  [variable path]
+  (let [file (io/file path)]
+    (when-not (.isFile file)
+      (raise-key-file-error variable path "configuration key file is missing or not a regular file"))
+    (when (> (.length file) max-key-file-size)
+      (raise-key-file-error variable path "configuration key file is too large"))
+    (let [value (try
+                  (some-> (slurp file)
+                          (str/trim)
+                          (str/replace #"\s+" ""))
+                  (catch Exception cause
+                    (l/warn :hint "unable to read configuration key file"
+                            :variable variable
+                            :path path
+                            :cause cause)
+                    nil))]
+      (when (str/blank? value)
+        (raise-key-file-error variable path "configuration key file is missing or empty"))
+      value)))
+
+(defn- resolve-key-files
+  [config prefix]
+  (reduce-kv
+   (fn [result file-key key]
+     (if-let [path (c/get config file-key)]
+       (if (contains? result key)
+         result
+         (let [variable (str/upper (str/snake (str prefix "_" (name file-key))))]
+           (assoc result key (get-key-file-value variable path))))
+       result))
+   config
+   key-file->key))
+
 (defn read-config
   "Reads the configuration from environment variables and decodes all
   known values."
   [& {:keys [prefix default] :or {prefix "penpot"}}]
   (->> (read-env prefix)
        (merge default)
+       (#(resolve-key-files % prefix))
        (normalize-tenant)
        (decode-config)
        (normalize-file-data-backend)))
