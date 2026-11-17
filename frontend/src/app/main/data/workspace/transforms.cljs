@@ -1561,8 +1561,14 @@
 
          ;; Shapes that already belong to the frame leave nothing to move
          (when (and (some? frame-id) (seq ids))
-           (rx/of (dch/commit-changes changes)
-                  (dwc/expand-collapse frame-id)))
+           (let [layout-ids (into #{}
+                                  (filter (partial cfh/has-layout? objects))
+                                  (cons frame-id (map #(dm/get-in objects [% :parent-id]) ids)))]
+             (rx/concat
+              (rx/of (dch/commit-changes changes)
+                     (dwc/expand-collapse frame-id))
+              (when (seq layout-ids)
+                (rx/of (ptk/data-event :layout/update {:ids layout-ids}))))))
          (when add-component-to-variant?
            (rx/of (ev/event {::ev/name "add-component-to-variant"})))
          (when add-new-variant?
