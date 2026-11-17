@@ -61,13 +61,17 @@ export class ExecuteCodeTaskHandler extends TaskHandler<ExecuteCodeTaskParams> {
         originalThrowValidationErrors = penpot.flags.throwValidationErrors;
         penpot.flags.throwValidationErrors = true;
 
+        // Layout and save waits only apply with a ready workspace: on the dashboard (or while a file
+        // loads) no edit of this call can be pending. Checked at each wait, since the code may navigate.
+        const management = this.context.penpotMgmt;
+        const workspaceReady = () => !management || management.workspace.status === "ready";
+
         let result: any;
         try {
             // wait for layout updates prior to executing the supplied code (if method is available)
             try {
-                const management = this.context.penpotMgmt;
                 // @ts-ignore - TODO Penpot.waitForLayoutUpdate is not yet in the released types
-                if ((!management || management.workspace.status === "ready") && penpot.waitForLayoutUpdate) {
+                if (workspaceReady() && penpot.waitForLayoutUpdate) {
                     // @ts-ignore
                     await penpot.waitForLayoutUpdate();
                 }
@@ -96,7 +100,9 @@ export class ExecuteCodeTaskHandler extends TaskHandler<ExecuteCodeTaskParams> {
         }
 
         // Wait for the save outside any swallow catch: a failed or rolled-back save must fail the task.
-        await penpot.waitForSave();
+        if (workspaceReady()) {
+            await penpot.waitForSave();
+        }
 
         // return result and captured log
         let resultData: ExecuteCodeTaskResultData<any> = {

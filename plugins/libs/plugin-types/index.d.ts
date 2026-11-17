@@ -1637,10 +1637,15 @@ export interface Context {
    * It force-flushes the persistence buffer first when work is pending.
    * @param timeout Maximum time to wait, in milliseconds. If the timeout
    * elapses before the save settles, the promise is rejected. Defaults to
-   * 90000; the promise never waits indefinitely.
+   * 60000; the promise never waits indefinitely.
    * @return The promise to be resolved when the save has settled. It is
    * rejected with an Error on save failure, when changes are rolled back
-   * during the wait, on timeout, or on an invalid timeout value.
+   * during the wait, on timeout, or on an invalid timeout value. A save
+   * that failed before the call also rejects: with `save-retrying` while
+   * Penpot keeps retrying it, otherwise with the failure code until the
+   * file is reopened. The Error `code` property tells the cases apart:
+   * `save-timeout`, `rolled-back`, `save-retrying`, or the failure code
+   * (`save-failed` unless the backend gave a more specific one).
    */
   waitForSave(timeout?: number): Promise<void>;
 }

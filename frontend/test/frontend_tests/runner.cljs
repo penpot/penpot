@@ -34,7 +34,6 @@
    [frontend-tests.data.team-test]
    [frontend-tests.data.uploads-test]
    [frontend-tests.data.viewer-test]
-   [frontend-tests.data.wait-for-save-test]
    [frontend-tests.data.workspace-colors-test]
    [frontend-tests.data.workspace-comments-test]
    [frontend-tests.data.workspace-context-menu-test]
@@ -108,6 +107,7 @@
    [frontend-tests.plugins.user-test]
    [frontend-tests.plugins.utils-test]
    [frontend-tests.plugins.value-objects-test]
+   [frontend-tests.plugins.wait-for-save-test]
    [frontend-tests.render-dimensions-test]
    [frontend-tests.render-wasm.process-objects-test]
    [frontend-tests.render-wasm.serialization-test]
@@ -221,7 +221,6 @@
    'frontend-tests.data.persistence-retry-test
    'frontend-tests.data.persistence-rollback-test
    'frontend-tests.data.persistence-test
-   'frontend-tests.data.wait-for-save-test
    'frontend-tests.data.pointer-map-test
    'frontend-tests.data.profile-test
    'frontend-tests.data.repo-test
@@ -310,6 +309,7 @@
    'frontend-tests.plugins.user-test
    'frontend-tests.plugins.utils-test
    'frontend-tests.plugins.value-objects-test
+   'frontend-tests.plugins.wait-for-save-test
    'frontend-tests.render-wasm.process-objects-test
    'frontend-tests.render-wasm.serialization-test
    'frontend-tests.render-wasm.shape-proxy-test

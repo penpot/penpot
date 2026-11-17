@@ -2,13 +2,14 @@
 
 ### 🚀 Features
 
-- **plugin-types, plugins-runtime:** Added `penpot.waitForSave(timeout?)` to wait until pending file changes are saved (or there is nothing to save). Rejects on save failure, rollback during the wait, timeout (default 90000 ms), or an invalid timeout.
+- **plugin-types, plugins-runtime:** Added `penpot.waitForSave(timeout?)` to wait until pending file changes are saved (or there is nothing to save). Rejects on save failure, rollback during the wait, timeout (default 60000 ms), or an invalid timeout. The Error `code` property is `save-timeout`, `rolled-back`, `save-retrying` (an earlier failed save Penpot keeps retrying) or the save failure code.
 - **plugin-types, plugins-runtime:** `penpotMgmt` returns `Team`, `Project` and `ProjectFile` objects. Assigning `name` renames teams, projects and files, `project.pinned` pins a project and `file.shared` shares a file as a team library; `createProject`, `createFile`, `moveTo`, `duplicate`, `remove` and `restore` live on the objects. Added `penpotMgmt.listTeams`, `penpotMgmt.createTeam`, `penpotMgmt.getFile`, `listDeletedProjects` and `listDeletedFiles`, and the `manage:projects`, `manage:teams` and `manage:delete` permissions. Restoration uses the dashboard's Trash operation; projects need recoverable files and empty projects cannot be restored; the API exposes no permanent deletion method. Team deletion is not exposed.
 - **plugins-runtime, plugin-types**: Added global plugins (`scope: "global"`) that remain active across dashboard and workspace navigation until closed or logged out, with `penpotMgmt` for project and file discovery, file navigation and workspace events. Global scope adds the `allow:global` permission, which users must accept when installing the plugin.
 - **plugin-types:** Added the `contentrollback` event and the `ContentRollback` type. The event fires after the backend rejected some changes and the workspace undid them, with the ids of the files, pages and shapes affected. It fires once the undone data is in the workspace, also when the workspace has to reload the file to undo the changes.
 
 ### 🩹 Fixes
 
+- **plugins-runtime:** Methods that rejected an invalid value with a plain string (`connectLibrary`, file `restore`, `remove`, `pin`, `export`, `findVersions`, `saveVersion`) now reject with an `Error` carrying the same message.
 - **plugin-runtime:** `LibraryComponent.instance()`, `createShapeFromSvg()` and `createShapeFromSvgWithImages()` now create shapes at the page root instead of inside a board at the page origin. Closes #12086.
 - **plugin-types, plugin-runtime:** Dashboard property setters now update values after backend success and log failures without interrupting the workspace. File moves reject projects in other teams, backend rejections include their type and code, and `project.fileCount` stays at its listing snapshot. Duplicated projects include their file count and pinned state.
 - **plugin-runtime:** Cancel plugin loads before they execute after unloading or logout, and allow reopening plugins that close during startup.

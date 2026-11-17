@@ -70,7 +70,9 @@ function loadHandler(): { ExecuteCodeTaskHandler: any; Task: any } {
     };
 }
 
-function installPenpot(options: { waitForSave?: (() => Promise<void>) | null }): { messages: TaskResponse[] } {
+function installPenpot(options: { waitForSave?: (() => Promise<void>) | null; workspaceStatus?: string }): {
+    messages: TaskResponse[];
+} {
     const messages: TaskResponse[] = [];
     const penpot: Record<string, unknown> = {
         flags: {
@@ -88,7 +90,8 @@ function installPenpot(options: { waitForSave?: (() => Promise<void>) | null }):
         penpot.waitForSave = options.waitForSave;
     }
     (globalThis as any).penpot = penpot;
-    (globalThis as any).penpotMgmt = undefined;
+    (globalThis as any).penpotMgmt =
+        options.workspaceStatus === undefined ? undefined : { workspace: { status: options.workspaceStatus } };
     return { messages };
 }
 
@@ -137,16 +140,8 @@ test("reports an error when waitForSave rejects", async () => {
     const { ExecuteCodeTaskHandler, Task } = loadHandler();
     const handler = new ExecuteCodeTaskHandler();
     const task = new Task("req-2", "executeCode", { code: "return 1;" });
-    try {
-        await handler.handle(task);
-        assert.fail("expected handle to throw");
-    } catch (error) {
-        task.sendError(`Error handling task: ${error instanceof Error ? error.message : String(error)}`);
-    }
-
-    const response = lastResponse(messages);
-    assert.equal(response.success, false);
-    assert.match(String(response.error), /could not be saved/i);
+    await assert.rejects(handler.handle(task), /could not be saved/i);
+    assert.equal(messages.length, 0, "must not report success");
 });
 
 test("hard-fails when waitForSave is missing", async () => {
@@ -155,14 +150,44 @@ test("hard-fails when waitForSave is missing", async () => {
     const { ExecuteCodeTaskHandler, Task } = loadHandler();
     const handler = new ExecuteCodeTaskHandler();
     const task = new Task("req-3", "executeCode", { code: "return 1;" });
-    try {
-        await handler.handle(task);
-        assert.fail("expected handle to throw");
-    } catch (error) {
-        task.sendError(`Error handling task: ${error instanceof Error ? error.message : String(error)}`);
-    }
+    await assert.rejects(handler.handle(task), /waitForSave/);
+    assert.equal(messages.length, 0, "must not report success");
+});
 
-    const response = lastResponse(messages);
-    assert.equal(response.success, false);
-    assert.match(String(response.error), /waitForSave|Penpot build|upgrade Penpot/i);
+for (const workspaceStatus of ["none", "loading"]) {
+    test(`skips waitForSave when the workspace is ${workspaceStatus}`, async () => {
+        let waitForSaveCalls = 0;
+        const { messages } = installPenpot({
+            workspaceStatus,
+            waitForSave: async () => {
+                waitForSaveCalls += 1;
+                throw new Error("Changes could not be saved");
+            },
+        });
+
+        const { ExecuteCodeTaskHandler, Task } = loadHandler();
+        const handler = new ExecuteCodeTaskHandler();
+        const task = new Task("req-4", "executeCode", { code: "return 7;" });
+        await handler.handle(task);
+
+        assert.equal(waitForSaveCalls, 0, "no workspace edit can be pending");
+        const response = lastResponse(messages);
+        assert.equal(response.success, true);
+        assert.equal((response.data as any).result, 7);
+    });
+}
+
+test("awaits waitForSave when the workspace is ready", async () => {
+    const { messages } = installPenpot({
+        workspaceStatus: "ready",
+        waitForSave: async () => {
+            throw new Error("Changes could not be saved");
+        },
+    });
+
+    const { ExecuteCodeTaskHandler, Task } = loadHandler();
+    const handler = new ExecuteCodeTaskHandler();
+    const task = new Task("req-5", "executeCode", { code: "return 1;" });
+    await assert.rejects(handler.handle(task), /could not be saved/i);
+    assert.equal(messages.length, 0, "must not report success");
 });
