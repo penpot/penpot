@@ -229,33 +229,6 @@ This is commonly required when the provider is reachable from the browser via a 
 URL but from the backend via a different internal hostname.
 <br />
 
-__Since version 2.21.0__
-
-The ID token the provider returns is verified against the issuer of the provider
-(the `iss` claim) and against the configured client id (the `aud` claim). When the
-endpoints are overridden explicitly there is no discovery document to read the
-issuer from, so <code class="language-bash">PENPOT_OIDC_ISSUER</code> must be set.
-Otherwise the provider refuses to initialize and only password login is left. A
-provider that authenticates with discovery needs no extra configuration, and the
-Google and GitLab providers are not affected.
-
-Set the issuer explicitly in production. It is what keeps the discovery document
-from choosing the issuer on its own, and it has to match what the document
-publishes: the comparison is exact, so a trailing slash makes a different issuer.
-When the two values disagree, Penpot refuses to start the provider and the log
-line reports both.
-
-The providers of a domain (`sso_provider` rows) are also configured outside this
-environment. A row that bypasses discovery through explicit endpoints keeps an
-empty `issuer` after upgrading, so its provider does not initialize until you set
-the column to the issuer the provider publishes:
-
-```sql
-UPDATE sso_provider SET issuer = 'https://idp.example.com'
- WHERE domain = 'example.com';
-```
-<br />
-
 __Since version 1.6.0__
 
 Added the ability to specify custom OIDC scopes.
@@ -320,6 +293,38 @@ Allows customising the label shown on the OIDC login button (defaults to "OpenID
 ```bash
 # Frontend
 PENPOT_OIDC_NAME: <provider-name>
+```
+<br />
+
+__Since version 2.21.0__
+
+The ID token the provider returns is verified against the issuer of the provider
+(the `iss` claim) and against the configured client id (the `aud` claim). When the
+endpoints are overridden explicitly there is no discovery document to read the
+issuer from, so <code class="language-bash">PENPOT_OIDC_ISSUER</code> must be set.
+Otherwise the provider refuses to initialize and only password login is left. A
+provider that authenticates with discovery needs no extra configuration, and the
+bundled Google and GitLab providers already declare their issuer and the keys
+their provider publishes.
+
+Penpot loads those keys once, when the provider initializes. If the provider
+rotates them while Penpot runs, the ID token stays unverified and the login
+continues through the userinfo endpoint until the next restart.
+
+Set the issuer explicitly in production. It is what keeps the discovery document
+from choosing the issuer on its own, and it has to match what the document
+publishes: the comparison is exact, so a trailing slash makes a different issuer.
+When the two values disagree, Penpot refuses to start the provider and the log
+line reports both.
+
+The providers of a domain (`sso_provider` rows) are also configured outside this
+environment. A row that bypasses discovery through explicit endpoints keeps an
+empty `issuer` after upgrading, so its provider does not initialize until you set
+the column to the issuer the provider publishes:
+
+```sql
+UPDATE sso_provider SET issuer = 'https://idp.example.com'
+ WHERE domain = 'example.com';
 ```
 <br />
 

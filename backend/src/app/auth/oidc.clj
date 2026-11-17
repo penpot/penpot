@@ -276,6 +276,7 @@
     :scopes           #{"openid" "email" "profile"}
     ;; Google documents both values for the `iss` claim of its ID tokens.
     :issuer           #{"https://accounts.google.com" "accounts.google.com"}
+    :jwks-uri         "https://www.googleapis.com/oauth2/v3/certs"
     :auth-uri         "https://accounts.google.com/o/oauth2/v2/auth"
     :token-uri        "https://oauth2.googleapis.com/token"
     :user-uri         "https://openidconnect.googleapis.com/v1/userinfo"
@@ -284,22 +285,27 @@
     :id               "google"}))
 
 (defn- prepare-google-provider
-  [params]
+  [cfg params]
   (when-not (and (string? (:client-id params))
                  (string? (:client-secret params)))
-    (ex/raise :type ::internal
-              :code :invalid-sso-config
-              :hint "missing params for provider initialization"
-              :provider (:id params)))
+    (raise-invalid-sso-config
+     :hint "missing params for provider initialization"
+     :provider (:id params)))
 
-  params)
+  ;; The keys are needed to validate the `iss`/`aud` claims of the ID token,
+  ;; so Google needs the same best-effort JWKS load as the other providers.
+  (populate-jwks cfg params))
+
+(defmethod ig/assert-key ::providers/google
+  [_ params]
+  (assert (http/client? (::http/client params)) "expected a valid http client"))
 
 (defmethod ig/init-key ::providers/google
-  [_ _]
+  [_ cfg]
   (when (contains? cf/flags :login-with-google)
     (try
       (let [provider (->> (get-google-config)
-                          (prepare-google-provider))]
+                          (prepare-google-provider cfg))]
         (l/inf :hint "provider initialized"
                :provider (:id provider)
                :client-id (:client-id provider)
@@ -1067,6 +1073,11 @@
   "Build an OIDC provider map dynamically from the Nitrate organization SSO config.
    Uses OIDC discovery via :issuer when token/auth/user URIs are absent."
   [cfg {:keys [client-id client-secret issuer]}]
+  ;; The Nitrate issuer is the discovery anchor, and the issuer of the document
+  ;; it points to is the value the `iss` claim of the ID token carries, so there
+  ;; is no second issuer to compare it with: `discover-oidc-config` adopts it
+  ;; without raising. That is on purpose; see
+  ;; `mem:backend/auth-permissions-product-domains`.
   (prepare-oidc-provider cfg
                          {:type             "oidc"
                           :client-id        client-id

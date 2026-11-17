@@ -1,6 +1,6 @@
 # Clojure Logging Conventions
 
-Structured logging through `app.common.logging` (`l/trc`/`l/dbg`/`l/info`/`l/wrn`/`l/error`/`l/fatal`): `:hint` carries the human-readable message, every other datum goes in its own keyword field (`:id`, `:container`, `:removed`, ...).
+Structured logging through `app.common.logging`, which exposes every level under two identical names — `l/trace`/`l/trc`, `l/debug`/`l/dbg`, `l/info`/`l/inf`, `l/warn`/`l/wrn`, `l/error`/`l/err`: `:hint` carries the human-readable message, every other datum goes in its own keyword field (`:id`, `:container`, `:removed`, ...). `:fatal` is a level, not a helper: pass it to `l/log` or `l/raw!` as `(l/log :fatal :hint "…")`.
 
 - `:hint` values start lowercase: `"fix dangling children"`, not `"Fix dangling children"`. Uppercase-first hints exist as legacy (~57 occurrences, the densest in `backend/src`; also `l/trc` in migration `legacy-28` and `log/error` in `app.common.files.repair`) — do not copy them, and do not mass-rewrite them unless the surrounding code needs the change.
 - A name that requires uppercase (an env var like `PENPOT_MEDIA_PROCESSING_SERVICE_URI`, an acronym like `MCP` or `LDAP`) stays uppercase inside an otherwise lowercase sentence.

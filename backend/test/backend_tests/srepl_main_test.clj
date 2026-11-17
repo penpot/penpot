@@ -306,3 +306,53 @@
           (t/is (= "clear-email-complaint-reports" (:name event)))
           (t/is (= email (get-in event [:props :email])))
           (t/is (nil? (get-in event [:props :id]))))))))
+
+;; --- SSO CONFIG
+
+(t/deftest add-sso-config-stores-the-issuer
+  (with-redefs [sys/system th/*system*]
+    (srepl/add-sso-config
+     :base-uri "https://idp.example.com"
+     :issuer "https://idp.example.com"
+     :client-id "client-id"
+     :client-secret "client-secret"
+     :domain "issuer.example.com")
+
+    (let [row (th/db-get :sso-provider {:domain "issuer.example.com"})]
+      (t/is (= "oidc" (:type row)))
+      (t/is (= "https://idp.example.com" (:issuer row))))))
+
+(t/deftest add-sso-config-omits-a-missing-issuer
+  (with-redefs [sys/system th/*system*]
+    (srepl/add-sso-config
+     :base-uri "https://idp.example.com"
+     :client-id "client-id"
+     :client-secret "client-secret"
+     :domain "discovery.example.com")
+
+    (let [row (th/db-get :sso-provider {:domain "discovery.example.com"})]
+      (t/is (some? (:id row)))
+      (t/is (nil? (:issuer row))))))
+
+(t/deftest add-sso-config-rejects-a-blank-issuer
+  (with-redefs [sys/system th/*system*]
+    (t/testing "an empty issuer is a configuration error, not a discovery request"
+      (t/is (thrown? AssertionError
+                     (srepl/add-sso-config
+                      :base-uri "https://idp.example.com"
+                      :issuer ""
+                      :client-id "client-id"
+                      :client-secret "client-secret"
+                      :domain "blank.example.com"))))
+
+    (t/testing "a whitespace only issuer is rejected too"
+      (t/is (thrown? AssertionError
+                     (srepl/add-sso-config
+                      :base-uri "https://idp.example.com"
+                      :issuer "   "
+                      :client-id "client-id"
+                      :client-secret "client-secret"
+                      :domain "spaces.example.com"))))
+
+    (t/is (nil? (th/db-get :sso-provider {:domain "blank.example.com"})))
+    (t/is (nil? (th/db-get :sso-provider {:domain "spaces.example.com"})))))

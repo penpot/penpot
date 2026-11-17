@@ -1074,7 +1074,8 @@
   (assert (string? client-id) "expected a valid client-id")
   (assert (string? client-secret) "expected a valid client-secret")
   (assert (string? domain) "expected a valid domain")
-  (assert (or (nil? issuer) (string? issuer)) "expected a string issuer or nil to rely on discovery")
+  (assert (or (nil? issuer) (and (string? issuer) (not (str/blank? issuer))))
+          "expected a non-blank string issuer, or nil to rely on discovery")
   (db/insert! sys/system :sso-provider
               (cond-> {:id (uuid/next)
                        :type "oidc"

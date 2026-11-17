@@ -169,19 +169,65 @@
 
   (t/testing "a token with an unknown kid returns nil"
     (t/is (nil? (#'oidc/get-id-token-claims (rs256-provider)
-                                            {:token/id (sign-rs256-id-token "unknown-kid" {})})))))
+                                            {:token/id (sign-rs256-id-token "unknown-kid" {})}))))
+
+  (t/testing "a google shaped provider accepts the legacy issuer form"
+    (let [provider (assoc (rs256-provider)
+                          :id "google"
+                          :issuer #{"https://accounts.google.com" "accounts.google.com"})
+          claims   (#'oidc/get-id-token-claims
+                    provider
+                    {:token/id (sign-rs256-id-token {:iss "accounts.google.com"})})]
+      (t/is (= "user-1" (:sub claims))))))
+
+(defn- google-params
+  "The Google provider params, built the way the config builds them."
+  []
+  (with-redefs [cf/get (fn [key & [default]]
+                         (case key
+                           :google-client-id "google-client-id"
+                           :google-client-secret "google-client-secret"
+                           default))]
+    (#'oidc/get-google-config)))
+
+(t/deftest get-google-config-declares-the-jwks-endpoint
+  (let [config (google-params)]
+    (t/is (= "https://www.googleapis.com/oauth2/v3/certs" (:jwks-uri config)))
+    (t/is (= #{"https://accounts.google.com" "accounts.google.com"} (:issuer config)))
+    (t/is (= "google" (:id config)))))
+
+(t/deftest prepare-google-provider-loads-the-jwks
+  (let [public-key (.getPublic ^java.security.KeyPair @rsa-keypair)]
+    (t/testing "the keys are fetched from the endpoint the provider declares"
+      (let [uris (atom [])]
+        (with-redefs [app.auth.oidc/fetch-oidc-jwks
+                      (fn [_ uri _]
+                        (swap! uris conj uri)
+                        {"test-kid" public-key})]
+          (let [provider (#'oidc/prepare-google-provider {} (google-params))]
+            (t/is (= ["https://www.googleapis.com/oauth2/v3/certs"] @uris))
+            (t/is (= public-key (get-in provider [:jwks "test-kid"])))))))
+
+    (t/testing "a failing fetch leaves the provider usable, without keys"
+      (with-redefs [app.auth.oidc/fetch-oidc-jwks
+                    (fn [& _] (throw (java.net.ConnectException. "unreachable")))]
+        (let [provider (#'oidc/prepare-google-provider {} (google-params))]
+          (t/is (= "google" (:id provider)))
+          (t/is (nil? (:jwks provider))))))))
 
 (defn- capture-warnings
-  "Run `f` and return the warnings it logged. The logging API emits
-  asynchronously, so the record is awaited (bounded)."
-  [f]
+  "Run `f` and return the warnings it logged that match `match?`, plus the value
+  of `f`. The logging API emits asynchronously, so the record is awaited
+  (bounded). The predicate is required: a record logged by another test can
+  still be in flight when the watch is installed."
+  [match? f]
   (let [records (atom [])]
     (add-watch l/log-record ::capture
                (fn [_ _ _ record] (swap! records conj record)))
     (try
       (let [value (f)]
         [(loop [remaining 100]
-           (let [warns (filter #(= :warn (::l/level %)) @records)]
+           (let [warns (filter #(and (= :warn (::l/level %)) (match? %)) @records)]
              (cond
                (seq warns) warns
                (zero? remaining) warns
@@ -191,10 +237,13 @@
         (remove-watch l/log-record ::capture)))))
 
 (t/deftest get-id-token-claims-warns-when-the-kid-is-unknown
-  (let [[warns value] (capture-warnings
+  (let [own?           #(= "rotated-kid" (-> % ::l/props :kid))
+        [warns value] (capture-warnings
+                       own?
                        #(#'oidc/get-id-token-claims (rs256-provider)
                                                     {:token/id (sign-rs256-id-token "rotated-kid" {})}))]
     (t/is (nil? value))
+    (t/is (= 1 (count warns)))
     (t/is (= "rotated-kid" (-> warns first ::l/props :kid)))
     (t/is (= "oidc" (-> warns first ::l/props :provider)))))
 
@@ -1244,6 +1293,18 @@
         (t/is (= :validation (:type (ex-data e))))
         (t/is (= :invalid-sso-config (:code (ex-data e))))
         (t/is (= :ssrf-blocked-target (:code (ex-data (ex-cause e)))))))))
+
+(t/deftest prepare-organization-sso-provider-adopts-the-discovered-issuer
+  ;; The Nitrate issuer is the discovery anchor, so the document's issuer is the
+  ;; only one the tokens can carry and there is nothing to compare it with.
+  (with-mocks [http-mock {:target 'app.http.client/req
+                          :return {:status 200 :body (discovery-body "https://idp.example.com")}}]
+    (let [provider (#'oidc/prepare-organization-sso-provider
+                    {}
+                    {:client-id "test-client"
+                     :client-secret "test-secret"
+                     :issuer "https://idp.example.com"})]
+      (t/is (= "https://idp.example.com" (:issuer provider))))))
 
 (t/deftest prepare-organization-sso-provider-raises-on-jwks-network-failure
   (t/testing "SSL/network failures while fetching JWKs become controlled validation errors"

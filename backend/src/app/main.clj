@@ -497,7 +497,7 @@
     :enabled        (contains? cf/flags :login-with-ldap)}
 
    ::oidc.providers/google
-   {}
+   {::http.client/client (ig/ref ::http.client/client)}
 
    ::oidc.providers/github
    {::http.client/client (ig/ref ::http.client/client)}
