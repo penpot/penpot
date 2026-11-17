@@ -3,10 +3,10 @@
 -- verifies it (or reopens it), and it may be dropped as "won't do":
 --
 --   open -> done -> verified
---   done -> reopened -> done
+--   done | verified | wont-do -> reopened -> done
 --   open | reopened -> wont-do
 --
--- Anyone who can edit the file may move a task between states; every
+-- Anyone who can read the file may move a task between states; every
 -- move is recorded in `file_task_event` with who made it.
 --
 -- A task may come from a comment thread (`thread_id`, the thread stays
