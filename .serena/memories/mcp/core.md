@@ -120,6 +120,13 @@ From the `mcp/` directory, run
 
 - Authorization/discovery URLs, self-contained client IDs, consent and PKCE/code binding, backend Redis state, deployment wiring, and compatibility limits: `mem:mcp/oauth`.
 
+## Host and Origin allowlist (`RequestGuard`)
+
+- `RequestGuard` checks `Host` and `Origin` (hostname only, port ignored) on `/mcp`, the REPL (Express middleware, 403) and the plugin WebSocket (close `1008` before any message is read). It stops web pages on the user's machine from driving a local server (DNS rebinding, cross-site WebSocket).
+- Allowlist: `PENPOT_MCP_ALLOWED_HOSTS` (`*` turns the check off); unset → loopback only in local mode, any host in remote mode (multi-user relies on tokens; remote has no file access). A missing `Origin` passes (non-browser clients).
+- The plugin iframe has `allow-same-origin`, so its WebSocket carries the real plugin origin (`http://localhost:4400` locally, the Penpot origin when integrated).
+- Test mocks of `PenpotMcpServer` passed to `PluginBridge` must provide `requestGuard`.
+
 ## Backend tools (`submit_feedback`)
 
 - Tools that call the Penpot backend directly (not through the plugin) register only when `PENPOT_MCP_BACKEND_URI` is nonblank (`PenpotMcpServer.initTools`). Currently only `SubmitFeedbackTool`.
@@ -140,7 +147,7 @@ For parallel devenvs, prefer same-origin MCP routing: each Penpot instance shoul
 ## Plugin reconnect policy
 
 - The plugin treats WebSocket close code `1008` (policy violation) as terminal: it stops auto-reconnecting and stays disconnected until the user explicitly reconnects. Other close codes keep the capped-backoff retry. The decision lives in `ReconnectPolicy.ts` (`shouldReconnectAfterClose`), kept as a pure module so it is unit-testable without DOM/CSS.
-- The MCP server emits `1008` for a missing `userToken` in multi-user mode, for missing/invalid connection metadata, and to close a connection displaced by a newer one with the same user and session ID.
+- The MCP server emits `1008` for a `Host`/`Origin` outside the `RequestGuard` allowlist, for a missing `userToken` in multi-user mode, for missing/invalid connection metadata, and to close a connection displaced by a newer one with the same user and session ID.
 - Session IDs are deterministic per tab and file, so a reconnect reuses its ID while the old socket may be half-open: the newest connection wins (`PluginBridge.displaceConnection`). Across instances, each new connection publishes a session claim on a per-user Redis channel; an instance displaces its local connection only on a foreign claim that arrives after its own claim (channel order, no clocks). Discovery deduplicates by session ID.
 - A tab rejected with `1008` never reaches `connected`, so the frontend's 60s reconnect watcher (`start-reconnect-watcher` in `app.main.data.workspace.mcp`, started only on `connected`) does not engage; recovery is manual via the MCP menu.
 

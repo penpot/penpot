@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { request as httpRequest } from "node:http";
 import { afterEach, beforeEach, test } from "node:test";
 import { type CallToolResult, Client, StreamableHTTPClientTransport } from "@modelcontextprotocol/client";
 import { PenpotMcpServer } from "./PenpotMcpServer";
@@ -171,6 +172,56 @@ test("OAuth challenges missing credentials and accepts bearer and query tokens",
             await client.close();
         }
     }
+});
+
+/**
+ * Posts an MCP initialize request with the given extra headers and returns the response status.
+ *
+ * Uses `node:http`, since `fetch` does not let the caller set the `Host` header.
+ */
+function initializeStatus(headers: Record<string, string>): Promise<number> {
+    const body = JSON.stringify({
+        jsonrpc: "2.0",
+        id: 1,
+        method: "initialize",
+        params: {
+            protocolVersion: "2025-06-18",
+            capabilities: {},
+            clientInfo: { name: "guard-test", version: "1" },
+        },
+    });
+    return new Promise((resolve, reject) => {
+        const req = httpRequest(
+            `${baseUrl}/mcp`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Accept: "application/json, text/event-stream",
+                    ...headers,
+                },
+            },
+            (res) => {
+                res.resume();
+                resolve(res.statusCode!);
+            }
+        );
+        req.on("error", reject);
+        req.end(body);
+    });
+}
+
+test("local mode rejects requests from foreign hosts and origins", async () => {
+    await server.stop();
+    delete process.env.PENPOT_MCP_REMOTE_MODE;
+    delete process.env.PENPOT_MCP_ALLOWED_HOSTS;
+    server = new PenpotMcpServer(false);
+    await server.start();
+
+    assert.equal(await initializeStatus({ Host: `attacker.example:${server.port}` }), 403);
+    assert.equal(await initializeStatus({ Host: `localhost:${server.port}`, Origin: "https://attacker.example" }), 403);
+    assert.equal(await initializeStatus({ Host: `localhost:${server.port}` }), 200);
+    assert.equal(await initializeStatus({ Host: `127.0.0.1:${server.port}`, Origin: "http://localhost:4400" }), 200);
 });
 
 /**
