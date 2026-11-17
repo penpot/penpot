@@ -4547,3 +4547,8 @@
   ;; a few thousandths of a pixel from their new mains' places: no override
   (t/is (map? (cg/run {:world [3 2 {:variants true :layout :grid :rich-variants true :grid-empty true :layout-copies true :text true}] :ops [[:nest 7 2 4 2] [:rotate 6 2 4 1] [:duplicate 1 3 1 0] [:make-variant 2] [:duplicate 8 2 8 6] [:style 2 29 1] [:detach 8 6 8 2]]}))))
 
+(t/deftest generated-a-copy-grid-keeps-an-authored-empty-cell-where-it-was-when-it-grows-back
+  ;; a copy grid with its own cells loses a row its main removes and grows it
+  ;; back for its children: its authored empty cell keeps its place (user
+  ;; decision)
+  (t/is (map? (cg/run {:world [2 1 {:variants true :layout :grid :layout-item-margins false :grid-square true :rich-variants true :layout-children true :grid-empty false :layout-copies true :text true}] :ops [[:grid-track 9 5 0 0] [:grid-direction 0 0 1 1] [:grid-cell 0 15 0 1] [:grid-track 0 2 0 0]]}))))

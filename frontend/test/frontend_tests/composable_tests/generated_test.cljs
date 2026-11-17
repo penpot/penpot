@@ -1230,3 +1230,9 @@
   ;; main holds, which takes it with its sizing fixed as its own override
   (await (replay {:world [3 2 {:text true :layout :flex}] :ops [[:nest 24 11 9 6] [:delete 1] [:restore 1] [:add-child 15 16 4 29] [:move 23 24 12 20] [:edit 25 25 27 25] [:undo 23 17 15 25] [:style 23 29 25 20] [:transform 29 11 7 27] [:update-main 2 19 2 29]]})))
 
+(t/deftest ^:async generated-a-copy-grid-keeps-an-authored-empty-cell-where-it-was-when-it-grows-back
+  ;; a copy grid with its own cells loses a row its main removes and grows it
+  ;; back for its children: its authored empty cell keeps its place (user
+  ;; decision)
+  (await (replay {:world [2 1 {:variants true :layout :grid :layout-item-margins false :grid-square true :rich-variants true :layout-children true :grid-empty false :layout-copies true :text true}] :ops [[:grid-track 9 5 0 0] [:grid-direction 0 0 1 1] [:grid-cell 0 15 0 1] [:grid-track 0 2 0 0]]})))
+
