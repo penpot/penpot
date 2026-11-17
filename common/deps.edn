@@ -50,7 +50,8 @@
 
   ;; Resolves token values, reads and writes token files.
   penpot/tokenscript-interpreter
-  {:git/sha "321061dbddaf78270319136eb41cfbff172fba02"
+  {:git/tag "v0.3.0"
+   :git/sha "040583ad348e215b78ad1e4075759a9b7ec52750"
    :git/url "https://github.com/penpot/tokenscript-interpreter.git"}
 
   com.sun.mail/jakarta.mail {:mvn/version "2.0.2"}
