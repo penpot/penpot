@@ -195,7 +195,7 @@ PENPOT_OIDC_JWKS_URI: <uri>
 # Issuer the `iss` claim of the ID token is validated against. Optional: it
 # is taken from the discovery document. It is required when the endpoints
 # above are set explicitly, because then there is no discovery step to read
-# it from.
+# it from. Must match the value the provider publishes, exactly.
 PENPOT_OIDC_ISSUER: <uri>
 
 # Optional list of roles that users are required to have. If no role
@@ -238,6 +238,22 @@ issuer from, so <code class="language-bash">PENPOT_OIDC_ISSUER</code> must be se
 Otherwise the provider refuses to initialize and only password login is left. A
 provider that authenticates with discovery needs no extra configuration, and the
 Google and GitLab providers are not affected.
+
+Set the issuer explicitly in production. It is what keeps the discovery document
+from choosing the issuer on its own, and it has to match what the document
+publishes: the comparison is exact, so a trailing slash makes a different issuer.
+When the two values disagree, Penpot refuses to start the provider and the log
+line reports both.
+
+The providers of a domain (`sso_provider` rows) are also configured outside this
+environment. A row that bypasses discovery through explicit endpoints keeps an
+empty `issuer` after upgrading, so its provider does not initialize until you set
+the column to the issuer the provider publishes:
+
+```sql
+UPDATE sso_provider SET issuer = 'https://idp.example.com'
+ WHERE domain = 'example.com';
+```
 <br />
 
 __Since version 1.6.0__

@@ -85,6 +85,16 @@
                                                 AND column_name = ?"
                                              "job" "tenant"]))))))
 
+(t/deftest sso-provider-has-a-nullable-issuer-column
+  (t/testing "the ID token issuer of a provider is stored, and discovery may fill it"
+    (let [column (th/db-exec-one! ["SELECT is_nullable, data_type
+                                      FROM information_schema.columns
+                                     WHERE table_name = ?
+                                       AND column_name = ?"
+                                   "sso_provider" "issuer"])]
+      (t/is (= "YES" (:is-nullable column)))
+      (t/is (= "text" (:data-type column))))))
+
 (t/deftest job-queue-stores-the-bare-queue-name
   (let [job-id (th/mk-uuid "job-bare-queue")]
     (th/db-insert! :job {:id     job-id

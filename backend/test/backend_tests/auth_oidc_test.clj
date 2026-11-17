@@ -9,6 +9,8 @@
    [app.auth.oidc :as oidc]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
+   [app.common.logging :as l]
+   [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.uri :as u]
    [app.common.uuid :as uuid]
@@ -68,8 +70,7 @@
     (t/is (= :auto (#'oidc/select-user-info-source :userinfo)))))
 
 ;; OIDC core spec 3.1.3.7 — the relying party MUST validate `iss` and `aud`
-;; on the ID token, not just the signature. Use HS256 with a shared secret
-;; so the tests stay self-contained (no key material to manage).
+;; on the ID token, not just the signature.
 (def ^:private hs-secret
   "shared-secret-do-not-use-in-prod-do-not-use-in-prod-do-not-use!!")
 
@@ -80,9 +81,11 @@
    :issuer "https://idp.example.com"
    :client-secret hs-secret})
 
-(defn- sign-id-token
+(defn- id-token-claims
   [overrides]
-  (let [now (quot (System/currentTimeMillis) 1000)
+  ;; HS256 with a shared secret keeps the token self-contained (no key
+  ;; material to manage) for the claim validation tests.
+  (let [now    (quot (System/currentTimeMillis) 1000)
         claims (merge {:iss "https://idp.example.com"
                        :aud "client-id-123"
                        :sub "user-1"
@@ -91,32 +94,143 @@
                       overrides)]
     (jwt/sign claims hs-secret {:alg :hs256})))
 
+(defn- claims-error
+  "Return the exception raised by `get-id-token-claims`, nil when it answers."
+  [provider tdata]
+  (try
+    (#'oidc/get-id-token-claims provider tdata)
+    nil
+    (catch Throwable cause cause)))
+
+(def ^:private rsa-keypair
+  ;; RS256 is the real path of most providers: a public key selected by the
+  ;; `kid` of the token header.
+  (delay
+    (let [generator (doto (java.security.KeyPairGenerator/getInstance "RSA")
+                      (.initialize 2048))]
+      (.generateKeyPair generator))))
+
+(defn- sign-rs256-id-token
+  ([overrides] (sign-rs256-id-token "test-kid" overrides))
+  ([kid overrides]
+   (let [now    (quot (System/currentTimeMillis) 1000)
+         claims (merge {:iss "https://idp.example.com"
+                        :aud "client-id-123"
+                        :sub "user-1"
+                        :exp (+ now 3600)
+                        :iat now}
+                       overrides)]
+     (jwt/sign claims (.getPrivate ^java.security.KeyPair @rsa-keypair)
+               {:alg :rs256 :header {:kid kid}}))))
+
+(defn- rs256-provider
+  []
+  (assoc hs-provider :jwks {"test-kid" (.getPublic ^java.security.KeyPair @rsa-keypair)}))
+
 (t/deftest get-id-token-claims-validates-iss-and-aud
   (t/testing "valid token with matching iss/aud is decoded"
-    (let [token  (sign-id-token {})
+    (let [token  (id-token-claims {})
           claims (#'oidc/get-id-token-claims hs-provider {:token/id token})]
       (t/is (= "user-1" (:sub claims)))
       (t/is (= "client-id-123" (:aud claims)))
       (t/is (= "https://idp.example.com" (:iss claims)))))
 
   (t/testing "token with mismatched issuer is rejected"
-    (let [token (sign-id-token {:iss "https://attacker.example.com"})]
-      (t/is (thrown? clojure.lang.ExceptionInfo
-                     (#'oidc/get-id-token-claims hs-provider {:token/id token})))))
+    (let [cause (claims-error hs-provider {:token/id (id-token-claims {:iss "https://attacker.example.com"})})]
+      (t/is (ex/error? cause))
+      (t/is (= :invalid-id-token (:code (ex-data cause))))))
 
   (t/testing "token issued for a different client is rejected"
-    (let [token (sign-id-token {:aud "other-client-id"})]
-      (t/is (thrown? clojure.lang.ExceptionInfo
-                     (#'oidc/get-id-token-claims hs-provider {:token/id token})))))
+    (let [cause (claims-error hs-provider {:token/id (id-token-claims {:aud "other-client-id"})})]
+      (t/is (= :invalid-id-token (:code (ex-data cause))))))
 
   (t/testing "expired token is rejected"
-    (let [now    (quot (System/currentTimeMillis) 1000)
-          token  (sign-id-token {:exp (- now 60)})]
-      (t/is (thrown? clojure.lang.ExceptionInfo
-                     (#'oidc/get-id-token-claims hs-provider {:token/id token})))))
+    (let [now   (quot (System/currentTimeMillis) 1000)
+          cause (claims-error hs-provider {:token/id (id-token-claims {:exp (- now 60)})})]
+      (t/is (= :invalid-id-token (:code (ex-data cause))))))
+
+  (t/testing "a malformed token is rejected with the same code"
+    (let [cause (claims-error hs-provider {:token/id "not-a-jwt"})]
+      (t/is (= :invalid-id-token (:code (ex-data cause))))))
 
   (t/testing "absent id token returns nil (e.g., GitHub OAuth)"
     (t/is (nil? (#'oidc/get-id-token-claims hs-provider {})))))
+
+(t/deftest get-id-token-claims-validates-a-rs256-token
+  (t/testing "a token signed with the key of the provider is decoded"
+    (let [claims (#'oidc/get-id-token-claims (rs256-provider)
+                                             {:token/id (sign-rs256-id-token {})})]
+      (t/is (= "user-1" (:sub claims)))))
+
+  (t/testing "the claims are validated on the rs256 path too"
+    (let [cause (claims-error (rs256-provider)
+                              {:token/id (sign-rs256-id-token {:aud "other-client-id"})})]
+      (t/is (= :invalid-id-token (:code (ex-data cause))))))
+
+  (t/testing "a token with an unknown kid returns nil"
+    (t/is (nil? (#'oidc/get-id-token-claims (rs256-provider)
+                                            {:token/id (sign-rs256-id-token "unknown-kid" {})})))))
+
+(defn- capture-warnings
+  "Run `f` and return the warnings it logged. The logging API emits
+  asynchronously, so the record is awaited (bounded)."
+  [f]
+  (let [records (atom [])]
+    (add-watch l/log-record ::capture
+               (fn [_ _ _ record] (swap! records conj record)))
+    (try
+      (let [value (f)]
+        [(loop [remaining 100]
+           (let [warns (filter #(= :warn (::l/level %)) @records)]
+             (cond
+               (seq warns) warns
+               (zero? remaining) warns
+               :else (do (Thread/sleep 10) (recur (dec remaining))))))
+         value])
+      (finally
+        (remove-watch l/log-record ::capture)))))
+
+(t/deftest get-id-token-claims-warns-when-the-kid-is-unknown
+  (let [[warns value] (capture-warnings
+                       #(#'oidc/get-id-token-claims (rs256-provider)
+                                                    {:token/id (sign-rs256-id-token "rotated-kid" {})}))]
+    (t/is (nil? value))
+    (t/is (= "rotated-kid" (-> warns first ::l/props :kid)))
+    (t/is (= "oidc" (-> warns first ::l/props :provider)))))
+
+(t/deftest provider-declares-more-than-one-valid-issuer
+  (let [provider (assoc hs-provider
+                        :issuer #{"https://accounts.google.com" "accounts.google.com"})]
+    (t/testing "a token with the legacy google issuer is accepted"
+      (let [claims (#'oidc/get-id-token-claims
+                    provider
+                    {:token/id (id-token-claims {:iss "accounts.google.com"})})]
+        (t/is (= "user-1" (:sub claims)))))
+
+    (t/testing "a token with an unrelated issuer is still rejected"
+      (let [cause (claims-error provider
+                                {:token/id (id-token-claims {:iss "https://attacker.example.com"})})]
+        (t/is (= :invalid-id-token (:code (ex-data cause))))))))
+
+(t/deftest issuer-values-can-be-a-string-or-a-set
+  (t/is (true? (#'oidc/issuer? "https://idp.example.com")))
+  (t/is (true? (#'oidc/issuer? #{"https://idp.example.com" "accounts.google.com"})))
+  (t/is (false? (#'oidc/issuer? nil)))
+  (t/is (false? (#'oidc/issuer? #{})))
+  (t/is (false? (#'oidc/issuer? #{"https://idp.example.com" 42}))))
+
+(t/deftest provider-schema-accepts-an-issuer-set
+  (let [schema @#'oidc/schema:provider]
+    (t/is (nil? (sm/explain schema {:type "oidc"
+                                    :client-id "client-id"
+                                    :client-secret "secret"
+                                    :id "oidc"
+                                    :issuer #{"https://accounts.google.com" "accounts.google.com"}})))
+    (t/is (nil? (sm/explain schema {:type "oidc"
+                                    :client-id "client-id"
+                                    :client-secret "secret"
+                                    :id "oidc"
+                                    :issuer "https://accounts.google.com"})))))
 
 ;; Init-time guard that closes the loophole exploited above: if iss cannot be
 ;; enforced at runtime (no configured or discovered issuer), prepare-oidc-provider
@@ -139,27 +253,60 @@
   (t/testing "manual URI configuration with explicit issuer is accepted"
     (let [provider (#'oidc/prepare-oidc-provider {} (assoc manual-oidc-params
                                                            :issuer "https://idp.example.com"))]
-      (t/is (= "https://idp.example.com" (:issuer provider))))))
+      (t/is (= "https://idp.example.com" (:issuer provider)))))
 
-(def ^:private discovery-body
-  (str "{\"issuer\":\"https://idp.example.com\","
+  (t/testing "manual URI configuration with a set of issuers is accepted"
+    (let [issuers  #{"https://accounts.google.com" "accounts.google.com"}
+          provider (#'oidc/prepare-oidc-provider {} (assoc manual-oidc-params
+                                                           :issuer issuers))]
+      (t/is (= issuers (:issuer provider))))))
+
+(defn- discovery-body
+  [issuer]
+  (str "{\"issuer\":\"" issuer "\","
        "\"authorization_endpoint\":\"https://idp.example.com/auth\","
        "\"token_endpoint\":\"https://idp.example.com/token\","
        "\"userinfo_endpoint\":\"https://idp.example.com/userinfo\","
        "\"jwks_uri\":\"https://idp.example.com/jwks\"}"))
 
+(def ^:private discovery-body-without-issuer
+  (str "{\"authorization_endpoint\":\"https://idp.example.com/auth\","
+       "\"token_endpoint\":\"https://idp.example.com/token\","
+       "\"userinfo_endpoint\":\"https://idp.example.com/userinfo\"}"))
+
 (t/deftest discover-oidc-config-adds-the-discovered-issuer
   (t/testing "the issuer of the discovery document becomes the provider issuer"
     (with-mocks [http-mock {:target 'app.http.client/req
-                            :return {:status 200 :body discovery-body}}]
+                            :return {:status 200 :body (discovery-body "https://idp.example.com")}}]
       (let [provider (#'oidc/discover-oidc-config
                       {}
                       {:type "oidc" :id "oidc" :base-uri "https://idp.example.com/"})]
         (t/is (= "https://idp.example.com" (:issuer provider))))))
 
-  (t/testing "an explicitly configured issuer wins over the discovered one"
+  (t/testing "a configured issuer that matches the discovered one is kept"
     (with-mocks [http-mock {:target 'app.http.client/req
-                            :return {:status 200 :body discovery-body}}]
+                            :return {:status 200 :body (discovery-body "https://idp.example.com")}}]
+      (let [provider (#'oidc/discover-oidc-config
+                      {}
+                      {:type "oidc" :id "oidc"
+                       :issuer "https://idp.example.com"
+                       :base-uri "https://idp.example.com/"})]
+        (t/is (= "https://idp.example.com" (:issuer provider))))))
+
+  (t/testing "a configured set accepts any of its values"
+    (with-mocks [http-mock {:target 'app.http.client/req
+                            :return {:status 200 :body (discovery-body "https://idp.example.com")}}]
+      (let [issuers  #{"https://pinned.example.com" "https://idp.example.com"}
+            provider (#'oidc/discover-oidc-config
+                      {}
+                      {:type "oidc" :id "oidc"
+                       :issuer issuers
+                       :base-uri "https://idp.example.com/"})]
+        (t/is (= issuers (:issuer provider))))))
+
+  (t/testing "a discovery document without issuer keeps the configured one"
+    (with-mocks [http-mock {:target 'app.http.client/req
+                            :return {:status 200 :body discovery-body-without-issuer}}]
       (let [provider (#'oidc/discover-oidc-config
                       {}
                       {:type "oidc" :id "oidc"
@@ -167,17 +314,49 @@
                        :base-uri "https://idp.example.com/"})]
         (t/is (= "https://pinned.example.com" (:issuer provider)))))))
 
+(t/deftest discover-oidc-config-rejects-a-configured-issuer-that-contradicts
+  (with-mocks [http-mock {:target 'app.http.client/req
+                          :return {:status 200 :body (discovery-body "https://idp.example.com")}}]
+    (let [e (try
+              (#'oidc/discover-oidc-config
+               {}
+               {:type "oidc" :id "oidc"
+                :issuer "https://pinned.example.com"
+                :base-uri "https://idp.example.com/"})
+              (catch Throwable cause cause))
+          data (ex-data e)]
+      (t/is (ex/error? e))
+      (t/is (= :invalid-sso-config (:code data)))
+      (t/is (= "https://pinned.example.com" (:expected-issuer data)))
+      (t/is (= "https://idp.example.com" (:discovered-issuer data))))))
+
+(t/deftest get-gitlab-config-normalizes-the-issuer
+  (with-redefs [cf/get (fn [key & [default]]
+                         (case key
+                           :gitlab-base-uri "https://gitlab.example.com/"
+                           default))]
+    (let [config (#'oidc/get-gitlab-config)]
+      (t/is (= "https://gitlab.example.com/" (:base-uri config)))
+      (t/is (= "https://gitlab.example.com" (:issuer config)))
+      (t/is (str/starts-with? (:token-uri config) "https://gitlab.example.com/")))))
+
 ;; The whole point of letting the validation errors out of `get-id-token-claims`:
 ;; a token that fails `iss`/`aud` must never be turned into a valid login through
 ;; the userinfo fallback of the `:auto` source.
 (t/deftest get-info-propagates-id-token-validation-failure
   (let [provider (assoc hs-provider :user-info-source "auto")
-        token    (sign-id-token {:iss "https://attacker.example.com"})]
+        token    (id-token-claims {:iss "https://attacker.example.com"})]
     (with-redefs [app.auth.oidc/fetch-access-token (constantly {:token/id token})
                   app.auth.oidc/fetch-user-info
                   (fn [& _] (throw (Exception. "userinfo must not be called")))]
-      (t/is (thrown? clojure.lang.ExceptionInfo
-                     (#'oidc/get-info {} provider {} "code"))))))
+      (let [cause (try (#'oidc/get-info {} provider {} "code") (catch Throwable e e))]
+        (t/is (= :invalid-id-token (:code (ex-data cause))))))))
+
+(t/deftest organization-sso-failure-reason-tells-a-bad-token-apart
+  (let [reason (#'oidc/organization-sso-exception-failure-reason
+                (ex-info "unable to validate the ID token"
+                         {:type :validation :code :invalid-id-token}))]
+    (t/is (= "invalid-id-token" reason))))
 
 (t/deftest token-endpoint-errors-detect-valid-client-credentials
   (let [response {:status 403

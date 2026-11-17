@@ -52,6 +52,20 @@
                              :code :invalid-sso-config))
                   cause)))
 
+(defn- issuer?
+  "Check if `v` is an issuer the `iss` claim can be validated against: a
+  string, or a non-empty set of strings for a provider that documents more
+  than one valid issuer (Google does)."
+  [v]
+  (boolean
+   (or (string? v)
+       (and (set? v) (seq v) (every? string? v)))))
+
+(defn- issuer-set
+  "Return the set of values the `iss` claim of the provider can take."
+  [v]
+  (if (set? v) v #{v}))
+
 (defn- discover-oidc-config
   [cfg {:keys [base-uri skip-ssrf-check?] :as provider}]
   (let [uri (u/join base-uri ".well-known/openid-configuration")]
@@ -69,7 +83,18 @@
             ;; OIDC Discovery 1.0 section 4.3: the issuer of the discovery
             ;; document is the value the ID token `iss` claim is validated
             ;; against. An explicitly configured issuer wins, so a deployment
-            ;; can pin it (and reject a hijacked discovery document).
+            ;; can pin it, but the two must agree when both are present: a
+            ;; mismatch makes every login fail on the `iss` check with no clue
+            ;; about the cause.
+            (when (and (some? issuer)
+                       (some? (:issuer provider))
+                       (not (contains? (issuer-set (:issuer provider)) issuer)))
+              (raise-invalid-sso-config
+               :hint "the issuer of the discovery document does not match the configured issuer"
+               :discover-uri uri
+               :expected-issuer (:issuer provider)
+               :discovered-issuer issuer))
+
             (-> provider
                 (assoc :token-uri token-uri)
                 (assoc :auth-uri  auth-uri)
@@ -211,7 +236,7 @@
     ;; the issuer of the provider. With no issuer there is nothing to match
     ;; it against, so initialization fails closed instead of silently
     ;; skipping the check.
-    (when-not (string? (:issuer provider))
+    (when-not (issuer? (:issuer provider))
       (raise-invalid-sso-config
        :hint "OIDC provider is missing issuer; rely on discovery or set it explicitly"
        :provider (:id params)))
@@ -249,7 +274,8 @@
    {:client-id        (cf/get :google-client-id)
     :client-secret    (cf/get :google-client-secret)
     :scopes           #{"openid" "email" "profile"}
-    :issuer           "https://accounts.google.com"
+    ;; Google documents both values for the `iss` claim of its ID tokens.
+    :issuer           #{"https://accounts.google.com" "accounts.google.com"}
     :auth-uri         "https://accounts.google.com/o/oauth2/v2/auth"
     :token-uri        "https://oauth2.googleapis.com/token"
     :user-uri         "https://openidconnect.googleapis.com/v1/userinfo"
@@ -370,7 +396,10 @@
   []
   (let [base (cf/get :gitlab-base-uri "https://gitlab.com")
         opts {:base-uri      base
-              :issuer        base
+              ;; GitLab publishes its external URL as issuer, without a
+              ;; trailing slash; a cosmetic difference in the configured base
+              ;; URI must not break the `iss` validation.
+              :issuer        (str/rtrim base "/")
               :client-id     (cf/get :gitlab-client-id)
               :client-secret (cf/get :gitlab-client-secret)
               :scopes        #{"openid" "profile" "email"}
@@ -438,7 +467,7 @@
 
    [:id [:or :string ::sm/uuid]]
    [:base-uri {:optional true} ::sm/text]
-   [:issuer {:optional true} ::sm/text]
+   [:issuer {:optional true} [:or ::sm/text [::sm/set ::sm/text]]]
    [:token-uri {:optional true} ::sm/text]
    [:auth-uri {:optional true} ::sm/text]
    [:user-uri {:optional true} ::sm/text]
@@ -594,18 +623,35 @@
     (-> response :body json/decode)))
 
 ;; Per OIDC core 3.1.3.7: validate iss/aud/exp; failures must propagate
-;; so they cannot be bypassed via the userinfo fallback in `get-info`.
+;; so they cannot be bypassed via the userinfo fallback in `get-info`. They
+;; carry their own code, so the callback and the organization SSO audit
+;; event can tell a bad token from any other failure.
 (defn- get-id-token-claims
   [provider tdata]
   (when-let [token (:token/id tdata)]
-    (let [{:keys [kid alg]} (jwt/decode-header token)]
-      (when-let [key (if (str/starts-with? (name alg) "hs")
-                       (:client-secret provider)
-                       (get-in provider [:jwks kid]))]
-        (jwt/unsign token key
-                    (cond-> {:alg alg
-                             :aud (:client-id provider)}
-                      (:issuer provider) (assoc :iss (:issuer provider))))))))
+    (try
+      (let [{:keys [kid alg]} (jwt/decode-header token)
+            key (if (str/starts-with? (name alg) "hs")
+                  (:client-secret provider)
+                  (get-in provider [:jwks kid]))]
+        (if (some? key)
+          (jwt/unsign token key
+                      (cond-> {:alg alg
+                               :aud (:client-id provider)}
+                        (:issuer provider) (assoc :iss (:issuer provider))))
+          ;; Without the key the token cannot be verified, so it is never
+          ;; trusted; the identity still comes from the authenticated
+          ;; userinfo call. Log it: a rotated key or a stale JWKS cache
+          ;; would otherwise be invisible.
+          (l/warn :hint "no key found to verify the ID token"
+                  :provider (str (:id provider))
+                  :kid kid)))
+      (catch Throwable cause
+        (ex/raise :type :validation
+                  :code :invalid-id-token
+                  :hint "unable to validate the ID token"
+                  :provider (str (:id provider))
+                  :cause cause)))))
 
 (def ^:private schema:info
   [:map
@@ -970,6 +1016,7 @@
         :unable-to-retrieve-user-info "user-info-failed"
         :incomplete-user-info "incomplete-user-info"
         :invalid-sso-config "invalid-configuration"
+        :invalid-id-token "invalid-id-token"
         :unable-to-fetch-sso-jwks "provider-unavailable"
         :unable-to-auth "access-denied"
         "unexpected-error"))))

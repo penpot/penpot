@@ -798,6 +798,19 @@
               :failure-reason "access-denied"}
              (:props result)))))
 
+(t/deftest test-filter-telemetry-props-organization-sso-failure-keeps-invalid-id-token
+  (t/testing "an ID token that does not validate is reported as such, not as an unknown reason"
+    (let [ftp             (ns-resolve 'app.loggers.audit 'filter-telemetry-props)
+          organization-id (uuid/next)
+          result          (ftp {:source "backend"
+                                :name "organization-sso-auth-failed"
+                                :type "action"
+                                :props {:organization-id organization-id
+                                        :failure-reason "invalid-id-token"}})]
+      (t/is (= {:organization-id organization-id
+                :failure-reason "invalid-id-token"}
+               (:props result))))))
+
 (t/deftest test-filter-telemetry-props-navigate-keeps-route-and-ids
   ;; Frontend navigate events keep specific routing keys: :route,
   ;; :file-id, :team-id, :page-id.  These ids are strings because

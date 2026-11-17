@@ -42,6 +42,7 @@
   #{"access-denied"
     "provider-unavailable"
     "invalid-configuration"
+    "invalid-id-token"
     "provider-error"
     "token-exchange-failed"
     "user-info-failed"
