@@ -988,8 +988,7 @@
                :old-id (str (:id item))
                ::l/sync? true)
 
-        (db/insert! conn :file-media-object params
-                    ::db/on-conflict-do-nothing? (::bfc/overwrite cfg))))
+        (db/insert! conn :file-media-object params)))
 
     (doseq [[index item] (d/enumerate thumbnails)]
       (let [media-id  (bfc/lookup-index (:media-id item))
@@ -1038,26 +1037,49 @@
       file-id')))
 
 (defn- import-file-relations
+  "Import library relations from the manifest, ignoring relations whose
+  endpoints are not both part of the package. Of the rest, skip edges that
+  would close a dependency cycle or link a file to itself (same check as
+  `link-file-to-library`, see `bfc/library-link-status`). Relations are
+  processed in sorted manifest order and the first edge wins: an edge
+  that would close a cycle with previously imported relations is skipped
+  and logged."
   [{:keys [::db/conn ::manifest ::bfc/timestamp] :as cfg}]
-  (let [relations (:relations manifest)
+  (let [relations (sort-by (fn [[file-id libr-id]] [(str file-id) (str libr-id)])
+                           (:relations manifest))
         file-ids  (into #{} (map :id) (:files manifest))]
     (doseq [[index [file-id libr-id]] (d/enumerate relations)]
       (tap-progress cfg {:section :relations
-                         :current (inc index) :total (count relations)})
+                         :current (inc index)
+                         :total (count relations)})
 
-      (if (and (not= file-id libr-id)
-               (contains? file-ids file-id)
+      (if (and (contains? file-ids file-id)
                (contains? file-ids libr-id))
         (let [file-id (bfc/lookup-index file-id)
               libr-id (bfc/lookup-index libr-id)]
-          (l/dbg :hint "create file library link"
-                 :file-id (str file-id)
-                 :lib-id (str libr-id)
-                 ::l/sync? true)
-          (let [rel-params {:file-id file-id
-                            :library-file-id libr-id}]
-            (db/insert! conn :file-library-rel rel-params)
-            (bfc/upsert-file-library-sync! conn (assoc rel-params :synced-at timestamp))))
+          (case (bfc/library-link-status cfg file-id libr-id)
+            :self-link
+            (l/warn :hint "ignoring self-referencing library link"
+                    :file-id (str file-id)
+                    :lib-id (str libr-id)
+                    ::l/sync? true)
+
+            :circular
+            (l/warn :hint "ignoring circular library link"
+                    :file-id (str file-id)
+                    :lib-id (str libr-id)
+                    ::l/sync? true)
+
+            :ok
+            (do
+              (l/dbg :hint "create file library link"
+                     :file-id (str file-id)
+                     :lib-id (str libr-id)
+                     ::l/sync? true)
+              (let [rel-params {:file-id file-id
+                                :library-file-id libr-id}]
+                (db/insert! conn :file-library-rel rel-params)
+                (bfc/upsert-file-library-sync! conn (assoc rel-params :synced-at timestamp))))))
         (l/warn :hint "ignoring invalid file library relation"
                 :file-id (str file-id)
                 :lib-id (str libr-id))))))
@@ -1282,70 +1304,6 @@
       {:file-ids   file-ids
        :resolution resolution})))
 
-(defn- invalidate-thumbnails
-  [cfg file-id]
-  (let [storage (sto/resolve cfg ::db/reuse-conn true)
-
-        sql-1
-        (str "update file_tagged_object_thumbnail "
-             "   set deleted_at = now() "
-             " where file_id=? returning media_id")
-
-        sql-2
-        (str "update file_thumbnail "
-             "   set deleted_at = now() "
-             " where file_id=? returning media_id")]
-
-    (run! #(sto/touch-object! storage %)
-          (sequence
-           (keep :media-id)
-           (concat
-            (db/exec! cfg [sql-1 file-id])
-            (db/exec! cfg [sql-2 file-id]))))))
-
-(def ^:private sql:is-branch-file
-  "SELECT f.is_branch
-     FROM file AS f
-    WHERE f.id = ?")
-
-(defn- import-file-and-overwrite*
-  [{:keys [::manifest ::bfc/file-id] :as cfg}]
-
-  (when (not= 1 (count (:files manifest)))
-    (ex/raise :type :validation
-              :code :invalid-condition
-              :hint "unable to perform in-place update with binfile containing more than 1 file"
-              :manifest manifest))
-
-  ;; A branch file's data payload is derived from the branch base and
-  ;; the operation log; overwriting it would persist a `file_data` row
-  ;; no read path consults.
-  (when (:is-branch (db/exec-one! cfg [sql:is-branch-file file-id]))
-    (ex/raise :type :validation
-              :code :branch-file-cant-be-overwritten
-              :hint "branch file data is derived from the branch base and the operation log and can't be overwritten by an import"
-              :file-id file-id))
-
-  (bfc/configure-import-transaction cfg)
-
-  (let [ref-file (bfc/get-minimal-file cfg file-id ::db/for-update true)
-        file     (first (get manifest :files))
-        cfg      (assoc cfg ::bfc/overwrite true)]
-
-    (vswap! bfc/*state* update :index assoc (:id file) file-id)
-
-    (binding [bfc/*options* cfg
-              bfc/*reference-file* ref-file]
-
-      (import-storage-objects cfg)
-      (import-file cfg file {:current 1 :total 1})
-
-      (invalidate-thumbnails cfg file-id)
-      (bfm/apply-pending-migrations! cfg)
-
-      {:file-ids   [file-id]
-       :resolution {}})))
-
 (defn- import-files
   [{:keys [::bfc/timestamp ::bfc/input] :or {timestamp (ct/now)} :as cfg}]
 
@@ -1396,9 +1354,7 @@
     (tap-progress cfg {:section :manifest})
 
     (binding [bfc/*state* (volatile! {:media [] :index {}})]
-      (if (::bfc/file-id cfg)
-        (db/tx-run! cfg import-file-and-overwrite*)
-        (db/tx-run! cfg import-files*)))))
+      (db/tx-run! cfg import-files*))))
 
 ;; --- PUBLIC API
 
@@ -1466,6 +1422,12 @@
 
 (defn import-files!
   [{:keys [::bfc/input] :as cfg}]
+
+  (when (::bfc/file-id cfg)
+    (ex/raise :type :validation
+              :code :not-supported
+              :hint "in-place import is not supported"
+              :file-id (::bfc/file-id cfg)))
 
   (assert
    (and (uuid? (::bfc/profile-id cfg))

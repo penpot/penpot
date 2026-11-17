@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.flags :as flags]
+   [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.uri :as u]
@@ -167,6 +168,10 @@
     [:http-server-max-body-size {:optional true} ::sm/int]
     [:http-server-io-threads {:optional true} ::sm/int]
     [:http-server-max-worker-threads {:optional true} ::sm/int]
+
+    ;; How often a websocket subscription re-checks that its access still
+    ;; holds. The default lives in `app.http.websocket`, not here.
+    [:subscription-revalidation-interval {:optional true} ::ct/duration]
 
     ;; Explicit CORS allowlist used when the :cors flag is enabled.
     ;; Configured via PENPOT_ALLOWED_ORIGINS as a comma/whitespace
@@ -431,6 +436,22 @@
 (def explain-config
   (sm/explainer schema:config))
 
+(defn- normalize-file-data-backend
+  "The file data moved to `file_data` (migration `0157-migrate-legacy-file-data`), so
+  `file.data` and `file_change.data` are read-only leftovers and the `legacy-db`
+  back end is read-only: a write against it fails on every save. Accepting it would
+  start a healthy instance that cannot save a single file, so it reads as `db`,
+  which serves the legacy rows too. Warn instead of aborting: the operator may
+  still be halfway through the migration."
+  [config]
+  (if (= "legacy-db" (c/get config :file-data-backend))
+    (do
+      (l/warn :hint "file-data-backend=legacy-db is read-only, using db"
+              :file-data-backend "legacy-db"
+              :replacement "db")
+      (assoc config :file-data-backend "db"))
+    config))
+
 (defn read-config
   "Reads the configuration from environment variables and decodes all
   known values."
@@ -438,7 +459,8 @@
   (->> (read-env prefix)
        (merge default)
        (normalize-tenant)
-       (decode-config)))
+       (decode-config)
+       (normalize-file-data-backend)))
 
 (def version
   (v/parse (or (some-> (io/resource "version.txt")

@@ -368,3 +368,8 @@
 
     (t/is (every? #(= % "14") original-font-sizes))
     (t/is (every? #(= % "32") updated-font-sizes))))
+
+(t/deftest test-list-paragraph
+  (t/is (true? (cttx/list-paragraph? {:type "paragraph" :list-style-type "disc"})))
+  (t/is (false? (cttx/list-paragraph? {:type "paragraph" :list-style-type "none"})))
+  (t/is (false? (cttx/list-paragraph? {:type "paragraph"}))))

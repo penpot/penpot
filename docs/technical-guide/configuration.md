@@ -56,7 +56,7 @@ Penpot uses anonymous telemetries from the self-hosted instances to improve the 
 Consider sharing these anonymous telemetries enabling the corresponding flag:
 
 ```bash
-PENPOT_FLAGS: [...] enable-telemetries
+PENPOT_FLAGS: [...] enable-telemetry
 ```
 
 ## Registration and authentication
@@ -270,7 +270,11 @@ PENPOT_OIDC_USER_INFO_SOURCE:
 __Since version 2.1.2__
 
 Allows users to register and login with oidc without having to previously
-register with another method.
+register with another method. It also works with password login disabled
+(`disable-login-with-password`): OIDC registration only needs this flag,
+not password login. An invitation link also works as a substitute for
+this flag: an invited user can register with OIDC even with both
+registration flags disabled.
 
 ```bash
 PENPOT_FLAGS: [...] enable-oidc-registration
@@ -757,6 +761,25 @@ POSTGRES_USER: penpot
 POSTGRES_PASSWORD: penpot
 ```
 
+#### Connection pool
+
+The backend keeps a pool of database connections. Its size can be tuned with:
+
+```bash
+# Backend
+PENPOT_DATABASE_MIN_POOL_SIZE: 0
+PENPOT_DATABASE_MAX_POOL_SIZE: 60
+```
+
+The values above are the defaults. The pool keeps at least `MIN_POOL_SIZE` idle
+connections open and never opens more than `MAX_POOL_SIZE`, growing only under load
+and closing idle connections after two minutes. A minimum larger than the maximum is
+capped at the maximum.
+
+If the PostgreSQL server is shared with other applications, make sure
+`PENPOT_DATABASE_MAX_POOL_SIZE` plus the connections used by everything else stays below
+the server's `max_connections` (100 by default).
+
 ### Storage
 
 Storage refers to storing the user uploaded different objects in Penpot (assets, file data,...).
@@ -814,11 +837,12 @@ These settings are equally useful if you have a Minio storage system.
 
 __Since version 2.11.0__
 
-You can change the default file data storage backend with `PENPOT_FILE_DATA_BACKEND` environment variable. Possible values are:
+You can change the file data storage backend with `PENPOT_FILE_DATA_BACKEND` environment variable. Possible values are:
 
-- `legacy-db`: the current default backend, continues storing the file data of files and snapshots in the same location as previous versions of Penpot (< 2.11.0), this is a conservative default behaviour and will be changed to `db` in next versions.
-- `db`: stores the file data on an specific table (the future default backend).
+- `db`: the default. Stores the file data on an specific table.
 - `storage`: stores the file data using the objects storage system (S3 or FS, depending on which one is configured)
+
+The `legacy-db` value is still accepted as a **read-only** alias for the payloads written by versions before 2.11.0: the backend reads them, but it no longer writes file data there. **If you upgrade a deployment with `PENPOT_FILE_DATA_BACKEND=legacy-db`, remove the variable (or set it to `db`) before the upgrade**: the backend reads `legacy-db` as `db` and logs a warning, so saves keep working, but remove the variable anyway so the deployment does not claim a read-only backend.
 
 This also comes with an additional feature that allows offload the "inactive" files on file storage backend and leaves the database only for the active files. To enable it, you should use the `enable-tiered-file-data-storage` flag and `db` as file data storage backend.
 
@@ -982,6 +1006,33 @@ The backend accepts feedback when the `enable-mcp` or `enable-access-tokens` fla
 set, and sends it through the [email configuration](#email-configuration). Each
 email carries the name and email address of the user who sent it, and uses that
 address as reply-to.
+
+#### MCP sign-in
+
+MCP clients with OAuth support can connect with the URL
+`https://<your-penpot-domain>/mcp/stream`, without a key. The client opens Penpot
+in the browser, the user allows access, and Penpot gives the client the user's MCP
+key. This is off by default. Turn it on by setting the public URL of the
+authorization service on the MCP container:
+
+```bash
+# MCP
+PENPOT_MCP_AUTH_URI: https://penpot.example.com/api/mcp/oauth
+```
+
+- `PENPOT_MCP_AUTH_URI`: Your Penpot public URI followed by `/api/mcp/oauth`. It
+  must use HTTPS and have no credentials, query or fragment. When unset, clients
+  must add the key to the URL as `userToken`.
+
+The MCP server must run in multi-user mode, which the official `penpotapp/mcp`
+image does by default. The server does not start if the value is invalid, and it
+logs at startup whether sign-in is on.
+
+The frontend container forwards the sign-in requests to the backend. If your proxy
+sends `/api/` straight to the backend instead, send
+`/.well-known/oauth-authorization-server/api/mcp/oauth` to the backend too.
+
+Clients that already add the key to the URL keep working with sign-in on.
 
 ### Internal resolver
 

@@ -27,7 +27,7 @@
   "Runs handle-change-team-organization and returns recorded i18n/tr calls."
   [notification organization]
   (let [team-id     (uuid/next)
-        current-url (str "https://penpot.example.com/#/dashboard/recent?team-id=" team-id)
+        current-query-string (str "screen=dashboard-recent&team-id=" team-id)
         state       {:current-team-id team-id
                      :teams {team-id {:id team-id :name "Team-Apple"}}}
         event       (dcm/handle-change-team-organization
@@ -43,11 +43,11 @@
            rp/cmd! (mock/stub
                     (fn [cmd params]
                       (if (= [:check-nitrate-sso
-                              {:team-id team-id :url current-url}]
+                              {:team-id team-id   :query-string current-query-string}]
                              [cmd params])
                         (rx/of {:authorized true})
                         (rx/throw (ex-info "unexpected RPC" {:cmd cmd :params params})))))
-           rt/get-current-href (mock/stub (constantly current-url))}
+           rt/get-current-query-string (mock/stub (constantly current-query-string))}
           (await (async/observe (ptk/watch event state nil)
                                 :on-next (fn [ev]
                                            (t/is (contains? #{::ntf/show ::dtm/fetch-teams}
@@ -120,7 +120,7 @@
   (t/async done
     (let [team-id      (uuid/next)
           organization {:id (uuid/next) :name "OrgA"}
-          current-url  (str "https://penpot.example.com/#/dashboard/recent?team-id=" team-id)
+          current-query-string (str "screen=dashboard-recent&team-id=" team-id)
           redirect-url "https://idp.example.com/authorize"
           state        {:current-team-id team-id}
           event        (dcm/handle-change-team-organization
@@ -131,11 +131,11 @@
          rp/cmd! (mock/stub
                   (fn [cmd params]
                     (if (= [:check-nitrate-sso
-                            {:team-id team-id :url current-url}]
+                            {:team-id team-id   :query-string current-query-string}]
                            [cmd params])
                       (rx/of {:authorized false :redirect-uri redirect-url})
                       (rx/throw (ex-info "unexpected RPC" {:cmd cmd :params params})))))
-         rt/get-current-href (mock/stub (constantly current-url))}
+         rt/get-current-query-string (mock/stub (constantly current-query-string))}
         (fn [done']
           (->> (ptk/watch event state nil)
                (rx/reduce conj [])
@@ -152,7 +152,7 @@
   (t/async done
     (let [team-id      (uuid/next)
           organization-id       (uuid/next)
-          current-url  (str "https://penpot.example.com/#/workspace?team-id=" team-id)
+          current-query-string (str "screen=workspace&team-id=" team-id)
           redirect-url "https://idp.example.com/authorize"
           state        {:current-team-id team-id
                         :teams {team-id {:id team-id
@@ -164,11 +164,11 @@
          rp/cmd! (mock/stub
                   (fn [cmd params]
                     (if (= [:check-nitrate-sso
-                            {:team-id team-id :url current-url}]
+                            {:team-id team-id   :query-string current-query-string}]
                            [cmd params])
                       (rx/of {:authorized false :redirect-uri redirect-url})
                       (rx/throw (ex-info "unexpected RPC" {:cmd cmd :params params})))))
-         rt/get-current-href (mock/stub (constantly current-url))}
+         rt/get-current-query-string (mock/stub (constantly current-query-string))}
         (fn [done']
           (->> (ptk/watch event state nil)
                (rx/reduce conj [])
@@ -330,7 +330,7 @@
        (t/is (= [[:wait #{file-id}] [:duplicate-file]] @calls))
        (t/is (nil? (:notification @store)) "nothing is told before the copy exists")
        (rx/push! answer {:id (uuid/next)})
-       (await (async/wait-for #(some? (:notification @store)) "the user is told"))
+       (await (async/wait-for-store store #(some? (:notification @store)) "the user is told"))
        (await (async/settle))
        (t/is (= "translated:dashboard.duplicate-unsaved-changes"
                 (get-in @store [:notification :content])))
@@ -354,7 +354,7 @@
        (await (async/wait-for #(= 1 @sent) "the copy is requested"))
        (t/is (nil? (:notification @store)))
        (rx/push! answer {:id (uuid/next)})
-       (await (async/wait-for #(some? (:notification @store)) "the user is told"))
+       (await (async/wait-for-store store #(some? (:notification @store)) "the user is told"))
        (t/is (= "translated:dashboard.success-duplicate-file"
                 (get-in @store [:notification :content])))
        (t/is (= :success (get-in @store [:notification :level])))))))

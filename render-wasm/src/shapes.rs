@@ -191,6 +191,7 @@ pub struct Shape {
     pub background_blur: Option<Blur>,
     pub opacity: f32,
     pub hidden: bool,
+    pub hide_fill_on_export: bool,
     pub svg: Option<skia::svg::Dom>,
     pub svg_attrs: Option<SvgAttrs>,
     pub shadows: Vec<Shadow>,
@@ -295,6 +296,7 @@ impl Shape {
             vertical_align: VerticalAlign::Top,
             opacity: 1.,
             hidden: false,
+            hide_fill_on_export: false,
             blur: None,
             background_blur: None,
             svg: None,
@@ -464,6 +466,10 @@ impl Shape {
 
     pub fn set_hidden(&mut self, value: bool) {
         self.hidden = value;
+    }
+
+    pub fn set_hide_fill_on_export(&mut self, value: bool) {
+        self.hide_fill_on_export = value;
     }
 
     pub fn svg_transform(&self) -> Option<Matrix> {
@@ -1741,12 +1747,15 @@ impl Shape {
         for st in structure {
             match st.entry_type {
                 StructureEntryType::AddChild => {
-                    if result.is_empty() {
-                        result.insert(st.id);
-                    } else {
-                        let index = usize::min(result.len() - 1, st.index as usize);
-                        result.shift_insert(index, st.id);
-                    }
+                    // Same as `d/insert-at-index`: the index counts the child
+                    // at its old position.
+                    let index = st.index as usize;
+                    let index = match result.get_index_of(&st.id) {
+                        Some(current) if current < index => usize::min(index - 1, result.len() - 1),
+                        Some(_) => index,
+                        None => usize::min(index, result.len()),
+                    };
+                    result.shift_insert(index, st.id);
                 }
                 StructureEntryType::RemoveChild => {
                     to_remove.insert(&st.id);
@@ -2223,6 +2232,48 @@ mod tests {
 
     fn any_shape() -> Shape {
         Shape::new(Uuid::nil())
+    }
+
+    fn add_child(shape: &mut Shape, id: Uuid, index: u32) {
+        shape.apply_structure(&vec![StructureEntry::new(
+            StructureEntryType::AddChild,
+            index,
+            Uuid::nil(),
+            id,
+            0.0,
+        )]);
+    }
+
+    #[test]
+    fn add_child_index_counts_the_child_at_its_old_position() {
+        let ids: Vec<Uuid> = (1..=4).map(|i| Uuid::from_u64_pair(0, i)).collect();
+        let [a, b, c, d] = [ids[0], ids[1], ids[2], ids[3]];
+
+        let cases = [
+            (b, 4, vec![a, c, d, b]),
+            (b, 3, vec![a, c, b, d]),
+            (b, 2, vec![a, b, c, d]),
+            (b, 1, vec![a, b, c, d]),
+            (d, 0, vec![d, a, b, c]),
+        ];
+
+        for (id, index, expected) in cases {
+            let mut shape = any_shape();
+            shape.children = ids.clone();
+            add_child(&mut shape, id, index);
+            assert_eq!(shape.children, expected, "move {id} to {index}");
+        }
+    }
+
+    #[test]
+    fn add_child_inserts_a_new_child_at_the_end() {
+        let ids: Vec<Uuid> = (1..=3).map(|i| Uuid::from_u64_pair(0, i)).collect();
+        let new_id = Uuid::from_u64_pair(0, 9);
+
+        let mut shape = any_shape();
+        shape.children = ids.clone();
+        add_child(&mut shape, new_id, 3);
+        assert_eq!(shape.children, [ids, vec![new_id]].concat());
     }
 
     #[test]

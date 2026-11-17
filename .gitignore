@@ -121,7 +121,7 @@ opencode.json
 /.opencode/reports
 /.opencode/prompts
 /.ci-logs
-/tmp/
+/tmp
 /.codex/
 /scripts/__pycache__/
 /tools/__pycache__

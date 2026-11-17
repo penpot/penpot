@@ -17,6 +17,7 @@
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.exports.preview :refer [export-preview*]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr c]]
    [app.util.keyboard :as kbd]
@@ -28,7 +29,7 @@
 
 (mf/defc exports
   {::mf/wrap [#(mf/memo % =)]}
-  [{:keys [shapes page-id file-id share-id type] :as props}]
+  [{:keys [shapes page-id file-id share-id type from] :or {from :viewer} :as props}]
   (let [exports     (mf/use-state [])
         xstate      (mf/deref refs/export)
         vstate      (mf/deref refs/viewer-data)
@@ -44,7 +45,7 @@
         scale-enabled?
         (mf/use-callback
          (fn [export]
-           (#{:png :jpeg :webp} (:type export))))
+           (contains? de/raster-export-types (:type export))))
 
         in-progress? (:in-progress xstate)
 
@@ -218,5 +219,10 @@
                     :disabled in-progress?}
         (if in-progress?
           (tr "workspace.options.exporting-object")
-          (tr "workspace.options.export-object" (c (count shapes))))])]))
-
+          (tr "workspace.options.export-object" (c (count shapes))))])
+     (when (and (= 1 (count shapes)) (seq @exports))
+       [:> export-preview* {:key (-> shapes first :id)
+                            :object-id (-> shapes first :id)
+                            :exports @exports
+                            :from from
+                            :page-id page-id}])]))

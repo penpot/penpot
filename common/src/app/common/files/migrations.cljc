@@ -793,17 +793,6 @@
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
 
-(defmethod migrate-data "legacy-36"
-  [data _]
-  (letfn [(update-container [container]
-            (d/update-when container :objects (fn [objects]
-                                                (if (contains? objects nil)
-                                                  (dissoc objects nil)
-                                                  objects))))]
-    (-> data
-        (update :pages-index d/update-vals update-container)
-        (d/update-when :components d/update-vals update-container))))
-
 (defmethod migrate-data "legacy-37"
   [data _]
   (d/without-nils data))
@@ -2310,44 +2299,49 @@
   ;; been added to enforce this from now on.
   ;; Main instances in variants are a special case because they need to match the variant name.
   (letfn [(update-shape [container shape-id]
-            (let [shape (ctn/get-shape container shape-id)
+            (let [shape (ctn/get-shape container shape-id)]
+              ;; A shape may reference a child that does not exist in the
+              ;; container (a dangling reference). There is nothing to update
+              ;; on it, and storing it would add a nil entry to the objects
+              ;; map, making the whole file invalid.
+              (if (nil? shape)
+                container
+                (let [shape (cond
+                              ;; Variant container must have a normalized name
+                              (ctk/is-variant-container? shape)
+                              (let [name       (:name shape)
+                                    clean-name (cpn/clean-path name)
+                                    clean-name (if (str/blank? clean-name)
+                                                 "(empty)" ;; this may occur if the name contains only separators
+                                                 clean-name)]
+                                (if (= name clean-name)
+                                  shape
+                                  (assoc shape :name clean-name)))
 
-                  shape (cond
-                          ;; Variant container must have a normalized name
-                          (ctk/is-variant-container? shape)
-                          (let [name       (:name shape)
-                                clean-name (cpn/clean-path name)
-                                clean-name (if (str/blank? clean-name)
-                                             "(empty)" ;; this may occur if the name contains only separators
-                                             clean-name)]
-                            (if (= name clean-name)
-                              shape
-                              (assoc shape :name clean-name)))
+                              ;; Main instance inside a variant must have the same name as the container
+                              (ctk/main-instance? shape)
+                              (if (ctk/is-variant? shape)
+                                (let [variant-container (ctn/get-shape container (:parent-id shape))]
+                                  (if (or (= (:name shape) (:name variant-container))
+                                          (nil? variant-container))
+                                    shape
+                                    (assoc shape :name (:name variant-container))))
 
-                          ;; Main instance inside a variant must have the same name as the container
-                          (ctk/main-instance? shape)
-                          (if (ctk/is-variant? shape)
-                            (let [variant-container (ctn/get-shape container (:parent-id shape))]
-                              (if (or (= (:name shape) (:name variant-container))
-                                      (nil? variant-container))
-                                shape
-                                (assoc shape :name (:name variant-container))))
+                                ;; Other main instances must have the same name as the path+name of the component
+                                (let [component     (ctkl/get-component data (:component-id shape) true)
+                                      expected-name (when component
+                                                      (cpn/merge-path-item (:path component) (:name component)))]
+                                  (if (or (= expected-name (:name shape))
+                                          (nil? expected-name))
+                                    shape
+                                    (assoc shape :name expected-name))))
 
-                            ;; Other main instances must have the same name as the path+name of the component
-                            (let [component     (ctkl/get-component data (:component-id shape) true)
-                                  expected-name (when component
-                                                  (cpn/merge-path-item (:path component) (:name component)))]
-                              (if (or (= expected-name (:name shape))
-                                      (nil? expected-name))
-                                shape
-                                (assoc shape :name expected-name))))
+                              ;; Any other shape does not need processing
+                              :else shape)]
 
-                          ;; Any other shape does not need processing
-                          :else shape)]
-
-              (reduce update-shape
-                      (ctt/set-shape container shape)
-                      (:shapes shape))))
+                  (reduce update-shape
+                          (ctt/set-shape container shape)
+                          (:shapes shape))))))
 
           (update-container
             [container]
@@ -2399,6 +2393,35 @@
           (update :pages-index d/update-vals update-container)
           (d/update-when :components d/update-vals update-container)))))
 
+(defmethod migrate-data "0035-fix-dangling-children"
+  [data _]
+  ;; A shape may list a child id that does not exist in the objects map of
+  ;; the page or component that owns it (a dangling reference). Such a
+  ;; reference is invalid: any operation that walks the shape tree through
+  ;; the children lists trips on it, and the file cannot be migrated nor
+  ;; opened. Here we remove the dangling ids from the children lists,
+  ;; keeping every shape that really exists.
+  (letfn [(fix-shape [container-id objects shape]
+            (d/update-when shape :shapes
+                           (fn [shapes]
+                             (let [shapes' (filterv #(contains? objects %) shapes)]
+                               (when (not= shapes shapes')
+                                 (l/trc :hint "fix dangling children"
+                                        :container (str container-id)
+                                        :shape-id (str (:id shape))
+                                        :removed (remove #(contains? objects %) shapes)))
+                               shapes'))))
+
+          (fix-objects [container-id objects]
+            (d/update-vals objects (partial fix-shape container-id objects)))
+
+          (update-container [container]
+            (d/update-when container :objects #(fix-objects (:id container) %)))]
+
+    (-> data
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
+
 (defmethod migrate-data "0035-fix-shape-svg-attrs-and-defs"
   ;; Stored svg attribute keys are kebab-case (issue #11947): the v3 reader
   ;; already outputs kebab and birth normalizes any outside spelling, so
@@ -2445,6 +2468,26 @@
         (update :pages-index d/update-vals migrate-container)
         (d/update-when :components d/update-vals migrate-container))))
 
+(defmethod migrate-data "0036-clear-nil-keys-in-objects"
+  [data _]
+  ;; Soft-delete can leave a nil key in `:objects` (gsh/move on a missing
+  ;; main, then index-by :id). That fails the file schema on duplicate-file
+  ;; (#12336). "legacy-36" did the same cleanup but its id was withdrawn
+  ;; from `available-migrations` below: files that recorded it migrate
+  ;; again through this one.
+  (letfn [(update-container [container]
+            (d/update-when container :objects
+                           (fn [objects]
+                             (if (contains? objects nil)
+                               (do
+                                 (l/trc :hint "clear nil key in objects"
+                                        :container-id (:id container))
+                                 (dissoc objects nil))
+                               objects))))]
+    (-> data
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -2472,7 +2515,6 @@
          "legacy-32"
          "legacy-33"
          "legacy-34"
-         "legacy-36"
          "legacy-37"
          "legacy-38"
          "legacy-39"
@@ -2536,4 +2578,6 @@
          "0032-fix-children-not-in-parent"
          "0033-normalize-main-instance-names"
          "0034-fix-path-content-offset"
-         "0035-fix-shape-svg-attrs-and-defs"]))
+         "0035-fix-dangling-children"
+         "0035-fix-shape-svg-attrs-and-defs"
+         "0036-clear-nil-keys-in-objects"]))

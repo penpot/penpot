@@ -56,6 +56,14 @@ that breaks them is wrong, even if the code is right.
 
 `:bug:` bug fix · `:sparkles:` enhancement · `:tada:` new feature · `:recycle:` refactor · `:lipstick:` cosmetic · `:ambulance:` critical fix · `:books:` docs · `:construction:` WIP · `:boom:` breaking · `:wrench:` config · `:zap:` perf · `:whale:` docker · `:paperclip:` other · `:arrow_up:` dep upgrade · `:arrow_down:` dep downgrade · `:fire:` removal · `:globe_with_meridians:` translations · `:rocket:` epic/highlight
 
+## Atomic Commits
+
+A PR squash-merges into one commit by default, so the split inside the branch
+does not reach `main` and nothing depends on it. When the PR asks for a
+regular merge (`mem:workflow/creating-prs` → Merge Strategy), every commit
+must stand alone: it builds, passes the linter, and needs no later commit on
+the same branch to make sense.
+
 ## Referencing Issues
 
 Use `Closes #NNNN` (not `Fixes #NNNN`) in commit and PR body text for readable context. The explicit issue-to-PR link is assigned with `python3 scripts/gh.py link-issue <ISSUE_NUMBER> <PR_NUMBER>` as described in `mem:workflow/creating-prs`; do not rely on the keyword to create that link.

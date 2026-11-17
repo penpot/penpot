@@ -315,6 +315,16 @@
          props2)
         :props)))
 
+(defn group-properties-by-name
+  "Group properties by :name, preserving first-seen name order.
+   clojure.core/group-by loses order once maps grow past ArrayMap's
+   8-key threshold."
+  [props]
+  (reduce (fn [m p]
+            (update m (:name p) (fnil conj []) p))
+          (d/ordered-map)
+          props))
+
 (defn compare-properties
   "Compares vectors of properties keeping the value if it is the same for all
    or setting a custom value where their values do not coincide"
@@ -322,7 +332,7 @@
    (compare-properties props-list nil))
 
   ([props-list distinct-mark]
-   (let [grouped (group-by :name (apply concat props-list))
+   (let [grouped (group-properties-by-name (apply concat props-list))
          check-values (fn [values]
                         (let [vals (map :value values)]
                           (if (apply = vals)

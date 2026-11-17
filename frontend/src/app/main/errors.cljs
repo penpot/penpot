@@ -16,6 +16,7 @@
    [app.main.data.nitrate :as dnt]
    [app.main.data.notifications :as ntf]
    [app.main.data.workspace :as-alias dw]
+   [app.main.features :as features]
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.main.store :as st]
@@ -410,7 +411,8 @@
               :hint hint
               :href (rt/get-current-href)
               :report report
-              :occurrences occurrences})))
+              :occurrences occurrences
+              :renderer (features/get-active-renderer @st/state)})))
 
 (defn submit-report
   "Report the error report to the audit log subsystem, subject to the
@@ -812,11 +814,11 @@
   [{:keys [organization-id team-id] :as error}]
   (when-not @sso-renewal-pending?
     (vreset! sso-renewal-pending? true)
-    (let [dest-url (rt/get-current-href)]
+    (let [query-string (rt/get-current-query-string)]
       (->> (dnt/check-organization-sso
             {:organization-id organization-id
              :team-id team-id
-             :dest-url dest-url})
+             :query-string query-string})
            ;; Release the guard however the check ends, including an
            ;; unsubscription or a completion without a result: a stuck guard
            ;; would silently drop every later rejection.

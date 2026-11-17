@@ -5,15 +5,20 @@ Run with:
 
     python3 scripts/test_check_commit.py
 
-Covers the body line-wrapping validator added to enforce the commit body
-wrap rule documented in .serena/memories/workflow/creating-commits.md.
+Covers the commit message rules enforced by scripts/check-commit and documented
+in .serena/memories/workflow/creating-commits.md.
 """
 
+import contextlib
 import importlib.machinery
 import importlib.util
+import io
+import os
 import pathlib
 import sys
+import tempfile
 import unittest
+import unittest.mock
 
 # Loading scripts/check-commit would otherwise emit scripts/__pycache__/.
 sys.dont_write_bytecode = True
@@ -178,6 +183,72 @@ class SubjectRulesRegressionTests(unittest.TestCase):
         self.assertGreater(len(subject), 80)
         ok, error = check_commit.check_subject_length(subject)
         self.assertTrue(ok, error)
+
+
+class MessageFileTests(unittest.TestCase):
+    def setUp(self):
+        self.tmpdir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmpdir.cleanup)
+        env = unittest.mock.patch.dict(
+            os.environ,
+            {
+                "GIT_CONFIG_COUNT": "1",
+                "GIT_CONFIG_KEY_0": "core.commentChar",
+                "GIT_CONFIG_VALUE_0": "#",
+            },
+        )
+        env.start()
+        self.addCleanup(env.stop)
+
+    def write_message(self, text):
+        path = pathlib.Path(self.tmpdir.name) / "COMMIT_EDITMSG"
+        path.write_text(text, encoding="utf-8")
+        return str(path)
+
+    def test_reads_message_from_file(self):
+        path = self.write_message(":bug: Fix crash\n\nBody.\n")
+        self.assertEqual(
+            check_commit.get_message_from_file(path),
+            ":bug: Fix crash\n\nBody.",
+        )
+
+    def test_ignores_comment_lines(self):
+        path = self.write_message(
+            ":bug: Fix crash\n\nBody.\n\n"
+            "# Please enter the commit message for your changes.\n"
+            "# " + "long comment " * 20 + "\n"
+        )
+        message = check_commit.get_message_from_file(path)
+        self.assertEqual(message, ":bug: Fix crash\n\nBody.")
+        ok, error = check_commit.check_body_line_length(message)
+        self.assertTrue(ok, error)
+
+    def test_comment_only_file_exits(self):
+        path = self.write_message("# Nothing but a comment\n")
+        with contextlib.redirect_stderr(io.StringIO()):
+            with self.assertRaises(SystemExit):
+                check_commit.get_message_from_file(path)
+
+    def test_ignores_diff_after_scissors_line(self):
+        path = self.write_message(
+            ":bug: Fix crash\n\nBody.\n\n"
+            "# ------------------------ >8 ------------------------\n"
+            "diff --git a/f b/f\n"
+            "+" + "long diff line " * 10 + "\n"
+        )
+        message = check_commit.get_message_from_file(path)
+        self.assertEqual(message, ":bug: Fix crash\n\nBody.")
+
+
+class CommandLineTests(unittest.TestCase):
+    def test_empty_message_file_path_is_rejected(self):
+        argv = ["check-commit", "--message-file", ""]
+        with unittest.mock.patch.object(sys, "argv", argv):
+            with contextlib.redirect_stdout(io.StringIO()):
+                with contextlib.redirect_stderr(io.StringIO()):
+                    with self.assertRaises(SystemExit) as raised:
+                        check_commit.main()
+        self.assertEqual(raised.exception.code, 1)
 
 
 if __name__ == "__main__":

@@ -70,6 +70,7 @@
 
 (def defaults
   {::name :main
+   ::min-size 0
    ::max-size 60
    ::connection-timeout 30000
    ::validation-timeout 10000
@@ -92,8 +93,7 @@
               :read-only read-only
               :credentials (and (contains? cfg ::username)
                                 (contains? cfg ::password))
-              :min-size (or (::min-size cfg)
-                            (::max-size cfg))
+              :min-size (::min-size cfg)
               :max-size (::max-size cfg))
       (create-pool cfg))))
 
@@ -108,15 +108,16 @@
 
 (def initsql
   (str "SET statement_timeout = 300000;\n"
-       "SET idle_in_transaction_session_timeout = 300000;"))
+       "SET idle_in_transaction_session_timeout = 300000;\n"
+       ;; lets the planner resolve a join between two partitioned tables
+       ;; pairwise, when both are partitioned with the same bounds
+       "SET enable_partitionwise_join = on;"))
 
 (defn- create-datasource-config
   [{:keys [::uri] :as cfg}]
 
   ;; (app.common.pprint/pprint cfg)
-  (let [config   (HikariConfig.)
-        max-size (::max-size cfg)
-        min-size (or (::min-size cfg) max-size)]
+  (let [config (HikariConfig.)]
     (doto config
       (.setJdbcUrl           (str "jdbc:" uri))
       (.setPoolName          (d/name (::name cfg)))
@@ -126,8 +127,8 @@
       (.setValidationTimeout (::validation-timeout cfg))
       (.setIdleTimeout       (::idle-timeout cfg))
       (.setMaxLifetime       (::max-lifetime cfg))
-      (.setMinimumIdle       min-size)
-      (.setMaximumPoolSize   max-size)
+      (.setMinimumIdle       (::min-size cfg))
+      (.setMaximumPoolSize   (::max-size cfg))
       (.setConnectionInitSql initsql)
       (.setInitializationFailTimeout -1))
 

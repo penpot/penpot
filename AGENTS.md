@@ -28,6 +28,12 @@
   - Before `gh pr create` / `gh pr edit` → `mem:workflow/creating-prs` (title format, body structure, AI note)
   Don't infer format from the title of a previous commit/issue/PR — the memory
   is the source of truth.
+- **Everything in code MUST be in English.** Identifiers (functions,
+  variables, types, namespaces), code comments, docstrings, test
+  descriptions, log hints — always English, regardless of the language the
+  author works in. Tests are not an exception. The only place another
+  language may appear in the codebase is product copy rendered through the
+  i18n system.
 
 ## CRITICAL: Read module memories BEFORE writing any code
 

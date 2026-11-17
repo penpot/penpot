@@ -112,6 +112,7 @@
    [:font-family types.font/schema:font-family]
    [:font-weight [::sm/one-of {:format "number"} valid-weight]]
    [:font-style  [::sm/one-of {:format "string"} valid-style]]
+   [:variant-name {:optional true} [:maybe [::sm/text {:max 250}]]]
    [:uploads [:map-of ::sm/text ::sm/uuid]]])
 
 (defn- prepare-font-data-from-uploads
@@ -139,7 +140,8 @@
   chunked-upload API)."
   {::doc/added "1.18"
    ::doc/changes [["2.16" "Add :uploads param for chunked upload support"]
-                  ["2.18" "Remove :data param, use :uploads exclusively"]]
+                  ["2.18" "Remove :data param, use :uploads exclusively"]
+                  ["2.20" "Add optional :variant-name param"]]
    ::climit/id [[:process-font/by-profile ::rpc/profile-id]
                 [:process-font/global]]
    ::webhooks/event? true

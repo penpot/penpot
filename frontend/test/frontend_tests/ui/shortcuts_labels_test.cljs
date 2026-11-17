@@ -75,3 +75,11 @@
                (ss/translation-keyname :sc :stale-id)))
       (t/is (= "shortcuts.preview-frame"
                (ss/translation-keyname :sc :preview-frame))))))
+
+(t/deftest unit-move-commands-match-their-direction
+  (doseq [shortcuts [wsc/shortcuts psc/shortcuts]
+          dir       ["up" "down" "left" "right"]
+          :let [id       (keyword (str "move-unit-" dir))
+                command  (:command (get shortcuts id))
+                commands (if (string? command) [command] command)]]
+    (t/is (= dir (first commands)) (str id " is bound to the " dir " arrow"))))

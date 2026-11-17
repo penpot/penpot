@@ -319,6 +319,11 @@
       (db/insert! conn :file-tagged-object-thumbnail thumbnail
                   {::db/return-keys false})))
 
+  ;; NOTE: v2 packages are only produced and imported through the
+  ;; developer REPL (`app.srepl.binfile`), never through the product, so
+  ;; this path keeps inserting the relations as they come: unlike v1 and
+  ;; v3 it does not skip self-referencing or circular links (see
+  ;; `bfc/library-link-status`).
   (doseq [rel (read-obj cfg :file-rels file-id)]
     (let [rel (-> rel
                   (update :file-id bfc/lookup-index)

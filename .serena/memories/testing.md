@@ -73,6 +73,8 @@ a test that reproduces it:
 - **One Assertion Per Concept** — each test verifies one behavior; split
   compound assertions
 - **Descriptive Test Names** — names read like specifications
+- **English Only** — test names, `testing` strings, comments, and every
+  code-facing text MUST be in English; see the hard rule in `AGENTS.md`.
 
 ## Prefer Real Implementations Over Mocks
 

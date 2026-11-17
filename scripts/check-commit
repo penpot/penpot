@@ -13,6 +13,7 @@ Usage:
   ./scripts/check-commit
   ./scripts/check-commit --commit HEAD~1
   ./scripts/check-commit -c abc1234
+  ./scripts/check-commit --message-file .git/COMMIT_EDITMSG
 """
 
 import argparse
@@ -60,15 +61,23 @@ FORBIDDEN_TRAILER_PATTERN = re.compile(r"^\s*Co-authored-by\s*:", re.IGNORECASE)
 
 URL_PATTERN = re.compile(r"https?://\S+")
 
+# Git appends the staged diff after this marker for `git commit -v` and
+# discards everything after it during cleanup.
+SCISSORS_PATTERN = re.compile(
+    r"^.\s------------------------ >8 ------------------------$",
+    re.MULTILINE,
+)
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # Helpers
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def run_git(args):
+def run_git(args, input_text=None):
     """Run a git command and return (returncode, stdout, stderr)."""
     try:
         result = subprocess.run(
             ["git"] + args,
+            input=input_text,
             capture_output=True,
             text=True,
             check=False,
@@ -89,6 +98,39 @@ def get_commit_message(commit_ref):
         print(f"ERROR: commit {commit_ref} has no message", file=sys.stderr)
         sys.exit(1)
     return out.rstrip("\n")
+
+
+def get_message_from_file(path):
+    """Return the commit message stored in *path*.
+
+    The commit-msg hook receives the message before git removes comment
+    lines, so strip them the same way git does before validating.
+    """
+    try:
+        with open(path, encoding="utf-8") as fh:
+            raw = fh.read()
+    except (OSError, UnicodeDecodeError) as exc:
+        print(f"ERROR: could not read message file {path}: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+    scissors = SCISSORS_PATTERN.search(raw)
+    if scissors:
+        raw = raw[:scissors.start()]
+
+    rc, out, err = run_git(["stripspace", "--strip-comments"], input_text=raw)
+    if rc != 0:
+        print(
+            f"ERROR: could not clean message file {path}: {err.strip()}",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    message = out.rstrip("\n")
+    if not message.strip():
+        print(f"ERROR: message file {path} has no commit message", file=sys.stderr)
+        sys.exit(1)
+
+    return message
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -243,17 +285,26 @@ def main():
     parser = argparse.ArgumentParser(
         description="Check a commit message against Penpot commit guidelines."
     )
-    parser.add_argument(
+    source = parser.add_mutually_exclusive_group()
+    source.add_argument(
         "-c", "--commit",
-        default="HEAD",
+        metavar="REF",
         help="Commit to check (default: HEAD)",
+    )
+    source.add_argument(
+        "-m", "--message-file",
+        metavar="FILE",
+        help="Read the commit message from FILE instead of a commit",
     )
     args = parser.parse_args()
 
-    commit_ref = args.commit
-    message = get_commit_message(commit_ref)
-
-    print(f"Checking commit {commit_ref} ...\n")
+    if args.message_file is not None:
+        message = get_message_from_file(args.message_file)
+        print(f"Checking commit message in {args.message_file} ...\n")
+    else:
+        commit_ref = args.commit if args.commit is not None else "HEAD"
+        message = get_commit_message(commit_ref)
+        print(f"Checking commit {commit_ref} ...\n")
 
     validators = [
         ("Regex pattern", check_regex),

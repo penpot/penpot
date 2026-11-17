@@ -295,12 +295,12 @@
   fragment pointers, and `file` is the same document realized and
   checked against the size limits.
 
-  The row is read FOR SHARE. File-gc takes it FOR UPDATE and marks every
-  fragment that neither main nor a committed snapshot names, so a
-  snapshot that copies main's pointers must commit before the next pass
-  can read the row."
+  The row is read FOR UPDATE, since a data read cannot take FOR SHARE.
+  File-gc takes it FOR UPDATE too and marks every fragment that neither
+  main nor a committed snapshot names, so a snapshot that copies main's
+  pointers must commit before the next pass can read the row."
   [cfg main-id operation]
-  (let [stored (bfc/get-file cfg main-id :lock-for-share? true)
+  (let [stored (bfc/get-file cfg main-id :lock-for-update? true)
         file   (-> (fdata/realize cfg stored)
                    (check-file-size-limits! operation))]
     [stored file]))
@@ -590,10 +590,10 @@
                   ;; GC while the branch is open (it is released when the
                   ;; branch is deleted or its base moves). The snapshot
                   ;; stores main's fragment pointers, not its pages, so
-                  ;; main's row is read FOR SHARE: file-gc takes it FOR
-                  ;; UPDATE, and a pass that ran between this read and
-                  ;; the commit could mark a fragment the base names.
-                  (let [file (bfc/get-file cfg file-id :lock-for-share? true)
+                  ;; main's row is read FOR UPDATE: file-gc takes it FOR
+                  ;; UPDATE as well, and a pass that ran between this read
+                  ;; and the commit could mark a fragment the base names.
+                  (let [file (bfc/get-file cfg file-id :lock-for-update? true)
                         _    (fdata/with-pointers cfg file-id
                                (check-file-size-limits! file :create-branch))
                         base (fsnap/create! cfg file

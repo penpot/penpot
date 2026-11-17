@@ -267,8 +267,8 @@
                     (ptk/event ::dw/reload-current-file))
          (await (async/settle))
          (ptk/emit! store (rename-page (cthf/current-page-id file) "Renamed"))
-         (await (async/wait-for #(seq (get-in @store [:workspace-undo :items]))
-                                "the commit reaches the undo history"))
+         (await (async/wait-for-store store #(seq (get-in @store [:workspace-undo :items]))
+                                      "the commit reaches the undo history"))
          (await (async/settle))
          (t/is (= 1 (count (get-in @store [:workspace-undo :items]))))
          (finally

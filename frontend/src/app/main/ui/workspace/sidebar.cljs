@@ -38,6 +38,7 @@
    [app.main.ui.workspace.sidebar.history :refer [history-toolbox*]]
    [app.main.ui.workspace.sidebar.layers :refer [layers-toolbox*]]
    [app.main.ui.workspace.sidebar.options :refer [options-toolbox*]]
+   [app.main.ui.workspace.sidebar.scale :refer [scale-sidebar*]]
    [app.main.ui.workspace.sidebar.shortcuts :refer [shortcuts-container*]]
    [app.main.ui.workspace.sidebar.sitemap :refer [sitemap*]]
    [app.main.ui.workspace.sidebar.versions :refer [versions-toolbox*]]
@@ -102,6 +103,7 @@
     [:article {:class (stl/css :layers-tab)}
      [:> sitemap* {:layout layout
                    :height sitemap-height
+                   :scroll-store scroll-store
                    :collapsed sitemap-collapsed?
                    :on-toggle-collapsed on-toggle-sitemap-collapsed}]
 
@@ -119,11 +121,10 @@
 
 (mf/defc left-sidebar*
   {::mf/memo true}
-  [{:keys [layout file tokens-lib tokens-status active-tokens resolved-active-tokens]}]
+  [{:keys [layout file tokens-lib tokens-status active-tokens resolved-active-tokens scroll-store]}]
   (let [options-mode   (mf/deref refs/options-mode-global)
         project        (mf/deref refs/project)
         file-id        (get file :id)
-        scroll-store*  (mf/use-var {})
 
         design-tokens? (features/use-feature "design-tokens/v1")
         ;; a design review is read-only: it shows the pages and layers alone
@@ -209,7 +210,7 @@
         [:div {:class (stl/css :left-sidebar-content)}
          [:> layers-content* {:layout layout
                               :width width
-                              :scroll-store scroll-store*}]]
+                              :scroll-store scroll-store}]]
 
         :else
         [:div {:class (stl/css  :left-sidebar-content)}
@@ -225,7 +226,7 @@
             :assets
             [:> assets-toolbox* {:size (- width  58)
                                  :file-id file-id
-                                 :scroll-store scroll-store*}]
+                                 :scroll-store scroll-store}]
 
             :tokens
             [:> tokens-sidebar-tab*
@@ -233,12 +234,12 @@
               :tokens-status tokens-status
               :active-tokens active-tokens
               :resolved-active-tokens resolved-active-tokens
-              :scroll-store scroll-store*}]
+              :scroll-store scroll-store}]
 
             :layers
             [:> layers-content* {:layout layout
                                  :width width
-                                 :scroll-store scroll-store*}])]])]]))
+                                 :scroll-store scroll-store}])]])]]))
 
 ;; --- Right Sidebar (Component)
 
@@ -296,6 +297,7 @@
   (let [reviewing?       (some? (mf/deref refs/pull-request-preview))
         is-comments?     (and (not reviewing?) (= drawing-tool :comments))
         is-history?      (contains? layout :document-history)
+        is-scale?        (contains? layout :scale-text)
         is-inspect?      (= section :inspect)
         is-debug?        (= section :debug)
 
@@ -305,6 +307,7 @@
         can-be-expanded?
         (and (not is-comments?)
              (not is-history?)
+             (not is-scale?)
              is-inspect?
              (= current-section :code))
 
@@ -376,6 +379,9 @@
           is-history?
           [:> history-content* {}]
 
+          is-scale?
+          [:> scale-sidebar* {}]
+
           :else
           (let [props (mf/spread-props props
                                        {:on-change-section on-change-section
@@ -383,7 +389,7 @@
             [:> options-toolbox* props]))]]]]))
 
 (mf/defc sidebar*
-  [{:keys [layout file file-id page-id section drawing-tool selected]}]
+  [{:keys [layout file file-id page-id section drawing-tool selected scroll-store]}]
   (let [tokens-lib
         (mf/deref refs/tokens-lib)
 
@@ -428,6 +434,7 @@
         [:> left-sidebar* {:layout layout
                            :file file
                            :page-id page-id
+                           :scroll-store scroll-store
                            :tokens-lib tokens-lib
                            :tokens-status tokens-status
                            :active-tokens active-tokens-force-set

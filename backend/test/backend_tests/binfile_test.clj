@@ -801,6 +801,95 @@
         (t/is (cfo/token-applied? token-radius shape [:r1 :r2 :r3 :r4]))
         (t/is (cfo/token-applied? token-opacity shape [:opacity]))))))
 
+(t/deftest embed-assets-loads-the-library-components
+  ;; The library is read without `:realize?`, so its `:components` is an
+  ;; unloaded pointer map: `absorb-assets` walks it with `vals`, which calls
+  ;; `load!`, and that raises when no loader is bound. The absorb has to run
+  ;; under the library's own loader. This is a pre-existing failure, not a
+  ;; regression of the migration-on-read work: the migration path returns the
+  ;; pointer already loaded by the reattach comparison.
+  (let [profile      (th/create-profile* 1)
+        library      (th/create-file* 1 {:profile-id (:id profile)
+                                         :project-id (:default-project-id profile)
+                                         :is-shared true})
+        file         (th/create-file* 2 {:profile-id (:id profile)
+                                         :project-id (:default-project-id profile)})
+        lib-page     (first (get-in library [:data :pages]))
+        file-page    (first (get-in file [:data :pages]))
+        component-id (uuid/random)
+        main-id      (uuid/random)
+        copy-id      (uuid/random)]
+
+    (th/link-file-to-library* {:file-id (:id file) :library-id (:id library)})
+
+    ;; The library owns one component.
+    (update-file!
+     :file-id (:id library)
+     :profile-id (:id profile)
+     :changes
+     [{:type :add-obj
+       :page-id lib-page
+       :id main-id
+       :parent-id uuid/zero
+       :frame-id uuid/zero
+       :components-v2 true
+       :obj (cts/setup-shape
+             {:id main-id
+              :name "Board"
+              :frame-id uuid/zero
+              :parent-id uuid/zero
+              :type :frame
+              :main-instance true
+              :component-root true
+              :component-file (:id library)
+              :component-id component-id})}
+      {:type :add-component
+       :path ""
+       :name "Board"
+       :main-instance-id main-id
+       :main-instance-page lib-page
+       :id component-id
+       :anotation nil}])
+
+    ;; The file instances it, so the absorb has a usage to embed.
+    (update-file!
+     :file-id (:id file)
+     :profile-id (:id profile)
+     :changes
+     [{:type :add-obj
+       :page-id file-page
+       :id copy-id
+       :parent-id uuid/zero
+       :frame-id uuid/zero
+       :components-v2 true
+       :obj (cts/setup-shape
+             {:id copy-id
+              :name "Board"
+              :frame-id uuid/zero
+              :parent-id uuid/zero
+              :type :frame
+              :main-instance false
+              :component-root true
+              :component-file (:id library)
+              :component-id component-id})}])
+
+    (t/testing "a plain library is absorbed"
+      (let [file-data (-> (bfc/get-file th/*system* (:id file) :realize? true) :data)
+            result    (bfc/embed-assets th/*system* file-data (:id file))]
+        (t/is (contains? (:components result) component-id))))
+
+    (t/testing "a library that needed a migration is absorbed too"
+      ;; The scenario the review reported. It works even without the loader,
+      ;; because `reattach-unchanged` loads the pointers it puts back; it
+      ;; stays pinned so a future reattach that stops loading does not
+      ;; silently break the absorb.
+      (th/db-delete! :file-migration
+                     {:file-id (:id library)
+                      :name "0031-migrate-stroke-width-token-attr"})
+      (let [file-data (-> (bfc/get-file th/*system* (:id file) :realize? true) :data)
+            result    (bfc/embed-assets th/*system* file-data (:id file))]
+        (t/is (contains? (:components result) component-id))))))
+
 (t/deftest export-detach-libraries-preserves-own-tokens-and-status
   (let [profile (th/create-profile* 1)
         {:keys [library file page-id shape-id token-radius token-opacity]}
@@ -1410,26 +1499,23 @@
         (t/is (some? file-res))
         (t/is (= 1 (count (:done file-res))))))))
 
-(t/deftest link-later-overwrite-import-no-resolution
+(t/deftest import-rejects-an-in-place-import
+  ;; The in-place import was removed: it never carried the previous storage
+  ;; pointer, so it could leave the replaced object unreclaimed. A caller that
+  ;; still sets `::bfc/file-id` fails instead of importing as new files.
   (let [{:keys [profile file-id team-id]} (import-sample-file)
-        output (tmp/tempfile :suffix ".zip")]
-    ;; Export file with link-later
-    (v3/export-files!
-     (-> th/*system*
-         (assoc ::bfc/file-ids #{file-id})
-         (assoc ::bfc/export-type :link-later)
-         (assoc ::bfc/output (io/output-stream output))))
-
-    ;; Import with overwrite (file-id set)
-    (let [result (-> th/*system*
+        output (tmp/tempfile :suffix ".zip")
+        cause  (try
+                 (-> th/*system*
                      (assoc ::bfc/project-id (:default-project-id profile))
                      (assoc ::bfc/profile-id (:id profile))
                      (assoc ::bfc/team-id team-id)
                      (assoc ::bfc/file-id file-id)
                      (assoc ::bfc/input output)
-                     (v3/import-files!))]
-      ;; Overwrite should have empty resolution
-      (t/is (= {} (:resolution result))))))
+                     (v3/import-files!))
+                 nil
+                 (catch clojure.lang.ExceptionInfo cause cause))]
+    (t/is (= :not-supported (:code (ex-data cause))))))
 
 ;; -----------------------------------------------------------------------------
 ;; Category 2: Cross-Team Migration
@@ -3082,17 +3168,51 @@
                  (:object-id thumb)))
         (t/is (some? (:media-id thumb)))))))
 
-(t/deftest get-file-without-data-rejects-locks
-  ;; Locking is incompatible with `load-data? false`: the guard fires
-  ;; before any query, so no DB row is needed. Regression test for the
-  ;; `lock-for-share?`/`lock-for-share?` typo that left `lock-for-update?`
-  ;; unchecked. NOTE: the guard is an unconditional `when`/`throw` in
-  ;; `get-file*` (not an `assert`), so this test is not flag-dependent:
-  ;; it behaves the same with or without `enable-backend-asserts`.
-  (doseq [opt [:lock-for-share? :lock-for-update? :skip-locked?]]
+(t/deftest get-file-without-data-can-lock
+  ;; Locking is legal without loading the data: the row-only query selects
+  ;; directly from `file`, so `FOR UPDATE`/`FOR SHARE` apply to the row and
+  ;; the lock lives until the enclosing transaction ends. `SKIP LOCKED` only
+  ;; modifies a locking read, so on its own it is ignored. The SQL is pinned
+  ;; because a plain `SELECT` also returns the row: the lock clause is what
+  ;; serializes with the other writers.
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)})]
+    (doseq [[opt sql] {:lock-for-share?  (str bfc/sql:get-file-without-data " FOR SHARE of f")
+                       :lock-for-update? (str bfc/sql:get-file-without-data " FOR UPDATE of f")
+                       :skip-locked?     bfc/sql:get-file-without-data}]
+      (let [[row sqls] (th/read-recording-sql
+                        #(bfc/get-file th/*system* (:id file) :load-data? false opt true))]
+        (t/is (= (:id file) (:id row)))
+        (t/is (nil? (:data row)))
+        (t/is (= [sql] sqls))))))
+
+(t/deftest get-file-rejects-realize-without-data
+  ;; `:realize?` walks the decoded data; asking for it without loading or
+  ;; decoding the data is a caller bug. The guard fires before any query, so
+  ;; no file row is needed.
+  (let [id (uuid/random)]
     (t/is (thrown? IllegalArgumentException
-                   (bfc/get-file th/*system* (uuid/random)
-                                 :load-data? false opt true)))))
+                   (bfc/get-file th/*system* id :realize? true :decode? false)))
+    (t/is (thrown? IllegalArgumentException
+                   (bfc/get-file th/*system* id :realize? true :load-data? false)))))
+
+(t/deftest get-file-rejects-a-shared-lock-with-data
+  ;; The probe inherits the caller's lock and the migration branch re-reads
+  ;; with FOR UPDATE, so a shared lock on a data read is a lock upgrade. The
+  ;; guard fires before any query, so no row is needed.
+  (t/is (thrown? IllegalArgumentException
+                 (bfc/get-file th/*system* (uuid/random) :lock-for-share? true))))
+
+(t/deftest get-file-rejects-a-bare-pool-or-connection
+  ;; The read opens a transaction (unless it is read-only) and resolves the
+  ;; cfg, so it takes a cfg map only: a bare pool or connection is a caller
+  ;; bug. The guard is an `IllegalArgumentException`, not an `assert`, which
+  ;; is elided when the backend runs without `:backend-asserts`.
+  (let [id (uuid/random)]
+    (t/is (thrown? IllegalArgumentException (bfc/get-file th/*pool* id)))
+    (with-open [conn (db/open th/*system*)]
+      (t/is (thrown? IllegalArgumentException (bfc/get-file conn id))))))
 
 ;; -----------------------------------------------------------------------------
 ;; Branch target protection
@@ -3101,7 +3221,8 @@
 (t/deftest import-overwrite-refuses-branch-file
   ;; A branch file's data payload is derived from its merge base and op
   ;; log, so an in-place import would write a `file_data` main row that
-  ;; no read path consults.
+  ;; no read path consults. `import-files!` refuses every in-place import,
+  ;; and this keeps a branch file among the files it refuses.
   (with-redefs [cf/flags (conj cf/flags :branching)]
     (let [profile (th/create-profile* 1)
           file    (prepare-simple-file profile)
@@ -3134,7 +3255,7 @@
 
         (t/is (uuid? branch-id))
         (t/is (= :validation (:type error)))
-        (t/is (= :branch-file-cant-be-overwritten (:code error)))
+        (t/is (= :not-supported (:code error)))
         (t/is (empty? (th/db-query :file-data {:file-id branch-id :type "main"})))))))
 
 ;; --- Library relations security tests
@@ -3197,7 +3318,8 @@
                                                [[(str (:id file)) (str (:id file))]])
         [file-id :as result] (import-bundle profile evil)]
     (t/is (= 1 (count result)))
-    (t/is (empty? (th/db-query :file-library-rel {:file-id file-id})))))
+    (t/is (empty? (th/db-query :file-library-rel {:file-id file-id})))
+    (t/is (empty? (th/db-query :file-library-sync {:file-id file-id})))))
 
 (t/deftest import-v3-keeps-valid-library-relation
   (let [profile  (th/create-profile* 1)
@@ -3215,6 +3337,251 @@
       (t/is (some? new-file))
       (t/is (= 1 (count (th/db-query :file-library-rel
                                      {:file-id (:id new-file)})))))))
+
+(t/deftest import-skips-circular-library-relations
+  ;; https://github.com/penpot/penpot/issues/12052: two libraries that use
+  ;; each other (possible before the 2.17.1 guard) export both relations in
+  ;; the manifest; the import must skip the one closing the cycle instead
+  ;; of recreating it. The cycle is built with direct inserts because the
+  ;; UI command `link-file-to-library` already rejects it. Relations are
+  ;; processed in sorted manifest order and the first edge wins.
+  (let [profile (th/create-profile* 1)
+        lib-a   (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared true
+                                    :name "Library A"})
+        lib-b   (th/create-file* 2 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared true
+                                    :name "Library B"})]
+    (db/insert! th/*system* :file-library-rel
+                {:file-id (:id lib-a)
+                 :library-file-id (:id lib-b)})
+    (db/insert! th/*system* :file-library-rel
+                {:file-id (:id lib-b)
+                 :library-file-id (:id lib-a)})
+
+    (let [output (tmp/tempfile :suffix ".zip")]
+      (v3/export-files!
+       (-> th/*system*
+           (assoc ::bfc/file-ids #{(:id lib-a) (:id lib-b)})
+           (assoc ::bfc/export-type :include-libraries)
+           (assoc ::bfc/output (io/output-stream output))))
+
+      (let [result (import-bundle profile output)
+            rels   (mapcat #(db/query th/*system* :file-library-rel {:file-id %})
+                           result)
+            syncs  (mapcat #(db/query th/*system* :file-library-sync {:file-id %})
+                           result)]
+        (t/is (= 2 (count result)))
+        ;; only one of the two cycle edges survives the import
+        (t/is (= 1 (count rels)))
+        ;; the skipped edge leaves no sync row behind
+        (t/is (= 1 (count syncs)))
+        (t/is (= (set (map (juxt :file-id :library-file-id) syncs))
+                 (set (map (juxt :file-id :library-file-id) rels))))
+        ;; no imported file lists itself among its transitive libraries
+        (doseq [file-id result]
+          (t/is (not (contains? (bfc/get-libraries th/*system* [file-id])
+                                file-id))))))))
+
+(t/deftest import-skips-transitive-cycle
+  ;; A three-node cycle (A -> B -> C -> A) only breaks when the check uses
+  ;; the transitive closure: a direct-edge-only check would keep all three
+  ;; edges. Built with direct inserts because the UI command rejects it.
+  (let [profile (th/create-profile* 1)
+        lib-a   (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared true
+                                    :name "Library A"})
+        lib-b   (th/create-file* 2 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared true
+                                    :name "Library B"})
+        lib-c   (th/create-file* 3 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared true
+                                    :name "Library C"})]
+    (db/insert! th/*system* :file-library-rel
+                {:file-id (:id lib-a)
+                 :library-file-id (:id lib-b)})
+    (db/insert! th/*system* :file-library-rel
+                {:file-id (:id lib-b)
+                 :library-file-id (:id lib-c)})
+    (db/insert! th/*system* :file-library-rel
+                {:file-id (:id lib-c)
+                 :library-file-id (:id lib-a)})
+
+    (let [output (tmp/tempfile :suffix ".zip")]
+      (v3/export-files!
+       (-> th/*system*
+           (assoc ::bfc/file-ids #{(:id lib-a) (:id lib-b) (:id lib-c)})
+           (assoc ::bfc/export-type :include-libraries)
+           (assoc ::bfc/output (io/output-stream output))))
+
+      (let [result (import-bundle profile output)
+            rels   (mapcat #(db/query th/*system* :file-library-rel {:file-id %})
+                           result)
+            syncs  (mapcat #(db/query th/*system* :file-library-sync {:file-id %})
+                           result)]
+        (t/is (= 3 (count result)))
+        ;; only two of the three cycle edges survive the import
+        (t/is (= 2 (count rels)))
+        ;; the skipped edge leaves no sync row behind
+        (t/is (= 2 (count syncs)))
+        (t/is (= (set (map (juxt :file-id :library-file-id) syncs))
+                 (set (map (juxt :file-id :library-file-id) rels))))
+        ;; no imported file lists itself among its transitive libraries
+        (doseq [file-id result]
+          (t/is (not (contains? (bfc/get-libraries th/*system* [file-id])
+                                file-id))))))))
+
+(t/deftest import-keeps-acyclic-library-relations
+  ;; Control test: a chain without cycles must be imported untouched, so
+  ;; the new guard only skips edges that would close a cycle.
+  (let [profile (th/create-profile* 1)
+        lib-a   (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared true
+                                    :name "Library A"})
+        lib-b   (th/create-file* 2 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared true
+                                    :name "Library B"})
+        lib-c   (th/create-file* 3 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared true
+                                    :name "Library C"})]
+    (db/insert! th/*system* :file-library-rel
+                {:file-id (:id lib-a)
+                 :library-file-id (:id lib-b)})
+    (db/insert! th/*system* :file-library-rel
+                {:file-id (:id lib-b)
+                 :library-file-id (:id lib-c)})
+
+    (let [output (tmp/tempfile :suffix ".zip")]
+      (v3/export-files!
+       (-> th/*system*
+           (assoc ::bfc/file-ids #{(:id lib-a) (:id lib-b) (:id lib-c)})
+           (assoc ::bfc/export-type :include-libraries)
+           (assoc ::bfc/output (io/output-stream output))))
+
+      (let [result (import-bundle profile output)
+            rels   (mapcat #(db/query th/*system* :file-library-rel {:file-id %})
+                           result)
+            syncs  (mapcat #(db/query th/*system* :file-library-sync {:file-id %})
+                           result)]
+        (t/is (= 3 (count result)))
+        (t/is (= 2 (count rels)))
+        ;; every kept relation has its sync row
+        (t/is (= 2 (count syncs)))
+        (t/is (= (set (map (juxt :file-id :library-file-id) syncs))
+                 (set (map (juxt :file-id :library-file-id) rels))))))))
+
+(t/deftest import-v1-skips-circular-library-relations
+  ;; Issue #12052 also names the version 1 importer: importing a package
+  ;; whose libraries use each other must not recreate the cycle. The cycle
+  ;; is built with direct inserts because `link-file-to-library` already
+  ;; rejects it. The exported file only *uses* one of the libraries, so the
+  ;; package carries the cycle the same way a real export does.
+  (let [profile (th/create-profile* 1)
+        file    (prepare-simple-file profile)
+        lib-a   (th/create-file* 2 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared true
+                                    :name "Library A"})
+        lib-b   (th/create-file* 3 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared true
+                                    :name "Library B"})]
+    (th/link-file-to-library* {:file-id (:id file)
+                               :library-id (:id lib-a)})
+    (db/insert! th/*system* :file-library-rel
+                {:file-id (:id lib-a)
+                 :library-file-id (:id lib-b)})
+    (db/insert! th/*system* :file-library-rel
+                {:file-id (:id lib-b)
+                 :library-file-id (:id lib-a)})
+
+    (let [output (tmp/tempfile :suffix ".penpot")]
+      (v1/export-files!
+       (-> th/*system*
+           (assoc ::bfc/file-ids #{(:id file)})
+           (assoc ::bfc/include-libraries true))
+       (io/output-stream output))
+
+      (let [result (:file-ids (-> th/*system*
+                                  (assoc ::bfc/project-id (:default-project-id profile))
+                                  (assoc ::bfc/profile-id (:id profile))
+                                  (assoc ::bfc/input output)
+                                  (v1/import-files!)))
+            rels   (mapcat #(db/query th/*system* :file-library-rel {:file-id %})
+                           result)
+            syncs  (mapcat #(db/query th/*system* :file-library-sync {:file-id %})
+                           result)]
+        (t/is (= 3 (count result)))
+        ;; the relation of the file to its library, plus one of the two
+        ;; cycle edges; the edge that would close the cycle is skipped
+        (t/is (= 2 (count rels)))
+        ;; the skipped edge leaves no sync row behind
+        (t/is (= 2 (count syncs)))
+        (t/is (= (set (map (juxt :file-id :library-file-id) syncs))
+                 (set (map (juxt :file-id :library-file-id) rels))))
+        ;; no imported file lists itself among its transitive libraries
+        (doseq [file-id result]
+          (t/is (not (contains? (bfc/get-libraries th/*system* [file-id])
+                                file-id))))))))
+
+(t/deftest import-v1-tolerates-repeated-file-entries
+  ;; Old v1 exports could list the same file twice in the package metadata:
+  ;; the exporter unioned the requested files with their libraries without
+  ;; deduplicating, and a file inside a library cycle is one of its own
+  ;; libraries. The import must read every entry and import each file once.
+  (let [profile (th/create-profile* 1)
+        lib-a   (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared true
+                                    :name "Library A"})
+        lib-b   (th/create-file* 2 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared true
+                                    :name "Library B"})]
+    (db/insert! th/*system* :file-library-rel
+                {:file-id (:id lib-a)
+                 :library-file-id (:id lib-b)})
+    (db/insert! th/*system* :file-library-rel
+                {:file-id (:id lib-b)
+                 :library-file-id (:id lib-a)})
+
+    (let [output (tmp/tempfile :suffix ".penpot")]
+      ;; exporting only lib-a repeats its id in the metadata, because it is
+      ;; among its own transitive libraries
+      (v1/export-files!
+       (-> th/*system*
+           (assoc ::bfc/file-ids #{(:id lib-a)})
+           (assoc ::bfc/include-libraries true))
+       (io/output-stream output))
+
+      (let [result (:file-ids (-> th/*system*
+                                  (assoc ::bfc/project-id (:default-project-id profile))
+                                  (assoc ::bfc/profile-id (:id profile))
+                                  (assoc ::bfc/input output)
+                                  (v1/import-files!)))
+            rels   (mapcat #(db/query th/*system* :file-library-rel {:file-id %})
+                           result)
+            syncs  (mapcat #(db/query th/*system* :file-library-sync {:file-id %})
+                           result)]
+        ;; two files: the repeated entry is imported once
+        (t/is (= 2 (count result)))
+        ;; one of the two cycle edges survives the import
+        (t/is (= 1 (count rels)))
+        (t/is (= 1 (count syncs)))
+        (t/is (= (set (map (juxt :file-id :library-file-id) syncs))
+                 (set (map (juxt :file-id :library-file-id) rels))))
+        ;; no imported file lists itself among its transitive libraries
+        (doseq [file-id result]
+          (t/is (not (contains? (bfc/get-libraries th/*system* [file-id])
+                                file-id))))))))
 
 (t/deftest export-multi-file-includes-package-relations
   (let [profile          (th/create-profile* 1)
@@ -3314,3 +3681,45 @@
       (t/is (empty? (th/db-query :file-library-sync {:library-file-id (:id victim)})))
       (t/is (empty? (th/db-query :file-library-rel {:library-file-id (:id file)})))
       (t/is (empty? (th/db-query :file-library-sync {:library-file-id (:id file)}))))))
+
+(t/deftest file-permissions-ignore-soft-deleted
+  ;; sql:file-permissions must not grant anything through a file,
+  ;; project or team that is soft-deleted (GHSA-m53j-2766-6jqw: the
+  ;; websocket re-check relies on this query, and the subscribe handler
+  ;; additionally refuses deleted files via check-file-exists).
+  (let [owner   (th/create-profile* 1 {:is-active true})
+        editor  (th/create-profile* 2 {:is-active true})
+        team    (th/create-team* 1 {:profile-id (:id owner)})]
+    (th/create-team-role* {:team-id (:id team)
+                           :profile-id (:id editor)
+                           :role :editor})
+    (let [project (th/create-project* 1 {:profile-id (:id editor)
+                                         :team-id (:id team)})
+          file    (th/create-file* 1 {:profile-id (:id editor)
+                                      :project-id (:id project)})
+          perms?  #(some? (bfc/get-file-permissions th/*system* (:id editor) (:id file)))
+          undelete (fn [table id]
+                     (db/update! th/*system* table {:deleted-at nil} {:id id}))
+          soft-delete (fn [table id]
+                        (db/update! th/*system* table {:deleted-at (ct/now)} {:id id}))]
+
+      (t/testing "a live member can read the live file"
+        (t/is (perms?)))
+
+      (t/testing "a soft-deleted file grants nothing"
+        (soft-delete :file (:id file))
+        (t/is (nil? (bfc/get-file-permissions th/*system* (:id editor) (:id file))))
+        (undelete :file (:id file))
+        (t/is (perms?)))
+
+      (t/testing "a soft-deleted project grants nothing"
+        (soft-delete :project (:id project))
+        (t/is (nil? (bfc/get-file-permissions th/*system* (:id editor) (:id file))))
+        (undelete :project (:id project))
+        (t/is (perms?)))
+
+      (t/testing "a soft-deleted team grants nothing"
+        (soft-delete :team (:id team))
+        (t/is (nil? (bfc/get-file-permissions th/*system* (:id editor) (:id file))))
+        (undelete :team (:id team))
+        (t/is (perms?))))))

@@ -50,18 +50,21 @@
   (`observe-on :async`): await each effect — via `wait-for` — before
   asserting it."
   [f & [respond]]
-  (let [file-id  (uuid/next)
-        response (rx/subject)
-        failures (atom [])
-        requests (atom [])
-        tasks    (atom #{})
-        store    (ptk/store {:state {:current-file-id file-id
-                                     :permissions {:can-edit true}
-                                     :files {file-id {:id file-id :revn 0}}}
-                             :on-error #(t/is false (str %))})]
+  (let [file-id   (uuid/next)
+        response  (rx/subject)
+        failures  (atom [])
+        requests  (atom [])
+        requests$ (rx/subject)
+        tasks     (atom #{})
+        store     (ptk/store {:state {:current-file-id file-id
+                                      :permissions {:can-edit true}
+                                      :files {file-id {:id file-id :revn 0}}}
+                              :on-error #(t/is false (str %))})]
     (mock/with-mocks*
       {rp/cmd!          (mock/stub (fn [cmd params]
-                                     (swap! requests conj [cmd params])
+                                     (let [entry [cmd params]]
+                                       (swap! requests conj entry)
+                                       (rx/push! requests$ entry))
                                      (if respond
                                        (respond cmd params)
                                        (->> response (rx/take 1) (rx/observe-on :async)))))
@@ -73,9 +76,11 @@
       (try
         (ptk/emit! store (dps/initialize-persistence))
         (await (f {:file-id file-id :response response :failures failures
-                   :requests requests :store store :tasks tasks}))
+                   :requests requests :requests$ requests$ :store store
+                   :tasks tasks}))
         (finally
           (rx/dispose! store)
+          (rx/end! requests$)
           (rx/end! response))))))
 
 (defn set-attr
