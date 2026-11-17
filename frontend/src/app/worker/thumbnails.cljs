@@ -86,9 +86,7 @@
   (->> (fetch-data-for-thumbnail file-id revn strip-frames-with-thumbnails)
        (rx/mapcat
         (fn [{:keys [page] :as data}]
-          (->> (rx/from (ctr/resolve-for-reader (:tokens page)
-                                                (:tokens-resolved page)
-                                                (not tokenscript)))
+          (->> (rx/from (ctr/resolve-page-for-reader page (boolean tokenscript)))
                (rx/mapcat
                 (fn [resolved]
                   (if (and strip-frames-with-thumbnails

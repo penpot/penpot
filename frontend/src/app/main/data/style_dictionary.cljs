@@ -11,8 +11,6 @@
    [app.common.time :as ct]
    [app.config :as cf]
    [app.main.data.tokenscript :as ts]
-   [app.main.data.workspace.tokens.errors :as wte]
-   [app.main.data.workspace.tokens.warnings :as wtw]
    [beicon.v2.core :as rx]
    [rumext.v2 :as mf]))
 
@@ -20,22 +18,12 @@
 
 ;; === Resolution
 
-(defn- with-messages
-  "`token` with the messages of the UI in its errors and warnings."
-  [token]
-  (cond-> token
-    (seq (:errors token))
-    (update :errors (fn [errors] (mapv #(merge (wte/get-error-code (:error/code %)) %) errors)))
-
-    (seq (:warnings token))
-    (update :warnings (fn [warnings] (mapv #(merge (wtw/get-warning-code (:warning/code %)) %) warnings)))))
-
 (defn- resolution
   "Observable of the tokens resolved by the promise `resolved`, with the
   messages of the UI."
   [resolved]
   (->> (rx/from resolved)
-       (rx/map #(update-vals % with-messages))))
+       (rx/map #(update-vals % ts/with-messages))))
 
 (defn resolve-tokens
   [tokens]

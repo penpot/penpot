@@ -741,6 +741,19 @@
                   (when (some? value) [token-name value]))))
         resolved-tokens))
 
+(defn values-to-save
+  "`resolved-values` of `resolved-tokens`, with the value in `saved` of the
+  tokens they hold without a resolved value: a session whose resolver can't
+  resolve a token keeps the value another one saved for it."
+  [resolved-tokens saved]
+  (reduce-kv (fn [values token-name token]
+               (if (and (nil? (:resolved-value token))
+                        (contains? saved token-name))
+                 (assoc values token-name (get saved token-name))
+                 values))
+             (resolved-values resolved-tokens)
+             resolved-tokens))
+
 (defn values->resolved-tokens
   "Resolved tokens from `values`, a map of token name to resolved value
   saved in a file."

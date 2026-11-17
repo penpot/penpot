@@ -7,6 +7,7 @@
 (ns backend-tests.rpc-viewer-test
   (:require
    [app.binfile.common :as bfc]
+   [app.common.types.file :as ctf]
    [app.common.types.shape :as cts]
    [app.common.types.tokens-lib :as ctob]
    [app.common.uuid :as uuid]
@@ -1032,20 +1033,22 @@
         (t/is (= {:name "radius" :type :border-radius :value "{base}"}
                  (get-in result [:tokens "radius"])))))
 
-    (t/testing "get-page carries them too"
+    (t/testing "get-page carries them too, with the rem base of the file"
       (let [{:keys [result error]} (th/command! {::th/type :get-page
                                                  ::rpc/profile-id (:id prof)
                                                  :file-id (:id file)
                                                  :page-id page-id})]
         (t/is (nil? error))
-        (t/is (= #{"radius" "base" "shadow" "brand"} (set (keys (:tokens result)))))))
+        (t/is (= #{"radius" "base" "shadow" "brand"} (set (keys (:tokens result)))))
+        (t/is (= ctf/BASE-FONT-SIZE (:base-font-size result)))))
 
-    (t/testing "the data of the thumbnail carries them too"
+    (t/testing "the data of the thumbnail carries them too, with the rem base of the file"
       (let [{:keys [result error]} (th/command! {::th/type :get-file-data-for-thumbnail
                                                  ::rpc/profile-id (:id prof)
                                                  :file-id (:id file)})]
         (t/is (nil? error))
-        (t/is (= #{"radius" "base" "shadow" "brand"} (set (keys (get-in result [:page :tokens])))))))))
+        (t/is (= #{"radius" "base" "shadow" "brand"} (set (keys (get-in result [:page :tokens])))))
+        (t/is (= ctf/BASE-FONT-SIZE (get-in result [:page :base-font-size])))))))
 
 (t/deftest pages-carry-the-tokens-of-their-tokens-source
   (let [prof     (th/create-profile* 1 {:is-active true})

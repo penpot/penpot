@@ -309,6 +309,15 @@
     (t/testing "undo"
       (t/is (nil? (get-in (thf/apply-undo-changes file' changes) [:data :tokens-resolved]))))))
 
+(t/deftest values-to-save-keep-the-ones-not-resolved
+  (let [resolved {"radius" {:name "radius" :resolved-value 8}
+                  "size"   {:name "size" :resolved-value nil}
+                  "new"    {:name "new" :resolved-value nil}}
+        saved    {"radius" 4 "size" 24 "removed" 1}]
+    (t/is (= {"radius" 8 "size" 24} (cltp/values-to-save resolved saved))
+          "a token without a resolved value keeps the saved one; a removed one goes")
+    (t/is (= {"radius" 8} (cltp/values-to-save resolved nil)))))
+
 (t/deftest resolved-values-of-some-pages
   (let [file (-> (thf/sample-file :file1)
                  (tho/add-rect :rect1)

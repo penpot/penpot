@@ -11,7 +11,6 @@
    [app.common.data.macros :as dm]
    [app.common.features :as cfeat]
    [app.common.files.helpers :as cfh]
-   [app.common.files.tokens :as cfo]
    [app.common.geom.shapes :as gsh]
    [app.common.schema :as sm]
    [app.common.thumbnails :as thc]
@@ -179,18 +178,11 @@
             frame-ids (if (some? frame) (list frame-id) (map :id (ctt/get-frames (:objects page))))
 
             obj-ids   (map #(thc/fmt-object-id (:id file) page-id % "frame") frame-ids)
-            thumbs    (get-object-thumbnails conn id obj-ids)
-            tokens    (cfo/get-pages-tokens data (bfc/get-tokens-source-lib cfg data) [page])]
+            thumbs    (get-object-thumbnails conn id obj-ids)]
 
-        (cond-> (update page :objects filter-objects frame-id)
-          ;; The tokens of the page and their values saved by the editors,
-          ;; so the thumbnail sets the shapes that are out of date
-          (some? tokens)
-          (assoc :tokens tokens)
-
-          (some? (:tokens-resolved data))
-          (assoc :tokens-resolved (cfo/get-pages-resolved data [page]))
-
+        ;; The tokens of the page and their values saved by the editors,
+        ;; so the thumbnail sets the shapes that are out of date
+        (cond-> (bfc/assoc-page-tokens cfg data (update page :objects filter-objects frame-id))
           ;; If we have frame, we need to specify it on the page level
           (some? frame-id)
           (assoc :thumbnail-frame-id frame-id)

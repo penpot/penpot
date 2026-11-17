@@ -7,6 +7,7 @@
 (ns frontend-tests.tokens.tokenscript-test
   (:require
    [app.common.files.tokens :as cfo]
+   [app.common.logic.tokens-resolution :as ctr]
    [app.common.test-helpers.ids-map :as cthi]
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
@@ -436,6 +437,31 @@
               (t/is (nil? cause))
               (done)))))))
 
+(t/deftest text-values-resolve-as-with-style-dictionary
+  (t/async
+    done
+    (let [tokens (tokens-map {:name "weight" :value "700" :type :font-weight}
+                             {:name "weight.ref" :value "{weight}" :type :font-weight}
+                             {:name "family" :value ["Work Sans" "sans-serif"] :type :font-family}
+                             {:name "typo" :type :typography
+                              :value {:font-family "Work Sans, sans-serif" :font-weight "400" :font-size "16"}}
+                             {:name "typo.ref" :type :typography
+                              :value {:font-family "{family}" :font-weight "{weight}"}})
+          tokenscript (resolved-values (ts/resolve-tokens tokens))]
+      (t/is (= "700" (get tokenscript "weight")) "font weights are strings")
+      (t/is (= ["Work Sans" "sans-serif"] (get-in tokenscript ["typo" :font-family]))
+            "a string of families is split at the commas, not at the spaces")
+      (->> (sd/resolve-tokens tokens)
+           (rx/map resolved-values)
+           (rx/subs!
+            (fn [style-dictionary]
+              (doseq [token-name (keys tokens)]
+                (t/is (= (get style-dictionary token-name) (get tokenscript token-name)) token-name))
+              (done))
+            (fn [cause]
+              (t/is (nil? cause))
+              (done)))))))
+
 (t/deftest rem-values-take-the-base-font-size
   (t/async
     done
@@ -449,3 +475,14 @@
                        (t/is (= 24 (get-in default ["size" :resolved-value])) "1rem = 16px by default")
                        (t/is (= 30 (get-in base-20 ["size" :resolved-value])) "1rem = the base font size")
                        (done)))))))
+
+(t/deftest readers-resolve-with-tokenscript-and-the-rem-base
+  (t/async
+    done
+    (let [tokens (tokens-map {:name "size" :type :font-size :value "1.5rem"}
+                             {:name "broken" :type :font-size :value "{missing} * 2"})]
+      (-> (ctr/resolve-for-reader tokens {"broken" 7} {:tokenscript? true :base-font-size "20"})
+          (.then (fn [resolved]
+                   (t/is (= 30 (get-in resolved ["size" :resolved-value])) "1rem = the file's base font size")
+                   (t/is (= 7 (get-in resolved ["broken" :resolved-value])) "a token that doesn't resolve keeps the saved value")
+                   (done)))))))

@@ -13,6 +13,7 @@
    [app.common.files.tokens :as cfo]
    [app.common.logic.shapes :as cls]
    [app.common.logic.tokens-propagation :as cltp]
+   [app.common.logic.tokenscript :as cts]
    [app.common.types.component :as ctk]
    [app.common.types.file :as ctf]
    [app.common.types.shape.layout :as ctsl]
@@ -64,7 +65,7 @@
   resolved values. Rem values take `base-font-size` pixels each."
   [sets base-font-size]
   (if (contains? cf/flags :tokenscript)
-    (rx/of (binding [ts/*base-font-size* base-font-size]
+    (rx/of (binding [cts/*base-font-size* base-font-size]
              (ts/resolve-sets sets)))
     (sd/resolve-tokens (transduce (map second) merge (d/ordered-map) sets))))
 

@@ -25,7 +25,6 @@
    ["undici" :as http]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
-   [app.common.files.helpers :as cfh]
    [app.common.fonts :as cfnt]
    ;; Required for side effects: these register the transit read handlers and
    ;; deftype impls the `get-page` response is decoded into.
@@ -167,15 +166,6 @@
   "Fonts to find the fonts of the font tokens: the builtin and google ones."
   (delay (into {} (map (juxt :id identity)) (concat cfnt/local-fonts cfnt/catalog))))
 
-(defn- keep-objects
-  "`objects` with only the shapes `root-ids` and their children."
-  [objects root-ids]
-  (into {}
-        (comp (mapcat #(cfh/get-children-with-self objects %))
-              (filter some?)
-              (map (juxt :id identity)))
-        root-ids))
-
 (defn- fetch-objects
   "Fetches the exported roots and their children, with the shapes set to the
   current values of their tokens. An out of date page comes whole, since a
@@ -188,19 +178,12 @@
     (->> (fetch-page params root-ids)
          (p/mcat
           (fn [page]
-            (->> (ctr/resolve-for-reader (:tokens page)
-                                         (:tokens-resolved page)
-                                         (not (contains? cf/flags :tokenscript)))
+            (->> (ctr/resolve-page-for-reader page (contains? cf/flags :tokenscript))
                  (p/mcat
                   (fn [resolved]
-                    (let [refetch? (and (seq root-ids)
-                                        (not (:tokens-out-of-date page))
-                                        (ctr/differs-from-saved? page resolved))]
+                    (let [refetch? (and (seq root-ids) (ctr/refetch-whole? page resolved))]
                       (->> (if refetch? (fetch-page params nil) (p/resolved page))
-                           (p/fmap (fn [page]
-                                     (cond-> (cltp/correct-objects page resolved @token-fonts :ids root-ids)
-                                       (and (or refetch? (:tokens-out-of-date page)) (seq root-ids))
-                                       (keep-objects root-ids))))))))))))))
+                           (p/fmap #(cltp/reader-objects % resolved @token-fonts root-ids refetch?))))))))))))
 
 ;; --- font resolution
 ;;

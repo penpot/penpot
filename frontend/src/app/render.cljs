@@ -8,7 +8,6 @@
   "The main entry point for UI part needed by the exporter."
   (:require
    [app.common.data :as d]
-   [app.common.files.helpers :as cfh]
    [app.common.geom.shapes.bounds :as gsb]
    [app.common.logging :as log]
    [app.common.logic.tokens-propagation :as cltp]
@@ -130,25 +129,6 @@
                :embed embed
                :skip-children skip-children}]]))))))
 
-(defn- keep-objects
-  "`objects` with only the shapes `object-ids` and their children."
-  [objects object-ids]
-  (into {}
-        (comp (mapcat #(cfh/get-children-with-self objects %))
-              (filter some?)
-              (map (juxt :id identity)))
-        object-ids))
-
-(defn- correct-page
-  "The objects of `page` with the shapes that may change `object-ids` set
-  to `resolved`, the resolved values of their tokens. An out of date page
-  comes whole, since a shape depends on the layouts around it: it is set
-  and then reduced to `object-ids`."
-  [page resolved object-ids]
-  (cond-> (cltp/correct-objects page resolved @fonts/fontsdb :ids object-ids)
-    (:tokens-out-of-date page)
-    (keep-objects object-ids)))
-
 (defn- resolve-page
   "Observable of the objects of `page`, a page fetched with `params`, with
   the shapes set to the current values of their tokens. When they differ
@@ -156,18 +136,13 @@
   objects of a page that is out of date, so the whole page is fetched to set
   it."
   [page params object-ids]
-  (->> (rx/from (ctr/resolve-for-reader (:tokens page)
-                                        (:tokens-resolved page)
-                                        (not (contains? cf/flags :tokenscript))))
+  (->> (rx/from (ctr/resolve-page-for-reader page (contains? cf/flags :tokenscript)))
        (rx/mapcat
         (fn [resolved]
-          (if (and (not (:tokens-out-of-date page))
-                   (ctr/differs-from-saved? page resolved))
+          (if (ctr/refetch-whole? page resolved)
             (->> (repo/cmd! :get-page (dissoc params :object-id))
-                 (rx/map (fn [page]
-                           (-> (cltp/correct-objects page resolved @fonts/fontsdb :ids object-ids)
-                               (keep-objects object-ids)))))
-            (rx/of (correct-page page resolved object-ids)))))))
+                 (rx/map #(cltp/reader-objects % resolved @fonts/fontsdb object-ids true)))
+            (rx/of (cltp/reader-objects page resolved @fonts/fontsdb object-ids false)))))))
 
 (defn- fetch-objects-bundle
   [& {:keys [file-id page-id share-id object-id] :as options}]

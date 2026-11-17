@@ -500,11 +500,8 @@
                 :code :object-not-found
                 :hint "object not found"))
 
-    (let [;; The page's tokens and saved values, for readers to set stale shapes
-          tokens     (cfo/get-pages-tokens (:data file)
-                                           (bfc/get-tokens-source-lib cfg (:data file))
-                                           [page])
-          resolved   (cfo/get-pages-resolved (:data file) [page])
+    (let [page       (bfc/assoc-page-tokens cfg (:data file) page)
+          resolved   (:tokens-resolved page)
           object-ids (cond (uuid? object-id) [object-id]
                            (some? object-id) (vec object-id))
           out-of-date (and (some? resolved)
@@ -516,12 +513,6 @@
         ;; keep the objects
         (and (some? object-id) (not out-of-date))
         (prune-objects object-id)
-
-        (some? tokens)
-        (assoc :tokens tokens)
-
-        (some? resolved)
-        (assoc :tokens-resolved resolved)
 
         out-of-date
         (assoc :tokens-out-of-date true)))))

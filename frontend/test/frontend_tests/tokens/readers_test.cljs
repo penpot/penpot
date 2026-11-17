@@ -8,6 +8,7 @@
   "The shapes of the viewer set to the values of their tokens
   (`app.main.data.viewer`)."
   (:require
+   [app.common.logic.tokens-resolution :as ctr]
    [app.common.test-helpers.compositions :as ctho]
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.ids-map :as cthi]
@@ -95,3 +96,32 @@
                        (t/is (nil? cause))
                        (done))
                      done)))))
+
+(defn- reader-page
+  "A page fetched by a reader whose shape applies `radius`, an alias of
+  `base`, with `saved` as the values the editors saved."
+  [saved]
+  (let [file (tohp/setup-file)]
+    (-> (cthf/current-page file)
+        (assoc :tokens {"radius" {:name "radius" :type :border-radius :value "{base}"}
+                        "base"   {:name "base" :type :border-radius :value "50"}}
+               :tokens-resolved saved))))
+
+(def ^:private resolved
+  {"radius" {:name "radius" :resolved-value 50}
+   "base"   {:name "base" :resolved-value 50}})
+
+;; Scenario: a reader resolves an applied alias and the token it
+;; references, whose value is not saved. Proves: the page is not taken as
+;; out of date because of the referenced token.
+(t/deftest a-referenced-token-without-saved-value-is-not-a-difference
+  (let [page (reader-page {"radius" 50})]
+    (t/is (false? (ctr/differs-from-saved? page resolved)))
+    (t/is (false? (ctr/refetch-whole? page resolved)))))
+
+(t/deftest an-applied-token-with-another-value-is-a-difference
+  (let [page (reader-page {"radius" 10})]
+    (t/is (true? (ctr/differs-from-saved? page resolved)))
+    (t/is (true? (ctr/refetch-whole? page resolved)))
+    (t/is (false? (ctr/refetch-whole? (assoc page :tokens-out-of-date true) resolved))
+          "the backend sent it whole already")))

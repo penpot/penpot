@@ -94,7 +94,7 @@
     (watch [it state _]
       (let [file-data (dsh/lookup-file-data state)
             saved     (:tokens-resolved file-data)
-            values    (cltp/resolved-values resolved)]
+            values    (cltp/values-to-save resolved saved)]
         (when (and (editor? state)
                    (not (waiting? state opts))
                    (not= saved values))

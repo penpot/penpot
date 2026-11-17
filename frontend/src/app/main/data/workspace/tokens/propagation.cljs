@@ -178,6 +178,7 @@
         page    (dsh/lookup-page state file-id page-id)
         objects (:objects page)
         other?  (not= page-id (get state :current-page-id))
+        saved   (:tokens-resolved (dsh/lookup-file-data state file-id))
 
         targets
         (cond
@@ -212,8 +213,7 @@
             (cond-> (some? background) (pcb/mod-page page {:background background}))
             ;; The readers set their shapes with the values saved in the file
             (cond-> save-resolved?
-              (pcb/set-tokens-resolved (:tokens-resolved (dsh/lookup-file-data state file-id))
-                                       (cltp/resolved-values resolved-tokens)))
+              (pcb/set-tokens-resolved saved (cltp/values-to-save resolved-tokens saved)))
             (cond-> (seq tags) (update :tags (fnil into #{}) tags))
             ;; Work in the background is not something to undo
             (cond-> (or drain? background?) (pcb/set-save-undo? false))

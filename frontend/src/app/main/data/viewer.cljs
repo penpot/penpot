@@ -16,6 +16,7 @@
    [app.common.logic.tokens-resolution :as ctr]
    [app.common.schema :as sm]
    [app.common.transit :as t]
+   [app.common.types.file :as ctf]
    [app.common.types.shape-tree :as ctt]
    [app.common.types.shape.interactions :as ctsi]
    [app.common.uuid :as uuid]
@@ -26,8 +27,8 @@
    [app.main.data.fonts :as df]
    [app.main.data.helpers :as dsh]
    [app.main.features :as features]
-   [app.main.fonts :as fonts]
    [app.main.features.pointer-map :as fpmap]
+   [app.main.fonts :as fonts]
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.render-wasm.api :as wasm.api]
@@ -297,7 +298,9 @@
   resolve. The bundle keeps them in `:resolved-tokens` for the other pages."
   [{:keys [tokens tokens-resolved] :as bundle} page-id]
   (let [page-id (or page-id (first (get-in bundle [:file :data :pages])))]
-    (->> (rx/from (ctr/resolve-for-reader tokens tokens-resolved (not (contains? cf/flags :tokenscript))))
+    (->> (rx/from (ctr/resolve-for-reader tokens tokens-resolved
+                                          {:tokenscript? (contains? cf/flags :tokenscript)
+                                           :base-font-size (ctf/get-base-font-size (get-in bundle [:file :data]))}))
          (rx/map (fn [resolved]
                    (-> bundle
                        (update-in [:file :data] set-token-values page-id resolved)
