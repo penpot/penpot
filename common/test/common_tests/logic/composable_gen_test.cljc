@@ -4542,3 +4542,8 @@
                        :ops [[:style 1 1 1 0] [:add-child 0] [:structure 0 0 0] [:add-child 0]
                              [:structure 1 4 0] [:transform 1 1 0 1]]}))))
 
+(t/deftest generated-a-detach-authors-no-geometry-for-float-noise
+  ;; after a turn and a fill resize, the nested copies a detach advances sit
+  ;; a few thousandths of a pixel from their new mains' places: no override
+  (t/is (map? (cg/run {:world [3 2 {:variants true :layout :grid :rich-variants true :grid-empty true :layout-copies true :text true}] :ops [[:nest 7 2 4 2] [:rotate 6 2 4 1] [:duplicate 1 3 1 0] [:make-variant 2] [:duplicate 8 2 8 6] [:style 2 29 1] [:detach 8 6 8 2]]}))))
+
