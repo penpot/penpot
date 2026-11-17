@@ -255,40 +255,41 @@
     (swap! store assoc-in [:plugins :flags plugin-id :throw-validation-errors] true)
     (await
      (mock/with-mocks* {st/state store st/stream (ptk/input-stream store)}
-       (doseq [[catalog-label ^js catalog]
-               [["local catalog" (.. (library/library-subcontext plugin-id) -local -tokens)]
-                ["source catalog" (.. (library/library-subcontext plugin-id) -tokensSource -tokens)]
-                ["other connected catalog" (.-tokens (library/library-proxy plugin-id (:id other)))]]]
-         (t/testing catalog-label
-           (let [^js token-set (aget (.-sets catalog) 0)
-                 ^js token     (aget (.-tokens token-set) 0)
-                 ^js theme     (aget (.-themes catalog) 0)]
-             (t/is (false? (.-isEditableTokens catalog)))
-             (doseq [[label mutate]
-                     [["create set" #(.addSet catalog #js {:name "New"})]
-                      ["rename set" #(set! (.-name token-set) "Renamed")]
-                      ["duplicate set" #(.duplicate token-set)]
-                      ["remove set" #(.remove token-set)]
-                      ["create token" #(.addToken token-set #js {:name "color.new" :type "color" :value "#00FF00"})]
-                      ["rename token" #(set! (.-name token) "color.renamed")]
-                      ["change token value" #(set! (.-value token) "#00FF00")]
-                      ["change token description" #(set! (.-description token) "New description")]
-                      ["duplicate token" #(.duplicate token)]
-                      ["remove token" #(.remove token)]
-                      ["create theme" #(.addTheme catalog #js {:name "Dark" :group "Mode"})]
-                      ["rename theme" #(set! (.-name theme) "Dark")]
-                      ["change theme group" #(set! (.-group theme) "Other")]
-                      ["add set to theme" #(.addSet theme token-set)]
-                      ["remove set from theme" #(.removeSet theme token-set)]
-                      ["duplicate theme" #(.duplicate theme)]
-                      ["remove theme" #(.remove theme)]]]
-               (t/testing label
-                 (t/is (thrown-with-msg? js/Error #"Cannot modify tokens in an external library"
-                                         (mutate)))
-                 (await (async/settle))
-                 (t/is (tokens-unchanged? store file))
-                 (t/is (tokens-unchanged? store source))
-                 (t/is (tokens-unchanged? store other)))))))))))
+       (let [^js context (library/library-subcontext plugin-id)]
+         (doseq [[catalog-label ^js catalog]
+                 [["local catalog" (.. context -local -tokens)]
+                  ["source catalog" (.. context -tokensSource -tokens)]
+                  ["other connected catalog" (.-tokens (library/library-proxy plugin-id (:id other)))]]]
+           (t/testing catalog-label
+             (let [^js token-set (aget (.-sets catalog) 0)
+                   ^js token     (aget (.-tokens token-set) 0)
+                   ^js theme     (aget (.-themes catalog) 0)]
+               (t/is (false? (.-isEditableTokens catalog)))
+               (doseq [[label mutate]
+                       [["create set" #(.addSet catalog #js {:name "New"})]
+                        ["rename set" #(set! (.-name token-set) "Renamed")]
+                        ["duplicate set" #(.duplicate token-set)]
+                        ["remove set" #(.remove token-set)]
+                        ["create token" #(.addToken token-set #js {:name "color.new" :type "color" :value "#00FF00"})]
+                        ["rename token" #(set! (.-name token) "color.renamed")]
+                        ["change token value" #(set! (.-value token) "#00FF00")]
+                        ["change token description" #(set! (.-description token) "New description")]
+                        ["duplicate token" #(.duplicate token)]
+                        ["remove token" #(.remove token)]
+                        ["create theme" #(.addTheme catalog #js {:name "Dark" :group "Mode"})]
+                        ["rename theme" #(set! (.-name theme) "Dark")]
+                        ["change theme group" #(set! (.-group theme) "Other")]
+                        ["add set to theme" #(.addSet theme token-set)]
+                        ["remove set from theme" #(.removeSet theme token-set)]
+                        ["duplicate theme" #(.duplicate theme)]
+                        ["remove theme" #(.remove theme)]]]
+                 (t/testing label
+                   (t/is (thrown-with-msg? js/Error #"Cannot modify tokens in an external library"
+                                           (mutate)))
+                   (await (async/settle))
+                   (t/is (tokens-unchanged? store file))
+                   (t/is (tokens-unchanged? store source))
+                   (t/is (tokens-unchanged? store other))))))))))))
 
 (t/deftest ^:async external-catalogs-reject-status-changes
   (let [source    (token-source-file :source)
@@ -338,7 +339,8 @@
         store      (ths/setup-store file {:libraries [source]})]
     (await
      (mock/with-mocks* {st/state store st/stream (ptk/input-stream store)}
-       (let [^js catalog   (.. (library/library-subcontext (str uuid/zero)) -local -tokens)
+       (let [^js context   (library/library-subcontext (str uuid/zero))
+             ^js catalog   (.. context -local -tokens)
              ^js token-set (aget (.-sets catalog) 0)]
          (t/is (true? (.-active token-set)))
          (set! (.-active token-set) false)
@@ -356,7 +358,8 @@
         store      (ths/setup-store file {:libraries [source]})]
     (await
      (mock/with-mocks* {st/state store st/stream (ptk/input-stream store)}
-       (let [^js catalog (.. (library/library-subcontext (str uuid/zero)) -local -tokens)
+       (let [^js context (library/library-subcontext (str uuid/zero))
+             ^js catalog (.. context -local -tokens)
              ^js theme   (aget (.-themes catalog) 0)]
          (t/is (false? (.-active theme)))
          (set! (.-active theme) true)
@@ -375,7 +378,8 @@
         store  (ths/setup-store file {:libraries [source]})]
     (await
      (mock/with-mocks* {st/state store st/stream (ptk/input-stream store)}
-       (let [^js catalog (.. (library/library-subcontext (str uuid/zero)) -local -tokens)
+       (let [^js context (library/library-subcontext (str uuid/zero))
+             ^js catalog (.. context -local -tokens)
              ^js theme   (aget (.-themes catalog) 0)]
          (st/emit! (tohs/watch-undo-stack))
          (.toggleActive theme)
