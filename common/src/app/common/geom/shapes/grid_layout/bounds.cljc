@@ -8,7 +8,8 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
-   [app.common.geom.shapes.points :as gpo]))
+   [app.common.geom.shapes.points :as gpo]
+   [app.common.types.shape.layout :as ctl]))
 
 (defn layout-content-points
   [bounds parent {:keys [row-tracks column-tracks]}]
@@ -26,16 +27,13 @@
                                (gpt/add (:start-p %) (hv (:size %)))))))))))
 
 (defn layout-content-bounds
-  [bounds {:keys [layout-padding] :as parent} layout-data]
+  [bounds parent layout-data]
 
   (let [parent-id     (:id parent)
         parent-bounds (get bounds parent-id)]
     (when-let [parent-bounds (some-> parent-bounds deref)]
-      (let [{pad-top :p1 pad-right :p2 pad-bottom :p3 pad-left :p4} layout-padding
-            pad-top    (or pad-top 0)
-            pad-right  (or pad-right 0)
-            pad-bottom (or pad-bottom 0)
-            pad-left   (or pad-left 0)
+      (let [;; the paddings the layout uses: a simple type repeats top and right
+            [pad-top pad-right pad-bottom pad-left] (ctl/paddings parent)
 
             layout-points (layout-content-points bounds parent layout-data)]
 

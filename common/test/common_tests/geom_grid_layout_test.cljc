@@ -11,8 +11,10 @@
    [app.common.geom.modifiers :as gm]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
+   [app.common.geom.shapes.grid-layout.bounds :as glb]
    [app.common.geom.shapes.grid-layout.layout-data :as gld]
    [app.common.geom.shapes.grid-layout.params :as glparams]
+   [app.common.geom.shapes.points :as gpo]
    [app.common.math :as mth]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape :as cts]
@@ -174,6 +176,16 @@
   (let [frame  (make-grid-frame :layout-grid-rows [{:type :auto :value nil}])
         result (gld/calc-layout-data frame (bounds-for frame) [] {} {})]
     (t/is (= 1 (count (:row-tracks result))))))
+
+(t/deftest grid-content-bounds-take-simple-paddings
+  ;; a simple padding type repeats the top and right values on the bottom
+  ;; and left: two 50 px columns and 6 px on each side
+  (let [frame   (make-grid-frame :layout-padding-type :simple
+                                 :layout-padding {:p1 3 :p2 6 :p3 9 :p4 12})
+        bounds  {(:id frame) (delay (bounds-for frame))}
+        data    (gld/calc-layout-data frame (bounds-for frame) [] bounds {})
+        content (glb/layout-content-bounds bounds frame data)]
+    (t/is (mth/close? 112 (gpo/width-points content) 0.01))))
 
 (t/deftest grid-column-gap-space-between
   (t/testing "justify-content :space-between increases column-gap correctly"
