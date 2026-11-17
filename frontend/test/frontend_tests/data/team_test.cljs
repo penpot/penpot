@@ -10,7 +10,6 @@
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.main.ui.dashboard.team :as dtui]
-   [app.util.dom :as dom]
    [app.util.session-state :as ss]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
@@ -35,8 +34,8 @@
   (let [team-id         "00000000-0000-4000-8000-000000000001"
         organization-id "00000000-0000-4000-8000-000000000002"
         profile-id      "00000000-0000-4000-8000-000000000003"
-        dashboard-url   "https://penpot.example/#/dashboard-recent?team-id=current-team"
-        callback-url    (str dashboard-url "&pending-action-id=pending-id")
+        route-token     "?screen=dashboard-recent&team-id=current-team"
+        callback-query  "screen=dashboard-recent&team-id=current-team&pending-action-id=pending-id"
         team            {:id team-id
                          :organization {:id organization-id
                                         :name "Product"
@@ -54,8 +53,7 @@
                      :check-nitrate-sso
                      (rx/of {:authorized false
                              :redirect-uri "https://sso.example.test/login"}))))
-        rt/get-current-href (mock/stub (constantly dashboard-url))
-        dom/append-query-param (mock/stub (fn [_url _key _value] callback-url))
+        rt/get-current-token (mock/stub (constantly route-token))
         uuid/next (mock/stub (constantly "pending-id"))
         ss/save-pending-action! (mock/stub (fn [& args]
                                              (swap! saved-actions conj args)))
@@ -68,7 +66,7 @@
                :on-next #(swap! emitted conj %)))))
 
     (t/is (= [[:get-teams nil]
-              [:check-nitrate-sso {:team-id team-id :url callback-url}]]
+              [:check-nitrate-sso {:team-id team-id :query-string callback-query}]]
              @requests))
     (t/is (= [["pending-id" {:type :create-team-in-organization
                              :team-id team-id}]]
@@ -81,8 +79,8 @@
   (let [team-id         "00000000-0000-4000-8000-000000000001"
         organization-id "00000000-0000-4000-8000-000000000002"
         profile-id      "00000000-0000-4000-8000-000000000003"
-        dashboard-url   "https://penpot.example/#/dashboard-recent?team-id=current-team"
-        callback-url    (str dashboard-url "&pending-action-id=pending-id")
+        route-token     "?screen=dashboard-recent&team-id=current-team"
+        callback-query  "screen=dashboard-recent&team-id=current-team&pending-action-id=pending-id"
         team            {:id team-id
                          :organization {:id organization-id
                                         :name "Product"
@@ -97,8 +95,7 @@
                    (case command
                      :get-teams (rx/of [team])
                      :check-nitrate-sso (rx/of {:authorized true}))))
-        rt/get-current-href (mock/stub (constantly dashboard-url))
-        dom/append-query-param (mock/stub (fn [_url _key _value] callback-url))
+        rt/get-current-token (mock/stub (constantly route-token))
         uuid/next (mock/stub (constantly "pending-id"))
         modal/show (mock/stub (fn [& args] {:modal-show args}))}
        (await (async/observe
@@ -107,7 +104,7 @@
                           nil)
                :on-next #(swap! emitted conj %)))))
 
-    (t/is (= [:check-nitrate-sso {:team-id team-id :url callback-url}]
+    (t/is (= [:check-nitrate-sso {:team-id team-id :query-string callback-query}]
              (last @requests)))
     (t/is (= {:modal-show [:team-form {:organization-id organization-id
                                        :organization-name "Product"}]}
