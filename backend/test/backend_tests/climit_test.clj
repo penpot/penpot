@@ -22,21 +22,28 @@
 (def ^:private calls (atom []))
 
 (defn- record-metrics
-  "Run `f` recording every metrics call it makes."
+  "Run `f` recording every metrics call made while it runs, with the thread
+  that made it: `with-redefs` is global, so other threads of the test JVM
+  record into the same atom."
   [f]
   (reset! calls [])
   (with-redefs [mtx/run!
                 (fn [_ & {:keys [id labels val]}]
-                  (swap! calls conj {:id id :labels (vec labels) :val val}))]
+                  (swap! calls conj {:id id :labels (vec labels) :val val
+                                     :thread (Thread/currentThread)}))]
     (f)))
 
 (defn- acquired-in-order
-  "Limiter names acquired so far, in acquisition order."
+  "Limiter names the calling thread acquired so far, in acquisition order. A
+  call of another thread, such as an RPC left running by an earlier test, can
+  take a root limiter inside the window and must not count."
   []
-  (->> @calls
-       (filter #(= :rpc-climit-timing (:id %)))
-       (mapcat :labels)
-       (vec)))
+  (let [thread (Thread/currentThread)]
+    (->> @calls
+         (filter #(= :rpc-climit-timing (:id %)))
+         (filter #(identical? thread (:thread %)))
+         (mapcat :labels)
+         (vec))))
 
 (defn- invoke!
   "Run `f` under the limits the cfg declares, the way a command does: the key
