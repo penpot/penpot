@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { hkdfSync } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { readFileSync, statSync } from "node:fs";
 import type { AppConfig } from "./types.js";
 
 const envSchema = z.object({
@@ -33,12 +33,27 @@ function deriveSharedKey(secret: string): string {
   return Buffer.from(key).toString("base64url");
 }
 
+const MAX_KEY_FILE_SIZE = 4096;
+
 function readSharedKeyFile(variable: string, path: string): string {
+  let info;
+  try {
+    info = statSync(path);
+  } catch (error) {
+    console.error("unable to read configuration key file", variable, path, error);
+  }
+  if (!info || !info.isFile()) {
+    console.error("configuration key file is not a regular file", variable, path);
+    throw new Error(`${variable} key file is missing or empty: ${path}`);
+  }
+  if (info.size > MAX_KEY_FILE_SIZE) {
+    throw new Error(`${variable} key file is too large: ${path}`);
+  }
   let value: string | undefined;
   try {
-    value = readFileSync(path, "utf8").trim();
-  } catch {
-    // Reported below with the variable and path that failed.
+    value = readFileSync(path, "utf8").trim().replace(/\s+/g, "");
+  } catch (error) {
+    console.error("unable to read configuration key file", variable, path, error);
   }
   if (!value) {
     throw new Error(`${variable} key file is missing or empty: ${path}`);
@@ -50,14 +65,15 @@ export function loadConfig(): AppConfig {
   const parsed = envSchema.parse(process.env);
 
   let sharedKey: string | null = null;
-  if (parsed.PENPOT_MEDIA_PROCESSOR_SHARED_KEY) {
-    sharedKey = parsed.PENPOT_MEDIA_PROCESSOR_SHARED_KEY;
+  const explicitKey = parsed.PENPOT_MEDIA_PROCESSOR_SHARED_KEY;
+  if (explicitKey !== undefined) {
+    sharedKey = explicitKey.trim() === "" ? null : explicitKey.trim();
   } else if (parsed.PENPOT_MEDIA_PROCESSOR_SHARED_KEY_FILE) {
     sharedKey = readSharedKeyFile(
       "PENPOT_MEDIA_PROCESSOR_SHARED_KEY_FILE",
       parsed.PENPOT_MEDIA_PROCESSOR_SHARED_KEY_FILE
     );
-  } else if (parsed.PENPOT_SECRET_KEY) {
+  } else if (parsed.PENPOT_SECRET_KEY?.trim()) {
     sharedKey = deriveSharedKey(parsed.PENPOT_SECRET_KEY);
   }
 

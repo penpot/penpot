@@ -454,30 +454,50 @@
    :nexus-shared-key-file           :nexus-shared-key
    :media-processor-shared-key-file :media-processor-shared-key})
 
+(def ^:private max-key-file-size 4096)
+
+(defn- raise-key-file-error
+  [variable path hint]
+  (ex/raise :type :validation
+            :code :invalid-key-file
+            :hint hint
+            :variable variable
+            :path path))
+
 (defn- get-key-file-value
-  "Reads a secret from a file. A blank value is an error: `app.setup` treats a
-  blank shared key as disabled, which would silently remove the credential."
+  "Reads a secret from a regular file of at most `max-key-file-size` bytes.
+  Internal whitespace is removed so a wrapped base64 value works. A blank
+  value is an error: `app.setup` treats a blank shared key as disabled, which
+  would silently remove the credential."
   [variable path]
-  (let [value (try
-                (some-> (slurp path) (str/trim))
-                (catch Exception _
-                  nil))]
-    (when (or (nil? value) (str/blank? value))
-      (ex/raise :type :validation
-                :code :invalid-key-file
-                :hint "configuration key file is missing or empty"
-                :variable variable
-                :path path))
-    value))
+  (let [file (io/file path)]
+    (when-not (.isFile file)
+      (raise-key-file-error variable path "configuration key file is missing or not a regular file"))
+    (when (> (.length file) max-key-file-size)
+      (raise-key-file-error variable path "configuration key file is too large"))
+    (let [value (try
+                  (some-> (slurp file)
+                          (str/trim)
+                          (str/replace #"\s+" ""))
+                  (catch Exception cause
+                    (l/warn :hint "unable to read configuration key file"
+                            :variable variable
+                            :path path
+                            :cause cause)
+                    nil))]
+      (when (str/blank? value)
+        (raise-key-file-error variable path "configuration key file is missing or empty"))
+      value)))
 
 (defn- resolve-key-files
-  [config]
+  [config prefix]
   (reduce-kv
    (fn [result file-key key]
      (if-let [path (c/get config file-key)]
        (if (contains? result key)
          result
-         (assoc result key (get-key-file-value file-key path)))
+         (let [variable (str/upper (str/snake (str prefix "_" (name file-key))))]
+           (assoc result key (get-key-file-value variable path))))
        result))
    config
    key-file->key))
@@ -488,7 +508,7 @@
   [& {:keys [prefix default] :or {prefix "penpot"}}]
   (->> (read-env prefix)
        (merge default)
-       (resolve-key-files)
+       (#(resolve-key-files % prefix))
        (normalize-tenant)
        (decode-config)
        (normalize-file-data-backend)))

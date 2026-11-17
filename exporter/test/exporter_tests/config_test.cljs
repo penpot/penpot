@@ -10,64 +10,102 @@
    ["node:os" :as os]
    ["node:path" :as path]
    [app.config :as cf]
-   [cljs.test :as t :include-macros true]))
+   [cljs.test :as t :include-macros true]
+   [clojure.string :as str]))
 
-(defn- with-key-file
-  [content f]
-  (let [dir  (os/tmpdir)
-        file (path/join dir (str "penpot-exporter-key-" (random-uuid) ".txt"))]
-    (fs/writeFileSync file content)
+(defn- with-temp-dir
+  [f]
+  (let [dir (fs/mkdtempSync (path/join (os/tmpdir) "penpot-exporter-key-"))]
     (try
-      (f file)
-      (finally
-        (when (fs/existsSync file)
-          (fs/unlinkSync file))))))
+      (f dir)
+      (finally (fs/rmSync dir #js {:recursive true :force true})))))
 
-(defn- prepare-with-env
-  [env]
-  (with-redefs [cf/read-env (constantly env)]
-    (cf/prepare-config)))
+(defn- write-key!
+  [dir content]
+  (let [file (path/join dir "key")]
+    (fs/writeFileSync file content)
+    file))
+
+(defn- error-of
+  [f]
+  (try
+    (f)
+    nil
+    (catch :default e e)))
+
+(defn- message
+  [err]
+  (.-message err))
 
 (t/deftest explicit-shared-key-without-master-is-valid
-  (let [cfg (prepare-with-env {:exporter-shared-key "explicit"})]
+  (let [cfg (cf/prepare-config {:exporter-shared-key "explicit"})]
     (t/is (= "explicit" (:exporter-shared-key cfg)))
     (t/is (nil? (:secret-key cfg)))
     (t/is (= "explicit" (cf/get-management-key cfg)))))
 
-(t/deftest key-file-is-read-and-trimmed
-  (with-key-file "from-file\n"
-    (fn [file]
-      (let [cfg (prepare-with-env {:exporter-shared-key-file file})]
-        (t/is (= "from-file" (:exporter-shared-key cfg)))
-        (t/is (= "from-file" (cf/get-management-key cfg)))))))
+(t/deftest key-file-is-read-trimmed-and-unwrapped
+  (with-temp-dir
+    (fn [dir]
+      (let [file (write-key! dir "from-\n file \tkey")
+            cfg  (cf/prepare-config {:exporter-shared-key-file file})]
+        (t/is (= "from-filekey" (:exporter-shared-key cfg)))
+        (t/is (= "from-filekey" (cf/get-management-key cfg)))))))
+
+(t/deftest key-file-beats-derivation
+  (with-temp-dir
+    (fn [dir]
+      (let [file (write-key! dir "from-file")
+            cfg  (cf/prepare-config {:secret-key "master"
+                                     :exporter-shared-key-file file})]
+        (t/is (= "from-file" (:exporter-shared-key cfg)))))))
 
 (t/deftest direct-env-key-wins-over-file
-  (with-key-file "from-file"
-    (fn [_file]
-      (let [cfg (prepare-with-env {:exporter-shared-key "direct"
-                                   :exporter-shared-key-file
-                                   "/tmp/opencode/penpot-key-does-not-exist"})]
+  (with-temp-dir
+    (fn [dir]
+      (let [cfg (cf/prepare-config {:exporter-shared-key "direct"
+                                    :exporter-shared-key-file
+                                    (path/join dir "missing")})]
         (t/is (= "direct" (:exporter-shared-key cfg)))))))
 
-(t/deftest missing-key-file-throws
-  (let [err (try
-              (prepare-with-env {:exporter-shared-key-file
-                                 "/tmp/opencode/penpot-key-does-not-exist"})
-              nil
-              (catch :default e e))]
-    (t/is (some? err))))
+(t/deftest missing-key-file-names-the-variable
+  (with-temp-dir
+    (fn [dir]
+      (let [err (error-of #(cf/prepare-config {:exporter-shared-key-file
+                                               (path/join dir "missing")}))]
+        (t/is (some? err))
+        (t/is (str/includes? (message err) "PENPOT_EXPORTER_SHARED_KEY_FILE"))
+        (t/is (str/includes? (message err) "missing or empty"))))))
 
-(t/deftest empty-key-file-throws
-  (with-key-file "  \n\t"
-    (fn [file]
-      (let [err (try
-                  (prepare-with-env {:exporter-shared-key-file file})
-                  nil
-                  (catch :default e e))]
-        (t/is (some? err))))))
+(t/deftest empty-key-file-is-rejected
+  (with-temp-dir
+    (fn [dir]
+      (let [err (error-of #(cf/prepare-config {:exporter-shared-key-file
+                                               (write-key! dir "  \n\t")}))]
+        (t/is (some? err))
+        (t/is (str/includes? (message err) "PENPOT_EXPORTER_SHARED_KEY_FILE"))
+        (t/is (str/includes? (message err) "missing or empty"))))))
 
-(t/deftest no-key-source-is-rejected
-  (t/testing "neither a master secret nor an explicit key is a valid source"
-    (t/is (false? (cf/has-key-source? {})))
-    (t/is (true? (cf/has-key-source? {:secret-key "master"})))
-    (t/is (true? (cf/has-key-source? {:exporter-shared-key "explicit"})))))
+(t/deftest directory-as-key-file-is-rejected
+  (with-temp-dir
+    (fn [dir]
+      (let [err (error-of #(cf/prepare-config {:exporter-shared-key-file dir}))]
+        (t/is (some? err))
+        (t/is (str/includes? (message err) "missing or empty"))))))
+
+(t/deftest oversized-key-file-is-rejected
+  (with-temp-dir
+    (fn [dir]
+      (let [err (error-of #(cf/prepare-config {:exporter-shared-key-file
+                                               (write-key! dir (apply str (repeat 5000 "a")))}))]
+        (t/is (some? err))
+        (t/is (str/includes? (message err) "too large"))))))
+
+(t/deftest blank-explicit-key-disables-the-exporter
+  (let [err (error-of #(cf/prepare-config {:exporter-shared-key ""}))]
+    (t/is (some? err))
+    (t/is (str/includes? (message err) "Either PENPOT_EXPORTER_SHARED_KEY"))))
+
+(t/deftest get-management-key-without-a-source-is-rejected
+  (let [err (error-of #(cf/get-management-key {}))]
+    (t/is (some? err))
+    (t/is (str/includes? (message err) "PENPOT_SECRET_KEY"))))
