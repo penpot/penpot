@@ -134,10 +134,27 @@ fn calculate_bool_bounds(
     let mut subtree = shapes.subtree(&shape.id);
     subtree.set_modifiers(modifiers.clone());
 
-    let path = bools::bool_from_shapes(bool_data.bool_type, &children_ids, &subtree);
-    let result = path.bounds();
+    let mut path = bools::bool_from_shapes(bool_data.bool_type, &children_ids, &subtree);
 
-    Some(result)
+    // the path's extent along the axes of the bool's bounds, as a turned
+    // bool keeps its orientation
+    let hv = shape_bounds.hv(1.0);
+    let vv = shape_bounds.vv(1.0);
+    let axes = Matrix::new_all(hv.x, vv.x, 0.0, hv.y, vv.y, 0.0, 0.0, 0.0, 1.0);
+    let finite = [hv.x, hv.y, vv.x, vv.y].iter().all(|v| v.is_finite());
+    match axes.invert().filter(|_| finite) {
+        Some(inverse) => {
+            path.transform(&inverse);
+            let points = path
+                .bounds()
+                .points()
+                .into_iter()
+                .map(|p| axes.map_point(p))
+                .collect();
+            shape_bounds.with_points(points)
+        }
+        None => Some(path.bounds()),
+    }
 }
 
 /// Which parts of the geometry a pixel-grid correction rounds: only the ones
@@ -930,6 +947,42 @@ mod tests {
 
         assert_eq!(bounds.width(), 3.0);
         assert_eq!(bounds.height(), 3.0);
+    }
+
+    #[test]
+    fn test_turned_bool_bounds_keep_its_orientation() {
+        let bool_id = Uuid::new_v4();
+        let child_id = Uuid::new_v4();
+        let shapes = {
+            let mut shapes = ShapesPool::new();
+            shapes.initialize(10);
+
+            let child = shapes.add_shape(child_id);
+            child.set_selrect(0.0, 0.0, 50.0, 50.0);
+
+            let parent = shapes.add_shape(bool_id);
+            parent.set_shape_type(Type::Bool(Bool::default()));
+            parent.add_child(child_id);
+            parent.set_selrect(0.0, 0.0, 50.0, 50.0);
+            shapes
+        };
+
+        // the bool and its child turned 45 degrees about their center
+        let mut turn = Matrix::rotate_deg(45.0);
+        turn.pre_translate(Point::new(-25.0, -25.0));
+        turn.post_translate(Point::new(25.0, 25.0));
+        let parent = shapes.get(&bool_id).unwrap();
+        let mut bounds = HashMap::new();
+        bounds.insert(bool_id, parent.bounds().transform(&turn));
+        let mut modifiers = HashMap::new();
+        modifiers.insert(child_id, turn);
+
+        let result = calculate_bool_bounds(parent, &shapes, &bounds, &modifiers).unwrap();
+
+        assert!((result.width() - 50.0).abs() < 0.01, "{}", result.width());
+        assert!((result.height() - 50.0).abs() < 0.01, "{}", result.height());
+        let center = result.center();
+        assert!((center.x - 25.0).abs() < 0.01 && (center.y - 25.0).abs() < 0.01);
     }
 
     #[test]
