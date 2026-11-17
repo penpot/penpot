@@ -14,11 +14,8 @@
    0x02 :panic})
 
 (defmacro call
-  "A helper for calling a wasm  function.
-   Catches any exception thrown by the WASM function, reads the error code from
-   WASM when available, and routes it based on the error type:
-   - :wasm-non-blocking: call app.main.errors/on-error (eventually, shows a toast and logs the error)
-   - :wasm-critical or unknown: throws an exception to be handled by the global error handler (eventually, shows the internal error page)"
+  "Calls the WASM function `name`. On failure, throws a `:wasm-error` whose
+   `:code` comes from `error-code`, or `:wasm-critical` when WASM set none."
   [module name & params]
   (let [fn-sym    (with-meta (gensym "fn-") {:tag 'function})
         cause-sym (gensym "cause")]

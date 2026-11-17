@@ -738,17 +738,41 @@
       (ex/print-throwable cause :prefix "Unexpected Error")
       (flash :cause cause :type :unhandled))))
 
+(def recoverable-wasm-codes
+  "WASM error codes that show a toast; any other code shows the error page."
+  #{:non-blocking :wasm-reload-context-failure :viewer-canvas-failed})
+
 (defmethod ptk/handle-error :wasm-error
   [error]
   (when-let [cause (::instance error)]
     (ex/print-throwable cause)
-    (let [code (get error :code)]
-      (cond
-        (= code :panic)
-        (st/emit! (rt/assign-exception error))
+    (if (contains? recoverable-wasm-codes (:code error))
+      (flash :type :handled :cause cause)
+      (st/emit! (rt/assign-exception error)))))
 
-        :else
-        (flash :type :handled :cause cause)))))
+(defn- handle-wasm-effect-error
+  [cause]
+  (let [{:keys [type code]} (ex-data cause)]
+    (if (and (= type :wasm-error) (contains? recoverable-wasm-codes code))
+      (on-error cause)
+      (throw cause))))
+
+(defn wrap-wasm-effect
+  "Runs the React effect fn `f` and guards the cleanup fn it returns: a
+  recoverable WASM error goes to `on-error`, any other error is rethrown."
+  [f]
+  (let [result (try
+                 (f)
+                 (catch :default cause
+                   (handle-wasm-effect-error cause)
+                   nil))]
+    (if (fn? result)
+      (fn []
+        (try
+          (result)
+          (catch :default cause
+            (handle-wasm-effect-error cause))))
+      result)))
 
 ;; We receive a explicit authentication error; If the uri is for
 ;; workspace, dashboard, viewer or settings, then assign the exception
