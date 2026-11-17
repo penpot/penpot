@@ -384,6 +384,38 @@
     (t/is (ctk/swapped? head))
     (t/is (= (thi/id :badge-dot) (:shape-ref (get objects dot-id))))))
 
+(t/deftest paste-out-of-a-copy-follows-a-swap-in-its-main
+  ;; {:page-main}  [:name Frame1]          # [Component :page]
+  ;;     :inner-copy [:name Frame1]        @--> [Component :card] :card-main
+  ;;         :inner-star [:name Frame1]    @--> [Component :badge] :card-star (swapped)
+  ;; :outer-copy [:name Frame1]            #--> [Component :page] :page-main
+  ;;     :outer-inner [:name Frame1]       @--> [Component :card] :inner-copy
+  ;;         :outer-star [:name Frame1]    @--> [Component :badge] :inner-star
+  ;; pasted out of its copy, :outer-star shows the badge the main swapped in:
+  ;; it becomes a plain copy of :badge, as do its children
+  (let [file    (-> (setup)
+                    (tho/add-simple-component :dot :dot-main :dot-rect)
+                    (tho/add-frame :badge-main)
+                    (thc/instantiate-component :dot :badge-dot :parent-label :badge-main)
+                    (thc/make-component :badge :badge-main)
+                    (tho/add-frame :page-main)
+                    (thc/instantiate-component :card :inner-copy
+                                               :parent-label :page-main
+                                               :children-labels [:inner-star])
+                    (tho/swap-component-in-shape :inner-star :badge)
+                    (thc/make-component :page :page-main)
+                    (thc/instantiate-component :page :outer-copy
+                                               :children-labels [:outer-inner :outer-star])
+                    (thf/validate-file!))
+        star    (ths/get-shape file :outer-star)
+        objects (copy-objects file :outer-star)
+        head    (get objects (thi/id :outer-star))
+        dot     (get objects (first (:shapes head)))]
+    (t/is (= (:id (thc/get-component file :badge)) (:component-id star)))
+    (t/is (= (thi/id :badge-main) (:shape-ref head)))
+    (t/is (not (ctk/swapped? head)))
+    (t/is (= (thi/id :badge-dot) (:shape-ref dot)))))
+
 (t/deftest duplicate-keeps-the-swap
   (let [file   (-> (setup)
                    (tho/duplicate-shape :copy)

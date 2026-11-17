@@ -469,6 +469,34 @@
                                                          (assoc % :touched touched)
                                                          (dissoc % :touched)))))
                             objects)))
+        ;; a copy whose references skip a swapped head shows that head's
+        ;; component: each shape refers to its counterpart in the main of the
+        ;; component, the first of its content references there, and keeps
+        ;; the overrides of the references it skips
+        content-reheaded
+        (fn [objects shape level-delta]
+          (let [chain (->> (ctf/get-ref-chain-until-target-ref container libraries shape nil)
+                           rest
+                           (take level-delta))]
+            (when (some ctk/swapped? chain)
+              (when-let [[file-data component] (ctf/head-component file libraries shape :include-deleted? true)]
+                (let [main-ids (into #{} (map :id) (ctf/get-component-shapes file-data component))
+                      unchanged-ids (cli/swapped-descendant-ids objects (:id shape))]
+                  (reduce
+                   (fn [objects child]
+                     (let [chain   (rest (ctf/get-ref-chain-until-target-ref container libraries child nil))
+                           [skipped [target]] (split-with #(not (contains? main-ids (:id %))) chain)]
+                       (if (some? target)
+                         (let [touched (-> (into (or (:touched child) #{}) (mapcat :touched) skipped)
+                                           (disj :swap-group))]
+                           (update objects (:id child)
+                                   #(cond-> (assoc % :shape-ref (:id target))
+                                      (seq touched) (assoc :touched touched)
+                                      (empty? touched) (dissoc :touched))))
+                         objects)))
+                   objects
+                   (->> (cfh/get-children-with-self objects (:id shape))
+                        (remove #(contains? unchanged-ids (:id %))))))))))
         detach-copy   (fn [objects shape]
                         (reduce #(update %1 %2 ctk/detach-shape)
                                 objects
@@ -487,11 +515,12 @@
                                 (detach-copy objects shape))
 
                               :else
-                              (let [unchanged-ids (cli/swapped-descendant-ids objects (:id shape))]
-                                (reduce (partial advance-shape level-delta)
-                                        objects
-                                        (->> (cfh/get-children-with-self objects (:id shape))
-                                             (remove #(contains? unchanged-ids (:id %))))))))
+                              (or (content-reheaded objects shape level-delta)
+                                  (let [unchanged-ids (cli/swapped-descendant-ids objects (:id shape))]
+                                    (reduce (partial advance-shape level-delta)
+                                            objects
+                                            (->> (cfh/get-children-with-self objects (:id shape))
+                                                 (remove #(contains? unchanged-ids (:id %)))))))))
                           objects))]
     (reduce advance-copy
             objects
