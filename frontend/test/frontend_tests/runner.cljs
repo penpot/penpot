@@ -40,6 +40,7 @@
    [frontend-tests.data.workspace-comments-test]
    [frontend-tests.data.workspace-context-menu-test]
    [frontend-tests.data.workspace-focus-test]
+   [frontend-tests.data.workspace-heal-undo-test]
    [frontend-tests.data.workspace-interactions-test]
    [frontend-tests.data.workspace-layout-other-page-test]
    [frontend-tests.data.workspace-libraries-load-test]
@@ -253,6 +254,7 @@
    'frontend-tests.data.workspace-comments-test
    'frontend-tests.data.workspace-context-menu-test
    'frontend-tests.data.workspace-focus-test
+   'frontend-tests.data.workspace-heal-undo-test
    'frontend-tests.data.workspace-interactions-test
    'frontend-tests.data.workspace-layout-other-page-test
    'frontend-tests.data.workspace-libraries-load-test
