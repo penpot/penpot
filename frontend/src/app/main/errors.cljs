@@ -465,7 +465,7 @@
            (take update-loop-stack-lines)
            (str/join "\n")))
 
-(defn- report-update-loop!
+(defn- report-update-loop
   []
   (try
     (when-let [{:keys [rounds trips stack last-stack events objects]} @update-loop-run]
@@ -521,7 +521,7 @@
             ;; unhandled exception: a throttled loop is an application
             ;; defect, so it must reach the error reports and alerts, not
             ;; only audit.
-            (ts/schedule update-loop-observe-ms report-update-loop!)))))
+            (ts/schedule update-loop-observe-ms report-update-loop)))))
     (catch :default _
       nil)))
 
