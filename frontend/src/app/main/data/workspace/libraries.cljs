@@ -27,6 +27,7 @@
    [app.common.types.file :as ctf]
    [app.common.types.library :as ctl]
    [app.common.types.shape.layout :as ctsl]
+   [app.common.types.text :as txt]
    [app.common.types.typography :as ctt]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -1230,19 +1231,43 @@
          (remove uuid/zero?))
         (:redo-changes changes)))
 
+(def ^:private text-size-attrs
+  "Shape attributes whose change can change the size of an auto-grow text."
+  #{:grow-type :width :height :layout-item-h-sizing :layout-item-v-sizing})
+
+(defn- without-fills
+  "Text `content` without its fills, which do not change its layout."
+  [content]
+  (txt/transform-nodes #(apply dissoc % :fills txt/text-fill-attrs) content))
+
+(defn- text-size-change?
+  "True when `change` can change the size of the text `shape`: it sets a
+  size attribute, or content that differs in more than its fills. Sync only
+  emits operations for attributes that changed."
+  [shape {:keys [type operations]}]
+  (and (= :mod-obj type)
+       (some (fn [{:keys [attr val] :as op}]
+               (and (= :set (:type op))
+                    (or (contains? text-size-attrs attr)
+                        (and (= :content attr)
+                             (not= (without-fills (:content shape))
+                                   (without-fills val))))))
+             operations)))
+
 (defn- sync-auto-grow-text-ids-on-page
-  "Auto-grow text ids from sync redo-changes on `page-id`, resolved against
-  pre-commit `objects`. Off-page, non-text, and :fixed ids are excluded."
+  "Auto-grow text ids from sync redo-changes on `page-id` that can change
+  the text size, resolved against pre-commit `objects`. Off-page, non-text
+  and :fixed ids are excluded."
   [changes page-id objects]
   (into []
         (comp
          (filter #(= page-id (:page-id %)))
-         (keep :id)
-         (remove uuid/zero?)
-         (filter (fn [id]
+         (filter (fn [{:keys [id] :as change}]
                    (when-let [shape (get objects id)]
                      (and (cfh/text-shape? shape)
-                          (not= :fixed (:grow-type shape))))))
+                          (not= :fixed (:grow-type shape))
+                          (text-size-change? shape change)))))
+         (map :id)
          (distinct))
         (:redo-changes changes)))
 
