@@ -9,6 +9,7 @@
   (:require
    [app.common.types.fills :as types.fills]
    [app.config :as cfg]
+   [app.main.data.workspace.tokens.gradient :as wtg]
    [app.main.ui.inspect.attributes.common :as cmm]
    [app.main.ui.inspect.styles.rows.color-properties-row :refer [color-properties-row*]]
    [app.util.color :as uc]
@@ -29,9 +30,10 @@
 ;; Current token implementation on fills only supports one token per shape and has to be the first fill
 ;; This must be improved in the future
 (defn- has-token?
-  "Returns true if the resolved token matches the color and is the first fill (idx = 0)."
+  "Returns true if the resolved token (a color or a gradient) matches the
+  fill and is the first fill (idx = 0)."
   [resolved-token color-type idx]
-  (and (= (:resolved-value resolved-token) (:color color-type))
+  (and (wtg/paints? (:resolved-value resolved-token) color-type)
        (= 0 idx)))
 
 (defn- generate-fill-shorthand
@@ -80,4 +82,5 @@
               [:> color-properties-row* {:key idx
                                          :term property-name
                                          :color color-type
+                                         :token (when has-token resolved-token)
                                          :copiable true}])))])]))

@@ -159,6 +159,38 @@
             (fn []
               (done)))))))
 
+(t/deftest resolve-tokens-gradient-test
+  (t/async
+    done
+    (let [tokens (-> (ctob/make-tokens-lib)
+                     (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :core-set)
+                                                        :name "core"))
+                     (ctob/add-token (cthi/id :core-set)
+                                     (ctob/make-token {:name "color.brand"
+                                                       :value "#ff0000"
+                                                       :type :color}))
+                     (ctob/add-token (cthi/id :core-set)
+                                     (ctob/make-token {:name "gradient.brand"
+                                                       :value {:kind "linear"
+                                                               :angle "90"
+                                                               :stops [{:color "{color.brand}" :position "0"}
+                                                                       {:color "#00ff00" :position "1"}]}
+                                                       :type :gradient}))
+                     (ctob/get-all-tokens-map))]
+      (->> (sd/resolve-tokens tokens)
+           (rx/subs!
+            (fn [resolved-tokens]
+              (t/testing "gradient tokens are only resolved by tokenscript"
+                (t/is (nil? (get-in resolved-tokens ["gradient.brand" :resolved-value])))
+                (t/is (seq (get-in resolved-tokens ["gradient.brand" :errors]))))
+              (t/testing "the other tokens still resolve"
+                (t/is (= "#ff0000" (get-in resolved-tokens ["color.brand" :resolved-value])))))
+            (fn [err]
+              (t/do-report {:type :error :message "Stream error" :actual err})
+              (done))
+            (fn []
+              (done)))))))
+
 (t/deftest resolve-tokens-interactive-test
   (t/async
     done

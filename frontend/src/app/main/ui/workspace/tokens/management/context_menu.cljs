@@ -15,6 +15,7 @@
    [app.main.data.modal :as modal]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.tokens.application :as dwta]
+   [app.main.data.workspace.tokens.gradient :as wtg]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.features :as features]
    [app.main.refs :as refs]
@@ -362,12 +363,16 @@
                                                         :hint (tr "workspace.tokens.radius")
                                                         :on-update-shape-all dwta/update-shape-radius
                                                         :on-update-shape update-shape-radius-for-corners})
-        shadow (partial generic-attribute-actions #{:shadow} "Shadow")]
+        shadow (partial generic-attribute-actions #{:shadow} "Shadow")
+        color (fn [context-data]
+                (concat
+                 (generic-attribute-actions #{:fill} "Fill" (assoc context-data :on-update-shape dwta/update-fill :hint (tr "workspace.tokens.color")))
+                 (generic-attribute-actions #{:stroke-color} "Stroke" (assoc context-data :on-update-shape dwta/update-stroke-color))))]
     {:border-radius border-radius
-     :color (fn [context-data]
-              (concat
-               (generic-attribute-actions #{:fill} "Fill" (assoc context-data :on-update-shape dwta/update-fill :hint (tr "workspace.tokens.color")))
-               (generic-attribute-actions #{:stroke-color} "Stroke" (assoc context-data :on-update-shape dwta/update-stroke-color))))
+     :color color
+     :gradient (fn [context-data]
+                 (when (wtg/enabled?)
+                   (color context-data)))
      :spacing spacing-attribute-actions
      :sizing sizing-attribute-actions
      :rotation (partial generic-attribute-actions #{:rotation} "Rotation")

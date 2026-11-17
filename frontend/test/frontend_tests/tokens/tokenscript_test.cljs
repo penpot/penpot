@@ -13,8 +13,10 @@
    [app.common.types.tokens-status :as ctos]
    [app.main.data.style-dictionary :as sd]
    [app.main.data.tokenscript :as ts]
+   [app.main.data.workspace.tokens.gradient :as wtg]
    [beicon.v2.core :as rx]
-   [cljs.test :as t :include-macros true]))
+   [cljs.test :as t :include-macros true]
+   [tokenscript.importers.css :as tsi]))
 
 (defn- tokens-map
   "Tokens map of a library with one set holding `tokens`."
@@ -140,6 +142,71 @@
       (t/is (nil? (get-in resolved ["typography.bad" :resolved-value])))
       (t/is (= :error.style-dictionary/invalid-token-value-typography
                (get-in resolved ["typography.bad" :errors 0 :error/code]))))))
+
+(t/deftest resolve-tokens-gradient-test
+  (let [resolved (ts/resolve-tokens
+                  (tokens-map {:name "color.brand" :value "#ff0000" :type :color}
+                              {:name "middle" :value "0.25 * 2" :type :number}
+                              {:name "gradient.brand" :type :gradient
+                               :value {:kind "linear"
+                                       :angle "90"
+                                       :stops [{:color "{color.brand}" :position "0"}
+                                               {:color "rgba(0, 0, 255, 0.5)" :position "{middle}"}
+                                               {:color "#00ff00" :position "100%"}]}}
+                              {:name "gradient.alias" :value "{gradient.brand}" :type :gradient}
+                              {:name "gradient.radial" :type :gradient
+                               :value {:kind "radial"
+                                       :stops [{:color "{color.brand}" :position "0"}
+                                               {:color "#0000ff" :position "1"}]}}
+                              {:name "gradient.missing" :type :gradient
+                               :value {:kind "linear"
+                                       :stops [{:color "{color.missing}" :position "0"}
+                                               {:color "#0000ff" :position "1"}]}}
+                              {:name "gradient.conic" :type :gradient
+                               :value {:kind "conic"
+                                       :stops [{:color "#ff0000" :position "0"}
+                                               {:color "#0000ff" :position "1"}]}}
+                              {:name "gradient.one-stop" :type :gradient
+                               :value {:kind "linear"
+                                       :stops [{:color "#ff0000" :position "0"}]}}
+                              {:name "gradient.string" :value "8" :type :gradient}
+                              {:name "gradient.turned" :type :gradient
+                               :value {:kind "linear"
+                                       :angle "0.25turn"
+                                       :stops [{:color "#ff0000" :position "0"}
+                                               {:color "#0000ff" :position "1"}]}}
+                              {:name "gradient.bad-angle" :type :gradient
+                               :value {:kind "linear"
+                                       :angle "red"
+                                       :stops [{:color "#ff0000" :position "0"}
+                                               {:color "#0000ff" :position "1"}]}}))
+        code     (fn [name] (get-in resolved [name :errors 0 :error/code]))
+        brand    {:kind "linear"
+                  :angle 90
+                  :stops [{:color "#ff0000" :position 0}
+                          {:color "#0000ff80" :position 0.5}
+                          {:color "#00ff00" :position 1}]}]
+    (t/testing "stops resolve field by field"
+      (t/is (= brand (get-in resolved ["gradient.brand" :resolved-value]))))
+    (t/testing "a reference resolves to the gradient it points to"
+      (t/is (= brand (get-in resolved ["gradient.alias" :resolved-value]))))
+    (t/testing "a radial gradient has no angle"
+      (t/is (= {:kind "radial"
+                :stops [{:color "#ff0000" :position 0}
+                        {:color "#0000ff" :position 1}]}
+               (get-in resolved ["gradient.radial" :resolved-value]))))
+    (t/testing "a stop with a missing reference"
+      (t/is (= :error.style-dictionary/missing-reference (code "gradient.missing")))
+      (t/is (= ["color.missing"] (get-in resolved ["gradient.missing" :errors 0 :error/value]))))
+    (t/testing "gradients penpot can not draw are invalid"
+      (doseq [name ["gradient.conic" "gradient.one-stop" "gradient.string"]]
+        (t/is (nil? (get-in resolved [name :resolved-value])))
+        (t/is (= :error.style-dictionary/invalid-token-value-gradient (code name)))))
+    (t/testing "an angle in turns resolves to degrees"
+      (t/is (= 90 (get-in resolved ["gradient.turned" :resolved-value :angle]))))
+    (t/testing "an angle that is no rotation has an error of its own"
+      (t/is (nil? (get-in resolved ["gradient.bad-angle" :resolved-value])))
+      (t/is (= :error.style-dictionary/invalid-token-value-gradient-angle (code "gradient.bad-angle"))))))
 
 (t/deftest resolve-tokens-value-validation-test
   (let [resolved (ts/resolve-tokens
@@ -433,3 +500,58 @@
             (fn [cause]
               (t/is (nil? cause))
               (done)))))))
+
+(t/deftest resolve-tokens-gradient-function-test
+  (let [css-gradients
+        ["linear-gradient(to right, #5500ff, #00ff55)"
+         "linear-gradient(135deg, red 0%, blue 100%)"
+         "linear-gradient(90deg, rgba(255, 0, 0, 0.5) 25%, #00ff55)"
+         "linear-gradient(0.25turn, hsl(120, 100%, 50%), rgb(0, 0, 255))"
+         "linear-gradient(red 0% 50%, blue 50% 100%)"
+         "linear-gradient(45deg, {color.brand}, {color.brand} 40%, #0000ff)"
+         "linear-gradient(90deg, {color.brand} {position.start}, #0000ff 100%)"]
+
+        resolved
+        (->> css-gradients
+             (map-indexed (fn [index css]
+                            {:name (str "gradient.css" index)
+                             :type :gradient
+                             :value (tsi/linear-gradient->tokenscript css)}))
+             (concat [{:name "color.brand" :value "#ff0000" :type :color}
+                      {:name "position.start" :value "20%" :type :number}
+                      {:name "gradient.raw" :type :gradient
+                       :value "linear-gradient(to right, #5500ff, #00ff55)"}
+                      {:name "gradient.not-css" :value "linear-gradient(to nowhere, red, blue)" :type :gradient}])
+             (apply tokens-map)
+             (ts/resolve-tokens))]
+    (t/testing "tokenscript written for a CSS gradient resolves to a gradient"
+      (doseq [index (range (count css-gradients))]
+        (let [{:keys [errors resolved-value]} (get resolved (str "gradient.css" index))]
+          (t/is (empty? errors) (nth css-gradients index))
+          (t/is (some? (wtg/value->gradient resolved-value)) (nth css-gradients index)))))
+
+    (t/testing "tokenscript reads most CSS as it is"
+      (t/is (= {:kind "linear"
+                :angle 90
+                :stops [{:color "#5500ff" :position 0}
+                        {:color "#00ff55" :position 1}]}
+               (get-in resolved ["gradient.raw" :resolved-value]))))
+
+    (t/testing "angles, colors with opacity and positions come out as written"
+      (t/is (= {:kind "linear"
+                :angle 90
+                :stops [{:color "#ff000080" :position 0.25}
+                        {:color "#00ff55" :position 1}]}
+               (get-in resolved ["gradient.css2" :resolved-value]))))
+
+    (t/testing "references resolve, also the ones of positions"
+      (t/is (= {:kind "linear"
+                :angle 90
+                :stops [{:color "#ff0000" :position 0.2}
+                        {:color "#0000ff" :position 1}]}
+               (get-in resolved ["gradient.css6" :resolved-value]))))
+
+    (t/testing "text that is no linear gradient is invalid"
+      (t/is (nil? (get-in resolved ["gradient.not-css" :resolved-value])))
+      (t/is (= :error.style-dictionary/invalid-token-value-gradient
+               (get-in resolved ["gradient.not-css" :errors 0 :error/code]))))))

@@ -2027,6 +2027,18 @@ msgstr ""
 msgid "errors.tokens.invalid-text-decoration-token-value"
 msgstr "Invalid token value: only none, underline and strike-through are accepted"
 
+#: src/app/main/data/workspace/tokens/errors.cljs, src/app/main/ui/workspace/tokens/management/forms/gradient.cljs
+msgid "errors.tokens.invalid-token-value-gradient"
+msgstr ""
+"Invalid value: a gradient needs a type (linear or radial) and at least two "
+"color stops, each with a color and a position from 0% to 100%."
+
+#: src/app/main/data/workspace/tokens/errors.cljs
+msgid "errors.tokens.invalid-token-value-gradient-angle"
+msgstr ""
+"Invalid value: the angle of a gradient has to be a number of degrees, or "
+"an angle in deg, turn, rad or grad."
+
 #: src/app/main/data/workspace/tokens/errors.cljs:148
 msgid "errors.tokens.invalid-token-value-shadow"
 msgstr "Invalid value: must reference a composite shadow token."
@@ -9368,6 +9380,26 @@ msgstr "Font weight (300, Bold Italic...) or an {alias}"
 msgid "workspace.tokens.gaps"
 msgstr "Gaps"
 
+#: src/app/main/ui/workspace/tokens/management/forms/gradient.cljs
+msgid "workspace.tokens.gradient-angle"
+msgstr "Angle"
+
+#: src/app/main/ui/workspace/tokens/management/forms/gradient.cljs
+msgid "workspace.tokens.gradient-converted"
+msgstr "The CSS gradient was converted to tokenscript"
+
+#: src/app/main/ui/workspace/tokens/management/forms/gradient.cljs
+msgid "workspace.tokens.gradient-edit"
+msgstr "Edit gradient"
+
+#: src/app/main/ui/workspace/tokens/management/forms/gradient.cljs
+msgid "workspace.tokens.gradient-position"
+msgstr "Position"
+
+#: src/app/main/ui/workspace/tokens/management/forms/gradient.cljs
+msgid "workspace.tokens.gradient-remove-stop"
+msgstr "Remove color stop"
+
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:93
 msgid "workspace.tokens.group-name"
 msgstr "Group name"
@@ -9533,6 +9565,10 @@ msgstr "Reference in {%s} is not valid or is not in any active set."
 #: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:215
 msgid "workspace.tokens.reference-composite"
 msgstr "Enter a token typography alias"
+
+#: src/app/main/ui/workspace/tokens/management/forms/gradient.cljs
+msgid "workspace.tokens.reference-composite-gradient"
+msgstr "Enter a token gradient alias or paste a CSS gradient"
 
 #: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:242
 msgid "workspace.tokens.reference-composite-shadow"

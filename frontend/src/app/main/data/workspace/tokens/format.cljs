@@ -6,6 +6,7 @@
 
 (ns app.main.data.workspace.tokens.format
   (:require
+   [app.common.math :as mth]
    [cuerdas.core :as str]))
 
 (def category-dictionary
@@ -40,10 +41,50 @@
        (str/join "\n")
        (str "\n")))
 
+(defn- gradient?
+  [token-value]
+  (and (map? token-value) (contains? token-value :stops)))
+
+(defn format-angle
+  "An angle as tooltips, Inspect and the angle field of the gradient
+  form write it: a resolved number in degrees, other values as they
+  are."
+  [angle]
+  (if (number? angle)
+    (str (mth/precision angle 2) "deg")
+    (str angle)))
+
+(defn format-position
+  "A gradient stop position as tooltips, Inspect and the position field
+  of the gradient form write it: a resolved fraction from 0 to 1 as a
+  percentage, other values as they are."
+  [position]
+  (if (number? position)
+    (str (mth/precision (* 100 position) 2) "%")
+    (str position)))
+
+(defn- format-gradient
+  "A gradient on one line: its kind and angle, then each stop's color
+  and position, like `linear 90deg: #ff0000 0%, {color.brand} 100%`.
+  A resolved gradient has numbers, which are written as the gradient
+  form shows them (degrees, percentages); a token value keeps its
+  text."
+  [{:keys [kind angle stops]}]
+  (str kind
+       (when (some? angle) (str " " (format-angle angle)))
+       ": "
+       (->> stops
+            (map (fn [{:keys [color position]}]
+                   (str color " " (format-position position))))
+            (str/join ", "))))
+
 (defn format-token-value
   "Converts token value of any shape to a string."
   [token-value]
   (cond
+    (gradient? token-value)
+    (format-gradient token-value)
+
     (map? token-value)
     (format-map-entries token-value)
 

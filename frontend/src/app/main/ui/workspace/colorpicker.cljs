@@ -22,6 +22,7 @@
    [app.main.data.workspace.colors :as dc]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.media :as dwm]
+   [app.main.data.workspace.tokens.gradient :as wtg]
    [app.main.data.workspace.undo :as dwu]
    [app.main.features :as features]
    [app.main.refs :as refs]
@@ -691,7 +692,7 @@
    [{:set \"brand/dark\" :tokens [{:name \"background\"}]}]"
   [sets]
   (filter (fn [{:keys [tokens]}]
-            (some #(= (:type %) :color) tokens))
+            (some wtg/paint-token? tokens))
           sets))
 
 (defn- add-tokens-to-sets
@@ -782,7 +783,11 @@
                         @active-tokens
                         active-tokens)
 
-        color-tokens (:color active-tokens)
+        ;; A gradient token fills a shape like a color token does. Kept
+        ;; between renders: the grouping below is memoized on it.
+        color-tokens
+        (mf/with-memo [active-tokens]
+          (wtg/paint-tokens active-tokens))
 
         grouped-tokens-by-set
         (mf/with-memo [tokens-lib active-sets-names color-tokens]

@@ -12,6 +12,7 @@
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.json :as json]
+   [app.common.math :as mth]
    [app.common.path-names :as cpn]
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]
@@ -1540,6 +1541,34 @@
                       (mapv shadow-with-dtcg-keys value)
                       (shadow-with-dtcg-keys value)))))
 
+(defn- gradient-field
+  "A gradient field as the token forms edit it: numbers become strings."
+  [value]
+  (cond-> value (number? value) str))
+
+(defn convert-dtcg-gradient-composite
+  "Convert gradient token value from DTCG format to internal format: its
+  kind, its angle and its color stops, which the token forms edit. Fields
+  penpot can not draw (points, radius, midpoints, ...) are dropped. What a
+  gradient is in a file, such as a list of stops being a linear gradient,
+  is read by the tokenscript package."
+  [value]
+  (let [value (tsd/read-gradient value)]
+    (if (map? value)
+      (let [{:keys [kind angle stops]} (walk/keywordize-keys value)]
+        (d/without-nils
+         {:kind  kind
+          :angle (gradient-field angle)
+          :stops (if (sequential? stops)
+                   (mapv (fn [stop]
+                           (if (map? stop)
+                             (-> (select-keys stop [:color :position])
+                                 (d/update-vals gradient-field))
+                             stop))
+                         stops)
+                   stops)}))
+      value)))
+
 (defn- file-value->token-value
   "The token value of a value read from a file. The reader has already
   read shadows with `read-shadow`, so only their keys change."
@@ -1548,6 +1577,7 @@
     :font-family (convert-dtcg-font-family value)
     :typography  (convert-dtcg-typography-composite value)
     :shadow      (shadows-with-penpot-keys value)
+    :gradient    (convert-dtcg-gradient-composite value)
     value))
 
 (defn- document-token
@@ -1752,11 +1782,73 @@
           value)
     value))
 
+(def ^:private literal-number-re
+  #"\s*(-?\d+(?:\.\d+)?)\s*")
+
+(def ^:private literal-position-re
+  #"\s*(-?\d+(?:\.\d+)?)\s*(%)?\s*")
+
+(defn gradient-position->offset
+  "The offset of the literal stop position `position` of a gradient
+  token: a fraction (`\"0.5\"`) as it is, a percentage (`\"50%\"`) as a
+  fraction. Nil for references, expressions and other text. The range
+  is not checked: the tokenscript gradient type does that."
+  [position]
+  (when-let [[_ number percent] (when (string? position)
+                                  (re-matches literal-position-re position))]
+    ;; Rounded, so that 66.67% is 0.6667 and not with the noise of a
+    ;; binary division
+    (cond-> (d/parse-double number)
+      (some? percent) (-> (/ 100) (mth/precision 6)))))
+
+(defn- json-number
+  "Whole numbers as integers, so the file says `45`, not `45.0`."
+  [n]
+  (if (== n (Math/floor n))
+    (long n)
+    n))
+
+(defn- gradient-angle->dtcg
+  "A literal angle as a number. References, expressions and angles with
+  a unit stay strings."
+  [angle]
+  (if-let [[_ number] (when (string? angle)
+                        (re-matches literal-number-re angle))]
+    (json-number (d/parse-double number))
+    angle))
+
+(defn- gradient-position->dtcg
+  "A literal stop position as a number from 0 to 1. References and
+  expressions stay strings."
+  [position]
+  (if-let [offset (gradient-position->offset position)]
+    (json-number offset)
+    position))
+
+(defn- gradient-token->dtcg-token
+  "Convert gradient token value from internal format to DTCG format:
+  string keys, and a literal angle or stop position as a number, a stop
+  position from 0 to 1."
+  [value]
+  (if (map? value)
+    (-> (walk/stringify-keys value)
+        (d/update-when "angle" gradient-angle->dtcg)
+        (d/update-when "stops"
+                       (fn [stops]
+                         (if (sequential? stops)
+                           (mapv (fn [stop]
+                                   (cond-> stop
+                                     (map? stop) (d/update-when "position" gradient-position->dtcg)))
+                                 stops)
+                           stops))))
+    value))
+
 (defn- token->document-token
   [token]
   {:value (cond-> (:value token)
             (= :typography (:type token)) typography-token->dtcg-token
-            (= :shadow (:type token)) shadow-token->dtcg-token)
+            (= :shadow (:type token)) shadow-token->dtcg-token
+            (= :gradient (:type token)) gradient-token->dtcg-token)
    :type (cto/token-type->dtcg-token-type (:type token))
    :description (:description token)})
 

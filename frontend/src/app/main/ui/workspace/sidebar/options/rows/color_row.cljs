@@ -14,6 +14,8 @@
    [app.config :as cfg]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.colors :as dwc]
+   [app.main.data.workspace.tokens.format :as dwtf]
+   [app.main.data.workspace.tokens.gradient :as wtg]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.color-input :refer [color-input*]]
@@ -79,7 +81,8 @@
                         active-tokens)
 
 
-        active-color-tokens (:color active-tokens)
+        ;; A gradient token fills a shape like a color token does
+        active-color-tokens (wtg/paint-tokens active-tokens)
 
         token (some #(when (= (:name %) applied-token-name) %) active-color-tokens)
 
@@ -91,7 +94,7 @@
              (detach-token token-name))))
 
         token-name (:name token)
-        resolved (:resolved-value token)
+        resolved (dwtf/format-token-value (:resolved-value token))
 
 
         ;; Tooltip content for the swatch and token name, based on the token's state

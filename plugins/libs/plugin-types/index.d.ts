@@ -5189,6 +5189,113 @@ export interface TokenShadow extends TokenBase {
 }
 
 /**
+ * A color stop of a TokenGradientValue.
+ */
+export interface TokenGradientStop {
+  /**
+   * The color as a hex string (e.g. "#FF5733").
+   */
+  color: string;
+
+  /**
+   * Where the stop is on the gradient, from 0 to 1.
+   */
+  position: number;
+}
+
+/**
+ * The value of a TokenGradient in its resolved form.
+ */
+export interface TokenGradientValue {
+  /**
+   * Whether the gradient is linear or radial.
+   */
+  kind: 'linear' | 'radial';
+
+  /**
+   * The angle of a linear gradient in degrees: 0 goes up, 90 to the
+   * right, as in CSS. The angle is relative to the shape's bounding
+   * box: on a shape that is not square, 45 runs from corner to corner
+   * (like CSS `to top right`), not at a true 45 degrees. A linear
+   * gradient whose value has no angle goes top to bottom, 180.
+   * Undefined for a radial gradient.
+   */
+  angle?: number;
+
+  /**
+   * The color stops of the gradient.
+   */
+  stops: TokenGradientStop[];
+}
+
+/**
+ * A color stop of a TokenGradientValueString.
+ */
+export interface TokenGradientStopString {
+  /**
+   * The color as a string (e.g. "#FF5733"), or a reference to a color
+   * token.
+   */
+  color: string;
+
+  /**
+   * Where the stop is on the gradient, from 0 to 1 (e.g. "0.5"), as a
+   * percentage (e.g. "50%"), or a reference to a token.
+   */
+  position: string;
+}
+
+/**
+ * The value of a TokenGradient in its composite of strings form.
+ */
+export interface TokenGradientValueString {
+  /**
+   * Whether the gradient is linear or radial.
+   */
+  kind: 'linear' | 'radial';
+
+  /**
+   * The angle of a linear gradient (e.g. "90" or "90deg"), or a
+   * reference to a rotation token.
+   */
+  angle?: string;
+
+  /**
+   * The color stops of the gradient, at least two.
+   */
+  stops: TokenGradientStopString[];
+}
+
+/**
+ * Represents a token of type Gradient. Gradient tokens are only
+ * available when the `token-gradient` and `tokenscript` flags are
+ * enabled; otherwise they can't be added, edited or applied.
+ * This interface extends `TokenBase` and specifies the data type of the value.
+ */
+export interface TokenGradient extends TokenBase {
+  /**
+   * The type of the token.
+   */
+  readonly type: 'gradient';
+
+  /**
+   * The value as defined in the token itself.
+   * It may be a string with a reference to other token or a
+   * `linear-gradient()`, or else a TokenGradientValueString.
+   */
+  value: string | TokenGradientValueString;
+
+  /**
+   * The value calculated by finding all tokens with the same name in active sets
+   * and resolving the references.
+   *
+   * It's a TokenGradientValue, or undefined if no value has been found
+   * in active sets.
+   */
+  readonly resolvedValue: TokenGradientValue | undefined;
+}
+
+/**
  * Represents a token of type Color.
  * This interface extends `TokenBase` and specifies the data type of the value.
  */
@@ -5668,6 +5775,7 @@ export interface TokenTypography extends TokenBase {
  */
 export type TokenValueString =
   | TokenShadowValueString
+  | TokenGradientValueString
   | TokenTypographyValueString
   | string
   | string[]
@@ -5679,6 +5787,7 @@ export type TokenValueString =
 export type Token =
   | TokenBorderRadius
   | TokenShadow
+  | TokenGradient
   | TokenColor
   | TokenDimension
   | TokenFontFamilies
@@ -5948,6 +6057,11 @@ type TokenShadowProps = 'shadow';
 type TokenColorProps = 'fill' | 'strokeColor';
 
 /**
+ * The properties that a Gradient token can be applied to.
+ */
+type TokenGradientProps = 'fill' | 'strokeColor';
+
+/**
  * The properties that a Dimension token can be applied to.
  */
 type TokenDimensionProps =
@@ -6063,6 +6177,7 @@ export type TokenProperty =
   | TokenBorderRadiusProps
   | TokenShadowProps
   | TokenColorProps
+  | TokenGradientProps
   | TokenDimensionProps
   | TokenFontFamiliesProps
   | TokenFontSizesProps
@@ -6083,6 +6198,7 @@ export type TokenProperty =
 export type TokenType =
   | 'borderRadius'
   | 'shadow'
+  | 'gradient'
   | 'color'
   | 'dimension'
   | 'fontFamilies'

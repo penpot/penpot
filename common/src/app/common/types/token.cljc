@@ -92,6 +92,7 @@
    :font-family     "fontFamilies"
    :font-size       "fontSizes"
    :font-weight     "fontWeights"
+   :gradient        "gradient"
    :letter-spacing  "letterSpacing"
    :number          "number"
    :opacity         "opacity"
@@ -603,8 +604,8 @@
    :text-case          [:text-case]
    :letter-spacing     [:letter-spacing]
    :dimensions         [:dimensions]
-   :fill               [:color]
-   :stroke-color       [:color]
+   :fill               [:color :gradient]
+   :stroke-color       [:color :gradient]
    :canvas             [:color]
    :typography         [:typography]
    :number             [:number]

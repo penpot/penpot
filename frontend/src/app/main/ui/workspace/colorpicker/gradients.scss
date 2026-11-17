@@ -66,6 +66,14 @@
   }
 }
 
+// The tooltip of a stop covers it
+.gradient-preview-stop .gradient-preview-stop-tooltip {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+}
+
 .gradient-preview-stop-decoration {
   background: var(--color-foreground-primary);
   border-radius: 100%;

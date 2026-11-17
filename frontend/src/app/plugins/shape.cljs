@@ -66,7 +66,7 @@
    [app.plugins.strokes :as strokes]
    [app.plugins.system-events :as se]
    [app.plugins.text :as text]
-   [app.plugins.tokens :refer [applied-tokens-plugin->applied-tokens expand-token-attrs per-side-stroke-attrs-restricted? per-side-stroke-widths-message token-attr? valid-token-resolution?]]
+   [app.plugins.tokens :refer [applied-tokens-plugin->applied-tokens expand-token-attrs gradient-tokens-disabled-message per-side-stroke-attrs-restricted? per-side-stroke-widths-message token-attr? token-type-disabled? valid-token-resolution?]]
    [app.plugins.utils :as u]
    [app.util.http :as http]
    [app.util.object :as obj]
@@ -1844,6 +1844,9 @@
 
                       (nil? token)
                       (u/not-valid plugin-id :applyToken token-id)
+
+                      (token-type-disabled? (:type token))
+                      (u/not-valid plugin-id :applyToken gradient-tokens-disabled-message)
 
                       (not (valid-token-resolution? file-id set-id token-id))
                       (u/not-valid plugin-id :applyToken (:value token))

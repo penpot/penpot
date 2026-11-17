@@ -44,6 +44,7 @@
 
     - colors: hex strings (alpha as `#rrggbbaa`)
     - `rem` values: pixels (16px root font size), `%` values: fractions
+    - angles in `turn`, `rad` and `grad`: degrees, as `deg` angles are
     - other numbers with unit: the number
     - structured tokens (typography, shadows): maps with keyword keys and
       vectors
@@ -65,6 +66,9 @@
                                   (case (:unit v)
                                     "rem" (* n 16)
                                     "%" (/ n 100)
+                                    "turn" (* n 360)
+                                    "rad" (* n (/ 180 js/Math.PI))
+                                    "grad" (* n 0.9)
                                     n))
       (sym/symbol? v) (sym/value v)
       :else v)))
@@ -233,7 +237,7 @@
   "Maps a failed token type validation of the interpreter (an issue with
   an `INVALID_<TYPE>_<REASON>` code) to the Penpot error of the token's
   type."
-  [{:keys [code]} {:keys [type value]}]
+  [{:keys [code path]} {:keys [type value]}]
   (case type
     :opacity (wte/error-with-value :error.style-dictionary/invalid-token-value-opacity value)
     :stroke-width (wte/error-with-value :error.style-dictionary/invalid-token-value-stroke-width value)
@@ -243,6 +247,10 @@
     :font-family (wte/error-with-value :error.style-dictionary/invalid-token-value-font-family value)
     :typography (wte/error-with-value :error.style-dictionary/invalid-token-value-typography value)
     :shadow (wte/error-with-value :error.style-dictionary/invalid-token-value-shadow value)
+    :gradient (if (= "angle" (first path))
+                ;; The angle is checked as a rotation
+                (wte/error-with-value :error.style-dictionary/invalid-token-value-gradient-angle value)
+                (wte/error-with-value :error.style-dictionary/invalid-token-value-gradient value))
     (if (= "INVALID_NUMBER_UNIT" code)
       (wte/error-with-value :error.style-dictionary/value-with-units value)
       (wte/error-with-value :error.style-dictionary/invalid-token-value value))))

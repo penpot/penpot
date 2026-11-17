@@ -5,6 +5,7 @@
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
    [app.config :as cf]
+   [app.main.data.tinycolor :as tinycolor]
    [app.main.data.workspace.tokens.errors :as wte]
    [app.main.data.workspace.tokens.format :as dwtf]
    [app.main.refs :as refs]
@@ -207,3 +208,29 @@
           (if (string? value)
             (recur value (conj visited name))
             value))))))
+
+(defn visible-hint
+  "The hint of a field. A form that shows the resolved values elsewhere
+  hides the hint with the resolved value, `is-resolved-hint-hidden`;
+  an error hint always shows."
+  [hint is-resolved-hint-hidden]
+  (if (and is-resolved-hint-hidden (= "hint" (:type hint)))
+    {}
+    hint))
+
+(defn ramp-open?
+  "Whether the color ramp of a color input is open. A form that shows
+  one ramp for several inputs decides it for each; otherwise it is open
+  after the swatch was clicked."
+  [is-ramp-open is-opened-by-swatch]
+  (if (some? is-ramp-open)
+    is-ramp-open
+    is-opened-by-swatch))
+
+(defn ramp-color
+  "The color the ramp of a color input shows: its color, or for a
+  reference the color it resolves to."
+  [value resolved-color]
+  (if (tinycolor/valid-color value)
+    value
+    resolved-color))

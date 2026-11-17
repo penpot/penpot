@@ -128,6 +128,13 @@
    schema:token-value-shadow-vector
    schema:token-value-composite-ref])
 
+(def schema:token-value-gradient
+  [:or
+   ;; The `gradient` token type of the tokenscript package checks the
+   ;; fields when the token resolves
+   [:map]
+   schema:token-value-composite-ref])
+
 (defn make-token-value-schema
   [token-type]
   [:multi {:dispatch (constantly token-type)
@@ -138,6 +145,7 @@
    [:font-weight schema:token-value-font-weight]
    [:typography schema:token-value-typography]
    [:shadow schema:token-value-shadow]
+   [:gradient schema:token-value-gradient]
    [::m/default schema:token-value-generic]])
 
 ;; Token
@@ -271,6 +279,7 @@
                 :font-family (ctob/convert-dtcg-font-family value)
                 :typography  (ctob/convert-dtcg-typography-composite value)
                 :shadow      (ctob/convert-dtcg-shadow-composite value)
+                :gradient    (ctob/convert-dtcg-gradient-composite value)
                 value)]
 
     (d/without-nils {:name name

@@ -150,6 +150,7 @@
     :token-base-font-size
     :token-combobox
     :token-color
+    :token-gradient
     :token-shadow
     :token-tokenscript
     :token-import-from-library

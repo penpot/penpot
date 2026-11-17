@@ -31,6 +31,8 @@
                        660
                        :shadow
                        660
+                       :gradient
+                       800
                        400)
         ;; Checks for overflow outside the viewport height
         max-y             (- vh modal-height)
@@ -79,7 +81,8 @@
   (let [wrapper-style (use-viewport-position-style x y position token-type)
         modal-size-large* (mf/use-state (or (= token-type :typography)
                                             (= token-type :color)
-                                            (= token-type :shadow)))
+                                            (= token-type :shadow)
+                                            (= token-type :gradient)))
         modal-size-large? (deref modal-size-large*)
         close-modal (mf/use-fn
                      (fn []
@@ -152,6 +155,12 @@
 (mf/defc font-weight-modal
   {::mf/register modal/components
    ::mf/register-as :tokens/font-weight}
+  [properties]
+  [:& token-update-create-modal properties])
+
+(mf/defc gradient-modal
+  {::mf/register modal/components
+   ::mf/register-as :tokens/gradient}
   [properties]
   [:& token-update-create-modal properties])
 

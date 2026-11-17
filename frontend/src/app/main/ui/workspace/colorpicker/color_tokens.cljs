@@ -14,6 +14,7 @@
    [app.main.data.event :as-alias ev]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.tokens.application :as dwta]
+   [app.main.data.workspace.tokens.format :as dwtf]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -46,7 +47,7 @@
            (on-token-pill-click event token)))
         id-tooltip  (mf/use-id)
         resolved    (:resolved-value token)
-        color-value (dwta/value->color resolved)
+        color-value (dwta/value->paint resolved)
         item-ref (mf/use-ref nil)]
     [:> tooltip* {:id id-tooltip
                   :style {:width "100%"}
@@ -58,7 +59,7 @@
                :aria-labelledby id-tooltip
                :on-click on-click}
       [:> swatch* {:background color-value
-                   :tooltip-content (tr "workspace.tokens.resolved-value" resolved)
+                   :tooltip-content (tr "workspace.tokens.resolved-value" (dwtf/format-token-value resolved))
                    :size "small"}]
       [:div {:class (stl/css :token-name)}
        (:name token)]
@@ -77,7 +78,7 @@
            (on-token-pill-click event token)))
         resolved    (:resolved-value token)
         token-name  (:name token)
-        color-value (dwta/value->color resolved)]
+        color-value (dwta/value->paint resolved)]
     [:div {:class (stl/css-case :color-token-item-grid true
                                 :color-token-selected-grid selected)}
      [:> swatch* {:background color-value
@@ -86,7 +87,7 @@
                    [:*
                     [:div
                      [:span (dm/str (tr "workspace.tokens.token-name") ": ")] [:span {:class (stl/css :token-name)} token-name]]
-                    [:div (tr "workspace.tokens.resolved-value" resolved)]])
+                    [:div (tr "workspace.tokens.resolved-value" (dwtf/format-token-value resolved))]])
                   :on-click on-click
                   :size "medium"}]]))
 

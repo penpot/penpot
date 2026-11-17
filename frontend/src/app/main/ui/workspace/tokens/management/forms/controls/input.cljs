@@ -291,7 +291,11 @@
                        (update :extra-errors dissoc "")))))))
 
 (mf/defc input-composite*
-  [{:keys [name tokens token] :rest props}]
+  "A field of a composite token. With `is-tokenscript` it is resolved by
+  tokenscript, as the fields of a token type only tokenscript resolves
+  (gradients) need. `format-resolved` writes the resolved value of its
+  hint."
+  [{:keys [name tokens token is-tokenscript format-resolved] :rest props}]
 
   (let [form       (mf/use-ctx fc/context)
         input-name name
@@ -353,8 +357,12 @@
                 (mf/spread-props props {:hint-formated true})
                 props)]
 
-    (mf/with-effect [resolve-stream tokens token input-name name token-name]
-      (let [subs (->> resolve-stream
+    (mf/with-effect [resolve-stream tokens token input-name name token-name is-tokenscript format-resolved]
+      (let [resolve-value (if is-tokenscript
+                            resolve-value-tokenscript
+                            resolve-value)
+            format-value  (d/nilv format-resolved dwtf/format-token-value)
+            subs (->> resolve-stream
                       (rx/debounce 300)
                       (rx/mapcat (partial resolve-value tokens token token-name))
                       (rx/map (fn [result]
@@ -389,11 +397,15 @@
                                                                        nil value
                                                                        nil)]
                                                       (dwtf/format-token-value calculated)))
-                                                  (dwtf/format-token-value value))
+                                                  (format-value value))
                                  message (tr "workspace.tokens.resolved-value" (or resolved-value value))]
                              (swap! form update :errors dissoc :value)
                              (swap! form update :extra-errors dissoc :value)
-                             (if (= input-value (str resolved-value))
+                             ;; No hint for a field that already says what it
+                             ;; resolves to, written as the hint writes it or
+                             ;; as a plain value
+                             (if (or (= input-value (str resolved-value))
+                                     (= input-value (str value)))
                                (reset! hint* {})
                                (reset! hint* {:message message :type "hint"})))))))]
         (fn []
@@ -420,7 +432,11 @@
                        (update :extra-errors dissoc "")))))))
 
 (mf/defc input-indexed*
-  [{:keys [name tokens token index value-subfield nillable] :rest props}]
+  "A field of an item of a token with a list of items (shadows, the stops
+  of a gradient). With `is-tokenscript` it is resolved by tokenscript,
+  as the fields of a token type only tokenscript resolves (gradients)
+  need. `format-resolved` writes the resolved value of its hint."
+  [{:keys [name tokens token index value-subfield nillable is-resolved-hint-hidden is-tokenscript format-resolved] :rest props}]
 
   (let [form       (mf/use-ctx fc/context)
         input-name name
@@ -460,7 +476,7 @@
         (mf/use-state {})
 
         hint
-        (deref hint*)
+        (csu/visible-hint (deref hint*) is-resolved-hint-hidden)
 
         on-change
         (mf/use-fn
@@ -488,8 +504,12 @@
           (mf/spread-props props {:hint-formated true})
           props)]
 
-    (mf/with-effect [resolve-stream tokens token input-name index value-subfield token-name]
-      (let [subs (->> resolve-stream
+    (mf/with-effect [resolve-stream tokens token input-name index value-subfield token-name is-tokenscript format-resolved]
+      (let [resolve-value (if is-tokenscript
+                            resolve-value-tokenscript
+                            resolve-value)
+            format-value  (d/nilv format-resolved dwtf/format-token-value)
+            subs (->> resolve-stream
                       (rx/debounce 300)
                       (rx/mapcat (partial resolve-value tokens token token-name))
                       (rx/map (fn [result]
@@ -514,7 +534,7 @@
                                    (reset! hint* {:message error' :type "error"}))))
 
                            :else
-                           (let [message (tr "workspace.tokens.resolved-value" (dwtf/format-token-value value))
+                           (let [message (tr "workspace.tokens.resolved-value" (format-value value))
                                  input-value (get-in @form [:data :value value-subfield index input-name] "")]
                              (swap! form update :errors dissoc :value)
                              (swap! form update :extra-errors dissoc :value)

@@ -144,7 +144,36 @@
     (t/is (= {:name "spacing.16" :type :spacing :value "16"}
              (cfo/convert-dtcg-token {"name" "spacing.16" "type" "spacing" "value" 16})))
     (t/is (= {:name "radius" :type :border-radius :value "4"}
-             (cfo/convert-dtcg-token {"name" "radius" "type" "borderRadius" "value" 4})))))
+             (cfo/convert-dtcg-token {"name" "radius" "type" "borderRadius" "value" 4}))))
+  (t/testing "converts gradient values to the internal format"
+    (t/is (= {:name "gradient.brand"
+              :type :gradient
+              :value {:kind "linear"
+                      :angle "90"
+                      :stops [{:color "#ff0000" :position "0"}
+                              {:color "{color.brand}" :position "1"}]}}
+             (cfo/convert-dtcg-token {"name" "gradient.brand"
+                                      "type" "gradient"
+                                      "value" {"kind" "linear"
+                                               "angle" 90
+                                               "stops" [{"color" "#ff0000" "position" 0}
+                                                        {"color" "{color.brand}" "position" 1}]}})))))
+
+(t/deftest token-value-gradient-schema-test
+  (let [schema (cfo/make-token-value-schema :gradient)
+        stops  [{:color "#ff0000" :position "0"}
+                {:color "{color.brand}" :position "1"}]]
+    (t/testing "accepts the fields of a gradient, a reference and tokenscript"
+      (t/is (sm/validate schema {:kind "linear" :angle "90" :stops stops}))
+      (t/is (sm/validate schema {:kind "radial" :stops stops}))
+      (t/is (sm/validate schema "{gradient.brand}"))
+      (t/is (sm/validate schema "linear-gradient(90deg, {color.brand} 0%, #0000ff 100%)")))
+    (t/testing "leaves checking the fields to the tokenscript gradient type"
+      (t/is (sm/validate schema {:kind "conic" :stops []})))
+    (t/testing "rejects what is no map and no text"
+      (t/is (not (sm/validate schema 8)))
+      (t/is (not (sm/validate schema nil)))
+      (t/is (not (sm/validate schema ""))))))
 
 (t/deftest token-applied-test
   (t/testing "matches passed token with `:token-attributes`"

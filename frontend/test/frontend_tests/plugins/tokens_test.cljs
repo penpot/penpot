@@ -15,6 +15,7 @@
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.tokens-status :as ctos]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.main.data.tokenscript :as ts]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
@@ -1572,6 +1573,109 @@
     (t/is (= 2 (aget entry "offsetY")))
     (t/is (= 3 (aget entry "blur")))
     (t/is (= 4 (aget entry "spread")))))
+
+(def ^:private gradient-flags
+  (conj cf/flags :token-gradient :tokenscript))
+
+(def ^:private brand-gradient
+  {:kind "linear"
+   :angle "90"
+   :stops [{:color "#ff0000" :position "0"}
+           {:color "#0000ff" :position "1"}]})
+
+(defn- gradient-token-file
+  [set-id token-id]
+  (-> (cthf/sample-file :file1 :page-label :page1)
+      (ctht/add-tokens-lib)
+      (ctht/update-tokens-lib
+       #(-> %
+            (ctob/add-set (ctob/make-token-set :id set-id :name "gradients"))
+            (ctob/add-token set-id (ctob/make-token :id token-id
+                                                    :name "gradient.brand"
+                                                    :type :gradient
+                                                    :value brand-gradient))))))
+
+(t/deftest gradient-token-value-takes-numbers
+  (let [set-id   (cthi/new-id! :token-set)
+        token-id (cthi/new-id! :gradient-token)
+        file     (gradient-token-file set-id token-id)
+        store    (ths/setup-store file)
+        _        (set! st/state store)
+        _        (set! st/stream (ptk/input-stream store))
+        captured (atom nil)]
+    (with-redefs [cf/flags gradient-flags
+                  r/check-permission (constantly true)
+                  u/check-editable-tokens (constantly nil)
+                  dwtl/update-token (mock/stub (fn [_ _ attrs]
+                                                 (reset! captured attrs)
+                                                 :update-token))
+                  st/emit! mock/noop]
+      (let [token (ptok/token-proxy "plugin-id" (:id file) set-id token-id)]
+        (set! (.-value token) #js {:kind "linear"
+                                   :angle 45
+                                   :stops #js [#js {:color "#00ff00" :position 0}
+                                               #js {:color "#0000ff" :position 0.5}]})
+        (t/testing "numbers are kept as the strings the token form edits"
+          (t/is (= {:kind "linear"
+                    :angle "45"
+                    :stops [{:color "#00ff00" :position "0"}
+                            {:color "#0000ff" :position "0.5"}]}
+                   (:value @captured))))))))
+
+(t/deftest gradient-token-resolved-value-is-plugin-object
+  (let [token  (ctob/make-token {:name "gradient.brand"
+                                 :type :gradient
+                                 :value brand-gradient})
+        result (get-resolved-value token {(:name token) token})
+        stops  (aget result "stops")]
+    (t/is (object? result))
+    (t/is (= "linear" (aget result "kind")))
+    (t/is (= 90 (aget result "angle")))
+    (t/is (= ["#ff0000" "#0000ff"] (mapv #(aget % "color") stops)))
+    (t/is (= [0 1] (mapv #(aget % "position") stops)))))
+
+(t/deftest gradient-token-resolved-angle-is-the-drawn-one
+  (let [resolved (fn [value]
+                   (let [token (ctob/make-token {:name "gradient.brand"
+                                                 :type :gradient
+                                                 :value value})]
+                     (get-resolved-value token {(:name token) token})))
+        linear   (resolved (dissoc brand-gradient :angle))
+        radial   (resolved (assoc brand-gradient :kind "radial"))]
+    (t/testing "a linear gradient without an angle has the default one"
+      (t/is (= 180 (aget linear "angle"))))
+    (t/testing "a radial gradient has no angle, even when its value has one"
+      (t/is (= "radial" (aget radial "kind")))
+      (t/is (not (js-in "angle" radial))))))
+
+(t/deftest gradient-tokens-need-their-flags
+  (let [plugin-id "test-plugin"
+        set-id    (cthi/new-id! :token-set)
+        token-id  (cthi/new-id! :gradient-token)
+        file      (gradient-token-file set-id token-id)
+        store     (ths/setup-store file)
+        _         (set! st/state store)
+        _         (set! st/stream (ptk/input-stream store))
+        errors    (atom [])
+        emitted   (atom [])]
+    (with-redefs [cf/flags (conj (disj cf/flags :token-gradient) :tokenscript)
+                  r/check-permission (constantly true)
+                  u/check-editable-tokens (constantly nil)
+                  u/not-valid (mock/stub (fn [_ prop msg] (swap! errors conj [prop msg])))
+                  st/emit! (mock/stub (fn [& events] (swap! emitted into events)))]
+      (let [token     (ptok/token-proxy plugin-id (:id file) set-id token-id)
+            token-set (ptok/token-set-proxy plugin-id (:id file) set-id "gradients")]
+        (set! (.-value token) (clj->js brand-gradient))
+        (.addToken token-set #js {"type" "gradient"
+                                  "name" "gradient.other"
+                                  "value" (clj->js brand-gradient)})
+        (.applyToSelected token nil)
+        (t/testing "a gradient token is not edited, added or applied"
+          (t/is (= [[:value ptok/gradient-tokens-disabled-message]
+                    [:addToken ptok/gradient-tokens-disabled-message]
+                    [:applyToSelected ptok/gradient-tokens-disabled-message]]
+                   @errors))
+          (t/is (empty? @emitted)))))))
 
 (t/deftest font-family-token-resolved-value-is-string-array
   (let [token (ctob/make-token
