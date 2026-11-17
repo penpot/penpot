@@ -25,6 +25,7 @@ import { NreplClient } from "./NreplClient";
 import { ReplServer } from "./ReplServer";
 import { ApiDocs } from "./ApiDocs";
 import { McpAuthentication } from "./McpAuthentication";
+import { RequestGuard } from "./RequestGuard";
 
 /**
  * Session context for request-scoped data.
@@ -115,6 +116,11 @@ export class PenpotMcpServer {
     private httpServer?: HttpServer;
     private readonly mcpHandler: McpHttpHandler;
     private readonly authentication: McpAuthentication;
+
+    /**
+     * Check of the `Host` and `Origin` headers of HTTP and plugin WebSocket requests.
+     */
+    public readonly requestGuard: RequestGuard;
     public readonly pluginBridge: PluginBridge;
     private readonly replServer: ReplServer | null;
     private apiDocs: ApiDocs;
@@ -167,6 +173,8 @@ export class PenpotMcpServer {
         this.maxBodySize = process.env.PENPOT_MCP_MAX_BODY_SIZE ?? "10mb";
         const toolTimeoutSecs = parseInt(process.env.PENPOT_MCP_TOOL_TIMEOUT_S ?? "120", 10);
 
+        this.requestGuard = RequestGuard.fromEnvironment(process.env, this.isMultiUserMode());
+
         this.configLoader = new ConfigurationLoader(process.cwd());
         this.apiDocs = new ApiDocs();
 
@@ -190,7 +198,7 @@ export class PenpotMcpServer {
         this.pluginBridge = new PluginBridge(this, this.webSocketPort, toolTimeoutSecs, this.redisBridge);
 
         if (shouldStartReplServer(PenpotMcpServer.isReplEnabled(process.env), this.isMultiUserMode())) {
-            this.replServer = new ReplServer(this.pluginBridge, this.replPort, this.replHost);
+            this.replServer = new ReplServer(this.pluginBridge, this.requestGuard, this.replPort, this.replHost);
         } else {
             this.replServer = null;
         }
@@ -332,6 +340,7 @@ export class PenpotMcpServer {
     async start(): Promise<void> {
         const { default: express } = await import("express");
         this.app = express();
+        this.app.use(this.requestGuard.httpMiddleware);
         this.app.use(express.json({ limit: this.maxBodySize }));
 
         this.setupHttpEndpoints();
@@ -345,6 +354,13 @@ export class PenpotMcpServer {
                 );
                 this.logger.info(`Remote mode: ${this.isRemoteMode()}`);
                 this.logger.info(`DevEnv mode: ${this.isDevEnv()}`);
+                this.logger.info(`Allowed hosts and origins: ${this.requestGuard.describe()}`);
+                if (this.requestGuard.allowsAny() && !this.isMultiUserMode()) {
+                    this.logger.warn(
+                        "Host and Origin check is off and no user token is required: " +
+                            "any web page opened in a browser that reaches this server can drive it"
+                    );
+                }
                 this.logger.info(`Modern Streamable HTTP endpoint: http://${this.host}:${this.port}/mcp`);
                 this.logger.info(`WebSocket server URL: ws://${this.host}:${this.webSocketPort}`);
 

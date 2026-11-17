@@ -127,6 +127,14 @@ export class PluginBridge implements TaskDispatchHost {
      */
     private setupWebSocketHandlers(): void {
         this.wsServer.on("connection", (ws: WebSocket, request: http.IncomingMessage) => {
+            // reject pages on foreign sites before reading any message
+            const guardResult = this.mcpServer.requestGuard.check(request.headers);
+            if (!guardResult.isAllowed) {
+                this.logger.warn("Rejected WebSocket connection: %s", guardResult.reason);
+                ws.close(1008, "Origin or host not allowed; see PENPOT_MCP_ALLOWED_HOSTS");
+                return;
+            }
+
             // extract userToken from query parameters
             const url = new URL(request.url!, `ws://${request.headers.host}`);
             const userToken = url.searchParams.get("userToken");
