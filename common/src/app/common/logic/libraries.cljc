@@ -2548,6 +2548,22 @@
         (ctsl/assign-cells objects)
         (assoc :shapes (:shapes shape)))))
 
+(defn- grow-for-children
+  "`shape` with the default tracks its grid adds along its flow until each
+   child it lays out has a slot, as `ctsl/assign-cells` grows it. Only the
+   track lists grow: the cells the grid already holds keep their places."
+  [shape objects]
+  (let [children (count (remove #(ctsl/position-absolute? objects %) (:shapes shape)))
+        row-dir? (= :row (ctsl/grid-direction shape))]
+    (loop [shape shape]
+      (let [rows (count (:layout-grid-rows shape))
+            cols (count (:layout-grid-columns shape))]
+        (if (or (zero? rows) (zero? cols) (>= (* rows cols) children))
+          shape
+          (recur (if row-dir?
+                   (update shape :layout-grid-columns (fnil conj []) ctsl/default-track-value)
+                   (update shape :layout-grid-rows (fnil conj []) ctsl/default-track-value))))))))
+
 (defn- assign-inherited-grid-cells
   [shape before objects shape-main]
   (if-not (or (< (count (:layout-grid-rows shape)) (count (:layout-grid-rows before)))
@@ -2563,6 +2579,9 @@
                     (and active? (empty? (:layout-grid-columns shape)))
                     (assoc :layout-grid-columns [ctsl/default-track-value]))]
       (-> target
+          ;; the tracks the children need come first, so a grid that grows
+          ;; back the tracks it lost keeps its own cells where they were
+          (grow-for-children objects)
           (without-default-cells-beyond-tracks)
           (ctsl/check-deassigned-cells objects)
           (ctsl/fit-cells-to-tracks)
