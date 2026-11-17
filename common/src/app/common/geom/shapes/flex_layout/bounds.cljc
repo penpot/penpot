@@ -158,7 +158,7 @@
                      correct-v))))))))
 
 (defn layout-content-bounds
-  [bounds {:keys [layout-padding] :as parent} children objects]
+  [bounds parent children objects]
 
   (let [parent-id       (:id parent)
         parent-bounds   (get bounds parent-id)]
@@ -182,11 +182,12 @@
                       layout-gap-col
                       0)
 
-            {pad-top :p1 pad-right :p2 pad-bottom :p3 pad-left :p4} layout-padding
-            pad-top    (+ (or pad-top 0) row-pad)
-            pad-right  (+ (or pad-right 0) col-pad)
-            pad-bottom (+ (or pad-bottom 0) row-pad)
-            pad-left   (+ (or pad-left 0) col-pad)
+            ;; the paddings the layout uses: a simple type repeats top and right
+            [pad-top pad-right pad-bottom pad-left] (ctl/paddings parent)
+            pad-top    (+ pad-top row-pad)
+            pad-right  (+ pad-right col-pad)
+            pad-bottom (+ pad-bottom row-pad)
+            pad-left   (+ pad-left col-pad)
 
             layout-points
             (layout-content-points bounds parent children objects)]
