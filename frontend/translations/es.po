@@ -5872,7 +5872,9 @@ msgstr "Desbloquea Enterprise"
 
 #: src/app/main/ui/dashboard/subscription.cljs:219
 msgid "subscription.dashboard.banner.unlock-features-description"
-msgstr "Para organizaciones que necesitan una gobernanza avanzada, una administración centralizada y una colaboración segura."
+msgstr ""
+"Para organizaciones que necesitan una gobernanza avanzada, una "
+"administración centralizada y una colaboración segura."
 
 #: src/app/main/ui/dashboard/subscription.cljs:224
 msgid "subscription.dashboard.banner.upgrade-nitrate"
@@ -7185,7 +7187,11 @@ msgstr "RECURSOS EN ESTE ARCHIVO"
 
 #: src/app/main/data/workspace/libraries.cljs:1963
 msgid "workspace.libraries.broken-library-disconnected"
-msgstr "No se ha podido cargar la biblioteca \"%s\" y se ha desconectado de este archivo. Los componentes y colores que ya usa el archivo no se ven afectados, pero quedarán huérfanos hasta que la biblioteca se arregle y se vuelva a conectar."
+msgstr ""
+"No se ha podido cargar la biblioteca \"%s\" y se ha desconectado de este "
+"archivo. Los componentes y colores que ya usa el archivo no se ven "
+"afectados, pero quedarán huérfanos hasta que la biblioteca se arregle y se "
+"vuelva a conectar."
 
 #: src/app/main/ui/workspace/libraries.cljs:178, src/app/main/ui/workspace/libraries.cljs:207, src/app/main/ui/workspace/libraries.cljs:251
 msgid "workspace.libraries.colors"
@@ -8656,7 +8662,9 @@ msgstr "No se encuentran extensiones"
 
 #: src/app/main/data/plugins.cljs, src/app/main/ui/dashboard.cljs, src/app/main/ui/workspace/plugins.cljs
 msgid "workspace.plugins.error.global-not-allowed"
-msgstr "Por ahora, las extensiones que funcionan fuera de un archivo solo se pueden instalar desde localhost."
+msgstr ""
+"Por ahora, las extensiones que funcionan fuera de un archivo solo se pueden "
+"instalar desde localhost."
 
 #: src/app/main/ui/workspace/plugins.cljs:237
 msgid "workspace.plugins.error.manifest"
@@ -8828,6 +8836,54 @@ msgstr "**Edición desactivada** porque no se pueden guardar los cambios."
 #, markdown
 msgid "workspace.save-failure.stopped"
 msgstr "**Edición desactivada** porque no se pueden guardar los cambios."
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.anchor-point"
+msgstr "Punto de anclaje"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.anchor.bottom-center"
+msgstr "Abajo en el centro"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.anchor.bottom-left"
+msgstr "Abajo a la izquierda"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.anchor.bottom-right"
+msgstr "Abajo a la derecha"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.anchor.center"
+msgstr "Centro"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.anchor.center-left"
+msgstr "Centro a la izquierda"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.anchor.center-right"
+msgstr "Centro a la derecha"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.anchor.top-center"
+msgstr "Arriba en el centro"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.anchor.top-left"
+msgstr "Arriba a la izquierda"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.anchor.top-right"
+msgstr "Arriba a la derecha"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.scale-and-anchor"
+msgstr "Escala y punto de anclaje"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.title"
+msgstr "Escalado"
 
 #: src/app/main/ui/workspace/context_menu.cljs:667
 msgid "workspace.shape.menu.add-flex"

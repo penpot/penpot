@@ -37,6 +37,7 @@
    [app.main.ui.workspace.sidebar.history :refer [history-toolbox*]]
    [app.main.ui.workspace.sidebar.layers :refer [layers-toolbox*]]
    [app.main.ui.workspace.sidebar.options :refer [options-toolbox*]]
+   [app.main.ui.workspace.sidebar.scale :refer [scale-sidebar*]]
    [app.main.ui.workspace.sidebar.shortcuts :refer [shortcuts-container*]]
    [app.main.ui.workspace.sidebar.sitemap :refer [sitemap*]]
    [app.main.ui.workspace.sidebar.versions :refer [versions-toolbox*]]
@@ -286,6 +287,7 @@
   [{:keys [layout section file-id page-id drawing-tool active-tokens] :as props}]
   (let [is-comments?     (= drawing-tool :comments)
         is-history?      (contains? layout :document-history)
+        is-scale?        (contains? layout :scale-text)
         is-inspect?      (= section :inspect)
         is-debug?        (= section :debug)
 
@@ -295,6 +297,7 @@
         can-be-expanded?
         (and (not is-comments?)
              (not is-history?)
+             (not is-scale?)
              is-inspect?
              (= current-section :code))
 
@@ -354,6 +357,9 @@
 
           is-history?
           [:> history-content* {}]
+
+          is-scale?
+          [:> scale-sidebar* {}]
 
           :else
           (let [props (mf/spread-props props
