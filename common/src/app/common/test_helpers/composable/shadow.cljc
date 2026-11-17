@@ -705,9 +705,10 @@
   size authors that size, placed in its parent. The resize starts at the
   topmost resized ancestor of the head."
   [model before after]
-  (let [sized-alike? #(let [a (geom/boxed %1) b (geom/boxed %2)]
-                        (and (mth/close? (:width a) (:width b))
-                             (mth/close? (:height a) (:height b))))
+  (let [;; sizes are pixels: a hundredth of one is float noise
+        sized-alike? #(let [a (geom/boxed %1) b (geom/boxed %2)]
+                        (and (mth/close? (:width a) (:width b) 0.01)
+                             (mth/close? (:height a) (:height b) 0.01)))
         ;; whether `id` keeps its parent and has another size in `after`
         resized?     (fn [id]
                        (let [old (get before id) shape (get after id)]

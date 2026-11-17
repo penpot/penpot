@@ -561,9 +561,10 @@
   (let [objects (pcb/get-objects changes)
         resized? (fn [id]
                    (let [old (get before id) shape (get objects id)]
+                     ;; sizes are pixels: a hundredth of one is float noise
                      (and old shape
-                          (not (and (mth/close? (-> old :selrect :width) (-> shape :selrect :width))
-                                    (mth/close? (-> old :selrect :height) (-> shape :selrect :height)))))))
+                          (not (and (mth/close? (-> old :selrect :width) (-> shape :selrect :width) 0.01)
+                                    (mth/close? (-> old :selrect :height) (-> shape :selrect :height) 0.01))))))
         heads (into []
                     (comp (filter #(and (:shape-ref (get objects %)) (resized? %)))
                           (mapcat #(cfh/get-children-ids objects %))
@@ -675,14 +676,16 @@
 (declare flips)
 
 (defn- close-geometry?
-  "Whether `shape` and `other` have the same geometry: a bool keeps its
-   corners in one order whatever its flips, so they count too."
-  [shape other]
-  (and (gsh/close-attrs? :selrect (:selrect shape) (:selrect other))
-       (gsh/close-attrs? :points (:points shape) (:points other))
-       (mth/close? (:content-scale shape 1) (:content-scale other 1))
-       (or (not (#{:group :bool} (:type shape)))
-           (= (flips shape) (flips other)))))
+  "Whether `shape` and `other` have the same geometry, within `precision`:
+   a bool keeps its corners in one order whatever its flips, so they count
+   too."
+  ([shape other] (close-geometry? shape other mth/float-equal-precision))
+  ([shape other precision]
+   (and (gsh/close-attrs? :selrect (:selrect shape) (:selrect other) precision)
+        (gsh/close-attrs? :points (:points shape) (:points other) precision)
+        (mth/close? (:content-scale shape 1) (:content-scale other 1))
+        (or (not (#{:group :bool} (:type shape)))
+            (= (flips shape) (flips other))))))
 
 (defn- authored-constraints
   "The constraints that the copy shapes `ids` author, by the id of the main
@@ -2341,8 +2344,9 @@
   ([shape main main-parent parent sized]
    (let [main-parent (when-not (cfh/root? main-parent) main-parent)
          flip?       (fn [key] (odd? (count (filter key [main main-parent parent]))))]
-     (and (or (contains? sized :width) (mth/close? (-> shape :selrect :width) (-> main :selrect :width)))
-          (or (contains? sized :height) (mth/close? (-> shape :selrect :height) (-> main :selrect :height)))
+     ;; sizes are pixels: a hundredth of one is float noise
+     (and (or (contains? sized :width) (mth/close? (-> shape :selrect :width) (-> main :selrect :width) 0.01))
+          (or (contains? sized :height) (mth/close? (-> shape :selrect :height) (-> main :selrect :height) 0.01))
           (gmt/close? (axes-matrix shape)
                       (gmt/multiply (axes-matrix parent)
                                     (gmt/inverse (axes-matrix main-parent))
@@ -2398,9 +2402,11 @@
                 (not (#{:group :bool} (:type shape)))
                 (if (and (some? (:shape-ref parent)) (not layout-placed?))
                   (and (some? main-parent)
+                       ;; a place a hundredth of a pixel away is float noise
                        (not (close-geometry? shape (get (placed-like main-objects main-parent parent
                                                                      (authored-constraints objects [id]))
-                                                        (:id main)))))
+                                                        (:id main))
+                                             0.01)))
                   (not (turned-like-parent? shape main main-parent parent
                                             (if layout-placed? (layout-sized objects shape) #{})))))
          (pcb/update-shapes changes [id] #(update % :touched ctk/set-touched-group :geometry-group)
