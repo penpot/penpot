@@ -504,7 +504,6 @@ pub struct Surfaces {
     backbuffer: skia::Surface,
     // Atlas used to keep tiles.
     tile_atlas: skia::Surface,
-    tile_atlas_image: Option<skia::Image>,
 
     tiles: TileTextureCache,
     pub atlas: DocAtlas,
@@ -570,7 +569,6 @@ impl Surfaces {
             export,
             backbuffer,
             tile_atlas,
-            tile_atlas_image: None,
             tiles,
             atlas,
             sampling_options,
@@ -596,7 +594,6 @@ impl Surfaces {
         self.tiles
             .repack(self.tile_atlas.width(), self.tile_atlas.height(), slot);
         self.tile_atlas.canvas().clear(skia::Color::TRANSPARENT);
-        self.tile_atlas_image = None;
     }
 
     pub fn set_dpr(&mut self, dpr: f32) {
@@ -622,18 +619,11 @@ impl Surfaces {
         background: skia::Color,
     ) {
         self.tiles.update(viewbox, tile_viewbox);
-        if self.tiles.needs_snapshot() || self.tile_atlas_image.is_none() {
-            self.tile_atlas_image = Some(self.tile_atlas.image_snapshot());
-            self.tiles.snapshot();
-        }
-        let Some(atlas_image) = self.tile_atlas_image.as_ref() else {
-            return;
-        };
         let sampling = self.tile_atlas_sampling();
         let canvas = self.backbuffer.canvas();
         canvas.clear(background);
         canvas.draw_atlas(
-            atlas_image,
+            &self.tile_atlas.image_snapshot(),
             &self.tiles.transforms,
             &self.tiles.textures,
             None,
@@ -706,13 +696,6 @@ impl Surfaces {
             return;
         }
 
-        if self.tiles.needs_snapshot() || self.tile_atlas_image.is_none() {
-            self.tile_atlas_image = Some(self.tile_atlas.image_snapshot());
-            self.tiles.snapshot();
-        }
-        let Some(atlas_image) = self.tile_atlas_image.as_ref() else {
-            return;
-        };
         let sampling = self.tile_atlas_sampling();
 
         let canvas = self.backbuffer.canvas();
@@ -720,7 +703,7 @@ impl Surfaces {
         canvas.reset_matrix();
 
         canvas.draw_atlas(
-            atlas_image,
+            &self.tile_atlas.image_snapshot(),
             &batch.transforms,
             &batch.textures,
             None,
@@ -1560,7 +1543,6 @@ impl Surfaces {
     pub fn invalidate_tile_cache(&mut self) {
         self.tiles.clear();
         self.atlas.tile_doc_rects.clear();
-        self.tile_atlas_image = None;
     }
 
     pub fn gc(&mut self) {
@@ -1694,7 +1676,6 @@ impl TileAtlasTextureProvider {
 pub struct TileTextureCache {
     tile_size: f32,
     slot_size: i32,
-    is_updated: bool,
     provider: TileAtlasTextureProvider,
     transforms: Vec<skia::RSXform>,
     textures: Vec<skia::Rect>,
@@ -1719,7 +1700,6 @@ impl TileTextureCache {
         Self {
             tile_size: tiles::TILE_SIZE,
             slot_size: TILE_SIZE,
-            is_updated: false,
             provider: TileAtlasTextureProvider::new(texture_width, texture_height, TILE_SIZE),
             transforms: Vec::with_capacity(capacity),
             textures: Vec::with_capacity(capacity),
@@ -1739,7 +1719,6 @@ impl TileTextureCache {
     pub fn repack(&mut self, texture_width: i32, texture_height: i32, slot_size: i32) {
         let capacity = ((texture_width / slot_size) * (texture_height / slot_size)) as usize;
         self.slot_size = slot_size;
-        self.is_updated = true;
         self.provider = TileAtlasTextureProvider::new(texture_width, texture_height, slot_size);
         self.transforms = Vec::with_capacity(capacity);
         self.textures = Vec::with_capacity(capacity);
@@ -1755,14 +1734,6 @@ impl TileTextureCache {
                 self.provider.deallocate(tile_ref);
             }
         }
-    }
-
-    pub fn needs_snapshot(&self) -> bool {
-        self.is_updated
-    }
-
-    pub fn snapshot(&mut self) {
-        self.is_updated = false;
     }
 
     fn gc_non_visible(
@@ -1972,7 +1943,6 @@ impl TileTextureCache {
             self.removed.remove(&key);
         }
 
-        self.is_updated = true;
         tile_ref
     }
 
@@ -2002,7 +1972,6 @@ impl TileTextureCache {
             }
             self.removed.insert(key);
         }
-        self.is_updated = true;
     }
 
     pub fn remove_at(&mut self, tile: Tile, scale: f32) {
@@ -2014,13 +1983,11 @@ impl TileTextureCache {
             self.textures[tile_ref.index].set_empty();
         }
         self.removed.insert(key);
-        self.is_updated = true;
     }
 
     pub fn clear(&mut self) {
         for k in self.grid.keys() {
             self.removed.insert(*k);
         }
-        self.is_updated = true;
     }
 }
