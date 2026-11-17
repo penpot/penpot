@@ -150,6 +150,7 @@
   []
   (when (query-param "debug")
     (let [objects (dsh/lookup-page-objects @st/state)]
+      (js/console.log "WASM-REPLAY shapes" (count objects))
       (doseq [shape (sort-by :name (vals objects))]
         (js/console.log "WASM-REPLAY shape"
                         (pr-str [(:name shape) (:type shape) (:id shape)
@@ -157,8 +158,10 @@
                                  (some-> (:selrect shape) (select-keys [:x :y :width :height]))
                                  (:transform shape) (:touched shape)
                                  (:shape-ref shape) (:layout shape)
-                                 (some-> (:content shape) txt/content->text)
-                                 (some->> (:content shape) txt/node-seq (keep :font-weight) distinct)]))))))
+                                 (when (= :text (:type shape))
+                                   (some-> (:content shape) txt/content->text))
+                                 (when (= :text (:type shape))
+                                   (some->> (:content shape) txt/node-seq (keep :font-weight) distinct))]))))))
 
 (defn- ^:async replay
   "Replay `program` with the backend and timers mocked, as the frontend
