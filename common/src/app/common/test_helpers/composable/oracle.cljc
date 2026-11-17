@@ -184,14 +184,45 @@
                                                           (and (:deleted component) (not (contains? referenced id)))))
                                              components)))))))
 
+(defn- without-stored-layout-placement
+  "The snapshot `files` with the shapes a layout places, or that move with
+   one it places, in the stored objects of deleted components without their
+   place: no layout lays them out until
+   the component is restored, so a sync there gives a place the layout would
+   change."
+  [files]
+  (let [laid-out? (fn [objects shape]
+                    (and (ctl/any-layout-immediate-child? objects shape)
+                         (not (ctl/position-absolute? shape))))
+        unplaced (fn [objects]
+                   (update-vals objects
+                                (fn [shape]
+                                  ;; a layout places the shape, or a shape around it
+                                  (if (some #(laid-out? objects %)
+                                            (cons shape (cfh/get-parents objects (:id shape))))
+                                    (cond-> (dissoc shape :x :y :selrect :points :transform :transform-inverse)
+                                      (= :path (:type shape)) (dissoc :content))
+                                    shape))))]
+    (update-vals files
+                 (fn [file]
+                   (d/update-in-when file [:data :components]
+                                     (fn [components]
+                                       (update-vals components
+                                                    #(cond-> %
+                                                       (and (:deleted %) (:objects %))
+                                                       (update :objects unplaced)))))))))
+
 (defn design-snapshot
   "Design inputs without derived placement, dimensions and bookkeeping.
    Geometry remains unrounded; equivalent? applies its tolerance directly.
    With `:unreferenced-deleted-components false`, the deleted components
-   nothing refers to are left out."
+   nothing refers to are left out; with `:stored-layout-placement false`, so
+   is the place of the shapes a layout places in deleted components."
   ([situation] (design-snapshot situation {}))
-  ([situation {:keys [free-head-placement relative-free-head-placement unreferenced-deleted-components]
-               :or {free-head-placement true unreferenced-deleted-components true}}]
+  ([situation {:keys [free-head-placement relative-free-head-placement unreferenced-deleted-components
+                      stored-layout-placement]
+               :or {free-head-placement true unreferenced-deleted-components true
+                    stored-layout-placement true}}]
    (let [origins (when (and free-head-placement relative-free-head-placement)
                    (get-derived-reference-origins situation))]
      (walk/postwalk
@@ -279,7 +310,8 @@
                                                (dissoc :x :y :width :height :points :selrect :transform :transform-inverse)))])) objects)))
            value))
        (cond-> (snapshot situation)
-         (not unreferenced-deleted-components) without-unreferenced-deleted))))))
+         (not unreferenced-deleted-components) without-unreferenced-deleted
+         (not stored-layout-placement) without-stored-layout-placement))))))
 
 (defn canonical
   "Design data with shape, component and grid-cell IDs named by tree path.
@@ -602,10 +634,14 @@
          group-sized  (let [parent (get objects (:parent-id ownership))]
                         (and (#{:group :bool} (:type parent))
                              (some #{:width :height} (derived-attributes objects parent))))
+         ;; corners within a hundredth of a pixel, or within a ten-thousandth of
+         ;; the shape's diagonal, which float noise from a layout's resize of a
+         ;; turned parent reaches on a large shape
+         tolerance    (max 0.01 (* 1e-4 (mth/hypot (or (:width expected) 0) (or (:height expected) 0))))
          width-owned  (contains? derived :width)
          height-owned (contains? derived :height)
          ;; Both flags and a half turn decompose the transform neither does.
-         same-corners? (gsh/close-attrs? :points (:points shape) (:points expected) 0.01)
+         same-corners? (gsh/close-attrs? :points (:points shape) (:points expected) tolerance)
          both-flipped (and (not= (boolean (:flip-x shape)) (boolean (:flip-x expected)))
                            (not= (boolean (:flip-y shape)) (boolean (:flip-y expected)))
                            (geom/decomposes? shape))
@@ -615,7 +651,7 @@
          in-group? (#{:group :bool} (:type (get objects (:parent-id ownership))))
          derived (and (or (#{:group :bool} (:type shape)) in-group?)
                       (gsh/close-attrs? :points (geom/ordered-corners (:points shape))
-                                        (geom/ordered-corners (:points expected)) 0.01))]
+                                        (geom/ordered-corners (:points expected)) tolerance))]
      (cond-> #{}
        ;; Parents may store equivalent decompositions, so a rotation that
        ;; decomposes the shape's own transform is its expected turn too, as
@@ -624,7 +660,7 @@
                 (same-turn? rotation exp-rotation)
                 (and mirrored (same-turn? rotation (- exp-rotation)))
                 (geom/decomposes? shape)
-                (gsh/close-attrs? :points (:points shape) (:points expected) 0.01))) (conj :rotation)
+                (gsh/close-attrs? :points (:points shape) (:points expected) tolerance))) (conj :rotation)
        ;; ordered corners that match fix the transform, so flags that decompose
        ;; it store the same transform otherwise
        (and (not both-flipped) (not derived) (not= (boolean (:flip-x shape)) (boolean (:flip-x expected)))
@@ -635,13 +671,13 @@
        (and (not height-owned) (not (mth/close? (:height shape) (:height expected) 0.01))) (conj :height)
        (and (not layout-child) auto-height
             (not (gsh/close-attrs? :points [(first (:points shape))]
-                                   [(first (:points expected))] 0.01))) (conj :position)
+                                   [(first (:points expected))] tolerance))) (conj :position)
        (and (not layout-child) (not auto-width) (not auto-height) (not group-sized)
             ;; a bool computes its corners from its segments, in their order
             (not (if (or (= :bool (:type shape)) in-group?)
                    (gsh/close-attrs? :points (geom/ordered-corners (:points shape))
-                                     (geom/ordered-corners (:points expected)) 0.01)
-                   (gsh/close-attrs? :points (:points shape) (:points expected) 0.01)))) (conj :points)))))
+                                     (geom/ordered-corners (:points expected)) tolerance)
+                   (gsh/close-attrs? :points (:points shape) (:points expected) tolerance)))) (conj :points)))))
 
 (defn check-requested-geometry
   [objects actual expected]

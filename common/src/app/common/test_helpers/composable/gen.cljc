@@ -271,9 +271,10 @@
    `objects` out of `levels` copy levels into `after-objects`, also holding
    the groups the references it skips author: the clipboard keeps the values
    they gave it. The pasted shape's own groups win over theirs, and a nearer
-   reference's over a farther one's."
-  [model objects source-id after-objects new-head levels]
-  (letfn [(ref-at [id n] (nth (iterate #(:shape-ref (get objects %)) id) n))
+   reference's over a farther one's. `next-ref` steps along the references
+   a shape shows its content from."
+  [model objects source-id after-objects new-head levels next-ref]
+  (letfn [(ref-at [id n] (nth (iterate next-ref id) n))
           (walk [model source-id copy-id]
             (let [source (get objects source-id)
                   copy   (get after-objects copy-id)
@@ -556,6 +557,9 @@
   [situation]
   (vec
    (for [[library-index [library-id library]] (map-indexed vector (ordered-files (tm/aux-files situation)))
+         ;; a stale consumer refers to the libraries as it accepted them, which
+         ;; the model does not hold apart from those it pastes from
+         :when (not (:accepted-libraries situation))
          :let [objects (:objects (thf/current-page library))]
          entry (tree (tm/with-file situation library))
          :let [shape (:shape entry)]
@@ -733,6 +737,18 @@
   [[:group] [:mask] [:ungroup] [:unmask] [:bool :union] [:bool :difference]
    [:bool :intersection] [:bool :exclude] [:path]])
 
+(defn- overlapping?
+  "Whether the shapes `ids` of `objects` share an area, by the boxes of
+   their corners."
+  [objects ids]
+  (let [boxes (map #(let [xs (map :x (:points (get objects %))) ys (map :y (:points (get objects %)))]
+                      [(apply min xs) (apply min ys) (apply max xs) (apply max ys)])
+                   ids)
+        [x1 y1 x2 y2] (reduce (fn [[ax1 ay1 ax2 ay2] [bx1 by1 bx2 by2]]
+                                [(max ax1 bx1) (max ay1 by1) (min ax2 bx2) (min ay2 by2)])
+                              boxes)]
+    (and (seq ids) (< (+ x1 0.5) x2) (< (+ y1 0.5) y2))))
+
 (defn- structure-edit
   "The structure edit `property` names on the shape of `entry`, and the
    shapes it takes: with an odd `value`, its next sibling too when that is
@@ -751,7 +767,11 @@
         empties? (and (#{:group :bool} (:type parent)) (= (set pair) (set (:shapes parent))))
         targets (case action
                   (:group :mask) (when-not empties? pair)
-                  :bool    (when (not-any? #(= :text (:type (get objects %))) pair) pair)
+                  :bool    (when (and (not-any? #(= :text (:type (get objects %))) pair)
+                                      ;; an intersection of shapes that do not overlap is
+                                      ;; empty: it and the bools around it have no area
+                                      (or (not= :intersection bool-type) (overlapping? objects pair)))
+                             pair)
                   :ungroup (when (#{:group :bool :frame} (:type shape)) [(:id shape)])
                   :unmask  (when (:masked-group shape) [(:id shape)])
                   :path    (when (#{:rect :circle} (:type shape)) [(:id shape)]))]
@@ -1090,7 +1110,8 @@
         full-before (r/settle situation all)
         full (:situation (cf/sync-world settled all))
         ;; an undone creation keeps its stored copies as they were when it was undone
-        opts {:free-head-placement false :unreferenced-deleted-components false}
+        opts {:free-head-placement false :unreferenced-deleted-components false
+              :stored-layout-placement false}
         settled-design (oracle/canonical settled opts)
         full-before-design (oracle/canonical full-before opts)
         full-design (oracle/canonical full opts)
@@ -1252,30 +1273,42 @@
                        (get (into {} (mapcat cf/object-trees) (vals (cf/reference-libraries after head)))
                             (:shape-ref head)))
                      (get after-objects (:shape-ref head)))
-            model (shadow/duplicate model objects id
-                                    (if-let [page-id (:to-page op)]
-                                      (get-in (tm/file after) [:data :pages-index page-id :objects])
-                                      (:objects (thf/current-page (tm/file after))))
-                                    new-head)
+            ;; a library main pastes as a new copy of its component, with no
+            ;; override of its own
+            model (if (and (= kind :library-paste) (ctk/main-instance? shape))
+                    model
+                    (shadow/duplicate model objects id
+                                      (if-let [page-id (:to-page op)]
+                                        (get-in (tm/file after) [:data :pages-index page-id :objects])
+                                        (:objects (thf/current-page (tm/file after))))
+                                      new-head))
             ;; a nested copy pasted out of its copies takes the overrides of the
             ;; references it leaves behind
             page-objects (:objects (thf/current-page (tm/file before)))
-            ;; the references it skips to reach the main of its component
-            main-id (get-in (cf/libraries before) [(:component-file shape) :data :components
-                                                   (:component-id shape) :main-instance-id])
+            ;; the references it skips to reach the main of its component; a
+            ;; swapped head shows its content from the main of its own component
+            main-of (fn [shape] (get-in (cf/libraries before) [(:component-file shape) :data :components
+                                                               (:component-id shape) :main-instance-id]))
+            next-ref (fn [id] (let [s (get objects id)]
+                                (if (ctk/swapped? s) (main-of s) (:shape-ref s))))
+            main-id (main-of shape)
             levels (if (and (= kind :paste) (get page-objects id) (ctn/has-any-copy-parent? page-objects shape))
-                     (->> (iterate #(:shape-ref (get objects %)) (:shape-ref shape))
+                     (->> (iterate next-ref (:shape-ref shape))
                           (take-while some?)
                           (take 16)
                           (take-while #(not= % main-id))
                           count)
                      0)
             model (cond-> model
+                    ;; the references a swapped head skips are those of the slot it
+                    ;; replaced, not of its content: it inherits none of theirs
+                    (and new-head (pos? levels) (not (ctk/swapped? shape)))
+                    (inherit-skipped-groups objects id after-objects new-head levels next-ref)
+
+                    ;; out of every copy level, a swapped head is a plain copy of the
+                    ;; component it shows
                     (and new-head (pos? levels))
-                    (-> (inherit-skipped-groups objects id after-objects new-head levels)
-                        ;; out of every copy level, a swapped head is a plain copy of
-                        ;; the component it shows
-                        (update new-head dissoc :swap-group)))]
+                    (update new-head dissoc :swap-group))]
         ;; a copy pasted on the page keeps the geometry it showed: what it
         ;; authored, now where it lands, and the orientation and size another
         ;; parent gave it, which its main's need not be

@@ -4542,13 +4542,71 @@
                        :ops [[:style 1 1 1 0] [:add-child 0] [:structure 0 0 0] [:add-child 0]
                              [:structure 1 4 0] [:transform 1 1 0 1]]}))))
 
-(t/deftest generated-a-detach-authors-no-geometry-for-float-noise
-  ;; after a turn and a fill resize, the nested copies a detach advances sit
-  ;; a few thousandths of a pixel from their new mains' places: no override
-  (t/is (map? (cg/run {:world [3 2 {:variants true :layout :grid :rich-variants true :grid-empty true :layout-copies true :text true}] :ops [[:nest 7 2 4 2] [:rotate 6 2 4 1] [:duplicate 1 3 1 0] [:make-variant 2] [:duplicate 8 2 8 6] [:style 2 29 1] [:detach 8 6 8 2]]}))))
+(t/deftest generated-a-swapped-nested-head-pasted-out-inherits-no-overrides-of-its-slot
+  ;; the references a swapped head skips are those of the slot it replaced:
+  ;; pasted out of its copy, it is a plain copy of the component it shows
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :rich-variants true :layout-copies true :text true}]
+                       :ops [[:variant-property 0 0 0 0] [:switch 3] [:add-variant 15 0 0 0] [:combine 2]
+                             [:switch 0] [:resize 0 0 0 0] [:paste 11 0 0 0]]}))))
+
+(t/deftest generated-a-copy-grid-with-its-own-columns-grows-them-to-hold-its-children
+  ;; a main grid that loses a row leaves a copy with its own columns too few
+  ;; cells for its children: the copy adds a default column, also to the
+  ;; columns it authors
+  (t/is (map? (cg/run {:world [2 1 {:variants true :layout :grid :grid-square true :rich-variants true
+                                    :layout-children true :layout-copies true :text true}]
+                       :ops [[:grid-track 9 5 0 0] [:grid-direction 0 0 0 1] [:grid-cell 0 0 0 1]
+                             [:grid-track 0 2 0 0]]}))))
+
+(t/deftest generated-a-deleted-component-keeps-the-place-its-grid-gave-a-copy
+  ;; a component deleted with a path its grid places keeps it where the grid
+  ;; put it; a sync of its stored objects, which no layout lays out until it
+  ;; is restored, is not compared with it
+  (t/is (map? (cg/run {:world [2 2 {:variants true :rich-variants true :text true :layout :grid
+                                    :layout-copies true :layout-children true}]
+                       :ops [[:add-child 16] [:style 22 35 1] [:add-child 7] [:delete 15 18 10 19] [:add-child 7]
+                             [:structure 7 8 4] [:delete 6 9 5 0] [:delete 7 10 18 17]]}))))
+
+(t/deftest generated-a-pasted-library-main-is-a-new-copy-without-overrides
+  ;; a library main pasted into the consumer is a new copy of its component:
+  ;; its nested copies show what the main's nested copies author, without
+  ;; overriding it
+  (t/is (map? (cg/run {:world [2 0 {:variants true :text-styles true :layout :grid :library true :rich-variants true
+                                    :grid-empty true :layout-copies true :text true}]
+                       :ops [[:edit 5 0 0 2] [:edit 1 0 1 1] [:update-main 1] [:library-paste 4 0 0 0]]}))))
 
 (t/deftest generated-a-copy-grid-keeps-an-authored-empty-cell-where-it-was-when-it-grows-back
   ;; a copy grid with its own cells loses a row its main removes and grows it
   ;; back for its children: its authored empty cell keeps its place (user
   ;; decision)
   (t/is (map? (cg/run {:world [2 1 {:variants true :layout :grid :layout-item-margins false :grid-square true :rich-variants true :layout-children true :grid-empty false :layout-copies true :text true}] :ops [[:grid-track 9 5 0 0] [:grid-direction 0 0 1 1] [:grid-cell 0 15 0 1] [:grid-track 0 2 0 0]]}))))
+
+
+(t/deftest generated-an-intersection-is-made-only-of-overlapping-shapes
+  ;; an intersection of shapes that do not overlap would be empty; the
+  ;; programs make one only of shapes that overlap
+  (t/is (map? (cg/run {:world [2 0 {:variants true :rich-variants true :text true :layout :grid :layout-copies true :layout-children true}] :ops [[:add-child 0] [:structure 4 4 3] [:structure 5 6 3 0]]}))))
+
+
+(t/deftest generated-a-pasted-swapped-head-takes-the-placement-of-its-new-main
+  ;; a swapped nested head pasted out of its copy takes its new main's
+  ;; placement where it overrides none
+  (t/is (map? (cg/run {:world [2 0 {:variants true :text-styles true :layout :grid :layout-item-margins false :grid-square false :library true :rich-variants true :layout-children true :grid-empty true :layout-copies true :text true}] :ops [[:style 8 8 0 0] [:switch 7 0 0 0] [:delete 2 0 0 0] [:edit 3 0 1 1] [:update-main 3] [:paste 8 0 0 0]]}))))
+
+
+
+(t/deftest generated-a-detach-authors-no-geometry-for-float-noise
+  ;; after a turn and a fill resize, the nested copies a detach advances sit
+  ;; a few thousandths of a pixel from their new mains' places: no override
+  (t/is (map? (cg/run {:world [3 2 {:variants true :layout :grid :rich-variants true :grid-empty true :layout-copies true :text true}] :ops [[:nest 7 2 4 2] [:rotate 6 2 4 1] [:duplicate 1 3 1 0] [:make-variant 2] [:duplicate 8 2 8 6] [:style 2 29 1] [:detach 8 6 8 2]]}))))
+
+(t/deftest generated-a-pasted-copy-of-a-swapped-reference-inherits-nothing-of-its-slot
+  ;; a nested copy pasted out of its copy, whose reference is a head its main
+  ;; swapped, takes its content from the component swapped in: nothing the
+  ;; replaced slot overrides reaches it
+  (t/is (map? (cg/run {:world [2 1 {:variants true :text-styles true :library-variants true :stale-libraries true
+                                    :layout :flex :library-depth 2 :library true :rich-variants true
+                                    :layout-children true :library-text true :layout-copies true :text true}]
+                       :ops [[:library-variant-property 0 0 0 0] [:library-sync] [:switch 23] [:edit 12 0 0 0]
+                             [:delete 18 0 0 0] [:paste 12 0 0 0]]}))))
+
