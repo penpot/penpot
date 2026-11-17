@@ -21,7 +21,7 @@ use skia_safe::{
 };
 
 use std::borrow::Cow;
-use std::cell::Cell;
+use std::cell::{Cell, RefCell};
 use std::collections::HashSet;
 use std::rc::Rc;
 use unicode_segmentation::UnicodeSegmentation;
@@ -454,6 +454,15 @@ pub struct TextContent {
     /// Box size the gradient and image shaders were built for. They are relative
     /// to the whole box, so a new size must rebuild them.
     layout_paint_size: Option<(f32, f32)>,
+    trailing_space_anchors: RefCell<Option<TrailingSpaceAnchors>>,
+}
+
+/// Which paragraphs get a trailing space anchor, for one content version and width.
+#[derive(Debug, Clone)]
+struct TrailingSpaceAnchors {
+    content_version: u64,
+    width: f32,
+    anchored: Rc<Vec<bool>>,
 }
 
 impl PartialEq for TextContent {
@@ -479,6 +488,7 @@ impl TextContent {
             layout_width: None,
             layout_paint_origin: None,
             layout_paint_size: None,
+            trailing_space_anchors: RefCell::new(None),
         }
     }
 
@@ -496,6 +506,7 @@ impl TextContent {
             layout_width: None,
             layout_paint_origin: None,
             layout_paint_size: None,
+            trailing_space_anchors: RefCell::new(None),
         }
     }
 
@@ -980,9 +991,10 @@ impl TextContent {
     ) -> Vec<ParagraphBuilderGroup> {
         let fonts = get_font_collection();
         let fallback_fonts = get_fallback_fonts();
+        let anchors = self.trailing_space_anchors();
         let mut paragraph_group = Vec::new();
 
-        for paragraph in self.paragraphs() {
+        for (index, paragraph) in self.paragraphs().iter().enumerate() {
             let mut paragraph_style = paragraph.paragraph_to_style();
             if let Some(align) = align_override {
                 paragraph_style.set_text_align(align);
@@ -1057,10 +1069,75 @@ impl TextContent {
             if !has_text {
                 builder.add_text(" ");
             }
+            if anchors.get(index).copied().unwrap_or(false) {
+                add_trailing_space_anchor(&mut builder);
+            }
             paragraph_group.push(vec![builder]);
         }
 
         paragraph_group
+    }
+
+    /// Per paragraph, whether its builders end with [`add_trailing_space_anchor`].
+    ///
+    /// Only paragraphs ending in whitespace get one, unless the anchor would wrap onto a
+    /// line of its own, which would add an empty line.
+    pub fn trailing_space_anchors(&self) -> Rc<Vec<bool>> {
+        let width = if self.grow_type() == GrowType::AutoWidth {
+            f32::MAX
+        } else {
+            self.bounds.width()
+        };
+        if let Some(cached) = self.trailing_space_anchors.borrow().as_ref() {
+            if cached.content_version == self.content_version
+                && cached.width == width
+                && cached.anchored.len() == self.paragraphs.len()
+            {
+                return Rc::clone(&cached.anchored);
+            }
+        }
+        let anchored: Rc<Vec<bool>> = Rc::new(
+            self.paragraphs
+                .iter()
+                .map(|paragraph| {
+                    ends_with_trailing_space(paragraph)
+                        && (width == f32::MAX || self.anchor_shares_last_line(paragraph, width))
+                })
+                .collect(),
+        );
+        *self.trailing_space_anchors.borrow_mut() = Some(TrailingSpaceAnchors {
+            content_version: self.content_version,
+            width,
+            anchored: Rc::clone(&anchored),
+        });
+        anchored
+    }
+
+    /// Whether an anchored `paragraph` laid out at `width` keeps the anchor next to text.
+    fn anchor_shares_last_line(&self, paragraph: &Paragraph, width: f32) -> bool {
+        let fallback_fonts = get_fallback_fonts();
+        let mut builder =
+            ParagraphBuilder::new(&paragraph.paragraph_to_style(), get_font_collection());
+        let mut text_len = 0;
+        for span in paragraph.children() {
+            let style = span.to_style(
+                &self.bounds(),
+                fallback_fonts,
+                false,
+                paragraph.line_height(),
+            );
+            let text = span.apply_text_transform();
+            text_len += text.encode_utf16().count();
+            builder.push_style(&style);
+            add_text_with_tabs(&mut builder, &text, span.font_size);
+        }
+        add_trailing_space_anchor(&mut builder);
+        let mut probe = builder.build();
+        probe.layout(width);
+        probe
+            .get_line_metrics()
+            .last()
+            .is_some_and(|line| line.start_index < text_len)
     }
 
     /// Performs an Auto Width text layout.
@@ -1452,6 +1529,7 @@ impl Default for TextContent {
             layout_width: None,
             layout_paint_origin: None,
             layout_paint_size: None,
+            trailing_space_anchors: RefCell::new(None),
         }
     }
 }
@@ -1690,6 +1768,31 @@ fn capitalize_words(text: &str) -> String {
 }
 
 /// Add `text`, pushing every '\t' as a one em wide placeholder.
+/// Ends a paragraph with a zero-size placeholder, so Skia doesn't trim the spaces before it
+/// and measures and paints them.
+pub fn add_trailing_space_anchor(builder: &mut ParagraphBuilder) {
+    builder.add_placeholder(&PlaceholderStyle::new(
+        0.0,
+        0.0,
+        PlaceholderAlignment::Baseline,
+        TextBaseline::Alphabetic,
+        0.0,
+    ));
+}
+
+fn ends_with_trailing_space(paragraph: &Paragraph) -> bool {
+    paragraph
+        .children()
+        .iter()
+        .rev()
+        .map(|span| span.apply_text_transform())
+        .find(|text| !text.is_empty())
+        .and_then(|text| text.chars().last())
+        .is_some_and(|ch| {
+            ch.is_whitespace() && !matches!(ch, '\n' | '\r' | '\u{2028}' | '\u{2029}')
+        })
+}
+
 pub fn add_text_with_tabs(builder: &mut ParagraphBuilder, text: &str, font_size: f32) {
     let tab = PlaceholderStyle::new(
         font_size,
@@ -2798,5 +2901,144 @@ mod tests {
                 "{grow_type:?}: trimmed {trimmed:?}, with spaces {with_spaces:?}"
             );
         }
+    }
+
+    /// A laid-out fixed or auto-height text, `width` wide, with one paragraph of `text`.
+    fn laid_out_content(grow_type: GrowType, text: &str, width: f32) -> TextContent {
+        let selrect = Rect::from_xywh(0.0, 0.0, width, 100.0);
+        let mut content = TextContent::new(selrect, grow_type);
+        content.add_paragraph(test_paragraph(&[text]));
+        content.update_layout(selrect);
+        content
+    }
+
+    /// Glyphs Skia paints for each paragraph of `builders` laid out at `width`.
+    fn painted_glyphs(builders: &mut [ParagraphBuilderGroup], width: f32) -> Vec<usize> {
+        build_paragraphs_from_paragraph_builders(builders, width)
+            .into_iter()
+            .flatten()
+            .map(|mut paragraph| {
+                let mut count = 0;
+                paragraph.visit(|_, info| {
+                    if let Some(info) = info {
+                        count += info.count();
+                    }
+                });
+                count
+            })
+            .collect()
+    }
+
+    fn hello_width() -> f32 {
+        let content = laid_out_content(GrowType::AutoWidth, "hello", 200.0);
+        content.size.width
+    }
+
+    #[test]
+    fn trailing_spaces_are_painted() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        for grow_type in [GrowType::Fixed, GrowType::AutoHeight, GrowType::AutoWidth] {
+            let content = laid_out_content(grow_type, "hello   ", 200.0);
+            let mut builders = content.paragraph_builder_group_from_text(None);
+            let width = content.get_width(200.0);
+            assert_eq!(
+                painted_glyphs(&mut builders, width),
+                vec![8],
+                "{grow_type:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn trailing_spaces_are_painted_by_strokes() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let content = laid_out_content(GrowType::Fixed, "hello   ", 200.0);
+        let mut stroke = shapes::Stroke::new_center_stroke(
+            1.0,
+            shapes::StrokeStyle::Solid,
+            None,
+            None,
+            None,
+            None,
+        );
+        stroke.fill = solid_fill();
+        let (mut builders, _) = crate::render::text::stroke_paragraph_builder_group_from_text(
+            &content,
+            &stroke,
+            &content.bounds(),
+            None,
+        );
+        assert_eq!(painted_glyphs(&mut builders, 200.0), vec![8]);
+    }
+
+    #[test]
+    fn a_paragraph_of_only_spaces_is_painted() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let content = laid_out_content(GrowType::Fixed, "   ", 200.0);
+        let mut builders = content.paragraph_builder_group_from_text(None);
+        assert_eq!(painted_glyphs(&mut builders, 200.0), vec![3]);
+    }
+
+    #[test]
+    fn only_paragraphs_ending_in_whitespace_get_an_anchor() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let selrect = Rect::from_xywh(0.0, 0.0, 200.0, 100.0);
+        let mut content = TextContent::new(selrect, GrowType::Fixed);
+        for text in ["hello   ", "   hello", "", "hello\t"] {
+            content.add_paragraph(test_paragraph(&[text]));
+        }
+        content.update_layout(selrect);
+        assert_eq!(
+            *content.trailing_space_anchors(),
+            vec![true, false, false, true]
+        );
+    }
+
+    #[test]
+    fn no_anchor_when_it_would_wrap_onto_its_own_line() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let width = hello_width();
+        for grow_type in [GrowType::Fixed, GrowType::AutoHeight] {
+            let trimmed = laid_out_content(grow_type, "hello", width);
+            let content = laid_out_content(grow_type, "hello   ", width);
+            assert_eq!(
+                *content.trailing_space_anchors(),
+                vec![false],
+                "{grow_type:?}"
+            );
+            assert_eq!(content.size.height, trimmed.size.height, "{grow_type:?}");
+        }
+    }
+
+    #[test]
+    fn trailing_space_anchor_keeps_the_height() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        for grow_type in [GrowType::Fixed, GrowType::AutoHeight, GrowType::AutoWidth] {
+            let trimmed = laid_out_content(grow_type, "hello", 200.0);
+            let content = laid_out_content(grow_type, "hello   ", 200.0);
+            assert_eq!(
+                *content.trailing_space_anchors(),
+                vec![true],
+                "{grow_type:?}"
+            );
+            assert_eq!(content.size.height, trimmed.size.height, "{grow_type:?}");
+        }
+    }
+
+    #[test]
+    fn caret_past_a_trailing_space_anchor_stays_at_the_text_end() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let content = laid_out_content(GrowType::Fixed, "hello   ", 200.0);
+        let position = content
+            .get_caret_position_from_shape_coords(&Point::new(190.0, 5.0))
+            .expect("caret position");
+        assert_eq!(position.offset, 8);
     }
 }
