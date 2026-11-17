@@ -13,16 +13,11 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.rpc :as-alias rpc]
-   [app.rpc.commands.files-update :as files-update]
    [backend-tests.helpers :as th]
    [clojure.test :as t]))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Helpers
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- page-with-dangling-parent
   "A page whose only shape points at a parent that is not in the page, and
@@ -45,92 +40,62 @@
    :data {:pages [(:id page)]
           :pages-index {(:id page) page}}})
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Collection of the pages the affected check does not see
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defn- add-page-forms
+  "The two forms of `:add-page` that carry a whole page: the editor sends
+  the page with its id at the top level (duplicate page, undo of a page
+  deletion), and `files/builder.cljc` sends the page alone."
+  [page]
+  {"editor form" {:type :add-page :id (:id page) :page page}
+   "page-only form" {:type :add-page :page page}})
 
-(t/deftest get-added-page-ids-collects-only-whole-page-adds
-  (let [page-id (uuid/next)]
-    (t/is (= [page-id]
-             (@#'files-update/get-added-page-ids
-              [{:type :add-page :page {:id page-id}}])))
-
-    (t/testing "an editor-form add-page is left to the affected check"
-      (t/is (empty? (@#'files-update/get-added-page-ids
-                     [{:type :add-page :id page-id :name "Page 2"}]))))
-
-    (t/testing "pages without a uuid id are ignored"
-      (t/is (empty? (@#'files-update/get-added-page-ids
-                     [{:type :add-page :page {:id "not-a-uuid"}}]))))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Soft validation of the collected pages
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(t/deftest validate-added-pages-reports-a-dangling-parent
-  (let [page-id (uuid/next)
-        page    (page-with-dangling-parent page-id)
-        errors  (@#'files-update/validate-added-pages
-                 (file-with page)
-                 {}
-                 [{:type :add-page :page page}])]
-    (t/is (seq errors))
-    (t/is (contains? (set (map :code errors)) :parent-not-found))
-    (t/is (= #{page-id} (set (map :page-id errors))))))
-
-(t/deftest validate-added-pages-skips-editor-form-adds
+(t/deftest affected-check-sees-a-whole-page-add-page
   (let [page-id (uuid/next)
         page    (page-with-dangling-parent page-id)]
-    (t/is (nil? (@#'files-update/validate-added-pages
-                 (file-with page)
-                 {}
-                 [{:type :add-page :id page-id :name "Page 2"}])))))
+    (doseq [[form change] (add-page-forms page)]
+      (t/testing form
+        (let [errors (val/validate-file-affected (file-with page) {} [change])]
+          (t/is (contains? (set (map :code errors)) :parent-not-found))
+          (t/is (= #{page-id} (set (map :page-id errors)))))))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; update-file accepts the page and reports the error
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defn- add-page!
+  [profile file change]
+  (th/command! {::th/type :update-file
+                ::rpc/profile-id (:id profile)
+                :id (:id file)
+                :session-id (uuid/next)
+                :revn 0
+                :vern 0
+                :features cfeat/supported-features
+                :changes [change]}))
 
-(t/deftest update-file-accepts-page-added-with-a-whole-page-value
-  (let [profile  (th/create-profile* 1 {:is-active true})
-        file     (th/create-file* 1 {:profile-id (:id profile)
-                                     :project-id (:default-project-id profile)})
-        page-id  (uuid/next)
-        page     (page-with-dangling-parent page-id)
-        calls    (atom [])
-        validate val/validate-file-affected]
+(defn- stored-page
+  [profile file page-id]
+  (-> (th/command! {::th/type :get-file
+                    ::rpc/profile-id (:id profile)
+                    :id (:id file)})
+      (get-in [:result :data :pages-index page-id])))
 
-    (with-redefs [cf/flags (conj cf/flags :file-validation)
-                  val/validate-file-affected
-                  (fn [file libs changes]
-                    (let [errors (validate file libs changes)]
-                      (swap! calls conj [changes errors])
-                      errors))]
-
-      (let [out (th/command! {::th/type :update-file
-                              ::rpc/profile-id (:id profile)
-                              :id (:id file)
-                              :session-id (uuid/next)
-                              :revn 0
-                              :vern 0
-                              :features cfeat/supported-features
-                              :changes [{:type :add-page :page page}]})]
-
-        (t/testing "the save is accepted"
-          (t/is (nil? (:error out))))
-
-        (t/testing "the page is stored"
-          (let [out (th/command! {::th/type :get-file
-                                  ::rpc/profile-id (:id profile)
-                                  :id (:id file)})]
-            (t/is (nil? (:error out)))
-            (t/is (some? (get-in out [:result :data :pages-index page-id])))))
-
-        (t/testing "the added page is checked in soft mode"
-          (let [[changes errors]
-                (some (fn [[changes :as entry]]
-                        (when (= [{:type :add-page :id page-id}] changes)
-                          entry))
-                      @calls)]
-            (t/is (some? changes))
-            (t/is (contains? (set (map :code errors)) :parent-not-found))
-            (t/is (= #{page-id} (set (map :page-id errors))))))))))
+(t/deftest update-file-checks-a-whole-page-add-page-as-the-flags-say
+  ;; The page goes through the same affected check as every other page a
+  ;; save touches, so the deployment's validation flags decide whether an
+  ;; invalid page is refused or only logged.
+  (doseq [[mode flags refused?]
+          [["hard" (conj cf/flags :file-validation) true]
+           ["soft" (-> cf/flags (disj :file-validation) (conj :soft-file-validation)) false]]
+          [form change] (add-page-forms (page-with-dangling-parent (uuid/next)))]
+    (t/testing (str mode ", " form)
+      (th/database-reset
+       (fn []
+         (let [profile (th/create-profile* 1 {:is-active true})
+               file    (th/create-file* 1 {:profile-id (:id profile)
+                                           :project-id (:default-project-id profile)})
+               page-id (get-in change [:page :id])]
+           (with-redefs [cf/flags flags]
+             (let [out (add-page! profile file change)]
+               (if refused?
+                 (do
+                   (t/is (th/ex-of-code? (:error out) :referential-integrity))
+                   (t/is (nil? (stored-page profile file page-id))))
+                 (do
+                   (t/is (nil? (:error out)))
+                   (t/is (some? (stored-page profile file page-id)))))))))))))
