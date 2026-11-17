@@ -377,11 +377,37 @@
         (assoc :points points))))
 
 
+(defn- turn-before-flips
+  "`shape` with the rotation that turns it before its flips. Under one flip
+  a shape may store the turn it takes after them, the opposite one; a
+  transform adds its turn to, and a flip negates, the turn before them."
+  [shape]
+  (let [transform (:transform shape)]
+    (if (and (some? transform)
+             (not= (boolean (:flip-x shape)) (boolean (:flip-y shape))))
+      (let [{:keys [a b c d]} transform
+            sign     (if (:flip-x shape) -1 1)
+            turn     (mth/degrees (mth/atan2 (* sign b) (* sign a)))
+            rotation (d/nilv (:rotation shape) 0)
+            same?    #(mth/close? (mod (- %1 %2 -180) 360) 180 0.01)
+            ;; the axes of a skewed transform decompose into no turn
+            square?  (mth/close? (/ (+ (* a c) (* b d))
+                                    (max (* (mth/hypot a b) (mth/hypot c d)) 1e-12))
+                                 0 1e-6)]
+        (if (and square?
+                 (neg? (- (* a d) (* b c)))
+                 (not (same? rotation turn))
+                 (same? rotation (- turn)))
+          (assoc shape :rotation (mod turn 360))
+          shape))
+      shape)))
+
 (defn- apply-transform-generic
   "Given a new set of points transformed, set up the rectangle so it keeps
   its properties. We adjust de x,y,width,height and create a custom transform"
   [shape transform-mtx turn]
-  (let [points    (-> (dm/get-prop shape :points)
+  (let [shape     (turn-before-flips shape)
+        points    (-> (dm/get-prop shape :points)
                       (gco/transform-points transform-mtx))
 
         shape     (adjust-shape-flips shape points
