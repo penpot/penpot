@@ -4470,7 +4470,75 @@
                        :ops [[:remove-child 0 0 0 0] [:add-child 1] [:structure 0 4 0] [:transform 0 16 0 3]
                              [:rotate 0 0 0 0] [:rotate 1 0 0 0]]}))))
 
+(t/deftest interactions-stay-as-set-through-sync-swap-and-switch
+  ;; interactions are no sync attribute: sync, reset and update main leave
+  ;; them, and a swap or a switch keeps a head's
+  (doseq [program [{:world [2 1 {:variants true :rich-variants true}]
+                    :ops [[:interact 0 0 0 0] [:interact 5 0 0 1] [:interact 7 0 0 0] [:sync 0] [:swap 1]
+                          [:switch 0] [:reset 2] [:update-main 3] [:undo] [:redo] [:interact 7 0 0 2]]}
+                   {:world [2 2 {:variants true :layout :grid :layout-copies true :text true}]
+                    :ops [[:interact 3 0 0 0] [:edit 3 0 1 1] [:detach 3] [:interact 9 0 0 1] [:switch 1]
+                          [:swap 4] [:duplicate 2] [:paste 2] [:undo] [:undo] [:redo]]}]]
+    (let [result (cg/run program)]
+      (t/is (pos? (get-in result [:executed :interact] 0))))))
+
+(t/deftest generated-a-nested-copy-pasted-out-keeps-the-overrides-of-the-references-it-skips
+  ;; a nested copy pasted out of its copy refers to its component's main and
+  ;; overrides what the references it leaves behind override
+  (t/is (map? (cg/run {:world [4 4 {:variants true :layout :grid :rich-variants true :grid-empty true :text true}]
+                       :ops [[:edit 19 0 1 1] [:remove-child 10 6 4 27] [:paste 26 25 23 15]]}))))
+
+(t/deftest pastes-on-another-page-sync-and-undo-there
+  ;; copies pasted on a second page sync from their mains and undo there
+  (doseq [program [{:world [2 1 {:pages true :variants true}]
+                    :ops [[:paste 3 0 0 1] [:edit 3 0 1 1] [:sync 0] [:paste 5 0 0 1] [:undo] [:redo]]}
+                   {:world [2 2 {:pages true :variants true :rich-variants true :text true}]
+                    :ops [[:edit 9 0 1 1] [:paste 9 0 0 1] [:paste 2 0 0 1] [:update-main 2] [:swap 2]
+                          [:undo] [:undo] [:redo]]}]]
+    (let [result (cg/run program)
+          file   (tm/file (:situation (cg/settle-state (reduce cg/step (cg/initial-state (:world program))
+                                                               (:ops program)))))
+          other  (second (get-in file [:data :pages]))]
+      (t/is (= 2 (get-in result [:executed :paste])))
+      (t/is (< 1 (count (get-in file [:data :pages-index other :objects])))))))
+
+(t/deftest library-pastes-become-copies-of-the-library-components
+  ;; library mains and copies pasted into the consumer become copies of the
+  ;; library's components, which sync from it
+  (doseq [program [{:world [2 1 {:library true :variants true :rich-variants true :text true}]
+                    :ops [[:library-paste 0] [:library-paste 1] [:library-paste 2] [:edit 0 0 1 1]
+                          [:library-sync 0] [:undo] [:redo]]}
+                   {:world [2 2 {:library true :variants true :text true :layout :flex :layout-copies true}]
+                    :ops [[:library-paste 2] [:library-paste 5] [:swap 1] [:undo] [:undo] [:redo] [:library-paste 7]]}]]
+    (let [result (cg/run program)]
+      (t/is (= 3 (get-in result [:executed :library-paste]))))))
+
 (t/deftest generated-an-update-main-into-a-nested-copy-authors-the-sizing-it-fixes
   ;; a copy child filling a row pushes a transform into the nested copy its
   ;; main holds, which takes it with its sizing fixed as its own override
   (t/is (map? (cg/run {:world [3 2 {:text true :layout :flex}] :ops [[:nest 24 11 9 6] [:delete 1] [:restore 1] [:add-child 15 16 4 29] [:move 23 24 12 20] [:edit 25 25 27 25] [:undo 23 17 15 25] [:style 23 29 25 20] [:transform 29 11 7 27] [:update-main 2 19 2 29]]}))))
+
+(t/deftest generated-a-paste-out-of-a-copy-follows-a-swap-in-its-main
+  ;; a nested copy pasted out of its copy, whose main swapped the head it
+  ;; refers to, becomes a plain copy of the component swapped in
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout :flex :variant-diff true
+                                    :layout-item-margins true :rich-variants true :layout-children true
+                                    :grid-empty true :layout-copies true :text true}]
+                       :ops [[:text-style 7 4 0 10] [:switch 28 12 25 15] [:edit 25 1 1 :copy-head] [:reset 25]
+                             [:variant-property 7 7 24 6] [:make-variant 12 15 4 25] [:text 16 8 1] [:combine 11]
+                             [:switch 20] [:paste 18 15 27 2] [:make-variant 27 18 6 12] [:transform 25 1 26 25]]}))))
+
+(t/deftest generated-a-swapped-nested-head-pasted-out-is-a-plain-copy
+  ;; a swapped nested head pasted out of every copy level is a plain copy of
+  ;; the component it shows, with no swap of its own
+  (t/is (map? (cg/run {:world [4 3 {:variants true :rich-variants true :text true}]
+                       :ops [[:combine 21] [:switch 15] [:delete 24] [:make-variant 19 5 5 30]
+                             [:remove-child 11 11 16 13] [:combine 2] [:switch 3] [:nest 27 10 18 3]
+                             [:switch 1 16 9 19] [:combine 0 25 21 2] [:paste 17 19 20 30]]}))))
+
+(t/deftest generated-a-union-of-hidden-shapes-is-left-untransformed
+  ;; a union of hidden shapes has no area, and no transform targets it
+  (t/is (map? (cg/run {:world [2 0 {:variants true :rich-variants true :text true :layout-copies true}]
+                       :ops [[:style 1 1 1 0] [:add-child 0] [:structure 0 0 0] [:add-child 0]
+                             [:structure 1 4 0] [:transform 1 1 0 1]]}))))
+

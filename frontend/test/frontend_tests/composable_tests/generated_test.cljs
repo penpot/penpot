@@ -1192,7 +1192,41 @@
                                                   (select-keys before [:pass :fail :error]))))))
           (recur (inc index)))))))
 
+(t/deftest ^:async interactions-replay-through-the-prototype-panel
+  ;; interactions set on mains, copy heads and children through the prototype
+  ;; panel stay as set through sync, swaps, switches, resets and update main
+  (await (replay {:world [2 1 {:variants true :rich-variants true}]
+                  :ops [[:interact 0 0 0 0] [:interact 5 0 0 1] [:interact 7 0 0 0] [:sync 0] [:swap 1]
+                        [:switch 0] [:reset 2] [:update-main 3] [:undo] [:redo] [:interact 7 0 0 2]]}))
+  (await (replay {:world [2 2 {:variants true :layout :grid :layout-copies true :text true}]
+                  :ops [[:interact 3 0 0 0] [:edit 3 0 1 1] [:detach 3] [:interact 9 0 0 1] [:switch 1]
+                        [:swap 4] [:duplicate 2] [:paste 2] [:undo] [:undo] [:redo]]})))
+
+(t/deftest ^:async generated-a-nested-copy-pasted-out-keeps-the-overrides-of-the-references-it-skips
+  ;; the clipboard advances a nested copy pasted out of its copy to its
+  ;; component's main, with the overrides of the references it leaves behind
+  (await (replay {:world [4 4 {:variants true :layout :grid :rich-variants true :grid-empty true :text true}]
+                  :ops [[:edit 19 0 1 1] [:remove-child 10 6 4 27] [:paste 26 25 23 15]]})))
+
+(t/deftest ^:async pastes-on-another-page-replay-through-the-frontend
+  ;; copies pasted on a second page sync from their mains and undo there
+  (await (replay {:world [2 1 {:pages true :variants true}]
+                  :ops [[:paste 3 0 0 1] [:edit 3 0 1 1] [:sync 0] [:paste 5 0 0 1] [:undo] [:redo]]}))
+  (await (replay {:world [2 2 {:pages true :variants true :rich-variants true :text true}]
+                  :ops [[:edit 9 0 1 1] [:paste 9 0 0 1] [:paste 2 0 0 1] [:update-main 2] [:swap 2]
+                        [:undo] [:undo] [:redo]]})))
+
+(t/deftest ^:async library-pastes-replay-through-the-frontend
+  ;; library mains and copies pasted into the consumer become copies of the
+  ;; library's components, which sync from it
+  (await (replay {:world [2 1 {:library true :variants true :rich-variants true :text true}]
+                  :ops [[:library-paste 0] [:library-paste 1] [:library-paste 2] [:edit 0 0 1 1]
+                        [:library-sync 0] [:undo] [:redo]]}))
+  (await (replay {:world [2 2 {:library true :variants true :text true :layout :flex :layout-copies true}]
+                  :ops [[:library-paste 2] [:library-paste 5] [:swap 1] [:undo] [:undo] [:redo] [:library-paste 7]]})))
+
 (t/deftest ^:async generated-an-update-main-into-a-nested-copy-authors-the-sizing-it-fixes
   ;; a copy child filling a row pushes a transform into the nested copy its
   ;; main holds, which takes it with its sizing fixed as its own override
   (await (replay {:world [3 2 {:text true :layout :flex}] :ops [[:nest 24 11 9 6] [:delete 1] [:restore 1] [:add-child 15 16 4 29] [:move 23 24 12 20] [:edit 25 25 27 25] [:undo 23 17 15 25] [:style 23 29 25 20] [:transform 29 11 7 27] [:update-main 2 19 2 29]]})))
+

@@ -35,6 +35,7 @@
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.bool :as dwb]
    [app.main.data.workspace.groups :as dwg]
+   [app.main.data.workspace.interactions :as dwi]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.path.shapes-to-path :as dwps]
    [app.main.data.workspace.reflow :as wrf]
@@ -52,6 +53,7 @@
    [app.main.features :as features]
    [app.main.repo :as rp]
    [app.main.store :as st]
+   [app.main.streams :as ms]
    [app.plugins.reflow :as pwrf]
    [app.util.dom :as dom]
    [beicon.v2.core :as rx]
@@ -66,6 +68,13 @@
 ;; --------------------------------------------------------------------------
 
 (defonce ^:private original-update-thumbnail (atom nil))
+
+(defn- show-page
+  "The workspace showing the page `page-id`, as the pages panel leaves it."
+  [page-id]
+  (ptk/reify ::show-page
+    ptk/UpdateEvent
+    (update [_ state] (assoc state :current-page-id page-id))))
 
 (defn- noop-thumbnail-event []
   (ptk/reify ::noop-thumbnail
@@ -359,14 +368,34 @@
                            :change-selection? false)]
 
     (instance? n/PasteToRoot op)
-    ;; the clipboard's copy of the shape, pasted with the root selected
-    (let [file (current-file)
-          page (get-in file [:data :pages-index (:current-page-id @st/state)])
-          data (thp/simulate-copy-shape #{(tm/target-shape-id situation (:target op))}
-                                        (:objects page) {(:id file) file} page file
-                                        #{"components/v2"} 46)]
-      [(dws/select-shape uuid/zero)
-       (dw/paste-shapes data)])
+    ;; the clipboard's copy of the shape, from its file's page that holds it,
+    ;; pasted with the root selected; on another page or from another file,
+    ;; with nothing selected and the pointer where the node puts the corner
+    (let [file    (current-file)
+          page    (get-in file [:data :pages-index (:current-page-id @st/state)])
+          id      (tm/target-shape-id situation (:target op))
+          source  (if-let [from (:from-file op)] (get-in @st/state [:files from]) file)
+          src-page (or (d/seek #(contains? (:objects %) id) (vals (get-in source [:data :pages-index]))) page)
+          data    (thp/simulate-copy-shape #{id} (:objects src-page) (:files @st/state) src-page source
+                                           #{"components/v2"} 46)
+          dest    (if-let [to-page (:to-page op)] (get-in file [:data :pages-index to-page]) page)]
+      (cond
+        (:to-page op)
+        ;; pasted on another page, which the workspace shows for it
+        (do (rx/push! ms/mouse-position (n/paste-point dest))
+            [(show-page (:id dest))
+             (dws/deselect-all)
+             (dw/paste-shapes data)
+             (show-page (:id page))])
+
+        (:from-file op)
+        (do (rx/push! ms/mouse-position (n/paste-point dest))
+            [(dws/deselect-all)
+             (dw/paste-shapes data)])
+
+        :else
+        [(dws/select-shape uuid/zero)
+         (dw/paste-shapes data)]))
 
     (instance? n/NestCopy op)
     (let [parent-id (tm/target-shape-id situation (:into op))
@@ -381,6 +410,22 @@
     ;; the assets panel's rename
     (let [shape (tm/shape-by-id situation (tm/target-shape-id situation (:target op)))]
       [(dwl/rename-component-and-main-instance (:component-id shape) (:value op))])
+
+    (instance? n/SetInteractions op)
+    ;; the prototype panel: edit the first interaction or add one, and remove
+    ;; the rest
+    (let [shape   (tm/shape-by-id situation (tm/target-shape-id situation (:target op)))
+          current (vec (:interactions shape))
+          [wanted] (:interactions op)]
+      (cond-> []
+        (and wanted (seq current))
+        (conj (dwi/update-interaction shape 0 (constantly wanted)))
+
+        (and wanted (empty? current))
+        (conj (dwi/add-interaction nil (:id shape) wanted))
+
+        :always
+        (into (repeatedly (- (count current) (if wanted 1 0)) #(dwi/remove-interaction shape (if wanted 1 0))))))
 
     (instance? n/AnnotateComponent op)
     (let [shape (tm/shape-by-id situation (tm/target-shape-id situation (:target op)))]
@@ -566,6 +611,12 @@
         record    (cond-> (dissoc (into {} op) ::tm/id)
                     (and (instance? n/SyncFromLibrary op) (nil? (:source op)))
                     (dissoc :source)
+
+                    ;; a paste on its own page of its own file names neither
+                    (instance? n/PasteToRoot op)
+                    (as-> record (cond-> record
+                                   (nil? (:to-page op)) (dissoc :to-page)
+                                   (nil? (:from-file op)) (dissoc :from-file)))
 
                     (satisfies? n/IAppliedResult op)
                     (merge (n/applied-result op before (tm/file situation))))]

@@ -342,6 +342,38 @@
   [target annotation]
   (tm/assign-id (->AnnotateComponent target annotation)))
 
+;; ---------------------------------------------------------------------------
+;; set-interactions — give a shape its prototype interactions
+;;
+;; As the prototype panel's add, edit and remove of an interaction: the shape
+;; `target` names ends with `interactions`. Interactions are no sync
+;; attribute: sync leaves them, and a swap or a switch keeps a head's.
+;; ---------------------------------------------------------------------------
+
+(defrecord SetInteractions [target interactions]
+  IComponentOperation
+  (op-kind [_] :user)
+
+  tm/IOperation
+  (apply-to [this situation]
+    (let [the-file (tm/file situation)
+          page     (thf/current-page the-file)
+          id       (tm/target-shape-id situation target)
+          changes  (-> (pcb/empty-changes nil (:id page))
+                       (pcb/with-objects (:objects page))
+                       (pcb/update-shapes [id] #(assoc % :interactions interactions)))
+          file'    (thf/apply-changes the-file changes)]
+      (-> situation
+          (tm/with-file file')
+          (record-changes changes)
+          (tm/record-application this {:target target :interactions interactions})))))
+
+(defn set-interactions
+  "Constructor for the set-interactions operation: give the shape `target`
+   names the prototype `interactions`, a vector."
+  [target interactions]
+  (tm/assign-id (->SetInteractions target interactions)))
+
 (declare libraries)
 
 (defrecord EditGrid [target action value]
@@ -1389,14 +1421,22 @@
                                     (cfh/get-children-with-self (:objects page) id))
                               [id]))
 
-(defrecord PasteToRoot [target]
+(defn paste-point
+  "Where a paste on another page puts the corner of the shapes it pastes:
+   to the right of the root shapes `page` already holds, one step for each."
+  [page]
+  (gpt/point (+ 10000 (* 1000 (count (get-in page [:objects uuid/zero :shapes])))) 0))
+
+(defrecord PasteToRoot [target to-page from-file]
   IComponentOperation
   (op-kind [_] :user)
 
   IAppliedResult
   (applied-result [_ file-before file-after]
-    {:new-head (new-subtree-head (thf/current-page file-before)
-                                 (thf/current-page file-after))})
+    (let [page (fn [file] (if to-page
+                            (get-in file [:data :pages-index to-page])
+                            (thf/current-page file)))]
+      {:new-head (new-subtree-head (page file-before) (page file-after))}))
 
   tm/IOperation
   (apply-to [this situation]
@@ -1404,13 +1444,23 @@
           page      (thf/current-page the-file)
           libs      (libraries situation)
           id        (tm/target-shape-id situation target)
-          copied    (-> (copied-objects the-file page libs id)
+          ;; the file it is copied from: `from-file`, a library, or the current one
+          source    (if from-file (get libs from-file) the-file)
+          copied    (-> (copied-objects source (thf/current-page source) libs id)
                         (update id assoc :parent-id uuid/zero :frame-id uuid/zero))
-          changes   (-> (pcb/empty-changes nil (:id page))
-                        (cld/generate-duplicate-changes (merge (:objects page) copied)
-                                                        page
+          ;; the page it is pasted on: `to-page`, or the current one
+          dest      (if to-page (get-in the-file [:data :pages-index to-page]) page)
+          ;; on another page or from another file, its corner goes past the
+          ;; shapes already there
+          delta     (if (or to-page from-file)
+                      (let [bounds (gsh/shapes->rect [(get copied id)])]
+                        (gpt/subtract (paste-point dest) (gpt/point (:x1 bounds) (:y1 bounds))))
+                      (gpt/point 0 0))
+          changes   (-> (pcb/empty-changes nil (:id dest))
+                        (cld/generate-duplicate-changes (merge (:objects dest) copied)
+                                                        dest
                                                         #{id}
-                                                        (gpt/point 0 0)
+                                                        delta
                                                         libs
                                                         (:data the-file)
                                                         (:id the-file))
@@ -1425,13 +1475,19 @@
       (-> situation
           (tm/with-file file')
           (record-changes changes)
-          (tm/record-application this (merge {:target target}
+          (tm/record-application this (merge (cond-> {:target target}
+                                               to-page (assoc :to-page to-page)
+                                               from-file (assoc :from-file from-file))
                                              (applied-result this the-file file')))))))
 
 (defn paste-to-root
-  "Copy the shape `target` names and paste it at the page root."
-  [target]
-  (tm/assign-id (->PasteToRoot target)))
+  "Copy the shape `target` names and paste it at the root of its page, or
+   of the page `to-page`; with `from-file`, copy it from that library's
+   current page into the current file's."
+  ([target] (paste-to-root target nil nil))
+  ([target to-page] (paste-to-root target to-page nil))
+  ([target to-page from-file]
+   (tm/assign-id (->PasteToRoot target to-page from-file))))
 
 ;; ---------------------------------------------------------------------------
 ;; nest-copy — move an existing copy into a main
