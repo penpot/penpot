@@ -266,6 +266,30 @@
                    (assoc id groups)))
                before model)))
 
+(defn- inherit-skipped-groups
+  "`model` with each shape of the copy `new-head`, pasted from `source-id` of
+   `objects` out of `levels` copy levels into `after-objects`, also holding
+   the groups the references it skips author: the clipboard keeps the values
+   they gave it. The pasted shape's own groups win over theirs, and a nearer
+   reference's over a farther one's."
+  [model objects source-id after-objects new-head levels]
+  (letfn [(ref-at [id n] (nth (iterate #(:shape-ref (get objects %)) id) n))
+          (walk [model source-id copy-id]
+            (let [source (get objects source-id)
+                  copy   (get after-objects copy-id)
+                  pairs  (map vector (:shapes source) (:shapes copy))
+                  model  (reduce (fn [model level]
+                                   (let [ref-id  (ref-at source-id level)
+                                         ;; the children of the reference, as the pasted shape's
+                                         mapping (into {} (map (fn [[child pasted]] [(ref-at child level) pasted])) pairs)
+                                         groups  (grid/remap-groups (get model ref-id) mapping)]
+                                     (cond-> model
+                                       (seq groups) (update copy-id #(merge groups %)))))
+                                 model
+                                 (range 1 (inc levels)))]
+              (reduce (fn [model [child pasted]] (walk model child pasted)) model pairs)))]
+    (walk model source-id new-head)))
+
 (defn- settle-model
   [model situation synced?]
   (let [references (when (some :layout-grid-cells (vals model))
@@ -351,7 +375,17 @@
     (:library opts) (with-library opts)
     (:stale-libraries opts) (cf/freeze-libraries)
     (:rich-variants opts) (as-> s (assoc s :shape-budget (+ 80 (count (tree s)))))
-    (:scale opts) (as-> s (assoc s :shape-budget (+ 120 (count (tree s)))))))
+    (:scale opts) (as-> s (assoc s :shape-budget (+ 120 (count (tree s)))))
+    ;; a second page, empty, for pastes from the first
+    (:pages opts) (as-> s (tm/with-file s (let [file (tm/file s)]
+                                            (-> (thf/add-sample-page file :generated-page)
+                                                (vary-meta assoc :current-page-id (thf/current-page-id file))))))))
+
+(defn- other-page-id
+  "The page of `situation`'s file other than its current one, if any."
+  [situation]
+  (let [file (tm/file situation)]
+    (first (remove #{(thf/current-page-id file)} (get-in file [:data :pages])))))
 
 (defn candidates
   [situation model kind scope]
@@ -386,6 +420,9 @@
                               :detach (top-copy shape)
                               (:resize :rotate) (top-copy shape)
                               :transform (and (not= :text (:type shape))
+                                              ;; a bool of hidden shapes has no area to transform
+                                              (< 0.5 (get-in shape [:selrect :width]))
+                                              (< 0.5 (get-in shape [:selrect :height]))
                                               (case (mod (or scope 0) 5)
                                                 0 (ctk/main-instance? shape)
                                                 1 (and (nil? (:shape-ref shape))
@@ -409,16 +446,20 @@
                               :nest (and (top-copy shape) (not (overridden (:id shape))))
                               ;; a shape a main holds, other than its root: a plain shape
                               ;; or a nested copy head, which no copy around it holds
-                              ;; a top copy, or a plain shape a main holds: nothing in it
-                              ;; leaves a copy level, so the clipboard advances no ref
+                              ;; a top copy, a plain shape a main holds, or a nested copy
+                              ;; head a copy holds, which leaves its copy's level: the
+                              ;; clipboard advances its refs to the component it copies
                               :paste (and (< (count objects) (get situation :shape-budget 120))
                                           (or (top-copy shape)
+                                              (and (ctk/instance-head? shape) (:shape-ref shape)
+                                                   (ctn/has-any-copy-parent? objects shape))
                                               (and (nil? (:shape-ref shape))
                                                    (not (ctk/main-instance? shape))
                                                    (some ctk/main-instance? (cfh/get-parents objects (:id shape))))))
                               :rename (and (ctk/main-instance? shape) (not (:variant-id shape))
                                            (live-component shape))
                               :annotate (and (ctk/main-instance? shape) (live-component shape))
+                              :interact true
                               :move (and (not (ctk/main-instance? shape))
                                          (or (nil? (:shape-ref shape)) (ctk/instance-head? shape))
                                          (not (ctn/has-any-copy-parent? objects shape))
@@ -507,6 +548,26 @@
   #{:library-edit :library-add-child :library-remove-child :library-delete :library-restore
     :library-undo :library-redo :library-accept :library-transform :library-text :library-text-style
     :library-variant-property :library-add-variant :library-make-variant :library-combine})
+
+(defn- library-paste-candidates
+  "The shapes of the libraries' current pages that the consumer can paste:
+   main roots of live components, which it pastes as components of its own,
+   and top copies, which stay copies of their components."
+  [situation]
+  (vec
+   (for [[library-index [library-id library]] (map-indexed vector (ordered-files (tm/aux-files situation)))
+         :let [objects (:objects (thf/current-page library))]
+         entry (tree (tm/with-file situation library))
+         :let [shape (:shape entry)]
+         :when (and (< (count (:objects (thf/current-page (tm/file situation))))
+                       (get situation :shape-budget 120))
+                    (or (and (ctk/main-instance? shape)
+                             (not (:variant-id shape))
+                             (let [component (get-in library [:data :components (:component-id shape)])]
+                               (and component (not (:deleted component)))))
+                        (and (ctk/instance-head? shape) (:shape-ref shape)
+                             (not (ctn/has-any-copy-parent? objects shape)))))]
+     (assoc entry :path (into [:library library-index] (:path entry)) :from-library library-id))))
 
 (def ^:private local-variant-kind
   "The local kind of each library variant kind."
@@ -660,6 +721,13 @@
   "Annotations a component is given; nil removes it."
   ["Note" "Another note" nil])
 
+(def interaction-values
+  "Prototype interactions a shape is given; empty removes them. They open a
+   URL, so no board they lead to ties them to deletions."
+  [[{:event-type :click :action-type :open-url :url "https://example.com/a"}]
+   [{:event-type :click :action-type :open-url :url "https://example.com/b"}]
+   []])
+
 (def structure-edits
   "Structure actions: the action and, for a bool, its type."
   [[:group] [:mask] [:ungroup] [:unmask] [:bool :union] [:bool :difference]
@@ -746,8 +814,14 @@
   [situation model [kind index property value scope :as tuple]]
   (let [index (or index 0)
         [style-property style-values] (nth style-edits (mod (or property 0) (count style-edits)))
-        items (cond->> (if (contains? library-source-kinds kind)
+        items (cond->> (cond
+                         (contains? library-source-kinds kind)
                          (library-candidates situation kind scope)
+
+                         (= kind :library-paste)
+                         (library-paste-candidates situation)
+
+                         :else
                          (candidates situation model (if (#{:style :grid-cell :grid-direction :grid-track} kind) :edit kind)
                                      (if (= kind :grid-track) true scope)))
                 (#{:grid-cell :grid-direction :grid-track} kind)
@@ -902,11 +976,17 @@
                  :remove-child (n/remove-child target)
                  :duplicate (n/duplicate target)
                  (:nest :move) (n/nest-copy target (constantly (get-in selected [:parent :id])))
-                 :paste (n/paste-to-root target)
+                 ;; an odd choice pastes on the other page, when there is one
+                 :library-paste (n/paste-to-root (constantly (get-in selected [:shape :id])) nil
+                                                 (:from-library selected))
+                 :paste (n/paste-to-root target (when (odd? (or (nth tuple 4 nil) 0))
+                                                  (other-page-id situation)))
                  :rename (n/rename-component target (first (nth rename-values (mod (or (nth tuple 3 nil) 0)
                                                                                    (count rename-values)))))
                  :annotate (n/annotate-component target (nth annotations (mod (or (nth tuple 3 nil) 0)
                                                                               (count annotations))))
+                 :interact (n/set-interactions target (nth interaction-values
+                                                           (mod (or (nth tuple 3 nil) 0) (count interaction-values))))
                  :delete (n/delete-component target)
                  :swap (n/swap-shape target (constantly (get-in selected [:destination :shape :component-id])))
                  :switch (n/switch-variant target (:variant-value selected) :pos (:variant-pos selected))
@@ -1162,7 +1242,7 @@
                 model))
       (:text :text-style) (shadow/edit-text model shape (:content (n/text-edit-commit shape (:edit op) (:value op)))
                                             (some? (:typography op)))
-      (:duplicate :paste)
+      (:duplicate :paste :library-paste)
       (let [after-objects (all-objects after)
             new-head (:new-head (n/applied-result op (tm/file before) (tm/file after)))
             head (get after-objects new-head)
@@ -1172,12 +1252,35 @@
                        (get (into {} (mapcat cf/object-trees) (vals (cf/reference-libraries after head)))
                             (:shape-ref head)))
                      (get after-objects (:shape-ref head)))
-            model (shadow/duplicate model objects id (:objects (thf/current-page (tm/file after))) new-head)]
+            model (shadow/duplicate model objects id
+                                    (if-let [page-id (:to-page op)]
+                                      (get-in (tm/file after) [:data :pages-index page-id :objects])
+                                      (:objects (thf/current-page (tm/file after))))
+                                    new-head)
+            ;; a nested copy pasted out of its copies takes the overrides of the
+            ;; references it leaves behind
+            page-objects (:objects (thf/current-page (tm/file before)))
+            ;; the references it skips to reach the main of its component
+            main-id (get-in (cf/libraries before) [(:component-file shape) :data :components
+                                                   (:component-id shape) :main-instance-id])
+            levels (if (and (= kind :paste) (get page-objects id) (ctn/has-any-copy-parent? page-objects shape))
+                     (->> (iterate #(:shape-ref (get objects %)) (:shape-ref shape))
+                          (take-while some?)
+                          (take 16)
+                          (take-while #(not= % main-id))
+                          count)
+                     0)
+            model (cond-> model
+                    (and new-head (pos? levels))
+                    (-> (inherit-skipped-groups objects id after-objects new-head levels)
+                        ;; out of every copy level, a swapped head is a plain copy of
+                        ;; the component it shows
+                        (update new-head dissoc :swap-group)))]
         ;; a copy pasted on the page keeps the geometry it showed: what it
         ;; authored, now where it lands, and the orientation and size another
         ;; parent gave it, which its main's need not be
         (cond-> model
-          (and (= kind :paste) head main (:shape-ref head)
+          (and (#{:paste :library-paste} kind) head main (:shape-ref head)
                (or (get-in model [new-head :geometry-group])
                    (and (not (cfh/root? (get objects (:parent-id shape))))
                         (or (not (gmt/close? (or (:transform head) (gmt/matrix)) (or (:transform main) (gmt/matrix))))
@@ -1435,6 +1538,32 @@
               (when-not (= (get-in resolved [:op :annotation]) (:annotation component))
                 (oracle/fail :I9 {:phase :requested-annotation :expected (get-in resolved [:op :annotation])
                                   :actual (:annotation component)})))))
+        (when (= kind :interact)
+          (let [actual (:interactions (tm/shape-by-id after (get-in resolved [:shape :id])))]
+            (when-not (= (vec (get-in resolved [:op :interactions])) (vec actual))
+              (oracle/fail :I9 {:phase :requested-interactions :expected (get-in resolved [:op :interactions])
+                                :actual actual}))))
+        ;; interactions are no sync attribute: only their edit, or its undo or
+        ;; redo, changes those of a shape that stays; a swap or a switch gives
+        ;; the new head those of the head it replaces
+        (when-not (#{:interact :undo :redo :library-undo :library-redo} kind)
+          (let [interactions (fn [situation]
+                               (into {} (for [file (cons (tm/file situation) (vals (tm/aux-files situation)))
+                                              page (vals (get-in file [:data :pages-index]))
+                                              shape (vals (:objects page))]
+                                          [(:id shape) (vec (:interactions shape))])))
+                before  (interactions situation)
+                kept    (interactions after)
+                changed (filterv #(and (contains? kept %) (not= (get before %) (get kept %))) (keys before))
+                head    (get-in resolved [:shape :id])
+                new-head (when (and (#{:swap :switch} kind) (get-in resolved [:op]))
+                           (:id (tm/shape-by-id after head)))]
+            (when (seq changed)
+              (oracle/fail :I9 {:phase :kept-interactions :shapes changed
+                                :before (select-keys before changed) :after (select-keys kept changed)}))
+            (when (and new-head (not= (get before head) (get kept new-head)))
+              (oracle/fail :I9 {:phase :swapped-head-interactions :kind kind
+                                :before (get before head) :after (get kept new-head)}))))
         ;; only an annotation edit, or its undo or redo, changes an annotation
         (when-not (#{:annotate :undo :redo :library-undo :library-redo} kind)
           (let [annotations (fn [situation]
@@ -1704,7 +1833,7 @@
 (def structure-kinds
   [:edit :reset :update-main :detach :sync :undo :redo :text :text-style :add-child
    :remove-child :duplicate :nest :delete :restore :resize :rotate :style :transform
-   :grid-direction :grid-cell :move :rename :annotate :paste])
+   :grid-direction :grid-cell :move :rename :annotate :paste :interact])
 
 (def structure-program-gen
   (gen/let [components (gen/choose 2 3)
@@ -1713,9 +1842,10 @@
             layout-children gen/boolean
             layout-item-margins gen/boolean
             grid (gen/elements [nil :square :empty])
+            pages gen/boolean
             ops (operation-gen structure-kinds)]
     {:world [components depth {:text true :text-styles true :layout layout :layout-children layout-children :layout-item-margins layout-item-margins
-                               :grid-square (= grid :square) :grid-empty (= grid :empty)}]
+                               :grid-square (= grid :square) :grid-empty (= grid :empty) :pages pages}]
      :ops ops}))
 
 (def swap-kinds (into structure-kinds [:swap :switch]))
@@ -1727,11 +1857,12 @@
             layout-children gen/boolean
             layout-item-margins gen/boolean
             grid (gen/elements [nil :square :empty])
+            pages gen/boolean
             ops (operation-gen swap-kinds)]
     {:world [components 2 {:variants true :variant-diff differ? :rich-variants true
                            :text true :text-styles true :layout layout :layout-copies true
                            :layout-children layout-children :layout-item-margins layout-item-margins
-                           :grid-square (= grid :square) :grid-empty (= grid :empty)}]
+                           :grid-square (= grid :square) :grid-empty (= grid :empty) :pages pages}]
      :ops ops}))
 
 (def variant-kinds (into swap-kinds [:variant-property :add-variant :make-variant :combine]))
@@ -1834,7 +1965,7 @@
      :ops ops}))
 
 (def library-kinds
-  (into structure-kinds [:swap :switch :library-sync]))
+  (into structure-kinds [:swap :switch :library-sync :library-paste]))
 
 (def library-program-gen
   (gen/let [depth (gen/choose 0 2)
