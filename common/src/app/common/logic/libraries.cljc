@@ -771,7 +771,7 @@
         flipped   (gmt/multiply flips turn)
         ;; axes that tell neither apart, as those of a bool fitting resets,
         ;; take the turn before the flips, as a flip of a turned shape stores
-        transform (if (>= (closeness turned) (closeness flipped)) turned flipped)]
+        transform (if (>= (closeness turned) (- (closeness flipped) 1e-9)) turned flipped)]
     (assoc shape :transform transform :transform-inverse (gmt/inverse transform))))
 
 (defn- layout-skewed?
