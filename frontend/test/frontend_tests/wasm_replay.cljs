@@ -34,9 +34,13 @@
    [potok.v2.core :as ptk]
    [promesa.core :as p]))
 
+;; the page's query parameters as it loads, before a replayed step navigates
+(def ^:private page-params
+  (js/URLSearchParams. (.. js/globalThis -location -search)))
+
 (defn- query-param
   [name]
-  (.get (js/URLSearchParams. (.. js/globalThis -location -search)) name))
+  (.get page-params name))
 
 (defn- programs-uri
   "The programs file the page names in its `programs` query parameter: EDN
