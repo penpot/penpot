@@ -173,7 +173,7 @@ export class PenpotMcpServer {
         this.maxBodySize = process.env.PENPOT_MCP_MAX_BODY_SIZE ?? "10mb";
         const toolTimeoutSecs = parseInt(process.env.PENPOT_MCP_TOOL_TIMEOUT_S ?? "120", 10);
 
-        this.requestGuard = RequestGuard.fromEnvironment(process.env, this.isRemoteMode());
+        this.requestGuard = RequestGuard.fromEnvironment(process.env, this.isMultiUserMode());
 
         this.configLoader = new ConfigurationLoader(process.cwd());
         this.apiDocs = new ApiDocs();
@@ -355,6 +355,12 @@ export class PenpotMcpServer {
                 this.logger.info(`Remote mode: ${this.isRemoteMode()}`);
                 this.logger.info(`DevEnv mode: ${this.isDevEnv()}`);
                 this.logger.info(`Allowed hosts and origins: ${this.requestGuard.describe()}`);
+                if (this.requestGuard.allowsAny() && !this.isMultiUserMode()) {
+                    this.logger.warn(
+                        "Host and Origin check is off and no user token is required: " +
+                            "any web page opened in a browser that reaches this server can drive it"
+                    );
+                }
                 this.logger.info(`Modern Streamable HTTP endpoint: http://${this.host}:${this.port}/mcp`);
                 this.logger.info(`WebSocket server URL: ws://${this.host}:${this.webSocketPort}`);
 

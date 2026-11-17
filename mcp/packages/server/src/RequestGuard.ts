@@ -28,11 +28,16 @@ export class RequestGuardResult {
  * `Origin` header comes from a client other than a browser and passes the `Origin` check.
  *
  * The allowed hostnames come from `PENPOT_MCP_ALLOWED_HOSTS`, where `*` allows any hostname.
- * When it is unset, local mode allows only loopback hostnames and remote mode allows any
- * hostname, since a remote server is reached under names it cannot know and relies on user
- * tokens instead.
+ * When it is unset, single-user mode allows only loopback hostnames, in local and remote mode
+ * alike, since it has no other barrier. Multi-user mode allows any hostname, since its server
+ * is reached under names it cannot know and relies on user tokens instead.
  */
 export class RequestGuard {
+    /**
+     * Pattern of a valid allowlist entry: a hostname or a bracketed IPv6 address, without scheme or port.
+     */
+    private static readonly HOSTNAME_PATTERN = /^(?:[a-z0-9_-]+(?:\.[a-z0-9_-]+)*|\[[0-9a-f:.]+\])$/;
+
     private readonly logger = createLogger("RequestGuard");
 
     /**
@@ -47,20 +52,29 @@ export class RequestGuard {
      * go in brackets (e.g. `[::1]`). The entry `*` allows any hostname, which turns the check off.
      *
      * @param env the environment variables
-     * @param isRemoteMode whether the server runs in remote mode
+     * @param isMultiUserMode whether the server runs in multi-user mode
+     * @throws Error if an entry is neither `*` nor a hostname, e.g. when it has a scheme or port
      */
-    public static fromEnvironment(env: Record<string, string | undefined>, isRemoteMode: boolean): RequestGuard {
+    public static fromEnvironment(env: Record<string, string | undefined>, isMultiUserMode: boolean): RequestGuard {
         const configured = (env.PENPOT_MCP_ALLOWED_HOSTS ?? "")
             .split(",")
             .map((hostname) => hostname.trim().toLowerCase())
             .filter((hostname) => hostname.length > 0);
+        for (const hostname of configured) {
+            if (hostname !== "*" && !RequestGuard.HOSTNAME_PATTERN.test(hostname)) {
+                throw new Error(
+                    `PENPOT_MCP_ALLOWED_HOSTS entry "${hostname}" is not a hostname; ` +
+                        "give hostnames without scheme, port or path (e.g. localhost, [::1])"
+                );
+            }
+        }
         if (configured.includes("*")) {
             return RequestGuard.allowingAny();
         }
         if (configured.length > 0) {
             return new RequestGuard(configured);
         }
-        return isRemoteMode ? RequestGuard.allowingAny() : RequestGuard.allowing(localhostAllowedHostnames());
+        return isMultiUserMode ? RequestGuard.allowingAny() : RequestGuard.allowing(localhostAllowedHostnames());
     }
 
     /**
@@ -75,6 +89,13 @@ export class RequestGuard {
      */
     public static allowingAny(): RequestGuard {
         return new RequestGuard(null);
+    }
+
+    /**
+     * Indicates whether the guard allows every request.
+     */
+    public allowsAny(): boolean {
+        return this.allowedHostnames === null;
     }
 
     /**

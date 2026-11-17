@@ -211,17 +211,33 @@ function initializeStatus(headers: Record<string, string>): Promise<number> {
     });
 }
 
-test("local mode rejects requests from foreign hosts and origins", async () => {
-    await server.stop();
-    delete process.env.PENPOT_MCP_REMOTE_MODE;
-    delete process.env.PENPOT_MCP_ALLOWED_HOSTS;
-    server = new PenpotMcpServer(false);
-    await server.start();
+for (const remoteMode of [undefined, "true"]) {
+    test(`single-user mode rejects requests from foreign hosts and origins (remote mode: ${remoteMode})`, async () => {
+        await server.stop();
+        if (remoteMode === undefined) {
+            delete process.env.PENPOT_MCP_REMOTE_MODE;
+        } else {
+            process.env.PENPOT_MCP_REMOTE_MODE = remoteMode;
+        }
+        delete process.env.PENPOT_MCP_ALLOWED_HOSTS;
+        server = new PenpotMcpServer(false);
+        await server.start();
 
-    assert.equal(await initializeStatus({ Host: `attacker.example:${server.port}` }), 403);
-    assert.equal(await initializeStatus({ Host: `localhost:${server.port}`, Origin: "https://attacker.example" }), 403);
-    assert.equal(await initializeStatus({ Host: `localhost:${server.port}` }), 200);
-    assert.equal(await initializeStatus({ Host: `127.0.0.1:${server.port}`, Origin: "http://localhost:4400" }), 200);
+        assert.equal(await initializeStatus({ Host: `attacker.example:${server.port}` }), 403);
+        assert.equal(
+            await initializeStatus({ Host: `localhost:${server.port}`, Origin: "https://attacker.example" }),
+            403
+        );
+        assert.equal(await initializeStatus({ Host: `localhost:${server.port}` }), 200);
+        assert.equal(
+            await initializeStatus({ Host: `127.0.0.1:${server.port}`, Origin: "http://localhost:4400" }),
+            200
+        );
+    });
+}
+
+test("multi-user mode accepts requests from any host by default", async () => {
+    assert.equal(await initializeStatus({ Host: `penpot.example.com`, Origin: "https://penpot.example.com" }), 200);
 });
 
 /**

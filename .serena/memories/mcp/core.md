@@ -123,7 +123,8 @@ From the `mcp/` directory, run
 ## Host and Origin allowlist (`RequestGuard`)
 
 - `RequestGuard` checks `Host` and `Origin` (hostname only, port ignored) on `/mcp`, the REPL (Express middleware, 403) and the plugin WebSocket (close `1008` before any message is read). It stops web pages on the user's machine from driving a local server (DNS rebinding, cross-site WebSocket).
-- Allowlist: `PENPOT_MCP_ALLOWED_HOSTS` (`*` turns the check off); unset → loopback only in local mode, any host in remote mode (multi-user relies on tokens; remote has no file access). A missing `Origin` passes (non-browser clients).
+- Allowlist: `PENPOT_MCP_ALLOWED_HOSTS` (`*` turns the check off); unset → loopback only in single-user mode (local or remote: no other barrier, `execute_code` still runs in the user's session), any host in multi-user mode (relies on user tokens; behind nginx `/mcp/ws` the server sees `Host: penpot-mcp:4402`). A missing `Origin` passes (non-browser clients).
+- Entries must be `*`, a hostname or a bracketed IPv6 address; one with a scheme, port or path makes `fromEnvironment` throw, so the server does not start. Startup logs a `warn` when the check is off in single-user mode.
 - The plugin iframe has `allow-same-origin`, so its WebSocket carries the real plugin origin (`http://localhost:4400` locally, the Penpot origin when integrated).
 - Test mocks of `PenpotMcpServer` passed to `PluginBridge` must provide `requestGuard`.
 
