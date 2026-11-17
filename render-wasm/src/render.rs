@@ -2627,10 +2627,8 @@ impl RenderState {
         let frame_type =
             self.render_shape_tree_partial(base_object, tree, timestamp, allow_stop)?;
 
-        // `draw_atlas` needs a snapshot of the tile atlas. Partial frames are not
-        // presented (only flushed), so defer composition until the viewport is
-        // ready and avoid re-snapshotting up to 4096² on every rAF during async
-        // tile work.
+        // Partial frames are not presented (only flushed), so defer
+        // composition until the viewport is ready.
         let should_compose = !self.options.is_interactive_transform()
             && matches!(frame_type, FrameType::Full | FrameType::ViewportReady)
             && !self.viewport_presented;
