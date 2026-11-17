@@ -339,3 +339,23 @@
     (let [halved (mirror (rotate shape 30) (gpt/point -1 -1))]
       (t/is (and (:flip-x halved) (:flip-y halved)))
       (t/is (composes? halved)))))
+
+(t/deftest a-rotation-turns-a-mirror-that-stores-the-turn-after-its-flip
+  ;; a mirrored shape may store the turn it takes after its flip, the
+  ;; opposite of the one before it; a turn keeps its rotation and flips
+  ;; composing its transform, before the flips
+  (doseq [angle [30 45 90]]
+    (let [base     (create-test-shape :rect {:width 120 :height 60})
+          ;; turned 45 degrees after a horizontal flip, storing 45
+          mirrored (gmt/multiply (gmt/scale-matrix (gpt/point -1 1)) (gmt/rotate-matrix 45))
+          center   (gsh/shape->center base)
+          shape    (-> base
+                       (assoc :flip-x true :rotation 45
+                              :transform mirrored :transform-inverse (gmt/inverse mirrored))
+                       (assoc :points (mapv #(gpt/transform % (gmt/transform-in center mirrored))
+                                            (grc/rect->points (:selrect base)))))
+          after    (gsh/transform-shape shape (ctm/rotation-modifiers shape (gsh/shape->center shape) angle))
+          scale    (gpt/point (if (:flip-x after) -1 1) (if (:flip-y after) -1 1))
+          implied  (gmt/multiply (gmt/rotate-matrix (:rotation after)) (gmt/scale-matrix scale))]
+      (t/is (every? #(mth/close? (get implied %) (get (:transform after) %) 1e-9) [:a :b :c :d])
+            (pr-str angle (:rotation after) (:transform after))))))
