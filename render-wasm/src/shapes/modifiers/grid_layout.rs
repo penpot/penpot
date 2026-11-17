@@ -112,9 +112,62 @@ fn init_tracks(track: &[GridTrack], size: f32, auto_layout: bool) -> Vec<TrackDa
         .collect()
 }
 
+/// The size a grid `shape` needs along an axis to hold its content: its
+/// tracks at the sizes its children need, with its paddings and gaps, as it
+/// sizes itself when it hugs. None when `shape` is no grid.
+fn grid_content_size(
+    column: bool,
+    shape: &Shape,
+    shapes: ShapesPoolRef,
+    bounds: &HashMap<Uuid, Bounds>,
+) -> Option<f32> {
+    let Type::Frame(Frame {
+        layout: Some(Layout::GridLayout(layout_data, grid_data)),
+        ..
+    }) = &shape.shape_type
+    else {
+        return None;
+    };
+    let (track_defs, padding, gap) = if column {
+        (
+            &grid_data.columns,
+            layout_data.padding_left + layout_data.padding_right,
+            layout_data.column_gap,
+        )
+    } else {
+        (
+            &grid_data.rows,
+            layout_data.padding_top + layout_data.padding_bottom,
+            layout_data.row_gap,
+        )
+    };
+    let mut tracks = init_tracks(track_defs, 0.0, true);
+    set_auto_base_size(column, &mut tracks, &grid_data.cells, shapes, bounds);
+    set_auto_multi_span(column, &mut tracks, &grid_data.cells, shapes, bounds);
+    set_flex_multi_span(
+        column,
+        layout_data,
+        &mut tracks,
+        &grid_data.cells,
+        shapes,
+        bounds,
+    );
+    set_fr_value(column, layout_data, &mut tracks, 0.0, true);
+    let size = tracks.iter().map(|t| t.size).sum::<f32>()
+        + padding
+        + tracks.len().saturating_sub(1) as f32 * gap;
+    Some(size)
+}
+
 /// The size a track takes for `shape` along its axis: that of its margin box,
-/// as CSS sizes tracks.
-fn min_size(column: bool, shape: &Shape, bounds: &HashMap<Uuid, Bounds>) -> f32 {
+/// as CSS sizes tracks. A fill child takes its minimum size, and a fill grid
+/// at least the size its content needs.
+fn min_size(
+    column: bool,
+    shape: &Shape,
+    shapes: ShapesPoolRef,
+    bounds: &HashMap<Uuid, Bounds>,
+) -> f32 {
     let margins = shape
         .layout_item
         .map(|i| {
@@ -125,10 +178,17 @@ fn min_size(column: bool, shape: &Shape, bounds: &HashMap<Uuid, Bounds>) -> f32 
             }
         })
         .unwrap_or(0.0);
-    let size = if column && shape.is_layout_horizontal_fill() {
-        shape.layout_item.and_then(|i| i.min_w).unwrap_or(MIN_SIZE)
-    } else if !column && shape.is_layout_vertical_fill() {
-        shape.layout_item.and_then(|i| i.min_h).unwrap_or(MIN_SIZE)
+    let fill = if column {
+        shape.is_layout_horizontal_fill()
+    } else {
+        shape.is_layout_vertical_fill()
+    };
+    let size = if fill {
+        let min = shape
+            .layout_item
+            .and_then(|i| if column { i.min_w } else { i.min_h })
+            .unwrap_or(MIN_SIZE);
+        grid_content_size(column, shape, shapes, bounds).map_or(min, |content| min.max(content))
     } else if column {
         let bounds = bounds.find(shape);
         bounds.width()
@@ -169,7 +229,7 @@ fn set_auto_base_size(
             continue;
         };
 
-        let min_size = min_size(column, shape, bounds);
+        let min_size = min_size(column, shape, shapes, bounds);
         track.size = f32::max(track.size, min_size);
     }
 }
@@ -226,7 +286,7 @@ fn set_auto_multi_span(
         };
 
         // Retrieve the value we need to distribute (fixed cell size minus gaps)
-        let mut dist = min_size(column, child, bounds);
+        let mut dist = min_size(column, child, shapes, bounds);
         let mut num_auto = 0;
 
         let (start, end) = track_index(column, cell);
@@ -310,7 +370,7 @@ fn set_flex_multi_span(
         // Retrieve the value we need to distribute (fixed cell size minus gaps)
         let (start, end) = track_index(column, cell);
         let gaps = (end - start - 1) as f32 * gap_value;
-        let mut dist = min_size(column, child, bounds) - gaps;
+        let mut dist = min_size(column, child, shapes, bounds) - gaps;
         let mut num_flex = 0.0;
 
         // Distribute the size between the tracks that already have a set value
@@ -1014,6 +1074,82 @@ mod tests {
             row_gap: 4.0,
             column_gap: 4.0,
         }
+    }
+
+    #[test]
+    fn test_a_fill_grid_child_takes_the_size_its_content_needs() {
+        use crate::shapes::{GridDirection, Sizing};
+        use crate::state::ShapesPool;
+
+        let grid_id = Uuid::new_v4();
+        let first_id = Uuid::new_v4();
+        let second_id = Uuid::new_v4();
+        let mut shapes = ShapesPool::new();
+        shapes.initialize(10);
+        for id in [first_id, second_id] {
+            shapes.add_shape(id).set_selrect(0.0, 0.0, 60.0, 30.0);
+        }
+        let grid = shapes.add_shape(grid_id);
+        grid.set_shape_type(Type::Frame(Frame::default()));
+        grid.set_selrect(0.0, 0.0, 50.0, 100.0);
+        grid.set_grid_layout_data(
+            GridDirection::Row,
+            5.0,
+            9.0,
+            AlignItems::Start,
+            AlignContent::Start,
+            JustifyItems::Start,
+            JustifyContent::Start,
+            3.0,
+            6.0,
+            3.0,
+            6.0,
+        );
+        let flex = GridTrack {
+            track_type: GridTrackType::Flex,
+            value: 1.0,
+        };
+        grid.set_grid_columns(vec![flex.clone(), flex.clone(), flex.clone()]);
+        grid.set_grid_rows(vec![flex]);
+        let cell = |column: i32, shape: Option<Uuid>| GridCell {
+            row: 1,
+            row_span: 1,
+            column,
+            column_span: 1,
+            align_self: None,
+            justify_self: None,
+            shape,
+        };
+        grid.set_grid_cells(vec![
+            cell(1, None),
+            cell(2, Some(first_id)),
+            cell(3, Some(second_id)),
+        ]);
+        grid.set_flex_layout_child_data(
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            Sizing::Fill,
+            Sizing::Fix,
+            None,
+            None,
+            None,
+            None,
+            None,
+            false,
+            None,
+        );
+        grid.add_child(first_id);
+        grid.add_child(second_id);
+
+        let grid = shapes.get(&grid_id).unwrap();
+        // three equal columns as wide as the widest child, two gaps, two paddings
+        let size = min_size(true, grid, &shapes, &HashMap::new());
+        assert!(
+            (size - (3.0 * 60.0 + 2.0 * 9.0 + 2.0 * 6.0)).abs() < 0.01,
+            "{size}"
+        );
     }
 
     #[test]
