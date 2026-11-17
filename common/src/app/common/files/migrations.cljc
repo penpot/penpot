@@ -716,17 +716,6 @@
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
 
-(defmethod migrate-data "legacy-36"
-  [data _]
-  (letfn [(update-container [container]
-            (d/update-when container :objects (fn [objects]
-                                                (if (contains? objects nil)
-                                                  (dissoc objects nil)
-                                                  objects))))]
-    (-> data
-        (update :pages-index d/update-vals update-container)
-        (d/update-when :components d/update-vals update-container))))
-
 (defmethod migrate-data "legacy-37"
   [data _]
   (d/without-nils data))
@@ -2406,9 +2395,9 @@
   [data _]
   ;; Soft-delete can leave a nil key in `:objects` (gsh/move on a missing
   ;; main, then index-by :id). That fails the file schema on duplicate-file
-  ;; (#12336). legacy-36 already stripped nil keys once; files that already
-  ;; list it as applied can pick the key up again, so this migration
-  ;; re-runs the cleanup on pages and components.
+  ;; (#12336). "legacy-36" did the same cleanup but its id was withdrawn
+  ;; from `available-migrations` below: files that recorded it migrate
+  ;; again through this one.
   (letfn [(update-container [container]
             (d/update-when container :objects
                            (fn [objects]
@@ -2449,7 +2438,6 @@
          "legacy-32"
          "legacy-33"
          "legacy-34"
-         "legacy-36"
          "legacy-37"
          "legacy-38"
          "legacy-39"
