@@ -1126,9 +1126,9 @@
                                :layout-children false :grid-empty false :layout-copies true :text true}]
                   :ops [[:rotate 7 0 0 0] [:update-main 0 0 0 0] [:make-variant 19 0 0 0] [:style 0 29 4 0]]})))
 
-(t/deftest ^:async generated-a-turned-fill-swap-settles-like-its-main-after-the-layout
+(t/deftest ^:async generated-a-turned-fill-swap-keeps-the-skew-its-row-gives
   ;; the layout of a row fills a swapped head turned with its main, which
-  ;; then settles its placement as the main's
+  ;; keeps the skew the layout gives it, as its main does
   (await (replay {:world [2 2 {:variants true :layout :flex :rich-variants true :layout-copies true :text true}]
                   :ops [[:delete 0] [:restore 0] [:add-variant 0 0 0 0] [:swap 6 0 0 0] [:combine 5 0 0 0]
                         [:delete 12 0 0 0] [:combine 9 0 0 0] [:nest 0 0 0 0] [:restore 0 0 0 0] [:combine 8]

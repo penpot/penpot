@@ -183,27 +183,22 @@
   (::layout-reflow? changes))
 
 (defn get-layout-reflow-changes
-  "Derived layout changes on the current file's pages, after copy inputs sync.
-   As the frontend's layout update applies them, the copy shapes they move
-   then settle their placement."
+  "Derived layout changes on the current file's pages, after copy inputs sync."
   [situation]
-  (let [file (tm/file situation)]
-    (reduce (fn [changes [_ page]]
-              (let [ids (into [] (keep #(when (:layout %) (:id %))) (vals (:objects page)))]
-                (if (empty? ids)
-                  changes
-                  (let [tree (gm/set-objects-modifiers
-                              (into {} (map #(vector % {:modifiers (ctm/reflow-modifiers)})) ids)
-                              (:objects page))
-                        next (-> (cls/generate-update-shapes
-                                  (pcb/empty-changes nil (:id page)) (keys tree)
-                                  (clp/modifiers-transform tree) (:objects page)
-                                  {:ignore-touched true :attrs clp/transform-attrs})
-                                 (cll/generate-sync-transformed-placement file (cf/libraries situation)
-                                                                          page (:objects page) (keys tree)))]
-                    (pcb/concat-changes changes next)))))
-            (pcb/empty-changes)
-            (get-in file [:data :pages-index]))))
+  (reduce (fn [changes [_ page]]
+            (let [ids (into [] (keep #(when (:layout %) (:id %))) (vals (:objects page)))]
+              (if (empty? ids)
+                changes
+                (let [tree (gm/set-objects-modifiers
+                            (into {} (map #(vector % {:modifiers (ctm/reflow-modifiers)})) ids)
+                            (:objects page))
+                      next (cls/generate-update-shapes
+                            (pcb/empty-changes nil (:id page)) (keys tree)
+                            (clp/modifiers-transform tree) (:objects page)
+                            {:ignore-touched true :attrs clp/transform-attrs})]
+                  (pcb/concat-changes changes next)))))
+          (pcb/empty-changes)
+          (get-in (tm/file situation) [:data :pages-index])))
 
 (def ^:private sidebar-layout-child-properties
   "The properties the sidebar edits as a layout child (`update-layout-child`
