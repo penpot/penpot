@@ -207,15 +207,13 @@
                     (cfeat/check-client-features! (:features params))
                     (cfeat/check-file-features! (:features file)))
 
-        ;; The view-only bundle for a share link carries the primary
-        ;; file's components too: realize once and trim both scopes —
-        ;; the primary file keeps the live components referenced from
-        ;; the allowed pages, libraries are trimmed to the components
-        ;; the allowed pages (and those components themselves) reference.
-        ;; Known limitation: the reference walk can cross onto excluded
-        ;; pages, so the whole file is realized eagerly on every
-        ;; share-link bundle request. Pointer-map is operator-enabled and
-        ;; not active in production; revisit if it ships.
+        ;; The share-link bundle carries the primary file's components
+        ;; too: reuse the realization the library trim already needs and
+        ;; keep the emitted map inline. The walk may cross onto excluded
+        ;; pages (a retained component's subtree can live there), so the
+        ;; whole file is realized on each share-link bundle request.
+        ;; Pointer-map is operator-enabled and not active in production;
+        ;; revisit if it ships.
         realized-data
         (when (= :share-link (:type perms))
           (fdata/realize-pointers cfg file))

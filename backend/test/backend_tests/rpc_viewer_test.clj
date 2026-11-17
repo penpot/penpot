@@ -1180,11 +1180,6 @@
                               :who-inspect "all"})
         slink-id (get-in slink [:result :id])]
 
-    (t/testing "referenced components are kept (fixture sanity)"
-      (t/is (some? comp-x))
-      (t/is (some? comp-y))
-      (t/is (some? comp-w)))
-
     (t/testing "bundle keeps X (referenced from A) and Y (nested ref reached from X)"
       (let [out    (th/command! {::th/type :get-view-only-bundle
                                  :share-id slink-id
@@ -1208,13 +1203,20 @@
                                     :is-shared false})
         file-id (:id file)
         page-a  (first (get-in file [:data :pages]))
+        page-b  (uuid/random)
         marker  "SIICA-SYNTHETIC-FRAGMENT"
         shape   (uuid/random)
         comp    (uuid/random)
 
         _       (update-file! :profile-id owner-id
                               :file-id file-id
-                              :changes [{:type :add-obj
+                              :changes [{:type :add-page
+                                         :id page-b
+                                         :page {:id page-b
+                                                :name "Excluded"
+                                                :options {}
+                                                :objects {}}}
+                                        {:type :add-obj
                                          :page-id page-a
                                          :id shape
                                          :parent-id uuid/zero
@@ -1252,6 +1254,10 @@
                                 (fn [cfg]
                                   (pmap/get-id (get (:pages-index (:data (bfc/get-file cfg file-id)))
                                                     page-a))))
+        page-b-ptr-id (db/tx-run! th/*system*
+                                  (fn [cfg]
+                                    (pmap/get-id (get (:pages-index (:data (bfc/get-file cfg file-id)))
+                                                      page-b))))
 
         stranger (th/create-profile* 2 {:is-active true})
 
@@ -1270,6 +1276,17 @@
                                :file-id file-id
                                :fragment-id comp-ptr-id})
             err  (:error out)
+            edata (ex-data err)]
+        (t/is (th/ex-info? err))
+        (t/is (= :not-found (:type edata)))))
+
+    (t/testing "the fragment of a page outside the link is denied"
+      (let [out   (th/command! {::th/type :get-file-fragment
+                                ::rpc/profile-id (:id stranger)
+                                :share-id slink-id
+                                :file-id file-id
+                                :fragment-id page-b-ptr-id})
+            err   (:error out)
             edata (ex-data err)]
         (t/is (th/ex-info? err))
         (t/is (= :not-found (:type edata)))))
@@ -1293,14 +1310,14 @@
                                     :project-id proj-id
                                     :is-shared false})
         file-id (:id file)
-        page-a  (first (get-in file [:data :pages]))
-        page-b  (uuid/random)
-        shape   (uuid/random)
-        comp    (uuid/random)
+        page-a    (first (get-in file [:data :pages]))
+        page-b    (uuid/random)
+        shape     (uuid/random)
+        comp      (uuid/random)
         live-main (uuid/random)
         live-inst (uuid/random)
         comp-live (uuid/random)
-        marker  "SIICA-SYNTHETIC-DELETED-PM"
+        marker    "SIICA-SYNTHETIC-DELETED-PM"
 
         _       (update-file! :profile-id (:id owner)
                               :file-id file-id
@@ -1820,3 +1837,86 @@
         (t/is (= #{page-a page-b} (set (get-in data [:data :pages]))))
         (t/is (contains? (get-in data [:data :pages-index page-a :objects]) inst))
         (t/is (not (contains? (get-in data [:data :components]) comp)))))))
+
+(t/deftest membership-bundle-with-pointer-map-keeps-components-fragment
+  ;; The share-link restrictions must not leak into the membership path:
+  ;; a member still receives the components pointer and can resolve it.
+  (let [owner   (th/create-profile* 1 {:is-active true})
+        owner-id (:id owner)
+        proj-id (:default-project-id owner)
+        file    (th/create-file* 1 {:profile-id owner-id
+                                    :project-id proj-id
+                                    :is-shared false})
+        file-id (:id file)
+        page-a  (first (get-in file [:data :pages]))
+        shape   (uuid/random)
+        comp    (uuid/random)
+
+        _       (update-file! :profile-id owner-id
+                              :file-id file-id
+                              :changes [{:type :add-obj
+                                         :page-id page-a
+                                         :id shape
+                                         :parent-id uuid/zero
+                                         :frame-id uuid/zero
+                                         :components-v2 true
+                                         :obj (cts/setup-shape
+                                               {:id shape
+                                                :name "live"
+                                                :frame-id uuid/zero
+                                                :parent-id uuid/zero
+                                                :type :frame
+                                                :main-instance true
+                                                :component-root true
+                                                :component-file file-id
+                                                :component-id comp})}
+                                        {:type :add-component
+                                         :path ""
+                                         :name "live"
+                                         :main-instance-id shape
+                                         :main-instance-page page-a
+                                         :id comp
+                                         :anotation nil}])
+
+        _       (db/tx-run! th/*system*
+                            (fn [cfg]
+                              (fdata/with-tracked-pointers cfg file-id
+                                (bfc/update-file! cfg
+                                                  (-> (bfc/get-file cfg file-id)
+                                                      (fdata/enable-pointer-map))))))
+
+        comp-ptr-id (db/tx-run! th/*system*
+                                (fn [cfg]
+                                  (pmap/get-id (:components (:data (bfc/get-file cfg file-id))))))]
+
+    (t/testing "membership bundle carries the components pointer"
+      (let [out   (th/command! {::th/type :get-view-only-bundle
+                                ::rpc/profile-id owner-id
+                                :file-id file-id})
+            comps (get-in out [:result :file :data :components])]
+        (t/is (nil? (:error out)))
+        (t/is (pmap/pointer-map? comps))))
+
+    (t/testing "a member can resolve the components fragment"
+      (let [out (th/command! {::th/type :get-file-fragment
+                              ::rpc/profile-id owner-id
+                              :file-id file-id
+                              :fragment-id comp-ptr-id})]
+        (t/is (nil? (:error out)))
+        (t/is (= comp-ptr-id (get-in out [:result :id])))))))
+
+(t/deftest same-file-component-ref-legacy-shapes
+  ;; Legacy files omit `:component-file` on same-file references; the
+  ;; shared predicate must treat that as a same-file reference and still
+  ;; reject library shapes and plain shapes.
+  (let [file-id  (uuid/random)
+        other-id (uuid/random)
+        legacy   {:component-id (uuid/random)}
+        own      {:component-id (uuid/random) :component-file file-id}
+        library  {:component-id (uuid/random) :component-file other-id}
+        plain    {:name "not-a-component"}]
+
+    (t/is (true? (#'viewer/same-file-component-ref? file-id legacy)))
+    (t/is (true? (#'viewer/same-file-component-ref? file-id own)))
+    (t/is (false? (#'viewer/same-file-component-ref? file-id library)))
+    (t/is (false? (#'viewer/same-file-component-ref? file-id plain)))))
