@@ -7,10 +7,12 @@
 (ns frontend-tests.ui.viewport-texts-html-test
   "How the SVG renderer measures text shapes and commits the result."
   (:require
+   [app.common.geom.point :as gpt]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.texts :as dwt]
    [app.main.store :as st]
    [app.main.ui.workspace.shapes.text.viewport-texts-html :as vth]
+   [app.util.dom :as dom]
    [app.util.text-svg-position :as tsp]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.async :as async]
@@ -25,8 +27,10 @@
   "Measure `shape` as the SVG renderer does and return the measurement
   promise. Kept out of the `^:async` test bodies: there, a call through the
   var compiles to an awaited wrapper that would wait for the measurement."
-  [shape]
-  (#'vth/update-text-shape shape nil))
+  ([shape]
+   (measure-text shape nil nil))
+  ([shape node phase]
+   (#'vth/update-text-shape shape node phase)))
 
 (defn- with-measurement
   "Run `f` with the text measurement mocked to `measurement`, a promise the
@@ -69,3 +73,87 @@
            (p/reject measurement (ex-info "measure failed" {}))
            (t/is (nil? (await result))
                  "a failed measurement resolves to nil")))))))
+
+(def ^:private fragment
+  "A position-data fragment inside the box of `text`."
+  {:x 0 :y 17 :width 100 :height 17 :text "label"})
+
+(defn- text
+  [grow-type touched]
+  {:id (uuid/next) :type :text :grow-type grow-type :touched touched
+   :x 0 :y 0 :width 200 :height 17
+   :points [(gpt/point 0 0) (gpt/point 200 0) (gpt/point 200 17) (gpt/point 0 17)]
+   :position-data [fragment]})
+
+(defn- by-id
+  [& shapes]
+  (into {} (map (juxt :id identity)) shapes))
+
+(t/deftest override-copy-heal-phases-checks-overridden-auto-grow-copies
+  (let [fixed     (text :fixed #{:content-group})
+        untouched (text :auto-height nil)
+        geometry  (text :auto-height #{:geometry-group})
+        unknown   (text nil #{:content-group})
+        override  (text :auto-width #{:content-group})]
+    (t/is (= {(:id override) :check}
+             (vth/override-copy-heal-phases (by-id fixed untouched geometry unknown override)))
+          "only auto-grow texts with overridden content are checked")))
+
+(t/deftest unchanged-copy-is-measured-in-the-check-phase
+  (let [copy (text :auto-height #{:content-group})]
+    (t/is (vth/text-changed? copy copy (vth/text-phase {(:id copy) :check} copy))
+          "an unchanged copy waiting for its check is measured")
+    (t/is (not (vth/text-changed? copy copy (vth/text-phase {} copy)))
+          "once checked, an unchanged copy is left alone")))
+
+(t/deftest text-without-position-data-gets-no-phase
+  (let [copy (assoc (text :auto-height #{:content-group}) :position-data nil)]
+    (t/is (nil? (vth/text-phase {(:id copy) :check} copy))
+          "a text without position-data is committed as usual")))
+
+(defn- measure-with-box
+  "Measure `shape` in heal `phase` with its layout box measured at `width` x
+  `height`. Resolves to the events emitted to the store."
+  [shape phase width height]
+  (let [emitted (atom [])]
+    (->> (mock/with-mocks*
+           {tsp/calc-position-data  (mock/stub (constantly (p/resolved [fragment])))
+            dom/query               (mock/stub (constantly #js {}))
+            dom/get-bounding-rect   (mock/stub (constantly {:width width :height height}))
+            st/emit!                (mock/stub (fn [& events] (swap! emitted into events) nil))}
+           (await (measure-text shape #js {} phase)))
+         (p/fmap (fn [_] @emitted)))))
+
+(defn- emitted?
+  [type events]
+  (some #(= type (ptk/type %)) events))
+
+(t/deftest ^:async check-phase-commits-a-drifted-copy
+  (let [events (await (measure-with-box (text :auto-height #{:content-group}) :check 200 34))]
+    (t/is (emitted? ::dwt/resize-text events)
+          "a copy measured taller than its stored box is resized")
+    (t/is (emitted? ::dwt/update-position-data events)
+          "its position-data is written with the new layout")))
+
+(t/deftest ^:async check-phase-leaves-a-matching-copy-alone
+  (let [events (await (measure-with-box (text :auto-height #{:content-group}) :check 200 17.4))]
+    (t/is (not (emitted? ::dwt/resize-text events))
+          "a copy that matches its stored box is not resized")
+    (t/is (not (emitted? ::dwt/update-position-data events))
+          "nor is its position-data written back")
+    (t/is (emitted? ::dwt/clean-text-modifier events)
+          "the measurement still completes")))
+
+(t/deftest ^:async check-phase-commits-nothing-when-it-cannot-measure
+  (let [events (await (measure-with-box (text :auto-height #{:content-group}) :check 0 0))]
+    (t/is (not (emitted? ::dwt/resize-text events))
+          "an empty layout box is not a size")
+    (t/is (not (emitted? ::dwt/update-position-data events))
+          "nothing is written for a text that could not be measured")))
+
+(t/deftest ^:async no-phase-commits-as-usual
+  (let [events (await (measure-with-box (text :auto-height nil) nil 200 17.4))]
+    (t/is (emitted? ::dwt/resize-text events)
+          "outside a heal, a size within 1px is still committed")
+    (t/is (emitted? ::dwt/update-position-data events)
+          "and so is the position-data")))
