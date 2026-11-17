@@ -32,6 +32,7 @@ To assert over emitted event sequences, observe termination: subscribe through `
 - `take 1` is per-subscription on a hot subject: subscribe-before-push or hang. `end!`/`.error` with pending takes only forwards valueless completion.
 - The `:esm` target gives every namespace its own ES module, so a call that crosses a namespace boundary compiles to a plain JS call and CLJS arity dispatch (`cljs$core$IFn$_invoke$arity$N`) never runs: a wrong arity arrives as `undefined` arguments instead of throwing, and the analyzer `:fn-arity` warning is the only signal. Treat `:fn-arity` in `compile test` as a defect, never as noise.
 - `:infer-warning` on a JS interop fixes with `^js` on the target (`(.-foo ^js x)`, `(.method ^js x ...)`). Inside `set!` the hint must sit on a symbol: `(set! (.-foo ^js (f x)) v)` still warns, so bind `(let [^js y (f x)] (set! (.-foo y) v))`.
+- A helper that returns a JS object carries the hint on its name (`(defn- ^js catalog [id] ...)`), and call sites then need no hint at all — `(.method (catalog id))` and `(.-prop (catalog id))` stop warning. This is the cheapest way to keep interop out of the test bodies; `^js` on the arglist instead of the name does not work.
 
 ### Traps that bit
 
