@@ -1191,3 +1191,8 @@
                               (pr-str (merge-with - (select-keys after [:pass :fail :error])
                                                   (select-keys before [:pass :fail :error]))))))
           (recur (inc index)))))))
+
+(t/deftest ^:async generated-an-update-main-into-a-nested-copy-authors-the-sizing-it-fixes
+  ;; a copy child filling a row pushes a transform into the nested copy its
+  ;; main holds, which takes it with its sizing fixed as its own override
+  (await (replay {:world [3 2 {:text true :layout :flex}] :ops [[:nest 24 11 9 6] [:delete 1] [:restore 1] [:add-child 15 16 4 29] [:move 23 24 12 20] [:edit 25 25 27 25] [:undo 23 17 15 25] [:style 23 29 25 20] [:transform 29 11 7 27] [:update-main 2 19 2 29]]})))
