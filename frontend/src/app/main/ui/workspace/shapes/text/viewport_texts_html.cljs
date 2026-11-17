@@ -14,6 +14,7 @@
    [app.common.geom.shapes.text :as gsht]
    [app.common.logging :as log]
    [app.common.math :as mth]
+   [app.common.types.component :as ctk]
    [app.common.types.modifiers :as ctm]
    [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
@@ -92,22 +93,29 @@
 
 (defn- text-heal
   "How to commit a measured auto-grow text in heal `phase`: nil commits
-  nothing, otherwise a map with the commit `:opts` and the `:next` heal
-  phase, if any.
-  The `:check` phase runs when the page opens. It commits when the size
-  drifted, so rounding differences between renderers or browsers are not
-  written back on every open, or when the text has no position-data. A heal
-  records no undo step. A resize makes the text be measured again at its new
-  box, in the `:settle` phase, which is part of the heal too. Without a phase
-  the text is committed as usual."
+  nothing, otherwise a map with the commit `:opts`, whether to `:resize?`
+  the text and the `:next` heal phase, if any.
+  The `:check` phase runs when the page opens. It resizes the text when the
+  size drifted, so rounding differences between renderers or browsers are
+  not written back on every open. A text with no position-data that did not
+  drift gets its position-data only. A heal records no undo step. A resize
+  makes the text be measured again at its new box, in the `:settle` phase,
+  which is part of the heal too. Without a phase the text is committed as
+  usual.
+  Known limit: the WebGL and SVG renderers can measure the same text
+  differently. When they differ by more than 1px, each page open by a user
+  of the other renderer writes the size back. Two browsers on the SVG
+  renderer can do the same: a long auto-width line can differ by more than
+  1px, and an auto-height text can wrap a line differently."
   [phase shape size]
   (case phase
-    :check  (let [drifted? (and (some? size) (apply dwt/text-size-drifted? shape size))]
+    :check  (let [drifted? (when-let [[width height] size]
+                             (gsht/text-size-drifted? shape width height 1))]
               (when (or drifted? (nil? (:position-data shape)))
                 (cond-> {:opts {:save-undo? false}}
-                  drifted? (assoc :next :settle))))
-    :settle {:opts {:save-undo? false}}
-    {}))
+                  drifted? (assoc :resize? true :next :settle))))
+    :settle {:opts {:save-undo? false} :resize? true}
+    {:resize? true}))
 
 (defn- update-text-shape
   "Measure the text and commit its position-data and auto-grow size as
@@ -115,7 +123,11 @@
   [{:keys [id] :as shape} node phase]
   (->> (tsp/calc-position-data id)
        (p/fmap (fn [position-data]
-                 (let [size (measured-auto-size shape node)
+                 (let [;; A page-open check never writes a size laid out
+                       ;; with a fallback font
+                       size (when-not (and (= :check phase)
+                                           (tsp/font-failed? position-data))
+                              (measured-auto-size shape node))
                        heal (text-heal phase shape size)
                        opts (:opts heal)]
                    (when (some? heal)
@@ -123,7 +135,7 @@
                      (when (gsht/overlaps-position-data? shape position-data)
                        (st/emit! (dwt/update-position-data id position-data opts)))
 
-                     (when-let [[width height] size]
+                     (when-let [[width height] (and (:resize? heal) size)]
                        (st/emit! (dwt/resize-text id width height opts))))
 
                    (st/emit! (dwt/clean-text-modifier id))
@@ -205,15 +217,18 @@
         (nil? (:position-data new-shape))
         (= :check phase))))
 
-(defn override-copy-heal-phases
-  "Auto-grow texts whose content is overridden on a copy, each in the `:check`
-  heal phase: a component sync can give them the main's size, so they are
-  measured again when the page opens."
+(defn copy-heal-phases
+  "Auto-grow texts inside a component copy, each in the `:check` heal phase:
+  a component sync, also one through a nested main, can give them a stale
+  size, so they are measured again when the page opens. Texts of a main are
+  never synced. The check runs on every mount of `viewport-texts`: a page
+  open, a version change, and the end of read-only mode (Inspect, save-lock
+  release), which unmounts it."
   [text-shapes]
   (into {}
         (comp (map val)
               (filter (comp #{:auto-width :auto-height} :grow-type))
-              (filter #(contains? (:touched %) :content-group))
+              (filter ctk/in-component-copy?)
               (map (fn [{:keys [id]}] [id :check])))
         text-shapes))
 
@@ -229,11 +244,11 @@
         pending-update* (mf/use-state {})
         pending-update  (deref pending-update*)
 
-        ;; Heal phase per text id. Copies whose text is overridden start in
+        ;; Heal phase per text id. Auto-grow texts in copies start in
         ;; `:check` and are measured on page open: a sync while their page was
-        ;; closed can give them the main's size. A text in `:settle` waits for
+        ;; closed can give them a stale size. A text in `:settle` waits for
         ;; its heal resize to change the shape, which measures it again.
-        phases*         (mf/use-state #(override-copy-heal-phases text-shapes))
+        phases*         (mf/use-state #(copy-heal-phases text-shapes))
         phases          (deref phases*)
 
         text-change?

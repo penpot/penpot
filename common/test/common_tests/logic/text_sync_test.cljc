@@ -882,7 +882,7 @@
 
 (t/deftest sync-text-override-with-geometry-touched-keeps-width
   ;; Documents the #12721 gap: text+geometry touched receives font-size from
-  ;; main but keeps local width until frontend remasure.
+  ;; main but keeps local width until frontend re-measure.
   (let [;; ==== Setup
         file0      (-> (thf/sample-file :file1)
                        (tho/add-frame-with-text :main-root :main-child "hello world")

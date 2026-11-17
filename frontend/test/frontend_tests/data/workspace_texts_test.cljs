@@ -769,35 +769,3 @@
 (t/deftest same-styled-text-sees-a-text-change
   (t/is (not (dwt/same-styled-text? (text-content {:text "Hello" :font-weight "400"})
                                     (text-content {:text "Hello!" :font-weight "400"})))))
-
-(t/deftest text-size-drifted-ignores-sub-pixel-gaps
-  (t/is (not (dwt/text-size-drifted? {:grow-type :auto-width :width 100 :height 17} 100.5 17.5)))
-  (t/is (not (dwt/text-size-drifted? {:grow-type :auto-height :width 100 :height 17} 100 17.5))))
-
-(t/deftest text-size-drifted-checks-only-the-growing-axis
-  (t/is (not (dwt/text-size-drifted? {:grow-type :auto-height :width 100 :height 17} 140 17))
-        "auto-height width comes from the box, not the text")
-  (t/is (dwt/text-size-drifted? {:grow-type :auto-height :width 100 :height 17} 100 34))
-  (t/is (dwt/text-size-drifted? {:grow-type :auto-width :width 44 :height 17} 67 17))
-  (t/is (dwt/text-size-drifted? {:grow-type :auto-width :width 44 :height 17} 44 34)
-        "auto-width grows in height too"))
-
-(t/deftest text-size-drifted-treats-exactly-one-pixel-as-rounding
-  (t/is (not (dwt/text-size-drifted? {:grow-type :auto-height :width 100 :height 17} 100 18))
-        "a 1px height gap is rounding, as in the WebGL check")
-  (t/is (not (dwt/text-size-drifted? {:grow-type :auto-width :width 44 :height 17} 45 17))
-        "a 1px width gap is rounding, as in the WebGL check"))
-
-(t/deftest text-size-drifted-ignores-an-axis-that-fills-its-parent
-  (t/is (not (dwt/text-size-drifted? {:grow-type :auto-height :width 100 :height 40
-                                      :layout-item-v-sizing :fill}
-                                     100 17))
-        "a height set by the layout is not drift")
-  (t/is (not (dwt/text-size-drifted? {:grow-type :auto-width :width 200 :height 17
-                                      :layout-item-h-sizing :fill}
-                                     44 17))
-        "a width set by the layout is not drift")
-  (t/is (dwt/text-size-drifted? {:grow-type :auto-width :width 200 :height 17
-                                 :layout-item-h-sizing :fill}
-                                44 34)
-        "the axis that does not fill is still checked"))

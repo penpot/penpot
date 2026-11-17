@@ -813,19 +813,6 @@
 (defn not-changed? [old-dim new-dim]
   (> (mth/abs (- old-dim new-dim)) 0.1))
 
-(defn text-size-drifted?
-  "True when a measured auto-grow size is more than 1px off the stored one on
-  the axis that grows (width for :auto-width, height for both). Gaps up to
-  1px come from rounding differences between renderers and browsers. An
-  axis that fills its layout parent takes its size from the layout, so it
-  never drifts."
-  [{:keys [grow-type width height] :as shape} new-width new-height]
-  (or (and (= :auto-width grow-type)
-           (not (ctl/fill-width? shape))
-           (> (mth/abs (- width new-width)) 1))
-      (and (not (ctl/fill-height? shape))
-           (> (mth/abs (- height new-height)) 1))))
-
 (defn commit-resize-text
   []
   (ptk/reify ::commit-resize-text
@@ -886,7 +873,9 @@
                (rx/empty))
              (rx/of (ptk/data-event :layout/update {:ids ids}))
              (if (seq heal-ids)
-               (rx/of (ptk/data-event :layout/update {:ids heal-ids :save-undo? false}))
+               (rx/of (ptk/data-event :layout/update {:ids heal-ids
+                                                      :save-undo? false
+                                                      :skip-component-sync? true}))
                (rx/empty))
              (rx/of (dwu/commit-undo-transaction undo-id)))))))))
 

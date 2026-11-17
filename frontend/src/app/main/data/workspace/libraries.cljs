@@ -1254,10 +1254,20 @@
                                    (without-fills val))))))
              operations)))
 
+(defn- grow-type-after
+  "Grow type of text `shape` once `change` is applied."
+  [shape {:keys [operations]}]
+  (or (->> operations
+           (filter #(and (= :set (:type %)) (= :grow-type (:attr %))))
+           (last)
+           :val)
+      (:grow-type shape)))
+
 (defn- sync-auto-grow-text-ids-on-page
-  "Auto-grow text ids from sync redo-changes on `page-id` that can change
-  the text size, resolved against pre-commit `objects`. Off-page, non-text
-  and :fixed ids are excluded."
+  "Text ids from sync redo-changes on `page-id` that are auto-grow once the
+  change is applied and whose size the change can alter. Shapes come from
+  pre-commit `objects`; the grow type comes from the change when it sets
+  one. Off-page, non-text and ids :fixed after the change are excluded."
   [changes page-id objects]
   (into []
         (comp
@@ -1265,7 +1275,7 @@
          (filter (fn [{:keys [id] :as change}]
                    (when-let [shape (get objects id)]
                      (and (cfh/text-shape? shape)
-                          (not= :fixed (:grow-type shape))
+                          (not= :fixed (grow-type-after shape change))
                           (text-size-change? shape change)))))
          (map :id)
          (distinct))
@@ -1281,47 +1291,54 @@
         (dissoc state :updating-library)))))
 
 (defn- sync-file-frontend-events
-  "Commit sync changes, schedule current-page auto-grow text remasure, then
-  layout. Remasure heals box size only; it does not clear a stale
-  :geometry-group flag. Keep per-page updated-frames layout and
-  thumbnail clears."
+  "Commit sync changes, schedule current-page auto-grow text re-measure, then
+  layout. Re-measure heals box size only; it does not clear a stale
+  :geometry-group flag. The re-measure commit carries
+  :skip-component-sync? so it does not start another sync; the resize
+  itself never marks :geometry-group (it uses :ignore-touched). Keep
+  per-page updated-frames layout and thumbnail clears.
+  An auto-grow text copy takes the main's width and height on each
+  geometry sync, also when its content is overridden: its size is derived,
+  not an override. The re-measure corrects it on the current page, and the
+  page-open check on other pages. Until then the viewer, exports and
+  thumbnails show the main's box."
   [file-id changes updated-frames undo-group current-page-id objects wasm?]
-  (let [remasure-ids (when (and wasm? (some? current-page-id))
-                       (sync-auto-grow-text-ids-on-page changes current-page-id objects))
+  (let [remeasure-ids (when (and wasm? (some? current-page-id))
+                        (sync-auto-grow-text-ids-on-page changes current-page-id objects))
         frames-by-page (group-by :page-id updated-frames)
-        ;; Remasure-only layout when the current page has texts to heal but
+        ;; Re-measure-only layout when the current page has texts to heal but
         ;; no synced frames entry (covers empty updated-frames too).
-        remasure-only-layout? (and (seq remasure-ids)
-                                   (nil? (get frames-by-page current-page-id)))]
+        remeasure-only-layout? (and (seq remeasure-ids)
+                                    (nil? (get frames-by-page current-page-id)))]
     (rx/concat
      (rx/of (set-updating-library false)
             (ntf/hide {:tag :sync-dialog}))
      (when (seq (:redo-changes changes))
        (rx/of (dch/commit-changes changes)))
-     ;; Schedule remasure before layout (swap pattern: debounce ~40ms vs
+     ;; Schedule re-measure before layout (swap pattern: debounce ~40ms vs
      ;; layout buffer ~100ms).
-     (when (seq remasure-ids)
-       (rx/of (dwwt/resize-wasm-text-all remasure-ids
+     (when (seq remeasure-ids)
+       (rx/of (dwwt/resize-wasm-text-all remeasure-ids
                                          {:skip-component-sync? true
                                           :undo-group undo-group})))
      (rx/merge
-      ;; Per-page layout for synced frames; merge remasure ids into the
-      ;; current page so hug sees the post-remasure box.
+      ;; Per-page layout for synced frames; merge re-measure ids into the
+      ;; current page so hug sees the post-re-measure box.
       (->> frames-by-page
            (map (fn [[page-id frames]]
                   (let [ids (cond-> (mapv :id frames)
                               (and (= page-id current-page-id)
-                                   (seq remasure-ids))
-                              (into remasure-ids))]
+                                   (seq remeasure-ids))
+                              (into remeasure-ids))]
                     (ptk/data-event :layout/update
                                     {:page-id page-id
                                      :ids ids
                                      :undo-group undo-group}))))
            (rx/from))
-      (when remasure-only-layout?
+      (when remeasure-only-layout?
         (rx/of (ptk/data-event :layout/update
                                {:page-id current-page-id
-                                :ids remasure-ids
+                                :ids remeasure-ids
                                 :undo-group undo-group})))
       (->> (rx/from updated-frames)
            (rx/mapcat
@@ -1389,13 +1406,24 @@
        ptk/WatchEvent
        (watch [it state stream]
          (when (and (some? file-id) (some? library-id)) ; Prevent race conditions while navigating out of the file
-           (log/info :msg "SYNC-FILE"
-                     :file (debug-pretty-file file-id state)
-                     :library (debug-pretty-file library-id state)
-                     :asset-type asset-type
-                     :asset-id asset-id
-                     :undo-group undo-group)
-           (let [ldata           (dsh/lookup-file-data state file-id)
+           (let [tx              (dm/get-in state [:workspace-undo :transaction])
+                 ;; The sync commit and its text re-measure share one undo
+                 ;; group. The layout pass does not get it (the layout
+                 ;; buffer drops `:undo-group`); it joins the same undo
+                 ;; entry because it commits with `:stack-undo? true`.
+                 ;; Inside an undo transaction (color and typography edits)
+                 ;; the group is the transaction's, so the edit and its sync
+                 ;; undo and roll back together
+                 undo-group      (or undo-group (:undo-group tx) (:commit-group tx) (uuid/next))
+
+                 _               (log/info :msg "SYNC-FILE"
+                                           :file (debug-pretty-file file-id state)
+                                           :library (debug-pretty-file library-id state)
+                                           :asset-type asset-type
+                                           :asset-id asset-id
+                                           :undo-group undo-group)
+
+                 ldata           (dsh/lookup-file-data state file-id)
                  libraries       (dsh/lookup-libraries state)
                  current-file-id (:current-file-id state)
 

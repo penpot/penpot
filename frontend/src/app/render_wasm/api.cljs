@@ -14,6 +14,7 @@
    [app.common.files.focus :as cpf]
    [app.common.files.helpers :as cfh]
    [app.common.fonts :as cfnt]
+   [app.common.geom.shapes.text :as gsht]
    [app.common.logging :as log]
    [app.common.math :as mth]
    [app.common.render-wasm.api.props :as props]
@@ -1661,16 +1662,13 @@
   [text-ids]
   (run! f/force-update-text-layout text-ids))
 
-(defn- text-selrect-stale?
+(defn- text-size-stale?
   "Check if the WASM-measured dimensions of an auto-grow text shape differ
-   from its stored selrect by more than `tolerance`."
-  [{:keys [id selrect grow-type]} tolerance]
+   from its stored size by more than `tolerance` on an axis that grows and
+   does not fill its layout parent."
+  [{:keys [id] :as shape} tolerance]
   (when-let [{:keys [width height]} (get-text-dimensions id)]
-    (case grow-type
-      :auto-width  (or (not (mth/close? width (:width selrect) tolerance))
-                       (not (mth/close? height (:height selrect) tolerance)))
-      :auto-height (not (mth/close? height (:height selrect) tolerance))
-      false)))
+    (gsht/text-size-drifted? shape width height tolerance)))
 
 (defonce ^:private pending-stale-selrect-ids (atom #{}))
 (defonce ^:private stale-selrect-sync-token (atom 0))
@@ -1696,8 +1694,9 @@
     (listen-tiles-render-complete-once! flush-on-idle!)))
 
 (defn- sync-stale-text-selrects!
-  "Emit the ids of auto-grow text shapes whose selrect no longer matches the
-   measured layout, so the workspace resizes them (data-event instead of a
+  "Emit the ids of auto-grow text shapes whose stored size drifted from the
+   measured layout on an axis that grows and does not fill its layout
+   parent, so the workspace resizes them (data-event instead of a
    direct call to avoid a circular dependency; see the watcher in
    `app.main.data.workspace/initialize-workspace`). The default tolerance is
    0.1px, as in the classic renderer."
@@ -1707,7 +1706,7 @@
    (let [stale-ids (into []
                          (comp (filter cfh/text-shape?)
                                (filter (comp #{:auto-width :auto-height} :grow-type))
-                               (filter #(text-selrect-stale? % tolerance))
+                               (filter #(text-size-stale? % tolerance))
                                (map :id))
                          shapes)]
      (when (seq stale-ids)
