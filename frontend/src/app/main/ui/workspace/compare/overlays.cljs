@@ -180,8 +180,6 @@
                                       (tr "workspace.compare.navigator.changes"))
                         :on-previous on-previous
                         :on-next on-next}
-     ;; there with no entry chosen too: it takes the room the bar has
-     ;; left, and keeps what follows at the end
      [:> rvo/navigator-text*
       {:name (:label item)
        :detail (when (some? item)
@@ -310,23 +308,31 @@
             (wasm.api/request-render "compare-projection")))))))
 
 (mf/defc compare-overlays*
-  [{:keys [vbox vport zoom page-id show-rulers]}]
+  [{:keys [vbox vport zoom page-id show-rulers hover-ids]}]
   (let [comparison (cc/use-comparison)
         objects    (mf/deref refs/workspace-page-objects)
         review?    (some? (mf/deref refs/pull-request-preview))
 
-        {:keys [mode phase status incoming selected item rows model conflicts
-                excluded resolutions data]} comparison
+        {:keys [mode phase status incoming selected hovered item rows model
+                conflicts excluded resolutions data res attr]} comparison
         resolving? (= phase :resolve)
         hidden?    (:hidden mode)
         loaded?    (= status :loaded)
         direction  (if incoming :main->branch :branch->main)
         total      (get-in model [:counts :all])
         first-key  (some-> (first rows) dwcp/item-key)
+        ;; the entry of the layer under the pointer, while the canvas
+        ;; answers for the layers with a change (`hover-ids`)
+        pointed    (mf/with-memo [rows objects hover-ids]
+                     (cc/layer-entry rows objects hover-ids))
 
         ;; only the WASM render can draw a page the file does not hold
         wasm?      (features/use-feature "render-wasm/v1")
-        projection (mf/with-memo [wasm? comparison objects page-id]
+        ;; from what it reads alone: the comparison is put together on
+        ;; every render, and each projection is drawn again by the render
+        projection (mf/with-memo [wasm? objects page-id phase incoming model conflicts
+                                  resolutions excluded item res attr
+                                  hidden? (:preview mode) (:peek mode) (:other-changes mode)]
                      (when wasm?
                        (cc/canvas-objects comparison objects page-id)))
         live       objects
@@ -340,9 +346,10 @@
         ;; every change is marked until one is chosen; then its mark
         ;; stands alone, with the layers that use it when it is an asset
         marks
-        (mf/with-memo [resolving? model conflicts resolutions excluded item objects page-id data selected]
+        (mf/with-memo [resolving? model conflicts resolutions excluded item objects page-id data selected hovered]
           (cc/chosen-marks
            selected
+           hovered
            (if resolving?
              (brc/change-marks (:conflicts conflicts)
                                {:page-id page-id
@@ -358,6 +365,9 @@
                (into (brc/usage-marks data item page-id))))))]
 
     (use-shortcuts comparison)
+
+    (mf/with-effect [pointed]
+      (st/emit! (dwcp/set-hovered pointed :canvas)))
     (use-canvas-projection live (:objects projection))
 
     ;; each direction remembers how many changes it lists, for its tab
@@ -387,7 +397,8 @@
        [:div {:class (stl/css :marks)
               :style (rvo/viewbox-offset vbox zoom)}
         (for [mark marks
-              :let [active? (= selected (:key mark))]]
+              :let [active? (or (= selected (:key mark))
+                                (= hovered (:key mark)))]]
           [:> mark* {:key (:key mark)
                      :mark mark
                      :zoom zoom
@@ -423,5 +434,7 @@
       (when side?
         [:> text* {:as "span" :typography t/body-small :class (stl/css :note :is-quiet)}
          (tr "workspace.compare.side.linked")])]
-     (when (seq rows)
+     ;; the bar goes through the list from the entry chosen: with none
+     ;; chosen the canvas marks them all and the bar has nothing to say
+     (when (some? item)
        [:> compare-navigator* {:comparison comparison :can-peek wasm?}])]))

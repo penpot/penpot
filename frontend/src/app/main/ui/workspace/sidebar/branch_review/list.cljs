@@ -68,6 +68,11 @@
   (when (or (= :component (:kind item)) (:component? item))
     (get follow-counts (:id item))))
 
+(def pointed-row
+  "The key of the entry a list shows as pointed at from somewhere else
+  (its layer on the canvas), for its row to say so."
+  (mf/create-context nil))
+
 (mf/defc item-row*
   "One change. `inner` are the layers added or deleted with it, folded
   under it: the row counts them and its checkbox takes them along.
@@ -85,6 +90,7 @@
                       (and follows (pos? follows))
                       (dm/str " - " (tr "workspace.branches.review.copies.row-follow"
                                         (i18n/c follows))))
+        pointed?    (= item-key (mf/use-ctx pointed-row))
         on-click    (mf/use-fn (mf/deps item-key on-select) #(on-select item-key))
         on-check    (mf/use-fn (mf/deps toggle-keys on-toggle) #(on-toggle toggle-keys))
         start       (when selectable?
@@ -101,6 +107,9 @@
                      :tone (if (and excluded selectable?) "neutral" (brc/status-tone (:status item)))
                      :is-selected (= selected item-key)
                      :is-muted (boolean (and excluded selectable?))
+                     :class (stl/css-case :is-pointed pointed?)
+                     ;; for whoever follows the pointer over the list
+                     :data-item-key item-key
                      :start start
                      :end (mf/html [:> row-end* {:item item :excluded excluded :reviewed reviewed}])
                      :on-click on-click}]))
@@ -250,12 +259,15 @@
   [{:keys [conflict selected res on-select]}]
   (let [item-key  (dwcp/item-key conflict)
         resolved? (bm/conflict-resolved? conflict res)
+        pointed?  (= item-key (mf/use-ctx pointed-row))
         on-click  (mf/use-fn (mf/deps item-key on-select) #(on-select item-key))]
     [:> change-row* {:title (or (:label conflict) "")
                      :subtitle (row-subtitle conflict res)
                      :icon (brc/entry-icon conflict)
                      :tone (if resolved? "success" "warning")
                      :is-selected (= selected item-key)
+                     :class (stl/css-case :is-pointed pointed?)
+                     :data-item-key item-key
                      :end (mf/html
                            (cond
                              resolved?

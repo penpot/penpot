@@ -94,7 +94,7 @@
   The rulers are drawn on the canvas, so main starts after them
   (`show-rulers`)."
   [{:keys [comparison objects canvas items listed page-id background vbox vport zoom show-rulers]}]
-  (let [{:keys [incoming excluded selected branch mode]} comparison
+  (let [{:keys [incoming excluded selected hovered branch mode]} comparison
         half     (/ (:width vport) 2)
         edge     (if show-rulers rulers/ruler-area-size 0)
         other    (:other-changes mode)
@@ -107,9 +107,10 @@
         pictures* (mf/use-state [])
         pictures (deref pictures*)
         ;; a layer main lacks leaves a gap where the branch has it
-        marks    (mf/with-memo [listed main excluded page-id selected]
+        marks    (mf/with-memo [listed main excluded page-id selected hovered]
                    (cc/chosen-marks
                     selected
+                    hovered
                     (brc/change-marks listed {:page-id page-id
                                               :objects main
                                               :excluded excluded

@@ -21,3 +21,9 @@
   inline-size: $sz-16;
   overflow: visible;
 }
+
+// the row of the layer under the pointer on the canvas reads as the row
+// under the pointer itself (`change-row*` on hover)
+.is-pointed {
+  --row-bg-color: var(--color-background-quaternary);
+}

@@ -27,7 +27,7 @@
   "The comparison of the compare mode, put together from the store:
 
     `:mode`        the `:workspace-compare` entry, and from it `:branch`,
-                   `:phase`, `:selected` and `:attr`;
+                   `:phase`, `:selected`, `:hovered` and `:attr`;
     `:status`      of the diff (`:loading`, `:loaded`, `:error`);
     `:incoming`    true when the changes listed are main's;
     `:excluded`, `:reviewed`, `:resolutions`  the marks on the diff;
@@ -65,6 +65,8 @@
      :branch      branch
      :phase       phase
      :selected    selected
+     :hovered     (:hovered mode)
+     :hovered-from (:hovered-from mode)
      :attr        (:attr mode)
      :status      status
      :incoming    incoming?
@@ -145,12 +147,42 @@
 
 (defn chosen-marks
   "The marks of `marks` the canvas shows with the entry `selected`
-  chosen: its own and the ones of the layers that use it (`:usage`), so
-  the canvas is not crowded. All of them with none chosen."
-  [selected marks]
+  chosen: its own, the ones of the layers that use it (`:usage`) and the
+  one of the entry whose row is under the pointer (`hovered`), so the
+  canvas is not crowded. All of them with none chosen."
+  [selected hovered marks]
   (if (some? selected)
-    (filterv #(or (= selected (:key %)) (= :usage (:status %))) marks)
+    (filterv #(or (= selected (:key %))
+                  (= hovered (:key %))
+                  (= :usage (:status %)))
+             marks)
     marks))
+
+(defn layer-entry
+  "The key of the entry of `rows` that answers for the layers `ids` (the
+  ones under the pointer) of `objects`: the entry of one of them or of
+  the closest layer that holds it, as a change of a board is the change
+  of what is in it. With several, the one of the deepest layer."
+  [rows objects ids]
+  (let [by-layer (into {}
+                       (comp (filter #(= :shape (:kind %)))
+                             (map (juxt :id dwcp/item-key)))
+                       rows)
+        ;; up to the root of the page, which is its own parent
+        chain    (fn [id]
+                   (loop [id id found []]
+                     (let [parent-id (:parent-id (get objects id))]
+                       (if (or (nil? id) (some #(= id %) found))
+                         found
+                         (recur (when (not= parent-id id) parent-id)
+                                (conj found id))))))
+        depth    (fn [id] (count (chain id)))
+        holder   (fn [id] (some #(when (contains? by-layer %) %) (chain id)))]
+    (when (seq by-layer)
+      (some->> (keep holder ids)
+               (seq)
+               (apply max-key depth)
+               (get by-layer)))))
 
 ;; --- Moving through the list
 

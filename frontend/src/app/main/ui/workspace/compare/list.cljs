@@ -35,6 +35,17 @@
   [item-key]
   (st/emit! (dwcp/toggle-selected item-key)))
 
+(defn- on-hover
+  "The row under the pointer, from wherever in it the pointer is; none
+  between rows."
+  [event]
+  (let [row (.closest ^js (dom/get-target event) "[data-item-key]")]
+    (st/emit! (dwcp/set-hovered (some-> row (dom/get-data "item-key")) :list))))
+
+(defn- on-leave
+  [_]
+  (st/emit! (dwcp/set-hovered nil :list)))
+
 (defn- on-fold
   [id]
   (st/emit! (dwcp/toggle-group id)))
@@ -188,13 +199,29 @@
   [{:keys [class]}]
   (let [comparison (cc/use-comparison)
         resolving? (= :resolve (:phase comparison))
-        on-export  (mf/use-fn (mf/deps comparison) #(cc/export-diff comparison))]
-    [:div {:class [class (stl/css :compare-list)]}
-     [:> header* {:title (if resolving?
-                           (tr "workspace.compare.decisions"
-                               (count (get-in comparison [:conflicts :conflicts])))
-                           (tr "workspace.compare.changes"))
-                  :on-export (when (= :loaded (:status comparison)) on-export)}]
-     (if resolving?
-       [:> decisions* {:comparison comparison}]
-       [:> changes* {:comparison comparison}])]))
+        on-export  (mf/use-fn (mf/deps comparison) #(cc/export-diff comparison))
+        node-ref   (mf/use-ref nil)
+        hovered    (:hovered comparison)
+        ;; the row of the layer under the pointer, on the canvas
+        pointed    (when (= :canvas (:hovered-from comparison)) hovered)]
+
+    ;; that row comes into sight
+    (mf/with-effect [pointed]
+      (when (some? pointed)
+        (some-> (mf/ref-val node-ref)
+                (.querySelector (dm/str "[data-item-key=\"" pointed "\"]"))
+                (.scrollIntoView #js {:block "nearest"}))))
+
+    [:div {:class [class (stl/css :compare-list)]
+           :ref node-ref
+           :on-pointer-over on-hover
+           :on-pointer-leave on-leave}
+     [:> (mf/provider brli/pointed-row) {:value pointed}
+      [:> header* {:title (if resolving?
+                            (tr "workspace.compare.decisions"
+                                (count (get-in comparison [:conflicts :conflicts])))
+                            (tr "workspace.compare.changes"))
+                   :on-export (when (= :loaded (:status comparison)) on-export)}]
+      (if resolving?
+        [:> decisions* {:comparison comparison}]
+        [:> changes* {:comparison comparison}])]]))

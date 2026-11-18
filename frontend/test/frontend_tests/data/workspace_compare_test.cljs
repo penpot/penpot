@@ -167,6 +167,39 @@
     (t/is (nil? (get-in @store [:workspace-compare :selected])))
     (rx/dispose! store)))
 
+(t/deftest the-pointer-is-followed-on-the-list-and-on-the-canvas
+  (let [store (make-store {:workspace-compare {:phase :compare :selected "shape/p/a"}})
+        idle  (make-store {})
+        mode  #(select-keys (:workspace-compare @store) [:hovered :hovered-from :selected])]
+    (ptk/emit! store (dwcp/set-hovered "shape/p/b" :canvas))
+    (t/is (= {:hovered "shape/p/b" :hovered-from :canvas :selected "shape/p/a"} (mode))
+          "the choice stays")
+    (ptk/emit! store (dwcp/set-hovered "shape/p/c" :list))
+    (ptk/emit! store (dwcp/set-hovered nil :canvas))
+    (t/is (= "shape/p/c" (:hovered (mode)))
+          "the canvas does not let go the row the pointer reached")
+    (ptk/emit! store (dwcp/set-hovered nil :list))
+    (t/is (nil? (:hovered (mode))))
+    (ptk/emit! idle (dwcp/set-hovered "shape/p/b" :list))
+    (t/is (not (contains? @idle :workspace-compare)) "outside the mode nothing is kept")
+    (rx/dispose! store)
+    (rx/dispose! idle)))
+
+(t/deftest a-click-on-the-canvas-chooses-the-change-of-its-layer
+  (let [store (make-store {:workspace-compare {:phase :compare :selected "shape/p/a"}})
+        selected #(get-in @store [:workspace-compare :selected])]
+    (ptk/emit! store (dwcp/set-hovered "shape/p/b" :canvas))
+    (ptk/emit! store (dwcp/pick-hovered))
+    (t/is (= "shape/p/b" (selected)))
+    (ptk/emit! store (dwcp/set-hovered "shape/p/c" :list))
+    (ptk/emit! store (dwcp/pick-hovered))
+    (t/is (nil? (selected)) "a row under the pointer is no layer under it")
+    (ptk/emit! store (dwcp/select "shape/p/a" {:travel false}))
+    (ptk/emit! store (dwcp/set-hovered nil :list))
+    (ptk/emit! store (dwcp/pick-hovered))
+    (t/is (nil? (selected)) "the background lets the choice go")
+    (rx/dispose! store)))
+
 (t/deftest the-layer-chosen-is-fitted-in-the-room-the-view-leaves
   (let [page-id  (uuid/next)
         shape-id (uuid/next)

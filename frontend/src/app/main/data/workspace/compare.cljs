@@ -18,6 +18,9 @@
      :view      :highlight | :side
      :hidden    true while the changes are hidden on the canvas
      :selected  the key of the change or conflict chosen (`item-key`)
+     :hovered   the key of the change or conflict under the pointer, and
+     :hovered-from where the pointer is: its row (`:list`) or its layer
+                (`:canvas`)
      :attr      the property in turn while resolving a conflict
      :preview   the side (`:main`, `:branch`) of that property the canvas
                 tries out while the pointer is on its option
@@ -287,6 +290,52 @@
                   (go-to-item item))
            (rx/of (dwdc/clear-drawing))))))))
 
+(defn set-hovered
+  "Take the change or conflict `item-key` as the one under the pointer,
+  or none: the canvas marks it beside the one chosen, and the list shows
+  its row. `from` says where the pointer is, on the row (`:list`) or on
+  the layer (`:canvas`): each one only lets go what it took, so the
+  pointer leaving the canvas for the list does not undo the row it
+  reaches."
+  [item-key from]
+  (assert (contains? #{:list :canvas} from) "expected `:list` or `:canvas`")
+  (ptk/reify ::set-hovered
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [mode (:workspace-compare state)]
+        (cond
+          (nil? mode)
+          state
+
+          (some? item-key)
+          (assoc state :workspace-compare
+                 (assoc mode :hovered item-key :hovered-from from))
+
+          (= from (:hovered-from mode))
+          (assoc state :workspace-compare (dissoc mode :hovered :hovered-from))
+
+          :else
+          state)))))
+
+(defn- get-hovered-layer
+  "The key of the change or conflict whose layer is under the pointer."
+  [state]
+  (let [mode (:workspace-compare state)]
+    (when (= :canvas (:hovered-from mode))
+      (:hovered mode))))
+
+(defn pick-hovered
+  "Choose the change or conflict whose layer is under the pointer, or
+  none on any other spot of the canvas, where every change is marked
+  again. The canvas stays where it is: the layer is in sight."
+  []
+  (ptk/reify ::pick-hovered
+    ptk/WatchEvent
+    (watch [_ state _]
+      (if (comparing? state)
+        (rx/of (select (get-hovered-layer state) {:travel false}))
+        (rx/empty)))))
+
 (defn toggle-selected
   "Choose the change or conflict `item-key`, or none when it is the one
   chosen: with none chosen the canvas marks them all again."
@@ -328,6 +377,18 @@
     ptk/EffectEvent
     (effect [_ state _]
       (dwvw/maybe-sync-workspace-local-viewport! state))))
+
+(defn fit-hovered
+  "Choose the change or conflict whose layer is under the pointer and
+  zoom to it."
+  []
+  (ptk/reify ::fit-hovered
+    ptk/WatchEvent
+    (watch [_ state _]
+      (if-let [item-key (get-hovered-layer state)]
+        (rx/of (select item-key {:travel false})
+               (fit-selected))
+        (rx/empty)))))
 
 (defn set-attr
   "Take the property `attr` of the conflict chosen as the one in turn."

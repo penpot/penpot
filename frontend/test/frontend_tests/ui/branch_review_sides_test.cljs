@@ -158,12 +158,35 @@
 (t/deftest the-change-chosen-is-marked-alone
   (let [marks [{:key "a" :status :modified}
                {:key "b" :status :added}
+               {:key "c" :status :deleted}
                {:key "a/1" :status :usage}]]
-    (t/is (= marks (cc/chosen-marks nil marks)) "none chosen: every mark")
-    (t/is (= ["a" "a/1"] (mapv :key (cc/chosen-marks "a" marks)))
+    (t/is (= marks (cc/chosen-marks nil nil marks)) "none chosen: every mark")
+    (t/is (= marks (cc/chosen-marks nil "b" marks)) "the pointer takes none away")
+    (t/is (= ["a" "a/1"] (mapv :key (cc/chosen-marks "a" nil marks)))
           "its own mark and the layers that use it")
-    (t/is (= ["a/1"] (mapv :key (cc/chosen-marks "c" marks)))
+    (t/is (= ["a" "b" "a/1"] (mapv :key (cc/chosen-marks "a" "b" marks)))
+          "and the one of the row under the pointer")
+    (t/is (= ["a/1"] (mapv :key (cc/chosen-marks "z" nil marks)))
           "a change of another page leaves no mark of the others")))
+
+(t/deftest a-layer-answers-for-the-closest-change-that-holds-it
+  (let [inner   (uuid/next)
+        ;; the root of a page is its own parent
+        objects (-> branch-objects
+                    (assoc-in [uuid/zero :parent-id] uuid/zero)
+                    (assoc icon-id (assoc icon :shapes [inner])
+                           inner {:id inner :parent-id icon-id}))
+        board   {:kind :shape :id board-id :key "board"}
+        group   {:kind :shape :id icon-id :key "icon"}
+        color   {:kind :color :id board-id :key "color"}]
+    (t/is (= "board" (cc/layer-entry [board] objects [inner]))
+          "the change of the board is the change of what is in it")
+    (t/is (= "icon" (cc/layer-entry [board group] objects [board-id inner]))
+          "the deepest layer with a change wins")
+    (t/is (nil? (cc/layer-entry [group] objects [board-id])) "a layer with no change")
+    (t/is (nil? (cc/layer-entry [group] objects [uuid/zero])) "the root of the page")
+    (t/is (nil? (cc/layer-entry [color] objects [board-id])) "an asset is no layer")
+    (t/is (nil? (cc/layer-entry [board] objects nil)) "the pointer on nothing")))
 
 ;; --- Main beside the branch
 

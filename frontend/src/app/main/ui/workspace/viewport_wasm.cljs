@@ -331,6 +331,13 @@
         context-loss-overlay? (mf/deref wasm.api/context-loss-overlay?)
         transition-reveal-rulers? (mf/deref wasm.api/transition-reveal-rulers?)
 
+        compare-mode      (mf/deref refs/compare-mode)
+        comparing?        (some? compare-mode)
+        ;; comparing, the canvas answers for the layers with a change
+        ;; alone: no layer is selected, and a click picks a change. A
+        ;; commenting tool takes the canvas back
+        picking?          (and comparing? (nil? drawing-tool))
+
         on-click          (actions/on-click hover selected edition path-drawing? drawing-tool space? selrect z?)
         on-context-menu   (actions/on-context-menu hover hover-ids read-only?)
         on-double-click   (actions/on-double-click hover hover-ids selected hover-top-frame-id path-drawing? base-objects edition drawing-tool z? read-only?)
@@ -341,7 +348,12 @@
         on-drag-end       (actions/on-drag-over comp-inst-ref)
         on-drop           (actions/on-drop file comp-inst-ref)
         on-pointer-down   (actions/on-pointer-down @hover selected edition drawing-tool text-editing? path-editing? grid-editing?
-                                                   path-drawing? create-comment? space? panning z? read-only?)
+                                                   path-drawing? create-comment? space? panning z? read-only?
+                                                   picking?)
+        on-pick           (actions/on-pick-change space? z?)
+        on-pick-fit       (actions/on-pick-change-fit space? z?)
+        on-click          (if picking? on-pick on-click)
+        on-double-click   (if picking? on-pick-fit on-double-click)
 
         on-pointer-up     (actions/on-pointer-up disable-paste-ref)
 
@@ -358,7 +370,6 @@
         disable-events?          (contains? layout :comments)
         comments-mode?           (= drawing-tool :comments)
         reviewing?               (some? (mf/deref refs/pull-request-preview))
-        comparing?               (some? (mf/deref refs/compare-mode))
         ;; inside a design review the global "show comments" option
         ;; decides alone: it shows or hides comments and tasks
         show-comments?           (if reviewing?
@@ -682,7 +693,12 @@
             (wasm.api/set-shape-hidden false)
             (wasm.api/request-render "stop-path-edition")))))
 
-    [:div {:class (dm/str @cursor " " (stl/css :viewport)) :style #js {"--zoom" zoom} :data-testid "viewport"}
+    [:div {:class (dm/str @cursor " " (stl/css :viewport))
+           ;; a layer with a change says it answers to a click
+           :style (if (and picking? (= :canvas (:hovered-from compare-mode)) (some? (:hovered compare-mode)))
+                    #js {"--zoom" zoom :cursor "pointer"}
+                    #js {"--zoom" zoom})
+           :data-testid "viewport"}
 
      (cond
        (some? preview-id)
@@ -726,7 +742,10 @@
                                :vport vport
                                :zoom zoom
                                :page-id page-id
-                               :show-rulers show-rulers?}])
+                               :show-rulers show-rulers?
+                               :hover-ids (when picking?
+                                            (cond-> (vec @hover-ids)
+                                              (some? (:id @hover)) (conj (:id @hover))))}])
 
       (when picking-color?
         [:> pixel-overlay/pixel-overlay-wasm* {:viewport-ref viewport-ref
@@ -810,7 +829,7 @@
            :else [:& editor-v1/text-editor-svg {:shape editing-shape
                                                 :ref text-editor-ref}]))
 
-       (when show-frame-outline?
+       (when (and show-frame-outline? (not picking?))
          (let [outlined-frame-id (->> @hover-ids
                                       (filter #(cfh/frame-shape? (get base-objects %)))
                                       (remove selected)
@@ -835,7 +854,7 @@
          [:> outline/shape-outlines*
           {:objects objects-for-outlines
            :selected (when-not comments-mode? selected)
-           :hover (when-not comments-mode? #{(:id @hover) @frame-hover})
+           :hover (when-not (or comments-mode? picking?) #{(:id @hover) @frame-hover})
            :highlighted highlighted
            :edition edition
            :zoom zoom}])
