@@ -99,11 +99,14 @@
                                                      (= topic organization-id)))))
                                   (rx/map process-message))
 
-                             ;; On reconnect, send again the subscription messages
+                             ;; On reconnect, send again the subscription messages,
+                             ;; and read the changes stored while disconnected
                              (->> stream
                                   (rx/filter (ptk/type? ::dws/opened))
-                                  (rx/mapcat #(->> (rx/from initmsg)
-                                                   (rx/map dws/send))))
+                                  (rx/mapcat #(rx/concat
+                                               (->> (rx/from initmsg)
+                                                    (rx/map dws/send))
+                                               (rx/of (dps/catch-up file-id)))))
 
                              ;; Emit presence event for current user;
                              ;; this is because websocket server don't
@@ -287,22 +290,32 @@
     (-deref [_] {:changes changes})
 
     ptk/WatchEvent
-    (watch [_ _ _]
+    (watch [_ state _]
       ;; The commit event is responsible to apply the data localy
       ;; and update the persistence internal state with the updated
       ;; file-revn
+      (cond
+        ;; A catch-up read applied it before its message arrived
+        (dps/caught-up? state file-id revn)
+        (rx/empty)
 
-      (rx/concat
-       (rx/of (dch/commit {:file-id file-id
-                           :file-revn revn
-                           :file-vern vern
-                           :save-undo? false
-                           :source :remote
-                           :redo-changes (vec changes)
-                           :undo-changes []}))
-       (if (:repaired msg)
-         (rx/of (dps/notify-repaired))
-         (rx/empty))))))
+        ;; The changes before it never arrived: the catch-up read applies
+        ;; them, and this one after them, in the server's order
+        (dps/revision-gap? state file-id revn)
+        (rx/of (dps/catch-up file-id))
+
+        :else
+        (rx/concat
+         (rx/of (dch/commit {:file-id file-id
+                             :file-revn revn
+                             :file-vern vern
+                             :save-undo? false
+                             :source :remote
+                             :redo-changes (vec changes)
+                             :undo-changes []}))
+         (if (:repaired msg)
+           (rx/of (dps/notify-repaired))
+           (rx/empty)))))))
 
 (defn handle-file-deleted
   [{:keys [file-id] :as msg}]

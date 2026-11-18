@@ -81,15 +81,15 @@
   [:map {:title "update-file-result"}
    ;; The revision the file had before this update
    [:revn {:min 0} ::sm/int]
-   ;; Every change stored after the incoming revision, this one included
+   ;; The revisions stored after the incoming one, this save's last, as
+   ;; long as they number at most `:lagged-row-cap`
    [:lagged
     [:vector
      [:map
-      [:changes [:vector cpc/schema:change]]
-      [:file-id ::sm/uuid]
-      [:id ::sm/uuid]
       [:revn {:min 0} ::sm/int]
       [:session-id ::sm/uuid]]]]
+   ;; Past the cap: `:lagged` is empty and the client reloads the file
+   [:reload {:optional true} :boolean]
    ;; Commits not saved: the first one that failed and every later one
    [:rejected {:optional true}
     [:map
@@ -337,9 +337,6 @@
           saved?   (or (nil? rejected) (seq changes))
           snapshot (when saved? (::snapshot file))
 
-          deleted-at
-          (ct/plus timestamp (ct/duration {:hours 1}))
-
           ;; The id of the change row (xlog) goes to the audit event
           ;; too: a consumer that reads the event needs to know what the
           ;; save changed, and that row is the only place with it.
@@ -376,19 +373,11 @@
 
       (when saved?
         (when repair
-          (db/insert! conn :file-change
-                      {:id (uuid/next)
-                       :kind fchanges/revision-kind
-                       :session-id repair-session-id
-                       :profile-id profile-id
-                       :created-at timestamp
-                       :updated-at timestamp
-                       :deleted-at deleted-at
-                       :file-id (:id file)
-                       :revn (:revn repair)
-                       :version (:version file)
-                       :changes (blob/encode (:changes repair))}
-                      {::db/return-keys false})
+          (fchanges/insert-revision cfg file timestamp
+                                    {:session-id repair-session-id
+                                     :profile-id profile-id
+                                     :revn (:revn repair)
+                                     :changes (:changes repair)})
           (l/wrn :hint "file auto-repaired"
                  :file-id (str (:id file))
                  :error-codes (error-codes (:errors repair))
@@ -396,26 +385,17 @@
                  :change-count (count (:changes repair)))
           (record-repair-outcome cfg :repaired))
 
-        ;; Insert change (xlog) with deleted_at in a future data for
-        ;; make them automatically eleggible for GC once they expires
-        ;;
-        ;; The revision carries only the delta of the save: the features of the
-        ;; file are not repeated here (nobody reads them from a revision, and
-        ;; they are duplicated on every save).
-        (db/insert! conn :file-change
-                    {:id file-change-id
-                     :kind fchanges/revision-kind
-                     :session-id session-id
-                     :profile-id profile-id
-                     :created-at change-created-at
-                     :updated-at change-created-at
-                     :deleted-at deleted-at
-                     :file-id (:id file)
-                     :revn (:revn file)
-                     :version (:version file)
-                     :changes (blob/encode changes)}
-                    {::db/return-keys false})
-
+        ;; The revision carries only the delta of the save: the features of
+        ;; the file are not repeated here (nobody reads them from a revision,
+        ;; and they are duplicated on every save). It expires in an hour,
+        ;; which `insert-revision` decides. The caller's `file-change-id`
+        ;; travels with it, so the audit event points at this very row.
+        (fchanges/insert-revision cfg file change-created-at
+                                  {:id file-change-id
+                                   :session-id session-id
+                                   :profile-id profile-id
+                                   :revn (:revn file)
+                                   :changes changes})
         (persist-file! cfg (dissoc file ::repair))
 
         (when (contains? cf/flags :redis-cache)
@@ -426,7 +406,8 @@
           (send-repair-notifications cfg params file repair))
         (send-notifications! cfg params file))
 
-      (with-meta (cond-> {:revn revn :lagged (get-lagged-changes conn params)}
+      (with-meta (cond-> (-> (get-lagged-changes conn params)
+                             (assoc :revn revn))
                    (some? rejected)
                    (assoc :rejected rejected))
         {::audit/replace-props
@@ -461,15 +442,19 @@
            (assoc :file-change-id file-change-id))}))))
 
 (defn get-file
-  "Get not-decoded file, only decodes the features set.
+  "Get the file with its data decoded and not migrated.
 
   The read takes the `file` row with FOR UPDATE: the save persists the
   map it read, so it must hold the row from the read to the write. The
   lock is exclusive, not shared, because the migration-on-read path may
   re-read the same row with FOR UPDATE, and a shared lock that upgrades
-  deadlocks two concurrent readers."
+  deadlocks two concurrent readers.
+
+  The read does not migrate because a save that repairs attaches its
+  snapshot before the migration runs (`update-file-data!`): the fold's
+  own migration would run before that snapshot exists."
   [cfg id]
-  (bfc/get-file cfg id :decode? false :lock-for-update? true))
+  (bfc/get-file cfg id :migrate? false :lock-for-update? true))
 
 (defn persist-file!
   "Function responsible of persisting already encoded file. Should be
@@ -513,8 +498,8 @@
 (defn- update-file-data!
   "Perform a file data transformation in with all update context setup.
 
-  This function expected not-decoded file and transformation function. Returns
-  an encoded file.
+  This function expects the file with its data decoded (`get-file`) and a
+  transformation function, and returns the transformed file, still decoded.
 
   This function is not responsible of saving the file. Fragment rows are
   persisted later by `persist-file!` (via `bfc/update-file!` inside the
@@ -523,7 +508,6 @@
   [cfg {:keys [id] :as file} update-fn & args]
   (let [file (update file :data (fn [data]
                                   (-> data
-                                      (blob/decode)
                                       (assoc :id id))))
         libs (delay (bfc/get-resolved-file-libraries cfg file))
 
@@ -899,6 +883,43 @@
       :else
       (throw cause))))
 
+(defn- append-saved-changes
+  "Appends `changes` to `::changes`, the changes the save stores in its
+  revision row, the notification, and the response. The media rewrite
+  goes through it, so a rename of that key meets the rewrite here."
+  [file changes]
+  (update file ::changes into changes))
+
+(defn- media-rewrite-changes
+  "Maybe remapped media references, as changes: one `:mod-obj` per shape
+  that `update-media-references!` pointed at a copy in this file. The
+  client never learns the copies' ids, so the save appends these changes
+  to its row, its notification, and its response."
+  [before after refs]
+  (into []
+        (comp (map (juxt :page-id :shape-id))
+              (distinct)
+              (keep (fn [[page-id shape-id]]
+                      (let [old (get-in before [:data :pages-index page-id
+                                                :objects shape-id])
+                            new (get-in after [:data :pages-index page-id
+                                               :objects shape-id])]
+                        (when (and old new (not= old new))
+                          {:type :mod-obj
+                           :page-id page-id
+                           :id shape-id
+                           :operations (into []
+                                             (keep (fn [[attr val]]
+                                                     (when (not= val (get old attr))
+                                                       ;; The live rewrite marks nothing
+                                                       ;; touched, and neither may a replay
+                                                       {:type :set
+                                                        :attr attr
+                                                        :val val
+                                                        :ignore-touched true})))
+                                             new)})))))
+        refs))
+
 (defn- process-changes-and-validate
   "Applies and validates all `changes` at once. If that fails, repairs
   damage the file already had or keeps the longest prefix of the
@@ -951,7 +972,11 @@
                                 skip-validate tracked cause))))]
 
     (if-let [media-refs (-> @state :media-refs not-empty)]
-      (bfc/update-media-references! cfg file media-refs)
+      (let [rewritten (bfc/update-media-references! cfg file media-refs)
+            rewrite   (media-rewrite-changes file rewritten media-refs)]
+        (cond-> rewritten
+          (seq rewrite)
+          (append-saved-changes rewrite)))
       file)))
 
 (defn- take-snapshot?
@@ -967,20 +992,113 @@
           (> (inst-ms (ct/diff modified-at (ct/now)))
              (inst-ms timeout))))))
 
+;; Ordered by `revn`: a repair row takes the revision below the save's,
+;; so the save's own row comes last, which the frontend's settle step
+;; (`persistence.cljs::settle-saved-commit`) relies on.
 (def ^:private sql:lagged-changes
-  "select s.id, s.revn, s.file_id,
-          s.session_id, s.changes
+  "select s.revn, s.session_id
      from file_change as s
     where s.file_id = ?
       and s.revn > ?
-    order by s.created_at asc")
+      and s.label is null
+      and s.changes is not null
+    order by s.revn asc, s.created_at asc
+    limit ?")
 
 (defn- get-lagged-changes
-  [conn {:keys [id revn] :as params}]
-  (->> (db/exec! conn [sql:lagged-changes id revn])
-       (filter :changes)
-       (mapv (fn [row]
-               (update row :changes blob/decode)))))
+  "The `revn` and `session-id` of the revisions stored above the incoming
+  `revn`, in the order they were stored, the save's own last. More than
+  `:lagged-row-cap` of them answer a reload instead: a client so far
+  behind reloads the file rather than wait for every change it missed."
+  [conn {:keys [id revn]}]
+  (let [cap  (cf/get :lagged-row-cap)
+        rows (db/exec! conn [sql:lagged-changes id revn (inc cap)])]
+    (if (> (count rows) cap)
+      {:lagged [] :reload true}
+      {:lagged rows})))
+
+;; --- COMMAND QUERY: get-file-changes
+
+(def ^:private sql:catch-up-rows
+  "select s.revn, octet_length(s.changes) as size
+     from file_change as s
+    where s.file_id = ?
+      and s.revn > ?
+      and s.revn <= ?
+      and s.created_at >= ?
+      and s.label is null
+      and s.changes is not null
+    order by s.revn asc
+    limit ?")
+
+(def ^:private sql:catch-up-changes
+  "select s.revn, s.session_id, s.changes
+     from file_change as s
+    where s.file_id = ?
+      and s.revn > ?
+      and s.revn <= ?
+      and s.label is null
+      and s.changes is not null
+    order by s.revn asc")
+
+(defn get-file-changes
+  "The changes of the revisions a client at revision `since` lacks, in
+  order. Answers a reload instead when the stored rows do not cover the
+  gap one row per revision (a write that stores no row leaves a hole,
+  and expired rows leave one too), when a row of the gap is older than
+  `:catch-up-window`, or when the changes of the gap weigh more than
+  `:catch-up-max-size` bytes as stored. Decodes nothing before it knows
+  the answer is servable."
+  [conn file-id since]
+  (let [head (:revn (db/get conn :file {:id file-id}
+                            {::db/columns [:revn]}))]
+    (if (<= head since)
+      {:revn head :changes []}
+      (let [oldest (ct/minus (ct/now) (cf/get :catch-up-window))
+            rows   (db/exec! conn [sql:catch-up-rows file-id since head oldest
+                                   (inc (- head since))])]
+        (if (and (= (map :revn rows) (range (inc since) (inc head)))
+                 (<= (reduce + 0 (map :size rows)) (cf/get :catch-up-max-size)))
+          ;; `objects-gc` may delete an expired row between the two reads
+          (let [changes (db/exec! conn [sql:catch-up-changes file-id since head])]
+            (if (= (map :revn changes) (map :revn rows))
+              {:revn head
+               :changes (mapv #(update % :changes blob/decode) changes)}
+              {:revn head :reload true}))
+          {:revn head :reload true})))))
+
+(def ^:private
+  schema:get-file-changes
+  [:map {:title "get-file-changes"}
+   [:file-id ::sm/uuid]
+   [:since {:min 0} ::sm/int]])
+
+(def ^:private
+  schema:get-file-changes-result
+  [:map {:title "get-file-changes-result"}
+   ;; The revision of the file when it was read
+   [:revn {:min 0} ::sm/int]
+   ;; The revisions above `since`, up to `revn`
+   [:changes {:optional true}
+    [:vector
+     [:map
+      [:revn {:min 0} ::sm/int]
+      [:session-id ::sm/uuid]
+      [:changes [:vector cpc/schema:change]]]]]
+   ;; Set instead of `:changes` when the gap cannot be served
+   [:reload {:optional true} :boolean]])
+
+(sv/defmethod ::get-file-changes
+  "The changes a client at revision `since` lacks, so that it catches up
+  without reloading the file, or a reload when they cannot be served."
+  {::doc/added "2.21"
+   ::doc/module :files
+   ::sm/params schema:get-file-changes
+   ::sm/result schema:get-file-changes-result}
+  [cfg {:keys [::rpc/profile-id file-id since]}]
+  (db/run! cfg (fn [{:keys [::db/conn]}]
+                 (files/check-read-permissions! conn profile-id file-id)
+                 (get-file-changes conn file-id since))))
 
 (defn- send-repair-notifications
   [cfg {:keys [team session-id] :as params} file repair]

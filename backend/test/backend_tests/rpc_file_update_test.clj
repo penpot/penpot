@@ -11,8 +11,11 @@
    [app.common.files.changes :as cpc]
    [app.common.files.validate :as val]
    [app.common.logging :as l]
+   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.config :as cf]
+   [app.db :as db]
+   [app.features.file-changes :as fchanges]
    [app.loggers.audit :as-alias audit]
    [app.msgbus :as mbus]
    [app.rpc :as-alias rpc]
@@ -568,3 +571,118 @@
         (t/is (nil? (:error out)))
         (t/is (nil? (-> out :result :rejected)))
         (t/is (= 1 (count (th/db-query :file-media-object {:file-id file-id}))))))))
+
+(t/deftest a-save-writes-its-revision-through-one-writer
+  (let [{:keys [page-id file-id] :as ctx} (create-file)]
+    (update-file ctx {:changes [(th/add-rect-change page-id (uuid/next))]})
+    (let [[row] (->> (th/db-query :file-change {:file-id file-id})
+                     (filter :changes))
+          file   (th/db-get :file {:id file-id})]
+      (t/is (= fchanges/revision-kind (:kind row)))
+      (t/is (= (:version file) (:version row))
+            "the row carries the file's data version")
+      (t/is (= (:created-at row) (:updated-at row)))
+      (t/is (= (ct/plus (:created-at row) (ct/duration {:hours 1}))
+               (:deleted-at row))
+            "the row expires an hour after it was stored"))))
+
+;; Scenario: a writer of a companion row for the same revision. Proves:
+;; the revision writer takes the row's id and answers the expiry it set,
+;; so the companion can share the revision's identity and expiry.
+(t/deftest the-revision-writer-answers-the-identity-and-expiry
+  (let [{:keys [file-id]} (create-file)
+        file   (th/db-get :file {:id file-id})
+        id     (uuid/next)
+        now    (ct/inst (inst-ms (ct/now)))
+        out    (db/tx-run! th/*system*
+                           (fn [cfg]
+                             (fchanges/insert-revision cfg file now
+                                                       {:id id
+                                                        :session-id (uuid/next)
+                                                        :revn 1
+                                                        :changes []})))
+        [row]  (th/db-query :file-change {:file-id file-id :id id})]
+    (t/is (= id (:id out) (:id row)))
+    (t/is (= (ct/plus now (ct/duration {:hours 1}))
+             (:deleted-at out)
+             (:deleted-at row)))
+    (t/is (= [] (blob/decode (:changes row)))
+          "the writer encodes the changes it receives")))
+
+;; Scenario: a save with the `file-change-retention` flag set. Proves: the
+;; revision row carries no expiry, so `objects-gc` never collects it.
+(t/deftest a-save-keeps-its-revision-row-under-the-retention-flag
+  (let [{:keys [page-id file-id] :as ctx} (create-file)]
+    (with-redefs [cf/flags (conj cf/flags :file-change-retention)]
+      (update-file ctx {:changes [(th/add-rect-change page-id (uuid/next))]}))
+    (let [[row] (->> (th/db-query :file-change {:file-id file-id})
+                     (filter :changes))]
+      (t/is (some? row))
+      (t/is (nil? (:deleted-at row)) "the row never expires"))))
+
+;; Scenario: a shape references an image of another file. The save copies
+;; the media object into this file and rewrites the reference. Proves: the
+;; rewrite is part of the save's own change vector, so the row carries the
+;; whole of what the save applied, and the log verifier matches the head.
+(t/deftest a-save-carries-the-media-rewrite-in-its-row
+  (let [{:keys [profile-id page-id file-id] :as ctx} (create-file)
+        other   (th/create-file* 2 {:profile-id profile-id
+                                    :project-id (:default-project-id
+                                                 (th/db-get :profile {:id profile-id}))
+                                    :is-shared false})
+        mobj    (upload-image profile-id (:id other))
+        shape-a (uuid/next)
+        out     (update-file ctx {:changes-with-metadata
+                                  [(commit (add-image-rect page-id shape-a mobj))]})]
+    (t/is (nil? (:error out)))
+
+    (let [local        (-> (th/db-query :file-media-object {:file-id file-id})
+                           first :id)
+          shape        (-> (get-file-data ctx)
+                           (get-in [:pages-index page-id :objects shape-a]))
+          row-changes  (->> (th/db-query :file-change {:file-id file-id})
+                            (filter :changes)
+                            first
+                            :changes
+                            (blob/decode))
+          rewrite      (filter #(= :mod-obj (:type %)) row-changes)]
+      (t/is (not= (:id mobj) local)
+            "the media object is copied into this file")
+      (t/is (= local (-> shape :fills first :fill-image :id))
+            "the head names the copy")
+      (t/is (= [{:type :mod-obj
+                 :page-id page-id
+                 :id shape-a
+                 :operations [{:type :set :attr :fills :val (:fills shape)
+                               :ignore-touched true}]}]
+               rewrite)
+            "the row carries the rewrite as a change of its own")
+      (t/is (= :match (th/verify-file-log file-id))
+            "the log explains the head"))))
+
+;; Scenario: three saves on a file with a snapshot per save. Proves:
+;; folding the latest checkpoint and the rows after it reproduces the head.
+(t/deftest the-log-verifier-matches-the-head-after-saves
+  (let [{:keys [page-id file-id] :as ctx} (create-file)]
+    (update-file ctx {:changes [(th/add-rect-change page-id (uuid/next))]})
+    (update-file ctx {:revn 1 :changes [(th/add-rect-change page-id (uuid/next))]})
+    (update-file ctx {:revn 2 :changes [(th/add-rect-change page-id (uuid/next))]})
+    (t/is (= :match (th/verify-file-log file-id)))))
+
+;; Scenario: a revision row is lost. Proves: the verifier says so instead
+;; of matching, naming the revision the fold reached.
+(t/deftest the-log-verifier-reports-a-missing-row
+  (let [{:keys [page-id file-id] :as ctx} (create-file)]
+    (update-file ctx {:changes [(th/add-rect-change page-id (uuid/next))]})
+    (th/db-delete! :file-change {:file-id file-id :revn 1})
+    (let [verdict (th/verify-file-log file-id)]
+      (t/is (map? verdict))
+      (t/is (= {:folded-to 0 :head-revn 1 :differing-keys ["pages-index"]}
+               (:mismatch verdict))
+            "the fold stays at the checkpoint while the head moved"))))
+
+;; Scenario: the file a branch owns. Proves: the verifier skips it, because
+;; a branch has no stored head of its own to compare a fold against.
+(t/deftest the-log-verifier-skips-branch-files
+  (t/is (= :skipped-branch
+           (th/verify-file {:id (uuid/next) :revn 7 :is-branch true}))))

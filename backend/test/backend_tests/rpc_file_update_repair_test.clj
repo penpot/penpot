@@ -15,6 +15,7 @@
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
+   [app.common.time :as ct]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -350,11 +351,15 @@
         (t/is (= 2 (:kind (first new))))
         (t/is (nil? (:features (first new))))
         (t/is (some? (:changes (first new))))
-        (t/is (some? (:deleted-at (first new))))
+        (t/is (= (ct/plus (:created-at (first new)) (ct/duration {:hours 1}))
+                 (:deleted-at (first new)))
+              "the repair row expires an hour after it was stored")
         (t/is (= (:created-at (first new)) (:updated-at (first new))))
         (t/is (= (+ n 2) (:revn (second new))))
         (t/is (= session (:session-id (second new))))
-        (t/is (some? (:deleted-at (second new))))
+        (t/is (= (ct/plus (:created-at (second new)) (ct/duration {:hours 1}))
+                 (:deleted-at (second new)))
+              "the save row expires an hour after it was stored")
         (t/is (= (:created-at (second new)) (:updated-at (second new))))
         (t/is (not (pos? (compare (:created-at (first new))
                                   (:created-at (second new))))))

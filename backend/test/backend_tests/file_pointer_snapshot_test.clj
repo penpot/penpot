@@ -785,10 +785,12 @@
                     (fn [cfg file-id id]
                       (swap! loads inc)
                       (load cfg file-id id))]
-        (update-file! :profile-id (:id profile)
-                      :file-id file-id
-                      :revn 1
-                      :changes (add-rect-change page-2 (uuid/random))))
+        ;; The log verifier would load every page to compare it
+        (binding [th/*verify-saves?* false]
+          (update-file! :profile-id (:id profile)
+                        :file-id file-id
+                        :revn 1
+                        :changes (add-rect-change page-2 (uuid/random)))))
 
       (t/is (= 1 @loads))
 
