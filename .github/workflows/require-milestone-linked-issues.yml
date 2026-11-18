@@ -37,6 +37,7 @@ jobs:
           OWNER="${REPOSITORY%%/*}"
           REPO="${REPOSITORY#*/}"
 
+          # shellcheck disable=SC2016  # GraphQL variables, not shell expansion.
           ISSUES=$(gh api graphql \
             -F owner="$OWNER" \
             -F repo="$REPO" \
