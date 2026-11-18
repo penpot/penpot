@@ -121,17 +121,8 @@
 (defn get-variant-main-shape
   "Return the main shape map for `component`, or nil when it is absent."
   [data component]
-  (let [main-id (:main-instance-id component)
-        page-id (:main-instance-page component)]
-    (cond
-      (and (:deleted component) main-id)
-      (get-in component [:objects main-id])
-
-      (and page-id main-id)
-      (get-in data [:pages-index page-id :objects main-id])
-
-      :else
-      nil)))
+  (some->> (variant-main-shape-path component)
+           (get-in data)))
 
 (defn variant-main-label-changed?
   "True when the main shape exists and its :variant-name is not
