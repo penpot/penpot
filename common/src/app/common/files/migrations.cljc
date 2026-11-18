@@ -14,6 +14,7 @@
    [app.common.files.defaults :as cfd]
    [app.common.files.helpers :as cfh]
    [app.common.files.tokens :as cfo]
+   [app.common.files.variant :as cfv]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
@@ -2212,7 +2213,34 @@
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
 
-(defmethod migrate-data "0033-normalize-main-instance-names"
+(defn- repair-shape-children
+  [objects shape]
+  (if-let [shapes (:shapes shape)]
+    (let [shapes' (into []
+                        (comp (keep uuid/coerce)
+                              (filter #(contains? objects %))
+                              (distinct))
+                        shapes)]
+      (if (and (vector? shapes) (= shapes shapes'))
+        shape
+        (assoc shape :shapes shapes')))
+    shape))
+
+(defn- repair-container-children
+  [container]
+  (d/update-when container :objects
+                 (fn [objects]
+                   ;; Only assoc the shapes that change, so an ObjectsMap is
+                   ;; not marked as modified when nothing is repaired.
+                   (reduce-kv (fn [result id shape]
+                                (let [shape' (repair-shape-children objects shape)]
+                                  (if (identical? shape shape')
+                                    result
+                                    (assoc result id shape'))))
+                              objects
+                              objects))))
+
+(defmethod migrate-data "0033-normalize-main-instance-names-v2"
   [data _]
   ;; In penpot shape names always have "/" characters normalized with one space between and after,
   ;; to form paths. But this is not enforced and may be places that still admit names like
@@ -2221,15 +2249,13 @@
   ;; Here we normalize the names of all main instances, and a new file integrity validation has
   ;; been added to enforce this from now on.
   ;; Main instances in variants are a special case because they need to match the variant name.
+  ;; Old files may also list in :shapes child ids stored as strings, nil, or ids that point to no
+  ;; shape. They fail the shape schema and the uuid assert of get-shape, so the container is
+  ;; repaired first (see `repair-container-children`). That repair is the reason for the `-v2`:
+  ;; files that already applied the original migration need to run it again to get it.
   (letfn [(update-shape [container shape-id]
-            (let [shape (ctn/get-shape container shape-id)]
-              ;; A shape may reference a child that does not exist in the
-              ;; container (a dangling reference). There is nothing to update
-              ;; on it, and storing it would add a nil entry to the objects
-              ;; map, making the whole file invalid.
-              (if (nil? shape)
-                container
-                (let [shape (cond
+            (let [shape     (ctn/get-shape container shape-id)
+                  shape'    (cond
                               ;; Variant container must have a normalized name
                               (ctk/is-variant-container? shape)
                               (let [name       (:name shape)
@@ -2262,13 +2288,19 @@
                               ;; Any other shape does not need processing
                               :else shape)]
 
-                  (reduce update-shape
-                          (ctt/set-shape container shape)
-                          (:shapes shape))))))
+              ;; Only assoc the shape when the normalization changed it, so an
+              ;; ObjectsMap is not marked as modified, and the page is not
+              ;; rewritten, when there is nothing to normalize.
+              (reduce update-shape
+                      (if (identical? shape shape')
+                        container
+                        (ctt/set-shape container shape'))
+                      (:shapes shape'))))
 
           (update-container
             [container]
-            (let [root (ctn/get-container-root container)]
+            (let [container (repair-container-children container)
+                  root      (ctn/get-container-root container)]
               (if root
                 (update-shape container (:id root))
                 container)))]
@@ -2414,6 +2446,77 @@
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
 
+;; Property names and values used to accept `,` and `=`. The formula
+;; editor treats those as separators, and a later edit strips them.
+;; Files saved before that strip can also hold two identical names, two
+;; identical value combinations, or a label that was not saved with the
+;; values. Rewrite the text in place and refresh the label.
+(defn- variant-container-entries
+  [data]
+  (concat
+   (for [page  (vals (:pages-index data))
+         shape (vals (:objects page))
+         :when (ctk/is-variant-container? shape)]
+     {:objects   (:objects page)
+      :container shape})
+   (for [component (vals (:components data))
+         shape     (vals (:objects component))
+         :when     (ctk/is-variant-container? shape)]
+     {:objects   (:objects component)
+      :container shape})))
+
+(defmethod migrate-data "0038-sanitize-variant-property-text"
+  [data _]
+  (let [entries  (variant-container-entries data)
+        used-ids (into #{}
+                       (comp (mapcat (fn [{:keys [objects container]}]
+                                       (cfv/qualifying-variant-members data objects container)))
+                             (map :component-id))
+                       entries)
+        data     (reduce (fn [data {:keys [objects container]}]
+                           (cfv/sanitize-variant-container data objects container))
+                         data
+                         entries)]
+    (->> (vals (:components data))
+         (filter ctk/is-variant?)
+         (remove #(contains? used-ids (:id %)))
+         (reduce cfv/sanitize-variant-component data))))
+
+;; The board name and each main's layer name are already normalized.
+;; The library entry could still carry the previous path. Point every
+;; member of the board at that board name.
+(defmethod migrate-data "0039-align-variant-component-names"
+  [data _]
+  (letfn [(align-container [data objects container]
+            (let [board-name         (or (:name container) "")
+                  [path item-name]   (cpn/split-group-name board-name)]
+              (reduce (fn [data child-id]
+                        (let [child     (get objects child-id)
+                              component (when child
+                                          (get-in data [:components (:component-id child)]))]
+                          (if (and (ctk/is-variant? child)
+                                   (= (:id container) (:variant-id child))
+                                   (some? component)
+                                   (= (:id container) (:variant-id component))
+                                   (not= board-name
+                                         (cpn/merge-path-item (:path component) (:name component))))
+                            (update-in data [:components (:id component)]
+                                       assoc :path path :name item-name)
+                            data)))
+                      data
+                      (:shapes container))))
+
+          (containers-in [objects]
+            (filter ctk/is-variant-container? (vals objects)))]
+
+    (reduce (fn [data objects]
+              (reduce #(align-container %1 objects %2)
+                      data
+                      (containers-in objects)))
+            data
+            (concat (map :objects (vals (:pages-index data)))
+                    (map :objects (vals (:components data)))))))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -2502,8 +2605,10 @@
          "0030-remove-stroke-per-side-attr"
          "0031-migrate-stroke-width-token-attr"
          "0032-fix-children-not-in-parent"
-         "0033-normalize-main-instance-names"
+         "0033-normalize-main-instance-names-v2"
          "0034-fix-path-content-offset"
          "0035-fix-dangling-children"
          "0036-clear-nil-keys-in-objects"
-         "0037-fix-shape-svg-attrs-and-defs"]))
+         "0037-fix-shape-svg-attrs-and-defs"
+         "0038-sanitize-variant-property-text"
+         "0039-align-variant-component-names"]))
