@@ -1261,6 +1261,7 @@ mod tests {
         use Child::*;
         assert_size(auto_frame_size(TestLayout::Grid, InFlow), (200.0, 50.0));
         assert_size(auto_frame_size(TestLayout::Grid, Absolute), (500.0, 300.0));
-        assert_size(auto_frame_size(TestLayout::Grid, Hidden), (500.0, 300.0));
+        // Grid takes its size from its tracks; hidden children still count.
+        assert_size(auto_frame_size(TestLayout::Grid, Hidden), (200.0, 50.0));
     }
 }

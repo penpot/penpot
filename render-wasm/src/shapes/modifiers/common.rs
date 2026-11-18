@@ -15,11 +15,19 @@ impl GetBounds for HashMap<Uuid, Bounds> {
     }
 }
 
-/// Whether a layout has a child that takes part in the flow (neither absolute
-/// nor hidden). Without one there is no content to auto-size the layout to.
+/// Whether a flex layout has a child it places (see `Shape::is_in_flow`).
 pub fn has_in_flow_children(shape: &Shape, shapes: ShapesPoolRef) -> bool {
     shape
         .children_ids_iter(true)
         .filter_map(|id| shapes.get(id))
-        .any(|child| !child.is_absolute() && !child.hidden())
+        .any(Shape::is_in_flow)
+}
+
+/// Whether a layout has a child that is not absolute. Hidden children count,
+/// as in the CLJS layout.
+pub fn has_non_absolute_children(shape: &Shape, shapes: ShapesPoolRef) -> bool {
+    shape
+        .children_ids_iter(true)
+        .filter_map(|id| shapes.get(id))
+        .any(|child| !child.is_absolute())
 }

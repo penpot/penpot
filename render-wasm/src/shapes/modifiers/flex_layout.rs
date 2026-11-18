@@ -202,7 +202,7 @@ fn initialize_tracks(
             continue;
         };
 
-        if child.is_absolute() || child.hidden() {
+        if !child.is_in_flow() {
             continue;
         }
 
@@ -686,8 +686,8 @@ pub fn reflow_flex_layout(
         }
     }
 
-    // Like the CLJS layout, keep the size when there is no content to fit:
-    // auto-sizing to padding only would collapse the frame.
+    // With nothing to place, keep the size instead of collapsing to padding.
+    // CLJS would also size to hidden children; flex here leaves them out.
     if (layout_axis.is_auto_across || layout_axis.is_auto_main)
         && has_in_flow_children(shape, shapes)
     {
