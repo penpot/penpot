@@ -351,7 +351,8 @@
         (-> state
             (assoc :thumbnails (d/update-vals thumbnails (fn [uri] {:uri uri :rendered-at nil})))
             (update :files assoc file-id file)
-            (dps/forget-other-versions file))))))
+            (dps/forget-other-versions file)
+            (dps/remember-loaded-revn file))))))
 
 (defn zoom-to-frame
   []

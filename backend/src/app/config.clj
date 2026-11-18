@@ -46,6 +46,14 @@
    :auto-file-snapshot-every 5
    :auto-file-snapshot-timeout "3h"
 
+   ;; The save answer lists at most this many revisions; past it the
+   ;; client reloads the file
+   :lagged-row-cap 1000
+   ;; The catch-up read serves the changes of a gap no older than the
+   ;; window and no larger than the size, in bytes as stored
+   :catch-up-window (ct/duration {:hours 24})
+   :catch-up-max-size (* 32 1024 1024)
+
    :public-uri "http://localhost:3449"
 
    :host "localhost"
@@ -175,6 +183,9 @@
 
     [:auto-file-snapshot-every {:optional true} ::sm/int]
     [:auto-file-snapshot-timeout {:optional true} ::ct/duration]
+    [:lagged-row-cap {:optional true} ::sm/int]
+    [:catch-up-window {:optional true} ::ct/duration]
+    [:catch-up-max-size {:optional true} ::sm/int]
 
     [:media-max-file-size {:optional true} ::sm/int]
     [:font-max-file-size  {:optional true} ::sm/int]

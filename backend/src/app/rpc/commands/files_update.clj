@@ -81,15 +81,15 @@
   [:map {:title "update-file-result"}
    ;; The revision the file had before this update
    [:revn {:min 0} ::sm/int]
-   ;; Every change stored after the incoming revision, this one included
+   ;; The revisions stored after the incoming one, this save's last, as
+   ;; long as they number at most `:lagged-row-cap`
    [:lagged
     [:vector
      [:map
-      [:changes [:vector cpc/schema:change]]
-      [:file-id ::sm/uuid]
-      [:id ::sm/uuid]
       [:revn {:min 0} ::sm/int]
       [:session-id ::sm/uuid]]]]
+   ;; Past the cap: `:lagged` is empty and the client reloads the file
+   [:reload {:optional true} :boolean]
    ;; Commits not saved: the first one that failed and every later one
    [:rejected {:optional true}
     [:map
@@ -426,7 +426,8 @@
           (send-repair-notifications cfg params file repair))
         (send-notifications! cfg params file))
 
-      (with-meta (cond-> {:revn revn :lagged (get-lagged-changes conn params)}
+      (with-meta (cond-> (-> (get-lagged-changes conn params)
+                             (assoc :revn revn))
                    (some? rejected)
                    (assoc :rejected rejected))
         {::audit/replace-props
@@ -968,19 +969,106 @@
              (inst-ms timeout))))))
 
 (def ^:private sql:lagged-changes
-  "select s.id, s.revn, s.file_id,
-          s.session_id, s.changes
+  "select s.revn, s.session_id
      from file_change as s
     where s.file_id = ?
       and s.revn > ?
-    order by s.created_at asc")
+      and s.label is null
+      and s.changes is not null
+    order by s.revn asc, s.created_at asc
+    limit ?")
 
 (defn- get-lagged-changes
-  [conn {:keys [id revn] :as params}]
-  (->> (db/exec! conn [sql:lagged-changes id revn])
-       (filter :changes)
-       (mapv (fn [row]
-               (update row :changes blob/decode)))))
+  "The `revn` and `session-id` of the revisions stored above the incoming
+  `revn`, in the order they were stored, the save's own last. More than
+  `:lagged-row-cap` of them answer a reload instead: a client so far
+  behind reloads the file rather than wait for every change it missed."
+  [conn {:keys [id revn]}]
+  (let [cap  (cf/get :lagged-row-cap)
+        rows (db/exec! conn [sql:lagged-changes id revn (inc cap)])]
+    (if (> (count rows) cap)
+      {:lagged [] :reload true}
+      {:lagged rows})))
+
+;; --- COMMAND QUERY: get-file-changes
+
+(def ^:private sql:catch-up-rows
+  "select s.revn, octet_length(s.changes) as size
+     from file_change as s
+    where s.file_id = ?
+      and s.revn > ?
+      and s.revn <= ?
+      and s.created_at >= ?
+      and s.label is null
+      and s.changes is not null
+    order by s.revn asc
+    limit ?")
+
+(def ^:private sql:catch-up-changes
+  "select s.revn, s.session_id, s.changes
+     from file_change as s
+    where s.file_id = ?
+      and s.revn > ?
+      and s.revn <= ?
+      and s.label is null
+      and s.changes is not null
+    order by s.revn asc")
+
+(defn get-file-changes
+  "The changes of the revisions a client at revision `since` lacks, in
+  order. Answers a reload instead when the stored rows do not cover the
+  gap one row per revision (a write that stores no row leaves a hole,
+  and expired rows leave one too), when a row of the gap is older than
+  `:catch-up-window`, or when the changes of the gap weigh more than
+  `:catch-up-max-size` bytes as stored. Decodes nothing before it knows
+  the answer is servable."
+  [conn file-id since]
+  (let [head (:revn (db/get conn :file {:id file-id}
+                            {::db/columns [:revn]}))]
+    (if (<= head since)
+      {:revn head :changes []}
+      (let [oldest (ct/minus (ct/now) (cf/get :catch-up-window))
+            rows   (db/exec! conn [sql:catch-up-rows file-id since head oldest
+                                   (inc (- head since))])]
+        (if (and (= (map :revn rows) (range (inc since) (inc head)))
+                 (<= (reduce + 0 (map :size rows)) (cf/get :catch-up-max-size)))
+          {:revn head
+           :changes (->> (db/exec! conn [sql:catch-up-changes file-id since head])
+                         (mapv #(update % :changes blob/decode)))}
+          {:revn head :reload true})))))
+
+(def ^:private
+  schema:get-file-changes
+  [:map {:title "get-file-changes"}
+   [:file-id ::sm/uuid]
+   [:since {:min 0} ::sm/int]])
+
+(def ^:private
+  schema:get-file-changes-result
+  [:map {:title "get-file-changes-result"}
+   ;; The revision of the file when it was read
+   [:revn {:min 0} ::sm/int]
+   ;; The revisions above `since`, up to `revn`
+   [:changes {:optional true}
+    [:vector
+     [:map
+      [:revn {:min 0} ::sm/int]
+      [:session-id ::sm/uuid]
+      [:changes [:vector cpc/schema:change]]]]]
+   ;; Set instead of `:changes` when the gap cannot be served
+   [:reload {:optional true} :boolean]])
+
+(sv/defmethod ::get-file-changes
+  "The changes a client at revision `since` lacks, so that it catches up
+  without reloading the file, or a reload when they cannot be served."
+  {::doc/added "2.21"
+   ::doc/module :files
+   ::sm/params schema:get-file-changes
+   ::sm/result schema:get-file-changes-result}
+  [cfg {:keys [::rpc/profile-id file-id since]}]
+  (db/run! cfg (fn [{:keys [::db/conn]}]
+                 (files/check-read-permissions! conn profile-id file-id)
+                 (get-file-changes conn file-id since))))
 
 (defn- send-repair-notifications
   [cfg {:keys [team session-id] :as params} file repair]
