@@ -116,6 +116,7 @@
    [frontend-tests.plugins.user-test]
    [frontend-tests.plugins.utils-test]
    [frontend-tests.plugins.value-objects-test]
+   [frontend-tests.plugins.wait-for-save-test]
    [frontend-tests.render-dimensions-test]
    [frontend-tests.render-wasm.call-test]
    [frontend-tests.render-wasm.modifiers-test]
@@ -189,6 +190,7 @@
    [frontend-tests.ui.subscription-test]
    [frontend-tests.ui.team-container-test]
    [frontend-tests.ui.text-attrs-multiple-test]
+   [frontend-tests.ui.viewport-texts-html-test]
    [frontend-tests.ui.viewport-top-bar-test]
    [frontend-tests.ui.workspace-libraries-test]
    [frontend-tests.util-clipboard-test]
@@ -342,6 +344,7 @@
    'frontend-tests.plugins.user-test
    'frontend-tests.plugins.utils-test
    'frontend-tests.plugins.value-objects-test
+   'frontend-tests.plugins.wait-for-save-test
    'frontend-tests.render-wasm.call-test
    'frontend-tests.render-wasm.modifiers-test
    'frontend-tests.render-wasm.process-objects-test
@@ -416,6 +419,7 @@
    'frontend-tests.ui.subscription-test
    'frontend-tests.ui.team-container-test
    'frontend-tests.ui.text-attrs-multiple-test
+   'frontend-tests.ui.viewport-texts-html-test
    'frontend-tests.ui.viewport-top-bar-test
    'frontend-tests.ui.workspace-libraries-test
    'frontend-tests.util-clipboard-test

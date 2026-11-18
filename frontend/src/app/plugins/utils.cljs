@@ -341,10 +341,24 @@
     (display-not-valid code value)))
 
 (defn reject-not-valid
+  "Rejects a promise with the standard invalid-value Error and logs it."
   [reject code value]
   (let [msg (dm/str "[PENPOT PLUGIN] Value not valid: " value ". Code: " code)]
     (.error js/console msg)
-    (reject msg)))
+    (reject (js/Error. msg))))
+
+(def max-timeout
+  "Largest value a signed 32-bit timer accepts."
+  2147483647)
+
+(defn valid-timeout?
+  "Checks that a plugin timeout fits a signed 32-bit timer."
+  [value]
+  (or (nil? value)
+      (and (number? value)
+           (pos? value)
+           (<= value max-timeout)
+           (js/Number.isFinite value))))
 
 (defn mixed-value
   [values]

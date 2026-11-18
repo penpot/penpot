@@ -413,6 +413,11 @@ export function createApi(
       checkPermission('content:read');
       return plugin.context.waitForLayoutUpdate(timeout);
     },
+
+    waitForSave(timeout?: number): Promise<void> {
+      checkPermission('content:read');
+      return plugin.context.waitForSave(timeout);
+    },
   };
 
   const penpotMgmt: PenpotMgmt = {

@@ -57,7 +57,9 @@
 
 (def ^:private schema:pool-options
   [:map {:title "pool-options"}
-   [::connect-timeout {:optional true} ::sm/int]
+   [::connection-timeout {:optional true} ::sm/int]
+   [::idle-timeout {:optional true} ::sm/int]
+   [::max-lifetime {:optional true} ::sm/int]
    [::max-size {:optional true} ::sm/int]
    [::min-size {:optional true} ::sm/int]
    [::name {:optional true} :keyword]
@@ -66,6 +68,17 @@
    [::username {:optional true} :string]
    [::validation-timeout {:optional true} ::sm/int]
    [::read-only {:optional true} ::sm/boolean]
+   ;; pgjdbc prepared statement cache. Absent keys mean the driver
+   ;; defaults; the size is in bytes and is converted to whole MiB for
+   ;; the driver (see create-datasource-config). The threshold is the
+   ;; executions before a statement is server-prepared: 0 stops
+   ;; server-side prepared statements (the cache of parsed queries stays
+   ;; in use) and -1 prepares from the first execution. Any other
+   ;; negative is a typo the driver would clamp to -1, so the schema
+   ;; rejects it.
+   [::prepared-statement-cache-threshold {:optional true} [::sm/int {:min -1}]]
+   [::prepared-statement-cache-queries {:optional true} [::sm/int {:min 0}]]
+   [::prepared-statement-cache-size {:optional true} [::sm/int {:min 0}]]
    [::mtx/metrics ::mtx/metrics]])
 
 (def defaults
@@ -94,7 +107,10 @@
               :credentials (and (contains? cfg ::username)
                                 (contains? cfg ::password))
               :min-size (::min-size cfg)
-              :max-size (::max-size cfg))
+              :max-size (::max-size cfg)
+              :prepared-statement-cache-threshold (::prepared-statement-cache-threshold cfg)
+              :prepared-statement-cache-queries (::prepared-statement-cache-queries cfg)
+              :prepared-statement-cache-size (::prepared-statement-cache-size cfg))
       (create-pool cfg))))
 
 (defmethod ig/halt-key! ::pool
@@ -112,6 +128,17 @@
        ;; lets the planner resolve a join between two partitioned tables
        ;; pairwise, when both are partitioned with the same bounds
        "SET enable_partitionwise_join = on;"))
+
+;; pgjdbc reads dataSourceProperties through Properties.getProperty, which
+;; drops non-String values silently, so everything is passed as a string.
+;; preparedStatementCacheSizeMiB only accepts a whole-MiB integer: the
+;; configured size (bytes) is converted up, so any positive value keeps the
+;; cache enabled and 0 disables the cache. A query parameter of the same name
+;; in the URI wins over these properties: pgjdbc ignores the Properties value
+;; when the URL carries it.
+(defn- bytes->mib-ceil
+  [bytes]
+  (Math/ceilDiv (long bytes) (* 1024 1024)))
 
 (defn- create-datasource-config
   [{:keys [::uri] :as cfg}]
@@ -131,6 +158,13 @@
       (.setMaximumPoolSize   (::max-size cfg))
       (.setConnectionInitSql initsql)
       (.setInitializationFailTimeout -1))
+
+    (some->> (::prepared-statement-cache-threshold cfg) (str)
+             (.addDataSourceProperty config "prepareThreshold"))
+    (some->> (::prepared-statement-cache-queries cfg) (str)
+             (.addDataSourceProperty config "preparedStatementCacheQueries"))
+    (some->> (::prepared-statement-cache-size cfg) (bytes->mib-ceil) (str)
+             (.addDataSourceProperty config "preparedStatementCacheSizeMiB"))
 
     (->> (mtx/get-registry (::mtx/metrics cfg))
          (PrometheusMetricsTrackerFactory.)

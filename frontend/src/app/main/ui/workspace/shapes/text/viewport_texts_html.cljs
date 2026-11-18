@@ -97,12 +97,14 @@
                        (st/emit! (dwt/resize-text id width height)))))
 
                  (st/emit! (dwt/clean-text-modifier id))))
-       ;; Always clear the task and log measurement errors.
-       (p/catch (fn [cause]
-                  (log/error :hint "Could not measure text shape"
-                             :shape-id id
-                             :cause cause)
-                  nil))))
+       ;; Log measurement errors and resolve to nil. The returned promise
+       ;; stays pending until the measurement settles, so callers keep the
+       ;; text mounted while it is measured.
+       (p/merr (fn [cause]
+                 (log/error :hint "Could not measure text shape"
+                            :shape-id id
+                            :cause cause)
+                 (p/resolved nil)))))
 
 (defn- update-text-modifier
   [{:keys [grow-type id] :as shape} node]

@@ -5,6 +5,7 @@ import Redis, { type Command } from "ioredis";
 import { WebSocket } from "ws";
 import { RedisBridge } from "./RedisBridge";
 import { PluginBridge } from "./PluginBridge";
+import { RequestGuard } from "./RequestGuard";
 import { PluginTask } from "./PluginTask";
 import type { PenpotMcpServer } from "./PenpotMcpServer";
 import type { PenpotSession } from "@penpot/mcp-common";
@@ -163,6 +164,7 @@ function instance(t: TestContext) {
             host: "127.0.0.1",
             isMultiUserMode: () => true,
             getSessionContext: () => ({ userToken: "alice" }),
+            requestGuard: RequestGuard.allowingAny(),
         } as PenpotMcpServer,
         wsPort,
         0.1,
