@@ -43,6 +43,9 @@ jobs:
             // === 1. CONFIGURATION ===
             const PROJECT_NUMBER = 8; // <--- Replace with your project board number
             const IS_ORG = true;      // <--- Set to false if this is a personal project, true if an organization
+            const STATUS_FIELD_ID = 'PVTSSF_lADOAcyBPM4BV2pqzhRPY48';
+            const STATUS_BACKLOG = 'f75ad846';
+            const STATUS_TECH_REVIEW = 'b0f45db9';
             const OWNER = context.repo.owner;
             const REPO = context.repo.repo;
 
@@ -88,6 +91,65 @@ jobs:
               }
             `;
 
-            await github.graphql(addToProjectMutation, { projectId, contentId });
+            let itemId;
+            try {
+              const addRes = await github.graphql(addToProjectMutation, { projectId, contentId });
+              itemId = addRes.addProjectV2ItemById.item.id;
+            } catch (error) {
+              const messages = [
+                error && error.message,
+                ...(Array.isArray(error && error.errors)
+                  ? error.errors.map(e => e && e.message)
+                  : [])
+              ].filter(Boolean).join('\n');
+              if (!messages.includes('Content already exists in this project')) {
+                throw error;
+              }
+              console.log('Item already in project, fetching existing item...');
+              const existing = await github.graphql(
+                `query($contentId: ID!) {
+                  node(id: $contentId) {
+                    ... on Issue {
+                      projectItems(first: 50) {
+                        nodes { id project { id } }
+                      }
+                    }
+                    ... on PullRequest {
+                      projectItems(first: 50) {
+                        nodes { id project { id } }
+                      }
+                    }
+                  }
+                }`,
+                { contentId }
+              );
+              const nodes = (existing.node && existing.node.projectItems && existing.node.projectItems.nodes) || [];
+              const match = nodes.find(n => n.project.id === projectId);
+              if (!match) {
+                throw new Error(`Item already in a project, but not found in project ${projectId}`);
+              }
+              itemId = match.id;
+            }
+
+            // === 4. SET PROJECT STATUS ===
+            const statusOptionId = isPR ? STATUS_TECH_REVIEW : STATUS_BACKLOG;
+            const statusName = isPR ? 'Tech Review' : 'Backlog';
+            console.log(`Setting status to "${statusName}" for ${isPR ? 'PR' : 'Issue'} #${issueNumber}...`);
+            await github.graphql(
+              `mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
+                updateProjectV2ItemFieldValue(input: {
+                  projectId: $projectId,
+                  itemId: $itemId,
+                  fieldId: $fieldId,
+                  value: { singleSelectOptionId: $optionId }
+                }) {
+                  projectV2Item {
+                    id
+                  }
+                }
+              }`,
+              { projectId, itemId, fieldId: STATUS_FIELD_ID, optionId: statusOptionId }
+            );
+
             console.log("Automation successfully completed!");
 
