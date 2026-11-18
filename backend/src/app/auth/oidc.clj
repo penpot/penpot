@@ -54,12 +54,15 @@
 
 (defn- issuer?
   "Check if `v` is an issuer the `iss` claim can be validated against: a
-  string, or a non-empty set of strings for a provider that documents more
-  than one valid issuer (Google does)."
+  non-blank string, or a non-empty set of non-blank strings for a provider that
+  documents more than one valid issuer (Google does). A blank value is a
+  configuration error, not a request to rely on discovery."
   [v]
   (boolean
-   (or (string? v)
-       (and (set? v) (seq v) (every? string? v)))))
+   (or (and (string? v) (not (str/blank? v)))
+       (and (set? v)
+            (seq v)
+            (every? #(and (string? %) (not (str/blank? %))) v)))))
 
 (defn- issuer-set
   "Return the set of values the `iss` claim of the provider can take."
@@ -628,18 +631,20 @@
 
     (-> response :body json/decode)))
 
-;; Per OIDC core 3.1.3.7: validate iss/aud/exp; failures must propagate
-;; so they cannot be bypassed via the userinfo fallback in `get-info`. They
-;; carry their own code, so the callback and the organization SSO audit
-;; event can tell a bad token from any other failure.
+;; Per OIDC core 3.1.3.7: validate the signature and the `iss`/`aud` claims, and
+;; `exp` when the token carries it (buddy rejects an expired one but does not
+;; require the claim). Failures must propagate so they cannot be bypassed via
+;; the userinfo fallback in `get-info`; they carry their own code, so the
+;; callback and the organization SSO audit event can tell a bad token from any
+;; other failure.
 (defn- get-id-token-claims
   [provider tdata]
   (when-let [token (:token/id tdata)]
     (try
       (let [{:keys [kid alg]} (jwt/decode-header token)
-            key (if (str/starts-with? (name alg) "hs")
-                  (:client-secret provider)
-                  (get-in provider [:jwks kid]))]
+            key                (if (str/starts-with? (name alg) "hs")
+                                 (:client-secret provider)
+                                 (get-in provider [:jwks kid]))]
         (if (some? key)
           (jwt/unsign token key
                       (cond-> {:alg alg

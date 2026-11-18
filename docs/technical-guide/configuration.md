@@ -302,17 +302,20 @@ The ID token the provider returns is verified against the issuer of the provider
 (the `iss` claim) and against the configured client id (the `aud` claim). When the
 endpoints are overridden explicitly there is no discovery document to read the
 issuer from, so <code class="language-bash">PENPOT_OIDC_ISSUER</code> must be set.
-Otherwise the provider refuses to initialize and only password login is left. A
+Otherwise the provider refuses to initialize and that login is unavailable. A
 provider that authenticates with discovery needs no extra configuration, and the
 bundled Google and GitLab providers already declare their issuer and the keys
 their provider publishes.
 
 Penpot loads those keys once, when the provider initializes. If the provider
-rotates them while Penpot runs, the ID token stays unverified until the next
-restart: a provider that reads the identity from the userinfo endpoint keeps
-logging in, while setting <code class="language-bash">PENPOT_OIDC_USER_INFO_SOURCE</code>
-to <code class="language-bash">token</code> fails the login with an incomplete user
-info error (`incomplete-user-info`).
+rotates them while Penpot runs, the ID token stays unverified until the provider
+loads the keys again (a restart, for the providers configured by environment): a
+provider that reads the identity from the userinfo endpoint keeps logging in,
+while one that reads it from the claims fails the login with an incomplete user
+info error (`incomplete-user-info`). The providers of a domain read the claims
+by default, and the value <code class="language-bash">PENPOT_OIDC_USER_INFO_SOURCE</code>
+set to <code class="language-bash">token</code> does the same for the provider
+configured by environment.
 
 Set the issuer explicitly in production. It is what keeps the discovery document
 from choosing the issuer on its own, and it has to match what the document

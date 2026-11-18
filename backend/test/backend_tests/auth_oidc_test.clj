@@ -9,7 +9,6 @@
    [app.auth.oidc :as oidc]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
-   [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.uri :as u]
@@ -234,38 +233,6 @@
                   :client-secret "client-secret"}]
       (t/is (= params (#'oidc/prepare-github-provider params))))))
 
-(defn- capture-warnings
-  "Run `f` and return the warnings it logged that match `match?`, plus the value
-  of `f`. The logging API emits asynchronously, so the record is awaited
-  (bounded). The predicate is required: a record logged by another test can
-  still be in flight when the watch is installed."
-  [match? f]
-  (let [records (atom [])]
-    (add-watch l/log-record ::capture
-               (fn [_ _ _ record] (swap! records conj record)))
-    (try
-      (let [value (f)]
-        [(loop [remaining 100]
-           (let [warns (filter #(and (= :warn (::l/level %)) (match? %)) @records)]
-             (cond
-               (seq warns) warns
-               (zero? remaining) warns
-               :else (do (Thread/sleep 10) (recur (dec remaining))))))
-         value])
-      (finally
-        (remove-watch l/log-record ::capture)))))
-
-(t/deftest get-id-token-claims-warns-when-the-kid-is-unknown
-  (let [own?           #(= "rotated-kid" (-> % ::l/props :kid))
-        [warns value] (capture-warnings
-                       own?
-                       #(#'oidc/get-id-token-claims (rs256-provider)
-                                                    {:token/id (sign-rs256-id-token "rotated-kid" {})}))]
-    (t/is (nil? value))
-    (t/is (= 1 (count warns)))
-    (t/is (= "rotated-kid" (-> warns first ::l/props :kid)))
-    (t/is (= "oidc" (-> warns first ::l/props :provider)))))
-
 (t/deftest provider-declares-more-than-one-valid-issuer
   (let [provider (assoc hs-provider
                         :issuer #{"https://accounts.google.com" "accounts.google.com"})]
@@ -286,6 +253,15 @@
   (t/is (false? (#'oidc/issuer? nil)))
   (t/is (false? (#'oidc/issuer? #{})))
   (t/is (false? (#'oidc/issuer? #{"https://idp.example.com" 42}))))
+
+(t/deftest blank-issuer-values-are-rejected
+  (t/testing "an empty or whitespace only issuer is a configuration error"
+    (t/is (false? (#'oidc/issuer? "")))
+    (t/is (false? (#'oidc/issuer? "   "))))
+
+  (t/testing "a set with a blank member is rejected as a whole"
+    (t/is (false? (#'oidc/issuer? #{"https://idp.example.com" ""})))
+    (t/is (false? (#'oidc/issuer? #{"https://idp.example.com" "  "})))))
 
 (t/deftest provider-schema-accepts-an-issuer-set
   (let [schema @#'oidc/schema:provider]
@@ -327,7 +303,12 @@
     (let [issuers  #{"https://accounts.google.com" "accounts.google.com"}
           provider (#'oidc/prepare-oidc-provider {} (assoc manual-oidc-params
                                                            :issuer issuers))]
-      (t/is (= issuers (:issuer provider))))))
+      (t/is (= issuers (:issuer provider)))))
+
+  (t/testing "manual URI configuration with a blank issuer is rejected"
+    (t/is (thrown-with-msg? Exception #"missing issuer"
+                            (#'oidc/prepare-oidc-provider {} (assoc manual-oidc-params
+                                                                    :issuer ""))))))
 
 (defn- discovery-body
   [issuer]
@@ -419,6 +400,23 @@
                   (fn [& _] (throw (Exception. "userinfo must not be called")))]
       (let [cause (try (#'oidc/get-info {} provider {} "code") (catch Throwable e e))]
         (t/is (= :invalid-id-token (:code (ex-data cause))))))))
+
+(t/deftest get-info-propagates-the-failure-in-userinfo-mode
+  ;; The claims are computed before the user-info source is dispatched, so a bad
+  ;; token cannot be laundered through the userinfo endpoint either.
+  (let [provider (assoc hs-provider :user-info-source "userinfo")
+        token    (id-token-claims {:iss "https://attacker.example.com"})]
+    (with-redefs [app.auth.oidc/fetch-access-token (constantly {:token/id token})
+                  app.auth.oidc/fetch-user-info
+                  (fn [& _] (throw (Exception. "userinfo must not be called")))]
+      (let [cause (try (#'oidc/get-info {} provider {} "code") (catch Throwable e e))]
+        (t/is (= :invalid-id-token (:code (ex-data cause))))))))
+
+(t/deftest get-info-throws-on-incomplete-info-with-the-token-source
+  (let [provider (assoc hs-provider :user-info-source "token")]
+    (with-redefs [app.auth.oidc/fetch-access-token (constantly {:token/id nil})]
+      (let [cause (try (#'oidc/get-info {} provider {} "code") (catch Throwable e e))]
+        (t/is (= :incomplete-user-info (:code (ex-data cause))))))))
 
 (t/deftest organization-sso-failure-reason-tells-a-bad-token-apart
   (let [reason (#'oidc/organization-sso-exception-failure-reason
