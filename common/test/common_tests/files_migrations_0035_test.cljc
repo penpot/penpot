@@ -367,6 +367,31 @@
     (t/is (= :mask (get-in file' [:data :pages-index page-id :objects rect-id :svg-defs :a :tag])))
     (t/is (= :g (get-in file' [:data :pages-index page-id :objects raw-id :content :tag])))))
 
+(t/deftest migration-0035-drops-map-valued-svg-attrs
+  ;; Files exported by old Penpot versions hold maps where an svg attr
+  ;; value should be, such as a `:filter` that once read
+  ;; `url(#filter_2)`. The closed `:svg-attrs` schema admits scalars
+  ;; only, so `migrate-file` must drop them or the file cannot be
+  ;; imported or opened. The values below are copied from the
+  ;; "Avataaars" and "Tutorial for beginners" templates.
+  (let [shape-id (uuid/next)
+        file     (ctf/make-file {:name "Map-valued svg attrs"})
+        page-id  (first (get-in file [:data :pages]))
+        shape    (-> (cts/setup-shape {:id shape-id :type :rect :name "rect"})
+                     (assoc :svg-attrs {:fillRule "evenodd"
+                                        :filter {(keyword "{") "{ \"url(#filter_2) nil}\""}
+                                        :mask {(keyword "url(-filter0-d-16837-160)") nil}
+                                        :style {:fill "red"
+                                                :filter {:a "b"}}}))
+        file     (-> file
+                     (assoc :migrations (disj cfm/available-migrations migration-id))
+                     (update-in [:data :pages-index page-id :objects] assoc shape-id shape)
+                     (update-in [:data :pages-index page-id :objects uuid/zero :shapes] conj shape-id))
+        file'    (cfm/migrate-file file {})
+        attrs    (get-in file' [:data :pages-index page-id :objects shape-id :svg-attrs])]
+    (t/is (= {:fill-rule "evenodd" :style {:fill "red"}} attrs)
+          "map values are dropped, scalars are kept")))
+
 (t/deftest migration-0035-turns-plain-map-svg-transform-into-matrix
   ;; The svg defs renderer multiplies `:svg-transform` as a matrix; a
   ;; plain map there renders as `matrix(NaN, ...)`.
