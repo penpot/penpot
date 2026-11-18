@@ -40,6 +40,14 @@
   [outcome]
   (some-> (:error outcome) .-code))
 
+(defn- saves
+  "The `update-file` commands the transport received. Every flow of the
+  editor shares the mocked transport and a lingering one can still reach
+  it, so a stray call must neither pass for a save nor release a wait on
+  one."
+  [requests]
+  (filterv #(= :update-file (first %)) @requests))
+
 (t/deftest ^:async empty-persistence-resolves-after-intake
   (await
    (with-persistence
@@ -50,7 +58,7 @@
             (let [outcome (await (await-outcome (persist/wait-for-save 2000)))]
               (t/is (contains? outcome :ok)
                     "empty buffer and queue resolve after intake")
-              (t/is (empty? @requests)
+              (t/is (empty? (saves requests))
                     "nothing to save sends no update-file")))))))))
 
 (t/deftest ^:async context-wait-for-save-resolves
@@ -133,7 +141,7 @@
             (await (async/wait-for #(seq (get-in @store [:persistence :buffer]))
                                    "commit is buffered"))
             (let [p (persist/wait-for-save 5000)]
-              (await (async/wait-for #(seq @requests)
+              (await (async/wait-for #(seq (saves requests))
                                      "force-persist flushed the buffer"))
               (rx/error! response (ex-info "rejected" {:type :validation :code :invalid-data}))
               (let [outcome (await (await-outcome p))]
@@ -189,7 +197,8 @@
               (js/setTimeout
                (fn [] (ptk/emit! store (local-commit file-id)))
                0)
-              (await (async/wait-for #(seq @requests) "force-persist sent the edit"))
+              (await (async/wait-for #(seq (saves requests))
+                                     "force-persist sent the edit"))
               (rx/push! response {:revn 1})
               (let [outcome (await (await-outcome p))]
                 (t/is (contains? outcome :ok)
@@ -206,7 +215,8 @@
             (await (async/wait-for #(seq (get-in @store [:persistence :buffer]))
                                    "commit is buffered"))
             (let [p (persist/wait-for-save 5000)]
-              (await (async/wait-for #(seq @requests) "force-persist flushed the buffer"))
+              (await (async/wait-for #(seq (saves requests))
+                                     "force-persist flushed the buffer"))
               (rx/push! response {:revn 1})
               (let [outcome (await (await-outcome p))]
                 (t/is (contains? outcome :ok)
@@ -255,7 +265,7 @@
               (await (async/wait-for #(seq (get-in @store [:persistence :buffer]))
                                      "commit is buffered"))
               (let [p (persist/wait-for-save 5000)]
-                (await (async/wait-for #(seq @requests)
+                (await (async/wait-for #(seq (saves requests))
                                        "force-persist flushed the buffer"))
                 (rx/push! response (thp/rejection (:id @commit)))
                 (let [outcome (await (await-outcome p))]
@@ -276,7 +286,7 @@
             (await (async/wait-for #(seq (get-in @store [:persistence :buffer]))
                                    "commit is buffered"))
             (let [p (persist/wait-for-save 5000)]
-              (await (async/wait-for #(seq @requests)
+              (await (async/wait-for #(seq (saves requests))
                                      "force-persist flushed the buffer"))
               ;; Rollback starts before settle can publish empty :saved;
               ;; never emit ::rolled-back (reload-delay case).

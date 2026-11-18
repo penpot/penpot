@@ -11,6 +11,7 @@
    #?(:clj [malli.dev.pretty :as mdp])
    #?(:clj [malli.dev.virhe :as v])
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.i18n :as i18n :refer [tr]]
    [app.common.json :as json]
    [app.common.math :as mth]
@@ -320,25 +321,32 @@
   ([s] (lookup sr/default-registry s))
   ([registry s] (schema (mr/schema registry s))))
 
-(defn check-fn
-  "Create a predefined check function"
-  [s & {:keys [hint type code]}]
-  (let [s          #?(:clj
-                      (schema s)
-                      :cljs
-                      (try
-                        (schema s)
-                        (catch :default cause
-                          (let [data (ex-data cause)]
-                            (if (= :malli.core/invalid-schema (:type data))
-                              (throw (ex-info
-                                      (str "Invalid schema\n"
-                                           (pp/pprint-str (:data data)))
-                                      {}))
-                              (throw cause))))))
+(defn- resolve-schema
+  "Resolves the schema definition. On ClojureScript it rewrites the malli
+  invalid schema error with a human readable message."
+  [s]
+  #?(:clj  (schema s)
+     :cljs (try
+             (schema s)
+             (catch :default cause
+               (let [data (ex-data cause)]
+                 (if (= :malli.core/invalid-schema (:type data))
+                   (throw (ex-info
+                           (str "Invalid schema\n"
+                                (pp/pprint-str (:data data)))
+                           {}))
+                   (throw cause)))))))
 
-        validator* (delay (m/validator s))
-        explainer* (delay (m/explainer s))
+(defn check-fn
+  "Create a predefined check function.
+
+  The schema definition is resolved lazily on production builds, and
+  eagerly on development ones, so invalid schemas are detected early
+  while developing. See `app.common.data.macros/lazy-delay`."
+  [s & {:keys [hint type code]}]
+  (let [s*         (dm/lazy-delay (resolve-schema s))
+        validator* (delay (m/validator @s*))
+        explainer* (delay (m/explainer @s*))
         hint       (or ^boolean hint "check error")
         type       (or ^boolean type :assertion)
         code       (or ^boolean code :data-validation)]

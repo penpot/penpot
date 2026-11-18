@@ -17,6 +17,7 @@
    [common-tests.attrs-test]
    [common-tests.buffer-test]
    [common-tests.colors-test]
+   [common-tests.data-macros-test]
    [common-tests.data-test]
    [common-tests.exceptions-test]
    [common-tests.files-builder-test]
@@ -27,6 +28,7 @@
    [common-tests.files-migrations-0034-test]
    [common-tests.files-migrations-0035-test]
    [common-tests.files-migrations-0036-test]
+   [common-tests.files-migrations-0037-test]
    [common-tests.files-migrations-test]
    [common-tests.files.comp-processors-test]
    [common-tests.files.helpers-test]
@@ -135,6 +137,7 @@
    'common-tests.attrs-test
    'common-tests.buffer-test
    'common-tests.colors-test
+   'common-tests.data-macros-test
    'common-tests.data-test
    'common-tests.exceptions-test
    'common-tests.files-builder-test
@@ -147,6 +150,7 @@
    'common-tests.files-migrations-0034-test
    'common-tests.files-migrations-0035-test
    'common-tests.files-migrations-0036-test
+   'common-tests.files-migrations-0037-test
    'common-tests.files-migrations-test
    'common-tests.files.comp-processors-test
    'common-tests.files.helpers-test
