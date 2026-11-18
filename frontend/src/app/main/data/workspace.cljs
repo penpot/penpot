@@ -190,15 +190,19 @@
                        (rx/merge
                         (->> (rx/from libraries)
                              (rx/merge-map
-                              (fn [{:keys [id synced-at is-indirect]}]
+                              (fn [{:keys [id synced-at is-indirect] :as library}]
                                 (->> (rp/cmd! :get-file {:id id :features features})
                                      (rx/map (fn [file]
                                                (-> file
                                                    (assoc :synced-at synced-at)
                                                    (assoc :library-of file-id)
-                                                   (assoc :is-indirect is-indirect)))))))
-                             (rx/mapcat resolve-file)
-                             (rx/map library-resolved))
+                                                   (assoc :is-indirect is-indirect))))
+                                     (rx/mapcat resolve-file)
+                                     (rx/map library-resolved)
+                                     ;; A library the backend can not load stays
+                                     ;; connected with no assets: it must not
+                                     ;; break the file that uses it.
+                                     (rx/catch (dwl/on-library-load-error file-id library))))))
                         (->> (rx/from libraries)
                              (rx/map :id)
                              (rx/mapcat (fn [file-id]

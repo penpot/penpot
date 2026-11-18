@@ -43,6 +43,7 @@
    [frontend-tests.data.workspace-heal-undo-test]
    [frontend-tests.data.workspace-interactions-test]
    [frontend-tests.data.workspace-layout-other-page-test]
+   [frontend-tests.data.workspace-libraries-load-test]
    [frontend-tests.data.workspace-libraries-sync-test]
    [frontend-tests.data.workspace-mcp-test]
    [frontend-tests.data.workspace-media-test]
@@ -257,6 +258,7 @@
    'frontend-tests.data.workspace-heal-undo-test
    'frontend-tests.data.workspace-interactions-test
    'frontend-tests.data.workspace-layout-other-page-test
+   'frontend-tests.data.workspace-libraries-load-test
    'frontend-tests.data.workspace-libraries-sync-test
    'frontend-tests.data.workspace-mcp-test
    'frontend-tests.data.workspace-media-test
