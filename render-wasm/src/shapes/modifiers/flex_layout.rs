@@ -9,7 +9,7 @@ use crate::uuid::Uuid;
 
 use std::collections::{HashMap, VecDeque};
 
-use super::common::GetBounds;
+use super::common::{has_in_flow_children, GetBounds};
 
 const MIN_SIZE: f32 = 0.01;
 const MAX_SIZE: f32 = f32::INFINITY;
@@ -686,7 +686,11 @@ pub fn reflow_flex_layout(
         }
     }
 
-    if layout_axis.is_auto_across || layout_axis.is_auto_main {
+    // Like the CLJS layout, keep the size when there is no content to fit:
+    // auto-sizing to padding only would collapse the frame.
+    if (layout_axis.is_auto_across || layout_axis.is_auto_main)
+        && has_in_flow_children(shape, shapes)
+    {
         let width = layout_bounds.width();
         let height = layout_bounds.height();
 
@@ -749,7 +753,7 @@ pub fn reflow_flex_layout(
 
         let parent_transform = layout_bounds.transform_matrix().unwrap_or_default();
 
-        let parent_transform_inv = &parent_transform.invert().ok_or(Error::CriticalError(
+        let parent_transform_inv = &parent_transform.invert().ok_or(Error::RecoverableError(
             "Failed to invert parent transform".to_string(),
         ))?;
         let origin = parent_transform_inv.map_point(layout_bounds.nw);
