@@ -32,6 +32,9 @@ permissions:
 jobs:
   test-render-wasm:
     if: ${{ !github.event.pull_request.draft }}
+    permissions:
+      contents: read
+      pull-requests: write  # coverage comment on the PR
     name: "Render WASM Tests"
     runs-on: penpot-extended-runner
     container:
@@ -56,7 +59,64 @@ jobs:
         run: |
           ./lint
 
+      - name: Install cargo-llvm-cov
+        env:
+          CARGO_LLVM_COV_VERSION: "0.9.1"
+        run: |
+          case "$(uname -m)" in
+            aarch64|arm64)
+              arch="aarch64"
+              sha256="abf5f13c1520f8756d2192bfaaeadb0208f5b7eaa8cadc15bf847befa42b7360"
+              ;;
+            *)
+              arch="x86_64"
+              sha256="b3f68e625481fed9b16444174f3fa5ebcdbde4a1878803a35eabe2dcefcdc41a"
+              ;;
+          esac
+          archive="cargo-llvm-cov-${arch}-unknown-linux-gnu.tar.gz"
+          curl -fsSL --retry 3 -o "$RUNNER_TEMP/$archive" \
+            "https://github.com/taiki-e/cargo-llvm-cov/releases/download/v${CARGO_LLVM_COV_VERSION}/${archive}"
+          echo "${sha256}  $RUNNER_TEMP/$archive" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/$archive" -C /usr/local/bin cargo-llvm-cov
+          cargo llvm-cov --version
+
       - name: Test
         working-directory: ./render-wasm
+        env:
+          RENDER_WASM_COVERAGE: "true"
         run: |
           ./test
+
+      - name: Coverage summary
+        if: ${{ !cancelled() && hashFiles('render-wasm/target/coverage/lcov.info') != '' }}
+        run: |
+          node scripts/coverage-summary.mjs \
+            --title "Render WASM test coverage" \
+            --note "Rust sources under \`render-wasm/src\`, measured by cargo-llvm-cov on the native test build." \
+            --lcov render-wasm/target/coverage/lcov.info \
+            > render-wasm/target/coverage/summary.md
+          cat render-wasm/target/coverage/summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Coverage comment
+        # Fork PRs get a read-only token, so only branches of this repo comment.
+        if: ${{ !cancelled() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && hashFiles('render-wasm/target/coverage/lcov.info') != '' }}
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          node scripts/coverage-comment.mjs \
+            --project "Render WASM" \
+            --lcov render-wasm/target/coverage/lcov.info \
+            --llvm-json render-wasm/target/coverage/summary.json
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: ${{ !cancelled() }}
+        with:
+          name: render-wasm-coverage
+          path: render-wasm/target/coverage/
+          overwrite: true
+          if-no-files-found: ignore
+          retention-days: 7

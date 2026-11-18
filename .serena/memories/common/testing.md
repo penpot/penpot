@@ -15,6 +15,7 @@ From `common/`:
 - Full JS test run (always builds, build output visible): `pnpm run test`
 - Focus a JVM test namespace: `clojure -M:dev:test --focus common-tests.logic.variants-switch-test`
 - Focus a JVM test var: `clojure -M:dev:test --focus common-tests.logic.variants-switch-test/test-basic-switch`
+- JVM line coverage: `clojure -M:dev:test:coverage` (kaocha-cloverage, about 2x slower; `:cloverage/opts` in `tests.edn`, which excludes `app.common.test-helpers.*`; output in `target/coverage/` (lcov, HTML, and EMMA `coverage.xml` whose form counts the PR report shows as statements; cloverage measures no functions or branches)). `scripts/test` (CI) uses it; the JS side has no coverage.
 - Focus a JS test namespace: `pnpm run test:quiet -- --focus common-tests.logic.comp-sync-test`
 - Focus a JS test var: `pnpm run test:quiet -- --focus common-tests.logic.comp-sync-test/test-sync-when-changing-attribute`
 - Quiet logging during a JS run: append `--log-level warn` (or `trace|debug|info|warn|error`)

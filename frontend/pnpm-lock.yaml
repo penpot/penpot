@@ -252,9 +252,21 @@ importers:
       '@vitest/coverage-v8':
         specifier: 5.0.3
         version: 5.0.3(@vitest/browser@5.0.3)(vitest@5.0.3)
+      '@vitest/istanbul-lib-coverage':
+        specifier: 1.0.2
+        version: 1.0.2
+      '@vitest/istanbul-lib-report':
+        specifier: 1.0.2
+        version: 1.0.2
       '@zip.js/zip.js':
         specifier: 2.8.34
         version: 2.8.34(patch_hash=7b556bbd426f152eb086f0126a53900e369a95cf64357c380b7c8d8e940c3d95)
+      acorn:
+        specifier: 8.19.0
+        version: 8.19.0
+      ast-v8-to-istanbul:
+        specifier: 1.0.7
+        version: 1.0.7
       autoprefixer:
         specifier: ^10.6.1
         version: 10.6.1(postcss@8.5.29)

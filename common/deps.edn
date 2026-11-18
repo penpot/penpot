@@ -76,6 +76,11 @@
   {:main-opts ["-m" "kaocha.runner"]
    :extra-deps {lambdaisland/kaocha {:mvn/version "1.91.1392"}}}
 
+  ;; Use after :test (`-M:dev:test:coverage`) to run the suite with cloverage.
+  :coverage
+  {:main-opts ["-m" "kaocha.runner" "--plugin" "cloverage"]
+   :extra-deps {lambdaisland/kaocha-cloverage {:mvn/version "1.1.89"}}}
+
   :shadow-cljs
   {:main-opts ["-m" "shadow.cljs.devtools.cli"]
    :jvm-opts ["--sun-misc-unsafe-memory-access=allow"]}

@@ -68,6 +68,7 @@ opencode.json
 /frontend/playwright-report/
 /frontend/playwright/ui/visual-specs/
 /frontend/text-editor/src/wasm/
+/frontend/coverage/
 /frontend/dist/
 /frontend/npm-debug.log
 /frontend/out/

@@ -95,6 +95,11 @@
    :jvm-opts ["-Dlog4j2.configurationFile=log4j2-devenv-repl.xml"]
    :extra-deps {lambdaisland/kaocha {:mvn/version "1.91.1392"}}}
 
+  ;; Use after :test (`-M:dev:test:coverage`) to run the suite with cloverage.
+  :coverage
+  {:main-opts ["-m" "kaocha.runner" "--plugin" "cloverage"]
+   :extra-deps {lambdaisland/kaocha-cloverage {:mvn/version "1.1.89"}}}
+
   :outdated
   {:extra-deps {com.github.liquidz/antq {:mvn/version "2.11.1276"}}
    :main-opts ["-m" "antq.core"]}
