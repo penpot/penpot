@@ -215,6 +215,25 @@
           (t/is (= "google" (:id provider)))
           (t/is (nil? (:jwks provider))))))))
 
+(t/deftest prepare-github-provider-raises-a-controlled-error
+  (t/testing "a provider without credentials is a controlled validation error"
+    (let [cause (try
+                  (#'oidc/prepare-github-provider {:id "github" :type "github"})
+                  (catch Throwable cause cause))
+          data  (ex-data cause)]
+      (t/is (ex/error? cause))
+      (t/is (= :validation (:type data)))
+      (t/is (= :invalid-sso-config (:code data)))
+      (t/is (= "several required params for configuring GITHUB SSO are missing"
+               (ex-message cause)))))
+
+  (t/testing "a complete provider is answered unchanged"
+    (let [params {:id "github"
+                  :type "github"
+                  :client-id "client-id"
+                  :client-secret "client-secret"}]
+      (t/is (= params (#'oidc/prepare-github-provider params))))))
+
 (defn- capture-warnings
   "Run `f` and return the warnings it logged that match `match?`, plus the value
   of `f`. The logging API emits asynchronously, so the record is awaited

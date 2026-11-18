@@ -308,8 +308,11 @@ bundled Google and GitLab providers already declare their issuer and the keys
 their provider publishes.
 
 Penpot loads those keys once, when the provider initializes. If the provider
-rotates them while Penpot runs, the ID token stays unverified and the login
-continues through the userinfo endpoint until the next restart.
+rotates them while Penpot runs, the ID token stays unverified until the next
+restart: a provider that reads the identity from the userinfo endpoint keeps
+logging in, while setting <code class="language-bash">PENPOT_OIDC_USER_INFO_SOURCE</code>
+to <code class="language-bash">token</code> fails the login with an incomplete user
+info error (`incomplete-user-info`).
 
 Set the issuer explicitly in production. It is what keeps the discovery document
 from choosing the issuer on its own, and it has to match what the document

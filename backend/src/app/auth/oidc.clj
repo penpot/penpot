@@ -292,8 +292,9 @@
      :hint "missing params for provider initialization"
      :provider (:id params)))
 
-  ;; The keys are needed to validate the `iss`/`aud` claims of the ID token,
-  ;; so Google needs the same best-effort JWKS load as the other providers.
+  ;; The keys verify the signature of the ID token; without them
+  ;; `get-id-token-claims` never reaches the claim checks, so Google needs the
+  ;; same best-effort JWKS load as the other providers.
   (populate-jwks cfg params))
 
 (defmethod ig/assert-key ::providers/google
@@ -366,10 +367,9 @@
   [params]
   (when-not (and (string? (:client-id params))
                  (string? (:client-secret params)))
-    (ex/raise :type ::internal
-              :code :invalid-sso-config
-              :hint "several required params for configuring GITHUB SSO are missing"
-              :provider (:id params)))
+    (raise-invalid-sso-config
+     :hint "several required params for configuring GITHUB SSO are missing"
+     :provider (:id params)))
 
   params)
 
