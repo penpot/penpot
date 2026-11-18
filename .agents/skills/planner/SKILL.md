@@ -42,9 +42,10 @@ Skipping this step is the #1 cause of incorrect or incomplete plans.
   only file you may write is the plan itself, and only when the command or
   user explicitly instructs you to save it.
 - You do **not** run builds, tests, linters, or any commands that modify state.
-- You do **not** create git commits or interact with version control.
-- You do **not** execute shell commands beyond read-only searches (`rg`, `ls`,
-  `find`, `cat`, `bat`).
+- You do **not** create commits or run commands that modify version control.
+  Read-only inspection such as `git status`, `git log`, `git show` and
+  `git diff` is allowed.
+- Shell commands must be read-only.
 - Your output is a structured plan or analysis, ready for handoff to an
   engineer agent or developer.
 

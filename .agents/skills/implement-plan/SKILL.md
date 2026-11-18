@@ -116,18 +116,19 @@ Implement every task in one go. Work methodically, keeping changes
 focused on what the issue requires. Respect the plan's proposed
 parallelization when it applies.
 
-When the implementation is complete, close the plan file first: flip its
-`Status` to `done` and append one UTC ISO 8601 line to its `Review Log`
-with the issue URL when one exists (standalone mode, e.g.
-`https://github.com/penpot/penpot/issues/NNNN`); in continue/direct
-mode with no issue, just `done` with no invented identifier. Never
-record commit hashes. Leave the closed plan file local and uncommitted.
-Then load the **`create-commit`** skill and follow its workflow to commit
+When the implementation is complete, load the **`create-commit`** skill and
+follow its workflow to commit
 only the implementation, tests, memory, and documentation changes. Before
 committing, verify that the staged file list does not contain the plan
 file. Provide a brief summary of what was implemented and why, the issue
 reference (`issue-NNNN`) when there is one, and the model name you are
 running as so the `AI-assisted-by` trailer is set correctly.
+
+Only after the commit exists and passes its checks, close the plan: flip
+`Status` to `done` and append one UTC ISO 8601 line to `Review Log` with the
+issue URL when one exists; otherwise record `done` without inventing an
+identifier. Never record commit hashes. Leave the plan local and uncommitted.
+If the commit or its checks fail, do not close the plan.
 
 ### Step-by-step mode (on request)
 
