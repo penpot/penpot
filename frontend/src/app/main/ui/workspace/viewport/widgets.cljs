@@ -267,6 +267,7 @@
         root-frames    (into []
                              (comp (keep (d/getf objects))
                                    (filter cfh/frame-shape?)
+                                   (filter #(= uuid/zero (:parent-id %)))
                                    (remove #(and (ctk/instance-head? %)
                                                  (not (ctk/main-instance? %)))))
                              (dm/get-in objects [uuid/zero :shapes]))
