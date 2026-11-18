@@ -9,7 +9,6 @@ pub mod grid_layout;
 use crate::math::{self as math, bools, identitish, is_close_to, Bounds, Matrix, Point};
 use common::GetBounds;
 
-use crate::error::Result;
 use crate::shapes;
 use crate::shapes::{
     ConstraintH, ConstraintV, Frame, Group, GrowType, Layout, Modifier, PixelPrecision, Shape,
@@ -26,7 +25,7 @@ fn propagate_children(
     parent_bounds_after: &Bounds,
     transform: Matrix,
     bounds: &HashMap<Uuid, Bounds>,
-) -> Result<VecDeque<Modifier>> {
+) -> VecDeque<Modifier> {
     let mut result = VecDeque::new();
 
     // We use the identity transform as a mark that a reflow is needed.
@@ -35,7 +34,7 @@ fn propagate_children(
         for child_id in shape.children_ids_iter(true) {
             result.push_back(Modifier::transform_propagate(*child_id, transform));
         }
-        return Ok(result);
+        return result;
     }
 
     for child_id in shape.children_ids_iter(true) {
@@ -81,12 +80,12 @@ fn propagate_children(
             constraint_v,
             transform,
             child.ignore_constraints,
-        )?;
+        );
 
         result.push_back(Modifier::transform_propagate(*child_id, transform));
     }
 
-    Ok(result)
+    result
 }
 
 fn calculate_group_bounds(
@@ -240,9 +239,9 @@ fn propagate_transform(
     reflown: &mut HashSet<Uuid>,
     reflowed_shapes: &mut HashSet<Uuid>,
     pending_reflows: &mut HashSet<Uuid>,
-) -> Result<()> {
+) {
     let Some(shape) = state.shapes.get(&entry.id) else {
-        return Ok(());
+        return;
     };
 
     let shapes = &state.shapes;
@@ -349,7 +348,7 @@ fn propagate_transform(
             &shape_bounds_after,
             transform,
             bounds,
-        )?;
+        );
         entries.append(&mut children);
     }
 
@@ -378,7 +377,6 @@ fn propagate_transform(
             entries.push_back(Modifier::reflow(parent.id, false));
         }
     }
-    Ok(())
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -444,28 +442,27 @@ fn reflow_shape(
     reflown: &mut HashSet<Uuid>,
     entries: &mut VecDeque<Modifier>,
     bounds: &mut HashMap<Uuid, Bounds>,
-) -> Result<()> {
+) {
     let Some(shape) = state.shapes.get(id) else {
-        return Ok(());
+        return;
     };
 
     let shapes = &state.shapes;
 
     let Type::Frame(frame_data) = &shape.shape_type else {
-        return Ok(());
+        return;
     };
 
     if let Some(Layout::FlexLayout(layout_data, flex_data)) = &frame_data.layout {
         let mut children =
-            flex_layout::reflow_flex_layout(shape, layout_data, flex_data, shapes, bounds)?;
+            flex_layout::reflow_flex_layout(shape, layout_data, flex_data, shapes, bounds);
         entries.append(&mut children);
     } else if let Some(Layout::GridLayout(layout_data, grid_data)) = &frame_data.layout {
         let mut children =
-            grid_layout::reflow_grid_layout(shape, layout_data, grid_data, shapes, bounds)?;
+            grid_layout::reflow_grid_layout(shape, layout_data, grid_data, shapes, bounds);
         entries.append(&mut children);
     }
     reflown.insert(*id);
-    Ok(())
 }
 
 /// Propagates a set of transforms through the shape tree, returning one
@@ -477,7 +474,7 @@ pub fn propagate_modifiers(
     state: &State,
     modifiers: &[TransformEntry],
     pixel_precision: PixelPrecision,
-) -> Result<Vec<TransformEntry>> {
+) -> Vec<TransformEntry> {
     let mut entries: VecDeque<_> = modifiers
         .iter()
         .map(|entry| {
@@ -522,7 +519,7 @@ pub fn propagate_modifiers(
                     &mut reflown,
                     &mut reflowed_shapes,
                     &mut pending_reflows,
-                )?,
+                ),
                 Modifier::Reflow(id, force_reflow) => {
                     pending_reflows.remove(&id);
                     if force_reflow {
@@ -562,14 +559,14 @@ pub fn propagate_modifiers(
             if reflown.contains(id) {
                 continue;
             }
-            reflow_shape(id, state, &mut reflown, &mut entries, &mut bounds_temp)?;
+            reflow_shape(id, state, &mut reflown, &mut entries, &mut bounds_temp);
         }
     }
 
-    Ok(modifiers
+    modifiers
         .iter()
         .map(|(key, val)| TransformEntry::from_input(*key, *val))
-        .collect())
+        .collect()
 }
 
 #[cfg(test)]
@@ -617,8 +614,7 @@ mod tests {
             &bounds_after,
             transform,
             &HashMap::new(),
-        )
-        .unwrap();
+        );
 
         assert_eq!(result.len(), 1);
     }
@@ -677,7 +673,7 @@ mod tests {
         }
 
         let entry = TransformEntry::from_input(shape_id, Matrix::translate((5.2, 3.7)));
-        let result = propagate_modifiers(&state, &[entry], PixelPrecision::Both).unwrap();
+        let result = propagate_modifiers(&state, &[entry], PixelPrecision::Both);
 
         let transform = result
             .iter()
@@ -713,7 +709,7 @@ mod tests {
             resize.pre_translate(Point::new(-10.4, -20.6));
 
             let entry = TransformEntry::from_input(shape_id, resize);
-            let result = propagate_modifiers(&state, &[entry], PixelPrecision::Both).unwrap();
+            let result = propagate_modifiers(&state, &[entry], PixelPrecision::Both);
 
             let transform = result
                 .iter()
@@ -793,7 +789,7 @@ mod tests {
             state.shapes.clear_transform_modifiers();
 
             let entry = TransformEntry::from_input(shape_id, Matrix::translate((delta, delta)));
-            let result = propagate_modifiers(state, &[entry], PixelPrecision::Both).unwrap();
+            let result = propagate_modifiers(state, &[entry], PixelPrecision::Both);
             let transform = result
                 .iter()
                 .find(|entry| entry.id == shape_id)
@@ -845,7 +841,7 @@ mod tests {
         resize.pre_translate(Point::new(-10.4, -20.6));
 
         let entry = TransformEntry::from_input(shape_id, resize);
-        let result = propagate_modifiers(&state, &[entry], PixelPrecision::Both).unwrap();
+        let result = propagate_modifiers(&state, &[entry], PixelPrecision::Both);
 
         let transform = result
             .iter()
@@ -1024,7 +1020,7 @@ mod tests {
     /// Reflows every layout above `id`, as a committed text resize does.
     fn reflow(state: &State, id: Uuid) -> Vec<TransformEntry> {
         let entry = TransformEntry::from_input(id, Matrix::default());
-        propagate_modifiers(state, &[entry], PixelPrecision::Disabled).unwrap()
+        propagate_modifiers(state, &[entry], PixelPrecision::Disabled)
     }
 
     fn size_after(state: &State, result: &[TransformEntry], id: Uuid) -> (f32, f32) {

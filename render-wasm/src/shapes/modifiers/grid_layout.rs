@@ -1,4 +1,3 @@
-use crate::error::Result;
 use crate::math::{self as math, intersect_rays, Bounds, Matrix, Point, Ray, Vector, VectorExt};
 use crate::shapes::{
     AlignContent, AlignItems, AlignSelf, Frame, GridCell, GridData, GridTrack, GridTrackType,
@@ -739,7 +738,7 @@ pub fn reflow_grid_layout(
     grid_data: &GridData,
     shapes: ShapesPoolRef,
     bounds: &mut HashMap<Uuid, Bounds>,
-) -> Result<VecDeque<Modifier>> {
+) -> VecDeque<Modifier> {
     let mut result = VecDeque::new();
     let layout_bounds = bounds.find(shape);
     let children: HashSet<Uuid> = shape.children_ids_iter(true).copied().collect();
@@ -933,5 +932,5 @@ pub fn reflow_grid_layout(
         bounds.insert(shape.id, layout_bounds_after);
     }
 
-    Ok(result)
+    result
 }
