@@ -5,11 +5,12 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.sidebar.branch-review.common
-  "What the compare and conflict dialogs say about a diff entry, kept free
-  of rendering: labels, values, categories, one-line summaries, the
-  page/board a change lives on, how a conflict splits into the
-  properties in conflict and the ones only one side touched, and what the
-  copy rule decides for the copies of a changed component."
+  "What the compare mode says about a diff entry, kept free of rendering:
+  labels, values, one-line summaries, the page/board a change lives on,
+  the list the changes make and the marks they leave on the canvas, how a
+  conflict splits into the properties in conflict and the ones only one
+  side touched, and what the copy rule decides for the copies of a changed
+  component."
   (:require
    [app.common.data.macros :as dm]
    [app.common.files.branch-merge :as bm]
@@ -19,6 +20,7 @@
    [app.common.uuid :as uuid]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.branches :as dwb]
+   [app.main.data.workspace.compare :as dwcp]
    [app.main.store :as st]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.util.i18n :as i18n :refer [tr]]
@@ -29,7 +31,7 @@
 (defn confirm-merge!
   "Open the merge dialog for `branch` (merge into main is irreversible and
   deletes the branch; the dialog asks for a comment for the merge's
-  record). `excluded` is the compare dialog's per-change selection, if
+  record). `excluded` is the per-change selection of the comparison, if
   any."
   ([branch] (confirm-merge! branch nil))
   ([branch excluded]
@@ -37,8 +39,8 @@
 
 (defn confirm-update!
   "Ask for confirmation before updating `branch` from main (overwrites
-  conflicting branch changes). `excluded` is the compare dialog's
-  per-change selection, if any."
+  conflicting branch changes). `excluded` is the per-change selection of
+  the comparison, if any."
   ([branch] (confirm-update! branch nil))
   ([branch excluded]
    (st/emit! (modal/show {:type :confirm
@@ -257,75 +259,20 @@
   [changed-attrs]
   (into [] (remove (fn [[attr _]] (contains? technical-attrs attr))) changed-attrs))
 
-;; --- Categories
+;; --- Scope
 
-(def ^:private copy-attrs #{:content :name})
-(def ^:private colour-attrs #{:fills :strokes :fill-color :stroke-color :color :gradient
-                              :shadow :opacity :blend-mode})
-(def ^:private layout-attrs #{:layout :layout-flex-dir :layout-gap :layout-padding
-                              :layout-padding-type :layout-gap-type :layout-wrap-type
-                              :layout-justify-content :layout-align-items
-                              :layout-align-content :layout-justify-items
-                              :layout-grid-rows :layout-grid-columns :layout-grid-cells
-                              :layout-item-margin :layout-item-h-sizing
-                              :layout-item-v-sizing :layout-item-align-self
-                              :x :y :width :height :rotation :constraints-h
-                              :constraints-v})
+(def ^:private page-kinds
+  #{:page :page-order})
 
-(def categories
-  "Category order, the tone and icon of each one. Colour is
-  kept for what happened to an entry (added, modified, deleted, in
-  conflict), so the categories are neutral and told apart by their icon;
-  decisions alone stay in the conflict colour, as they are conflicts."
-  [[:decisions  "warning" i/triangle-alert]
-   [:copy       "neutral" i/text]
-   [:colour     "neutral" i/swatches]
-   [:layout     "neutral" i/flex]
-   [:components "neutral" i/component]
-   [:variants   "neutral" i/variant]
-   [:tokens     "neutral" i/tokens]
-   [:other      "neutral" i/layers]])
-
-(def category->tone
-  (into {} (map (fn [[k tone _]] [k tone])) categories))
-
-(defn category-label
-  [cat]
-  (case cat
-    :decisions  (tr "workspace.branches.review.category.decisions")
-    :copy       (tr "workspace.branches.review.category.copy")
-    :colour     (tr "workspace.branches.review.category.colour")
-    :layout     (tr "workspace.branches.review.category.layout")
-    :components (tr "workspace.branches.review.category.components")
-    :variants   (tr "workspace.branches.review.category.variants")
-    :tokens     (tr "workspace.branches.review.category.tokens")
-    :other      (tr "workspace.branches.review.category.other")))
-
-(def category->icon
-  (into {} (map (fn [[k _ icon]] [k icon])) categories))
-
-(defn category
-  "The one category a diff entry falls under, most specific first: a
-  conflict is a decision; a variant is a variant change; a component or
-  a copy is a component change; a token is a token change; the attrs of a modified
-  layer decide between copy, colour and layout."
+(defn scope
+  "Where a diff entry belongs, as the filters of the list tell them
+  apart: `:layers` for what lives on a page (layers, and the pages
+  themselves), `:library` for what the whole file shares (components,
+  colours, typographies, tokens, file options)."
   [item]
-  (let [kind  (:kind item)
-        attrs (set (keys (:changed-attrs item)))]
-    (cond
-      (= :conflict (:status item)) :decisions
-      (:variant? item) :variants
-      (or (= :component kind) (:component? item) (:component-copy? item))
-      :components
-      (contains? #{:token :token-set :token-set-rename :token-set-order :token-theme
-                   :token-active-themes :token-active-sets :tokens-source} kind)
-      :tokens
-      (contains? #{:color} kind) :colour
-      (contains? #{:typography} kind) :copy
-      (some copy-attrs attrs) :copy
-      (some colour-attrs attrs) :colour
-      (some layout-attrs attrs) :layout
-      :else :other)))
+  (if (or (some? (:page-id item)) (contains? page-kinds (:kind item)))
+    :layers
+    :library))
 
 (defn status-tone
   "The colour of the bar on a change row: what happened to the entry. A
@@ -413,26 +360,26 @@
   "The added or deleted layers that only follow a container added or
   deleted with them, folded under the outermost one: deleting a group
   deletes its layers too, and listing each one apart would repeat the
-  same change. Takes `[index item]` pairs and returns a map from the
-  index of each outermost entry to the `[index item]` pairs it holds."
-  [indexed]
+  same change. Returns a map from the key (`dwcp/item-key`) of each
+  outermost entry to the entries it holds."
+  [items]
   (let [by-id   (into {}
-                      (keep (fn [[idx item]]
+                      (keep (fn [item]
                               (when (cascade-entry? item)
-                                [[(:page-id item) (:id item)] [idx item]])))
-                      indexed)
+                                [[(:page-id item) (:id item)] item])))
+                      items)
         root-of (fn [item]
                   (loop [cur item root nil depth 0]
-                    (let [[pidx parent] (get by-id [(:page-id item) (get-in cur [:shape :parent-id])])]
+                    (let [parent (get by-id [(:page-id item) (get-in cur [:shape :parent-id])])]
                       (if (and parent (= (:status parent) (:status item)) (< depth 64))
-                        (recur parent pidx (inc depth))
+                        (recur parent parent (inc depth))
                         root))))]
-    (reduce (fn [acc [_ item :as row]]
+    (reduce (fn [acc item]
               (if-let [root (when (cascade-entry? item) (root-of item))]
-                (update acc root (fnil conj []) row)
+                (update acc (dwcp/item-key root) (fnil conj []) item)
                 acc))
             {}
-            indexed)))
+            items)))
 
 ;; --- What goes with an added or deleted layer
 
@@ -467,14 +414,14 @@
   Penpot makes these changes itself when a layer goes, so the diff lists
   them as entries of their own; this ties them to their cause. `objects`
   is the page as the side that holds the layer has it, `inner` the
-  layers folded under it (`fold-cascades`), and `incoming` says the
+  entries folded under it (`fold-cascades`), and `incoming` says the
   changes are main's, going to the branch, rather than the branch's
   going to main."
   [item items objects inner incoming]
   (let [from     (if incoming :branch :main)
         to       (if incoming :main :branch)
         deleted? (= :deleted (:status item))
-        ids      (into #{(:id item)} (map (comp :id second)) inner)
+        ids      (into #{(:id item)} (map :id) inner)
         page-id  (:page-id item)
         on-page  (filterv #(= page-id (:page-id %)) items)
         modified (into {}
@@ -529,32 +476,31 @@
            ancestors)}))
 
 (defn group-by-place
-  "Group the clean changes (`[index item]` pairs) by page, and inside a
-  page by the top-level board that holds them, reading names from the
-  open file's `pages-index`. Entries that belong to no page (components,
-  colours, typographies, tokens) go to a last `:library` group, after a
-  `:pages` group for the pages added, deleted or reordered. Each
-  group is `{:id :name :page-id :rows [[idx item]] :boards [{:id :name
-  :rows}]}`, with `:rows` holding the entries outside any board. A board
-  groups its changes only when it holds two or more of `rows`. `:count`
-  leaves out the copies the copy rule settled (`bm/settled?`)."
-  [rows pages-index pages]
-  (let [by-page (group-by (fn [[_ item]] (:page-id item)) rows)
+  "Group the clean changes `items` by page, and inside a page by the
+  top-level board that holds them, reading names from the open file's
+  `pages-index`. Entries that belong to no page (components, colours,
+  typographies, tokens) go to a last `:library` group, after a `:pages`
+  group for the pages added, deleted or reordered. Each group is
+  `{:id :name :page-id :rows [item] :boards [{:id :name :rows}]}`, with
+  `:rows` holding the entries outside any board. A board groups its
+  changes only when it holds two or more of `items`. `:count` leaves out
+  the copies the copy rule settled (`bm/settled?`)."
+  [items pages-index pages]
+  (let [by-page (group-by :page-id items)
         page-group
-        (fn [page-id page-rows]
+        (fn [page-id page-items]
           (let [page    (get pages-index page-id)
                 objects (:objects page)
-                placed  (map (fn [[_ item :as row]]
-                               (let [board (when (= :shape (:kind item))
-                                             (top-board objects (:id item)))]
-                                 [row board]))
-                             page-rows)
+                placed  (map (fn [item]
+                               [item (when (= :shape (:kind item))
+                                       (top-board objects (:id item)))])
+                             page-items)
                 ;; a board folds its changes only when it holds two or
                 ;; more of the listed ones: a lone change stays loose, as
                 ;; the fold would only repeat it
                 sizes   (frequencies (keep (comp :id second) placed))
-                placed  (map (fn [[row board]]
-                               [row (when (> (get sizes (:id board) 0) 1) board)])
+                placed  (map (fn [[item board]]
+                               [item (when (> (get sizes (:id board) 0) 1) board)])
                              placed)
                 boards  (->> placed
                              (filter second)
@@ -570,14 +516,14 @@
              :name    (or (:name page) (tr "workspace.branches.review.unknown-page"))
              :rows    (into [] (comp (remove second) (map first)) placed)
              :boards  boards
-             :count   (count (remove (comp bm/settled? second) page-rows))}))
+             :count   (count (remove bm/settled? page-items))}))
         page-order (into {} (map-indexed (fn [idx id] [id idx])) pages)
         loose      (get by-page nil)
-        page-kind  #(contains? #{:page :page-order} (:kind (second %)))
-        page-rows  (filterv page-kind loose)
-        library    (filterv (complement page-kind) loose)]
+        page-kind? #(contains? page-kinds (:kind %))
+        page-rows  (filterv page-kind? loose)
+        library    (filterv (complement page-kind?) loose)]
     (cond-> (->> (dissoc by-page nil)
-                 (map (fn [[page-id page-rows]] (page-group page-id page-rows)))
+                 (map (fn [[page-id page-items]] (page-group page-id page-items)))
                  (sort-by #(get page-order (:page-id %) 9999))
                  vec)
       (seq page-rows)
@@ -593,6 +539,110 @@
              :rows   library
              :boards []
              :count  (count library)}))))
+
+;; --- The list of changes
+
+(defn selectable-item?
+  "An entry the per-change selection covers: a clean change. A conflict
+  keeps its resolution instead, and an `:unsupported` entry is a refusal
+  the merge raises whatever the selection says."
+  [item]
+  (contains? #{:added :modified :deleted} (:status item)))
+
+(defn conflict?
+  [item]
+  (= :conflict (:status item)))
+
+(defn row-keys
+  "The change keys a row stands for: its own and those of the layers
+  folded under it (`fold-cascades`), which travel or stay with it."
+  [item inner]
+  (into #{(:key item)} (map :key) inner))
+
+(defn change-model
+  "What the list of a comparison shows, from its `diff` and the open
+  file (`pages-index`, `pages`), with the filter in use (`:filter`) and
+  the per-change selection `excluded` applied:
+
+    `:items`     every change and conflict of the diff;
+    `:cascades`  the entries folded under another one (`fold-cascades`);
+    `:listed`    the entries the list shows, the folded ones left out;
+    `:counted`   the listed ones that count as changes: a copy the copy
+                 rule settled is shown, never counted;
+    `:counts`    how many each filter keeps (`:all`, `:layers`,
+                 `:library`, `:left-out`);
+    `:conflicts` the conflicts the filter keeps;
+    `:groups`    the clean changes it keeps, by place (`group-by-place`);
+    `:rows`      the entries it keeps, in the order the list shows them;
+    `:decisions` how many conflicts wait for a choice;
+    `:kept`      how many clean changes travel, and `:left-out` how many
+                 stay: a folded layer goes with its container, so both
+                 count the rows the list shows."
+  [diff {:keys [excluded pages-index pages] active-filter :filter}]
+  (let [items      (into (vec (:changes diff)) (:conflicts diff))
+        excluded   (or excluded #{})
+        cascades   (fold-cascades items)
+        folded     (into #{} (comp (mapcat val) (map dwcp/item-key)) cascades)
+        listed     (filterv #(not (contains? folded (dwcp/item-key %))) items)
+        left-out?  #(and (selectable-item? %) (contains? excluded (:key %)))
+        visible    (filterv (fn [item]
+                              (case active-filter
+                                :left-out (left-out? item)
+                                :layers   (= :layers (scope item))
+                                :library  (= :library (scope item))
+                                true))
+                            listed)
+        conflicts  (filterv conflict? visible)
+        groups     (group-by-place (filterv (complement conflict?) visible) pages-index pages)
+        selectable (filterv selectable-item? listed)
+        left-out   (count (filter left-out? selectable))
+        counted    (filterv (complement bm/settled?) listed)]
+    {:items     items
+     :cascades  cascades
+     :listed    listed
+     :counted   counted
+     :counts    {:all      (count counted)
+                 :layers   (count (filter #(= :layers (scope %)) counted))
+                 :library  (count (filter #(= :library (scope %)) counted))
+                 :left-out left-out}
+     :conflicts conflicts
+     :groups    groups
+     :rows      (into conflicts
+                      (mapcat (fn [{:keys [rows boards]}]
+                                (concat rows (mapcat :rows boards))))
+                      groups)
+     :decisions (count (filter conflict? items))
+     :kept      (- (count selectable) left-out)
+     :left-out  left-out}))
+
+(defn step
+  "The key of the entry `offset` rows away from `selected` in `rows`,
+  going round at the ends; the first row when nothing is chosen. Nil for
+  an empty list."
+  [rows selected offset]
+  (when (seq rows)
+    (let [pos (first (keep-indexed (fn [idx item]
+                                     (when (= selected (dwcp/item-key item)) idx))
+                                   rows))]
+      (dwcp/item-key (if (nil? pos)
+                       (first rows)
+                       (nth rows (mod (+ pos offset) (count rows))))))))
+
+(defn next-pending
+  "The key of the first row after `selected` (going round) that `done?`
+  does not hold for, or nil when every row is done. `rows` are the
+  entries in the order of the list."
+  [rows selected done?]
+  (let [pos   (or (first (keep-indexed (fn [idx item]
+                                         (when (= selected (dwcp/item-key item)) idx))
+                                       rows))
+                  -1)
+        start (inc pos)
+        ahead (concat (drop start rows) (take start rows))]
+    (some (fn [item]
+            (when (and (not= selected (dwcp/item-key item)) (not (done? item)))
+              (dwcp/item-key item)))
+          ahead)))
 
 ;; --- Conflicts: which properties conflict and what one side did alone
 
@@ -741,6 +791,79 @@
                           :else nil)})))
           mine)))
 
+;; --- Conflicts: what the user decides, and how far along they are
+
+(defn conflict-reason-label
+  "Why both sides clash on an entity, or nil for any other reason."
+  [reason]
+  (case reason
+    :modify-modify (tr "workspace.branches.conflicts.reason.modify-modify")
+    :add-add       (tr "workspace.branches.conflicts.reason.add-add")
+    :delete-modify (tr "workspace.branches.conflicts.reason.delete-modify")
+    :modify-delete (tr "workspace.branches.conflicts.reason.modify-delete")
+    nil))
+
+(defn text-conflict?
+  "A conflict whose text content both sides rewrote."
+  [conflict]
+  (boolean
+   (and (per-attr? conflict)
+        (some #(and (= :content (:attr %)) (= :conflict (:source %)))
+              (conflict-attr-rows conflict)))))
+
+(defn dropped-paragraphs
+  "The paragraph edits keeping `side` drops."
+  [conflict side]
+  (let [other (if (= side :main) :branch :main)]
+    (filterv #(= :kept (:status %)) (paragraph-rows conflict other))))
+
+(defn loses-work?
+  "Whether every choice on a text conflict drops a paragraph edit: both
+  sides edited different paragraphs."
+  [conflict]
+  (boolean
+   (and (text-conflict? conflict)
+        (seq (dropped-paragraphs conflict :main))
+        (seq (dropped-paragraphs conflict :branch)))))
+
+(defn pending-attr
+  "The property of `conflict` in turn under resolution `res`: `attr` when
+  it is one of its conflicting properties, else the first one without a
+  choice, else the first one. Nil for a conflict that cannot be split by
+  property."
+  [conflict res attr]
+  (when (per-attr? conflict)
+    (let [attrs (conflicting-attrs (conflict-attr-rows conflict))]
+      (or (some #{attr} attrs)
+          (some #(when (nil? (attr-choice res %)) %) attrs)
+          (first attrs)))))
+
+(defn conflict-model
+  "How far along the `conflicts` of a merge or an update are under
+  `resolutions`: the ones that still wait for a choice (`:pending`), the
+  ones decided (`:decided`), and both in the order the list shows them
+  (`:rows`)."
+  [conflicts resolutions]
+  (let [resolved? #(bm/conflict-resolved? % (get resolutions (:id %)))
+        pending   (filterv (complement resolved?) conflicts)
+        decided   (filterv resolved? conflicts)]
+    {:conflicts (vec conflicts)
+     :pending   pending
+     :decided   decided
+     :rows      (into pending decided)}))
+
+(defn prefill-resolutions
+  "The resolutions the `conflicts` without one in `resolutions` start
+  with (`prefill-resolution`), by conflict id: the edits one side made
+  alone are not in doubt, so only the conflicting properties wait."
+  [conflicts resolutions]
+  (into {}
+        (keep (fn [conflict]
+                (when (and (per-attr? conflict)
+                           (nil? (get resolutions (:id conflict))))
+                  [(:id conflict) (prefill-resolution conflict)])))
+        conflicts))
+
 ;; --- What a new or deleted entry is, where it lands, what it affects
 
 (defn page-contents
@@ -767,42 +890,75 @@
         (recur (:parent-id parent) (conj path (:name parent)) (inc depth))
         (vec path)))))
 
-(defn- all-shapes
-  [data]
-  (mapcat (comp vals :objects) (vals (:pages-index data))))
+(defn- uses?
+  "Whether `shape` depends on the library entry `item`: it copies the
+  component, fills or strokes with the colour, writes with the
+  typography or applies the token."
+  [shape {:keys [kind id label]}]
+  (case kind
+    :component  (and (= id (:component-id shape))
+                     (not (:main-instance shape)))
+    :color      (or (some #(= id (:fill-color-ref-id %)) (:fills shape))
+                    (some #(= id (:stroke-color-ref-id %)) (:strokes shape)))
+    :typography (and (= :text (:type shape))
+                     (some #(= id (:typography-ref-id %))
+                           (txt/node-seq (:content shape))))
+    :token      (some #(= label %) (vals (:applied-tokens shape)))
+    false))
 
-(defn component-copies
-  "How many copies of component `component-id` the file `data` holds."
-  [data component-id]
-  (count (filter #(and (= component-id (:component-id %))
-                       (not (:main-instance %)))
-                 (all-shapes data))))
+(defn usages
+  "The layers of the file `data` that depend on the library entry `item`
+  (a component, colour, typography or token), each as
+  `{:page-id :shape}`; nil for an entry no layer can depend on."
+  [data item]
+  (when (contains? #{:component :color :typography :token} (:kind item))
+    (into []
+          (mapcat (fn [[page-id page]]
+                    (eduction (filter #(uses? % item))
+                              (map (fn [shape] {:page-id page-id :shape shape}))
+                              (vals (:objects page)))))
+          (:pages-index data))))
 
-(defn color-usages
-  "How many layers of `data` fill or stroke with library colour
-  `color-id`."
-  [data color-id]
-  (count (filter (fn [shape]
-                   (or (some #(= color-id (:fill-color-ref-id %)) (:fills shape))
-                       (some #(= color-id (:stroke-color-ref-id %)) (:strokes shape))))
-                 (all-shapes data))))
+;; --- The marks of the changes on the canvas
 
-(defn typography-usages
-  "How many text layers of `data` use library typography
-  `typography-id`."
-  [data typography-id]
-  (count (filter (fn [shape]
-                   (and (= :text (:type shape))
-                        (some #(= typography-id (:typography-ref-id %))
-                              (txt/node-seq (:content shape)))))
-                 (all-shapes data))))
+(defn- shape-rect
+  [shape]
+  (select-keys (:selrect shape) [:x :y :width :height]))
 
-(defn token-usages
-  "How many layers of `data` apply the token named `token-name`."
-  [data token-name]
-  (count (filter (fn [shape]
-                   (some #(= token-name %) (vals (:applied-tokens shape))))
-                 (all-shapes data))))
+(defn change-marks
+  "The marks the entries `items` leave on the page `page-id`, whose
+  layers are `objects`: `{:key :label :status :rect}` for each one that
+  is a layer of that page with a place (`dwcp/item-rect`). A layer the
+  open file lacks (deleted here, or added on the other side) is marked
+  where the diff says it is. `status-of` gives the status drawn for an
+  entry; the entries `excluded` holds leave no mark, as they stay out."
+  [items {:keys [page-id objects excluded status-of]}]
+  (let [excluded  (or excluded #{})
+        status-of (or status-of :status)]
+    (into []
+          (keep (fn [item]
+                  (when (and (= page-id (:page-id item))
+                             (not (contains? excluded (:key item))))
+                    (when-let [rect (dwcp/item-rect objects item)]
+                      {:key    (dwcp/item-key item)
+                       :label  (:label item)
+                       :status (status-of item)
+                       :rect   rect}))))
+          items)))
+
+(defn usage-marks
+  "The marks of the layers of page `page-id` that depend on the library
+  entry `item` (`usages`): the change of a token or a colour shows on
+  the layers that use it."
+  [data item page-id]
+  (into []
+        (comp (filter #(= page-id (:page-id %)))
+              (map (fn [{:keys [shape]}]
+                     {:key    (dm/str (dwcp/item-key item) "/" (:id shape))
+                      :label  (:name shape)
+                      :status :usage
+                      :rect   (shape-rect shape)})))
+        (usages data item)))
 
 ;; --- Component copies: what follows a changed component
 

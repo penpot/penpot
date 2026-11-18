@@ -11169,3 +11169,146 @@ msgid "workspace.sidebar.layers.comments"
 msgid_plural "workspace.sidebar.layers.comments"
 msgstr[0] "1 comentario abierto"
 msgstr[1] "%s comentarios abiertos"
+
+msgid "workspace.branches.open"
+msgstr "Abrir rama"
+
+msgid "workspace.branches.resolve.group.decided"
+msgstr "Decididos (%s)"
+
+msgid "workspace.branches.resolve.group.pending"
+msgstr "Necesitan una decisión (%s)"
+
+msgid "workspace.branches.resolve.paragraphs"
+msgid_plural "workspace.branches.resolve.paragraphs"
+msgstr[0] "1 párrafo"
+msgstr[1] "%s párrafos"
+
+msgid "workspace.branches.resolve.tag.from"
+msgstr "De %s"
+
+msgid "workspace.compare.action.edit-layer"
+msgstr "Editar capa"
+
+msgid "workspace.compare.action.include-merge"
+msgstr "Incluir en la fusión"
+
+msgid "workspace.compare.action.include-update"
+msgstr "Incluir en la actualización"
+
+msgid "workspace.compare.action.leave-out-merge"
+msgstr "Dejar fuera de la fusión"
+
+msgid "workspace.compare.action.leave-out-update"
+msgstr "Dejar fuera de la actualización"
+
+msgid "workspace.compare.bar.all-decided"
+msgstr "Todos los conflictos decididos"
+
+msgid "workspace.compare.bar.apply-update"
+msgstr "Aplicar y actualizar"
+
+msgid "workspace.compare.bar.back"
+msgstr "Volver a comparar"
+
+msgid "workspace.compare.bar.comparing"
+msgstr "Comparando"
+
+msgid "workspace.compare.bar.comparing-main"
+msgstr "Comparando con main"
+
+msgid "workspace.compare.bar.decided"
+msgstr "%s de %s decididos"
+
+msgid "workspace.compare.bar.exit"
+msgstr "Salir de comparar"
+
+msgid "workspace.compare.changes"
+msgstr "Cambios"
+
+msgid "workspace.compare.decisions"
+msgstr "Decisiones (%s)"
+
+msgid "workspace.compare.direction.branch"
+msgstr "En esta rama"
+
+msgid "workspace.compare.direction.main"
+msgstr "En main"
+
+msgid "workspace.compare.empty-main"
+msgstr "main no tiene cambios que le falten a esta rama"
+
+msgid "workspace.compare.filter.layers"
+msgstr "Capas"
+
+msgid "workspace.compare.navigator.changes"
+msgstr "Cambios de la comparación"
+
+msgid "workspace.compare.navigator.decisions"
+msgstr "Conflictos por resolver"
+
+msgid "workspace.compare.navigator.in-main"
+msgstr "%s en main"
+
+msgid "workspace.compare.navigator.mark-reviewed"
+msgstr "Marcar como revisado"
+
+msgid "workspace.compare.navigator.next-pending"
+msgstr "Siguiente pendiente"
+
+msgid "workspace.compare.popover.applies-merge"
+msgstr "Nada cambia hasta que apliques y fusiones."
+
+msgid "workspace.compare.popover.applies-update"
+msgstr "Nada cambia hasta que apliques y actualices."
+
+msgid "workspace.compare.popover.attr"
+msgstr "Main y la rama lo cambiaron. Elige cuál conservar."
+
+msgid "workspace.compare.popover.text"
+msgstr "Main y la rama cambiaron este texto. Elige cuál conservar."
+
+msgid "workspace.compare.tab-count"
+msgstr "%s (%s)"
+
+msgid "workspace.compare.tab.changes"
+msgstr "Cambios (%s)"
+
+msgid "workspace.compare.toolbar.label"
+msgstr "Herramientas de comparación"
+
+msgid "workspace.compare.view.hidden"
+msgstr "Cambios ocultos"
+
+msgid "workspace.compare.view.hide"
+msgstr "Ocultar cambios"
+
+msgid "workspace.compare.view.highlight"
+msgstr "Resaltar"
+
+msgid "workspace.compare.view.label"
+msgstr "Cómo muestra el lienzo los cambios"
+
+msgid "workspace.compare.view.show"
+msgstr "Mostrar cambios"
+
+msgid "workspace.compare.canvas.main"
+msgstr "main tal como está ahora"
+
+msgid "workspace.compare.canvas.result"
+msgstr "Vista previa - el resultado de tus elecciones"
+
+msgid "workspace.compare.canvas.update"
+msgstr "Vista previa - %s tras la actualización"
+
+msgid "workspace.compare.navigator.peek"
+msgstr "%s - mantén M para ver main"
+
+msgid "workspace.compare.popover.hover"
+msgstr "Al pasar por una opción se previsualiza en el lienzo."
+
+msgid "workspace.compare.side.linked"
+msgstr "El zoom y el desplazamiento van enlazados"
+
+msgid "workspace.compare.side.not-in-main"
+msgstr "No está en main"

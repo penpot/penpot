@@ -5,8 +5,9 @@
 ;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.data.workspace.branches
-  "Data layer for file branching (Phase 1: create + list). Mirrors the
-  patterns in `app.main.data.workspace.versions`."
+  "Data layer for file branching: the branches of a file, the diff of a
+  branch against main, and merging and updating it. Mirrors the patterns
+  in `app.main.data.workspace.versions`."
   (:require
    [app.config :as cf]
    [app.main.data.common :as dcm]
@@ -416,6 +417,23 @@
 ;; COMPARE (read-only 3-way diff)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn item-key
+  "The key a change or a conflict of a diff is chosen and marked as
+  reviewed by: its change key
+  (`app.common.files.branch-merge/change-key`), or its kind and id for an
+  entry that carries none."
+  [item]
+  (or (:key item) (str (name (:kind item)) ":" (:id item))))
+
+(defn change-fingerprint
+  "A digest of what the diff entry `item` is: what happened to it and the
+  values it moved between. A review mark is kept with it, so a mark made
+  on a change that later became another one no longer counts."
+  [item]
+  (str (hash [(:status item) (:changed-attrs item) (:shape item) (:main item) (:branch item)])))
+
+(declare fetch-diff-reviewed)
+
 (defn update-branch-diff
   [diff-state]
   (ptk/reify ::update-branch-diff
@@ -435,47 +453,46 @@
    (ptk/reify ::fetch-branch-diff
      ptk/UpdateEvent
      (update [_ state]
-       (let [prev (:workspace-branch-diff state)]
+       (let [prev  (:workspace-branch-diff state)
+             same? (= branch-id (:branch-id prev))
+             same-direction? (and same? (= direction (:direction prev)))]
          (assoc state :workspace-branch-diff
                 {:status    :loading
                  :branch-id branch-id
                  :direction direction
-                 :selected  nil
-                 ;; a refetch of the SAME comparison keeps the user's
-                 ;; per-change selection, review marks and conflict
-                 ;; choices (they name the same entities); a different
-                 ;; branch or direction starts over
-                 :excluded  (if (and (= branch-id (:branch-id prev))
-                                     (= direction (:direction prev)))
-                              (or (:excluded prev) #{})
-                              #{})
-                 :reviewed  (if (= branch-id (:branch-id prev))
-                              (or (:reviewed prev) #{})
-                              #{})
-                 :resolutions (when (= branch-id (:branch-id prev))
-                                (:resolutions prev))})))
+                 ;; a refetch for the SAME branch keeps the per-change
+                 ;; selection of each direction and the conflict choices
+                 ;; (they name the same entities), so going from one
+                 ;; direction to the other and back loses nothing; a
+                 ;; different branch starts over
+                 :excluded  (if same? (or (:excluded prev) {}) {})
+                 ;; the review marks are the ones of the direction: they
+                 ;; stay while it reloads, and load again with the diff
+                 :reviewed  (if same-direction? (or (:reviewed prev) #{}) #{})
+                 :resolutions (when same? (:resolutions prev))})))
      ptk/WatchEvent
      (watch [_ _ stream]
        (->> (rp/cmd! :get-branch-diff {:branch-id branch-id :direction direction})
-            (rx/map #(update-branch-diff {:status :loaded :diff %}))
+            (rx/mapcat #(rx/of (update-branch-diff {:status :loaded :diff %})
+                               (fetch-diff-reviewed)))
             (rx/catch (fn [_]
                         (rx/of (update-branch-diff {:status :error}))))
             (rx/take-until (rx/filter (ptk/type? ::fetch-branch-diff) stream)))))))
 
-(defn select-diff-change
-  "Select a change/conflict (by its index in the diff) to show its detail."
-  [selected]
-  (ptk/reify ::select-diff-change
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:workspace-branch-diff :selected] selected))))
+(defn diff-excluded
+  "The per-change selection of `diff-state` (the `:workspace-branch-diff`
+  entry) for the direction it shows: the change keys left OUT of the
+  merge or update. Each direction keeps its own."
+  [diff-state]
+  (get-in diff-state [:excluded (:direction diff-state :branch->main)] #{}))
 
 (defn toggle-diff-excluded
-  "Toggle the per-change selection of the current diff. `change-keys` are
-  change keys (`app.common.files.branch-merge/change-key`); a key the
-  selection holds is left OUT of the merge or update, and a key it lacks
-  travels. `include?` sets them all to that side instead of toggling (the
-  group checkbox): nil flips the whole batch, which is what a single row
+  "Toggle the per-change selection of the current diff, in the direction
+  it shows. `change-keys` are change keys
+  (`app.common.files.branch-merge/change-key`); a key the selection holds
+  is left OUT of the merge or update, and a key it lacks travels.
+  `include?` sets them all to that side instead of toggling (the group
+  checkbox): nil flips the whole batch, which is what a single row
   checkbox needs too."
   ([change-keys] (toggle-diff-excluded change-keys nil))
   ([change-keys include?]
@@ -483,22 +500,73 @@
    (ptk/reify ::toggle-diff-excluded
      ptk/UpdateEvent
      (update [_ state]
-       (update-in state [:workspace-branch-diff :excluded]
-                  (fn [excluded]
-                    (let [excluded (or excluded #{})
-                          include? (if (some? include?)
-                                     include?
-                                     (every? excluded change-keys))]
-                      (if include?
-                        (apply disj excluded change-keys)
-                        (into excluded change-keys)))))))))
+       (let [direction (get-in state [:workspace-branch-diff :direction] :branch->main)]
+         (update-in state [:workspace-branch-diff :excluded direction]
+                    (fn [excluded]
+                      (let [excluded (or excluded #{})
+                            include? (if (some? include?)
+                                       include?
+                                       (every? excluded change-keys))]
+                        (if include?
+                          (apply disj excluded change-keys)
+                          (into excluded change-keys))))))))))
+
+(defn- diff-items
+  "Every entry of the diff in `diff-state`, by its key (`item-key`)."
+  [diff-state]
+  (into {}
+        (map (juxt item-key identity))
+        (concat (get-in diff-state [:diff :changes])
+                (get-in diff-state [:diff :conflicts]))))
+
+(defn- set-diff-reviewed
+  "Keep `reviewed` as the review marks of the diff of `branch-id` in
+  `direction`, when that is still the one in the store."
+  [branch-id direction reviewed]
+  (ptk/reify ::set-diff-reviewed
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [diff-st (:workspace-branch-diff state)]
+        (if (and (= branch-id (:branch-id diff-st))
+                 (= direction (:direction diff-st)))
+          (assoc-in state [:workspace-branch-diff :reviewed] reviewed)
+          state)))))
+
+(defn fetch-diff-reviewed
+  "Load the changes the profile marked as reviewed in the comparison the
+  store holds. A mark counts while its change is still what it was when
+  it was marked (`change-fingerprint`): a layer that changed again asks
+  to be reviewed again. The marks are the profile's own and the same
+  inside and outside a design review. A failure leaves the marks as they
+  are."
+  []
+  (ptk/reify ::fetch-diff-reviewed
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [{:keys [branch-id direction status] :as diff-st} (:workspace-branch-diff state)]
+        (if (= :loaded status)
+          (let [items (diff-items diff-st)]
+            (->> (rp/cmd! :get-branch-change-reviews {:branch-id branch-id :direction direction})
+                 (rx/map (fn [marks]
+                           (set-diff-reviewed
+                            branch-id direction
+                            (into #{}
+                                  (keep (fn [{:keys [change-key fingerprint]}]
+                                          (when (= fingerprint
+                                                   (some-> (get items change-key) change-fingerprint))
+                                            change-key)))
+                                  marks))))
+                 (rx/catch (fn [_] (rx/empty)))))
+          (rx/empty))))))
 
 (defn toggle-diff-reviewed
-  "Mark the change `change-key` as reviewed in the compare dialog, or clear
-  the mark. `reviewed?` forces one side; nil flips it. The marks only
-  guide the review: the merge does not read them."
-  ([change-key] (toggle-diff-reviewed change-key nil))
-  ([change-key reviewed?]
+  "Mark the change `item-key` as reviewed in the compare mode, or clear
+  the mark. `reviewed?` forces one side; nil flips it. The mark shows at
+  once and is kept for the profile, with the fingerprint of the change
+  as it stands; if it cannot be kept, the marks are read again. The
+  marks only guide the review: the merge does not read them."
+  ([item-key] (toggle-diff-reviewed item-key nil))
+  ([item-key reviewed?]
    (ptk/reify ::toggle-diff-reviewed
      ptk/UpdateEvent
      (update [_ state]
@@ -507,19 +575,35 @@
                     (let [reviewed  (or reviewed #{})
                           reviewed? (if (some? reviewed?)
                                       reviewed?
-                                      (not (contains? reviewed change-key)))]
+                                      (not (contains? reviewed item-key)))]
                       (if reviewed?
-                        (conj reviewed change-key)
-                        (disj reviewed change-key)))))))))
+                        (conj reviewed item-key)
+                        (disj reviewed item-key))))))
+
+     ptk/WatchEvent
+     (watch [_ state _]
+       (let [{:keys [branch-id direction reviewed] :as diff-st} (:workspace-branch-diff state)
+             item (get (diff-items diff-st) item-key)]
+         ;; only a change of the diff has a mark to keep
+         (if (and (some? item) (uuid? branch-id))
+           (->> (rp/cmd! :set-branch-change-review
+                         {:branch-id branch-id
+                          :direction direction
+                          :change-key item-key
+                          :fingerprint (change-fingerprint item)
+                          :reviewed (contains? reviewed item-key)})
+                (rx/ignore)
+                (rx/catch (fn [_] (rx/of (fetch-diff-reviewed)))))
+           (rx/empty)))))))
 
 (defn clear-diff-excluded
-  "Drop the per-change selection: the compare dialog closes without
-  applying it."
+  "Drop the per-change selection of both directions: the compare mode
+  closes without applying it."
   []
   (ptk/reify ::clear-diff-excluded
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:workspace-branch-diff :excluded] #{}))))
+      (assoc-in state [:workspace-branch-diff :excluded] {}))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; BRANCH CONTEXT (banner when the open file is a branch)
@@ -575,43 +659,47 @@
                  (rx/catch (fn [_] (rx/of (set-branch-context file-id nil)))))))))))
 
 (defn open-conflict-resolutions
-  "Open the conflict-resolution modal and seed the store with the conflict set
-  the command just returned.
+  "Seed the store with the conflict set a merge or update just returned.
+  The compare mode reacts to this event and takes the user to resolve
+  them (`app.main.data.workspace.compare/watch-events`).
 
-  Those conflicts are authoritative for the whole modal: they are the very
-  ones the command's own `resolved?` matches against, while the diff the modal
-  can fetch on its own is computed in another id space and may list a
-  different set, or none at all. Keeping them in the store also lets the
-  bulk actions resolve the same set the modal shows.
+  Those conflicts are authoritative while they are resolved: they are the
+  very ones the command's own `resolved?` matches against, while the diff
+  the compare mode fetches on its own is computed in another id space and
+  may list a different set, or none at all.
 
   `main-revn` is main's revn when the command computed those conflicts. It
-  is stored with them because the modal's own diff fetch can still be in
-  flight when the user applies; see `conflict-main-revn`."
+  is stored with them because the diff fetch can still be in flight when
+  the user applies; see `conflict-main-revn`. `excluded` is the per-change
+  selection the attempt was made with and `comment` what the user said
+  about the merge: applying the resolutions sends both again."
   [{:keys [branch mode conflicts main-revn excluded comment]}]
   (ptk/reify ::open-conflict-resolutions
     ptk/UpdateEvent
     (update [_ state]
       (assoc state :workspace-branch-conflicts
              {:branch-id (:id branch)
+              :branch branch
               :mode mode
               :conflicts (vec conflicts)
-              :main-revn main-revn}))
-    ptk/WatchEvent
-    (watch [_ _ _]
-      ;; `excluded` is the per-change selection the merge/update attempt
-      ;; was made with, and `comment` what the user said about the merge;
-      ;; the resolution modal sends both again on retry
-      (rx/of (modal/show :branch-conflicts {:branch branch
-                                            :mode mode
-                                            :conflicts conflicts
-                                            :excluded excluded
-                                            :comment comment})))))
+              :main-revn main-revn
+              :excluded excluded
+              :comment comment}))))
+
+(defn close-conflict-resolutions
+  "Forget the conflict set of the last merge or update attempt: the user
+  left it unresolved."
+  []
+  (ptk/reify ::close-conflict-resolutions
+    ptk/UpdateEvent
+    (update [_ state]
+      (dissoc state :workspace-branch-conflicts))))
 
 (defn- conflict-main-revn
   "Main's revn when the server computed the conflict set stored for
   `branch-id`, or nil when the stored set belongs to another branch.
 
-  The resolution modal fetches its own diff when it opens, and that fetch
+  Resolving fetches the diff in its own direction, and that fetch
   replaces the loaded diff with a loading state until it answers. The user
   can resolve every conflict and apply inside that window, so merge and
   update fall back to this revn: resolutions never leave without the token
@@ -624,8 +712,8 @@
 
 (defn update-branch-from-main
   "Bring main's changes into the branch (reverse of merge). `branch` is the
-  branch row. With conflicts and no `resolutions`, opens the conflict
-  resolution modal in update mode; with resolutions, applies them.
+  branch row. With conflicts and no `resolutions`, hands them over to be
+  resolved (`open-conflict-resolutions`); with resolutions, applies them.
 
   Options (`opts`): `:resolutions` `{entity-id (:main|:branch)}` as below,
   and `:excluded`, the per-change selection (change keys,
@@ -666,8 +754,8 @@
                                         (reload-file-window))
                     ;; the returned conflicts are authoritative: they are the very
                     ;; ones the command computes `resolved?` against, and the diff
-                    ;; the modal could fetch on its own is computed in another id
-                    ;; space, which can disagree with them
+                    ;; fetched to compare is computed in another id space, which
+                    ;; can disagree with them
                     :conflicts   (rx/of (open-conflict-resolutions {:branch branch
                                                                     :mode :update
                                                                     :conflicts conflicts
@@ -713,36 +801,6 @@
     (update [_ state]
       (update-in state [:workspace-branch-diff :resolutions] dissoc id))))
 
-(defn set-conflict-attr-resolution
-  "Choose `:main` or `:branch` for a single attribute `attr` of a
-  conflicting entity, leaving the other attributes as they were. `attrs`
-  is the full set of the conflict's changed-attr keys, used to seed a
-  complete resolution map the first time a property is toggled (so the
-  conflict counts as resolved, with untouched attrs defaulting to the safe
-  `:main` side). Promotes a prior whole-entity keyword to a per-attr map."
-  [id attr choice attrs]
-  (ptk/reify ::set-conflict-attr-resolution
-    ptk/UpdateEvent
-    (update [_ state]
-      (update-in state [:workspace-branch-diff :resolutions id]
-                 (fn [cur]
-                   (let [seed (cond
-                                (map? cur)      cur
-                                (= cur :branch) (zipmap attrs (repeat :branch))
-                                :else           (zipmap attrs (repeat :main)))]
-                     (assoc seed attr choice)))))))
-
-(defn set-all-resolutions
-  "Bulk-resolve every current conflict to `:main` or `:branch`."
-  [choice]
-  (ptk/reify ::set-all-resolutions
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [conflicts (or (get-in state [:workspace-branch-conflicts :conflicts])
-                          (get-in state [:workspace-branch-diff :diff :conflicts]))
-            res       (into {} (map (fn [c] [(:id c) choice])) conflicts)]
-        (assoc-in state [:workspace-branch-diff :resolutions] res)))))
-
 (defn merge-branch
   "Merge `branch` (a branch row/context map with at least `:id`) into main.
   On success the server records the merge and deletes the branch and its
@@ -764,7 +822,8 @@
   computed against a stale diff (`:file-modified`); in that case the diff
   is re-fetched and the user is asked to review it again. Resolutions sent
   before that diff has loaded carry the revn of the conflict answer instead
-  (`conflict-main-revn`). Unresolved conflicts open the resolution modal."
+  (`conflict-main-revn`). Unresolved conflicts are handed over to be
+  resolved (`open-conflict-resolutions`)."
   ([branch] (merge-branch branch nil))
   ([branch {:keys [resolutions comment excluded notify-assignees]}]
    (assert (uuid? (:id branch)) "expected a branch row with a valid `:id`")

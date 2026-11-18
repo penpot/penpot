@@ -1,0 +1,44 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS SUBSIDIARY SL
+
+@use "ds/_borders.scss" as *;
+@use "ds/_utils.scss" as *;
+
+// main covers the first half of the canvas, after the rulers; its edge
+// is the divider
+.main-half {
+  position: absolute;
+  inset-block-end: 0;
+  overflow: hidden;
+  border-inline-end: $b-2 solid var(--color-background-quaternary);
+}
+
+.layer {
+  position: absolute;
+}
+
+.picture {
+  position: absolute;
+  max-inline-size: none;
+}
+
+// a layer the branch has and main lacks: the place it would take
+.is-missing {
+  border-style: dashed;
+}
+
+// each half says whose it is at its outer top corner: main at the start
+// of its half, the branch at the end of the canvas
+.label {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  margin: var(--sp-m);
+
+  &.is-branch {
+    inset-inline: auto 0;
+  }
+}

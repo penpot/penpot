@@ -1,0 +1,75 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS SUBSIDIARY SL
+
+@use "ds/_sizes.scss" as *;
+@use "ds/mixins.scss" as *;
+
+.compare-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+  min-block-size: 0;
+  padding-block-start: var(--sp-s);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+  min-block-size: $sz-32;
+  padding-inline: var(--sp-m) var(--sp-s);
+}
+
+.title {
+  flex: 1;
+  margin: 0;
+  color: var(--color-foreground-secondary);
+}
+
+.tabs {
+  --tabs-nav-padding-inline-start: var(--sp-s);
+  --tabs-nav-padding-inline-end: var(--sp-s);
+
+  flex: 1;
+  min-block-size: 0;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+  padding: var(--sp-s);
+
+  &.is-scrollable {
+    @include custom-scrollbar;
+
+    flex: 1;
+    min-block-size: 0;
+    overflow-block: auto;
+  }
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-xs);
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xxs);
+}
+
+.bulk {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-xs);
+}
+
+.empty {
+  padding: var(--sp-xxl) var(--sp-m);
+}

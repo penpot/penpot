@@ -40,10 +40,10 @@
    [app.main.ui.ds.product.task-status :refer [task-status*]]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.review.common :as rvc]
+   [app.main.ui.workspace.review.shape-preview :refer [shape-preview*]]
    [app.main.ui.workspace.review.tasks :as rvt]
    [app.main.ui.workspace.sidebar.branch-review.common :as brc]
    [app.main.ui.workspace.sidebar.branch-review.layout :as brl]
-   [app.main.ui.workspace.sidebar.branch-review.previews :as brp]
    [app.main.ui.workspace.sidebar.pull-requests :as prui :refer [pr-state-badge* dialog-header*]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -331,7 +331,7 @@
       [:> tag* {:tone (kind-tone (:kind entry))} (rvc/change-kind-label (:kind entry))]]
      [:div {:class (stl/css :change-card-preview)}
       (if (and (some? shape) (not= :deleted (:kind entry)))
-        [:> brp/shape-preview* {:shape shape :objects objects}]
+        [:> shape-preview* {:shape shape :objects objects}]
         [:div {:class (stl/css :deleted-preview)}])]
      (when (seq attrs)
        [:dl {:class (stl/css :attrs)}

@@ -50,8 +50,8 @@
 
 (defn- open-conflicts!
   "Ask for a `mode` (`:merge` or `:update`) of `branch` and let the conflict
-  answer open the modal, which then fetches its own diff in its direction,
-  as `branch-conflicts-dialog*` does on mount."
+  answer seed the store, as the compare mode then fetches the diff in the
+  direction it resolves (`app.main.data.workspace.compare/start-resolve`)."
   [store mode branch]
   (ptk/emit! store (if (= mode :update)
                      (dwb/update-branch-from-main branch)
@@ -60,9 +60,12 @@
                                           (if (= mode :update) :main->branch :branch->main))))
 
 (defn- apply-resolutions!
-  "Resolve every conflict to main and press Apply, as the modal does."
+  "Resolve every conflict to main and apply, as the compare mode does."
   [store mode branch]
-  (ptk/emit! store (dwb/set-all-resolutions :main))
+  (ptk/emit! store (dwb/set-conflict-resolutions
+                    (into {}
+                          (map (fn [conflict] [(:id conflict) :main]))
+                          (get-in @store [:workspace-branch-conflicts :conflicts]))))
   (let [resolutions (get-in @store [:workspace-branch-diff :resolutions])]
     (ptk/emit! store (if (= mode :update)
                        (dwb/update-branch-from-main branch {:resolutions resolutions})
@@ -90,7 +93,7 @@
                 (reset! calls [])
                 (open-conflicts! store mode branch)
                 (t/is (= :loading (get-in @store [:workspace-branch-diff :status]))
-                      "the modal's diff fetch has not answered")
+                      "the diff fetch has not answered")
                 (apply-resolutions! store mode branch)
                 (let [params (last-params calls mode)]
                   (t/is (= {conflict-id :main} (:resolutions params)))
@@ -113,7 +116,7 @@
                     store  (make-store)]
                 (reset! calls [])
                 (open-conflicts! store mode branch)
-                ;; the modal's diff fetch answers, computed at a newer main
+                ;; the diff fetch answers, computed at a newer main
                 (ptk/emit! store (dwb/update-branch-diff {:status :loaded
                                                           :diff {:meta {:main-revn 9}}}))
                 (apply-resolutions! store mode branch)
@@ -153,46 +156,60 @@
 
 ;;; --- Selective merge: the per-change selection ---
 
+(defn- excluded
+  "The per-change selection of the direction the diff of `store` shows."
+  [store]
+  (dwb/diff-excluded (:workspace-branch-diff @store)))
+
 (t/deftest the-per-change-selection-toggles-and-clears
   (let [store (make-store)
         k1 "color//aaaaaaaa/1"
         k2 "color//aaaaaaaa/2"]
     (t/testing "a row flips on its own"
       (ptk/emit! store (dwb/toggle-diff-excluded #{k1}))
-      (t/is (= #{k1} (get-in @store [:workspace-branch-diff :excluded])))
+      (t/is (= #{k1} (excluded store)))
       (ptk/emit! store (dwb/toggle-diff-excluded #{k1}))
-      (t/is (= #{} (get-in @store [:workspace-branch-diff :excluded]))))
+      (t/is (= #{} (excluded store))))
 
     (t/testing "a group sets every key of it to one side"
       (ptk/emit! store (dwb/toggle-diff-excluded #{k1 k2} false))
-      (t/is (= #{k1 k2} (get-in @store [:workspace-branch-diff :excluded])))
+      (t/is (= #{k1 k2} (excluded store)))
       (ptk/emit! store (dwb/toggle-diff-excluded #{k1} false))
-      (t/is (= #{k1 k2} (get-in @store [:workspace-branch-diff :excluded])))
+      (t/is (= #{k1 k2} (excluded store)))
       (ptk/emit! store (dwb/toggle-diff-excluded #{k1 k2} true))
-      (t/is (= #{} (get-in @store [:workspace-branch-diff :excluded]))))
+      (t/is (= #{} (excluded store))))
 
-    (t/testing "closing the compare dialog drops the selection"
+    (t/testing "leaving the comparison drops the selection"
       (ptk/emit! store (dwb/toggle-diff-excluded #{k1}))
       (ptk/emit! store (dwb/clear-diff-excluded))
-      (t/is (= #{} (get-in @store [:workspace-branch-diff :excluded]))))))
+      (t/is (= #{} (excluded store))))))
 
-(t/deftest a-refetch-of-the-same-comparison-keeps-the-selection
+(t/deftest each-direction-keeps-its-own-selection
   (t/async done
-    (let [calls (atom [])
-          branch {:id (uuid/next)}]
+    (let [calls  (atom [])
+          branch {:id (uuid/next)}
+          k1     "color//aaaaaaaa/1"
+          k2     "color//aaaaaaaa/2"]
       (mock/with-mocks
         {rp/cmd! (cmd-stub calls (uuid/next))}
         (fn [done']
           (let [store (make-store)]
             (ptk/emit! store (dwb/fetch-branch-diff (:id branch)))
-            (ptk/emit! store (dwb/toggle-diff-excluded #{"color//aaaaaaaa/1"}))
+            (ptk/emit! store (dwb/toggle-diff-excluded #{k1}))
             (t/testing "the same branch and direction refetches over the selection"
               (ptk/emit! store (dwb/fetch-branch-diff (:id branch)))
-              (t/is (= #{"color//aaaaaaaa/1"}
-                       (get-in @store [:workspace-branch-diff :excluded]))))
-            (t/testing "the other direction starts the selection over"
+              (t/is (= #{k1} (excluded store))))
+            (t/testing "the other direction has a selection of its own"
               (ptk/emit! store (dwb/fetch-branch-diff (:id branch) :main->branch))
-              (t/is (= #{} (get-in @store [:workspace-branch-diff :excluded]))))
+              (t/is (= #{} (excluded store)))
+              (ptk/emit! store (dwb/toggle-diff-excluded #{k2}))
+              (t/is (= #{k2} (excluded store))))
+            (t/testing "going back finds the first one as it was left"
+              (ptk/emit! store (dwb/fetch-branch-diff (:id branch)))
+              (t/is (= #{k1} (excluded store))))
+            (t/testing "another branch starts over"
+              (ptk/emit! store (dwb/fetch-branch-diff (uuid/next)))
+              (t/is (= #{} (excluded store))))
             (rx/dispose! store))
           (done'))
         done))))
@@ -235,16 +252,117 @@
             (ptk/emit! store (dwb/merge-branch branch {:comment "  Ships the header  "}))
             (t/is (= "Ships the header" (:comment (last-params calls :merge)))
                   "the comment is trimmed")
-            (t/testing "the conflict answer hands the comment to the modal"
-              (t/is (= :branch-conflicts (get-in @store [::modal/modal :type])))
+            (t/testing "the conflict answer keeps the comment for the retry"
               (t/is (= "  Ships the header  "
-                       (get-in @store [::modal/modal :props :comment]))))
+                       (get-in @store [:workspace-branch-conflicts :comment]))))
             (t/testing "a blank comment sends no `:comment` at all"
               (ptk/emit! store (dwb/merge-branch branch {:comment "   "}))
               (t/is (not (contains? (last-params calls :merge) :comment))))
             (rx/dispose! store))
           (done'))
         done))))
+
+;;; --- Review marks: kept for the profile, dropped when the change moves ---
+
+(def ^:private title
+  {:kind :shape :status :modified :id (uuid/next) :key "shape/p/title"
+   :changed-attrs {:opacity {:main 1 :branch 0.5}}})
+
+(def ^:private logo
+  {:kind :shape :status :modified :id (uuid/next) :key "shape/p/logo"
+   :changed-attrs {:rx {:main 0 :branch 8}}})
+
+(defn- review-stub
+  "Fake `rp/cmd!` for a comparison that lists `title` and `logo`: the diff
+  answers at once, the marks answer with `marks`, and keeping a mark
+  fails when `fail-set?` holds. Every call is recorded into `calls`."
+  [calls marks fail-set?]
+  (mock/stub (fn [cmd params]
+               (swap! calls conj [cmd params])
+               (case cmd
+                 :get-branch-diff           (rx/of {:changes [title logo] :conflicts []})
+                 :get-branch-change-reviews (rx/of @marks)
+                 :set-branch-change-review  (if fail-set?
+                                              (rx/throw (ex-info "refused" {}))
+                                              (rx/of nil))
+                 (rx/empty)))))
+
+(defn- last-call
+  "Params of the last call of `cmd` recorded in `calls`."
+  [calls cmd]
+  (->> @calls (filter #(= cmd (first %))) (last) (second)))
+
+(defn- reviewed
+  [store]
+  (get-in @store [:workspace-branch-diff :reviewed]))
+
+(t/deftest ^:async a-mark-counts-while-its-change-is-what-it-was
+  (let [calls  (atom [])
+        branch {:id (uuid/next)}
+        marks  (atom [{:change-key (:key title) :fingerprint (dwb/change-fingerprint title)}
+                      ;; the logo changed again after it was marked
+                      {:change-key (:key logo) :fingerprint "what-it-was-before"}
+                      ;; a change the comparison no longer lists
+                      {:change-key "shape/p/gone" :fingerprint "x"}])]
+    (await
+     (mock/with-mocks* {rp/cmd! (review-stub calls marks false)}
+       (let [store (make-store)]
+         (ptk/emit! store (dwb/fetch-branch-diff (:id branch)))
+         (await (async/wait-for-store store #(seq (reviewed store)) "the marks load"))
+         (t/is (= #{(:key title)} (reviewed store)))
+         (t/is (= {:branch-id (:id branch) :direction :branch->main}
+                  (last-call calls :get-branch-change-reviews))
+               "the marks are the ones of the direction compared")
+         (rx/dispose! store))))))
+
+(t/deftest ^:async marking-a-change-keeps-it-with-its-fingerprint
+  (let [calls  (atom [])
+        branch {:id (uuid/next)}
+        marks  (atom [])]
+    (await
+     (mock/with-mocks* {rp/cmd! (review-stub calls marks false)}
+       (let [store (make-store)]
+         (ptk/emit! store (dwb/fetch-branch-diff (:id branch)))
+         (await (async/wait-for #(some? (last-call calls :get-branch-change-reviews))
+                                "the marks are asked for"))
+         (ptk/emit! store (dwb/toggle-diff-reviewed (:key logo) true))
+         (t/is (= #{(:key logo)} (reviewed store)) "the mark shows at once")
+         (await (async/wait-for #(some? (last-call calls :set-branch-change-review))
+                                "the mark is kept"))
+         (t/is (= {:branch-id (:id branch)
+                   :direction :branch->main
+                   :change-key (:key logo)
+                   :fingerprint (dwb/change-fingerprint logo)
+                   :reviewed true}
+                  (last-call calls :set-branch-change-review)))
+         (ptk/emit! store (dwb/toggle-diff-reviewed (:key logo)))
+         (t/is (= #{} (reviewed store)) "without a side it flips")
+         (await (async/wait-for #(false? (:reviewed (last-call calls :set-branch-change-review)))
+                                "the mark is cleared"))
+         (rx/dispose! store))))))
+
+(t/deftest ^:async a-mark-that-cannot-be-kept-does-not-stay
+  (let [calls  (atom [])
+        branch {:id (uuid/next)}
+        marks  (atom [])]
+    (await
+     (mock/with-mocks* {rp/cmd! (review-stub calls marks true)}
+       (let [store (make-store)]
+         (ptk/emit! store (dwb/fetch-branch-diff (:id branch)))
+         (await (async/wait-for #(some? (last-call calls :get-branch-change-reviews))
+                                "the marks are asked for"))
+         (ptk/emit! store (dwb/toggle-diff-reviewed (:key title) true))
+         (await (async/wait-for-store store #(empty? (reviewed store))
+                                      "the marks are read again"))
+         (t/is (= #{} (reviewed store)))
+         (rx/dispose! store))))))
+
+(t/deftest the-fingerprint-follows-what-the-change-is
+  (t/is (= (dwb/change-fingerprint title) (dwb/change-fingerprint (assoc title :label "Title"))))
+  (t/is (not= (dwb/change-fingerprint title)
+              (dwb/change-fingerprint (assoc-in title [:changed-attrs :opacity :branch] 0.6))))
+  (t/is (not= (dwb/change-fingerprint title)
+              (dwb/change-fingerprint (assoc title :status :deleted)))))
 
 ;;; --- Branch switcher: the entry point of the menu and the shortcut ---
 

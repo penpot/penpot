@@ -30,6 +30,8 @@
    [app.main.ui.hooks :as hooks]
    [app.main.ui.hooks.resize :refer [use-resize-hook]]
    [app.main.ui.workspace.comments :refer [comments-sidebar*]]
+   [app.main.ui.workspace.compare.detail :refer [compare-detail*]]
+   [app.main.ui.workspace.compare.list :refer [compare-list*]]
    [app.main.ui.workspace.left-header :refer [left-header*]]
    [app.main.ui.workspace.review.panel :refer [review-panel*]]
    [app.main.ui.workspace.right-header :refer [right-header*]]
@@ -129,6 +131,8 @@
         design-tokens? (features/use-feature "design-tokens/v1")
         ;; a design review is read-only: it shows the pages and layers alone
         reviewing?     (some? (mf/deref refs/pull-request-preview))
+        ;; comparing the branch with main, the changes take their place
+        comparing?     (some? (mf/deref refs/compare-mode))
         mode-inspect?  (or reviewing? (= options-mode :inspect))
         shortcuts?     (contains? layout :shortcuts)
         show-debug?    (contains? layout :debug-panel)
@@ -205,6 +209,9 @@
 
         (true? show-debug?)
         [:> debug-panel* {:class (stl/css :left-sidebar-content)}]
+
+        ^boolean comparing?
+        [:> compare-list* {:class (stl/css :left-sidebar-content)}]
 
         ^boolean reviewing?
         [:div {:class (stl/css :left-sidebar-content)}
@@ -295,6 +302,10 @@
 (mf/defc right-sidebar*
   [{:keys [layout section file-id page-id drawing-tool active-tokens] :as props}]
   (let [reviewing?       (some? (mf/deref refs/pull-request-preview))
+        ;; comparing the branch with main, the panel shows the change
+        ;; chosen; a commenting tool brings the comments and tasks back
+        is-comparing?    (and (some? (mf/deref refs/compare-mode))
+                              (not= drawing-tool :comments))
         is-comments?     (and (not reviewing?) (= drawing-tool :comments))
         is-history?      (contains? layout :document-history)
         is-scale?        (contains? layout :scale-text)
@@ -362,6 +373,9 @@
 
        [:div {:class (stl/css :right-sidebar-content)}
         (cond
+          (and is-comparing? (not is-history?))
+          [:> compare-detail* {}]
+
           ;; inside a design review the panel shows the inspect of the
           ;; selection (the same one the workspace has) and the comments and
           ;; tasks of the review

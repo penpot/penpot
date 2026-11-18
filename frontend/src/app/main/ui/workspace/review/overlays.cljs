@@ -29,32 +29,89 @@
    [app.util.keyboard :as kbd]
    [rumext.v2 :as mf]))
 
-(defn- screen-rect
-  "The box of `shape` on the screen, inside a layer translated by the
-  viewbox."
-  [shape zoom]
-  (let [{:keys [x y width height]} (:selrect shape)]
-    #js {:left (dm/str (* x zoom) "px")
-         :top (dm/str (* y zoom) "px")
-         :width (dm/str (* width zoom) "px")
-         :height (dm/str (* height zoom) "px")}))
+(defn screen-rect
+  "The box `rect` (canvas coordinates) on the screen, inside a layer
+  translated by the viewbox."
+  [{:keys [x y width height]} zoom]
+  #js {:left (dm/str (* x zoom) "px")
+       :top (dm/str (* y zoom) "px")
+       :width (dm/str (* width zoom) "px")
+       :height (dm/str (* height zoom) "px")})
+
+(defn viewbox-offset
+  "The style that moves a layer covering the viewport to the origin of
+  the canvas, so what it holds is placed in canvas coordinates."
+  [vbox zoom]
+  #js {:transform (dm/fmt "translate(%px, %px)"
+                          (* (- (:x vbox)) zoom)
+                          (* (- (:y vbox)) zoom))})
 
 ;; --- Changes
 
 (mf/defc change-box*
-  {::mf/private true}
-  [{:keys [entry shape zoom is-active]}]
-  (let [kind (:kind entry)]
-    [:div {:class (stl/css-case :change-box true
+  "The mark of a change on the canvas: a dashed box around `rect` with a
+  tag that says what happened, in the `tone` of its status. The active
+  one is drawn solid. With `on-click` the tag is a button; the box itself
+  never takes the pointer, so the canvas under it stays usable."
+  [{:keys [class rect zoom label tone is-active on-click children] :rest props}]
+  (let [tag-class (stl/css-case :change-tag true
                                 :is-active is-active
-                                :is-added (= kind :added))
-           :style (screen-rect shape zoom)}
-     [:span {:class (stl/css-case :change-tag true
-                                  :is-active is-active
-                                  :is-added (= kind :added))}
-      (if is-active
-        (tr "workspace.review.text-and-detail" (:name shape) (rvc/change-kind-label kind))
-        (rvc/change-kind-label kind))]]))
+                                :is-button (some? on-click))
+        props     (mf/spread-props props
+                                   {:class [class (stl/css-case :change-box true
+                                                                :is-active is-active
+                                                                :tone-success (= tone "success")
+                                                                :tone-error (= tone "error")
+                                                                :tone-warning (= tone "warning"))]
+                                    :style (screen-rect rect zoom)})]
+    [:> :div props
+     (if (some? on-click)
+       [:button {:class tag-class :on-click on-click} label]
+       [:span {:class tag-class} label])
+     children]))
+
+(mf/defc navigator*
+  "A bar over the canvas that goes through a list one entry at a time:
+  the arrows, the place in the list and, after them, what the entry is
+  and what can be done with it (`children`). It stands over the bar at
+  the bottom of the canvas, in the middle of the canvas the rulers leave
+  as that bar is, and over its strip when that bar is folded
+  (`is-lowered`)."
+  [{:keys [class index total tone is-lowered on-previous on-next children] :rest props}]
+  (let [rulers? (mf/deref refs/rulers?)
+        props (mf/spread-props props
+                               {:class [class (stl/css-case :navigator true
+                                                            :has-rulers rulers?
+                                                            :is-lowered is-lowered
+                                                            :tone-warning (= tone "warning"))]
+                                :role "region"})]
+    [:> :div props
+     [:> icon-button* {:variant "ghost"
+                       :icon i/arrow-left
+                       :aria-label (tr "workspace.review.changes.previous")
+                       :disabled (zero? total)
+                       :on-click on-previous}]
+     [:> text* {:as "span" :typography t/body-small :class (stl/css :navigator-count)}
+      (tr "workspace.review.changes.position" (if (pos? total) (inc index) 0) total)]
+     [:> icon-button* {:variant "ghost"
+                       :icon i/arrow-right
+                       :aria-label (tr "workspace.review.changes.next")
+                       :disabled (zero? total)
+                       :on-click on-next}]
+     children]))
+
+(mf/defc navigator-text*
+  "What the entry of a `navigator*` is: its `name` and a `detail`."
+  [{:keys [name detail]}]
+  [:> text* {:as "span" :typography t/body-small :class (stl/css :navigator-text)}
+   (when name
+     [:strong {:class (stl/css :navigator-name)} name])
+   (when name " ")
+   detail])
+
+(mf/defc navigator-separator*
+  []
+  [:div {:class (stl/css :navigator-separator)}])
 
 (mf/defc changes-navigator*
   "The bar that goes through the changes shown on the canvas."
@@ -67,32 +124,19 @@
         on-back  (mf/use-fn #(st/emit! (dwrv/back-to-details)))
         on-close (mf/use-fn #(st/emit! (dwrv/hide-changes)))]
 
-    [:div {:class (stl/css :navigator)
-           :role "region"
-           :aria-label (tr "workspace.review.changes.label")}
-     [:> icon-button* {:variant "ghost"
-                       :icon i/arrow-left
-                       :aria-label (tr "workspace.review.changes.previous")
-                       :disabled (zero? total)
-                       :on-click on-prev}]
-     [:> text* {:as "span" :typography t/body-small :class (stl/css :navigator-count)}
-      (tr "workspace.review.changes.position" (if (pos? total) (inc index) 0) total)]
-     [:> icon-button* {:variant "ghost"
-                       :icon i/arrow-right
-                       :aria-label (tr "workspace.review.changes.next")
-                       :disabled (zero? total)
-                       :on-click on-next}]
+    [:> navigator* {:index index
+                    :total total
+                    :aria-label (tr "workspace.review.changes.label")
+                    :on-previous on-prev
+                    :on-next on-next}
      (if (some? entry)
-       [:> text* {:as "span" :typography t/body-small :class (stl/css :navigator-text)}
-        [:strong {:class (stl/css :navigator-name)} (:name entry)]
-        " "
-        (tr "workspace.review.changes.by"
-            (rvc/change-kind-label-lower (:kind entry))
-            (rvc/profile-name profiles (:profile-id entry))
-            (ct/format-inst (:changed-at entry) :localized-time))]
-       [:> text* {:as "span" :typography t/body-small :class (stl/css :navigator-text)}
-        (tr "workspace.review.changes.none")])
-     [:div {:class (stl/css :navigator-separator)}]
+       [:> navigator-text* {:name (:name entry)
+                            :detail (tr "workspace.review.changes.by"
+                                        (rvc/change-kind-label-lower (:kind entry))
+                                        (rvc/profile-name profiles (:profile-id entry))
+                                        (ct/format-inst (:changed-at entry) :localized-time))}]
+       [:> navigator-text* {:detail (tr "workspace.review.changes.none")}])
+     [:> navigator-separator* {}]
      [:> button* {:variant "ghost" :on-click on-back}
       (tr "workspace.review.changes.back")]
      [:> icon-button* {:variant "ghost"
@@ -118,15 +162,22 @@
                   (into [] d/xf:add-index entries))]
     [:*
      (for [entry entries]
-       (let [shape (get objects (:id entry))]
+       (let [shape   (get objects (:id entry))
+             kind    (:kind entry)
+             active? (= (::d/index entry) index)]
          (when (and (= page-id (:page-id entry))
                     (some? shape)
                     (not (cfh/root? shape)))
            [:> change-box* {:key (dm/str (:id entry))
-                            :entry entry
-                            :shape shape
+                            :class (stl/css :review-change)
+                            :rect (:selrect shape)
                             :zoom zoom
-                            :is-active (= (::d/index entry) index)}])))]))
+                            :tone (when (= kind :added) "success")
+                            :label (if active?
+                                     (tr "workspace.review.text-and-detail"
+                                         (:name shape) (rvc/change-kind-label kind))
+                                     (rvc/change-kind-label kind))
+                            :is-active active?}])))]))
 
 ;; --- Picking the layer of a task
 
@@ -178,13 +229,12 @@
             :on-click on-click}
       (when (some? hover)
         [:div {:class (stl/css :threads)
-               :style #js {:transform (dm/fmt "translate(%px, %px)"
-                                              (* (- (:x vbox)) zoom)
-                                              (* (- (:y vbox)) zoom))}}
-         [:div {:class (stl/css :change-box :is-active)
-                :style (screen-rect hover zoom)}
-          [:span {:class (stl/css :change-tag :is-active :is-pick)}
-           (tr "workspace.tasks.relink.link-to" (:name hover))]]])]
+               :style (viewbox-offset vbox zoom)}
+         [:> change-box* {:rect (:selrect hover)
+                          :zoom zoom
+                          :class (stl/css :is-pick)
+                          :label (tr "workspace.tasks.relink.link-to" (:name hover))
+                          :is-active true}]])]
      [:div {:class (stl/css :picker-banner)
             :role "status"}
       [:> icon* {:icon-id i/view-as-list :size "s" :class (stl/css :picker-icon)}]
@@ -212,9 +262,7 @@
        (when (some? show-changes)
          [:*
           [:div {:class (stl/css :threads)
-                 :style #js {:transform (dm/fmt "translate(%px, %px)"
-                                                (* (- (:x vbox)) zoom)
-                                                (* (- (:y vbox)) zoom))}}
+                 :style (viewbox-offset vbox zoom)}
            [:> change-boxes* {:entries entries
                               :zoom zoom
                               :page-id page-id

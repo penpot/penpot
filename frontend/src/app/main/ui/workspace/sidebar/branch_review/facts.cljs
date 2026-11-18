@@ -5,7 +5,7 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.sidebar.branch-review.facts
-  "What the detail pane says about an entry that has no before and after:
+  "What the detail says about an entry that has no before and after:
   a new or deleted page or layer, and the library entries other layers
   depend on. It answers what the entry is, where it lands and what it
   affects, from the open file and, for a layer it lacks, from the diff.
@@ -17,11 +17,10 @@
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.foundations.typography :as t]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
-   [app.main.ui.ds.product.preview-card :refer [preview-card*]]
    [app.main.ui.ds.product.tag :refer [tag*]]
    [app.main.ui.workspace.sidebar.branch-review.common :as brc]
    [app.main.ui.workspace.sidebar.branch-review.layout :as brl]
-   [app.main.ui.workspace.sidebar.branch-review.previews :as brp]
+   [app.main.ui.workspace.sidebar.branch-review.sides :as brs]
    [app.util.i18n :as i18n :refer [tr]]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
@@ -58,52 +57,33 @@
 ;; --- Pages
 
 (mf/defc page-facts*
-  "A new or deleted page: what it holds, drawn and counted, and the
-  changes listed on it (`children`)."
-  [{:keys [item data open-side incoming change-count children]}]
+  "A new or deleted page: what it holds, counted, when the open file has
+  it."
+  [{:keys [item data incoming]}]
   (let [page     (get-in data [:pages-index (:id item)])
         deleted? (= :deleted (:status item))
         {:keys [boards layers]} (when page (brc/page-contents page))
         names    (map :name boards)]
-    [:*
-     (if page
-       [:*
-        [:> preview-card* {:label (brc/side-label open-side)
-                           :side (name open-side)
-                           :detail (:name page)}
-         [:> brp/page-preview* {:objects (:objects page)}]]
-        [:> fact-list*
-         {:rows [[(tr "workspace.branches.review.facts.contents")
-                  (if (zero? layers)
-                    (tr "workspace.branches.review.facts.empty-page")
-                    (dm/str (tr "workspace.branches.review.facts.boards" (i18n/c (count boards)))
-                            " - "
-                            (tr "workspace.branches.review.facts.layers" (i18n/c layers))))]
-                 (when (seq names)
-                   [(tr "workspace.branches.review.facts.board-names")
-                    (names-line names)])]}]
-        (when (and deleted? (pos? layers))
-          [:> brl/notice* {:level :warning
-                           :title (tr "workspace.branches.review.facts.page-goes")}
-           (let [boards (tr "workspace.branches.review.facts.boards" (i18n/c (count boards)))
-                 layers (tr "workspace.branches.review.facts.layers" (i18n/c layers))]
-             (if incoming
-               (tr "workspace.branches.review.facts.page-goes-update" boards layers)
-               (tr "workspace.branches.review.facts.page-goes-merge" boards layers)))])]
-
-       [:> preview-card* {:label (brc/side-label (if (= open-side :main) :branch :main))
-                          :side (if (= open-side :main) "branch" "main")}
-        [:> brp/entity-preview* {:kind :page
-                                 :value nil
-                                 :missing {:reason :unavailable
-                                           :side (if (= open-side :main) :branch :main)
-                                           :open-side open-side}}]])
-
-     (when (pos? change-count)
-       [:div {:class (stl/css :section)}
-        [:> section-title* {}
-         (tr "workspace.branches.review.facts.changes-on-page" (str change-count))]
-        [:div {:class (stl/css :inner-list)} children]])]))
+    (when page
+      [:*
+       [:> fact-list*
+        {:rows [[(tr "workspace.branches.review.facts.contents")
+                 (if (zero? layers)
+                   (tr "workspace.branches.review.facts.empty-page")
+                   (dm/str (tr "workspace.branches.review.facts.boards" (i18n/c (count boards)))
+                           " - "
+                           (tr "workspace.branches.review.facts.layers" (i18n/c layers))))]
+                (when (seq names)
+                  [(tr "workspace.branches.review.facts.board-names")
+                   (names-line names)])]}]
+       (when (and deleted? (pos? layers))
+         [:> brl/notice* {:level :warning
+                          :title (tr "workspace.branches.review.facts.page-goes")}
+          (let [boards (tr "workspace.branches.review.facts.boards" (i18n/c (count boards)))
+                layers (tr "workspace.branches.review.facts.layers" (i18n/c layers))]
+            (if incoming
+              (tr "workspace.branches.review.facts.page-goes-update" boards layers)
+              (tr "workspace.branches.review.facts.page-goes-merge" boards layers)))])])))
 
 ;; --- Layers
 
@@ -164,7 +144,7 @@
   (let [{:keys [interactions flows layouts]}
         (mf/with-memo [item items objects inner incoming]
           (brc/shape-effects item items objects inner incoming))
-        names    (mapv (comp :label second) inner)
+        names    (mapv :label inner)
         deleted? (= :deleted (:status item))
         rows     (cond-> (mapv layout-row layouts)
                    (seq names)
@@ -197,19 +177,20 @@
   (let [open-objs (get-in data [:pages-index (:page-id item) :objects])
         ;; a layer the open file lacks is read on the other side, where
         ;; the changes of `items` put it and its deleted parents back
-        objects  (mf/with-memo [open-objs items item open-side]
+        objects  (mf/with-memo [open-objs items item open-side incoming]
                    (if (or (contains? open-objs (:id item)) (nil? open-objs))
                      open-objs
-                     (brp/side-objects open-objs
+                     (brs/side-objects open-objs
                                        (filterv #(= (:page-id item) (:page-id %)) items)
                                        (if (= open-side :main) :branch :main)
-                                       open-side)))
+                                       open-side
+                                       (if incoming :main :branch))))
         shape    (get objects (:id item))
         page     (get-in data [:pages-index (:page-id item) :name])
         deleted? (= :deleted (:status item))
         type-lbl (brc/type-label item)
         copies   (when (and deleted? shape (:main-instance shape))
-                   (brc/component-copies data (:component-id shape)))]
+                   (count (brc/usages data {:kind :component :id (:component-id shape)})))]
     (when shape
       [:*
        [:> fact-list*
@@ -229,21 +210,12 @@
 
 ;; --- Library entries other layers depend on
 
-(defn- usages
-  [item data]
-  (case (:kind item)
-    :component  (brc/component-copies data (:id item))
-    :color      (brc/color-usages data (:id item))
-    :typography (brc/typography-usages data (:id item))
-    :token      (brc/token-usages data (:label item))
-    nil))
-
 (mf/defc usage-facts*
   "How many layers of the open file depend on a component, colour,
   typography or token, and what a merge does to them when it deletes
   it."
   [{:keys [item data]}]
-  (let [n        (usages item data)
+  (let [n        (some-> (brc/usages data item) count)
         deleted? (= :deleted (:status item))
         kind     (:kind item)]
     (when (some? n)

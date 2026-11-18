@@ -1,0 +1,91 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS SUBSIDIARY SL
+
+@use "ds/_borders.scss" as *;
+@use "ds/_utils.scss" as *;
+
+.overlays {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.marks {
+  position: absolute;
+}
+
+// beside the layer in conflict, after it; before it (`is-before`) when
+// the canvas has no room left there. Its width is `popover-width`
+.popover {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: calc(100% + var(--sp-s));
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+  inline-size: px2rem(240);
+  padding: var(--sp-m);
+  border: $b-1 solid var(--color-accent-warning);
+  border-radius: $br-8;
+  background-color: var(--color-background-primary);
+  pointer-events: auto;
+
+  &.is-before {
+    inset-inline: auto calc(100% + var(--sp-s));
+  }
+}
+
+.popover-title {
+  margin: 0;
+  color: var(--color-foreground-primary);
+}
+
+.popover-text {
+  margin: 0;
+  color: var(--color-foreground-secondary);
+}
+
+// what the canvas says of itself, under the toolbar at the top center
+// of the canvas: what it shows when it is not the branch as it is, and
+// that both halves move together
+.notes {
+  position: absolute;
+  inset-block-start: px2rem(96);
+  inset-inline-start: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-xs);
+}
+
+.note {
+  padding: var(--sp-xxs) var(--sp-s);
+  border-radius: $br-4;
+  background-color: var(--color-background-quaternary);
+  color: var(--color-foreground-primary);
+  white-space: nowrap;
+
+  &.is-quiet {
+    color: var(--color-foreground-secondary);
+  }
+}
+
+// the bar that goes through the list keeps one width, whatever the entry
+// says: its arrows and its action stay where they are from one entry to
+// the next, and the text is cut short when it does not fit
+.navigator {
+  --navigator-count-size: 7ch;
+
+  inline-size: px2rem(640);
+}
+
+.navigator-action {
+  flex-shrink: 0;
+  white-space: nowrap;
+}

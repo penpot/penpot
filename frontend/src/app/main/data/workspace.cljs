@@ -46,6 +46,7 @@
    [app.main.data.workspace.colors :as dwcl]
    [app.main.data.workspace.comments :as dwcm]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.compare :as dwcmp]
    [app.main.data.workspace.drawing :as dwd]
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.fix-deleted-fonts :as fdf]
@@ -528,6 +529,10 @@
                ;; Keep comment thread positions in sync on undo/redo
                (rx/of (dwcm/watch-comment-thread-position-changes stoper-s))
 
+               ;; The conflicts of a merge or an update are resolved on
+               ;; the canvas, in the compare mode
+               (rx/of (dwcmp/watch-events stoper-s))
+
                ;; Resize auto-grow text shapes whose selrect does not match
                ;; the WASM text layout once their fonts finish loading.
                (->> stream
@@ -625,6 +630,8 @@
           ;; FIXME: revisit
           (dissoc
            :current-file-id
+           :workspace-branch-diff
+           :workspace-compare
            :workspace-editor-state
            :workspace-wasm-editor-styles
            :workspace-media-objects

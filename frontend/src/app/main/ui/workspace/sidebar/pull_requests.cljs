@@ -13,11 +13,13 @@
   review / details modals and the review-sandbox banner."
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.main.data.modal :as modal]
    [app.main.data.team :as dtm]
+   [app.main.data.workspace.compare :as dwcp]
    [app.main.data.workspace.pull-requests :as dwpr]
    [app.main.data.workspace.review :as dwrv]
    [app.main.refs :as refs]
@@ -33,8 +35,8 @@
    [app.main.ui.ds.layout.modal :refer [modal* modal-header* modal-content* modal-footer*]]
    [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
    [app.main.ui.ds.product.avatar :refer [avatar*]]
-   [app.main.ui.ds.product.progress-bar :refer [progress-bar*]]
    [app.main.ui.ds.tooltip :refer [tooltip*]]
+   [app.main.ui.workspace.compare.common :as cc]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
@@ -98,11 +100,11 @@
    :conflicts (:conflicts pr)})
 
 (defn open-compare!
-  "Open the branching compare dialog on the pull request's branch, so the
+  "Compare the pull request's branch with main on the canvas, so the
   proposed changes can be inspected. Like merging, it diffs the LIVE
-  branch against main."
+  branch against main. The branch is the open file inside its review."
   [pr]
-  (modal/show! :branch-compare {:branch (pr->branch pr) :is-review true}))
+  (st/emit! (dwcp/enter (pr->branch pr))))
 
 (defn confirm-merge!
   "Open the branching merge dialog for the pull request's branch:
@@ -525,6 +527,60 @@
 
 ;; --- Review bar (replaces the branch banner inside a design review)
 
+(mf/defc compare-banner-content*
+  "What the review bar says and offers while the branch of the review is
+  compared with main, or its conflicts are resolved: the comparison, how
+  far along it is, its main action and the way back to the review. Only
+  who may merge gets the action that merges."
+  {::mf/private true}
+  [{:keys [pr can-merge]}]
+  (let [comparison (cc/use-comparison)
+        resolving? (= :resolve (:phase comparison))
+        {:keys [icon title progress exit action]} (cc/bar comparison)]
+    [:div {:class (stl/css :pr-banner-content)}
+     [:div {:class (stl/css :pr-banner-icon)}
+      [:> i/icon* {:icon-id icon}]]
+     [:div {:class (stl/css :pr-banner-text)}
+      (if resolving?
+        [:span {:class (stl/css :pr-banner-name)} title]
+        [:*
+         [:span {:class (stl/css :pr-banner-title)}
+          (tr "workspace.compare.bar.comparing")]
+         [:span {:class (stl/css :pr-banner-name)}
+          (if (:incoming comparison)
+            (tr "workspace.review.route" (tr "workspace.branches.main") (:branch-name pr))
+            (tr "workspace.review.route" (:branch-name pr) (tr "workspace.branches.main")))]])]
+
+     (when (some? progress)
+       [:*
+        [:div {:class (stl/css :pr-banner-separator)}]
+        [:span {:class (stl/css :pr-banner-title)} progress]])
+
+     [:div {:class (stl/css :pr-banner-separator)}]
+
+     [:div {:class (stl/css :pr-banner-actions)}
+      (when (and (some? action) (or can-merge (not (:merge action))))
+        [:> button* {:variant "primary"
+                     :icon (:icon action)
+                     :disabled (boolean (:disabled action))
+                     :on-click (:on-click action)}
+         (:label action)])
+      [:> button* {:variant "ghost" :on-click (:on-click exit)}
+       (:label exit)]]]))
+
+(defn canvas-center
+  "The middle of the canvas, in pixels from the left of the window. The bar of
+  the branch and the one of the review center there and not on the window, or
+  at a usual width they would cover the folded palettes, on the left of the
+  canvas. The rulers take their side of it."
+  [vport rulers?]
+  (let [left-sidebar (dom/get-element "left-sidebar-aside")
+        left         (-> (dom/get-data left-sidebar "width")
+                         (d/parse-integer)
+                         (d/nilv 0))
+        rulers       (if rulers? 22 0)]
+    (+ left rulers (/ (- (:width vport) rulers) 2))))
+
 (mf/defc pr-review-banner*
   "The bar at the bottom of the canvas inside a design review: the review
   being reviewed, the progress of its tasks, its details, the verdict of
@@ -536,7 +592,10 @@
   that says the branch has changes they cannot see yet."
   []
   (let [preview    (mf/deref refs/pull-request-preview)
+        vport      (mf/deref refs/workspace-vport)
+        rulers?    (mf/deref refs/rulers?)
         pr         (:info preview)
+        comparing? (some? (mf/deref refs/compare-mode))
         profile    (mf/deref refs/profile)
         team       (mf/deref refs/team)
         tasks*     (mf/deref refs/tasks)
@@ -587,69 +646,71 @@
 
     (when (some? pr)
       [:div {:class (stl/css :pr-banner)
+             :style (when (some? vport)
+                      #js {"insetInlineStart" (dm/str (canvas-center vport rulers?) "px")})
              :role "region"
              :aria-label (tr "workspace.review.bar.label")}
-       [:div {:class (stl/css :pr-banner-content)}
-        [:div {:class (stl/css :pr-banner-icon)}
-         [:> i/icon* {:icon-id i/git-pull-request-arrow}]]
-        [:div {:class (stl/css :pr-banner-text)}
-         [:span {:class (stl/css :pr-banner-title)}
-          (tr "workspace.pull-requests.banner.reviewing")]
-         [:span {:class (stl/css :pr-banner-name)} (:title pr)]
-         ;; the author publishes them with the button instead
-         (when (and outdated? (not author?))
-           [:> tooltip* {:content (tr "workspace.pull-requests.badge.outdated-hint")
-                         :placement "top"}
-            [:span {:class (stl/css :pr-badge :badge-outdated)}
-             (tr "workspace.pull-requests.badge.outdated")]])]
+       ;; while its branch is compared with main, the bar belongs to the
+       ;; comparison
+       (if comparing?
+         [:> compare-banner-content* {:pr pr :can-merge can-merge?}]
+         [:div {:class (stl/css :pr-banner-content)}
+          [:div {:class (stl/css :pr-banner-icon)}
+           [:> i/icon* {:icon-id i/git-pull-request-arrow}]]
+          [:div {:class (stl/css :pr-banner-text)}
+           [:span {:class (stl/css :pr-banner-title)}
+            (tr "workspace.pull-requests.banner.reviewing")]
+           [:span {:class (stl/css :pr-banner-name)} (:title pr)]
+           ;; the author publishes them with the button instead
+           (when (and outdated? (not author?))
+             [:> tooltip* {:content (tr "workspace.pull-requests.badge.outdated-hint")
+                           :placement "top"}
+              [:span {:class (stl/css :pr-badge :badge-outdated)}
+               (tr "workspace.pull-requests.badge.outdated")]])]
 
-        [:div {:class (stl/css :pr-banner-separator)}]
+          [:div {:class (stl/css :pr-banner-separator)}]
 
-        ;; the progress of the tasks shows once the review has any
-        (when (pos? total)
-          [:*
-           [:> banner-button* {:on-click on-tasks}
-            [:> i/icon* {:icon-id i/view-as-list :size "s"}]
-            [:span (tr "workspace.review.bar.tasks" closed total)]
-            [:> progress-bar* {:value closed
-                               :total total
-                               :class (stl/css :pr-banner-progress)
-                               :aria-hidden true}]]
+          ;; the progress of the tasks shows once the review has any
+          (when (pos? total)
+            [:*
+             [:> banner-button* {:on-click on-tasks}
+              [:> i/icon* {:icon-id i/view-as-list :size "s"}]
+              [:span (tr "workspace.review.bar.tasks" closed total)]]
 
-           [:div {:class (stl/css :pr-banner-separator)}]])
+             [:div {:class (stl/css :pr-banner-separator)}]])
 
-        [:div {:class (stl/css :pr-banner-actions)}
-         [:> button* {:variant "secondary" :on-click on-details}
-          (tr "workspace.review.bar.details")]
-         (when (and outdated? author?)
-           [:> tooltip* {:content (tr "workspace.pull-requests.banner.publish-hint")
-                         :placement "top"}
-            [:> button* {:variant "primary" :on-click on-publish}
-             (tr "workspace.pull-requests.banner.publish")]])
-         (when reviewer?
-           [:> button* {:variant "primary" :on-click on-review}
-            (tr "workspace.review.submit")])
-         [:> button* {:variant "ghost" :on-click on-exit}
-          (tr "workspace.pull-requests.banner.exit")]
+          [:div {:class (stl/css :pr-banner-actions)}
+           [:> button* {:variant "secondary" :on-click on-details}
+            (tr "workspace.review.bar.details")]
+           (when (and outdated? author?)
+             [:> tooltip* {:content (tr "workspace.pull-requests.banner.publish-hint")
+                           :placement "top"}
+              [:> button* {:variant "primary" :on-click on-publish}
+               (tr "workspace.pull-requests.banner.publish")]])
+           (when reviewer?
+             [:> button* {:variant "primary" :on-click on-review}
+              (tr "workspace.review.submit")])
+           [:> button* {:variant "ghost" :on-click on-exit}
+            (tr "workspace.pull-requests.banner.exit")]
 
-         ;; the bar sits at the bottom of the canvas: its menu opens upwards
-         [:div {:class (stl/css :pr-banner-menu)}
-          [:> menu* {:is-open menu-open?
-                     :on-open-change on-menu-change
-                     :on-action on-menu-action
-                     :placement "top end"
-                     :trigger
-                     (mf/html
-                      [:> icon-button* {:variant "ghost"
-                                        :icon i/menu
-                                        :aria-label (tr "labels.options")
-                                        :aria-pressed menu-open?
-                                        :on-click on-toggle-menu}])}
-           [:> menu-item* {:id "compare"}
-            (tr "workspace.branches.compare")]
-           (when can-merge?
-             [:> menu-item* {:id "merge"}
-              (tr "workspace.pull-requests.actions.merge")])
-           (when can-cancel?
-             [:> menu-item* {:id "cancel"}
-              (tr "workspace.pull-requests.banner.cancel")])]]]]])))
+           ;; the bar sits at the bottom of the canvas: its menu opens upwards
+           [:div {:class (stl/css :pr-banner-menu)}
+            [:> menu* {:is-open menu-open?
+                       :on-open-change on-menu-change
+                       :on-action on-menu-action
+                       :placement "top end"
+                       :trigger
+                       (mf/html
+                        [:> icon-button* {:variant "ghost"
+                                          :icon i/menu
+                                          :aria-label (tr "labels.options")
+                                          :aria-pressed menu-open?
+                                          :on-click on-toggle-menu}])}
+             [:> menu-item* {:id "compare"}
+              (tr "workspace.branches.compare")]
+             (when can-merge?
+               [:> menu-item* {:id "merge"}
+                (tr "workspace.pull-requests.actions.merge")])
+             (when can-cancel?
+               [:> menu-item* {:id "cancel"}
+                (tr "workspace.pull-requests.banner.cancel")])]]]])])))

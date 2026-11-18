@@ -26,6 +26,7 @@
    [app.main.ui.hooks :as ui-hooks]
    [app.main.ui.measurements :as msr]
    [app.main.ui.shapes.export :as use]
+   [app.main.ui.workspace.compare.overlays :refer [compare-overlays*]]
    [app.main.ui.workspace.review.overlays :refer [review-overlays*]]
    [app.main.ui.workspace.shapes :as shapes]
    [app.main.ui.workspace.shapes.path.editor :refer [path-editor*]]
@@ -240,6 +241,7 @@
         disable-events?          (contains? layout :comments)
         comments-mode?           (= drawing-tool :comments)
         reviewing?               (some? (mf/deref refs/pull-request-preview))
+        comparing?               (some? (mf/deref refs/compare-mode))
         ;; inside a design review the global "show comments" option
         ;; decides alone: it shows or hides comments and tasks
         show-comments?           (if reviewing?
@@ -394,6 +396,14 @@
                             :vport vport
                             :zoom zoom
                             :page-id page-id}]
+
+      ;; the changes of the branch against main, in the compare mode
+      (when ^boolean comparing?
+        [:> compare-overlays* {:vbox vbox
+                               :vport vport
+                               :zoom zoom
+                               :page-id page-id
+                               :show-rulers show-rulers?}])
 
       (when picking-color?
         [:> pixel-overlay/pixel-overlay* {:vport vport

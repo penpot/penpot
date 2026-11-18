@@ -404,10 +404,9 @@
   border: $b-2 solid var(--color-background-quaternary);
   background-color: var(--color-background-primary);
 
-  // it must beat the viewport controls, which are raised to z-index 1
-  // while a drawing tool is active
-  // TODO: no DS z-index token for 2.
-  z-index: 2;
+  // over the canvas and what is drawn on it (the viewport controls, the
+  // marks, main beside the branch), as the toolbar is
+  z-index: var(--z-index-panels);
   transition:
     inset-block-end 0.2s,
     block-size 0.2s;
