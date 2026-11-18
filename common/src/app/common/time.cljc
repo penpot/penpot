@@ -409,7 +409,7 @@
 #?(:cljs
    (defn set-default-locale
      [locale]
-     (when-let [locale (unchecked-get locales locale)]
+     (let [locale (or (unchecked-get locales locale) df-en-us)]
        (dfn-set-default-options #js {:locale locale}))))
 
 ;; --- HELPERS

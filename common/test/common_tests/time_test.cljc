@@ -6,6 +6,7 @@
 
 (ns common-tests.time-test
   (:require
+   #?(:cljs ["date-fns/getDefaultOptions$default" :as dfn-get-default-options])
    [app.common.time :as dt]
    [clojure.test :as t]))
 
@@ -24,6 +25,13 @@
    (t/deftest hindi-and-serbian-date-locales-test
      (t/is (= "hi" (some-> (unchecked-get dt/locales "hi") .-code)))
      (t/is (= "sr" (some-> (unchecked-get dt/locales "sr") .-code)))))
+
+#?(:cljs
+   (t/deftest unmapped-locale-resets-date-locale-test
+     (dt/set-default-locale "ja")
+     (dt/set-default-locale "ha")
+     (t/is (= "en-US" (.-code (.-locale (dfn-get-default-options)))))
+     (dt/set-default-locale "en")))
 
 #?(:clj
    (t/deftest parse-duration-test
