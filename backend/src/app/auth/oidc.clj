@@ -52,6 +52,15 @@
                              :code :invalid-sso-config))
                   cause)))
 
+(defn- rethrow-or-build
+  "Re-throw an already controlled configuration error: wrapping it again would
+  drop its fields. Anything else goes to `build`, which raises."
+  [cause build]
+  (if (and (ex/error? cause)
+           (= :invalid-sso-config (:code (ex-data cause))))
+    (throw cause)
+    (build cause)))
+
 (defn- issuer?
   "Check if `v` is an issuer the `iss` claim can be validated against: a
   non-blank string, or a non-empty set of non-blank strings for a provider that
@@ -90,7 +99,7 @@
             ;; mismatch makes every login fail on the `iss` check with no clue
             ;; about the cause.
             (when (and (some? issuer)
-                       (some? (:issuer provider))
+                       (issuer? (:issuer provider))
                        (not (contains? (issuer-set (:issuer provider)) issuer)))
               (raise-invalid-sso-config
                :hint "the issuer of the discovery document does not match the configured issuer"
@@ -113,15 +122,14 @@
       (catch Throwable cause
         ;; Controlled raises above are ExceptionInfo and would otherwise be
         ;; re-wrapped by this catch, dropping fields like :response-status-code.
-        (if (and (ex/error? cause)
-                 (= :invalid-sso-config (:code (ex-data cause))))
-          (throw cause)
-          ;; Wrap SSRF blocks, DNS failures, TLS errors, etc. — from the caller's
-          ;; perspective these are all "bad/unreachable issuer URL".
-          (raise-invalid-sso-config
+        ;; SSRF blocks, DNS failures and TLS errors are, from the caller's
+        ;; perspective, all "bad/unreachable issuer URL".
+        (rethrow-or-build
+         cause
+         #(raise-invalid-sso-config
            :hint "unable to discover OIDC configuration"
            :discover-uri uri
-           :cause cause))))))
+           :cause %))))))
 
 (def ^:private default-oidc-scopes
   #{"openid" "profile" "email"})
@@ -172,13 +180,12 @@
          :jwks-uri jwks-uri
          :response-status-code status)))
     (catch Throwable cause
-      (if (and (ex/error? cause)
-               (= :invalid-sso-config (:code (ex-data cause))))
-        (throw cause)
-        (raise-invalid-sso-config
+      (rethrow-or-build
+       cause
+       #(raise-invalid-sso-config
          :hint "unable to retrieve JWKs"
          :jwks-uri jwks-uri
-         :cause cause)))))
+         :cause %)))))
 
 (defn- populate-jwks
   "Fetch and add JWKs to the OIDC provider.
@@ -194,13 +201,12 @@
       provider)
     (catch Throwable cause
       (if (:strict-jwks? provider)
-        (if (and (ex/error? cause)
-                 (= :invalid-sso-config (:code (ex-data cause))))
-          (throw cause)
-          (raise-invalid-sso-config
+        (rethrow-or-build
+         cause
+         #(raise-invalid-sso-config
            :hint "unable to retrieve JWKs"
            :provider (:id provider)
-           :cause cause))
+           :cause %))
         (do
           (l/warn :hint "unable to fetch JWKs for the OIDC provider"
                   :provider (str (:id provider))
@@ -227,13 +233,12 @@
                        (with-meta provider {::discovered true})))
 
                    (catch Throwable cause
-                     (if (and (ex/error? cause)
-                              (= :invalid-sso-config (:code (ex-data cause))))
-                       (throw cause)
-                       (raise-invalid-sso-config
+                     (rethrow-or-build
+                      cause
+                      #(raise-invalid-sso-config
                         :hint "unexpected exception on configuring provider"
                         :provider (:id params)
-                        :cause cause))))]
+                        :cause %))))]
 
     ;; OIDC Core 3.1.3.7 requires the `iss` claim of the ID token to match
     ;; the issuer of the provider. With no issuer there is nothing to match
@@ -437,13 +442,12 @@
              :client-secret (d/obfuscate-string (:client-secret provider)))
       provider)
     (catch Throwable cause
-      (if (and (ex/error? cause)
-               (= :invalid-sso-config (:code (ex-data cause))))
-        (throw cause)
-        (raise-invalid-sso-config
+      (rethrow-or-build
+       cause
+       #(raise-invalid-sso-config
          :hint "unexpected exception on configuring provider"
          :provider (:id params)
-         :cause cause)))))
+         :cause %)))))
 
 (defmethod ig/init-key ::providers/gitlab
   [_ cfg]

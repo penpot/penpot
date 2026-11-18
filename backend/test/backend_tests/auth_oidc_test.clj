@@ -137,7 +137,11 @@
   (t/testing "token with mismatched issuer is rejected"
     (let [cause (claims-error hs-provider {:token/id (id-token-claims {:iss "https://attacker.example.com"})})]
       (t/is (ex/error? cause))
-      (t/is (= :invalid-id-token (:code (ex-data cause))))))
+      (t/is (= :validation (:type (ex-data cause))))
+      (t/is (= :invalid-id-token (:code (ex-data cause))))
+      ;; The organization SSO classifier walks the cause chain, so the original
+      ;; error has to survive.
+      (t/is (some? (ex-cause cause)))))
 
   (t/testing "token issued for a different client is rejected"
     (let [cause (claims-error hs-provider {:token/id (id-token-claims {:aud "other-client-id"})})]
@@ -378,6 +382,20 @@
       (t/is (= :invalid-sso-config (:code data)))
       (t/is (= "https://pinned.example.com" (:expected-issuer data)))
       (t/is (= "https://idp.example.com" (:discovered-issuer data))))))
+
+(t/deftest prepare-oidc-provider-reports-a-blank-issuer-as-missing
+  ;; With discovery, a blank configured issuer is a missing value, not a
+  ;; contradiction with the document: the operator has to read the right cause.
+  (with-mocks [http-mock {:target 'app.http.client/req
+                          :return {:status 200 :body (discovery-body "https://idp.example.com")}}]
+    (let [params (-> manual-oidc-params
+                     (dissoc :token-uri :user-uri :auth-uri)
+                     (assoc :issuer ""))
+          cause  (try
+                   (#'oidc/prepare-oidc-provider {} params)
+                   (catch Throwable cause cause))]
+      (t/is (= :invalid-sso-config (:code (ex-data cause))))
+      (t/is (str/includes? (ex-message cause) "missing issuer")))))
 
 (t/deftest get-gitlab-config-normalizes-the-issuer
   (with-redefs [cf/get (fn [key & [default]]

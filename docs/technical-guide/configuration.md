@@ -193,9 +193,10 @@ PENPOT_OIDC_USER_URI: <uri>
 PENPOT_OIDC_JWKS_URI: <uri>
 
 # Issuer the `iss` claim of the ID token is validated against. Optional: it
-# is taken from the discovery document. It is required when the endpoints
-# above are set explicitly, because then there is no discovery step to read
-# it from. Must match the value the provider publishes, exactly.
+# is taken from the discovery document. It is required when the token, auth
+# and user endpoints above are set explicitly, because then there is no
+# discovery step to read it from. Must match the value the provider
+# publishes, exactly.
 PENPOT_OIDC_ISSUER: <uri>
 
 # Optional list of roles that users are required to have. If no role
@@ -303,9 +304,12 @@ The ID token the provider returns is verified against the issuer of the provider
 endpoints are overridden explicitly there is no discovery document to read the
 issuer from, so <code class="language-bash">PENPOT_OIDC_ISSUER</code> must be set.
 Otherwise the provider refuses to initialize and that login is unavailable. A
-provider that authenticates with discovery needs no extra configuration, and the
-bundled Google and GitLab providers already declare their issuer and the keys
-their provider publishes.
+provider that authenticates with discovery needs no extra configuration: the
+bundled Google provider declares its issuer and the keys Google publishes. The
+GitLab provider derives its issuer from
+<code class="language-bash">PENPOT_GITLAB_BASE_URI</code> without the trailing
+slash, so that variable has to be the external URL of the instance, the same
+value the browser uses for `/oauth/authorize`.
 
 Penpot loads those keys once, when the provider initializes. If the provider
 rotates them while Penpot runs, the ID token stays unverified until the provider
