@@ -2345,19 +2345,22 @@
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
 
-(defmethod migrate-data "0035-fix-shape-svg-attrs-and-defs"
+(defmethod migrate-data "0037-fix-shape-svg-attrs-and-defs"
   ;; Stored svg attribute keys are kebab-case (issue #11947): the v3 reader
   ;; already outputs kebab and birth normalizes any outside spelling, so
   ;; export/import converges to the same state. Old birth and the cleaner
   ;; era stored camelCase React prop names instead, which the reader
-  ;; kebab-ized on import beyond repair. Convert once, with the same
-  ;; birth transforms: `:svg-attrs` and `:svg-defs` node attrs go through
+  ;; kebab-ized on import beyond repair. Convert with the same birth
+  ;; transforms: `:svg-attrs` and `:svg-defs` node attrs go through
   ;; the whitelist+kebab transform (unknown attrs drop, same as birth),
   ;; while svg-raw `:content` attrs are kebab-ized spelling-only (unknown
   ;; keys kept: the sidebar reads keys outside the whitelist). Kebab
   ;; input passes through unchanged, so re-running is safe. This replaces
-  ;; "0021-fix-shape-svg-attrs" (id withdrawn from `available-migrations`
-  ;; below): files that recorded it migrate again through this one.
+  ;; "0021-fix-shape-svg-attrs" and "0035-fix-shape-svg-attrs-and-defs"
+  ;; (ids withdrawn from `available-migrations` below): files that
+  ;; recorded either migrate again through this one. 0035 was withdrawn
+  ;; because a client that loaded a file before 0035 ran could still save
+  ;; camelCase keys into it afterwards (#13107).
   ;; Node tags in defs and svg-raw content are stored as keywords; files
   ;; that hold them as strings get them converted here, since the closed
   ;; node schemas reject strings. `:svg-transform` held as a plain map
@@ -2502,5 +2505,5 @@
          "0033-normalize-main-instance-names"
          "0034-fix-path-content-offset"
          "0035-fix-dangling-children"
-         "0035-fix-shape-svg-attrs-and-defs"
-         "0036-clear-nil-keys-in-objects"]))
+         "0036-clear-nil-keys-in-objects"
+         "0037-fix-shape-svg-attrs-and-defs"]))

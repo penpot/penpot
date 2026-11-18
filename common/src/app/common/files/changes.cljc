@@ -930,6 +930,13 @@
   (when (and id name page)
     (ex/raise :type :conflict
               :hint "id+name or page should be provided, never both"))
+
+  ;; NOTE: we only perform hard validation on backend. The page arrives
+  ;; whole (duplicate page, undo of a page deletion), as the client holds
+  ;; it, so each of its shapes is validated as `:add-obj` validates one.
+  #?(:clj (doseq [shape (vals (:objects page))]
+            (validate-shape shape (:id page))))
+
   (let [page (if (and (string? name) (uuid? id))
                (ctp/make-empty-page {:id id :name name})
                page)]

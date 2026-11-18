@@ -40,6 +40,7 @@ To assert over emitted event sequences, observe termination: subscribe through `
 - Teardown belongs to the terminal continuation, never to `finally`-around-triggers (it would dispose in-flight flows).
 - A body that awaits must be `(^:async fn …)` even if the rest is sync; sync sequences are atomic vs the event loop.
 - The `:esm` test build cannot load the CommonJS `sax` module behind `tubax`, so SVG parsing fails in tests (`dwm/valid-svg-string?` answers false, `dwm/svg->clj` errors): mock both with the parsed data.
+- `set!` mocks are global and outlive the fixture, so a flow another module left running (a store's pending timer) can still reach the mocked transport mid-test; `with-persistence` records every command for that reason. Filter to the commands your layer issues — persistence only sends `update-file` — before counting or asserting emptiness, and never let a stray call release a `wait-for` on one.
 
 From `frontend/`:
 - Full unit test run (always builds, suppressed output): `pnpm run test:quiet`.

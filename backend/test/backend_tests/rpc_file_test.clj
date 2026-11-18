@@ -13,6 +13,7 @@
    [app.common.pprint :as pp]
    [app.common.thumbnails :as thc]
    [app.common.time :as ct]
+   [app.common.types.page :as ctp]
    [app.common.types.shape :as cts]
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.tokens-status :as ctos]
@@ -3433,3 +3434,35 @@
           (t/is (= (into #{} (map :id) (:result miss))
                    (into #{} (map :id) (:result hit))))
           (t/is (every? #(not (contains? % :migrations)) (:result hit))))))))
+
+(t/deftest add-page-rejects-an-invalid-shape
+  ;; Duplicate page and the undo of a page deletion send the whole page as
+  ;; the client holds it. A tab that loaded the file before a migration
+  ;; ran holds the old format, here camelCase svg attrs (#13107), and the
+  ;; page must not reach the file: the next migrating read would reject
+  ;; the whole file.
+  (let [profile  (th/create-profile* 1 {:is-active true})
+        file     (th/create-file* 1 {:profile-id (:id profile)
+                                     :project-id (:default-project-id profile)
+                                     :is-shared false})
+        page-id  (uuid/next)
+        shape-id (uuid/next)
+        shape    (cts/setup-shape {:id shape-id :type :rect :name "rect"
+                                   :x 0 :y 0 :width 10 :height 10
+                                   :parent-id uuid/zero :frame-id uuid/zero
+                                   :svg-attrs {:fillRule "nonzero"}})
+        page     (-> (ctp/make-empty-page {:id page-id :name "Copy"})
+                     (assoc-in [:objects shape-id] shape)
+                     (update-in [:objects uuid/zero :shapes] (fnil conj []) shape-id))
+        out      (th/command! {::th/type :update-file
+                               ::rpc/profile-id (:id profile)
+                               :id (:id file)
+                               :session-id (uuid/random)
+                               :revn 0
+                               :vern 0
+                               :features cfeat/supported-features
+                               :changes [{:type :add-page :id page-id :page page}]})
+        stored   (bfc/get-file th/*system* (:id file) :migrate? false :realize? true)]
+    (t/is (th/ex-of-type? (:error out) :assertion))
+    (t/is (th/ex-of-code? (:error out) :data-validation))
+    (t/is (not (contains? (get-in stored [:data :pages-index]) page-id)))))
