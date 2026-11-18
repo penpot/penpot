@@ -18,6 +18,7 @@ No single source of truth: nothing reads `.nvmrc` at build time, and the version
 - Renovate also opens these bumps, on `renovate-*` branches and with its config living outside this repo; a manual bump and Renovate's must not diverge on any of the six sites.
 - A backport merge can deliver a newer Node into `docker/` and the plugins-deploy workflows while main's `.nvmrc` stays behind, because main receives partial backports of `.github/` and `docker/` from develop. Merging main into staging therefore conflicts on the pin lines: take main's set and finish the bump (`.nvmrc` plus the `packageManager` fields via `mem:workflow/updating-pnpm`), or the six sites drift.
 - The newer version wins in both directions. A maintenance→main merge (`main-2.18.x` into `main`) can carry the newer Node while `.nvmrc` and the `packageManager` fields stay on the older pair; then adopt the newer set and finish the bump on all six sites plus the 35 `packageManager` fields.
+- Node stays on the 24.x line even when the rest of `.github/` moves on: `99db795966` (`update GitHub Actions`) took the two `plugins-deploy-*` `runtime:` pins to `node@26.13.1` on develop while `.nvmrc` stayed on `v24.22.3`. The project keeps every site on the `.nvmrc` value; resolve that conflict back to the 24.x pin instead of taking develop's.
 - Both workflows must stay valid YAML. The `python3` in the devenv has no `yaml` module, so validate with `uv run --with pyyaml python3 -c ...` instead of a bare import.
 
 ## Verification
