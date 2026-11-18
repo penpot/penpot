@@ -11,8 +11,10 @@
    [app.common.files.changes :as cpc]
    [app.common.files.validate :as val]
    [app.common.logging :as l]
+   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.config :as cf]
+   [app.features.file-changes :as fchanges]
    [app.loggers.audit :as-alias audit]
    [app.msgbus :as mbus]
    [app.rpc :as-alias rpc]
@@ -568,3 +570,17 @@
         (t/is (nil? (:error out)))
         (t/is (nil? (-> out :result :rejected)))
         (t/is (= 1 (count (th/db-query :file-media-object {:file-id file-id}))))))))
+
+(t/deftest a-save-writes-its-revision-through-one-writer
+  (let [{:keys [page-id file-id] :as ctx} (create-file)]
+    (update-file ctx {:changes [(th/add-rect-change page-id (uuid/next))]})
+    (let [[row] (->> (th/db-query :file-change {:file-id file-id})
+                     (filter :changes))
+          file   (th/db-get :file {:id file-id})]
+      (t/is (= fchanges/revision-kind (:kind row)))
+      (t/is (= (:version file) (:version row))
+            "the row carries the file's data version")
+      (t/is (= (:created-at row) (:updated-at row)))
+      (t/is (= (ct/plus (:created-at row) (ct/duration {:hours 1}))
+               (:deleted-at row))
+            "the row expires an hour after it was stored"))))

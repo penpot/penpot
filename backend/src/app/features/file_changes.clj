@@ -10,7 +10,11 @@
   A snapshot is the state of a file at a point: it has a label and its
   data lives in `file_data` (old `legacy-db` payloads live in
   `file_change.data`). A revision is the delta of a save: it has
-  no label and it holds the changes.")
+  no label and it holds the changes."
+  (:require
+   [app.common.time :as ct]
+   [app.common.uuid :as uuid]
+   [app.db :as db]))
 
 (def snapshot-kind
   "The kind of a snapshot row."
@@ -19,3 +23,27 @@
 (def revision-kind
   "The kind of a revision row."
   2)
+
+(defn insert-revision!
+  "Inserts the revision row of a save on `file`: `changes` is the whole of
+  what the save applied, encoded, and the row expires one hour after
+  `timestamp` (retention, when it comes, is decided here). Every writer of
+  a revision row goes through this function, so that the `kind`, the data
+  `version`, and the `updated_at` the partition runbook copies by are
+  always set. `id` is optional: a save passes the id its audit event
+  carries, so that the event points at the row really inserted."
+  [{:keys [::db/conn] :as _cfg} {:keys [version] :as file} timestamp
+   {:keys [id session-id profile-id revn changes]}]
+  (db/insert! conn :file-change
+              {:id (or id (uuid/next))
+               :kind revision-kind
+               :session-id session-id
+               :profile-id profile-id
+               :created-at timestamp
+               :updated-at timestamp
+               :deleted-at (ct/plus timestamp (ct/duration {:hours 1}))
+               :file-id (:id file)
+               :revn revn
+               :version version
+               :changes changes}
+              {::db/return-keys false}))

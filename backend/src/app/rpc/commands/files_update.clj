@@ -337,9 +337,6 @@
           saved?   (or (nil? rejected) (seq changes))
           snapshot (when saved? (::snapshot file))
 
-          deleted-at
-          (ct/plus timestamp (ct/duration {:hours 1}))
-
           ;; The id of the change row (xlog) goes to the audit event
           ;; too: a consumer that reads the event needs to know what the
           ;; save changed, and that row is the only place with it.
@@ -376,19 +373,11 @@
 
       (when saved?
         (when repair
-          (db/insert! conn :file-change
-                      {:id (uuid/next)
-                       :kind fchanges/revision-kind
-                       :session-id repair-session-id
-                       :profile-id profile-id
-                       :created-at timestamp
-                       :updated-at timestamp
-                       :deleted-at deleted-at
-                       :file-id (:id file)
-                       :revn (:revn repair)
-                       :version (:version file)
-                       :changes (blob/encode (:changes repair))}
-                      {::db/return-keys false})
+          (fchanges/insert-revision! cfg file timestamp
+                                     {:session-id repair-session-id
+                                      :profile-id profile-id
+                                      :revn (:revn repair)
+                                      :changes (blob/encode (:changes repair))})
           (l/wrn :hint "file auto-repaired"
                  :file-id (str (:id file))
                  :error-codes (error-codes (:errors repair))
@@ -396,26 +385,17 @@
                  :change-count (count (:changes repair)))
           (record-repair-outcome cfg :repaired))
 
-        ;; Insert change (xlog) with deleted_at in a future data for
-        ;; make them automatically eleggible for GC once they expires
-        ;;
-        ;; The revision carries only the delta of the save: the features of the
-        ;; file are not repeated here (nobody reads them from a revision, and
-        ;; they are duplicated on every save).
-        (db/insert! conn :file-change
-                    {:id file-change-id
-                     :kind fchanges/revision-kind
-                     :session-id session-id
-                     :profile-id profile-id
-                     :created-at change-created-at
-                     :updated-at change-created-at
-                     :deleted-at deleted-at
-                     :file-id (:id file)
-                     :revn (:revn file)
-                     :version (:version file)
-                     :changes (blob/encode changes)}
-                    {::db/return-keys false})
-
+        ;; The revision carries only the delta of the save: the features of
+        ;; the file are not repeated here (nobody reads them from a revision,
+        ;; and they are duplicated on every save). It expires in an hour,
+        ;; which `insert-revision!` decides. The caller's `file-change-id`
+        ;; travels with it, so the audit event points at this very row.
+        (fchanges/insert-revision! cfg file change-created-at
+                                   {:id file-change-id
+                                    :session-id session-id
+                                    :profile-id profile-id
+                                    :revn (:revn file)
+                                    :changes (blob/encode changes)})
         (persist-file! cfg (dissoc file ::repair))
 
         (when (contains? cf/flags :redis-cache)
