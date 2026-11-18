@@ -883,6 +883,34 @@
       :else
       (throw cause))))
 
+(defn- media-rewrite-changes
+  "The changes of the media reference rewrite: one `:mod-obj` per touched
+  shape, setting every attribute the rewrite changed. Appended to the
+  save's own change vector they make the row carry the whole of what the
+  save applied. `before` is the file the rewrite received, `after` the one
+  it returned; the refs name the shapes it may have touched."
+  [before after refs]
+  (into []
+        (comp (map (juxt :page-id :shape-id))
+              (distinct)
+              (keep (fn [[page-id shape-id]]
+                      (let [old (get-in before [:data :pages-index page-id
+                                                :objects shape-id])
+                            new (get-in after [:data :pages-index page-id
+                                               :objects shape-id])]
+                        (when (and old new (not= old new))
+                          {:type :mod-obj
+                           :page-id page-id
+                           :id shape-id
+                           :operations (into []
+                                             (keep (fn [[attr val]]
+                                                     (when (not= val (get old attr))
+                                                       {:type :set
+                                                        :attr attr
+                                                        :val val})))
+                                             new)})))))
+        refs))
+
 (defn- process-changes-and-validate
   "Applies and validates all `changes` at once. If that fails, repairs
   damage the file already had or keeps the longest prefix of the
@@ -935,7 +963,11 @@
                                 skip-validate tracked cause))))]
 
     (if-let [media-refs (-> @state :media-refs not-empty)]
-      (bfc/update-media-references! cfg file media-refs)
+      (let [rewritten (bfc/update-media-references! cfg file media-refs)
+            rewrite   (media-rewrite-changes file rewritten media-refs)]
+        (cond-> rewritten
+          (seq rewrite)
+          (update ::changes into rewrite)))
       file)))
 
 (defn- take-snapshot?

@@ -6,11 +6,13 @@
 
 (ns backend-tests.helpers
   (:require
-   [app.auth]
+   [app.binfile.common :as bfc]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.features :as cfeat]
+   [app.common.files.changes :as cpc]
+   [app.common.files.migrations :as fmg]
    [app.common.flags :as flags]
    [app.common.pprint :as pp]
    [app.common.schema :as sm]
@@ -21,6 +23,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.features.fdata :as fdata]
    [app.jobs :as jobs]
    [app.main :as main]
    [app.media]
@@ -59,6 +62,8 @@
    java.io.PipedOutputStream
    java.util.UUID
    org.postgresql.ds.PGSimpleDataSource))
+
+(declare verify-save!)
 
 (def ^:dynamic *system* nil)
 (def ^:dynamic *pool* nil)
@@ -570,8 +575,10 @@
                 :code :rpc-method-not-found
                 :hint (str/ffmt "rpc method '%' not found" (name type))))
 
-    (let [params (prepare-rpc-params data)]
-      (try-on! (method-fn params)))))
+    (let [params (prepare-rpc-params data)
+          out    (try-on! (method-fn params))]
+      (verify-save! data out)
+      out)))
 
 (defn command-raw!
   "Like `command!`, but returns the raw result without unwrapping it, so a test
@@ -873,6 +880,161 @@
 (defn db-query
   [& params]
   (apply db/query *pool* params))
+
+;; --- FILE LOG VERIFIER
+;;
+;; Folds a checkpoint of a file and the revision rows after it and
+;; compares the result with the stored head. Every `update-file` the
+;; suite issues is followed by one run (`command!`), from the checkpoint
+;; the save itself wrote, so a save path that stores less than it
+;; applied fails the test that reached it.
+
+(def ^:dynamic *verify-saves?*
+  "Bound false by a test whose own instrumentation the verifier's reads
+  would disturb, such as one counting fragment loads."
+  true)
+
+(defn branch-file?
+  "True for a file a branch owns. A branch has no stored head of its own,
+  so the verifier has no head to compare a fold against."
+  [file]
+  (boolean (:is-branch file)))
+
+(def ^:private sql:latest-checkpoint
+  "select c.id, c.revn, c.version, c.features, c.migrations,
+          fd.backend, fd.storage_object_id, fd.data,
+          c.data as legacy_data
+     from file_change as c
+     left join file_data as fd
+             on (fd.file_id = c.file_id and fd.id = c.id
+                 and fd.type = 'snapshot')
+    where c.file_id = ?
+      and c.label is not null
+      and c.revn <= ?
+      and (c.deleted_at is null or c.deleted_at > now())
+    order by c.revn desc, c.created_at desc
+    limit 1")
+
+(def ^:private sql:revision-rows
+  "select revn, changes
+     from file_change
+    where file_id = ?
+      and revn > ?
+      and label is null
+      and changes is not null
+    order by revn asc")
+
+(defn- latest-checkpoint
+  "The newest surviving snapshot row of `file-id` at or below `from-revn`,
+  its document resolved and decoded but not migrated."
+  [cfg file-id from-revn]
+  (when-let [row (db/get-with-sql cfg [sql:latest-checkpoint file-id from-revn]
+                                  {::db/remove-deleted false
+                                   ::db/throw-if-not-exists false})]
+    (let [row (-> row
+                  (d/update-when :migrations #(into (d/ordered-set)
+                                                    (db/decode-pgarray % [])))
+                  (d/update-when :features #(db/decode-pgarray % #{})))]
+      (fdata/decode-file-data cfg (fdata/resolve-file-data cfg row)))))
+
+(defn- fold-head
+  "The document the stored log produces: `checkpoint` migrated in memory
+  when it lags, with every revision row above it applied through
+  `process-changes`, in order. Returns the folded data and the revision
+  the fold reached."
+  [cfg file-id checkpoint]
+  (let [checkpoint (assoc checkpoint :id file-id)
+        file       (if (fmg/need-migration? checkpoint)
+                     (let [file (fdata/realize cfg checkpoint)]
+                       (fmg/migrate-file
+                        file
+                        (delay (bfc/get-resolved-file-libraries cfg file))))
+                     checkpoint)
+        rows       (->> (db/exec! cfg [sql:revision-rows file-id
+                                       (:revn checkpoint)])
+                        (mapv #(update % :changes blob/decode)))
+        data       (reduce (fn [data {:keys [changes]}]
+                             (cpc/process-changes data changes))
+                           (:data file)
+                           rows)]
+    {:data data
+     :revn (or (:revn (last rows)) (:revn checkpoint))}))
+
+(defn- comparable
+  "`data` without what a replay cannot reproduce: the `:modified-at` that
+  components, colours, and typographies take from the clock when a change
+  applies, and the identity of the token types, which define no value
+  equality and compare through their printed form."
+  [data]
+  (let [unstamp #(d/update-vals % (fn [item] (dissoc item :modified-at)))]
+    (-> data
+        (d/update-when :components unstamp)
+        (d/update-when :colors unstamp)
+        (d/update-when :typographies unstamp)
+        (d/update-when :tokens-lib pr-str)
+        (d/update-when :tokens-status pr-str)
+        (d/update-when :own-tokens-status pr-str))))
+
+(defn verify-file!
+  "Folds the newest checkpoint of `file` at or below `from-revn` (its head
+  revision by default) and the revision rows after it, and compares the
+  result with the stored head. The comparison runs on realized documents,
+  inside the file's pointer-loader context, on one connection.
+
+  Verdicts: `:match`; `:skipped-branch`, for a branch file, which has no
+  stored head of its own; `:no-checkpoint`, when no snapshot row survives
+  to fold from; or `{:mismatch …}` naming the revisions and the top-level
+  keys that differ."
+  [{:keys [id revn] :as file} & {:keys [from-revn]}]
+  (cond
+    (branch-file? file)
+    :skipped-branch
+
+    (nil? revn)
+    {:mismatch {:cause :file-without-revision}}
+
+    :else
+    (db/run! (merge *system* {::db/pool *pool*})
+             (fn [cfg]
+               (if-let [checkpoint (latest-checkpoint cfg id (or from-revn revn))]
+                 (fdata/with-pointers cfg id
+                   (let [head (->> (bfc/get-file cfg id :read-only? true :migrate? false)
+                                   (fdata/realize cfg)
+                                   :data
+                                   (comparable))
+                         fold (-> (fold-head cfg id checkpoint)
+                                  (update :data #(comparable
+                                                  (:data (fdata/realize
+                                                          cfg {:id id :data %})))))
+                         diff (sort (map name
+                                         (remove #(= (get head %) (get (:data fold) %))
+                                                 (distinct (concat (keys head)
+                                                                   (keys (:data fold)))))))]
+                     (if (or (seq diff) (not= (:revn fold) revn))
+                       {:mismatch {:folded-to (:revn fold)
+                                   :head-revn revn
+                                   :differing-keys diff}}
+                       :match)))
+                 :no-checkpoint)))))
+
+(defn verify-file-log!
+  "Reads the `file` row of `file-id` and verifies its log (`verify-file!`)."
+  [file-id & {:as opts}]
+  (verify-file! (db/get *pool* :file {:id file-id}) opts))
+
+(defn- verify-save!
+  "The verifier `command!` runs after a successful `update-file`, from the
+  revision before the save: the checkpoint the save wrote and the rows
+  above it must explain the head, or the save stored less than it applied
+  and the test that issued it fails."
+  [{:keys [::type id] :as _data} out]
+  (when (and *verify-saves?*
+             (= type :update-file)
+             (nil? (:error out)))
+    (let [verdict (verify-file-log! id :from-revn (:revn (:result out)))]
+      (t/is (contains? #{:match :no-checkpoint} verdict)
+            (str "the log explains the head after update-file: "
+                 (pr-str verdict))))))
 
 (defn db-get
   [& params]
