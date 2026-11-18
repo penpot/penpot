@@ -32,6 +32,11 @@ in the local working tree.
 
 Do not use it to produce plans — that is the `make-a-plan` flow.
 
+For a plan derived from a code review, retain its review target, reviewer
+session ID, original findings and decisions. Record the starting revision and
+the exact commits or diff produced by this implementation, plus test evidence,
+in session context for follow-up. Do not put commit hashes in the plan file.
+
 ## 1. Read the plan first
 
 Identify the plan to execute — from the file path the user gave, the
@@ -146,11 +151,22 @@ stop and ask the user before splitting it.
 
 ## When you are done
 
+After the entire plan is implemented and verified, including the final task in
+step-by-step mode, if it addresses code review findings, ask whether the user
+wants the original reviewer to verify the corrections. Use the `question` tool
+if available; otherwise ask in chat. Wait for the answer. Do not start the
+follow-up without consent, and do not ask after each intermediate task.
+
+If the user accepts, follow `@review-code`'s follow-up procedure with the
+review context, decisions, exact correction range or diff and test evidence.
+If the original reviewer cannot be resumed, say so and use a new reviewer with
+the same context. If the user declines, stop without starting a review. The
+follow-up is read-only; further fixes require the user's direction.
+
 End by suggesting the next steps (suggestions, not a required pipeline — any
 instruction from me overrides them):
 
-- `@review-code` — to review the changes just committed; it routes to
-  `@make-a-plan` by itself if the findings need one.
+- `@review-code` — for a new independent review of the changes.
 - `@create-pr` — when the task is done and the branch is ready to merge.
 
 ## User input, overrides and additional context

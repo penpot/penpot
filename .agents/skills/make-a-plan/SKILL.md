@@ -39,6 +39,11 @@ Do not use it to execute a plan — that is the `implement-plan` flow.
    example, `delegated` in the user context), delegate to the `general` subagent
    instead — the delegate must also follow the `planner` skill and receive all
    the relevant session context (a review, user feedback, and so on).
+   When the plan addresses a code review, preserve the review target, reviewer
+   session ID if available, original findings and IDs, and decisions including
+   deferred or rejected findings and their reasons in the local plan. Map
+   accepted findings to tasks. If context is unavailable, mark it unknown; do
+   not invent it. Pass this context to a delegated planner too.
 2. Before asking me to decide anything, explain the plan and every open question in
    plain language. Assume I know only the high-level project goal, not the codebase,
    architecture, implementation terms, or the problem this task solves.

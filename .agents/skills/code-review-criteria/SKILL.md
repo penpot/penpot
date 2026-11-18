@@ -103,6 +103,8 @@ For detailed security guidance, see `security-and-hardening`.
 
 For each finding, describe the circumstances under which it could fail: specific inputs, load conditions, timing, or user actions that trigger the problem. "This crashes when input is null" is actionable; "this might crash" is not.
 
+For each finding, propose a concrete remedy and the tests needed to verify it. If a decision requires user input, state the real options, their consequences, and your recommendation within that finding. Do not ask the user to decide during the review, and do not ask about implementation details the code can settle.
+
 Lead with what matters: correctness and security first, then structural issues, then everything else. A few high-conviction comments beat a long list.
 
 5. **Check the evidence, do not re-run it** — Which tests cover the change? What did the author run, and what did CI report? Never re-run the full suite or a build yourself: the author's run and CI already cover that, and repeating it only lengthens the review. Run at most the single test file that settles a specific doubt. When no checks have been run at all (a change you did not see tested), run the module's checks before the verdict.
@@ -127,11 +129,11 @@ Briefly explain what the code does and give an overall assessment.
 
 ### Critical and High-Priority Issues
 
-List problems that could cause security incidents, data loss, crashes, incorrect behavior, or major performance degradation. Each finding gets its unique ID (`R1`, `R2`, …). For each: state the severity, identify the file/function/code section, explain why it's a problem, describe failure circumstances, and provide a concrete improvement with corrected code when useful.
+List problems that could cause security incidents, data loss, crashes, incorrect behavior, or major performance degradation. Each finding gets its unique ID (`R1`, `R2`, …). For each: state the severity, identify the file/function/code section, explain why it's a problem, describe failure circumstances, and provide a concrete improvement with corrected code when useful. Include the tests needed and any user decision, options and recommendation in the finding itself.
 
 ### Other Findings
 
-List medium- and low-priority issues, including maintainability and design concerns. Use `M1`, `M2`, … for Medium/Low and `S1`, `S2`, … for Suggestions.
+List medium- and low-priority issues, including maintainability and design concerns. Use `M1`, `M2`, … for Medium/Low and `S1`, `S2`, … for Suggestions. Apply the same remedy, test and decision guidance to each finding; say when no new test is needed and why.
 
 ### Suggested Refactoring
 
@@ -139,7 +141,7 @@ Provide focused code changes or revised snippets. Preserve existing behavior unl
 
 ### Testing Recommendations
 
-Identify missing tests and describe specific test cases, including edge cases and failure scenarios.
+Summarize the verification approach and any cross-cutting test cases, including edge cases and failure scenarios. Keep missing tests as severity-tagged findings and link this section to their IDs.
 
 ### Positive Observations
 

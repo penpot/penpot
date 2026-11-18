@@ -352,7 +352,10 @@ small. To delegate without switching models, delegate to `general`.
    whether it will create an issue and a branch, the execution style, and a
    task checklist — and waits for your go-ahead. Say "step by step" to stop
    after each task (one commit per task) so you can verify as it goes;
-   the default runs all tasks with one final commit.
+   the default runs all tasks with one final commit. For a plan based on a
+   code review, it then asks whether to have the original reviewer verify the
+   corrections. If that session is unavailable, it tells you and uses a new
+   reviewer with the review and implementation context.
 5. **Land the work.** When it finishes, either push yourself and invoke
    `@create-pr`, or loop `@review-code` → `@make-a-plan` →
    `@implement-plan` until the findings are addressed, then push and invoke

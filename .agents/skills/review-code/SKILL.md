@@ -32,12 +32,17 @@ Act as a senior software engineer and perform a thorough code review.
    - Read-only: modify no file and create no commit. Reviewing never writes.
    - Do not invent problems: every finding must be real and actionable.
    - Missing tests are an issue, not a suggestion — a severity-tagged finding.
+   - For each finding, give a concrete remedy and the tests needed to verify it.
+     If a user decision is needed, include the real options and a recommendation
+     in that finding. Do not pause to ask during the review.
    - Prioritize by impact: one structural issue outweighs ten nits, and "this
      could be better" is not a finding — say why and how.
    - Skip generated files, lockfile-only changes and unrelated modifications
      unless they introduce security risks.
 3. When the subagent returns, output the review to the user verbatim. Do not
-   summarize it and do not act on its findings.
+   summarize it and do not act on its findings. Retain the subagent session ID,
+   review target and complete findings in the session context for follow-up;
+   do not invent an ID if the tool does not provide one.
 4. Right after the review, suggest how to proceed based on the findings. These
    are suggestions — the user decides:
    - **Approve (no required changes):** say so — there is nothing to address.
@@ -45,6 +50,30 @@ Act as a senior software engineer and perform a thorough code review.
      review is done — no plan needed.
    - **Substantive findings:** suggest `@make-a-plan` to make a plan to address
      them.
+   - If the user wants to discuss findings one by one, use `@issue-walkthrough`
+     on request; do not start it automatically.
+
+### Follow-up after implementation
+
+When the user agrees to verify corrections, resume the original reviewer using
+its session ID if the tool supports it. Give it the original review target and
+findings, the decisions and plan, the exact correction commit range or diff,
+and the test evidence. Require it to inspect the actual corrections and
+evidence, not rely on its earlier context alone. If the original session is
+unavailable or cannot be resumed, tell the user and delegate to a new reviewer
+with the same context; never claim it is the original reviewer. If the review,
+decisions or correction range cannot be established, ask for the missing
+information rather than inventing it.
+
+The reviewer follows `code-review-criteria` and remains read-only. It reports
+each original finding with its unchanged ID as **resolved**, **pending**, or
+**not addressed** (including the agreed reason); report any new problems with
+new, non-conflicting IDs. For pending and new problems, give evidence, a remedy,
+tests and any user decision as in the original review. Summarize separately
+whether all agreed corrections are resolved and whether any findings remain,
+including deferred findings. Do not equate deferred with resolved. Present the
+result without implementing fixes; the user chooses whether to iterate, request
+an independent review, or stop.
 
 ### Hard rule — read-only while reviewing
 
