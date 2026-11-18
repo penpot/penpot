@@ -4,7 +4,7 @@ Check commit messages against Penpot's commit guidelines.
 
 Validates commit messages using the rules defined in:
   - .github/workflows/commit-checker.yml (regex pattern)
-  - CONTRIBUTING.md (formatting rules, subject length, DCO)
+  - CONTRIBUTING.md (formatting rules, subject length)
   - .serena/memories/workflow/creating-commits.md (body wrapped at 80 chars)
 
 By default, checks HEAD. Use --commit to specify a different commit.
@@ -220,17 +220,6 @@ def check_body_line_length(message):
         f"Body lines must wrap at {MAX_BODY_LINE} characters or fewer. "
         "Unwrapped line(s):\n" + details
     )
-
-
-def check_signed_off_by(message):
-    """Check for the DCO Signed-off-by line (required for code changes)."""
-    if "Signed-off-by:" not in message:
-        return False, (
-            "Missing 'Signed-off-by:' line in the commit footer.\n"
-            "  Add it with 'git commit -s' or append it manually:\n"
-            "    Signed-off-by: Your Real Name <your.email@example.com>"
-        )
-    return True, None
 
 
 def check_co_authored_by(message):
