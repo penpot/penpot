@@ -225,8 +225,11 @@ Commit messages must follow this format:
   those prefixes to an existing subject)
 - **Wrap body lines at 80 characters or fewer** (trailers and URLs excepted)
 - Separate the subject from the body with a **blank line**
-- Never add a `Co-authored-by` trailer — it is forbidden and fails
-  `./scripts/check-commit`
+- Use `Co-authored-by:` only for a human co-author
+  (`Co-authored-by: Name <email>`). AI providers, agents and bots are not
+  allowed there; for AI participation add an `AI-assisted-by: <model-name>`
+  trailer instead. `./scripts/check-commit` rejects the trailer when its value
+  names one of them.
 
 You can check a commit against these rules with `./scripts/check-commit`.
 CI runs the same script on every new commit in
