@@ -5,7 +5,7 @@ name: Auto Label and Add to Project
 # code, it only reads ids from the event payload.
 on:
   issues:
-    types: [opened]
+    types: [opened, closed]
   pull_request_target:
     types: [opened]
 
@@ -52,6 +52,100 @@ jobs:
             const issueNumber = context.issue.number;
             const isPR = !!context.payload.pull_request;
             const contentId = isPR ? context.payload.pull_request.node_id : context.payload.issue.node_id;
+
+            // A completed issue is already closed by GitHub. Route its Main
+            // project status according to whether QA needs to verify it.
+            if (context.eventName === 'issues' && context.payload.action === 'closed') {
+              const issue = context.payload.issue;
+              if (issue.state_reason !== 'completed') {
+                console.log(`Issue #${issue.number} was closed as ${issue.state_reason}; leaving project status unchanged.`);
+                return;
+              }
+
+              const targetStatus = issue.labels.some(({ name }) => name === 'team-qa')
+                ? 'Ready for QA'
+                : 'Product Review';
+
+              const projectQuery = `
+                query($owner: String!, $number: Int!) {
+                  organization(login: $owner) {
+                    projectV2(number: $number) {
+                      id
+                      fields(first: 100) {
+                        nodes {
+                          ... on ProjectV2SingleSelectField {
+                            id
+                            name
+                            options { id name }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              `;
+              const projectRes = await github.graphql(projectQuery, {
+                owner: OWNER,
+                number: PROJECT_NUMBER
+              });
+              const project = projectRes.organization.projectV2;
+              if (!project) {
+                throw new Error(`Could not find Main project #${PROJECT_NUMBER}.`);
+              }
+
+              const statusField = project.fields.nodes.find(({ name }) => name === 'Status');
+              const statusOption = statusField?.options.find(({ name }) => name === targetStatus);
+              if (!statusField || !statusOption) {
+                throw new Error(`Could not find Status option "${targetStatus}" in Main.`);
+              }
+
+              const issueProjectItemsQuery = `
+                query($issueId: ID!) {
+                  node(id: $issueId) {
+                    ... on Issue {
+                      projectItems(first: 100) {
+                        nodes {
+                          id
+                          project { id }
+                        }
+                      }
+                    }
+                  }
+                }
+              `;
+              const issueProjectItemsRes = await github.graphql(issueProjectItemsQuery, {
+                issueId: contentId
+              });
+              const projectItems = issueProjectItemsRes.node?.projectItems?.nodes || [];
+              const projectItem = projectItems.find(
+                ({ project: itemProject }) => itemProject.id === project.id
+              );
+              if (!projectItem) {
+                console.log(`Issue #${issue.number} is not in Main project #${PROJECT_NUMBER}; skipping status update.`);
+                return;
+              }
+
+              const updateStatusMutation = `
+                mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
+                  updateProjectV2ItemFieldValue(input: {
+                    projectId: $projectId
+                    itemId: $itemId
+                    fieldId: $fieldId
+                    value: { singleSelectOptionId: $optionId }
+                  }) {
+                    projectV2Item { id }
+                  }
+                }
+              `;
+              await github.graphql(updateStatusMutation, {
+                projectId: project.id,
+                itemId: projectItem.id,
+                fieldId: statusField.id,
+                optionId: statusOption.id
+              });
+              console.log(`Issue #${issue.number} closed; Main status set to "${targetStatus}".`);
+              return;
+            }
 
             // Define your labels here
             const labelToApply = 'needs triage';
