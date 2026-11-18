@@ -10,7 +10,7 @@ use crate::uuid::Uuid;
 
 use std::collections::{HashMap, HashSet, VecDeque};
 
-use super::common::{has_in_flow_children, GetBounds};
+use super::common::{has_non_absolute_children, GetBounds};
 
 const MIN_SIZE: f32 = 0.01;
 const MAX_SIZE: f32 = f32::INFINITY;
@@ -890,10 +890,10 @@ pub fn reflow_grid_layout(
         }
     }
 
-    // Like the CLJS layout, keep the size when there is no content to fit:
-    // auto-sizing to empty tracks would collapse the frame.
+    // Like the CLJS layout, skip auto-size when every child is absolute: the
+    // size comes from the tracks, and hidden children still count.
     if (shape.is_layout_horizontal_auto() || shape.is_layout_vertical_auto())
-        && has_in_flow_children(shape, shapes)
+        && has_non_absolute_children(shape, shapes)
     {
         let width = layout_bounds.width();
         let height = layout_bounds.height();
