@@ -36,7 +36,9 @@
   which was reloaded, and whether their edits not saved yet were lost."
   {::mf/register modal/components
    ::mf/register-as :file-restored}
-  [{:keys [fullname label created-at unsaved]}]
+  ;; The modal wrapper passes the props map without camelCasing its keys,
+  ;; so every prop of this component must be a one-word name.
+  [{:keys [fullname label date unsaved]}]
   (let [on-close (mf/use-fn #(st/emit! (modal/hide)))]
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog)
@@ -49,7 +51,7 @@
                     :class (stl/css :modal-title)}
        (tr "workspace.file-restored.title")]
       [:> text* {:as "p" :typography t/body-large}
-       (restored-message fullname label created-at)]
+       (restored-message fullname label date)]
       (when unsaved
         [:> text* {:as "p" :typography t/body-large}
          (tr "workspace.file-restored.unsaved-changes")])

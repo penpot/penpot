@@ -140,7 +140,7 @@
         props      (:props (shown-modal events))]
     (t/is (= "Ada" (:fullname props)))
     (t/is (= "Hand-off v2" (:label props)))
-    (t/is (= created-at (:created-at props)))
+    (t/is (= created-at (:date props)))
     (t/is (true? (:unsaved props)))))
 
 ;; Scenario: the restoring session left before its message arrived, so it
