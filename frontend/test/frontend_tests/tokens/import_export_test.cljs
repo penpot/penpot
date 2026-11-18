@@ -112,7 +112,7 @@ color.value tries to reference missing, which is not defined.")))
             (fn [_]
               (throw (js/Error. "Should be an error")))
             (fn [err]
-              (t/is (= :error.import/invalid-json-data (:error/code (ex-data err))))
+              (t/is (= :error.import/no-token-files-found (:error/code (ex-data err))))
               (done)))))))
 
 (t/deftest import-invalid-json-stream-test
@@ -138,7 +138,7 @@ color.value tries to reference missing, which is not defined.")))
             (fn []
               (throw (js/Error. "Should be an error")))
             (fn [err]
-              (t/is (= :error.import/invalid-json-data (:error/code (ex-data err))))
+              (t/is (= :error.import/no-token-files-found (:error/code (ex-data err))))
               (done)))))))
 
 (t/deftest import-missing-references-json-test

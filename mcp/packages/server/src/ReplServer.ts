@@ -4,6 +4,7 @@ import { fileURLToPath } from "url";
 import { PluginBridge } from "./PluginBridge";
 import { ExecuteCodePluginTask } from "./tasks/ExecuteCodePluginTask";
 import { createLogger } from "./logger";
+import type { RequestGuard } from "./RequestGuard";
 
 /**
  * Web-based REPL server for executing code through the PluginBridge.
@@ -22,6 +23,7 @@ export class ReplServer {
 
     constructor(
         private readonly pluginBridge: PluginBridge,
+        private readonly requestGuard: RequestGuard,
         port: number = 4403,
         host: string = "localhost"
     ) {
@@ -36,6 +38,7 @@ export class ReplServer {
      * Sets up Express middleware for request parsing and static content.
      */
     private setupMiddleware(): void {
+        this.app.use(this.requestGuard.httpMiddleware);
         this.app.use(express.json());
     }
 

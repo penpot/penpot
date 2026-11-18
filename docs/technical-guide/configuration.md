@@ -780,6 +780,33 @@ If the PostgreSQL server is shared with other applications, make sure
 `PENPOT_DATABASE_MAX_POOL_SIZE` plus the connections used by everything else stays below
 the server's `max_connections` (100 by default).
 
+#### Prepared statement cache
+
+__Since version 2.20.0__
+
+The driver keeps two things per connection: a cache of parsed queries and, once a query
+runs enough times, a statement prepared in the server whose plan the server can reuse.
+Both are on by default; you only need these settings to tune them or to turn them off:
+
+```bash
+# Backend
+PENPOT_DATABASE_PREPARED_STATEMENT_CACHE_THRESHOLD: 5
+PENPOT_DATABASE_PREPARED_STATEMENT_CACHE_QUERIES: 256
+PENPOT_DATABASE_PREPARED_STATEMENT_CACHE_SIZE: 5242880
+```
+
+The values above are the driver defaults. `PENPOT_DATABASE_PREPARED_STATEMENT_CACHE_THRESHOLD`
+is how many times a query runs on a connection before the driver prepares it server-side:
+`-1` prepares it from the first execution and forces binary transfer, and `0` stops the
+driver from preparing statements in the server. The cache of parsed queries stays in use
+with the threshold at `0`: the connection caches up to
+`PENPOT_DATABASE_PREPARED_STATEMENT_CACHE_QUERIES` queries, using at most
+`PENPOT_DATABASE_PREPARED_STATEMENT_CACHE_SIZE` bytes per connection (the size is rounded
+up to whole MiB for the driver), and setting either of those two to `0` disables the
+cache. With 60 connections, the ceiling is 60 × the size. Leave a variable unset and the
+driver default applies. A parameter of the same name in `PENPOT_DATABASE_URI`, such as
+`?prepareThreshold=0`, takes precedence over these variables.
+
 ### Storage
 
 Storage refers to storing the user uploaded different objects in Penpot (assets, file data,...).
@@ -1048,6 +1075,27 @@ PENPOT_INTERNAL_RESOLVER: 127.0.0.11
 - `PENPOT_INTERNAL_RESOLVER`: The DNS server nginx uses to resolve the internal service
   names. Defaults to the nameservers found in `/etc/resolv.conf`. `127.0.0.11` is the
   embedded Docker DNS server; use the address of your own resolver on other setups.
+
+### Nginx workers
+
+The frontend container sizes its nginx workers from the CPUs it can use, its CPU quota or
+its cpuset, when they are fewer than the CPUs of the host. Otherwise it starts one worker
+per CPU of the host. Each worker reserves the memory for all its connections when it
+starts, so tune these if the frontend uses more memory than you expect:
+
+```bash
+# Frontend
+PENPOT_HTTP_SERVER_WORKER_PROCESSES: 2
+PENPOT_HTTP_SERVER_WORKER_CONNECTIONS: 2048
+```
+
+- `PENPOT_HTTP_SERVER_WORKER_PROCESSES`: Number of nginx worker processes, a positive
+  integer or `auto` for one per host CPU. Defaults to the CPUs the container can use, with
+  the quota rounded up, or `auto` when it has no limit.
+- `PENPOT_HTTP_SERVER_WORKER_CONNECTIONS`: Maximum simultaneous connections per worker,
+  a positive integer. Defaults to `65535`, which takes about 30 MB of memory per worker.
+
+The container refuses to start if either value is not valid.
 
 ## Other flags
 

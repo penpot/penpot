@@ -238,6 +238,7 @@
    :enable-inspect-styles
    :enable-feature-fdata-objects-map
    :enable-feature-render-wasm
+   :enable-feature-text-editor-wasm-html-paste
    :enable-token-import-from-library
    :enable-render-switch
    :enable-render-wasm-info

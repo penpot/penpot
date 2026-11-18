@@ -119,6 +119,7 @@
    [frontend-tests.plugins.user-test]
    [frontend-tests.plugins.utils-test]
    [frontend-tests.plugins.value-objects-test]
+   [frontend-tests.plugins.wait-for-save-test]
    [frontend-tests.render-dimensions-test]
    [frontend-tests.render-wasm.call-test]
    [frontend-tests.render-wasm.modifiers-test]
@@ -136,6 +137,7 @@
    [frontend-tests.text-editor-paste-guard-test]
    [frontend-tests.tokens.context-menu-test]
    [frontend-tests.tokens.copy-paste-props-test]
+   [frontend-tests.tokens.export-modal-test]
    [frontend-tests.tokens.import-export-test]
    [frontend-tests.tokens.logic.token-actions-test]
    [frontend-tests.tokens.logic.token-data-test]
@@ -196,6 +198,7 @@
    [frontend-tests.ui.subscription-test]
    [frontend-tests.ui.team-container-test]
    [frontend-tests.ui.text-attrs-multiple-test]
+   [frontend-tests.ui.viewport-texts-html-test]
    [frontend-tests.ui.viewport-top-bar-test]
    [frontend-tests.ui.workspace-libraries-test]
    [frontend-tests.util-clipboard-test]
@@ -352,6 +355,7 @@
    'frontend-tests.plugins.user-test
    'frontend-tests.plugins.utils-test
    'frontend-tests.plugins.value-objects-test
+   'frontend-tests.plugins.wait-for-save-test
    'frontend-tests.render-wasm.call-test
    'frontend-tests.render-wasm.modifiers-test
    'frontend-tests.render-wasm.process-objects-test
@@ -368,6 +372,7 @@
    'frontend-tests.svg-filters-test
    'frontend-tests.tokens.copy-paste-props-test
    'frontend-tests.tokens.context-menu-test
+   'frontend-tests.tokens.export-modal-test
    'frontend-tests.tokens.import-export-test
    'frontend-tests.tokens.logic.token-actions-test
    'frontend-tests.tokens.logic.token-data-test
@@ -430,6 +435,7 @@
    'frontend-tests.ui.subscription-test
    'frontend-tests.ui.team-container-test
    'frontend-tests.ui.text-attrs-multiple-test
+   'frontend-tests.ui.viewport-texts-html-test
    'frontend-tests.ui.viewport-top-bar-test
    'frontend-tests.ui.workspace-libraries-test
    'frontend-tests.util-clipboard-test

@@ -25,13 +25,21 @@ before trying to observe changes.
 To wait only for a single shape (and its children), use `await shape.waitForLayoutUpdate();`.
 Both accept an optional timeout in milliseconds (default 30000) and reject when it elapses.
 Every `execute_code` call waits for updates before applying your code, so you never need to call `waitForLayoutUpdate` at the beginning of your code.
+Every `execute_code` call also waits for pending changes to be saved before it returns success, so you should not call
+`await penpot.waitForSave()` at the end of your code (that would wait twice).
+That automatic save wait defaults to 60s and runs after the automatic layout wait (default 30s); both, plus your code,
+must fit inside the MCP tool timeout (`PENPOT_MCP_TOOL_TIMEOUT_S`, default 120s). If layout or saves are slow and tools
+time out before a save error appears, raise that env var.
 
 ## Rejected Changes and Read-Only Mode
 
-Penpot saves your changes to the backend after your `execute_code` call returns.
-When the backend rejects a save, Penpot undoes the rejected changes, together with the rest of their undo steps
-and any later change to the same file. This can happen a few seconds after the call that made the changes succeeded.
-The next tool response then starts with a warning that names the files, pages and shapes involved.
+`execute_code` only reports success after Penpot has saved the changes from that call (or confirmed there was nothing
+to save). If the save fails, times out, or the backend rejects the changes and the workspace rolls them back, the tool
+call fails with an error — do not treat a failed call as if the design was updated.
+A timeout while saves are still retrying means the save was not confirmed; it does not mean the file is fine.
+
+When a rollback is reported only on a later tool response (rare: concurrent edits, or a race after a timed-out response),
+that response starts with a warning that names the files, pages and shapes involved.
 When you get this warning:
   * Do not trust what you know about the design from before: shapes you created may be gone, and removed ones may be back.
   * Read the affected pages and shapes again (e.g. `penpotUtils.shapeStructure(page.root, 3)`) and check that they hold what you expect.
@@ -39,6 +47,11 @@ When you get this warning:
 
 While saves are failing, the workspace becomes read-only: every write through the API throws an error saying that the
 workspace is read-only because changes cannot be saved. Do not retry in a loop; wait and try again later, or tell the user.
+Once a save has failed for good, every `execute_code` call in that file fails with "Changes could not be saved", reads
+included, until the file is reopened. Tell the user to reopen the file. If the error says Penpot keeps retrying the
+saves, wait and try again later instead. Calls made from the dashboard do not wait for saves.
+A save failure does not undo `penpotMgmt` calls (projects, files, teams) made in the same code: read that state back
+before retrying them.
 Writes also throw when the user cannot edit the file, a version is being previewed or the canvas stopped rendering;
 the error says which. These do not pass by waiting: tell the user.
 

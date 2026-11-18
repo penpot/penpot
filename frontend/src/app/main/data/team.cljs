@@ -143,11 +143,15 @@
                 (rx/of team-form-modal)
 
                 :else
-                (let [pending-id   (str (uuid/next))
-                      callback-url (dom/append-query-param (rt/get-current-href)
-                                                           :pending-action-id pending-id)]
-                  (->> (rp/cmd! :check-nitrate-sso {:team-id team-id
-                                                    :url callback-url})
+                (let [pending-id            (str (uuid/next))
+                      ;; The callback travels as a query string; the token is
+                      ;; kept in its own shape because `append-query-param`
+                      ;; works on URLs.
+                      callback-query-string (-> (rt/get-current-token)
+                                                (dom/append-query-param :pending-action-id pending-id)
+                                                rt/token->query-string)]
+                  (->> (rp/cmd! :check-nitrate-sso {:team-id      team-id
+                                                    :query-string callback-query-string})
                        (rx/mapcat
                         (fn [{:keys [authorized redirect-uri]}]
                           (cond

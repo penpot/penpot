@@ -87,6 +87,7 @@ Penpot:
         flatten(shapes: Shape[]): Path[];
         createVariantFromComponents(shapes: Board[]): VariantContainer;
         waitForLayoutUpdate(timeout?: number): Promise<void>;
+        waitForSave(timeout?: number): Promise<void>;
     }
     ```
 
@@ -354,6 +355,7 @@ Penpot:
         * themechange: event emitted when the user changes its theme. The callback will receive the new theme (currently: either `dark` or `light`)
         * filechange: event emitted when a different file is opened. The callback will receive the new file.
         * contentsave: event emitted after the file content is saved in the backend. The callback receives no arguments.
+        * contentrollback: event emitted after the backend rejected some changes and they were undone in the workspace. The callback receives a `ContentRollback` with the files, pages and shapes affected.
         * finish: event emitted when the current file is closed. The callback will receive the id of the closed file.
 
         Type Parameters
@@ -1041,6 +1043,33 @@ Penpot:
 
         The promise to be resolved when the layout is updated. It is
         rejected with an Error, both on timeout and on an invalid timeout value.
+      waitForSave: |-
+        ```
+        waitForSave(timeout?: number): Promise<void>
+        ```
+
+        This method returns a promise that will be resolved when pending file
+        changes have been saved to the backend, or when there is nothing to save.
+        It force-flushes the persistence buffer first when work is pending.
+
+        Parameters
+
+        * timeout: number
+
+          Maximum time to wait, in milliseconds. If the timeout
+          elapses before the save settles, the promise is rejected. Defaults to
+          60000; the promise never waits indefinitely.
+
+        Returns Promise<void>
+
+        The promise to be resolved when the save has settled. It is
+        rejected with an Error on save failure, when changes are rolled back
+        during the wait, on timeout, or on an invalid timeout value. A save
+        that failed before the call also rejects: with `save-retrying` while
+        Penpot keeps retrying it, otherwise with the failure code until the
+        file is reopened. The Error `code` property tells the cases apart:
+        `save-timeout`, `rolled-back`, `save-retrying`, or the failure code
+        (`save-failed` unless the backend gave a more specific one).
 ActiveUser:
   overview: |-
     Interface ActiveUser
@@ -5365,7 +5394,8 @@ Team:
 
         Example
         ```
-        const [team] = await penpotMgmt.listTeams();const projects = await team.listProjects();
+        const [team] = await penpotMgmt.listTeams();
+        const projects = await team.listProjects();
         ```
       listDeletedProjects: |-
         ```
@@ -5519,7 +5549,8 @@ Project:
 
         Example
         ```
-        const file = await project.createFile({ name: 'Login' });await file.open();
+        const file = await project.createFile({ name: 'Login' });
+        await file.open();
         ```
       duplicate: |-
         ```
@@ -5585,7 +5616,7 @@ ProjectFile:
     }
     ```
 
-    Referenced by: PenpotMgmt, Project, ProjectFile
+    Referenced by: PenpotMgmt, Project, ProjectFile, Team
   members:
     Properties:
       id: |-
@@ -5814,7 +5845,8 @@ PenpotMgmt:
 
         Example
         ```
-        const file = await penpotMgmt.getFile(penpotMgmt.workspace.fileId!);file.name = 'Checkout';
+        const file = await penpotMgmt.getFile(penpotMgmt.workspace.fileId!);
+        file.name = 'Checkout';
         ```
       openFile: |-
         ```
@@ -5940,6 +5972,7 @@ Context:
         flatten(shapes: Shape[]): Path[];
         createVariantFromComponents(shapes: Board[]): VariantContainer;
         waitForLayoutUpdate(timeout?: number): Promise<void>;
+        waitForSave(timeout?: number): Promise<void>;
     }
     ```
   members:
@@ -6793,6 +6826,33 @@ Context:
 
         The promise to be resolved when the layout is updated. It is
         rejected with an Error, both on timeout and on an invalid timeout value.
+      waitForSave: |-
+        ```
+        waitForSave(timeout?: number): Promise<void>
+        ```
+
+        This method returns a promise that will be resolved when pending file
+        changes have been saved to the backend, or when there is nothing to save.
+        It force-flushes the persistence buffer first when work is pending.
+
+        Parameters
+
+        * timeout: number
+
+          Maximum time to wait, in milliseconds. If the timeout
+          elapses before the save settles, the promise is rejected. Defaults to
+          60000; the promise never waits indefinitely.
+
+        Returns Promise<void>
+
+        The promise to be resolved when the save has settled. It is
+        rejected with an Error on save failure, when changes are rolled back
+        during the wait, on timeout, or on an invalid timeout value. A save
+        that failed before the call also rejects: with `save-retrying` while
+        Penpot keeps retrying it, otherwise with the failure code until the
+        file is reopened. The Error `code` property tells the cases apart:
+        `save-timeout`, `rolled-back`, `save-retrying`, or the failure code
+        (`save-failed` unless the backend gave a more specific one).
 ContextGeometryUtils:
   overview: |-
     Interface ContextGeometryUtils
@@ -8162,6 +8222,7 @@ EventsMap:
         finish: string;
         shapechange: Shape;
         contentsave: void;
+        contentrollback: ContentRollback;
     }
     ```
 
@@ -8222,6 +8283,56 @@ EventsMap:
         ```
 
         The `contentsave` event will trigger after the file content is saved in the backend.
+      contentrollback: |-
+        ```
+        readonly contentrollback: ContentRollback
+        ```
+
+        The `contentrollback` event will trigger after the backend rejected some changes
+        and the workspace undid them, together with the rest of their undo steps and any
+        later change to the same file. Changes made by a plugin can be undone this way
+        after the call that made them returned, so a plugin that relies on them should
+        read the affected shapes again. The event fires once the undone data is in the
+        workspace. When the workspace could not undo the changes in place, it reloads the
+        file from the server first; the whole file then holds the server data, so shapes
+        outside the listed ones may have changed too.
+ContentRollback:
+  overview: |-
+    Interface ContentRollback
+    =========================
+
+    What a rollback of rejected changes undid, as given to the `contentrollback` event.
+
+    ```
+    interface ContentRollback {
+        fileIds: string[];
+        pageIds: string[];
+        shapeIds: string[];
+    }
+    ```
+
+    Referenced by: EventsMap
+  members:
+    Properties:
+      fileIds: |-
+        ```
+        readonly fileIds: string[]
+        ```
+
+        Ids of the files that lost changes.
+      pageIds: |-
+        ```
+        readonly pageIds: string[]
+        ```
+
+        Ids of the pages the undone changes touched.
+      shapeIds: |-
+        ```
+        readonly shapeIds: string[]
+        ```
+
+        Ids of the page shapes the undone changes touched. A shape the undone changes
+        created no longer exists; one they removed exists again.
 Export:
   overview: |-
     Interface Export

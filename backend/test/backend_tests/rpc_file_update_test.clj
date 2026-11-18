@@ -282,18 +282,20 @@
 
 (defn- update-file-logged
   "Updates the file and returns the response in `:out` and, in `:rejected`,
-  the props of the log record of the rejection, if any."
+  the props of the log record of the rejection, if any. Keeps the watch
+  until the record arrives: the logger writes it on another thread, so it
+  can land after the update returns."
   [ctx params]
-  (let [records (atom [])
-        out     (try
-                  (add-watch l/log-record ::capture
-                             (fn [_ _ _ record] (swap! records conj record)))
-                  (update-file ctx params)
-                  (finally
-                    (remove-watch l/log-record ::capture)))]
-    {:out      out
-     :rejected (some-> (wait-for-record records "update-file commit rejected")
-                       ::l/props)}))
+  (let [records (atom [])]
+    (try
+      (add-watch l/log-record ::capture
+                 (fn [_ _ _ record] (swap! records conj record)))
+      (let [out (update-file ctx params)]
+        {:out      out
+         :rejected (some-> (wait-for-record records "update-file commit rejected")
+                           ::l/props)})
+      (finally
+        (remove-watch l/log-record ::capture)))))
 
 (t/deftest bisects-the-commits-to-find-the-invalid-one
   (let [{:keys [page-id] :as ctx} (create-file)

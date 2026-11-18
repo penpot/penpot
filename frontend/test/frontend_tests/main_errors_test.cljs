@@ -1198,3 +1198,115 @@
                                 "errors.save-refused-merged-branch"
                                 "errors.save-refused-archived-branch"))
                      (get-in state [:notification :content])))))))))
+
+;; ---------------------------------------------------------------------------
+;; WASM errors
+;; ---------------------------------------------------------------------------
+
+(defn- ^:async handle-wasm-error
+  "Sends a `:wasm-error` with `code` through `on-error`. Resolves to the
+  errors assigned to the error page and the events emitted."
+  [code]
+  (let [events   (atom [])
+        assigned (atom [])
+        cause    (ex-info "WASM Error" {:type :wasm-error :code code :hint "WASM Error"})]
+    (await
+     (mock/with-mocks*
+       {st/emit!              (mock/stub (fn [& emitted] (swap! events into emitted)))
+        rt/get-current-href   (constantly "https://penpot.example.com/#/workspace")
+        rt/assign-exception   (fn [error] (swap! assigned conj error) error)
+        tm/schedule           (mock/stub (fn [f] (f)))
+        st/format-last-events (mock/stub (fn [& _] "(stub last events)"))}
+       (errors/on-error cause)
+       (await (async/settle))))
+    {:assigned @assigned :events @events}))
+
+(t/deftest ^:async non-recoverable-wasm-errors-show-the-error-page
+  ;; Scenario: a panic, a trap with no code and an unknown code.
+  ;; Proves: each shows the error page and no toast.
+  (doseq [code [:panic :wasm-critical :unknown-code]]
+    (errors/reset-report-governor!)
+    (let [{:keys [assigned events]} (await (handle-wasm-error code))]
+      (t/is (= [code] (map :code assigned))
+            (str code " must show the error page"))
+      (t/is (empty? (report-events events))
+            (str code " must not show a toast")))))
+
+(t/deftest ^:async recoverable-wasm-errors-show-a-toast
+  ;; Scenario: WASM errors with a recoverable code. Proves: each shows a
+  ;; handled report and a toast, and keeps the page.
+  (doseq [code [:non-blocking :wasm-reload-context-failure :viewer-canvas-failed]]
+    (errors/reset-report-governor!)
+    (let [{:keys [assigned events]} (await (handle-wasm-error code))]
+      (t/is (empty? assigned)
+            (str code " must not show the error page"))
+      (t/is (= ["handled-exception"]
+               (map (comp ::ev/name deref) (report-events events)))
+            (str code " must show a toast")))))
+
+;; ---------------------------------------------------------------------------
+;; wrap-wasm-effect
+;; ---------------------------------------------------------------------------
+
+(defn- wasm-error
+  [code]
+  (ex-info "WASM Error" {:type :wasm-error :code code}))
+
+(defn- run-wasm-effect
+  "Runs `f` through `wrap-wasm-effect` with `on-error` captured. Returns the
+  effect result, or the thrown error under `:thrown`, and the errors handled."
+  [f]
+  (let [handled (atom [])]
+    (with-redefs [errors/on-error (mock/stub #(swap! handled conj %))]
+      (let [result (try
+                     {:value (errors/wrap-wasm-effect f)}
+                     (catch :default cause
+                       {:thrown cause}))]
+        (assoc result :handled @handled)))))
+
+(t/deftest wrap-wasm-effect-returns-the-effect-value
+  (t/testing "an effect that does not throw keeps its return value"
+    (let [{:keys [value handled]} (run-wasm-effect (constantly :done))]
+      (t/is (= :done value))
+      (t/is (empty? handled)))))
+
+(t/deftest wrap-wasm-effect-keeps-the-cleanup
+  (t/testing "a returned cleanup fn still runs the original cleanup"
+    (let [cleaned (atom false)
+          {:keys [value]} (run-wasm-effect (fn [] #(reset! cleaned true)))]
+      (t/is (fn? value))
+      (value)
+      (t/is (true? @cleaned)))))
+
+(t/deftest wrap-wasm-effect-handles-recoverable-errors
+  (t/testing "a recoverable WASM error goes to on-error and is not rethrown"
+    (doseq [code errors/recoverable-wasm-codes]
+      (let [cause (wasm-error code)
+            {:keys [value thrown handled]} (run-wasm-effect #(throw cause))]
+        (t/is (nil? value) (str code))
+        (t/is (nil? thrown) (str code " must not be rethrown"))
+        (t/is (= [cause] handled) (str code " must go to on-error"))))))
+
+(t/deftest wrap-wasm-effect-rethrows-other-errors
+  (t/testing "critical WASM errors and other errors are rethrown unchanged"
+    (doseq [cause [(wasm-error :panic)
+                   (wasm-error :wasm-critical)
+                   (ex-info "other" {:type :validation})
+                   (js/Error. "plain")]]
+      (let [{:keys [thrown handled]} (run-wasm-effect #(throw cause))]
+        (t/is (identical? cause thrown) (ex-message cause))
+        (t/is (empty? handled) (str (ex-message cause) " must not go to on-error"))))))
+
+(t/deftest wrap-wasm-effect-guards-the-cleanup
+  (t/testing "a recoverable error in the cleanup goes to on-error"
+    (let [cause   (wasm-error :non-blocking)
+          handled (atom [])
+          cleanup (:value (run-wasm-effect (fn [] #(throw cause))))]
+      (with-redefs [errors/on-error (mock/stub #(swap! handled conj %))]
+        (cleanup))
+      (t/is (= [cause] @handled))))
+
+  (t/testing "a critical error in the cleanup is rethrown"
+    (let [cause   (wasm-error :wasm-critical)
+          cleanup (:value (run-wasm-effect (fn [] #(throw cause))))]
+      (t/is (thrown? js/Error (cleanup))))))

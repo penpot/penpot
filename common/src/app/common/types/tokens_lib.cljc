@@ -1678,7 +1678,7 @@
             (every? empty? (vals sets))
             (and (empty? sets) (empty? themes)))
       (throw (ex-info "the file doesn't contain any tokens"
-                      {:error/code :error.import/invalid-json-data})))
+                      {:error/code :error.import/no-token-files-found})))
 
     (as-> (make-tokens-lib) library
       (reduce-kv (fn [library name tokens]
@@ -1817,8 +1817,6 @@
   A `:dtcg` file is not meant to import back unchanged: tokens come back
   with their DTCG type and value, a spacing token as a dimension, `4` as
   `4px` and `rgb(255, 0, 0)` as `#ff0000`."
-  ([tokens-lib]
-   (tsw/write-files (tokens-lib->document tokens-lib (legacy-activation tokens-lib))))
   ([tokens-lib tokens-status]
    (export-dtcg-multi-file tokens-lib tokens-status nil))
   ([tokens-lib tokens-status opts]
