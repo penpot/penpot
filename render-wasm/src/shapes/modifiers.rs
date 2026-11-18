@@ -17,6 +17,7 @@ use crate::shapes::{
 };
 use crate::state::{ShapesPoolRef, State};
 use crate::uuid::Uuid;
+use crate::{get_render_state, has_render_state};
 
 #[allow(clippy::too_many_arguments)]
 fn propagate_children(
@@ -527,7 +528,8 @@ pub fn propagate_modifiers(
             Modifier::Transform(..) => None,
         })
         .collect();
-    let mut nested_layouts_queued = requested_reflows.is_empty();
+    let interactive = has_render_state() && get_render_state().options.is_interactive_transform();
+    let mut nested_layouts_queued = interactive || requested_reflows.is_empty();
 
     // We first propagate the transforms to the children and then after
     // recalculate the layouts. The layout can create further transforms that
