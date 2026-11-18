@@ -397,7 +397,16 @@
           (->> (fdata/realize cfg)))))))
 
 (defn get-file
-  "Get file, resolve all features and apply migrations.
+  "Read the head of a file: the `file` row with its `file_data` resolved,
+  decoded, and, unless `:migrate? false`, migrated.
+
+  Every reader of the head goes through this function, which is the one
+  place a later fold over a checkpoint and the change rows after it
+  lands. Two kinds of read stay outside its decoded form on purpose: a
+  row-only read (`:load-data? false`) and a bytes read (`:decode? false`,
+  for a caller that moves or copies the stored bytes rather than reading
+  the document). Fragment rows are not the head: they load lazily through
+  the pointer loader, not through this function.
 
   Runs inside a transaction: it joins the caller's when the cfg already
   carries a connection and opens one otherwise, so the migration write

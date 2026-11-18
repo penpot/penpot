@@ -442,15 +442,19 @@
            (assoc :file-change-id file-change-id))}))))
 
 (defn get-file
-  "Get not-decoded file, only decodes the features set.
+  "Get the file with its data decoded and not migrated.
 
   The read takes the `file` row with FOR UPDATE: the save persists the
   map it read, so it must hold the row from the read to the write. The
   lock is exclusive, not shared, because the migration-on-read path may
   re-read the same row with FOR UPDATE, and a shared lock that upgrades
-  deadlocks two concurrent readers."
+  deadlocks two concurrent readers.
+
+  The read does not migrate because a save that repairs attaches its
+  snapshot before the migration runs (`update-file-data!`): the fold's
+  own migration would run before that snapshot exists."
   [cfg id]
-  (bfc/get-file cfg id :decode? false :lock-for-update? true))
+  (bfc/get-file cfg id :migrate? false :lock-for-update? true))
 
 (defn persist-file!
   "Function responsible of persisting already encoded file. Should be
@@ -494,8 +498,8 @@
 (defn- update-file-data!
   "Perform a file data transformation in with all update context setup.
 
-  This function expected not-decoded file and transformation function. Returns
-  an encoded file.
+  This function expects the file with its data decoded (`get-file`) and a
+  transformation function, and returns the transformed file, still decoded.
 
   This function is not responsible of saving the file. Fragment rows are
   persisted later by `persist-file!` (via `bfc/update-file!` inside the
@@ -504,7 +508,6 @@
   [cfg {:keys [id] :as file} update-fn & args]
   (let [file (update file :data (fn [data]
                                   (-> data
-                                      (blob/decode)
                                       (assoc :id id))))
         libs (delay (bfc/get-resolved-file-libraries cfg file))
 
