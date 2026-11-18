@@ -1527,26 +1527,6 @@
         (rx/of (dwsh/relocate-shapes orphans uuid/zero 0 true))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Sitemap
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn start-rename-page-item
-  [id]
-  (ptk/reify ::start-rename-page-item
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:workspace-local :page-item] id))))
-
-(defn stop-rename-page-item
-  []
-  (ptk/reify ::stop-rename-page-item
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [local (-> (:workspace-local state)
-                      (dissoc :page-item))]
-        (assoc state :workspace-local local)))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Components annotations
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -1822,6 +1802,9 @@
 (dm/export dwpg/initialize-page)
 (dm/export dwpg/finalize-page)
 (dm/export dwpg/create-page)
+(dm/export dwpg/add-page)
+(dm/export dwpg/start-rename-page-item)
+(dm/export dwpg/stop-rename-page-item)
 (dm/export dwpg/duplicate-page)
 (dm/export dwpg/rename-page)
 (dm/export dwpg/delete-page)
