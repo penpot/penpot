@@ -1,4 +1,4 @@
-use crate::error::{Error, Result};
+use crate::error::Result;
 use crate::math::{self as math, intersect_rays, Bounds, Matrix, Point, Ray, Vector, VectorExt};
 use crate::shapes::{
     AlignContent, AlignItems, AlignSelf, Frame, GridCell, GridData, GridTrack, GridTrackType,
@@ -10,7 +10,7 @@ use crate::uuid::Uuid;
 
 use std::collections::{HashMap, HashSet, VecDeque};
 
-use super::common::GetBounds;
+use super::common::{has_in_flow_children, GetBounds};
 
 const MIN_SIZE: f32 = 0.01;
 const MAX_SIZE: f32 = f32::INFINITY;
@@ -890,7 +890,11 @@ pub fn reflow_grid_layout(
         }
     }
 
-    if shape.is_layout_horizontal_auto() || shape.is_layout_vertical_auto() {
+    // Like the CLJS layout, keep the size when there is no content to fit:
+    // auto-sizing to empty tracks would collapse the frame.
+    if (shape.is_layout_horizontal_auto() || shape.is_layout_vertical_auto())
+        && has_in_flow_children(shape, shapes)
+    {
         let width = layout_bounds.width();
         let height = layout_bounds.height();
 
@@ -915,9 +919,7 @@ pub fn reflow_grid_layout(
 
         let parent_transform = layout_bounds.transform_matrix().unwrap_or_default();
 
-        let parent_transform_inv = &parent_transform.invert().ok_or(Error::CriticalError(
-            "Failed to invert parent transform".to_string(),
-        ))?;
+        let parent_transform_inv = &parent_transform.invert().unwrap_or_default();
         let origin = parent_transform_inv.map_point(layout_bounds.nw);
 
         let mut scale = Matrix::scale((scale_width, scale_height));

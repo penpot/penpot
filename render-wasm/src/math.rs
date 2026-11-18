@@ -337,6 +337,10 @@ impl Bounds {
         target_points_matrix.set_translate_x(0.0);
         target_points_matrix.set_translate_y(0.0);
 
+        // Collapsed bounds (e.g. all corners on one line) give a singular
+        // matrix; callers fall back to the identity, as for zero-size bounds.
+        target_points_matrix.invert()?;
+
         Some(target_points_matrix)
     }
 
@@ -596,5 +600,35 @@ mod tests {
         assert!((m.scale_y() - 0.81).abs() <= 0.1);
         assert!((m.translate_x() - 0.0).abs() <= 0.1);
         assert!((m.translate_y() - 0.0).abs() <= 0.1);
+    }
+
+    #[test]
+    fn test_transform_matrix_of_collapsed_rotated_bounds_is_none() {
+        // A slightly rotated shape squashed to zero width (issue #12763): the
+        // corners share one x but nw and ne keep a small y offset.
+        let b = Bounds::new(
+            Point::new(-1536.0, 48.96324),
+            Point::new(-1536.0, 49.500076),
+            Point::new(-1536.0, 103.5),
+            Point::new(-1536.0, 102.963165),
+        );
+
+        assert!(b.width() > 0.0);
+        assert!(b.transform_matrix().is_none());
+    }
+
+    #[test]
+    fn test_transform_matrix_of_small_rotated_bounds_is_some() {
+        let (sin, cos) = 0.1_f32.to_radians().sin_cos();
+        let rotate = |x: f32, y: f32| Point::new(x * cos - y * sin, x * sin + y * cos);
+        let b = Bounds::new(
+            rotate(0.0, 0.0),
+            rotate(0.05, 0.0),
+            rotate(0.05, 0.05),
+            rotate(0.0, 0.05),
+        );
+
+        let m = b.transform_matrix().unwrap();
+        assert!(m.invert().is_some());
     }
 }
