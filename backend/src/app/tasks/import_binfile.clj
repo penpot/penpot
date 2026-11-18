@@ -12,13 +12,17 @@
    [app.binfile.jobs :as bfj]
    [app.binfile.v1 :as bf.v1]
    [app.binfile.v3 :as bf.v3]
+   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.db :as db]
    [app.jobs :as jobs]
    [app.jobs.storage :as js]
+   [app.loggers.audit :as audit]
+   [app.loggers.webhooks :as-alias webhooks]
    [app.metrics :as mtx]
+   [app.rpc :as-alias rpc]
    [app.rpc.commands.projects :as projects]
    [app.rpc.commands.teams :as teams]
    [app.storage :as sto]
@@ -117,17 +121,88 @@
               {:id project-id}
               {::db/return-keys false}))
 
+(defn- import-files
+  "Run the core inside a transaction, so a cancellation detected between
+  units rolls the whole import back, and check the result against its
+  schema inside that same transaction: a result the contract does not
+  accept rolls the import back instead of leaving half of a file
+  imported."
+  [cfg context params team input]
+  (let [profile-id (:profile-id context)
+        project-id (:project-id params)]
+    (db/tx-run! cfg (fn [tx-cfg]
+                      ;; the core joins this transaction: it is the one
+                      ;; that decides whether the whole import is kept or
+                      ;; rolled back
+                      (-> (bfc/import-cfg tx-cfg {:profile-id profile-id
+                                                  :project-id project-id
+                                                  :team       team
+                                                  :name       (:name params)
+                                                  :input      input})
+                          (bfj/check-active context)
+                          (bfj/run context
+                                   (fn [cfg]
+                                     (let [result (case (int (:version params))
+                                                    1 (bf.v1/import-files! cfg)
+                                                    3 (bf.v3/import-files! cfg)
+                                                    (ex/raise :type :validation
+                                                              :code :unsupported-version
+                                                              :hint "unsupported binfile version"
+                                                              :version (:version params)))]
+                                       (touch-project cfg project-id)
+                                       result)))
+                          (assoc :name (:name params))
+                          (assoc :version (:version params))
+                          (check-result))))))
+
+(defn- get-outcome
+  "The status the audit gives to an import that raised: an `:interrupt`
+  means the job stopped being active (the user cancelled it), anything
+  else is a failure."
+  [cause]
+  (if (= :interrupt (:type (ex-data cause)))
+    "cancelled"
+    "failed"))
+
+(defn- submit-import-event
+  "Submit the `import-binfile` audit event with the outcome of the job.
+
+  It keeps the name and the props of the event the legacy RPC submits, so
+  the series continues across both paths, and adds what only the job
+  knows. The job runs outside any request, so the event carries no
+  request context."
+  [cfg context params props]
+  (audit/submit cfg {:type             "command"
+                     :name             "import-binfile"
+                     :profile-id       (:profile-id context)
+                     :props            (-> params
+                                           (assoc :job-id (:id context))
+                                           (merge props)
+                                           (d/without-nils))
+                     :context          {:triggered-by "import-binfile-job"}
+                     ::webhooks/event? true}))
+
+(defn- submit-file-created-events
+  "The imported files get no event from their own command, so emit one per
+  file inside a single transaction, as the legacy RPC does."
+  [cfg context team file-ids]
+  (let [params {::rpc/profile-id (:profile-id context)}]
+    (db/tx-run! cfg (fn [cfg]
+                      (doseq [file-id file-ids]
+                        (audit/submit-file-created-event cfg params file-id
+                                                         {:team-id (:id team)}))))))
+
 (defn execute-import
   "Plain handler, importable and testable without integrant.
 
   The edition permission is checked again here, and not only when the job
   was created: it can be revoked while the job waits in its queue. The
-  core runs inside a transaction, so a cancellation detected between units
-  rolls the whole import back, and the result is checked against its schema
-  inside that same transaction: a result the contract does not accept rolls
-  the import back instead of leaving half of a file imported. The substrate
-  checks the result again when the job is completed, which is the only net
-  for a job that does not validate its own result.
+  substrate checks the result again when the job is completed, which is
+  the only net for a job that does not validate its own result.
+
+  Once the permission holds, every outcome of the import (completed,
+  failed or cancelled) submits the `import-binfile` audit event, and a
+  completed import submits a `create-file` event per file it created.
 
   The package is the input of the job: it is released and its temporary
   copy deleted once the job is terminal, whatever the outcome. A crash is
@@ -135,43 +210,40 @@
   [cfg context params]
   (let [profile-id (:profile-id context)
         project-id (:project-id params)
+        tpoint     (ct/tpoint)
         input      (js/load-input cfg context)]
 
     (try
       (projects/check-edition-permissions! cfg profile-id project-id)
 
-      (let [team (or (teams/get-team cfg
-                                     :profile-id profile-id
-                                     :project-id project-id)
-                     (ex/raise :type :not-found
-                               :code :project-not-found
-                               :hint "the destination project is not available"
-                               :profile-id profile-id
-                               :project-id project-id))]
-        (db/tx-run! cfg (fn [tx-cfg]
-                          ;; the core joins this transaction: it
-                          ;; is the one that decides whether the
-                          ;; whole import is kept or rolled back
-                          (-> (bfc/import-cfg tx-cfg {:profile-id profile-id
-                                                      :project-id project-id
-                                                      :team       team
-                                                      :name       (:name params)
-                                                      :input      input})
-                              (bfj/check-active context)
-                              (bfj/run context
-                                       (fn [cfg]
-                                         (let [result (case (int (:version params))
-                                                        1 (bf.v1/import-files! cfg)
-                                                        3 (bf.v3/import-files! cfg)
-                                                        (ex/raise :type :validation
-                                                                  :code :unsupported-version
-                                                                  :hint "unsupported binfile version"
-                                                                  :version (:version params)))]
-                                           (touch-project cfg project-id)
-                                           result)))
-                              (assoc :name (:name params))
-                              (assoc :version (:version params))
-                              (check-result)))))
+      (let [team   (or (teams/get-team cfg
+                                       :profile-id profile-id
+                                       :project-id project-id)
+                       (ex/raise :type :not-found
+                                 :code :project-not-found
+                                 :hint "the destination project is not available"
+                                 :profile-id profile-id
+                                 :project-id project-id))
+            props  {:team-id   (:id team)
+                    :file-size (fs/size input)}
+            result (try
+                     (import-files cfg context params team input)
+                     (catch Throwable cause
+                       (submit-import-event cfg context params
+                                            (assoc props
+                                                   :status     (get-outcome cause)
+                                                   :elapsed-ms (inst-ms (tpoint))))
+                       (throw cause)))]
+
+        (submit-file-created-events cfg context team (:file-ids result))
+        (submit-import-event cfg context params
+                             (assoc props
+                                    :status     "completed"
+                                    :file-ids   (:file-ids result)
+                                    :file-count (count (:file-ids result))
+                                    :elapsed-ms (inst-ms (tpoint))))
+        result)
+
       (finally
         (fs/delete input)
         (js/release-input cfg context)))))

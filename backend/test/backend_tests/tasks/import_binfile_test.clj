@@ -12,6 +12,7 @@
    [app.binfile.v1 :as v1]
    [app.binfile.v3 :as v3]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as db]
    [app.jobs :as jobs]
    [app.jobs.storage :as js]
@@ -20,7 +21,8 @@
    [backend-tests.helpers :as th]
    [clojure.java.io :as jio]
    [clojure.test :as t]
-   [datoteka.io :as io]))
+   [datoteka.io :as io]
+   [mockery.core :refer [with-mocks]]))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each (th/serial th/database-reset th/clean-storage))
@@ -84,6 +86,13 @@
 (defn- temp-files
   []
   (seq (.list (jio/file tmp/default-tmp-dir))))
+
+(defn- audit-events
+  "The audit events a mock of `audit/submit` received with that name."
+  [mock event-name]
+  (->> (:call-args-list @mock)
+       (map second)
+       (filter #(= event-name (:name %)))))
 
 (defn- project-modified-at
   [project-id]
@@ -265,3 +274,103 @@
 
       (t/testing "and the import is rolled back: the destination keeps no files"
         (t/is (= before (project-files project-id)))))))
+
+(t/deftest a-completed-import-submits-its-audit-events
+  (with-mocks [mock {:target 'app.loggers.audit/submit :return nil}]
+    ;; the `create-file` events are only built when the audit log is on
+    (with-redefs [cf/flags (conj cf/flags :audit-log)]
+      (let [profile (th/create-profile* 1)
+            staged  (stage-package! profile (fixture-path))
+            job-id  (th/create-job* :import-binfile {:profile-id (:id profile)
+                                                     :resource-id (:resource-id staged)})
+            result  (run-import job-id {:project-id   (:default-project-id profile)
+                                        :name         "imported"
+                                        :version      3
+                                        :referer      "penpot"
+                                        :generated-by "penpot/2.20.0"})
+            file-id (first (:file-ids result))
+            [event :as events] (audit-events mock "import-binfile")]
+
+        (t/testing "the import submits one event with the legacy name and props"
+          (t/is (= 1 (count events)))
+          (t/is (= "command" (:type event)))
+          (t/is (= (:id profile) (:profile-id event)))
+          (t/is (= "completed" (-> event :props :status)))
+          (t/is (= [file-id] (-> event :props :file-ids)))
+          (t/is (= 1 (-> event :props :file-count)))
+          (t/is (= (:default-project-id profile) (-> event :props :project-id)))
+          (t/is (= 3 (-> event :props :version)))
+          (t/is (= "penpot" (-> event :props :referer)))
+          (t/is (= "penpot/2.20.0" (-> event :props :generated-by))))
+
+        (t/testing "and what only the job knows"
+          (t/is (= job-id (-> event :props :job-id)))
+          (t/is (= (:default-team-id profile) (-> event :props :team-id)))
+          (t/is (pos? (-> event :props :file-size)))
+          (t/is (nat-int? (-> event :props :elapsed-ms))))
+
+        (t/testing "every imported file gets its create-file event"
+          (let [[created :as created-events] (audit-events mock "create-file")]
+            (t/is (= 1 (count created-events)))
+            (t/is (= file-id (-> created :props :id)))
+            (t/is (= (:id profile) (:profile-id created)))
+            (t/is (= (:default-team-id profile) (-> created :props :team-id)))))))))
+
+(t/deftest a-failed-import-submits-its-outcome
+  (with-mocks [mock {:target 'app.loggers.audit/submit :return nil}]
+    (with-redefs [cf/flags (conj cf/flags :audit-log)]
+      (let [profile (th/create-profile* 1)
+            staged  (stage-package! profile (fixture-path))
+            job-id  (th/create-job* :import-binfile {:profile-id (:id profile)
+                                                     :resource-id (:resource-id staged)})]
+
+        (with-redefs [v3/import-files! (fn [_] (throw (ex-info "boom" {:type :internal})))]
+          (t/is (thrown? Throwable
+                         (run-import job-id {:project-id (:default-project-id profile)
+                                             :name       "imported"
+                                             :version    3}))))
+
+        (let [[event :as events] (audit-events mock "import-binfile")]
+          (t/is (= 1 (count events)))
+          (t/is (= "failed" (-> event :props :status)))
+          (t/is (= job-id (-> event :props :job-id)))
+          (t/is (not (contains? (:props event) :file-ids))))
+
+        (t/testing "and no file is reported as created"
+          (t/is (empty? (audit-events mock "create-file"))))))))
+
+(t/deftest a-cancelled-import-submits-its-outcome
+  (with-mocks [mock {:target 'app.loggers.audit/submit :return nil}]
+    (let [profile (th/create-profile* 1)
+          staged  (stage-package! profile (fixture-path))
+          job-id  (th/create-job* :import-binfile {:profile-id (:id profile)
+                                                   :resource-id (:resource-id staged)})]
+
+      ;; the user cancels while the import is running
+      (with-redefs [jobs/heartbeat (fn [& _]
+                                     (th/db-update! :job {:status "cancelled"} {:id job-id})
+                                     1)]
+        (t/is (thrown? Throwable
+                       (run-import job-id {:project-id (:default-project-id profile)
+                                           :name       "imported"
+                                           :version    3}))))
+
+      (let [[event :as events] (audit-events mock "import-binfile")]
+        (t/is (= 1 (count events)))
+        (t/is (= "cancelled" (-> event :props :status)))))))
+
+(t/deftest an-import-without-permission-submits-no-outcome
+  (with-mocks [mock {:target 'app.loggers.audit/submit :return nil}]
+    (let [owner  (th/create-profile* 1)
+          other  (th/create-profile* 2)
+          staged (stage-package! other (fixture-path))
+          job-id (th/create-job* :import-binfile {:profile-id (:id other)
+                                                  :resource-id (:resource-id staged)})]
+
+      (t/is (thrown? Throwable
+                     (run-import job-id {:project-id (:default-project-id owner)
+                                         :name       "imported"
+                                         :version    3})))
+
+      (t/testing "the import never started, as with the legacy RPC"
+        (t/is (empty? (audit-events mock "import-binfile")))))))
