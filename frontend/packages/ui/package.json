@@ -20,7 +20,8 @@
   },
   "scripts": {
     "watch": "vite build --watch",
-    "build": "vite build"
+    "build": "vite build",
+    "test": "vitest run --config vite.config.mts"
   },
   "devDependencies": {
     "@babel/core": "^8.0.6",

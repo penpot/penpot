@@ -7,7 +7,7 @@ slash: true
 # Skill: create-commit
 
 Produce a git commit that follows Penpot's commit message conventions. This
-skill owns the commit format, staging review, and safety checks — it does not
+skill handles staging review and safety checks — it does not
 implement features or push.
 
 ## When to Use
@@ -23,15 +23,9 @@ subject/body limits, and the `AI-assisted-by` trailer. Follow it exactly.
 
 ## Iron Rules (non-negotiable)
 
-1. **Wrap every body line at 80 characters or fewer.** Count characters, do
-   not eyeball. Exceptions: `Signed-off-by:` / `AI-assisted-by:` trailers and
-   lines carrying a URL. This is the rule agents skip most often.
-2. **Subject ≤80 chars**, imperative, capitalized, no trailing period.
-   `Merge`/`Revert`/`Reapply` commits skip the length check.
-3. **Blank line between subject and body.**
-4. **Run `./scripts/check-commit` and require exit code 0.** It mechanically
-   checks rules 1–3. A non-zero exit is a hard blocker: fix the message and
-   re-commit. Never report the commit as done with a failing checker.
+Follow the message rules and exceptions in `mem:workflow/creating-commits`.
+**Run `./scripts/check-commit` and require exit code 0.** A non-zero exit is a
+hard blocker: fix the message and re-check it before reporting success.
 
 ## Workflow
 
@@ -67,4 +61,4 @@ subject/body limits, and the `AI-assisted-by` trailer. Follow it exactly.
   bots are rejected by `./scripts/check-commit`; for AI participation use the
   `AI-assisted-by:` trailer.
 - Do not add untracked files that were not created in this session.
-- Do not skip the `scripts/check-commit` verification step (Iron Rule 4).
+- Do not skip the `scripts/check-commit` verification step.

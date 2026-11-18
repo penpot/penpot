@@ -29,6 +29,8 @@
    [common-tests.files-migrations-0035-test]
    [common-tests.files-migrations-0036-test]
    [common-tests.files-migrations-0037-test]
+   [common-tests.files-migrations-0038-test]
+   [common-tests.files-migrations-0039-test]
    [common-tests.files-migrations-test]
    [common-tests.files.comp-processors-test]
    [common-tests.files.helpers-test]
@@ -151,6 +153,8 @@
    'common-tests.files-migrations-0035-test
    'common-tests.files-migrations-0036-test
    'common-tests.files-migrations-0037-test
+   'common-tests.files-migrations-0038-test
+   'common-tests.files-migrations-0039-test
    'common-tests.files-migrations-test
    'common-tests.files.comp-processors-test
    'common-tests.files.helpers-test

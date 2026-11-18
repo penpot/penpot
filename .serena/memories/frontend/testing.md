@@ -57,6 +57,7 @@ From `frontend/`:
 - Build test target only (no run): `pnpm run build:test`.
 - After `build:test` has been run, run the compiled runner directly: `node target/tests/test.js [--focus ...] [--log-level ...]`.
 - Watch tests: `pnpm run watch:test`.
+- Coverage: `pnpm run test:coverage` (builds, runs the suite under `NODE_V8_COVERAGE`, keeps its exit code). `scripts/coverage.js` maps V8 data back to `.cljs`/`.cljc` through the test build's source maps (`ast-v8-to-istanbul` + acorn) and writes `coverage/` (`lcov.info`, `coverage-summary.json`, `html/`, `unloaded.txt`); `tests-frontend.yml` renders the step summary with `scripts/coverage-summary.mjs` and uploads `coverage/` as the `frontend-coverage` artifact. `scripts/test` (CI) runs `test:coverage`, not `test`. Scope: `frontend/src/app/**` minus `app/main/ui/` (`EXCLUDED_DIRS`); namespaces no test loads are listed apart, never counted. Never pass `ignoreSourceCode` to `convert`: CLJS maps point past source lines and it throws. Trust line % over branch % (branches are of the generated JS).
 
 New frontend test namespaces must be required/listed in `frontend_tests/runner.cljs`; new vars in existing namespaces need no runner change.
 

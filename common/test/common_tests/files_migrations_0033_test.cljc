@@ -6,21 +6,21 @@
 
 (ns common-tests.files-migrations-0033-test
   "Regression coverage for the shape tree traversal of the
-  `0033-normalize-main-instance-names` migration.
+  `0033-normalize-main-instance-names-v2` migration.
 
   The migration walks a container from its root down, following the
   `:shapes` vectors. A file can hold a `:shapes` entry pointing to a
   shape that is not in the `:objects` map (a dangling reference). The
-  traversal must skip it instead of storing a nil shape into the
-  `:objects` map, and must keep normalizing the names of the shapes
-  that do exist."
+  repair that runs before the walk drops it instead of storing a nil
+  shape into the `:objects` map, and the walk keeps normalizing the
+  names of the shapes that do exist."
   (:require
    [app.common.files.migrations :as cfm]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [clojure.test :as t]))
 
-(def ^:private migration "0033-normalize-main-instance-names")
+(def ^:private migration "0033-normalize-main-instance-names-v2")
 
 (defn- make-root
   [children]
@@ -47,7 +47,7 @@
   [component-id objects]
   {:components {component-id {:id component-id :objects objects}}})
 
-;; --- The guard: a missing child must not become a nil shape
+;; --- A missing child is dropped, and never becomes a nil shape
 
 (t/deftest missing-child-of-a-page-does-not-create-a-nil-shape
   (let [page-id   (uuid/next)
@@ -61,8 +61,8 @@
           "no nil key is added to the objects map")
     (t/is (= 1 (count objects'))
           "the objects map keeps only the shapes that exist")
-    (t/is (= root (get objects' uuid/zero))
-          "the root is left untouched")))
+    (t/is (= (assoc root :shapes []) (get objects' uuid/zero))
+          "the dangling child is dropped, the rest of the root is left untouched")))
 
 (t/deftest missing-child-of-a-component-does-not-create-a-nil-shape
   (let [component-id (uuid/next)
@@ -76,8 +76,8 @@
           "no nil key is added to the objects map")
     (t/is (= 1 (count objects'))
           "the objects map keeps only the shapes that exist")
-    (t/is (= root (get objects' uuid/zero))
-          "the component root is left untouched")))
+    (t/is (= (assoc root :shapes []) (get objects' uuid/zero))
+          "the dangling child is dropped, the rest of the component root is left untouched")))
 
 (t/deftest missing-child-deep-in-the-tree-does-not-create-a-nil-shape
   (let [page-id    (uuid/next)
@@ -92,8 +92,8 @@
 
     (t/is (not (contains? objects' nil))
           "no nil key is added to the objects map")
-    (t/is (= frame (get objects' frame-id))
-          "the parent of the missing child is left untouched")))
+    (t/is (= (assoc frame :shapes []) (get objects' frame-id))
+          "the missing child is dropped, the rest of its parent is left untouched")))
 
 ;; --- The behavior: names keep being normalized next to a missing child
 
