@@ -67,7 +67,7 @@ rg "user_\d+"
 rg -F "function()"
 
 # Multiline search
-rg -U "start.*end"
+rg -U '(?s)start.*end'
 
 # Only show matches, not lines
 rg -o "https?://[^\s]+"
