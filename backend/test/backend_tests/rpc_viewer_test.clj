@@ -1755,6 +1755,200 @@
         (t/is (not (contains? comps comp-d)))
         (t/is (not (contains? comps comp-e)))))))
 
+(t/deftest share-link-bundle-drops-library-components-of-deleted-primary-component
+  ;; A deleted primary component keeps its main-instance subtree in
+  ;; `:objects`. A library component instanced only inside those stored
+  ;; shapes is out of scope: the library trim walks the data the bundle
+  ;; emits, whose `:components` map no longer carries deleted components.
+  (let [owner    (th/create-profile* 1 {:is-active true})
+        proj-id  (:default-project-id owner)
+
+        lib      (th/create-file* 1 {:profile-id (:id owner)
+                                     :project-id proj-id
+                                     :is-shared true})
+        lib-id   (:id lib)
+        lib-page (first (get-in lib [:data :pages]))
+
+        l-control (uuid/random)
+        l-live    (uuid/random)
+        l-retired (uuid/random)
+        lc-main   (uuid/random)
+        ll-main   (uuid/random)
+        lr-main   (uuid/random)
+        marker    "SIICA-LIB-RETIRED-REF"
+
+        frame    (fn [id parent frame-id extra]
+                   (cts/setup-shape
+                    (merge {:id id
+                            :name "Board"
+                            :frame-id frame-id
+                            :parent-id parent
+                            :type :frame}
+                           extra)))
+
+        _        (update-file!
+                  :profile-id (:id owner)
+                  :file-id lib-id
+                  :changes [{:type :add-obj
+                             :page-id lib-page
+                             :id lc-main
+                             :parent-id uuid/zero
+                             :frame-id uuid/zero
+                             :components-v2 true
+                             :obj (frame lc-main uuid/zero uuid/zero
+                                         {:main-instance true
+                                          :component-root true
+                                          :component-file lib-id
+                                          :component-id l-control})}
+                            {:type :add-obj
+                             :page-id lib-page
+                             :id ll-main
+                             :parent-id uuid/zero
+                             :frame-id uuid/zero
+                             :components-v2 true
+                             :obj (frame ll-main uuid/zero uuid/zero
+                                         {:main-instance true
+                                          :component-root true
+                                          :component-file lib-id
+                                          :component-id l-live})}
+                            {:type :add-obj
+                             :page-id lib-page
+                             :id lr-main
+                             :parent-id uuid/zero
+                             :frame-id uuid/zero
+                             :components-v2 true
+                             :obj (frame lr-main uuid/zero uuid/zero
+                                         {:main-instance true
+                                          :component-root true
+                                          :component-file lib-id
+                                          :component-id l-retired})}
+                            {:type :add-component
+                             :path ""
+                             :name "control"
+                             :main-instance-id lc-main
+                             :main-instance-page lib-page
+                             :id l-control
+                             :anotation nil}
+                            {:type :add-component
+                             :path ""
+                             :name "live"
+                             :main-instance-id ll-main
+                             :main-instance-page lib-page
+                             :id l-live
+                             :anotation nil}
+                            {:type :add-component
+                             :path ""
+                             :name marker
+                             :main-instance-id lr-main
+                             :main-instance-page lib-page
+                             :id l-retired
+                             :anotation nil}
+                            ;; A retired library component keeps its
+                            ;; stored shapes; no link may receive them.
+                            {:type :del-component
+                             :id l-retired}])
+
+        file     (th/create-file* 2 {:profile-id (:id owner)
+                                     :project-id proj-id
+                                     :is-shared false})
+        file-id  (:id file)
+        page-a   (first (get-in file [:data :pages]))
+        page-b   (uuid/random)
+
+        c-deleted (uuid/random)
+        d-main    (uuid/random)
+        d-live    (uuid/random)
+        d-retired (uuid/random)
+        inst      (uuid/random)
+
+        _        (update-file!
+                  :profile-id (:id owner)
+                  :file-id file-id
+                  :changes [{:type :add-page
+                             :id page-b
+                             :page {:id page-b
+                                    :name "Hidden"
+                                    :options {}
+                                    :objects {}}}
+                            ;; The deleted component's stored subtree
+                            ;; instances both library components.
+                            {:type :add-obj
+                             :page-id page-b
+                             :id d-main
+                             :parent-id uuid/zero
+                             :frame-id uuid/zero
+                             :components-v2 true
+                             :obj (frame d-main uuid/zero uuid/zero
+                                         {:main-instance true
+                                          :component-root true
+                                          :component-file file-id
+                                          :component-id c-deleted})}
+                            {:type :add-obj
+                             :page-id page-b
+                             :id d-live
+                             :parent-id d-main
+                             :frame-id d-main
+                             :components-v2 true
+                             :obj (frame d-live d-main d-main
+                                         {:component-root true
+                                          :component-file lib-id
+                                          :component-id l-live})}
+                            {:type :add-obj
+                             :page-id page-b
+                             :id d-retired
+                             :parent-id d-main
+                             :frame-id d-main
+                             :components-v2 true
+                             :obj (frame d-retired d-main d-main
+                                         {:component-root true
+                                          :component-file lib-id
+                                          :component-id l-retired})}
+                            {:type :add-component
+                             :path ""
+                             :name "retired"
+                             :main-instance-id d-main
+                             :main-instance-page page-b
+                             :id c-deleted
+                             :anotation nil}
+                            {:type :del-component
+                             :id c-deleted}
+                            ;; The only library reference the link grants.
+                            {:type :add-obj
+                             :page-id page-a
+                             :id inst
+                             :parent-id uuid/zero
+                             :frame-id uuid/zero
+                             :components-v2 true
+                             :obj (frame inst uuid/zero uuid/zero
+                                         {:component-root true
+                                          :component-file lib-id
+                                          :component-id l-control})}])
+
+        _        (th/link-file-to-library* {:file-id file-id
+                                            :library-id lib-id})
+
+        slink    (th/command! {::th/type :create-share-link
+                               ::rpc/profile-id (:id owner)
+                               :file-id file-id
+                               :pages #{page-a}
+                               :who-comment "team"
+                               :who-inspect "all"})
+        slink-id (get-in slink [:result :id])]
+
+    (t/testing "the trim keeps only the library component the link references"
+      (let [out    (th/command! {::th/type :get-view-only-bundle
+                                 :share-id slink-id
+                                 :file-id file-id})
+            result (:result out)
+            libs   (:libraries result)
+            comps  (get-in (first libs) [:data :components])]
+        (t/is (nil? (:error out)))
+        (t/is (= 1 (count libs)))
+        (t/is (= #{l-control} (set (keys comps))))
+        (t/is (not (contains? comps l-live)))
+        (t/is (not (contains? comps l-retired)))
+        (t/is (not (str/includes? (pr-str out) marker)))))))
+
 (t/deftest share-link-bundle-full-scope-link-still-lists-pages
   ;; A link granting every page is the common "public prototype" case:
   ;; pages are listed, instances render, and even there a deleted

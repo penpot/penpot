@@ -79,10 +79,12 @@
         (cfh/get-children-with-self objects main-instance-id)))))
 
 (defn- collect-used-library-components
-  "Walk the objects of the (already page-scoped) primary file data and of
-   the referenced library components themselves, and return a map of
-   `{lib-id #{component-id}}` with every library component the allowed
-   pages need. Follows nested references to a fixpoint so trimming never
+  "Walk the objects of the primary file data the view-only bundle emits,
+   and of the referenced library components themselves, and return a map
+   of `{lib-id #{component-id}}` with every library component the emitted
+   data needs. The caller passes that data: pages scoped to the link and
+   the already trimmed components map, so deleted components are never
+   walked. Follows nested references to a fixpoint so trimming never
    drops a component that is only reached through another component."
   [primary-data libs-by-id]
   (let [root-shapes (concat (mapcat (comp vals :objects) (vals (:pages-index primary-data)))
@@ -234,12 +236,17 @@
                                  (bfc/file->response)))))
 
         ;; A share link never grants pages of a linked library, so trim
-        ;; each library to the components the allowed pages reference.
-        ;; File data may hold lazy pointer-mapped pages/components, so
-        ;; realize each file with its own loader before walking it.
-        ;; Membership bundles keep the full libraries.
+        ;; each library to the components the emitted bundle references:
+        ;; pages are scoped to the link and the components map already
+        ;; dropped deleted components, so neither of them seeds library
+        ;; references. The pages must come from the realized file, not
+        ;; from `file`: lazy pointer-mapped pages only load in their own
+        ;; loader. Membership bundles keep the full libraries.
         libs    (if (= :share-link (:type perms))
-                  (let [allowed-data (update realized-data :data remove-not-allowed-pages (:pages perms))
+                  (let [allowed-data (-> realized-data
+                                         (update :data remove-not-allowed-pages (:pages perms))
+                                         (assoc-in [:data :components]
+                                                   (get-in file [:data :components])))
                         libs'        (mapv #(fdata/realize-pointers cfg %) libs)
                         libs-by-id   (d/index-by :id libs')
                         used         (collect-used-library-components (:data allowed-data) libs-by-id)]
