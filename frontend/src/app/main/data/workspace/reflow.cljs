@@ -94,6 +94,11 @@
   []
   (count (.getValue ^js pending-shapes)))
 
+(defn pending-ids
+  "Set of the ids with work in flight now."
+  []
+  (set (keys (.getValue ^js pending-shapes))))
+
 (defn task
   "Creates an opaque task token without opening it."
   [kind ids]

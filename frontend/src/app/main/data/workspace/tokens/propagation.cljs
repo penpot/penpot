@@ -484,10 +484,12 @@
                         (if background?
                           (rx/of (dwu/commit-undo-transaction undo-id))
                           (rx/empty))
-                        ;; The current page is saved before the other pages
-                        ;; are set
+                        ;; The texts of the current page are laid out before
+                        ;; the other pages are set; the change and the page
+                        ;; are saved once the dialog closes
                         (if (next scopes)
-                          (rx/of ::dps/force-persist)
+                          (rx/of :app.main.data.workspace/layout-texts
+                                 (dwtpr/persist-when-closed))
                           (rx/empty))
                         (run-scopes stream resolved-tokens changed (rest scopes) tags)
                         (if background?

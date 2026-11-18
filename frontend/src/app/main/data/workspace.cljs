@@ -560,7 +560,8 @@
                      notifier-s
                      (rx/merge
                       (->> local-commits-s (rx/debounce 1000))
-                      (->> stream (rx/filter dps/force-persist?)))
+                      (->> stream (rx/filter #(or (dps/force-persist? %)
+                                                  (= % ::layout-texts)))))
 
                      objects-s
                      (rx/from-atom refs/workspace-page-objects {:emit-current-value? true})

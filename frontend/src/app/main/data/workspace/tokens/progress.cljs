@@ -16,7 +16,9 @@
   (:require
    [app.common.logic.tokens-propagation :as cltp]
    [app.common.time :as ct]
+   [app.main.data.persistence :as-alias dps]
    [app.main.data.workspace.reflow :as wrf]
+   [app.util.timers :as tm]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -37,6 +39,11 @@
 (def settle-timeout-ms
   "Longest wait for the texts and layouts after the values."
   30000)
+
+(def paint-timeout-ms
+  "Longest wait for the browser to paint the closed dialog before saving: a
+  hidden tab doesn't paint."
+  500)
 
 (def ^:private tick-ms
   "Interval of the checks of the work."
@@ -74,6 +81,44 @@
     (update [_ state]
       (assoc state ::progress true))))
 
+(declare finalize)
+
+(defn- after-paint
+  "Observable that emits once the browser has painted a frame, or after
+  `paint-timeout-ms` when it doesn't paint."
+  []
+  (rx/create
+   (fn [subs]
+     (let [done? (volatile! false)
+           emit  (fn []
+                   (when-not @done?
+                     (vreset! done? true)
+                     (rx/push! subs nil)
+                     (rx/end! subs)))
+           ;; A timer set in the frame runs after it is painted
+           frame (tm/raf #(js/setTimeout emit 0))
+           timer (js/setTimeout emit paint-timeout-ms)]
+       (fn []
+         (tm/cancel-af! frame)
+         (js/clearTimeout timer))))))
+
+(defn persist-when-closed
+  "Event that saves the pending changes once the dialog is closed and
+  painted, or at once when it is not shown: the save doesn't take time from
+  the work the user waits for."
+  []
+  (ptk/reify ::persist-when-closed
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (if (::progress state)
+        (->> stream
+             (rx/filter (ptk/type? ::hide))
+             (rx/take 1)
+             (rx/mapcat (fn [_] (after-paint)))
+             (rx/map (constantly ::dps/force-persist))
+             (rx/take-until (rx/filter (ptk/type? ::finalize) stream)))
+        (rx/of ::dps/force-persist)))))
+
 (defn- hide
   []
   (ptk/reify ::hide
@@ -86,22 +131,29 @@
   {:total 0 :done 0 :quiet 0 :started (ct/now)})
 
 (defn- tick
-  "Events that show or hide the dialog for `work*`."
+  "Events that show or hide the dialog for `work*`. Once the values are
+  set the dialog is not shown any more; when it shows, it waits for the
+  texts and layouts in flight at that moment (`:waiting`), not for work
+  started later, like the other pages set in the background."
   [work*]
   (when-let [work @work*]
-    (let [values? (>= (:done work) (:total work))
-          work    (cond-> work
-                    values? (update :values-at #(or % (ct/now)))
-                    :always (assoc :quiet (if (and values? (zero? (wrf/pending-count)))
-                                            (inc (:quiet work))
-                                            0)))]
+    (let [values?  (>= (:done work) (:total work))
+          pending  (when values? (wrf/pending-ids))
+          work     (cond-> work
+                     values? (update :values-at #(or % (ct/now)))
+                     values? (update :waiting #(or % pending)))
+          settled? (and values? (not-any? pending (:waiting work)))
+          work     (assoc work :quiet (if settled? (inc (:quiet work)) 0))]
       (cond
+        (and values? (not (:shown? work)))
+        (do (vreset! work* nil)
+            nil)
+
         (and values?
              (or (>= (:quiet work) quiet-ticks)
                  (>= (ct/diff-ms (:values-at work) (ct/now)) settle-timeout-ms)))
         (do (vreset! work* nil)
-            (when (:shown? work)
-              (rx/of (hide))))
+            (rx/of (hide)))
 
         (:shown? work)
         (do (vreset! work* work)
