@@ -384,6 +384,97 @@
         (t/is (= #{:geometry-group} (:touched (get objects' child2))))
         (t/is (= slot (ctk/get-swap-slot (get objects' child1))))))))
 
+(defn- delete-component-and-main
+  "Delete the component and remove its main instance from `page-label`, the way
+   the editor does. The component keeps the shapes of the instance inside its
+   own `:objects` map."
+  [file component-label root-label page-label]
+  (thf/apply-changes
+   file
+   {:redo-changes [{:type :del-component :id (thi/id component-label)}
+                   {:type :del-obj :id (thi/id root-label)
+                    :page-id (thi/id page-label)}]}))
+
+(t/deftest repair-component-nil-objects-not-allowed
+  (t/testing "the repair sends the :objects key so the applier drops it"
+    (let [file    (-> (thf/sample-file :file1 :page-label :page1)
+                      (tho/add-simple-component :component1 :root1 :child1)
+                      (thc/update-component :component1 :objects nil))
+          errors  (cfv/validate-file file {})
+          changes (cfr/repair-file file {} errors)
+          change  (first changes)
+          file'   (thf/apply-changes file {:redo-changes changes} :validate? false)]
+
+      (t/is (= [:component-nil-objects-not-allowed] (mapv :code errors)))
+      (t/is (= :mod-component (:type change)))
+      (t/is (contains? change :objects)
+            "an absent :objects key would leave the stored map alone")
+      (t/is (nil? (:objects change)))
+      (t/is (not (contains? (thc/get-component file' :component1) :objects)))
+      (t/is (nil? (cfv/validate-file file' {}))))))
+
+(t/deftest repair-component-nil-objects-not-allowed-deleted
+  (t/testing "a deleted component is repaired with an empty objects map"
+    (let [file    (-> (thf/sample-file :file1 :page-label :page1)
+                      (tho/add-simple-component :component1 :root1 :child1)
+                      (delete-component-and-main :component1 :root1 :page1)
+                      (thc/update-component :component1 :objects nil))
+          errors  (cfv/validate-file file {})
+          changes (cfr/repair-file file {} errors)
+          change  (first changes)
+          file'   (thf/apply-changes file {:redo-changes changes} :validate? false)]
+
+      (t/is (= [:component-nil-objects-not-allowed] (mapv :code errors)))
+      (t/is (= :mod-component (:type change)))
+      (t/is (= {} (:objects change))
+            "a deleted component keeps the map, empty, so it can be restored")
+      (t/is (= {} (:objects (thc/get-component file' :component1 :include-deleted? true))))
+      (t/is (nil? (cfv/validate-file file' {}))))))
+
+(t/deftest repair-non-deleted-component-cannot-have-objects
+  (t/testing "the repair sends the :objects key so the applier drops it"
+    (let [base    (-> (thf/sample-file :file1 :page-label :page1)
+                      (tho/add-simple-component :component1 :root1 :child1))
+          root    (ths/get-shape base :root1)
+          file    (thc/update-component base :component1 :objects {(thi/id :root1) root})
+          errors  (cfv/validate-file file {})
+          changes (cfr/repair-file file {} errors)
+          change  (first changes)
+          file'   (thf/apply-changes file {:redo-changes changes} :validate? false)]
+
+      (t/is (= [:non-deleted-component-cannot-have-objects] (mapv :code errors)))
+      (t/is (= :mod-component (:type change)))
+      (t/is (contains? change :objects)
+            "an absent :objects key would leave the stored map alone")
+      (t/is (nil? (:objects change)))
+      (t/is (not (contains? (thc/get-component file' :component1) :objects)))
+      (t/is (nil? (cfv/validate-file file' {}))))))
+
+(t/deftest repair-shape-ref-cycle
+  (t/testing "a shape whose shape-ref points to itself is detached with changes scoped to the component"
+    (let [file      (-> (thf/sample-file :file1 :page-label :page1)
+                        (tho/add-simple-component :component1 :root1 :child1)
+                        (delete-component-and-main :component1 :root1 :page1))
+          objects   (:objects (thc/get-component file :component1 :include-deleted? true))
+          file      (thc/update-component
+                     file :component1 :objects
+                     (update objects (thi/id :child1) assoc :shape-ref (thi/id :child1)))
+          errors    (cfv/validate-file file {})
+          changes   (cfr/repair-file file {} errors)
+          file'     (thf/apply-changes file {:redo-changes changes} :validate? false)
+          objects'  (:objects (thc/get-component file' :component1 :include-deleted? true))]
+
+      (t/is (= [:shape-ref-cycle] (mapv :code errors)))
+      (t/is (every? #(= :mod-obj (:type %)) changes)
+            "the repair emits shape changes instead of rewriting the whole objects map")
+      (t/is (every? #(= (thi/id :component1) (:component-id %)) changes))
+      (t/is (= (set (keys objects)) (set (map :id changes)))
+            "every shape of the component travels as its own change")
+      (t/is (= (set (keys objects)) (set (keys objects')))
+            "no shape is lost")
+      (t/is (every? #(not= (:id %) (:shape-ref %)) (vals objects')))
+      (t/is (nil? (cfv/validate-file file' {}))))))
+
 (t/deftest repair-child-not-in-parent
   (t/testing "detect and repair shapes whose parent exists but does not list them"
     (let [file    (-> (thf/sample-file :file1 :page-label :page1)

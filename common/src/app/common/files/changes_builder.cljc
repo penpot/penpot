@@ -935,8 +935,8 @@
    By default the change carries only component metadata. Shapes stored inside
    the component (deleted components keep them in `:objects`) travel as
    `:mod-obj` changes scoped with `:component-id`, which is what the component
-   sync emits. Pass `:objects? true` to rewrite the whole `:objects` map, only
-   needed by the repairs that move or clear that key."
+   sync emits. Pass `:objects? true` to put the whole `:objects` map in the
+   change: it replaces the stored shapes, or drops them when the map is nil."
   [changes id update-fn & {:keys [apply-changes-local-library? objects?]}]
   (assert-library! changes)
   (let [library-data   (::library-data (meta changes))
