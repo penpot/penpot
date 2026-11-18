@@ -359,7 +359,7 @@
                  (modal/show :file-restored
                              {:fullname   (restorer-fullname state profile-id session-id)
                               :label      label
-                              :created-at created-at
+                              :date       created-at
                               ;; Made on the replaced version, so the reload drops them
                               :unsaved    (boolean (seq (dps/pending-file-changes state file)))}))
           (rx/empty))))))
