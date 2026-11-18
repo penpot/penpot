@@ -13,19 +13,17 @@ Multi-dimensional code review with quality gates. Every change gets reviewed bef
 
 ## When to Use
 
-- The reviewer subagent of the `review-code` flow loads this skill to perform
-  the review of a code change.
-- To review code, always go through the `review-code` flow — never load this
-  skill directly for that. This is the criteria reference, not the flow.
+- The reviewer subagent of the `review-code` flow loads this skill to perform the review of a code change.
+- To review code, always go through the `review-code` flow — never load this skill directly for that. This is the criteria reference, not the flow.
 
 ## Core Principles
 
 These principles underpin every axis. When in doubt, default to them.
 
-- **DRY (Don't Repeat Yourself):** Every piece of knowledge has one authoritative representation. If the same logic appears in two places, extract it into a shared helper, model, or type. Reviewers: flag duplicated logic as a required change — it's not "just similar," it's drift that will diverge.
-- **KISS (Keep It Simple, Stupid):** The simplest solution that works is the best solution. Complexity must earn its place. Reviewers: if you need more than one sentence to explain what a piece of code does, it's too complex — push for simplification before merge.
-- **YAGNI (You Aren't Gonna Need It):** Don't add abstractions, hooks, or generalizations for hypothetical future use cases. Generalize on the third occurrence, not the first. Reviewers: delete speculative generality.
-- **Don't invent problems:** Do not manufacture issues to produce more feedback. Every finding must be a real risk, a real readability barrier, or a real architectural concern — not a hypothetical or a stylistic preference disguised as a problem.
+- **DRY (Don't Repeat Yourself):** Every piece of knowledge has one authoritative representation. Flag duplicated logic as a required change — it is not "just similar", it is drift that will diverge.
+- **KISS (Keep It Simple, Stupid):** The simplest solution that works is the best solution. Complexity must earn its place: if it needs more than a sentence to explain, push for simplification before merge.
+- **YAGNI (You Aren't Gonna Need It):** No abstractions, hooks or generalizations for hypothetical future use cases. Generalize on the third occurrence, not the first.
+- **Don't invent problems:** Every finding must be a real risk, a real readability barrier, or a real architectural concern — not a hypothetical or a stylistic preference disguised as a problem.
 
 ## The Five-Axis Review
 
@@ -38,7 +36,7 @@ Does the code do what it claims to do?
 - Does it match the spec or task requirements?
 - Are edge cases handled (null, empty, boundary values)?
 - Are error paths handled (not just the happy path)?
-- Does it pass all tests? Are the tests actually testing the right things?
+- Do the tests cover the changed behavior, including its edge cases?
 - Are there off-by-one errors, race conditions, or state inconsistencies?
 
 ### 2. Readability & Simplicity
@@ -47,10 +45,7 @@ Can another engineer (or agent) understand this code without the author explaini
 
 - Are names descriptive and consistent with project conventions? (No `temp`, `data`, `result` without context)
 - Is the control flow straightforward (avoid nested ternaries, deep callbacks)?
-- Are there any "clever" tricks that should be simplified?
-- **KISS check:** Is this the simplest approach that solves the problem? A 20-line straightforward function beats a 5-line clever one that requires a comment to explain.
-- Could this be done in fewer lines? (1000 lines where 100 suffice is a failure)
-- Are abstractions earning their complexity? (Don't generalize until the third use case)
+- Are there "clever" tricks that should be simplified? Could this be done in fewer lines? (1000 lines where 100 suffice is a failure)
 - Is a new conditional bolted onto an unrelated flow? Push the logic into its own helper, state, or policy.
 - Do repeated conditionals on the same shape appear? They signal a missing model or dispatcher.
 - Are there dead code artifacts: no-op variables, backwards-compat shims, or `// removed` comments?
@@ -60,14 +55,13 @@ Can another engineer (or agent) understand this code without the author explaini
 Does the change fit the system's design?
 
 - Does it follow existing patterns or introduce a new one? If new, is it justified?
-- Does it maintain clean module boundaries?
-- **DRY check:** Is there existing code that does the same thing? Reuse the canonical helper instead of writing a near-duplicate. If two branches do nearly the same thing, collapse them.
-- Are dependencies flowing in the right direction (no circular dependencies)?
+- Does it keep clean module boundaries, with dependencies flowing the right way (no cycles)?
 - Is the abstraction level appropriate (not over-engineered, not too coupled)?
-- Does this refactor reduce complexity or just relocate it? Count the concepts a reader must hold. Prefer the restructuring that makes whole branches disappear over one that re-centralizes the same logic. Prefer deleting an abstraction to polishing it.
+- Is there existing code that already does this? Reuse the canonical helper instead of a near-duplicate, and collapse branches that do nearly the same thing.
 - Is feature-specific logic leaking into a shared or general-purpose module?
 - Are type boundaries explicit? Question gratuitous `any`/`unknown`/optional/casts and silent fallbacks.
-- **Structural remedies:** When you flag a problem, propose the move — not just the problem. Replace conditionals with dispatchers, collapse duplicate branches, separate orchestration from business logic, extract helpers, split large files. Prefer the remedy that removes moving pieces over one that spreads the same complexity around.
+- Does the change reduce complexity or relocate it? Count the concepts a reader must hold: prefer the restructuring that makes whole branches disappear, and deleting an abstraction over polishing it.
+- **Give the remedy, not only the problem:** replace conditionals with dispatchers, separate orchestration from business logic, extract helpers, split large files. Prefer the remedy that removes moving pieces over one that spreads the same complexity around.
 
 ### 4. Security
 
@@ -111,7 +105,17 @@ For each finding, describe the circumstances under which it could fail: specific
 
 Lead with what matters: correctness and security first, then structural issues, then everything else. A few high-conviction comments beat a long list.
 
-5. **Verify the verification** — What tests were run? Did the build pass? Was the change tested manually? Screenshots for UI changes?
+5. **Check the evidence, do not re-run it** — Which tests cover the change? What did the author run, and what did CI report? Never re-run the full suite or a build yourself: the author's run and CI already cover that, and repeating it only lengthens the review. Run at most the single test file that settles a specific doubt. When no checks have been run at all (a change you did not see tested), run the module's checks before the verdict.
+
+## Change Sizing
+
+Small, focused changes are easier to review, faster to merge, and safer to deploy. Flag the size when a diff exceeds ~300 lines, or when it grows a file past ~1000 total lines, and name the remedy: split it, and separate refactoring from feature work. This is a finding about the change, not work to do inside the review.
+
+## Dependencies
+
+Before accepting a new dependency: does the existing stack already solve it, how large is the bundle impact, is it maintained, does `npm audit` report anything, is the license compatible. Prefer the standard library and existing utilities — every dependency is a liability.
+
+For upgrades: read the changelog, not just the version number; one dependency per change; a green suite before and after; review the lockfile diff and never hand-edit it. Supply-chain triage follows `security-and-hardening`.
 
 ## Review Output
 
@@ -151,96 +155,18 @@ Choose one:
 
 List the finding IDs the verdict depends on (e.g. "Request changes: R1, R2").
 
-## Change Sizing
-
-Small, focused changes are easier to review, faster to merge, and safer to deploy.
-
-```
-~100 lines changed   → Good. Reviewable in one sitting.
-~300 lines changed   → Acceptable if it's a single logical change.
-~1000 lines changed  → Too large. Split it.
-```
-
-**Watch file size, not just diff size.** Around 1000 *total* lines in a single file is a common inspection signal. When a change materially grows an already-large file, decompose first.
-
-**Splitting strategies:**
-
-| Strategy | How | When |
-|----------|-----|------|
-| **Stack** | Submit a small change, start the next one based on it | Sequential dependencies |
-| **By file group** | Separate changes for groups needing different reviewers | Cross-cutting concerns |
-| **Horizontal** | Create shared code/stubs first, then consumers | Layered architecture |
-| **Vertical** | Break into smaller full-stack slices of the feature | Feature work |
-
-**Separate refactoring from feature work.** A change that refactors and adds new behavior is two changes — submit them separately.
-
-## Change Descriptions
-
-- **First line:** Short, imperative, standalone. "Delete the FizzBuzz RPC" not "Deleting the FizzBuzz RPC."
-- **Body:** What is changing and why. Include context and reasoning not visible in the code itself.
-- **Anti-patterns:** "Fix bug," "Fix build," "Add patch," "Phase 1."
-
-## Dependencies
-
-Before adding any dependency:
-
-1. Does the existing stack solve this? (Often it does.)
-2. How large is the dependency? (Check bundle impact.)
-3. Is it actively maintained? (Check last commit, open issues.)
-4. Does it have known vulnerabilities? (`npm audit`)
-5. What's the license? (Must be compatible with the project.)
-
-**Rule:** Prefer standard library and existing utilities over new dependencies. Every dependency is a liability.
-
-**Upgrading dependencies:**
-
-- Read the changelog, not just the version number. Semver is a promise the maintainer may not have kept.
-- One dependency per change. When a bulk bump breaks the build, you've lost which package did it.
-- Let the tests decide — a green suite before *and* after, not just "it installed."
-- Review the lockfile diff, not just `package.json`. Commit it and never hand-edit it.
-
-For supply-chain risk triage, follow the `security-and-hardening` skill.
-
-## Common Rationalizations
-
-| Rationalization | Reality |
-|---|---|
-| "It works, that's good enough" | Working code that's unreadable, insecure, or architecturally wrong creates debt that compounds. |
-| "I wrote it, so I know it's correct" | Authors are blind to their own assumptions. Every change benefits from another set of eyes. |
-| "We'll clean it up later" | Later never comes. The review is the quality gate — use it. |
-| "AI-generated code is probably fine" | AI code needs more scrutiny, not less. It's confident and plausible, even when wrong. |
-| "The tests pass, so it's good" | Tests are necessary but not sufficient. They don't catch architecture, security, or readability problems. |
-| "The refactor makes it cleaner" | Relocating complexity isn't reducing it. If the reader still holds the same number of concepts, the structure didn't improve. |
-| "It's only a small addition to this file" | Small diffs still push files past healthy size and bolt branches onto unrelated flows. |
-| "It's just a version bump" | A bump is a behavior change you didn't write. Read the changelog. |
-| "I'll upgrade everything in one PR" | A bulk bump hides which package broke the build. One per change. |
-| "It's duplicated but it's only two places" | Two becomes three becomes five. Extract now, before the copies diverge. |
-| "The abstraction is future-proof" | YAGNI. Delete speculative generality — generalize on the third occurrence, not the first. |
-| "It's clever but efficient" | Cleverness is a readability tax. If it needs a comment to understand, simplify it. |
-
 ## Red Flags
 
-- PRs merged without any review
-- Review that only checks if tests pass (ignoring other axes)
-- "LGTM" without evidence of actual review
-- Security-sensitive changes without security-focused review
-- Large PRs that are "too big to review properly" (split them)
-- No regression tests with bug fix PRs
-- Accepting "I'll fix it later" — it never happens
-- A refactor that moves code around without reducing the number of concepts a reader must hold
-- New conditionals scattered into unrelated code paths (a missing abstraction)
-- A bespoke helper that duplicates an existing canonical one
-- A bulk "bump dependencies" PR with no changelog review
+- A change merged without any review.
+- A review that only checks whether the tests pass.
+- Security-sensitive changes without a security-focused review.
+- A change too large to review properly: split it.
 
 ## Verification
 
-Before emitting the verdict, verify the change as it stands. This is the reviewer's own due diligence — it covers the state of the code at review time, not the later resolution of findings (fixing findings is the author's job; confirming them is a new review):
+Before emitting the verdict, confirm the evidence the review rests on. This covers the state of the code at review time, not the later fixing of findings:
 
-- [ ] Tests pass — run them yourself, don't trust the claim
-- [ ] Build succeeds
-- [ ] The verification story is documented (what changed, how it was verified)
-- [ ] Dependency upgrades reviewed against changelog, isolated per package, verified by green suite
-
-## See Also
-
-- For detailed security review guidance, see `security-and-hardening`
+- [ ] The suite is green, and the evidence is the author's run or CI — not your own re-run. Say which one you relied on.
+- [ ] New behavior has tests that cover the edge cases in the diff.
+- [ ] The verification story is stated: what changed and how it was verified.
+- [ ] Dependency changes were reviewed against the changelog and the lockfile diff.
