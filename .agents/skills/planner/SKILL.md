@@ -223,16 +223,16 @@ Review Log:
   log. `reviewed` never means "a review was emitted" — it means
   "review feedback was incorporated". A plan approved with no changes
   goes `draft` → `done` without passing through `reviewed`.
-- Only a user-triggered apply step writes them before implementation:
-  when the user says to apply `review-plan` findings, `make-a-plan`
-  applies the changes, flips to `reviewed`, and appends one UTC
-  ISO 8601 line describing what changed.
+- Before implementation, `review-plan` applies clear review feedback and
+  agreed decisions, flips to `reviewed` and appends one UTC ISO 8601 entry
+  when the plan changed. `make-a-plan` can also do this for additional
+  feedback when the user asks.
 - `implement-plan` flips to `done` on completion and appends one line
   with the issue URL when one exists (standalone mode); otherwise
   just `done`. Never record commit hashes — they rot on amend/rebase
   and git already links the commit.
 - The log is append-only: never rewrite or delete lines.
-- `review-plan` and `review-code` never write these fields.
+- `review-code` never writes these fields.
 
 Omit empty sections only when they do not apply. Every implementation task
 still requires acceptance criteria, verification, dependencies, likely files,

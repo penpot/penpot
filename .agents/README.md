@@ -346,8 +346,9 @@ small. To delegate without switching models, delegate to `general`.
    `@make-a-plan delegate to @engineer-glm`.
 3. **Iterate on the plan.** The plan is saved to `.agents/plans/`, so you
    never depend on LLM memory: read the file directly, or invoke `@review-plan`
-   for a second opinion (delegation works here too). Complex plans deserve a
-   review; simple ones can skip it.
+   for a second opinion (delegation works here too). It applies clear plan
+   improvements and discusses consequential decisions one by one before
+   applying them. Complex plans deserve a review; simple ones can skip it.
 4. **Execute.** Invoke `@implement-plan`. It first prints the full picture —
    whether it will create an issue and a branch, the execution style, and a
    task checklist — and waits for your go-ahead. Say "step by step" to stop
@@ -405,9 +406,8 @@ Every plan carries `Status: draft | reviewed | done` plus an
 append-only `Review Log` (UTC ISO 8601, one line per entry):
 
 - `draft` — fresh from `@make-a-plan`.
-- `reviewed` — review feedback incorporated. `@review-plan` stays
-  read-only; only your explicit "apply" makes `@make-a-plan` apply
-  the changes, flip the status, and log one line.
+- `reviewed` — review feedback incorporated. `@review-plan` applies clear
+  improvements and agreed decisions, then updates the status and log.
 - `done` — `@implement-plan` closes it on completion, logging the
   issue URL when one exists (never commit hashes).
 

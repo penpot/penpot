@@ -51,7 +51,8 @@ Act as a senior software engineer and perform a thorough code review.
    - **Substantive findings:** suggest `@make-a-plan` to make a plan to address
      them.
    - If the user wants to discuss findings one by one, use `@issue-walkthrough`
-     on request; do not start it automatically.
+     on request; do not start it automatically. The walkthrough returns its
+     decisions to `@make-a-plan`, not to automatic code editing.
 
 ### Follow-up after implementation
 

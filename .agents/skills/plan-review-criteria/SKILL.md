@@ -11,6 +11,13 @@ Multi-dimensional plan review with quality gates. Every plan gets reviewed befor
 
 **The approval standard:** Approve a plan when it is specific enough that a skilled implementer could execute it without guessing, the task ordering is sound, and risks are acknowledged. Perfect plans don't exist — the goal is confidence that implementation won't derail. Don't block a plan because it isn't exactly how you would have structured it. If it's executable and well-organized, approve it.
 
+In the `review-plan` flow, apply clear improvements within the plan's existing
+goal, scope and decisions. Flag consequential choices for the user instead of
+choosing them. Report applied changes and unresolved decisions with evidence,
+options and a recommendation; the parent conducts the walkthrough. Recheck the
+plan after answers are applied and never approve while required decisions or
+changes remain unresolved. Only the plan file may be edited.
+
 ## When to Use
 
 - The reviewer subagent of the `review-plan` flow loads this skill to perform

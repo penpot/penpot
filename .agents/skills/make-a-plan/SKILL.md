@@ -24,11 +24,10 @@ stop — this skill needs the build agent to save the plan.
   `@review-code` findings on committed work), write a new derived plan
   file instead — never rewrite the executed plan. The `planner` skill
   defines the derived naming (`--review-NN`, `--task-NN`).
-- The user says to apply `review-plan` findings to a still-unimplemented
-  plan: apply the agreed changes, flip `Status` to `reviewed`, and
-  append one UTC ISO 8601 line to `Review Log` describing what changed.
-  This apply step is the only pre-implementation write to those fields —
-  `review-plan` itself stays read-only and never writes.
+- The user says to apply additional review feedback to a still-unimplemented
+  plan: apply the agreed changes, flip `Status` to `reviewed`, and append one
+  UTC ISO 8601 line to `Review Log`. `review-plan` can also update the plan
+  and its metadata as part of its own review flow.
 
 Do not use it to execute a plan — that is the `implement-plan` flow.
 
