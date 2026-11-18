@@ -6171,7 +6171,8 @@ export interface Variants {
   currentValues(property: string): string[];
 
   /**
-   * Remove a property of the Variant
+   * Remove a property of the Variant. If two variants end up with the same
+   * values, the lower one in the layers panel gets a " (n)" suffix on a value.
    * @param pos The position of the property to remove
    */
   removeProperty(pos: number): void;

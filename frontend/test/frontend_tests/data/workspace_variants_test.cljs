@@ -162,6 +162,33 @@
                (t/is (= expected names2))
                (t/is (not-any? #(= "Property 5" %) names1))))))))
 
+(t/deftest remove-empty-properties-keeps-a-duplicate
+  ;; A rename made both variants "Big, red"; removing the empty property
+  ;; must not renumber either one, so the duplicate warning still shows.
+  (t/async
+    done
+    (let [props      [{:name "Size" :value "Big"}
+                      {:name "Color" :value "red"}
+                      {:name "Extra" :value ""}]
+          file       (-> (cthf/sample-file :file1 :page-label :page1)
+                         (thv/add-variant :v01 :c01 :m01 :c02 :m02)
+                         (cthc/update-component :c01 {:variant-properties props})
+                         (cthc/update-component :c02 {:variant-properties props})
+                         (cths/update-shape :m01 :variant-name (ctv/properties-to-name props))
+                         (cths/update-shape :m02 :variant-name (ctv/properties-to-name props)))
+          variant-id (cthi/id :v01)]
+      (run file
+           [(dwv/remove-empty-properties variant-id)]
+           done
+           (fn [state]
+             (let [file    (ths/get-file-from-state state)
+                   values1 (mapv :value (:variant-properties (cthc/get-component file :c01)))
+                   values2 (mapv :value (:variant-properties (cthc/get-component file :c02)))]
+               (t/is (= ["Big" "red"] values1))
+               (t/is (= ["Big" "red"] values2))
+               (t/is (= "Big, red" (variant-name file :m01)))
+               (t/is (= "Big, red" (variant-name file :m02)))))))))
+
 (t/deftest update-property-name-from-another-page
   (t/async
     done

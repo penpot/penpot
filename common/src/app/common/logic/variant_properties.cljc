@@ -37,23 +37,32 @@
 
 
 (defn generate-remove-property
-  [changes variant-id pos]
-  (let [data               (pcb/get-library-data changes)
-        objects            (pcb/get-objects changes)
-        related-components (cfv/find-variant-components data objects variant-id)
-        props              (-> related-components first :variant-properties)]
+  "Remove the property at `pos` from every variant of the set. Then, unless
+   `sanitize-set?` is false, sanitize the remaining set as a whole, so two
+   variants that differed only in the removed property do not end up with
+   the same values."
+  [changes variant-id pos & {:keys [sanitize-set?] :or {sanitize-set? true}}]
+  (let [data       (pcb/get-library-data changes)
+        objects    (pcb/get-objects changes)
+        ;; Layers-panel order, the reverse of :shapes: on a clash the variant
+        ;; higher in the panel keeps its values and the lower one gets " (n)".
+        components (->> (cfv/qualifying-variant-members data objects (get objects variant-id))
+                        (map :component)
+                        (reverse))
+        props      (-> components first :variant-properties)]
     (if (and (seq props) (<= 0 pos) (< pos (count props)))
-      (reduce (fn [changes component]
-                (let [props   (:variant-properties component)
-                      props   (d/remove-at-index props pos)
-                      main-id (:main-instance-id component)
-                      name    (ctv/properties-to-name props)]
+      (let [stripped  (mapv #(d/remove-at-index (:variant-properties %) pos) components)
+            props-seq (cond-> stripped
+                        sanitize-set? ctv/sanitize-properties-set)]
+        (reduce (fn [changes [component props]]
                   (-> changes
-                      (pcb/update-component (:id component) #(assoc % :variant-properties props)
+                      (pcb/update-component (:id component)
+                                            #(assoc % :variant-properties props)
                                             {:apply-changes-local-library? true})
-                      (pcb/update-shapes [main-id] #(assoc % :variant-name name)))))
-              changes
-              related-components)
+                      (pcb/update-shapes [(:main-instance-id component)]
+                                         #(assoc % :variant-name (ctv/properties-to-name props)))))
+                changes
+                (map vector components props-seq)))
       changes)))
 
 
