@@ -59,13 +59,26 @@
    {:label "简体中文 (community)" :value "zh_cn"}
    {:label "繁體中文 (community)" :value "zh_hant"}])
 
+;; Browser tags that name a supported locale under another code. Bare
+;; "zh" defaults to Simplified Chinese, as in CLDR likely subtags.
+(def ^:private locale-aliases
+  {"zh" "zh_cn"
+   "zh_hans" "zh_cn"
+   "zh_tw" "zh_hant"
+   "zh_hk" "zh_hant"
+   "zh_mo" "zh_hant"})
+
+;; Candidate locale codes for a BCP 47 tag, most specific first.
 (defn- parse-locale
   [locale]
-  (let [locale (-> (str/lower locale)
-                   (str/replace "-" "_"))]
-    (cond-> [locale]
-      (str/includes? locale "_")
-      (conj (subs locale 0 2)))))
+  (let [parts (-> (str/lower locale)
+                  (str/replace "-" "_")
+                  (str/split "_"))]
+    (->> (range (count parts) 0 -1)
+         (map #(str/join "_" (take % parts)))
+         (map #(get locale-aliases % %))
+         (distinct)
+         (vec))))
 
 (def ^:private browser-locales
   (delay
