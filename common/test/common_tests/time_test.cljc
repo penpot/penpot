@@ -20,6 +20,11 @@
      (t/is (= "zh-CN" (some-> (unchecked-get dt/locales "zh_cn") .-code)))
      (t/is (= "zh-TW" (some-> (unchecked-get dt/locales "zh_hant") .-code)))))
 
+#?(:cljs
+   (t/deftest hindi-and-serbian-date-locales-test
+     (t/is (= "hi" (some-> (unchecked-get dt/locales "hi") .-code)))
+     (t/is (= "sr" (some-> (unchecked-get dt/locales "sr") .-code)))))
+
 #?(:clj
    (t/deftest parse-duration-test
      (t/is (dt/duration? (dt/parse-duration "10m")))

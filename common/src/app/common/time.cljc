@@ -31,6 +31,7 @@
               ["date-fns/locale/fr-CA$default" :as dfn-fr-ca]
               ["date-fns/locale/gl$default" :as dfn-gl]
               ["date-fns/locale/he$default" :as dfn-he]
+              ["date-fns/locale/hi$default" :as dfn-hi]
               ["date-fns/locale/hr$default" :as dfn-hr]
               ["date-fns/locale/id$default" :as dfn-id]
               ["date-fns/locale/it$default" :as dfn-it]
@@ -44,6 +45,7 @@
               ["date-fns/locale/pt-BR$default" :as dfn-pt-br]
               ["date-fns/locale/ro$default" :as dfn-ro]
               ["date-fns/locale/ru$default" :as dfn-ru]
+              ["date-fns/locale/sr$default" :as dfn-sr]
               ["date-fns/locale/tr$default" :as dfn-tr]
               ["date-fns/locale/uk$default" :as dfn-uk]
               ["date-fns/locale/zh-CN$default" :as dfn-zh-cn]
@@ -290,11 +292,13 @@
           :fr dfn-fr
           :fr_ca dfn-fr-ca
           :he dfn-he
+          :hi dfn-hi
           :pt dfn-pt
           :pt_pt dfn-pt
           :pt_br dfn-pt-br
           :ro dfn-ro
           :ru dfn-ru
+          :sr dfn-sr
           :tr dfn-tr
           :zh_cn dfn-zh-cn
           :zh_hant dfn-zh-tw
