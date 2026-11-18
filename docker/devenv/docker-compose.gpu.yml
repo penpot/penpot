@@ -1,0 +1,14 @@
+services:
+  main:
+    environment:
+      - NVIDIA_DRIVER_CAPABILITIES=all
+      - PENPOT_GPU=1
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    volumes:
+      - /usr/share/vulkan/icd.d:/usr/share/vulkan/icd.d:ro

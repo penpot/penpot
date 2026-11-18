@@ -1,4 +1,4 @@
-FROM dhi.io/debian-base:trixie-debian13-dev@sha256:af61a3296b0c92f16969f11ce8c2a93722e84c9e5c1bb42ed6afec796be71b04 AS build
+FROM dhi.io/debian-base:trixie-debian13-dev@sha256:f90fd43cdf3dd94840b4dc3a2a39fd2a08578e40e7895535e2e20a1275ba6013 AS build
 LABEL maintainer="Penpot <docker@penpot.app>"
 
 ENV LANG='C.UTF-8' \
@@ -27,12 +27,12 @@ RUN set -eux; \
     ARCH="$(dpkg --print-architecture)"; \
     case "${ARCH}" in \
        aarch64|arm64) \
-         ESUM='8ff07320636ef5b30f0d7e16687932df52255c3ef3ffd920a6aae3723511ce7f'; \
-         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu26.32.203-ca-jdk26.0.2.1-linux_aarch64.tar.gz'; \
+         ESUM='18875b92ad2535230a13175f718933f7cc0593b4affa2dab442815ec245dacbb'; \
+         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu27.30.201-ca-jdk27.0.1.1-linux_aarch64.tar.gz'; \
          ;; \
        amd64|x86_64) \
-         ESUM='c6b810ca659e3293205444f47ac4af163396fd6d025c51fd5f767e628b2ceede'; \
-         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu26.32.203-ca-jdk26.0.2.1-linux_x64.tar.gz'; \
+         ESUM='c4d7bf4c80a21e935187ecdcb111e4b2f14e1fdd18364974fe7f7da54b12bea0'; \
+         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu27.30.201-ca-jdk27.0.1.1-linux_x64.tar.gz'; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; \
@@ -53,7 +53,7 @@ RUN set -eux; \
        --output /opt/jre;
 
 
-FROM dhi.io/debian-base:trixie-debian13-dev@sha256:af61a3296b0c92f16969f11ce8c2a93722e84c9e5c1bb42ed6afec796be71b04 AS image
+FROM dhi.io/debian-base:trixie-debian13-dev@sha256:f90fd43cdf3dd94840b4dc3a2a39fd2a08578e40e7895535e2e20a1275ba6013 AS image
 LABEL maintainer="Penpot <docker@penpot.app>"
 
 ENV LANG='C.UTF-8' \

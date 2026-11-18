@@ -1,4 +1,4 @@
-FROM dhi.io/debian-base:trixie-debian13-dev@sha256:9b025768946856e44f9775005eb199f2e1820484ea27bb5c8bcbb187b80464dc AS base
+FROM dhi.io/debian-base:trixie-debian13-dev@sha256:f90fd43cdf3dd94840b4dc3a2a39fd2a08578e40e7895535e2e20a1275ba6013 AS base
 
 ENV LANG='C.UTF-8' \
     LC_ALL='C.UTF-8' \
@@ -66,8 +66,8 @@ RUN set -ex; \
 
 FROM base AS setup-node
 
-ENV NODE_VERSION=v24.22.2 \
-    PNPM_VERSION=12.16.1 \
+ENV NODE_VERSION=v24.22.3 \
+    PNPM_VERSION=12.21.0 \
     PATH=/opt/node/bin:$PATH
 
 RUN set -eux; \
@@ -76,16 +76,16 @@ RUN set -eux; \
        aarch64|arm64) \
          OPENSSL_ARCH='linux-aarch64'; \
          BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-arm64.tar.gz"; \
-         NODE_SHA256='95c264150aceb7f3437a29fd6984924f5f8d1511ea3cbd6c508b83f6c555dae2'; \
+         NODE_SHA256='261af2af250dfd7e9f25cf151d1b2713a0adf8f10a9ad116c4947f68627affe8'; \
          PNPM_ARCH='arm64'; \
-         PNPM_SHA256='f5847699e5d528f8f8e9bcfb385e58cb9fba7482af1b1aa7b70737be42277f81'; \
+         PNPM_SHA256='6c5913a48c93b3a556b71c3bd9bf12c6bf9fbfbbbd2dcbd1d52a85c539751b9e'; \
          ;; \
        amd64|x86_64) \
          OPENSSL_ARCH='linux-x86_64'; \
          BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-x64.tar.gz"; \
-         NODE_SHA256='361718c444e49af2ca5a110c83ba6a8901143f23ab285ebbef0341f391f482a9'; \
+         NODE_SHA256='061ec3e3062115705b56b51fa9cc330ab50d34b6969387d4e4b1a50c6809acc2'; \
          PNPM_ARCH='x64'; \
-         PNPM_SHA256='565ff81174a14f6f7bd5d84c1b17e51031a80230d370a1fe24be5d16bd02a825'; \
+         PNPM_SHA256='84c4773bcf4a217f4083cd7b2a91e4cee6103cf42426c1282ef37d308f55a410'; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; \
@@ -150,12 +150,12 @@ RUN set -eux; \
     ARCH="$(dpkg --print-architecture)"; \
     case "${ARCH}" in \
        aarch64|arm64) \
-         ESUM='9fa5bf865783c43840101fcdc3a5222b60daf4fe11f26806247bf807c08aba38'; \
-         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu27.28.101-ca-jdk27.0.0-linux_aarch64.tar.gz'; \
+         ESUM='18875b92ad2535230a13175f718933f7cc0593b4affa2dab442815ec245dacbb'; \
+         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu27.30.201-ca-jdk27.0.1.1-linux_aarch64.tar.gz'; \
          ;; \
        amd64|x86_64) \
-         ESUM='ccbc15c4edbedfdcc03c2d29a2aa2c6daf9e6ffb4cda7dd5ece0fcbb37350267'; \
-         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu27.28.101-ca-jdk27.0.0-linux_x64.tar.gz'; \
+         ESUM='c4d7bf4c80a21e935187ecdcb111e4b2f14e1fdd18364974fe7f7da54b12bea0'; \
+         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu27.30.201-ca-jdk27.0.1.1-linux_x64.tar.gz'; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; \
@@ -187,7 +187,7 @@ ENV PATH=/opt/cargo/bin:$PATH \
     RUSTUP_HOME=/opt/rustup \
     CARGO_HOME=/opt/cargo \
     RUSTUP_VERSION=1.28.2 \
-    RUST_VERSION=1.91.0 \
+    RUST_VERSION=1.99.0 \
     EMSCRIPTEN_VERSION=4.0.6
 
 WORKDIR /opt
@@ -236,7 +236,9 @@ ENV CLJKONDO_VERSION=2026.10.20 \
     UV_TOOL_DIR=/opt/uv/tools \
     UV_TOOL_BIN_DIR=/opt/utils/bin \
     UV_PYTHON_INSTALL_DIR=/opt/uv/python \
-    SERENA_VERSION=1.7.0
+    SERENA_VERSION=2.1.0
+# NOTE: When updating SERENA_VERSION, also update SERENA_UPDATE_VERSION in docker-compose.main.yml.
+#   The latter results in a dynamic update without rebuilding the image, so it must never be lower than SERENA_VERSION here.
 
 RUN set -ex; \
     ARCH="$(dpkg --print-architecture)"; \
@@ -429,6 +431,8 @@ RUN set -ex; \
       fontforge \
       \
       xvfb \
+      xauth \
+      libvulkan1 \
       fonts-noto-color-emoji \
       fonts-unifont \
       libfontconfig1 \

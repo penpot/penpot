@@ -98,8 +98,14 @@ services:
 
       # Agentic devenv: set to a PyPI release version/tag to update Serena on startup,
       # leave empty to skip update and use the version baked into the image.
-      - SERENA_UPDATE_VERSION=
+      - SERENA_UPDATE_VERSION=2.1.0
       - SHADOW_SERVER_URL=${SHADOW_SERVER_URL}
+
+      # Frontend dev devenv switch: makes the frontend compile with
+      # PENPOT_DEVENV=true so the admin-console is disabled by default
+      # (app.config/devenv-mode). `enable-admin-console` in config.js
+      # re-enables it.
+      - PENPOT_DEVENV=true
 
     networks:
       - default
