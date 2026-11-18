@@ -16,12 +16,12 @@ stop — this skill needs the build agent to save the plan.
 
 - The user asks to plan, design, or break down a task, in any phrasing:
   "make a plan", "how would we build X", "design an approach for Y" —
-  or runs `/make-a-plan`.
+  or invokes `@make-a-plan`.
 - The user asks to rework or extend an existing plan. While the plan is
   still unimplemented (pre-`implement-plan` iteration, e.g. after
-  `/review-plan` findings or user feedback), revise the saved plan file
+  `@review-plan` findings or user feedback), revise the saved plan file
   in place. Once the plan has been implemented and reviewed (post
-  `/review-code` findings on committed work), write a new derived plan
+  `@review-code` findings on committed work), write a new derived plan
   file instead — never rewrite the executed plan. The `planner` skill
   defines the derived naming (`--review-NN`, `--task-NN`).
 - The user says to apply `review-plan` findings to a still-unimplemented
@@ -101,8 +101,8 @@ constraints and risks, what is deliberately out of scope, and the path where the
 is saved. Never assume that a short list of task names is enough context. End
 the final response by suggesting the next steps, in this order:
 
-1. `/review-plan` — to get a second opinion on the plan before executing it.
-2. `/implement-plan` — to execute the plan from the current session context.
+1. `@review-plan` — to get a second opinion on the plan before executing it.
+2. `@implement-plan` — to execute the plan from the current session context.
 
 These are suggestions, not a required pipeline — any instruction from me
 overrides them (for example, asking you to implement the plan directly).

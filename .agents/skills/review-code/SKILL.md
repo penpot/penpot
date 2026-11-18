@@ -12,7 +12,7 @@ Act as a senior software engineer and perform a thorough code review.
 
 - The user asks to review code, in any phrasing: "review this diff",
   "review the PR", "check my changes", "code review" — or runs
-  `/review-code`.
+  `@review-code`.
 - A commit, branch, PR, or diff is ready and the user wants it assessed
   before merge.
 
@@ -43,7 +43,7 @@ Act as a senior software engineer and perform a thorough code review.
    - **Approve (no required changes):** say so — there is nothing to address.
    - **Minor findings (nits):** applying them directly as-is is fine once the
      review is done — no plan needed.
-   - **Substantive findings:** suggest `/make-a-plan` to make a plan to address
+   - **Substantive findings:** suggest `@make-a-plan` to make a plan to address
      them.
 
 ### Hard rule — read-only while reviewing

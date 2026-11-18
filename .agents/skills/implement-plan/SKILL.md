@@ -26,9 +26,9 @@ in the local working tree.
 
 - The user asks to implement or execute a plan, in any phrasing:
   "implement the plan", "execute it", "go build it" — or runs
-  `/implement-plan`.
+  `@implement-plan`.
 - A ready, reviewed plan is in the session context or a plan file path
-  was given (typically after `/make-a-plan` or `/review-plan`).
+  was given (typically after `@make-a-plan` or `@review-plan`).
 
 Do not use it to produce plans — that is the `make-a-plan` flow.
 
@@ -149,9 +149,9 @@ stop and ask the user before splitting it.
 End by suggesting the next steps (suggestions, not a required pipeline — any
 instruction from me overrides them):
 
-- `/review-code` — to review the changes just committed; it routes to
-  `/make-a-plan` by itself if the findings need one.
-- `/create-pr` — when the task is done and the branch is ready to merge.
+- `@review-code` — to review the changes just committed; it routes to
+  `@make-a-plan` by itself if the findings need one.
+- `@create-pr` — when the task is done and the branch is ready to merge.
 
 ## User input, overrides and additional context
 

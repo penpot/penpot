@@ -337,28 +337,28 @@ small. To delegate without switching models, delegate to `general`.
    report with your intent: "investigate this and find the possible cause",
    "investigate and tell me where this points", or "does this still apply?".
    Explore until you and the agent roughly agree on the problem.
-2. **Write the plan.** Run `/make-a-plan` — it executes in Build mode.
-   If you need to step in and answer something yourself, press TAB to
-   leave Build mode. Use Plan mode only when you want a hard guarantee
-   that the agent modifies no file under any circumstance. If you
+2. **Write the plan.** Invoke `@make-a-plan`. Skills use the current agent;
+   select Build mode first when the skill needs to write files. Use Plan mode
+   only when you want a hard guarantee that the agent modifies no file under
+   any circumstance. If you
    explored with a weaker model but want a stronger one to write the
    plan, switch models first or delegate:
-   `/make-a-plan delegate to @engineer-glm`.
+   `@make-a-plan delegate to @engineer-glm`.
 3. **Iterate on the plan.** The plan is saved to `.agents/plans/`, so you
-   never depend on LLM memory: read the file directly, or run `/review-plan`
+   never depend on LLM memory: read the file directly, or invoke `@review-plan`
    for a second opinion (delegation works here too). Complex plans deserve a
    review; simple ones can skip it.
-4. **Execute.** Run `/implement-plan`. It first prints the full picture —
+4. **Execute.** Invoke `@implement-plan`. It first prints the full picture —
    whether it will create an issue and a branch, the execution style, and a
    task checklist — and waits for your go-ahead. Say "step by step" to stop
    after each task (one commit per task) so you can verify as it goes;
    the default runs all tasks with one final commit.
-5. **Land the work.** When it finishes, either push yourself and run
-   `/create-pr`, or loop `/review-code` → `/make-a-plan` →
-   `/implement-plan` until the findings are addressed, then push and
-   `/create-pr`. Nothing pushes for you — you always push from your shell.
+5. **Land the work.** When it finishes, either push yourself and invoke
+   `@create-pr`, or loop `@review-code` → `@make-a-plan` →
+   `@implement-plan` until the findings are addressed, then push and invoke
+   `@create-pr`. Nothing pushes for you — you always push from your shell.
 
-> Note: `/implement-plan` checks the current branch. On a base branch
+> Note: `@implement-plan` checks the current branch. On a base branch
 > (`main`, `develop`, `staging`) it creates a GitHub issue and a branch
 > `issue-NNNN`; on an existing feature branch it continues there and
 > creates nothing. The pre-run summary tells you which applies. Read the
@@ -367,14 +367,14 @@ small. To delegate without switching models, delegate to `general`.
 
 ### Big feature with multiple plans
 
-When the work is too large for a single plan, tell `/make-a-plan`
+When the work is too large for a single plan, tell `@make-a-plan`
 up front: produce a high-level roadmap where each task will get its
 own execution plan, and the roadmap doubles as the progress tracker.
 
 From there the flow mirrors the issue flow above, one level down:
-take each roadmap task in turn, write its own plan (`/make-a-plan`,
+take each roadmap task in turn, write its own plan (`@make-a-plan`,
 delegating when it helps), review it when the task is complex
-(`/review-plan`), implement it (`/implement-plan`), and mark progress
+(`@review-plan`), implement it (`@implement-plan`), and mark progress
 on the roadmap as you land each piece.
 
 ### Plan file naming (base + derivatives)
@@ -392,7 +392,7 @@ keeps everything adjacent in `ls`:
   `2026-09-20-upload-pipeline-roadmap--task-01-chunk-upload.md`
 - Chained: `...--task-02-gc--review-01.md`
 
-While a plan is still unimplemented, `/make-a-plan` revises it in
+While a plan is still unimplemented, `@make-a-plan` revises it in
 place. Once implemented and reviewed, it writes a new followup file.
 Full rules live in the `planner` skill.
 
@@ -401,11 +401,11 @@ Full rules live in the `planner` skill.
 Every plan carries `Status: draft | reviewed | done` plus an
 append-only `Review Log` (UTC ISO 8601, one line per entry):
 
-- `draft` — fresh from `/make-a-plan`.
-- `reviewed` — review feedback incorporated. `/review-plan` stays
-  read-only; only your explicit "apply" makes `/make-a-plan` apply
+- `draft` — fresh from `@make-a-plan`.
+- `reviewed` — review feedback incorporated. `@review-plan` stays
+  read-only; only your explicit "apply" makes `@make-a-plan` apply
   the changes, flip the status, and log one line.
-- `done` — `/implement-plan` closes it on completion, logging the
+- `done` — `@implement-plan` closes it on completion, logging the
   issue URL when one exists (never commit hashes).
 
 A plan approved with no changes goes `draft` → `done` directly.
@@ -516,11 +516,11 @@ JSON, REPL access, and so on.
 
 ### A typical round
 
-1. `/make-a-plan` — you get a plan and a saved file in `.agents/plans/`.
-2. `/review-plan` — a second opinion; approve or request changes.
-3. `/implement-plan` — the code gets written and committed. Starting from a base branch, it also opens the GitHub issue and the `issue-NNNN` branch; the plans that follow continue on that same branch.
-4. `/review-code` — a reviewer checks the commit.
-5. `/create-pr` — the branch goes up as a pull request.
+1. `@make-a-plan` — you get a plan and a saved file in `.agents/plans/`.
+2. `@review-plan` — a second opinion; approve or request changes.
+3. `@implement-plan` — the code gets written and committed. Starting from a base branch, it also opens the GitHub issue and the `issue-NNNN` branch; the plans that follow continue on that same branch.
+4. `@review-code` — a reviewer checks the commit.
+5. `@create-pr` — the branch goes up as a pull request.
 
 Every step also works on its own, and you can always say what you want
 in plain words — the agents pick the right skill from what you say.

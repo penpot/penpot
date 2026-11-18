@@ -12,15 +12,15 @@ implementation plan.
 ## When to use
 
 - The user asks to review a plan, in any phrasing: "review this plan",
-  "does this plan look right?", "second opinion on the plan" — or runs
-  `/review-plan`.
-- A plan was just produced (typically by `/make-a-plan`) and the user
+  "does this plan look right?", "second opinion on the plan" — or invokes
+  `@review-plan`.
+- A plan was just produced (typically by `@make-a-plan`) and the user
   wants it evaluated before executing it.
 
 ## Instructions
 
 1. **Determine the plan under review** from the session context (for example, a
-   plan just produced by `/make-a-plan`) or from a plan file path given by the
+   plan just produced by `@make-a-plan`) or from a plan file path given by the
    user (typically under `.agents/plans/`). If a file path is given, read the
    file first so the complete plan is in context.
 2. Delegate the review to the `general` subagent (via the task tool), unless the
@@ -30,8 +30,8 @@ implementation plan.
    summarize it and do not act on its findings.
 4. Right after the review, suggest the next step based on the verdict. These
    are suggestions — the user decides, and any instruction overrides them:
-   - **Approve** → suggest `/implement-plan` to execute it.
-   - **Request changes** → suggest `/make-a-plan` to make a plan to address the
+   - **Approve** → suggest `@implement-plan` to execute it.
+   - **Request changes** → suggest `@make-a-plan` to make a plan to address the
      findings.
 
 ### Hard rule — read-only while reviewing

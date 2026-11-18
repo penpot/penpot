@@ -192,8 +192,8 @@ Source: review-code over `<commit>` (branch `<branch>`) | task `NN` of roadmap `
 Created: YYYY-MM-DD
 ```
 
-End the response by suggesting the next steps: `/review-plan` to get a second
-opinion on the plan and `/implement-plan` to execute it.
+End the response by suggesting the next steps: `@review-plan` to get a second
+opinion on the plan and `@implement-plan` to execute it.
 
 ### Plan Structure
 
@@ -261,5 +261,5 @@ Before delivering the plan, confirm:
 - [ ] No task is XL or larger — break it down instead
 - [ ] Checkpoints exist after every 2-3 tasks
 - [ ] The response states the plan's path (saved or suggested) and suggests
-      `/review-plan` and `/implement-plan`
+      `@review-plan` and `@implement-plan`
 - [ ] The plan is ready for human review
