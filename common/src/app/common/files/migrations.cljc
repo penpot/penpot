@@ -2212,7 +2212,34 @@
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
 
-(defmethod migrate-data "0033-normalize-main-instance-names"
+(defn- repair-shape-children
+  [objects shape]
+  (if-let [shapes (:shapes shape)]
+    (let [shapes' (into []
+                        (comp (keep uuid/coerce)
+                              (filter #(contains? objects %))
+                              (distinct))
+                        shapes)]
+      (if (and (vector? shapes) (= shapes shapes'))
+        shape
+        (assoc shape :shapes shapes')))
+    shape))
+
+(defn- repair-container-children
+  [container]
+  (d/update-when container :objects
+                 (fn [objects]
+                   ;; Only assoc the shapes that change, so an ObjectsMap is
+                   ;; not marked as modified when nothing is repaired.
+                   (reduce-kv (fn [result id shape]
+                                (let [shape' (repair-shape-children objects shape)]
+                                  (if (identical? shape shape')
+                                    result
+                                    (assoc result id shape'))))
+                              objects
+                              objects))))
+
+(defmethod migrate-data "0033-normalize-main-instance-names-v2"
   [data _]
   ;; In penpot shape names always have "/" characters normalized with one space between and after,
   ;; to form paths. But this is not enforced and may be places that still admit names like
@@ -2221,15 +2248,13 @@
   ;; Here we normalize the names of all main instances, and a new file integrity validation has
   ;; been added to enforce this from now on.
   ;; Main instances in variants are a special case because they need to match the variant name.
+  ;; Old files may also list in :shapes child ids stored as strings, nil, or ids that point to no
+  ;; shape. They fail the shape schema and the uuid assert of get-shape, so the container is
+  ;; repaired first (see `repair-container-children`). That repair is the reason for the `-v2`:
+  ;; files that already applied the original migration need to run it again to get it.
   (letfn [(update-shape [container shape-id]
-            (let [shape (ctn/get-shape container shape-id)]
-              ;; A shape may reference a child that does not exist in the
-              ;; container (a dangling reference). There is nothing to update
-              ;; on it, and storing it would add a nil entry to the objects
-              ;; map, making the whole file invalid.
-              (if (nil? shape)
-                container
-                (let [shape (cond
+            (let [shape     (ctn/get-shape container shape-id)
+                  shape'    (cond
                               ;; Variant container must have a normalized name
                               (ctk/is-variant-container? shape)
                               (let [name       (:name shape)
@@ -2262,13 +2287,19 @@
                               ;; Any other shape does not need processing
                               :else shape)]
 
-                  (reduce update-shape
-                          (ctt/set-shape container shape)
-                          (:shapes shape))))))
+              ;; Only assoc the shape when the normalization changed it, so an
+              ;; ObjectsMap is not marked as modified, and the page is not
+              ;; rewritten, when there is nothing to normalize.
+              (reduce update-shape
+                      (if (identical? shape shape')
+                        container
+                        (ctt/set-shape container shape'))
+                      (:shapes shape'))))
 
           (update-container
             [container]
-            (let [root (ctn/get-container-root container)]
+            (let [container (repair-container-children container)
+                  root      (ctn/get-container-root container)]
               (if root
                 (update-shape container (:id root))
                 container)))]
@@ -2502,7 +2533,7 @@
          "0030-remove-stroke-per-side-attr"
          "0031-migrate-stroke-width-token-attr"
          "0032-fix-children-not-in-parent"
-         "0033-normalize-main-instance-names"
+         "0033-normalize-main-instance-names-v2"
          "0034-fix-path-content-offset"
          "0035-fix-dangling-children"
          "0036-clear-nil-keys-in-objects"
