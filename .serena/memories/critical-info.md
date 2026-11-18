@@ -8,7 +8,7 @@ You are working on the GitHub project `penpot/penpot`, a monorepo.
 - Cross-cutting testing principles, TDD workflow, and anti-patterns: `mem:testing`.
 - Structured logging conventions (`:hint` casing and fields, log levels): `mem:clojure/logging` — read before adding or changing any log call.
 - Verified Clojure language behaviors that contradict common assumptions (e.g. `int?` covers `Long`; `integer?` is the general predicate): `mem:clojure/idioms` — read before assuming stdlib predicate semantics.
-- Read `mem:clojure/design-rules` (function shape, boundary checks, naming) before writing or modifying Clojure/ClojureScript code — not only when designing a solution or an API.
+- Read `mem:clojure/core` (function shape, boundary checks, naming) before writing or modifying Clojure/ClojureScript code — not only when designing a solution or an API.
 
 # Development workflow
 
@@ -23,7 +23,6 @@ You are working on the GitHub project `penpot/penpot`, a monorepo.
 - **Never `git push`, force-push, or modify `git origin`** (or any other remote). The user pushes from their own shell; if a push is required, say so and wait. Never amend a commit that the user has already pushed unless explicitly asked.
 - **Never edit `CHANGES.md` by hand.** The changelog is generated from GitHub milestones during the release process; update it only via `mem:workflow/updating-changelog` (the `update-changelog` skill flow) or on explicit user request.
 - You have access to the GitHub CLI `gh` or corresponding MCP tools.
-- Issues are also managed on Taiga. Read issues using the `read_taiga_issue` tool.
 - Before writing code, analyze the task in depth and describe your plan. If the task is complex, break it down into atomic steps. After making changes, run the applicable lint and format checks for the affected module before considering the work done (per example `mem:backend/core` or `mem:frontend/core`).
 - Align `let` binding values: when a `let` form has multiple bindings spanning several lines, align the value forms to the same column with spaces.
 - If you introduce delimiter errors (mismatched parens/brackets) in Clojure/CLJS files, fix them with `scripts/paren-repair` BEFORE running lint/format checks. See `mem:scripts/paren-repair` for usage.

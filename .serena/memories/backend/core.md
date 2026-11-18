@@ -14,7 +14,7 @@ Backend: JVM Clojure; Integrant; PostgreSQL; Redis/Valkey; RPC; HTTP; storage; m
 
 ## Stable namespace map
 
-- `app.rpc.commands.*`: RPC command implementations exposed under `/api/rpc/command/<cmd-name>`.
+- `app.rpc.commands.*`: RPC command implementations exposed under `/api/main/methods/<method-name>`; `/api/rpc/command/<method-name>` remains as a backward-compatible route.
 - `app.rpc.permissions`: permission predicate/check helper factories.
 - `app.http.*`: HTTP routes and middleware.
 - `app.auth.*`: provider-specific authentication helpers such as LDAP/OIDC.

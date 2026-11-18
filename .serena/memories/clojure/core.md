@@ -1,4 +1,4 @@
-# Clojure Design Rules
+# Clojure Core
 
 How to shape a function in this codebase. Each rule came from a review round; do not re-derive from taste.
 
@@ -11,4 +11,4 @@ How to shape a function in this codebase. Each rule came from a review round; do
 
 Reference implementation: the http metrics samplers in `app.http` (`sample-worker-metrics` / `sample-connector-metrics` are guard-free; `sample-http-metrics` guards at the boundary).
 
-See also: `mem:clojure/idioms` (language behaviors), `mem:testing` (TDD and test conventions).
+See also: `mem:clojure/idioms` (language behaviors and naming exceptions), `mem:clojure/logging` (structured logging), `mem:testing` (TDD and test conventions).
