@@ -2071,6 +2071,87 @@
                (files/check-read-permissions! cfg profile-id main-id)
                (db/exec! conn [sql:get-file-branch-merges main-id])))))
 
+;; --- COMMANDS: the changes a profile marked as reviewed
+
+(defn- get-readable-branch
+  "The branch `branch-id`, once `profile-id` is known to read its main.
+  Raises when there is no such branch."
+  [{:keys [::db/conn] :as cfg} profile-id branch-id]
+  (let [branch (db/get* conn :file-branch {:id branch-id})]
+    (when (nil? branch)
+      (ex/raise :type :not-found
+                :code :branch-not-found
+                :hint "unable to find branch with the provided id"
+                :branch-id branch-id))
+    (files/check-read-permissions! cfg profile-id (:source-file-id branch))
+    branch))
+
+(def ^:private schema:get-branch-change-reviews
+  [:map {:title "get-branch-change-reviews"}
+   [:branch-id ::sm/uuid]
+   [:direction [:enum :branch->main :main->branch]]])
+
+(def ^:private sql:get-branch-change-reviews
+  "SELECT r.change_key, r.fingerprint
+     FROM file_branch_change_review AS r
+    WHERE r.file_branch_id = ?
+      AND r.profile_id = ?
+      AND r.direction = ?")
+
+(sv/defmethod ::get-branch-change-reviews
+  "The changes of a comparison the profile marked as reviewed, each with
+  the fingerprint of the change when it was marked. The marks are the
+  profile's own: nobody else's are returned. A mark whose fingerprint no
+  longer matches its change is stale, which the reader of the comparison
+  decides: the change may have moved since."
+  {::doc/added "2.16"
+   ::sm/params schema:get-branch-change-reviews}
+  [cfg {:keys [::rpc/profile-id branch-id direction]}]
+  (check-branching-enabled!)
+  (db/run! cfg
+           (fn [{:keys [::db/conn] :as cfg}]
+             (get-readable-branch cfg profile-id branch-id)
+             (db/exec! conn [sql:get-branch-change-reviews
+                             branch-id profile-id (name direction)]))))
+
+(def ^:private schema:set-branch-change-review
+  [:map {:title "set-branch-change-review"}
+   [:branch-id ::sm/uuid]
+   [:direction [:enum :branch->main :main->branch]]
+   [:change-key [:string {:max 500}]]
+   [:fingerprint [:string {:max 250}]]
+   [:reviewed ::sm/boolean]])
+
+(def ^:private sql:upsert-branch-change-review
+  "INSERT INTO file_branch_change_review
+          (file_branch_id, profile_id, direction, change_key, fingerprint)
+   VALUES (?, ?, ?, ?, ?)
+       ON CONFLICT (file_branch_id, profile_id, direction, change_key)
+       DO UPDATE SET fingerprint = EXCLUDED.fingerprint,
+                     created_at = clock_timestamp()")
+
+(sv/defmethod ::set-branch-change-review
+  "Mark a change of a comparison as reviewed by the profile, with the
+  fingerprint of the change as it stands, or clear the mark. Reading the
+  branch is enough: the mark is the profile's own note and changes
+  nothing of the branch."
+  {::doc/added "2.16"
+   ::sm/params schema:set-branch-change-review
+   ::db/transaction true}
+  [{:keys [::db/conn] :as cfg}
+   {:keys [::rpc/profile-id branch-id direction change-key fingerprint reviewed]}]
+  (check-branching-enabled!)
+  (get-readable-branch cfg profile-id branch-id)
+  (if reviewed
+    (db/exec-one! conn [sql:upsert-branch-change-review
+                        branch-id profile-id (name direction) change-key fingerprint])
+    (db/delete! conn :file-branch-change-review
+                {:file-branch-id branch-id
+                 :profile-id profile-id
+                 :direction (name direction)
+                 :change-key change-key}))
+  nil)
+
 ;; --- COMMAND: update-file-branch (rename / description)
 
 (def ^:private schema:update-file-branch
