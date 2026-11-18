@@ -41,7 +41,6 @@
    [frontend-tests.data.workspace-context-menu-test]
    [frontend-tests.data.workspace-focus-test]
    [frontend-tests.data.workspace-interactions-test]
-   [frontend-tests.data.workspace-libraries-load-test]
    [frontend-tests.data.workspace-libraries-sync-test]
    [frontend-tests.data.workspace-mcp-test]
    [frontend-tests.data.workspace-media-test]
@@ -250,7 +249,6 @@
    'frontend-tests.data.workspace-context-menu-test
    'frontend-tests.data.workspace-focus-test
    'frontend-tests.data.workspace-interactions-test
-   'frontend-tests.data.workspace-libraries-load-test
    'frontend-tests.data.workspace-libraries-sync-test
    'frontend-tests.data.workspace-mcp-test
    'frontend-tests.data.workspace-media-test
