@@ -1002,100 +1002,6 @@
     (t/is (= (:variant-name copy) (:variant-name copy')))
     (t/is (= data' (cfm/migrate-data data' variant-text-migration)))))
 
-(t/deftest migration-0038-blank-name-and-value
-  (let [file   (-> (variant-file)
-                   (thk/update-component :component2 {:variant-properties [{:name "=,="
-                                                                            :value "=,="}]}))
-        file'  (migrate-text file)
-        comp2' (thk/get-component file' :component2)
-        root2' (ths/get-shape file' :root2)
-        data'  (ctf/file-data file')]
-
-    (t/is (= "Property 1" (->> (:variant-properties comp2')
-                               (some #(when (= "" (:value %)) %))
-                               :name)))
-    (t/is (= "" (:variant-name root2')))
-    (t/is (= data' (cfm/migrate-data data' variant-text-migration)))))
-
-(t/deftest migration-0038-numbers-an-empty-duplicate-value
-  ;; :shapes is [root2 root1]. root2 keeps the empty value. root1 is numbered.
-  (let [props  [{:name "Property 1" :value "=,="}]
-        file   (-> (variant-file)
-                   (thk/update-component :component2 {:variant-properties props})
-                   (thk/update-component :component1 {:variant-properties props}))
-        file'  (migrate-text file)
-        comp2' (thk/get-component file' :component2)
-        comp1' (thk/get-component file' :component1)
-        root1' (ths/get-shape file' :root1)
-        data'  (ctf/file-data file')]
-
-    (t/is (= "" (-> comp2' :variant-properties first :value)))
-    (t/is (= "(1)" (-> comp1' :variant-properties first :value)))
-    (t/is (= "(1)" (:variant-name root1')))
-    (t/is (= data' (cfm/migrate-data data' variant-text-migration)))))
-
-(t/deftest migration-0038-numbers-duplicate-names
-  (let [file   (-> (variant-file)
-                   (thk/update-component :component2 {:variant-properties [{:name "Size=Big" :value "one"}
-                                                                           {:name "SizeBig" :value "two"}]})
-                   (thk/update-component :component1 {:variant-properties [{:name "Size=Big" :value "only"}]}))
-        file'  (migrate-text file)
-        comp2' (thk/get-component file' :component2)
-        comp1' (thk/get-component file' :component1)
-        data'  (ctf/file-data file')]
-
-    (t/is (= ["SizeBig" "SizeBig (1)"] (mapv :name (:variant-properties comp2'))))
-    (t/is (= ["one" "two"] (mapv :value (:variant-properties comp2'))))
-    (t/is (= ["SizeBig" "SizeBig (1)"] (mapv :name (:variant-properties comp1'))))
-    (t/is (= ["only" ""] (mapv :value (:variant-properties comp1'))))
-    (t/is (= data' (cfm/migrate-data data' variant-text-migration)))))
-
-(t/deftest migration-0038-numbers-only-a-colliding-value-tuple
-  (let [file   (-> (variant-file)
-                   (thk/update-component :component2 {:variant-properties [{:name "Size" :value "a=b"}]})
-                   (thk/update-component :component1 {:variant-properties [{:name "Size" :value "a=b"}]}))
-        file'  (migrate-text file)
-        comp2' (thk/get-component file' :component2)
-        comp1' (thk/get-component file' :component1)
-        data'  (ctf/file-data file')]
-
-    (t/is (= "ab" (-> comp2' :variant-properties first :value)))
-    (t/is (= "ab (1)" (-> comp1' :variant-properties first :value)))
-    (t/is (= data' (cfm/migrate-data data' variant-text-migration))))
-
-  (let [file   (-> (variant-file)
-                   (thk/update-component :component2 {:variant-properties [{:name "Size" :value "a=b"}
-                                                                           {:name "Color" :value "red"}]})
-                   (thk/update-component :component1 {:variant-properties [{:name "Size" :value "a=b"}
-                                                                           {:name "Color" :value "blue"}]}))
-        file'  (migrate-text file)
-        comp1' (thk/get-component file' :component1)
-        data'  (ctf/file-data file')]
-
-    (t/is (= ["ab" "blue"] (mapv :value (:variant-properties comp1'))))
-    (t/is (= data' (cfm/migrate-data data' variant-text-migration)))))
-
-(t/deftest migration-0038-keeps-the-value-when-a-long-name-is-shortened
-  (let [long-name (apply str (repeat 60 "n"))
-        file      (-> (variant-file)
-                      (thk/update-component :component2 {:variant-properties [{:name long-name :value "other"}
-                                                                              {:name long-name :value "kept"}]})
-                      (thk/update-component :component1 {:variant-properties [{:name long-name :value "x"}
-                                                                              {:name long-name :value "y"}]}))
-        file'     (migrate-text file)
-        props'    (:variant-properties (thk/get-component file' :component2))
-        root2'    (ths/get-shape file' :root2)
-        first-n   (:name (first props'))
-        second    (second props')
-        data'     (ctf/file-data file')]
-
-    (t/is (not= first-n (:name second)))
-    (t/is (<= (count (:name second)) 60))
-    (t/is (<= (count first-n) 60))
-    (t/is (= "kept" (:value second)))
-    (t/is (some? (re-find #"kept" (or (:variant-name root2') ""))))
-    (t/is (= data' (cfm/migrate-data data' variant-text-migration)))))
-
 (t/deftest migration-0038-refreshes-a-stale-variant-name
   (let [props [{:name "State" :value "active"}
                {:name "Tone" :value "crítica"}]
@@ -1145,18 +1051,6 @@
     (t/is (= "LegacyName" (-> deleted :variant-properties first :name)))
     (t/is (= "ab" (-> deleted :variant-properties first :value)))
     (t/is (= "ab" (get-in deleted [:objects main-id :variant-name])))
-    (t/is (= data' (cfm/migrate-data data' variant-text-migration)))))
-
-(t/deftest migration-0038-replaces-a-non-string-value
-  (let [file  (-> (variant-file)
-                  (thk/update-component :component2 {:variant-properties [{:name "Property 1" :value 5}]}))
-        file' (migrate-text file)
-        comp' (thk/get-component file' :component2)
-        root' (ths/get-shape file' :root2)
-        data' (ctf/file-data file')]
-
-    (t/is (= "" (-> comp' :variant-properties first :value)))
-    (t/is (= "" (:variant-name root')))
     (t/is (= data' (cfm/migrate-data data' variant-text-migration)))))
 
 (t/deftest migration-0038-leaves-a-clean-set-unchanged

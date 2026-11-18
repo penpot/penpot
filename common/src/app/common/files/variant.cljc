@@ -8,8 +8,7 @@
    [app.common.data.macros :as dm]
    [app.common.types.component :as ctc]
    [app.common.types.components-list :as ctcl]
-   [app.common.types.variant :as ctv]
-   [cuerdas.core :as str]))
+   [app.common.types.variant :as ctv]))
 
 (defn find-variant-components
   "Find a list of the components that belongs to this variant-id"
@@ -102,96 +101,22 @@
            (ctcl/get-component data))
       component)))
 
-(def ^:private variant-property-passes 10)
-
-(defn- clip-property-text
-  [value pass]
-  (let [value (or value "")]
+(defn- variant-main-shape-path
+  "Path in file data to the main shape of `component`: inside the
+   component `:objects` when it is deleted, or on its page. Nil when the
+   component has no main."
+  [component]
+  (let [main-id (:main-instance-id component)
+        page-id (:main-instance-page component)]
     (cond
-      (<= (count value) ctv/property-max-length)
-      value
+      (and (:deleted component) main-id)
+      [:components (:id component) :objects main-id]
 
-      (>= pass variant-property-passes)
-      (subs value 0 ctv/property-max-length)
+      (and page-id main-id)
+      [:pages-index page-id :objects main-id]
 
       :else
-      (let [matched (re-matches #"^(.*?)( ?\(\d+\))$" value)
-            base    (if matched (nth matched 1) value)
-            suffix  (if matched (nth matched 2) "")
-            room    (- ctv/property-max-length (count suffix))]
-        (if (neg? room)
-          (subs value 0 ctv/property-max-length)
-          (str (subs base 0 (min (count base) room)) suffix))))))
-
-(defn- trimmed-unique-text
-  "Number `text` against `taken`, then trim. An empty base is stored
-   as \"(1)\" rather than \" (1)\", which the next sanitize would trim."
-  [taken text]
-  (loop [candidate (str/trim (or text ""))
-         guard     0]
-    (let [numbered (str/trim (ctv/update-number-in-repeated-item taken candidate))]
-      (cond
-        (>= guard 32)
-        numbered
-
-        (some #(= numbered %) taken)
-        (recur numbered (inc guard))
-
-        :else
-        numbered))))
-
-(defn- property-name-or-generated
-  [name taken-names]
-  (let [text (or (ctv/sanitize-property-text (when (string? name) name)) "")]
-    (if (str/blank? text)
-      (str ctv/property-prefix
-           (ctv/next-property-number (mapv (fn [taken-name] {:name taken-name}) taken-names)))
-      text)))
-
-(defn- sanitized-property-value
-  [value]
-  (let [text (or (ctv/sanitize-property-text (when (string? value) value)) "")]
-    (if (> (count text) ctv/property-max-length)
-      (subs text 0 ctv/property-max-length)
-      text)))
-
-(defn- sanitize-variant-properties
-  [props]
-  (reduce (fn [acc prop]
-            (conj acc (assoc prop
-                             :name (property-name-or-generated (:name prop) (mapv :name acc))
-                             :value (sanitized-property-value (:value prop)))))
-          []
-          (or props [])))
-
-(defn- variant-property-names-settled?
-  [props]
-  (let [names (mapv :name props)]
-    (and (= (count names) (count (distinct names)))
-         (every? #(<= (count %) ctv/property-max-length) names))))
-
-(defn- settle-variant-property-names
-  [props]
-  (loop [props (vec props)
-         pass  1]
-    (let [props' (reduce (fn [acc prop]
-                           (let [taken (mapv :name acc)
-                                 named (-> (:name prop)
-                                           (clip-property-text pass)
-                                           (->> (trimmed-unique-text taken))
-                                           (clip-property-text pass))
-                                 named (if (and (some #(= named %) taken)
-                                                (< pass variant-property-passes))
-                                         (-> (trimmed-unique-text taken named)
-                                             (clip-property-text pass))
-                                         named)]
-                             (conj acc (assoc prop :name named))))
-                         []
-                         props)]
-      (if (or (variant-property-names-settled? props')
-              (>= pass variant-property-passes))
-        props'
-        (recur props' (inc pass))))))
+      nil)))
 
 (defn get-variant-main-shape
   "Return the main shape map for `component`, or nil when it is absent."
@@ -217,63 +142,6 @@
          (not= (ctv/properties-to-name props)
                (:variant-name shape)))))
 
-(defn prepare-variant-properties
-  "Sanitize one property vector that is not part of a live set."
-  [props]
-  (-> props
-      sanitize-variant-properties
-      settle-variant-property-names))
-
-(defn- canonical-variant-property-names
-  [props-seq]
-  (reduce (fn [names props]
-            (reduce (fn [names prop]
-                      (if (some #(= (:name prop) %) names)
-                        names
-                        (conj names (:name prop))))
-                    names
-                    props))
-          []
-          props-seq))
-
-(defn- align-variant-properties
-  [props names]
-  (mapv (fn [name]
-          (or (some #(when (= name (:name %)) %) props)
-              {:name name :value ""}))
-        names))
-
-(defn- value-index-to-number
-  [props]
-  (or (->> (map-indexed vector props)
-           (filter (fn [[_ prop]]
-                     (not (str/blank? (:value prop)))))
-           last
-           first)
-      0))
-
-(defn- resolve-variant-value-tuple
-  [props seen]
-  (loop [props (vec props)
-         pass  1]
-    (let [tuple (mapv :value props)]
-      (if (or (empty? props)
-              (not (some #(= tuple %) seen))
-              (> pass variant-property-passes))
-        props
-        (let [idx     (value-index-to-number props)
-              taken   (mapv #(nth % idx "") seen)
-              current (:value (nth props idx))
-              updated (if (>= pass variant-property-passes)
-                        (let [text (or current "")]
-                          (subs text 0 (min ctv/property-max-length (count text))))
-                        (-> (trimmed-unique-text taken current)
-                            (clip-property-text pass)))]
-          (if (>= pass variant-property-passes)
-            (assoc-in props [idx :value] updated)
-            (recur (assoc-in props [idx :value] updated)
-                   (inc pass))))))))
-
 (defn- qualifying-variant-member
   [data objects container child-id]
   (when-let [child (get objects child-id)]
@@ -293,21 +161,40 @@
         (keep #(qualifying-variant-member data objects container %))
         (:shapes container)))
 
-(defn repair-variant-members
-  "Return `members` with finished `:props`.
-   Each member is {:component component}. Order is board :shapes order."
-  [members]
-  (let [prepared (mapv (fn [member]
-                         (assoc member :props (prepare-variant-properties
-                                               (:variant-properties (:component member)))))
-                       members)
-        names    (canonical-variant-property-names (map :props prepared))
-        aligned  (mapv (fn [member]
-                         (update member :props #(align-variant-properties % names)))
-                       prepared)]
-    (reduce (fn [acc member]
-              (let [seen  (mapv #(mapv :value (:props %)) acc)
-                    props (resolve-variant-value-tuple (:props member) seen)]
-                (conj acc (assoc member :props props))))
-            []
-            aligned)))
+(defn update-variant-properties
+  "Apply `f` to the `:variant-properties` of `component` and write the
+   result to `data`. Also refresh the `:variant-name` of its main shape
+   when it no longer matches. Return `data` unchanged when nothing differs."
+  [data component f]
+  (let [old-props (vec (or (:variant-properties component) []))
+        props     (f old-props)
+        data      (if (= old-props props)
+                    data
+                    (assoc-in data [:components (:id component) :variant-properties] props))]
+    (if (variant-main-label-changed? data component props)
+      (assoc-in data
+                (conj (variant-main-shape-path component) :variant-name)
+                (ctv/properties-to-name props))
+      data)))
+
+(defn update-variant-container-properties
+  "Apply `f` to the property vectors of the members of `container`, in
+   `:shapes` order, and write each result with `update-variant-properties`.
+   `f` takes and returns a vector of property vectors."
+  [data objects container f]
+  (let [components (mapv :component (qualifying-variant-members data objects container))
+        props-seq  (f (mapv #(vec (or (:variant-properties %) [])) components))]
+    (reduce (fn [data [component props]]
+              (update-variant-properties data component (constantly props)))
+            data
+            (map vector components props-seq))))
+
+(defn sanitize-variant-component
+  "Sanitize the properties of one variant component on its own."
+  [data component]
+  (update-variant-properties data component ctv/sanitize-properties))
+
+(defn sanitize-variant-container
+  "Sanitize the properties of every member of `container` as one set."
+  [data objects container]
+  (update-variant-container-properties data objects container ctv/sanitize-properties-set))

@@ -2451,31 +2451,6 @@
 ;; Files saved before that strip can also hold two identical names, two
 ;; identical value combinations, or a label that was not saved with the
 ;; values. Rewrite the text in place and refresh the label.
-(defn- write-variant-member
-  [data component props]
-  (let [variant-name (ctv/properties-to-name props)
-        component-id (:id component)
-        main-id      (:main-instance-id component)
-        page-id      (:main-instance-page component)
-        label?       (cfv/variant-main-label-changed? data component props)
-        same-props?  (= (vec (or (:variant-properties component) []))
-                        (vec props))
-        data         (if same-props?
-                       data
-                       (assoc-in data [:components component-id :variant-properties] props))]
-    (cond
-      (not label?)
-      data
-
-      (and (:deleted component) main-id)
-      (assoc-in data [:components component-id :objects main-id :variant-name] variant-name)
-
-      (and page-id main-id)
-      (assoc-in data [:pages-index page-id :objects main-id :variant-name] variant-name)
-
-      :else
-      data)))
-
 (defn- variant-container-entries
   [data]
   (concat
@@ -2492,29 +2467,20 @@
 
 (defmethod migrate-data "0038-sanitize-variant-property-text"
   [data _]
-  (let [[data used-ids]
-        (reduce (fn [[data used-ids] {:keys [objects container]}]
-                  (let [members (cfv/qualifying-variant-members data objects container)]
-                    [(reduce (fn [data member]
-                               (write-variant-member data (:component member) (:props member)))
-                             data
-                             (cfv/repair-variant-members members))
-                     (into used-ids (map :component-id) members)]))
-                [data #{}]
-                (variant-container-entries data))
-
-        solos
-        (remove (fn [component]
-                  (or (contains? used-ids (:id component))
-                      (not (ctk/is-variant? component))))
-                (vals (:components data)))]
-
-    (reduce (fn [data component]
-              (write-variant-member data
-                                    component
-                                    (cfv/prepare-variant-properties (:variant-properties component))))
-            data
-            solos)))
+  (let [entries  (variant-container-entries data)
+        used-ids (into #{}
+                       (comp (mapcat (fn [{:keys [objects container]}]
+                                       (cfv/qualifying-variant-members data objects container)))
+                             (map :component-id))
+                       entries)
+        data     (reduce (fn [data {:keys [objects container]}]
+                           (cfv/sanitize-variant-container data objects container))
+                         data
+                         entries)]
+    (->> (vals (:components data))
+         (filter ctk/is-variant?)
+         (remove #(contains? used-ids (:id %)))
+         (reduce cfv/sanitize-variant-component data))))
 
 ;; The board name and each main's layer name are already normalized.
 ;; The library entry could still carry the previous path. Point every
