@@ -145,7 +145,9 @@ test("the branch list offers Restore for archived branches only", async ({
 
   const info = page.getByRole("dialog").filter({ hasText: "Branch info" });
   await expect(info.getByRole("button", { name: "Restore" })).toBeVisible();
-  await expect(info.getByRole("button", { name: "Compare" })).toBeVisible();
+  // a branch is compared from its own file: from another one it opens first
+  await expect(info.getByRole("button", { name: "Compare" })).toBeHidden();
+  await expect(info.getByRole("button", { name: "Open branch" })).toBeVisible();
   await expect(
     info.getByRole("button", { name: "Turn into an ordinary file" }),
   ).toBeVisible();
