@@ -3,6 +3,7 @@ import { request as httpRequest } from "node:http";
 import { afterEach, beforeEach, test } from "node:test";
 import { type CallToolResult, Client, StreamableHTTPClientTransport } from "@modelcontextprotocol/client";
 import { PenpotMcpServer } from "./PenpotMcpServer";
+import { PluginTaskError } from "./PluginTask";
 
 let server: PenpotMcpServer;
 let baseUrl: string;
@@ -125,6 +126,33 @@ test("passes an explicit Penpot session ID from the tool call to plugin dispatch
     assert.equal(response.status, 200);
     const body = await response.json();
     assert.match(JSON.stringify(body), /chosen-tab/);
+});
+
+test("marks an explicit plugin failure as an error tool result", async (t) => {
+    t.mock.method(server.pluginBridge, "executePluginTask", async () => {
+        throw new PluginTaskError("intentional diagnostic plugin error");
+    });
+    const response = await modernRequest("tools/call", {
+        name: "execute_code",
+        arguments: { code: "return 1;" },
+    });
+    assert.equal(response.status, 200);
+    const body = (await response.json()) as { result: CallToolResult };
+    assert.equal(body.result.isError, true);
+    const content = body.result.content[0];
+    assert.equal(content.type, "text");
+    assert.match(content.text, /intentional diagnostic plugin error/);
+});
+
+test("leaves a successful tool result unmarked", async (t) => {
+    t.mock.method(server.pluginBridge, "executePluginTask", async () => ({ data: "ok" }));
+    const response = await modernRequest("tools/call", {
+        name: "execute_code",
+        arguments: { code: "return 1;" },
+    });
+    assert.equal(response.status, 200);
+    const body = (await response.json()) as { result: CallToolResult };
+    assert.equal(body.result.isError, undefined);
 });
 
 test("accepts tool calls with request bodies larger than 100 KiB", async (t) => {
