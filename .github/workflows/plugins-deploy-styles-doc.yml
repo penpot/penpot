@@ -49,7 +49,7 @@ jobs:
         uses: pnpm/setup@fa36a5ef7dcdefc3a7cb25655c122e00cf6e636e # v3.1.2
         with:
           working-directory: plugins
-          runtime: node@26.13.0
+          runtime: node@24.22.3
           install: false
 
       - name: Install deps

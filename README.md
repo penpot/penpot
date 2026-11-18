@@ -13,9 +13,6 @@
   <a href="https://tree.taiga.io/project/penpot/" rel="nofollow">
     <img alt="Managed with Taiga.io" src="https://img.shields.io/badge/managed%20with-TAIGA.io-709f14.svg">
   </a>
-  <a href="https://gitpod.io/#https://github.com/penpot/penpot" rel="nofollow">
-    <img alt="Gitpod ready-to-code" src="https://img.shields.io/badge/Gitpod-ready--to--code-blue?logo=gitpod">
-  </a>
 </p>
 
 <p align="center">
