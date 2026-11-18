@@ -905,9 +905,12 @@
                            :operations (into []
                                              (keep (fn [[attr val]]
                                                      (when (not= val (get old attr))
+                                                       ;; The live rewrite marks nothing
+                                                       ;; touched, and neither may a replay
                                                        {:type :set
                                                         :attr attr
-                                                        :val val})))
+                                                        :val val
+                                                        :ignore-touched true})))
                                              new)})))))
         refs))
 
@@ -1047,9 +1050,12 @@
                                    (inc (- head since))])]
         (if (and (= (map :revn rows) (range (inc since) (inc head)))
                  (<= (reduce + 0 (map :size rows)) (cf/get :catch-up-max-size)))
-          {:revn head
-           :changes (->> (db/exec! conn [sql:catch-up-changes file-id since head])
-                         (mapv #(update % :changes blob/decode)))}
+          ;; `objects-gc` may delete an expired row between the two reads
+          (let [changes (db/exec! conn [sql:catch-up-changes file-id since head])]
+            (if (= (map :revn changes) (map :revn rows))
+              {:revn head
+               :changes (mapv #(update % :changes blob/decode) changes)}
+              {:revn head :reload true}))
           {:revn head :reload true})))))
 
 (def ^:private

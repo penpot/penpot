@@ -619,7 +619,8 @@
       (t/is (= [{:type :mod-obj
                  :page-id page-id
                  :id shape-a
-                 :operations [{:type :set :attr :fills :val (:fills shape)}]}]
+                 :operations [{:type :set :attr :fills :val (:fills shape)
+                               :ignore-touched true}]}]
                rewrite)
             "the row carries the rewrite as a change of its own")
       (t/is (= :match (th/verify-file-log! file-id))
