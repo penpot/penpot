@@ -15,6 +15,11 @@
     (t/is (false? (dt/is-after? dta dtb)))
     (t/is (true? (dt/is-before? dta dtb)))))
 
+#?(:cljs
+   (t/deftest chinese-date-locales-test
+     (t/is (= "zh-CN" (some-> (unchecked-get dt/locales "zh_cn") .-code)))
+     (t/is (= "zh-TW" (some-> (unchecked-get dt/locales "zh_hant") .-code)))))
+
 #?(:clj
    (t/deftest parse-duration-test
      (t/is (dt/duration? (dt/parse-duration "10m")))

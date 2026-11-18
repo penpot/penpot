@@ -46,7 +46,8 @@
               ["date-fns/locale/ru$default" :as dfn-ru]
               ["date-fns/locale/tr$default" :as dfn-tr]
               ["date-fns/locale/uk$default" :as dfn-uk]
-              ["date-fns/locale/zh-CN$default" :as dfn-zh-cn]])
+              ["date-fns/locale/zh-CN$default" :as dfn-zh-cn]
+              ["date-fns/locale/zh-TW$default" :as dfn-zh-tw]])
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]
    [app.common.schema.openapi :as-alias oapi]
@@ -295,7 +296,8 @@
           :ro dfn-ro
           :ru dfn-ru
           :tr dfn-tr
-          :zh-cn dfn-zh-cn
+          :zh_cn dfn-zh-cn
+          :zh_hant dfn-zh-tw
           :nl dfn-nl
           :eu dfn-eu
           :gl dfn-gl
