@@ -183,19 +183,22 @@
 }
 
 .task-next-step {
+  --task-next-step-background-color: var(--color-background-tertiary);
+
   display: flex;
   flex-direction: column;
   gap: var(--sp-m);
   padding: var(--sp-m);
   border-radius: $br-8;
-  background-color: var(--color-background-tertiary);
+  background-color: var(--task-next-step-background-color);
   color: var(--color-foreground-primary);
 
   &.is-inline {
+    --task-next-step-background-color: transparent;
+
     flex-direction: row;
     justify-content: flex-end;
     padding: 0;
-    background: none;
   }
 }
 

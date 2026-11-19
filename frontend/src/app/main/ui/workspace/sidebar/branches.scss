@@ -123,20 +123,22 @@
 
 // ahead/behind: a side with changes stands out, a zero stays quiet
 .count {
+  --count-foreground-color: var(--color-foreground-secondary);
+
   @include use-typography("code-font");
 
   display: inline-flex;
   align-items: center;
   gap: var(--sp-xxs);
-  color: var(--color-foreground-secondary);
+  color: var(--count-foreground-color);
 
   &.has-changes {
-    color: var(--color-accent-primary);
+    --count-foreground-color: var(--color-accent-primary);
   }
 
   // what main has and the branch lacks reads in the error color
   &.is-behind.has-changes {
-    color: var(--color-foreground-error);
+    --count-foreground-color: var(--color-foreground-error);
   }
 }
 
@@ -445,6 +447,8 @@
   inset-block-start: 0;
   block-size: var(--sp-m);
   inline-size: 100%;
+
+  // TODO: no DS z-index token for 1.
   z-index: 1;
 }
 

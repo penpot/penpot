@@ -5,7 +5,6 @@
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
 @use "ds/_borders.scss" as *;
-@use "ds/_utils.scss" as *;
 
 // main covers the first half of the canvas, after the rulers; its edge
 // is the divider
@@ -24,7 +23,7 @@
     content: "";
     position: absolute;
     inset: 0;
-    border: $b-2 solid var(--panel-border-color);
+    border: $b-2 solid var(--color-background-quaternary);
     border-inline-end: none;
     border-start-start-radius: $br-12;
     border-end-start-radius: $br-12;

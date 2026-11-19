@@ -90,6 +90,8 @@
 }
 
 .action {
+  --action-background-color: transparent;
+
   @include use-typography("body-small");
 
   display: flex;
@@ -101,14 +103,14 @@
   border: none;
   border-radius: $br-8;
   background: none;
+  background-color: var(--action-background-color);
   color: var(--color-foreground-primary);
   text-align: start;
   cursor: pointer;
 
   &:hover:not(:disabled) {
+    --action-background-color: var(--color-background-quaternary);
     --shortcut-foreground-color: var(--color-foreground-primary);
-
-    background-color: var(--color-background-quaternary);
   }
 
   &:focus-visible {

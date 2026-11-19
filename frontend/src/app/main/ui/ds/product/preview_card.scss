@@ -70,9 +70,11 @@
 }
 
 .caption {
-  color: var(--color-foreground-secondary);
+  --caption-foreground-color: var(--color-foreground-secondary);
+
+  color: var(--caption-foreground-color);
 
   &.is-warning {
-    color: var(--color-accent-error);
+    --caption-foreground-color: var(--color-accent-error);
   }
 }

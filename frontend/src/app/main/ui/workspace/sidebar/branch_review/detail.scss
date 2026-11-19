@@ -5,7 +5,6 @@
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
 @use "ds/_borders.scss" as *;
-@use "ds/_sizes.scss" as *;
 @use "ds/mixins.scss" as *;
 
 .detail {
@@ -58,6 +57,9 @@
 .section {
   margin-inline: calc(-1 * var(--sp-m));
   padding: var(--sp-m);
+
+  // TODO: --low-emphasis-background is not a DS token: the inspect tab
+  // defines it per theme (`inspect/styles/style_box.scss`).
   background-color: var(--low-emphasis-background);
 }
 
