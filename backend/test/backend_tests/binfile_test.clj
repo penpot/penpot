@@ -3813,6 +3813,12 @@
       (t/is (rejected? (file #{} {:shape-ref (uuid/custom 2 2)} nil)))
       (t/is (rejected? (file #{} {:main-instance true} nil))))
 
+    (t/testing "a file without components/v2 is rejected when it has graphics"
+      (let [media-id (uuid/custom 6 1)]
+        (t/is (rejected? (assoc-in (file #{} {} nil) [:data :media]
+                                   {media-id {:id media-id :name "icon" :width 24 :height 24
+                                              :mtype "image/svg+xml" :media-id (uuid/custom 6 2)}})))))
+
     (t/testing "a file without components/v2 and without component data takes the feature"
       (t/is (= #{"components/v2"}
                (:features (bfc/check-components-v2 (file #{} {} nil))))))
