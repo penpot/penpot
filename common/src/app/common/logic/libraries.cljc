@@ -2995,11 +2995,16 @@
   [changes objects shape file page libraries id-new-component
    index target-cell keep-props-values ignore-swapped?]
   (let [;; When we keep the touched properties, we can't delete the
-        ;; swapped children (we will keep them too)
+        ;; swapped children (we will keep them too). That includes the
+        ;; children swapped in an outer main, above the main of the shape
         ignore-swapped-fn
         (if ignore-swapped?
-          #(-> (get objects %)
-               (ctk/get-swap-slot))
+          (let [container (ctn/make-container page :page)
+                base-id   (:id (ctf/find-remote-shape container libraries shape))]
+            #(let [child (get objects %)]
+               (or (some? (ctk/get-swap-slot child))
+                   (and (ctk/instance-head? child)
+                        (some? (ctf/find-outer-swap container libraries child base-id))))))
           (constantly false))
 
         ;; In the cases where the swapped shape was the first element of the masked group it would make the group to loose the
