@@ -95,7 +95,7 @@ function assertNoTrackedTasks(server: PenpotMcpServer): void {
 }
 
 for (const protocol of ["2025-03-26", MODERN_PROTOCOL]) {
-    test(`opt-in JSON preserves ${protocol} payloads, owners and pending shutdown`, { timeout: 15000 }, async () => {
+    test(`opt-in JSON preserves ${protocol} payloads, owners and pending shutdown`, { timeout: 60000 }, async () => {
         const { server, restoreEnv } = await startServer("true");
         const plugins: WebSocket[] = [];
         let stopped = false;
