@@ -7,7 +7,6 @@
 (ns backend-tests.files-update-add-page-validation-test
   (:require
    [app.common.features :as cfeat]
-   [app.common.files.validate :as val]
    [app.common.types.page :as ctp]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
@@ -33,40 +32,35 @@
     (-> (ctp/make-empty-page {:id page-id :name "Page 2"})
         (assoc-in [:objects (:id shape)] shape))))
 
-(defn- file-with
-  [page]
-  {:id (uuid/next)
-   :features #{"components/v2"}
-   :data {:pages [(:id page)]
-          :pages-index {(:id page) page}}})
-
 (defn- add-page-forms
-  "The two forms of `:add-page` that carry a whole page: the editor sends
-  the page with its id at the top level (duplicate page, undo of a page
-  deletion), and `files/builder.cljc` sends the page alone."
+  "The forms of `:add-page` that carry a whole page: the editor sends the
+  page with its id at the top level (duplicate page, undo of a page
+  deletion), `files/builder.cljc` sends the page alone, and the change
+  schema also admits a top-level id that differs from the page's."
   [page]
   {"editor form" {:type :add-page :id (:id page) :page page}
-   "page-only form" {:type :add-page :page page}})
-
-(t/deftest affected-check-sees-a-whole-page-add-page
-  (let [page-id (uuid/next)
-        page    (page-with-dangling-parent page-id)]
-    (doseq [[form change] (add-page-forms page)]
-      (t/testing form
-        (let [errors (val/validate-file-affected (file-with page) {} [change])]
-          (t/is (contains? (set (map :code errors)) :parent-not-found))
-          (t/is (= #{page-id} (set (map :page-id errors)))))))))
+   "page-only form" {:type :add-page :page page}
+   "differing ids" {:type :add-page :id (uuid/next) :page page}})
 
 (defn- add-page!
-  [profile file change]
-  (th/command! {::th/type :update-file
-                ::rpc/profile-id (:id profile)
-                :id (:id file)
-                :session-id (uuid/next)
-                :revn 0
-                :vern 0
-                :features cfeat/supported-features
-                :changes [change]}))
+  "Sends `change` alone, or as one commit group when `commit-id` is given,
+  which is how the editor sends its changes."
+  ([profile file change]
+   (add-page! profile file change nil))
+  ([profile file change commit-id]
+   (th/command! (cond-> {::th/type :update-file
+                         ::rpc/profile-id (:id profile)
+                         :id (:id file)
+                         :session-id (uuid/next)
+                         :revn 0
+                         :vern 0
+                         :features cfeat/supported-features}
+                  (nil? commit-id)
+                  (assoc :changes [change])
+
+                  (some? commit-id)
+                  (assoc :changes-with-metadata
+                         [{:commit-id commit-id :changes [change]}])))))
 
 (defn- stored-page
   [profile file page-id]
@@ -99,3 +93,20 @@
                  (do
                    (t/is (nil? (:error out)))
                    (t/is (some? (stored-page profile file page-id)))))))))))))
+
+(t/deftest update-file-rejects-the-commit-of-an-invalid-whole-page-add-page
+  ;; A save that names its commits is not refused whole: the answer lists
+  ;; the rejected commit and the page is not stored.
+  (let [profile   (th/create-profile* 1 {:is-active true})
+        file      (th/create-file* 1 {:profile-id (:id profile)
+                                      :project-id (:default-project-id profile)})
+        page-id   (uuid/next)
+        change    {:type :add-page :page (page-with-dangling-parent page-id)}
+        commit-id (uuid/next)]
+    (with-redefs [cf/flags (conj cf/flags :file-validation)]
+      (let [out      (add-page! profile file change commit-id)
+            rejected (get-in out [:result :rejected])]
+        (t/is (nil? (:error out)))
+        (t/is (= commit-id (:failed-commit-id rejected)))
+        (t/is (= :referential-integrity (get-in rejected [:error :code])))
+        (t/is (nil? (stored-page profile file page-id)))))))

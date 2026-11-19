@@ -194,6 +194,24 @@
           changes  [{:type :add-page :id page1-id}]]
       (t/is (nil? (cfv/validate-file-affected file' {} changes)))))
 
+  (t/testing "add-page that carries the page alone validates that page"
+    (let [file     (-> (thf/sample-file :file1 :page-label :page1)
+                       (thf/add-sample-page :page2))
+          file'    (inject-broken-child file :page2)
+          page2    (ctpl/get-page (:data file') (thi/id :page2))
+          changes  [{:type :add-page :page page2}]]
+      (let [errors (cfv/validate-file-affected file' {} changes)]
+        (t/is (some #(= :child-not-found (:code %)) errors)))))
+
+  (t/testing "add-page validates the page it stores, not the top-level :id"
+    (let [file     (-> (thf/sample-file :file1 :page-label :page1)
+                       (thf/add-sample-page :page2))
+          file'    (inject-broken-child file :page2)
+          page2    (ctpl/get-page (:data file') (thi/id :page2))
+          changes  [{:type :add-page :id (uuid/next) :page page2}]]
+      (let [errors (cfv/validate-file-affected file' {} changes)]
+        (t/is (some #(= :child-not-found (:code %)) errors)))))
+
   (t/testing "mod-page with :id=page2 validates page2 (broken → errors)"
     (let [file     (-> (thf/sample-file :file1 :page-label :page1)
                        (thf/add-sample-page :page2))
@@ -491,7 +509,11 @@
                                   :namespace "ns" :key "k" :value "v"}])))
 
     (t/testing "a guide on the invalid page raises"
-      (t/is (schema-error? file [{:type :set-guide :page-id (thi/id :page2) :id (uuid/next) :params nil}])))))
+      (t/is (schema-error? file [{:type :set-guide :page-id (thi/id :page2) :id (uuid/next) :params nil}])))
+
+    (t/testing "add-page checks the page it stores, not the top-level :id"
+      (let [page2 (ctpl/get-page (:data file) (thi/id :page2))]
+        (t/is (schema-error? file [{:type :add-page :id (uuid/next) :page page2}]))))))
 
 (t/deftest validate-file-schema-affected!-skips-untouched-pages
   (let [file (-> (thf/sample-file :file1 :page-label :page1)

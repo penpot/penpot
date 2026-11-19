@@ -945,10 +945,10 @@
                 page-id (conj page-id))
 
               ;; A new or modified page needs a full page sweep. An
-              ;; `:add-page` may carry the page whole, with its id inside
-              ;; `:page` and none at the top level.
+              ;; `:add-page` that carries the page whole stores it under
+              ;; the id inside `:page`, whatever the top level says.
               :add-page
-              (conj page-ids (or id (:id page)))
+              (conj page-ids (or (:id page) id))
 
               :mod-page
               (conj page-ids id)
@@ -1057,7 +1057,7 @@
               (cond-> page-ids (some? page-id) (conj page-id))
 
               :add-page
-              (conj page-ids (or id (:id page)))
+              (conj page-ids (or (:id page) id))
 
               :mod-page
               (conj page-ids id)
