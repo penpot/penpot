@@ -13,6 +13,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.files.branch-merge :as bm]
+   [app.common.math :as mth]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.branches :as dwb]
    [app.main.data.workspace.compare :as dwcp]
@@ -223,6 +224,7 @@
 (def ^:private reviewed-key? (kbd/is-key-ignore-case? "r"))
 (def ^:private exclude-key? (kbd/is-key-ignore-case? "x"))
 (def ^:private peek-key? (kbd/is-key-ignore-case? "m"))
+(def ^:private align-key? (kbd/is-key-ignore-case? "a"))
 
 (defn- fit-key?
   "The key 2, whatever character it types with shift held."
@@ -240,8 +242,9 @@
   "The keys of the compare mode: Escape leaves it (or goes back from the
   conflicts to the changes), J and K go to the next and the previous
   row, R marks the change as reviewed, X leaves it out or takes it back
-  in, and M shows main for as long as it is held. A dialog, a field or a
-  tool in use keeps its own keys."
+  in, M shows main for as long as it is held, and A lines main up with
+  the change chosen, or links it again, while it is beside the branch.
+  A dialog, a field or a tool in use keeps its own keys."
   [comparison]
   (let [comparison* (mf/use-ref comparison)]
     (mf/set-ref-val! comparison* comparison)
@@ -278,7 +281,10 @@
                     (cc/toggle-excluded comparison)
 
                     (and (peek-key? event) (not resolving?) (not (.-repeat ^js event)))
-                    (st/emit! (dwcp/set-peek true))))))
+                    (st/emit! (dwcp/set-peek true))
+
+                    (and (align-key? event) (not (.-repeat ^js event)))
+                    (st/emit! (dwcp/toggle-side-mode))))))
 
             on-key-up
             (fn [event]
@@ -340,11 +346,20 @@
                        (cc/canvas-objects comparison objects page-id)))
         live       objects
         side?      (and wasm? (= :side (:view mode)))
+        aligned?   (and side? (= :aligned (:side-mode mode)))
         objects    (or (:objects projection) objects)
         ;; kept the same between renders: the side view takes its pictures
         ;; of main again when they change
         page-items (mf/with-memo [model page-id]
                      (filterv #(= page-id (:page-id %)) (:items model)))
+        main       (mf/with-memo [side? live page-id page-items (:other-changes mode) incoming]
+                     (when side?
+                       (cc/main-objects live page-id page-items (:other-changes mode) incoming)))
+        ;; from the page as the canvas shows it: while it shows main
+        ;; (`:peek`) both halves hold the same place and nothing moves
+        offset     (mf/with-memo [aligned? objects main item]
+                     (when aligned?
+                       (cc/align-offset objects main item)))
 
         ;; every change is marked until one is chosen; then its mark
         ;; stands alone, with the layers that use it when it is an asset
@@ -419,6 +434,8 @@
        [:> side-view* {:comparison comparison
                        :objects live
                        :canvas objects
+                       :main main
+                       :offset offset
                        :items page-items
                        :listed (if resolving? (:conflicts conflicts) (:listed model))
                        :page-id page-id
@@ -436,7 +453,17 @@
            :main   (tr "workspace.compare.canvas.main"))])
       (when side?
         [:> text* {:as "span" :typography t/body-small :class (stl/css :note :is-quiet)}
-         (tr "workspace.compare.side.linked")])]
+         (cond
+           (not aligned?)
+           (tr "workspace.compare.side.linked")
+
+           (some? offset)
+           (tr "workspace.compare.side.aligned"
+               (str (mth/round (:x offset)))
+               (str (mth/round (:y offset))))
+
+           :else
+           (tr "workspace.compare.side.aligned-none"))])]
      ;; the bar goes through the list from the entry chosen: with none
      ;; chosen the canvas marks them all and the bar has nothing to say
      (when (some? item)

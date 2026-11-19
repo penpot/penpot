@@ -12,10 +12,10 @@
   (:require
    [app.common.types.shape :as cts]))
 
-(def ^:private box-shape-types
-  "Shape types whose geometry is their position and size; a path or a
-  boolean takes it from its content, a group from its children."
-  #{:rect :circle :frame :text :image :svg-raw})
+(def ^:private content-shape-types
+  "Shape types whose geometry is their content; the others keep it in
+  their position and size."
+  #{:path :bool})
 
 (defn- with-values
   "`entity` with each attr of `attrs` (`{attr {:main .. :branch ..}}`)
@@ -31,11 +31,20 @@
                         entity
                         changed)]
     ;; the diff leaves out `:selrect` and `:points` (they follow from
-    ;; position and size), so a box that moved or resized gets them
-    ;; again from its own, or it would draw with the open side's
-    (if (and (contains? box-shape-types (:type entity))
-             (some #{:x :y :width :height} changed))
+    ;; the geometry), so a layer that moved or resized gets them again
+    ;; from its own, or it would be placed with the open side's: a path
+    ;; or a boolean from its content, any other from its position and
+    ;; size
+    (cond
+      (and (contains? content-shape-types (:type entity))
+           (some #{:content} changed))
+      (cts/setup-path (dissoc entity :selrect :points))
+
+      (and (not (contains? content-shape-types (:type entity)))
+           (some #{:x :y :width :height} changed))
       (cts/setup-rect (dissoc entity :selrect :points))
+
+      :else
       entity)))
 
 (defn side-entity

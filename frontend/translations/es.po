@@ -6939,6 +6939,10 @@ msgstr "Token de %s"
 msgid "workspace.branches.review.copies.via"
 msgstr "%s sigue el cambio a través de su copia de %s"
 
+#: src/app/main/ui/workspace/sidebar/branch_review/compare.cljs:201
+msgid "workspace.branches.review.view.side"
+msgstr "Lado a lado"
+
 #: src/app/main/ui/workspace/branch_switcher.cljs:242
 msgid "workspace.branches.switcher.all"
 msgstr "Todas las ramas"
@@ -11277,6 +11281,15 @@ msgstr "Cambios (%s)"
 msgid "workspace.compare.toolbar.label"
 msgstr "Herramientas de comparación"
 
+msgid "workspace.compare.view.side-aligned"
+msgstr "Lado a lado - alineado"
+
+msgid "workspace.compare.view.side.aligned"
+msgstr "Alineado al cambio"
+
+msgid "workspace.compare.view.side.linked"
+msgstr "Vinculado"
+
 msgid "workspace.compare.view.hidden"
 msgstr "Cambios ocultos"
 
@@ -11307,8 +11320,14 @@ msgstr "%s - mantén M para ver main"
 msgid "workspace.compare.popover.hover"
 msgstr "Al pasar por una opción se previsualiza en el lienzo."
 
+msgid "workspace.compare.side.aligned"
+msgstr "Main está desplazado %s, %s para alinear el cambio"
+
+msgid "workspace.compare.side.aligned-none"
+msgstr "No hay nada que alinear en este cambio"
+
 msgid "workspace.compare.side.linked"
-msgstr "El zoom y el desplazamiento van enlazados"
+msgstr "El zoom y el desplazamiento van vinculados"
 
 msgid "workspace.compare.side.not-in-main"
 msgstr "No está en main"

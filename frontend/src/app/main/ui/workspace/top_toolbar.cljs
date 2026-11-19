@@ -380,6 +380,7 @@
                           :toolbar-hidden toolbar-hidden
                           :on-toggle-toolbar on-toggle-toolbar}
    [:> view-mode-menu* {:view (:view mode)
+                        :side-mode (:side-mode mode)
                         :hidden (boolean (:hidden mode))
                         :is-review is-review}]])
 

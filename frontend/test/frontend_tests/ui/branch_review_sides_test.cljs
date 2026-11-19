@@ -54,6 +54,47 @@
     (t/is (= 163 (get-in main [board-id :selrect :width])))
     (t/is (= 131 (get-in branch-objects [board-id :selrect :width])))))
 
+;; --- Layers whose place is not their x and y alone
+
+(def ^:private group-id (uuid/next))
+(def ^:private line-id (uuid/next))
+
+(defn- line-content
+  "A path from `x`,`y` to 10 to the right and 20 down."
+  [x y]
+  [{:command :move-to :params {:x x :y y}}
+   {:command :line-to :params {:x (+ x 10) :y (+ y 20)}}])
+
+(def ^:private moved-objects
+  "The branch, open: it moved a group and a path."
+  (-> branch-objects
+      (assoc-in [board-id :shapes] [group-id line-id])
+      (assoc group-id (cts/setup-rect {:id group-id :type :group :name "group"
+                                       :parent-id board-id :x 300 :y 400
+                                       :width 50 :height 60 :shapes []})
+             line-id (cts/setup-path {:id line-id :type :path :name "line"
+                                      :parent-id board-id
+                                      :content (line-content 500 600)}))))
+
+(def ^:private moves
+  [{:kind :shape :status :modified :id group-id
+    :changed-attrs {:x {:main 10 :branch 300} :y {:main 20 :branch 400}}}
+   {:kind :shape :status :modified :id line-id
+    :changed-attrs {:content {:main (line-content 30 40)
+                              :branch (line-content 500 600)}}}])
+
+(t/deftest a-moved-group-takes-its-place-on-the-other-side
+  (let [main (brs/side-objects moved-objects moves :main :branch)]
+    (t/is (= {:x 10 :y 20 :width 50 :height 60}
+             (select-keys (get-in main [group-id :selrect]) [:x :y :width :height])))
+    (t/is (= 300 (get-in moved-objects [group-id :selrect :x])) "the branch keeps its own")))
+
+(t/deftest a-moved-path-takes-its-place-on-the-other-side
+  (let [main (brs/side-objects moved-objects moves :main :branch)]
+    (t/is (= {:x 30 :y 40 :width 10 :height 20}
+             (select-keys (get-in main [line-id :selrect]) [:x :y :width :height])))
+    (t/is (= 500 (get-in moved-objects [line-id :selrect :x])) "the branch keeps its own")))
+
 ;; --- The changes an update brings
 
 (def ^:private badge-id (uuid/next))
@@ -231,3 +272,42 @@
           "a layer neither side has in a board leaves nothing to draw")
     (t/is (= [] (side/picture-roots [{:kind :color :status :modified :id (uuid/next)}]
                                     main branch-objects)))))
+
+;; --- Main lined up with the change chosen
+
+(defn- box
+  [id x y width height]
+  (cts/setup-rect {:id id :type :rect :name "box" :parent-id board-id
+                   :x x :y y :width width :height height}))
+
+(t/deftest main-moves-by-what-the-layer-moved
+  (let [id     (uuid/next)
+        item   {:kind :shape :id id}
+        canvas {id (box id 400 150 20 10)}]
+    (t/is (= {:x 300 :y 50} (cc/align-offset canvas {id (box id 100 100 20 10)} item)))
+    (t/is (= {:x 5 :y 3} (cc/align-offset canvas {id (box id 400 150 10 4)} item))
+          "a layer that grew lines up by its centre")))
+
+(t/deftest main-stays-put-with-nothing-to-line-up
+  (let [id     (uuid/next)
+        item   {:kind :shape :id id}
+        canvas {id (box id 400 150 20 10)}]
+    (t/is (nil? (cc/align-offset canvas canvas item)) "the same place on both sides")
+    (t/is (nil? (cc/align-offset canvas {} item)) "a layer main lacks")
+    (t/is (nil? (cc/align-offset {} canvas item)) "a layer the canvas lacks")
+    (t/is (nil? (cc/align-offset canvas canvas {:kind :color :id id})) "an asset")
+    (t/is (nil? (cc/align-offset canvas canvas nil)) "no change chosen")))
+
+(t/deftest main-lines-up-a-moved-group-and-a-moved-path
+  (let [main (cc/main-objects moved-objects page-id (on-page moves) nil false)]
+    (t/is (= {:x 290 :y 380}
+             (cc/align-offset moved-objects main {:kind :shape :id group-id})))
+    (t/is (= {:x 470 :y 560}
+             (cc/align-offset moved-objects main {:kind :shape :id line-id})))))
+
+(t/deftest the-layer-of-main-shows-the-spot-of-the-second-half
+  (let [vbox {:x 100 :y 50}]
+    (t/is (= {:x -700 :y -100} (side/layer-translate vbox 2 500 0))
+          "half a viewport back")
+    (t/is (= {:x -724 :y -124} (side/layer-translate vbox 2 500 24))
+          "after the rulers")))

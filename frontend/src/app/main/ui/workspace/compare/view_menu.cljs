@@ -15,16 +15,17 @@
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.foundations.typography :as t]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
-   [app.main.ui.ds.layout.menu :refer [menu* menu-item* menu-separator*]]
+   [app.main.ui.ds.layout.menu :refer [menu* menu-item* menu-separator* sub-menu*]]
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
 (defn- on-action
   [action]
   (case action
-    "highlight" (st/emit! (dwcp/set-view :highlight))
-    "side"      (st/emit! (dwcp/set-view :side))
-    "hide"      (st/emit! (dwcp/toggle-hidden))
+    "highlight"    (st/emit! (dwcp/set-view :highlight))
+    "side-linked"  (st/emit! (dwcp/set-view :side) (dwcp/set-side-mode :linked))
+    "side-aligned" (st/emit! (dwcp/set-view :side) (dwcp/set-side-mode :aligned))
+    "hide"         (st/emit! (dwcp/toggle-hidden))
     nil))
 
 (mf/defc view-item*
@@ -37,19 +38,26 @@
      [:> i/icon* {:icon-id i/tick :size "s"}])])
 
 (mf/defc view-mode-menu*
-  "`view` is the view in use and `hidden` says the changes are hidden.
-  Inside a design review (`is-review`) the control takes the colour of
-  the review."
-  [{:keys [view hidden is-review]}]
+  "`view` is the view in use, `side-mode` how the side by side view
+  places main and `hidden` says the changes are hidden. Inside a design
+  review (`is-review`) the control takes the colour of the review."
+  [{:keys [view side-mode hidden is-review]}]
   (let [open*     (mf/use-state false)
         open?     (deref open*)
         on-toggle (mf/use-fn #(swap! open* not))
         on-change (mf/use-fn #(reset! open* %))
         ;; main beside the branch is drawn by the WASM render alone
         wasm?     (features/use-feature "render-wasm/v1")
+        side?     (and wasm? (= view :side) (not hidden))
+        aligned?  (= side-mode :aligned)
         highlight (tr "workspace.compare.view.highlight")
         side      (tr "workspace.branches.review.view.side")
-        current   (if (and wasm? (= view :side)) side highlight)]
+        linked    (tr "workspace.compare.view.side.linked")
+        lined-up  (tr "workspace.compare.view.side.aligned")
+        current   (cond
+                    (not (and wasm? (= view :side))) highlight
+                    aligned?                         (tr "workspace.compare.view.side-aligned")
+                    :else                            side)]
     [:> menu* {:is-open open?
                :on-open-change on-change
                :on-action on-action
@@ -71,9 +79,18 @@
      [:> menu-item* {:id "highlight" :text-value highlight}
       [:> view-item* {:label highlight
                       :is-selected (and (= view :highlight) (not hidden))}]]
-     [:> menu-item* {:id "side" :text-value side :is-disabled (not wasm?)}
-      [:> view-item* {:label side
-                      :is-selected (and wasm? (= view :side) (not hidden))}]]
+     ;; the two ways main stands beside the branch
+     [:> sub-menu* {:id "side"
+                    :text-value side
+                    :trigger side
+                    :is-disabled (not wasm?)
+                    :on-action on-action}
+      [:> menu-item* {:id "side-linked" :text-value linked}
+       [:> view-item* {:label linked
+                       :is-selected (and side? (not aligned?))}]]
+      [:> menu-item* {:id "side-aligned" :text-value lined-up}
+       [:> view-item* {:label lined-up
+                       :is-selected (and side? aligned?)}]]]
      [:> menu-separator* {}]
      [:> menu-item* {:id "hide"}
       (if hidden

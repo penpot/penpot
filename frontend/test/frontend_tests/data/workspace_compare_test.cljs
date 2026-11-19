@@ -14,6 +14,7 @@
    [app.main.data.workspace.branches :as dwb]
    [app.main.data.workspace.compare :as dwcp]
    [app.main.repo :as rp]
+   [app.util.storage :as storage]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.async :as async]
@@ -235,8 +236,135 @@
     (t/is (= 200 (center half 0.75)) "in the middle of the half of the branch")
     (t/is (= (/ 1000 (:zoom half)) (get-in half [:vbox :width])))))
 
+;;; --- The side mode ---
+
+(def ^:private side-mode-key
+  :app.main.data.workspace.compare/side-mode)
+
+(defn- keeping-side-mode
+  "Run `f` with `stored` as the side mode the browser keeps (nil for
+  none), and leave what the browser kept before as it was."
+  [stored f]
+  (let [prev (get @storage/user side-mode-key)]
+    (if (some? stored)
+      (swap! storage/user assoc side-mode-key stored)
+      (swap! storage/user dissoc side-mode-key))
+    (try
+      (f)
+      (finally
+        (if (some? prev)
+          (swap! storage/user assoc side-mode-key prev)
+          (swap! storage/user dissoc side-mode-key))))))
+
+(defn- side-store
+  [view]
+  (make-store {:current-file-id branch-file-id
+               :workspace-compare {:branch branch :phase :compare
+                                   :view view :side-mode :linked}}))
+
+(defn- side-mode
+  [store]
+  (get-in @store [:workspace-compare :side-mode]))
+
+(t/deftest ^:async the-side-mode-starts-linked-and-comes-back-as-picked
+  (let [calls (atom [])
+        prev  (get @storage/user side-mode-key)]
+    (swap! storage/user dissoc side-mode-key)
+    (await
+     (mock/with-mocks* {rp/cmd! (cmd-stub calls)}
+       (let [store (on-branch)]
+         (ptk/emit! store (dwcp/enter branch))
+         (t/is (= :linked (side-mode store)) "linked with nothing kept")
+         (ptk/emit! store (dwcp/set-side-mode :aligned))
+         (ptk/emit! store (dwcp/exit))
+         (ptk/emit! store (dwcp/enter branch))
+         (await (async/wait-for #(some? (last-call calls :get-branch-diff))
+                                "the diff is asked for"))
+         (t/is (= :aligned (side-mode store)) "the one picked last")
+         (rx/dispose! store))))
+    (if (some? prev)
+      (swap! storage/user assoc side-mode-key prev)
+      (swap! storage/user dissoc side-mode-key))))
+
+(t/deftest ^:async the-side-mode-kept-must-be-one
+  (let [calls (atom [])
+        prev  (get @storage/user side-mode-key)]
+    (swap! storage/user assoc side-mode-key :sideways)
+    (await
+     (mock/with-mocks* {rp/cmd! (cmd-stub calls)}
+       (let [store (on-branch)]
+         (ptk/emit! store (dwcp/enter branch))
+         (await (async/wait-for #(some? (last-call calls :get-branch-diff))
+                                "the diff is asked for"))
+         (t/is (= :linked (side-mode store)))
+         (rx/dispose! store))))
+    (if (some? prev)
+      (swap! storage/user assoc side-mode-key prev)
+      (swap! storage/user dissoc side-mode-key))))
+
+(t/deftest ^:async resolving-takes-the-side-mode-kept
+  (let [calls (atom [])
+        prev  (get @storage/user side-mode-key)]
+    (swap! storage/user assoc side-mode-key :aligned)
+    (await
+     (mock/with-mocks* {rp/cmd! (cmd-stub calls)}
+       (let [store (on-branch)]
+         (ptk/emit! store (dwb/open-conflict-resolutions {:branch branch
+                                                          :mode :merge
+                                                          :conflicts [{:id (uuid/next)}]}))
+         (ptk/emit! store (dwcp/start-resolve))
+         (await (async/wait-for #(some? (last-call calls :get-branch-diff))
+                                "the diff is asked for"))
+         (t/is (= :aligned (side-mode store)))
+         (rx/dispose! store))))
+    (if (some? prev)
+      (swap! storage/user assoc side-mode-key prev)
+      (swap! storage/user dissoc side-mode-key))))
+
+(t/deftest the-side-mode-is-kept-in-the-browser
+  (keeping-side-mode
+   nil
+   (fn []
+     (let [store (side-store :side)]
+       (ptk/emit! store (dwcp/set-side-mode :aligned))
+       (t/is (= :aligned (side-mode store)))
+       (t/is (= :aligned (get @storage/user side-mode-key)))
+       (rx/dispose! store)))))
+
+(t/deftest ^:async the-key-flips-the-side-mode-beside-the-branch-alone
+  (let [prev (get @storage/user side-mode-key)
+        side (side-store :side)
+        flat (side-store :highlight)]
+    (ptk/emit! side (dwcp/toggle-side-mode))
+    (await (async/wait-for-store side #(= :aligned (side-mode side)) "it flips"))
+    (ptk/emit! side (dwcp/toggle-side-mode))
+    (await (async/wait-for-store side #(= :linked (side-mode side)) "and back"))
+    (ptk/emit! flat (dwcp/toggle-side-mode))
+    (await (async/settle))
+    (t/is (= :linked (side-mode flat)) "highlighting, it does nothing")
+    (rx/dispose! side)
+    (rx/dispose! flat)
+    (if (some? prev)
+      (swap! storage/user assoc side-mode-key prev)
+      (swap! storage/user dissoc side-mode-key))))
+
+(t/deftest another-view-keeps-the-side-mode
+  (let [store (make-store {:current-file-id branch-file-id
+                           :workspace-compare {:branch branch :phase :compare
+                                               :view :side :side-mode :aligned}})]
+    (ptk/emit! store (dwcp/set-view :highlight))
+    (ptk/emit! store (dwcp/set-view :side))
+    (t/is (= :aligned (side-mode store)))
+    (rx/dispose! store)))
+
 (t/deftest the-events-do-nothing-outside-the-mode
   (let [store (make-store {:current-file-id branch-file-id})]
+    (keeping-side-mode
+     nil
+     (fn []
+       (ptk/emit! store (dwcp/set-side-mode :aligned))
+       (ptk/emit! store (dwcp/toggle-side-mode))
+       (t/is (nil? (get @storage/user side-mode-key)) "nothing is kept")))
     (ptk/emit! store (dwcp/toggle-hidden))
     (ptk/emit! store (dwcp/set-filter :library))
     (ptk/emit! store (dwcp/toggle-group "library"))

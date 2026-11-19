@@ -10,7 +10,8 @@
   itself; main is a picture of each board with changes, drawn off screen
   by the same render and placed over the first half so that both halves
   show the same spot. Both follow the one viewport, so zoom and pan are
-  linked."
+  linked; lined up with the change chosen (`:side-mode :aligned`), main
+  is moved by how far that layer moved."
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.colors :as clr]
@@ -78,6 +79,14 @@
         (wasm.api/request-render "compare-side")
         pictures))))
 
+(defn layer-translate
+  "Where the layer of main goes, in pixels: the spot of the page the
+  second half shows, half a viewport (`half`) back and after the rulers
+  (`edge`)."
+  [vbox zoom half edge]
+  {:x (- (* (- (:x vbox)) zoom) half edge)
+   :y (- (* (- (:y vbox)) zoom) edge)})
+
 (defn- use-settled
   "`value`, once it has stayed the same for `ms` milliseconds."
   [value ms]
@@ -88,18 +97,20 @@
     (deref settled*)))
 
 (mf/defc side-view*
-  "`objects` is the page as the open branch has it and `canvas` as the
-  canvas shows it; `items` are the entries of the comparison on the
-  page and `listed` the ones its list shows, which are the ones marked.
-  The rulers are drawn on the canvas, so main starts after them
-  (`show-rulers`)."
-  [{:keys [comparison objects canvas items listed page-id background vbox vport zoom show-rulers]}]
-  (let [{:keys [incoming excluded selected hovered branch mode]} comparison
+  "`objects` is the page as the open branch has it, `canvas` as the
+  canvas shows it and `main` as main has it (`cc/main-objects`); `items`
+  are the entries of the comparison on the page and `listed` the ones
+  its list shows, which are the ones marked. Main is moved by `offset`
+  (`cc/align-offset`, nil for none). The rulers are drawn on the canvas,
+  so main starts after them (`show-rulers`)."
+  [{:keys [comparison objects canvas main offset items listed page-id background vbox vport zoom show-rulers]}]
+  (let [{:keys [excluded selected hovered branch mode]} comparison
         half     (/ (:width vport) 2)
         edge     (if show-rulers rulers/ruler-area-size 0)
-        other    (:other-changes mode)
-        main     (mf/with-memo [objects page-id items other incoming]
-                   (cc/main-objects objects page-id items other incoming))
+        place    (layer-translate vbox zoom half edge)
+        ;; main slides to the change chosen for a moment after it is
+        ;; chosen, and follows pan and zoom at once the rest of the time
+        sliding  (not= selected (use-settled selected 250))
         roots    (mf/with-memo [items main objects]
                    (picture-roots items main objects))
         ;; the pictures are drawn again once the zoom rests, sharp at it
@@ -130,31 +141,32 @@
                         :left (dm/str edge "px")
                         :width (dm/str (- half edge) "px")
                         :backgroundColor (or background clr/canvas)}}
-      ;; the same spot the second half shows: the canvas, half a viewport
-      ;; back
       [:div {:class (stl/css :layer)
-             :style #js {:transform (dm/fmt "translate(%px, %px)"
-                                            (- (* (- (:x vbox)) zoom) half edge)
-                                            (- (* (- (:y vbox)) zoom) edge))}}
-       (for [{:keys [id rect uri]} pictures]
-         [:img {:key (str id)
-                :class (stl/css :picture)
-                :alt ""
-                :src uri
-                :style (rvo/screen-rect rect zoom)}])
-       (when-not (:hidden mode)
-         (for [mark marks
-               :let [missing? (= :missing (:status mark))]]
-           [:> rvo/change-box* {:key (:key mark)
-                                :rect (:rect mark)
-                                :zoom zoom
-                                :tone (when missing? "warning")
-                                :class (stl/css-case :is-missing missing?)
-                                :label (cond
-                                         missing? (tr "workspace.compare.side.not-in-main")
-                                         (= selected (:key mark)) (:label mark)
-                                         :else nil)
-                                :is-active (and (not missing?) (= selected (:key mark)))}]))]
+             :style #js {:transform (dm/fmt "translate(%px, %px)" (:x place) (:y place))}}
+       ;; moved by how far the change chosen moved (`offset`)
+       [:div {:class (stl/css-case :layer true :is-sliding sliding)
+              :style #js {:transform (dm/fmt "translate(%px, %px)"
+                                             (* (:x offset 0) zoom)
+                                             (* (:y offset 0) zoom))}}
+        (for [{:keys [id rect uri]} pictures]
+          [:img {:key (str id)
+                 :class (stl/css :picture)
+                 :alt ""
+                 :src uri
+                 :style (rvo/screen-rect rect zoom)}])
+        (when-not (:hidden mode)
+          (for [mark marks
+                :let [missing? (= :missing (:status mark))]]
+            [:> rvo/change-box* {:key (:key mark)
+                                 :rect (:rect mark)
+                                 :zoom zoom
+                                 :tone (when missing? "warning")
+                                 :class (stl/css-case :is-missing missing?)
+                                 :label (cond
+                                          missing? (tr "workspace.compare.side.not-in-main")
+                                          (= selected (:key mark)) (:label mark)
+                                          :else nil)
+                                 :is-active (and (not missing?) (= selected (:key mark)))}]))]]
       [:span {:class (stl/css :label)}
        [:> branch-pill* {:label (tr "workspace.branches.main") :is-main true}]]]
      [:span {:class (stl/css :label :is-branch)

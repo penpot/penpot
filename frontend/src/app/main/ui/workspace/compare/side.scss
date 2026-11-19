@@ -18,6 +18,13 @@
 
 .layer {
   position: absolute;
+
+  // main slides to the change chosen; pan and zoom never wait for it
+  &.is-sliding {
+    @media (prefers-reduced-motion: no-preference) {
+      transition: transform 0.2s ease-out;
+    }
+  }
 }
 
 .picture {

@@ -16,6 +16,11 @@
     {:branch    the branch row compared (`:id`, `:name`, `:branch-file-id`)
      :phase     :compare | :resolve
      :view      :highlight | :side
+     :side-mode how the side by side view places main (`side-modes`):
+                at the spot of the page the branch shows (`:linked`),
+                or moved so the change chosen sits at the same spot of
+                its half (`:aligned`). The last one picked is kept in
+                the browser and comes back on every comparison
      :hidden    true while the changes are hidden on the canvas
      :selected  the key of the change or conflict chosen (`item-key`)
      :hovered   the key of the change or conflict under the pointer, and
@@ -47,6 +52,7 @@
    [app.main.data.workspace.viewport-wasm :as dwvw]
    [app.main.repo :as rp]
    [app.main.router :as rt]
+   [app.util.storage :as storage]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -56,8 +62,24 @@
   half of the canvas and the branch on the second."
   #{:highlight :side})
 
+(def side-modes
+  "How the side by side view places main: at the spot of the page the
+  branch shows (`:linked`), or moved so the change chosen sits at the
+  same spot of its half as on the branch (`:aligned`)."
+  #{:linked :aligned})
+
 (def filters
   #{:all :layers :library :left-out})
+
+(def ^:private side-mode-storage-key
+  ::side-mode)
+
+(defn- get-stored-side-mode
+  "The side mode picked last in this browser, `:linked` when none is
+  kept or what is kept is no side mode."
+  []
+  (let [side-mode (get @storage/user side-mode-storage-key)]
+    (if (contains? side-modes side-mode) side-mode :linked)))
 
 (defn comparing?
   [state]
@@ -167,6 +189,7 @@
                {:branch    (select-keys branch [:id :name :branch-file-id])
                 :phase     :compare
                 :view      :highlight
+                :side-mode (get-stored-side-mode)
                 :hidden    false
                 :selected  nil
                 :attr      nil
@@ -230,6 +253,33 @@
     ptk/UpdateEvent
     (update [_ state]
       (d/update-when state :workspace-compare assoc :view view :hidden false))))
+
+(defn set-side-mode
+  "Place main beside the branch as `side-mode` says (one of
+  `side-modes`), and keep it in the browser for the next comparison."
+  [side-mode]
+  (assert (contains? side-modes side-mode) "expected a side mode")
+  (ptk/reify ::set-side-mode
+    ptk/UpdateEvent
+    (update [_ state]
+      (d/update-when state :workspace-compare assoc :side-mode side-mode))
+
+    ptk/EffectEvent
+    (effect [_ state _]
+      (when (comparing? state)
+        (swap! storage/user assoc side-mode-storage-key side-mode)))))
+
+(defn toggle-side-mode
+  "Take the other side mode, while main is beside the branch."
+  []
+  (ptk/reify ::toggle-side-mode
+    ptk/WatchEvent
+    (watch [_ state _]
+      (if (side-view? state)
+        (rx/of (set-side-mode (if (= :aligned (get-in state [:workspace-compare :side-mode]))
+                                :linked
+                                :aligned)))
+        (rx/empty)))))
 
 (defn toggle-hidden
   "Hide the changes on the canvas, or show them again."
@@ -447,7 +497,11 @@
               (d/update-when :workspace-branch-conflicts dissoc :pending)
               (update :workspace-compare
                       (fn [mode]
-                        (merge {:view :highlight :hidden false :filter :all :collapsed #{}}
+                        (merge {:view :highlight
+                                :side-mode (get-stored-side-mode)
+                                :hidden false
+                                :filter :all
+                                :collapsed #{}}
                                mode
                                {:branch   (select-keys branch [:id :name :branch-file-id])
                                 :phase    :resolve

@@ -12962,6 +12962,15 @@ msgstr "Changes (%s)"
 msgid "workspace.compare.toolbar.label"
 msgstr "Compare tools"
 
+msgid "workspace.compare.view.side-aligned"
+msgstr "Side by side - aligned"
+
+msgid "workspace.compare.view.side.aligned"
+msgstr "Aligned to the change"
+
+msgid "workspace.compare.view.side.linked"
+msgstr "Linked"
+
 msgid "workspace.compare.view.hidden"
 msgstr "Changes hidden"
 
@@ -12991,6 +13000,12 @@ msgstr "%s - hold M to see main"
 
 msgid "workspace.compare.popover.hover"
 msgstr "Hovering an option previews it on the canvas."
+
+msgid "workspace.compare.side.aligned"
+msgstr "Main is shifted %s, %s to line up the change"
+
+msgid "workspace.compare.side.aligned-none"
+msgstr "Nothing to line up for this change"
 
 msgid "workspace.compare.side.linked"
 msgstr "Zoom and pan are linked"

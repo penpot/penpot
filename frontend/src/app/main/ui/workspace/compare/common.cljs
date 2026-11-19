@@ -97,6 +97,26 @@
         (brs/side-objects (on-page items) :main :branch own)
         (brs/side-objects (on-page other) :main :branch others))))
 
+(defn- get-center
+  [objects id]
+  (when-let [{:keys [x y width height]} (get-in objects [id :selrect])]
+    {:x (+ x (/ width 2)) :y (+ y (/ height 2))}))
+
+(defn align-offset
+  "How far main is moved, as `{:x :y}` in page units, so the layer of
+  entry `item` sits in main's half where the canvas has it in its own:
+  the centre of the layer in `canvas` (the page as the canvas shows it)
+  less its centre in `main`. Nil when there is nothing to line up: no
+  entry, an entry that is no layer, a layer one side lacks, or the same
+  place on both."
+  [canvas main item]
+  (when (= :shape (:kind item))
+    (let [to   (get-center canvas (:id item))
+          from (get-center main (:id item))]
+      (when (and (some? to) (some? from) (not= to from))
+        {:x (- (:x to) (:x from))
+         :y (- (:y to) (:y from))}))))
+
 (defn canvas-objects
   "The layers of the page `page-id` as the canvas shows them in the
   compare mode, from `objects`, the page as the open branch has it. The
