@@ -669,6 +669,24 @@
                  :style (when (some? pct)
                           #js {:width (str pct "%")})}]])])))
 
+(defn import-error-detail
+  "The text that explains why an entry could not be imported."
+  [err]
+  (cond
+    (= err (tr "dashboard.import.components-v1-error"))
+    err
+
+    (and (string? err)
+         (str/includes? (str/lower err) "check error"))
+    (tr "dashboard.import.import-error.check-error")
+
+    (and (string? err)
+         (str/includes? (str/lower err) "corrupt"))
+    (tr "dashboard.import.import-error.corrupt-file")
+
+    :else
+    (tr "dashboard.import.import-error.unknown-error")))
+
 (mf/defc import-files-stage*
   {::mf/private true}
   [{:keys [entries template status step errors? import-success-total auto-linked-count
@@ -715,17 +733,7 @@
              [:div (:name entry)]
              (when-let [err (:error entry)]
                [:div {:class (stl/css :import-error-detail)}
-                (cond
-                  (and (string? err)
-                       (str/includes? (str/lower err) "check error"))
-                  (tr "dashboard.import.import-error.check-error")
-
-                  (and (string? err)
-                       (str/includes? (str/lower err) "corrupt"))
-                  (tr "dashboard.import.import-error.corrupt-file")
-
-                  :else
-                  (tr "dashboard.import.import-error.unknown-error"))])]))]
+                (import-error-detail err)])]))]
        [:div (tr "dashboard.import.import-error.message2")]]
 
       (imp/awaiting-analysis? status errors?)
