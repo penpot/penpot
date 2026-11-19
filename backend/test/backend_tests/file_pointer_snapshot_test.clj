@@ -951,9 +951,14 @@
                                      (when snapshot-data
                                        (fdata/get-used-pointer-ids snapshot-data)))
               fragments-after  (live-fragment-ids file-id)
-              ids-after        (page-pointer-ids file-id)
+              ids-after        (into {} (map (fn [[pid pointer]]
+                                               [pid (pmap/get-id pointer)]))
+                                     (:pages-index (:data main)))
               migrated-page-id (get ids-after page-b)]
 
+          ;; Use the same non-migrating read for both assertions. A normal
+          ;; read here could apply a migration that the save failed to record.
+          (t/is (not (fmg/need-migration? main)))
           (t/is (= (get ids-before page-a) (get ids-after page-a)))
           (t/is (not= (get ids-before page-b) (get ids-after page-b)))
           (t/is (not= (get ids-before page-c) (get ids-after page-c)))
@@ -970,9 +975,7 @@
           (let [tokens (get-in (fragment-objects file-id migrated-page-id)
                                [shape-b :applied-tokens])]
             (t/is (contains? tokens :stroke-width-top))
-            (t/is (not (contains? tokens :stroke-width)))))
-
-        (t/is (not (fmg/need-migration? (bfc/get-file th/*system* file-id))))))))
+            (t/is (not (contains? tokens :stroke-width)))))))))
 
 (t/deftest migration-read-only-keeps-fragments-untouched
   ;; A read-only migration returns realized data but does not persist:
