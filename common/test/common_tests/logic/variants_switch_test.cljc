@@ -12,6 +12,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
+   [app.common.logic.variants :as clv]
    [app.common.math :as mth]
    [app.common.test-helpers.components :as thc]
    [app.common.test-helpers.compositions :as tho]
@@ -21,6 +22,7 @@
    [app.common.test-helpers.variants :as thv]
    [app.common.types.component :as ctk]
    [app.common.types.modifiers :as ctm]
+   [app.common.uuid :as uuid]
    [clojure.set :as set]
    [clojure.string :as string]
    [clojure.test :as t]))
@@ -1562,6 +1564,156 @@
     ;; The width of copy-cp02-rect' is 25 (change is preserved)
     (t/is (= (:width copy-cp02-rect') 25))))
 
+(defn- switch-with-changes
+  "Switches the copy `shape-tag` to the variant `component-tag` keeping the
+  touched changes, as `tho/swap-component-in-shape` does, and returns the new
+  file and the changes."
+  [file shape-tag component-tag]
+  (let [page        (thf/current-page file)
+        shape       (ths/get-shape file shape-tag)
+        libraries   {(:id file) file}
+        orig-shapes (cfh/get-children-with-self (:objects page) (:id shape))
+
+        [new-shape _ changes]
+        (cll/generate-component-swap (pcb/empty-changes)
+                                     (:objects page)
+                                     shape
+                                     (:data file)
+                                     page
+                                     libraries
+                                     (:id (thc/get-component file component-tag))
+                                     0
+                                     nil
+                                     (select-keys shape ctk/swap-keep-attrs)
+                                     true)
+
+        [changes _] (clv/generate-keep-touched changes new-shape shape orig-shapes
+                                               page libraries (:data file))]
+    [(thf/apply-changes file changes) changes]))
+
+(defn- check-switch-undone
+  "Undoes the switch `changes` on `file'` and checks that every shape of the
+  copy `shape-tag` is as it was in `file`, and that a redo gives `file'`
+  again."
+  [file file' changes shape-tag]
+  (let [file''    (thf/apply-undo-changes file' changes)
+        file'''   (thf/apply-changes file'' changes)
+        objects   (:objects (thf/current-page file))
+        objects'' (:objects (thf/current-page file''))]
+    (doseq [shape (cfh/get-children-with-self objects (thi/id shape-tag))]
+      (t/is (= shape (get objects'' (:id shape)))))
+    (t/is (= (:objects (thf/current-page file'))
+             (:objects (thf/current-page file'''))))))
+
+(defn- setup-copy-with-swapped-child
+  "Variants `:c01` / `:c02` holding a copy of `:external01`, and a copy
+  `:copy01` of `:c01` whose `:external01` copy is swapped for `:external02`
+  (labelled `:copy-cp02`)."
+  []
+  (-> (thf/sample-file :file1)
+      (tho/add-simple-component :external01 :external01-root :external01-child)
+      (tho/add-simple-component :external02 :external02-root :external02-child)
+      (thv/add-variant-with-copy :v01 :c01 :m01 :c02 :m02 :cp01 :cp02 :external01)
+      (thc/instantiate-component :c01 :copy01 :children-labels [:copy-cp01])
+      (tho/swap-component-in-shape :copy-cp01 :external02 {:new-shape-label :copy-cp02
+                                                           :keep-touched? false})))
+
+(t/deftest test-switch-variant-undo-keeps-swapped-child
+  (let [;; ==== Setup
+        file            (setup-copy-with-swapped-child)
+
+        ;; ==== Action
+        [file' changes] (switch-with-changes file :copy01 :c02)]
+
+    ;; The new variant copy keeps the swapped child
+    (t/is (= (:shapes (ths/get-shape file' :copy01)) [(thi/id :copy-cp02)]))
+    ;; Undo restores the old variant copy with the swapped child
+    (check-switch-undone file file' changes :copy01)))
+
+(t/deftest test-switch-variant-undo-keeps-swapped-child-without-match
+  (let [;; ==== Setup
+        file            (-> (setup-copy-with-swapped-child)
+                            ;; The :external01 copy in :c02 gets another name, so
+                            ;; the swapped child has no related shape in :c02
+                            (tho/change-shape :cp02 #(assoc % :name "Other child")))
+
+        ;; ==== Action
+        [file' changes] (switch-with-changes file :copy01 :c02)]
+
+    ;; The swapped child is removed, and nothing is left on the root
+    (t/is (nil? (ths/get-shape-by-id file' (thi/id :copy-cp02))))
+    (t/is (= (set (:shapes (ths/get-shape-by-id file uuid/zero)))
+             (set (:shapes (ths/get-shape-by-id file' uuid/zero)))))
+    ;; Undo restores the old variant copy with the swapped child
+    (check-switch-undone file file' changes :copy01)))
+
+(defn- label-child-by-name
+  "Gives the label `label` to the child named `child-name` of the shape
+  `parent-tag`."
+  [file parent-tag child-name label]
+  (let [child (->> (:shapes (ths/get-shape file parent-tag))
+                   (map #(ths/get-shape-by-id file %))
+                   (filter #(= child-name (:name %)))
+                   first)]
+    (assert child (str "no child named " child-name))
+    (thi/set-id! label (:id child))
+    file))
+
+(t/deftest test-switch-variant-undo-keeps-kept-and-dropped-swapped-children
+  (let [;; ==== Setup
+        file            (-> (thf/sample-file :file1)
+                            (tho/add-simple-component :external01 :external01-root :external01-child)
+                            (tho/add-simple-component :external02 :external02-root :external02-child)
+                            (thv/add-variant-with-copy :v01 :c01 :m01 :c02 :m02 :cp01 :cp02 :external01)
+                            ;; A second :external01 copy in each variant, with other
+                            ;; names, so the one in :c01 has no related shape in :c02
+                            (thc/instantiate-component :external01 :second-in-m01 :parent-label :m01)
+                            (thc/instantiate-component :external01 :second-in-m02 :parent-label :m02)
+                            (tho/change-shape :cp01 #(assoc % :name "First child"))
+                            (tho/change-shape :cp02 #(assoc % :name "First child"))
+                            (tho/change-shape :second-in-m01 #(assoc % :name "Second child"))
+                            (tho/change-shape :second-in-m02 #(assoc % :name "Other child"))
+                            (thc/instantiate-component :c01 :copy01)
+                            (label-child-by-name :copy01 "First child" :first-in-copy)
+                            (label-child-by-name :copy01 "Second child" :second-in-copy)
+                            (tho/swap-component-in-shape :first-in-copy :external02
+                                                         {:new-shape-label :first-swapped
+                                                          :keep-touched? false})
+                            (tho/swap-component-in-shape :second-in-copy :external02
+                                                         {:new-shape-label :second-swapped
+                                                          :keep-touched? false}))
+
+        ;; ==== Action
+        [file' changes] (switch-with-changes file :copy01 :c02)]
+
+    ;; The first swapped child is kept, the second one is removed
+    (t/is (some #{(thi/id :first-swapped)} (:shapes (ths/get-shape file' :copy01))))
+    (t/is (nil? (ths/get-shape-by-id file' (thi/id :second-swapped))))
+    ;; Undo restores the old variant copy with both swapped children
+    (check-switch-undone file file' changes :copy01)))
+
+(t/deftest test-nested-switch-in-copy-twice-keeps-copy
+  (let [;; ==== Setup
+        file            (-> (thf/sample-file :file1)
+                            (thv/add-variant :v01 :c01 :m01 :c02 :m02)
+                            (tho/add-frame :m03)
+                            (thc/instantiate-component :c01 :nested01 :parent-label :m03)
+                            (thc/make-component :c03 :m03)
+                            (thc/instantiate-component :c03 :nested02 :children-labels [:child01])
+                            ;; After this switch the copy has a swap slot
+                            (tho/swap-component-in-shape :child01 :c02 {:keep-touched? true}))
+        c01             (thc/get-component file :c01)
+
+        ;; ==== Action
+        [file' changes] (switch-with-changes file :child01 :c01)
+        child01'        (ths/get-shape file' :child01)]
+
+    (t/is (some? (ctk/get-swap-slot (ths/get-shape file :child01))))
+    ;; The second switch keeps the copy, now of :c01
+    (t/is (= (:component-id child01') (:id c01)))
+    ;; Undo restores the copy of :c02
+    (check-switch-undone file file' changes :child01)))
+
 (defn- setup-variant-with-copy-in-outer
   "Variants `:c01` / `:c02` holding a copy of `:external01`, and a component
   `:outer` whose main holds a copy of `:c01`. A copy of `:outer` is placed,
@@ -1641,22 +1793,21 @@
 
 (defn- switch-nested-variant
   "Switches `:c01-in-copy` to `:c02` keeping the touched changes, and
-  returns the new file and the first child of the new variant copy."
+  returns the new file, the first child of the new variant copy and the
+  changes. The new copy keeps the id, and so the label, of the old one."
   [file]
-  (let [file'       (tho/swap-component-in-shape file :c01-in-copy :c02
-                                                 {:new-shape-label :c02-in-copy
-                                                  :keep-touched? true})
-        c02-in-copy (ths/get-shape file' :c02-in-copy)]
-    [file' (ths/get-shape-by-id file' (-> c02-in-copy :shapes first))]))
+  (let [[file' changes] (switch-with-changes file :c01-in-copy :c02)
+        c02-in-copy     (ths/get-shape file' :c01-in-copy)]
+    [file' (ths/get-shape-by-id file' (-> c02-in-copy :shapes first)) changes]))
 
 (t/deftest test-switch-nested-variant-keeps-swap-made-in-copy
   (let [;; ==== Setup
-        file           (setup-variant-with-copy-in-outer :swap-in :copy)
-        external02     (thc/get-component file :external02)
-        swapped        (ths/get-shape file :swapped-in-copy)
+        file                       (setup-variant-with-copy-in-outer :swap-in :copy)
+        external02                 (thc/get-component file :external02)
+        swapped                    (ths/get-shape file :swapped-in-copy)
 
         ;; ==== Action
-        [_ new-child'] (switch-nested-variant file)]
+        [file' new-child' changes] (switch-nested-variant file)]
 
     ;; The child of the nested variant copy was swapped for :external02
     (t/is (= (:component-id swapped) (:id external02)))
@@ -1664,7 +1815,9 @@
     ;; :external01 copy in :c02
     (t/is (= (:id new-child') (:id swapped)))
     (t/is (= (:component-id new-child') (:id external02)))
-    (t/is (= (ctk/get-swap-slot new-child') (thi/id :cp02)))))
+    (t/is (= (ctk/get-swap-slot new-child') (thi/id :cp02)))
+    ;; Undo restores the old variant copy with the swapped child
+    (check-switch-undone file file' changes :c01-in-copy)))
 
 (t/deftest test-switch-nested-variant-keeps-swap-made-in-copy-of-deleted-outer
   (let [;; ==== Setup
@@ -1705,16 +1858,18 @@
 
 (t/deftest test-switch-nested-variant-keeps-swap-made-in-outer-main
   (let [;; ==== Setup
-        file                (setup-variant-with-copy-in-outer :swap-in :outer-main)
-        external02          (thc/get-component file :external02)
-        child-in-copy       (ths/get-shape file :child-in-copy)
+        file                       (setup-variant-with-copy-in-outer :swap-in :outer-main)
+        external02                 (thc/get-component file :external02)
+        child-in-copy              (ths/get-shape file :child-in-copy)
 
         ;; ==== Action
-        [file' new-child']  (switch-nested-variant file)]
+        [file' new-child' changes] (switch-nested-variant file)]
 
     ;; The copy of :outer inherits the swap from its main
     (t/is (= (:component-id child-in-copy) (:id external02)))
-    (check-swap-from-outer-main-kept file' new-child')))
+    (check-swap-from-outer-main-kept file' new-child')
+    ;; Undo restores the old variant copy with the swapped child
+    (check-switch-undone file file' changes :c01-in-copy)))
 
 (t/deftest test-switch-nested-variant-keeps-swap-made-in-deleted-outer-main
   (let [;; ==== Setup
@@ -1783,21 +1938,22 @@
 
 (t/deftest test-switch-nested-variant-drops-swap-made-in-outer-main-without-match
   (let [;; ==== Setup
-        file               (-> (setup-variant-with-copy-in-outer :swap-in :outer-main)
-                               ;; The :external01 copy in :c02 gets another name, so
-                               ;; the swapped child has no related shape in :c02
-                               (tho/change-shape :cp02 #(assoc % :name "Other child")))
-        external01         (thc/get-component file :external01)
+        file                       (-> (setup-variant-with-copy-in-outer :swap-in :outer-main)
+                                       ;; The :external01 copy in :c02 gets another name, so
+                                       ;; the swapped child has no related shape in :c02
+                                       (tho/change-shape :cp02 #(assoc % :name "Other child")))
+        external01                 (thc/get-component file :external01)
 
         ;; ==== Action
-        [file' new-child'] (switch-nested-variant file)]
+        [file' new-child' changes] (switch-nested-variant file)]
 
     ;; The new variant copy shows the child of :c02
     (t/is (= (:component-id new-child') (:id external01)))
     (t/is (= (:shape-ref new-child') (thi/id :cp02)))
     ;; The swapped child is removed with the old variant copy
-    ;; (undo does not bring it back yet, see #13181)
-    (t/is (nil? (ths/get-shape-by-id file' (thi/id :child-in-copy))))))
+    (t/is (nil? (ths/get-shape-by-id file' (thi/id :child-in-copy))))
+    ;; Undo restores the old variant copy with the swapped child
+    (check-switch-undone file file' changes :c01-in-copy)))
 
 ;; ============================================================
 ;; TOUCHED PARENT (switch without touched but with touched parent)

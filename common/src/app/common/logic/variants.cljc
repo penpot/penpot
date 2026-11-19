@@ -110,6 +110,32 @@
       [[] {}]
       shapes))))
 
+(defn- move-to-root-first
+  "Adds, before all the `changes` of a switch, a move of `shape` to the root,
+   so it is not deleted with the original copy (its undo, run last, puts it
+   back once the original copy is restored)."
+  [changes page shape]
+  (-> (pcb/empty-changes)
+      (pcb/with-page page)
+      (pcb/with-objects (:objects page))
+      (pcb/change-parent uuid/zero [shape] 0 {:allow-altering-copies true})
+      (pcb/concat-changes changes)
+      ;; Keep the other keys of the switch changes, as :origin or :undo-group
+      (merge (dissoc changes :redo-changes :undo-changes))))
+
+(defn- drop-swapped-item
+  "As part of the keep-touched process on a switch, delete a child on the
+   original copy that was swapped (orig-swapped-child) and has no related
+   shape on the new copy."
+  [changes orig-swapped-child ldata page]
+  (let [changes (move-to-root-first changes page orig-swapped-child)]
+    ;; These objects are the page ones with the child moved to the root, not
+    ;; the ones after the switch. Enough to delete the child.
+    (-> (cls/generate-delete-shapes changes ldata page (pcb/get-objects changes)
+                                    (d/ordered-set (:id orig-swapped-child))
+                                    {:allow-altering-copies true})
+        second)))
+
 (defn- keep-swapped-item
   "As part of the keep-touched process on a switch, given a child on the original
    copy that was swapped (orig-swapped-child), and its related shape on the new copy
@@ -120,15 +146,7 @@
    orig-swapped-child follows its parent through its constraints and, if the
    user didn't move it, takes the place of related-shape-in-new."
   [changes related-shape-in-new orig-swapped-child ldata page swap-ref-id]
-  (let [;; Before to the swap, temporary move the previous
-        ;; shape to the root panel to avoid problems when
-        ;; the previous parent is deleted.
-        before-changes (-> (pcb/empty-changes)
-                           (pcb/with-page page)
-                           (pcb/with-objects (:objects page))
-                           (pcb/change-parent uuid/zero [orig-swapped-child] 0 {:allow-altering-copies true}))
-
-        objects         (pcb/get-objects changes)
+  (let [objects         (pcb/get-objects changes)
         page-objects    (:objects page)
         prev-swap-slot  (ctk/get-swap-slot orig-swapped-child)
         current-parent  (get objects (:parent-id related-shape-in-new))
@@ -140,7 +158,7 @@
                           #(gpt/subtract (grc/rect->point (:selrect related-shape-in-new))
                                          (grc/rect->point (:selrect %))))]
 
-    (-> (pcb/concat-changes before-changes changes)
+    (-> (move-to-root-first changes page orig-swapped-child)
 
         ;; Move the previous shape to the new parent
         (pcb/change-parent (:parent-id related-shape-in-new) [orig-swapped-child] pos {:allow-altering-copies true})
@@ -355,7 +373,14 @@
                                       parent-of-swapped)
                  ;; If there is a related shape, keep its data
                  changes
-                 (if related-shape-in-new
+                 (cond
+                   (and swap-slot
+                        (nil? related-shape-in-new)
+                        (not= (:id orig-child-touched) (:id original-shape)))
+                   ;; The swapped child has no place on the new copy
+                   (drop-swapped-item changes orig-child-touched ldata page)
+
+                   related-shape-in-new
                    (if swap-slot
                      ;; If the orig-child-touched was swapped, keep it
                      (cond-> (keep-swapped-item changes related-shape-in-new orig-child-touched
@@ -370,6 +395,8 @@
                      (cll/update-attrs-on-switch
                       changes related-shape-in-new orig-child-touched
                       new-shape original-shape orig-ref-shape container))
+
+                   :else
                    changes)]
              [changes parents-of-swapped]))
          [changes []]
