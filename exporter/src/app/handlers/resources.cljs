@@ -39,12 +39,18 @@
      :filename (str/concat (str/replace name #"[\\/:*?\"<>|]" "_") (mime/get-extension type))
      :id       task-id}))
 
+(def ^:private close-zip-timeout-ms 60000)
+
 (defn create-zip
+  "Creates a zip archiver piped to the resource destination stream.
+   Returns `[zip out]`, where `zip` is the archiver and `out` is the
+   destination write stream (both needed so completion can wait for the
+   stream to finish/close, not only for the archiver to end)."
   [& {:keys [resource on-complete on-progress on-error]}]
-  (let [^js zip  (new arc/ZipArchive)
-        ^js out  (fs/createWriteStream (:path resource))
+  (let [^js zip     (new arc/ZipArchive)
+        ^js out     (fs/createWriteStream (:path resource))
         on-complete (or on-complete (constantly nil))
-        progress (atom 0)]
+        progress    (atom 0)]
     (.on zip "error" on-error)
     (.on zip "end" on-complete)
     (.on zip "entry" (fn [data]
@@ -60,35 +66,52 @@
   (.file ^js zip path #js {:name name}))
 
 (defn close-zip
+  "Finalizes `zip` and resolves only after the archiver has completed and
+   the destination stream `out` has finished/closed. This avoids reading a
+   partially written archive; `finish`/`close` means the stream handed data
+   to the OS and closed the fd (not a durable fsync). Rejects on archiver
+   or destination errors and on timeout."
   [zip out]
-  (p/create (fn [resolve reject]
-              (let [zipped  (atom false)
-                    flushed (atom false)
-                    done    (atom false)
-                    settle  (fn [err]
-                              (when-not @done
-                                (reset! done true)
-                                (if err
-                                  (reject err)
-                                  (resolve nil))))
-                    check   #(when (and @zipped @flushed) (settle nil))
-                    note-z  #(do (reset! zipped true) (check))
-                    note-o  #(do (reset! flushed true) (check))]
-                ;; Wait for the archiver to be done AND for the destination
-                ;; file stream to be flushed. The archiver's `close` event
-                ;; does not guarantee the last chunks received by the pipe
-                ;; have been written to disk, so resolving on it alone used
-                ;; to race with `readFile` in `upload-resource`, yielding
-                ;; truncated (unusable) zip archives.
-                (.on ^js zip "end" note-z)
-                (.on ^js zip "close" note-z)
-                (if (some? out)
-                  (doto ^js out
-                    (.on "finish" note-o)
-                    (.on "close" note-o)
-                    (.on "error" settle))
-                  (reset! flushed true))
-                (.then (.finalize ^js zip) note-z settle)))))
+  (p/create
+   (fn [resolve reject]
+     (let [zipped?  (volatile! false)
+           flushed? (volatile! false)
+           settled? (volatile! false)
+           timer    (volatile! nil)
+           settle!  (fn [err]
+                      (when-not @settled?
+                        (vreset! settled? true)
+                        (when-some [t @timer]
+                          (js/clearTimeout t))
+                        (if err
+                          (reject err)
+                          (resolve nil))))
+           maybe-resolve! #(when (and @zipped? @flushed?)
+                             (settle! nil))
+           mark-zipped!   #(do (vreset! zipped? true) (maybe-resolve!))
+           mark-flushed!  #(do (vreset! flushed? true) (maybe-resolve!))]
+       (vreset! timer
+                (js/setTimeout
+                 #(settle! (ex-info "close-zip timeout waiting for archive completion"
+                                    {:type :internal
+                                     :code :close-zip-timeout}))
+                 close-zip-timeout-ms))
+
+       ;; The archiver `end`/`close` alone does not guarantee the piped
+       ;; chunks were written out by the destination stream, so wait for
+       ;; both archiver completion and destination `finish`/`close`.
+       (.on ^js zip "end" mark-zipped!)
+       (.on ^js zip "close" mark-zipped!)
+       (.on ^js zip "error" settle!)
+
+       (doto ^js out
+         (.on "finish" mark-flushed!)
+         (.on "close" mark-flushed!)
+         (.on "error" settle!))
+
+       (-> (.finalize ^js zip)
+           (p/then (fn [_] (mark-zipped!)))
+           (p/catch settle!))))))
 
 (defn upload-resource
   [auth-token resource]

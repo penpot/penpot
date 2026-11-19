@@ -15,49 +15,70 @@
    [cljs.test :as t :include-macros true]
    [promesa.core :as p]))
 
-(def ^:private eocd-str
-  (js/String.fromCharCode 0x50 0x4b 0x05 0x06))
+(def ^:private eocd-sig
+  (js/Buffer.from #js [0x50 0x4b 0x05 0x06]))
+
+(defn- once
+  [f]
+  (let [called (volatile! false)]
+    (fn [& args]
+      (when-not @called
+        (vreset! called true)
+        (apply f args)))))
 
 (defn- source-file
   []
-  (let [path (path/join (sh/tmpdir) (str (uuid/next) ".png"))]
-    (fs/writeFileSync path (js/Buffer.alloc 4000))
+  (let [path (-> (path/join sh/tmpdir (str "penpot.test.entry." (uuid/next) ".bin"))
+                 (sh/schedule-deletion))]
+    (fs/writeFileSync path (js/Buffer.alloc 65536 1))
     path))
 
 (t/deftest close-zip-resolves-with-a-complete-file
   "After `close-zip` resolves, the destination file must contain the
-   whole archive, including the end-of-central-directory record."
+   whole archive, including the end-of-central-directory record. The
+   fixture is sized to make it likely that data is still buffered when
+   the archiver completes, so resolution must wait for the destination
+   stream to finish/close (not only for archiver events)."
   (t/async done
-    (let [resource (rsc/create :zip "resources-test")
-          [zip out] (rsc/create-zip :resource resource
-                                    :on-error (fn [_] nil)
-                                    :on-progress (fn [_] nil))]
-      (doseq [i (range 3)]
-        (rsc/add-to-zip zip (source-file) (str "entry-" i ".png")))
-      (-> (rsc/close-zip zip out)
-          (p/fmap (fn [_]
-                    (let [buf (fs/readFileSync (:path resource))
-                          eocd (.lastIndexOf buf eocd-str)]
-                      (t/is (not= -1 eocd) "end-of-central-directory record present")
-                      (t/is (= (+ eocd 22) (.-length buf)) "archive has no missing tail")
-                      (done nil))))
+    (let [done  (once done)
+          timer (js/setTimeout #(do (t/is false "test timeout") (done)) 15000)]
+      (-> (p/let [resource  (rsc/create :zip "resources-test")
+                  [zip out] (rsc/create-zip :resource resource
+                                            :on-error (fn [_] nil)
+                                            :on-progress (fn [_] nil))
+                  _         (doseq [i (range 20)]
+                              (rsc/add-to-zip zip (source-file) (str "entry-" i ".bin")))
+                  _         (rsc/close-zip zip out)]
+            (let [^js buf (fs/readFileSync (:path resource))
+                  eocd    (.lastIndexOf buf eocd-sig)]
+              (t/is (not= -1 eocd)
+                    "end-of-central-directory record present")
+              (when (not= -1 eocd)
+                ;; EOCD is 22 bytes + comment length (at offset 20, little-endian).
+                (let [comment-len (.readUInt16LE buf (+ eocd 20))]
+                  (t/is (= (.-length buf) (+ eocd 22 comment-len))
+                        "archive has no missing tail")))))
           (p/catch (fn [err]
-                     (t/is nil (str "unexpected error: " err))
-                     (done nil)))))))
+                     (t/is (nil? err) (str "unexpected error: " err))))
+          (p/finally (fn [& _]
+                       (js/clearTimeout timer)
+                       (done)))))))
 
 (t/deftest close-zip-rejects-on-destination-error
   "A failure on the destination stream must surface as a rejection
    instead of silently resolving with a truncated file."
   (t/async done
-    (let [bad-path (path/join (sh/tmpdir) (str (uuid/next)) (str (uuid/next) ".zip"))
+    (let [done     (once done)
+          timer    (js/setTimeout #(do (t/is false "test timeout") (done)) 15000)
+          bad-path (path/join sh/tmpdir (str (uuid/next)) (str (uuid/next) ".zip"))
           resource {:path bad-path}
           [zip out] (rsc/create-zip :resource resource
                                     :on-error (fn [_] nil)
                                     :on-progress (fn [_] nil))]
-      (-> (rsc/close-zip zip out)
-          (p/fmap (fn [_]
-                    (t/is nil "close-zip should reject when the destination stream errors")
-                    (done nil)))
-          (p/catch (fn [_]
-                     (t/is true)
-                     (done nil)))))))
+      (-> (p/let [_ (rsc/close-zip zip out)]
+            (t/is false "close-zip should reject when the destination stream errors"))
+          (p/catch (fn [_cause]
+                     (t/is true "rejected on destination stream error")))
+          (p/finally (fn [& _]
+                       (js/clearTimeout timer)
+                       (done)))))))
