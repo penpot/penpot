@@ -4205,6 +4205,47 @@
            rect-ids))
     {:file-id (:id file) :page-id page-id :rect-ids rect-ids}))
 
+(def ^:private text-content
+  "The minimal valid text tree the changes machinery accepts; the management
+  tests use the same shape."
+  {:type "root"
+   :children [{:type "paragraph-set"
+               :children [{:type "paragraph"
+                           :children [{:text "cheap meds"}]}]}]})
+
+(defn- add-page-with-texts
+  "A file with one page that holds two texts identical except for `:grow-type`:
+  one carries `:fixed` and the other has no key at all."
+  [profile]
+  (let [file      (th/create-file* 1 {:profile-id (:id profile)
+                                      :project-id (:default-project-id profile)
+                                      :is-shared false})
+        page-id   (uuid/next)
+        fixed-id  (uuid/next)
+        absent-id (uuid/next)
+        text      (fn [id grow-type]
+                    (cond-> (cts/setup-shape
+                             {:id id :name "text" :type :text
+                              :x 10 :y 20 :width 100 :height 20
+                              :parent-id uuid/zero :frame-id uuid/zero
+                              :content text-content})
+                      grow-type (assoc :grow-type :fixed)))]
+
+    (update-file!
+     :file-id (:id file)
+     :profile-id (:id profile)
+     :changes
+     [{:type :add-page :name "texts" :id page-id}
+      {:type :add-obj :page-id page-id :id fixed-id
+       :parent-id uuid/zero :frame-id uuid/zero :components-v2 true
+       :obj (text fixed-id true)}
+      {:type :add-obj :page-id page-id :id absent-id
+       :parent-id uuid/zero :frame-id uuid/zero :components-v2 true
+       :obj (text absent-id false)}])
+
+    {:file-id (:id file) :page-id page-id
+     :fixed-id fixed-id :absent-id absent-id}))
+
 (defn- export-compact!
   "Exports `file-id` with the compact layout. A `budget` overrides the chunk
   size, so a test can force several chunks without a page of megabytes."
@@ -4363,6 +4404,31 @@
                                             :layout-item-align-self])))
         (t/is (= :center (get-in imported [:objects center-id
                                            :layout-item-align-self])))))))
+
+(t/deftest export-binfile-v3-compact-round-trip-grow-type
+  ;; The compaction must not turn an absent :grow-type into :fixed: a text
+  ;; without the key is re-measured after a style change and one carrying
+  ;; :fixed is not. The importer serializes, decodes and cleans every shape, so
+  ;; the two states must survive the whole trip.
+  (let [profile (th/create-profile* 1)
+        {:keys [file-id page-id fixed-id absent-id]} (add-page-with-texts profile)
+        output  (tmp/tempfile :suffix ".zip")]
+
+    (export-compact! file-id output nil)
+
+    (let [result   (import-package profile output)
+          imported (-> (bfc/get-file th/*system* (first (:file-ids result)) {:realize? true})
+                       :data :pages-index (get page-id)
+                       :objects)
+          fixed    (get imported fixed-id)
+          absent   (get imported absent-id)]
+
+      (t/is (some? fixed))
+      (t/is (some? absent))
+      (t/is (= :fixed (:grow-type fixed))
+            "an explicit value survives the round trip")
+      (t/is (not (contains? absent :grow-type))
+            "an absent key stays absent"))))
 
 (t/deftest export-binfile-stores-the-already-compressed-media
   (let [profile (th/create-profile* 1)
@@ -5463,7 +5529,13 @@
             [["a key without the frame"
               (fn [k] (let [[tag page _] (segs k)] (str tag "/" page)))]
              ["a key pointing at another frame"
-              (fn [k] (let [[tag page _] (segs k)] (str tag "/" page "/" (uuid/next))))]]]
+              (fn [k] (let [[tag page _] (segs k)] (str tag "/" page "/" (uuid/next))))]
+             ["a tag with a C0 control"
+              (fn [k] (let [[_ page frame] (segs k)] (str "bad\u0001tag/" page "/" frame)))]
+             ["a tag with a C1 control"
+              (fn [k] (let [[_ page frame] (segs k)] (str "bad\u0085tag/" page "/" frame)))]
+             ["a key with a trailing separator"
+              (fn [k] (str k "/"))]]]
       (let [output (tmp/tempfile :suffix ".zip")
             cause  (atom nil)
             pairs  (with-open [zip (ZipFile. (fs/file packed))]
@@ -5480,6 +5552,49 @@
         (t/is (some? @cause) label)
         (t/is (= :inconsistent-penpot-file (:code (ex-data @cause))) label)
         (t/is (contains? (ex-data @cause) :key) label)))))
+
+(t/deftest import-binfile-v3-refuses-a-per-entry-thumbnail-with-a-control-tag
+  ;; The tag is the first segment of the key the export writes. A row whose tag
+  ;; carries a control character would be dropped by the next export, so the
+  ;; import refuses it instead of creating it.
+  (let [profile (th/create-profile* 1)
+        file    (prepare-file-with-all-families profile)
+        packed  (tmp/tempfile :suffix ".zip")
+        f       (str (:id file))]
+
+    (v3/export-files!
+     (bfc/export-cfg th/*system*
+                     {:file-ids    #{(:id file)}
+                      :export-type :detach-libraries
+                      :output      (io/output-stream packed)}))
+
+    (let [path (->> (zip-entry-names packed)
+                    (filter #(and (str/starts-with? % (str "files/" f "/thumbnails/"))
+                                  (not (str/includes? % "/chunks/"))))
+                    sort
+                    first)
+          segs (str/split path "/")]
+
+      (t/is (some? path) "the verbose export writes one entry per thumbnail")
+
+      (doseq [[label bad-tag] [["a C0 control" "bad\u0001tag"]
+                               ["a C1 control" "bad\u0085tag"]]]
+        (let [output   (tmp/tempfile :suffix ".zip")
+              new-path (str/join "/" (concat (take 3 segs) [bad-tag] (drop 4 segs)))
+              cause    (atom nil)]
+
+          (rewrite-entry packed output path new-path (zip-entry-bytes packed path))
+
+          (try
+            (import-package profile output)
+            (catch Throwable error
+              (reset! cause error)))
+
+          (t/is (some? @cause) label)
+          (t/is (= :inconsistent-penpot-file (:code (ex-data @cause))) label)
+          (t/is (= new-path (:path (ex-data @cause))) label)
+          (t/is (= bad-tag (:tag (ex-data @cause)))
+                "the failure names the tag, not a key that does not match"))))))
 
 (t/deftest import-binfile-v3-ignores-a-family-chunk-without-its-entry
   ;; The entry of the family is what declares it. Its chunks on their own are
@@ -5586,6 +5701,188 @@
     (t/is (= (str "files/" file-id "/pages/" page-id ".json")
              (:path (ex-data @cause)))
           "and names the page")))
+
+(t/deftest import-binfile-v3-refuses-a-compact-package-that-declares-version-1
+  ;; The manifest declares the layout. A compact package rewritten as version 1
+  ;; would lose every chunked page and every packed family, because the verbose
+  ;; reader visits neither of them.
+  (let [profile (th/create-profile* 1)
+        {:keys [file-id]} (add-page-with-rects profile 2)
+        packed  (tmp/tempfile :suffix ".zip")
+        output  (tmp/tempfile :suffix ".zip")
+        cause   (atom nil)]
+
+    (export-compact! file-id packed 1)
+
+    (rewrite-json-entry packed output "manifest.json" #(assoc % :version 1))
+
+    (try
+      (import-package profile output)
+      (catch Throwable error
+        (reset! cause error)))
+
+    (t/is (some? @cause)
+          "the import refuses a compact package that declares version 1")
+    (t/is (= :inconsistent-penpot-file (:code (ex-data @cause))))
+    (t/is (str/starts-with? (:path (ex-data @cause))
+                            (str "files/" file-id "/pages/"))
+          "and names a page entry that declares its chunks")
+    (t/is (str/ends-with? (:path (ex-data @cause)) ".json"))))
+
+(t/deftest import-binfile-v3-refuses-a-verbose-page-that-declares-chunks
+  ;; A verbose page has no chunks at all. One that declares them describes a
+  ;; layout its own package does not have, and the reader would not read them
+  ;; even when they are absent.
+  (let [profile (th/create-profile* 1)
+        {:keys [file-id page-id]} (add-page-with-rects profile 2)
+        output  (tmp/tempfile :suffix ".zip")
+        output2 (tmp/tempfile :suffix ".zip")
+        path    (str "files/" file-id "/pages/" page-id ".json")
+        cause   (atom nil)]
+
+    (v3/export-files!
+     (bfc/export-cfg th/*system*
+                     {:file-ids    #{file-id}
+                      :export-type :detach-libraries
+                      :output      (io/output-stream output)}))
+
+    (rewrite-json-entry output output2 path #(assoc % :chunks 1))
+
+    (try
+      (import-package profile output2)
+      (catch Throwable error
+        (reset! cause error)))
+
+    (t/is (some? @cause) "the import refuses the declaration")
+    (t/is (= :inconsistent-penpot-file (:code (ex-data @cause))))
+    (t/is (= path (:path (ex-data @cause))) "and names the page")
+    (t/is (= 1 (:chunks (ex-data @cause))))))
+
+(t/deftest import-binfile-v3-refuses-a-packed-family-in-a-verbose-package
+  ;; A packed family is the structure of versions 2 and 3. In a verbose package
+  ;; the reader never visits it, so the objects it carries would be lost.
+  (let [profile (th/create-profile* 1)
+        {:keys [file-id]} (add-page-with-rects profile 2)
+        output  (tmp/tempfile :suffix ".zip")
+        output2 (tmp/tempfile :suffix ".zip")
+        path    (str "files/" file-id "/components.json")
+        cause   (atom nil)]
+
+    (v3/export-files!
+     (bfc/export-cfg th/*system*
+                     {:file-ids    #{file-id}
+                      :export-type :detach-libraries
+                      :output      (io/output-stream output)}))
+
+    (add-json-entry output output2 path {:chunks 0})
+
+    (try
+      (import-package profile output2)
+      (catch Throwable error
+        (reset! cause error)))
+
+    (t/is (some? @cause) "the import refuses a packed family in version 1")
+    (t/is (= :inconsistent-penpot-file (:code (ex-data @cause))))
+    (t/is (= path (:path (ex-data @cause))) "and names the family entry")))
+
+(t/deftest import-binfile-v3-refuses-packed-storage-metadata-in-a-verbose-package
+  ;; The packed storage metadata is the structure of versions 2 and 3; a
+  ;; verbose package writes one entry per object and would never read it.
+  (let [profile (th/create-profile* 1)
+        {:keys [file-id]} (add-page-with-rects profile 2)
+        output  (tmp/tempfile :suffix ".zip")
+        output2 (tmp/tempfile :suffix ".zip")
+        cause   (atom nil)]
+
+    (v3/export-files!
+     (bfc/export-cfg th/*system*
+                     {:file-ids    #{file-id}
+                      :export-type :detach-libraries
+                      :output      (io/output-stream output)}))
+
+    (add-json-entry output output2 "objects.json" {:chunks 0})
+
+    (try
+      (import-package profile output2)
+      (catch Throwable error
+        (reset! cause error)))
+
+    (t/is (some? @cause) "the import refuses packed storage metadata in version 1")
+    (t/is (= :inconsistent-penpot-file (:code (ex-data @cause))))
+    (t/is (= "objects.json" (:path (ex-data @cause))))))
+
+(t/deftest import-binfile-v3-ignores-an-unknown-entry
+  ;; A path that matches no recognized pattern carries nothing the importer
+  ;; would read in any layout, so it is ignored instead of failing.
+  (let [profile (th/create-profile* 1)
+        {:keys [file-id page-id]} (add-page-with-rects profile 2)
+        output  (tmp/tempfile :suffix ".zip")
+        output2 (tmp/tempfile :suffix ".zip")]
+
+    (v3/export-files!
+     (bfc/export-cfg th/*system*
+                     {:file-ids    #{file-id}
+                      :export-type :detach-libraries
+                      :output      (io/output-stream output)}))
+
+    (add-json-entry output output2 "foobar.json" {:hello "world"})
+
+    (let [result   (import-package profile output2)
+          imported (-> (bfc/get-file th/*system* (first (:file-ids result)) {:realize? true})
+                       :data :pages-index (get page-id))]
+      (t/is (= 1 (count (:file-ids result))))
+      (t/is (= 2 (count (filter (comp #{:rect} :type) (vals (:objects imported)))))
+            "the shapes of the package are imported"))))
+
+(t/deftest import-binfile-v3-ignores-a-family-chunk-in-a-verbose-package
+  ;; A family exists because its main entry exists. Its chunks on their own are
+  ;; not a declaration in any layout, so a verbose package ignores them instead
+  ;; of failing.
+  (let [profile (th/create-profile* 1)
+        {:keys [file-id page-id]} (add-page-with-rects profile 2)
+        output  (tmp/tempfile :suffix ".zip")
+        output2 (tmp/tempfile :suffix ".zip")]
+
+    (v3/export-files!
+     (bfc/export-cfg th/*system*
+                     {:file-ids    #{file-id}
+                      :export-type :detach-libraries
+                      :output      (io/output-stream output)}))
+
+    (add-json-entry output output2
+                    (str "files/" file-id "/colors/chunks/0.json")
+                    {(keyword (str (uuid/next))) {:name "red"}})
+
+    (let [result (import-package profile output2)
+          file   (bfc/get-file th/*system* (first (:file-ids result)) {:realize? true})
+          page   (get-in file [:data :pages-index page-id])]
+      (t/is (= 1 (count (:file-ids result))))
+      (t/is (= 2 (count (filter (comp #{:rect} :type) (vals (:objects page)))))
+            "the shapes of the package are imported")
+      (t/is (empty? (get-in file [:data :colors]))
+            "the orphan chunk does not become a color"))))
+
+(t/deftest import-binfile-v3-ignores-an-objects-chunk-in-a-verbose-package
+  ;; The packed storage metadata is declared by `objects.json`. Its chunks
+  ;; without that entry are ignored, like any other chunk without its main
+  ;; entry.
+  (let [profile (th/create-profile* 1)
+        {:keys [file-id]} (add-page-with-rects profile 2)
+        output  (tmp/tempfile :suffix ".zip")
+        output2 (tmp/tempfile :suffix ".zip")]
+
+    (v3/export-files!
+     (bfc/export-cfg th/*system*
+                     {:file-ids    #{file-id}
+                      :export-type :detach-libraries
+                      :output      (io/output-stream output)}))
+
+    (add-json-entry output output2 "objects/chunks/0.json"
+                    {(keyword (str (uuid/next))) {:bucket "file-media-object"}})
+
+    (let [result (import-package profile output2)]
+      (t/is (= 1 (count (:file-ids result)))
+            "the package imports despite the orphan chunk"))))
 
 (t/deftest import-binfile-v3-refuses-a-family-header-with-members
   ;; A chunked family keeps its objects in the chunks; a member next to the

@@ -599,7 +599,37 @@
         {:keys [id width height name]}
         (-> params
             (update :id default-uuid)
-            (check-add-file-media))]
+            (check-add-file-media))
+
+        previous
+        (get-in state [::file-media id])
+
+        descriptor
+        {:id id
+         :created-at (dt/now)
+         :name name
+         :width width
+         :height height
+         :file-id file-id
+         :media-id media-id
+         :is-local true
+         :mtype (get blob :mtype)}]
+
+    ;; The model is one storage object shared by many file_media_object rows,
+    ;; each with its own id and its own file. A link with no file is never
+    ;; exported, and a repeated id would leave two files owning the same link:
+    ;; in version 1 the descriptor of the old file would point at a storage
+    ;; object the package does not carry.
+    (when-not (uuid? file-id)
+      (ex/raise :type :validation
+                :code :media-without-file
+                :hint "expected a current file before adding media"))
+
+    (when (some? previous)
+      (ex/raise :type :validation
+                :code :media-id-in-use
+                :hint "the media id already exists"
+                :file-id (:file-id previous)))
 
     (-> state
         (update ::blobs assoc media-id blob)
@@ -608,15 +638,11 @@
                  :bucket "file-media-object"
                  :content-type (get blob :mtype)
                  :size (get blob :size)})
-        (update ::file-media assoc id
-                {:id id
-                 :created-at (dt/now)
-                 :name name
-                 :width width
-                 :height height
-                 :file-id file-id
-                 :media-id media-id
-                 :is-local true
-                 :mtype (get blob :mtype)})
+        (update ::file-media assoc id descriptor)
+        ;; A media descriptor has one canonical file, so the exporters can ask
+        ;; for the descriptors of a file instead of filtering the flat map once
+        ;; per file. The index is maintained here, where the file is already
+        ;; known, and nobody rebuilds it.
+        (assoc-in [::file-media-by-file file-id id] descriptor)
 
         (assoc ::last-id id))))

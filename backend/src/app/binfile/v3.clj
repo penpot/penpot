@@ -1347,6 +1347,48 @@
               :hint "the package carries the family packed and per entry"
               :family label)))
 
+(defn- compact-layout-offender
+  "The path of one entry that belongs to the compact layouts, or nil when the
+  package carries none.
+
+  The manifest declares the layout of the package, so the entry that declares
+  a compact structure names its path: the page entry for page chunks, the
+  family main entry for a packed family, `objects.json` for the packed storage
+  metadata. A page chunk is always an offender: the page is what declares its
+  shapes, and a verbose reader would not read them. A family or storage chunk
+  whose main entry is missing is not a declaration, though: no reader visits it
+  in any layout, so it stays ignored here as it does for versions 2 and 3."
+  [{:keys [::entries-index]}]
+  (let [index entries-index]
+    (or
+     (some (fn [[file-id pages]]
+             (some (fn [[page-id _]]
+                     (str "files/" file-id "/pages/" page-id ".json"))
+                   pages))
+           (:page-chunks index))
+
+     (when (some? (:objects-packed index))
+       "objects.json")
+
+     (some (fn [category]
+             (let [packed (get index (packed-collection-key category))]
+               (when (seq packed)
+                 (str "files/" (first (keys packed)) "/" category ".json"))))
+           collection-categories))))
+
+(defn- check-layout-matches-manifest
+  "Fails when the manifest declares the verbose layout and the package carries
+  the structure of the compact ones. The reader of a verbose package reads one
+  entry per shape and never visits a page chunk or a packed family, so it would
+  import fewer objects than the package holds."
+  [{:keys [::compact?] :as cfg}]
+  (when-not compact?
+    (when-let [path (compact-layout-offender cfg)]
+      (ex/raise :type :validation
+                :code :inconsistent-penpot-file
+                :hint "the package carries the compact layout but its manifest is version 1"
+                :path path))))
+
 (defn- read-packed-collection
   "Reads a packed family from its main entry and its chunks and answers the
   map of objects.
@@ -1629,6 +1671,15 @@
                  (let [page        (read-entry cfg input entry)
                        chunks      (:chunks page)
                        page-chunks (get-in entries-index [:page-chunks (str file-id) (str id)])]
+                   ;; The manifest declares the layout: a verbose page entry
+                   ;; that declares chunks is the structure of versions 2 and 3,
+                   ;; and the verbose reader would never visit them.
+                   (when (and (not compact?) (some? chunks))
+                     (ex/raise :type :validation
+                               :code :inconsistent-penpot-file
+                               :hint "a verbose page declares chunks"
+                               :path (zip-entry-name entry)
+                               :chunks chunks))
                    (when (and compact? (some? chunks) (contains? page :objects))
                      (ex/raise :type :validation
                                :code :inconsistent-penpot-file
@@ -1676,12 +1727,16 @@
 (defn- thumbnail-key-parts
   "The `[tag page-id frame-id]` of a packed thumbnail key, failing when the
   key is not that shape: the reader compares the parts against the object, so
-  a malformed key must not turn into a silent drop."
+  a malformed key must not turn into a silent drop. The tag is the one the
+  export accepts (`cth/valid-tag?`), and a trailing separator is refused
+  explicitly because `str/split` drops the empty segment at the end on the JVM
+  and keeps it on JS."
   [k]
   (let [text (packed-key-text k)
-        segs (str/split text "/")]
+        segs (when-not (str/ends-with? text "/")
+               (str/split text "/"))]
     (if (and (= 3 (count segs))
-             (not (str/blank? (nth segs 0)))
+             (cth/valid-tag? (nth segs 0))
              (some? (parse-uuid (nth segs 1)))
              (some? (parse-uuid (nth segs 2))))
       segs
@@ -1724,6 +1779,15 @@
       (->> entries
            (reduce (fn [result {:keys [page-id frame-id tag entry]}]
                      (let [object (-> (read-entry cfg input entry) prepare)]
+                       ;; The tag is the one segment of the key the export
+                       ;; writes, and a row with another one would be dropped
+                       ;; by the next export.
+                       (when-not (cth/valid-tag? tag)
+                         (ex/raise :type :validation
+                                   :code :inconsistent-penpot-file
+                                   :hint "a per-entry thumbnail carries an invalid tag"
+                                   :path (zip-entry-name entry)
+                                   :tag (str tag)))
                        (when-not (and (= frame-id (:frame-id object))
                                       (= page-id (:page-id object))
                                       (= tag (:tag object)))
@@ -2162,6 +2226,8 @@
                      (assoc ::manifest manifest)
                      (assoc ::compact? compact?)
                      (assoc ::bfc/timestamp timestamp))]
+
+    (check-layout-matches-manifest cfg)
 
     (when-not (= "penpot/export-files" (:type manifest))
       (ex/raise :type :validation

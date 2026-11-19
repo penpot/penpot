@@ -239,6 +239,24 @@
       (t/is (= value (:layout-item-align-self result))
             (str "align-self " value " survives")))))
 
+(t/deftest compact-shape-keeps-an-explicit-grow-type
+  ;; Absence and `:fixed` take different branches in the text resize path, so
+  ;; the writer keeps the value the shape carries instead of pruning it.
+  (let [shape (-> (cts/setup-shape {:type :text :x 0 :y 0 :width 10 :height 10})
+                  (assoc :grow-type :fixed))
+        c     (sc/compact-shape shape)]
+    (t/is (= :fixed (:grow-type c)))))
+
+(t/deftest compact-shape-does-not-invent-a-grow-type
+  (let [shape    (cts/setup-shape {:type :text :x 0 :y 0 :width 10 :height 10})
+        compact  (sc/compact-shape shape)
+        expanded (sc/expand-shape compact)]
+    (t/is (not (contains? shape :grow-type))
+          "the minimal text carries no grow type")
+    (t/is (not (contains? compact :grow-type)))
+    (t/is (not (contains? expanded :grow-type))
+          "the reader leaves the absent key absent")))
+
 (t/deftest compact-shape-keeps-the-layout-item-sizing
   ;; `:fix` is the renderer's default but not the sync logic's: absence and
   ;; `:fix` take different branches there, so the key is never pruned.
@@ -484,6 +502,17 @@
     (t/is (= (page-view page owned-keys)
              (page-view expanded owned-keys))
           "ids, tree and geometry read back unchanged")))
+
+(t/deftest compact-page-does-not-invent-a-grow-type
+  (let [text-id  (uuid/next)
+        text     (cts/setup-shape
+                  {:id text-id :name "Text" :type :text
+                   :x 0 :y 0 :width 100 :height 20
+                   :parent-id uuid/zero :frame-id uuid/zero})
+        page     {:id (uuid/next) :objects (d/ordered-map text-id text)}
+        expanded (sc/expand-page (compact-page* page))]
+    (t/is (not (contains? (get-in expanded [:objects text-id]) :grow-type))
+          "a page round trip does not invent the key")))
 
 (t/deftest compact-page-keeps-an-id-that-does-not-match-its-key
   (let [page   (make-tree-page)

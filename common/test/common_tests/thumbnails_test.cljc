@@ -47,9 +47,19 @@
               (str file-id "/" page-id "/" frame-id "/bad\ttag")]
              ["a tag with a newline"
               (str file-id "/" page-id "/" frame-id "/bad\ntag")]
+             ["a tag with a unit separator"
+              (str file-id "/" page-id "/" frame-id "/bad\u001ftag")]
+             ["a tag with a C1 control"
+              (str file-id "/" page-id "/" frame-id "/bad\u0085tag")]
              ["a trailing separator" (str valid "/")]
              ["two trailing separators" (str valid "//")]]]
       (t/is (nil? (thc/parse-object-id-strict object-id)) label))))
+
+(t/deftest valid-tag-accepts-what-the-export-can-carry
+  (doseq [tag ["frame" "board" "my tag" "a:b" "tag-1"]]
+    (t/is (thc/valid-tag? tag) (pr-str tag)))
+  (doseq [tag ["" " " "\u0001" "\u001f" "\u007f" "\u0085" "\u009f" "a/b" "a/b/c" nil :frame 42]]
+    (t/is (not (thc/valid-tag? tag)) (pr-str tag))))
 
 (t/deftest parse-object-id-strict-answers-nil-without-a-string
   (t/is (nil? (thc/parse-object-id-strict nil)))

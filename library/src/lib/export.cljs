@@ -205,10 +205,10 @@
           (:objects page)))))
 
 (defn- file-media
+  "The media descriptors of one file, as `add-file-media` indexed them.
+  Answers an empty map for a file without media."
   [state file-id]
-  (->> (get state ::fb/file-media)
-       (filter (fn [[_ file-media]] (= file-id (:file-id file-media))))
-       (into {})))
+  (or (get-in state [::fb/file-media-by-file file-id]) {}))
 
 (defn- family-units
   "The packed families of one file, in version 2. A family with no objects
