@@ -1359,6 +1359,10 @@ msgstr "This team is not part of any organization"
 msgid "dashboard.team-organization.remove"
 msgstr "Remove team from organization"
 
+#: src/app/main/data/common.cljs:213
+msgid "dashboard.team-owner-changed-by-organization"
+msgstr "You are now a viewer in %s. %s is its new owner."
+
 #: src/app/main/ui/dashboard/team.cljs:1744
 msgid "dashboard.team-projects"
 msgstr "Team projects"

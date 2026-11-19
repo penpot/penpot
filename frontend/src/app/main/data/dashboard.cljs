@@ -700,12 +700,17 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- handle-change-team-role
-  [params]
+  [{:keys [team-id] :as params}]
   (ptk/reify ::handle-change-team-role
     ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/of (dcm/change-team-role params)
-             (modal/hide)))))
+    (watch [_ state _]
+      (rx/concat
+       (rx/of (dcm/change-team-role params)
+              (modal/hide))
+       ;; The open members list shows the old role (and, after an
+       ;; ownership transfer, the old owner) until it is fetched again
+       (when (= team-id (:current-team-id state))
+         (rx/of (dtm/fetch-members team-id)))))))
 
 (defn- handle-user-organization-change
   "Handle :user-organization-change websocket messages.

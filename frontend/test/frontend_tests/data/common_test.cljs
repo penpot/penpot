@@ -14,6 +14,7 @@
   id from the argument, the initialized team, the team of the route
   already on screen, and the profile default, in that order."
   (:require
+   [app.common.types.team :as ctt]
    [app.common.uuid :as uuid]
    [app.main.data.common :as dcm]
    [app.main.router :as rt]
@@ -172,3 +173,37 @@
   (let [events (await (emitted (dcm/go-to-dashboard-members) (state {})))]
     (t/is (some? (nav-params events :dashboard-members)))
     (t/is (nil? (:team-id (nav-params events :dashboard-members))))))
+
+;; --- Team role changes
+
+(defn- role-state
+  "A session inside `current-team-id` with editor rights in it and in
+  `other-team-id`."
+  [current-team-id other-team-id]
+  (let [editor (get ctt/permissions-for-role :editor)]
+    {:current-team-id current-team-id
+     :permissions     editor
+     :team            {:id current-team-id :permissions editor}
+     :teams           {current-team-id {:permissions editor}
+                       other-team-id   {:permissions editor}}}))
+
+(t/deftest change-team-role-of-another-team-keeps-the-session-permissions
+  (let [current-team-id (uuid/next)
+        other-team-id   (uuid/next)
+        editor          (get ctt/permissions-for-role :editor)
+        state           (ptk/update (dcm/change-team-role {:team-id other-team-id :role :viewer})
+                                    (role-state current-team-id other-team-id))]
+    (t/is (= editor (:permissions state)))
+    (t/is (= editor (get-in state [:team :permissions])))
+    (t/is (= editor (get-in state [:teams current-team-id :permissions])))
+    (t/is (false? (get-in state [:teams other-team-id :permissions :can-edit])))))
+
+(t/deftest change-team-role-of-the-current-team-limits-the-session
+  (let [current-team-id (uuid/next)
+        other-team-id   (uuid/next)
+        state           (ptk/update (dcm/change-team-role {:team-id current-team-id :role :viewer})
+                                    (role-state current-team-id other-team-id))]
+    (t/is (false? (get-in state [:permissions :can-edit])))
+    (t/is (false? (get-in state [:team :permissions :can-edit])))
+    (t/is (false? (get-in state [:teams current-team-id :permissions :can-edit])))
+    (t/is (true? (get-in state [:teams other-team-id :permissions :can-edit])))))
