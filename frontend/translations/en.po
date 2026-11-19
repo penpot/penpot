@@ -4122,7 +4122,7 @@ msgstr[1] "They aren't activated in any file."
 msgid "modals.delete-shared-confirm.activated.scd-message"
 msgid_plural "modals.delete-shared-confirm.activated.scd-message"
 msgstr[0] "This library is activated here: "
-msgstr[1] "This libraries are activated here: "
+msgstr[1] "These libraries are activated here: "
 
 #: src/app/main/ui/delete_shared.cljs:49
 msgid "modals.delete-shared-confirm.message"
