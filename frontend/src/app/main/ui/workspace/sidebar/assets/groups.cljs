@@ -136,7 +136,7 @@
   [{:keys [path last-path accept] :as ctx
     :or {path "" last-path ""}}]
   (let [initial  (mf/with-memo [last-path]
-                   {:asset-name last-path})
+                   {:name last-path})
         form     (fm/use-form :schema schema:group-form
                               :initial initial)
 
