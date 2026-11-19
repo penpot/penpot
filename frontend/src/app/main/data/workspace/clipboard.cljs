@@ -906,7 +906,10 @@
 
                   variant-props (:variant-properties pdata)
 
-                  position     (deref ms/mouse-position)
+                  ;; Before the pointer has been over the viewport there is
+                  ;; no mouse position, so the paste goes to its center.
+                  position     (or (deref ms/mouse-position)
+                                   (dsh/get-viewport-center state))
 
                   ;; Replace mode is only valid with a single selected shape.
                   ;; In that case we drop the pasted content at its position and
@@ -1049,7 +1052,8 @@
       (gsh/shape->center frame-object))
 
     :else
-    (deref ms/mouse-position)))
+    (or (deref ms/mouse-position)
+        (dsh/get-viewport-center state))))
 
 (defn- paste-html-text
   [html]

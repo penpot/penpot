@@ -132,6 +132,32 @@
            ;; ==== Check
            (t/is (= (:parent-id copied-blue1') (:id frame-red')))))))))
 
+(t/deftest paste-before-the-pointer-reaches-the-viewport-uses-its-center
+  "With no mouse position yet, a paste with nothing selected lands at the
+  center of the viewport."
+  (t/async
+    done
+    (let [file     (-> (cthf/sample-file :file1)
+                       (ctho/add-frame :frame-red {:name "frame-red"}))
+          store    (ths/setup-store file)
+          page     (cthf/current-page file)
+          frame    (cths/get-shape file :frame-red)
+          pdata    (thp/simulate-copy-shape #{(:id frame)} (:objects page) {(:id file) file} page file #{} 67)
+          _        (rx/push! ms/mouse-position nil)
+          events   [#(assoc-in % [:workspace-local :vbox] {:x 0 :y 0 :width 1000 :height 800})
+                    (dws/deselect-all)
+                    (dw/paste-shapes pdata)]]
+      (ths/run-store
+       store done events
+       (fn [new-state]
+         (let [page'  (cthf/current-page (ths/get-file-from-state new-state))
+               copied (->> (vals (:objects page'))
+                           (filter #(and (= "frame-red" (:name %)) (not= (:id frame) (:id %))))
+                           first)]
+           (t/is (some? copied))
+           (t/is (= 500 (:x copied)))
+           (t/is (= 400 (:y copied)))))))))
+
 (t/deftest copy-shape-to-component
   "Coping a rect into a component results in a copy of the rect inside the component"
   (t/async
