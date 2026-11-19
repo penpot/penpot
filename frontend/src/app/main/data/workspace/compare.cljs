@@ -21,6 +21,9 @@
                 or moved so the change chosen sits at the same spot of
                 its half (`:aligned`). The last one picked is kept in
                 the browser and comes back on every comparison
+     :main-extent the rect of the page as main has it, while main is
+                beside the branch: fitting the whole page takes it in
+                (`app.main.data.workspace.zoom/zoom-to-fit-all`)
      :hidden    true while the changes are hidden on the canvas
      :selected  the key of the change or conflict chosen (`item-key`)
      :hovered   the key of the change or conflict under the pointer, and
@@ -42,7 +45,6 @@
   (`app.main.data.workspace.branches`)."
   (:require
    [app.common.data :as d]
-   [app.common.geom.align :as gal]
    [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.branches :as dwb]
@@ -50,6 +52,7 @@
    [app.main.data.workspace.review :as dwrv]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.viewport-wasm :as dwvw]
+   [app.main.data.workspace.zoom :as dwz]
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.util.storage :as storage]
@@ -281,6 +284,15 @@
                                 :aligned)))
         (rx/empty)))))
 
+(defn set-main-extent
+  "Remember the rect of the page as main has it (`rect`), or none, for
+  as long as main is beside the branch."
+  [rect]
+  (ptk/reify ::set-main-extent
+    ptk/UpdateEvent
+    (update [_ state]
+      (d/update-when state :workspace-compare assoc :main-extent rect))))
+
 (defn toggle-hidden
   "Hide the changes on the canvas, or show them again."
   []
@@ -411,18 +423,7 @@
             side? (side-view? state)]
         (if (or (nil? rect) (dwvw/render-context-lost? state))
           state
-          (update state :workspace-local
-                  (fn [{:keys [vport] :as local}]
-                    (let [room  (cond-> vport side? (update :width / 2))
-                          srect (gal/adjust-to-viewport room rect {:padding 40 :min-zoom 0.01})
-                          zoom  (/ (:width room) (:width srect))
-                          vbox  (assoc (:vbox local)
-                                       :width (/ (:width vport) zoom)
-                                       :height (/ (:height vport) zoom))]
-                      (-> local
-                          (assoc :zoom zoom)
-                          (assoc :zoom-inverse (/ 1 zoom))
-                          (assoc :vbox (centered-vbox vbox rect side?)))))))))
+          (update state :workspace-local dwz/fit-rect rect 40 side?))))
 
     ptk/EffectEvent
     (effect [_ state _]

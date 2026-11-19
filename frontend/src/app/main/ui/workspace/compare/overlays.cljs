@@ -357,6 +357,9 @@
                        (cc/main-objects live page-id page-items (:other-changes mode) incoming)))
         ;; from the page as the canvas shows it: while it shows main
         ;; (`:peek`) both halves hold the same place and nothing moves
+        extent     (mf/with-memo [main]
+                     (when (some? main)
+                       (cc/main-extent main)))
         offset     (mf/with-memo [aligned? objects main item]
                      (when aligned?
                        (cc/align-offset objects main item)))
@@ -387,6 +390,10 @@
     (mf/with-effect [pointed]
       (st/emit! (dwcp/set-hovered pointed :canvas)))
     (use-canvas-projection live (:objects projection))
+
+    ;; fitting the whole page takes in main beside the branch
+    (mf/with-effect [extent]
+      (st/emit! (dwcp/set-main-extent extent)))
 
     ;; each direction remembers how many changes it lists, for its tab
     (mf/with-effect [loaded? direction total]

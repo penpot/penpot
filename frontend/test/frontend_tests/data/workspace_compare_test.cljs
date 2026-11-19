@@ -9,10 +9,13 @@
   read-only while it lasts, leaves nothing behind, and applies the
   conflict choices with what the attempt that returned them carried."
   (:require
+   [app.common.geom.rect :as grc]
+   [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
    [app.main.data.workspace.branches :as dwb]
    [app.main.data.workspace.compare :as dwcp]
+   [app.main.data.workspace.zoom :as dwz]
    [app.main.repo :as rp]
    [app.util.storage :as storage]
    [beicon.v2.core :as rx]
@@ -356,6 +359,71 @@
     (ptk/emit! store (dwcp/set-view :side))
     (t/is (= :aligned (side-mode store)))
     (rx/dispose! store)))
+
+;;; --- Zoom with main beside the branch ---
+
+(defn- zoom-state
+  "A page with a board at 100,100 (200 by 100) on a viewport of 1000 by
+  500, with the compare mode in `view` when there is one."
+  [view local]
+  (let [page-id  (uuid/next)
+        board-id (uuid/next)]
+    (cond-> {:current-file-id branch-file-id
+             :current-page-id page-id
+             :files {branch-file-id
+                     {:data {:pages-index
+                             {page-id
+                              {:objects
+                               {uuid/zero {:id uuid/zero :type :frame :parent-id uuid/zero
+                                           :shapes [board-id]}
+                                board-id  (cts/setup-rect {:id board-id :type :frame
+                                                           :parent-id uuid/zero
+                                                           :x 100 :y 100
+                                                           :width 200 :height 100})}}}}}}
+             :workspace-local (merge {:vport {:width 1000 :height 500}
+                                      :vbox (grc/make-rect 0 0 1000 500)
+                                      :zoom 1}
+                                     local)}
+      (some? view)
+      (assoc :workspace-compare {:phase :compare :view view}))))
+
+(defn- zoom-with
+  [state event]
+  (let [store (make-store state)]
+    (ptk/emit! store event)
+    (let [local (:workspace-local @store)]
+      (rx/dispose! store)
+      local)))
+
+(defn- vbox-at
+  "The point of the page at `at` of the width of the viewbox."
+  [{:keys [vbox]} at]
+  (+ (:x vbox) (* at (:width vbox))))
+
+(t/deftest the-whole-page-is-fitted-in-the-room-the-view-leaves
+  (let [whole (zoom-with (zoom-state nil nil) dwz/zoom-to-fit-all)
+        half  (zoom-with (zoom-state :side nil) dwz/zoom-to-fit-all)]
+    (t/is (= 200 (vbox-at whole 0.5)) "in the middle of the canvas")
+    (t/is (= 200 (vbox-at half 0.75)) "in the middle of the half of the branch")
+    (t/is (< (:zoom half) (:zoom whole)) "half the canvas holds less")
+    (t/is (= 200 (vbox-at (zoom-with (zoom-state :highlight nil) dwz/zoom-to-fit-all) 0.5))
+          "highlighting, the canvas is not split")))
+
+(t/deftest the-whole-page-takes-in-main-beside-the-branch
+  (let [state (assoc-in (zoom-state :side nil) [:workspace-compare :main-extent]
+                        (grc/make-rect 1000 100 200 100))
+        local (zoom-with state dwz/zoom-to-fit-all)]
+    (t/is (= 650 (vbox-at local 0.75)) "the middle of the board on both sides")))
+
+(t/deftest the-zoom-turns-on-the-middle-of-the-room-the-view-leaves
+  (let [local {:zoom 2 :vbox (grc/make-rect 0 0 500 250)}
+        whole (zoom-with (zoom-state nil local) dwz/reset-zoom)
+        half  (zoom-with (zoom-state :side local) dwz/reset-zoom)
+        more  (zoom-with (zoom-state :side local) (dwz/increase-zoom nil))]
+    (t/is (= 1 (:zoom half)))
+    (t/is (= 250 (vbox-at whole 0.5)) "the middle of the canvas stays")
+    (t/is (= 375 (vbox-at half 0.75)) "the middle of the half of the branch stays")
+    (t/is (= 375 (vbox-at more 0.75)) "zooming in from the menu too")))
 
 (t/deftest the-events-do-nothing-outside-the-mode
   (let [store (make-store {:current-file-id branch-file-id})]

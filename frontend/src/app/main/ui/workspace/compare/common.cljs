@@ -10,6 +10,8 @@
   banner and the popover share."
   (:require
    [app.common.files.branch-merge :as bm]
+   [app.common.files.helpers :as cfh]
+   [app.common.geom.shapes :as gsh]
    [app.main.data.workspace.branches :as dwb]
    [app.main.data.workspace.compare :as dwcp]
    [app.main.refs :as refs]
@@ -96,6 +98,14 @@
     (-> objects
         (brs/side-objects (on-page items) :main :branch own)
         (brs/side-objects (on-page other) :main :branch others))))
+
+(defn main-extent
+  "The rect that holds every layer of `main` (`main-objects`), nil for an
+  empty page."
+  [main]
+  (let [shapes (cfh/get-immediate-children main)]
+    (when (seq shapes)
+      (gsh/shapes->rect shapes))))
 
 (defn- get-center
   [objects id]

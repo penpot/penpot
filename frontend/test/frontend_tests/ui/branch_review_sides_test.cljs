@@ -311,3 +311,10 @@
           "half a viewport back")
     (t/is (= {:x -724 :y -124} (side/layer-translate vbox 2 500 24))
           "after the rulers")))
+
+(t/deftest main-reaches-as-far-as-its-layers
+  (let [main (cc/main-objects branch-objects page-id (on-page items) nil false)]
+    (t/is (= {:x 0 :y 0 :width 163 :height 48}
+             (select-keys (cc/main-extent main) [:x :y :width :height])))
+    (t/is (nil? (cc/main-extent {uuid/zero {:id uuid/zero :type :frame :shapes []}}))
+          "an empty page")))
