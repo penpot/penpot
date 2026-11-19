@@ -1283,9 +1283,33 @@
          container container]
     (if (= (:id current) target-ref)
       chain
-      (if-let [ref (find-ref-shape nil container libraries current :with-context? true)]
+      (if-let [ref (find-ref-shape nil container libraries current
+                                   :include-deleted? true
+                                   :with-context? true)]
         (recur (conj chain ref) ref (:container (meta ref)))
         chain))))
+
+(defn get-swap-level
+  "Returns the level (0 is the shape itself) of the first shape in the ref
+   chain of `shape` that has been swapped there, looking at most
+   `max-levels` levels up. Returns `max-levels` if none is found."
+  [container libraries shape max-levels]
+  (loop [level     0
+         current   shape
+         container container]
+    (cond
+      (>= level max-levels)
+      max-levels
+
+      (some? (ctk/get-swap-slot current))
+      level
+
+      :else
+      (if-let [ref (find-ref-shape nil container libraries current
+                                   :include-deleted? true
+                                   :with-context? true)]
+        (recur (inc level) ref (:container (meta ref)))
+        max-levels))))
 
 (defn get-touched-from-ref-chain-until-target-ref
   "Returns a set with the :touched of all the items on the shape

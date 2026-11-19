@@ -1017,3 +1017,283 @@
            ;; the copied blue has no swap-id
            (t/is (some? copied-blue'))
            (t/is (nil? (ctk/get-swap-slot copied-blue')))))))))
+
+(t/deftest test-keep-swapped-children-refs-copy-paste-nested-copy-to-root
+  (t/async
+    done
+    (let [;; ==== Setup
+          ;; {:frame-base} [:name frame-base]                    # [Component :base]
+          ;; {:frame-effects} [:name frame-effects]              # [Component :effects]
+          ;;     :base-in-effects [:name frame-base]             @--> frame-base
+          ;; {:frame-plain} [:name frame-plain]                  # [Component :plain]
+          ;; {:frame-inner} [:name frame-inner]                  # [Component :inner]
+          ;;     :plain-in-inner [:name frame-plain]             @--> frame-plain
+          ;; {:frame-outer} [:name frame-outer]                  # [Component :outer]
+          ;;     :inner-in-outer [:name frame-inner]             @--> frame-inner
+          ;;         :plain-in-inner-in-outer [:name frame-plain] @--> :plain-in-inner
+          ;; :outer-copy [:name frame-outer]                     #--> frame-outer
+          ;;     :inner-copy [:name frame-inner]                 @--> :inner-in-outer
+          ;;         :effects-swapped [:name frame-effects, :swap-slot-label :plain-in-inner] @--> frame-effects
+          ;;             :base-in-swapped [:name frame-base]     @--> :base-in-effects
+          file     (-> (cthf/sample-file :file1)
+                       (ctho/add-frame :frame-base :name "frame-base")
+                       (cthc/make-component :base :frame-base)
+                       (ctho/add-frame :frame-effects :name "frame-effects")
+                       (cthc/make-component :effects :frame-effects)
+                       (cthc/instantiate-component :base :base-in-effects :parent-label :frame-effects)
+                       (ctho/add-frame :frame-plain :name "frame-plain")
+                       (cthc/make-component :plain :frame-plain)
+                       (ctho/add-frame :frame-inner :name "frame-inner")
+                       (cthc/make-component :inner :frame-inner)
+                       (cthc/instantiate-component :plain :plain-in-inner :parent-label :frame-inner)
+                       (ctho/add-frame :frame-outer :name "frame-outer")
+                       (cthc/make-component :outer :frame-outer)
+                       (cthc/instantiate-component :inner :inner-in-outer :parent-label :frame-outer
+                                                   :children-labels [:plain-in-inner-in-outer])
+                       (cthc/instantiate-component :outer :outer-copy
+                                                   :children-labels [:inner-copy :plain-copy])
+                       (cthc/component-swap :plain-copy :effects :effects-swapped
+                                            :children-labels [:base-in-swapped]))
+          store    (ths/setup-store file)
+
+          ;; ==== Action
+          page     (cthf/current-page file)
+          inner    (cths/get-shape file :inner-copy)
+          features #{"components/v2"}
+          version  47
+
+          pdata    (thp/simulate-copy-shape #{(:id inner)} (:objects page) {(:id file) file} page file features version)
+
+          events
+          [(dws/select-shape uuid/zero)
+           (dw/paste-shapes pdata)]]
+
+      (ths/run-store
+       store done events
+       (fn [new-state]
+         (let [;; ==== Get
+               file'           (ths/get-file-from-state new-state)
+               page'           (cthf/current-page file')
+               inner'          (cths/get-shape file' :inner-copy)
+               effects'        (cths/get-shape file' :effects-swapped)
+               base'           (cths/get-shape file' :base-in-swapped)
+               copied-inner'   (find-copied-shape inner' page' uuid/zero)
+               copied-effects' (find-copied-shape effects' page' (:id copied-inner'))
+               copied-base'    (find-copied-shape base' page' (:id copied-effects'))
+               errors          (try
+                                 (cfv/validate-file! file' {(:id file') file'})
+                                 nil
+                                 (catch :default cause
+                                   (ex-data cause)))]
+
+           ;; ==== Check
+           ;; the swap was made in the copied shape itself, so the children
+           ;; of the swapped copy already point to the effects main and must
+           ;; not be advanced
+           (t/is (some? copied-inner'))
+           (t/is (= (:shape-ref copied-inner') (cthi/id :frame-inner)))
+           (t/is (some? copied-effects'))
+           (t/is (= (:shape-ref copied-effects') (cthi/id :frame-effects)))
+           (t/is (= (ctk/get-swap-slot copied-effects') (cthi/id :plain-in-inner)))
+           (t/is (some? copied-base'))
+           (t/is (= (:shape-ref copied-base') (cthi/id :base-in-effects)))
+
+           ;; the file must be valid after the paste
+           (t/is (nil? errors))))))))
+
+(defn- setup-file-deep-nested-swap
+  []
+  ;; {:frame-base} [:name frame-base]                    # [Component :base]
+  ;; {:frame-effects} [:name frame-effects]              # [Component :effects]
+  ;;     :base-in-effects [:name frame-base]             @--> frame-base
+  ;; {:frame-plain} [:name frame-plain]                  # [Component :plain]
+  ;; {:frame-inner} [:name frame-inner]                  # [Component :inner]
+  ;;     :plain-in-inner [:name frame-plain]             @--> frame-plain
+  ;; {:frame-mid} [:name frame-mid]                      # [Component :mid]
+  ;;     :inner-in-mid [:name frame-inner]               @--> frame-inner
+  ;;         :plain-in-mid [:name frame-plain]           @--> :plain-in-inner
+  ;; {:frame-top} [:name frame-top]                      # [Component :top]
+  ;;     :mid-in-top [:name frame-mid]                   @--> frame-mid
+  ;;         :inner-in-top [:name frame-inner]           @--> :inner-in-mid
+  ;;             :effects-in-top [:name frame-effects, :swap-slot-label :plain-in-inner] @--> frame-effects
+  ;;                 [:name frame-base]                  @--> :base-in-effects
+  ;; :top-copy [:name frame-top]                         #--> frame-top
+  ;;     :mid-copy [:name frame-mid]                     @--> :mid-in-top
+  ;;         :inner-copy [:name frame-inner]             @--> :inner-in-top
+  ;;             :effects-copy [:name frame-effects]     @--> :effects-in-top
+  ;;                 :base-copy [:name frame-base]       @--> (base in :effects-in-top)
+  (-> (cthf/sample-file :file1)
+      (ctho/add-frame :frame-base :name "frame-base")
+      (cthc/make-component :base :frame-base)
+      (ctho/add-frame :frame-effects :name "frame-effects")
+      (cthc/make-component :effects :frame-effects)
+      (cthc/instantiate-component :base :base-in-effects :parent-label :frame-effects)
+      (ctho/add-frame :frame-plain :name "frame-plain")
+      (cthc/make-component :plain :frame-plain)
+      (ctho/add-frame :frame-inner :name "frame-inner")
+      (cthc/make-component :inner :frame-inner)
+      (cthc/instantiate-component :plain :plain-in-inner :parent-label :frame-inner)
+      (ctho/add-frame :frame-mid :name "frame-mid")
+      (cthc/make-component :mid :frame-mid)
+      (cthc/instantiate-component :inner :inner-in-mid :parent-label :frame-mid
+                                  :children-labels [:plain-in-mid])
+      (ctho/add-frame :frame-top :name "frame-top")
+      (cthc/make-component :top :frame-top)
+      (cthc/instantiate-component :mid :mid-in-top :parent-label :frame-top
+                                  :children-labels [:inner-in-top :plain-in-top])
+      (cthc/component-swap :plain-in-top :effects :effects-in-top)
+      (cthc/instantiate-component :top :top-copy
+                                  :children-labels [:mid-copy :inner-copy
+                                                    :effects-copy :base-copy])))
+
+(t/deftest test-keep-swapped-children-refs-copy-paste-deep-nested-copy-to-root
+  (t/async
+    done
+    (let [;; ==== Setup
+          file     (setup-file-deep-nested-swap)
+          store    (ths/setup-store file)
+
+          ;; ==== Action
+          page     (cthf/current-page file)
+          inner    (cths/get-shape file :inner-copy)
+          features #{"components/v2"}
+          version  47
+
+          pdata    (thp/simulate-copy-shape #{(:id inner)} (:objects page) {(:id file) file} page file features version)
+
+          events
+          [(dws/select-shape uuid/zero)
+           (dw/paste-shapes pdata)]]
+
+      (ths/run-store
+       store done events
+       (fn [new-state]
+         (let [;; ==== Get
+               file'           (ths/get-file-from-state new-state)
+               page'           (cthf/current-page file')
+               inner'          (cths/get-shape file' :inner-copy)
+               effects'        (cths/get-shape file' :effects-copy)
+               base'           (cths/get-shape file' :base-copy)
+               copied-inner'   (find-copied-shape inner' page' uuid/zero)
+               copied-effects' (find-copied-shape effects' page' (:id copied-inner'))
+               copied-base'    (find-copied-shape base' page' (:id copied-effects'))
+               errors          (try
+                                 (cfv/validate-file! file' {(:id file') file'})
+                                 nil
+                                 (catch :default cause
+                                   (ex-data cause)))]
+
+           ;; ==== Check
+           ;; the swap was made in the top main, one of the two levels the
+           ;; copied inner drops, so the children of the swapped copy must
+           ;; advance only one level, up to the effects main
+           (t/is (some? copied-inner'))
+           (t/is (= (:shape-ref copied-inner') (cthi/id :frame-inner)))
+           (t/is (some? copied-effects'))
+           (t/is (= (:shape-ref copied-effects') (cthi/id :frame-effects)))
+           (t/is (= (ctk/get-swap-slot copied-effects') (cthi/id :plain-in-inner)))
+           (t/is (some? copied-base'))
+           (t/is (= (:shape-ref copied-base') (cthi/id :base-in-effects)))
+
+           ;; the file must be valid after the paste
+           (t/is (nil? errors))))))))
+
+(t/deftest test-keep-swapped-children-refs-copy-paste-swapped-head-to-root
+  (t/async
+    done
+    (let [;; ==== Setup
+          file     (setup-file-deep-nested-swap)
+          store    (ths/setup-store file)
+
+          ;; ==== Action
+          page     (cthf/current-page file)
+          effects  (cths/get-shape file :effects-copy)
+          features #{"components/v2"}
+          version  47
+
+          pdata    (thp/simulate-copy-shape #{(:id effects)} (:objects page) {(:id file) file} page file features version)
+
+          events
+          [(dws/select-shape uuid/zero)
+           (dw/paste-shapes pdata)]]
+
+      (ths/run-store
+       store done events
+       (fn [new-state]
+         (let [;; ==== Get
+               file'           (ths/get-file-from-state new-state)
+               page'           (cthf/current-page file')
+               effects'        (cths/get-shape file' :effects-copy)
+               base'           (cths/get-shape file' :base-copy)
+               copied-effects' (find-copied-shape effects' page' uuid/zero)
+               copied-base'    (find-copied-shape base' page' (:id copied-effects'))
+               errors          (try
+                                 (cfv/validate-file! file' {(:id file') file'})
+                                 nil
+                                 (catch :default cause
+                                   (ex-data cause)))]
+
+           ;; ==== Check
+           ;; the copied effects was swapped in the top main, so it and its
+           ;; children advance only up to the effects main. As a root copy it
+           ;; carries no swap slot
+           (t/is (some? copied-effects'))
+           (t/is (= (:shape-ref copied-effects') (cthi/id :frame-effects)))
+           (t/is (nil? (ctk/get-swap-slot copied-effects')))
+           (t/is (some? copied-base'))
+           (t/is (= (:shape-ref copied-base') (cthi/id :base-in-effects)))
+
+           ;; the file must be valid after the paste
+           (t/is (nil? errors))))))))
+
+(t/deftest test-keep-swap-slot-copy-paste-deep-nested-copy-of-deleted-component-to-root
+  (t/async
+    done
+    (let [;; ==== Setup
+          ;; same tree, with the :top component deleted, so the ref chain
+          ;; of the copy goes through a deleted component
+          file     (-> (setup-file-deep-nested-swap)
+                       (ctho/delete-shape :frame-top))
+          store    (ths/setup-store file)
+
+          ;; ==== Action
+          page     (cthf/current-page file)
+          inner    (cths/get-shape file :inner-copy)
+          features #{"components/v2"}
+          version  47
+
+          pdata    (thp/simulate-copy-shape #{(:id inner)} (:objects page) {(:id file) file} page file features version)
+
+          events
+          [(dws/select-shape uuid/zero)
+           (dw/paste-shapes pdata)]]
+
+      (ths/run-store
+       store done events
+       (fn [new-state]
+         (let [;; ==== Get
+               file'           (ths/get-file-from-state new-state)
+               page'           (cthf/current-page file')
+               inner'          (cths/get-shape file' :inner-copy)
+               effects'        (cths/get-shape file' :effects-copy)
+               base'           (cths/get-shape file' :base-copy)
+               copied-inner'   (find-copied-shape inner' page' uuid/zero)
+               copied-effects' (find-copied-shape effects' page' (:id copied-inner'))
+               copied-base'    (find-copied-shape base' page' (:id copied-effects'))
+               errors          (try
+                                 (cfv/validate-file! file' {(:id file') file'})
+                                 nil
+                                 (catch :default cause
+                                   (ex-data cause)))]
+
+           ;; ==== Check
+           ;; the swap slot comes from the deleted top component, so the
+           ;; ref chain must follow deleted components to keep it
+           (t/is (some? copied-effects'))
+           (t/is (= (:shape-ref copied-effects') (cthi/id :frame-effects)))
+           (t/is (= (ctk/get-swap-slot copied-effects') (cthi/id :plain-in-inner)))
+           (t/is (some? copied-base'))
+           (t/is (= (:shape-ref copied-base') (cthi/id :base-in-effects)))
+
+           ;; the file must be valid after the paste
+           (t/is (nil? errors))))))))
