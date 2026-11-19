@@ -81,10 +81,7 @@
              (sd/resolve-tokens-interactive tokens))
            (rx/mapcat
             (fn [resolved-tokens]
-              (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens (:name token))
-                    resolved-value (if (contains? cf/flags :tokenscript)
-                                     (ts/tokenscript-symbols->penpot-unit resolved-value)
-                                     resolved-value)]
+              (let [{:keys [errors resolved-value]} (get resolved-tokens (:name token))]
                 (if resolved-value
                   (rx/of {:value resolved-value})
                   (rx/of {:error (first errors)})))))))))
@@ -284,19 +281,28 @@
                                 (d/update-when result :error wte/resolve-error-message)))
                       (rx/subs! (fn [{:keys [error value]}]
                                   (let [touched? (get-in @form [:touched input-name])]
-                                    (when touched?
-                                      (if error
-                                        (if (csu/group-name-conflict-error? error token-name)
-                                          (swap! form assoc-in [:extra-errors ""] {:message error})
-                                          (do
-                                            (swap! form assoc-in [:extra-errors input-name] {:message error})
-                                            (swap! form assoc-in [:data :color-result] "")
-                                            (reset! hint* {:message error :type "error"})))
+                                    (cond
+                                      ;; Untouched field (form just opened)
+                                      (not touched?)
+                                      (when-not error
+                                        (swap! form assoc-in [:data :color-result] value)
+                                        (when (csu/show-hint-on-open? (get-in @form [:data input-name]) value)
+                                          (reset! hint* {:message (tr "workspace.tokens.resolved-value" (dwtf/format-token-value value))
+                                                         :type "hint"})))
 
-                                        (let [message (tr "workspace.tokens.resolved-value" (dwtf/format-token-value value))]
-                                          (swap! form update :extra-errors dissoc input-name)
-                                          (swap! form assoc-in [:data :color-result] value)
-                                          (reset! hint* {:message message :type "hint"}))))))))]
+                                      error
+                                      (if (csu/group-name-conflict-error? error token-name)
+                                        (swap! form assoc-in [:extra-errors ""] {:message error})
+                                        (do
+                                          (swap! form assoc-in [:extra-errors input-name] {:message error})
+                                          (swap! form assoc-in [:data :color-result] "")
+                                          (reset! hint* {:message error :type "error"})))
+
+                                      :else
+                                      (let [message (tr "workspace.tokens.resolved-value" (dwtf/format-token-value value))]
+                                        (swap! form update :extra-errors dissoc input-name)
+                                        (swap! form assoc-in [:data :color-result] value)
+                                        (reset! hint* {:message message :type "hint"})))))))]
 
         (fn []
           (rx/dispose! subs))))

@@ -132,3 +132,16 @@
          ;; Let the current mouse event finish before clearing drawing state.
          (->> (rx/of (clear-drawing {:preserve-tool? (= tool :curve)}))
               (rx/delay 0)))))))
+
+(defn cancel-drawing
+  "Ends the drawing in progress without adding its shape, as when saves
+  start failing mid-gesture."
+  []
+  (ptk/reify ::cancel-drawing
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :workspace-drawing dissoc :object))
+
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of (handle-finish-drawing)))))

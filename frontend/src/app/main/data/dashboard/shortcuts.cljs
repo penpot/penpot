@@ -50,7 +50,8 @@
 (def shortcut-create-new-project
   {:create-new-project {:tooltip "+"
                         :label (fn [] (tr "shortcuts.create-new-project"))
-                        :command "+"
+                        :command ["+" "="]
+                        :show-command "+"
                         :section [:dashboard]
                         :subsections [:generic]
                         :fn #(st/emit! (dd/create-element))}})

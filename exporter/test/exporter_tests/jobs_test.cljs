@@ -9,6 +9,7 @@
   reported and swallowed, so only the in-process record is exercised."
   (:require
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.jobs :as jobs]
    [cljs.test :as t :include-macros true]
    [promesa.core :as p]))
@@ -84,3 +85,23 @@
         (t/is (= "ended" (:state ended)))
         (t/is (nil? (jobs/lookup (:id job))))
         (done)))))
+
+(t/deftest boot-sweep-leaves-sibling-jobs-alone
+  (let [abandoned? #'jobs/abandoned?]
+    (t/is (abandoned? {:replica cf/replica-id :state "running"}))
+    (t/is (abandoned? {:replica cf/replica-id :state "queued"}))
+    (t/is (not (abandoned? {:replica cf/replica-id :state "ended"})))
+    (t/is (not (abandoned? {:replica (str cf/replica-id "-sibling") :state "running"})))))
+
+(t/deftest shutdown-cancels-all-its-jobs
+  (t/async done
+    (p/let [running (create!)
+            queued  (create!)
+            _       (jobs/start! running)
+            _       (jobs/cancel-all!)]
+      (doseq [job [running queued]]
+        (let [current (jobs/lookup (:id job))]
+          (t/is (= "cancelled" (:state current)))
+          (t/is (true? (:interrupted current))))
+        (jobs/release! (:id job)))
+      (done))))

@@ -23,6 +23,7 @@
    [app.features.fdata :as fdata]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
+   [app.media.svg :as svg]
    [app.media.validation :as media.v]
    [app.rpc :as-alias rpc]
    [app.rpc.climit :as-alias climit]
@@ -166,7 +167,7 @@
 
                 objects)))]
 
-    (binding [pmap/*load-fn* (partial fdata/load-pointer cfg id)]
+    (fdata/with-pointers cfg id
       (let [frame     (get-thumbnail-frame data)
             frame-id  (:id frame)
             page-id   (or (:page-id frame)
@@ -247,8 +248,7 @@
 
 (defn- persist-thumbnail!
   [storage media created-at]
-  (let [path  (:path media)
-        mtype (:mtype media)
+  (let [{:keys [path mtype]} (svg/sanitize-svg-upload media)
         hash  (sto/calculate-hash path)
         data  (-> (sto/content path)
                   (sto/wrap-with-hash hash))]
@@ -298,11 +298,13 @@
    ::rtry/enabled true
    ::rtry/when rtry/conflict-exception?
    ::audit/skip true
-   ::sm/params schema:create-file-object-thumbnail}
+   ::sm/params schema:create-file-object-thumbnail
+   ::rpc/multipart-only-params [:media]}
 
   [cfg {:keys [::rpc/profile-id file-id object-id media tag]}]
-  (media.v/validate-media-type! media)
-  (media.v/validate-media-size! media)
+  (media.v/check-upload-path media)
+  (media.v/check-media-type media)
+  (media.v/check-media-size media)
 
   (db/run! cfg files/check-edition-permissions! profile-id file-id)
   (when-let [file (files/get-minimal-file cfg file-id {::db/check-deleted false})]
@@ -399,11 +401,13 @@
                 [:file-thumbnail-ops/global]]
    ::rtry/enabled true
    ::rtry/when rtry/conflict-exception?
-   ::sm/params schema:create-file-thumbnail}
+   ::sm/params schema:create-file-thumbnail
+   ::rpc/multipart-only-params [:media]}
 
   [cfg {:keys [::rpc/profile-id file-id] :as params}]
-  (media.v/validate-media-type! (:media params))
-  (media.v/validate-media-size! (:media params))
+  (media.v/check-upload-path (:media params))
+  (media.v/check-media-type (:media params))
+  (media.v/check-media-size (:media params))
 
   (db/run! cfg files/check-edition-permissions! profile-id file-id)
 
@@ -411,7 +415,7 @@
     (let [storage (::sto/storage cfg)
           file    (bfc/get-file cfg file-id :include-deleted? true :load-data? false)
           props   (db/tjson (or (:props params) {}))
-          {:keys [path mtype]} (:media params)
+          {:keys [path mtype]} (svg/sanitize-svg-upload (:media params))
           hash    (sto/calculate-hash path)
           data    (-> (sto/content path)
                       (sto/wrap-with-hash hash))

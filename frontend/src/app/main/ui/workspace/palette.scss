@@ -4,17 +4,16 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
-@use "ds/spacing.scss" as *;
-@use "ds/z-index.scss" as *;
+@use "ds/_borders.scss" as *;
 @use "ds/_sizes.scss" as *;
-@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_utils.scss" as *;
 
 .palette-wrapper {
   position: absolute;
-  width: 100vw;
-  left: 0;
-  bottom: 0;
-  padding-bottom: deprecated.$s-4;
+  inline-size: 100vw;
+  inset-inline-start: 0;
+  inset-block-end: 0;
+  padding-block-end: var(--sp-xs);
 
   /** Aligns AI Chat button **/
   display: flex;
@@ -23,20 +22,26 @@
   gap: var(--sp-s);
 }
 
+// `right` and `width` stay physical: they are the transitioned properties.
 .palettes {
-  z-index: deprecated.$z-index-2;
+  // Above .viewport-overlays (z-index 1), which covers the whole viewport.
+  z-index: 2;
   position: relative;
   right: 0;
   grid-area: color-palette;
   display: grid;
-  grid-template: "resize resize resize" deprecated.$s-8 "buttons actions palette" 1fr / deprecated.$s-32 auto 1fr;
-  max-height: deprecated.$s-80;
-  height: var(--height);
+  grid-template-areas:
+    "resize resize resize"
+    "buttons actions palette";
+  grid-template-rows: px2rem(8) 1fr;
+  grid-template-columns: $sz-32 auto 1fr;
+  max-block-size: px2rem(80);
+  block-size: var(--height);
   width: fit-content;
-  padding: deprecated.$s-0 deprecated.$s-0 deprecated.$s-8 deprecated.$s-8;
-  border-radius: deprecated.$br-8;
-  background-color: var(--palette-background-color);
-  border: deprecated.$s-2 solid var(--panel-border-color);
+  padding: 0 0 var(--sp-s) var(--sp-s);
+  border-radius: $br-8;
+  background-color: var(--color-background-primary);
+  border: $b-2 solid var(--color-background-quaternary);
   transition:
     right 0.3s,
     opacity 0.2s,
@@ -48,23 +53,21 @@
 
   .resize-area {
     grid-area: resize;
-    height: deprecated.$s-8;
-    z-index: deprecated.$z-index-4;
-    width: calc(100% - deprecated.$s-8);
-    border-radius: deprecated.$br-circle;
+    block-size: px2rem(8);
+    inline-size: calc(100% - px2rem(8));
+    border-radius: $br-circle;
     cursor: ns-resize;
-    background-color: var(--palette-background-color);
+    background-color: var(--color-background-primary);
   }
 
   .palette-btn-list {
     grid-area: buttons;
-    background-color: var(--palette-background-color);
-    height: calc(var(--height) - deprecated.$s-16);
-    width: deprecated.$s-32;
-    margin: deprecated.$s-0;
+    background-color: var(--color-background-primary);
+    block-size: calc(var(--height) - px2rem(16));
+    inline-size: $sz-32;
+    margin: 0;
     list-style: none;
-    z-index: deprecated.$z-index-2;
-    gap: deprecated.$s-2;
+    gap: var(--sp-xxs);
 
     &.mid-palette,
     &.small-palette {
@@ -72,151 +75,171 @@
     }
 
     .palette-item {
-      @include deprecated.flex-center;
-
-      border-radius: deprecated.$br-8;
-      opacity: deprecated.$op-10;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: $br-8;
+      opacity: 1;
       transition: opacity 1s ease;
-
-      .palette-btn {
-        @extend %button-tertiary;
-
-        height: deprecated.$s-32;
-        width: deprecated.$s-32;
-        border-radius: deprecated.$br-8;
-        background-clip: padding-box;
-        padding: 0;
-
-        svg {
-          @extend %button-icon-small;
-
-          stroke: var(--icon-foreground);
-        }
-
-        &.selected {
-          @extend %button-icon-selected;
-        }
-      }
     }
   }
 
+  // DS icon button stretched to the palette height.
   .palette-actions {
-    @extend %button-tertiary;
+    --button-height: calc(var(--height) - #{px2rem(16)});
 
     grid-area: actions;
-    height: calc(var(--height) - deprecated.$s-16);
-    width: deprecated.$s-32;
-    padding: 0;
-    margin-left: deprecated.$s-4;
-    border-radius: deprecated.$br-8;
-    background-color: var(--palette-background-color);
-    z-index: deprecated.$z-index-2;
-
-    svg {
-      @extend %button-icon;
-
-      stroke: var(--icon-foreground);
-    }
+    margin-inline-start: var(--sp-xs);
   }
 
   .palette {
     grid-area: palette;
-    width: 100%;
-    min-width: 0;
+    inline-size: 100%;
+    min-inline-size: 0;
   }
 }
 
 .handler {
-  @include deprecated.button-style;
-  @include deprecated.flex-center;
-
-  width: deprecated.$s-12;
-  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: none;
+  background: none;
+  cursor: pointer;
+  inline-size: $sz-12;
+  block-size: 100%;
 
   .handler-btn {
-    width: deprecated.$s-4;
-    height: 100%;
-    max-height: deprecated.$s-40;
-    margin: deprecated.$s-8 deprecated.$s-4;
+    inline-size: px2rem(4);
+    block-size: 100%;
+    max-block-size: $sz-40;
+    margin: var(--sp-s) var(--sp-xs);
     padding: 0;
-    border-radius: deprecated.$s-4;
-    background-color: var(--palette-handler-background-color);
+    border-radius: $br-4;
+    background-color: var(--color-background-quaternary);
   }
 }
 
 .mid-palette,
 .small-palette {
-  grid-template-columns: deprecated.$s-64 auto 1fr;
+  grid-template-columns: px2rem(64) auto 1fr;
 }
 
 .hidden-bts {
-  right: deprecated.$s-2;
-  z-index: deprecated.$z-index-1;
-  width: 22px;
-  grid-template-columns: deprecated.$s-8 auto 1fr;
+  right: px2rem(2);
+
+  // Back to the .viewport-overlays level (z-index 1) while collapsed.
+  z-index: 1;
+  width: px2rem(22);
+  grid-template-columns: px2rem(8) auto 1fr;
   padding: 0;
   border-inline-start: 0;
   border-start-start-radius: 0;
   border-end-start-radius: 0;
 
   .palette-btn-list {
-    opacity: deprecated.$op-0;
+    opacity: 0;
     visibility: hidden;
-    width: 0;
+    inline-size: 0;
 
     .palette-item {
-      opacity: deprecated.$op-0;
+      opacity: 0;
       visibility: hidden;
-      z-index: 0;
     }
   }
 
   .resize-area {
     visibility: hidden;
-    z-index: 0;
-    width: 0;
+    inline-size: 0;
   }
 
   .palette-actions {
     visibility: hidden;
-    z-index: 0;
   }
 
   .palette {
     visibility: hidden;
-    z-index: 0;
   }
 
   .handler {
-    padding-bottom: deprecated.$s-8;
+    padding-block-end: var(--sp-s);
   }
 }
 
 /** AI Chat button styles **/
+// Not used in palette.cljs: the external chat widget (Inkeep, see #6509)
+// injected into #palette-wrapper may use these class names, so they stay.
 .help-btn {
+  --help-btn-foreground-color: var(--color-foreground-secondary);
+  --help-btn-background-color: var(--color-background-tertiary);
+
   z-index: var(--z-index-panels);
   flex-shrink: 0;
-
-  @extend %button-secondary;
-
+  display: flex;
+  justify-content: center;
+  align-items: center;
   inline-size: $sz-40;
   block-size: $sz-40;
-  border-radius: deprecated.$br-circle;
   border: none;
+  border-radius: $br-circle;
+  background-color: var(--help-btn-background-color);
+  color: var(--help-btn-foreground-color);
+  cursor: pointer;
 
-  &.selected {
-    @extend %button-icon-selected;
+  // The widget markup is external, so its icon has no known class.
+  svg {
+    stroke: var(--help-btn-foreground-color);
   }
 
   &:hover {
-    border: none;
+    --help-btn-foreground-color: var(--color-accent-primary);
+    --help-btn-background-color: var(--color-background-quaternary);
+
+    text-decoration: none;
+  }
+
+  &:active {
+    --help-btn-foreground-color: var(--color-accent-primary);
+    --help-btn-background-color: var(--color-background-secondary);
+
+    outline: none;
+    border: $b-1 solid var(--color-background-quaternary);
+  }
+
+  &:focus-visible {
+    --help-btn-foreground-color: var(--color-foreground-secondary);
+    --help-btn-background-color: var(--color-background-tertiary);
+
+    outline: none;
+    border: $b-1 solid var(--color-accent-primary);
+  }
+
+  &:global(.disabled),
+  &[disabled],
+  &:disabled {
+    --help-btn-foreground-color: var(--color-foreground-disabled);
+    --help-btn-background-color: var(--color-background-quaternary);
+
+    border: $b-1 solid var(--color-background-quaternary);
+    cursor: unset;
+  }
+
+  &.selected {
+    --help-btn-foreground-color: var(--color-accent-primary);
+    --help-btn-background-color: var(--color-background-quaternary);
+
+    outline: none;
   }
 }
 
 .icon-help {
-  @extend %button-icon;
-
-  stroke: var(--icon-foreground);
+  display: flex;
+  justify-content: center;
+  align-items: center;
   inline-size: var(--sp-xxl);
   block-size: var(--sp-xxl);
+  color: transparent;
+  fill: none;
+  stroke-width: 1px;
+  stroke: var(--color-foreground-secondary);
 }

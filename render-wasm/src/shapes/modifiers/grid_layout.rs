@@ -314,10 +314,7 @@ fn set_flex_multi_span(
         // Distribute the space between flex tracks in proportion to the division
         for track in tracks[start..end].iter_mut() {
             if track.track_type == GridTrackType::Flex {
-                let new_size = alloc.clamp(track.size, track.max_size);
-                let aloc = new_size - track.size;
-                dist -= aloc;
-                track.size = new_size;
+                track.size = alloc.clamp(track.size, track.max_size);
             }
         }
     }

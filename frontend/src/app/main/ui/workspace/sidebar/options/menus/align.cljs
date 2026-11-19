@@ -11,7 +11,8 @@
    [app.main.data.workspace.path :as dwdp]
    [app.main.data.workspace.shortcuts :as sc]
    [app.main.store :as st]
-   [app.main.ui.icons :as deprecated-icon]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
@@ -57,67 +58,59 @@
     (when (or path-edit? (not (and disabled-align disabled-distribute)))
       [:div {:class (stl/css :align-options)}
        [:div {:class (stl/css :align-group-horizontal)}
-        [:button {:class (stl/css-case :align-button true
-                                       :disabled disabled-align)
-                  :disabled disabled-align
-                  :title (tr "workspace.align.hleft" (sc/get-tooltip :align-left))
-                  :data-value "hleft"
-                  :on-click align-objects}
-         deprecated-icon/align-left]
+        [:> icon-button* {:variant "ghost"
+                          :aria-label (tr "workspace.align.hleft" (sc/get-tooltip :align-left))
+                          :icon i/align-left
+                          :disabled disabled-align
+                          :data-value "hleft"
+                          :on-click align-objects}]
 
-        [:button {:class (stl/css-case :align-button true
-                                       :disabled disabled-align)
-                  :disabled disabled-align
-                  :title (tr "workspace.align.hcenter" (sc/get-tooltip :align-hcenter))
-                  :data-value "hcenter"
-                  :on-click align-objects}
-         deprecated-icon/align-horizontal-center]
+        [:> icon-button* {:variant "ghost"
+                          :aria-label (tr "workspace.align.hcenter" (sc/get-tooltip :align-hcenter))
+                          :icon i/align-horizontal-center
+                          :disabled disabled-align
+                          :data-value "hcenter"
+                          :on-click align-objects}]
 
-        [:button {:class (stl/css-case :align-button true
-                                       :disabled disabled-align)
-                  :disabled disabled-align
-                  :title (tr "workspace.align.hright" (sc/get-tooltip :align-right))
-                  :data-value "hright"
-                  :on-click align-objects}
-         deprecated-icon/align-right]
+        [:> icon-button* {:variant "ghost"
+                          :aria-label (tr "workspace.align.hright" (sc/get-tooltip :align-right))
+                          :icon i/align-right
+                          :disabled disabled-align
+                          :data-value "hright"
+                          :on-click align-objects}]
 
-        [:button {:class (stl/css-case :align-button true
-                                       :disabled disabled-distribute)
-                  :disabled disabled-distribute
-                  :title (tr "workspace.align.hdistribute" (sc/get-tooltip :h-distribute))
-                  :data-value "horizontal"
-                  :on-click distribute-objects}
-         deprecated-icon/distribute-horizontally]]
+        [:> icon-button* {:variant "ghost"
+                          :aria-label (tr "workspace.align.hdistribute" (sc/get-tooltip :h-distribute))
+                          :icon i/distribute-horizontally
+                          :disabled disabled-distribute
+                          :data-value "horizontal"
+                          :on-click distribute-objects}]]
 
        [:div {:class (stl/css :align-group-vertical)}
-        [:button {:class (stl/css-case :align-button true
-                                       :disabled disabled-align)
-                  :disabled disabled-align
-                  :title (tr "workspace.align.vtop" (sc/get-tooltip :align-top))
-                  :data-value "vtop"
-                  :on-click  align-objects}
-         deprecated-icon/align-top]
+        [:> icon-button* {:variant "ghost"
+                          :aria-label (tr "workspace.align.vtop" (sc/get-tooltip :align-top))
+                          :icon i/align-top
+                          :disabled disabled-align
+                          :data-value "vtop"
+                          :on-click align-objects}]
 
-        [:button {:class (stl/css-case :align-button true
-                                       :disabled disabled-align)
-                  :disabled disabled-align
-                  :title (tr "workspace.align.vcenter" (sc/get-tooltip :align-vcenter))
-                  :data-value "vcenter"
-                  :on-click  align-objects}
-         deprecated-icon/align-vertical-center]
+        [:> icon-button* {:variant "ghost"
+                          :aria-label (tr "workspace.align.vcenter" (sc/get-tooltip :align-vcenter))
+                          :icon i/align-vertical-center
+                          :disabled disabled-align
+                          :data-value "vcenter"
+                          :on-click align-objects}]
 
-        [:button {:class (stl/css-case :align-button true
-                                       :disabled disabled-align)
-                  :disabled disabled-align
-                  :title (tr "workspace.align.vbottom" (sc/get-tooltip :align-bottom))
-                  :data-value "vbottom"
-                  :on-click  align-objects}
-         deprecated-icon/align-bottom]
+        [:> icon-button* {:variant "ghost"
+                          :aria-label (tr "workspace.align.vbottom" (sc/get-tooltip :align-bottom))
+                          :icon i/align-bottom
+                          :disabled disabled-align
+                          :data-value "vbottom"
+                          :on-click align-objects}]
 
-        [:button {:title (tr "workspace.align.vdistribute" (sc/get-tooltip :v-distribute))
-                  :class (stl/css-case :align-button true
-                                       :disabled disabled-distribute)
-                  :disabled disabled-distribute
-                  :data-value "vertical"
-                  :on-click distribute-objects}
-         deprecated-icon/distribute-vertical-spacing]]])))
+        [:> icon-button* {:variant "ghost"
+                          :aria-label (tr "workspace.align.vdistribute" (sc/get-tooltip :v-distribute))
+                          :icon i/distribute-vertical-spacing
+                          :disabled disabled-distribute
+                          :data-value "vertical"
+                          :on-click distribute-objects}]]])))

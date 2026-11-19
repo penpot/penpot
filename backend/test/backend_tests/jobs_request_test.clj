@@ -23,8 +23,6 @@
    [integrant.core :as ig])
   (:import
    io.lettuce.core.api.sync.RedisCommands
-   io.prometheus.client.Counter
-   io.prometheus.client.Counter$Child
    java.lang.AutoCloseable))
 
 (t/use-fixtures :once th/state-init)
@@ -36,8 +34,7 @@
 (defn- make-metrics []
   (ig/init-key :app.metrics/metrics
                {:default (select-keys main/default-metrics
-                                      [:jobs-requests-total
-                                       :jobs-request-timing])}))
+                                      [:jobs-request-timing])}))
 
 (defn- make-pool
   ([] (make-pool (get th/*system* :app.metrics/metrics)))
@@ -131,11 +128,21 @@
 ;; TESTS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- counter-value [metrics id labels]
-  (let [collector (mtx/get-collector metrics id)
-        instance  (::mdef/instance collector)
-        child     (.labels ^Counter instance (into-array String labels))]
-    (.get ^Counter$Child child)))
+(defn- histogram-count [metrics id labels]
+  (let [definition (get main/default-metrics id)]
+    (->> (enumeration-seq
+          (.metricFamilySamples ^io.prometheus.client.CollectorRegistry
+           (mtx/get-registry metrics)))
+         (filter (fn [^io.prometheus.client.Collector$MetricFamilySamples family]
+                   (= (.-name family) (::mdef/name definition))))
+         (mapcat (fn [^io.prometheus.client.Collector$MetricFamilySamples family]
+                   (.samples family)))
+         (filter (fn [^io.prometheus.client.Collector$MetricFamilySamples$Sample sample]
+                   (and (str/ends-with? (.-name sample) "_count")
+                        (= labels (vec (.-labelValues sample))))))
+         (map (fn [^io.prometheus.client.Collector$MetricFamilySamples$Sample sample]
+                (.-value sample)))
+         (reduce + 0.0))))
 
 (t/deftest request-pool-keeps-its-own-metrics
   (let [metrics-a (make-metrics)
@@ -154,14 +161,14 @@
              (jobs/request cfg {::jobs/queue :media
                                 ::jobs/cmd :process
                                 ::jobs/params {}})))
-    (t/is (= 1.0 (counter-value metrics :jobs-requests-total ["replied"])))
+    (t/is (= 1.0 (histogram-count metrics :jobs-request-timing ["replied"])))
     (t/is (thrown-with-msg? Exception #"timeout waiting for the job reply"
                             (jobs/request cfg {::jobs/queue :media
                                                ::jobs/cmd :process
                                                ::jobs/params {}
                                                ::jobs/timeout (ct/duration {:millis 100})})))
-    (t/is (= 1.0 (counter-value metrics :jobs-requests-total ["timeout"])))
-    (t/is (= 0.0 (counter-value metrics :jobs-requests-total ["sent"])))))
+    (t/is (= 1.0 (histogram-count metrics :jobs-request-timing ["timeout"])))
+    (t/is (= 0.0 (histogram-count metrics :jobs-request-timing ["sent"])))))
 
 (t/deftest request-returns-the-ok-reply
   (let [pool    (make-pool)

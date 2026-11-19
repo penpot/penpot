@@ -49,7 +49,7 @@ pub fn move_cursor_backward(
         if cursor.offset > 0 {
             return TextPositionWithAffinity::new_downstream_affinity(
                 cursor.paragraph,
-                cursor.offset - 1,
+                paragraphs[cursor.paragraph].prev_grapheme_offset(cursor.offset),
             );
         }
         if cursor.paragraph > 0 {
@@ -126,7 +126,7 @@ pub fn move_cursor_forward(
         if cursor.offset < char_count {
             return TextPositionWithAffinity::new_downstream_affinity(
                 cursor.paragraph,
-                cursor.offset + 1,
+                para.next_grapheme_offset(cursor.offset),
             );
         }
         if cursor.paragraph < paragraphs.len() - 1 {
@@ -297,12 +297,9 @@ pub fn replace_text_with_newlines(
 
     let mut current_cursor = *cursor;
 
-    if let Some(new_offset) = replace_text_at_cursor(text_content, &current_cursor, lines[0]) {
-        current_cursor =
-            TextPositionWithAffinity::new_downstream_affinity(current_cursor.paragraph, new_offset);
-    } else {
-        return None;
-    }
+    let new_offset = replace_text_at_cursor(text_content, &current_cursor, lines[0])?;
+    current_cursor =
+        TextPositionWithAffinity::new_downstream_affinity(current_cursor.paragraph, new_offset);
 
     for line in lines.iter().skip(1) {
         if !split_paragraph_at_cursor(text_content, &current_cursor) {
@@ -336,12 +333,9 @@ pub fn insert_text_with_newlines(
 
     let mut current_cursor = *cursor;
 
-    if let Some(new_offset) = insert_text_at_cursor(text_content, &current_cursor, lines[0]) {
-        current_cursor =
-            TextPositionWithAffinity::new_downstream_affinity(current_cursor.paragraph, new_offset);
-    } else {
-        return None;
-    }
+    let new_offset = insert_text_at_cursor(text_content, &current_cursor, lines[0])?;
+    current_cursor =
+        TextPositionWithAffinity::new_downstream_affinity(current_cursor.paragraph, new_offset);
 
     for line in lines.iter().skip(1) {
         if !split_paragraph_at_cursor(text_content, &current_cursor) {
@@ -477,8 +471,7 @@ pub fn delete_selection_range(text_content: &mut TextContent, selection: &TextSe
 
         delete_range_in_paragraph(&mut paragraphs[end_paragraph], 0, end.offset);
 
-        let end_para_children: Vec<_> =
-            paragraphs[end_paragraph].children_mut().drain(..).collect();
+        let end_para_children: Vec<_> = std::mem::take(paragraphs[end_paragraph].children_mut());
         paragraphs[start.paragraph]
             .children_mut()
             .extend(end_para_children);
@@ -582,7 +575,7 @@ pub fn delete_char_before(
     if cursor.offset > 0 {
         let paragraphs = text_content.paragraphs_mut();
         let para = &mut paragraphs[cursor.paragraph];
-        let delete_pos = cursor.offset - 1;
+        let delete_pos = para.prev_grapheme_offset(cursor.offset);
         delete_range_in_paragraph(para, delete_pos, cursor.offset);
         Some(TextPositionWithAffinity::new_downstream_affinity(
             cursor.paragraph,
@@ -593,10 +586,7 @@ pub fn delete_char_before(
         let paragraphs = text_content.paragraphs_mut();
         let prev_para_len = paragraph_char_count(&paragraphs[prev_para_idx]);
 
-        let current_children: Vec<_> = paragraphs[cursor.paragraph]
-            .children_mut()
-            .drain(..)
-            .collect();
+        let current_children: Vec<_> = std::mem::take(paragraphs[cursor.paragraph].children_mut());
         paragraphs[prev_para_idx]
             .children_mut()
             .extend(current_children);
@@ -766,10 +756,11 @@ pub fn delete_char_after(text_content: &mut TextContent, cursor: &TextPositionWi
 
     if cursor.offset < para_len {
         let para = &mut paragraphs[cursor.paragraph];
-        delete_range_in_paragraph(para, cursor.offset, cursor.offset + 1);
+        let end = para.next_grapheme_offset(cursor.offset);
+        delete_range_in_paragraph(para, cursor.offset, end);
     } else if cursor.paragraph < paragraphs.len() - 1 {
         let next_para_idx = cursor.paragraph + 1;
-        let next_children: Vec<_> = paragraphs[next_para_idx].children_mut().drain(..).collect();
+        let next_children: Vec<_> = std::mem::take(paragraphs[next_para_idx].children_mut());
         paragraphs[cursor.paragraph]
             .children_mut()
             .extend(next_children);
@@ -824,6 +815,7 @@ pub fn split_paragraph_at_cursor(
     let text_transform = para.text_transform();
     let line_height = para.line_height();
     let letter_spacing = para.letter_spacing();
+    let list_style_type = para.list_style_type();
 
     let para = &mut paragraphs[cursor.paragraph];
     let children = para.children_mut();
@@ -845,7 +837,8 @@ pub fn split_paragraph_at_cursor(
         line_height,
         letter_spacing,
         new_para_children,
-    );
+    )
+    .with_list_style_type(list_style_type);
 
     paragraphs.insert(cursor.paragraph + 1, new_para);
 
@@ -856,7 +849,7 @@ pub fn split_paragraph_at_cursor(
 mod tests {
     use super::*;
     use crate::math::Rect;
-    use crate::shapes::{FontFamily, FontStyle, GrowType, TextAlign, TextSpan};
+    use crate::shapes::{FontFamily, FontStyle, GrowType, ListStyleType, TextAlign, TextSpan};
     use crate::uuid::Uuid;
 
     fn span(text: &str) -> TextSpan {
@@ -944,6 +937,51 @@ mod tests {
         let mut content = content(vec![paragraph(&["a😀b"])]);
         delete_selection_range(&mut content, &selection((0, 1), (0, 2)));
         assert_eq!(text_of(&content), "ab");
+    }
+
+    fn caret(paragraph: usize, offset: usize) -> TextPositionWithAffinity {
+        TextPositionWithAffinity::new_downstream_affinity(paragraph, offset)
+    }
+
+    #[test]
+    fn split_paragraph_keeps_the_list_style_type() {
+        let mut content = content(vec![
+            paragraph(&["Hello world"]).with_list_style_type(ListStyleType::Disc)
+        ]);
+        assert!(split_paragraph_at_cursor(&mut content, &caret(0, 5)));
+
+        let paragraphs = content.paragraphs();
+        assert_eq!(paragraphs.len(), 2);
+        assert_eq!(paragraphs[0].list_style_type(), ListStyleType::Disc);
+        assert_eq!(paragraphs[1].list_style_type(), ListStyleType::Disc);
+    }
+
+    #[test]
+    fn delete_char_before_deletes_a_whole_emoji() {
+        for emoji in ["😀", "👍🏽", "👨\u{200d}👩\u{200d}👧", "🇪🇸"] {
+            let text = format!("A{emoji}");
+            let len = text.chars().count();
+            let mut content = content(vec![paragraph(&[text.as_str()])]);
+            let new_caret = delete_char_before(&mut content, &caret(0, len));
+            assert_eq!(text_of(&content), "A");
+            assert_eq!(new_caret, Some(caret(0, 1)));
+        }
+    }
+
+    #[test]
+    fn delete_char_after_deletes_a_whole_emoji() {
+        let mut content = content(vec![paragraph(&["A👍🏽B"])]);
+        delete_char_after(&mut content, &caret(0, 1));
+        assert_eq!(text_of(&content), "AB");
+    }
+
+    #[test]
+    fn move_cursor_steps_over_a_whole_emoji() {
+        let paragraphs = vec![paragraph(&["A👍🏽B"])];
+        let forward = move_cursor_forward(&caret(0, 1), &paragraphs, false);
+        assert_eq!(forward, caret(0, 3));
+        let backward = move_cursor_backward(&caret(0, 3), &paragraphs, false);
+        assert_eq!(backward, caret(0, 1));
     }
 
     #[test]

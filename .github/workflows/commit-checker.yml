@@ -47,4 +47,46 @@ jobs:
       #     pattern: '^.+(Resolves|Fixes): \#[0-9]+$'
       #     error: 'You need at least one "Resolves|Fixes: #<issue number>" line.'
 
+  check-commit-guidelines:
+    if: ${{ !github.event.pull_request.draft }}
+    name: Check Commit Guidelines
+    runs-on: ubuntu-latest
+    steps:
+      # On PR events check out the base ref, so the script below is
+      # always the trusted version: PR commits are only read, never
+      # executed. On push events this resolves to the pushed sha.
+      - name: Checkout trusted code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.base.sha || github.sha }}
+
+      - name: Fetch PR commits
+        if: ${{ github.event_name == 'pull_request' || github.event_name == 'pull_request_target' }}
+        run: git fetch --no-tags origin "pull/${{ github.event.pull_request.number }}/head:pr-head"
+
+      - name: Run scripts/check-commit on every new commit
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "push" ]; then
+            if [ "${{ github.event.before }}" = "0000000000000000000000000000000000000000" ]; then
+              RANGE="${{ github.sha }}"
+            else
+              RANGE="${{ github.event.before }}..${{ github.sha }}"
+            fi
+          else
+            RANGE="${{ github.event.pull_request.base.sha }}..pr-head"
+          fi
+          COMMITS="$(git rev-list --reverse "$RANGE")"
+          if [ -z "$COMMITS" ]; then
+            echo "No new commits to check."
+            exit 0
+          fi
+          FAILED=0
+          for COMMIT in $COMMITS; do
+            ./scripts/check-commit -c "$COMMIT" || FAILED=1
+          done
+          exit "$FAILED"
+
 

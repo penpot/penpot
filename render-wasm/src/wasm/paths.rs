@@ -5,7 +5,8 @@ use std::mem::size_of;
 use std::sync::{Mutex, OnceLock};
 
 use crate::error::{Error, Result};
-use crate::shapes::{stroke_to_path, Path, Segment, ToPath};
+use crate::render::per_side_stroke_outline;
+use crate::shapes::{stroke_to_path, Path, Segment, Stroke, ToPath, Type};
 use crate::{mem, with_current_shape, with_current_shape_mut};
 
 const RAW_SEGMENT_DATA_SIZE: usize = size_of::<RawSegmentData>();
@@ -247,17 +248,34 @@ pub extern "C" fn convert_stroke_to_path(stroke_index: i32) -> *mut u8 {
     with_current_shape!(state, |shape: &Shape| {
         let idx = stroke_index as usize;
         if let Some(stroke) = shape.strokes.get(idx) {
-            let shape_path = shape.to_path(&state.shapes);
-            let path_transform = shape.to_path_transform();
+            let per_side = stroke
+                .per_side_widths()
+                .filter(|_| matches!(shape.shape_type, Type::Rect(_) | Type::Frame(_)));
 
-            if let Some(path) = stroke_to_path(
-                stroke,
-                &shape_path,
-                path_transform.as_ref(),
-                &shape.selrect,
-                shape.svg_attrs.as_ref(),
-                false,
-            ) {
+            let path = match per_side {
+                Some(widths) => {
+                    let outline = per_side_stroke_outline(
+                        stroke,
+                        &shape.selrect,
+                        &shape.shape_type.corners(),
+                        widths,
+                        Stroke::per_side_profile(shape.visible_strokes()),
+                    );
+                    Some(Path::from_skia_path_accurate(
+                        outline.make_transform(&shape.centered_transform()),
+                    ))
+                }
+                None => stroke_to_path(
+                    stroke,
+                    &shape.to_path(&state.shapes),
+                    shape.to_path_transform().as_ref(),
+                    &shape.selrect,
+                    shape.svg_attrs.as_ref(),
+                    false,
+                ),
+            };
+
+            if let Some(path) = path {
                 even_odd = path.is_even_odd();
                 result = path
                     .segments()

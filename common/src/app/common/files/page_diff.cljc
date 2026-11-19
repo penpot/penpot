@@ -12,7 +12,9 @@
    [clojure.set :as set]))
 
 (defn calculate-page-diff
-  [old-page page check-attrs]
+  "Only the objects in `object-ids` are compared; guides are always
+  compared in full."
+  [old-page page check-attrs object-ids]
 
   (let [old-objects (get old-page :objects)
         old-guides (or (get old-page :guides) [])
@@ -83,8 +85,7 @@
         changed-object-ids
         (into #{}
               (filter changed-object?)
-              (set/union (set (keys old-objects))
-                         (set (keys new-objects))))
+              object-ids)
 
         changed-guides-ids
         (into #{}

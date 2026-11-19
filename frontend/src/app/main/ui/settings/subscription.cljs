@@ -16,6 +16,7 @@
    [app.main.ui.components.forms :as fm]
    [app.main.ui.dashboard.subscription :refer [get-subscription-type]]
    [app.main.ui.ds.buttons.button :refer [button*]]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.foundations.assets.raw-svg :refer [raw-svg*]]
    [app.main.ui.nitrate.nitrate-activation-success-modal]
@@ -93,6 +94,7 @@
        [:button {:class (stl/css :cta-button :more-info)
                  :on-click cta-link-with-icon} cta-text-with-icon
         [:> icon* {:icon-id "open-link"
+                   :class (stl/css :cta-icon)
                    :size "s"}]])
      (when has-cta-link
        [:button {:class (stl/css-case :cta-button true
@@ -137,7 +139,7 @@
      [:button {:class (stl/css :cta-button :show-editors-button) :on-click handle-click}
       (tr "subscription.settings.management.dialog.editors")
       [:> icon* {:icon-id (if show-editors-list i/arrow-up i/arrow-down)
-                 :class (stl/css :icon-dropdown)
+                 :class (stl/css :cta-icon)
                  :size "s"}]]
      (when show-editors-list
        [:*
@@ -262,9 +264,11 @@
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog)}
-      [:button {:class (stl/css :close-btn) :on-click handle-close-dialog}
-       [:> icon* {:icon-id "close"
-                  :size "m"}]]
+      [:> icon-button* {:variant "ghost"
+                        :tooltip-class (stl/css :close-btn)
+                        :aria-label (tr "labels.close")
+                        :icon i/close
+                        :on-click handle-close-dialog}]
       [:div {:class (stl/css :modal-title :subscription-title)}
        (if (= unlimited-modal-step 2)
          (tr "subscription.settings.management-dialog.step-2-title")
@@ -382,12 +386,15 @@
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog :subscription-success)}
-      [:button {:class (stl/css :close-btn) :on-click handle-close-dialog}
-       [:> icon* {:icon-id "close"
-                  :size "m"}]]
+      [:> icon-button* {:variant "ghost"
+                        :tooltip-class (stl/css :close-btn)
+                        :aria-label (tr "labels.close")
+                        :icon i/close
+                        :on-click handle-close-dialog}]
       [:div {:class (stl/css :modal-success-content)}
        [:div {:class (stl/css :modal-start)}
-        [:> raw-svg* {:id (if (= "light" (:theme profile)) "logo-subscription-light" "logo-subscription")}]]
+        [:> raw-svg* {:id (if (= "light" (:theme profile)) "logo-subscription-light" "logo-subscription")
+                      :class (stl/css :modal-start-logo)}]]
 
        [:div {:class (stl/css :modal-end)}
         [:div {:class (stl/css :modal-title)}
@@ -469,7 +476,14 @@
           (= subscription-type "enterprise") (tr "subscription.settings.enterprise"))
 
         subscription-is-trial?
-        (= (:status subscription) "trialing")
+        (if nitrate?
+          (= (:status nitrate-license) "trialing")
+          (= (:status subscription) "trialing"))
+
+        trial-end-date
+        (if nitrate?
+          (ct/format-inst (:trial-end nitrate-license) "d MMMM, yyyy")
+          (ct/format-inst (:trial-end subscription) "d MMMM, yyyy"))
 
         member-since
         (ct/format-inst (:created-at profile) "d MMMM, yyyy")
@@ -701,12 +715,19 @@
        [:div {:class (stl/css :membership-container)}
         (when (or nitrate?
                   (and subscribed-since (not= subscription-type "professional")))
-          [:div {:class (stl/css :membership)}
-           [:> icon* {:class (stl/css :subscription-member)
-                      :icon-id "crown"
-                      :size "m"}]
-           [:span {:class (stl/css :membership-date)}
-            (tr "subscription.settings.subscribed-since" subscription-name subscribed-since)]])
+          (if subscription-is-trial?
+            [:div {:class (stl/css :membership)}
+             [:> icon* {:class (stl/css :subscription-member)
+                        :icon-id "hourglass"
+                        :size "m"}]
+             [:span {:class (stl/css :membership-date)}
+              (tr "subscription.settings.trial-ends-on" trial-end-date)]]
+            [:div {:class (stl/css :membership)}
+             [:> icon* {:class (stl/css :subscription-member)
+                        :icon-id "crown"
+                        :size "m"}]
+             [:span {:class (stl/css :membership-date)}
+              (tr "subscription.settings.subscribed-since" subscription-name subscribed-since)]]))
 
         [:div {:class (stl/css :membership)}
          [:> icon* {:class (stl/css :penpot-member)
@@ -821,9 +842,11 @@
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog)}
-      [:button {:class (stl/css :close-btn) :on-click handle-close-dialog}
-       [:> icon* {:icon-id "close"
-                  :size "m"}]]
+      [:> icon-button* {:variant "ghost"
+                        :tooltip-class (stl/css :close-btn)
+                        :aria-label (tr "labels.close")
+                        :icon i/close
+                        :on-click handle-close-dialog}]
       [:div {:class (stl/css :modal-title :subscription-title :nitrate-subscription)}
        (tr "nitrate.form.title")]
 
@@ -875,9 +898,11 @@
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog)}
-      [:button {:class (stl/css :close-btn) :on-click handle-close-dialog}
-       [:> icon* {:icon-id "close"
-                  :size "m"}]]
+      [:> icon-button* {:variant "ghost"
+                        :tooltip-class (stl/css :close-btn)
+                        :aria-label (tr "labels.close")
+                        :icon i/close
+                        :on-click handle-close-dialog}]
       [:div {:class (stl/css :modal-title :subscription-title)}
        (tr "nitrate.contact-sales.title" subscription-type)]
       [:div {:class (stl/css :modal-content)}
@@ -928,9 +953,11 @@
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog)}
-      [:button {:class (stl/css :close-btn) :on-click handle-close-dialog}
-       [:> icon* {:icon-id "close"
-                  :size "m"}]]
+      [:> icon-button* {:variant "ghost"
+                        :tooltip-class (stl/css :close-btn)
+                        :aria-label (tr "labels.close")
+                        :icon i/close
+                        :on-click handle-close-dialog}]
       [:div {:class (stl/css :modal-title :subscription-title)}
        (tr "nitrate.subscription.settings.manual-cancel")]
 

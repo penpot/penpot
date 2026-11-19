@@ -274,6 +274,7 @@
   (let [detach? (= export-type :detach-libraries)
         embed?  (= export-type :merge-libraries)]
     (db/tx-run! cfg (fn [cfg]
+                      (bfc/set-transaction-idle-timeout cfg)
                       (cond-> (bfc/get-file cfg file-id
                                             {:realize? true
                                              :include-deleted? true
@@ -284,6 +285,10 @@
 
                         embed?
                         (update :data #(bfc/embed-assets cfg % file-id))
+
+                        (not (or detach? embed?))
+                        (update :data #(bfc/absorb-unlinked-tokens-source
+                                        cfg % (bfc/get-libraries cfg [file-id])))
 
                         :always
                         (bfc/clean-file-features))))))
@@ -449,14 +454,15 @@
         (write-entry! output path encoded-status)))))
 
 (defn- export-files
-  [{:keys [::bfc/ids ::bfc/export-type ::output] :as cfg}]
+  [{:keys [::bfc/file-ids ::bfc/export-type ::output] :as cfg}]
 
-  (let [original-ids ids
-        ids  (into ids (when (= export-type :include-libraries) (bfc/get-libraries cfg ids)))
-        rels (if (= export-type :include-libraries)
-               (->> (bfc/get-files-rels cfg ids)
-                    (mapv (juxt :file-id :library-file-id)))
-               [])
+  (let [original-ids file-ids
+        file-ids     (into file-ids (when (= export-type :include-libraries)
+                                      (bfc/get-libraries cfg file-ids)))
+        rels         (if (= export-type :include-libraries)
+                       (->> (bfc/get-files-rels cfg file-ids)
+                            (mapv (juxt :file-id :library-file-id)))
+                       [])
 
         ;; Compute external libraries: referenced by original files but
         ;; not included in the export set. Only relevant for :link-later.
@@ -481,11 +487,11 @@
     (vswap! bfc/*state* assoc :files (d/ordered-map))
 
     ;; Write all the exporting files
-    (doseq [[index file-id] (d/enumerate ids)]
+    (doseq [[index file-id] (d/enumerate file-ids)]
       (-> cfg
           (assoc ::file-id file-id)
           (with-outer-counter :files {:current (inc index)
-                                      :total (count ids)})
+                                      :total (count file-ids)})
           (export-file)))
 
     ;; Write manifest file
@@ -843,13 +849,26 @@
                  {})
          (not-empty))))
 
-(defn- read-file-tokens-lib
+(defn- read-file-tokens-lib*
   [{:keys [::bfc/input ::entries-index] :as cfg} file-id]
   (when-let [{:keys [entry]} (first (get-in entries-index [:tokens (str file-id)]))]
     (tap-progress cfg {:section :tokens-lib :file-id file-id})
     (->> (read-entry cfg input entry nil)
          (decode-tokens-lib)
          (validate-tokens-lib))))
+
+(defn- read-file-tokens-lib
+  "Read the tokens lib of a file once per import. Decoding generates new
+  set ids, so the tokens lib of a library must be the same instance when
+  it is imported and when it resolves the tokens status of a file that
+  uses it as tokens source."
+  [cfg file-id]
+  (let [cache (:tokens-libs @bfc/*state*)]
+    (if (contains? cache file-id)
+      (get cache file-id)
+      (let [tokens-lib (read-file-tokens-lib* cfg file-id)]
+        (vswap! bfc/*state* assoc-in [:tokens-libs file-id] tokens-lib)
+        tokens-lib))))
 
 (defn- read-file-tokens-status
   [{:keys [::bfc/input ::entries-index] :as cfg} file-id tokens-lib]
@@ -969,8 +988,7 @@
                :old-id (str (:id item))
                ::l/sync? true)
 
-        (db/insert! conn :file-media-object params
-                    ::db/on-conflict-do-nothing? (::bfc/overwrite cfg))))
+        (db/insert! conn :file-media-object params)))
 
     (doseq [[index item] (d/enumerate thumbnails)]
       (let [media-id  (bfc/lookup-index (:media-id item))
@@ -1019,24 +1037,52 @@
       file-id')))
 
 (defn- import-file-relations
+  "Import library relations from the manifest, ignoring relations whose
+  endpoints are not both part of the package. Of the rest, skip edges that
+  would close a dependency cycle or link a file to itself (same check as
+  `link-file-to-library`, see `bfc/library-link-status`). Relations are
+  processed in sorted manifest order and the first edge wins: an edge
+  that would close a cycle with previously imported relations is skipped
+  and logged."
   [{:keys [::db/conn ::manifest ::bfc/timestamp] :as cfg}]
-  (let [relations (:relations manifest)]
+  (let [relations (sort-by (fn [[file-id libr-id]] [(str file-id) (str libr-id)])
+                           (:relations manifest))
+        file-ids  (into #{} (map :id) (:files manifest))]
     (doseq [[index [file-id libr-id]] (d/enumerate relations)]
       (tap-progress cfg {:section :relations
-                         :current (inc index) :total (count relations)})
+                         :current (inc index)
+                         :total (count relations)})
 
-      (let [file-id (bfc/lookup-index file-id)
-            libr-id (bfc/lookup-index libr-id)]
+      (if (and (contains? file-ids file-id)
+               (contains? file-ids libr-id))
+        (let [file-id (bfc/lookup-index file-id)
+              libr-id (bfc/lookup-index libr-id)]
+          (case (bfc/library-link-status cfg file-id libr-id)
+            :self-link
+            (l/warn :hint "ignoring self-referencing library link"
+                    :file-id (str file-id)
+                    :lib-id (str libr-id)
+                    ::l/sync? true)
 
-        (when (and file-id libr-id)
-          (l/dbg :hint "create file library link"
-                 :file-id (str file-id)
-                 :lib-id (str libr-id)
-                 ::l/sync? true)
-          (let [rel-params {:file-id file-id
-                            :library-file-id libr-id}]
-            (db/insert! conn :file-library-rel rel-params)
-            (bfc/upsert-file-library-sync! conn (assoc rel-params :synced-at timestamp))))))))
+            :circular
+            (l/warn :hint "ignoring circular library link"
+                    :file-id (str file-id)
+                    :lib-id (str libr-id)
+                    ::l/sync? true)
+
+            :ok
+            (do
+              (l/dbg :hint "create file library link"
+                     :file-id (str file-id)
+                     :lib-id (str libr-id)
+                     ::l/sync? true)
+              (let [rel-params {:file-id file-id
+                                :library-file-id libr-id}]
+                (db/insert! conn :file-library-rel rel-params)
+                (bfc/upsert-file-library-sync! conn (assoc rel-params :synced-at timestamp))))))
+        (l/warn :hint "ignoring invalid file library relation"
+                :file-id (str file-id)
+                :lib-id (str libr-id))))))
 
 (defn- import-storage-objects
   [{:keys [::bfc/input ::entries-index ::bfc/timestamp] :as cfg}]
@@ -1217,7 +1263,7 @@
 
 (defn- import-files*
   [{:keys [::manifest] :as cfg}]
-  (bfc/configure-database-timeouts! cfg)
+  (bfc/configure-import-transaction cfg)
 
   (vswap! bfc/*state* update :index bfc/update-index (:files manifest) :id)
 
@@ -1257,56 +1303,6 @@
       (bfm/apply-pending-migrations! cfg)
       {:file-ids   file-ids
        :resolution resolution})))
-
-(defn- invalidate-thumbnails
-  [cfg file-id]
-  (let [storage (sto/resolve cfg ::db/reuse-conn true)
-
-        sql-1
-        (str "update file_tagged_object_thumbnail "
-             "   set deleted_at = now() "
-             " where file_id=? returning media_id")
-
-        sql-2
-        (str "update file_thumbnail "
-             "   set deleted_at = now() "
-             " where file_id=? returning media_id")]
-
-    (run! #(sto/touch-object! storage %)
-          (sequence
-           (keep :media-id)
-           (concat
-            (db/exec! cfg [sql-1 file-id])
-            (db/exec! cfg [sql-2 file-id]))))))
-
-(defn- import-file-and-overwrite*
-  [{:keys [::manifest ::bfc/file-id] :as cfg}]
-
-  (when (not= 1 (count (:files manifest)))
-    (ex/raise :type :validation
-              :code :invalid-condition
-              :hint "unable to perform in-place update with binfile containing more than 1 file"
-              :manifest manifest))
-
-  (bfc/configure-database-timeouts! cfg)
-
-  (let [ref-file (bfc/get-minimal-file cfg file-id ::db/for-update true)
-        file     (first (get manifest :files))
-        cfg      (assoc cfg ::bfc/overwrite true)]
-
-    (vswap! bfc/*state* update :index assoc (:id file) file-id)
-
-    (binding [bfc/*options* cfg
-              bfc/*reference-file* ref-file]
-
-      (import-storage-objects cfg)
-      (import-file cfg file {:current 1 :total 1})
-
-      (invalidate-thumbnails cfg file-id)
-      (bfm/apply-pending-migrations! cfg)
-
-      {:file-ids   [file-id]
-       :resolution {}})))
 
 (defn- import-files
   [{:keys [::bfc/timestamp ::bfc/input] :or {timestamp (ct/now)} :as cfg}]
@@ -1358,31 +1354,31 @@
     (tap-progress cfg {:section :manifest})
 
     (binding [bfc/*state* (volatile! {:media [] :index {}})]
-      (if (::bfc/file-id cfg)
-        (db/tx-run! cfg import-file-and-overwrite*)
-        (db/tx-run! cfg import-files*)))))
+      (db/tx-run! cfg import-files*))))
 
 ;; --- PUBLIC API
 
 (defn export-files!
   "Do the exportation of a specified file in custom penpot binary
-  format. There are some options available for customize the output:
+  format. The cfg carries what `bfc/export-cfg` froze: `::bfc/file-ids`
+  (the files to export), `::bfc/export-type` (how linked libraries are
+  handled) and `::bfc/output` (where the package is written).
 
-  `::bfc/export-type`: determines how linked libraries are handled.
+  `::bfc/export-type` determines how linked libraries are handled.
   Valid values: `:include-libraries` (include linked libraries),
   `:merge-libraries` (embed library assets in the file),
   `:detach-libraries` (treat assets as basic objects),
   `:link-later` (preserve component metadata for relinking on import)."
 
-  [{:keys [::bfc/ids] :as cfg} output]
+  [{:keys [::bfc/file-ids ::bfc/output] :as cfg}]
 
   (assert
-   (and (set? ids) (every? uuid? ids))
-   "expected a set of uuid's for `::bfc/ids` parameter")
+   (and (set? file-ids) (every? uuid? file-ids))
+   "expected a set of uuid's for `::bfc/file-ids` parameter")
 
   (assert
    (satisfies? jio/IOFactory output)
-   "expected instance of jio/IOFactory for `input`")
+   "expected instance of jio/IOFactory for `::bfc/output`")
 
   (let [id (uuid/next)
         tp (ct/tpoint)
@@ -1426,6 +1422,12 @@
 
 (defn import-files!
   [{:keys [::bfc/input] :as cfg}]
+
+  (when (::bfc/file-id cfg)
+    (ex/raise :type :validation
+              :code :not-supported
+              :hint "in-place import is not supported"
+              :file-id (::bfc/file-id cfg)))
 
   (assert
    (and (uuid? (::bfc/profile-id cfg))

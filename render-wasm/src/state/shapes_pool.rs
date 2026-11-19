@@ -142,8 +142,30 @@ impl ShapesPoolImpl {
         self.uuid_to_idx.contains_key(id)
     }
 
+    /// Runs `render` with the fills of `id` removed when it hides them on
+    /// export. Only the exported board applies the flag; nested boards keep
+    /// their fills.
+    pub fn with_export_root<T>(&mut self, id: &Uuid, render: impl FnOnce(&Self) -> T) -> T {
+        let hide = self.get(id).is_some_and(|shape| shape.hide_fill_on_export);
+        let fills = if hide {
+            self.get_mut(id)
+                .map(|shape| std::mem::take(&mut shape.fills))
+        } else {
+            None
+        };
+        let result = render(self);
+        if let (Some(fills), Some(shape)) = (fills, self.get_mut(id)) {
+            shape.fills = fills;
+        }
+        result
+    }
+
     pub fn get_mut(&mut self, id: &Uuid) -> Option<&mut Shape> {
         let idx = *self.uuid_to_idx.get(id)?;
+        // The caller may change the shape, so its modified copy goes stale.
+        if let Some(cell) = self.modified_shape_cache.get_mut(&idx) {
+            *cell = OnceCell::new();
+        }
         Some(&mut self.shapes[idx])
     }
 
@@ -304,10 +326,11 @@ impl ShapesPoolImpl {
             }
         }
 
-        // Expand every root modifier to its full descendant subtree.
+        // Expand every pure-move root modifier to the descendants without one.
         // When CLJS sends only root shapes (translation on drag), descendants
-        // need the same matrix.
-        // For resize/rotate, propagate-modifiers already includes all descendants.
+        // need the same matrix. Other matrices come from propagate-modifiers,
+        // where a missing child means the child stays put (e.g. an auto-size
+        // layout parent or a layout child that does not move).
         // Descendants are NOT pushed into `ids` / `modifier_uuids`: rebuild_modifier_tiles
         // runs for roots, and drops the non-clipping ancestors' extrects separately.
         let root_pairs: Vec<(usize, skia::Matrix)> = ids
@@ -315,7 +338,7 @@ impl ShapesPoolImpl {
             .filter_map(|uuid| {
                 let idx = self.uuid_to_idx.get(uuid).copied()?;
                 let matrix = modifiers_with_idx.get(&idx).copied()?;
-                Some((idx, matrix))
+                math::is_move_only_matrix(&matrix).then_some((idx, matrix))
             })
             .collect();
 
@@ -575,5 +598,71 @@ impl Clone for ShapesPoolImpl {
             structure: self.structure.clone(),
             scale_content: self.scale_content.clone(),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn get_mut_refreshes_the_modified_shape() {
+        let mut pool = ShapesPool::new();
+        pool.initialize(1);
+        let id = Uuid::new_v4();
+        pool.add_shape(id).set_opacity(1.0);
+
+        pool.set_modifiers(HashMap::from([(id, skia::Matrix::translate((10.0, 0.0)))]));
+        assert_eq!(pool.get(&id).expect("shape").opacity, 1.0);
+
+        pool.get_mut(&id).expect("shape").set_opacity(0.5);
+        assert_eq!(pool.get(&id).expect("shape").opacity, 0.5);
+    }
+
+    fn pool_with_parent_and_child() -> (ShapesPool, Uuid, Uuid) {
+        let mut pool = ShapesPool::new();
+        pool.initialize(2);
+        let parent = Uuid::new_v4();
+        let child = Uuid::new_v4();
+        pool.add_shape(parent).add_child(child);
+        pool.add_shape(child).set_parent(parent);
+        (pool, parent, child)
+    }
+
+    #[test]
+    fn with_export_root_hides_only_the_root_fills() {
+        let (mut pool, parent, child) = pool_with_parent_and_child();
+        let fills = vec![shapes::Fill::Solid(shapes::SolidColor(skia::Color::RED))];
+        for id in [parent, child] {
+            let shape = pool.get_mut(&id).expect("shape");
+            shape.set_fills(fills.clone());
+            shape.set_hide_fill_on_export(true);
+        }
+
+        pool.with_export_root(&parent, |tree| {
+            assert!(tree.get(&parent).expect("parent").fills.is_empty());
+            assert_eq!(tree.get(&child).expect("child").fills, fills);
+        });
+
+        assert_eq!(pool.get(&parent).expect("parent").fills, fills);
+    }
+
+    #[test]
+    fn set_modifiers_passes_a_move_down_to_children() {
+        let (mut pool, parent, child) = pool_with_parent_and_child();
+        let translate = skia::Matrix::translate((10.0, 0.0));
+
+        pool.set_modifiers(HashMap::from([(parent, translate)]));
+
+        assert_eq!(pool.get_modifier(&child), Some(&translate));
+    }
+
+    #[test]
+    fn set_modifiers_keeps_a_resize_on_the_parent() {
+        let (mut pool, parent, child) = pool_with_parent_and_child();
+
+        pool.set_modifiers(HashMap::from([(parent, skia::Matrix::scale((1.0, 2.4)))]));
+
+        assert_eq!(pool.get_modifier(&child), None);
     }
 }

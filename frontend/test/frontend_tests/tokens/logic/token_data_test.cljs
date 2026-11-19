@@ -15,10 +15,12 @@
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.data.workspace.undo :as dwu]
    [cljs.test :as t :include-macros true]
+   [frontend-tests.helpers.async :as async]
    [frontend-tests.helpers.pages :as thp]
    [frontend-tests.helpers.state :as ths]
    [frontend-tests.tokens.helpers.state :as tohs]
-   [frontend-tests.tokens.helpers.tokens :as toht]))
+   [frontend-tests.tokens.helpers.tokens :as toht]
+   [potok.v2.core :as ptk]))
 
 (t/use-fixtures :each
   {:before thp/reset-idmap!})
@@ -895,3 +897,64 @@
            (t/testing "Tokens lib has been imported into file without existing lib"
              (t/is (some? tokens-lib'))
              (t/is (some? (ctob/get-set-by-name tokens-lib' "Imported Set"))))))))))
+
+(defn- setup-tokens-source-library
+  []
+  (ctho/sample-file-with-tokens
+   :file-id :library
+   :lib-fn #(-> %
+                (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :source-set)
+                                                   :name "Source"))
+                (ctob/add-token (cthi/id :source-set)
+                                (ctob/make-token :id (cthi/new-id! :source-token)
+                                                 :name "color.source"
+                                                 :type :color
+                                                 :value "#FF0000"))
+                (ctob/add-theme (ctob/make-token-theme :id (cthi/new-id! :source-theme)
+                                                       :name "Light"
+                                                       :group "Mode"
+                                                       :sets #{"Source"})))
+   :status-fn #(ctos/set-tokens-status % #{} #{(cthi/id :source-set)})))
+
+(t/deftest ^:async external-tokens-source-rejects-tokens-lib-changes
+  (let [source     (setup-tokens-source-library)
+        file       (-> (setup-file-with-token-lib)
+                       (assoc-in [:data :tokens-source] (:id source)))
+        errors     (atom [])
+        store      (ths/setup-store file {:libraries [source]
+                                          :on-error #(swap! errors conj %)})
+        tokens-lib (ctho/get-tokens-lib source)
+        set-id     (cthi/id :source-set)
+        token-id   (cthi/id :source-token)
+        theme-id   (cthi/id :source-theme)]
+    (doseq [[label event]
+            [["create theme" (dwtl/create-token-theme (ctob/make-token-theme :name "Dark" :group "Mode"))]
+             ["update theme" (dwtl/update-token-theme theme-id (ctob/rename (ctob/get-theme tokens-lib theme-id) "Dark"))]
+             ["delete theme" (dwtl/delete-token-theme theme-id)]
+             ["create set" (dwtl/create-token-set (ctob/make-token-set :name "New"))]
+             ["rename set" (dwtl/rename-token-set (ctob/get-set tokens-lib set-id) "Renamed")]
+             ["rename set group" (dwtl/rename-token-set-group ["Source"] "Renamed")]
+             ["duplicate set" (dwtl/duplicate-token-set set-id)]
+             ["delete set" (dwtl/delete-token-set set-id)]
+             ["delete set group" (dwtl/delete-token-set-group ["Source"])]
+             ["drop set group" (dwtl/drop-token-set-group {:from-index 0 :to-index 0 :position :top})]
+             ["drop set" (dwtl/drop-token-set {:from-index 0 :to-index 0 :position :top})]
+             ["import tokens lib" (dwtl/import-tokens-lib (ctob/make-tokens-lib))]
+             ["create token" (dwtl/create-token set-id (ctob/make-token :name "color.new"
+                                                                        :type :color
+                                                                        :value "#00FF00"))]
+             ["bulk create tokens" (dwtl/bulk-create-tokens set-id [token-id] :color {:depth 0} "brand")]
+             ["update token" (dwtl/update-token set-id token-id {:value "#00FF00"})]
+             ["bulk update tokens" (dwtl/bulk-update-tokens set-id [token-id] :color "color" "brand")]
+             ["delete token" (dwtl/delete-token set-id token-id)]
+             ["bulk delete tokens" (dwtl/bulk-delete-tokens set-id [token-id])]
+             ["duplicate token" (dwtl/duplicate-token token-id)]]]
+      (t/testing label
+        (reset! errors [])
+        (ptk/emit! store event)
+        (await (async/wait-for #(seq @errors) label))
+        (t/is (= [{:type :assertion :code :tokens-not-editable}]
+                 (map #(select-keys (ex-data %) [:type :code]) @errors)))))
+    (await (async/settle))
+    (t/is (= file (get-in @store [:files (:id file)])))
+    (t/is (= source (get-in @store [:files (:id source)])))))

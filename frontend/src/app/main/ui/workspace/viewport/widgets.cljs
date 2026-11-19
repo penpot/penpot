@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
@@ -181,7 +182,7 @@
            (let [name-input     (mf/ref-val ref)
                  name           (str/trim (dom/get-value name-input))]
              (reset! edition* false)
-             (st/emit! (dw/end-rename-shape frame-id name))
+             (st/emit! (dw/rename-shape-or-variant frame-id name))
              (on-frame-leave frame-id))))
 
         cancel-edit
@@ -262,34 +263,39 @@
   [{:keys [objects base-objects zoom selected focus is-show-artboard-names
            on-frame-enter on-frame-leave on-frame-select]}]
   (let [selected       (or selected #{})
-        frame-ids      (mf/with-memo [base-objects]
-                         (vec (ctt/get-frames-ids base-objects {:skip-copies? true :ignore-index? true})))
-        shapes         (into [] (keep (d/getf objects)) frame-ids)
-        shapes         (if (dbg/enabled? :shape-titles)
-                         (into (set shapes)
-                               (map (d/getf objects))
-                               selected)
-                         shapes)
+        show-id?       (dbg/enabled? :shape-titles)
+        root-frames    (into []
+                             (comp (keep (d/getf objects))
+                                   (filter cfh/frame-shape?)
+                                   (filter #(= uuid/zero (:parent-id %)))
+                                   (remove #(and (ctk/instance-head? %)
+                                                 (not (ctk/main-instance? %)))))
+                             (dm/get-in objects [uuid/zero :shapes]))
+        shapes         (if show-id?
+                         (into []
+                               (comp (keep (d/getf objects))
+                                     (filter (fn [{:keys [id]}]
+                                               (and (not= id uuid/zero)
+                                                    (or (empty? focus) (contains? focus id))))))
+                               (into (set (ctt/get-frames-ids base-objects {:skip-copies? true :ignore-index? true}))
+                                     selected))
+                         root-frames)
 
         edition        (mf/deref refs/selected-edition)
         grid-edition?  (ctl/grid-layout? objects edition)]
 
     [:g.frame-titles.blurrable
-     (for [{:keys [id parent-id] :as shape} shapes]
-       (when (and
-              (not= id uuid/zero)
-              (or (dbg/enabled? :shape-titles) (= parent-id uuid/zero))
-              (or (empty? focus) (contains? focus id)))
-         [:> frame-title* {:key (dm/str "frame-title-" id)
-                           :frame shape
-                           :zoom zoom
-                           :is-selected (contains? selected id)
-                           :is-show-artboard-names is-show-artboard-names
-                           :is-show-id (dbg/enabled? :shape-titles)
-                           :is-grid-edition (and (= id edition) grid-edition?)
-                           :on-frame-enter on-frame-enter
-                           :on-frame-leave on-frame-leave
-                           :on-frame-select on-frame-select}]))]))
+     (for [{:keys [id] :as shape} shapes]
+       [:> frame-title* {:key (dm/str "frame-title-" id)
+                         :frame shape
+                         :zoom zoom
+                         :is-selected (contains? selected id)
+                         :is-show-artboard-names is-show-artboard-names
+                         :is-show-id show-id?
+                         :is-grid-edition (and (= id edition) grid-edition?)
+                         :on-frame-enter on-frame-enter
+                         :on-frame-leave on-frame-leave
+                         :on-frame-select on-frame-select}])]))
 
 (mf/defc frame-flow*
   [{:keys [flow frame is-selected zoom on-frame-enter on-frame-leave on-frame-select]}]

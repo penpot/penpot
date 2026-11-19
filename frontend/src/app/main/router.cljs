@@ -17,7 +17,6 @@
    [app.util.timers :as ts]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
-   [goog.events :as e]
    [potok.v2.core :as ptk]))
 
 ;; --- Router API
@@ -25,6 +24,11 @@
 ;; Query-string routing: `router` is the set of enabled route names
 ;; (see `app.main.ui.routes/routes`). The `screen` query param carries
 ;; the route name; every other param travels as a plain query param.
+
+(def ^:private history-path-prefix
+  "The application base path. The history token is the query string
+  appended to it; the path never carries the token."
+  (:path cf/public-uri))
 
 (defn create
   [routes]
@@ -120,9 +124,8 @@
 
     ptk/EffectEvent
     (effect [_ state _]
-      (let [router  (:router state)
-            history (:history state)
-            path    (resolve router id params)]
+      (let [router (:router state)
+            path   (resolve router id params)]
 
         (if ^boolean new-window
           (let [name   (or (::window-name options) "_blank")
@@ -130,8 +133,8 @@
             (dom/open-new-window uri name nil))
           (ts/asap
            #(if ^boolean replace
-              (bhistory/replace-token! history path)
-              (bhistory/set-token! history path))))))))
+              (bhistory/replace-token! history-path-prefix path)
+              (bhistory/set-token! history-path-prefix path))))))))
 
 (defn assign-exception
   [error]
@@ -189,8 +192,15 @@
       (ts/asap (partial dom/reload-current-window force?)))))
 
 (defn nav-raw
-  [& {:keys [href uri]}]
+  "Navigate to a raw URL, out of the router.
+
+   The destination is exposed through `@event`, like `navigate` does, so
+   listeners and tests can tell where the user is being sent."
+  [& {:keys [href uri] :as props}]
   (ptk/reify ::nav-raw
+    IDeref
+    (-deref [_] props)
+
     ptk/EffectEvent
     (effect [_ _ _]
       (cond
@@ -204,6 +214,41 @@
   []
   (.-href globals/location))
 
+(defn token->query-string
+  "The query string of `token`, without the `?` that separates it from the
+  path. The history token is `location.search`, so it carries that delimiter;
+  a query string does not, and this is what the organization SSO RPC takes: the
+  server joins it under its own public URI and puts the separator back."
+  [token]
+  (let [token (or token "")]
+    (if (str/starts-with? token "?")
+      (subs token 1)
+      token)))
+
+(defn token->url
+  "Build the absolute URL for a route token under `cf/public-uri`. Accepts
+  the token in either shape: with its leading `?` or as a bare query string.
+  A blank token lands on the public URI, without a trailing separator."
+  [token]
+  (let [query-string (token->query-string token)]
+    (if (str/blank? query-string)
+      (str cf/public-uri)
+      (str cf/public-uri "?" query-string))))
+
+(defn get-current-token
+  "Return the current history token: the query string that carries the route,
+  with the leading `?` that separates it from the path. The application
+  concatenates it over the base path, so it keeps the delimiter; use
+  `get-current-query-string` for the value the SSO flow sends to the backend.
+  The server builds the destination URL out of that one, so the client never
+  chooses the origin of it."
+  []
+  (bhistory/get-token))
+
+(defn get-current-query-string
+  "The query string of the current route (see `token->query-string`)."
+  []
+  (token->query-string (get-current-token)))
 
 ;; --- History API
 
@@ -221,26 +266,14 @@
 (defn initialize-history
   [on-change]
   (ptk/reify ::initialize-history
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [history (bhistory/create (:path cf/public-uri))]
-        (bhistory/enable! history)
-        (assoc state :history history)))
-
     ptk/EffectEvent
     (effect [_ state stream]
       (let [stopper (rx/filter (ptk/type? ::initialize-history) stream)
-            history (:history state)
             router  (:router state)]
-        (ts/schedule #(on-change router (.getToken ^js history) true))
+        (ts/schedule #(on-change router (bhistory/get-token) true))
         (->> (rx/concat
               (rx/of nil nil)
-              (rx/create
-               (fn [subs]
-                 (let [key (e/listen history "navigate" (fn [o] (rx/push! subs (.-token ^js o))))]
-                   (fn []
-                     (bhistory/disable! history)
-                     (e/unlistenByKey key))))))
+              bhistory/token-changes)
              (rx/buffer 2 1)
              (rx/take-until stopper)
              (rx/subs!

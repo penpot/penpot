@@ -11,7 +11,7 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
 "X-Generator: Weblate 2026.10.dev0\n"
 
-#: src/app/main/ui/auth/register.cljs:227, src/app/main/ui/static.cljs:191, src/app/main/ui/viewer/login.cljs:119
+#: src/app/main/ui/auth/login_modal.cljs:125, src/app/main/ui/auth/register.cljs:227, src/app/main/ui/static.cljs:193
 msgid "auth.already-have-account"
 msgstr "¿Ya tienes una cuenta?"
 
@@ -29,7 +29,7 @@ msgstr ""
 "Este es un servicio DEMO, NO LO UTILICE para trabajos reales, los proyectos "
 "se borrarán periódicamente."
 
-#: src/app/main/ui/auth/login.cljs:203, src/app/main/ui/viewer/login.cljs:105
+#: src/app/main/ui/auth/login.cljs:204, src/app/main/ui/auth/login_modal.cljs:109
 msgid "auth.forgot-password"
 msgstr "¿Has olvidado tu contraseña?"
 
@@ -37,27 +37,27 @@ msgstr "¿Has olvidado tu contraseña?"
 msgid "auth.fullname"
 msgstr "Nombre completo"
 
-#: src/app/main/ui/auth/register.cljs:231, src/app/main/ui/static.cljs:194, src/app/main/ui/viewer/login.cljs:122
+#: src/app/main/ui/auth/login_modal.cljs:130, src/app/main/ui/auth/register.cljs:231, src/app/main/ui/static.cljs:199
 msgid "auth.login-here"
 msgstr "Inicie sesión aquí"
 
-#: src/app/main/ui/auth/login.cljs:254
+#: src/app/main/ui/auth/login.cljs:255
 msgid "auth.login-with-github-submit"
 msgstr "GitHub"
 
-#: src/app/main/ui/auth/login.cljs:260
+#: src/app/main/ui/auth/login.cljs:261
 msgid "auth.login-with-gitlab-submit"
 msgstr "GitLab"
 
-#: src/app/main/ui/auth/login.cljs:248
+#: src/app/main/ui/auth/login.cljs:249
 msgid "auth.login-with-google-submit"
 msgstr "Google"
 
-#: src/app/main/ui/auth/login.cljs:213
+#: src/app/main/ui/auth/login.cljs:214
 msgid "auth.login-with-ldap-submit"
 msgstr "LDAP"
 
-#: src/app/main/ui/auth/login.cljs:266
+#: src/app/main/ui/auth/login.cljs:267
 msgid "auth.login-with-oidc-submit"
 msgstr "Open ID"
 
@@ -79,7 +79,7 @@ msgstr ""
 "El enlace de recuperación de contraseña ha sido enviado a su bandeja de "
 "entrada de su correo electrónico."
 
-#: src/app/main/ui/auth/verify_token.cljs:85
+#: src/app/main/ui/auth/verify_token.cljs:58
 msgid "auth.notifications.team-invitation-accepted"
 msgstr "Se unió al equipo con éxito"
 
@@ -111,11 +111,11 @@ msgstr "¿Has olvidado tu contraseña?"
 msgid "auth.recovery-submit"
 msgstr "cambia tu contraseña"
 
-#: src/app/main/ui/auth/login.cljs:310, src/app/main/ui/static.cljs:177, src/app/main/ui/viewer/login.cljs:109
+#: src/app/main/ui/auth/login.cljs:311, src/app/main/ui/auth/login_modal.cljs:113, src/app/main/ui/static.cljs:177
 msgid "auth.register"
 msgstr "¿No tienes cuenta aún?"
 
-#: src/app/main/ui/auth/login.cljs:314, src/app/main/ui/auth/register.cljs:199, src/app/main/ui/auth/register.cljs:345, src/app/main/ui/static.cljs:181, src/app/main/ui/viewer/login.cljs:112
+#: src/app/main/ui/auth/login.cljs:315, src/app/main/ui/auth/login_modal.cljs:118, src/app/main/ui/auth/register.cljs:199, src/app/main/ui/auth/register.cljs:345, src/app/main/ui/static.cljs:183
 msgid "auth.register-submit"
 msgstr "Crea una cuenta"
 
@@ -123,113 +123,113 @@ msgstr "Crea una cuenta"
 msgid "auth.register-title"
 msgstr "Crea una cuenta"
 
-#: src/app/main/ui/auth/register.cljs:264, src/app/main/ui/dashboard/sidebar.cljs:542, src/app/main/ui/workspace/main_menu.cljs:210
+#: src/app/main/ui/auth/register.cljs:264, src/app/main/ui/dashboard/sidebar.cljs:535, src/app/main/ui/workspace/main_menu.cljs:211
 msgid "auth.terms-of-service"
 msgstr "Términos de servicio"
 
-#: src/app/main/ui/workspace/libraries.cljs:437, src/app/main/ui/workspace/libraries.cljs:838
+#: src/app/main/ui/workspace/libraries.cljs:489, src/app/main/ui/workspace/libraries.cljs:860
 msgid "common.publish"
 msgstr "Publicar"
 
-#: src/app/main/ui/viewer/share_link.cljs:304, src/app/main/ui/viewer/share_link.cljs:314
+#: src/app/main/ui/viewer/share_link.cljs:309, src/app/main/ui/viewer/share_link.cljs:319
 msgid "common.share-link.all-users"
 msgstr "Todos los usuarios de Penpot"
 
-#: src/app/main/ui/viewer/share_link.cljs:198
+#: src/app/main/ui/viewer/share_link.cljs:202
 msgid "common.share-link.confirm-deletion-link-description"
 msgstr ""
 "¿Estás seguro de que deseas eliminar este enlace? Si lo haces ya no estará "
 "disponible para nadie"
 
-#: src/app/main/ui/viewer/share_link.cljs:259, src/app/main/ui/viewer/share_link.cljs:289
+#: src/app/main/ui/viewer/share_link.cljs:264, src/app/main/ui/viewer/share_link.cljs:294
 msgid "common.share-link.current-tag"
 msgstr "(actual)"
 
-#: src/app/main/ui/viewer/share_link.cljs:207, src/app/main/ui/viewer/share_link.cljs:214
+#: src/app/main/ui/viewer/share_link.cljs:211, src/app/main/ui/viewer/share_link.cljs:217
 msgid "common.share-link.destroy-link"
 msgstr "Borrar enlace"
 
-#: src/app/main/ui/viewer/share_link.cljs:221
+#: src/app/main/ui/viewer/share_link.cljs:223
 msgid "common.share-link.get-link"
 msgstr "Conseguir enlace"
 
-#: src/app/main/ui/viewer/share_link.cljs:137
+#: src/app/main/ui/viewer/share_link.cljs:140
 msgid "common.share-link.link-copied-success"
 msgstr "Enlace copiado exitosamente"
 
-#: src/app/main/ui/viewer/share_link.cljs:231
+#: src/app/main/ui/viewer/share_link.cljs:236
 msgid "common.share-link.manage-ops"
 msgstr "Administrar permisos"
 
-#: src/app/main/ui/viewer/share_link.cljs:277
+#: src/app/main/ui/viewer/share_link.cljs:282
 msgid "common.share-link.page-shared"
 msgid_plural "common.share-link.page-shared"
 msgstr[0] "1 página compartida"
 msgstr[1] "%s paginas compartidas"
 
-#: src/app/main/ui/viewer/share_link.cljs:298
+#: src/app/main/ui/viewer/share_link.cljs:303
 msgid "common.share-link.permissions-can-comment"
 msgstr "Puedes comentar"
 
-#: src/app/main/ui/viewer/share_link.cljs:308
+#: src/app/main/ui/viewer/share_link.cljs:313
 msgid "common.share-link.permissions-can-inspect"
 msgstr "Puedes inspeccionar el código"
 
-#: src/app/main/ui/viewer/share_link.cljs:193
+#: src/app/main/ui/viewer/share_link.cljs:197
 msgid "common.share-link.permissions-hint"
 msgstr "Cualquier persona con enlace tendrá acceso"
 
-#: src/app/main/ui/viewer/share_link.cljs:241
+#: src/app/main/ui/viewer/share_link.cljs:246
 msgid "common.share-link.permissions-pages"
 msgstr "Páginas compartidas"
 
-#: src/app/main/ui/viewer/share_link.cljs:183
+#: src/app/main/ui/viewer/share_link.cljs:187
 msgid "common.share-link.placeholder"
 msgstr "El enlace para compartir aparecerá aquí"
 
-#: src/app/main/ui/viewer/share_link.cljs:303, src/app/main/ui/viewer/share_link.cljs:313
+#: src/app/main/ui/viewer/share_link.cljs:308, src/app/main/ui/viewer/share_link.cljs:318
 msgid "common.share-link.team-members"
 msgstr "Solo miembros del equipo"
 
-#: src/app/main/ui/viewer/share_link.cljs:171
+#: src/app/main/ui/viewer/share_link.cljs:174
 msgid "common.share-link.title"
 msgstr "Compartir prototipos"
 
-#: src/app/main/ui/viewer/share_link.cljs:269
+#: src/app/main/ui/viewer/share_link.cljs:274
 msgid "common.share-link.view-all"
 msgstr "Seleccionar todo"
 
-#: src/app/main/ui/workspace/libraries.cljs:432, src/app/main/ui/workspace/libraries.cljs:833
+#: src/app/main/ui/workspace/libraries.cljs:484, src/app/main/ui/workspace/libraries.cljs:855
 msgid "common.unpublish"
 msgstr "Despublicar"
 
-#: src/app/main/ui/dashboard/projects.cljs:90
+#: src/app/main/ui/dashboard/projects.cljs:98
 msgid "dasboard.team-hero.management"
 msgstr "Gestión de equipos"
 
-#: src/app/main/ui/dashboard/projects.cljs:89
+#: src/app/main/ui/dashboard/projects.cljs:97
 msgid "dasboard.team-hero.text"
 msgstr ""
 "Penpot está destinado a equipos. Invite a miembros a trabajar juntos en "
 "proyectos y archivos"
 
-#: src/app/main/ui/dashboard/projects.cljs:87
+#: src/app/main/ui/dashboard/projects.cljs:95
 msgid "dasboard.team-hero.title"
 msgstr "¡En equipo!"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:324, src/app/main/ui/workspace/main_menu.cljs:700
+#: src/app/main/ui/dashboard/file_menu.cljs:324, src/app/main/ui/workspace/main_menu.cljs:701
 msgid "dashboard.add-shared"
 msgstr "Agregar como biblioteca compartida"
 
-#: src/app/main/ui/settings/profile.cljs:75
+#: src/app/main/ui/settings/profile.cljs:79
 msgid "dashboard.change-email"
 msgstr "Cambiar el correo electrónico"
 
-#: src/app/main/data/dashboard.cljs:300, src/app/main/data/dashboard.cljs:535, src/app/main/data/workspace/pages.cljs:201
+#: src/app/main/data/dashboard.cljs:317, src/app/main/data/dashboard.cljs:553, src/app/main/data/workspace/pages.cljs:206
 msgid "dashboard.copy-suffix"
 msgstr "(copiar)"
 
-#: src/app/main/ui/dashboard/organization_team_switch.cljs:295
+#: src/app/main/ui/dashboard/organization_team_switch.cljs:393
 msgid "dashboard.create-new-team"
 msgstr "Crear nuevo equipo"
 
@@ -237,11 +237,11 @@ msgstr "Crear nuevo equipo"
 msgid "dashboard.default-team-name"
 msgstr "Tu Penpot"
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:227, src/app/main/ui/dashboard/team_form.cljs:153
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:227, src/app/main/ui/dashboard/team_form.cljs:157
 msgid "dashboard.delete-team"
 msgstr "Eliminar equipo"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:329, src/app/main/ui/workspace/main_menu.cljs:737
+#: src/app/main/ui/dashboard/file_menu.cljs:329, src/app/main/ui/workspace/main_menu.cljs:738
 msgid "dashboard.download-binary-file"
 msgstr "Descargar el archivo Penpot (.penpot)"
 
@@ -257,73 +257,61 @@ msgstr "Duplicar %s archivos"
 msgid "dashboard.export-binary-multi"
 msgstr "Descargar %s archivos Penpot (.penpot)"
 
-#: src/app/main/ui/workspace/main_menu.cljs:745
+#: src/app/main/ui/workspace/main_menu.cljs:746
 msgid "dashboard.export-frames"
 msgstr "Exportar tableros como PDF"
 
-#: src/app/main/ui/exports/assets.cljs:202
+#: src/app/main/ui/exports/assets.cljs:194
 msgid "dashboard.export-frames.title"
 msgstr "Exportar como PDF"
 
-#: src/app/main/ui/exports/assets.cljs:108
+#: src/app/main/ui/exports/assets.cljs:103
 msgid "dashboard.export-multiple.selected"
 msgstr "%s de %s elementos seleccionados"
 
-#: src/app/main/ui/workspace/main_menu.cljs:728
+#: src/app/main/ui/workspace/main_menu.cljs:729
 msgid "dashboard.export-shapes"
 msgstr "Exportar"
 
-#: src/app/main/ui/exports/assets.cljs:179
+#: src/app/main/ui/exports/assets.cljs:171
 msgid "dashboard.export-shapes.how-to"
 msgstr ""
 "Puede agregar configuraciones de exportación a elementos desde las "
 "propiedades de diseño (en la parte inferior de la barra lateral derecha)."
 
-#: src/app/main/ui/exports/assets.cljs:183
+#: src/app/main/ui/exports/assets.cljs:175
 msgid "dashboard.export-shapes.how-to-link"
 msgstr "Información sobre cómo configurar las exportaciones en Penpot."
 
-#: src/app/main/ui/exports/assets.cljs:178
+#: src/app/main/ui/exports/assets.cljs:170
 msgid "dashboard.export-shapes.no-elements"
 msgstr "No hay elementos con configuración de exportación."
 
-#: src/app/main/ui/exports/assets.cljs:189
+#: src/app/main/ui/exports/assets.cljs:181
 msgid "dashboard.export-shapes.title"
 msgstr "Selección de exportación"
 
-#: src/app/main/ui/dashboard/import.cljs:137
-msgid "dashboard.import.progress.process-typographies"
-msgstr "Procesamiento de tipografías"
-
-#: src/app/main/ui/dashboard/import.cljs:125
-msgid "dashboard.import.progress.upload-data"
-msgstr "Subiendo datos al servidor (%s/%s)"
-
-#: src/app/main/ui/dashboard/import.cljs:128
-msgid "dashboard.import.progress.upload-media"
-msgstr "Subiendo archivo: %s"
-
-#: src/app/main/ui/dashboard/team.cljs:149, src/app/main/ui/dashboard/team.cljs:860
+#: src/app/main/ui/dashboard/team.cljs:133, src/app/main/ui/dashboard/team.cljs:855
 msgid "dashboard.invite-profile"
 msgstr "Invitar a la gente"
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:210, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:216, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:221, src/app/main/ui/dashboard/team.cljs:464
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:210, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:216, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:221, src/app/main/ui/dashboard/team.cljs:455
 msgid "dashboard.leave-team"
 msgstr "dejar el equipo"
 
-#: src/app/main/ui/dashboard/templates.cljs:83, src/app/main/ui/dashboard/templates.cljs:166
+#: src/app/main/ui/dashboard/templates.cljs:78, src/app/main/ui/dashboard/templates.cljs:160
 msgid "dashboard.libraries-and-templates"
 msgstr "Bibliotecas y plantillas"
 
-#: src/app/main/ui/dashboard/templates.cljs:167
+#: src/app/main/ui/dashboard/templates.cljs:161
 msgid "dashboard.libraries-and-templates.explore"
 msgstr "Explore más de ellos y sepa cómo contribuir"
 
-#: src/app/main/ui/dashboard/import.cljs:816, src/app/main/ui/workspace/libraries.cljs:229
+#: src/app/main/ui/dashboard/import.cljs:937, src/app/main/ui/workspace/libraries.cljs:281
 msgid "dashboard.libraries-and-templates.import-error"
 msgstr "Hubo un problema al importar la plantilla. La plantilla no fue importada."
 
-#: src/app/main/ui/dashboard/libraries.cljs:71
+#: src/app/main/ui/dashboard/libraries.cljs:76
 msgid "dashboard.libraries-title"
 msgstr "Bibliotecas"
 
@@ -331,7 +319,7 @@ msgstr "Bibliotecas"
 msgid "dashboard.loading-files"
 msgstr "cargando tus archivos…"
 
-#: src/app/main/ui/dashboard/fonts.cljs:489
+#: src/app/main/ui/dashboard/fonts.cljs:520
 msgid "dashboard.loading-fonts"
 msgstr "cargando tus fuentes…"
 
@@ -347,35 +335,35 @@ msgstr "Mover %s archivos a"
 msgid "dashboard.move-to-other-team"
 msgstr "Pasar a otro equipo"
 
-#: src/app/main/ui/dashboard/files.cljs:117, src/app/main/ui/dashboard/projects.cljs:259
+#: src/app/main/ui/dashboard/files.cljs:127, src/app/main/ui/dashboard/projects.cljs:268
 msgid "dashboard.new-file"
 msgstr "+ Nuevo archivo"
 
-#: src/app/main/data/dashboard.cljs:506, src/app/main/data/dashboard.cljs:618
+#: src/app/main/data/dashboard.cljs:524, src/app/main/data/dashboard.cljs:636
 msgid "dashboard.new-file-prefix"
 msgstr "Archivo nuevo"
 
-#: src/app/main/ui/dashboard/projects.cljs:59
+#: src/app/main/ui/dashboard/projects.cljs:67
 msgid "dashboard.new-project"
 msgstr "+ Nuevo proyecto"
 
-#: src/app/main/data/dashboard.cljs:259, src/app/main/data/dashboard.cljs:621
+#: src/app/main/data/dashboard.cljs:269, src/app/main/data/dashboard.cljs:639
 msgid "dashboard.new-project-prefix"
 msgstr "Nuevo proyecto"
 
-#: src/app/main/ui/dashboard/search.cljs:76
+#: src/app/main/ui/dashboard/search.cljs:90
 msgid "dashboard.no-matches-for"
 msgstr "No se encontraron coincidencias para \"%s\""
 
-#: src/app/main/ui/dashboard/sidebar.cljs:400
+#: src/app/main/ui/dashboard/sidebar.cljs:393
 msgid "dashboard.no-projects-placeholder"
 msgstr "Los proyectos fijados aparecerán aquí"
 
-#: src/app/main/ui/auth/verify_token.cljs:38
+#: src/app/main/ui/auth/verify_token.cljs:36
 msgid "dashboard.notifications.email-changed-successfully"
 msgstr "Su dirección de correo electrónico se ha actualizado correctamente"
 
-#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:302, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:234, ../common/src/app/common/files/tokens.cljc:217, ../common/src/app/common/files/tokens.cljc:298, ../common/src/app/common/files/tokens.cljc:339, ../common/src/app/common/schema.cljc:1063
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:370, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:305, ../common/src/app/common/files/tokens.cljc:217, ../common/src/app/common/files/tokens.cljc:298, ../common/src/app/common/files/tokens.cljc:339, ../common/src/app/common/schema.cljc:1063
 msgid "errors.field-max-length"
 msgstr "El nombre debe contener como máximo %s caracteres."
 

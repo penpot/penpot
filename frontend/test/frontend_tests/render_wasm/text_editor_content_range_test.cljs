@@ -54,3 +54,19 @@
              (text-editor/content-range (content (paragraph {} (span "a😀b" bold)))
                                         {:start-para 0 :start-offset 1
                                          :end-para 0 :end-offset 4})))))
+
+(t/deftest span-ranges
+  (let [slice (text-editor/content-range source {:start-para 0 :start-offset 3
+                                                 :end-para 1 :end-offset 5})]
+    (t/testing "the first paragraph's spans start at the slice start; later ones at 0"
+      (t/is (= [[{:start-para 0 :start-offset 3 :end-para 0 :end-offset 6}
+                 {:start-para 0 :start-offset 6 :end-para 0 :end-offset 10}
+                 {:start-para 0 :start-offset 10 :end-para 0 :end-offset 14}]
+                [{:start-para 1 :start-offset 0 :end-para 1 :end-offset 3}
+                 {:start-para 1 :start-offset 3 :end-para 1 :end-offset 5}]]
+               (text-editor/span-ranges slice {:para 0 :offset 3})))))
+
+  (t/testing "offsets count UTF-16 units like WASM's"
+    (t/is (= [[{:start-para 2 :start-offset 1 :end-para 2 :end-offset 4}]]
+             (text-editor/span-ranges (content (paragraph {} (span "😀b" bold)))
+                                      {:para 2 :offset 1})))))

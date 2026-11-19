@@ -16,8 +16,10 @@
    [app.main.data.workspace.texts :as dwt]
    [app.main.data.workspace.texts-events :as dwte]
    [app.main.ui.workspace.shapes.text.viewport-texts-html :as vth]
+   [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
-   [frontend-tests.helpers.state :as ths]))
+   [frontend-tests.helpers.state :as ths]
+   [potok.v2.core :as ptk]))
 
 ;; ---------------------------------------------------------------------------
 ;; Helpers
@@ -296,6 +298,20 @@
 ;; With the fix (mth/precision + str), it is normalised to "1.2" before the
 ;; schema check runs.
 ;; ---------------------------------------------------------------------------
+
+;; Scenario: the text editor saves its content after its shape is gone (a
+;; rollback removed it while it was being edited). Proves: nothing is
+;; committed for a shape that no longer exists.
+(t/deftest updating-the-content-of-a-removed-text-commits-nothing
+  (let [state  (-> @(ths/setup-store (cthf/sample-file :file1))
+                   (assoc :features #{}))
+        event  (dwt/v2-update-text-shape-content (uuid/next) (txt/change-text nil "hello")
+                                                 :finalize? true)
+        events (atom [])]
+    (rx/subs! #(swap! events conj %) (ptk/watch event state (rx/subject)))
+    (t/is (not-any? #(and (ptk/event? %)
+                          (= :app.main.data.workspace.shapes/update-shapes (ptk/type %)))
+                    @events))))
 
 (t/deftest add-typography-normalises-float-line-height
   (t/async
@@ -581,3 +597,131 @@
   (t/testing "a non-root content (e.g. paragraph) is left alone"
     (let [node {:type "paragraph" :children []}]
       (t/is (= node (dwt/ensure-valid-text-content node))))))
+
+;; ---------------------------------------------------------------------------
+;; Tests: merge-live-text-dimensions (Design tab / edition outline)
+;; ---------------------------------------------------------------------------
+
+(t/deftest merge-live-text-dimensions-auto-width-uses-live-axes
+  (t/testing "auto-width takes live width and height"
+    (let [selrect {:width 0.01 :height 0.01}
+          live    {:width 70 :height 17}
+          result  (dwt/merge-live-text-dimensions :auto-width selrect live)]
+      (t/is (= 70 (:width result)))
+      (t/is (= 17 (:height result))))))
+
+(t/deftest merge-live-text-dimensions-auto-height-keeps-width
+  (t/testing "auto-height keeps selrect width and takes live height"
+    (let [selrect {:width 300 :height 40}
+          live    {:width 120 :height 80}
+          result  (dwt/merge-live-text-dimensions :auto-height selrect live)]
+      (t/is (= 300 (:width result)))
+      (t/is (= 80 (:height result))))))
+
+(t/deftest merge-live-text-dimensions-fixed-keeps-selrect
+  (t/testing "fixed keeps both selrect axes"
+    (let [selrect {:width 300 :height 60}
+          live    {:width 90 :height 20}
+          result  (dwt/merge-live-text-dimensions :fixed selrect live)]
+      (t/is (= 300 (:width result)))
+      (t/is (= 60 (:height result))))))
+
+(t/deftest merge-live-text-dimensions-nil-live-falls-back
+  (t/testing "nil live map falls back to selrect"
+    (let [selrect {:width 50 :height 25}
+          result  (dwt/merge-live-text-dimensions :auto-width selrect nil)]
+      (t/is (= 50 (:width result)))
+      (t/is (= 25 (:height result)))))
+  (t/testing "nil live axes fall back per axis"
+    (let [selrect {:width 50 :height 25}
+          result  (dwt/merge-live-text-dimensions :auto-width selrect {:width nil :height nil})]
+      (t/is (= 50 (:width result)))
+      (t/is (= 25 (:height result)))))
+  (t/testing "non-positive live axes do not wipe selrect"
+    (let [selrect {:width 50 :height 25}
+          result  (dwt/merge-live-text-dimensions :auto-width selrect {:width 0 :height 0})]
+      (t/is (= 50 (:width result)))
+      (t/is (= 25 (:height result))))))
+
+;; ---------------------------------------------------------------------------
+;; copied-shapes->payload
+;; ---------------------------------------------------------------------------
+
+(defn- copied-text
+  [id y & spans]
+  {:id id
+   :type :text
+   :x 0
+   :y y
+   :content {:type "root"
+             :children [{:type "paragraph-set"
+                         :children [{:type "paragraph"
+                                     :children (mapv #(hash-map :text %) spans)}]}]}})
+
+(t/deftest copied-shapes-payload-joins-text-geometry
+  (let [top-id    (uuid/next)
+        bottom-id (uuid/next)
+        origin    {:x 4 :y 2 :box {:width 100 :height 20}}
+        data      {:file-id   (uuid/next)
+                   :selected  #{bottom-id top-id}
+                   :objects   {top-id    (copied-text top-id 0 "a" "b")
+                               bottom-id (copied-text bottom-id 50 "c")}}]
+    (t/testing "the origins follow the joined paragraphs, nil for texts without geometry"
+      (t/is (= {:origins [[nil nil] [origin]]}
+               (:geometry (#'dwt/copied-shapes->payload
+                           (assoc data :text-geometry {bottom-id {:origins [[origin]]}}))))))
+    (t/testing "a copy without geometry gives a payload without it"
+      (t/is (not (contains? (#'dwt/copied-shapes->payload data) :geometry))))))
+
+;; ---------------------------------------------------------------------------
+;; Tests: values read from a disposed v2 editor
+;; ---------------------------------------------------------------------------
+
+(defn- disposed-v2-editor
+  "A v2 editor after `dispose!`: reading its style throws."
+  []
+  (let [editor #js {}]
+    (js/Object.defineProperty editor "currentStyle"
+                              #js {:get (fn [] (throw (js/TypeError. "Cannot read properties of null (reading 'currentStyle')")))})
+    editor))
+
+;; Scenario: the sidebar renders once more with the editor it saw last,
+;; after closing the text editor disposed it. Proves: the values come from
+;; the shape instead of crashing the workspace.
+(t/deftest current-values-of-a-disposed-v2-editor-come-from-the-shape
+  (let [shape  (make-text-shape)
+        editor (disposed-v2-editor)]
+    (t/is (= (dwt/current-text-values {:shape shape :attrs txt/text-node-attrs})
+             (dwt/current-text-values {:editor-instance editor
+                                       :shape shape
+                                       :attrs txt/text-node-attrs})))
+    (t/is (= (dwt/current-paragraph-values {:shape shape :attrs txt/paragraph-attrs})
+             (dwt/current-paragraph-values {:editor-instance editor
+                                            :shape shape
+                                            :attrs txt/paragraph-attrs})))))
+
+;; ---------------------------------------------------------------------------
+;; same-styled-text?
+;; ---------------------------------------------------------------------------
+
+(defn- text-content
+  "Text content of one paragraph holding `runs`, each a map with `:text`
+  and its styles."
+  [& runs]
+  {:type "root"
+   :children [{:type "paragraph-set"
+               :children [{:type "paragraph"
+                           :key (str (uuid/next))
+                           :children (mapv #(assoc % :key (str (uuid/next))) runs)}]}]})
+
+(t/deftest same-styled-text-ignores-node-keys-and-nil-styles
+  (t/is (dwt/same-styled-text? (text-content {:text "Hello" :font-weight "400"})
+                               (text-content {:text "Hello" :font-weight "400" :font-style nil}))))
+
+(t/deftest same-styled-text-sees-a-style-change-on-the-same-text
+  (t/is (not (dwt/same-styled-text? (text-content {:text "Hello" :font-weight "400"})
+                                    (text-content {:text "Hello" :font-weight "700"})))))
+
+(t/deftest same-styled-text-sees-a-text-change
+  (t/is (not (dwt/same-styled-text? (text-content {:text "Hello" :font-weight "400"})
+                                    (text-content {:text "Hello!" :font-weight "400"})))))

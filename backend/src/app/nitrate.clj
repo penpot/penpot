@@ -265,7 +265,7 @@
   (request-to-nitrate cfg :get
                       (generate-nitrate-uri
                        "api/organizations/"
-                       organization-id
+                       (str organization-id "/")
                        "members/"
                        profile-id)
                       schema:profile-organization params))
@@ -285,7 +285,7 @@
   (request-to-nitrate cfg :get
                       (generate-nitrate-uri
                        "api/organizations/"
-                       organization-id
+                       (str organization-id "/")
                        "summary")
                       schema:organization-summary params))
 
@@ -294,7 +294,7 @@
   (request-to-nitrate cfg :get
                       (generate-nitrate-uri
                        "api/users/"
-                       profile-id
+                       (str profile-id "/")
                        "owned-organizations")
                       [:vector schema:organization-summary]
                       params))
@@ -314,7 +314,7 @@
   (let [organizations (request-to-nitrate cfg :get
                                           (generate-nitrate-uri
                                            "api/users/"
-                                           profile-id
+                                           (str profile-id "/")
                                            "owned-organizations-summary")
                                           [:vector schema:organization-summary-counts]
                                           params)]
@@ -329,7 +329,7 @@
   (request-to-nitrate cfg :post
                       (generate-nitrate-uri
                        "api/users/"
-                       profile-id
+                       (str profile-id "/")
                        "cleanup-after-deletion")
                       nil params))
 
@@ -340,7 +340,7 @@
         team (request-to-nitrate cfg :post
                                  (generate-nitrate-uri
                                   "api/organizations/"
-                                  organization-id
+                                  (str organization-id "/")
                                   "add-team")
                                  cto/schema:team-with-organization params)
         custom-photo (when-let [logo-id (dm/get-in team [:organization :logo-id])]
@@ -357,7 +357,7 @@
     (request-to-nitrate cfg :post
                         (generate-nitrate-uri
                          "api/organizations/"
-                         organization-id
+                         (str organization-id "/")
                          "add-user")
                         schema:profile-organization params)))
 
@@ -372,7 +372,7 @@
     (request-to-nitrate cfg :post
                         (generate-nitrate-uri
                          "api/organizations/"
-                         organization-id
+                         (str organization-id "/")
                          "remove-user")
                         nil params)))
 
@@ -382,7 +382,7 @@
     (request-to-nitrate cfg :post
                         (generate-nitrate-uri
                          "api/organizations/"
-                         organization-id
+                         (str organization-id "/")
                          "remove-team")
                         nil params)))
 
@@ -397,6 +397,20 @@
   (request-to-nitrate cfg :get
                       (generate-nitrate-uri "api/subscriptions/" profile-id)
                       schema:subscription params))
+
+(def ^:private schema:profile-subscription
+  [:map {:title "ProfileSubscription"}
+   [:profile-id ::sm/uuid]
+   [:type ::sm/text]
+   [:status ::sm/text]])
+
+(defn- get-subscriptions-api
+  [cfg {:keys [profile-ids] :as params}]
+  (let [params (assoc params :request-params {:profile-ids profile-ids})]
+    (request-to-nitrate cfg :post
+                        (generate-nitrate-uri "api/subscriptions/bulk")
+                        [:vector schema:profile-subscription]
+                        params)))
 
 (def ^:private schema:subscription-warning
   [:maybe
@@ -439,12 +453,13 @@
   (request-to-nitrate cfg :get
                       (generate-nitrate-uri
                        "api/organizations/"
-                       organization-id
+                       (str organization-id "/")
                        "permissions")
                       [:map
                        [:organization-id ::sm/uuid]
                        [:owner-id ::sm/uuid]
-                       [:permissions [:map-of :keyword :string]]]
+                       [:permissions [:map-of :keyword :string]]
+                       [:restrictions-met {:optional true} [:maybe [:map-of :keyword :boolean]]]]
                       params))
 
 (defn- get-organization-sso-api
@@ -453,7 +468,7 @@
   (request-to-nitrate cfg :get
                       (generate-nitrate-uri
                        "api/organizations/"
-                       organization-id
+                       (str organization-id "/")
                        "sso")
                       schema:nitrate-sso
                       params))
@@ -461,7 +476,7 @@
 (defn- get-organization-sso-by-team-api
   [cfg {:keys [team-id] :as params}]
   (request-to-nitrate cfg :get
-                      (generate-nitrate-uri "api/teams/" team-id "sso")
+                      (generate-nitrate-uri "api/teams/" (str team-id "/") "sso")
                       schema:nitrate-sso
                       params))
 
@@ -470,7 +485,7 @@
   (request-to-nitrate cfg :get
                       (generate-nitrate-uri
                        "api/organizations/"
-                       organization-id
+                       (str organization-id "/")
                        "members-list")
                       [:vector ::sm/uuid]
                       params))
@@ -483,8 +498,8 @@
                       (assoc params :throw-on-error? true)))
 
 (def ^:private audit-event-keys
-  [:id :name :type :profile-id :props :context
-   :created-at :tracked-at :source :ip-addr])
+  [:id :name :type :profile-id :profile-email :profile-name
+   :props :context :created-at :tracked-at :source :ip-addr])
 
 (defn- ->audit-event
   [event]
@@ -532,6 +547,7 @@
      :delete-team                         (partial delete-team-api cfg)
      :remove-team-from-organization       (partial remove-team-from-organization-api cfg)
      :get-subscription                    (partial get-subscription-api cfg)
+     :get-subscriptions                   (partial get-subscriptions-api cfg)
      :get-subscription-warning            (partial get-subscription-warning-api cfg)
      :connectivity                        (partial get-connectivity-api cfg)
      :get-identity                        (partial get-identity-api cfg)
@@ -652,6 +668,35 @@
                    :cause cause)
           team)))))
 
+(defn add-organization-info-to-team-strict
+  "Like `add-organization-info-to-team`, but fails closed for authorization
+  checks: the team is returned unchanged only when Nitrate answers 404 (the
+  team belongs to no organization). Any other failure, including a 4xx or an
+  invalid response body, raises instead of looking like a team without an
+  organization."
+  [cfg team params]
+  (let [params (assoc (or params {})
+                      :team-id (:id team)
+                      :throw-on-error? true)
+        team-with-organization
+        (try
+          (call cfg :get-team-organization params)
+          (catch Throwable cause
+            (let [{:keys [type status]} (ex-data cause)]
+              (if (and (= :nitrate-http-error type) (= 404 status))
+                ::no-organization
+                (throw cause)))))]
+    (cond
+      (= ::no-organization team-with-organization)
+      team
+
+      (nil? team-with-organization)
+      (ex/raise :type :nitrate-unavailable
+                :hint "nitrate did not return a valid team organization response")
+
+      :else
+      (apply-organization-info-to-team team team-with-organization))))
+
 (defn add-organization-info-to-teams
   "Enriches teams with organization information using one batched Nitrate request.
   Teams absent from the Nitrate response are returned unchanged.
@@ -668,6 +713,47 @@
                 (apply-organization-info-to-team team team-with-organization)
                 team))
             teams))))
+
+(def ^:private valid-licence-statuses
+  "The statuses `app.main.data.nitrate/is-valid-license?` accepts on the
+  frontend."
+  #{"active" "past_due" "trialing"})
+
+(defn- get-valid-licence-statuses
+  "Returns a map of profile id to the status of its valid Nitrate licence.
+  Returns an empty map when Nitrate does not answer: the licences of team
+  owners only decide which plan a team shows."
+  [cfg profile-ids params]
+  (try
+    (let [params        (assoc (or params {}) :profile-ids (vec profile-ids))
+          subscriptions (call cfg :get-subscriptions params)]
+      (into {}
+            (comp (filter #(contains? valid-licence-statuses (:status %)))
+                  (map (juxt :profile-id :status)))
+            subscriptions))
+    (catch Throwable cause
+      (l/wrn :hint "failed to get team owner licences"
+             :cause cause)
+      {})))
+
+(defn add-owner-licence-to-teams
+  "Sets type \"nitrate\" in the `:subscription` of each team outside an
+  organization whose owner has a valid Nitrate licence, so every member
+  sees the plan of the owner, not only the owner. The database only knows
+  the Stripe subscription of the owner, which teams keep when Nitrate does
+  not answer. Teams in an organization take their plan from it."
+  [cfg teams params]
+  (let [owner-id  #(when (nil? (:organization %))
+                     (get-in % [:subscription :owner-id]))
+        owner-ids (into #{} (keep owner-id) teams)]
+    (if (empty? owner-ids)
+      teams
+      (let [statuses (get-valid-licence-statuses cfg owner-ids params)]
+        (mapv (fn [team]
+                (if-let [status (get statuses (owner-id team))]
+                  (update team :subscription assoc :type "nitrate" :status status)
+                  team))
+              teams)))))
 
 (defn set-team-organization
   "Associates a team with an organization in Nitrate.
@@ -686,12 +772,19 @@
                           :organization-id (:organization-id params)}))
     team))
 
+(defn- organization-membership
+  "The membership of `profile-id` in `organization-id`, as Nitrate reports it.
+  The profile travels in the path of the Nitrate endpoint, so no acting
+  profile is sent."
+  [cfg profile-id organization-id]
+  (call cfg :get-organization-membership {:profile-id      profile-id
+                                          :organization-id organization-id}))
+
 (defn assert-membership
   "Verifies that the user is a member of the organization.
   Raises an exception if the organization doesn't exist or the user is not a member."
   [cfg profile-id organization-id]
-  (let [membership (call cfg :get-organization-membership {:profile-id profile-id
-                                                           :organization-id organization-id})]
+  (let [membership (organization-membership cfg profile-id organization-id)]
     (when-not (:organization-id membership)
       (ex/raise :type :validation
                 :code :organization-does-not-exist))
@@ -699,3 +792,18 @@
     (when-not (:is-member membership)
       (ex/raise :type :validation
                 :code :user-doesnt-belong-organization))))
+
+(defn organization-access?
+  "True when `profile-id` may act for `organization-id`: it is a member of
+  the organization or its owner.
+
+  The organization id reaches the backend from the client, so the flows that
+  take one have to check it: without this check any authenticated profile
+  could start a flow for an organization it does not belong to."
+  [cfg profile-id organization-id]
+  (let [membership (organization-membership cfg profile-id organization-id)]
+    (if (:is-member membership)
+      true
+      (= (:owner-id (call cfg :get-organization-summary {:organization-id organization-id
+                                                         ::rpc/profile-id profile-id}))
+         profile-id))))

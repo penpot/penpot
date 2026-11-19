@@ -4,86 +4,77 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
-@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/typography.scss" as *;
 
 .text-context-menu {
   position: absolute;
-  left: auto;
-  bottom: var(--height);
-  max-width: deprecated.$s-480;
-  padding: deprecated.$s-4;
-  margin: 0 0 deprecated.$s-4 0;
-  z-index: deprecated.$z-index-4;
-  border-radius: deprecated.$br-10;
-  background-color: var(--context-menu-background-color);
+  inset-inline-start: auto;
+  inset-block-end: var(--height);
+  max-inline-size: $sz-480;
+  padding: var(--sp-xs);
+  margin: 0 0 var(--sp-xs) 0;
+
+  // Context menu level of the legacy scale, inside the palette.
+  z-index: 4;
+  border-radius: px2rem(10);
+  background-color: var(--color-background-tertiary);
 
   .palette-library,
   .file-library {
+    --library-foreground-color: var(--color-foreground-secondary);
+
     position: relative;
     display: flex;
     justify-content: space-between;
-    width: 100%;
-    gap: deprecated.$s-8;
-    padding: deprecated.$s-8;
-    margin-bottom: deprecated.$s-4;
-    border-radius: deprecated.$br-8;
+    inline-size: 100%;
+    gap: var(--sp-s);
+    padding: var(--sp-s);
+    margin-block-end: var(--sp-xs);
+    border-radius: $br-8;
 
     &:last-child {
-      margin-bottom: 0;
+      margin-block-end: 0;
     }
 
     .library-name {
-      @include deprecated.body-small-typography;
+      @include use-typography("body-small");
 
-      color: var(--context-menu-foreground-color);
+      color: var(--library-foreground-color);
       display: grid;
-      grid-template-columns: 1fr deprecated.$s-24;
-      max-width: deprecated.$s-400;
+      grid-template-columns: 1fr $sz-24;
+      max-inline-size: $sz-400;
 
       .lib-name {
-        @include deprecated.text-ellipsis;
-
-        max-width: deprecated.$s-380;
+        display: block;
+        max-inline-size: px2rem(380);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
       .lib-num {
-        margin-left: deprecated.$s-4;
+        margin-inline-start: var(--sp-xs);
       }
     }
 
     .icon-wrapper {
-      margin-left: deprecated.$s-4;
-
-      @include deprecated.flex-center;
-
-      svg {
-        @include deprecated.flex-center;
-        @extend %button-icon-small;
-
-        stroke: var(--icon-foreground);
-      }
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-inline-start: var(--sp-xs);
+      color: var(--library-foreground-color);
     }
 
     &.selected,
     &:hover {
-      .icon-wrapper {
-        @include deprecated.flex-center;
-
-        svg {
-          @include deprecated.flex-center;
-          @extend %button-icon-small;
-
-          stroke: var(--context-menu-foreground-color-selected);
-        }
-      }
-
-      .library-name {
-        color: var(--context-menu-foreground-color-selected);
-      }
+      --library-foreground-color: var(--color-foreground-primary);
     }
 
     &:hover {
-      background-color: var(--context-menu-background-color-selected);
+      background-color: var(--color-background-quaternary);
     }
   }
 }

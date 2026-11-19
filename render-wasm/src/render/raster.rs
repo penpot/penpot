@@ -8,6 +8,16 @@ use macros::ToJs;
 use super::vector;
 use super::RenderResources;
 
+/// Half the default 2 GiB emscripten heap (a 16384² RGBA surface), leaving
+/// room for the encoded copies and the scene. Estimated, not measured.
+const MAX_RASTER_BYTES: i64 = 1 << 30;
+/// PNG stores each side in 31 bits; the memory budget limits it first.
+const MAX_PNG_SIDE: i32 = i32::MAX;
+/// libjpeg-turbo's `JPEG_MAX_DIMENSION`, below the 16-bit JPEG header limit.
+const MAX_JPEG_SIDE: i32 = 65500;
+/// libwebp's `WEBP_MAX_DIMENSION`: WebP stores each side in 14 bits.
+const MAX_WEBP_SIDE: i32 = 16383;
+
 /// Encoded output format for [`render_to_raster`] and `render_shape_pixels`.
 /// `ToJs` publishes the discriminants to `api/shared.js`, so the CLJS side
 /// reads them from here instead of hardcoding the codes.
@@ -65,6 +75,17 @@ impl RasterFormat {
     pub fn clear_color(self) -> skia::Color {
         self.opaque_background().unwrap_or(skia::Color::TRANSPARENT)
     }
+
+    pub fn fits_raster(self, width: i32, height: i32) -> bool {
+        let max_side = match self {
+            Self::Png => MAX_PNG_SIDE,
+            Self::Jpeg => MAX_JPEG_SIDE,
+            Self::Webp => MAX_WEBP_SIDE,
+        };
+        width <= max_side
+            && height <= max_side
+            && width as i64 * height as i64 * 4 <= MAX_RASTER_BYTES
+    }
 }
 
 /// Renders a shape tree to encoded image bytes on a CPU raster surface (no
@@ -79,15 +100,9 @@ pub fn render_to_raster(
     let Some(shape) = tree.get(id) else {
         return Ok((Vec::new(), 0, 0));
     };
-    // Boards export at their own bounds (like the classic exporter, which
-    // screenshots exactly the board box): content overflowing a board lands
-    // outside the page/surface and is cropped. Other shapes keep the extended
-    // rect so their own shadows/blur are included.
-    let bounds = if matches!(shape.shape_type, crate::shapes::Type::Frame(_)) {
-        shape.selrect()
-    } else {
-        shape.extrect(tree, scale)
-    };
+    // Boards crop overflowing children (classic board box) but keep their own
+    // strokes/shadows/blur. Other shapes use full extrect.
+    let bounds = shape.export_root_bounds(tree, scale);
 
     let width = (bounds.width() * scale).ceil() as i32;
     let height = (bounds.height() * scale).ceil() as i32;

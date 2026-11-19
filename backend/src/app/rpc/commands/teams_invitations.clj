@@ -202,7 +202,10 @@
           (when (contains? cf/flags :admin-console)
             (teams/initialize-user-in-organization cfg (:id member) (:id organization) email))
           ;; Insert the invited member to the team
-          (teams/add-profile-to-team! cfg params {::db/on-conflict-do-nothing? true}))
+          (teams/add-profile-to-team! cfg params
+                                      {::db/on-conflict-do-nothing? true}
+                                      {:actor-id (:id profile)
+                                       :rpc-params params}))
 
         ;; If profile is not yet verified, mark it as verified because
         ;; accepting an invitation link serves as verification.
@@ -288,24 +291,24 @@
                      (not recent?))
             (if organization
               (when (contains? cf/flags :admin-console)
-                (eml/send cfg {::eml/reuse-conn true
-                               ::eml/factory eml/invite-to-organization
-                               :public-uri (cf/get :public-uri)
-                               :to email
-                               :invited-by (:fullname profile)
-                               :user-name (:fullname member)
-                               :organization organization
-                               :token itoken
-                               :extra-data ptoken}))
-              (eml/send cfg {::eml/reuse-conn true
-                             ::eml/factory eml/invite-to-team
-                             :public-uri (cf/get :public-uri)
-                             :to email
-                             :invited-by (:fullname profile)
-                             :team (:name team)
-                             :organization (:organization team)
-                             :token itoken
-                             :extra-data ptoken})))
+                (eml/send-template cfg {::eml/reuse-conn true
+                                        ::eml/template "invite-to-organization"
+                                        :public-uri (cf/get :public-uri)
+                                        :to email
+                                        :invited-by (:fullname profile)
+                                        :user-name (:fullname member)
+                                        :organization organization
+                                        :token itoken
+                                        :extra-data ptoken}))
+              (eml/send-template cfg {::eml/reuse-conn true
+                                      ::eml/template "invite-to-team"
+                                      :public-uri (cf/get :public-uri)
+                                      :to email
+                                      :invited-by (:fullname profile)
+                                      :team (:name team)
+                                      :organization (:organization team)
+                                      :token itoken
+                                      :extra-data ptoken})))
 
           itoken)))))
 
@@ -318,7 +321,7 @@
                               :role :editor))))
 
 (defn- add-member-to-team
-  [{:keys [::db/conn] :as cfg} profile team role member]
+  [{:keys [::db/conn] :as cfg} profile team role member event-opts]
   (assert (db/connection-map? cfg)
           "expected cfg with valid connection")
 
@@ -340,7 +343,9 @@
       ::quotes/team-id team-id})
 
     ;; Insert the member to the team
-    (teams/add-profile-to-team! cfg params {::db/on-conflict-do-nothing? true})
+    (teams/add-profile-to-team! cfg params
+                                {::db/on-conflict-do-nothing? true}
+                                event-opts)
 
     ;; Delete any request
     (db/delete! conn :team-access-request
@@ -350,13 +355,13 @@
     (db/delete! conn :team-invitation
                 {:team-id team-id :email-to (:email member)})
 
-    (eml/send cfg {::eml/reuse-conn true
-                   ::eml/factory eml/join-team
-                   :public-uri (cf/get :public-uri)
-                   :to (:email member)
-                   :invited-by (:fullname profile)
-                   :team (:name team)
-                   :team-id (:id team)})))
+    (eml/send-template cfg {::eml/reuse-conn true
+                            ::eml/template "join-team"
+                            :public-uri (cf/get :public-uri)
+                            :to (:email member)
+                            :invited-by (:fullname profile)
+                            :team (:name team)
+                            :team-id (:id team)})))
 
 (def ^:private sql:valid-access-request-profiles
   "SELECT p.id, p.email, p.is_blocked
@@ -377,13 +382,12 @@
   "Unified function to handle both create and resend team invitations.
   Accepts either:
   - emails (set) + role (single role for all emails)
-  - invitations (vector of {:email :role} maps)"
+  - invitations (vector of {:email :role} maps)
+
+  `team` must already carry its organization info when nitrate is
+  active (see `nitrate/add-organization-info-to-team-strict`)."
   [{:keys [::db/conn] :as cfg} {:keys [profile team role emails invitations] :as params}]
-  (let [;; Enrich team with organization info once for all invitations when nitrate is active
-        team             (if (contains? cf/flags :admin-console)
-                           (nitrate/add-organization-info-to-team cfg team {})
-                           team)
-        organization              (:organization team)
+  (let [organization              (:organization team)
         organization-id           (:id organization)
         restricted?      (and organization-id (not (cto/allowed? :add-anybody-to-team {:organization-perms organization})))
         all-organization-member-ids
@@ -438,7 +442,9 @@
          (filter #(contains? invitation-emails (key %)))
          (map (fn [[email member]]
                 (let [role (:role (first (filter #(= (:email %) email) invitation-data)))]
-                  (add-member-to-team cfg profile team role member))))
+                  (add-member-to-team cfg profile team role member
+                                      {:actor-id (:id profile)
+                                       :rpc-params params}))))
          (doall))
 
     invitations))
@@ -468,6 +474,31 @@
   "The number of invitations can be sent in a single rpc request"
   25)
 
+(defn- check-send-invitations-policy
+  "Raises `:insufficient-permissions` when the organization of the team does
+  not let the profile send invitations. The policy covers the pending
+  invitations too: changing their role, deleting them and minting their token
+  manage the same access that sending one grants.
+
+  Only applies with the `:admin-console` flag. Then it returns the team with
+  its organization info, so the caller reuses the same Nitrate answer."
+  [cfg profile-id team-id perms]
+  (when (contains? cf/flags :admin-console)
+    (let [team         (db/get-by-id cfg :team team-id)
+          ;; Strict lookup: a failed Nitrate call must not skip the
+          ;; organization policy by looking like a team without one.
+          team         (nitrate/add-organization-info-to-team-strict cfg team {::rpc/profile-id profile-id})
+          organization (:organization team)]
+      (when (and organization
+                 (not (cto/allowed? :send-invitations
+                                    {:organization-perms organization
+                                     :profile-id profile-id
+                                     :team-perms perms})))
+        (ex/raise :type :validation
+                  :code :insufficient-permissions
+                  :hint "Organization policy does not allow you to send invitations"))
+      team)))
+
 (sv/defmethod ::create-team-invitations
   "A rpc call that allows to send single or multiple invitations to join the team.
 
@@ -478,12 +509,12 @@
    ::doc/module :teams
    ::sm/params schema:create-team-invitations}
   [cfg {:keys [::rpc/profile-id team-id role emails] :as params}]
-  (let [perms    (teams/get-permissions cfg profile-id team-id)
+  (let [perms    (teams/check-invitation-permissions cfg profile-id team-id)
         profile  (db/get-by-id cfg :profile profile-id)
-        team     (db/get-by-id cfg :team team-id)
-        team-with-org (when (contains? cf/flags :admin-console)
-                        (nitrate/add-organization-info-to-team cfg team {}))
-        organization (:organization team-with-org)
+        ;; Reuse the organization lookup of the policy check, so every
+        ;; organization rule below sees the same Nitrate answer.
+        team     (or (check-send-invitations-policy cfg profile-id team-id perms)
+                     (db/get-by-id cfg :team team-id))
         ;; Determine which format is being used
         using-emails-format? (and emails role)
         ;; Handle both parameter formats
@@ -494,21 +525,6 @@
         invitation-count (if using-emails-format?
                            (count emails)
                            (count (:invitations params)))]
-
-    (when-not (:is-admin perms)
-      (ex/raise :type :validation
-                :code :insufficient-permissions))
-
-    (when (and (contains? cf/flags :admin-console)
-               organization
-               (not (cto/allowed? :send-invitations
-                                  {:organization-perms {:owner-id    (:owner-id organization)
-                                                        :permissions (:permissions organization)}
-                                   :profile-id profile-id
-                                   :team-perms perms})))
-      (ex/raise :type :validation
-                :code :insufficient-permissions
-                :hint "Organization policy does not allow you to send invitations"))
 
     ;; Don't allow promote to owner to admin users.
     (when (and (not (:is-owner perms))
@@ -533,8 +549,7 @@
     ;; Check if the current profile is allowed to send emails
     (teams/check-profile-muted cfg profile)
 
-    (let [team        (db/get-by-id cfg :team team-id)
-          ;; NOTE: Is important pass RPC method params down to the
+    (let [;; NOTE: Is important pass RPC method params down to the
           ;; `create-team-invitations` because it uses the implicit
           ;; RPC properties from params for fill necessary data on
           ;; emiting an entry to the audit-log
@@ -593,7 +608,7 @@
                 :hint "the maximum of invitation on single request is reached"
                 :threshold max-invitations-by-request-threshold))
 
-    (let [props {:name name :features features}
+    (let [props {:id (:id team) :name name :features features}
           event (-> (audit/event-from-rpc-params params)
                     (assoc :name "create-team")
                     (assoc :props props))]
@@ -609,7 +624,8 @@
                            (map (fn [email] (assoc params :email email)))
                            (map (partial create-invitation cfg)))]
 
-      (vary-meta team assoc ::audit/props {:invitations (count invitations)}))))
+      (vary-meta team assoc ::audit/props {:id (:id team)
+                                           :invitations (count invitations)}))))
 
 ;; --- Query: get-team-invitation-token
 
@@ -623,26 +639,46 @@
    ::doc/module :teams
    ::sm/params schema:get-team-invitation-token}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id email] :as params}]
-  (teams/check-edition-permissions! cfg profile-id team-id)
-  (let [email (profile/clean-email email)
+  ;; The token is a bearer credential that accepts the invitation with the
+  ;; role of the invitation row, so it takes the same permissions as the
+  ;; rest of the invitation commands.
+  (let [perms (teams/check-invitation-permissions cfg profile-id team-id)
+        email (profile/clean-email email)
         invit (-> (db/get pool :team-invitation
                           {:team-id team-id
                            :email-to email})
-                  (update :role keyword))
+                  (update :role keyword))]
 
-        member (profile/get-profile-by-email pool (:email-to invit))
-        token  (create-invitation-token cfg {:team-id (:team-id invit)
-                                             ;; The inviter is the creator of
-                                             ;; the invitation row, not the
-                                             ;; profile requesting the token.
-                                             :profile-id (or (:created-by invit)
-                                                             profile-id)
-                                             :valid-until (:valid-until invit)
-                                             :role (:role invit)
-                                             :member-id (:id member)
-                                             :member-email (or (:email member)
-                                                               (profile/clean-email (:email-to invit)))})]
-    {:token token}))
+    ;; An admin cannot create nor promote an owner invitation, so it
+    ;; cannot mint its token either: only the team owner can.
+    (when (and (= :owner (:role invit))
+               (not (:is-owner perms)))
+      (ex/raise :type :validation
+                :code :cant-promote-to-owner
+                :hint "only the team owner can get an owner invitation token"))
+
+    ;; Handing out the link invites as much as sending the email does.
+    (check-send-invitations-policy cfg profile-id team-id perms)
+
+    (let [member (profile/get-profile-by-email pool (:email-to invit))
+          token  (create-invitation-token cfg {:team-id (:team-id invit)
+                                               ;; The inviter is the creator of
+                                               ;; the invitation row, not the
+                                               ;; profile requesting the token.
+                                               :profile-id (or (:created-by invit)
+                                                               profile-id)
+                                               :valid-until (:valid-until invit)
+                                               :role (:role invit)
+                                               :member-id (:id member)
+                                               :member-email (or (:email member)
+                                                                 (profile/clean-email (:email-to invit)))})]
+      ;; The event is named as an action and carries the granted role, so
+      ;; the minting of the token is traceable in the audit log.
+      (rph/with-meta
+        {:token token}
+        {::audit/name "create-team-invitation-token"
+         ::audit/props {:role (:role invit)
+                        :invitation-id (:id invit)}}))))
 
 ;; --- Mutation: Update invitation role
 
@@ -655,21 +691,20 @@
 (sv/defmethod ::update-team-invitation-role
   {::doc/added "1.17"
    ::doc/module :teams
-   ::sm/params schema:update-team-invitation-role
-   ::db/transaction true}
-  [{:keys [::db/conn]} {:keys [::rpc/profile-id team-id email role] :as params}]
-  (let [perms (teams/get-permissions conn profile-id team-id)]
-
-    (when-not (:is-admin perms)
-      (ex/raise :type :validation
-                :code :insufficient-permissions))
+   ::sm/params schema:update-team-invitation-role}
+  [cfg {:keys [::rpc/profile-id team-id email role] :as params}]
+  (let [perms (teams/check-invitation-permissions cfg profile-id team-id)]
 
     ;; Don't allow promote to owner to admin users.
     (when (and (not (:is-owner perms)) (= role :owner))
       (ex/raise :type :validation
                 :code :cant-promote-to-owner))
 
-    (db/update! conn :team-invitation
+    ;; Checked outside a transaction: it may call Nitrate over HTTP, and the
+    ;; update below is a single statement.
+    (check-send-invitations-policy cfg profile-id team-id perms)
+
+    (db/update! cfg :team-invitation
                 {:role (name role) :updated-at (ct/now)}
                 {:team-id team-id :email-to (profile/clean-email email)})
 
@@ -684,16 +719,15 @@
 
 (sv/defmethod ::delete-team-invitation
   {::doc/added "1.17"
-   ::sm/params schema:delete-team-invition
-   ::db/transaction true}
-  [{:keys [::db/conn]} {:keys [::rpc/profile-id team-id email] :as params}]
-  (let [perms (teams/get-permissions conn profile-id team-id)]
+   ::sm/params schema:delete-team-invition}
+  [cfg {:keys [::rpc/profile-id team-id email] :as params}]
+  (let [perms (teams/check-invitation-permissions cfg profile-id team-id)]
 
-    (when-not (:is-admin perms)
-      (ex/raise :type :validation
-                :code :insufficient-permissions))
+    ;; Checked outside a transaction: it may call Nitrate over HTTP, and the
+    ;; delete below is a single statement.
+    (check-send-invitations-policy cfg profile-id team-id perms)
 
-    (let [invitation (db/delete! conn :team-invitation
+    (let [invitation (db/delete! cfg :team-invitation
                                  {:team-id team-id
                                   :email-to (profile/clean-email email)}
                                  {::db/return-keys true})]
@@ -755,6 +789,9 @@
     (-> file
         (dissoc :data)
         (dissoc :deleted-at)
+        ;; The storage pointer is internal bookkeeping: it never leaves the
+        ;; backend in a response.
+        (bfc/file->response)
         (assoc :page-id (-> file :data :pages first)))))
 
 (def ^:private schema:create-team-access-request
@@ -801,30 +838,30 @@
     (teams/check-email-spam conn (:email team-owner) true)
 
     (let [request (upsert-team-access-request cfg team-id profile-id)
-          factory (cond
-                    (and (some? file) (:is-default team) is-viewer)
-                    eml/request-file-access-yourpenpot-view
+          template (cond
+                     (and (some? file) (:is-default team) is-viewer)
+                     "request-file-access-yourpenpot-view"
 
-                    (and (some? file) (:is-default team))
-                    eml/request-file-access-yourpenpot
+                     (and (some? file) (:is-default team))
+                     "request-file-access-yourpenpot"
 
-                    (some? file)
-                    eml/request-file-access
+                     (some? file)
+                     "request-file-access"
 
-                    :else
-                    eml/request-team-access)]
+                     :else
+                     "request-team-access")]
 
-      (eml/send cfg {::eml/reuse-conn true
-                     ::eml/factory factory
-                     :public-uri (cf/get :public-uri)
-                     :to (:email team-owner)
-                     :requested-by (:fullname requester)
-                     :requested-by-email (:email requester)
-                     :team-name (:name team)
-                     :team-id team-id
-                     :file-name (:name file)
-                     :file-id file-id
-                     :page-id (:page-id file)})
+      (eml/send-template cfg {::eml/reuse-conn true
+                              ::eml/template template
+                              :public-uri (cf/get :public-uri)
+                              :to (:email team-owner)
+                              :requested-by (:fullname requester)
+                              :requested-by-email (:email requester)
+                              :team-name (:name team)
+                              :team-id team-id
+                              :file-name (:name file)
+                              :file-id file-id
+                              :page-id (:page-id file)})
 
       (with-meta {:request request}
         {::audit/props {:request 1}}))))

@@ -1,4 +1,4 @@
-FROM dhi.io/debian-base:trixie-debian13-dev@sha256:61dc022a1908439c478ed4b00e883fe8a7a03540fac23a8aed61352e28e6ae07 AS base
+FROM dhi.io/debian-base:trixie-debian13-dev@sha256:a249f094c5e7dee12dee88ad5ad70274cc621dd311a64353bc8876f7c775eb49 AS base
 
 ENV LANG='C.UTF-8' \
     LC_ALL='C.UTF-8' \
@@ -66,8 +66,8 @@ RUN set -ex; \
 
 FROM base AS setup-node
 
-ENV NODE_VERSION=v24.21.0 \
-    PNPM_VERSION=12.9.1 \
+ENV NODE_VERSION=v24.22.3 \
+    PNPM_VERSION=12.21.0 \
     PATH=/opt/node/bin:$PATH
 
 RUN set -eux; \
@@ -76,16 +76,16 @@ RUN set -eux; \
        aarch64|arm64) \
          OPENSSL_ARCH='linux-aarch64'; \
          BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-arm64.tar.gz"; \
-         NODE_SHA256='724282c3b43aec998aa9527380465b45d229e021b58035f5f4f63095eabfe5d5'; \
+         NODE_SHA256='261af2af250dfd7e9f25cf151d1b2713a0adf8f10a9ad116c4947f68627affe8'; \
          PNPM_ARCH='arm64'; \
-         PNPM_SHA256='468294b77633d29889c6e4a79cefb1277eba30cd62e7d6a754218cb85a1d730d'; \
+         PNPM_SHA256='6c5913a48c93b3a556b71c3bd9bf12c6bf9fbfbbbd2dcbd1d52a85c539751b9e'; \
          ;; \
        amd64|x86_64) \
          OPENSSL_ARCH='linux-x86_64'; \
          BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-x64.tar.gz"; \
-         NODE_SHA256='6e1db87ef58b8819e5d5402eff1536491b18edd8eb7bee5ef7897876e88dc5ff'; \
+         NODE_SHA256='061ec3e3062115705b56b51fa9cc330ab50d34b6969387d4e4b1a50c6809acc2'; \
          PNPM_ARCH='x64'; \
-         PNPM_SHA256='b4f58449ac02d9d24023ac89e17e05e8331f8ddc12ca1f489cf231bc2bb2bce1'; \
+         PNPM_SHA256='84c4773bcf4a217f4083cd7b2a91e4cee6103cf42426c1282ef37d308f55a410'; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; \
@@ -105,37 +105,6 @@ RUN set -eux; \
     chown -R root /opt/node; \
     find /opt/node/include/node/openssl/archs -mindepth 1 -maxdepth 1 ! -name "$OPENSSL_ARCH" -exec rm -rf {} \; ; \
     rm -f /tmp/nodejs.tar.gz /tmp/pnpm.tar.gz;
-
-################################################################################
-## OPENCODE SETUP
-################################################################################
-
-FROM base AS setup-opencode
-
-ENV OPENCODE_VERSION=2.0.24
-
-RUN set -eux; \
-    ARCH="$(dpkg --print-architecture)"; \
-    case "${ARCH}" in \
-       aarch64|arm64) \
-         BINARY_URL="https://registry.npmjs.org/@opencode/cli-linux-arm64/-/cli-linux-arm64-${OPENCODE_VERSION}.tgz"; \
-         ESUM='9d0cd2bfc060fd6c2afdf6db69837f8690d46a8d8327bb864421851ce004f453'; \
-         ;; \
-       amd64|x86_64) \
-         BINARY_URL="https://registry.npmjs.org/@opencode/cli-linux-x64/-/cli-linux-x64-${OPENCODE_VERSION}.tgz"; \
-         ESUM='21b1ee0683841405d69541fc44481f8e5752e95bea72e8b8ec31dbcdb102e7f8'; \
-         ;; \
-       *) \
-         echo "Unsupported arch: ${ARCH}"; exit 1; \
-         ;; \
-    esac; \
-    curl -LfsSo /tmp/opencode.tgz "${BINARY_URL}"; \
-    echo "${ESUM} */tmp/opencode.tgz" | sha256sum -c -; \
-    mkdir -p /tmp/opencode; \
-    tar -xzf /tmp/opencode.tgz -C /tmp/opencode --strip-components=2 package/bin; \
-    chmod +x /tmp/opencode/opencode; \
-    rm -f /tmp/opencode.tgz;
-
 
 ################################################################################
 ## CADDYSERVER SETUP
@@ -181,12 +150,12 @@ RUN set -eux; \
     ARCH="$(dpkg --print-architecture)"; \
     case "${ARCH}" in \
        aarch64|arm64) \
-         ESUM='9fa5bf865783c43840101fcdc3a5222b60daf4fe11f26806247bf807c08aba38'; \
-         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu27.28.101-ca-jdk27.0.0-linux_aarch64.tar.gz'; \
+         ESUM='18875b92ad2535230a13175f718933f7cc0593b4affa2dab442815ec245dacbb'; \
+         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu27.30.201-ca-jdk27.0.1.1-linux_aarch64.tar.gz'; \
          ;; \
        amd64|x86_64) \
-         ESUM='ccbc15c4edbedfdcc03c2d29a2aa2c6daf9e6ffb4cda7dd5ece0fcbb37350267'; \
-         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu27.28.101-ca-jdk27.0.0-linux_x64.tar.gz'; \
+         ESUM='c4d7bf4c80a21e935187ecdcb111e4b2f14e1fdd18364974fe7f7da54b12bea0'; \
+         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu27.30.201-ca-jdk27.0.1.1-linux_x64.tar.gz'; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; \
@@ -218,7 +187,7 @@ ENV PATH=/opt/cargo/bin:$PATH \
     RUSTUP_HOME=/opt/rustup \
     CARGO_HOME=/opt/cargo \
     RUSTUP_VERSION=1.28.2 \
-    RUST_VERSION=1.91.0 \
+    RUST_VERSION=1.99.0 \
     EMSCRIPTEN_VERSION=4.0.6
 
 WORKDIR /opt
@@ -257,17 +226,19 @@ RUN set -eux; \
 
 FROM base AS setup-utils
 
-ENV CLJKONDO_VERSION=2026.08.04 \
-    BABASHKA_VERSION=1.13.225 \
+ENV CLJKONDO_VERSION=2026.10.20 \
+    BABASHKA_VERSION=1.13.226 \
     CLJFMT_VERSION=0.16.6 \
-    PIXI_VERSION=0.81.0 \
-    GITHUB_CLI_VERSION=2.102.0 \
-    AWS_CLI_VERSION=2.37.9 \
-    UV_VERSION=0.12.23 \
+    PIXI_VERSION=0.83.0 \
+    GITHUB_CLI_VERSION=2.103.0 \
+    AWS_CLI_VERSION=2.38.5 \
+    UV_VERSION=0.13.5 \
     UV_TOOL_DIR=/opt/uv/tools \
     UV_TOOL_BIN_DIR=/opt/utils/bin \
     UV_PYTHON_INSTALL_DIR=/opt/uv/python \
-    SERENA_VERSION=1.7.0
+    SERENA_VERSION=2.1.0
+# NOTE: When updating SERENA_VERSION, also update SERENA_UPDATE_VERSION in docker-compose.main.yml.
+#   The latter results in a dynamic update without rebuilding the image, so it must never be lower than SERENA_VERSION here.
 
 RUN set -ex; \
     ARCH="$(dpkg --print-architecture)"; \
@@ -378,11 +349,11 @@ RUN set -ex; \
     case "${ARCH}" in \
        aarch64|arm64) \
          BINARY_ARCH="aarch64"; \
-         BINARY_SHA256="e7d2cca3622af4765871fe9ce7eeed03acd09dca10a99ebc46e92f79d78765c0"; \
+         BINARY_SHA256="07711a936e9d271045ab937d2c2c5390c25f419e4ba9e25adb9e996031e3f6be"; \
          ;; \
        amd64|x86_64) \
          BINARY_ARCH="x86_64"; \
-         BINARY_SHA256="6b3a6a3d7bb3997928f0bdf7b866914224abf242c2e54e1dcebbe84bee64f356"; \
+         BINARY_SHA256="5def7d1b7e55d892f9a381bb2cb2081a685712464be0d36d5d706af0ac48d0d3"; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; \
@@ -460,6 +431,8 @@ RUN set -ex; \
       fontforge \
       \
       xvfb \
+      xauth \
+      libvulkan1 \
       fonts-noto-color-emoji \
       fonts-unifont \
       libfontconfig1 \
@@ -561,7 +534,6 @@ COPY --from=setup-rust /opt/cargo /opt/cargo
 COPY --from=setup-rust /opt/rustup /opt/rustup
 COPY --from=setup-rust /opt/emsdk /opt/emsdk
 COPY --from=setup-caddy /usr/bin/caddy /usr/bin/caddy
-COPY --from=setup-opencode /tmp/opencode/opencode /opt/utils/bin/opencode
 
 COPY files/nginx.conf /etc/nginx/nginx.conf
 COPY files/nginx-mime.types /etc/nginx/mime.types

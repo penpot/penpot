@@ -41,7 +41,7 @@
    [:> search-bar* {:on-change on-search-term-change
                     :on-clear on-search-clear-click
                     :value filter-term
-                    :placeholder (tr "shortcuts.title")
+                    :placeholder (tr "shortcuts.search")
                     :icon-id i/search
                     :auto-focus true}]
    (when (and show-restore-all has-custom-shortcuts)
@@ -50,7 +50,7 @@
        :on-click on-restore-all
        :class (stl/css :restore-all-button)
        :icon i/reload}
-      (tr "dashboard.restore-all-deleted-button")])])
+      (tr "shortcuts.reset-all")])])
 
 (defn- filter-shortcuts-tree
   [tree shortcut-filter search-term]
@@ -119,6 +119,53 @@
      [:workspace {:optional true} (context-schema :workspace)]
      [:dashboard {:optional true} (context-schema :dashboard)]
      [:viewer {:optional true} (context-schema :viewer)]]))
+
+(defn- entry-path
+  [& segments]
+  (str/join "/" (map d/name segments)))
+
+(defn- sanitize-context
+  "Keeps the entries of one imported context that map to a known shortcut key
+   with a valid command; every other entry goes to :skipped."
+  [result ctx entries known-keys]
+  (let [viable (reduce-kv
+                (fn [viable k command]
+                  (if (and (contains? known-keys k)
+                           (ss/valid-command? command)
+                           (not (ss/reserved-command? command)))
+                    (assoc viable k command)
+                    viable))
+                {}
+                entries)
+        skipped (->> (keys entries)
+                     (remove #(contains? viable %))
+                     (map #(entry-path ctx %)))]
+    (cond-> (update result :skipped into skipped)
+      ;; A context left empty by skipped entries is dropped: an empty context
+      ;; clears the user's shortcuts on import, an explicit {} still does.
+      (or (seq viable) (empty? entries))
+      (assoc-in [:shortcuts ctx] viable))))
+
+(defn sanitize-imported-shortcuts
+  "Splits an imported custom-shortcuts payload into the entries Penpot can
+   apply and the ones it must skip: unknown contexts, unknown or
+   non-customizable shortcut keys, commands that are not a key combination
+   (see `app.main.ui.shortcuts/valid-command?`) and reserved combinations
+   (see `app.main.ui.shortcuts/reserved-command?`).
+
+   Returns {:shortcuts <viable payload> :skipped [\"context/key\" ...]}, or
+   nil when the payload is not a map."
+  [data]
+  (when (map? data)
+    (-> (reduce-kv
+         (fn [result ctx entries]
+           (let [known-keys (get known-shortcut-keys ctx)]
+             (if (and (some? known-keys) (map? entries))
+               (sanitize-context result ctx entries known-keys)
+               (update result :skipped conj (entry-path ctx)))))
+         {:shortcuts {} :skipped []}
+         data)
+        (update :skipped (comp vec sort)))))
 
 (defn- flatten-humanize
   "Turns Malli's humanized explain output into a flat list of {:path :message} maps."
@@ -449,17 +496,21 @@
                   (rx/subs!
                    (fn [content]
                      (try
-                       (let [shortcuts (js->clj (.parse js/JSON content)
-                                                :keywordize-keys true)
-                             validation (validate-imported-shortcuts shortcuts)]
-                         (if (:valid? validation)
+                       (let [data                        (js->clj (.parse js/JSON content)
+                                                                  :keywordize-keys true)
+                             {:keys [shortcuts skipped]} (sanitize-imported-shortcuts data)]
+                         ;; Rejects the file only when nothing in it can be applied.
+                         (if (and (some? shortcuts)
+                                  (or (seq shortcuts) (empty? skipped))
+                                  (:valid? (validate-imported-shortcuts shortcuts)))
                            (st/emit! (modal/show {:type :import-shortcuts-diff-modal
                                                   :imported-shortcuts shortcuts
+                                                  :skipped-entries skipped
                                                   :custom-shortcuts custom-shortcuts
                                                   :all-shortcuts-raw all-shortcuts-raw}))
-                           (st/emit! (ntf/error (tr "errors.invalid-data")))))
+                           (st/emit! (ntf/error (tr "import-shortcuts.invalid-file")))))
                        (catch :default _
-                         (st/emit! (ntf/error (tr "errors.invalid-data"))))))))
+                         (st/emit! (ntf/error (tr "import-shortcuts.invalid-file"))))))))
 
              (-> (mf/ref-val input-ref)
                  (dom/set-value! "")))))]

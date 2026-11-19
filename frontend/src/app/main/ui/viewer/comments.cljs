@@ -20,7 +20,7 @@
    [app.main.store :as st]
    [app.main.ui.comments :as cmt]
    [app.main.ui.components.dropdown :refer [dropdown]]
-   [app.main.ui.icons :as deprecated-icon]
+   [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
    [app.main.ui.workspace.comments :as wc]
    [app.main.ui.workspace.viewport.utils :as utils]
    [app.util.dom :as dom]
@@ -66,11 +66,17 @@
                           (parse-boolean))]
              (st/emit! (dcm/update-options {:show-sidebar? (not mode)})))))]
 
-    [:div {:class (stl/css :view-options)
-           :data-testid "viewer-comments-dropdown"
-           :on-click toggle-dropdown}
-     [:span {:class (stl/css :dropdown-title)} (tr "labels.comments")]
-     [:span {:class (stl/css :icon-dropdown)} deprecated-icon/arrow]
+    [:div {:class (stl/css :view-options-wrapper)}
+     [:button {:type "button"
+               :class (stl/css :view-options)
+               :data-testid "viewer-comments-dropdown"
+               :aria-expanded (deref show-dropdown?)
+               :aria-haspopup "menu"
+               :on-click toggle-dropdown}
+      [:span {:class (stl/css :dropdown-title)} (tr "labels.comments")]
+      [:> icon* {:icon-id i/arrow-down
+                 :size "s"
+                 :class (stl/css :icon-dropdown)}]]
 
      [:& dropdown {:show @show-dropdown?
                    :on-close hide-dropdown}
@@ -83,7 +89,7 @@
              :on-click update-mode}
         [:span {:class (stl/css :label)} (tr "labels.show-all-comments")]
         (when (or (= :all cmode) (nil? cmode))
-          [:span {:class (stl/css :icon)} deprecated-icon/tick])]
+          [:> icon* {:icon-id i/tick :size "s" :class (stl/css :icon)}])]
 
        [:li {:class (stl/css-case
                      :dropdown-element true
@@ -92,8 +98,7 @@
              :on-click update-mode}
         [:span {:class (stl/css :label)} (tr "labels.show-your-comments")]
         (when (= :yours cmode)
-          [:span {:class (stl/css :icon)}
-           deprecated-icon/tick])]
+          [:> icon* {:icon-id i/tick :size "s" :class (stl/css :icon)}])]
 
        [:li {:class (stl/css-case
                      :dropdown-element true
@@ -102,8 +107,7 @@
              :on-click update-mode}
         [:span {:class (stl/css :label)} (tr "labels.show-mentions")]
         (when (= :mentions cmode)
-          [:span {:class (stl/css :icon)}
-           deprecated-icon/tick])]
+          [:> icon* {:icon-id i/tick :size "s" :class (stl/css :icon)}])]
 
        [:li {:class (stl/css :separator)}]
 
@@ -114,8 +118,7 @@
              :on-click update-show}
         [:span {:class (stl/css :label)} (tr "labels.hide-resolved-comments")]
         (when  (= :pending cshow)
-          [:span {:class (stl/css :icon)}
-           deprecated-icon/tick])]
+          [:> icon* {:icon-id i/tick :size "s" :class (stl/css :icon)}])]
 
        [:li {:class (stl/css :separator)}]
 
@@ -126,7 +129,7 @@
              :on-click update-options}
         [:span {:class (stl/css :label)} (tr "labels.show-comments-list")]
         (when show-sidebar?
-          [:span {:class (stl/css :icon)} deprecated-icon/tick])]]]]))
+          [:> icon* {:icon-id i/tick :size "s" :class (stl/css :icon)}])]]]]))
 
 
 (defn- update-thread-position

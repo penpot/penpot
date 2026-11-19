@@ -4,77 +4,67 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
+// Only for %input-element: inputs move to the DS in their own plan.
 @use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_utils.scss" as *;
+@use "ds/typography.scss" as *;
 
 .element-set {
   margin: 0;
 }
 
 .title-spacing-svg-attrs {
-  padding-left: deprecated.$s-2;
+  padding-inline-start: var(--sp-xxs);
   margin: 0;
 }
 
 .element-set-content {
-  @include deprecated.flex-column;
-
-  margin: deprecated.$s-4 0 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  margin-block-start: var(--sp-xs);
 }
 
 .attr-content {
   display: flex;
-  gap: deprecated.$s-4;
+  gap: var(--sp-xs);
 }
 
 .attr-name {
-  @include deprecated.body-small-typography;
-  @include deprecated.two-line-text-ellipsis;
+  @include use-typography("body-small");
 
-  width: deprecated.$s-88;
-  margin: auto deprecated.$s-4;
-  margin-right: 0;
   display: inline-block;
-  color: var(--title-foreground-color);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  inline-size: px2rem(88);
+  max-inline-size: 99%;
+  margin-block: auto;
+  margin-inline: var(--sp-xs) 0;
+  color: var(--color-foreground-secondary);
 }
 
 .attr-input {
   @extend %input-element;
-  @include deprecated.body-small-typography;
+  @include use-typography("body-small");
 
-  width: deprecated.$s-124;
-}
-
-.attr-actions {
-  display: flex;
-  gap: deprecated.$s-4;
-}
-
-.attr-action-btn {
-  @extend %button-tertiary;
-
-  width: deprecated.$s-28;
-  height: deprecated.$s-32;
-
-  svg {
-    @extend %button-icon;
-  }
+  inline-size: px2rem(124);
 }
 
 .attr-nested-content {
   display: grid;
-  row-gap: deprecated.$s-4;
+  row-gap: var(--sp-xs);
 }
 
 .attr-title {
-  @include deprecated.body-small-typography;
+  @include use-typography("body-small");
 
-  font-size: deprecated.$fs-10;
+  font-size: px2rem(10);
   text-transform: uppercase;
-  margin-inline-start: deprecated.$s-4;
+  margin-inline-start: var(--sp-xs);
   color: var(--color-foreground-primary);
 }
 
 .attr-row {
   display: flex;
-  gap: deprecated.$s-4;
+  gap: var(--sp-xs);
 }

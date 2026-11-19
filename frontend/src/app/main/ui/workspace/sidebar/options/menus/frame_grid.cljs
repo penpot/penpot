@@ -40,14 +40,13 @@
    params. Shared by the square, column and row grid-type layouts, each of
    which places it at a different point in their own layout."
   [{:keys [show disabled on-toggle]}]
-  [:button {:class (stl/css-case :show-more-options true
-                                 :selected show)
-            :on-click on-toggle
-            :disabled disabled}
-   [:> icon* {:icon-id i/menu
-              :size "m"
-              :aria-hidden true
-              :class (stl/css :show-options-icon)}]])
+  [:> icon-button* {:variant "ghost"
+                    :aria-label (tr "workspace.options.grid.params.guide-defaults")
+                    :aria-pressed show
+                    :on-click on-toggle
+                    :disabled disabled
+                    :tooltip-placement "top-left"
+                    :icon i/menu}])
 
 (mf/defc default-options-dropdown*
   "Dropdown menu with the reset/save-as-default options for a grid's params.
@@ -230,10 +229,12 @@
        [:> icon-button* {:variant "ghost"
                          :aria-label (tr "workspace.options.guides.toggle-guide")
                          :on-click handle-toggle-visibility
+                         :tooltip-placement "top-left"
                          :icon (if display "shown" "hide")}]
        [:> icon-button* {:variant "ghost"
                          :aria-label (tr "workspace.options.guides.remove-guide")
                          :on-click on-remove
+                         :tooltip-placement "top-left"
                          :icon i/remove}]]]
 
      (when (:display grid)
@@ -365,6 +366,7 @@
        [:> icon-button* {:variant "ghost"
                          :aria-label (tr "workspace.options.guides.add-guide")
                          :on-click handle-create-grid
+                         :tooltip-placement "top-left"
                          :icon i/add}]]]
 
      (when (and open? (seq grids))

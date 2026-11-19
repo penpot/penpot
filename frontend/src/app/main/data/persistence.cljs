@@ -14,18 +14,30 @@
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
    [app.main.data.common :as-alias dc]
+   [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
+   [app.main.data.modal :as-alias modal]
    [app.main.data.notifications :as ntf]
+   [app.main.data.persistence.commits :as pcm]
+   [app.main.data.persistence.lock :as plk]
    [app.main.data.workspace :as-alias dw]
+   [app.main.data.workspace.edition :as dwe]
+   [app.main.data.workspace.path.state :as path.state]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.errors :as errors]
    [app.main.refs :as refs]
    [app.main.repo :as rp]
+   [app.main.store :as st]
    [app.util.i18n :refer [tr]]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
 (declare ^:private run-persistence-task)
 (declare ^:private persist-commit)
+(declare ^:private resume-persistence)
+(declare ^:private slow-retry-cycle)
+(declare ^:private flush-buffer)
+(declare ^:private commit-persisted)
 
 (log/set-level! :warn)
 
@@ -35,18 +47,45 @@
 
 (def force-persist? #(= % ::force-persist))
 
+(def slow-retry-delay-ms
+  "Pause between the attempts of a queue whose backoff is spent: one attempt
+  per cycle, until it saves or the retry window closes."
+  30000)
+
+(def retry-give-up-ms
+  "How long a queue that keeps failing on transport errors is sent again."
+  (* 24 60 60 1000))
+
+(def slow-failure-ms
+  "An attempt that fails after this long may have kept the backend busy,
+  as a gateway timeout does, so it counts towards `max-slow-failures`."
+  (* 90 1000))
+
+(def max-slow-failures
+  "Slow failures a queued commit may collect before the slow cycle stops
+  sending it. Fast failures, such as being offline, never count."
+  3)
+
+;; Wait for the changes stored before a saved commit, then reload the file.
+(def ^:private unseen-changes-timeout-ms 10000)
+
 (def ^:private saving-stall-timeout-ms (* 5 60 1000))
 (def ^:private saving-check-interval-ms 30000)
 (def ^:private save-wait-timeout-ms (* 2 60 1000))
+;; Longer than the stall threshold so a hung save is reported before it is retried.
+(def ^:private save-request-timeout-ms (* 7 60 1000))
 
 (defn terminal-status?
   "True when a persistence snapshot releases waiters: a failed save, or
-  a settled (`nil` / `:saved`) empty queue. Anything else — `:pending`,
-  `:saving` and the `:retrying` episode — keeps waiting."
-  [{:keys [status queue]}]
+  a settled (`nil` / `:saved`) empty queue and buffer. Anything else —
+  `:pending`, `:saving`, the `:retrying` episode, or commits still in the
+  buffer (the status turns `:saved` as soon as the queue empties) — keeps
+  waiting."
+  [{:keys [status queue buffer]}]
   (boolean
    (or (= status :error)
        (and (empty? queue)
+            (empty? buffer)
             (or (nil? status) (= status :saved))))))
 
 (defn wait-persisted-or-error
@@ -84,6 +123,30 @@
   ([timeout-ms]
    (rx/concat (rx/of ::force-persist) (wait-persisted timeout-ms))))
 
+(defn- files-queued?
+  "True when the queue in `pstate` still holds changes of any of `file-ids`."
+  [{:keys [queue index]} file-ids]
+  (boolean (some #(contains? file-ids (get-in index [% :file-id])) queue)))
+
+(defn unsaved-changes?
+  "True when any of `file-ids` has changes the server does not have yet."
+  [state file-ids]
+  (files-queued? (:persistence state) file-ids))
+
+(defn force-persist-files-and-wait
+  "Sends the pending changes and waits until no change of `file-ids` is
+  queued, saving fails, or `timeout-ms` passes. Never raises; check
+  `unsaved-changes?` afterwards."
+  [file-ids timeout-ms]
+  (rx/concat
+   (rx/of ::force-persist)
+   (->> (rx/from-atom refs/persistence {:emit-current-value? true})
+        (rx/filter #(or (= :error (:status %))
+                        (not (files-queued? % file-ids))))
+        (rx/take 1)
+        (rx/ignore)
+        (rx/timeout timeout-ms (rx/empty)))))
+
 (defn- next-status
   "Refuses downgrades: a save in progress stays :saving, a failed save
   stays :error until persistence is resumed, and a retrying episode stays
@@ -96,7 +159,20 @@
     (and (= from :retrying) (#{:pending :saving} to)) from
     :else                                          to))
 
+(defn- count-unsaved-commits
+  "Local commits not saved yet, queued or buffered, of every file."
+  [state]
+  (let [{:keys [queue index buffer]} (:persistence state)]
+    (+ (count (mapcat #(get-in index [% :commits]) queue))
+       (count buffer))))
+
+(defn- nothing-to-save?
+  [{:keys [buffer queue]}]
+  (and (empty? buffer) (empty? queue)))
+
 (defn- update-status
+  "Moves persistence to `status`. A delayed :pending notice is ignored
+  when nothing is left to save (e.g. a rollback already dropped the edit)."
   [status]
   (ptk/reify ::update-status
     ptk/UpdateEvent
@@ -106,7 +182,9 @@
                 (log/trc :hint "update-status"
                          :from (:status pstate)
                          :to status)
-                (let [status (next-status (:status pstate) status)]
+                (let [status (if (and (= :pending status) (nothing-to-save? pstate))
+                               (:status pstate)
+                               (next-status (:status pstate) status))]
                   (cond-> (assoc pstate :status status)
                     (#{:pending :saving} status)
                     (update :last-progress-at d/nilv (inst-ms (ct/now)))
@@ -114,17 +192,31 @@
                     (#{:error :saved} status)
                     (dissoc :run-id :last-progress-at :stall-reported))))))))
 
+(def ^:private busy-server-codes
+  "Server error codes for a database timeout that rolled the save back."
+  #{:statement-timeout :idle-in-transaction-timeout})
+
+(defn- busy-server-error?
+  "True when the backend was too busy to apply the save: it refused it
+  (429) or a database timeout rolled it back. Resending it is safe."
+  [{:keys [type cause-type code]}]
+  (let [type (or cause-type type)]
+    (or (= :rate-limit type)
+        (and (= :server-error type)
+             (contains? busy-server-codes code)))))
+
 (defn transient-error?
   "True when a save failure is worth retrying with backoff: a transient
   transport failure (from the shared `repo/retryable-types` set, which says
-  nothing about the edits themselves) or an unusable save response.
-  Everything else (auth, validation, state) is terminal and keeps the
-  `:error` path. Checked against both `:type` and `:cause-type` because
+  nothing about the edits themselves), a busy backend, or an unusable save
+  response. Everything else (auth, validation, state) is terminal and keeps
+  the `:error` path. Checked against both `:type` and `:cause-type` because
   `persistence-failed` wraps the original cause under `:type :persistence`."
-  [{:keys [type cause-type code]}]
+  [{:keys [type cause-type code] :as error}]
   (boolean
    (or (contains? rp/retryable-types type)
        (contains? rp/retryable-types cause-type)
+       (busy-server-error? error)
        (= :invalid-save-response code))))
 
 (def ^:private retry-delays-ms
@@ -138,6 +230,30 @@
   construction (the store holds one toast), and it is hidden by tag on
   save or on terminal failure."
   :persistence-reconnecting)
+
+(defn- retry-window-open?
+  "True while a failing queue may still be sent again."
+  [pstate]
+  (let [since (:failing-since pstate)]
+    (or (nil? since)
+        (< (- (inst-ms (ct/now)) since) retry-give-up-ms))))
+
+(defn- slow-retry-pending?
+  "True when the queue is halted by a transport failure that the slow retry
+  cycle keeps sending. A commit whose attempts keep failing slowly is not
+  sent again: each attempt may cost the backend the whole save."
+  [{:keys [status error slow-failures] :as pstate}]
+  (and (= :error status)
+       (transient-error? error)
+       (retry-window-open? pstate)
+       (< (or slow-failures 0) max-slow-failures)))
+
+(defn save-retrying?
+  "True while the slow cycle keeps resending a failed queue, including
+  while one of its attempts is in flight."
+  [pstate]
+  (or (true? (:recovering pstate))
+      (slow-retry-pending? pstate)))
 
 (defn- report-stalled-persistence
   [now]
@@ -196,6 +312,98 @@
     (effect [_ _ _]
       (swap! revn-data update file-id (fnil max 0) revn))))
 
+(defn- record-remote-changes
+  "Numbers a remote commit, keeps the highest revision received per file
+  (`:remote-revn`) and, while `file-id` has pending commits, keeps its
+  changes for a rollback to apply again."
+  [file-id revn changes]
+  (ptk/reify ::record-remote-changes
+    IDeref
+    (-deref [_] {:file-id file-id :revn revn})
+
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :persistence
+              (fn [pstate]
+                (let [number (inc (:remote-seq pstate 0))]
+                  (cond-> (-> pstate
+                              (assoc :remote-seq number)
+                              (update-in [:remote-revn file-id] (fnil max revn) revn))
+                    (seq (pcm/pending-commits pstate file-id))
+                    (update-in [:remote-changes file-id] (fnil conj [])
+                               {:seq number :changes changes}))))))))
+
+(defn- stale-commit?
+  "True when `commit` was made on another version of its file than the
+  loaded one, which a peer's restore replaced: its changes are not in the
+  local data and the server refuses them. A file loaded with no version
+  known is never stale."
+  [state {:keys [file-id file-vern]}]
+  (let [vern (:vern (dsh/lookup-file state file-id))]
+    (and (some? vern)
+         (not= vern file-vern))))
+
+(defn- last-unseen-revn
+  "The highest revision above `seen` (the highest one received) of the rows
+  other sessions stored in `lagged`, the rows a save answer lists after
+  the revision it was sent with. Nil when there is none, or when the save
+  stored nothing (the last row is not this session's)."
+  [lagged session-id seen]
+  (let [own? #(= session-id (:session-id %))]
+    (when (own? (last lagged))
+      (transduce (comp (remove own?)
+                       (map :revn)
+                       (filter #(> % seen)))
+                 (completing (fnil max 0))
+                 nil
+                 lagged))))
+
+(defn- settle-saved-commit
+  "Acknowledges the saved `commit` once this tab received every change the
+  server stored before it (from `lagged`, the save answer's rows), such as
+  the repair of a damaged file. Until then its commits stay pending, so a
+  late change is applied under them, in the server's order. A change that
+  does not arrive in time reloads the file."
+  [commit lagged]
+  (let [needed (volatile! nil)]
+    (ptk/reify ::settle-saved-commit
+      ptk/UpdateEvent
+      (update [_ state]
+        (let [file-id (:file-id commit)
+              seen    (dm/get-in state [:persistence :remote-revn file-id] -1)
+              revn    (when (and (= file-id (:current-file-id state))
+                                 (not (stale-commit? state commit)))
+                        (last-unseen-revn lagged (:session-id state) seen))]
+          (vreset! needed revn)
+          (cond-> state
+            (some? revn)
+            (d/update-in-when [:persistence :index (:id commit)] assoc ::awaiting revn))))
+
+      ptk/WatchEvent
+      (watch [_ _ stream]
+        (if-let [revn @needed]
+          (let [file-id   (:file-id commit)
+                arrived-s (->> stream
+                               (rx/filter (ptk/type? ::record-remote-changes))
+                               (rx/map deref)
+                               (rx/filter #(and (= file-id (:file-id %))
+                                                (>= (:revn %) revn)))
+                               (rx/map (constantly ::arrived)))
+                left-s    (->> stream
+                               (rx/filter (ptk/type? ::dw/finalize-workspace))
+                               (rx/map (constantly ::left)))
+                timeout-s (->> (rx/timer unseen-changes-timeout-ms)
+                               (rx/map (constantly ::timeout)))]
+            (->> (rx/merge arrived-s left-s timeout-s)
+                 (rx/take 1)
+                 (rx/mapcat (fn [outcome]
+                              (rx/concat
+                               (rx/of (commit-persisted commit))
+                               (if (= ::timeout outcome)
+                                 (rx/of (ptk/event ::dw/reload-current-file))
+                                 (rx/empty)))))))
+          (rx/of (commit-persisted commit)))))))
+
 (defn- discard-commit
   [commit-id]
   (ptk/reify ::discard-commit
@@ -208,9 +416,27 @@
                                                           (pop queue)
                                                           (throw (ex-info "invalid state" {})))))
                                        (update :index dissoc commit-id)
+                                       (pcm/keep-saved-commits (get-in pstate [:index commit-id]))
+                                       (pcm/prune-remote-changes (get-in pstate [:index commit-id :file-id]))
                                        (assoc :last-progress-at (inst-ms (ct/now)))
-                                       (dissoc :stall-reported
-                                               :attempts :retry-token :retry-for)))))))
+                                       (dissoc :stall-reported :failing-since :recovering
+                                               :slow-failures :attempts :retry-token
+                                               :retry-for)))))))
+
+(defn- without-commits
+  "`buffer` without `commits`."
+  [buffer commits]
+  (let [ids (into #{} (map :id) commits)]
+    (into [] (remove #(contains? ids (:id %))) buffer)))
+
+(defn- buffer-commit
+  "Keeps a local commit in the buffer until the next flush."
+  [commit]
+  (ptk/reify ::buffer-commit
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [number (get-in state [:persistence :remote-seq] 0)]
+        (update-in state [:persistence :buffer] (fnil conj []) (assoc commit :remote-seq number))))))
 
 (defn- append-commit
   "Event used internally to append the current change to the
@@ -226,6 +452,7 @@
                   (-> pstate
                       (cond-> (not= :error (:status pstate))
                         (update :run-id d/nilv run-id))
+                      (update :buffer without-commits (:commits commit))
                       (update :queue queue-conj id)
                       (update :index assoc id commit)))))
 
@@ -239,6 +466,48 @@
                      (= run-id (:run-id pstate)))
             (rx/of (update-status :saving)
                    (run-persistence-task))))))))
+
+(defn- drop-file-commits
+  "Removes every queued commit belonging to `file-id`, together with its
+  index entry."
+  [pstate file-id]
+  (if-not file-id
+    pstate
+    (let [dropped (into #{}
+                        (keep (fn [commit-id]
+                                (when (= file-id (get-in pstate [:index commit-id :file-id]))
+                                  commit-id)))
+                        (:queue pstate))]
+      (if (empty? dropped)
+        pstate
+        (-> pstate
+            (update :queue #(into (empty %) (remove dropped) %))
+            (update :index #(apply dissoc % dropped)))))))
+
+(defn- notify-failure?
+  "False for a failed attempt of the slow cycle: it repeats a failure the
+  user was already told about."
+  [pstate]
+  (not (and (:recovering pstate)
+            (slow-retry-pending? pstate))))
+
+(defn- save-failed-event
+  "Audit event for a save failure the user is told about, so failed saves
+  can be counted."
+  [{:keys [error queue] :as pstate}]
+  (ev/event {::ev/name "save-failed"
+             :cause-type (:cause-type error)
+             :code (:code error)
+             :retrying (slow-retry-pending? pstate)
+             :queued-commits (count queue)}))
+
+(defn- end-stopped-slow-cycle
+  "Clears `:recovering` when the slow cycle no longer resends the failure:
+  the limit of slow failures is reached or the retry window closed."
+  [pstate]
+  (cond-> pstate
+    (not (slow-retry-pending? pstate))
+    (dissoc :recovering)))
 
 (defn- persistence-failed
   [commit-id cause]
@@ -257,28 +526,48 @@
                                            :commit-id commit-id
                                            :hint (ex-message cause)
                                            ::errors/handled? true))
+                      (update :failing-since d/nilv (inst-ms (ct/now)))
                       (dissoc :run-id :last-progress-at :stall-reported
-                              :attempts :retry-token :retry-for))))))
+                              :attempts :retry-token :retry-for)
+                      (end-stopped-slow-cycle))))))
 
     ptk/WatchEvent
-    (watch [_ _ _]
-      ;; The terminal toast supersedes the reconnect notice; hide it
-      ;; explicitly instead of relying on the single-toast replacement.
-      (rx/of (ptk/data-event ::error cause)
-             (ntf/hide :tag reconnecting-tag)))
+    (watch [_ state stream]
+      (let [pstate (:persistence state)]
+        (rx/merge
+         ;; The terminal toast replaces the reconnect notice, hidden by tag.
+         (rx/of (ptk/data-event ::error cause)
+                (ntf/hide :tag reconnecting-tag))
+         (if (notify-failure? pstate)
+           (rx/of (save-failed-event pstate))
+           (rx/empty))
+         ;; A transport failure that outlasts the backoff can still pass, so
+         ;; the queue keeps trying at a slow pace.
+         (if (and (not (:suspended pstate))
+                  (slow-retry-pending? pstate))
+           (slow-retry-cycle stream)
+           (rx/empty)))))
 
     ptk/EffectEvent
-    (effect [_ _ _]
-      ;; Report without invoking global handlers that may reload the file or
-      ;; navigate away before the user can recover the retained changes.
-      (errors/flash-persistence cause))))
+    (effect [_ state _]
+      ;; Notifies without the global handlers, which may reload the file or
+      ;; navigate away and lose the retained changes.
+      (let [pstate (:persistence state)]
+        (when (notify-failure? pstate)
+          (errors/flash-persistence cause
+                                    :retrying (slow-retry-pending? pstate)
+                                    :busy (busy-server-error? (ex-data cause))))))))
 
 (defn- persistence-transient-failure
   "Transient save failure: the head commit stays queued and a retry is
   scheduled with backoff instead of parking the save in `:error`. Once the
-  budget (`retry-delays-ms`) is exhausted, the failure falls through to the
-  terminal `persistence-failed` path unchanged."
-  [commit-id cause]
+  budget (`retry-delays-ms`) is exhausted, the commit has `max-slow-failures`
+  slow failures, or the failed attempt was one of the slow cycle, the
+  failure falls through to the `persistence-failed` path, which schedules
+  the next slow attempt while `slow-retry-pending?`. While retries are suspended
+  nothing is scheduled: the episode waits for a file to be opened again.
+  `elapsed-ms` is how long the failed attempt took."
+  [commit-id cause elapsed-ms]
   (ptk/reify ::persistence-transient-failure
     ptk/UpdateEvent
     (update [_ state]
@@ -293,18 +582,31 @@
                              :retry-token (uuid/next)
                              :retry-for commit-id
                              :last-progress-at (inst-ms (ct/now)))
+                      (update :failing-since d/nilv (inst-ms (ct/now)))
+                      (cond-> (>= elapsed-ms slow-failure-ms)
+                        (update :slow-failures (fnil inc 0)))
                       (dissoc :stall-reported))))))
 
     ptk/WatchEvent
     (watch [_ state _]
-      (let [attempts (dm/get-in state [:persistence :attempts])]
-        (if (> attempts (count retry-delays-ms))
+      (let [{:keys [attempts recovering suspended slow-failures]} (:persistence state)]
+        (cond
+          (or recovering
+              (> attempts (count retry-delays-ms))
+              (>= (or slow-failures 0) max-slow-failures))
           (rx/of (persistence-failed commit-id cause))
+
+          suspended
+          (rx/empty)
+
+          :else
           (rx/merge
            ;; One notice per episode: shown on the first attempt,
            ;; re-showing would only replace the identical toast.
            (when (= 1 attempts)
-             (rx/of (ntf/show {:content (tr "errors.save-retrying")
+             (rx/of (ntf/show {:content (if (busy-server-error? (ex-data cause))
+                                          (tr "errors.save-retrying-busy")
+                                          (tr "errors.save-retrying"))
                                :type :toast
                                :level :warning
                                :tag reconnecting-tag})))
@@ -312,19 +614,6 @@
                  token    (dm/get-in state [:persistence :retry-token])]
              (->> (rx/timer delay-ms)
                   (rx/map (fn [_] (persist-commit commit-id {:token token})))))))))))
-
-(defn- rotate-stalled-stamp
-  "Clears a previous attempt stamp when it is safe to resend: the commit is
-  the current retry head and its request is no longer in flight. A still
-  in-flight request is left alone — its own result drives the next step."
-  [state commit-id]
-  (let [commit (dm/get-in state [:persistence :index commit-id])]
-    (if (and (= :retrying (dm/get-in state [:persistence :status]))
-             (= commit-id (dm/get-in state [:persistence :retry-for]))
-             (::request-id commit)
-             (not (contains? @active-requests (::request-id commit))))
-      (update-in state [:persistence :index commit-id] dissoc ::request-id)
-      state)))
 
 (defn- commit-persisted
   [commit]
@@ -337,6 +626,245 @@
       ;; Keep the acknowledgment even if the queue runner has stopped.
       (d/update-in-when state [:persistence :index (:id commit)]
                         assoc ::acknowledged true))))
+
+(def rejected-tag
+  "Tag of the notice that changes to the open file were rejected."
+  :persistence-rejected)
+
+(def ^:private other-file-rejected-tag
+  "Tag of the notice that changes to a file not open were rejected."
+  :persistence-rejected-other-file)
+
+(def file-repaired-tag
+  "Tag of the notice that the backend repaired the open file."
+  :file-repaired)
+
+(def repaired-rejected-tag
+  "Tag of the notice that tells both of a repair and of rejected changes."
+  :file-repaired-rejected)
+
+(def ^:private rejected-timeout-ms
+  "How long the rejected changes notice stays; the report is sent anyway."
+  10000)
+
+(defn notify-repaired
+  "Tells the user the backend repaired the open file. The store holds one
+  toast, so a notice of rejected changes to that file still on screen is
+  folded into it, keeping its report link."
+  []
+  (ptk/reify ::notify-repaired
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [{:keys [tag links]} (:notification state)]
+        (rx/of
+         (ntf/show
+          (if (contains? #{rejected-tag repaired-rejected-tag} tag)
+            (cond-> {:content (tr "workspace.notifications.file-repaired-changes-undone")
+                     :type :toast
+                     :level :warning
+                     :timeout nil
+                     :tag repaired-rejected-tag}
+              (seq links)
+              (assoc :links links))
+            {:content (tr "workspace.notifications.file-repaired")
+             :type :toast
+             :level :info
+             :timeout nil
+             :tag file-repaired-tag})))))))
+
+(defn- rejection-notice
+  "Text, tag and timeout of the notice that the changes `rejected` in a
+  save of `file-id` were undone. A file other than the open one is named;
+  a repair notice of the open file still on screen is folded into it."
+  [state file-id {:keys [preexisting-damage]}]
+  (let [file-name (dm/get-in state [:files file-id :name])
+        current?  (= file-id (:current-file-id state))
+        repaired? (contains? #{file-repaired-tag repaired-rejected-tag}
+                             (dm/get-in state [:notification :tag]))]
+    (cond
+      (and (not current?) (some? file-name))
+      {:hint    (tr "errors.save-rejected-changes-undone-in-file" file-name)
+       :tag     other-file-rejected-tag
+       :timeout rejected-timeout-ms}
+
+      (and current? repaired?)
+      {:hint    (tr "workspace.notifications.file-repaired-changes-undone")
+       :tag     repaired-rejected-tag
+       :timeout nil}
+
+      (and current? preexisting-damage)
+      {:hint    (tr "errors.save-rejected-damaged-data")
+       :tag     rejected-tag
+       :timeout rejected-timeout-ms}
+
+      :else
+      {:hint    (tr "errors.save-rejected-changes-undone")
+       :tag     (if current? rejected-tag other-file-rejected-tag)
+       :timeout rejected-timeout-ms})))
+
+(defn- discard-path-edit
+  "Forgets the path editor's state for `id`, so leaving the edition saves
+  nothing from it."
+  [id]
+  (ptk/reify ::discard-path-edit
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:workspace-local :edit-path] dissoc id))))
+
+(defn- prune-removed-shapes
+  "Deselects the shapes missing from the current page, closing the color
+  picker that edits them, and leaves edition mode if the edited one is
+  missing. A path the rollback changed (`edited` is the edited shape before
+  it) leaves edition too: the editor works on its own copy of the shape,
+  which still holds the reverted content. Text editors stay open and show
+  the reverted text."
+  [edited]
+  (ptk/reify ::prune-removed-shapes
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [objects  (dsh/lookup-page-objects state)
+            selected (dm/get-in state [:workspace-local :selected])
+            kept     (some->> selected (into (empty selected) (filter #(contains? objects %))))]
+        (cond-> state
+          (some? selected)
+          (assoc-in [:workspace-local :selected] kept)
+
+          (and (not= (count selected) (count kept))
+               (= :colorpicker (dm/get-in state [::modal/modal :type])))
+          (dissoc ::modal/modal))))
+
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [edition (dm/get-in state [:workspace-local :edition])
+            shape   (get (dsh/lookup-page-objects state) edition)]
+        (cond
+          (nil? edition)
+          (rx/empty)
+
+          (nil? shape)
+          (rx/of (dwe/clear-edition-mode))
+
+          (and (path.state/editing? state)
+               (not= edited shape))
+          (rx/of (discard-path-edit edition)
+                 (dwe/clear-edition-mode))
+
+          :else
+          (rx/empty))))))
+
+(defn- compensate-commits
+  "Undoes the saved `commits` of `file-id`, newest first. A loaded file gets
+  a commit, applied locally; the undo of a file that is not loaded goes to
+  the queue as is."
+  [origin state file-id commits]
+  (let [changes (pcm/compensation-changes commits)]
+    (if (dsh/lookup-file-data state file-id)
+      (dch/commit-changes (assoc changes
+                                 :origin origin
+                                 :file-id file-id
+                                 :save-undo? false
+                                 ;; Its own group, never that of an open undo transaction
+                                 :undo-group (uuid/next)
+                                 ;; Rollbacks also run while saves fail
+                                 :ignore-save-lock true))
+      (let [{:keys [file-revn file-vern features]} (peek commits)]
+        (append-commit
+         (pcm/queue-entry
+          [(assoc changes
+                  :id (uuid/next)
+                  :created-at (ct/now)
+                  :origin (ptk/type origin)
+                  :file-id file-id
+                  :file-revn file-revn
+                  :file-vern file-vern
+                  :features features
+                  :remote-seq (dm/get-in state [:persistence :remote-seq] 0))]))))))
+
+(defn- reloaded-s
+  "Ends once the reload that follows a failed rebase of `file-ids` has put
+  the server data of those files in the state."
+  [stream current-file-id file-ids]
+  (let [loaded? (if (every? #(= current-file-id %) file-ids)
+                  (ptk/type? ::dw/bundle-fetched)
+                  (ptk/type? ::dw/all-libraries-resolved))]
+    (->> stream
+         (rx/filter loaded?)
+         (rx/take 1)
+         (rx/ignore)
+         (rx/take-until (rx/filter (ptk/type? ::dw/finalize-workspace) stream)))))
+
+(defn- notify-rolled-back
+  "Emits `::rolled-back` with `targets` once the reverted data is in the
+  state: at once, or after the reload when a rebase of `rebases` failed.
+  The reload replaces the whole file data, so other shapes may change too."
+  [stream state rebases targets]
+  (rx/defer
+   (fn []
+     (let [failed (into #{} (comp (map deref) (filter :failed) (map :file-id)) rebases)
+           event  (ptk/data-event ::rolled-back targets)]
+       (if (empty? failed)
+         (rx/of event)
+         (rx/concat (reloaded-s stream (:current-file-id state) failed)
+                    (rx/of event)))))))
+
+(defn- apply-rollback-plan
+  "Events that revert the local data as `plan` says: pending commits are
+  undone, saved ones undone by a new commit, and their groups leave the
+  undo history."
+  [origin state stream {:keys [files compensate groups undo-index]}]
+  (let [rebases (mapv (fn [[fid plan]] (dch/rebase-commits fid plan)) files)]
+    (rx/concat
+     (rx/from rebases)
+     (rx/from (map (fn [[fid commits]] (compensate-commits origin state fid commits))
+                   (group-by :file-id compensate)))
+     (rx/of (dwu/forget-undo-groups groups undo-index)
+            (prune-removed-shapes (get (dsh/lookup-page-objects state)
+                                       (dm/get-in state [:workspace-local :edition]))))
+     ;; Tells listeners (a library sync, plugins) which files, pages and
+     ;; shapes lost commits
+     (notify-rolled-back stream state rebases
+                         (pcm/rollback-targets {:files files :compensate compensate})))))
+
+(defn- rollback-rejected
+  "Reverts the commits `rejected` in the save of `entry`, the later commits
+  of its file and the rest of their undo groups. Pending commits are undone
+  and dropped, saved ones undone by a new commit; the groups leave the undo
+  history and the user gets a warning."
+  [{:keys [file-id] :as entry} rejected]
+  (let [plan (volatile! nil)]
+    (ptk/reify ::rollback-rejected
+      ptk/UpdateEvent
+      (update [_ state]
+        ;; A save made on a version a restore replaced: the reloaded data
+        ;; holds none of it, so there is nothing to revert
+        (if (stale-commit? state entry)
+          state
+          (let [plan' (pcm/rollback-plan (:persistence state) entry rejected)]
+            (vreset! plan plan')
+            (update state :persistence pcm/without-rolled-back entry plan'))))
+
+      ptk/WatchEvent
+      (watch [it state stream]
+        (if-let [plan @plan]
+          (apply-rollback-plan it state stream plan)
+          (rx/empty)))
+
+      ptk/EffectEvent
+      (effect [_ state _]
+        (when-let [plan @plan]
+          (let [{:keys [error commit-ids]} rejected
+                {:keys [hint tag timeout]} (rejection-notice state file-id rejected)]
+            (errors/flash :cause (ex-info "The server rejected some changes"
+                                          (merge error
+                                                 {:file-id file-id
+                                                  :commit-ids commit-ids}
+                                                 (pcm/rollback-summary plan)))
+                          :type :unhandled
+                          :level :warning
+                          :timeout timeout
+                          :tag tag
+                          :report-link? true
+                          :hint hint)))))))
 
 (defn- update-file-request
   "Issues the `update-file` request, tracked as active for its lifetime."
@@ -357,69 +885,109 @@
   "Classifies what should happen with a queued commit before sending it.
   The attempt stamp and the send decision both read this, so a commit is
   only ever stamped with a request that is actually going to be sent."
-  [state commit-id request-id]
+  [state commit-id]
   (let [commit (dm/get-in state [:persistence :index commit-id])]
     (cond
       (= :error (dm/get-in state [:persistence :status]))  :halted
       (nil? commit)                                        :missing-commit
       (::acknowledged commit)                              :acknowledged
       (contains? @active-requests (::request-id commit))   :in-flight
-      (and (::request-id commit)
-           (not= request-id (::request-id commit)))        :unknown-outcome
+      ;; Saved, waiting for the changes stored before it
+      (::awaiting commit)                                  :in-flight
+      (stale-commit? state commit)                         :stale
       (not (dm/get-in state [:permissions :can-edit]))     :permission-denied
       :else                                                :ready)))
 
+(defn- with-changes
+  "Adds the changes of a queue entry to the save params, one group per
+  commit so the backend can reject them one by one."
+  [params {:keys [commits]}]
+  (assoc params :changes-with-metadata
+         (mapv (fn [{:keys [id origin redo-changes]}]
+                 (cond-> {:commit-id id :changes (vec redo-changes)}
+                   (keyword? origin)
+                   (assoc :hint-origin origin)))
+               commits)))
+
+(defn- save-attempt-failed
+  "Routes a failed attempt to send `commit-id`, which took `elapsed-ms`. A
+  commit made on a version a restore replaced is dropped instead: the
+  reloaded file does not hold it and no resend can save it."
+  [commit-id cause elapsed-ms]
+  (ptk/reify ::save-attempt-failed
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [commit (dm/get-in state [:persistence :index commit-id])]
+        (rx/of (cond
+                 (and (some? commit) (stale-commit? state commit))
+                 (commit-persisted commit)
+
+                 (transient-error? (ex-data cause))
+                 (persistence-transient-failure commit-id cause elapsed-ms)
+
+                 :else
+                 (persistence-failed commit-id cause)))))))
+
 (defn- send-queued-commit
   "Sends one queued commit and maps its outcome to persistence events."
-  [request-id session-id {:keys [id file-id file-revn file-vern changes features] :as commit}]
-  (let [params {:id file-id
-                :revn (max file-revn (get @revn-data file-id 0))
-                :vern file-vern
-                :session-id session-id
-                :origin (:origin commit)
-                :created-at (:created-at commit)
-                :commit-id id
-                :changes (vec changes)
-                :features features}]
+  [request-id session-id {:keys [id file-id file-revn file-vern features] :as commit}]
+  (let [sent-at (inst-ms (ct/now))
+        params  (-> {:id file-id
+                     :revn (max file-revn (get @revn-data file-id 0))
+                     :vern file-vern
+                     :session-id session-id
+                     :origin (:origin commit)
+                     :created-at (:created-at commit)
+                     :commit-id id
+                     :features features}
+                    (with-changes commit))]
     ;; UI read-only mode does not invalidate already queued edits.
     (->> (update-file-request request-id params)
+         ;; Fails an unanswered request as a transient network error, so the
+         ;; retry path resends it instead of blocking the queue.
+         (rx/timeout save-request-timeout-ms
+                     (rx/throw (ex-info "The save request timed out"
+                                        {:type :network
+                                         :code :save-request-timeout
+                                         :file-id file-id})))
          (rx/take 1)
          ;; A response that carries no revision, including one that never
          ;; arrived, is treated as a failed save rather than a saved file.
          (rx/if-empty nil)
-         (rx/mapcat (fn [{:keys [revn]}]
+         (rx/mapcat (fn [{:keys [revn rejected lagged]}]
                       (if (and (int? revn) (<= 0 revn))
-                        (rx/of (update-file-revn file-id revn)
-                               (commit-persisted commit))
+                        (rx/concat
+                         (rx/of (update-file-revn file-id revn))
+                         ;; Reverts the rejected commits before the queue moves on
+                         (if (some? rejected)
+                           (rx/of (rollback-rejected commit rejected))
+                           (rx/empty))
+                         (rx/of (settle-saved-commit commit lagged)))
                         (rx/throw (ex-info "The save response has no valid revision"
                                            {:type :persistence
                                             :code :invalid-save-response
                                             :file-id file-id})))))
          (rx/catch (fn [cause]
-                     (rx/of ((if (transient-error? (ex-data cause))
-                               persistence-transient-failure
-                               persistence-failed)
-                             id cause)))))))
+                     (rx/of (save-attempt-failed id cause (- (inst-ms (ct/now)) sent-at))))))))
 
 (defn- persist-commit
-  "Sends the queued commit, stamping the attempt first. Inside a `:retrying`
-  episode a previous stamp is rotated when its request is no longer in
-  flight, so a retry resends the same commit instead of failing as
-  `:unknown-outcome`. Carries an optional `:token`: retry timers pass the
-  episode token, and a stale token (superseded episode) stays silent
-  instead of sending or failing."
+  "Sends the queued commit, stamping the attempt first. A commit whose
+  earlier request is no longer in flight is sent again: changes are
+  idempotent, so a save the backend already applied can be applied again.
+  Carries an optional `:token`: retry timers pass the episode token, and a
+  stale token (superseded episode) stays silent instead of sending or
+  failing."
   [commit-id & {:keys [token]}]
   (let [request-id (uuid/next)]
     (ptk/reify ::persist-commit
       ptk/UpdateEvent
       (update [_ state]
         (let [token-ok? (or (nil? token)
-                            (= token (dm/get-in state [:persistence :retry-token])))
-              state     (if token-ok? (rotate-stalled-stamp state commit-id) state)]
+                            (= token (dm/get-in state [:persistence :retry-token])))]
           (if (and token-ok?
-                   (= :ready (attempt-state state commit-id request-id)))
-            ;; Record the attempt before starting I/O. An interrupted request
-            ;; may have reached the server and must not be replayed blindly.
+                   (= :ready (attempt-state state commit-id)))
+            ;; Stamp the attempt before any I/O, so a request in flight is
+            ;; never sent twice in parallel.
             (assoc-in state [:persistence :index commit-id ::request-id] request-id)
             state)))
 
@@ -431,21 +999,20 @@
                                                   (ex-info hint {:type :persistence
                                                                  :code code
                                                                  :commit-id commit-id
-                                                                 :file-id (:file-id commit)}))))]
+                                                                 :file-id (:file-id commit)
+                                                                 :unsaved-commits (count-unsaved-commits state)}))))]
           (if (and (some? token)
                    (not= token (dm/get-in state [:persistence :retry-token])))
             ;; Stale retry timer: its episode was superseded. Stay silent.
             (rx/empty)
-            (case (attempt-state state commit-id request-id)
+            (case (attempt-state state commit-id)
               :halted            (rx/empty)
               :missing-commit    (fail :missing-commit "A queued save has no change data")
               :acknowledged      (rx/of (commit-persisted commit))
               ;; The replacement runner listens for the original request's result.
               :in-flight         (rx/empty)
-              ;; Fail-safe for anything outside a live retry episode (retry
-              ;; rotation in `update` already cleared the stamp when resending
-              ;; is safe). Keep the attempt stamp to prevent replay.
-              :unknown-outcome   (fail :save-outcome-unknown "An interrupted save has an unknown outcome")
+              ;; Made on a version a restore replaced: never sent
+              :stale             (rx/of (commit-persisted commit))
               :permission-denied (fail :save-permission-denied "Edit permission was lost before changes could be saved")
               :ready             (send-queued-commit request-id (:session-id state) commit))))))))
 
@@ -474,7 +1041,10 @@
                        (rx/filter #(= commit-id (:id %)))
                        (rx/take 1)
                        (rx/mapcat (fn [_]
+                                    ;; A save that lands shows the connection
+                                    ;; is back: the failure warning goes away.
                                     (rx/of (discard-commit commit-id)
+                                           (ntf/hide :tag errors/persistence-failed-tag)
                                            (run-persistence-task)))))
                   (rx/of (persist-commit commit-id)))
                  (rx/take-until stoper-s)))
@@ -484,73 +1054,312 @@
                  (ntf/hide :tag reconnecting-tag)))))))
 
 (defn- resume-persistence
+  "Starts the queue again. A `recovering` resume is an attempt of the slow
+  cycle, which sends once instead of starting a backoff episode."
+  ([] (resume-persistence false))
+  ([recovering]
+   (ptk/reify ::resume-persistence
+     ptk/UpdateEvent
+     (update [_ state]
+       (update state :persistence
+               (fn [pstate]
+                 (-> pstate
+                     (dissoc :error :attempts :retry-token :retry-for)
+                     (assoc :run-id (uuid/next)
+                            :status :saving
+                            :recovering recovering)
+                     (update :last-progress-at d/nilv (inst-ms (ct/now)))))))
+     ptk/WatchEvent
+     (watch [_ _ _]
+       (rx/of (run-persistence-task))))))
+
+(defn- slow-retry-cycle
+  "Resumes a failed queue after `slow-retry-delay-ms`, unless the queue is
+  resumed some other way, persistence restarts or the workspace closes."
+  [stream]
+  (let [stopper-s (rx/merge
+                   (rx/filter (ptk/type? ::resume-persistence) stream)
+                   (rx/filter (ptk/type? ::initialize-persistence) stream)
+                   (rx/filter (ptk/type? ::dw/finalize-workspace) stream))]
+    (->> (rx/timer slow-retry-delay-ms)
+         (rx/map (fn [_] (resume-persistence true)))
+         (rx/take-until stopper-s))))
+
+(defn- suspend-retries
+  "Stops retrying when the workspace closes. A pending backoff timer goes
+  stale, and no backoff or slow cycle is armed until a file is opened
+  again. Queued edits stay queued and a request in flight still lands."
   []
-  (ptk/reify ::resume-persistence
+  (ptk/reify ::suspend-retries
     ptk/UpdateEvent
     (update [_ state]
       (update state :persistence
-              (fn [pstate]
-                (-> pstate
-                    (dissoc :error :attempts :retry-token :retry-for)
-                    (assoc :run-id (uuid/next) :status :saving)
-                    (update :last-progress-at d/nilv (inst-ms (ct/now)))))))
+              #(-> %
+                   (assoc :suspended true)
+                   (dissoc :retry-token))))))
+
+(defn- restore-retries
+  "Lets failed saves be retried again once a file is opened."
+  []
+  (ptk/reify ::restore-retries
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :persistence dissoc :suspended))))
+
+(defn- release-failed-file
+  "Drops the queued commits of the file whose save failed terminally.
+
+  This runs when the user opens a file again, not at failure time. The
+  failure itself stays visible, because `wait-persisted-or-error` must keep
+  rejecting: callers use it to avoid snapshotting a file whose edits were
+  never saved. What must not survive is the halt. Left in place, the failed
+  commits sit at the head of the queue forever and, because the queue is
+  shared, they also block the pending edits of every other file.
+
+  With `revert?` the file is still open with the released edits applied,
+  so they are rolled back as a rejection would be: undone on screen and
+  cut from the undo history."
+  [revert?]
+  (let [plan (volatile! nil)]
+    (ptk/reify ::release-failed-file
+      ptk/UpdateEvent
+      (update [_ state]
+        (let [pstate    (:persistence state)
+              commit-id (get-in pstate [:error :commit-id])
+              file-id   (get-in pstate [:index commit-id :file-id])
+              plan'     (when (and revert? file-id)
+                          (pcm/release-plan pstate file-id))]
+          (vreset! plan plan')
+          (assoc state :persistence
+                 (-> (if plan'
+                       (pcm/without-rolled-back pstate {:file-id file-id} plan')
+                       pstate)
+                     (drop-file-commits file-id)
+                     (pcm/prune-remote-changes file-id)
+                     (dissoc :failing-since :slow-failures)))))
+
+      ptk/WatchEvent
+      (watch [it state stream]
+        (if-let [plan @plan]
+          (apply-rollback-plan it state stream plan)
+          (rx/empty))))))
+
+(defn- queue-needs-a-runner?
+  "True when the queue still holds commits that nobody is sending.
+
+  The runner does not survive a subscription teardown, so both
+  initialization and recovery hit this. A halted queue is excluded: the
+  halt is lifted by `recover-persistence`, which has its own triggers. A
+  retrying episode is excluded too: its backoff timer owns the recovery,
+  or `recover-persistence` resumes it when retries were suspended."
+  [{:keys [queue status]}]
+  (and (seq queue)
+       (not= :error status)
+       (not= :retrying status)))
+
+(defn forget-other-versions
+  "Forgets the commits of the freshly loaded `file` made on another version
+  (`pcm/without-other-versions`), so no rollback or rebase replays them on
+  the loaded data. A pending status with nothing left to save turns saved."
+  [state {:keys [id vern]}]
+  (update state :persistence
+          (fn [pstate]
+            (let [pstate (pcm/without-other-versions pstate id vern)]
+              (cond-> pstate
+                (and (= :pending (:status pstate))
+                     (nothing-to-save? pstate))
+                (assoc :status :saved))))))
+
+(defn pending-file-changes
+  "Queued and buffered edits to restore into a freshly loaded file, oldest
+  first. Only edits of the loaded version belong in its data. A
+  permanently failed file is excluded because recovery releases its edits."
+  [{:keys [persistence]} {:keys [id vern]}]
+  (let [{:keys [queue index buffer status error]} persistence
+        failed-file-id (get-in index [(:commit-id error) :file-id])
+        of-file?       #(and (= id (:file-id %))
+                             (= vern (:file-vern %)))]
+    (if (and (= :error status)
+             (= id failed-file-id)
+             (not (slow-retry-pending? persistence)))
+      []
+      (-> []
+          (into (comp (map #(get index %))
+                      (filter of-file?)
+                      (mapcat :commits)
+                      (mapcat :redo-changes))
+                queue)
+          (into (comp (filter of-file?)
+                      (mapcat :redo-changes))
+                buffer)))))
+
+(defn- initialize-persistence-state
+  "Brings persistence to a coherent starting shape when the workspace
+  mounts.
+
+  Deliberately leaves a halted or retrying queue alone. Lifting a halt is
+  `recover-persistence`'s job, and it waits for the user to open a file, so
+  doing it here would release edits the moment the view mounts rather than
+  when the user acts on them."
+  []
+  (ptk/reify ::initialize-persistence-state
     ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/of (run-persistence-task)))))
+    (watch [_ state _]
+      (let [{:keys [queue status run-id buffer]} (:persistence state)]
+        (rx/concat
+         (cond
+           ;; A commit left queued by a previous session, with no runner.
+           (queue-needs-a-runner? (:persistence state))
+           (rx/of (resume-persistence))
+
+           ;; Nothing queued and nothing in flight: there is nothing to save.
+           (and (empty? queue)
+                (empty? buffer)
+                (not= status :error)
+                (or run-id (#{:pending :saving} status)))
+           (rx/of (update-status :saved))
+
+           :else
+           (rx/empty))
+         ;; Queues the commits a previous session left buffered
+         (if (seq buffer)
+           (rx/of (flush-buffer))
+           (rx/empty)))))))
+
+(defn- notify-kept-failure
+  "Shows the save failure the queue keeps again, so the count of unsaved
+  changes replaces the notice the role change shows."
+  []
+  (ptk/reify ::notify-kept-failure
+    ptk/EffectEvent
+    (effect [_ state _]
+      (let [error (dm/get-in state [:persistence :error])]
+        (errors/flash-persistence (ex-info (:hint error) error))))))
 
 (defn- recover-persistence
-  []
+  "Lifts a halted queue when a file is opened again or the role changes.
+
+  Leaving the workspace suspends retries (`suspend-retries`), so opening a
+  file (`opened-file?`) restores them, resends a retrying episode whose
+  backoff was cut short, and sends a failure the slow cycle still covers
+  (`slow-retry-pending?`) once more instead of dropping it.
+
+  Every other terminal failure is permanent for that file: permission lost,
+  file gone, or changes the server refuses. None of them can succeed on a
+  resend, so opening a file releases them instead of replaying them.
+  Retaining them until here is deliberate: it is what keeps
+  `wait-persisted-or-error` rejecting, which is what stops
+  `workspace/versions.cljs` from building a snapshot out of unsaved edits.
+
+  A lost permission is not a temporary condition. The backend raises
+  `:not-found` for it, and replaying the save to find that out routes the
+  user to the exception page. A role change that leaves the user a viewer
+  keeps those edits; the one that brings edit rights back releases them."
+  [opened-file?]
   (ptk/reify ::recover-persistence
     ptk/WatchEvent
     (watch [_ state _]
-      (let [{:keys [queue index status error run-id]} (:persistence state)
-            commit (get index (peek queue))]
-        (cond
-          ;; A retrying episode owns its recovery through the backoff
-          ;; scheduler; resuming here would bypass the attempt budget.
-          (and (seq queue)
-               (not= status :retrying)
-               (or (not= status :error)
-                   (and (= :save-permission-denied (:code error))
-                        (not (::request-id commit))
-                        (= (:file-id commit) (:current-file-id state))
-                        (dm/get-in state [:permissions :can-edit]))))
-          (rx/of (resume-persistence))
+      (let [{:keys [queue status run-id suspended]} (:persistence state)]
+        (rx/concat
+         (if (and opened-file? suspended)
+           (rx/of (restore-retries))
+           (rx/empty))
+         (cond
+           ;; A live retry episode owns its recovery through the backoff
+           ;; scheduler; resuming here would bypass the attempt budget.
+           ;; A suspended one has no scheduler left.
+           (= :retrying status)
+           (if (and opened-file? suspended)
+             (rx/of (resume-persistence))
+             (rx/empty))
 
-          (and (empty? queue)
-               (not= status :error)
-               (or run-id (#{:pending :saving} status)))
-          (rx/of (update-status :saved)))))))
+           (slow-retry-pending? (:persistence state))
+           (rx/of (resume-persistence true))
 
-(def ^:private xf-mapcat-undo
-  (mapcat :undo-changes))
+           ;; A viewer's edits wait for edit rights to come back, still
+           ;; queued and on screen.
+           (and (not opened-file?)
+                (= :save-permission-denied (dm/get-in state [:persistence :error :code]))
+                (not (dm/get-in state [:permissions :can-edit])))
+           (rx/of (notify-kept-failure))
 
-(def ^:private xf-mapcat-redo
-  (mapcat :redo-changes))
+           ;; An opened file was loaded without the released edits; one
+           ;; still open shows them, so they are reverted.
+           (= :error status)
+           (rx/of (release-failed-file (not opened-file?)) (resume-persistence))
+
+           (queue-needs-a-runner? (:persistence state))
+           (rx/of (resume-persistence))
+
+           (and (empty? queue) (or run-id (#{:pending :saving} status)))
+           (rx/of (update-status :saved))
+
+           :else
+           (rx/empty)))))))
 
 (defn- merge-commit
+  "One queue entry per file and version: a save carries one version."
   [buffer]
-  (->> (rx/from (group-by :file-id buffer))
-       (rx/map (fn [[_ [item :as commits]]]
-                 (let [uchg (into [] xf-mapcat-undo commits)
-                       rchg (into [] xf-mapcat-redo commits)]
-                   (-> item
-                       (assoc :undo-changes uchg)
-                       (assoc :redo-changes rchg)
-                       (assoc :changes rchg)))))))
+  (->> (rx/from (group-by (juxt :file-id :file-vern) buffer))
+       (rx/map (comp pcm/queue-entry val))))
+
+(defn- flush-buffer
+  "Queues the buffered commits, merged into one queue entry per file."
+  []
+  (ptk/reify ::flush-buffer
+    ptk/WatchEvent
+    (watch [_ state _]
+      (if-let [buffer (seq (dm/get-in state [:persistence :buffer]))]
+        (->> (merge-commit buffer)
+             (rx/map append-commit))
+        (rx/empty)))))
 
 (defn- resume-on-online
   "Re-enters the runner for a retrying episode when the browser reports
   connectivity back, instead of waiting out the backoff. Terminal failures
-  stay terminal: only a live `:retrying` episode resumes."
+  stay terminal: only a live `:retrying` episode resumes, never one
+  suspended outside the workspace."
   []
   (ptk/reify ::resume-on-online
     ptk/WatchEvent
     (watch [_ state _]
-      (let [{:keys [status queue]} (:persistence state)]
-        (if (and (seq queue) (= :retrying status))
+      (let [{:keys [status queue suspended]} (:persistence state)]
+        (if (and (seq queue) (= :retrying status) (not suspended))
           (rx/of (run-persistence-task))
           (rx/empty))))))
+
+(defn- sync-unload-guard
+  "Turns the browser's leave-page warning on while edits are unsaved:
+  buffered, queued, or retained after a failed save."
+  []
+  (ptk/reify ::sync-unload-guard
+    ptk/EffectEvent
+    (effect [_ state _]
+      (if (or (seq (dm/get-in state [:persistence :buffer]))
+              (seq (dm/get-in state [:persistence :queue])))
+        (swap! st/ongoing-tasks conj :persistence)
+        (swap! st/ongoing-tasks disj :persistence)))))
+
+(defn- persist-buffered
+  "Forces a save when local commits wait in the buffer."
+  []
+  (ptk/reify ::persist-buffered
+    ptk/WatchEvent
+    (watch [_ state _]
+      (if (seq (dm/get-in state [:persistence :buffer]))
+        (rx/of ::force-persist)
+        (rx/empty)))))
+
+(defn leave-signals
+  "Emits when the tab is hidden or the window loses focus: another tab or
+  app, a plugin iframe, a closed laptop. Empty outside the browser."
+  []
+  (if (and (exists? js/window) (exists? js/document))
+    (rx/merge
+     (->> (rx/from-event js/document "visibilitychange")
+          (rx/filter #(= "hidden" (.-visibilityState js/document))))
+     (rx/from-event js/window "blur"))
+    (rx/empty)))
 
 (defn initialize-persistence
   []
@@ -577,12 +1386,17 @@
                   (rx/filter #(= % ::force-persist))))]
 
         (rx/merge
-         (rx/of (recover-persistence))
+         (rx/of (initialize-persistence-state))
+
+         (->> stream
+              (rx/filter (ptk/type? ::dw/finalize-workspace))
+              (rx/map (fn [_] (suspend-retries)))
+              (rx/take-until stoper-s))
 
          (->> stream
               (rx/filter #(or (ptk/type? ::dc/change-team-role %)
                               (ptk/type? ::dw/workspace-initialized %)))
-              (rx/map (fn [_] (recover-persistence)))
+              (rx/map #(recover-persistence (ptk/type? ::dw/workspace-initialized %)))
               (rx/take-until stoper-s))
 
          (->> (rx/interval saving-check-interval-ms)
@@ -602,20 +1416,48 @@
               (rx/map #(ptk/data-event ::persistence-notification))
               (rx/take-until stoper-s))
 
+         ;; Sends the buffered edits when the user leaves the tab or window.
+         (->> (leave-signals)
+              (rx/map (fn [_] (persist-buffered)))
+              (rx/take-until stoper-s))
+
+         ;; Syncs the leave-page warning on every buffer and queue change
+         (->> (rx/merge
+               (rx/of nil)
+               (->> stream
+                    (rx/filter #(or (ptk/type? ::buffer-commit %)
+                                    (ptk/type? ::append-commit %)
+                                    (ptk/type? ::discard-commit %)
+                                    (ptk/type? ::rollback-rejected %)
+                                    (ptk/type? ::release-failed-file %)
+                                    (ptk/type? ::dw/bundle-fetched %)))))
+              (rx/map (fn [_] (sync-unload-guard)))
+              (rx/take-until stoper-s))
+
+         ;; Locks the workspace while saves fail and the user can edit
+         (->> stream
+              (rx/filter #(or (ptk/type? ::update-status %)
+                              (ptk/type? ::persistence-failed %)
+                              (ptk/type? ::resume-persistence %)
+                              (ptk/type? ::discard-commit %)
+                              (ptk/type? ::dc/change-team-role %)))
+              (rx/map (fn [_] (plk/sync-failure-lock)))
+              (rx/take-until stoper-s))
+
          (->> local-commits-s
               (rx/debounce 200)
               (rx/map (fn [_]
                         (update-status :pending)))
               (rx/take-until stoper-s))
 
-         ;; Here we watch for local commits, buffer them in a small
-         ;; chunks (very near in time commits) and append them to the
-         ;; persistence queue
+         ;; Buffers local commits; each notification queues the buffer
          (->> local-commits-s
+              (rx/map buffer-commit)
+              (rx/take-until stoper-s))
+
+         (->> notifier-s
+              (rx/map (fn [_] (flush-buffer)))
               (rx/take-until stoper-s)
-              (rx/buffer-until notifier-s)
-              (rx/mapcat merge-commit)
-              (rx/map append-commit)
               (rx/finalize (fn []
                              (log/debug :hint "finalize persistence: changes watcher"))))
 
@@ -625,6 +1467,7 @@
               (rx/filter dch/commit?)
               (rx/map deref)
               (rx/filter #(= :remote (:source %)))
-              (rx/mapcat (fn [{:keys [file-id file-revn] :as commit}]
-                           (rx/of (update-file-revn file-id file-revn))))
+              (rx/mapcat (fn [{:keys [file-id file-revn redo-changes]}]
+                           (rx/of (record-remote-changes file-id file-revn redo-changes)
+                                  (update-file-revn file-id file-revn))))
               (rx/take-until stoper-s)))))))

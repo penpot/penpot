@@ -14,6 +14,7 @@
    [app.common.files.shapes-builder :as sb]
    [app.common.math :as mth]
    [app.common.media :as media]
+   [app.common.path-names :as cpn]
    [app.common.schema :as sm]
    [app.common.types.container :as ctn]
    [app.common.types.fills :as types.fills]
@@ -435,10 +436,12 @@
 
             fdata   (dsh/lookup-file-data state file-id)
             page    (dsh/get-page fdata page-id)
-            pos     (dsh/get-viewport-center state)]
+            pos     (dsh/get-viewport-center state)
+
+            name    (cpn/remove-extension (:name svg-data))]
 
         (->> (create-shapes-svg file-id (:objects page) pos svg-data)
-             (rx/map (partial add-shapes-and-component it fdata page (:name svg-data))))))))
+             (rx/map (partial add-shapes-and-component it fdata page name)))))))
 
 (defn upload-media-components
   [params]
@@ -487,10 +490,14 @@
     (watch [_ _ _]
       (->> (svg->clj [name svg-string])
            (rx/take 1)
-           (rx/map #(svg/add-svg-shapes id % position {:ignore-selection? true
+           (rx/map #(svg/add-svg-shapes id % position {:frame-id uuid/zero
+                                                       :ignore-selection? true
                                                        :change-selection? false}))))))
 (defn create-svg-shape-with-images
-  [file-id id name svg-string position on-success on-error]
+  "Uploads the images of `svg-string` and adds it as shape `id`.
+  `check-writable` runs once the images are uploaded, before the shape is
+  added; when it throws, no shape is added and `on-error` gets the error."
+  [file-id id name svg-string position {:keys [check-writable on-success on-error]}]
   (ptk/reify ::create-svg-shape-with-images
     ptk/WatchEvent
     (watch [_ _ _]
@@ -500,13 +507,15 @@
             (fn [svg-data]
               (->> (svg/upload-images svg-data file-id)
                    (rx/map #(assoc svg-data :image-data %)))))
+           (rx/tap (fn [_] (check-writable)))
            (rx/map
             (fn [svg-data]
               (svg/add-svg-shapes
                id
                svg-data
                position
-               {:ignore-selection? true
+               {:frame-id uuid/zero
+                :ignore-selection? true
                 :change-selection? false})))
            (rx/tap on-success)
            (rx/catch on-error)))))

@@ -2,6 +2,12 @@
 
 Commit only on explicit request. Before commit: `git status`; exclude unrelated user changes.
 
+**Never stage a plan file.** A plan is session bookkeeping, not part of the
+change: the commit carries the code and the tests. The `implement-plan` flow
+still closes the plan (`Status: done` plus one `Review Log` line with the issue
+URL); that is not a file to ship, and its absence from the commit is correct,
+not a missing piece.
+
 Do not guess or hallucinate git author information (Name or Email). Never include the
 `--author` flag in git commands unless specifically instructed by the user for a unique
 case; assume the local environment is already configured. Allow git commit to
@@ -11,12 +17,11 @@ automatically pull the identity from the local git config `user.name` and `user.
 ## Message Format
 
 ```
-:emoji: Subject line (imperative, capitalized, no period, <=70 chars)
+:emoji: Subject line (imperative, capitalized, no period, <=80 chars)
 
 Body explaining what changed and why.
-Wrap lines at 76 characters — git log adds a
-four-space indent, so 76 + 4 fits an 80-column
-terminal. Keep each line concise.
+Wrap lines at 80 characters.
+Keep each line concise.
 
 AI-assisted-by: model-name
 ```
@@ -26,19 +31,21 @@ AI-assisted-by: model-name
 These rules are not advisory. Do not commit until every one holds. A commit
 that breaks them is wrong, even if the code is right.
 
-- **Body lines MUST wrap at 76 characters or fewer.** Measure every line; do
-  not eyeball it. This is the rule most often skipped. Rationale: `git log`
-  indents the body four spaces, so 76 + 4 fits an 80-column terminal.
-- **Subject MUST be ≤70 chars**, imperative, capitalized, no trailing period.
+- **Body lines MUST wrap at 80 characters or fewer.** Measure every line; do
+  not eyeball it. This is the rule most often skipped.
+- **Subject MUST be ≤80 chars**, imperative, capitalized, no trailing period.
+  Merge/Revert/Reapply commits skip the length check: git prepends those
+  prefixes to an existing subject.
 - **MUST be a blank line** between subject and body.
 - **MUST run `scripts/check-commit` and get exit code 0 before finishing.**
   It mechanically validates the rules above; a failing run is a blocker.
   - It checks `HEAD` by default: `./scripts/check-commit`
   - For another commit: `./scripts/check-commit -c <ref>`
-- **NEVER** hand-wave the body as "one long line". If a line exceeds 76,
+- **NEVER** hand-wave the body as "one long line". If a line exceeds 80,
   break it at a space.
-- Exceptions inside the body (do not wrap these): `Signed-off-by:`,
-  `Co-authored-by:`, `AI-assisted-by:` trailers, and lines carrying a URL.
+- **`Co-authored-by:` is for human co-authors only** (`Co-authored-by: Name <email>`). AI providers, agents and bots must not be credited that way; use `AI-assisted-by:` instead. `scripts/check-commit` rejects a trailer value that names an AI provider or agent (`Claude`, `Copilot`, `Cursor`, `Codex`, `Gemini`, `Aider`, `Cline`, `Windsurf`, `DeepSeek`, `OpenCode`, `devin-ai`, `amazon q`, and similar) or carries a bot identity (`[bot]`, `bot@`). `NON_HUMAN_COAUTHOR_PATTERN` is the list; extend it when a new tool starts adding trailers. A person whose own name or email matches one of those tokens (a surname like `Cline`, an address at a provider) is rejected too; amend the trailer or credit them with `Reviewed-by:`.
+- CI runs `scripts/check-commit` on every new commit (`mem:workflow/creating-commits` is enforced by `.github/workflows/commit-checker.yml`), so a forbidden trailer fails the build.
+- Exceptions inside the body (do not wrap these): `Signed-off-by:`, `Co-authored-by:`, `AI-assisted-by:` trailers, and lines carrying a URL.
 
 **AI-assisted-by trailer rules:**
 - Use only the model name, e.g. `mimo-v2.5`, `deepseek-v4-flash`
@@ -47,6 +54,14 @@ that breaks them is wrong, even if the code is right.
 ## Commit Type Emojis
 
 `:bug:` bug fix · `:sparkles:` enhancement · `:tada:` new feature · `:recycle:` refactor · `:lipstick:` cosmetic · `:ambulance:` critical fix · `:books:` docs · `:construction:` WIP · `:boom:` breaking · `:wrench:` config · `:zap:` perf · `:whale:` docker · `:paperclip:` other · `:arrow_up:` dep upgrade · `:arrow_down:` dep downgrade · `:fire:` removal · `:globe_with_meridians:` translations · `:rocket:` epic/highlight
+
+## Atomic Commits
+
+A PR squash-merges into one commit by default, so the split inside the branch
+does not reach `main` and nothing depends on it. When the PR asks for a
+regular merge (`mem:workflow/creating-prs` → Merge Strategy), every commit
+must stand alone: it builds, passes the linter, and needs no later commit on
+the same branch to make sense.
 
 ## Referencing Issues
 

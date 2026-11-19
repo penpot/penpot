@@ -9,7 +9,7 @@ use super::document::{
 };
 use super::images::{emit_fills, emit_strokes};
 use super::render_tree;
-use crate::render::RenderResources;
+use crate::render::{children_paint_order, RenderResources};
 
 pub(super) fn render_frame(
     builder: &mut SvgLayerCanvas,
@@ -34,6 +34,7 @@ pub(super) fn render_frame(
     // (GPU), filter only blurs/tints — keeps stroke-ring width and rotation.
     if !builder.suppress_filters {
         let drops: Vec<Shadow> = element.drop_shadows_visible().copied().collect();
+        let cleared = !drops.is_empty() && builder.open_drop_shadow_clear_group(element);
         for shadow in &drops {
             let id = push_container_drop_filter(builder, shadow);
             builder.open_group(&format!("filter=\"url(#{id})\""));
@@ -47,6 +48,9 @@ pub(super) fn render_frame(
             builder.silhouette_offset = prev_offset;
             builder.silhouette_spread = prev_spread;
             builder.suppress_filters = prev_suppress;
+            builder.close_group();
+        }
+        if cleared {
             builder.close_group();
         }
     }
@@ -104,7 +108,7 @@ fn render_frame_body(
         )?;
     }
 
-    let children: Vec<_> = element.children_ids_iter_forward(false).copied().collect();
+    let children = children_paint_order(tree, element);
     for child_id in &children {
         render_tree(builder, shared, child_id, tree, scale)?;
     }

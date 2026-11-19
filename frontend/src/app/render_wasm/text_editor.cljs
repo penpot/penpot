@@ -24,7 +24,7 @@
 
 (def multiple-state-multiple (sr/translate-multiple-state :multiple))
 
-(def ^:const TEXT_EDITOR_STYLES_METADATA_SIZE (* 31 4))
+(def ^:const TEXT_EDITOR_STYLES_METADATA_SIZE (* 33 4))
 (def ^:const TEXT_EDITOR_STYLES_FILL_SOLID 0)
 (def ^:const TEXT_EDITOR_STYLES_FILL_LINEAR_GRADIENT 1)
 (def ^:const TEXT_EDITOR_STYLES_FILL_RADIAL_GRADIENT 2)
@@ -123,12 +123,17 @@
             width (aget heap-i32 (+ fill-u32-offset 6))
             height (aget heap-i32 (+ fill-u32-offset 7))]
         {:fill-opacity (u8->opacity alpha)
-         :fill-image {:id (uuid/from-unsigned-parts a b c d)
-                      :width width
-                      :height height
-                      :mtype (types.fills.impl/decode-mtype mtype)
-                      :keep-aspect-ratio (not (zero? (bit-and flags 0x01)))
-                      :name "sample"}})
+         :fill-image (cond-> {:id (uuid/from-unsigned-parts a b c d)
+                              :width width
+                              :height height
+                              :mtype (types.fills.impl/decode-mtype mtype)
+                              :keep-aspect-ratio (not (zero? (bit-and flags 0x01)))
+                              :name "sample"}
+                       (not (zero? (bit-and flags 0x02)))
+                       (assoc :transform {:x      (aget heap-f32 (+ fill-u32-offset 8))
+                                          :y      (aget heap-f32 (+ fill-u32-offset 9))
+                                          :width  (aget heap-f32 (+ fill-u32-offset 10))
+                                          :height (aget heap-f32 (+ fill-u32-offset 11))}))})
 
       nil)))
 
@@ -320,6 +325,8 @@
               font-weight-value (aget heap-i32 (+ u32-offset 24))
               line-height-value (aget heap-f32 (+ u32-offset 29))
               letter-spacing-value (aget heap-f32 (+ u32-offset 30))
+              list-style-type-state (aget heap-u32 (+ u32-offset 31))
+              list-style-type-value (aget heap-u32 (+ u32-offset 32))
               font-id (fonts/uuid->font-id font-family-id-value)
               font-style-value (sr/untranslate-font-style (text-editor-get-style-property font-style-state font-style-raw-value))
               font-variant-id-computed (text-editor-compute-font-variant-id font-id font-weight-value font-style-value)
@@ -351,6 +358,7 @@
                       :text-direction (sr/untranslate-text-direction (text-editor-get-style-property text-direction-state text-direction-value))
                       :text-decoration (sr/untranslate-text-decoration (text-editor-get-style-property text-decoration-state text-decoration-value))
                       :text-transform (sr/untranslate-text-transform (text-editor-get-style-property text-transform-state text-transform-value))
+                      :list-style-type (sr/untranslate-list-style-type (text-editor-get-style-property list-style-type-state list-style-type-value))
                       ;; WASM reports size/weight as numbers, but the rest of Penpot (and the backend schema) expects strings.
                       :line-height (let [height (text-editor-get-style-property line-height-state line-height-value)]
                                      (if (= height :multiple) height (str height)))
@@ -378,10 +386,9 @@
              (wasm/ready?))
     (let [encoder (js/TextEncoder.)
           buf (.encode encoder text)
-          heapu8 (mem/get-heap-u8)
           size (mem/size buf)
           offset (mem/alloc size)]
-      (mem/write-buffer offset heapu8 buf))))
+      (mem/write-buffer offset (mem/get-heap-u8) buf))))
 
 (defn text-editor-encode-text-post
   [text]
@@ -501,10 +508,10 @@
   (when (wasm/ready?)
     (try
       (let [byte-offset (mem/alloc 16)
-            u32-offset (mem/->offset-32 byte-offset)
-            heap (mem/get-heap-u32)]
+            u32-offset (mem/->offset-32 byte-offset)]
         (h/call wasm/internal-module "_text_editor_get_active_shape_id" byte-offset)
-        (let [a (aget heap u32-offset)
+        (let [heap (mem/get-heap-u32)
+              a (aget heap u32-offset)
               b (aget heap (+ u32-offset 1))
               c (aget heap (+ u32-offset 2))
               d (aget heap (+ u32-offset 3))
@@ -521,10 +528,10 @@
   (when (wasm/ready?)
     (let [byte-offset     (mem/alloc 16)
           u32-offset      (mem/->offset-32 byte-offset)
-          heap            (mem/get-heap-u32)
           has-selection?  (h/call wasm/internal-module "_text_editor_get_selection" byte-offset)]
       (if has-selection?
-        (let [result {:anchor-para   (aget heap u32-offset)
+        (let [heap   (mem/get-heap-u32)
+              result {:anchor-para   (aget heap u32-offset)
                       :anchor-offset (aget heap (+ u32-offset 1))
                       :focus-para    (aget heap (+ u32-offset 2))
                       :focus-offset  (aget heap (+ u32-offset 3))}]
@@ -838,13 +845,79 @@
         (when-not (and (= start-para end-para) (= start-offset end-offset))
           (content-range content range))))))
 
+(defn span-ranges
+  "The char range of every span of `content`, a slice that starts at `start`
+  (`{:para :offset}`) in its shape: one vector of ranges per paragraph."
+  [content {:keys [para offset]}]
+  (into []
+        (map-indexed
+         (fn [idx paragraph]
+           (let [para-idx (+ para idx)
+                 spans    (:children paragraph)
+                 starts   (reductions + (if (zero? idx) offset 0) (map (comp count :text) spans))]
+             (mapv (fn [span span-start]
+                     {:start-para para-idx
+                      :start-offset span-start
+                      :end-para para-idx
+                      :end-offset (+ span-start (count (:text span)))})
+                   spans
+                   starts))))
+        (-> content :children first :children)))
+
+(defn- range-origin
+  "Where the text in `range` starts in the text `shape-id`, shape-local, with the size
+  of the box its fills are laid over: {:x :y :box {:width :height}}, or nil."
+  [shape-id {:keys [start-para start-offset end-para end-offset]}]
+  (when (wasm/ready?)
+    (let [id          (uuid/get-u32 shape-id)
+          byte-offset (mem/alloc 16)
+          f32-offset  (mem/->offset-32 byte-offset)
+          has-text?   (h/call wasm/internal-module "_text_get_range_origin"
+                              (aget id 0) (aget id 1) (aget id 2) (aget id 3)
+                              start-para start-offset end-para end-offset byte-offset)
+          heap        (mem/get-heap-f32)
+          result      (when has-text?
+                        {:x   (aget heap f32-offset)
+                         :y   (aget heap (+ f32-offset 1))
+                         :box {:width  (aget heap (+ f32-offset 2))
+                               :height (aget heap (+ f32-offset 3))}})]
+      (mem/free)
+      result)))
+
+(defn- box-relative-fill?
+  [fill]
+  (or (some? (:fill-color-gradient fill))
+      (some? (:fill-image fill))))
+
+(defn content-geometry
+  "Where the gradient or image spans of `content`, a slice starting at `start`, begin
+  in the text `shape-id`, each with its box size; nil when it has none."
+  [shape-id content start]
+  (let [ranges  (span-ranges content start)
+        origins (mapv (fn [paragraph paragraph-ranges]
+                        (mapv (fn [span range]
+                                (when (some box-relative-fill? (:fills span))
+                                  (range-origin shape-id range)))
+                              (:children paragraph)
+                              paragraph-ranges))
+                      (-> content :children first :children)
+                      ranges)]
+    (when (some some? (flatten origins))
+      {:origins origins})))
+
 (defn- clean-styles
   "Drop nil-valued attrs (unlike the DOM path, our merge would keep them and fail
-   the backend schema); a per-span fn is passed through untouched."
+   the backend schema); a per-span fn is passed through untouched. A nil
+   `:text-decoration` is the panel's toggle-off, so it becomes \"none\"."
   [styles]
   (if (fn? styles)
     styles
-    (into {} (remove (comp nil? val)) styles)))
+    (into {}
+          (keep (fn [[k v]]
+                  (cond
+                    (some? v)              [k v]
+                    (= k :text-decoration) [k "none"])))
+          styles)))
 
 (defn apply-styles-to-selection
   "Apply `styles` (attrs map, or a fn per span) to the selected spans; `:with-fills?` also returns `:fills`."

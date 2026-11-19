@@ -23,11 +23,8 @@ test("[View mode] Export presets are preserved when navigating between boards in
   // Enter inspect (code) mode
   await viewer.showCode();
 
-  // Wait for the inspect panel to load
-  await page.waitForSelector(".main_ui_inspect_exports__add-export");
-
   // Add an export preset via the "+" button in the Export section
-  const addExportButton = page.locator(".main_ui_inspect_exports__add-export");
+  const addExportButton = page.getByRole("button", { name: "Add export" });
   await addExportButton.click();
 
   // Verify the "Export 1 element" button appears, confirming the preset was added

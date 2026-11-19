@@ -33,7 +33,8 @@
   "Enabled route names. Query-string routing: the `screen` query param
   carries the route name (`?screen=<name>&params`); it is router-owned
   and reserved, every other param travels as a plain query param."
-  (into #{:auth-login
+  (into #{:mcp-authorize
+          :auth-login
           :auth-register
           :auth-register-validate
           :auth-register-success
@@ -140,6 +141,13 @@
                       (u/query-string->map (:query uri)))})))
 
 
+(defn- legacy-query-token
+  "Legacy root links (e.g. `#?template=<url>`) keep their params in a
+  bare `#?…` fragment. Return them as a query token, or nil."
+  [hash]
+  (when (str/starts-with? hash "#?")
+    (subs hash 1)))
+
 (defn- store-session-params
   [{:keys [template plugin]}]
   (binding [storage/*sync* true]
@@ -156,7 +164,7 @@
   active. If so, calls :check-nitrate-sso and either proceeds with navigation
   or redirects to the SSO provider URL. Successful checks are cached for five
   minutes per profile and team; redirect results are never cached."
-  [match send-event-info? url]
+  [match send-event-info? query-string]
   (let [route-name      (name (get-in match [:data :name]))
         relevant?       (and (contains? cf/flags :admin-console)
                              (or (str/starts-with? route-name "dashboard")
@@ -180,7 +188,7 @@
       (navigate)
 
       :else
-      (->> (rp/cmd! :check-nitrate-sso {:team-id team-id :url url})
+      (->> (rp/cmd! :check-nitrate-sso {:team-id team-id :query-string query-string})
            (rx/subs!
             (fn [{:keys [authorized redirect-uri]}]
               (if authorized
@@ -198,7 +206,7 @@
   and deliberately do NOT proceed with normal navigation: emitting
   `rt/navigated` would clear the exception that was just assigned.
   Otherwise, delegate to `check-sso-and-navigate`."
-  [match send-event-info? url]
+  [match send-event-info? query-string]
   (let [route-name        (name (get-in match [:data :name]))
         sso-error?        (some? (get-in match [:query-params :sso-error]))
         organization-id   (some-> (get-in match [:query-params :organization-id]) uuid/parse*)
@@ -215,7 +223,7 @@
                                       :team-id team-id
                                       :is-workspace is-workspace?
                                       :is-dashboard is-dashboard?}))
-      (check-sso-and-navigate match send-event-info? url))))
+      (check-sso-and-navigate match send-event-info? query-string))))
 
 (declare on-query-navigate)
 
@@ -226,7 +234,8 @@
   (let [location        (.-location js/document)
         location-path   (dm/str (.-origin location) (.-pathname location))
         valid-location? (= location-path (dm/str cf/public-uri))
-        legacy-hash     (.-hash location)]
+        legacy-hash     (.-hash location)
+        legacy-token    (legacy-query-token legacy-hash)]
 
     (cond
       (not valid-location?)
@@ -242,28 +251,37 @@
         (st/emit! (rt/nav name params {::rt/replace true}))
         (on-query-navigate router token send-event-info?))
 
+      ;; TODO(next-version): delete with `legacy-routes`.
+      (some? legacy-token)
+      (on-query-navigate router legacy-token send-event-info?)
+
       :else
       (on-query-navigate router token send-event-info?))))
 
 (defn- on-query-navigate
   [router token send-event-info?]
-  (let [token-query  (if (str/starts-with? (or token "") "?")
-                       (subs token 1)
-                       (or token ""))
+  (let [token-query  (rt/token->query-string token)
         query-params (u/query-string->map token-query)
-        empty-token? (str/blank? token-query)
+        ;; Without a `screen` the token targets the app root; its params
+        ;; (e.g. `template`) are forwarded to the dashboard or kept for
+        ;; after login.
+        root?        (nil? (rt/get-query-param query-params :screen))
         match        (rt/match router token)]
     (if (some? match)
-      (handle-sso-error-and-navigate match send-event-info? (rt/get-current-href))
+      (handle-sso-error-and-navigate match send-event-info? (rt/get-current-query-string))
 
       ;; We just recheck with an additional profile request; this
       ;; avoids some race conditions that causes unexpected redirects
       ;; on invitations workflows (and probably other cases).
       (->> (rp/cmd! :get-profile)
            (rx/mapcat (fn [profile]
-                        (->> (rp/cmd! :get-teams {})
-                             (rx/map (fn [teams]
-                                       (assoc profile ::teams (into #{} (map :id) teams)))))))
+                        ;; get-teams requires a session; anonymous users
+                        ;; only need their params kept for after login.
+                        (if (= (:id profile) uuid/zero)
+                          (rx/of profile)
+                          (->> (rp/cmd! :get-teams {})
+                               (rx/map (fn [teams]
+                                         (assoc profile ::teams (into #{} (map :id) teams))))))))
            (rx/subs! (fn [{:keys [id ::teams] :as profile}]
                        (cond
                          (= id uuid/zero)
@@ -271,7 +289,7 @@
                            (store-session-params query-params)
                            (st/emit! (rt/nav :auth-login)))
 
-                         empty-token?
+                         root?
                          (let [default-team-id (:default-team-id profile)
                                last-team-id    (dtm/get-last-team-id)
                                team-id         (if (contains? teams last-team-id)

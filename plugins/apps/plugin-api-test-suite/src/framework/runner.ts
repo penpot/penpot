@@ -98,6 +98,28 @@ export interface RunOptions {
 
 export type ResultReporter = (result: TestResult) => void;
 
+/** File and page that were active when the run started. */
+interface Home {
+  fileId: string | null;
+  teamId: string | null;
+  pageId: string | null;
+}
+
+// Reopens the home file when a test navigated to another one. Shape, page and
+// file references taken before navigating are stale afterwards, so callers
+// look objects up again by id. Uses the *raw* globals so it isn't credited
+// toward coverage.
+async function returnToHomeFile(home: Home): Promise<void> {
+  if (!home.fileId) return;
+  const workspace = penpotMgmt.workspace;
+  if (workspace.status === 'ready' && workspace.fileId === home.fileId) return;
+  await penpotMgmt.openFile(home.fileId, { teamId: home.teamId ?? undefined });
+}
+
+function homePage(home: Home) {
+  return penpot.currentFile?.pages.find((page) => page.id === home.pageId);
+}
+
 function withTimeout(promise: void | Promise<void>, ms: number): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     let settled = false;
@@ -152,6 +174,14 @@ export async function runTests(
     : focused;
 
   const recorder = createRecorder(penpot, apiSurface as ApiSurface);
+  const management = recorder.wrap(penpotMgmt, 'PenpotMgmt');
+
+  // Fixtures shared by the tests of this run (see `TestContext.fixture`).
+  const fixtures = new Map<string, Promise<unknown>>();
+  const fixture = <T>(key: string, create: () => Promise<T>): Promise<T> => {
+    if (!fixtures.has(key)) fixtures.set(key, create());
+    return fixtures.get(key) as Promise<T>;
+  };
 
   // Run every test with strict, deterministic API behavior. Set through the
   // recording proxy so the flags also count towards coverage:
@@ -162,13 +192,17 @@ export async function runTests(
   recorder.proxy.flags.throwValidationErrors = true;
   recorder.proxy.flags.naturalChildOrdering = true;
 
-  // Remember the page that was active when the run started. Tests share global
-  // state (selection, the active page) with no per-test reset, so a test that
-  // changes the active page — or fails before restoring it — would silently make
-  // every later test run on the wrong page. After each test we clear the
-  // selection and restore this page, all through the *raw* penpot so the cleanup
-  // isn't credited toward coverage.
-  const homePage = penpot.currentPage;
+  // Remember the file and page that were active when the run started. Tests
+  // share global state (selection, the active page, the open file) with no
+  // per-test reset, so a test that changes them — or fails before restoring
+  // them — would silently make every later test run in the wrong place. After
+  // each test we reopen this file and page and clear the selection, all through
+  // the *raw* globals so the cleanup isn't credited toward coverage.
+  const home: Home = {
+    fileId: penpotMgmt.workspace.fileId,
+    teamId: penpotMgmt.workspace.teamId,
+    pageId: penpot.currentPage?.id ?? null,
+  };
 
   const results: TestResult[] = [];
 
@@ -190,7 +224,7 @@ export async function runTests(
     // Create/name/remove the scratch board through the *raw* penpot so this
     // harness bookkeeping isn't credited toward coverage. The test still gets a
     // recording-wrapped board, so its own access to it is counted.
-    let rawBoard: ReturnType<typeof penpot.createBoard> | undefined;
+    let boardId: string | undefined;
     let result: TestResult;
 
     // Baseline the file's integrity errors before the test so we can attribute
@@ -198,13 +232,21 @@ export async function runTests(
     const integrityBaseline = integritySignatures();
 
     try {
-      rawBoard = penpot.createBoard();
+      const rawBoard = penpot.createBoard();
       rawBoard.name = SCRATCH_NAME;
+      boardId = rawBoard.id;
       const board = recorder.wrap(rawBoard, 'Board');
       await withTimeout(
-        testCase.fn({ penpot: recorder.proxy, board }),
+        testCase.fn({
+          penpot: recorder.proxy,
+          penpotMgmt: management,
+          board,
+          fixture,
+        }),
         TEST_TIMEOUT_MS,
       );
+      // The integrity baseline belongs to the home file, so check it there.
+      await returnToHomeFile(home);
       // Postcondition: the test must not have broken referential integrity.
       if (integrityBaseline) assertNoNewIntegrityErrors(integrityBaseline);
       result = {
@@ -225,22 +267,27 @@ export async function runTests(
       // `test.nocleanup` keeps the scratch board and shared state as the test
       // left them so the result can be inspected in the workspace.
       if (!testCase.noCleanup) {
-        try {
-          rawBoard?.remove();
-        } catch {
-          // best-effort cleanup; never fail a test because teardown failed
-        }
         // Reset shared state so the next test starts clean. All best-effort: a
         // teardown failure must never turn into a test failure.
+        try {
+          await returnToHomeFile(home);
+        } catch {
+          /* ignore */
+        }
+        try {
+          if (boardId) homePage(home)?.getShapeById(boardId)?.remove();
+        } catch {
+          /* ignore */
+        }
         try {
           penpot.selection = [];
         } catch {
           /* ignore */
         }
         try {
-          const active = penpot.currentPage;
-          if (homePage && active && active.id !== homePage.id) {
-            await penpot.openPage(homePage);
+          const page = homePage(home);
+          if (page && penpot.currentPage?.id !== page.id) {
+            await penpot.openPage(page);
           }
         } catch {
           /* ignore */

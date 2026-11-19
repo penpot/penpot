@@ -10,7 +10,7 @@
    [app.common.data.macros :as dm]
    [app.main.refs :as refs]
    [app.main.ui.components.dropdown :refer [dropdown]]
-   [app.main.ui.icons :as deprecated-icon]
+   [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
@@ -37,7 +37,7 @@
 
            (when (= selected (:id cur-library))
              [:span {:class (stl/css :icon-wrapper)}
-              deprecated-icon/tick])]))
+              [:> icon* {:icon-id i/tick :size "s"}]])]))
 
       [:li
        {:class (stl/css-case :file-library true
@@ -51,4 +51,4 @@
          (dm/str "(" (count typographies) ")")]]
        (when (= selected :file)
          [:span {:class (stl/css :icon-wrapper)}
-          deprecated-icon/tick])]]]))
+          [:> icon* {:icon-id i/tick :size "s"}]])]]]))

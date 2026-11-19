@@ -133,20 +133,20 @@
         on-success
         (mf/use-fn
          (mf/deps on-success-callback)
-         (fn [params]
+         (fn [response]
            (if (fn? on-success-callback)
-             (on-success-callback params)
+             (on-success-callback response)
              (cond
-               (some? (:invitation-token params))
-               (let [token (:invitation-token params)]
-                 (st/emit! (rt/nav :auth-verify-token {:token token})))
+               (some? (:invitation-token response))
+               (st/emit! (da/login-from-register
+                          {:invitation-token (:invitation-token response)}))
 
-               (:is-active params)
+               (:is-active response)
                (st/emit! (da/login-from-register))
 
                :else
                (do
-                 (swap! storage/user assoc ::email (:email params))
+                 (swap! storage/user assoc ::email (:email response))
                  (st/emit! (rt/nav :auth-register-success)))))))
 
         on-register-profile
@@ -293,22 +293,22 @@
         on-success
         (mf/use-fn
          (mf/deps on-success-callback)
-         (fn [params]
-           (cf/external-notify-register-success (:id params))
+         (fn [response]
+           (cf/external-notify-register-success (:id response))
            (if (fn? on-success-callback)
-             (on-success-callback (:email params))
+             (on-success-callback (:email response))
 
              (cond
-               (some? (:invitation-token params))
-               (let [token (:invitation-token params)]
-                 (st/emit! (rt/nav :auth-verify-token {:token token})))
+               (some? (:invitation-token response))
+               (st/emit! (da/login-from-register
+                          {:invitation-token (:invitation-token response)}))
 
-               (:is-active params)
+               (:is-active response)
                (st/emit! (da/login-from-register))
 
                :else
                (do
-                 (swap! storage/user assoc ::email (:email params))
+                 (swap! storage/user assoc ::email (:email response))
                  (st/emit! (rt/nav :auth-register-success)))))))
 
         on-error

@@ -14,9 +14,11 @@
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.texts :as dwt]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.errors :as errors]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.css-cursors :as cur]
+   [app.main.ui.hooks.wasm-effect :refer [with-wasm-effect]]
    [app.render-wasm.api :as wasm.api]
    [app.render-wasm.text-editor :as text-editor]
    [app.util.dom :as dom]
@@ -72,6 +74,27 @@
   (doseq [[mime value] items]
     (.setData data mime value)))
 
+(defn- collapse-input-caret
+  "Replaces the browser selection with a collapsed caret at the end of `node`."
+  [^js node]
+  (when-let [sel (.getSelection js/window)]
+    (let [range (.createRange js/document)]
+      (.selectNodeContents range node)
+      (.collapse range false)
+      (.removeAllRanges sel)
+      (.addRange sel range))))
+
+(defn- ensure-input-caret
+  "Collapses the browser selection into the capture surface when it leaves it:
+  such a selection is not editable, so typed keys would fire no `input`."
+  [^js node]
+  (when (some? node)
+    (let [sel (.getSelection js/window)]
+      (when-not (and (some? sel)
+                     (.contains node (.-anchorNode sel))
+                     (.contains node (.-focusNode sel)))
+        (collapse-input-caret node)))))
+
 (defn- reset-input-node
   "Empties the contenteditable capture surface and restores a collapsed caret
   inside it.
@@ -87,12 +110,7 @@
     (set! (.-textContent node) "")
     (when (not= (.-activeElement js/document) node)
       (.focus node))
-    (when-let [sel (.getSelection js/window)]
-      (let [range (.createRange js/document)]
-        (.selectNodeContents range node)
-        (.collapse range true)
-        (.removeAllRanges sel)
-        (.addRange sel range)))))
+    (collapse-input-caret node)))
 
 (defn- keep-input-alive
   "Keeps the capture surface able to receive further input WITHOUT clearing it.
@@ -372,8 +390,10 @@
                    (text-editor/text-editor-move-cursor 5 ctrl? shift?)
                    (wasm.api/render-text-editor-overlay!))
 
-                 ;; Let contenteditable handle text input via on-input
-                 :else nil)))))
+                 ;; Let contenteditable handle text input via on-input, which
+                 ;; needs an editable browser selection.
+                 :else
+                 (ensure-input-caret (mf/ref-val contenteditable-ref)))))))
 
         ;; Native `beforeinput` listener (see the use-effect that registers it).
         ;; We use the native event, not React's synthetic `onBeforeInput`, because
@@ -490,6 +510,7 @@
                  (triple-click? native-event)
                  (do
                    (wasm.api/text-editor-select-paragraph off-pt)
+                   (ensure-input-caret (mf/ref-val contenteditable-ref))
                    (wasm.api/render-text-editor-overlay!))
 
                  ;; `dblclick` selects the word right after. Shift+click still goes
@@ -509,6 +530,7 @@
            (let [native-event (dom/event->native-event event)
                  off-pt (dom/get-offset-position native-event)]
              (wasm.api/text-editor-select-word-boundary off-pt)
+             (ensure-input-caret (mf/ref-val contenteditable-ref))
              (wasm.api/render-text-editor-overlay!))))
 
         on-context-menu
@@ -587,47 +609,48 @@
            (.removeEventListener node "beforeinput" on-before-input)))))
 
     ;; Focus contenteditable on mount
-    (mf/use-effect
-     (mf/deps contenteditable-ref)
-     (fn []
-       ;; Group the whole editing session (edits, reflow resizes, finalize) into a single
-       ;; undo entry. Nested transactions (e.g. style shortcuts) are ref-counted and fold in.
-       (st/emit! (dwu/start-undo-transaction shape-id :timeout nil))
-       (when-let [node (mf/ref-val contenteditable-ref)]
-         ;; Focus and select all text on mount (this will trigger on-focus)
-         (.focus node)
-         (text-editor/text-editor-select-all)
-         (wasm.api/request-render-preserving-target "text-editor-select-all-on-mount"))
-       ;; On unmount, finalize the editor content and then dispose the WASM editor.
-       ;; We finalize on unmount instead of relying on the browser blur event, because
-       ;; it was not being reliable (timing issues, Firefox issues…)
-       (fn []
-         (on-blur)
-         (st/emit! dw/hide-context-menu
-                   (dwu/commit-undo-transaction shape-id))
-         (text-editor/text-editor-dispose)
-         (wasm.api/request-render-preserving-target "text-editor-dispose"))))
-
-    (mf/use-effect
-     (mf/deps)
-     (fn []
-       (let [timeout-id (atom nil)
-             schedule-blink (fn schedule-blink []
-                              ;; The caret only blinks for a collapsed cursor. With an active
-                              ;; selection there is nothing to animate, so skip the repaint:
-                              ;; re-compositing every interval would otherwise redraw the
-                              ;; selection over and over (a visible flicker at high zoom).
-                              (when (and (text-editor/text-editor-has-focus?)
-                                         (not (text-editor/text-editor-has-selection?)))
-                                ;; Redraw only the caret (cached frame + overlay) instead of a
-                                ;; full `request-render`, which flashes on zoomed-in views by
-                                ;; kicking off a progressive tile-by-tile shape re-render.
-                                (wasm.api/render-text-editor-overlay!))
-                              (reset! timeout-id (js/setTimeout schedule-blink caret-blink-interval-ms)))]
-         (schedule-blink)
+    (with-wasm-effect [contenteditable-ref]
+      ;; Group the whole editing session (edits, reflow resizes, finalize) into a single
+      ;; undo entry. Nested transactions (e.g. style shortcuts) are ref-counted and fold in.
+      (st/emit! (dwu/start-undo-transaction shape-id :timeout nil))
+      (when-let [node (mf/ref-val contenteditable-ref)]
+        ;; Focus and select all text on mount (this will trigger on-focus)
+        (.focus node)
+        ;; Guarded apart so a recoverable error still returns the cleanup below,
+        ;; which commits the undo transaction opened above.
+        (errors/wrap-wasm-effect
          (fn []
-           (when @timeout-id
-             (js/clearTimeout @timeout-id))))))
+           (text-editor/text-editor-select-all)
+           (wasm.api/request-render-preserving-target "text-editor-select-all-on-mount"))))
+      ;; On unmount, finalize the editor content and then dispose the WASM editor.
+      ;; We finalize on unmount instead of relying on the browser blur event, because
+      ;; it was not being reliable (timing issues, Firefox issues…)
+      (fn []
+        (on-blur)
+        (st/emit! dw/hide-context-menu
+                  (dwt/v3-stop-text-layout-preview shape-id)
+                  (dwu/commit-undo-transaction shape-id))
+        (text-editor/text-editor-dispose)
+        (wasm.api/request-render-preserving-target "text-editor-dispose")))
+
+    (with-wasm-effect []
+      (let [timeout-id (atom nil)
+            schedule-blink (fn schedule-blink []
+                             ;; The caret only blinks for a collapsed cursor. With an active
+                             ;; selection there is nothing to animate, so skip the repaint:
+                             ;; re-compositing every interval would otherwise redraw the
+                             ;; selection over and over (a visible flicker at high zoom).
+                             (when (and (text-editor/text-editor-has-focus?)
+                                        (not (text-editor/text-editor-has-selection?)))
+                               ;; Redraw only the caret (cached frame + overlay) instead of a
+                               ;; full `request-render`, which flashes on zoomed-in views by
+                               ;; kicking off a progressive tile-by-tile shape re-render.
+                               (wasm.api/render-text-editor-overlay!))
+                             (reset! timeout-id (js/setTimeout schedule-blink caret-blink-interval-ms)))]
+        (schedule-blink)
+        (fn []
+          (when @timeout-id
+            (js/clearTimeout @timeout-id)))))
 
     ;; Composition and input events
     [:g.text-editor {:clip-path (dm/fmt "url(#%)" clip-id)

@@ -13,19 +13,26 @@ enabling advanced AI-driven features in Penpot.
 - Build Tool: TypeScript Compiler (tsc) + esbuild
 - Package Manager: pnpm
 
-## General Principles
+## Principles & Code Style
 
 IMPORTANT: Use an idiomatic, object-oriented style.
-In particular, this implies that, for any non-trivial interfaces, you use interfaces that expect explicitly typed abstractions
-rather than mere functions (i.e. use the strategy pattern, for example).
+* You keep each concern in exactly one home.
+  A mechanism whose parts are only correct in combination is implemented as a single component/class, and its parts are private to it;
+  expose a minimal public surface. Java-like encapsulation: If helper functions and constants are only used by one abstraction,
+  make them internal to the respective class.
+* For any non-trivial interfaces, you use functions/methods that expect explicitly typed abstractions
+  rather than mere functions (i.e. use the strategy pattern, for example).
+* Prefer declaring and instantiating concrete classes over defining only interfaces and using object literals.
 
 Comments:
-When describing parameters, methods/functions and classes, you use a precise style, where the initial (elliptical) phrase
-clearly defines *what* it is. Any details then follow in subsequent sentences.
+* When describing parameters, methods/functions and classes, you use a precise style, where the initial (elliptical) phrase
+  clearly defines *what* it is. Any details then follow in subsequent sentences.
+* When describing what blocks of code do, you also use an elliptical style and start with a lower-case letter unless
+  the comment is a lengthy explanation with at least two sentences (in which case you start with a capital letter, as is
+  required for sentences).
 
-When describing what blocks of code do, you also use an elliptical style and start with a lower-case letter unless
-the comment is a lengthy explanation with at least two sentences (in which case you start with a capital letter, as is
-required for sentences).
+Syntax: 
+* Never use if blocks (or other blocks) without braces, even for single-line cases.
 
 ## Project Structure (Excerpt)
 
@@ -50,7 +57,7 @@ mcp/
 │   ├── src/
 │   │   ├── main.ts            # handles communication
 │   │   └── plugin.ts          # plugin implementation
-│   └── package.json           # Includes @penpot-mcp/common dependency
+│   └── package.json           # Plugin deps: published plugin-styles, linked plugin-types
 └── prepare-api-docs           # Python project for the generation of API docs
 ```
 
@@ -85,7 +92,50 @@ From the `mcp/` directory, run
 
 * `pnpm run build` to test the build of all packages
 * `pnpm run fmt` to apply the auto-formatter
+* `pnpm run test` runs the tests of `plugin` (node test runner) and `server` (tsx).
+  The committed `typescript` version is 6.x: the 7.x line ships only a version stub
+  at the `typescript` entry point, and its synchronous compiler API is gone, so
+  `ts.transpileModule` (used by the plugin tests to compile `main.ts`/`plugin.ts`
+  into a sandboxed browser-like context) fails there.
+* `packages/server` type-checks against the built `dist` of `@penpot/mcp-common`;
+  a stale `packages/common/dist` makes `types:check` fail with missing exports
+  (e.g. `PenpotSession`). Run `pnpm --filter mcp-common run build` first.
+* The server logger (`packages/server/src/logger.ts`) uses pino transports only
+  outside `node:test` (`logTransportTargets`). A transport spawns a worker thread
+  whose message port stays referenced once a line is in flight, so the test child
+  process keeps running after the tests finish and the suite hangs intermittently
+  (node reports `Promise resolution is still pending but the event loop has
+  already resolved` for the file's root test). Inside tests the logger writes to
+  stdout directly. `NODE_TEST_CONTEXT` is the env var `node --test` sets.
+* `packages/plugin` takes `@penpot/plugin-styles` from the registry but links
+  `@penpot/plugin-types` to `plugins/libs/plugin-types` (`link:` in the manifest
+  and in `mcp/pnpm-lock.yaml`, with no registry entry, because a linked package
+  has no resolution): the published types do not declare the `penpotMgmt`
+  global the plugin needs. On a plugins libs version bump, only the styles
+  version moves. After editing the manifest, `pnpm install --lockfile-only` in
+  `mcp/` must leave the lock untouched.
 * Cross-cutting testing principles and anti-patterns: `mem:testing`.
+
+## OAuth for remote MCP clients
+
+- Authorization/discovery URLs, self-contained client IDs, consent and PKCE/code binding, backend Redis state, deployment wiring, and compatibility limits: `mem:mcp/oauth`.
+
+## Host and Origin allowlist (`RequestGuard`)
+
+- `RequestGuard` checks `Host` and `Origin` (hostname only, port ignored) on `/mcp`, the REPL (Express middleware, 403) and the plugin WebSocket (close `1008` before any message is read). It stops web pages on the user's machine from driving a local server (DNS rebinding, cross-site WebSocket).
+- Allowlist: `PENPOT_MCP_ALLOWED_HOSTS` (`*` turns the check off); unset → loopback only in single-user mode (local or remote: no other barrier, `execute_code` still runs in the user's session), any host in multi-user mode (relies on user tokens; behind nginx `/mcp/ws` the server sees `Host: penpot-mcp:4402`). A missing `Origin` passes (non-browser clients).
+- Entries must be `*`, a hostname or a bracketed IPv6 address; one with a scheme, port or path makes `fromEnvironment` throw, so the server does not start. Startup logs a `warn` when the check is off in single-user mode.
+- The plugin iframe has `allow-same-origin`, so its WebSocket carries the real plugin origin (`http://localhost:4400` locally, the Penpot origin when integrated).
+- Test mocks of `PenpotMcpServer` passed to `PluginBridge` must provide `requestGuard`.
+
+## Backend tools (`submit_feedback`)
+
+- Tools that call the Penpot backend directly (not through the plugin) register only when `PENPOT_MCP_BACKEND_URI` is nonblank (`PenpotMcpServer.initTools`). Currently only `SubmitFeedbackTool`.
+- `PenpotBackendClient` owns the HTTP call and the status-to-message mapping; it posts to `api/main/methods/send-mcp-feedback` with `Authorization: Token <MCP user token>`. The token comes from the session context (OAuth bearer or `?userToken=`); without one the tool fails before calling the backend.
+- Tool zod schemas mirror the backend malli schema (lengths, blank, control characters); keep both in sync. The backend is the authority.
+- Success means the mail job was queued, not delivered; the tool text says so. `formatArgs` hides the feedback from logs.
+- Backend side: `send-mcp-feedback` in `app.rpc.commands.feedback`, configured by `PENPOT_MCP_FEEDBACK_EMAIL`; MCP-token auth rules in `mem:backend/auth-permissions-product-domains`.
+- User docs: `mcp/README.md` (env tables), `docs/mcp/index.md` (tool list), `docs/technical-guide/configuration.md` (MCP feedback section).
 
 ## Devenv plugin/server wiring
 
@@ -98,6 +148,11 @@ For parallel devenvs, prefer same-origin MCP routing: each Penpot instance shoul
 ## Plugin reconnect policy
 
 - The plugin treats WebSocket close code `1008` (policy violation) as terminal: it stops auto-reconnecting and stays disconnected until the user explicitly reconnects. Other close codes keep the capped-backoff retry. The decision lives in `ReconnectPolicy.ts` (`shouldReconnectAfterClose`), kept as a pure module so it is unit-testable without DOM/CSS.
-- The MCP server emits `1008` for a missing `userToken` in multi-user mode, for missing/invalid connection metadata, and to close a connection displaced by a newer one with the same user and session ID.
+- The MCP server emits `1008` for a `Host`/`Origin` outside the `RequestGuard` allowlist, for a missing `userToken` in multi-user mode, for missing/invalid connection metadata, and to close a connection displaced by a newer one with the same user and session ID.
 - Session IDs are deterministic per tab and file, so a reconnect reuses its ID while the old socket may be half-open: the newest connection wins (`PluginBridge.displaceConnection`). Across instances, each new connection publishes a session claim on a per-user Redis channel; an instance displaces its local connection only on a foreign claim that arrives after its own claim (channel order, no clocks). Discovery deduplicates by session ID.
 - A tab rejected with `1008` never reaches `connected`, so the frontend's 60s reconnect watcher (`start-reconnect-watcher` in `app.main.data.workspace.mcp`, started only on `connected`) does not engage; recovery is manual via the MCP menu.
+
+## Rollback warnings
+
+- `ExecuteCodeTaskHandler` awaits `penpot.waitForSave()` after the code and outside its swallow catch, so a save failure, save timeout or rollback during the wait fails that `execute_code` call itself. It hard-fails as "missing Plugin API support" when `penpot.waitForSave` is absent (old Penpot or stale runtime build, or broken `api.cljs` wiring). Both waits run only when `penpotMgmt.workspace.status` is `"ready"` (or there is no `penpotMgmt`), checked at each wait: dashboard calls skip them, because persistence `:error` outlives the workspace and would fail successful `penpotMgmt` calls. Budget: layout wait 30s before the code + save wait 60s after it, under `PENPOT_MCP_TOOL_TIMEOUT_S` (120s). `RollbackNotices` below only cover rollbacks that land after the call returned (concurrent edits, a response after a timeout).
+- The plugin's `RollbackLog` (`packages/plugin/src/RollbackLog.ts`) holds the `contentrollback` events not yet sent with a task response; `Task.sendResponse` attaches them and acknowledges them once sent, and the server's `unclaimed-rollbacks` message (a response that came after its task timed out) puts them back. With a `RollbackStore` (`LocalStorageRollbackStore` over `penpot.localStorage`, one entry per file) every change is written through, so a reload of the tab or plugin keeps them; storage failures fall back to memory. Plugin tests run with `node --experimental-strip-types`, which rejects TypeScript parameter properties: declare fields explicitly.

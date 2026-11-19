@@ -23,6 +23,7 @@
    [app.main.refs :as refs]
    [app.main.render :as render]
    [app.main.repo :as rp]
+   [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.components.color-bullet :as bc]
    [app.main.ui.dashboard.file-menu :refer [file-menu* file-menu-items*]]
@@ -49,6 +50,10 @@
 
 (def thumbnail-width 252)
 
+;; Larger than the grid card: the image is also the link preview card
+;; and has to stay sharp on high-DPI screens.
+(def ^:private wasm-thumbnail-width 600)
+
 ;; --- Grid Item Thumbnail
 
 (defn- persist-thumbnail
@@ -57,30 +62,42 @@
     (->> (rp/cmd! :create-file-thumbnail params)
          (rx/map :id))))
 
+(defn- render-thumbnail-with-wasm
+  "Returns a stream with the PNG blob of the file thumbnail."
+  [file-id revn]
+  (->> (mw/ask! {:cmd :thumbnails/generate-for-file-wasm
+                 :revn revn
+                 :file-id file-id
+                 :width wasm-thumbnail-width})
+       (rx/map :blob)))
+
+(defn- render-thumbnail-with-svg
+  "Returns a stream with the PNG blob of the file thumbnail."
+  [file-id revn]
+  (->> (mw/ask! {:cmd :thumbnails/generate-for-file
+                 :revn revn
+                 :file-id file-id
+                 :width thumbnail-width})
+       (rx/mapcat
+        (fn [{:keys [fonts] :as result}]
+          (->> (fonts/render-font-styles fonts)
+               (rx/map (fn [styles]
+                         (-> result
+                             (assoc :styles styles
+                                    :width thumbnail-width)))))))
+       (rx/mapcat thr/render)))
+
 (defn render-thumbnail
+  "Returns a stream with the PNG blob of the file thumbnail."
   [file-id revn]
   (if (features/active-feature? @st/state "render-wasm/v1")
-    (mw/ask! {:cmd :thumbnails/generate-for-file-wasm
-              :revn revn
-              :file-id file-id
-              :width thumbnail-width})
-    (->> (mw/ask! {:cmd :thumbnails/generate-for-file
-                   :revn revn
-                   :file-id file-id
-                   :width thumbnail-width})
-         (rx/mapcat
-          (fn [{:keys [fonts] :as result}]
-            (->> (fonts/render-font-styles fonts)
-                 (rx/map (fn [styles]
-                           (-> result
-                               (assoc :styles styles
-                                      :width thumbnail-width))))))))))
+    (render-thumbnail-with-wasm file-id revn)
+    (render-thumbnail-with-svg file-id revn)))
 
 (defn- ask-for-thumbnail
   "Creates some hooks to handle the files thumbnails cache"
   [file-id revn]
   (->> (render-thumbnail file-id revn)
-       (rx/mapcat thr/render)
        (rx/mapcat (partial persist-thumbnail file-id revn))))
 
 (mf/defc grid-item-thumbnail*
@@ -293,22 +310,35 @@
 
         library-view? (= origin :libraries)
 
+        on-open-new-tab
+        (mf/use-fn
+         (mf/deps file-id can-restore)
+         (fn []
+           (when-not can-restore
+             (st/emit! (dcm/go-to-workspace :file-id file-id ::rt/new-window true)))))
+
         on-select
         (mf/use-fn
-         (mf/deps selected? selected-num)
+         (mf/deps selected? selected-num on-open-new-tab)
          (fn [event]
-           (when (or (not selected?) (> selected-num 1))
-             (dom/stop-propagation event)
-             (let [shift? (kbd/shift? event)]
-               (when-not shift?
-                 (st/emit! (dd/clear-selected-files)))
-               (st/emit! (dd/toggle-file-select file))))))
+           (if (kbd/mod? event)
+             (do
+               (dom/stop-propagation event)
+               (on-open-new-tab))
+             (when (or (not selected?) (> selected-num 1))
+               (dom/stop-propagation event)
+               (let [shift? (kbd/shift? event)]
+                 (when-not shift?
+                   (st/emit! (dd/clear-selected-files)))
+                 (st/emit! (dd/toggle-file-select file)))))))
 
         on-navigate
         (mf/use-fn
          (mf/deps file-id can-restore)
          (fn [event]
-           (when-not can-restore
+           ;; A Ctrl/Cmd double click has already opened the file in new
+           ;; tabs through on-select; the current tab stays where it is.
+           (when-not (or can-restore (kbd/mod? event))
              (let [menu-icon (mf/ref-val menu-ref)
                    target    (dom/get-target event)]
                (when-not (dom/child? target menu-icon)

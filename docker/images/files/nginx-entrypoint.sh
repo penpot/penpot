@@ -51,6 +51,59 @@ update_oidc_name /var/www/app/js/config.js
 ## Nginx Config
 #########################################
 
+# Path of PENPOT_PUBLIC_URI (e.g. /penpot/ for https://example.com/penpot/).
+# Requests below it are rewritten to the root, so the proxy in front of this
+# server forwards them unchanged.
+PENPOT_PUBLIC_PATH="$(sed -E 's|^[A-Za-z][A-Za-z0-9+.-]*://[^/]*||; s|[?#].*$||' <<< "${PENPOT_PUBLIC_URI:-}")"
+PENPOT_PUBLIC_PATH="/${PENPOT_PUBLIC_PATH#/}"
+export PENPOT_PUBLIC_PATH="${PENPOT_PUBLIC_PATH%/}/"
+
+if [ "$PENPOT_PUBLIC_PATH" != "/" ]; then
+    # shellcheck disable=SC2016 # literal regex metacharacters
+    _public_path_regex="$(sed -E 's/[][\.*^$(){}+?|]/\\&/g' <<< "$PENPOT_PUBLIC_PATH")"
+    export PENPOT_PUBLIC_PATH_DIRECTIVES="location = ${PENPOT_PUBLIC_PATH%/} { absolute_redirect off; return 301 ${PENPOT_PUBLIC_PATH}\$is_args\$args; }
+        rewrite ^${_public_path_regex}(.*)\$ /\$1 last;"
+    unset _public_path_regex
+else
+    export PENPOT_PUBLIC_PATH_DIRECTIVES=""
+fi
+
+# nginx's `auto` starts one worker per CPU of the host, not of the container,
+# and each worker reserves the memory for all its connections at startup. A
+# container limited to a few CPUs on a large node can run out of memory before
+# serving a request, so size the workers from the CPUs the container can use
+# (its cpuset, and its CPU quota rounded up) when they are fewer than the host's.
+container_cpu_limit() {
+  local quota="" period="" cpus
+  cpus="$(nproc 2>/dev/null)" || return 1
+  if [ -r /sys/fs/cgroup/cpu.max ]; then
+    read -r quota period < /sys/fs/cgroup/cpu.max
+  elif [ -r /sys/fs/cgroup/cpu/cpu.cfs_quota_us ]; then
+    quota="$(< /sys/fs/cgroup/cpu/cpu.cfs_quota_us)"
+    period="$(< /sys/fs/cgroup/cpu/cpu.cfs_period_us)"
+  fi
+  # "max" (cgroup v2) and -1 (cgroup v1) mean no quota, and 0 is not one.
+  if [[ "$quota" =~ ^[1-9][0-9]*$ && "$period" =~ ^[1-9][0-9]*$ ]]; then
+    quota=$(( (quota + period - 1) / period ))
+    (( quota < cpus )) && cpus=$quota
+  fi
+  (( cpus < $(nproc --all) )) || return 1
+  echo "$cpus"
+}
+
+export PENPOT_HTTP_SERVER_WORKER_PROCESSES=${PENPOT_HTTP_SERVER_WORKER_PROCESSES:-$(container_cpu_limit || echo auto)}
+export PENPOT_HTTP_SERVER_WORKER_CONNECTIONS=${PENPOT_HTTP_SERVER_WORKER_CONNECTIONS:-65535}
+
+if [[ ! "$PENPOT_HTTP_SERVER_WORKER_PROCESSES" =~ ^(auto|[1-9][0-9]*)$ ]]; then
+    echo "penpot: invalid PENPOT_HTTP_SERVER_WORKER_PROCESSES '${PENPOT_HTTP_SERVER_WORKER_PROCESSES}'; expected auto or a positive integer" >&2
+    exit 1
+fi
+
+if [[ ! "$PENPOT_HTTP_SERVER_WORKER_CONNECTIONS" =~ ^[1-9][0-9]*$ ]]; then
+    echo "penpot: invalid PENPOT_HTTP_SERVER_WORKER_CONNECTIONS '${PENPOT_HTTP_SERVER_WORKER_CONNECTIONS}'; expected a positive integer" >&2
+    exit 1
+fi
+
 export PENPOT_BACKEND_URI=${PENPOT_BACKEND_URI:-http://penpot-backend:6060}
 export PENPOT_EXPORTER_URI=${PENPOT_EXPORTER_URI:-http://penpot-exporter:6061}
 export PENPOT_HTTP_SERVER_MAX_BODY_SIZE=${PENPOT_HTTP_SERVER_MAX_BODY_SIZE:-367001600} # Default to 350MiB
@@ -58,10 +111,10 @@ export PENPOT_IPV6_LISTEN_DIRECTIVE=${PENPOT_IPV6_LISTEN_DIRECTIVE:-"listen [::]
 if is_truthy "${PENPOT_DISABLE_IPV6_LISTEN:-}"; then
   export PENPOT_IPV6_LISTEN_DIRECTIVE=""
 fi
-envsubst "\$PENPOT_BACKEND_URI,\$PENPOT_EXPORTER_URI,\$PENPOT_HTTP_SERVER_MAX_BODY_SIZE,\$PENPOT_IPV6_LISTEN_DIRECTIVE" \
+envsubst "\$PENPOT_HTTP_SERVER_WORKER_PROCESSES,\$PENPOT_HTTP_SERVER_WORKER_CONNECTIONS,\$PENPOT_BACKEND_URI,\$PENPOT_EXPORTER_URI,\$PENPOT_HTTP_SERVER_MAX_BODY_SIZE,\$PENPOT_IPV6_LISTEN_DIRECTIVE,\$PENPOT_PUBLIC_PATH,\$PENPOT_PUBLIC_PATH_DIRECTIVES" \
         < /tmp/nginx.conf.template > /etc/nginx/nginx.conf
 
-if [[ $PENPOT_FLAGS == *"enable-admin-console"* ]]; then
+if [[ " $PENPOT_FLAGS " != *" disable-admin-console "* ]]; then
     export PENPOT_ADMIN_CONSOLE_URI=${PENPOT_ADMIN_CONSOLE_URI:-http://penpot-admin-console:3000}
     envsubst "\$PENPOT_ADMIN_CONSOLE_URI" \
              < /tmp/nginx-admin-console-locations.conf.template > /etc/nginx/overrides/server.d/admin-console-locations.conf

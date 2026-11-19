@@ -25,6 +25,8 @@
    [app.rpc.commands.projects :as proj]
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
+   [app.rpc.notifications :as ntf]
+   [app.rpc.permissions :as perms]
    [app.setup :as-alias setup]
    [app.setup.templates :as tmpl]
    [app.storage.tmp :as tmp]
@@ -88,7 +90,9 @@
                                fmeds)]
         (db/insert! conn :file-media-object params ::db/return-keys false))
 
-      file)))
+      ;; The storage pointer of the source file is internal bookkeeping: the
+      ;; new file does not inherit it, and it never leaves the backend.
+      (bfc/file->response file))))
 
 (def ^:private
   schema:duplicate-file
@@ -106,10 +110,12 @@
                     (db/exec-one! conn ["SET CONSTRAINTS ALL DEFERRED"])
 
                     (binding [bfc/*state* (volatile! {:index {file-id (uuid/next)}})]
-                      (duplicate-file (assoc cfg ::bfc/timestamp (ct/now))
-                                      (-> params
-                                          (assoc :profile-id profile-id)
-                                          (assoc :reset-shared-flag true)))))))
+                      (-> (duplicate-file (assoc cfg ::bfc/timestamp (ct/now))
+                                          (-> params
+                                              (assoc :profile-id profile-id)
+                                              (assoc :reset-shared-flag true)))
+                          ;; Clients only need the metadata, don't send the full file contents.
+                          (dissoc :data))))))
 
 ;; --- COMMAND: Duplicate Project
 
@@ -142,12 +148,29 @@
         (when (uuid? profile-id)
           (teams/create-project-role conn profile-id (:id project) :owner))
 
+        ;; The new entities are created by internal calls, so they carry no
+        ;; event of their own; emit one per entity for a local projection.
+        (audit/submit-create-event cfg params "create-project"
+                                   {:id (:id project)
+                                    :team-id (:team-id project)
+                                    :name (:name project)
+                                    :created-at (:created-at project)
+                                    :modified-at (:modified-at project)})
+
         (doseq [file-id files]
           (let [params (-> params
                            (dissoc :name)
                            (assoc :file-id file-id)
-                           (assoc :reset-shared-flag false))]
-            (duplicate-file cfg params)))
+                           (assoc :reset-shared-flag false))
+                file   (duplicate-file cfg params)]
+            (audit/submit-create-event cfg params "create-file"
+                                       {:id (:id file)
+                                        :project-id (:project-id file)
+                                        :team-id (:team-id project)
+                                        :name (:name file)
+                                        :created-at (:created-at file)
+                                        :modified-at (:modified-at file)
+                                        :revn (:revn file)})))
 
         project))))
 
@@ -211,7 +234,7 @@
                          (update :team-id bfc/lookup-index)
                          (assoc :created-at timestamp)
                          (assoc :modified-at timestamp))]
-          (teams/add-profile-to-team! cfg params {::db/return-keys false})))
+          (teams/add-profile-to-team! cfg params)))
 
       ;; Duplicate team fonts
       (doseq [font fonts]
@@ -252,6 +275,17 @@
       team)))
 
 ;; --- COMMAND: Move file
+
+(defn- notify-team-access-changed
+  "Announces a possible read-access change for `team-ids`.
+
+  Moving content can take it out of the reach of a whole team, and the
+  only place that knows who was relying on it is the set of open
+  connections. One event per team: the watcher resolves the members
+  itself, so a large team cannot overflow the bounded publish buffers."
+  [cfg team-ids]
+  (doseq [team-id (into #{} (remove nil?) team-ids)]
+    (ntf/notify-team-permissions-changed cfg team-id)))
 
 (def sql:get-files
   "select id, features, project_id from file where id = ANY(?)")
@@ -323,6 +357,14 @@
         (recur (rest project-ids)
                (ct/plus modified-at 10))))
 
+    ;; Moving files can take them out of the reach of the team they came
+    ;; from. Only the open connections know who was relying on them, so
+    ;; the source teams are announced wholesale and the watcher re-checks
+    ;; each member against the subscriptions they actually hold.
+    (notify-team-access-changed
+     cfg
+     (keep (partial perms/get-team-id-for-project conn) source))
+
     nil))
 
 (def ^:private
@@ -392,6 +434,10 @@
     ;; delete possible broken relations on moved files
     (db/exec-one! conn [sql:delete-broken-relations pids])
 
+    ;; The project, and everything under it, leaves the source team. The
+    ;; destination team only gains access, so it is not announced.
+    (notify-team-access-changed cfg [(:team-id project)])
+
     nil))
 
 (def ^:private
@@ -444,14 +490,12 @@
                               {:id project-id}
                               {::db/return-keys false})
 
-                  (let [props (audit/clean-props params)]
-                    (doseq [file-id result]
-                      (let [props (assoc props :id file-id)
-                            event (-> (audit/event-from-rpc-params params)
-                                      (assoc :profile-id profile-id)
-                                      (assoc :name "create-file")
-                                      (assoc :props props))]
-                        (audit/submit cfg event))))))
+                  (doseq [file-id (:file-ids result)]
+                    (audit/submit-file-created-event
+                     cfg
+                     (assoc params :profile-id profile-id)
+                     file-id
+                     {:team-id (:id team)}))))
 
     result))
 

@@ -199,3 +199,51 @@
     (t/testing "and the other tenant's row is untouched"
       (t/is (= "running" (:status (th/db-get :job {:name "session-gc"
                                                    :tenant "other-tenant"})))))))
+
+(t/deftest cron-tick-is-not-blocked-by-active-job-on-another-queue
+  (let [cfg   (make-cfg)
+        entry {:id   "session-gc-other-queue"
+               :job :session-gc
+               :cron (ucron/cron "0 0 0 * * ?")}]
+
+    (th/db-insert! :scheduled-task {:id        "session-gc-other-queue"
+                                    :cron-expr "0 0 * * *"})
+    ;; A live job with the same name, label and tenant, but sitting on
+    ;; another queue. The cron no-overlap check is qualified by queue,
+    ;; so it is none of this tick's business.
+    (th/db-insert! :job {:id           (uuid/next)
+                         :name         "session-gc"
+                         :tenant       (cf/get :tenant)
+                         :queue        "default"
+                         :label        "session-gc-other-queue"
+                         :status       "running"
+                         :params       (db/json {})
+                         :scheduled-at (ct/now)
+                         :created-at   (ct/now)
+                         :modified-at  (ct/now)})
+
+    (.join ^Thread (#'cron/execute-cron-task cfg entry))
+
+    (t/testing "the tick still submits its own job on the cron queue"
+      (t/is (= 1 (count-jobs cfg :name "session-gc"
+                             :queue "cron"
+                             :label "session-gc-other-queue"))))
+    (t/testing "and the row on the other queue is untouched"
+      (t/is (= "running" (:status (th/db-get :job {:name  "session-gc"
+                                                   :queue "default"
+                                                   :label "session-gc-other-queue"})))))))
+
+(t/deftest cron-submit-skips-when-active-instance-on-cron-queue
+  (let [cfg   (make-cfg)
+        entry (first (get-cron-entries))]
+
+    (let [job-id (cron/submit-cron-job cfg entry)]
+      (t/is (some? job-id))
+
+      (t/testing "a second submit while the first is live returns nil"
+        (t/is (nil? (cron/submit-cron-job cfg entry))))
+
+      (t/testing "no second row was inserted"
+        (t/is (= 1 (count-jobs cfg :name "session-gc"
+                               :queue "cron"
+                               :label "session-gc-no-props")))))))

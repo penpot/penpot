@@ -11,6 +11,8 @@
    [app.common.schema :as sm]
    [app.common.types.objects-map]
    [app.util.object :as obj]
+   [app.worker.component-thumbnails]
+   [app.worker.exports]
    [app.worker.impl :as impl]
    [app.worker.index]
    [app.worker.messages :as wm]

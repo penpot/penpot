@@ -19,6 +19,7 @@
    [app.main.data.workspace.comments :as dwcm]
    [app.main.data.workspace.drawing :as dwd]
    [app.main.data.workspace.drawing.common :as dwdc]
+   [app.main.data.workspace.history :as dwh]
    [app.main.data.workspace.layers :as dwly]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.shape-layout :as dwsl]
@@ -57,6 +58,14 @@
       (.preventDefault event)
       (st/emit! (toggle-layout-flag :display-guides)))))
 
+(defn- escape
+  "Leave the scale content mode when it is active, keeping the
+  selection; otherwise clear the current drawing and selection."
+  []
+  (if (contains? (deref refs/workspace-layout) :scale-text)
+    (st/emit! :interrupt (dw/remove-layout-flag :scale-text))
+    (st/emit! :interrupt (dwdc/clear-drawing) (dw/deselect-all true))))
+
 (defn- emit-when-no-readonly
   [& events]
   (let [can-edit?  (:can-edit (deref refs/permissions))
@@ -94,6 +103,7 @@
                           :command (ds/c-mod "c")
                           :subsections [:edit]
                           :section [:workspace]
+                          :customizable false
                           :fn #(st/emit! (dw/copy-selected))}
 
    :copy-link            {:tooltip (ds/shift (ds/alt "C"))
@@ -178,7 +188,8 @@
                           :command "escape"
                           :subsections [:edit]
                           :section [:workspace]
-                          :fn #(st/emit! :interrupt (dwdc/clear-drawing) (dw/deselect-all true))}
+                          :customizable false
+                          :fn escape}
 
    :find             {:tooltip (ds/meta "F") :command (ds/c-mod "f") :subsections [:edit]
                       :label (fn [] (tr "shortcuts.find"))
@@ -323,19 +334,19 @@
                           :subsections [:modify-layers]
                           :fn #(emit-when-no-readonly (dwt/move-selected :down false))}
 
-   :move-unit-left       {:tooltip ds/right-arrow
+   :move-unit-left       {:tooltip ds/left-arrow
                           :label (fn [] (tr "shortcuts.move-unit-left"))
-                          :command ["right" "alt+right"]
-                          :subsections [:modify-layers]
-                          :section [:workspace]
-                          :fn #(emit-when-no-readonly (dwt/move-selected :right false))}
-
-   :move-unit-right      {:tooltip ds/left-arrow
-                          :label (fn [] (tr "shortcuts.move-unit-right"))
                           :command ["left" "alt+left"]
+                          :subsections [:modify-layers]
+                          :section [:workspace]
+                          :fn #(emit-when-no-readonly (dwt/move-selected :left false))}
+
+   :move-unit-right      {:tooltip ds/right-arrow
+                          :label (fn [] (tr "shortcuts.move-unit-right"))
+                          :command ["right" "alt+right"]
                           :section [:workspace]
                           :subsections [:modify-layers]
-                          :fn #(emit-when-no-readonly (dwt/move-selected :left false))}
+                          :fn #(emit-when-no-readonly (dwt/move-selected :right false))}
 
    :artboard-selection   {:tooltip (ds/meta (ds/alt "G"))
                           :label (fn [] (tr "shortcuts.artboard-selection"))
@@ -567,8 +578,7 @@
 
    :toggle-guides        {:tooltip (ds/meta "'")
                           :label (fn [] (tr "shortcuts.toggle-guides"))
-                          ;;https://github.com/ccampbell/mousetrap/issues/85
-                          :command [(ds/c-mod "'") (ds/c-mod "219")]
+                          :command (ds/c-mod "'")
                           :show-command (ds/c-mod "'")
                           :subsections [:main-menu]
                           :section [:workspace]
@@ -619,8 +629,7 @@
 
    :toggle-snap-guides      {:tooltip (ds/meta-shift "'")
                              :label (fn [] (tr "shortcuts.toggle-snap-guides"))
-                             ;;https://github.com/ccampbell/mousetrap/issues/85
-                             :command [(ds/c-mod "shift+'") (ds/c-mod "shift+219")]
+                             :command (ds/c-mod "shift+'")
                              :show-command (ds/c-mod "shift+'")
                              :subsections [:main-menu]
                              :section [:workspace]
@@ -655,7 +664,8 @@
                           :subsections [:panels]
                           :section [:workspace]
                           :fn #(emit-when-no-readonly
-                                (dw/toggle-layout-flag :document-history))}
+                                (-> (dwh/initialize-history)
+                                    (vary-meta assoc ::ev/origin "workspace:shortcuts")))}
 
    :toggle-colorpalette  {:tooltip (ds/alt "P")
                           :label (fn [] (tr "shortcuts.toggle-colorpalette"))
@@ -716,7 +726,7 @@
 
    :zoom-selected        {:tooltip (ds/shift "2")
                           :label (fn [] (tr "shortcuts.zoom-selected"))
-                          :command ["shift+2" "shift+num2" "@" "\""]
+                          :command ["shift+2" "shift+num2"]
                           :subsections [:zoom-workspace]
                           :section [:workspace]
                           :fn #(st/emit! dw/zoom-to-selected-shape)}

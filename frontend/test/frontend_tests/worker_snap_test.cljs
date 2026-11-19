@@ -11,9 +11,15 @@
    [app.common.uuid :as uuid]
    [app.worker.snap :as snap]
    [cljs.pprint :refer [pprint]]
-   [cljs.test :as t :include-macros true]))
+   [cljs.test :as t :include-macros true]
+   [clojure.set :as set]))
 
 (def uuid-counter 1)
+
+(defn- get-object-ids
+  [old-page new-page]
+  (set/union (set (keys (:objects old-page)))
+             (set (keys (:objects new-page)))))
 
 (defn get-mocked-uuid
   []
@@ -207,7 +213,7 @@
                         (fb/delete-shape shape-id))
 
           new-page (fb/get-current-page state)
-          data     (snap/update-page data page new-page)
+          data     (snap/update-page data page new-page (get-object-ids page new-page))
 
           result-x (snap/query data (:id page) uuid/zero :x [0 100])
           result-y (snap/query data (:id page) uuid/zero :y [0 100])]
@@ -237,7 +243,7 @@
           state (fb/delete-shape state shape-id)
 
           new-page (fb/get-current-page state)
-          data (snap/update-page data page new-page)
+          data (snap/update-page data page new-page (get-object-ids page new-page))
 
           result-x (snap/query data (:id page) uuid/zero :x [0 100])
           result-y (snap/query data (:id page) uuid/zero :y [0 100])]
@@ -269,7 +275,7 @@
           state    (fb/delete-shape state shape-id)
           new-page (fb/get-current-page state)
 
-          data     (snap/update-page data page new-page)
+          data     (snap/update-page data page new-page (get-object-ids page new-page))
 
           result-zero-x  (snap/query data (:id page) uuid/zero :x [0 100])
           result-frame-x (snap/query data (:id page) frame-id :x [0 100])]
@@ -297,7 +303,7 @@
           new-page (-> (fb/delete-guide state guide-id)
                        (fb/get-current-page))
 
-          data     (snap/update-page data page new-page)
+          data     (snap/update-page data page new-page (get-object-ids page new-page))
 
           result-zero-x  (snap/query data (:id page) uuid/zero :x [0 100])
           result-zero-y  (snap/query data (:id page) uuid/zero :y [0 100])
@@ -330,7 +336,7 @@
           new-page (-> (fb/delete-guide file guide-id)
                        (fb/get-current-page))
 
-          data (snap/update-page data page new-page)
+          data (snap/update-page data page new-page (get-object-ids page new-page))
 
           result-zero-x (snap/query data (:id page) uuid/zero :x [0 100])
           result-zero-y (snap/query data (:id page) uuid/zero :y [0 100])
@@ -370,7 +376,7 @@
 
 
           new-page (fb/get-current-page state)
-          data     (snap/update-page data page new-page)
+          data     (snap/update-page data page new-page (get-object-ids page new-page))
 
           result-zero-x-1 (snap/query data (:id page) uuid/zero :x [0 100])
           result-frame-x-1 (snap/query data (:id page) frame-id :x [0 100])
@@ -408,7 +414,7 @@
 
           new-page (fb/get-current-page state)
           ;; FIXME: update
-          data     (snap/update-page data page new-page)
+          data     (snap/update-page data page new-page (get-object-ids page new-page))
 
           result-zero-x-1 (snap/query data (:id page) uuid/zero :x [0 100])
           result-zero-x-2 (snap/query data (:id page) uuid/zero :x [200 300])]
@@ -437,7 +443,7 @@
           new-page (-> (fb/update-guide state (assoc guide :position 150))
                        (fb/get-current-page))
 
-          data     (snap/update-page data page new-page)
+          data     (snap/update-page data page new-page (get-object-ids page new-page))
 
           result-zero-x-1 (snap/query data (:id page) uuid/zero :x [0 100])
           result-zero-y-1 (snap/query data (:id page) uuid/zero :y [0 100])

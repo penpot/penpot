@@ -3,4 +3,16 @@
  [{:id          :unit
    :test-paths  ["test" "src"]
    :ns-patterns [".*-test$"]
-   :kaocha/reporter [kaocha.report/dots]}]}
+   :kaocha/reporter [kaocha.report/dots]}]
+
+ ;; Only read when the cloverage plugin is on (`:coverage` alias).
+ :cloverage/opts {:src-ns-path ["src"]
+                  :ns-regex ["^app\\..*"]
+                  :output "target/coverage"
+                  :lcov? true
+                  ;; EMMA XML carries the form counts the PR report shows as statements.
+                  :emma-xml? true
+                  :html? true
+                  :summary? true
+                  :codecov? false
+                  :fail-threshold 0}}

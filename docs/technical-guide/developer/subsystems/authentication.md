@@ -65,7 +65,7 @@ When the user press one of the "Log in with XXX" button, frontend calls
 generates a request token and redirects the user to the service provider to
 authenticate in it.
 
-If succesful, the provider redirects to the<code class="language-clojure">/auth/oauth/:provider/callback</code>.
+If successful, the provider redirects to the<code class="language-clojure">/auth/oauth/:provider/callback</code>.
 This verifies the call with the request token, extracts another access token
 from the auth response, and uses it to request the email and full name from the
 service provider.
@@ -143,6 +143,13 @@ When a user follows it, the token is verified and then the corresponding process
 is routed, depending if the email corresponds to an existing account or not. The
 <code class="language-clojure">:register-profile</code> or <code class="language-clojure">:login</code> services are used, and the invitation token is
 attached so that the profile is linked to the team at the end.
+
+There is a shortcut when the `:email-verification` flag is disabled: if the invited email
+already corresponds to an existing profile, the `create-invitation` function (in
+`app.rpc.commands.teams-invitations`) adds the profile to the team directly, without
+creating an invitation token or sending an email, and marks the profile as active if it
+was inactive. Emails without an existing profile follow the normal invitation flow
+described above.
 
 ## Handling unfinished registrations and bouncing users
 

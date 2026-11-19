@@ -1,0 +1,44 @@
+{
+    "~:email": "foo@example.com",
+    "~:is-demo": false,
+    "~:auth-backend": "penpot",
+    "~:fullname": "Princesa Leia",
+    "~:modified-at": "~m1713533116365",
+    "~:is-active": true,
+    "~:default-project-id": "~uc7ce0794-0992-8105-8004-38e630f7920b",
+    "~:id": "~uc7ce0794-0992-8105-8004-38e630f29a9b",
+    "~:is-muted": false,
+    "~:default-team-id": "~uc7ce0794-0992-8105-8004-38e630f40f6d",
+    "~:created-at": "~m1713533116365",
+    "~:is-blocked": false,
+    "~:props": {
+        "~:nudge": {
+            "~:big": 10,
+            "~:small": 1
+        },
+        "~:v2-info-shown": true,
+        "~:viewed-tutorial?": false,
+        "~:viewed-walkthrough?": false,
+        "~:plugins": {
+            "~:ids": [
+                "0a5b1c2d-3e4f-4a5b-8c6d-7e8f9a0b1c2d"
+            ],
+            "~:data": {
+                "0a5b1c2d-3e4f-4a5b-8c6d-7e8f9a0b1c2d": {
+                    "~:plugin-id": "0a5b1c2d-3e4f-4a5b-8c6d-7e8f9a0b1c2d",
+                    "~:version": 2,
+                    "~:name": "Lorem Ipsum generator",
+                    "~:description": "Fill text layers with placeholder text.",
+                    "~:host": "https://plugin.example.com/",
+                    "~:code": "plugin.js",
+                    "~:permissions": {
+                        "~#set": [
+                            "content:read",
+                            "content:write"
+                        ]
+                    }
+                }
+            }
+        }
+    }
+}

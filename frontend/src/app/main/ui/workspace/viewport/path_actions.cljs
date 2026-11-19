@@ -11,53 +11,21 @@
    [app.main.data.workspace.path.helpers :as path.helpers]
    [app.main.data.workspace.path.shortcuts :as sc]
    [app.main.store :as st]
-   [app.main.ui.icons :as deprecated-icon]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.timers :as ts]
    [rumext.v2 :as mf]))
 
-(def ^:private pentool-icon
-  (deprecated-icon/icon-xref :pentool (stl/css :pentool-icon :pathbar-icon)))
-
-(def ^:private move-icon
-  (deprecated-icon/icon-xref :move (stl/css :move-icon :pathbar-icon)))
-
-(def ^:private merge-nodes-icon
-  (deprecated-icon/icon-xref :merge-nodes (stl/css :merge-nodes-icon :pathbar-icon)))
-
-(def ^:private join-nodes-icon
-  (deprecated-icon/icon-xref :join-nodes (stl/css :join-nodes-icon :pathbar-icon)))
-
-(def ^:private separate-nodes-icon
-  (deprecated-icon/icon-xref :separate-nodes (stl/css :separate-nodes-icon :pathbar-icon)))
-
-(def ^:private to-corner-icon
-  (deprecated-icon/icon-xref :to-corner (stl/css :to-corner-icon :pathbar-icon)))
-
-(def ^:private to-curve-icon
-  (deprecated-icon/icon-xref :to-curve (stl/css :to-curve-icon :pathbar-icon)))
-
-(def ^:private snap-icon
-  (deprecated-icon/icon-xref :snap (stl/css :snap-icon :pathbar-icon)))
-
 ;; Handler behavior icons: mirror, aligned, and independent.
-(def ^:private handler-mirror-icon
-  (deprecated-icon/icon-xref :handlers-equal (stl/css :pathbar-icon)))
-
-(def ^:private handler-aligned-icon
-  (deprecated-icon/icon-xref :handlers-mirror (stl/css :pathbar-icon)))
-
-(def ^:private handler-independent-icon
-  (deprecated-icon/icon-xref :handlers-independent (stl/css :pathbar-icon)))
-
 (defn- handler-type-icon [type]
   (case type
-    :mirror      handler-mirror-icon
-    :aligned     handler-aligned-icon
-    :independent handler-independent-icon
+    :mirror      i/handlers-equal
+    :aligned     i/handlers-mirror
+    :independent i/handlers-independent
     ;; Use the independent icon for mixed selections.
-    :mixed       handler-independent-icon
-    handler-independent-icon))
+    :mixed       i/handlers-independent
+    i/handlers-independent))
 
 (defn toolbar-group-visibility
   [structural-visible? shape-visible? handler-visible?]
@@ -69,11 +37,11 @@
 (mf/defc topbar-button*
   "A path node action button."
   {::mf/private true}
-  [{:keys [title on-click icon]}]
-  [:button {:class (stl/css :topbar-btn)
-            :title title
-            :on-click on-click}
-   icon])
+  [props]
+  (let [props (mf/spread-props props {:variant "ghost"
+                                      :tooltip-placement "bottom"
+                                      :tooltip-class (stl/css :topbar-btn)})]
+    [:> icon-button* props]))
 
 (defn- cancel-timer!
   [timer-ref*]
@@ -144,31 +112,31 @@
     [:div {:class (stl/css :handler-menu)
            :on-pointer-enter on-display-menu
            :on-pointer-leave on-hide-menu}
-     [:button {:class (stl/css :topbar-btn :handler-trigger)
-               :title (tr "workspace.path.actions.handler-type")
-               :aria-haspopup true
-               :aria-expanded open?
-               :on-click on-trigger-click}
-      (handler-type-icon active-type)
-      [:svg {:view-box "0 0 6 6"
-             :aria-hidden true
-             :class (stl/css :flyout-indicator)}
-       [:path {:d "M4,2 L4,3.15 C4,3.62 3.62,4 3.15,4 L2,4"
-               :stroke-linecap "round"}]]]
+     ;; Like the top toolbar flyouts: the menu opens on hover, so the
+     ;; trigger has no tooltip.
+     [:> icon-button* {:variant "ghost"
+                       :class (stl/css :topbar-btn)
+                       :flyout-indicator true
+                       :has-tooltip false
+                       :aria-label (tr "workspace.path.actions.handler-type")
+                       :aria-haspopup true
+                       :aria-expanded open?
+                       :icon (handler-type-icon active-type)
+                       :on-click on-trigger-click}]
      [:div {:class (stl/css-case :handler-popover true :open open?)
             :data-dont-clear-path true}
-      [:button {:class (stl/css-case :is-toggled (= active-type :mirror) :topbar-btn true)
-                :title (tr "workspace.path.actions.handler-mirror")
-                :on-click #(select :mirror)}
-       handler-mirror-icon]
-      [:button {:class (stl/css-case :is-toggled (= active-type :aligned) :topbar-btn true)
-                :title (tr "workspace.path.actions.handler-aligned")
-                :on-click #(select :aligned)}
-       handler-aligned-icon]
-      [:button {:class (stl/css-case :is-toggled (= active-type :independent) :topbar-btn true)
-                :title (tr "workspace.path.actions.handler-independent")
-                :on-click #(select :independent)}
-       handler-independent-icon]]]))
+      [:> topbar-button* {:aria-label (tr "workspace.path.actions.handler-mirror")
+                          :aria-pressed (= active-type :mirror)
+                          :icon (handler-type-icon :mirror)
+                          :on-click #(select :mirror)}]
+      [:> topbar-button* {:aria-label (tr "workspace.path.actions.handler-aligned")
+                          :aria-pressed (= active-type :aligned)
+                          :icon (handler-type-icon :aligned)
+                          :on-click #(select :aligned)}]
+      [:> topbar-button* {:aria-label (tr "workspace.path.actions.handler-independent")
+                          :aria-pressed (= active-type :independent)
+                          :icon (handler-type-icon :independent)
+                          :on-click #(select :independent)}]]]))
 
 (mf/defc path-actions*
   [{:keys [shape state]}]
@@ -266,14 +234,14 @@
            :data-dont-clear-path true}
      ;; Mode: draw / move (always visible)
      [:div {:class (stl/css :sub-actions-group)}
-      [:button {:class (stl/css-case :is-toggled (= edit-mode :draw) :topbar-btn true)
-                :title (tr "workspace.path.actions.draw-nodes" (sc/get-tooltip :draw-nodes))
-                :on-click on-select-draw-mode}
-       pentool-icon]
-      [:button {:class (stl/css-case :is-toggled (= edit-mode :move) :topbar-btn true)
-                :title (tr "workspace.path.actions.move-nodes" (sc/get-tooltip :move-nodes))
-                :on-click on-select-edit-mode}
-       move-icon]]
+      [:> topbar-button* {:aria-label (tr "workspace.path.actions.draw-nodes" (sc/get-tooltip :draw-nodes))
+                          :aria-pressed (= edit-mode :draw)
+                          :icon i/pentool
+                          :on-click on-select-draw-mode}]
+      [:> topbar-button* {:aria-label (tr "workspace.path.actions.move-nodes" (sc/get-tooltip :move-nodes))
+                          :aria-pressed (= edit-mode :move)
+                          :icon i/move
+                          :on-click on-select-edit-mode}]]
 
      [:div {:class (stl/css :separator)}]
 
@@ -281,17 +249,17 @@
      (when structural-visible?
        [:div {:class (stl/css :sub-actions-group)}
         (when (:merge-nodes enabled-buttons)
-          [:> topbar-button* {:title (tr "workspace.path.actions.merge-nodes" (sc/get-tooltip :merge-nodes))
+          [:> topbar-button* {:aria-label (tr "workspace.path.actions.merge-nodes" (sc/get-tooltip :merge-nodes))
                               :on-click on-merge-nodes
-                              :icon merge-nodes-icon}])
+                              :icon i/merge-nodes}])
         (when (:join-nodes enabled-buttons)
-          [:> topbar-button* {:title (tr "workspace.path.actions.join-nodes" (sc/get-tooltip :join-nodes))
+          [:> topbar-button* {:aria-label (tr "workspace.path.actions.join-nodes" (sc/get-tooltip :join-nodes))
                               :on-click on-join-nodes
-                              :icon join-nodes-icon}])
+                              :icon i/join-nodes}])
         (when (:separate-nodes enabled-buttons)
-          [:> topbar-button* {:title (tr "workspace.path.actions.separate-nodes" (sc/get-tooltip :separate-nodes))
+          [:> topbar-button* {:aria-label (tr "workspace.path.actions.separate-nodes" (sc/get-tooltip :separate-nodes))
                               :on-click on-separate-nodes
-                              :icon separate-nodes-icon}])])
+                              :icon i/separate-nodes}])])
 
      (when node-groups-separator-visible?
        [:div {:class (stl/css :separator)}])
@@ -300,13 +268,13 @@
      (when shape-visible?
        [:div {:class (stl/css :sub-actions-group)}
         (when (:make-corner enabled-buttons)
-          [:> topbar-button* {:title (tr "workspace.path.actions.make-corner" (sc/get-tooltip :make-corner))
+          [:> topbar-button* {:aria-label (tr "workspace.path.actions.make-corner" (sc/get-tooltip :make-corner))
                               :on-click on-make-corner
-                              :icon to-corner-icon}])
+                              :icon i/to-corner}])
         (when (:make-curve enabled-buttons)
-          [:> topbar-button* {:title (tr "workspace.path.actions.make-curve" (sc/get-tooltip :make-curve))
+          [:> topbar-button* {:aria-label (tr "workspace.path.actions.make-curve" (sc/get-tooltip :make-curve))
                               :on-click on-make-curve
-                              :icon to-curve-icon}])])
+                              :icon i/to-curve}])])
 
      ;; Handler behaviour of the selected node(s)
      (when handler-visible?
@@ -318,7 +286,7 @@
 
      ;; Toggle snap (always visible, pinned to the right)
      [:div {:class (stl/css :sub-actions-group :snap-group)}
-      [:button {:class (stl/css-case :is-toggled snap-toggled :topbar-btn true)
-                :title (tr "workspace.path.actions.snap-nodes" (sc/get-tooltip :snap-nodes))
-                :on-click on-toggle-snap}
-       snap-icon]]]))
+      [:> topbar-button* {:aria-label (tr "workspace.path.actions.snap-nodes" (sc/get-tooltip :snap-nodes))
+                          :aria-pressed (boolean snap-toggled)
+                          :icon i/snap
+                          :on-click on-toggle-snap}]]]))

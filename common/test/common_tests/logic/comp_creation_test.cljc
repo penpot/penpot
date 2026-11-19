@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.shapes-helpers :as cfsh]
+   [app.common.files.validate :as cfv]
    [app.common.geom.point :as gpt]
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
@@ -19,6 +20,7 @@
    [app.common.test-helpers.shapes :as ths]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
+   [app.common.types.file :as ctf]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
    [clojure.test :as t]))
@@ -89,6 +91,37 @@
     (t/is (= (:type root) :frame))
     (t/is (ctk/main-instance? root))
     (t/is (ctk/main-instance-of? (:id root) (:id page) component))))
+
+(t/deftest test-add-component-normalizes-root-name
+  (t/testing "main instance root name matches the component even if the source name is not normalized"
+    (let [;; ==== Setup
+          file   (-> (thf/sample-file :file1)
+                     (ths/add-sample-shape :frame1 :type :frame :name "Group/Subgroup  /  Name"))
+
+          page   (thf/current-page file)
+          frame1 (ths/get-shape file :frame1)
+
+          ;; ==== Action
+          [_ component-id changes]
+          (cll/generate-add-component (pcb/empty-changes)
+                                      [frame1]
+                                      (:objects page)
+                                      (:id page)
+                                      (:id file)
+                                      nil)
+
+          file'     (thf/apply-changes file changes)
+
+          ;; ==== Get
+          component (thc/get-component-by-id file' component-id)
+          root      (ths/get-shape-by-id file' (:main-instance-id component))
+          errors    (cfv/validate-file file' {})]
+
+      ;; ==== Check
+      (t/is (= "Group / Subgroup" (:path component)))
+      (t/is (= "Name" (:name component)))
+      (t/is (= "Group / Subgroup / Name" (:name root)))
+      (t/is (nil? errors)))))
 
 (t/deftest test-add-component-from-several-shapes
   (let [;; ==== Setup
@@ -250,18 +283,25 @@
         component (thc/get-component file :component1)
 
         ;; ==== Action
-        changes   (cll/generate-rename-component (pcb/empty-changes)
-                                                 (:id component)
-                                                 "Test component after"
-                                                 (:data file))
+        changes   (-> (pcb/empty-changes nil (thf/current-page-id file))
+                      (pcb/with-file-data (ctf/file-data file))
+                      (cll/generate-rename-component
+                       (:id component)
+                       "Test component after"
+                       (:data file))
+                      (pcb/update-shapes
+                       [(thi/id :main1-root)]
+                       #(assoc % :name "Test component after")))
 
         file' (thf/apply-changes file changes)
 
         ;; ==== Get
-        component' (thc/get-component file' :component1)]
+        component'  (thc/get-component file' :component1)
+        main1-root' (ths/get-shape file' :main1-root)]
 
     ;; ==== Check
-    (t/is (= (:name component') "Test component after"))))
+    (t/is (= (:name component') "Test component after"))
+    (t/is (= (:name main1-root') "Test component after"))))
 
 (t/deftest test-duplicate-component
   (let [;; ==== Setup

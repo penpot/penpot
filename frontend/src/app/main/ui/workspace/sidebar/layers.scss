@@ -4,6 +4,7 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
+// Only for the shared %menu-dropdown placeholder of the filters menu.
 @use "refactor/common-refactor.scss" as deprecated;
 @use "ds/borders.scss" as *;
 @use "ds/mixins.scss" as *;
@@ -63,7 +64,7 @@
   justify-content: center;
   block-size: var(--sp-xxxl);
   padding-inline-start: var(--sp-s);
-  color: var(--icon-foreground);
+  color: var(--color-foreground-secondary);
 }
 
 .focus-name {
@@ -71,7 +72,7 @@
   @include text-ellipsis;
 
   padding-inline-end: var(--sp-xs);
-  color: var(--title-foreground-color);
+  color: var(--color-foreground-secondary);
 }
 
 .focus-mode-tag-wrapper {
@@ -91,18 +92,36 @@
 }
 
 .layer-filter {
-  @extend %button-tag;
+  --layer-filter-background-color: var(--color-background-tertiary);
+  --layer-filter-border: none;
 
+  display: flex;
+  justify-content: center;
+  align-items: center;
   gap: px2rem(6);
   block-size: var(--sp-xxl);
   margin: var(--sp-xxs) 0;
+  border: var(--layer-filter-border);
   border-radius: $br-6;
-  background-color: var(--pill-background-color);
+  background-color: var(--layer-filter-background-color);
+  cursor: pointer;
+
+  &:focus-visible {
+    --layer-filter-background-color: var(--color-background-secondary);
+    --layer-filter-border: #{$b-1} solid var(--color-accent-primary);
+
+    outline: none;
+  }
+
+  &:active {
+    --layer-filter-background-color: transparent;
+    --layer-filter-border: none;
+  }
 }
 
 .layer-filter-icon,
 .layer-filter-close {
-  color: var(--pill-foreground-color);
+  color: var(--color-foreground-primary);
 }
 
 .layer-filter-name {
@@ -111,7 +130,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--pill-foreground-color);
+  color: var(--color-foreground-primary);
 }
 
 .layers {
@@ -213,6 +232,8 @@
   inline-size: $sz-192;
 
   .filter-menu-item {
+    --filter-menu-item-background-color: transparent;
+
     @include t.use-typography("body-small");
 
     display: flex;
@@ -221,60 +242,30 @@
     inline-size: 100%;
     padding: px2rem(6);
     border-radius: $br-8;
-
-    .filter-menu-item-name-wrapper {
-      display: flex;
-      align-items: center;
-      gap: var(--sp-s);
-
-      .filter-menu-item-icon {
-        color: var(--menu-foreground-color);
-      }
-
-      .filter-menu-item-name {
-        padding-block-start: var(--sp-xxs);
-        color: var(--menu-foreground-color);
-      }
-    }
-
-    .filter-menu-item-tick {
-      color: var(--menu-foreground-color);
-    }
+    background-color: var(--filter-menu-item-background-color);
 
     &.selected {
-      background-color: var(--menu-background-color-selected);
-
-      .filter-menu-item-name-wrapper {
-        .filter-menu-item-icon {
-          color: var(--menu-foreground-color);
-        }
-
-        .filter-menu-item-name {
-          color: var(--menu-foreground-color);
-        }
-      }
-
-      .filter-menu-item-tick {
-        color: var(--menu-foreground-color);
-      }
+      --filter-menu-item-background-color: var(--color-background-tertiary);
     }
 
     &:hover {
-      background-color: var(--menu-background-color-hover);
-
-      .filter-menu-item-name-wrapper {
-        .filter-menu-item-icon {
-          color: var(--menu-foreground-color-hover);
-        }
-
-        .filter-menu-item-name {
-          color: var(--menu-foreground-color-hover);
-        }
-      }
-
-      .filter-menu-item-tick {
-        color: var(--menu-foreground-color-hover);
-      }
+      --filter-menu-item-background-color: var(--color-background-quaternary);
     }
+  }
+
+  .filter-menu-item-name-wrapper {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-s);
+  }
+
+  .filter-menu-item-icon,
+  .filter-menu-item-name,
+  .filter-menu-item-tick {
+    color: var(--color-foreground-primary);
+  }
+
+  .filter-menu-item-name {
+    padding-block-start: var(--sp-xxs);
   }
 }

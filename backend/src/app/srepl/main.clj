@@ -25,6 +25,7 @@
    [app.db.sql :as-alias sql]
    [app.features.fdata :as fdata]
    [app.features.file-snapshots :as fsnap]
+   [app.health :as health]
    [app.http.session :as session]
    [app.jobs :as jobs]
    [app.loggers.audit :as audit]
@@ -97,6 +98,30 @@
                   (#'auth/send-email-verification! cfg profile)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; INSTANCE AVAILABILITY
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn set-offline
+  "Take this instance out of the load balancer.
+
+  The `/readyz` endpoint starts answering 503, so the load balancer
+  removes the instance from rotation. Requests already in flight are
+  still served; wait for the load balancer to notice and for the traffic
+  to drop before restarting the process.
+
+  A restarted process comes back online on its own."
+  []
+  (health/set-offline))
+
+(defn set-online
+  "Put this instance back into the load balancer rotation.
+
+  Only needed to undo a `set-offline` without a restart; a restarted
+  process starts online."
+  []
+  (health/set-online))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PROFILES MANAGEMENT
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -144,6 +169,89 @@
                (-> (db/exec-one! conn ["update profile set password=? where email=?" password email])
                    (db/get-update-count)
                    (pos?)))))))
+
+(defn update-profile-email!
+  "Support helper: change a profile's email address.
+
+  Looks up the profile by its current email. Rejects with
+  `:email-already-exists` when the new address is already used by
+  another non-deleted profile. Does not clear bounce/complaint
+  reports; call `clear-email-complaint-reports!` for that."
+  [& {:keys [email new-email]}]
+  (assert (string? email) "expected email")
+  (assert (string? new-email) "expected new-email")
+
+  (let [email     (profile/clean-email email)
+        new-email (profile/clean-email new-email)]
+    (db/tx-run! sys/system
+                (fn [{:keys [::db/conn] :as system}]
+                  (let [profile (profile/get-profile-by-email conn email)]
+                    (when-not profile
+                      (ex/raise :type :not-found
+                                :code :profile-not-found
+                                :hint "profile not found for email"
+                                :email email))
+
+                    (if (= email new-email)
+                      :unchanged
+                      (do
+                        (when (profile/get-profile-by-email conn new-email)
+                          (ex/raise :type :validation
+                                    :code :email-already-exists))
+
+                        (db/update! conn :profile
+                                    {:email new-email}
+                                    {:id (:id profile)}
+                                    {::db/return-keys false})
+
+                        (audit/insert system
+                                      {:name "update-profile-email"
+                                       :type "action"
+                                       :props {:id (:id profile)
+                                               :email email
+                                               :new-email new-email}
+                                       :context {:triggered-by "srepl"
+                                                 :cause "explicit call to update-profile-email!"}})
+                        :updated)))))))
+
+(defn clear-email-complaint-reports!
+  "Support helper: delete bounce and complaint reports for an email
+  from `global_complaint_report` and, when a profile owns that email,
+  from `profile_complaint_report`. Also unmutes that profile so mail
+  can be sent again after a false-positive bounce or complaint."
+  [email]
+  (assert (string? email) "expected email")
+
+  (let [email (profile/clean-email email)]
+    (db/tx-run! sys/system
+                (fn [{:keys [::db/conn] :as system}]
+                  (let [profile (db/get* conn :profile {:email email})
+                        global-deleted
+                        (-> (db/delete! conn :global-complaint-report {:email email})
+                            (db/get-update-count))
+                        profile-deleted
+                        (if profile
+                          (-> (db/delete! conn :profile-complaint-report
+                                          {:profile-id (:id profile)})
+                              (db/get-update-count))
+                          0)]
+                    (when profile
+                      (db/update! conn :profile
+                                  {:is-muted false}
+                                  {:id (:id profile)}
+                                  {::db/return-keys false}))
+
+                    (when (or profile (pos? global-deleted))
+                      (audit/insert system
+                                    {:name "clear-email-complaint-reports"
+                                     :type "action"
+                                     :props (cond-> {:email email
+                                                     :global-deleted global-deleted
+                                                     :profile-deleted profile-deleted}
+                                              profile (assoc :id (:id profile)))
+                                     :context {:triggered-by "srepl"
+                                               :cause "explicit call to clear-email-complaint-reports!"}})
+                      :cleared))))))
 
 (defn parse-emails
   "Parse the emails into a seq of cleaned emails. Accepts a single
@@ -758,7 +866,7 @@
                    :type "action"
                    :props {:id team-id}
                    :context {:triggered-by "srepl"
-                             :cause "explicit call to delete-profile!"}
+                             :cause "explicit call to delete-team!"}
                    :tracked-at tnow})
 
     (jobs/invoke (-> sys/system
@@ -767,6 +875,15 @@
                                            :deleted-at tnow
                                            :id team-id})))
     :deleted))
+
+(def ^:private sql:restore-font-file-objects
+  "UPDATE storage_object
+      SET deleted_at = null
+    WHERE deleted_at IS NOT NULL
+      AND id IN (SELECT unnest(array[woff1_file_id, woff2_file_id, otf_file_id, ttf_file_id])
+                   FROM team_font_variant
+                  WHERE team_id = ?::uuid
+                    AND deleted_at IS NULL)")
 
 (defn- restore-team*
   [{:keys [::db/conn] :as cfg} team-id]
@@ -777,6 +894,11 @@
   (db/update! conn :team-font-variant
               {:deleted-at nil}
               {:team-id team-id})
+
+  ;; Same as in `restore-files`: the font objects of the variants we just
+  ;; brought back must stop being marked for deletion, or the storage GC will
+  ;; skip them forever (those foreign keys are `NO ACTION`).
+  (db/exec-one! conn [sql:restore-font-file-objects team-id])
 
   (doseq [{:keys [id]} (db/query conn :project
                                  {:team-id team-id}
@@ -813,6 +935,7 @@
     (audit/insert sys/system
                   {:name "delete-profile"
                    :type "action"
+                   :props {:id profile-id}
                    :context {:triggered-by "srepl"
                              :cause "explicit call to delete-profile!"}
                    :tracked-at tnow})
@@ -876,45 +999,69 @@
 ;; CASCADE FIXING
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- submit-deleted-cascade
+  "Replay the deletion cascade of every soft-deleted row of `table`, by
+  submitting one `:delete-object` job per row.
+
+  Reads the rows with a server-side cursor (`db/plan`) instead of materialising
+  the whole table, and enqueues the job instead of running it inline, so it
+  can be used against production in bounded batches. The job is idempotent (it
+  only marks the children with the row's own date), `label` is the row id and
+  `dedupe` drops not-yet-due duplicates.
+
+  Options: `:limit` (max rows read), `:ids` (restrict the run to these row ids)
+  and `:dry-run?` (count without enqueueing). `table` and `object` are internal
+  constants, never operator input.
+
+  Returns `{:found n :submitted m}`.
+
+  Note: the submissions are given the outer `system` (with the pool) on
+  purpose; handing them the read-only transaction cfg would write on it."
+  [system {:keys [table object limit ids dry-run?]}]
+  (let [clauses (cond-> ["deleted_at is not null"]
+                  (seq ids) (conj "id = any(?)"))
+        sql     (str "select id, deleted_at from " table
+                     " where " (str/join " and " clauses)
+                     (when limit (str " limit " (long limit))))]
+
+    (db/tx-run! (assoc system ::db/read-only true)
+                (fn [{:keys [::db/conn]}]
+                  (let [query (cond-> [sql]
+                                (seq ids) (conj (db/create-array conn "uuid" ids)))
+                        found (reduce (fn [total {:keys [id deleted-at]}]
+                                        (when-not dry-run?
+                                          (jobs/submit system
+                                                       {::jobs/name :delete-object
+                                                        ::jobs/params {:object object
+                                                                       :deleted-at deleted-at
+                                                                       :id id}
+                                                        ::jobs/label (str id)
+                                                        ::jobs/dedupe true}))
+                                        (inc total))
+                                      0
+                                      (db/plan conn query))]
+                    {:found found
+                     :submitted (if dry-run? 0 found)})))))
+
 (defn process-deleted-profiles-cascade
-  []
-  (->> (db/exec! sys/system ["select id, deleted_at from profile where deleted_at is not null"])
-       (run! (fn [{:keys [id deleted-at]}]
-               (jobs/invoke (-> sys/system
-                                (assoc ::jobs/name :delete-object)
-                                (assoc ::jobs/params {:object :profile
-                                                      :deleted-at deleted-at
-                                                      :id id})))))))
+  "Replay the deletion cascade of every soft-deleted profile."
+  [& {:as opts}]
+  (submit-deleted-cascade sys/system (merge {:table "profile" :object :profile} opts)))
 
 (defn process-deleted-teams-cascade
-  []
-  (->> (db/exec! sys/system ["select id, deleted_at from team where deleted_at is not null"])
-       (run! (fn [{:keys [id deleted-at]}]
-               (jobs/invoke (-> sys/system
-                                (assoc ::jobs/name :delete-object)
-                                (assoc ::jobs/params {:object :team
-                                                      :deleted-at deleted-at
-                                                      :id id})))))))
+  "Replay the deletion cascade of every soft-deleted team."
+  [& {:as opts}]
+  (submit-deleted-cascade sys/system (merge {:table "team" :object :team} opts)))
 
 (defn process-deleted-projects-cascade
-  []
-  (->> (db/exec! sys/system ["select id, deleted_at from project where deleted_at is not null"])
-       (run! (fn [{:keys [id deleted-at]}]
-               (jobs/invoke (-> sys/system
-                                (assoc ::jobs/name :delete-object)
-                                (assoc ::jobs/params {:object :project
-                                                      :deleted-at deleted-at
-                                                      :id id})))))))
+  "Replay the deletion cascade of every soft-deleted project."
+  [& {:as opts}]
+  (submit-deleted-cascade sys/system (merge {:table "project" :object :project} opts)))
 
 (defn process-deleted-files-cascade
-  []
-  (->> (db/exec! sys/system ["select id, deleted_at from file where deleted_at is not null"])
-       (run! (fn [{:keys [id deleted-at]}]
-               (jobs/invoke (-> sys/system
-                                (assoc ::jobs/name :delete-object)
-                                (assoc ::jobs/params {:object :file
-                                                      :deleted-at deleted-at
-                                                      :id id})))))))
+  "Replay the deletion cascade of every soft-deleted file."
+  [& {:as opts}]
+  (submit-deleted-cascade sys/system (merge {:table "file" :object :file} opts)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SSO
@@ -977,4 +1124,4 @@
                       (let [params (-> rel
                                        (assoc :id (uuid/next))
                                        (assoc :team-id (:id team)))]
-                        (teams/add-profile-to-team! cfg params {::db/return-keys false}))))))))
+                        (teams/add-profile-to-team! cfg params))))))))

@@ -15,16 +15,11 @@
    [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.dashboard.sidebar :refer [profile-section*]]
-   [app.main.ui.icons :as deprecated-icon]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [rumext.v2 :as mf]))
 
-(def ^:private arrow-icon
-  (deprecated-icon/icon-xref :arrow (stl/css :arrow-icon)))
-
-(def ^:private feedback-icon
-  (deprecated-icon/icon-xref :feedback (stl/css :feedback-icon)))
 
 ;; FIXME: move to common
 (def ^:private go-settings-profile
@@ -82,7 +77,8 @@
      [:div {:class (stl/css :sidebar-content-section)}
       [:button {:class (stl/css :back-to-dashboard)
                 :on-click go-dashboard}
-       arrow-icon
+       [:> icon* {:icon-id i/arrow-left
+                  :class (stl/css :arrow-icon)}]
        [:span {:class (stl/css :back-text)} (tr "labels.dashboard")]]]
 
      [:hr {:class (stl/css :sidebar-separator)}]
@@ -143,7 +139,9 @@
          [:li {:class (stl/css-case :current feedback?
                                     :settings-item true)
                :on-click go-settings-feedback}
-          feedback-icon
+          [:> icon* {:icon-id i/feedback
+                     :size "s"
+                     :class (stl/css :feedback-icon)}]
           [:span {:class (stl/css :element-title)} (tr "labels.contact-us")]])]]]))
 
 (mf/defc sidebar*

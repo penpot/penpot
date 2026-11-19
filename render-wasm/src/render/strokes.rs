@@ -128,22 +128,22 @@ fn inner_corners_collapse(stroke: &Stroke, rect: &Rect, radii: &Option<Corners>)
         .any(|(shape, (want, got))| shape.x > 0.0 && (want.x <= 0.0 || want != got))
 }
 
-/// Draws a rect/frame stroke whose sides have different widths as the area
-/// between an outer and an inner (rounded) rect, mitered like CSS borders.
-/// Dashed/dotted styles cut that band per side, each side fitting a whole
-/// number of dashes the way a browser fits a dashed border.
-#[allow(clippy::too_many_arguments)]
-fn draw_per_side_stroke_on_rect(
-    canvas: &skia::Canvas,
+struct PerSideGeometry {
+    band: skia::Path,
+    pattern: Option<skia::Path>,
+    wedges: Option<skia::Path>,
+    trim_to_band: bool,
+}
+
+fn per_side_geometry(
     stroke: &Stroke,
+    style: StrokeStyle,
     rect: &Rect,
     corners: &Option<Corners>,
-    paint: &skia::Paint,
     widths: [f32; 4],
-    scale: f32,
     miter: Option<[f32; 4]>,
     antialias: bool,
-) {
+) -> PerSideGeometry {
     // Strokes sharing a border box are shaped by the whole box: a side this one
     // does not paint still sets the radii its corners curve to, as in CSS.
     let band_widths: [f32; 4] = match miter {
@@ -181,11 +181,6 @@ fn draw_per_side_stroke_on_rect(
     // When a side width exceeds the shape dimension the inner rect collapses
     // and the whole outer rect is filled, like CSS collapsing borders.
     let has_hole = inner.width() > 0.0 && inner.height() > 0.0;
-
-    let mut fill_paint = paint.clone();
-    fill_paint.set_style(skia::PaintStyle::Fill);
-    fill_paint.set_path_effect(None);
-    fill_paint.set_anti_alias(antialias);
 
     let mut pb = skia::PathBuilder::new();
     let (outer_radii, inner_radii) = match corners {
@@ -231,7 +226,6 @@ fn draw_per_side_stroke_on_rect(
 
     // Solid is the common case and the whole band is one fill. A collapsed
     // band has no sides left to walk, so it fills solid too.
-    let style = stroke.with_width(stroke.max_width()).style_at_scale(scale);
     let pattern = if style == StrokeStyle::Solid || !has_hole {
         None
     } else {
@@ -251,8 +245,68 @@ fn draw_per_side_stroke_on_rect(
     // so each one keeps only its own wedge of the corner.
     let wedges = miter.and_then(|profile| side_wedges(&outer, outer_radii, profile, widths));
 
-    if pattern.is_none() && wedges.is_none() {
-        canvas.draw_path(&band, &fill_paint);
+    // Square corners need no clip: the side strips tile the band exactly.
+    // Rounded corners curve past them, and dots straddle the boundary.
+    let rounded = corners.is_some_and(|radii| radii.iter().any(|r| r.x > 0.0 || r.y > 0.0));
+    let trim_to_band = rounded || style == StrokeStyle::Dotted;
+
+    PerSideGeometry {
+        band,
+        pattern,
+        wedges,
+        trim_to_band,
+    }
+}
+
+pub(crate) fn per_side_stroke_outline(
+    stroke: &Stroke,
+    rect: &Rect,
+    corners: &Option<Corners>,
+    widths: [f32; 4],
+    miter: Option<[f32; 4]>,
+) -> skia::Path {
+    let geometry = per_side_geometry(stroke, stroke.style, rect, corners, widths, miter, true);
+    let outline = match geometry.pattern {
+        Some(pattern) if geometry.trim_to_band => pattern
+            .op(&geometry.band, skia::PathOp::Intersect)
+            .unwrap_or(pattern),
+        Some(pattern) => pattern,
+        None => geometry.band,
+    };
+    match &geometry.wedges {
+        Some(wedges) => outline
+            .op(wedges, skia::PathOp::Intersect)
+            .unwrap_or(outline),
+        None => outline,
+    }
+}
+
+/// Draws a rect/frame stroke whose sides have different widths as the area
+/// between an outer and an inner (rounded) rect, mitered like CSS borders.
+/// Dashed/dotted styles cut that band per side, each side fitting a whole
+/// number of dashes the way a browser fits a dashed border.
+#[allow(clippy::too_many_arguments)]
+fn draw_per_side_stroke_on_rect(
+    canvas: &skia::Canvas,
+    stroke: &Stroke,
+    rect: &Rect,
+    corners: &Option<Corners>,
+    paint: &skia::Paint,
+    widths: [f32; 4],
+    scale: f32,
+    miter: Option<[f32; 4]>,
+    antialias: bool,
+) {
+    let mut fill_paint = paint.clone();
+    fill_paint.set_style(skia::PaintStyle::Fill);
+    fill_paint.set_path_effect(None);
+    fill_paint.set_anti_alias(antialias);
+
+    let style = stroke.with_width(stroke.max_width()).style_at_scale(scale);
+    let geometry = per_side_geometry(stroke, style, rect, corners, widths, miter, antialias);
+
+    if geometry.pattern.is_none() && geometry.wedges.is_none() {
+        canvas.draw_path(&geometry.band, &fill_paint);
         return;
     }
 
@@ -271,22 +325,19 @@ fn draw_per_side_stroke_on_rect(
         }
     }
 
-    if let Some(wedges) = &wedges {
+    if let Some(wedges) = &geometry.wedges {
         canvas.clip_path(wedges, skia::ClipOp::Intersect, antialias);
     }
 
-    match &pattern {
+    match &geometry.pattern {
         Some(pattern) => {
-            // Square corners need no clip: the side strips tile the band exactly.
-            // Rounded corners curve past them, and dots straddle the boundary.
-            let rounded = corners.is_some_and(|radii| radii.iter().any(|r| r.x > 0.0 || r.y > 0.0));
-            if rounded || style == StrokeStyle::Dotted {
-                canvas.clip_path(&band, skia::ClipOp::Intersect, antialias);
+            if geometry.trim_to_band {
+                canvas.clip_path(&geometry.band, skia::ClipOp::Intersect, antialias);
             }
             canvas.draw_path(pattern, &fill_paint);
         }
         None => {
-            canvas.draw_path(&band, &fill_paint);
+            canvas.draw_path(&geometry.band, &fill_paint);
         }
     }
     canvas.restore();
@@ -1536,5 +1587,53 @@ mod per_side_tests {
         assert!(!pattern.contains((50.0, 8.0)), "top gap was filled");
         // 175 stretches to 3 dashes of 35: the first gap is 35..70.
         assert!(!pattern.contains((227.0, 50.0)), "right gap was filled");
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn per_side_stroke_is_an_evenodd_band() {
+        let stroke = Stroke::new_center_stroke(2., StrokeStyle::Solid, None, None, None, None);
+        let rect = Rect::from_xywh(0., 0., 100., 50.);
+        let path = per_side_stroke_outline(&stroke, &rect, &None, [2., 4., 6., 8.], None);
+
+        assert_eq!(path.fill_type(), skia::PathFillType::EvenOdd);
+        assert_eq!(
+            path.compute_tight_bounds(),
+            Rect::from_ltrb(-4., -1., 102., 53.)
+        );
+        assert!(!path.contains(Point::new(50., 25.)));
+        assert!(path.contains(Point::new(-2., 25.)));
+    }
+
+    #[test]
+    fn per_side_dashed_stroke_keeps_its_gaps() {
+        let stroke = Stroke::new_center_stroke(4., StrokeStyle::Dashed, None, None, None, None);
+        let rect = Rect::from_xywh(0., 0., 200., 100.);
+        let path = per_side_stroke_outline(&stroke, &rect, &None, [4., 4., 4., 8.], None);
+
+        let hits = (10..190)
+            .filter(|x| path.contains(Point::new(*x as f32, 0.)))
+            .count();
+        assert!(hits > 0 && hits < 180, "hits: {hits}");
+    }
+
+    #[test]
+    fn per_side_stroke_miters_against_its_siblings() {
+        let stroke = Stroke::new_center_stroke(4., StrokeStyle::Solid, None, None, None, None);
+        let rect = Rect::from_xywh(0., 0., 100., 50.);
+        let path = per_side_stroke_outline(
+            &stroke,
+            &rect,
+            &None,
+            [4., 0., 0., 0.],
+            Some([4., 4., 0., 0.]),
+        );
+
+        assert!(path.contains(Point::new(101., -1.5)));
+        assert!(!path.contains(Point::new(99., 1.5)));
     }
 }

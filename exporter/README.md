@@ -88,6 +88,7 @@ section, with a `?job-id=` filter.
 | `PENPOT_EXPORTER_MAX_CONCURRENT_JOBS` | `4`     | Admission limit                       |
 | `PENPOT_EXPORTER_MAX_JOBS_PER_PROFILE`| `2`     | Per-profile admission limit           |
 | `PENPOT_EXPORTER_QUEUE_MAX`           | `64`    | Queue cap; over it, `429 :queue-full` |
+| `PENPOT_EXPORTER_REPLICA_ID`          | hostname | Names this replica; boot cleanup only cancels its own jobs |
 | `PENPOT_WASM_WORKER_POOL_MAX`         | `2`     | Headless render worker threads; min 1 |
 | `PENPOT_WASM_WORKER_POOL_MIN`         | `1`     | Workers kept warm; clamped to the max |
 | `PENPOT_WASM_WORKER_IDLE_TIMEOUT`     | `300`   | Silence before a worker is terminated, in seconds |

@@ -74,6 +74,7 @@
       "verticalPadding",
       "verticalSizing"
     ],
+    "ContentRollback": ["fileIds", "pageIds", "shapeIds"],
     "Context": [
       "activeUsers",
       "alignHorizontal",
@@ -103,6 +104,7 @@
       "history",
       "library",
       "localStorage",
+      "location",
       "openPage",
       "openViewer",
       "replaceColor",
@@ -115,7 +117,8 @@
       "uploadMediaUrl",
       "version",
       "viewport",
-      "waitForLayoutUpdate"
+      "waitForLayoutUpdate",
+      "waitForSave"
     ],
     "ContextGeometryUtils": ["center"],
     "ContextTypesUtils": [
@@ -135,13 +138,16 @@
     "Dissolve": ["duration", "easing", "type"],
     "Ellipse": ["fills", "type"],
     "EventsMap": [
+      "contentrollback",
       "contentsave",
       "filechange",
       "finish",
+      "logout",
       "pagechange",
       "selectionchange",
       "shapechange",
-      "themechange"
+      "themechange",
+      "workspacechange"
     ],
     "Export": ["scale", "skipChildren", "suffix", "type"],
     "File": [
@@ -273,6 +279,7 @@
       "createColor",
       "createComponent",
       "createTypography",
+      "deletedComponents",
       "id",
       "name",
       "tokens",
@@ -287,16 +294,21 @@
       "opacity"
     ],
     "LibraryComponent": [
+      "annotation",
+      "duplicate",
       "instance",
       "isVariant",
       "mainInstance",
+      "remove",
+      "restore",
       "transformInVariant"
     ],
     "LibraryContext": [
       "availableLibraries",
       "connectLibrary",
       "connected",
-      "local"
+      "local",
+      "tokensSource"
     ],
     "LibraryElement": ["id", "libraryId", "name", "path"],
     "LibrarySummary": [
@@ -365,6 +377,19 @@
     "Path": ["commands", "d", "fills", "type"],
     "PathCommand": ["command", "params"],
     "Penpot": ["closePlugin", "off", "on", "ui", "utils"],
+    "PenpotLocation": ["baseUrl", "href", "params"],
+    "PenpotMgmt": [
+      "createTeam",
+      "getFile",
+      "listDeletedFiles",
+      "listDeletedProjects",
+      "listProjects",
+      "listTeams",
+      "off",
+      "on",
+      "openFile",
+      "workspace"
+    ],
     "PluginData": [
       "getPluginData",
       "getPluginDataKeys",
@@ -375,6 +400,34 @@
     ],
     "Point": ["x", "y"],
     "PreviousScreen": ["type"],
+    "Project": [
+      "createFile",
+      "duplicate",
+      "fileCount",
+      "id",
+      "isDefault",
+      "listDeletedFiles",
+      "listFiles",
+      "moveTo",
+      "name",
+      "pinned",
+      "remove",
+      "restore",
+      "teamId"
+    ],
+    "ProjectFile": [
+      "duplicate",
+      "id",
+      "modifiedAt",
+      "moveTo",
+      "name",
+      "open",
+      "projectId",
+      "remove",
+      "restore",
+      "shared",
+      "teamId"
+    ],
     "Push": ["direction", "duration", "easing", "type"],
     "Rectangle": ["fills", "type"],
     "RulerGuide": ["board", "orientation", "position", "remove"],
@@ -454,6 +507,7 @@
       "swapComponent",
       "switchVariant",
       "tokens",
+      "updateMain",
       "visible",
       "waitForLayoutUpdate",
       "width",
@@ -472,9 +526,23 @@
       "strokeImage",
       "strokeOpacity",
       "strokeStyle",
-      "strokeWidth"
+      "strokeWidth",
+      "strokeWidthBottom",
+      "strokeWidthLeft",
+      "strokeWidthRight",
+      "strokeWidthTop",
+      "strokeWidthType"
     ],
     "SvgRaw": ["type"],
+    "Team": [
+      "createProject",
+      "id",
+      "isDefault",
+      "listDeletedFiles",
+      "listDeletedProjects",
+      "listProjects",
+      "name"
+    ],
     "Text": [
       "align",
       "applyTypography",
@@ -533,6 +601,7 @@
       "addTheme",
       "getSetById",
       "getThemeById",
+      "isEditableTokens",
       "sets",
       "themes"
     ],
@@ -631,7 +700,8 @@
       "zoomIntoView",
       "zoomReset",
       "zoomToFitAll"
-    ]
+    ],
+    "WorkspaceContext": ["fileId", "fileName", "status", "teamId"]
   },
   "graph": {
     "ActiveUser": {
@@ -1114,6 +1184,12 @@
         "array": false
       },
       "resetOverrides": {
+        "decl": "ShapeBase",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
+      "updateMain": {
         "decl": "ShapeBase",
         "kind": "method",
         "type": null,
@@ -1625,6 +1701,12 @@
         "type": null,
         "array": false
       },
+      "updateMain": {
+        "decl": "ShapeBase",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
       "switchVariant": {
         "decl": "ShapeBase",
         "kind": "method",
@@ -2074,7 +2156,33 @@
         "array": false
       }
     },
+    "ContentRollback": {
+      "fileIds": {
+        "decl": "ContentRollback",
+        "kind": "get",
+        "type": null,
+        "array": true
+      },
+      "pageIds": {
+        "decl": "ContentRollback",
+        "kind": "get",
+        "type": null,
+        "array": true
+      },
+      "shapeIds": {
+        "decl": "ContentRollback",
+        "kind": "get",
+        "type": null,
+        "array": true
+      }
+    },
     "Context": {
+      "management": {
+        "decl": "Context",
+        "kind": "get",
+        "type": null,
+        "array": false
+      },
       "version": {
         "decl": "Context",
         "kind": "get",
@@ -2145,6 +2253,12 @@
         "decl": "Context",
         "kind": "get",
         "type": "Theme",
+        "array": false
+      },
+      "location": {
+        "decl": "Context",
+        "kind": "get",
+        "type": "PenpotLocation",
         "array": false
       },
       "localStorage": {
@@ -2328,6 +2442,12 @@
         "array": false
       },
       "waitForLayoutUpdate": {
+        "decl": "Context",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
+      "waitForSave": {
         "decl": "Context",
         "kind": "method",
         "type": null,
@@ -2769,6 +2889,12 @@
         "type": null,
         "array": false
       },
+      "updateMain": {
+        "decl": "ShapeBase",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
       "switchVariant": {
         "decl": "ShapeBase",
         "kind": "method",
@@ -2909,6 +3035,18 @@
       }
     },
     "EventsMap": {
+      "workspacechange": {
+        "decl": "EventsMap",
+        "kind": "get",
+        "type": "WorkspaceContext",
+        "array": false
+      },
+      "logout": {
+        "decl": "EventsMap",
+        "kind": "get",
+        "type": null,
+        "array": false
+      },
       "pagechange": {
         "decl": "EventsMap",
         "kind": "get",
@@ -2949,6 +3087,12 @@
         "decl": "EventsMap",
         "kind": "get",
         "type": null,
+        "array": false
+      },
+      "contentrollback": {
+        "decl": "EventsMap",
+        "kind": "get",
+        "type": "ContentRollback",
         "array": false
       }
     },
@@ -4017,6 +4161,12 @@
         "type": null,
         "array": false
       },
+      "updateMain": {
+        "decl": "ShapeBase",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
       "switchVariant": {
         "decl": "ShapeBase",
         "kind": "method",
@@ -4607,6 +4757,12 @@
         "type": null,
         "array": false
       },
+      "updateMain": {
+        "decl": "ShapeBase",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
       "switchVariant": {
         "decl": "ShapeBase",
         "kind": "method",
@@ -4989,6 +5145,12 @@
         "type": "LibraryComponent",
         "array": true
       },
+      "deletedComponents": {
+        "decl": "Library",
+        "kind": "get",
+        "type": "LibraryComponent",
+        "array": true
+      },
       "tokens": {
         "decl": "Library",
         "kind": "get",
@@ -5149,6 +5311,30 @@
       }
     },
     "LibraryComponent": {
+      "annotation": {
+        "decl": "LibraryComponent",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "duplicate": {
+        "decl": "LibraryComponent",
+        "kind": "method",
+        "type": "LibraryComponent",
+        "array": false
+      },
+      "remove": {
+        "decl": "LibraryComponent",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
+      "restore": {
+        "decl": "LibraryComponent",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
       "instance": {
         "decl": "LibraryComponent",
         "kind": "method",
@@ -5246,6 +5432,12 @@
         "kind": "get",
         "type": "Library",
         "array": true
+      },
+      "tokensSource": {
+        "decl": "LibraryContext",
+        "kind": "getset",
+        "type": "Library",
+        "array": false
       },
       "availableLibraries": {
         "decl": "LibraryContext",
@@ -5515,6 +5707,30 @@
       },
       "setVariantProperty": {
         "decl": "LibraryVariantComponent",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
+      "annotation": {
+        "decl": "LibraryComponent",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "duplicate": {
+        "decl": "LibraryComponent",
+        "kind": "method",
+        "type": "LibraryComponent",
+        "array": false
+      },
+      "remove": {
+        "decl": "LibraryComponent",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
+      "restore": {
+        "decl": "LibraryComponent",
         "kind": "method",
         "type": null,
         "array": false
@@ -6241,6 +6457,12 @@
         "type": null,
         "array": false
       },
+      "updateMain": {
+        "decl": "ShapeBase",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
       "switchVariant": {
         "decl": "ShapeBase",
         "kind": "method",
@@ -6497,6 +6719,12 @@
         "type": "Theme",
         "array": false
       },
+      "location": {
+        "decl": "Context",
+        "kind": "get",
+        "type": "PenpotLocation",
+        "array": false
+      },
       "localStorage": {
         "decl": "Context",
         "kind": "get",
@@ -6670,6 +6898,94 @@
         "kind": "method",
         "type": null,
         "array": false
+      },
+      "waitForSave": {
+        "decl": "Context",
+        "kind": "method",
+        "type": null,
+        "array": false
+      }
+    },
+    "PenpotLocation": {
+      "baseUrl": {
+        "decl": "PenpotLocation",
+        "kind": "get",
+        "type": null,
+        "array": false
+      },
+      "href": {
+        "decl": "PenpotLocation",
+        "kind": "get",
+        "type": null,
+        "array": false
+      },
+      "params": {
+        "decl": "PenpotLocation",
+        "kind": "get",
+        "type": null,
+        "array": false
+      }
+    },
+    "PenpotMgmt": {
+      "workspace": {
+        "decl": "PenpotMgmt",
+        "kind": "get",
+        "type": "WorkspaceContext",
+        "array": false
+      },
+      "listTeams": {
+        "decl": "PenpotMgmt",
+        "kind": "method",
+        "type": "Team",
+        "array": true
+      },
+      "createTeam": {
+        "decl": "PenpotMgmt",
+        "kind": "method",
+        "type": "Team",
+        "array": false
+      },
+      "listProjects": {
+        "decl": "PenpotMgmt",
+        "kind": "method",
+        "type": "Project",
+        "array": true
+      },
+      "listDeletedProjects": {
+        "decl": "PenpotMgmt",
+        "kind": "method",
+        "type": "Project",
+        "array": true
+      },
+      "listDeletedFiles": {
+        "decl": "PenpotMgmt",
+        "kind": "method",
+        "type": "ProjectFile",
+        "array": true
+      },
+      "getFile": {
+        "decl": "PenpotMgmt",
+        "kind": "method",
+        "type": "ProjectFile",
+        "array": false
+      },
+      "openFile": {
+        "decl": "PenpotMgmt",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
+      "on": {
+        "decl": "PenpotMgmt",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
+      "off": {
+        "decl": "PenpotMgmt",
+        "kind": "method",
+        "type": null,
+        "array": false
       }
     },
     "PluginData": {
@@ -6728,6 +7044,154 @@
       "type": {
         "decl": "PreviousScreen",
         "kind": "get",
+        "type": null,
+        "array": false
+      }
+    },
+    "Project": {
+      "id": {
+        "decl": "Project",
+        "kind": "get",
+        "type": null,
+        "array": false
+      },
+      "teamId": {
+        "decl": "Project",
+        "kind": "get",
+        "type": null,
+        "array": false
+      },
+      "isDefault": {
+        "decl": "Project",
+        "kind": "get",
+        "type": null,
+        "array": false
+      },
+      "fileCount": {
+        "decl": "Project",
+        "kind": "get",
+        "type": null,
+        "array": false
+      },
+      "name": {
+        "decl": "Project",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "pinned": {
+        "decl": "Project",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "listFiles": {
+        "decl": "Project",
+        "kind": "method",
+        "type": "ProjectFile",
+        "array": true
+      },
+      "listDeletedFiles": {
+        "decl": "Project",
+        "kind": "method",
+        "type": "ProjectFile",
+        "array": true
+      },
+      "restore": {
+        "decl": "Project",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
+      "createFile": {
+        "decl": "Project",
+        "kind": "method",
+        "type": "ProjectFile",
+        "array": false
+      },
+      "duplicate": {
+        "decl": "Project",
+        "kind": "method",
+        "type": "Project",
+        "array": false
+      },
+      "moveTo": {
+        "decl": "Project",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
+      "remove": {
+        "decl": "Project",
+        "kind": "method",
+        "type": null,
+        "array": false
+      }
+    },
+    "ProjectFile": {
+      "id": {
+        "decl": "ProjectFile",
+        "kind": "get",
+        "type": null,
+        "array": false
+      },
+      "teamId": {
+        "decl": "ProjectFile",
+        "kind": "get",
+        "type": null,
+        "array": false
+      },
+      "projectId": {
+        "decl": "ProjectFile",
+        "kind": "get",
+        "type": null,
+        "array": false
+      },
+      "modifiedAt": {
+        "decl": "ProjectFile",
+        "kind": "get",
+        "type": null,
+        "array": false
+      },
+      "name": {
+        "decl": "ProjectFile",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "shared": {
+        "decl": "ProjectFile",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "open": {
+        "decl": "ProjectFile",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
+      "restore": {
+        "decl": "ProjectFile",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
+      "moveTo": {
+        "decl": "ProjectFile",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
+      "duplicate": {
+        "decl": "ProjectFile",
+        "kind": "method",
+        "type": "ProjectFile",
+        "array": false
+      },
+      "remove": {
+        "decl": "ProjectFile",
+        "kind": "method",
         "type": null,
         "array": false
       }
@@ -7078,6 +7542,12 @@
         "array": false
       },
       "resetOverrides": {
+        "decl": "ShapeBase",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
+      "updateMain": {
         "decl": "ShapeBase",
         "kind": "method",
         "type": null,
@@ -7617,6 +8087,12 @@
         "type": null,
         "array": false
       },
+      "updateMain": {
+        "decl": "ShapeBase",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
       "switchVariant": {
         "decl": "ShapeBase",
         "kind": "method",
@@ -7826,6 +8302,36 @@
         "array": false
       },
       "strokeWidth": {
+        "decl": "Stroke",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "strokeWidthType": {
+        "decl": "Stroke",
+        "kind": "get",
+        "type": null,
+        "array": false
+      },
+      "strokeWidthTop": {
+        "decl": "Stroke",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "strokeWidthRight": {
+        "decl": "Stroke",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "strokeWidthBottom": {
+        "decl": "Stroke",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "strokeWidthLeft": {
         "decl": "Stroke",
         "kind": "getset",
         "type": null,
@@ -8187,6 +8693,12 @@
         "type": null,
         "array": false
       },
+      "updateMain": {
+        "decl": "ShapeBase",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
       "switchVariant": {
         "decl": "ShapeBase",
         "kind": "method",
@@ -8324,6 +8836,50 @@
         "kind": "method",
         "type": null,
         "array": true
+      }
+    },
+    "Team": {
+      "id": {
+        "decl": "Team",
+        "kind": "get",
+        "type": null,
+        "array": false
+      },
+      "isDefault": {
+        "decl": "Team",
+        "kind": "get",
+        "type": null,
+        "array": false
+      },
+      "name": {
+        "decl": "Team",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "listProjects": {
+        "decl": "Team",
+        "kind": "method",
+        "type": "Project",
+        "array": true
+      },
+      "listDeletedProjects": {
+        "decl": "Team",
+        "kind": "method",
+        "type": "Project",
+        "array": true
+      },
+      "listDeletedFiles": {
+        "decl": "Team",
+        "kind": "method",
+        "type": "ProjectFile",
+        "array": true
+      },
+      "createProject": {
+        "decl": "Team",
+        "kind": "method",
+        "type": "Project",
+        "array": false
       }
     },
     "Text": {
@@ -8754,6 +9310,12 @@
         "array": false
       },
       "resetOverrides": {
+        "decl": "ShapeBase",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
+      "updateMain": {
         "decl": "ShapeBase",
         "kind": "method",
         "type": null,
@@ -9239,6 +9801,12 @@
       }
     },
     "TokenCatalog": {
+      "isEditableTokens": {
+        "decl": "TokenCatalog",
+        "kind": "get",
+        "type": null,
+        "array": false
+      },
       "themes": {
         "decl": "TokenCatalog",
         "kind": "get",
@@ -11063,6 +11631,12 @@
         "type": null,
         "array": false
       },
+      "updateMain": {
+        "decl": "ShapeBase",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
       "switchVariant": {
         "decl": "ShapeBase",
         "kind": "method",
@@ -11292,6 +11866,32 @@
       "zoomIntoView": {
         "decl": "Viewport",
         "kind": "method",
+        "type": null,
+        "array": false
+      }
+    },
+    "WorkspaceContext": {
+      "status": {
+        "decl": "WorkspaceContext",
+        "kind": "get",
+        "type": null,
+        "array": false
+      },
+      "fileId": {
+        "decl": "WorkspaceContext",
+        "kind": "get",
+        "type": null,
+        "array": false
+      },
+      "fileName": {
+        "decl": "WorkspaceContext",
+        "kind": "get",
+        "type": null,
+        "array": false
+      },
+      "teamId": {
+        "decl": "WorkspaceContext",
+        "kind": "get",
         "type": null,
         "array": false
       }

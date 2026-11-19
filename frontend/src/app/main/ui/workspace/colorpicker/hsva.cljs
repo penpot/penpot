@@ -8,20 +8,15 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.types.color :as cc]
+   [app.main.ui.workspace.colorpicker.hsl :as hsl]
    [app.main.ui.workspace.colorpicker.slider-selector :refer [slider-selector*]]
    [rumext.v2 :as mf]))
 
 (mf/defc hsva-selector* [{:keys [color disable-opacity mode on-change on-start-drag on-finish-drag]}]
-  (let [{hue :h saturation :s value :v alpha :alpha
-         r-val :r g-val :g b-val :b} color
+  (let [{hue :h saturation :s value :v alpha :alpha} color
         hsl-mode? (= mode :hsl)
 
-        ;; Current HSL derived from RGB — used as the starting point
-        ;; for HSL saturation/lightness slider values and for
-        ;; recomputing the color when either is dragged.
-        [_ hsl-s hsl-l] (if (and r-val g-val b-val)
-                          (cc/rgb->hsl [r-val g-val b-val])
-                          [0 0 0])
+        [hsl-h hsl-s hsl-l] (hsl/components color)
 
         ;; HSB math — current default behavior.
         handle-change-hsv
@@ -41,14 +36,7 @@
         handle-change-hsl
         (fn [key]
           (fn [new-value]
-            (let [new-s   (if (= key :hsl-s) new-value hsl-s)
-                  new-l   (if (= key :hsl-l) new-value hsl-l)
-                  [r g b] (cc/hsl->rgb [hue new-s new-l])
-                  hex     (cc/rgb->hex [r g b])
-                  [h s v] (cc/hex->hsv hex)]
-              (on-change {:hex hex
-                          :h h :s s :v v
-                          :r r :g g :b b}))))
+            (on-change (hsl/update-color color key new-value))))
 
         on-change-opacity (fn [new-alpha] (on-change {:alpha new-alpha}))]
     [:div {:class (stl/css :hsva-selector)}
@@ -58,8 +46,10 @@
        {:class (stl/css :hsva-bar)
         :type :hue
         :max-value 360
-        :value hue
-        :on-change (handle-change-hsv :h)
+        :value (if hsl-mode? hsl-h hue)
+        :on-change (if hsl-mode?
+                     (handle-change-hsl :h)
+                     (handle-change-hsv :h))
         :on-start-drag on-start-drag
         :on-finish-drag on-finish-drag}]]
      [:div {:class (stl/css :hsva-row)}

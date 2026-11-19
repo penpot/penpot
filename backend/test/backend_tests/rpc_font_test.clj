@@ -76,11 +76,11 @@
     (when (uuid? session-id)
       (doseq [[idx chunk-data] (map-indexed vector chunks)]
         (let [mfile (make-chunk-mfile chunk-data mtype)
-              out   (th/command! {::th/type        :upload-chunk
-                                  ::rpc/profile-id (:id prof)
-                                  :session-id      session-id
-                                  :index           idx
-                                  :content         mfile})]
+              out   (th/multipart-command! {::th/type        :upload-chunk
+                                            ::rpc/profile-id (:id prof)
+                                            :session-id      session-id
+                                            :index           idx
+                                            :content         mfile})]
           (t/is (nil? (:error out))))))
     session-id))
 
@@ -140,7 +140,7 @@
 
     (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
                 (th/run-task! :storage-gc-touched {}))]
-      (t/is (= 6 (:freeze res))))
+      (t/is (= 8 (:freeze res))))
 
     (let [params {::th/type :delete-font
                   ::rpc/profile-id (:id prof)
@@ -209,7 +209,7 @@
 
     (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
                 (th/run-task! :storage-gc-touched {}))]
-      (t/is (= 6 (:freeze res))))
+      (t/is (= 8 (:freeze res))))
 
     (let [params {::th/type :delete-font
                   ::rpc/profile-id (:id prof)
@@ -260,7 +260,7 @@
     ;; freeze with hours 3 clock
     (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
                 (th/run-task! :storage-gc-touched {}))]
-      (t/is (= 6 (:freeze res))))
+      (t/is (= 8 (:freeze res))))
 
     (let [params {::th/type :delete-font-variant ::rpc/profile-id (:id prof)
                   :team-id team-id :id (-> out1 :result :id)}
@@ -403,6 +403,51 @@
       (t/is (nil? (:error out)))
       (assert-font-variant-result params (:result out)))))
 
+(t/deftest create-font-variant-persists-variant-name
+  "The optional :variant-name is stored and returned by get-font-variants."
+  (with-mocks [_mock {:target 'app.rpc.quotes/check! :return nil}]
+    (let [prof       (th/create-profile* 1 {:is-active true})
+          team-id    (:default-team-id prof)
+          font-id    (uuid/custom 10 34)
+          font-bytes (-> (io/resource "backend_tests/test_files/font-1.ttf") (io/read*))
+          session-id (upload-font-chunked! prof font-bytes "font/ttf" (* 4 1024 1024))
+          out        (th/command! {::th/type        :create-font-variant
+                                   ::rpc/profile-id (:id prof)
+                                   :team-id         team-id
+                                   :font-id         font-id
+                                   :font-family     "variant-name-font"
+                                   :font-weight     600
+                                   :font-style      "normal"
+                                   :variant-name    "SemiBold"
+                                   :uploads         {"font/ttf" session-id}})]
+      (t/is (th/success? out))
+      (t/is (= "SemiBold" (-> out :result :variant-name)))
+
+      (let [variants (-> (th/command! {::th/type        :get-font-variants
+                                       ::rpc/profile-id (:id prof)
+                                       :team-id         team-id})
+                         :result)
+            variant  (first (filter #(= font-id (:font-id %)) variants))]
+        (t/is (= "SemiBold" (:variant-name variant)))))
+
+    ;; An explicit nil must be accepted (the param is optional).
+    (let [prof       (th/create-profile* 2 {:is-active true})
+          team-id    (:default-team-id prof)
+          font-id    (uuid/custom 10 35)
+          font-bytes (-> (io/resource "backend_tests/test_files/font-1.ttf") (io/read*))
+          session-id (upload-font-chunked! prof font-bytes "font/ttf" (* 4 1024 1024))
+          out        (th/command! {::th/type        :create-font-variant
+                                   ::rpc/profile-id (:id prof)
+                                   :team-id         team-id
+                                   :font-id         font-id
+                                   :font-family     "variant-name-nil"
+                                   :font-weight     400
+                                   :font-style      "normal"
+                                   :variant-name    nil
+                                   :uploads         {"font/ttf" session-id}})]
+      (t/is (th/success? out))
+      (t/is (nil? (-> out :result :variant-name))))))
+
 ;; -----------------------------------------------------------------------
 ;; Error cases
 ;; -----------------------------------------------------------------------
@@ -438,11 +483,11 @@
       ;; Upload all real chunks except the last one (omit it so the session is incomplete)
       (doseq [[idx chunk-data] (map-indexed vector (butlast chunks))]
         (let [mfile (make-chunk-mfile chunk-data "font/ttf")
-              out   (th/command! {::th/type        :upload-chunk
-                                  ::rpc/profile-id (:id prof)
-                                  :session-id      session-id
-                                  :index           idx
-                                  :content         mfile})]
+              out   (th/multipart-command! {::th/type        :upload-chunk
+                                            ::rpc/profile-id (:id prof)
+                                            :session-id      session-id
+                                            :index           idx
+                                            :content         mfile})]
           (t/is (nil? (:error out)))))
 
       (let [out (th/command! {::th/type    :create-font-variant
@@ -521,6 +566,26 @@
       (t/is (some? (:error out)))
       (t/is (= :validation (-> out :error ex-data :type)))
       (t/is (= :media-type-not-allowed (-> out :error ex-data :code))))))
+
+(t/deftest create-font-variant-png-bytes-chunked-upload
+  "PNG bytes uploaded in chunks but declared as font/ttf are rejected."
+  (with-mocks [_mock {:target 'app.rpc.quotes/check! :return nil}]
+    (let [prof       (th/create-profile* 1 {:is-active true})
+          team-id    (:default-team-id prof)
+          font-id    (uuid/custom 10 63)
+          png-bytes  (-> (io/resource "backend_tests/test_files/sample.png") (io/read*))
+          session-id (upload-font-chunked! prof png-bytes "font/ttf" (* 4 1024 1024))
+          out        (th/command! {::th/type    :create-font-variant
+                                   ::rpc/profile-id (:id prof)
+                                   :team-id     team-id
+                                   :font-id     font-id
+                                   :font-family "png-as-font"
+                                   :font-weight 400
+                                   :font-style  "normal"
+                                   :uploads     {"font/ttf" session-id}})]
+      (t/is (some? (:error out)))
+      (t/is (= :validation (-> out :error ex-data :type)))
+      (t/is (= :media-type-mismatch (-> out :error ex-data :code))))))
 
 ;; --- Font family name validation / XSS prevention
 

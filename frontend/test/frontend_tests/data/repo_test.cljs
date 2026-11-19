@@ -8,7 +8,8 @@
   (:require
    [app.main.repo :as repo]
    [beicon.v2.core :as rx]
-   [cljs.test :as t :include-macros true]))
+   [cljs.test :as t :include-macros true]
+   [cuerdas.core :as str]))
 
 ;; ---------------------------------------------------------------------------
 ;; retryable-error? tests (synchronous)
@@ -27,6 +28,11 @@
 (t/deftest retryable-error-service-unavailable
   (t/testing "503 service-unavailable is retryable"
     (let [err (ex-info "service unavailable" {:type :service-unavailable})]
+      (t/is (true? (repo/retryable-error? err))))))
+
+(t/deftest retryable-error-gateway-error
+  (t/testing "504 and the Cloudflare 52x family are retryable"
+    (let [err (ex-info "http error" {:type :gateway-error})]
       (t/is (true? (repo/retryable-error? err))))))
 
 (t/deftest retryable-error-offline
@@ -215,3 +221,123 @@
                 (t/is (= 2 @call-count))
                 (t/is (= :authentication (:type (ex-data err))))
                 (done))))))))
+
+;; ---------------------------------------------------------------------------
+;; handle-response classification tests
+;; ---------------------------------------------------------------------------
+
+(defn- capture-error
+  "Subscribes to `handle-response` for `response` and calls `k` with the
+  `ex-data` of the raised error."
+  [response k]
+  (->> (repo/handle-response response)
+       (rx/subs!
+        (fn [_] (t/is false "expected an error response") (k nil))
+        (fn [cause] (k (ex-data cause))))))
+
+(def ^:private html-error-page
+  "<html><head><title>Web Page Blocked</title></head><body>blocked</body></html>")
+
+(t/deftest handle-response-gateway-statuses
+  (t/testing "every edge status that never reached the backend is a gateway error"
+    (t/async done
+      (let [statuses [504 520 521 522 523 524]
+            pending  (atom (count statuses))]
+        (doseq [status statuses]
+          (capture-error {:status status
+                          :body html-error-page
+                          :headers {"content-type" "text/html"}
+                          :uri "https://design.penpot.app/api/main/methods/get-teams"}
+                         (fn [data]
+                           (t/is (= :gateway-error (:type data))
+                                 (str "status " status " should be a gateway error"))
+                           (t/is (= status (:status data))
+                                 (str "status " status " should be carried through"))
+                           (when (zero? (swap! pending dec))
+                             (done)))))))))
+
+(t/deftest handle-response-rate-limit
+  (t/testing "a 429 with no interpretable body is a rate-limit error"
+    (t/async done
+      (capture-error {:status 429
+                      :body ""
+                      :headers {}
+                      :uri "https://design.penpot.app/api/main/methods/get-teams"}
+                     (fn [data]
+                       (t/is (= :rate-limit (:type data)))
+                       (t/is (= 429 (:status data)))
+                       (done))))))
+
+(t/deftest handle-response-intercepted-by-proxy
+  (t/testing "an error page from a filtering proxy is not an internal error"
+    (t/async done
+      (capture-error {:status 403
+                      :body html-error-page
+                      :headers {"content-type" "text/html"
+                                "server" "Zscaler/6.2"}
+                      :uri "https://design.penpot.app/api/main/methods/update-file"}
+                     (fn [data]
+                       (t/is (= :unexpected-response (:type data)))
+                       (t/is (= 403 (:status data)))
+                       (done))))))
+
+(t/deftest handle-response-keeps-body-excerpt
+  (t/testing "a body too long to keep is cut short and marked as cut"
+    (t/async done
+      (capture-error {:status 403
+                      :body (apply str (repeat 5000 "x"))
+                      :headers {"content-type" "text/html"}
+                      :uri "https://design.penpot.app/api/main/methods/update-file"}
+                     (fn [data]
+                       (t/is (= 503 (count (:data data))) "500 characters and an ellipsis")
+                       (t/is (str/ends-with? (:data data) "..."))
+                       (done))))))
+
+(t/deftest handle-response-keeps-a-short-body-whole
+  (t/testing "a body short enough to read is passed through untouched"
+    (t/async done
+      (capture-error {:status 403
+                      :body html-error-page
+                      :headers {"content-type" "text/html"}
+                      :uri "https://design.penpot.app/api/main/methods/update-file"}
+                     (fn [data]
+                       (t/is (= html-error-page (:data data)))
+                       (done))))))
+
+(t/deftest handle-response-challenge-still-authorization
+  (t/testing "a Cloudflare challenge keeps its own type"
+    (t/async done
+      (capture-error {:status 403
+                      :body html-error-page
+                      :headers {"server" "cloudflare"
+                                "cf-mitigated" "challenge"}
+                      :uri "https://design.penpot.app/api/main/methods/get-teams"}
+                     (fn [data]
+                       (t/is (= :authorization (:type data)))
+                       (t/is (= :challenge-required (:code data)))
+                       (done))))))
+
+(t/deftest handle-response-keeps-backend-error
+  (t/testing "an error the backend itself reported is passed through untouched"
+    (t/async done
+      (capture-error {:status 400
+                      :body {:type :validation :code :missing-param}
+                      :headers {"content-type" "application/transit+json"}
+                      :uri "https://design.penpot.app/api/main/methods/update-file"}
+                     (fn [data]
+                       (t/is (= :validation (:type data)))
+                       (t/is (= :missing-param (:code data)))
+                       (t/is (= 400 (:status data)))
+                       (done))))))
+
+(t/deftest handle-response-undecodable-non-error-is-internal
+  (t/testing "a non-error response we cannot interpret is still an internal error"
+    (t/async done
+      (capture-error {:status 301
+                      :body html-error-page
+                      :headers {"content-type" "text/html"}
+                      :uri "https://design.penpot.app/api/main/methods/get-teams"}
+                     (fn [data]
+                       (t/is (= :internal (:type data)))
+                       (t/is (= :unable-to-process-repository-response (:code data)))
+                       (done))))))

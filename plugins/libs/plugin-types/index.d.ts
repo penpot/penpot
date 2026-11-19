@@ -110,6 +110,7 @@ export interface Penpot extends Omit<
    *  - themechange: event emitted when the user changes its theme. The callback will receive the new theme (currently: either `dark` or `light`)
    *  - filechange: event emitted when a different file is opened. The callback will receive the new file.
    *  - contentsave: event emitted after the file content is saved in the backend. The callback receives no arguments.
+   *  - contentrollback: event emitted after the backend rejected some changes and they were undone in the workspace. The callback receives a `ContentRollback` with the files, pages and shapes affected.
    *  - finish: event emitted when the current file is closed. The callback will receive the id of the closed file.
    *
    * @param type The event type to listen for.
@@ -786,42 +787,212 @@ export interface WorkspaceContext {
   readonly teamId: string | null;
 }
 
-/** Metadata snapshot of an accessible, non-deleted project. */
-export interface ProjectSummary {
+/**
+ * A team the user belongs to. Requires `manage:teams`.
+ *
+ * Values are a snapshot taken when the team was listed; changes made through
+ * this object update it.
+ * Property assignments run asynchronously and update values after success.
+ * Backend failures are logged to the console; assignments cannot be awaited.
+ */
+export interface Team {
   readonly id: string;
-  readonly teamId: string;
-  readonly name: string;
-  /** Whether this is the team's Drafts project. */
+  /** Whether this is the user's personal team. */
   readonly isDefault: boolean;
-  readonly fileCount: number;
+  /**
+   * The team name. Assigning renames the team; requires `manage:teams`.
+   * Trims the name and requires 1 to 250 characters.
+   */
+  name: string;
+  /**
+   * Lists the team's projects. Requires `content:read`.
+   *
+   * @example
+   * ```ts
+   * const [team] = await penpotMgmt.listTeams();
+   * const projects = await team.listProjects();
+   * ```
+   */
+  listProjects(): Promise<Project[]>;
+  /** Lists projects still recoverable from Trash. Requires `content:read`. */
+  listDeletedProjects(): Promise<Project[]>;
+  /** Lists files still recoverable from Trash. Requires `content:read`. */
+  listDeletedFiles(): Promise<ProjectFile[]>;
+  /**
+   * Creates a project in the team. Requires `manage:projects`.
+   *
+   * - Trims `name` and requires 1 to 250 characters.
+   * - Does not change navigation.
+   *
+   * @example
+   * ```ts
+   * const project = await team.createProject({ name: 'Design system' });
+   * ```
+   */
+  createProject(options: { name: string }): Promise<Project>;
 }
 
-/** Metadata snapshot of an accessible, non-deleted file. */
-export interface FileSummary {
+/**
+ * A project in the dashboard.
+ *
+ * Values are a snapshot taken when the project was listed; changes made through
+ * this object update it.
+ * Property assignments run asynchronously and update values after success.
+ * Backend failures are logged to the console; assignments cannot be awaited.
+ */
+export interface Project {
+  readonly id: string;
+  readonly teamId: string;
+  /** Whether this is the team's Drafts project. */
+  readonly isDefault: boolean;
+  /** Number of files when the project was listed; file operations do not update it. */
+  readonly fileCount: number;
+  /**
+   * The project name. Assigning renames the project; requires `manage:projects`.
+   * Trims the name and requires 1 to 250 characters.
+   */
+  name: string;
+  /** Whether the project is pinned in the sidebar. Assigning requires `manage:projects`. */
+  pinned: boolean;
+  /**
+   * Lists the files in the project. Requires `content:read`.
+   *
+   * @example
+   * ```ts
+   * const files = await project.listFiles();
+   * ```
+   */
+  listFiles(): Promise<ProjectFile[]>;
+  /** Lists the project's files still recoverable from Trash. Requires `content:read`. */
+  listDeletedFiles(): Promise<ProjectFile[]>;
+  /**
+   * Restores the project through its files using the dashboard's Trash operation.
+   * Requires `manage:projects` and team edit access. Does not require `manage:delete`.
+   * Rejects if the project has no recoverable files, including empty projects.
+   */
+  restore(): Promise<void>;
+  /**
+   * Creates a file with an initial page in the project. Requires `content:write`.
+   *
+   * - Trims `name` and requires 1 to 250 characters.
+   * - Does not open the file. Use `ProjectFile.open` to edit it.
+   *
+   * @example
+   * ```ts
+   * const file = await project.createFile({ name: 'Login' });
+   * await file.open();
+   * ```
+   */
+  createFile(options: { name: string }): Promise<ProjectFile>;
+  /**
+   * Duplicates the project with all its files. Requires `manage:projects`.
+   *
+   * `name` defaults to the name the backend chooses.
+   */
+  duplicate(options?: { name?: string }): Promise<Project>;
+  /** Moves the project to another team. Requires `manage:teams`. */
+  moveTo(team: Team): Promise<void>;
+  /**
+   * Moves the project and its files to Trash. Requires `manage:delete`.
+   * They can be restored during the retention period. Cannot permanently delete.
+   */
+  remove(): Promise<void>;
+}
+
+/**
+ * A file in the dashboard, which may or may not be open.
+ *
+ * Values are a snapshot taken when the file was listed; changes made through
+ * this object update it. To read or edit its content, `open` it and use
+ * `penpot.currentFile`.
+ * Property assignments run asynchronously and update values after success.
+ * Backend failures are logged to the console; assignments cannot be awaited.
+ */
+export interface ProjectFile {
   readonly id: string;
   readonly teamId: string;
   readonly projectId: string;
-  readonly name: string;
   /** Last modification time as an ISO 8601 string in UTC. */
   readonly modifiedAt: string;
+  /**
+   * The file name. Assigning renames the file; requires `content:write`.
+   * Trims the name and requires 1 to 250 characters.
+   */
+  name: string;
+  /**
+   * Whether the file is shared as a library with its team. Assigning requires
+   * `library:write`. A shared file is listed by
+   * `penpot.library.availableLibraries()`; unsharing copies its assets into
+   * every file that uses it and disconnects them.
+   */
+  shared: boolean;
+  /**
+   * Opens the file in this tab and resolves once its workspace and page are
+   * ready. Requires `content:read`.
+   */
+  open(): Promise<void>;
+  /**
+   * Restores the file using the dashboard's Trash operation, including its parent
+   * project if deleted. Requires `content:write` and team edit access.
+   * Rejects if the file no longer exists. Does not require `manage:delete`.
+   */
+  restore(): Promise<void>;
+  /**
+   * Moves the file to another project of the same team. Requires `content:write`.
+   * Rejects a destination that currently belongs to another team.
+   */
+  moveTo(project: Project): Promise<void>;
+  /**
+   * Duplicates the file in its project. Requires `content:write`.
+   *
+   * `name` defaults to the name the backend chooses.
+   */
+  duplicate(options?: { name?: string }): Promise<ProjectFile>;
+  /**
+   * Moves the file to Trash. Requires `manage:delete`.
+   * It can be restored during the retention period. Cannot permanently delete.
+   */
+  remove(): Promise<void>;
 }
 
 /**
  * Application management API exposed as `penpotMgmt` to global plugins.
  *
- * - Discovery and navigation require `content:read`; creation requires `content:write`.
- * - Available in the dashboard and file workspaces.
- * - Use this API to discover, create and open files; file operations on `penpot` require a ready workspace.
+ * - Lists teams, projects and files, and opens files, from the dashboard or a
+ *   file workspace. Teams, projects and files are objects with their own
+ *   properties and methods.
+ * - Listing and opening require `content:read`; teams require `manage:teams`.
+ * - File operations on `penpot` require a ready workspace.
  * - Reacquire file, page and shape objects after changing files.
  */
 export interface PenpotMgmt {
   /** Current workspace availability and metadata; usable for file operations when status is `ready`. */
   readonly workspace: WorkspaceContext;
   /**
-   * Lists accessible, non-deleted projects as metadata snapshots.
+   * Lists the teams of the user. Requires `manage:teams`.
+   *
+   * @example
+   * ```ts
+   * const teams = await penpotMgmt.listTeams();
+   * ```
+   */
+  listTeams(): Promise<Team[]>;
+  /**
+   * Creates a team with the user as owner. Requires `manage:teams`.
+   *
+   * - Trims `name` and requires 1 to 250 characters.
+   * - Does not change navigation.
+   *
+   * @example
+   * ```ts
+   * const team = await penpotMgmt.createTeam({ name: 'Marketing' });
+   * ```
+   */
+  createTeam(options: { name: string }): Promise<Team>;
+  /**
+   * Lists the projects of a team. Requires `content:read`.
    *
    * - `teamId` defaults to the current team.
-   * - Queries the backend without opening a file or changing navigation.
    * - Rejects invalid identifiers and backend access errors.
    *
    * @example
@@ -829,55 +1000,27 @@ export interface PenpotMgmt {
    * const projects = await penpotMgmt.listProjects();
    * ```
    */
-  listProjects(options?: { teamId?: string }): Promise<ProjectSummary[]>;
+  listProjects(options?: { teamId?: string }): Promise<Project[]>;
   /**
-   * Lists accessible, non-deleted files in the specified project as metadata snapshots.
-   *
-   * - Requires an explicit `projectId`.
-   * - Queries the backend without opening a file or changing navigation.
-   * - Rejects invalid identifiers and backend access errors.
+   * Lists projects still recoverable from Trash. Requires `content:read`.
+   * `teamId` defaults to the current team. Use `Project.restore` to recover them.
+   */
+  listDeletedProjects(options?: { teamId?: string }): Promise<Project[]>;
+  /**
+   * Lists files still recoverable from Trash. Requires `content:read`.
+   * `teamId` defaults to the current team. Use `ProjectFile.restore` to recover them.
+   */
+  listDeletedFiles(options?: { teamId?: string }): Promise<ProjectFile[]>;
+  /**
+   * Loads a file by id, open or not. Requires `content:read`.
    *
    * @example
    * ```ts
-   * const files = await penpotMgmt.listFiles({ projectId: project.id });
+   * const file = await penpotMgmt.getFile(penpotMgmt.workspace.fileId!);
+   * file.name = 'Checkout';
    * ```
    */
-  listFiles(options: { projectId: string }): Promise<FileSummary[]>;
-  /**
-   * Creates a project and returns its metadata snapshot. Requires `content:write`.
-   *
-   * - `teamId` defaults to the current team.
-   * - Trims `name` and requires 1 to 250 characters.
-   * - Does not change navigation or open a file.
-   * - Rejects invalid input, backend access errors and quota errors.
-   *
-   * @example
-   * ```ts
-   * const project = await penpotMgmt.createProject({ name: 'Design system' });
-   * ```
-   */
-  createProject(options: {
-    name: string;
-    teamId?: string;
-  }): Promise<ProjectSummary>;
-  /**
-   * Creates a file with an initial page and returns its metadata snapshot. Requires `content:write`.
-   *
-   * - Requires an explicit `projectId`.
-   * - Trims `name` and requires 1 to 250 characters.
-   * - Does not open the file or change navigation. Use `openFile` to edit it.
-   * - Rejects invalid input, backend access errors and quota errors.
-   *
-   * @example
-   * ```ts
-   * const file = await penpotMgmt.createFile({ projectId: project.id, name: 'Login' });
-   * await penpotMgmt.openFile(file.id, { teamId: file.teamId });
-   * ```
-   */
-  createFile(options: {
-    name: string;
-    projectId: string;
-  }): Promise<FileSummary>;
+  getFile(fileId: string): Promise<ProjectFile>;
   /**
    * Opens a file in this tab and resolves once its workspace and page are ready.
    *
@@ -1021,6 +1164,19 @@ export interface Context {
    * ```
    */
   readonly theme: Theme;
+
+  /**
+   * The Penpot instance URL and the current address in the app, in the
+   * dashboard as well as in the workspace. Requires `content:read` permission.
+   *
+   * @example
+   * ```js
+   * const { baseUrl, href, params } = penpot.location;
+   * console.log(baseUrl); // "https://design.penpot.app/"
+   * console.log(params['file-id']);
+   * ```
+   */
+  readonly location: PenpotLocation;
 
   /**
    * Access to the localStorage proxy
@@ -1487,6 +1643,24 @@ export interface Context {
    * rejected with an Error, both on timeout and on an invalid timeout value.
    */
   waitForLayoutUpdate(timeout?: number): Promise<void>;
+
+  /**
+   * This method returns a promise that will be resolved when pending file
+   * changes have been saved to the backend, or when there is nothing to save.
+   * It force-flushes the persistence buffer first when work is pending.
+   * @param timeout Maximum time to wait, in milliseconds. If the timeout
+   * elapses before the save settles, the promise is rejected. Defaults to
+   * 60000; the promise never waits indefinitely.
+   * @return The promise to be resolved when the save has settled. It is
+   * rejected with an Error on save failure, when changes are rolled back
+   * during the wait, on timeout, or on an invalid timeout value. A save
+   * that failed before the call also rejects: with `save-retrying` while
+   * Penpot keeps retrying it, otherwise with the failure code until the
+   * file is reopened. The Error `code` property tells the cases apart:
+   * `save-timeout`, `rolled-back`, `save-retrying`, or the failure code
+   * (`save-failed` unless the backend gave a more specific one).
+   */
+  waitForSave(timeout?: number): Promise<void>;
 }
 
 /**
@@ -1717,6 +1891,37 @@ export interface EventsMap {
    * The `contentsave` event will trigger after the file content is saved in the backend.
    */
   readonly contentsave: void;
+
+  /**
+   * The `contentrollback` event will trigger after the backend rejected some changes
+   * and the workspace undid them, together with the rest of their undo steps and any
+   * later change to the same file. Changes made by a plugin can be undone this way
+   * after the call that made them returned, so a plugin that relies on them should
+   * read the affected shapes again. The event fires once the undone data is in the
+   * workspace. When the workspace could not undo the changes in place, it reloads the
+   * file from the server first; the whole file then holds the server data, so shapes
+   * outside the listed ones may have changed too.
+   */
+  readonly contentrollback: ContentRollback;
+}
+
+/**
+ * What a rollback of rejected changes undid, as given to the `contentrollback` event.
+ */
+export interface ContentRollback {
+  /**
+   * Ids of the files that lost changes.
+   */
+  readonly fileIds: string[];
+  /**
+   * Ids of the pages the undone changes touched.
+   */
+  readonly pageIds: string[];
+  /**
+   * Ids of the page shapes the undone changes touched. A shape the undone changes
+   * created no longer exists; one they removed exists again.
+   */
+  readonly shapeIds: string[];
 }
 
 /**
@@ -2796,6 +3001,12 @@ export interface Library extends PluginData {
   readonly components: LibraryComponent[];
 
   /**
+   * Deleted components, including individual deleted variants.
+   * Use a component's `restore()` method to restore it.
+   */
+  readonly deletedComponents: LibraryComponent[];
+
+  /**
    * A catalog of Design Tokens in the library.
    *
    * See `TokenCatalog` type to see usage.
@@ -2891,6 +3102,40 @@ export interface LibraryColor extends LibraryElement {
  */
 export interface LibraryComponent extends LibraryElement {
   /**
+   * The component annotation, or null when none is set.
+   * Set null to delete it. Text can contain at most 300 characters.
+   * Writing requires `library:write` permission and a live component in the
+   * current file's library.
+   */
+  annotation: string | null;
+
+  /**
+   * Duplicates this component and its main instance in the current file's library.
+   * Requires `library:write` permission. The component must not be deleted.
+   */
+  duplicate(): LibraryComponent;
+
+  /**
+   * Deletes this component and its main instance from the current file's library.
+   * Requires `library:write` permission. Does nothing if already deleted.
+   * Surviving copies keep their link so the component can be restored later.
+   */
+  remove(): void;
+
+  /**
+   * Restores this component if it has been deleted, including its main instance,
+   * in the current file's library.
+   * Leaves the current page, selection, zoom, and viewport unchanged.
+   * Requires `library:write` permission. Does nothing if already restored.
+   *
+   * @example
+   * ```js
+   * penpot.selection[0].component()?.restore();
+   * ```
+   */
+  restore(): void;
+
+  /**
    * Creates an instance of the component.
    * @return Returns a `Shape` object representing the instance of the component.
    *
@@ -2979,6 +3224,32 @@ export type LibraryContext = {
    * ```
    */
   readonly connected: Library[];
+
+  /**
+   * The library that supplies tokens to the current file.
+   * Defaults to the local library.
+   *
+   * Assign a connected library that has its own tokens to use it as the
+   * source. This copies its active themes and sets to the current file.
+   * Assign `local` to use the file's own tokens again. Themes and sets
+   * that don't exist in the local tokens are deactivated.
+   * Setting the source requires `content:write` permission and supports undo.
+   * Assigning the current source again keeps the active themes and sets.
+   *
+   * The catalog of an external `tokensSource` is read-only and reports the
+   * library's own active themes and sets. To change which ones are active
+   * in the current file, use `penpot.library.local.tokens`, which lists the
+   * tokens of the source.
+   *
+   * @example
+   * ```js
+   * const source = await penpot.library.connectLibrary('library-id');
+   * penpot.library.tokensSource = source;
+   * // Restore local tokens:
+   * penpot.library.tokensSource = penpot.library.local;
+   * ```
+   */
+  tokensSource: Library;
 
   /**
    * Retrieves a summary of available libraries that can be connected to.
@@ -3144,6 +3415,33 @@ export interface LibraryTypography extends LibraryElement {
    * ```
    */
   setFont(font: Font, variant?: FontVariant): void;
+}
+
+/**
+ * The Penpot instance URL and the current address in the app.
+ * Each read of `penpot.location` returns a new snapshot.
+ *
+ * Query params that carry secrets (`share-id`, any param ending in
+ * `token`, `secret` or `password`, and the OAuth params `request`,
+ * `code` and `state`) are left out of `params` and `href`.
+ */
+export interface PenpotLocation {
+  /**
+   * The public URL of the Penpot instance, ending in `/`,
+   * e.g. `"https://design.penpot.app/"`.
+   */
+  readonly baseUrl: string;
+  /**
+   * The URL of the current screen, e.g. the open file and page:
+   * `"https://design.penpot.app/?screen=workspace&team-id=…&file-id=…&page-id=…"`.
+   * Use it to link to what the user is looking at.
+   */
+  readonly href: string;
+  /**
+   * The query params of the current URL, e.g. `screen`, `team-id`,
+   * `file-id` and `page-id`. A param repeated in the URL keeps its last value.
+   */
+  readonly params: Record<string, string>;
 }
 
 /**
@@ -4108,6 +4406,15 @@ export interface ShapeBase extends PluginData {
   resetOverrides(): void;
 
   /**
+   * Applies this copy's overrides to its main component and synchronizes copies.
+   * Similar to the editor's "update main component" action.
+   * Requires `content:write` and `library:write` permissions.
+   * The shape must be a component copy head on the active page of the current file,
+   * outside any other component copy, with a main component that is not deleted.
+   */
+  updateMain(): void;
+
+  /**
    * Switch a VariantComponent copy to the nearest one that has the specified property value
    * @param pos The position of the property to update
    * @param value The new value of the property
@@ -4227,6 +4534,11 @@ export interface ShapeBase extends PluginData {
    * several tokens with the same name in different sets, the actual token applied
    * and the value set to the attributes will depend on which sets are active
    * (and will change if different sets or themes are activated later).
+   *
+   * NOTE that the per-side stroke width properties (`strokeWidthTop`,
+   * `strokeWidthRight`, `strokeWidthBottom`, `strokeWidthLeft`) are only valid on
+   * boards and rectangles. Applying one to any other shape raises a validation
+   * error. The uniform `strokeWidth` property is accepted on every shape.
    */
   applyToken(token: Token, properties?: TokenProperty[]): void;
 
@@ -4291,8 +4603,8 @@ export interface Slide {
 }
 
 /**
- * Represents stroke properties in Penpot. You can add a stroke to any shape except for groups.
- * This interface includes properties for defining the color, style, width, alignment, and caps of a stroke.
+ * Stroke properties for any shape except groups.
+ * Literals apply strokeWidth before top/right/bottom/left widths.
  */
 export interface Stroke {
   /**
@@ -4317,9 +4629,33 @@ export interface Stroke {
    */
   strokeStyle?: 'solid' | 'dotted' | 'dashed' | 'mixed' | 'none' | 'svg';
   /**
-   * The optional width of the stroke.
+   * Reads the top width. Setting it selects simple mode and sets all four sides.
    */
   strokeWidth?: number;
+  /**
+   * Computed width mode: simple when all four effective widths match, multiple otherwise.
+   */
+  readonly strokeWidthType?: 'simple' | 'multiple';
+  /**
+   * Top side width; setting it preserves the other side widths.
+   * Boards and rectangles only; other shape types raise a validation error.
+   */
+  strokeWidthTop?: number;
+  /**
+   * Right side width; setting it preserves the other side widths.
+   * Boards and rectangles only; other shape types raise a validation error.
+   */
+  strokeWidthRight?: number;
+  /**
+   * Bottom side width; setting it preserves the other side widths.
+   * Boards and rectangles only; other shape types raise a validation error.
+   */
+  strokeWidthBottom?: number;
+  /**
+   * Left side width; setting it preserves the other side widths.
+   * Boards and rectangles only; other shape types raise a validation error.
+   */
+  strokeWidthLeft?: number;
   /**
    * The optional alignment of the stroke relative to the shape's boundary.
    */
@@ -4691,6 +5027,10 @@ export interface TokenBase {
    * several tokens with the same name in different sets, the actual token applied
    * and the value set to the attributes will depend on which sets are active
    * (and will change if different sets or themes are activated later).
+   *
+   * NOTE that the per-side stroke width properties are only valid on boards and
+   * rectangles; applying one to any other shape raises a validation error. The
+   * uniform `strokeWidth` property is accepted on every shape.
    */
   applyToShapes(shapes: Shape[], properties?: TokenProperty[]): void;
 
@@ -5348,10 +5688,12 @@ export type Token =
  */
 export interface TokenCatalog {
   /**
-   * Returns true if the tokens can be edited (it can't
-   * if the tokens of the file are in an external library).
-   * Note that even in this case, Themes and Sets status still
-   * can be changed and tokens can be applied to shapes.
+   * Returns true if the tokens in this catalog can be edited. Only the
+   * catalog of the current file (`penpot.library.local.tokens`) can be
+   * edited, and only when the file is its own tokens source.
+   * When the tokens come from an external library, the local catalog
+   * can still change the active themes and sets, and its tokens can
+   * still be applied to shapes.
    */
   readonly isEditableTokens: boolean;
 
@@ -5425,7 +5767,8 @@ export interface TokenSet {
   name: string;
 
   /**
-   * Indicates if the set is currently active.
+   * Indicates if the set is active in the file that owns this catalog.
+   * Only sets from `penpot.library.local.tokens` can be changed.
    */
   active: boolean;
 
@@ -5441,6 +5784,7 @@ export interface TokenSet {
 
   /**
    * Toggles the active status of this set.
+   * Only sets from `penpot.library.local.tokens` can be changed.
    */
   toggleActive(): void;
 
@@ -5525,12 +5869,14 @@ export interface TokenTheme {
   name: string;
 
   /**
-   * Indicates if the theme is currently active.
+   * Indicates if the theme is active in the file that owns this catalog.
+   * Only themes from `penpot.library.local.tokens` can be changed.
    */
   active: boolean;
 
   /**
    * Toggles the active status of this theme.
+   * Only themes from `penpot.library.local.tokens` can be changed.
    */
   toggleActive(): void;
 
@@ -5592,7 +5938,11 @@ type TokenDimensionProps =
   | 'y'
 
   // Stroke width
-  | 'strokeWidth';
+  | 'strokeWidth'
+  | 'strokeWidthTop'
+  | 'strokeWidthRight'
+  | 'strokeWidthBottom'
+  | 'strokeWidthLeft';
 
 /**
  * The properties that a FontFamilies token can be applied to.
@@ -5661,7 +6011,12 @@ type TokenSpacingProps =
 /**
  * The properties that a BorderWidth token can be applied to.
  */
-type TokenBorderWidthProps = 'strokeWidth';
+type TokenBorderWidthProps =
+  | 'strokeWidth'
+  | 'strokeWidthTop'
+  | 'strokeWidthRight'
+  | 'strokeWidthBottom'
+  | 'strokeWidthLeft';
 
 /**
  * The properties that a TextCase token can be applied to.

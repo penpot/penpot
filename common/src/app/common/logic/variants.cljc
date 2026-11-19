@@ -4,14 +4,57 @@
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
    [app.common.files.variant :as cfv]
+   [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
    [app.common.logic.variant-properties :as clvp]
+   [app.common.path-names :as cpn]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]))
+
+(defn generate-rename-variant
+  "Rename a variant set in one change vector.
+
+   The builder already has the mains' page objects and library data.
+   The stored name is `clean-path` of `name`, or \"(empty)\" when that
+   path is blank. The board and every direct child take that name.
+   Each component's path and name come from `split-group-name`."
+  [changes variant-id name]
+  (let [objects     (pcb/get-objects changes)
+        data        (pcb/get-library-data changes)
+        clean-name  (cpn/clean-path name)
+        stored-name (if (empty? clean-name) "(empty)" clean-name)
+        shape-ids   (cons variant-id (:shapes (get objects variant-id)))
+        components  (cfv/find-variant-components data objects variant-id)]
+    (reduce (fn [changes component]
+              (let [[path item-name] (cpn/split-group-name stored-name)]
+                (pcb/update-component changes
+                                      (:id component)
+                                      #(assoc % :path path :name item-name))))
+            (pcb/update-shapes changes shape-ids #(assoc % :name stored-name))
+            components)))
+
+(defn generate-define-variant-container
+  "One change vector. `name` is the string stored on the board.
+   The component path and name are `split-group-name` of that string.
+   Library data is refreshed before the first property is added."
+  [changes variant-id main-id component-id name]
+  (let [[path item-name] (cpn/split-group-name name)]
+    (-> changes
+        (pcb/update-shapes [variant-id]
+                           #(assoc % :is-variant-container true :name name))
+        (pcb/update-shapes [main-id]
+                           #(assoc % :name name :variant-id variant-id))
+        (pcb/update-component component-id
+                              #(assoc % :variant-id variant-id
+                                      :path path
+                                      :name item-name)
+                              {:apply-changes-local-library? true})
+        (clvp/generate-add-new-property variant-id {:fill-values? true}))))
 
 (defn generate-add-new-variant
   [changes shape variant-id new-component-id new-shape-id prop-num]
@@ -72,7 +115,10 @@
    copy that was swapped (orig-swapped-child), and its related shape on the new copy
    (related-shape-in-new), move the orig-swapped-child into the parent of
    related-shape-in-new, fix its swap-slot if needed, and then delete
-   related-shape-in-new"
+   related-shape-in-new.
+
+   orig-swapped-child follows its parent through its constraints and, if the
+   user didn't move it, takes the place of related-shape-in-new."
   [changes related-shape-in-new orig-swapped-child ldata page swap-ref-id]
   (let [;; Before to the swap, temporary move the previous
         ;; shape to the root panel to avoid problems when
@@ -83,14 +129,27 @@
                            (pcb/change-parent uuid/zero [orig-swapped-child] 0 {:allow-altering-copies true}))
 
         objects         (pcb/get-objects changes)
+        page-objects    (:objects page)
         prev-swap-slot  (ctk/get-swap-slot orig-swapped-child)
         current-parent  (get objects (:parent-id related-shape-in-new))
-        pos             (d/index-of (:shapes current-parent) (:id related-shape-in-new))]
+        pos             (d/index-of (:shapes current-parent) (:id related-shape-in-new))
+
+        orig-child      (get page-objects (:id orig-swapped-child))
+        ;; If the user didn't move it, it goes to the place of related-shape-in-new
+        delta-fn        (when-not (ctk/touched-group? orig-child :geometry-group)
+                          #(gpt/subtract (grc/rect->point (:selrect related-shape-in-new))
+                                         (grc/rect->point (:selrect %))))]
 
     (-> (pcb/concat-changes before-changes changes)
 
         ;; Move the previous shape to the new parent
         (pcb/change-parent (:parent-id related-shape-in-new) [orig-swapped-child] pos {:allow-altering-copies true})
+
+        (cll/generate-follow-parent (ctn/make-container page :page)
+                                    orig-child
+                                    (get page-objects (:parent-id orig-child))
+                                    current-parent
+                                    delta-fn)
 
         ;; We need to update the swap slot only when it pointed
         ;; to the swap-ref-id. Oterwise this is a swapped item

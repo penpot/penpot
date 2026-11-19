@@ -11,7 +11,8 @@
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.metrics.definition :as-alias mdef]
-   [integrant.core :as ig])
+   [integrant.core :as ig]
+   [promesa.exec :as px])
   (:import
    io.prometheus.client.CollectorRegistry
    io.prometheus.client.Counter
@@ -147,6 +148,25 @@
     (number? value)  (str value)
     :else            fallback))
 
+;; Tail for request and wait timings (RPC, CLIMIT waits, audit handler,
+;; HTTP dispatch): covers the 30s/60s CLIMIT timeouts while keeping the
+;; sub-7.5s resolution of the default buckets untouched.
+(def default-request-histogram-buckets
+  [1 5 10 25 50 75 100 250 500 750 1000 2500 5000 7500
+   10000 15000 30000 60000])
+
+;; Tail for background tasks (GC sweeps, file workers): they run until
+;; done with no CLIMIT timeout, bounded in practice by the 300s postgres
+;; statement timeout.
+(def default-tasks-histogram-buckets
+  [1 5 10 25 50 75 100 250 500 750 1000 2500 5000 7500
+   10000 15000 30000 60000 120000 300000])
+
+;; Tail for Redis eval: sub-second in practice, one extra bucket covers
+;; the pathological (timeout) case without adding idle series.
+(def default-redis-histogram-buckets
+  [1 5 10 25 50 75 100 250 500 750 1000 2500 5000 7500 10000])
+
 (defmulti run-collector! (fn [mdef _] (::mdef/type mdef)))
 (defmulti create-collector ::mdef/type)
 
@@ -202,6 +222,33 @@
       (catch Throwable cause
         (report-safe-failure! (str "unable to record metric " (pr-str id)) cause)
         nil))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SAMPLER
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn create-sampler
+  "Create a daemon scheduler that runs `sample` every `interval-ms`,
+  starting right away. A single thread is used, named after `name`
+  (default `metrics`), and an unexpected error on a single sample does NOT
+  cancel the following runs: the next run is scheduled in a `finally`.
+  The caller owns the returned scheduler and has to shut it down
+  (`px/shutdown-now`) when its component halts."
+  ([interval-ms sample]
+   (create-sampler interval-ms sample {}))
+  ([interval-ms sample {:keys [name] :or {name "metrics"}}]
+   (let [prefix    (str "penpot/" name "/")
+         scheduler (px/scheduled-executor
+                    :parallelism 1
+                    :factory (px/thread-factory :prefix prefix :daemon true))
+         task      (fn task []
+                     (try
+                       (sample)
+                       (finally
+                         (px/schedule scheduler interval-ms task))))]
+
+     (px/schedule scheduler 0 task)
+     scheduler)))
 
 (defn- create-registry
   []

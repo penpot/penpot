@@ -17,7 +17,7 @@
    [app.main.data.profile :as dp]
    [app.main.data.websocket :as ws]
    [app.main.data.workspace.mcp :as mcp]
-   [app.main.errors]
+   [app.main.errors :as errors]
    [app.main.features :as feat]
    [app.main.rasterizer :as thr]
    [app.main.store :as st]
@@ -67,9 +67,10 @@
   []
   (ptk/reify ::initialize-rasterizer
     ptk/EffectEvent
-    (effect [_ _ _]
-      ;; The rasterizer is used for the dashboard thumbnails
-      (thr/init!))))
+    (effect [_ state _]
+      ;; Only the SVG renderer uses the rasterizer
+      (when-not (feat/active-feature? state "render-wasm/v1")
+        (thr/init!)))))
 
 (defn initialize
   []
@@ -107,9 +108,8 @@
             (rx/map #(ws/initialize)))
 
        (->> stream
-            (rx/filter (ptk/type? ::feat/initialize))
-            (rx/take 1)
-            (rx/map #(initialize-rasterizer)))))))
+            (rx/filter (comp #{::feat/initialize ::feat/recompute-features} ptk/type))
+            (rx/map initialize-rasterizer))))))
 
 (defn ^:export init
   [options]
@@ -135,6 +135,8 @@
       (mw/init!)
       (i18n/init)
       (cur/init-styles)
+
+      (mf/set-update-scheduler {:on-trip errors/on-update-loop})
 
       (init-ui)
       (st/emit! (plugins/initialize)

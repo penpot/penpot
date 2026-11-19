@@ -209,15 +209,18 @@ below):
 The files are committed templates + an `envsubst` pass; see
 [`.devenv/README.md`](../../../.devenv/README.md) for the full layout.
 
-`./manage.sh start-coding-agent <client> [--ws N] [...passthrough]`
+`./manage.sh start-coding-agent <client> [--ws N] [--bin EXE] [...passthrough]`
 launches the chosen client against one workspace, `cd`'ing into the right
-directory and refusing to launch if the instance is not running:
+directory and refusing to launch if the instance is not running. `--bin`
+runs another executable in place of the client's default one (for example a
+wrapper script), with the same MCP wiring:
 
 ```bash
 ./manage.sh start-coding-agent claude              # ws0
 ./manage.sh start-coding-agent opencode --ws 1     # ws1
 ./manage.sh start-coding-agent vscode              # opens VS Code on ws0
 ./manage.sh start-coding-agent codex --ws 2        # ws2
+./manage.sh start-coding-agent claude --bin claude-alt
 ```
 
 A given AI client session drives **exactly one workspace**, so running N

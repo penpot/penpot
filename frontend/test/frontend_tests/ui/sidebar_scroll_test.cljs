@@ -31,6 +31,14 @@
     (sc/save-scroll! store [:layers :page-1] #js {})
     (t/is (= {} @store))))
 
+(t/deftest forget-scroll-drops-only-that-key
+  (let [store (atom {[:layers :page-1] 250
+                     [:layers-search :page-1] 90})]
+    (sc/forget-scroll! store [:layers-search :page-1])
+    (t/is (= {[:layers :page-1] 250} @store))
+    (sc/forget-scroll! store [:layers-search :page-1])
+    (t/is (= {[:layers :page-1] 250} @store))))
+
 (t/deftest restore-scroll-writes-saved-position
   (let [node #js {:scrollTop 0}]
     (sc/restore-scroll! node 320)

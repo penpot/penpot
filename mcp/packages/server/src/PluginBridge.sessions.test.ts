@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
 import { once } from "node:events";
-import { afterEach, beforeEach, test } from "node:test";
+import { afterEach, beforeEach, mock, test } from "node:test";
 import { WebSocket } from "ws";
-import { PluginBridge } from "./PluginBridge";
+import { HEARTBEAT_REQUEST_INTERVAL_MS, PluginBridge } from "./PluginBridge";
 import { PluginTask } from "./PluginTask";
 import type { PenpotMcpServer } from "./PenpotMcpServer";
+import { RequestGuard } from "./RequestGuard";
 
 let bridge: PluginBridge;
 let port = 17_600;
@@ -22,6 +23,7 @@ beforeEach(() => {
             host: "127.0.0.1",
             isMultiUserMode: () => multiUser,
             getSessionContext: () => ({ userToken }),
+            requestGuard: RequestGuard.allowing(["localhost", "127.0.0.1"]),
         } as PenpotMcpServer,
         port,
         1
@@ -37,16 +39,32 @@ async function connect(sessionId: string, token = "alice", fileName = "Design", 
     const socket = new WebSocket(`ws://127.0.0.1:${port}?userToken=${token}`);
     sockets.push(socket);
     await once(socket, "open");
+    // answer tasks from the start, since one may arrive right behind the initialization
+    socket.on("message", (raw) => {
+        const request = JSON.parse(raw.toString());
+        if (request.type !== "initialized" && request.type !== "heartbeat-request") {
+            socket.send(JSON.stringify({ id: request.id, success: true, data: reply }));
+        }
+    });
     const initialized = once(socket, "message", { signal: AbortSignal.timeout(1500) });
     socket.send(JSON.stringify({ type: "initialize", session: { sessionId, fileId: "file-1", fileName } }));
     const [message] = await initialized;
     assert.equal(JSON.parse(message.toString()).type, "initialized");
-    socket.on("message", (raw) => {
-        const request = JSON.parse(raw.toString());
-        socket.send(JSON.stringify({ id: request.id, success: true, data: reply }));
-    });
     return socket;
 }
+
+test("asks each plugin for a heartbeat at a fixed interval", async () => {
+    mock.timers.enable({ apis: ["setInterval"] });
+    try {
+        const socket = await connect("tab-1");
+        const requested = once(socket, "message", { signal: AbortSignal.timeout(1500) });
+        mock.timers.tick(HEARTBEAT_REQUEST_INTERVAL_MS);
+        const [message] = await requested;
+        assert.deepEqual(JSON.parse(message.toString()), { type: "heartbeat-request" });
+    } finally {
+        mock.timers.reset();
+    }
+});
 
 test("keeps two tabs for the same file and dispatches to the selected session", async () => {
     await connect("tab-1");
@@ -168,4 +186,53 @@ test("a dashboard session remains routable while its workspace metadata changes"
         assert.equal((await bridge.executePluginTask(new PluginTask("test", {}), "tab")).data, "ok");
         assert.deepEqual(bridge.getUserConnections("alice")!.getSessions(), [{ sessionId: "tab", ...context }]);
     }
+});
+
+test("a task fails at once when its plugin connection closes before answering", async () => {
+    const plugin = new WebSocket(`ws://127.0.0.1:${port}?userToken=alice`);
+    sockets.push(plugin);
+    await once(plugin, "open");
+    const initialized = once(plugin, "message");
+    plugin.send(JSON.stringify({ type: "initialize", session: { sessionId: "tab", fileId: null, fileName: null } }));
+    await initialized;
+    // the socket closes once the task reaches it
+    plugin.on("message", () => plugin.terminate());
+    const started = Date.now();
+    await assert.rejects(
+        bridge.executePluginTask(new PluginTask("test", {}), "tab"),
+        /connection closed before the task finished/
+    );
+    // well within the 1s task timeout of these tests
+    assert.ok(Date.now() - started < 500);
+});
+
+test("closes a WebSocket opened by a page on a foreign site with a policy violation", async () => {
+    const socket = new WebSocket(`ws://127.0.0.1:${port}?userToken=alice`, {
+        headers: { Origin: "http://attacker.example" },
+    });
+    sockets.push(socket);
+    const [code] = await once(socket, "close", { signal: AbortSignal.timeout(1500) });
+    assert.equal(code, 1008);
+    assert.equal(bridge.getUserConnections("alice"), undefined);
+});
+
+test("closes a WebSocket that reaches the server under a foreign host name", async () => {
+    const socket = new WebSocket(`ws://127.0.0.1:${port}?userToken=alice`, {
+        headers: { Host: `attacker.example:${port}` },
+    });
+    sockets.push(socket);
+    const [code] = await once(socket, "close", { signal: AbortSignal.timeout(1500) });
+    assert.equal(code, 1008);
+});
+
+test("accepts a WebSocket opened by a plugin page served from an allowed host", async () => {
+    const socket = new WebSocket(`ws://127.0.0.1:${port}?userToken=alice`, {
+        headers: { Origin: "http://localhost:4400" },
+    });
+    sockets.push(socket);
+    await once(socket, "open");
+    const initialized = once(socket, "message", { signal: AbortSignal.timeout(1500) });
+    socket.send(JSON.stringify({ type: "initialize", session: { sessionId: "tab", fileId: null, fileName: null } }));
+    const [message] = await initialized;
+    assert.equal(JSON.parse(message.toString()).type, "initialized");
 });

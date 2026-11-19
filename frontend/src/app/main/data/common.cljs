@@ -13,11 +13,13 @@
    [app.common.time :as ct]
    [app.common.types.organization :as cto]
    [app.common.types.team :as ctt]
+   [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
    [app.main.data.persistence :as-alias dps]
+   [app.main.data.team :as dtm]
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.main.store :as st]
@@ -195,7 +197,10 @@
     :owner  (tr "dashboard.permissions-change.owner")))
 
 (defn change-team-role
-  [{:keys [team-id role]}]
+  "Applies a role change pushed by the backend. When the organization
+  takes a team away from its owner, the message names the team and its
+  new owner, and the former owner is told wherever they are."
+  [{:keys [team-id role team-name new-owner-name]}]
   (dm/assert! (uuid? team-id))
   (dm/assert! (contains? ctt/valid-roles role))
 
@@ -203,16 +208,24 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [current-team-id (:current-team-id state)]
-        (when (= team-id current-team-id)
+        (cond
+          (some? new-owner-name)
+          (rx/of (ntf/info (tr "dashboard.team-owner-changed-by-organization"
+                               team-name
+                               new-owner-name)))
+
+          (= team-id current-team-id)
           (rx/of (ntf/info (get-change-role-msg role))))))
 
     ptk/UpdateEvent
     (update [_ state]
       (let [permissions (get ctt/permissions-for-role role)]
-        (-> state
-            (update :permissions merge permissions)
-            (update-in [:team :permissions] merge permissions)
-            (d/update-in-when [:teams team-id :permissions] merge permissions))))))
+        ;; The session's own permissions follow the team it is in; a
+        ;; change to any other team only updates that team's entry
+        (cond-> (d/update-in-when state [:teams team-id :permissions] merge permissions)
+          (= team-id (:current-team-id state))
+          (-> (update :permissions merge permissions)
+              (update-in [:team :permissions] merge permissions)))))))
 
 (defn team-membership-change
   [{:keys [team-id team-name change]}]
@@ -236,8 +249,8 @@
 
 (defn- check-team-sso
   [team-id]
-  (let [url (rt/get-current-href)]
-    (->> (rp/cmd! :check-nitrate-sso {:team-id team-id :url url})
+  (let [query-string (rt/get-current-query-string)]
+    (->> (rp/cmd! :check-nitrate-sso {:team-id team-id :query-string query-string})
          (rx/mapcat (fn [{:keys [authorized redirect-uri]}]
                       (if authorized
                         (rx/empty)
@@ -250,28 +263,38 @@
   Updates local team organization data and redirects to SSO when required.
   `team` and `notification` come from the server-published message (see backend
   app.rpc.notifications/notify-team-change); `notification` is a translation
-  key resolved here, dynamic by design."
+  key resolved here, dynamic by design.
+
+  The message is broadcast to every connected user, so it cannot carry the
+  per-profile `:restrictions-met`: the last known value is kept and the teams
+  are fetched again to get the current profile's one."
   [{:keys [team notification]}]
   (ptk/reify ::handle-change-team-organization
     ptk/WatchEvent
     (watch [_ state _]
       (let [current-team-id (:current-team-id state)
             organization    (:organization team)
-            current-team?   (= (:id team) current-team-id)]
+            team-name       (or (:name team)
+                                (dm/get-in state [:teams (:id team) :name]))
+            current-team?   (= (:id team) current-team-id)
+            known-team?     (contains? (:teams state) (:id team))]
         (when (and (contains? cf/flags :admin-console)
-                   current-team?)
+                   (or current-team? known-team?))
           (rx/concat
-           (when notification
+           (when known-team?
+             (rx/of (dtm/fetch-teams)))
+           (when (and current-team? notification)
              ;; Execution time translation strings (keys sent by the backend):
              ;;   (tr "dashboard.team-belong-organization")
              ;;   (tr "dashboard.team-no-longer-belong-organization")
              ;; notification is a server-provided key, dynamic by design
+             ;; args: team name, organization name
              #_{:clj-kondo/ignore [:penpot/tr-dynamic]}
-             (rx/of (ntf/show {:content (tr notification (:name organization))
+             (rx/of (ntf/show {:content (tr notification team-name (:name organization))
                                :type :toast
                                :level :info
                                :timeout nil})))
-           (when (:id organization)
+           (when (and current-team? (:id organization))
              (check-team-sso current-team-id))))))
     ptk/UpdateEvent
     (update [_ state]
@@ -281,8 +304,14 @@
               organization (:organization team)]
           (d/update-in-when state [:teams team-id]
                             (fn [team]
-                              (cond-> (cto/apply-organization team organization)
-                                team-name (assoc :name team-name)))))
+                              (let [same-organization? (= (:id organization)
+                                                          (dm/get-in team [:organization :id]))
+                                    organization       (cond-> organization
+                                                         same-organization?
+                                                         (assoc :restrictions-met
+                                                                (dm/get-in team [:organization :restrictions-met])))]
+                                (cond-> (cto/apply-organization team organization)
+                                  team-name (assoc :name team-name))))))
         state))))
 
 (defn handle-organization-change-sso
@@ -388,6 +417,26 @@
 ;; NAVEGATION EVENTS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- resolve-team-id
+  "The team a team scoped navigation must carry: the UUID the caller
+  passes, the team initialized in the store, the team of the route
+  already on screen, or the profile default. A navigation carries a nil
+  id only when none of the four exists.
+
+  The route goes before the profile default on purpose: the emitters that
+  run from a team screen know the team the user is looking at, and the
+  personal team would open their file under another team.
+
+  `team-container*` raises `:not-found :invalid-team-id` for a dashboard
+  or workspace route without a valid id, and `:not-found` is not reported
+  to the error pipeline, so a navigation that loses the id ends on the
+  not-found page without leaving a trace."
+  [state team-id]
+  (or (when (uuid? team-id) team-id)
+      (:current-team-id state)
+      (some-> (rt/get-query-param (rt/get-params state) :team-id) uuid/parse*)
+      (dm/get-in state [:profile :default-team-id])))
+
 (defn go-to-feedback
   []
   (ptk/reify ::go-to-feedback
@@ -403,7 +452,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [profile    (get state :profile)
-            team-id    (or team-id (:current-team-id state))
+            team-id    (resolve-team-id state team-id)
             project-id (if (= project-id :default)
                          (:default-project-id profile)
                          project-id)
@@ -417,7 +466,7 @@
   (ptk/reify ::go-to-dashboard-search
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [team-id (:current-team-id state)]
+      (let [team-id (resolve-team-id state nil)]
         (rx/merge
          (->> (rx/of (rt/nav :dashboard-search
                              {:team-id team-id
@@ -437,7 +486,7 @@
   (ptk/reify ::go-to-dashboard-libraries
     ptk/WatchEvent
     (watch [_ state _]
-      (let [team-id (or team-id (:current-team-id state))]
+      (let [team-id (resolve-team-id state team-id)]
         (rx/of (rt/nav :dashboard-libraries {:team-id team-id}))))))
 
 
@@ -446,7 +495,7 @@
   (ptk/reify ::go-to-dashboard-fonts
     ptk/WatchEvent
     (watch [_ state _]
-      (let [team-id (or team-id (:current-team-id state))]
+      (let [team-id (resolve-team-id state team-id)]
         (rx/of (rt/nav :dashboard-fonts {:team-id team-id}))))))
 
 (defn go-to-dashboard-recent
@@ -455,15 +504,9 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [profile (get state :profile)
-            team-id (cond
-                      (= :default team-id)
+            team-id (if (= :default team-id)
                       (:default-team-id profile)
-
-                      (uuid? team-id)
-                      team-id
-
-                      :else
-                      (:current-team-id state))
+                      (resolve-team-id state team-id))
             params  {:team-id team-id}]
         (rx/of (modal/hide)
                (rt/nav :dashboard-recent params options))))))
@@ -473,7 +516,7 @@
   (ptk/reify ::go-to-dashboard-members
     ptk/WatchEvent
     (watch [_ state _]
-      (let [team-id (:current-team-id state)]
+      (let [team-id (resolve-team-id state nil)]
         (rx/of (rt/nav :dashboard-members {:team-id team-id}))))))
 
 (defn go-to-dashboard-invitations
@@ -481,7 +524,7 @@
   (ptk/reify ::go-to-dashboard-invitations
     ptk/WatchEvent
     (watch [_ state _]
-      (let [team-id (:current-team-id state)]
+      (let [team-id (resolve-team-id state nil)]
         (rx/of (rt/nav :dashboard-invitations {:team-id team-id}))))))
 
 (defn go-to-dashboard-webhooks
@@ -489,7 +532,7 @@
   (ptk/reify ::go-to-dashboard-webhooks
     ptk/WatchEvent
     (watch [_ state _]
-      (let [team-id (:current-team-id state)]
+      (let [team-id (resolve-team-id state nil)]
         (rx/of (rt/nav :dashboard-webhooks {:team-id team-id}))))))
 
 (defn go-to-dashboard-settings
@@ -497,7 +540,7 @@
   (ptk/reify ::go-to-dashboard-settings
     ptk/WatchEvent
     (watch [_ state _]
-      (let [team-id (:current-team-id state)]
+      (let [team-id (resolve-team-id state nil)]
         (rx/of (rt/nav :dashboard-settings {:team-id team-id}))))))
 
 (defn go-to-workspace
@@ -505,7 +548,7 @@
   (ptk/reify ::go-to-workspace
     ptk/WatchEvent
     (watch [_ state _]
-      (let [team-id (or team-id (:current-team-id state))
+      (let [team-id (resolve-team-id state team-id)
             file-id (or file-id (:current-file-id state))
             page-id (or page-id (:current-page-id state)
                         (-> (dsh/lookup-file-data state file-id)
@@ -558,15 +601,9 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [profile (get state :profile)
-            team-id (cond
-                      (= :default team-id)
+            team-id (if (= :default team-id)
                       (:default-team-id profile)
-
-                      (uuid? team-id)
-                      team-id
-
-                      :else
-                      (:current-team-id state))
+                      (resolve-team-id state team-id))
             params  {:team-id team-id}]
         (rx/of (modal/hide)
                (rt/nav :dashboard-deleted params options))))))

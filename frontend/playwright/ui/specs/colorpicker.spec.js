@@ -144,15 +144,14 @@ test("Create a RADIAL gradient", async ({ page }) => {
   const gradOption = workspacePage.page.getByText("Gradient");
   await gradOption.click();
 
-  const gradTypeOptions = workspacePage.colorpicker
-    .locator("div")
-    .filter({ hasText: "Linear" })
-    .nth(3);
-  await gradTypeOptions.click();
+  const gradTypeSelect = workspacePage.colorpicker
+    .getByRole("combobox")
+    .filter({ hasText: "Linear" });
+  await gradTypeSelect.click();
 
-  const gradRadialOption = workspacePage.page
-    .locator("li")
-    .filter({ hasText: "Radial" });
+  const gradRadialOption = workspacePage.page.getByRole("option", {
+    name: "Radial",
+  });
   await gradRadialOption.click();
 
   const addStopBtn = workspacePage.page.getByRole("button", {

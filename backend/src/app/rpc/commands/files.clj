@@ -22,6 +22,7 @@
    [app.common.transit :as t]
    [app.common.types.components-list :as ctkl]
    [app.common.types.file :as ctf]
+   [app.common.types.plugins :as ctpg]
    [app.common.types.tokens-lib :as ctob]
    [app.common.uri :as uri]
    [app.config :as cf]
@@ -41,8 +42,8 @@
    [app.rpc.cond :as-alias cond]
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
+   [app.rpc.notifications :as ntf]
    [app.rpc.permissions :as perms]
-   [app.util.blob :as blob]
    [app.util.events :as events]
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
@@ -221,7 +222,11 @@
         (if (and (contains? (:features file) "fdata/objects-map")
                  (not (contains? (:features params) "fdata/objects-map")))
           (feat.fdata/realize-objects cfg file)
-          file)))))
+          file)
+
+        ;; The storage pointer is internal bookkeeping: it never leaves the
+        ;; backend in a response.
+        (bfc/file->response file)))))
 
 ;; --- COMMAND QUERY: get-file-fragment (by id)
 
@@ -230,7 +235,7 @@
    [:id ::sm/uuid]
    [:file-id ::sm/uuid]
    [:created-at ::ct/inst]
-   [:content ::sm/any]])
+   [:data ::sm/any]])
 
 (def schema:get-file-fragment
   [:map {:title "get-file-fragment"}
@@ -240,8 +245,17 @@
 
 (defn- get-file-fragment
   [cfg file-id fragment-id]
-  (some-> (db/get cfg :file-data {:file-id file-id :id fragment-id :type "fragment"})
-          (update :data blob/decode)))
+  ;; Resolve through the file data backend: a fragment can live on cold
+  ;; storage, and reading its row directly would hand `nil` to `blob/decode`.
+  ;; Only the public fields leave the backend: the row also carries the
+  ;; internal storage pointer and the backend metadata.
+  (when-let [row (db/get cfg :file-data {:file-id file-id
+                                         :id fragment-id
+                                         :type "fragment"})]
+    (let [fragment (->> row
+                        (feat.fdata/resolve-file-data cfg)
+                        (feat.fdata/decode-file-data cfg))]
+      (select-keys fragment (sm/keys schema:file-fragment)))))
 
 (defn- check-fragment-scope!
   "Checks that the fragment is reachable from the pages authorized by
@@ -430,7 +444,7 @@
                   (cfeat/check-client-features! (:features params))
                   (cfeat/check-file-features! (:features file)))
 
-        page  (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg file-id)]
+        page  (feat.fdata/with-pointers cfg file-id
                 (let [page (dm/get-in file [:data :pages-index resolved-page-id])]
                   (if (pmap/pointer-map? page)
                     (deref page)
@@ -555,17 +569,23 @@
             (let [file    (bfc/get-file cfg id :load-data? false)
                   summary (t/decode-str result)]
               (-> (assoc file :library-summary summary)
-                  (dissoc :data)))))
+                  (dissoc :data :migrations)
+                  (bfc/file->response)))))
 
         calculate-from-db
         (fn []
           (let [file   (bfc/get-file cfg id)
-                result (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)]
+                result (feat.fdata/with-pointers cfg id
                          (calculate-library-summary file))]
+            ;; The storage pointer is internal bookkeeping: this summary is an
+            ;; RPC response and must not expose it. The applied migrations go
+            ;; for the same reason: this endpoint is not where a client
+            ;; completes a read, and `schema:file` declares the key optional.
             (-> file
                 (assoc :library-summary result)
                 (dissoc :legacy-data)
-                (dissoc :data))))
+                (dissoc :data :migrations)
+                (bfc/file->response))))
 
         persist-to-cache
         (fn [{:keys [::rds/conn]} data cache-key]
@@ -607,11 +627,24 @@
 
   (let [process-row
         (fn [{:keys [id library-file-ids]}]
-          (let [file (get-file-with-summary cfg id)]
-            (assoc file :library-file-ids (db/decode-pgarray library-file-ids #{}))))
+          ;; One shared file that fails to load (for example, a migration
+          ;; error on old data) must not break the whole list; skip it
+          ;; and report it with its id. Old data can also fail with a JVM
+          ;; Error (an assert or a deep recursion), so catch Throwable.
+          (try
+            (let [file (get-file-with-summary cfg id)]
+              (assoc file :library-file-ids (db/decode-pgarray library-file-ids #{})))
+            (catch Throwable cause
+              (when (instance? InterruptedException cause)
+                (.interrupt (Thread/currentThread)))
+              (l/error :hint "unable to load shared file"
+                       :file-id (str id)
+                       :team-id (str team-id)
+                       :cause cause)
+              nil)))
 
         xform
-        (map process-row)]
+        (keep process-row)]
 
     (->> (db/plan conn [sql:team-shared-files team-id] {:fetch-size 1})
          (transduce xform conj #{}))))
@@ -674,7 +707,7 @@
 (defn- get-file-stats
   [{:keys [::db/conn] :as cfg} file-id]
   (let [file    (bfc/get-file cfg file-id)
-        base    (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg file-id)]
+        base    (feat.fdata/with-pointers cfg file-id
                   (cfs/calc-file-stats (:data file)))
         lib-cnt (get-file-stats-library-counts conn file-id)]
     (-> base
@@ -719,6 +752,53 @@
   [cfg {:keys [::rpc/profile-id id]}]
   (check-read-permissions! cfg profile-id id)
   (get-file-stats cfg id))
+
+
+;; --- COMMAND QUERY: get-file-plugin-data
+
+(def ^:private schema:get-file-plugin-data
+  [:map {:title "get-file-plugin-data"}
+   [:id ::sm/uuid]
+   [:namespace {:optional true} :keyword]])
+
+(sv/defmethod ::get-file-plugin-data
+  "Return the file-level plugin data: the arbitrary key/value metadata
+   stored on the file root through the Plugin API. Optionally narrowed
+   to a single `namespace`. Lets external tooling read metadata such as
+   issue or commit references without downloading the whole file."
+  {::doc/added "2.20"
+   ::sm/params schema:get-file-plugin-data
+   ::sm/result ctpg/schema:plugin-data
+   ::db/transaction true}
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id id namespace]}]
+  (check-read-permissions! conn profile-id id)
+  (let [plugin-data (-> (bfc/get-file cfg id)
+                        (get-in [:data :plugin-data]))]
+    (if namespace
+      (select-keys plugin-data [namespace])
+      (or plugin-data {}))))
+
+;; --- COMMAND QUERY: get-file-tokens
+
+(def ^:private schema:get-file-tokens
+  [:map {:title "get-file-tokens"}
+   [:file-id ::sm/uuid]])
+
+(sv/defmethod ::get-file-tokens
+  "Return the design tokens of a file as a DTCG document, or nil when
+   the file has none. Active themes and sets come from the file's
+   tokens status. Cheap alternative to `get-file` when only the tokens
+   are needed."
+  {::doc/added "2.20"
+   ::sm/params schema:get-file-tokens
+   ::sm/result [:maybe [:map-of :string :any]]}
+  [cfg {:keys [::rpc/profile-id file-id]}]
+  (bfc/check-file-exists cfg file-id)
+  (check-read-permissions! cfg profile-id file-id)
+  (let [{:keys [data]} (bfc/get-file cfg file-id)]
+    (feat.fdata/with-pointers cfg file-id
+      (when-let [tokens-lib (cfo/get-tokens-lib data)]
+        (ctob/export-dtcg-json tokens-lib (cfo/get-tokens-status data))))))
 
 
 ;; --- COMMAND QUERY: get-file-libraries
@@ -935,34 +1015,40 @@
   (assert (db/connection-map? cfg)
           "expected cfg with valid connection")
 
-  (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg file-id)
-            pmap/*tracked* (pmap/create-tracked)]
+  (feat.fdata/with-tracked-pointers cfg file-id
     (let [file (-> (bfc/get-file cfg file-id
                                  :include-deleted? true
                                  :lock-for-update? true)
-                   (update :data ctf/absorb-assets ldata))]
+                   (update :data ctf/absorb-assets ldata)
+                   (update :data (fn [data]
+                                   (cond-> data
+                                     (cfo/effective-tokens-source? data (:id ldata))
+                                     (cfo/absorb-tokens-lib ldata)))))]
 
       (l/trc :hint "library absorbed"
              :library-id (str (:id ldata))
              :file-id (str file-id))
 
-      (bfc/update-file! cfg {:id file-id
-                             :migrations (:migrations file)
-                             :revn (inc (:revn file))
-                             :data (:data file)
-                             :modified-at (ct/now)
-                             :has-media-trimmed false}))))
+      (bfc/update-file! cfg file
+                        :revn (inc (:revn file))
+                        :modified-at (ct/now)
+                        :has-media-trimmed false))))
+
+(defn- get-referenced-files
+  [cfg library-id]
+  (->> (db/exec! cfg [sql:get-referenced-files library-id])
+       (into [] bfc/xf-map-id)))
 
 (defn- absorb-library*
-  "Find all files using a shared library, and absorb all library assets
-  into the file local libraries"
-  [cfg {:keys [id data] :as library}]
+  "Absorb all library assets, and its tokens lib if it is their tokens
+  source, into the local libraries of the files that use it. The files
+  are the given file-ids, or the ones linked to the library if nil."
+  [cfg {:keys [id data] :as library} file-ids]
 
   (assert (db/connection-map? cfg)
           "expected cfg with valid connection")
 
-  (let [ids (->> (db/exec! cfg [sql:get-referenced-files id])
-                 (sequence bfc/xf-map-id))]
+  (let [ids (or file-ids (get-referenced-files cfg id))]
 
     (l/trc :hint "absorbing library"
            :library-id (str id)
@@ -972,7 +1058,9 @@
     library))
 
 (defn absorb-library
-  [{:keys [::db/conn] :as cfg} id]
+  "Absorb the library into the files that use it. The files are the given
+  file-ids, or the ones linked to the library if omitted."
+  [{:keys [::db/conn] :as cfg} id & {:keys [file-ids]}]
   (let [file (-> (bfc/get-file cfg id
                                :realize? true
                                :lock-for-update? true
@@ -988,7 +1076,7 @@
     (-> (cfeat/get-team-enabled-features cf/flags team)
         (cfeat/check-file-features! (:features file)))
 
-    (absorb-library* cfg file)))
+    (absorb-library* cfg file file-ids)))
 
 (defn- set-file-shared
   [{:keys [::db/conn] :as cfg} {:keys [profile-id id] :as params}]
@@ -1061,7 +1149,10 @@
                           {:deleted-at (ct/in-future delay)}
                           {:id file-id}
                           {::db/return-keys [:id :name :is-shared :deleted-at
-                                             :project-id :created-at :modified-at]})]
+                                             :project-id :created-at :modified-at]})
+        ;; Files using the library, captured before their relations are removed
+        file-ids (when (:is-shared file)
+                   (get-referenced-files conn file-id))]
 
     ;; Remove all possible relations for that file
     (db/delete! conn :file-library-rel
@@ -1069,9 +1160,11 @@
 
     (jobs/submit cfg
                  {::jobs/name :delete-object
-                  ::jobs/params {:object :file
-                                 :deleted-at (:deleted-at file)
-                                 :id file-id}})
+                  ::jobs/params (cond-> {:object :file
+                                         :deleted-at (:deleted-at file)
+                                         :id file-id}
+                                  (some? file-ids)
+                                  (assoc :file-ids file-ids))})
     file))
 
 (def ^:private
@@ -1094,11 +1187,19 @@
                          :file-id id
                          :profile-id profile-id})
 
+    ;; Deleting the file ends read access for whoever had it open, and
+    ;; which profiles those are is only known to the connections
+    ;; themselves, so the whole team is announced and the watcher
+    ;; re-checks each of them.
+    (ntf/notify-team-permissions-changed cfg (:id team))
+
     (rph/with-meta (rph/wrap)
-      {::audit/props {:project-id (:project-id file)
+      {::audit/props {:team-id (:id team)
+                      :project-id (:project-id file)
                       :name (:name file)
                       :created-at (:created-at file)
-                      :modified-at (:modified-at file)}})))
+                      :modified-at (:modified-at file)
+                      :deleted-at (:deleted-at file)}})))
 
 (sv/defmethod ::delete-file
   {::doc/added "1.17"
@@ -1164,11 +1265,10 @@
   (check-edition-permissions! conn profile-id library-id)
   (check-library-team-ownership! conn file-id library-id)
 
-  (let [transitive-deps (bfc/get-libraries cfg [library-id])]
-    (when (contains? transitive-deps file-id)
-      (ex/raise :type :validation
-                :code :circular-library-reference
-                :hint "linking this library would create a circular dependency")))
+  (when (= :circular (bfc/library-link-status cfg file-id library-id))
+    (ex/raise :type :validation
+              :code :circular-library-reference
+              :hint "linking this library would create a circular dependency"))
 
   (link-file-to-library conn params)
   (bfc/get-libraries cfg [library-id]))
@@ -1318,8 +1418,18 @@
     WHERE file_id = ANY(?::uuid[])")
 
 (def ^:private sql:restore-file-changes
-  "UPDATE file_change SET deleted_at = null
-    WHERE file_id = ANY(?::uuid[])")
+  ;; Only durable history comes back: a snapshot, the rows that carry `label`.
+  ;; Everything else is deliberately left alone. Revisions are born already
+  ;; scheduled for deletion one hour later, and the collector only looks at
+  ;; rows that carry a date, so unmarking one here would keep it in the table
+  ;; for ever. Rows that still carry a legacy payload without a label are
+  ;; garbage that no read path reaches; 0157-migrate-legacy-file-data deletes
+  ;; them, so they must keep their date and go with the collector.
+  ;; Every write moves `updated_at`: the delta passes copy the rows whose
+  ;; `updated_at` changed, so a restore that left it stale could be missed.
+  "UPDATE file_change SET deleted_at = null, updated_at = now()
+    WHERE file_id = ANY(?::uuid[])
+      AND label IS NOT NULL")
 
 (def ^:private sql:restore-file-data
   "UPDATE file_data SET deleted_at = null
@@ -1333,6 +1443,48 @@
   "UPDATE file_tagged_object_thumbnail SET deleted_at = null
     WHERE file_id = ANY(?::uuid[])")
 
+(def ^:private sql:restore-storage-objects
+  ;; Collect referenced storage ids first (UUID set), then join by PK.
+  ;; `file_data` points at its object with the `storage_object_id` column, so
+  ;; the reference is already a uuid and no JSON cast is needed.
+  "WITH ids AS (SELECT unnest(?::uuid[]) AS file_id),
+        refs AS (
+          SELECT fmo.media_id AS id
+            FROM file_media_object AS fmo
+            JOIN ids ON (ids.file_id = fmo.file_id)
+           WHERE fmo.deleted_at IS NULL
+             AND fmo.media_id IS NOT NULL
+          UNION
+          SELECT fmo.thumbnail_id
+            FROM file_media_object AS fmo
+            JOIN ids ON (ids.file_id = fmo.file_id)
+           WHERE fmo.deleted_at IS NULL
+             AND fmo.thumbnail_id IS NOT NULL
+          UNION
+          SELECT ft.media_id
+            FROM file_thumbnail AS ft
+            JOIN ids ON (ids.file_id = ft.file_id)
+           WHERE ft.deleted_at IS NULL
+             AND ft.media_id IS NOT NULL
+          UNION
+          SELECT fot.media_id
+            FROM file_tagged_object_thumbnail AS fot
+            JOIN ids ON (ids.file_id = fot.file_id)
+           WHERE fot.deleted_at IS NULL
+             AND fot.media_id IS NOT NULL
+          UNION
+          SELECT fd.storage_object_id
+            FROM file_data AS fd
+            JOIN ids ON (ids.file_id = fd.file_id)
+           WHERE fd.deleted_at IS NULL
+             AND fd.storage_object_id IS NOT NULL
+        )
+   UPDATE storage_object AS so
+      SET deleted_at = null
+     FROM refs
+    WHERE so.id = refs.id
+      AND so.deleted_at IS NOT NULL")
+
 (defn- restore-files
   [conn file-ids]
   (let [file-ids (db/create-array conn "uuid" file-ids)]
@@ -1341,7 +1493,13 @@
     (db/exec-one! conn [sql:restore-file-changes file-ids])
     (db/exec-one! conn [sql:restore-file-data file-ids])
     (db/exec-one! conn [sql:restore-file-thumbnails file-ids])
-    (db/exec-one! conn [sql:restore-file-tagged-object-thumbnails file-ids])))
+    (db/exec-one! conn [sql:restore-file-tagged-object-thumbnails file-ids])
+
+    ;; NOTE: the storage objects referenced by the rows we just brought back
+    ;; must stop being marked for deletion. The storage GC cannot delete an
+    ;; object that a live row references (those foreign keys are `NO ACTION`),
+    ;; so a marked object that comes back to life is skipped forever otherwise.
+    (db/exec-one! conn [sql:restore-storage-objects file-ids])))
 
 (def ^:private sql:restore-projects
   "UPDATE project SET deleted_at = null WHERE id = ANY(?::uuid[])")

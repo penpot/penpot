@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# Install the opencode CLI as a global pnpm package.
+#
+# opencode is not part of the devenv image: run this when you want the
+# `opencode` and `opencode2` commands. The install lives in $PNPM_HOME, which
+# inside the devenv is the penpot home (the user-data volume), so it survives
+# a container re-creation.
+#
+# Usage: scripts/setup-opencode
+
+set -euo pipefail
+
+if ! command -v pnpm >/dev/null 2>&1; then
+  echo "setup-opencode: pnpm is not on PATH." >&2
+  exit 1
+fi
+
+# pnpm installs global packages under $PNPM_HOME and refuses to run when its
+# bin dir is not on PATH: without this the install aborts with
+# ERR_PNPM_GLOBAL_BIN_DIR_NOT_IN_PATH. Non-interactive shells do not read
+# ~/.bashrc, so both are set here. The default is the directory pnpm itself
+# uses on Linux.
+export PNPM_HOME="${PNPM_HOME:-$HOME/.local/share/pnpm}"
+path_hint=0
+case ":$PATH:" in
+  *":$PNPM_HOME/bin:"*) ;;
+  *) path_hint=1; export PATH="$PNPM_HOME/bin:$PATH" ;;
+esac
+
+pnpm add -g --allow-build=@opencode/cli @opencode/cli
+opencode --version
+
+if [[ $path_hint -eq 1 ]]; then
+  echo "note: $PNPM_HOME/bin is not on your PATH; add it to run 'opencode' directly." >&2
+fi

@@ -17,6 +17,8 @@ export interface PenpotConnection extends PluginLivenessState {
     readonly userToken: string | null;
     readonly session: PenpotSession;
     readonly pingInterval: NodeJS.Timeout;
+    /** the interval sending heartbeat requests to the plugin. */
+    readonly heartbeatRequestInterval: NodeJS.Timeout;
     /** whether initialization and dispatch subscriptions have completed. */
     ready: boolean;
 }

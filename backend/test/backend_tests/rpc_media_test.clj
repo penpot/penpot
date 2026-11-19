@@ -10,10 +10,12 @@
    [app.db :as db]
    [app.http.client :as http]
    [app.media :as media]
+   [app.media.svg :as svg]
    [app.rpc :as-alias rpc]
    [app.storage :as sto]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
+   [cuerdas.core :as str]
    [datoteka.fs :as fs]
    [datoteka.io :as io]
    [mockery.core :refer [with-mocks]])
@@ -22,6 +24,14 @@
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
+
+(def ^:private evil-svg
+  "An SVG that smuggles an event handler inside an attribute value."
+  "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"64\" height=\"64\" id=\"x' onload='alert(1)\"><rect width=\"10\" height=\"10\"/></svg>")
+
+(def ^:private evil-text-svg
+  "An SVG that smuggles a script element inside a text node."
+  "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"64\" height=\"64\"><text>&lt;/text&gt;&lt;script&gt;alert(1)&lt;/script&gt;</text></svg>")
 
 (t/deftest media-object-from-url
   (let [prof   (th/create-profile* 1)
@@ -73,7 +83,7 @@
                 :is-local true
                 :name "testfile"
                 :content mfile}
-        out    (th/command! params)]
+        out    (th/multipart-command! params)]
 
     ;; (th/print-result! out)
     (t/is (nil? (:error out)))
@@ -93,6 +103,123 @@
         (t/is (= 312043 (:size mobj1)))
         (t/is (= 3890   (:size mobj2)))))))
 
+
+(t/deftest upload-file-media-object-sanitizes-svg
+  (let [prof (th/create-profile* 1)
+        file (th/create-file* 1 {:profile-id (:id prof)
+                                 :project-id (:default-project-id prof)
+                                 :is-shared false})]
+    (th/with-temp-file [path evil-svg]
+      (let [params {::th/type :upload-file-media-object
+                    ::rpc/profile-id (:id prof)
+                    :file-id (:id file)
+                    :is-local true
+                    :name "evil.svg"
+                    :content {:filename "evil.svg"
+                              :path path
+                              :mtype "image/svg+xml"
+                              :size (fs/size path)}}
+            out    (th/multipart-command! params)]
+
+        (t/is (nil? (:error out)))
+
+        (let [{:keys [media-id]} (:result out)
+              storage (:app.storage/storage th/*system*)
+              sobject (sto/get-object storage media-id)
+              content (slurp (sto/get-object-data storage sobject))
+              parsed  (svg/parse-svg content)]
+          (t/is (not (contains? (:attrs parsed) :onload)))
+          (t/is (= "x' onload='alert(1)" (get (:attrs parsed) :id)))
+          (t/is (str/includes? content "&apos;")))))))
+
+(t/deftest upload-file-media-object-sanitizes-svg-text
+  (let [prof (th/create-profile* 1)
+        file (th/create-file* 1 {:profile-id (:id prof)
+                                 :project-id (:default-project-id prof)
+                                 :is-shared false})]
+    (th/with-temp-file [path evil-text-svg]
+      (let [params {::th/type :upload-file-media-object
+                    ::rpc/profile-id (:id prof)
+                    :file-id (:id file)
+                    :is-local true
+                    :name "evil.svg"
+                    :content {:filename "evil.svg"
+                              :path path
+                              :mtype "image/svg+xml"
+                              :size (fs/size path)}}
+            out    (th/multipart-command! params)]
+
+        (t/is (nil? (:error out)))
+
+        (let [{:keys [media-id]} (:result out)
+              storage (:app.storage/storage th/*system*)
+              sobject (sto/get-object storage media-id)
+              content (slurp (sto/get-object-data storage sobject))
+              parsed  (svg/parse-svg content)]
+          (t/is (not (str/includes? content "<script")))
+          (t/is (= "</text><script>alert(1)</script>"
+                   (get-in parsed [:content 0 :content 0]))))))))
+
+(t/deftest create-file-media-object-from-url-sanitizes-svg
+  (let [prof (th/create-profile* 1)
+        file (th/create-file* 1 {:profile-id (:id prof)
+                                 :project-id (:default-project-id prof)
+                                 :is-shared false})
+        body (.getBytes ^String evil-svg "UTF-8")]
+    (with-mocks [http-mock {:target 'app.http.client/req-with-redirects
+                            :return {:status 200
+                                     :headers {"content-type" "image/svg+xml"
+                                               "content-length" (str (alength ^bytes body))}
+                                     :body (java.io.ByteArrayInputStream. ^bytes body)}}]
+      (let [params {::th/type :create-file-media-object-from-url
+                    ::rpc/profile-id (:id prof)
+                    :file-id (:id file)
+                    :is-local true
+                    :url "https://example.com/evil.svg"}
+            out   (th/command! params)]
+        (t/is (nil? (:error out)))
+
+        (let [{:keys [media-id]} (:result out)
+              storage (:app.storage/storage th/*system*)
+              sobject (sto/get-object storage media-id)
+              content (slurp (sto/get-object-data storage sobject))
+              parsed  (svg/parse-svg content)]
+          (t/is (not (contains? (:attrs parsed) :onload)))
+          (t/is (not (str/includes? content "<script>")))
+          (t/is (= "x' onload='alert(1)" (get (:attrs parsed) :id)))
+          (t/is (str/includes? content "&apos;")))))))
+
+(def ^:private xhtml-child-svg
+  "An SVG whose root is in the SVG namespace but whose child rebinds the
+   default namespace to XHTML and embeds live HTML."
+  "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"64\" height=\"64\"><g xmlns=\"http://www.w3.org/1999/xhtml\"><iframe srcdoc=\"&lt;script&gt;alert(1)&lt;/script&gt;\"/><meta http-equiv=\"refresh\" content=\"0;url=javascript:alert(1)\"/></g><rect width=\"10\" height=\"10\"/></svg>")
+
+(t/deftest create-file-media-object-from-url-sanitizes-xhtml-child
+  (let [prof (th/create-profile* 1)
+        file (th/create-file* 1 {:profile-id (:id prof)
+                                 :project-id (:default-project-id prof)
+                                 :is-shared false})
+        body (.getBytes ^String xhtml-child-svg "UTF-8")]
+    (with-mocks [http-mock {:target 'app.http.client/req-with-redirects
+                            :return {:status 200
+                                     :headers {"content-type" "image/svg+xml"
+                                               "content-length" (str (alength ^bytes body))}
+                                     :body (java.io.ByteArrayInputStream. ^bytes body)}}]
+      (let [params {::th/type :create-file-media-object-from-url
+                    ::rpc/profile-id (:id prof)
+                    :file-id (:id file)
+                    :is-local true
+                    :url "https://example.com/evil.svg"}
+            out   (th/command! params)]
+        (t/is (nil? (:error out)))
+
+        (let [{:keys [media-id]} (:result out)
+              storage (:app.storage/storage th/*system*)
+              sobject (sto/get-object storage media-id)
+              content (slurp (sto/get-object-data storage sobject))]
+          (t/is (not (str/includes? content "iframe")))
+          (t/is (not (str/includes? content "srcdoc")))
+          (t/is (not (str/includes? content "http-equiv"))))))))
 
 (t/deftest media-object-from-url-command
   (let [prof   (th/create-profile* 1)
@@ -144,7 +271,7 @@
                 :is-local true
                 :name "testfile"
                 :content mfile}
-        out    (th/command! params)]
+        out    (th/multipart-command! params)]
 
     ;; (th/print-result! out)
     (t/is (nil? (:error out)))
@@ -189,7 +316,7 @@
                 :name "testfile"
                 :content mfile}
 
-        out    (th/command! params)]
+        out    (th/multipart-command! params)]
 
     (let [error      (:error out)
           error-data (ex-data error)]
@@ -391,11 +518,11 @@
     ;; --- 1. Upload chunks ---
     (doseq [[idx chunk-data] (map-indexed vector chunks)]
       (let [mfile (make-chunk-mfile chunk-data mtype)
-            out   (th/command! {::th/type        :upload-chunk
-                                ::rpc/profile-id (:id prof)
-                                :session-id      session-id
-                                :index           idx
-                                :content         mfile})]
+            out   (th/multipart-command! {::th/type        :upload-chunk
+                                          ::rpc/profile-id (:id prof)
+                                          :session-id      session-id
+                                          :index           idx
+                                          :content         mfile})]
         (t/is (nil? (:error out)))
         (t/is (= session-id (:session-id (:result out))))
         (t/is (= idx (:index (:result out))))))
@@ -438,11 +565,11 @@
         mfile       (make-chunk-mfile (first chunks) mtype)
         session-id  (create-session! prof 1)]
 
-    (th/command! {::th/type        :upload-chunk
-                  ::rpc/profile-id (:id prof)
-                  :session-id      session-id
-                  :index           0
-                  :content         mfile})
+    (th/multipart-command! {::th/type        :upload-chunk
+                            ::rpc/profile-id (:id prof)
+                            :session-id      session-id
+                            :index           0
+                            :content         mfile})
 
     ;; First assemble succeeds; session row is marked as consumed afterwards
     (let [out1 (th/command! {::th/type        :assemble-file-media-object
@@ -482,11 +609,11 @@
                      :size     312043}
 
         ;; prof2 tries to upload a chunk into prof1's session
-        out (th/command! {::th/type        :upload-chunk
-                          ::rpc/profile-id (:id prof2)
-                          :session-id      session-id
-                          :index           0
-                          :content         mfile})]
+        out (th/multipart-command! {::th/type        :upload-chunk
+                                    ::rpc/profile-id (:id prof2)
+                                    :session-id      session-id
+                                    :index           0
+                                    :content         mfile})]
 
     (t/is (some? (:error out)))
     (t/is (= :not-found (-> out :error ex-data :type)))))
@@ -505,11 +632,11 @@
                      :size     312043}]
 
     ;; prof1 uploads a chunk into their own session
-    (let [out (th/command! {::th/type        :upload-chunk
-                            ::rpc/profile-id (:id prof1)
-                            :session-id      session-id
-                            :index           0
-                            :content         mfile})]
+    (let [out (th/multipart-command! {::th/type        :upload-chunk
+                                      ::rpc/profile-id (:id prof1)
+                                      :session-id      session-id
+                                      :index           0
+                                      :content         mfile})]
       (t/is (nil? (:error out))))
 
     ;; prof2 tries to assemble prof1's session via create-font-variant
@@ -540,11 +667,11 @@
                      :mtype    "image/jpeg"
                      :size     312043}]
 
-    (th/command! {::th/type        :upload-chunk
-                  ::rpc/profile-id (:id prof)
-                  :session-id      session-id
-                  :index           0
-                  :content         mfile})
+    (th/multipart-command! {::th/type        :upload-chunk
+                            ::rpc/profile-id (:id prof)
+                            :session-id      session-id
+                            :index           0
+                            :content         mfile})
 
     ;; Assemble with a wrong mtype should fail validation
     (let [out (th/command! {::th/type        :assemble-file-media-object
@@ -573,11 +700,11 @@
                      :size     312043}]
 
     ;; Upload only 1 chunk
-    (th/command! {::th/type        :upload-chunk
-                  ::rpc/profile-id (:id prof)
-                  :session-id      session-id
-                  :index           0
-                  :content         mfile})
+    (th/multipart-command! {::th/type        :upload-chunk
+                            ::rpc/profile-id (:id prof)
+                            :session-id      session-id
+                            :index           0
+                            :content         mfile})
 
     ;; Assemble: session says 3 expected, only 1 stored → :missing-chunks
     (let [out (th/command! {::th/type        :assemble-file-media-object
@@ -606,18 +733,18 @@
         mtype       "image/jpeg"
         size        (alength (first chunks))]
 
-    (let [out (th/command! {::th/type        :upload-chunk
-                            ::rpc/profile-id (:id prof)
-                            :session-id      session-id
-                            :index           0
-                            :content         (make-chunk-mfile (first chunks) mtype)})]
+    (let [out (th/multipart-command! {::th/type        :upload-chunk
+                                      ::rpc/profile-id (:id prof)
+                                      :session-id      session-id
+                                      :index           0
+                                      :content         (make-chunk-mfile (first chunks) mtype)})]
       (t/is (nil? (:error out))))
 
-    (let [out (th/command! {::th/type        :upload-chunk
-                            ::rpc/profile-id (:id prof)
-                            :session-id      session-id
-                            :index           0
-                            :content         (make-chunk-mfile (first chunks) mtype)})]
+    (let [out (th/multipart-command! {::th/type        :upload-chunk
+                                      ::rpc/profile-id (:id prof)
+                                      :session-id      session-id
+                                      :index           0
+                                      :content         (make-chunk-mfile (first chunks) mtype)})]
       (t/is (some? (:error out)))
       (t/is (= :validation (-> out :error ex-data :type)))
       (t/is (= :chunk-already-exists (-> out :error ex-data :code))))
@@ -650,27 +777,27 @@
 
     (t/is (= 3 (count chunks)))
 
-    (let [out (th/command! {::th/type        :upload-chunk
-                            ::rpc/profile-id (:id prof)
-                            :session-id      session-id
-                            :index           0
-                            :content         (make-chunk-mfile (nth chunks 0) mtype)})]
+    (let [out (th/multipart-command! {::th/type        :upload-chunk
+                                      ::rpc/profile-id (:id prof)
+                                      :session-id      session-id
+                                      :index           0
+                                      :content         (make-chunk-mfile (nth chunks 0) mtype)})]
       (t/is (nil? (:error out))))
 
-    (let [out (th/command! {::th/type        :upload-chunk
-                            ::rpc/profile-id (:id prof)
-                            :session-id      session-id
-                            :index           0
-                            :content         (make-chunk-mfile (nth chunks 0) mtype)})]
+    (let [out (th/multipart-command! {::th/type        :upload-chunk
+                                      ::rpc/profile-id (:id prof)
+                                      :session-id      session-id
+                                      :index           0
+                                      :content         (make-chunk-mfile (nth chunks 0) mtype)})]
       (t/is (some? (:error out)))
       (t/is (= :validation (-> out :error ex-data :type)))
       (t/is (= :chunk-already-exists (-> out :error ex-data :code))))
 
-    (let [out (th/command! {::th/type        :upload-chunk
-                            ::rpc/profile-id (:id prof)
-                            :session-id      session-id
-                            :index           1
-                            :content         (make-chunk-mfile (nth chunks 1) mtype)})]
+    (let [out (th/multipart-command! {::th/type        :upload-chunk
+                                      ::rpc/profile-id (:id prof)
+                                      :session-id      session-id
+                                      :index           1
+                                      :content         (make-chunk-mfile (nth chunks 1) mtype)})]
       (t/is (nil? (:error out))))
 
     ;; The mapping table holds exactly the two distinct indices: the
@@ -735,11 +862,11 @@
                        :mtype    "image/jpeg"
                        :size     312043}
           session-id  (create-session! prof 1)
-          upload-out  (th/command! {::th/type        :upload-chunk
-                                    ::rpc/profile-id (:id prof)
-                                    :session-id      session-id
-                                    :index           0
-                                    :content         mfile})]
+          upload-out  (th/multipart-command! {::th/type        :upload-chunk
+                                              ::rpc/profile-id (:id prof)
+                                              :session-id      session-id
+                                              :index           0
+                                              :content         mfile})]
       (t/is (nil? (:error upload-out)))
 
       (let [assemble-out (th/command! {::th/type        :assemble-file-media-object
@@ -788,21 +915,21 @@
                       :size     312043}]
 
     ;; index == total-chunks (out of range)
-    (let [out (th/command! {::th/type        :upload-chunk
-                            ::rpc/profile-id (:id prof)
-                            :session-id      session-id
-                            :index           2
-                            :content         mfile})]
+    (let [out (th/multipart-command! {::th/type        :upload-chunk
+                                      ::rpc/profile-id (:id prof)
+                                      :session-id      session-id
+                                      :index           2
+                                      :content         mfile})]
       (t/is (some? (:error out)))
       (t/is (= :validation (-> out :error ex-data :type)))
       (t/is (= :invalid-chunk-index (-> out :error ex-data :code))))
 
     ;; negative index
-    (let [out (th/command! {::th/type        :upload-chunk
-                            ::rpc/profile-id (:id prof)
-                            :session-id      session-id
-                            :index           -1
-                            :content         mfile})]
+    (let [out (th/multipart-command! {::th/type        :upload-chunk
+                                      ::rpc/profile-id (:id prof)
+                                      :session-id      session-id
+                                      :index           -1
+                                      :content         mfile})]
       (t/is (some? (:error out)))
       (t/is (= :validation (-> out :error ex-data :type)))
       (t/is (= :invalid-chunk-index (-> out :error ex-data :code))))))
@@ -821,11 +948,11 @@
           mtype       "image/jpeg"]
 
       ;; 312043 bytes exceeds the mocked 1024-byte cap: rejected
-      (let [out (th/command! {::th/type        :upload-chunk
-                              ::rpc/profile-id (:id prof)
-                              :session-id      session-id
-                              :index           0
-                              :content         (make-chunk-mfile (first chunks) mtype)})]
+      (let [out (th/multipart-command! {::th/type        :upload-chunk
+                                        ::rpc/profile-id (:id prof)
+                                        :session-id      session-id
+                                        :index           0
+                                        :content         (make-chunk-mfile (first chunks) mtype)})]
         (t/is (some? (:error out)))
         (t/is (= :validation (-> out :error ex-data :type)))
         (t/is (= :chunk-too-large (-> out :error ex-data :code))))
@@ -835,11 +962,11 @@
                                            session-id]))))
 
       ;; A chunk exactly at the cap still uploads fine
-      (let [out (th/command! {::th/type        :upload-chunk
-                              ::rpc/profile-id (:id prof)
-                              :session-id      session-id
-                              :index           0
-                              :content         (make-chunk-mfile (byte-array 1024 (byte 1)) mtype)})]
+      (let [out (th/multipart-command! {::th/type        :upload-chunk
+                                        ::rpc/profile-id (:id prof)
+                                        :session-id      session-id
+                                        :index           0
+                                        :content         (make-chunk-mfile (byte-array 1024 (byte 1)) mtype)})]
         (t/is (nil? (:error out)))))))
 
 (t/deftest chunked-upload-sessions-per-profile-quota
@@ -875,11 +1002,11 @@
                      :path     source-path
                      :mtype    "image/jpeg"
                      :size     312043}
-        out         (th/command! {::th/type        :upload-chunk
-                                  ::rpc/profile-id (:id prof)
-                                  :session-id      session-id
-                                  :index           0
-                                  :content         mfile})]
+        out         (th/multipart-command! {::th/type        :upload-chunk
+                                            ::rpc/profile-id (:id prof)
+                                            :session-id      session-id
+                                            :index           0
+                                            :content         mfile})]
     (t/is (nil? (:error out)))
 
     (let [row (th/db-exec-one! ["select session_id, object_id, chunk_index from upload_session_chunk where session_id = ?"
@@ -904,19 +1031,19 @@
                      :path     source-path
                      :mtype    "image/jpeg"
                      :size     312043}
-        out1        (th/command! {::th/type        :upload-chunk
-                                  ::rpc/profile-id (:id prof)
-                                  :session-id      session-id
-                                  :index           0
-                                  :content         mfile})]
+        out1        (th/multipart-command! {::th/type        :upload-chunk
+                                            ::rpc/profile-id (:id prof)
+                                            :session-id      session-id
+                                            :index           0
+                                            :content         mfile})]
     (t/is (nil? (:error out1)))
 
     (let [before (:count (th/db-exec-one! ["select count(*) from storage_object"]))
-          out2   (th/command! {::th/type        :upload-chunk
-                               ::rpc/profile-id (:id prof)
-                               :session-id      session-id
-                               :index           0
-                               :content         mfile})]
+          out2   (th/multipart-command! {::th/type        :upload-chunk
+                                         ::rpc/profile-id (:id prof)
+                                         :session-id      session-id
+                                         :index           0
+                                         :content         mfile})]
       (t/is (some? (:error out2)))
       (t/is (= :validation (-> out2 :error ex-data :type)))
       (t/is (= :chunk-already-exists (-> out2 :error ex-data :code)))
@@ -937,11 +1064,11 @@
     (th/db-exec! ["insert into upload_session_chunk (session_id, chunk_index, object_id) values (?, ?, null)"
                   session-id 0])
     (let [before (:count (th/db-exec-one! ["select count(*) from storage_object"]))
-          out    (th/command! {::th/type        :upload-chunk
-                               ::rpc/profile-id (:id prof)
-                               :session-id      session-id
-                               :index           0
-                               :content         mfile})]
+          out    (th/multipart-command! {::th/type        :upload-chunk
+                                         ::rpc/profile-id (:id prof)
+                                         :session-id      session-id
+                                         :index           0
+                                         :content         mfile})]
       (t/is (some? (:error out)))
       (t/is (= :validation (-> out :error ex-data :type)))
       (t/is (= :chunk-already-exists (-> out :error ex-data :code)))
@@ -965,21 +1092,21 @@
                                  (if (compare-and-set! failed? false true)
                                    (throw (ex-info "link boom" {}))
                                    (orig pool object-id session-id index)))}]
-      (let [out (th/command! {::th/type        :upload-chunk
-                              ::rpc/profile-id (:id prof)
-                              :session-id      session-id
-                              :index           0
-                              :content         mfile})]
+      (let [out (th/multipart-command! {::th/type        :upload-chunk
+                                        ::rpc/profile-id (:id prof)
+                                        :session-id      session-id
+                                        :index           0
+                                        :content         mfile})]
         (t/is (some? (:error out))))
       ;; the failed link left no reservation behind
       (t/is (= 0 (:count (th/db-exec-one! ["select count(*) from upload_session_chunk where session_id = ?"
                                            session-id]))))
       ;; retrying the same index in the same session succeeds
-      (let [out (th/command! {::th/type        :upload-chunk
-                              ::rpc/profile-id (:id prof)
-                              :session-id      session-id
-                              :index           0
-                              :content         mfile})]
+      (let [out (th/multipart-command! {::th/type        :upload-chunk
+                                        ::rpc/profile-id (:id prof)
+                                        :session-id      session-id
+                                        :index           0
+                                        :content         mfile})]
         (t/is (nil? (:error out)))
         (t/is (= 1 (:count (th/db-exec-one! ["select count(*) from upload_session_chunk where session_id = ?"
                                              session-id]))))))))
@@ -999,11 +1126,11 @@
                      :path     source-path
                      :mtype    "image/jpeg"
                      :size     312043}
-        out1        (th/command! {::th/type        :upload-chunk
-                                  ::rpc/profile-id (:id prof)
-                                  :session-id      session-id
-                                  :index           0
-                                  :content         mfile})]
+        out1        (th/multipart-command! {::th/type        :upload-chunk
+                                            ::rpc/profile-id (:id prof)
+                                            :session-id      session-id
+                                            :index           0
+                                            :content         mfile})]
     (t/is (nil? (:error out1)))
 
     (let [assemble-out (th/command! {::th/type        :assemble-file-media-object
@@ -1024,11 +1151,11 @@
 
     ;; uploading to the consumed session fails without creating an object
     (let [before (:count (th/db-exec-one! ["select count(*) from storage_object"]))
-          out    (th/command! {::th/type        :upload-chunk
-                               ::rpc/profile-id (:id prof)
-                               :session-id      session-id
-                               :index           0
-                               :content         mfile})]
+          out    (th/multipart-command! {::th/type        :upload-chunk
+                                         ::rpc/profile-id (:id prof)
+                                         :session-id      session-id
+                                         :index           0
+                                         :content         mfile})]
       (t/is (some? (:error out)))
       (t/is (= :not-found (-> out :error ex-data :type)))
       (t/is (= :object-not-found (-> out :error ex-data :code)))
@@ -1054,11 +1181,11 @@
                      :path     source-path
                      :mtype    "image/jpeg"
                      :size     312043}
-        out         (th/command! {::th/type        :upload-chunk
-                                  ::rpc/profile-id (:id prof)
-                                  :session-id      session-id
-                                  :index           0
-                                  :content         mfile})]
+        out         (th/multipart-command! {::th/type        :upload-chunk
+                                            ::rpc/profile-id (:id prof)
+                                            :session-id      session-id
+                                            :index           0
+                                            :content         mfile})]
     (t/is (nil? (:error out)))
 
     (let [object-id (:object-id (th/db-exec-one! ["select object_id from upload_session_chunk where session_id = ?"
@@ -1182,13 +1309,13 @@
                :mtype "image/jpeg"
                :size 312043}
         sent-id (uuid/next)
-        out   (th/command! {::th/type :upload-file-media-object
-                            ::rpc/profile-id (:id prof)
-                            :file-id (:id file)
-                            :is-local true
-                            :name "testfile"
-                            :content mfile
-                            :id sent-id})]
+        out   (th/multipart-command! {::th/type :upload-file-media-object
+                                      ::rpc/profile-id (:id prof)
+                                      :file-id (:id file)
+                                      :is-local true
+                                      :name "testfile"
+                                      :content mfile
+                                      :id sent-id})]
     (t/is (th/ex-info? (:error out)))
     (t/is (th/ex-of-type? (:error out) :validation))
     (t/is (th/ex-of-code? (:error out) :params-validation))))
@@ -1225,4 +1352,61 @@
                               :id sent-id})]
     (t/is (th/ex-info? (:error out)))
     (t/is (th/ex-of-type? (:error out) :validation))
+    (t/is (th/ex-of-code? (:error out) :params-validation))))
+
+(t/deftest media-audit-event-carries-team-id
+  ;; The media event carries the file id, so the resolver could find the team;
+  ;; the command already resolved the team for the quota check and sets it.
+  (let [prof    (th/create-profile* 1)
+        team    (th/create-team* 1 {:profile-id (:id prof)})
+        project (th/create-project* 1 {:profile-id (:id prof)
+                                       :team-id (:id team)})
+        file    (th/create-file* 1 {:profile-id (:id prof)
+                                    :project-id (:id project)
+                                    :is-shared false})
+        mfile   {:filename "sample.jpg"
+                 :path (th/tempfile "backend_tests/test_files/sample.jpg")
+                 :mtype "image/jpeg"
+                 :size 312043}
+        out     (th/multipart-command! {::th/type :upload-file-media-object
+                                        ::rpc/profile-id (:id prof)
+                                        :file-id (:id file)
+                                        :is-local true
+                                        :name "testfile"
+                                        :content mfile})]
+    (t/is (th/success? out))
+    (t/is (= (:id team)
+             (get-in (meta (:result out)) [:app.loggers.audit/replace-props :team-id])))))
+
+(t/deftest upload-file-media-object-rejects-forged-content
+  ;; A transit body like {"~:content": {"~:path": ["~#path", "/etc/passwd"]}}
+  ;; decodes to this exact map. Without a multipart request it must fail at
+  ;; params validation, before any file is read.
+  (let [prof (th/create-profile* 1)
+        file (th/create-file* 1 {:profile-id (:id prof)
+                                 :project-id (:default-project-id prof)
+                                 :is-shared false})
+        out  (th/command! {::th/type :upload-file-media-object
+                           ::rpc/profile-id (:id prof)
+                           :file-id (:id file)
+                           :is-local true
+                           :name "testfile"
+                           :content {:filename "evil.jpg"
+                                     :size 123
+                                     :path (fs/path "/etc/passwd")
+                                     :mtype "image/jpeg"}})]
+    (t/is (th/ex-of-code? (:error out) :params-validation))))
+
+(t/deftest upload-chunk-rejects-forged-content
+  ;; Same transit-forgery vector through the chunk primitive: without a
+  ;; multipart request the wrapper must reject it at params validation.
+  (let [prof (th/create-profile* 1)
+        out  (th/command! {::th/type :upload-chunk
+                           ::rpc/profile-id (:id prof)
+                           :session-id (uuid/random)
+                           :index 0
+                           :content {:filename "chunk"
+                                     :size 123
+                                     :path (fs/path "/etc/passwd")
+                                     :mtype "image/jpeg"}})]
     (t/is (th/ex-of-code? (:error out) :params-validation))))

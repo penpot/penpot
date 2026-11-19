@@ -4,65 +4,52 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
-@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/mixins.scss" as *;
+@use "ds/typography.scss" as *;
 
 .viewer-thumbnails {
-  background-color: var(--viewer-background-color);
+  background-color: var(--color-background-secondary);
   grid-row: 1 / span 1;
   grid-column: 1 / span 1;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  z-index: deprecated.$z-index-10;
+
+  // TODO: no DS z-index token for 10; it keeps the panel above the
+  // viewer content (z-index 2).
+  z-index: 10;
 }
 
 .expanded {
   grid-row: 1 / span 2;
-
-  .expand-btn svg {
-    transform: rotate(-90deg);
-  }
 }
 
 .thumbnails-summary {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: deprecated.$s-32;
-  margin: deprecated.$s-24 deprecated.$s-24 0 deprecated.$s-24;
+  block-size: $sz-32;
+  margin: var(--sp-xxl) var(--sp-xxl) 0 var(--sp-xxl);
 }
 
 .counter {
-  @include deprecated.body-small-typography;
+  @include use-typography("body-small");
 
-  color: var(--viewer-thumbnails-control-foreground-color);
+  color: var(--color-foreground-secondary);
 }
 
 .actions {
-  @include deprecated.flex-row;
-
-  width: deprecated.$s-60;
-}
-
-.expand-btn,
-.close-btn {
-  @extend %button-tertiary;
-
-  height: deprecated.$s-32;
-  width: deprecated.$s-28;
-
-  svg {
-    @extend %button-icon;
-  }
-}
-
-.expand-btn svg {
-  transform: rotate(90deg);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
 }
 
 .thumbnails-content {
   display: grid;
-  grid-template-columns: deprecated.$s-40 auto deprecated.$s-40;
+  grid-template-columns: $sz-40 auto $sz-40;
   grid-template-rows: auto;
 }
 
@@ -74,36 +61,28 @@
   overflow: hidden;
 }
 
+// Tooltip wrappers of the scroll buttons: they take the grid cell.
 .right-scroll-handler,
 .left-scroll-handler {
-  @extend %button-tertiary;
-  @include deprecated.flex-center;
-
   grid-column: 3 / span 1;
   grid-row: 1 / span 1;
-  width: deprecated.$s-32;
-  height: deprecated.$s-60;
   margin: auto 0;
-  z-index: deprecated.$z-index-10;
-  opacity: 0;
-
-  &:hover {
-    opacity: 1;
-  }
-
-  svg {
-    @extend %button-icon;
-
-    stroke: var(--icon-foreground);
-  }
+  z-index: 10;
 }
 
 .left-scroll-handler {
   grid-column: 1 / span 1;
-  grid-row: 1 / span 1;
+}
 
-  svg {
-    transform: rotate(180deg);
+// The scroll buttons are as tall as a thumbnail row and only show on hover.
+.thumbnails-content .scroll-handler {
+  --button-height: #{px2rem(60)};
+
+  opacity: 0;
+
+  &:hover,
+  &:focus-visible {
+    opacity: 1;
   }
 }
 
@@ -120,45 +99,49 @@
   position: relative;
 }
 
+// A list item, not a DS button.
 .thumbnail-item {
-  @include deprecated.button-style;
-
   display: flex;
   flex-direction: column;
-  padding: deprecated.$s-16;
+  padding: var(--sp-l);
+  border: none;
+  background: none;
+  cursor: pointer;
 }
 
 .thumbnail-preview {
-  @include deprecated.flex-center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  inline-size: px2rem(132);
+  min-block-size: px2rem(132);
+  block-size: px2rem(132);
+  padding: var(--sp-xs);
 
-  width: deprecated.$s-132;
-  min-height: deprecated.$s-132;
-  height: deprecated.$s-132;
-  padding: deprecated.$s-4;
-
+  // The board preview markup has no class of its own.
   svg {
-    width: 100%;
-    height: 100%;
+    inline-size: 100%;
+    block-size: 100%;
   }
 
   &.selected {
-    background-color: var(--viewer-thumbnail-background-color-selected);
-    border-radius: deprecated.$br-8;
+    background-color: var(--color-accent-primary-muted);
+    border-radius: $br-8;
   }
 
   &:hover {
-    border: deprecated.$s-1 solid var(--viewer-thumbnail-border-color);
-    border-radius: deprecated.$br-8;
+    border: $b-1 solid var(--color-accent-primary);
+    border-radius: $br-8;
   }
 }
 
 .thumbnail-info {
-  @include deprecated.body-small-typography;
-  @include deprecated.text-ellipsis;
+  @include use-typography("body-small");
+  @include text-ellipsis;
 
   text-align: center;
-  color: var(--viewer-thumbnails-control-foreground-color);
-  padding: deprecated.$s-8 0;
-  width: 100%;
-  max-width: deprecated.$s-132;
+  color: var(--color-foreground-secondary);
+  padding: var(--sp-s) 0;
+  inline-size: 100%;
+  max-inline-size: px2rem(132);
 }

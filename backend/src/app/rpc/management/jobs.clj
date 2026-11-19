@@ -10,11 +10,12 @@
   the ledger. The methods are family-agnostic (they operate on any row
   of the `job` table) and use the plain JSON schemas of `app.jobs`.
 
-  Auth: every method declares ::rpc/auth false because these endpoints
-  do not require a profile. Actual authentication is enforced by the
-  management route resolver (resolve-management-methods in app.rpc),
-  which mandates a valid shared-key before dispatching to these methods.
-  If the route resolver changes, these methods must be updated accordingly."
+  Auth: these endpoints take no profile, so every method declares
+  ::rpc/auth false. The route applies mw/shared-key-auth
+  (app.http.middleware) to authenticate the `<id> <secret>` header, and
+  wrap-management applies wrap-shared-key-authorization (app.rpc) to
+  check the key id against ::rpc/allowed-shared-keys. If the route
+  middleware or wrap-management changes, revisit these methods."
   (:require
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
@@ -23,6 +24,10 @@
    [app.rpc :as-alias rpc]
    [app.rpc.doc :as doc]
    [app.util.services :as sv]))
+
+(def ^:private allowed-shared-key-ids
+  "Only the exporter worker claims and settles durable jobs today."
+  #{:exporter})
 
 ;; ---- RPC METHOD: CLAIM-JOB
 
@@ -42,7 +47,8 @@
   {::doc/added "2.20"
    ::sm/params schema:claim-job-params
    ::sm/result schema:claim-job-result
-   ::rpc/auth false} ;; shared-key enforced by route resolver
+   ::rpc/auth false
+   ::rpc/allowed-shared-keys allowed-shared-key-ids}
   [cfg {:keys [job-id scheduled-at]}]
   (let [row (jobs/get-job cfg job-id)]
     ;; Race condition: if the job is claimed between get-job and claim! by
@@ -74,7 +80,8 @@
   {::doc/added "2.20"
    ::sm/params schema:report-job-progress-params
    ::sm/result schema:report-job-progress-result
-   ::rpc/auth false} ;; shared-key enforced by route resolver
+   ::rpc/auth false
+   ::rpc/allowed-shared-keys allowed-shared-key-ids}
   [cfg {:keys [job-id progress]}]
   ;; A lost race (row already terminal) reports :skip so the worker
   ;; stops retrying a report that can never land, mirroring claim-job.
@@ -106,7 +113,10 @@
    [:job-id ::sm/uuid]
    ;; Per-job result: any JSON-encodable value, nil when the job returns
    ;; nothing. Nested maps and vectors are allowed; unserializable
-   ;; values are dropped to nil by jobs/encode-result with a warning.
+   ;; values are dropped to nil by jobs/encode-result with a warning. A
+   ;; job whose job-def declares a result schema has its result validated
+   ;; against it: one that does not conform is rejected and the job is
+   ;; not completed.
    [:result [:maybe :any]]
    ;; Storage object the worker produced for this job. A resource is only
    ;; set, never replaced: a job that already has one is rejected.
@@ -117,10 +127,18 @@
    [:action [:enum :run :skip]]])
 
 (sv/defmethod ::complete-job
+  "Complete a job on behalf of the worker that ran it, with the result it
+  produced and, when it wrote one, the resource it stores.
+
+  The result of a job whose job-def declares a result schema is validated
+  against it before it is stored: one that does not conform is rejected and
+  the job is not completed. A job that is no longer completable is skipped,
+  and nothing is validated for it."
   {::doc/added "2.20"
    ::sm/params schema:complete-job-params
    ::sm/result schema:complete-job-result
-   ::rpc/auth false} ;; shared-key enforced by route resolver
+   ::rpc/auth false
+   ::rpc/allowed-shared-keys allowed-shared-key-ids}
   [cfg {:keys [job-id result resource-id]}]
   (if (pos? (jobs/complete cfg
                            :job-id job-id
@@ -146,7 +164,8 @@
   {::doc/added "2.20"
    ::sm/params schema:fail-job-params
    ::sm/result schema:fail-job-result
-   ::rpc/auth false} ;; shared-key enforced by route resolver
+   ::rpc/auth false
+   ::rpc/allowed-shared-keys allowed-shared-key-ids}
   [cfg {:keys [job-id error]}]
   (if (pos? (jobs/fail cfg job-id error))
     {:action :run}

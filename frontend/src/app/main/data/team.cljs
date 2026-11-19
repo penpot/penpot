@@ -13,6 +13,7 @@
    [app.common.types.organization :as cto]
    [app.common.types.team :as ctt]
    [app.common.uri :as u]
+   [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
@@ -24,7 +25,9 @@
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.util.clipboard :as clipboard]
+   [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
+   [app.util.session-state :as ss]
    [app.util.storage :as storage]
    [beicon.v2.core :as rx]
    [clojure.string :as str]
@@ -45,7 +48,7 @@
   (if (or (not (contains? cf/flags :admin-console))
           (= team-id default-team-id))
     (rx/of team-id)
-    (->> (rp/cmd! :check-nitrate-sso {:team-id team-id :url (rt/get-current-href)})
+    (->> (rp/cmd! :check-nitrate-sso {:team-id team-id :query-string (rt/get-current-query-string)})
          (rx/map (fn [{:keys [authorized]}]
                    (if authorized team-id default-team-id))))))
 
@@ -111,8 +114,8 @@
              (f team)))))))
 
 (defn check-and-create-team
-  "Fetches fresh team data from the server to ensure up-to-date organization
-  permissions, then shows the team-form modal or a no-permission modal."
+  "Fetches fresh team data, checks organization permissions and SSO, then
+  shows the team form or the appropriate access error."
   [team-id]
   (ptk/reify ::check-and-create-team
     ptk/WatchEvent
@@ -124,17 +127,51 @@
                   in-organization?      (and (contains? cf/flags :admin-console) organization)
                   can-create?  (if in-organization?
                                  (cto/allowed? :create-team
-                                               {:organization-perms {:owner-id    (:owner-id organization)
-                                                                     :permissions (:permissions organization)}
+                                               {:organization-perms organization
                                                 :profile-id profile-id
                                                 :team-perms (:permissions team)})
-                                 true)]
-              (rx/of (if can-create?
-                       (modal/show :team-form (if in-organization?
-                                                {:organization-id   (:id organization)
-                                                 :organization-name (:name organization)}
-                                                {}))
-                       (modal/show :no-permission-modal {:type :create-team}))))))))))
+                                 true)
+                  team-form-modal (modal/show :team-form (if in-organization?
+                                                           {:organization-id   (:id organization)
+                                                            :organization-name (:name organization)}
+                                                           {}))]
+              (cond
+                (not can-create?)
+                (rx/of (modal/show :no-permission-modal {:type :create-team}))
+
+                (not in-organization?)
+                (rx/of team-form-modal)
+
+                :else
+                (let [pending-id            (str (uuid/next))
+                      ;; The callback travels as a query string; the token is
+                      ;; kept in its own shape because `append-query-param`
+                      ;; works on URLs.
+                      callback-query-string (-> (rt/get-current-token)
+                                                (dom/append-query-param :pending-action-id pending-id)
+                                                rt/token->query-string)]
+                  (->> (rp/cmd! :check-nitrate-sso {:team-id      team-id
+                                                    :query-string callback-query-string})
+                       (rx/mapcat
+                        (fn [{:keys [authorized redirect-uri]}]
+                          (cond
+                            authorized
+                            (rx/of team-form-modal)
+
+                            redirect-uri
+                            (do
+                              (ss/save-pending-action! pending-id
+                                                       {:type :create-team-in-organization
+                                                        :team-id team-id})
+                              (rx/of (rt/nav-raw :uri (str redirect-uri))))
+
+                            :else
+                            (rx/of (rt/assign-exception
+                                    {:type :sso-error
+                                     :organization-id (:id organization)
+                                     :organization-name (:name organization)
+                                     :team-id team-id
+                                     :is-dashboard true})))))))))))))))
 
 (defn check-and-delete-team
   "Fetches fresh team data from the server to ensure up-to-date organization
@@ -150,8 +187,7 @@
                   in-organization?     (and (contains? cf/flags :admin-console) organization)
                   can-delete? (if in-organization?
                                 (cto/allowed? :delete-team
-                                              {:organization-perms {:owner-id    (:owner-id organization)
-                                                                    :permissions (:permissions organization)}
+                                              {:organization-perms organization
                                                :profile-id profile-id
                                                :team-perms (:permissions team)})
                                 (boolean (dm/get-in team [:permissions :is-owner])))
@@ -261,7 +297,20 @@
     (watch [_ state _]
       (let [team-id (:current-team-id state)]
         (->> (rp/cmd! :get-team-invitations {:team-id team-id})
-             (rx/map (partial invitations-fetched team-id)))))))
+             (rx/map (partial invitations-fetched team-id))
+             (rx/catch (fn [cause]
+                         (let [{:keys [type code]} (ex-data cause)]
+                           (if (and (= :validation type)
+                                    (= :insufficient-permissions code))
+                             ;; The pending invitations are an admin only
+                             ;; list, so a denied refetch means the cached
+                             ;; copy is no longer valid: drop it instead of
+                             ;; leaving stale emails around.
+                             (do
+                               (log/warn :hint "fetch-invitations: no permission, clearing"
+                                         :team-id (str team-id))
+                               (rx/of (invitations-fetched team-id [])))
+                             (rx/throw cause))))))))))
 
 (defn- team-initialized
   [team-id]

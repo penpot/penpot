@@ -72,6 +72,12 @@ export const WithIcons = {
   },
 };
 
+export const WithIcon = {
+  args: {
+    icon: "expand",
+  },
+};
+
 export const EmptyToEnd = {
   args: {
     emptyToEnd: true,

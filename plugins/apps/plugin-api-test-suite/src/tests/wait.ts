@@ -20,3 +20,20 @@ export async function waitFor(
     await new Promise((resolve) => setTimeout(resolve, interval));
   }
 }
+
+/**
+ * Like {@link waitFor}, for conditions that need an async check, such as
+ * listing from the backend after a change that saves in the background.
+ */
+export async function waitForAsync(
+  predicate: () => Promise<boolean>,
+  {
+    timeout = 5000,
+    interval = 100,
+  }: { timeout?: number; interval?: number } = {},
+): Promise<void> {
+  const start = Date.now();
+  while (!(await predicate()) && Date.now() - start < timeout) {
+    await new Promise((resolve) => setTimeout(resolve, interval));
+  }
+}

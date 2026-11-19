@@ -29,7 +29,11 @@
   Requires a done-chained context (usually `t/async`): a synchronous
   test completes before its deferred body runs.
 
-  Usage: `(with-mocks {ns/sym mock-fn, ...} test-fn done)`"
+  Usage: `(with-mocks {ns/sym mock-fn, ...} test-fn done)`.
+
+  `with-mocks*` is the preferred form for new tests: it wraps the body in a
+  generated `^:async` fn and evaluates to a promise, so there is no `done` to
+  thread. See [[run-mocked]] for the restore-on-settle machinery."
   #?(:cljs (:require
             [beicon.v2.core :as rx]
             [cljs.test :as t]))
@@ -105,6 +109,50 @@
                                       :expected nil
                                       :actual e#})
                    (~outer-done))))))))))
+
+#?(:clj
+   (defmacro with-mocks*
+     "Installs `mocks` via `set!`, then evaluates `body` inside a generated
+     `^:async` fn awaited via `run-mocked`: when the body settles, the
+     originals are restored — always. A rejection is reported as an `:error`.
+
+     Evaluates to a promise resolving once the body settles and the mocks
+     are restored. `await` it, either directly or by returning it from an
+     `^:async` fn; nested scopes must be awaited too.
+
+     Example:
+
+         (t/deftest ^:async my-async-test
+           (await (mock/with-mocks*
+                    {app.main.repo/cmd! mock/rpc-cmd-mock}
+                    (await (some-async-flow))
+                    ...)))"
+     [mocks & body]
+     (let [entries   (map identity mocks)
+           gen-pairs (mapv (fn [[qsym _mock]]
+                             {:qsym qsym
+                              :osym  (gensym "orig-")})
+                           entries)
+           let-bindings (vec (mapcat
+                              (fn [{:keys [qsym osym]}]
+                                [osym qsym])
+                              gen-pairs))
+           install-exprs (mapv
+                          (fn [[_qsym mock-fn] {:keys [qsym]}]
+                            `(set! ~qsym ~mock-fn))
+                          entries
+                          gen-pairs)
+           restore-exprs (mapv
+                          (fn [{:keys [qsym osym]}]
+                            `(set! ~qsym ~osym))
+                          gen-pairs)]
+       `(do
+          (frontend-tests.helpers.mock/reset-state!)
+          (let ~let-bindings
+            ~@install-exprs
+            (frontend-tests.helpers.mock/run-mocked
+             (^:async fn [] ~@body)
+             (fn [] ~@restore-exprs)))))))
 
 #?(:clj
    (defmacro with-mocks*

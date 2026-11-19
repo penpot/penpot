@@ -182,5 +182,5 @@
                         :created-by "system"}))
 
       (let [file' (update file' :revn inc)]
-        (bfc/update-file! system file' opts)
+        (bfc/update-file! system file' ::bfc/reset-migrations? (::bfc/reset-migrations? opts))
         true))))

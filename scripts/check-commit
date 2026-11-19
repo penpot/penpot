@@ -4,8 +4,8 @@ Check commit messages against Penpot's commit guidelines.
 
 Validates commit messages using the rules defined in:
   - .github/workflows/commit-checker.yml (regex pattern)
-  - CONTRIBUTING.md (formatting rules, subject length, DCO)
-  - .serena/memories/workflow/creating-commits.md (body wrapped at 76 chars)
+  - CONTRIBUTING.md (formatting rules, subject length)
+  - .serena/memories/workflow/creating-commits.md (body wrapped at 80 chars)
 
 By default, checks HEAD. Use --commit to specify a different commit.
 
@@ -13,6 +13,7 @@ Usage:
   ./scripts/check-commit
   ./scripts/check-commit --commit HEAD~1
   ./scripts/check-commit -c abc1234
+  ./scripts/check-commit --message-file .git/COMMIT_EDITMSG
 """
 
 import argparse
@@ -39,29 +40,59 @@ COMMIT_PATTERN = re.compile(
 
 MERGE_PATTERN = re.compile(r"^(Merge|Revert|Reapply).+[^.]$")
 
+# ── Subject line length ──────────────────────────────────────────────────────
+# Subject lines must fit in 80 characters. Merge/Revert/Reapply commits are
+# exempt: git prepends "Merge ..."/"Revert ..." to an existing subject, so
+# enforcing the limit would fail on text the author did not write.
+MAX_SUBJECT_LINE = 80
+
 # ── Body line wrapping ───────────────────────────────────────────────────────
-# Commit bodies must wrap at 76 characters (see
-# .serena/memories/workflow/creating-commits.md). That leaves room for the
-# four-space indent git log adds, fitting an 80-column terminal. Trailers and
+# Commit bodies must wrap at 80 characters (see
+# .serena/memories/workflow/creating-commits.md). Trailers and
 # URLs are exempt: they cannot be wrapped without losing meaning.
-MAX_BODY_LINE = 76
+MAX_BODY_LINE = 80
 
 TRAILER_PATTERN = re.compile(
     r"^(Signed-off-by|Co-authored-by|Co-developed-by|Reviewed-by|"
     r"Acked-by|Tested-by|Reported-by|Suggested-by|AI-assisted-by):"
 )
 
+# ── Co-authored-by trailer ───────────────────────────────────────────────────
+# A human co-author may be credited with Co-authored-by. The trailer is
+# forbidden when its value names an AI provider, an AI agent, or a bot: for AI
+# participation the message uses "AI-assisted-by: <model>" instead.
+# Extend this list when a new tool starts adding trailers.
+NON_HUMAN_COAUTHOR_PATTERN = re.compile(
+    r"^\s*co-authored-by\s*:.*("
+    r"\b(?:chatgpt|openai|anthropic|claude|copilot|codex|gemini|bard|"
+    r"deepseek|mistral|qwen|kimi|llama|grok|cursor|"
+    r"windsurf|cline|aider|codeium|tabnine|amazon\s+q|sourcegraph\s+cody|"
+    r"roo\s+code|kilo\s+code|opencode)\b"
+    r"|\bdevin-ai|@devin\.ai"
+    r"|\[bot\]|\bbot@"
+    r")",
+    re.IGNORECASE,
+)
+
 URL_PATTERN = re.compile(r"https?://\S+")
+
+# Git appends the staged diff after this marker for `git commit -v` and
+# discards everything after it during cleanup.
+SCISSORS_PATTERN = re.compile(
+    r"^.\s------------------------ >8 ------------------------$",
+    re.MULTILINE,
+)
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # Helpers
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def run_git(args):
+def run_git(args, input_text=None):
     """Run a git command and return (returncode, stdout, stderr)."""
     try:
         result = subprocess.run(
             ["git"] + args,
+            input=input_text,
             capture_output=True,
             text=True,
             check=False,
@@ -82,6 +113,39 @@ def get_commit_message(commit_ref):
         print(f"ERROR: commit {commit_ref} has no message", file=sys.stderr)
         sys.exit(1)
     return out.rstrip("\n")
+
+
+def get_message_from_file(path):
+    """Return the commit message stored in *path*.
+
+    The commit-msg hook receives the message before git removes comment
+    lines, so strip them the same way git does before validating.
+    """
+    try:
+        with open(path, encoding="utf-8") as fh:
+            raw = fh.read()
+    except (OSError, UnicodeDecodeError) as exc:
+        print(f"ERROR: could not read message file {path}: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+    scissors = SCISSORS_PATTERN.search(raw)
+    if scissors:
+        raw = raw[:scissors.start()]
+
+    rc, out, err = run_git(["stripspace", "--strip-comments"], input_text=raw)
+    if rc != 0:
+        print(
+            f"ERROR: could not clean message file {path}: {err.strip()}",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    message = out.rstrip("\n")
+    if not message.strip():
+        print(f"ERROR: message file {path} has no commit message", file=sys.stderr)
+        sys.exit(1)
+
+    return message
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -108,11 +172,13 @@ def check_regex(message):
 
 
 def check_subject_length(message):
-    """Subject line must be ≤ 70 characters."""
+    """Subject line must be ≤ 80 characters (Merge/Revert/Reapply exempt)."""
     first_line = message.split("\n")[0]
-    if len(first_line) > 70:
+    if MERGE_PATTERN.match(first_line):
+        return True, None
+    if len(first_line) > MAX_SUBJECT_LINE:
         return False, (
-            f"Subject line exceeds 70 characters ({len(first_line)} chars):\n"
+            f"Subject line exceeds {MAX_SUBJECT_LINE} characters ({len(first_line)} chars):\n"
             f"  {first_line}"
         )
     return True, None
@@ -164,7 +230,7 @@ def check_body_blank_line(message):
 
 
 def check_body_line_length(message):
-    """Body lines must wrap at 76 characters or fewer.
+    """Body lines must wrap at 80 characters or fewer.
 
     The subject (first line) has its own length rule. Trailers (e.g.
     Signed-off-by) and lines carrying a URL are exempt, since wrapping them
@@ -198,15 +264,25 @@ def check_body_line_length(message):
     )
 
 
-def check_signed_off_by(message):
-    """Check for the DCO Signed-off-by line (required for code changes)."""
-    if "Signed-off-by:" not in message:
-        return False, (
-            "Missing 'Signed-off-by:' line in the commit footer.\n"
-            "  Add it with 'git commit -s' or append it manually:\n"
-            "    Signed-off-by: Your Real Name <your.email@example.com>"
-        )
-    return True, None
+def check_co_authored_by(message):
+    """Co-authored-by is allowed for humans, not for AI providers or bots."""
+    offenders = [
+        (line_number, line)
+        for line_number, line in enumerate(message.split("\n"), start=1)
+        if NON_HUMAN_COAUTHOR_PATTERN.match(line)
+    ]
+    if not offenders:
+        return True, None
+    details = "\n".join(
+        f"    line {line_number}: {line!r}"
+        for line_number, line in offenders
+    )
+    return False, (
+        "The 'Co-authored-by:' trailer is only for human co-authors. This one "
+        "names an AI provider, an AI agent, or a bot. Offending line(s):\n"
+        + details
+        + "\n  For AI participation use: AI-assisted-by: <model-name>"
+    )
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -215,25 +291,35 @@ def main():
     parser = argparse.ArgumentParser(
         description="Check a commit message against Penpot commit guidelines."
     )
-    parser.add_argument(
+    source = parser.add_mutually_exclusive_group()
+    source.add_argument(
         "-c", "--commit",
-        default="HEAD",
+        metavar="REF",
         help="Commit to check (default: HEAD)",
+    )
+    source.add_argument(
+        "-m", "--message-file",
+        metavar="FILE",
+        help="Read the commit message from FILE instead of a commit",
     )
     args = parser.parse_args()
 
-    commit_ref = args.commit
-    message = get_commit_message(commit_ref)
-
-    print(f"Checking commit {commit_ref} ...\n")
+    if args.message_file is not None:
+        message = get_message_from_file(args.message_file)
+        print(f"Checking commit message in {args.message_file} ...\n")
+    else:
+        commit_ref = args.commit if args.commit is not None else "HEAD"
+        message = get_commit_message(commit_ref)
+        print(f"Checking commit {commit_ref} ...\n")
 
     validators = [
         ("Regex pattern", check_regex),
-        ("Subject ≤ 70 chars", check_subject_length),
+        ("Subject ≤ 80 chars", check_subject_length),
         ("No trailing period in subject", check_subject_no_trailing_dot),
         ("Subject capitalized", check_subject_capitalized),
         ("Blank line after subject", check_body_blank_line),
-        ("Body wrapped at 76 chars", check_body_line_length),
+        ("Body wrapped at 80 chars", check_body_line_length),
+        ("Co-authored-by is human only", check_co_authored_by),
     ]
 
     all_ok = True

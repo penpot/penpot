@@ -116,6 +116,10 @@
    ["ShapeProxy.rotation"                #(set! (.-rotation rect) 45)]
    ["ShapeProxy.fills"                   #(set! (.-fills rect) #js [#js {:fillColor "#fabada" :fillOpacity 1}])]
    ["ShapeProxy.strokes"                 #(set! (.-strokes rect) #js [#js {:strokeColor "#fabada" :strokeOpacity 1 :strokeWidth 2}])]
+   ["ShapeProxy.strokeWidthTop"          #(do (set! (.-strokes rect) #js [#js {:strokeColor "#fabada" :strokeWidth 2}])
+                                              (set! (.-strokeWidthTop (aget (.-strokes rect) 0)) 5))]
+   ["ShapeProxy.strokeWidthRight"        #(do (set! (.-strokes rect) #js [#js {:strokeColor "#fabada" :strokeWidth 2}])
+                                              (set! (.-strokeWidthRight (aget (.-strokes rect) 0)) 5))]
    ;; relative geometry (shape inside a board)
    ["ShapeProxy.boardX"                  #(set! (.-boardX child) 10)]
    ["ShapeProxy.boardY"                  #(set! (.-boardY child) 10)]

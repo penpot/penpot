@@ -133,8 +133,13 @@
     (or mdata {}))
 
   (withMeta [_ mdata']
-    (let [pmap (PointerMap. id mdata' odata (not= mdata mdata') loaded?)]
-      (some-> *tracked* (swap! assoc id pmap))
+    (let [changed? (not= mdata mdata')
+          ;; A fragment row never changes after it is written, so a
+          ;; metadata change is a new pointer (fresh id + tracked), like
+          ;; `assoc` does; reusing the id would rewrite the same row.
+          id'      (if changed? (uuid/next) id)
+          pmap     (PointerMap. id' mdata' odata changed? loaded?)]
+      (some-> *tracked* (swap! assoc id' pmap))
       pmap))
 
   Seqable

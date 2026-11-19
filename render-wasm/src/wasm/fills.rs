@@ -87,13 +87,11 @@ impl TryFrom<&[u8]> for RawFillData {
 // FIXME: return Result
 pub fn read_fills_from_bytes(buffer: &[u8], num_fills: usize) -> Vec<shapes::Fill> {
     buffer
-        .chunks_exact(RAW_FILL_DATA_SIZE)
+        .as_chunks::<RAW_FILL_DATA_SIZE>()
+        .0
+        .iter()
         .take(num_fills)
-        .map(|bytes| {
-            RawFillData::try_from(bytes)
-                .expect("Invalid fill data")
-                .into()
-        })
+        .map(|bytes| RawFillData::from(*bytes).into())
         .collect()
 }
 

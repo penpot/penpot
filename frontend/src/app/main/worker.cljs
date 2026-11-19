@@ -22,7 +22,8 @@
     (uw/ask! worker {:cmd :configure
                      :config {:public-uri cf/public-uri
                               :build-data cf/build-date
-                              :version cf/version}})
+                              :version cf/version
+                              :version-tag cf/version-tag}})
     (set! instance worker)))
 
 (defn ask!

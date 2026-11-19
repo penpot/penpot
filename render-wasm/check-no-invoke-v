@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# Usage: ./check-no-invoke-v [frontend|export] [glue-path]
+#
+# Fail if the Emscripten JS glue has any invoke_* wrapper. With Wasm EH and
+# Wasm SjLj there should be none; invoke_*V (v128) throws a TypeError at the
+# JS boundary.
+set -euo pipefail
+
+_SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+TARGET=${1:-frontend}
+# _build_env reads NODE_ENV without a default; keep set -u happy.
+NODE_ENV=${NODE_ENV:-}
+RENDER_TARGET=$TARGET
+# shellcheck source=/dev/null
+. "$_SCRIPT_DIR/_build_env" "$TARGET"
+
+if [[ $# -ge 2 ]]; then
+  GLUE=$2
+elif [[ "$TARGET" = "export" ]]; then
+  GLUE="$_SCRIPT_DIR/$EXPORT_DEST/$BUILD_NAME.js"
+else
+  GLUE="$_SCRIPT_DIR/$FRONTEND_DEST/$BUILD_NAME.js"
+fi
+
+if [[ ! -f "$GLUE" ]]; then
+  echo "error: JS glue not found: $GLUE" >&2
+  echo "hint: run ./build $TARGET first" >&2
+  exit 1
+fi
+
+status=0
+grep -qE 'invoke_[A-Za-z0-9]+' "$GLUE" || status=$?
+
+if [[ $status -eq 0 ]]; then
+  echo "error: JS glue has invoke_* wrappers: $GLUE" >&2
+  grep -oE 'invoke_[A-Za-z0-9]+' "$GLUE" | sort -u >&2
+  exit 1
+elif [[ $status -gt 1 ]]; then
+  echo "error: grep failed on $GLUE" >&2
+  exit "$status"
+fi

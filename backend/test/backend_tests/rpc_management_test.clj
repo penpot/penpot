@@ -9,6 +9,7 @@
    [app.binfile.common :as bfc]
    [app.common.features :as cfeat]
    [app.common.pprint :as pp]
+   [app.common.time :as ct]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -22,7 +23,8 @@
    [clojure.test :as t]
    [cuerdas.core :as str]
    [datoteka.fs :as fs]
-   [datoteka.io :as io]))
+   [datoteka.io :as io]
+   [mockery.core :refer [with-mocks]]))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
@@ -44,19 +46,18 @@
 
 (t/deftest upload-tempfile-returns-fresh-object-for-same-content
   (let [profile (th/create-profile* 1 {:is-active true})
-        path    (fs/create-tempfile :dir "/tmp/penpot" :prefix "test-upload-tempfile-")
-        _       (io/write* path "content")
+        path    (th/tempfile "backend_tests/test_files/sample.png")
         params  {::th/type :upload-tempfile
                  ::rpc/profile-id (:id profile)
                  :content {:filename "export.png"
                            :path path
                            :mtype "image/png"
-                           :size 7}}
+                           :size (fs/size path)}}
         config  (assoc cf/config :public-uri "https://example.com/penpot")
         out1    (binding [cf/config config]
-                  (th/management-command! params))
+                  (th/multipart-management-command! params))
         out2    (binding [cf/config config]
-                  (th/management-command! params))]
+                  (th/multipart-management-command! params))]
     (t/is (nil? (:error out1)))
     (t/is (nil? (:error out2)))
     (t/is (str/starts-with? (str (get-in out1 [:result :uri]))
@@ -75,10 +76,31 @@
                            :path path
                            :mtype "text/html"
                            :size 27}}
-        out     (th/management-command! params)]
+        out     (th/multipart-management-command! params)]
     (t/is (some? (:error out)))
     (t/is (= :validation (th/ex-type (:error out))))
     (t/is (= :media-type-not-allowed (th/ex-code (:error out))))))
+
+(t/deftest upload-tempfile-rejects-a-key-it-does-not-declare
+  (let [out (th/management-command! {::th/type :upload-tempfile
+                                     ::rpc/auth-key-id :nexus})]
+    (t/is (some? (:error out)))
+    (t/is (= :authorization (th/ex-type (:error out))))
+    (t/is (= :shared-key-not-allowed (th/ex-code (:error out))))))
+
+(t/deftest upload-tempfile-accepts-both-declared-keys
+  (let [profile (th/create-profile* 1 {:is-active true})]
+    (doseq [key-id [:exporter :media-processor]]
+      (let [path (th/tempfile "backend_tests/test_files/sample.png")
+            out  (th/multipart-management-command!
+                  {::th/type :upload-tempfile
+                   ::rpc/auth-key-id key-id
+                   ::rpc/profile-id (:id profile)
+                   :content {:filename "export.png"
+                             :path path
+                             :mtype "image/png"
+                             :size (fs/size path)}})]
+        (t/is (nil? (:error out)) (name key-id))))))
 
 (t/deftest duplicate-file
   (let [storage (-> (:app.storage/storage th/*system*)
@@ -142,15 +164,45 @@
           (t/is (= (:media-id item) (:media-id mobj)))
           (t/is (= (:media-id item) (:id sobject)))
 
-          ;; Check if media correctly contains the new file-media-object id
-          (t/is (contains? (get-in result [:data :media]) (:id item)))
-
-          ;; And does not contains the old one
-          (t/is (not (contains? (get-in result [:data :media]) (:id mobj)))))
+          ;; The response carries the file metadata only
+          (t/is (not (contains? result :data))))
 
         ;; Check the total number of files
         (let [rows (th/db-query :file {:project-id (:id project)})]
           (t/is (= 3 (count rows))))))))
+
+(t/deftest duplicate-file-does-not-touch-the-source-storage-object
+  (let [profile (th/create-profile* 1 {:is-active true})
+        project (th/create-project* 1 {:team-id (:default-team-id profile)
+                                       :profile-id (:id profile)})
+        file1   (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:id project)})]
+
+    (th/run-task! :offload-file-data {:file-id (:id file1)})
+    (th/run-task! :storage-gc-touched {:skip-delay true})
+
+    (let [sobject (:storage-object-id (th/db-get :file-data {:file-id (:id file1)
+                                                             :id (:id file1)}))]
+      (t/is (uuid? sobject))
+      (t/is (nil? (:touched-at (th/db-get :storage-object {:id sobject}
+                                          {::db/remove-deleted false}))))
+
+      (let [out (th/command! {::th/type :duplicate-file
+                              ::rpc/profile-id (:id profile)
+                              :file-id (:id file1)})]
+        (t/is (nil? (:error out)))
+        (t/is (not (contains? (:result out) :storage-object-id)))
+
+        (t/testing "duplication does not write to the source object"
+          (t/is (nil? (:touched-at (th/db-get :storage-object {:id sobject}
+                                              {::db/remove-deleted false})))))
+
+        (let [file-id (:id (:result out))
+              row     (th/db-get :file-data {:file-id file-id :id file-id})]
+          (t/testing "the new file does not inherit the source pointer"
+            (t/is (= "db" (:backend row)))
+            (t/is (nil? (:storage-object-id row)))
+            (t/is (bytes? (:data row)))))))))
 
 (t/deftest duplicate-file-with-deleted-relations
   (let [storage (-> (:app.storage/storage th/*system*)
@@ -666,3 +718,68 @@
       (t/is (vector? result))
       (t/is (= 1 (count result)))
       (t/is (= "test" (:id (first result)))))))
+
+(t/deftest clone-template-audit-events-carry-team-id
+  ;; The per-file `create-file` events are built by hand, so they do not pass
+  ;; through the generic resolver: the command must copy the team id itself.
+  (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
+    (with-redefs [cf/flags (conj cf/flags :audit-log)]
+      (let [prof    (th/create-profile* 1 {:is-active true})
+            team    (th/create-team* 1 {:profile-id (:id prof)})
+            project (th/create-project* 1 {:profile-id (:id prof)
+                                           :team-id (:id team)})
+            out     (th/command! {::th/type :clone-template
+                                  ::rpc/profile-id (:id prof)
+                                  :project-id (:id project)
+                                  :template-id "test"})]
+        (t/is (th/success? out))
+        (th/consume-sse (:result out))
+        (let [events (->> (:call-args-list @audit-mock)
+                          (map second)
+                          (filter #(= "create-file" (:name %))))]
+          (t/is (seq events))
+          (t/is (every? #(= (:id team) (get-in % [:props :team-id])) events)))))))
+
+(t/deftest duplicate-project-audit-events-carry-entity-ids
+  ;; The duplicated project and files are created by internal calls, so the
+  ;; command emits one create event per entity for a local projection.
+  (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
+    (with-redefs [cf/flags (conj cf/flags :audit-log)]
+      (let [profile (th/create-profile* 1 {:is-active true})
+            team    (th/create-team* 52 {:profile-id (:id profile)})
+            project (th/create-project* 52 {:profile-id (:id profile)
+                                            :team-id (:id team)})
+            _file   (th/create-file* 52 {:profile-id (:id profile)
+                                         :project-id (:id project)})
+            out     (th/command! {::th/type :duplicate-project
+                                  ::rpc/profile-id (:id profile)
+                                  :project-id (:id project)
+                                  :name "copy"})
+            events  (->> (:call-args-list @audit-mock)
+                         (map second)
+                         (filter #(contains? #{"create-project" "create-file"} (:name %))))]
+        (t/is (th/success? out))
+        (t/is (some #(and (= "create-project" (:name %))
+                          (= (get-in out [:result :id]) (get-in % [:props :id]))
+                          (= (:id team) (get-in % [:props :team-id]))
+                          (= "copy" (get-in % [:props :name])))
+                    events))
+        (t/is (some #(and (= "create-file" (:name %))
+                          (string? (get-in % [:props :name]))
+                          (int? (get-in % [:props :revn]))
+                          (ct/inst? (get-in % [:props :modified-at])))
+                    events))
+        (t/is (every? #(= (:id team) (get-in % [:props :team-id])) events))))))
+
+(t/deftest upload-tempfile-rejects-forged-content
+  ;; Same transit-forgery vector through the management API: without a
+  ;; multipart request the wrapper must reject it at params validation.
+  (let [profile (th/create-profile* 1 {:is-active true})
+        params  {::th/type :upload-tempfile
+                 ::rpc/profile-id (:id profile)
+                 :content {:filename "evil.png"
+                           :path (fs/path "/etc/passwd")
+                           :mtype "image/png"
+                           :size 123}}
+        out     (th/management-command! params)]
+    (t/is (th/ex-of-code? (:error out) :params-validation))))

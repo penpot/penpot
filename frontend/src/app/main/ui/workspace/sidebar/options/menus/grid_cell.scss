@@ -4,14 +4,20 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
+// Only for %input-element and %button-icon: the inputs and their icons move
+// to the DS in their own plan.
 @use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_borders.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/typography.scss" as *;
 @use "../../../sidebar/common/sidebar.scss" as sidebar;
 
 .grid-cell-menu-container {
-  @include deprecated.flex-column;
-
-  margin-top: deprecated.$s-8;
-  gap: deprecated.$s-16;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-l);
+  grid-column: span 8;
+  margin-block-start: var(--sp-s);
 }
 
 .grid-cell-menu {
@@ -20,55 +26,52 @@
 
 .grid-cell-menu-title {
   grid-column: span 8;
-  font-size: deprecated.$fs-11;
-}
-
-.grid-cell-menu-container {
-  grid-column: span 8;
+  font-size: px2rem(11);
 }
 
 .row {
-  @include deprecated.flex-row;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
 }
 
 .cell-mode :global(label) {
-  padding: 0 deprecated.$s-12;
+  padding: 0 var(--sp-m);
 }
 
 .edit-grid-btn {
-  @extend %button-secondary;
-  @include deprecated.uppercase-title-typography;
-
-  width: 100%;
-  padding: deprecated.$s-8;
+  justify-content: center;
+  inline-size: 100%;
 }
 
 .area-input {
   @extend %input-element;
-  @include deprecated.body-small-typography;
+  @include use-typography("body-small");
 
-  width: 100%;
-  padding: deprecated.$s-8;
+  inline-size: 100%;
+  padding: var(--sp-s);
 }
 
 .grid-coord-group {
-  @include deprecated.flex-row;
-
-  border-radius: deprecated.$br-8;
-  padding-left: deprecated.$s-4;
-  background-color: var(--input-background-color);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  border-radius: $br-8;
+  padding-inline-start: var(--sp-xs);
+  background-color: var(--color-background-tertiary);
 }
 
+// The legacy icon is a raw svg with no class of its own.
 .icon svg {
   @extend %button-icon;
 
-  stroke: var(--icon-foreground);
+  stroke: var(--color-foreground-secondary);
 }
 
 .coord-input {
   @extend %input-element;
-  @include deprecated.body-small-typography;
+  @include use-typography("body-small");
 
-  border-radius: 0 deprecated.$br-8 deprecated.$br-8 0;
-  border-left: deprecated.$s-1 solid var(--panel-background-color);
+  border-radius: 0 $br-8 $br-8 0;
+  border-inline-start: $b-1 solid var(--color-background-primary);
 }

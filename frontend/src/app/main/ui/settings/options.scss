@@ -13,6 +13,16 @@
   display: grid;
 }
 
+.options-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.section-title {
+  color: var(--color-foreground-primary);
+  margin-block: var(--sp-s);
+}
+
 .form-container {
   --menu-max-height-up: #{px2rem(180)};
 

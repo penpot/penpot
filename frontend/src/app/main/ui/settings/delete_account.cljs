@@ -14,8 +14,9 @@
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui.components.organization-avatar :refer [organization-avatar*]]
+   [app.main.ui.ds.buttons.button :refer [button*]]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
-   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.notifications.context-notification :refer [context-notification]]
    [app.util.i18n :as i18n :refer [tr]]
    [beicon.v2.core :as rx]
@@ -62,8 +63,11 @@
 
       [:div {:class (stl/css :modal-header)}
        [:h2 {:class (stl/css :modal-title)} (tr "modals.delete-account.title")]
-       [:button {:class (stl/css :modal-close-btn)
-                 :on-click modal/hide!} deprecated-icon/close]]
+       [:> icon-button* {:variant "ghost"
+                         :tooltip-class (stl/css :modal-close-btn)
+                         :aria-label (tr "labels.close")
+                         :icon i/close
+                         :on-click modal/hide!}]]
 
       [:div {:class (stl/css :modal-content)}
        [:div {:class (stl/css :warning-notice)}
@@ -100,11 +104,12 @@
 
       [:div {:class (stl/css :modal-footer)}
        [:div {:class (stl/css :action-buttons)}
-        [:button {:class (stl/css :cancel-button)
-                  :on-click modal/hide!}
+        [:> button* {:variant "secondary"
+                     :type "button"
+                     :on-click modal/hide!}
          (tr "modals.delete-account.cancel")]
-        [:button {:class (stl/css-case :accept-button true
-                                       :danger true)
-                  :on-click on-accept
-                  :data-testid "delete-account-btn"}
+        [:> button* {:variant "destructive"
+                     :type "button"
+                     :on-click on-accept
+                     :data-testid "delete-account-btn"}
          (tr "modals.delete-account.confirm")]]]]]))

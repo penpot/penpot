@@ -19,6 +19,7 @@ import type {
   Page,
   Path,
   Penpot,
+  PenpotLocation,
   PenpotMgmt,
   Rectangle,
   Shape,
@@ -45,6 +46,7 @@ export const validEvents = [
   'themechange',
   'shapechange',
   'contentsave',
+  'contentrollback',
 ] as const;
 
 export function createApi(
@@ -267,6 +269,11 @@ export function createApi(
       return plugin.context.theme;
     },
 
+    get location(): PenpotLocation {
+      checkPermission('content:read', false);
+      return plugin.context.location;
+    },
+
     get localStorage(): LocalStorage {
       checkPermission('allow:localstorage');
       return plugin.context.localStorage;
@@ -412,6 +419,11 @@ export function createApi(
       checkPermission('content:read');
       return plugin.context.waitForLayoutUpdate(timeout);
     },
+
+    waitForSave(timeout?: number): Promise<void> {
+      checkPermission('content:read');
+      return plugin.context.waitForSave(timeout);
+    },
   };
 
   const penpotMgmt: PenpotMgmt = {
@@ -419,21 +431,29 @@ export function createApi(
       checkPermission('content:read', false);
       return plugin.context.management!.workspace;
     },
+    listTeams() {
+      checkPermission('manage:teams', false);
+      return plugin.context.management!.listTeams();
+    },
+    createTeam(options) {
+      checkPermission('manage:teams', false);
+      return plugin.context.management!.createTeam(options);
+    },
     listProjects(options) {
       checkPermission('content:read', false);
       return plugin.context.management!.listProjects(options);
     },
-    listFiles(options) {
+    listDeletedProjects(options) {
       checkPermission('content:read', false);
-      return plugin.context.management!.listFiles(options);
+      return plugin.context.management!.listDeletedProjects(options);
     },
-    createProject(options) {
-      checkPermission('content:write', false);
-      return plugin.context.management!.createProject(options);
+    listDeletedFiles(options) {
+      checkPermission('content:read', false);
+      return plugin.context.management!.listDeletedFiles(options);
     },
-    createFile(options) {
-      checkPermission('content:write', false);
-      return plugin.context.management!.createFile(options);
+    getFile(fileId) {
+      checkPermission('content:read', false);
+      return plugin.context.management!.getFile(fileId);
     },
     openFile(fileId, options) {
       checkPermission('content:read', false);

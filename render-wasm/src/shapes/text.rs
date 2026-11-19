@@ -1,11 +1,10 @@
-use crate::render::text::decoration_segments;
+use crate::render::text::{decoration_segments, list_marker, list_markers};
 use crate::{
     math::{Bounds, Matrix, Rect},
     render::{default_font, DEFAULT_EMOJI_FONT},
     utils::Browser,
 };
 
-use core::f32;
 use macros::ToJs;
 use skia_safe::textlayout::{RectHeightStyle, RectWidthStyle};
 use skia_safe::{
@@ -25,6 +24,7 @@ use std::borrow::Cow;
 use std::cell::Cell;
 use std::collections::HashSet;
 use std::rc::Rc;
+use unicode_segmentation::UnicodeSegmentation;
 
 use super::FontFamily;
 use crate::math::Point;
@@ -309,6 +309,34 @@ impl TextContentLayout {
     }
 }
 
+// List bullet geometry, in font sizes, as Chrome draws a CSS disc marker
+// (measured with Source Sans Pro).
+pub const LIST_MARKER_RADIUS_FACTOR: f32 = 0.16;
+pub const LIST_MARKER_MIN_RADIUS: f32 = 1.5;
+/// Space between the bullet and the text box's start edge.
+pub const LIST_MARKER_GAP_FACTOR: f32 = 0.33;
+/// How far above the baseline the bullet's center sits.
+pub const LIST_MARKER_CENTER_FACTOR: f32 = 0.32;
+
+/// A list bullet, painted with the style of the first run on its line.
+#[derive(Debug, Clone)]
+pub struct ListMarker {
+    pub paint: skia::Paint,
+    pub center: Point,
+    pub radius: f32,
+}
+
+impl ListMarker {
+    pub fn rect(&self) -> Rect {
+        Rect::new(
+            self.center.x - self.radius,
+            self.center.y - self.radius,
+            self.center.x + self.radius,
+            self.center.y + self.radius,
+        )
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct TextDecorationSegment {
     #[allow(dead_code)]
@@ -424,6 +452,9 @@ pub struct TextContent {
     /// into cached Skia paragraphs. Kept across move clones so paint can
     /// translate glyphs + shaders together. See `cached_layout_paint_offset`.
     layout_paint_origin: Option<Point>,
+    /// Box size the gradient and image shaders were built for. They are relative
+    /// to the whole box, so a new size must rebuild them.
+    layout_paint_size: Option<(f32, f32)>,
 }
 
 impl PartialEq for TextContent {
@@ -448,6 +479,7 @@ impl TextContent {
             layout_version: 0,
             layout_width: None,
             layout_paint_origin: None,
+            layout_paint_size: None,
         }
     }
 
@@ -464,6 +496,7 @@ impl TextContent {
             layout_version: 0,
             layout_width: None,
             layout_paint_origin: None,
+            layout_paint_size: None,
         }
     }
 
@@ -621,11 +654,40 @@ impl TextContent {
             }
         }
 
-        if has_lines {
-            Some(Rect::from_ltrb(min_x, min_y, max_x, max_y))
-        } else {
-            None
+        if !has_lines {
+            return None;
         }
+
+        let mut rect = Rect::from_ltrb(min_x, min_y, max_x, max_y);
+        if let Some(markers) = self.list_markers_rect(selrect, valign) {
+            rect.join(markers);
+        }
+        Some(rect)
+    }
+
+    /// Union of the list bullets, which hang outside the text box.
+    fn list_markers_rect(&self, selrect: &Rect, valign: VerticalAlign) -> Option<Rect> {
+        let paragraphs = &self.layout.paragraphs;
+        let total_height: f32 = paragraphs
+            .iter()
+            .filter_map(|group| group.first())
+            .map(|p| p.height())
+            .sum();
+        let top = selrect.y() + vertical_align_offset(selrect.height(), total_height, valign);
+
+        list_markers(
+            paragraphs.iter().map(|group| group.first()),
+            self.paragraphs(),
+            selrect.x(),
+            top,
+            self.get_width(selrect.width()),
+        )
+        .iter()
+        .map(ListMarker::rect)
+        .reduce(|mut rect, marker_rect| {
+            rect.join(marker_rect);
+            rect
+        })
     }
 
     fn compute_and_cache_extrect(
@@ -638,7 +700,11 @@ impl TextContent {
         // (line.left) reflect alignment within that huge width and are
         // unusable for tight bounds.  Fall back to content_rect.
         if self.grow_type() == GrowType::AutoWidth {
-            return self.content_rect(selrect, valign);
+            let mut rect = self.content_rect(selrect, valign);
+            if let Some(markers) = self.list_markers_rect(selrect, valign) {
+                rect.join(markers);
+            }
+            return rect;
         }
 
         let layout_matches_container = self
@@ -878,18 +944,18 @@ impl TextContent {
     }
 
     /// Opaque black glyphs only for spans whose fill at `layer_from_bottom` is
-    /// the given image — used as an SVG `<clipPath>` for linked image fills.
+    /// `image_fill` — used as an SVG `<clipPath>` for linked image fills.
     pub fn paragraph_builder_group_opaque_for_image_layer(
         &self,
         layer_from_bottom: usize,
-        image_id: Uuid,
+        image_fill: &shapes::ImageFill,
     ) -> Vec<ParagraphBuilderGroup> {
         self.paragraph_builders(
             None,
             false,
             None,
             None,
-            Some((layer_from_bottom, image_id)),
+            Some((layer_from_bottom, image_fill)),
             None,
         )
     }
@@ -900,7 +966,7 @@ impl TextContent {
         opaque: bool,
         align_override: Option<skia::textlayout::TextAlign>,
         fill_layer: Option<usize>,
-        opaque_image_layer: Option<(usize, Uuid)>,
+        opaque_image_layer: Option<(usize, &shapes::ImageFill)>,
         skip_image_ids: Option<&HashSet<Uuid>>,
     ) -> Vec<ParagraphBuilderGroup> {
         let fonts = get_font_collection();
@@ -915,7 +981,7 @@ impl TextContent {
             let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
             let mut has_text = false;
             for span in paragraph.children() {
-                let text_style = if let Some((layer, image_id)) = opaque_image_layer {
+                let text_style = if let Some((layer, image_fill)) = opaque_image_layer {
                     let mut style = span.to_style(
                         &self.bounds(),
                         fallback_fonts,
@@ -924,7 +990,7 @@ impl TextContent {
                     );
                     let mut paint = paint::Paint::default();
                     match span.fills_from_bottom(layer) {
-                        Some(shapes::Fill::Image(img)) if img.id() == image_id => {
+                        Some(shapes::Fill::Image(img)) if img == image_fill => {
                             paint.set_color(skia::Color::BLACK);
                             paint.set_alpha(255);
                         }
@@ -1114,7 +1180,28 @@ impl TextContent {
         if self.layout.needs_update() || self.layout_version != self.content_version {
             return false;
         }
-        self.layout_matches_paint_container(shape)
+        self.layout_matches_paint_container(shape) && self.paint_size_matches(&shape.selrect())
+    }
+
+    /// True when some span has a fill laid over the whole box (gradient or image).
+    fn has_box_relative_fills(&self) -> bool {
+        self.paragraphs.iter().any(|paragraph| {
+            paragraph.children().iter().any(|span| {
+                span.fills
+                    .iter()
+                    .any(|fill| !matches!(fill, shapes::Fill::Solid(_)))
+            })
+        })
+    }
+
+    /// True when the cached fill shaders fit a box of `selrect`'s size.
+    fn paint_size_matches(&self, selrect: &Rect) -> bool {
+        if !self.has_box_relative_fills() {
+            return true;
+        }
+        self.layout_paint_size.is_some_and(|(width, height)| {
+            (width - selrect.width()).abs() < 0.01 && (height - selrect.height()).abs() < 0.01
+        })
     }
 
     pub(crate) fn layout_cache_versions_match(&self) -> bool {
@@ -1156,11 +1243,13 @@ impl TextContent {
         // Paragraph paints (incl. absolute image/gradient shaders) were built
         // against `self.bounds()` in `paragraph_builder_group_from_text`.
         self.layout_paint_origin = Some(Point::new(self.bounds.x(), self.bounds.y()));
+        self.layout_paint_size = Some((self.bounds.width(), self.bounds.height()));
     }
 
     pub fn force_next_layout_update(&mut self) {
         self.layout_width = None;
         self.layout_paint_origin = None;
+        self.layout_paint_size = None;
         self.layout.cached_extrect.set(None);
         // Bump the content version so update_layout can't early-return: auto-width
         // shapes always match their container and clearing the cache above doesn't
@@ -1182,6 +1271,7 @@ impl TextContent {
         if !self.layout.needs_update()
             && self.layout_version == self.content_version
             && layout_matches_container
+            && self.paint_size_matches(&selrect)
         {
             return self.size;
         }
@@ -1351,6 +1441,7 @@ impl Default for TextContent {
             layout_version: 0,
             layout_width: None,
             layout_paint_origin: None,
+            layout_paint_size: None,
         }
     }
 }
@@ -1366,6 +1457,13 @@ pub enum TextTransform {
     Capitalize,
 }
 
+#[derive(Debug, PartialEq, Clone, Copy, Default)]
+pub enum ListStyleType {
+    #[default]
+    None,
+    Disc,
+}
+
 // FIXME: Rethink this type. We'll probably need to move the serialization to the
 // wasm module and store here meaningful model values (and/or skia type aliases)
 #[derive(Debug, PartialEq, Clone)]
@@ -1376,6 +1474,7 @@ pub struct Paragraph {
     text_transform: Option<TextTransform>,
     line_height: f32,
     letter_spacing: f32,
+    list_style_type: ListStyleType,
     children: Vec<TextSpan>,
 }
 
@@ -1388,6 +1487,7 @@ impl Default for Paragraph {
             text_transform: None,
             line_height: 1.0,
             letter_spacing: 0.0,
+            list_style_type: ListStyleType::None,
             children: vec![],
         }
     }
@@ -1411,8 +1511,14 @@ impl Paragraph {
             text_transform,
             line_height,
             letter_spacing,
+            list_style_type: ListStyleType::None,
             children,
         }
+    }
+
+    pub fn with_list_style_type(mut self, list_style_type: ListStyleType) -> Self {
+        self.list_style_type = list_style_type;
+        self
     }
 
     pub fn children(&self) -> &[TextSpan] {
@@ -1470,10 +1576,37 @@ impl Paragraph {
         low
     }
 
-    /// UTF-16 length of the character at `char_offset`, so a caret range covers
-    /// the whole glyph.
-    pub fn char_utf16_len_at(&self, char_offset: usize) -> usize {
-        self.char_offset_to_utf16(char_offset + 1) - self.char_offset_to_utf16(char_offset)
+    fn text(&self) -> String {
+        self.children
+            .iter()
+            .map(|span| span.text.as_str())
+            .collect()
+    }
+
+    /// Char offset of the grapheme boundary before `char_offset`, so emojis
+    /// made of several chars are one step.
+    pub fn prev_grapheme_offset(&self, char_offset: usize) -> usize {
+        let mut boundary = 0;
+        for grapheme in self.text().graphemes(true) {
+            let next = boundary + grapheme.chars().count();
+            if next >= char_offset {
+                break;
+            }
+            boundary = next;
+        }
+        boundary
+    }
+
+    /// Char offset of the grapheme boundary after `char_offset`.
+    pub fn next_grapheme_offset(&self, char_offset: usize) -> usize {
+        let mut boundary = 0;
+        for grapheme in self.text().graphemes(true) {
+            boundary += grapheme.chars().count();
+            if boundary > char_offset {
+                break;
+            }
+        }
+        boundary
     }
 
     pub fn line_height(&self) -> f32 {
@@ -1498,6 +1631,10 @@ impl Paragraph {
 
     pub fn text_transform(&self) -> Option<TextTransform> {
         self.text_transform
+    }
+
+    pub fn list_style_type(&self) -> ListStyleType {
+        self.list_style_type
     }
 
     pub fn paragraph_to_style(&self) -> ParagraphStyle {
@@ -1800,6 +1937,7 @@ pub struct ParagraphLayout {
     pub x: f32,
     pub y: f32,
     pub decorations: Vec<TextDecorationSegment>,
+    pub marker: Option<ListMarker>,
 }
 
 #[derive(Debug)]
@@ -1863,20 +2001,39 @@ pub fn calculate_text_layout_data(
         vertical_align_offset(selrect_height, total_text_height, shape.vertical_align());
     let mut paragraph_layouts: Vec<ParagraphLayout> = Vec::new();
     let mut y_accum = base_y + vertical_offset;
+    // Last list marker of each builder, so an empty item borrows its pass' paint.
+    let mut previous_markers: Vec<Option<ListMarker>> = Vec::new();
     for (i, group_paragraphs) in built_groups.into_iter().enumerate() {
         // For each paragraph in the group (e.g., fill, stroke, etc.)
-        for skia_paragraph in group_paragraphs.into_iter() {
+        for (builder_index, skia_paragraph) in group_paragraphs.into_iter().enumerate() {
+            if previous_markers.len() <= builder_index {
+                previous_markers.resize(builder_index + 1, None);
+            }
             let decorations = text_paragraphs
                 .get(i)
                 .map(|text_paragraph| {
                     decoration_segments(&skia_paragraph, text_paragraph, x, y_accum)
                 })
                 .unwrap_or_default();
+            let marker = text_paragraphs.get(i).and_then(|text_paragraph| {
+                list_marker(
+                    &skia_paragraph,
+                    text_paragraph,
+                    x,
+                    y_accum,
+                    text_width,
+                    previous_markers[builder_index].as_ref(),
+                )
+            });
+            if marker.is_some() {
+                previous_markers[builder_index] = marker.clone();
+            }
             paragraph_layouts.push(ParagraphLayout {
                 paragraph: skia_paragraph,
                 x,
                 y: y_accum,
                 decorations,
+                marker,
             });
         }
         y_accum += paragraph_heights[i];
@@ -1967,6 +2124,8 @@ pub fn calculate_position_data(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::globals::TestRenderResourcesGuard;
+    use crate::render::RenderResources;
 
     #[test]
     fn vertical_align_top_keeps_the_content_at_the_origin() {
@@ -2166,16 +2325,29 @@ mod tests {
 
         assert_eq!(para.char_offset_to_utf16(4), 4);
         assert_eq!(para.char_offset_to_utf16(6), 7);
-        assert_eq!(para.char_utf16_len_at(4), 2);
+        assert_eq!(para.char_offset_to_utf16(5), 6);
         assert_eq!(para.utf16_offset_to_char(7), 6);
     }
 
     #[test]
-    fn char_utf16_len_at_covers_the_whole_glyph() {
-        let para = test_paragraph(&["a😀b"]);
-        assert_eq!(para.char_utf16_len_at(0), 1);
-        assert_eq!(para.char_utf16_len_at(1), 2);
-        assert_eq!(para.char_utf16_len_at(2), 1);
+    fn grapheme_offsets_cross_whole_emojis() {
+        let para = test_paragraph(&["A👍🏽👨\u{200d}👩\u{200d}👧e\u{301}"]);
+        let boundaries = [0, 1, 3, 8, 10];
+        for pair in boundaries.windows(2) {
+            assert_eq!(para.next_grapheme_offset(pair[0]), pair[1]);
+            assert_eq!(para.prev_grapheme_offset(pair[1]), pair[0]);
+        }
+        assert_eq!(para.next_grapheme_offset(2), 3);
+        assert_eq!(para.prev_grapheme_offset(2), 1);
+        assert_eq!(para.next_grapheme_offset(10), 10);
+        assert_eq!(para.prev_grapheme_offset(0), 0);
+    }
+
+    #[test]
+    fn grapheme_offsets_cross_an_emoji_split_across_spans() {
+        let para = test_paragraph(&["A👍", "🏽B"]);
+        assert_eq!(para.next_grapheme_offset(1), 3);
+        assert_eq!(para.prev_grapheme_offset(3), 1);
     }
 
     fn sample_text_content() -> TextContent {
@@ -2303,6 +2475,182 @@ mod tests {
             content.cached_layout_paint_offset(&selrect),
             Point::new(0.0, 0.0)
         );
+    }
+
+    fn gradient_fill() -> shapes::Fill {
+        shapes::Fill::LinearGradient(shapes::Gradient::new(
+            (0.5, 0.0),
+            (0.5, 1.0),
+            255,
+            1.0,
+            &[(skia::Color::RED, 0.0), (skia::Color::BLUE, 1.0)],
+        ))
+    }
+
+    fn solid_fill() -> shapes::Fill {
+        shapes::Fill::Solid(shapes::SolidColor(skia::Color::RED))
+    }
+
+    /// A laid-out text shape at 200x100 whose only span has `fills`.
+    fn laid_out_text_shape(grow_type: GrowType, fills: Vec<shapes::Fill>) -> Shape {
+        let mut paragraph = test_paragraph(&["hello"]);
+        paragraph.children_mut()[0].fills = fills;
+        let mut content = TextContent::new(Rect::from_xywh(0.0, 0.0, 200.0, 100.0), grow_type);
+        content.add_paragraph(paragraph);
+
+        let mut shape = Shape::new(Uuid::nil());
+        shape.set_shape_type(shapes::Type::Text(content));
+        shape.set_selrect(0.0, 0.0, 200.0, 100.0);
+        shape
+    }
+
+    /// A laid-out 200x100 text at the origin with one "hello" paragraph.
+    fn list_text_shape(
+        grow_type: GrowType,
+        direction: TextDirection,
+        list_style_type: ListStyleType,
+    ) -> Shape {
+        let mut paragraph = test_paragraph(&["hello"]).with_list_style_type(list_style_type);
+        paragraph.text_direction = direction;
+        let mut content = TextContent::new(Rect::from_xywh(0.0, 0.0, 200.0, 100.0), grow_type);
+        content.add_paragraph(paragraph);
+
+        let mut shape = Shape::new(Uuid::nil());
+        shape.set_shape_type(shapes::Type::Text(content));
+        shape.set_selrect(0.0, 0.0, 200.0, 100.0);
+        shape
+    }
+
+    #[test]
+    fn extrect_holds_the_painted_marker_when_vertically_aligned() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        for valign in [VerticalAlign::Center, VerticalAlign::Bottom] {
+            let mut shape =
+                list_text_shape(GrowType::Fixed, TextDirection::LTR, ListStyleType::Disc);
+            shape.set_vertical_align(valign);
+
+            let content = shape.get_text_content().clone();
+            let mut builders = content.paragraph_builder_group_from_text(None);
+            let layout = calculate_text_layout_data(&shape, &content, &mut builders, true);
+            let marker = layout.paragraphs[0]
+                .marker
+                .as_ref()
+                .expect("disc paragraph has a marker")
+                .rect();
+
+            let extrect = text_extrect(&shape);
+            assert!(
+                extrect.left() <= marker.left()
+                    && extrect.top() <= marker.top()
+                    && extrect.right() >= marker.right()
+                    && extrect.bottom() >= marker.bottom(),
+                "{valign:?}: {marker:?} outside {extrect:?}"
+            );
+            // With top alignment the marker would sit near y = 0.
+            assert!(marker.top() > 10.0, "{valign:?}: {marker:?}");
+        }
+    }
+
+    fn text_extrect(shape: &Shape) -> Rect {
+        shape
+            .get_text_content()
+            .calculate_bounds(shape, false)
+            .to_rect()
+    }
+
+    // Font size 14: a gap of 4.62 and a radius of 2.24.
+    const MARKER_REACH: f32 = 4.62 + 2.0 * 2.24;
+
+    #[test]
+    fn extrect_includes_a_list_marker_before_the_text() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        for grow_type in [GrowType::Fixed, GrowType::AutoHeight, GrowType::AutoWidth] {
+            let shape = list_text_shape(grow_type, TextDirection::LTR, ListStyleType::Disc);
+            let extrect = text_extrect(&shape);
+            assert!(
+                extrect.left() <= -MARKER_REACH + 0.01,
+                "{grow_type:?}: {extrect:?}"
+            );
+            assert_eq!(shape.selrect().left(), 0.0);
+        }
+    }
+
+    #[test]
+    fn extrect_includes_an_rtl_list_marker_after_the_text() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let shape = list_text_shape(GrowType::Fixed, TextDirection::RTL, ListStyleType::Disc);
+        let extrect = text_extrect(&shape);
+        assert!(
+            extrect.right() >= 200.0 + MARKER_REACH - 0.01,
+            "{extrect:?}"
+        );
+    }
+
+    #[test]
+    fn extrect_of_plain_text_stays_inside_the_text_box() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let shape = list_text_shape(GrowType::Fixed, TextDirection::LTR, ListStyleType::None);
+        let extrect = text_extrect(&shape);
+        assert!(extrect.left() >= 0.0, "{extrect:?}");
+    }
+
+    #[test]
+    fn extrect_grows_when_bullets_are_turned_on() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let mut shape = list_text_shape(GrowType::Fixed, TextDirection::LTR, ListStyleType::None);
+        assert!(text_extrect(&shape).left() >= 0.0);
+
+        let selrect = shape.selrect;
+        if let shapes::Type::Text(content) = &mut shape.shape_type {
+            let paragraph = content.paragraphs_mut()[0]
+                .clone()
+                .with_list_style_type(ListStyleType::Disc);
+            content.paragraphs_mut()[0] = paragraph;
+            content.update_layout(selrect);
+        }
+
+        assert!(text_extrect(&shape).left() <= -MARKER_REACH + 0.01);
+    }
+
+    /// Whether resizing `shape` to `width`x`height`, with no content change,
+    /// rebuilt its cached Skia paragraphs.
+    fn resize_rebuilds_paragraphs(shape: &mut Shape, width: f32, height: f32) -> bool {
+        let before = Rc::clone(&shape.get_text_content().layout.paragraphs);
+        assert!(!before.is_empty(), "the shape should be laid out");
+        shape.set_selrect(0.0, 0.0, width, height);
+        !Rc::ptr_eq(&before, &shape.get_text_content().layout.paragraphs)
+    }
+
+    // Gradient and image shaders are built into the cached paragraphs against
+    // the box size, so a new box size must rebuild them.
+
+    #[test]
+    fn resizing_a_fixed_text_height_rebuilds_box_relative_fills() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let mut shape = laid_out_text_shape(GrowType::Fixed, vec![gradient_fill()]);
+        assert!(resize_rebuilds_paragraphs(&mut shape, 200.0, 300.0));
+    }
+
+    #[test]
+    fn resizing_an_auto_width_text_rebuilds_box_relative_fills() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let mut shape = laid_out_text_shape(GrowType::AutoWidth, vec![gradient_fill()]);
+        assert!(resize_rebuilds_paragraphs(&mut shape, 400.0, 300.0));
+    }
+
+    #[test]
+    fn resizing_a_fixed_text_height_keeps_the_cache_for_solid_fills() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let mut shape = laid_out_text_shape(GrowType::Fixed, vec![solid_fill()]);
+        assert!(!resize_rebuilds_paragraphs(&mut shape, 200.0, 300.0));
     }
 
     #[test]

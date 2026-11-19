@@ -11,7 +11,9 @@
    [app.common.types.grid :as ctg]
    [app.common.types.shape.interactions :as ctsi]
    [app.common.uuid :as uuid]
+   [app.plugins.format :as format]
    [app.plugins.parser :as parser]
+   [app.plugins.strokes :as strokes]
    [cljs.test :as t :include-macros true]))
 
 (defn- overlay-action
@@ -193,3 +195,70 @@
 
   (t/testing "a malformed id raises, so plugin bugs stay visible"
     (t/is (thrown? js/Error (parser/parse-id "not-a-uuid")))))
+
+(t/deftest test-parse-stroke-maps-per-side-widths
+  (let [stroke (parser/parse-stroke
+                #js {:strokeColor "#000000"
+                     :strokeWidth 1
+                     :strokeWidthTop 2
+                     :strokeWidthRight 3
+                     :strokeWidthBottom 4
+                     :strokeWidthLeft 5})]
+    (t/is (= 2 (:stroke-width-top stroke)))
+    (t/is (= 3 (:stroke-width-right stroke)))
+    (t/is (= 4 (:stroke-width-bottom stroke)))
+    (t/is (= 5 (:stroke-width-left stroke))))
+
+  (t/testing "a uniform literal initializes all sides in simple mode"
+    (let [stroke (parser/parse-stroke #js {:strokeColor "#000000" :strokeWidth 1})]
+      (t/is (= "simple" (aget (format/format-stroke stroke) "strokeWidthType")))
+      (t/is (= 1 (:stroke-width-top stroke)))
+      (t/is (= 1 (:stroke-width-left stroke))))))
+
+(t/deftest test-parse-stroke-applies-uniform-width-before-sides
+  (let [stroke (parser/parse-stroke
+                #js {:strokeColor "#000000"
+                     :strokeWidthLeft 8
+                     :strokeWidthBottom 8
+                     :strokeWidthRight 8
+                     :strokeWidthTop 8
+                     :strokeWidth 1})]
+    (t/is (= "simple" (aget (format/format-stroke stroke) "strokeWidthType")))
+    (t/is (= 8 (:stroke-width stroke)))
+    (t/is (= [8 8 8 8]
+             (mapv stroke [:stroke-width-top :stroke-width-right :stroke-width-bottom :stroke-width-left])))))
+
+(t/deftest test-parse-stroke-top-preserves-other-widths
+  (let [stroke (parser/parse-stroke #js {:strokeColor "#000000" :strokeWidth 5 :strokeWidthTop 9})]
+    (t/is (= [9 5 5 5]
+             (mapv stroke [:stroke-width-top :stroke-width-right :stroke-width-bottom :stroke-width-left])))))
+
+(t/deftest test-stroke-proxy-mode-transitions
+  (let [^js stroke (strokes/stroke-proxy {:stroke-color "#000000" :stroke-width 1} (fn [_] nil))]
+    (t/is (= "simple" (.-strokeWidthType stroke)))
+    (set! (.-strokeWidthTop stroke) 8)
+    (t/is (= "multiple" (.-strokeWidthType stroke)))
+    (t/is (= 1 (.-strokeWidthRight stroke)))
+    (set! (.-strokeWidthRight stroke) 8)
+    (set! (.-strokeWidthBottom stroke) 8)
+    (set! (.-strokeWidthLeft stroke) 8)
+    (t/is (= "simple" (.-strokeWidthType stroke)))
+    (t/is (= 8 (.-strokeWidth stroke)))
+    (set! (.-strokeColor stroke) "#ff0000")
+    (t/is (not (contains? (parser/parse-stroke stroke) :stroke-width-type)))
+    (set! (.-strokeWidth stroke) 3)
+    (t/is (= "simple" (.-strokeWidthType stroke)))
+    (t/is (= [3 3 3 3]
+             (mapv #(aget stroke %) ["strokeWidthTop" "strokeWidthRight" "strokeWidthBottom" "strokeWidthLeft"])))
+    (set! (.-strokeWidthRight stroke) 9)
+    (t/is (= "multiple" (.-strokeWidthType stroke)))
+    (set! (.-strokeWidth stroke) 3)
+    (t/is (= [3 3 3 3]
+             (mapv #(aget stroke %) ["strokeWidthTop" "strokeWidthRight" "strokeWidthBottom" "strokeWidthLeft"])))
+    (t/is (= "simple" (.-strokeWidthType stroke)))))
+
+(t/deftest test-stroke-mode-round-trips-through-format
+  (doseq [right [8 12]]
+    (let [stroke (parser/parse-stroke
+                  #js {:strokeColor "#000000" :strokeWidth 8 :strokeWidthRight right})]
+      (t/is (= stroke (parser/parse-stroke (format/format-stroke stroke)))))))

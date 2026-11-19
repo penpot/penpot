@@ -173,11 +173,44 @@
         out     (create-export-binfile-job (:id profile) #{file-id})
         props   (::audit/props (meta (:result out)))]
 
-    (t/testing "the audit of the call points at the job, not at its files"
+    (t/testing "the audit of the call points at the job and its team"
       (t/is (= (:id (:result out)) (:job-id props)))
       (t/is (= 1 (:files props)))
       (t/is (= "detach-libraries" (:export-type props)))
-      (t/is (= #{:job-id :files :export-type} (set (keys props)))))))
+      (t/is (= (:default-team-id profile) (:team-id props)))
+      (t/is (= #{:job-id :files :export-type :team-id} (set (keys props))))
+      (t/is (not (contains? (:result out) :team-id))))))
+
+(t/deftest create-export-binfile-job-records-the-team-when-files-share-one
+  (let [profile (th/create-profile* 1)
+        file-a  (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)})
+        file-b  (th/create-file* 2 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)})
+        out     (create-export-binfile-job (:id profile)
+                                           #{(:id file-a) (:id file-b)})
+        props   (::audit/props (meta (:result out)))]
+    (t/is (th/success? out))
+    (t/is (= (:default-team-id profile) (:team-id props)))
+    (t/is (= 2 (:files props)))
+    (t/is (not (contains? (:result out) :team-id)))))
+
+(t/deftest create-export-binfile-job-omits-the-team-when-files-span-teams
+  (let [profile (th/create-profile* 1)
+        team    (th/create-team* 1 {:profile-id (:id profile)})
+        project (th/create-project* 1 {:profile-id (:id profile)
+                                       :team-id (:id team)})
+        file-a  (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)})
+        file-b  (th/create-file* 2 {:profile-id (:id profile)
+                                    :project-id (:id project)})
+        out     (create-export-binfile-job (:id profile)
+                                           #{(:id file-a) (:id file-b)})
+        props   (::audit/props (meta (:result out)))]
+    (t/is (th/success? out))
+    (t/is (nil? (:team-id props)))
+    (t/is (= #{:job-id :files :export-type} (set (keys props))))
+    (t/is (not (contains? (:result out) :team-id)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; IMPORT
@@ -216,17 +249,17 @@
                                      ::rpc/profile-id (:id profile)
                                      :total-chunks  1})
                        :result :session-id)
-        out        (th/command! {::th/type        :upload-chunk
-                                 ::rpc/profile-id (:id profile)
-                                 :session-id    session-id
-                                 :index         0
-                                 :content       (if (some? path)
-                                                  (let [size (.length (jio/file path))]
-                                                    {:filename "package.penpot"
-                                                     :path     path
-                                                     :mtype    "application/zip"
-                                                     :size     size})
-                                                  (upload-chunk :content content))})]
+        out        (th/multipart-command! {::th/type        :upload-chunk
+                                           ::rpc/profile-id (:id profile)
+                                           :session-id    session-id
+                                           :index         0
+                                           :content       (if (some? path)
+                                                            (let [size (.length (jio/file path))]
+                                                              {:filename "package.penpot"
+                                                               :path     path
+                                                               :mtype    "application/zip"
+                                                               :size     size})
+                                                            (upload-chunk :content content))})]
     (t/is (nil? (:error out)))
     session-id))
 

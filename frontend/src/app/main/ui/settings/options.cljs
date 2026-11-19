@@ -20,6 +20,7 @@
    [app.main.ui.ds.foundations.typography :as t]
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
+   [app.render-wasm.api.webgl :as webgl]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.theme :as theme]
@@ -49,7 +50,7 @@
                       (update :lang #(or % ""))
                       (update :theme #(if (= % "default")
                                         "dark"
-                                        (or % "dark")))))
+                                        (or % theme/default)))))
 
         form    (fm/use-form :schema schema:options-form
                              :initial initial)]
@@ -58,7 +59,10 @@
                  :on-submit on-submit
                  :form form}
 
-     [:h3 (tr "labels.language")]
+     [:> heading* {:level 3
+                   :typography t/headline-small
+                   :class (stl/css :section-title)}
+      (tr "labels.language")]
 
      [:div {:class (stl/css :fields-row)}
       [:& fm/select {:options (into [{:label "Auto (browser)" :value ""}]
@@ -68,7 +72,10 @@
                      :name :lang
                      :data-testid "setting-lang"}]]
 
-     [:h3 (tr "dashboard.theme-change")]
+     [:> heading* {:level 3
+                   :typography t/headline-small
+                   :class (stl/css :section-title)}
+      (tr "dashboard.theme-change")]
      [:div {:class (stl/css :fields-row)}
       [:& fm/select {:label (tr "dashboard.select-ui-theme")
                      :name :theme
@@ -95,10 +102,11 @@
         handle-render-change
         (mf/use-fn
          (fn [enabled?]
-           (st/emit! (ev/event {::ev/name (if enabled?
-                                            "enable-webgl-rendering"
-                                            "disable-webgl-rendering")
-                                ::ev/origin "settings"})
+           (st/emit! (ev/event (assoc (webgl/get-environment)
+                                      ::ev/name (if enabled?
+                                                  "enable-webgl-rendering"
+                                                  "disable-webgl-rendering")
+                                      ::ev/origin "settings"))
                      (du/update-profile-props {:renderer (if enabled? :wasm :svg)})
                      (ntf/success (if enabled?
                                     (tr "webgl.toast.webgl-render-enabled")
@@ -128,7 +136,7 @@
       [:div {:class (stl/css :form-container) :data-testid "settings-form"}
        [:> heading* {:level 2
                      :typography t/title-large
-                     :class (stl/css :color-primary)
+                     :class (stl/css :page-title)
                      :id "options-section-title"}
         (tr "labels.settings")]
        [:> options-form*]]

@@ -56,7 +56,7 @@ Penpot uses anonymous telemetries from the self-hosted instances to improve the 
 Consider sharing these anonymous telemetries enabling the corresponding flag:
 
 ```bash
-PENPOT_FLAGS: [...] enable-telemetries
+PENPOT_FLAGS: [...] enable-telemetry
 ```
 
 ## Registration and authentication
@@ -270,7 +270,11 @@ PENPOT_OIDC_USER_INFO_SOURCE:
 __Since version 2.1.2__
 
 Allows users to register and login with oidc without having to previously
-register with another method.
+register with another method. It also works with password login disabled
+(`disable-login-with-password`): OIDC registration only needs this flag,
+not password login. An invitation link also works as a substitute for
+this flag: an invited user can register with OIDC even with both
+registration flags disabled.
 
 ```bash
 PENPOT_FLAGS: [...] enable-oidc-registration
@@ -372,6 +376,44 @@ PENPOT_PUBLIC_URI: https://penpot.mycompany.com
 If you're using the official <code class="language-bash">docker-compose.yml</code> you only need to configure the
 <code class="language-bash">PENPOT_PUBLIC_URI</code> envvar in the top of the file.
 
+### Serve Penpot from a subpath
+
+Penpot can be served from a subpath such as `https://mycompany.com/penpot/`.
+Set `PENPOT_PUBLIC_URI` to the complete public URL, including the subpath and its
+trailing slash:
+
+```bash
+PENPOT_PUBLIC_URI: https://mycompany.com/penpot/
+```
+
+Your reverse proxy or Ingress must also:
+
+- Route requests under `/penpot/` to the Penpot frontend without rewriting the
+  path. The frontend expects to receive the subpath.
+- Preserve WebSocket upgrade headers for notifications and other services that
+  use WebSockets.
+
+#### Migrate an existing installation to a subpath
+
+Moving an installation from `/` to a subpath does not require a database or
+asset migration. Users, teams, projects, files, and uploaded assets remain in
+the existing storage.
+
+Before changing the public URL:
+
+1. Back up the database, assets, and current deployment configuration.
+2. Configure the proxy or Ingress route for the subpath.
+3. Update `PENPOT_PUBLIC_URI` for every Penpot component that uses it.
+4. Keep the existing `PENPOT_SECRET_KEY`, database, and asset storage
+   configuration.
+5. Restart or redeploy Penpot and verify login, static assets, API requests,
+   WebSockets, file editing, and image uploads through the new URL.
+
+Existing bookmarks and integrations that use the previous root URL must be
+updated. You may also configure a redirect from the previous URL. If the scheme
+or hostname changes in addition to the path, review your authentication provider
+callback URLs and cookie settings. Active users may need to sign in again.
+
 <p class="advice">
     If you plan to serve Penpot under different domain than `localhost` without HTTPS,
     you need to disable the `secure` flag on cookies, with the `disable-secure-session-cookies` flag.
@@ -386,9 +428,13 @@ By default, <code class="language-bash">smtp</code> flag is disabled, the email 
 printed to the console, which means that the emails will be shown in the stdout.
 
 Note that if you plan to invite members to a team, it is recommended that you enable SMTP
-as they will need to login to their account after receiving the invite link sent an in email.
-It is currently not possible to just add someone to a team without them accepting an
-invitation email.
+as they will need to login to their account after receiving the invite link sent in an email.
+
+There is one exception: with the `disable-email-verification` flag set, inviting an email
+that already has a profile adds that user to the team directly, without sending any
+invitation email and without requiring acceptance. Emails without an existing profile
+still follow the normal invitation flow. See the
+[`disable-email-verification` flag][11] description for more detail.
 
 If you have an SMTP service, uncomment the appropriate settings section in
 <code class="language-bash">docker-compose.yml</code> and configure those
@@ -618,6 +664,16 @@ In a high-availability (HA) scenario, managing the state outside of replicas is 
 - Valkey: Penpot only needs one Valkey instance to function correctly. Due to the nature of the data it manages, replication isn't even essential.
 - User media storage: This should not be configured with local storage but rather with centralized storage, such as Kubernetes PVC or S3.
 
+### Draining a backend instance
+
+To restart one backend without affecting ongoing clients, take it out of the
+load balancer first. From the backend REPL, run `(app.srepl.main/set-offline)`.
+The `/readyz` endpoint then answers `503 OFFLINE`, so the load balancer stops
+sending new requests to that instance while the requests already in flight
+finish normally. Wait for the traffic to drop, restart the process, and the
+instance comes back online on its own. To undo the drain without a restart,
+run `(app.srepl.main/set-online)`. Drain one instance at a time.
+
 ## Backend
 
 This section enumerates the backend only configuration variables.
@@ -683,7 +739,7 @@ flags, and by whether `PENPOT_PUBLIC_URI` is served over HTTPS. See
 
 ### Database
 
-Penpot only supports PostgreSQL and we highly recommend >=13 version. If you are using official
+Penpot only supports PostgreSQL and we highly recommend >=15 version. If you are using official
 docker images this is already solved for you.
 
 Essential database configuration:
@@ -704,6 +760,52 @@ POSTGRES_DATABASE: penpot
 POSTGRES_USER: penpot
 POSTGRES_PASSWORD: penpot
 ```
+
+#### Connection pool
+
+The backend keeps a pool of database connections. Its size can be tuned with:
+
+```bash
+# Backend
+PENPOT_DATABASE_MIN_POOL_SIZE: 0
+PENPOT_DATABASE_MAX_POOL_SIZE: 60
+```
+
+The values above are the defaults. The pool keeps at least `MIN_POOL_SIZE` idle
+connections open and never opens more than `MAX_POOL_SIZE`, growing only under load
+and closing idle connections after two minutes. A minimum larger than the maximum is
+capped at the maximum.
+
+If the PostgreSQL server is shared with other applications, make sure
+`PENPOT_DATABASE_MAX_POOL_SIZE` plus the connections used by everything else stays below
+the server's `max_connections` (100 by default).
+
+#### Prepared statement cache
+
+__Since version 2.20.0__
+
+The driver keeps two things per connection: a cache of parsed queries and, once a query
+runs enough times, a statement prepared in the server whose plan the server can reuse.
+Both are on by default; you only need these settings to tune them or to turn them off:
+
+```bash
+# Backend
+PENPOT_DATABASE_PREPARED_STATEMENT_CACHE_THRESHOLD: 5
+PENPOT_DATABASE_PREPARED_STATEMENT_CACHE_QUERIES: 256
+PENPOT_DATABASE_PREPARED_STATEMENT_CACHE_SIZE: 5242880
+```
+
+The values above are the driver defaults. `PENPOT_DATABASE_PREPARED_STATEMENT_CACHE_THRESHOLD`
+is how many times a query runs on a connection before the driver prepares it server-side:
+`-1` prepares it from the first execution and forces binary transfer, and `0` stops the
+driver from preparing statements in the server. The cache of parsed queries stays in use
+with the threshold at `0`: the connection caches up to
+`PENPOT_DATABASE_PREPARED_STATEMENT_CACHE_QUERIES` queries, using at most
+`PENPOT_DATABASE_PREPARED_STATEMENT_CACHE_SIZE` bytes per connection (the size is rounded
+up to whole MiB for the driver), and setting either of those two to `0` disables the
+cache. With 60 connections, the ceiling is 60 × the size. Leave a variable unset and the
+driver default applies. A parameter of the same name in `PENPOT_DATABASE_URI`, such as
+`?prepareThreshold=0`, takes precedence over these variables.
 
 ### Storage
 
@@ -762,11 +864,12 @@ These settings are equally useful if you have a Minio storage system.
 
 __Since version 2.11.0__
 
-You can change the default file data storage backend with `PENPOT_FILE_DATA_BACKEND` environment variable. Possible values are:
+You can change the file data storage backend with `PENPOT_FILE_DATA_BACKEND` environment variable. Possible values are:
 
-- `legacy-db`: the current default backend, continues storing the file data of files and snapshots in the same location as previous versions of Penpot (< 2.11.0), this is a conservative default behaviour and will be changed to `db` in next versions.
-- `db`: stores the file data on an specific table (the future default backend).
+- `db`: the default. Stores the file data on an specific table.
 - `storage`: stores the file data using the objects storage system (S3 or FS, depending on which one is configured)
+
+The `legacy-db` value is still accepted as a **read-only** alias for the payloads written by versions before 2.11.0: the backend reads them, but it no longer writes file data there. **If you upgrade a deployment with `PENPOT_FILE_DATA_BACKEND=legacy-db`, remove the variable (or set it to `db`) before the upgrade**: the backend reads `legacy-db` as `db` and logs a warning, so saves keep working, but remove the variable anyway so the deployment does not claim a read-only backend.
 
 This also comes with an additional feature that allows offload the "inactive" files on file storage backend and leaves the database only for the active files. To enable it, you should use the `enable-tiered-file-data-storage` flag and `db` as file data storage backend.
 
@@ -775,6 +878,8 @@ This also comes with an additional feature that allows offload the "inactive" fi
 PENPOT_FLAGS: [...] enable-tiered-file-data-storage
 PENPOT_FILE_DATA_BACKEND: db
 ```
+
+Once enabled, the offload job moves one file per run inside a single transaction: it locks the file row (skipping the run while the file is being edited) and migrates every live data row to the objects storage. You can follow it with `penpot_file_data_offload_rows_total` and `penpot_file_data_offload_bytes_total` (label `type="main|snapshot|fragment"`) and `penpot_file_data_offload_timing_ms` (label `result="ok|skip|error"`).
 
 ### Autosave
 
@@ -869,6 +974,15 @@ PENPOT_INTERNAL_URI: http://penpot-frontend:8080
   `http://penpot-frontend:8080` used in the docker-compose is a good default and
   it is recommended to keep it unchanged.
 
+**Beta, new render engine (WebGL):** when you run more than one exporter, give
+each one its own name and keep it across restarts and upgrades. An exporter
+uses it to cancel only its own unfinished exports when it restarts:
+
+```bash
+# Exporter
+PENPOT_EXPORTER_REPLICA_ID: exporter-1
+```
+
 ### MCP
 
 The MCP server lets AI agents read and edit Penpot files. It runs as a separate
@@ -896,6 +1010,57 @@ The defaults match the service name used in the official `docker-compose.yaml`. 
 them only if your MCP service has a different name or listens on other ports. Both
 variables are ignored when the `enable-mcp` flag is not set.
 
+#### MCP feedback
+
+Agents can email feedback about Penpot MCP to an inbox you choose, through the
+`submit_feedback` tool. Set the backend URI on the MCP container to offer the tool,
+and the inbox on the backend to accept the emails:
+
+```bash
+# MCP
+PENPOT_MCP_BACKEND_URI: http://penpot-backend:6060/
+
+# Backend
+PENPOT_MCP_FEEDBACK_EMAIL: mcp-feedback@example.com
+```
+
+- `PENPOT_MCP_BACKEND_URI`: The URI the MCP server uses to reach the backend. When
+  unset, the MCP server does not offer the tool.
+- `PENPOT_MCP_FEEDBACK_EMAIL`: The address that receives the feedback. When unset,
+  the backend rejects submissions.
+
+The backend accepts feedback when the `enable-mcp` or `enable-access-tokens` flag is
+set, and sends it through the [email configuration](#email-configuration). Each
+email carries the name and email address of the user who sent it, and uses that
+address as reply-to.
+
+#### MCP sign-in
+
+MCP clients with OAuth support can connect with the URL
+`https://<your-penpot-domain>/mcp/stream`, without a key. The client opens Penpot
+in the browser, the user allows access, and Penpot gives the client the user's MCP
+key. This is off by default. Turn it on by setting the public URL of the
+authorization service on the MCP container:
+
+```bash
+# MCP
+PENPOT_MCP_AUTH_URI: https://penpot.example.com/api/mcp/oauth
+```
+
+- `PENPOT_MCP_AUTH_URI`: Your Penpot public URI followed by `/api/mcp/oauth`. It
+  must use HTTPS and have no credentials, query or fragment. When unset, clients
+  must add the key to the URL as `userToken`.
+
+The MCP server must run in multi-user mode, which the official `penpotapp/mcp`
+image does by default. The server does not start if the value is invalid, and it
+logs at startup whether sign-in is on.
+
+The frontend container forwards the sign-in requests to the backend. If your proxy
+sends `/api/` straight to the backend instead, send
+`/.well-known/oauth-authorization-server/api/mcp/oauth` to the backend too.
+
+Clients that already add the key to the URL keep working with sign-in on.
+
 ### Internal resolver
 
 The frontend container resolves the backend, exporter and MCP service names with the
@@ -910,6 +1075,27 @@ PENPOT_INTERNAL_RESOLVER: 127.0.0.11
 - `PENPOT_INTERNAL_RESOLVER`: The DNS server nginx uses to resolve the internal service
   names. Defaults to the nameservers found in `/etc/resolv.conf`. `127.0.0.11` is the
   embedded Docker DNS server; use the address of your own resolver on other setups.
+
+### Nginx workers
+
+The frontend container sizes its nginx workers from the CPUs it can use, its CPU quota or
+its cpuset, when they are fewer than the CPUs of the host. Otherwise it starts one worker
+per CPU of the host. Each worker reserves the memory for all its connections when it
+starts, so tune these if the frontend uses more memory than you expect:
+
+```bash
+# Frontend
+PENPOT_HTTP_SERVER_WORKER_PROCESSES: 2
+PENPOT_HTTP_SERVER_WORKER_CONNECTIONS: 2048
+```
+
+- `PENPOT_HTTP_SERVER_WORKER_PROCESSES`: Number of nginx worker processes, a positive
+  integer or `auto` for one per host CPU. Defaults to the CPUs the container can use, with
+  the quota rounded up, or `auto` when it has no limit.
+- `PENPOT_HTTP_SERVER_WORKER_CONNECTIONS`: Maximum simultaneous connections per worker,
+  a positive integer. Defaults to `65535`, which takes about 30 MB of memory per worker.
+
+The container refuses to start if either value is not valid.
 
 ## Other flags
 
@@ -926,6 +1112,13 @@ for the user:
   <code class="language-bash">penpot-mcp</code> service. Check the [MCP section][8] to get more detail.
 - <code class="language-bash">enable-prepl-server</code>: enables PREPL server, used by manage.py and other additional
   tools to communicate internally with Penpot backend. Check the [CLI section][5] to get more detail.
+- `disable-email-verification`: skips the email verification step on registration, making
+  newly registered profiles active immediately without any verification email. It also
+  changes the team invitation flow: inviting an email that already has a profile adds that
+  user to the team directly, without sending an invitation email (check the
+  [email configuration section][10] for more detail). Note that registering with an email
+  that already has an inactive profile is rejected as "email already exists" while this
+  flag is set. Not recommended for production environments.
 
 __Since version 1.13.0__
 
@@ -952,3 +1145,5 @@ __Since version 2.0.0__
 [7]: /technical-guide/integration/#access-tokens
 [8]: /mcp/
 [9]: /technical-guide/developer/subsystems/link-preview/
+[10]: /technical-guide/configuration/#email-configuration
+[11]: /technical-guide/configuration/#other-flags

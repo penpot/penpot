@@ -208,6 +208,19 @@
   ([num1 num2 precision]
    (<= (abs (- num1 num2)) precision)))
 
+(defn close-map?
+  "Equality for maps: same keys, numeric values within `close?`, any other
+  value compared exactly."
+  [a b]
+  (and (= (count a) (count b))
+       (every? (fn [[k v]]
+                 (and (contains? b k)
+                      (let [w (get b k)]
+                        (if (number? v)
+                          (and (number? w) (close? v w))
+                          (= v w)))))
+               a)))
+
 (defn lerp
   "Calculates a the linear interpolation between two values and a given percent"
   [v0 v1 t]

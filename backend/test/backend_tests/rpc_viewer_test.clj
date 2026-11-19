@@ -910,3 +910,38 @@
         (t/is (= #{comp-b}
                  (set (keys (get-in by-id [(:id lib2) :data :components])))))
         (t/is (= [] (get-in by-id [(:id lib2) :data :pages])))))))
+
+(t/deftest view-only-bundle-does-not-expose-the-storage-pointer
+  ;; Both the file and its libraries are moved to cold storage, so their file
+  ;; maps carry the internal pointer unless the response strips it.
+  (let [owner    (th/create-profile* 1 {:is-active true})
+        proj-id  (:default-project-id owner)
+        file     (th/create-file* 1 {:profile-id (:id owner)
+                                     :project-id proj-id
+                                     :is-shared false})
+        lib      (th/create-file* 2 {:profile-id (:id owner)
+                                     :project-id proj-id
+                                     :is-shared true})
+        page-id  (get-in file [:data :pages 0])
+        _        (th/link-file-to-library* {:file-id (:id file)
+                                            :library-id (:id lib)})
+        slink    (th/command! {::th/type :create-share-link
+                               ::rpc/profile-id (:id owner)
+                               :file-id (:id file)
+                               :pages #{page-id}
+                               :who-comment "team"
+                               :who-inspect "all"})
+        slink-id (get-in slink [:result :id])]
+
+    (th/run-task! :offload-file-data {:file-id (:id file)})
+    (th/run-task! :offload-file-data {:file-id (:id lib)})
+
+    (let [out    (th/command! {::th/type :get-view-only-bundle
+                               :share-id slink-id
+                               :file-id (:id file)})
+          result (:result out)]
+      (t/is (nil? (:error out)))
+      (t/is (seq (:libraries result)))
+      (t/is (not (contains? (:file result) :storage-object-id)))
+      (t/is (every? #(not (contains? % :storage-object-id))
+                    (:libraries result))))))

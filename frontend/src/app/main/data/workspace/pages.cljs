@@ -147,7 +147,12 @@
                               :workspace-focus-selected))]
 
         (cond-> state
-          exit? (dissoc :workspace-drawing))))))
+          exit? (dissoc :workspace-drawing))))
+
+    ptk/EffectEvent
+    (effect [_ _ _]
+      ;; Free the worker's copy of the page and its indexes
+      (mw/emit! {:cmd :index/finalize :page-id page-id}))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Workspace Page CRUD

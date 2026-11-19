@@ -21,9 +21,8 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
-   [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
+   [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
    [app.main.ui.hooks :as hooks]
-   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.sidebar.layer-name :refer [layer-name*]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
@@ -138,7 +137,9 @@
                       :data-testid "toggle-content"
                       :aria-expanded is-expanded
                       :on-click on-toggle-collapse}
-             deprecated-icon/arrow])
+             [:> icon* {:icon-id i/arrow
+                        :size "s"
+                        :class (stl/css :toggle-content-icon)}]])
 
           [:div {:class (stl/css :icon-shape)
                  :on-double-click on-zoom-to-selected}
@@ -189,7 +190,9 @@
                             (tr "workspace.shape.menu.show")
                             (tr "workspace.shape.menu.hide"))
                    :on-click on-toggle-visibility}
-          (if ^boolean hidden? deprecated-icon/hide deprecated-icon/shown)]
+          [:> icon* {:icon-id (if ^boolean hidden? i/hide i/shown)
+                     :size "s"
+                     :class (stl/css :element-action-icon)}]]
          [:button {:class (stl/css-case
                            :block-element true
                            :selected blocked?)
@@ -197,7 +200,9 @@
                             (tr "workspace.shape.menu.unlock")
                             (tr "workspace.shape.menu.lock"))
                    :on-click on-toggle-blocking}
-          (if ^boolean blocked? deprecated-icon/lock deprecated-icon/unlock)]])]
+          [:> icon* {:icon-id (if ^boolean blocked? i/lock i/unlock)
+                     :size "s"
+                     :class (stl/css :element-action-icon)}]]])]
 
      children]))
 

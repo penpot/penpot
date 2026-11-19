@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS SUBSIDIARY SL
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns frontend-tests.errors-governor-test
   "Unit tests for the error report governor (`app.main.errors`).
@@ -173,6 +173,18 @@
                                           :cause cause))))]
     (t/is (= 1 (count events)))
     (t/is (= 1 (:occurrences (deref (first events)))))))
+
+(t/deftest submit-report-carries-the-active-renderer
+  (let [submit (fn [state hint]
+                 (with-redefs [st/state (atom state)]
+                   (capture-reports!
+                    #(errors/submit-report :event-name "handled-exception"
+                                           :report "report"
+                                           :hint hint
+                                           :cause (error-cause :hint hint)))))]
+    (t/is (= "wasm" (:renderer (deref (first (submit {:features #{"render-wasm/v1"}} "a"))))))
+    (t/is (= "svg" (:renderer (deref (first (submit {:features #{}} "b"))))))
+    (t/is (nil? (:renderer (deref (first (submit {} "c"))))))))
 
 (t/deftest invalid-report-does-not-consume-a-reservation
   (let [cause  (error-cause :type :network :hint "boom")

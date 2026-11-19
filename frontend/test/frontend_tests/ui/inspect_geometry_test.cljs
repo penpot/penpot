@@ -112,3 +112,17 @@
         (let [markup (render-panel panel shapes)]
           (t/is (str/includes? markup "Border width"))
           (t/is (str/includes? markup "3px")))))))
+
+;; Scenario: the selected shape points to a parent missing from the page, as
+;; in a damaged file or while a rejected save is on screen. Proves: the
+;; geometry panels and the code view show the size and leave out the
+;; position, which needs the parent, instead of crashing the workspace.
+(t/deftest geometry-without-a-parent-leaves-out-the-position
+  (let [orphan (assoc (shape :rect per-side-stroke) :parent-id (uuid/next) :frame-id (uuid/next))]
+    (doseq [panel [geometry/geometry-panel* styles-geometry/geometry-panel*]]
+      (let [markup (render-panel panel [orphan])]
+        (t/is (str/includes? markup "120px"))
+        (t/is (not (str/includes? markup "Left")))))
+    (let [code (css/get-shape-properties-css {(:id orphan) orphan} orphan css/shape-css-properties)]
+      (t/is (str/includes? code "width: 120px;"))
+      (t/is (not (str/includes? code "left:"))))))

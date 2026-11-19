@@ -14,9 +14,9 @@
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
    [app.main.ui.components.title-bar :refer [title-bar*]]
+   [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
-   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -159,8 +159,11 @@
         (if create?
           (tr "workspace.assets.create-group")
           (tr "workspace.assets.rename-group"))]
-       [:button {:class (stl/css :modal-close-btn)
-                 :on-click modal/hide!} deprecated-icon/close]]
+       [:> icon-button* {:variant "ghost"
+                         :tooltip-class (stl/css :modal-close-btn)
+                         :aria-label (tr "labels.close")
+                         :icon i/close
+                         :on-click modal/hide!}]]
 
       [:div {:class (stl/css :modal-content)}
        [:& fm/form {:form form :on-submit on-accept}
@@ -172,16 +175,13 @@
 
       [:div {:class (stl/css :modal-footer)}
        [:div {:class (stl/css :action-buttons)}
-        [:input
-         {:class (stl/css :cancel-button)
-          :type "button"
-          :value (tr "labels.cancel")
-          :on-click modal/hide!}]
+        [:> button* {:variant "secondary"
+                     :type "button"
+                     :on-click modal/hide!}
+         (tr "labels.cancel")]
 
-        [:input
-         {:type "button"
-          :class (stl/css-case :accept-btn true
-                               :global/disabled (not (:valid @form)))
-          :disabled (not (:valid @form))
-          :value (if create? (tr "labels.create") (tr "labels.rename"))
-          :on-click on-accept}]]]]]))
+        [:> button* {:variant "primary"
+                     :type "button"
+                     :disabled (not (:valid @form))
+                     :on-click on-accept}
+         (if create? (tr "labels.create") (tr "labels.rename"))]]]]]))

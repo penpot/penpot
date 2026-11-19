@@ -16,6 +16,7 @@
    [app.main.data.project :as dpj]
    [app.main.data.team :as dtm]
    [app.main.refs :as refs]
+   [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.components.mcp-menu :refer [dashboard-mcp-menu*]]
    [app.main.ui.dashboard.deleted :as deleted]
@@ -28,6 +29,8 @@
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
+   [app.main.ui.ds.foundations.typography :as t]
+   [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.layout.menu :refer [context-menu*]]
    [app.main.ui.ds.product.empty-placeholder :refer [empty-placeholder*]]
    [app.main.ui.hooks :as hooks]
@@ -47,9 +50,12 @@
     [:header {:class (stl/css :dashboard-header)
               :data-testid "dashboard-header"}
      [:div#dashboard-projects-title {:class (stl/css :dashboard-title)}
-      [:h1 (if default-team?
-             (tr "dashboard.personal-projects")
-             (tr "dashboard.projects-title"))]]
+      [:> heading* {:level 1
+                    :typography t/title-large
+                    :class (stl/css :dashboard-title-text)}
+       (if default-team?
+         (tr "dashboard.personal-projects")
+         (tr "dashboard.projects-title"))]]
      [:div {:class (stl/css :dashboard-header-actions)}
       [:> dashboard-mcp-menu*]
       [:> layout-toggle* {:layout layout
@@ -63,9 +69,16 @@
 (mf/defc team-hero*
   {::mf/wrap [mf/memo]}
   [{:keys [team on-close]}]
-  (let [on-nav-members-click
+  (let [router       (mf/deref refs/router)
+        members-href (rt/resolve-uri router :dashboard-members {:team-id (:id team)})
+
+        on-nav-members-click
         (mf/use-fn
-         #(st/emit! (dcm/go-to-dashboard-members)))
+         (fn [event]
+           ;; Ctrl/Cmd-click opens the href in a new tab, as any link.
+           (when-not (kbd/mod? event)
+             (dom/prevent-default event)
+             (st/emit! (dcm/go-to-dashboard-members)))))
 
         on-invite
         (mf/use-fn
@@ -89,7 +102,9 @@
       [:div {:class (stl/css :title)} (tr "dasboard.team-hero.title")]
       [:div {:class (stl/css :info)}
        [:span (tr "dasboard.team-hero.text")]
-       [:a {:on-click on-nav-members-click} (tr "dasboard.team-hero.management")]]
+       [:a {:href members-href
+            :on-click on-nav-members-click}
+        (tr "dasboard.team-hero.management")]]
       [:> button* {:variant "primary"
                    :on-click on-invite}
        (tr "onboarding.choice.team-up.invite-members")]]
@@ -127,8 +142,9 @@
         on-nav
         (mf/use-fn
          (mf/deps project-id)
-         (fn []
-           (st/emit! (dcm/go-to-dashboard-files :project-id project-id))))
+         (fn [event]
+           (st/emit! (dcm/go-to-dashboard-files :project-id project-id
+                                                ::rt/new-window (kbd/mod? event)))))
 
         toggle-pin
         (mf/use-fn
@@ -286,7 +302,7 @@
                    :tab-index "0"
                    :on-key-down (fn [event]
                                   (when (kbd/enter? event)
-                                    (on-nav)))}
+                                    (on-nav event)))}
           (tr "dashboard.show-all-files")
           [:> icon* {:icon-id i/arrow-right}]])]]
 

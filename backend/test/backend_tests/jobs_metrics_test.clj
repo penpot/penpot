@@ -33,8 +33,8 @@
 
 (def ^:private metric-ids
   [:jobs-submitted
+   :jobs-skipped
    :jobs-dispatched
-   :jobs-completed
    :jobs-retries
    :jobs-orphaned
    :jobs-rescheduled
@@ -48,7 +48,6 @@
    :jobs-gc-rows
    :jobs-gc-timing
    :jobs-cron-total
-   :jobs-requests-total
    :jobs-request-timing
    :jobs-events-total])
 
@@ -103,7 +102,7 @@
       (t/is (some? definition) id)
       (t/is (re-find #"^penpot_jobs_" (::mdef/name definition)) id)))
   (t/is (= ["name" "queue" "outcome"]
-           (::mdef/labels (:jobs-completed main/default-metrics))))
+           (::mdef/labels (:jobs-total-timing main/default-metrics))))
   (t/is (= ["status"]
            (::mdef/labels (:jobs-backlog main/default-metrics)))))
 
@@ -140,14 +139,37 @@
     (jobs/claim cfg job-id (:scheduled-at (jobs/get-job cfg job-id)))
     (jobs/complete cfg :job-id job-id :result {:ok true})
     (t/is (= 1.0 (counter-value metrics :jobs-submitted ["echo" "default"])))
-    (t/is (= 1.0 (counter-value metrics :jobs-completed ["echo" "default" "completed"])))))
+    (t/is (= 1.0 (histogram-count metrics :jobs-total-timing ["echo" "default" "completed"])))))
+
+(t/deftest skip-if-active-records-skipped-metric
+  (let [metrics (make-metrics)
+        defs    {:echo {::jobs/name      :echo
+                        ::jobs/schema    [:map]
+                        ::jobs/handler   (fn [_context params] params)
+                        ::jobs/decoder   identity
+                        ::jobs/validator (constantly true)}}
+        cfg     {::jobs/defs   defs
+                 ::db/pool     th/*pool*
+                 ::mtx/metrics metrics}
+        _       (jobs/submit cfg {::jobs/name   :echo
+                                  ::jobs/params {}
+                                  ::jobs/label  "skip-metric"})
+        skipped (jobs/submit cfg {::jobs/name   :echo
+                                  ::jobs/params {}
+                                  ::jobs/label  "skip-metric"
+                                  ::jobs/skip-if-active true})]
+    (t/is (nil? skipped))
+    (t/is (= 1.0 (counter-value metrics :jobs-skipped ["echo" "default"])))
+    (t/is (= 1.0 (counter-value metrics :jobs-submitted ["echo" "default"]))
+          "the withheld submit records no submission")))
 
 (t/deftest lifecycle-helpers-use-labels-as-is
   (let [metrics (make-metrics)
         cfg     (metrics-cfg metrics)]
     (jobs-metrics/record-submitted cfg "delete-object" "default")
+    (jobs-metrics/record-skipped cfg "delete-object" "default")
     (jobs-metrics/record-dispatched cfg "delete-object" "default" 2)
-    (jobs-metrics/record-outcome cfg "delete-object" "default" :completed)
+    (jobs-metrics/record-total cfg "delete-object" "default" :completed 42)
     (jobs-metrics/record-retry cfg "delete-object" "default" :backoff)
     (jobs-metrics/record-orphan cfg "webhooks")
     (jobs-metrics/record-rescheduled cfg "custom")
@@ -157,14 +179,15 @@
     (jobs-metrics/record-legacy-execution cfg "delete-object" 42)
 
     (t/is (= 1.0 (counter-value metrics :jobs-submitted ["delete-object" "default"])))
+    (t/is (= 1.0 (counter-value metrics :jobs-skipped ["delete-object" "default"])))
     (t/is (= 2.0 (counter-value metrics :jobs-dispatched ["delete-object" "default"])))
-    (t/is (= 1.0 (counter-value metrics :jobs-completed ["delete-object" "default" "completed"])))
+    (t/is (= 1.0 (histogram-count metrics :jobs-total-timing ["delete-object" "default" "completed"])))
     (t/is (= 1.0 (counter-value metrics :jobs-retries ["delete-object" "default" "backoff"])))
     (t/is (= 1.0 (counter-value metrics :jobs-orphaned ["webhooks"])))
     (t/is (= 1.0 (counter-value metrics :jobs-rescheduled ["custom"])))
     (t/is (= 3.0 (counter-value metrics :jobs-gc-rows ["expired" "deleted"])))
     (t/is (= 1.0 (counter-value metrics :jobs-cron-total ["submitted" "none"])))
-    (t/is (= 1.0 (counter-value metrics :jobs-requests-total ["replied"])))
+    (t/is (= 1.0 (histogram-count metrics :jobs-request-timing ["replied"])))
 
     (t/testing "the legacy histogram keeps the raw job name, with no queue"
       (t/is (= 1.0 (histogram-count metrics :tasks-timing ["delete-object"]))))
@@ -181,15 +204,15 @@
     (t/is (= "other" (jobs-metrics/queue-label nil))))
   (let [metrics (make-metrics)
         cfg     (metrics-cfg metrics)]
-    (jobs-metrics/record-outcome cfg "echo" "unexpected" :unexpected)
-    (t/is (= 1.0 (counter-value metrics :jobs-completed ["echo" "unexpected" "unexpected"])))
+    (jobs-metrics/record-total cfg "echo" "unexpected" :unexpected 42)
+    (t/is (= 1.0 (histogram-count metrics :jobs-total-timing ["echo" "unexpected" "unexpected"])))
     (t/testing "a new value is recorded, never folded or dropped"
       (jobs-metrics/record-gc-rows cfg :unknown :deleted 1)
       (jobs-metrics/record-cron cfg :brand-new :whatever)
       (jobs-metrics/record-request cfg :brand-new 5)
       (t/is (= 1.0 (counter-value metrics :jobs-gc-rows ["unknown" "deleted"])))
       (t/is (= 1.0 (counter-value metrics :jobs-cron-total ["brand-new" "whatever"])))
-      (t/is (= 1.0 (counter-value metrics :jobs-requests-total ["brand-new"]))))))
+      (t/is (= 1.0 (histogram-count metrics :jobs-request-timing ["brand-new"]))))))
 
 (t/deftest sampler-is-wired-and-does-not-start-on-read-only
   (t/is (contains? main/worker-config :app.jobs.metrics/sampler))
@@ -279,7 +302,7 @@
       (t/is (= 2 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job_event"])))))
 
     (t/testing "the terminal counter followed its own commit, not the caller one"
-      (t/is (= 1.0 (counter-value metrics :jobs-completed ["echo" "default" "completed"]))))))
+      (t/is (= 1.0 (histogram-count metrics :jobs-total-timing ["echo" "default" "completed"]))))))
 
 (t/deftest progress-counter-follows-the-report-that-outlives-the-caller
   (let [metrics (make-metrics)

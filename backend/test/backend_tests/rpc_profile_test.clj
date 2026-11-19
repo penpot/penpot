@@ -140,12 +140,12 @@
         (t/is (= "dark" (get-in out [:result :theme])))))
 
     (t/testing "update photo"
-      (let [data {::th/type :update-profile-photo
-                  ::rpc/profile-id (:id profile)
-                  :file {:filename "sample.jpg"
-                         :size 123123
-                         :path (th/tempfile "backend_tests/test_files/sample.jpg")
-                         :mtype "image/jpeg"}}
+      (let [data (th/with-multipart {::th/type :update-profile-photo
+                                     ::rpc/profile-id (:id profile)
+                                     :file {:filename "sample.jpg"
+                                            :size 123123
+                                            :path (th/tempfile "backend_tests/test_files/sample.jpg")
+                                            :mtype "image/jpeg"}})
             out  (th/command! data)]
 
         ;; (th/print-result! out)
@@ -508,8 +508,41 @@
         (t/is (= "utma" (:penpot/utm-campaign props)))
         (t/is (= "mtma" (:penpot/mtm-campaign props)))))))
 
+(defn- prepare-register-token
+  [email]
+  (-> (th/command! {::th/type :prepare-register-profile
+                    :email email
+                    :fullname "foobar"
+                    :password "Foobar12!"})
+      (get-in [:result :token])))
+
+(t/deftest register-profile-defaults-to-wasm-renderer
+  (let [token  (prepare-register-token "user@example.com")
+        result (th/command-raw! {::th/type :register-profile
+                                 :token token})
+        props  (:app.loggers.audit/replace-props (meta result))]
+    (t/is (= :wasm (:renderer-default props)))
+
+    (let [profile (-> (th/db-get :profile {:email "user@example.com"})
+                      (profile/decode-row))]
+      (t/is (= :wasm (get-in profile [:props :renderer]))))))
+
+(t/deftest register-profile-retry-has-no-renderer-default
+  (with-redefs [cf/flags (conj cf/flags :email-verification)]
+    (th/create-profile* 1 {:is-active false})
+    (let [token  (prepare-register-token "profile1.test@nodomain.com")
+          result (th/command-raw! {::th/type :register-profile
+                                   :token token})
+          props  (:app.loggers.audit/replace-props (meta result))]
+      (t/is (map? props))
+      (t/is (not (contains? props :renderer-default))))))
+
+(t/deftest create-profile-keeps-given-renderer
+  (let [profile (th/create-profile* 1 {:props {:renderer :svg}})]
+    (t/is (= :svg (get-in profile [:props :renderer])))))
+
 (t/deftest prepare-register-and-register-profile-2
-  (with-mocks [mock {:target 'app.email/send :return nil}]
+  (with-mocks [mock {:target 'app.email/send-template :return nil}]
     (let [current-token (atom nil)]
       ;; PREPARE REGISTER
       (let [data  {::th/type :prepare-register-profile
@@ -563,7 +596,7 @@
           (t/is (= 1 (:call-count @mock))))))))
 
 (t/deftest prepare-register-and-register-profile-3
-  (with-mocks [mock {:target 'app.email/send :return nil}]
+  (with-mocks [mock {:target 'app.email/send-template :return nil}]
     (let [current-token (atom nil)]
       ;; PREPARE REGISTER
       (let [data  {::th/type :prepare-register-profile
@@ -578,9 +611,15 @@
       ;; DO REGISTRATION
       (let [data  {::th/type :register-profile
                    :token @current-token}
-            out   (th/command! data)]
+            out   (th/command! data)
+            mdata (-> out :result meta)]
         (t/is (nil? (:error out)))
-        (t/is (= 1 (:call-count @mock))))
+        (t/is (= 1 (:call-count @mock)))
+        ;; The pending account describes itself with :activation, and
+        ;; the event no longer carries an :action.
+        (t/is (= "email-verification"
+                 (get-in mdata [:app.loggers.audit/replace-props :activation])))
+        (t/is (not (contains? (get-in mdata [:app.loggers.audit/context] {}) :action))))
 
       (th/reset-mock! mock)
 
@@ -611,7 +650,7 @@
   ;; When disable-email-verification is set and the profile is inactive
   ;; (e.g. created before the flag was set), re-registering should be
   ;; rejected with :email-already-exists.
-  (with-mocks [mock {:target 'app.email/send :return nil}]
+  (with-mocks [mock {:target 'app.email/send-template :return nil}]
     (with-redefs [app.config/flags #{:registration :login-with-password}]
       (let [current-token (atom nil)]
         ;; PREPARE REGISTER: first attempt (no profile exists yet)
@@ -633,7 +672,13 @@
           ;; No verification email sent
           (t/is (= 0 (:call-count @mock)))
           ;; Session is minted
-          (t/is (seq (:app.rpc/response-transform-fns mdata))))
+          (t/is (seq (:app.rpc/response-transform-fns mdata)))
+          ;; The immediately usable account describes itself with
+          ;; :activation, and the event no longer carries an :action.
+          (t/is (= "immediate"
+                   (get-in mdata [:app.loggers.audit/replace-props :activation])))
+          (t/is (false? (get-in mdata [:app.loggers.audit/replace-props :from-invitation])))
+          (t/is (not (contains? (get-in mdata [:app.loggers.audit/context] {}) :action))))
 
         ;; Force the profile back to inactive to simulate the case where it was
         ;; created before disable-email-verification was set
@@ -699,7 +744,7 @@
 
 (t/deftest prepare-register-with-invitation-and-disabled-registration
   (with-redefs [app.config/flags #{:login-with-password :email-verification}]
-    (with-mocks [mock {:target 'app.email/send :return nil}]
+    (with-mocks [mock {:target 'app.email/send-template :return nil}]
       (let [email   "invited@example.com"
             fixture (create-invitation-fixture email (ct/in-future "48h"))
             itoken  (create-test-invitation-token fixture email)
@@ -840,7 +885,7 @@
   ;; verify-email mail with the invitation token EMBEDDED into the
   ;; verify-email JWE (so the team-invitation flow can resume after
   ;; the user clicks the email link).
-  (with-mocks [mock {:target 'app.email/send :return nil}]
+  (with-mocks [mock {:target 'app.email/send-template :return nil}]
     (let [itoken (tokens/generate th/*system*
                                   {:iss :team-invitation
                                    :exp (ct/in-future "48h")
@@ -911,11 +956,15 @@
         (t/is (map? reg-result))
 
         ;; Active branch: invitation-token is echoed back and a session
-        ;; is minted via `session/create-fn`.
+        ;; is minted via `session/create-fn`. The event describes the
+        ;; outcome with :activation and :from-invitation, not with an
+        ;; :action.
         (t/is (string? (:invitation-token reg-result)))
         (t/is (seq (:app.rpc/response-transform-fns mdata)))
-        (t/is (= "accept-invitation"
-                 (get-in mdata [:app.loggers.audit/context :action])))))))
+        (t/is (= "immediate"
+                 (get-in mdata [:app.loggers.audit/replace-props :activation])))
+        (t/is (true? (get-in mdata [:app.loggers.audit/replace-props :from-invitation])))
+        (t/is (not (contains? (get-in mdata [:app.loggers.audit/context] {}) :action)))))))
 
 (t/deftest prepare-and-register-with-invitation-and-enabled-registration-2
   (let [itoken (tokens/generate th/*system*
@@ -938,6 +987,10 @@
       (t/is (= :email-does-not-match-invitation (:code edata))))))
 
 (t/deftest prepare-register-with-invitation-and-disabled-registration-and-wrong-email
+  ;; The email check runs before the invitation row lookup, so a
+  ;; mismatched email is reported even when the invitation row is gone.
+  ;; Flags stay `#{:login-with-password}`: password registration is
+  ;; allowed only via invitation.
   (with-redefs [app.config/flags #{:login-with-password}]
     (let [itoken (tokens/generate th/*system*
                                   {:iss :team-invitation
@@ -945,7 +998,6 @@
                                    :role :editor
                                    :team-id uuid/zero
                                    :member-email "user2@example.com"})
-
           data  {::th/type :prepare-register-profile
                  :invitation-token itoken
                  :email "user@example.com"
@@ -996,6 +1048,216 @@
             (t/is (not (th/success? out)))
             (t/is (= :registration-disabled (-> out :error ex-data :code)))
             (t/is (nil? (th/db-get :profile {:email email})))))))))
+
+(defn- create-oidc-register-token
+  "Mint a `:prepared-register` token shaped like the ones the OIDC
+  callback produces in `redirect-to-register` (no real provider needed)."
+  [email extra]
+  (tokens/generate th/*system*
+                   (merge {:iss :prepared-register
+                           :exp (ct/in-future "48h")
+                           :backend "oidc"
+                           :email email
+                           :fullname "OIDC User"
+                           :email-verified true
+                           :props {}}
+                          extra)))
+
+(t/deftest register-profile-allows-oidc-registration-with-password-login-disabled
+  ;; Issue #12964: with password login and public registration disabled,
+  ;; a new user arriving from OIDC must still be able to register when
+  ;; `oidc-registration` is enabled.
+  (with-redefs [app.config/flags #{:login-with-oidc :oidc-registration}]
+    (let [email  "oidc-user@example.com"
+          token  (create-oidc-register-token email nil)
+          out    (th/command! {::th/type :register-profile
+                               :token token})
+          result (:result out)
+          mdata  (meta result)]
+      (t/is (th/success? out))
+      ;; A session is minted: the user lands on the dashboard.
+      (t/is (seq (:app.rpc/response-transform-fns mdata)))
+      (let [profile (th/db-get :profile {:email email})]
+        (t/is (some? profile))
+        (t/is (= "oidc" (:auth-backend profile)))
+        (t/is (true? (:is-active profile))))
+      ;; No password fallback while password login is disabled.
+      (let [login-out (th/command! {::th/type :login-with-password
+                                    :email email
+                                    :password "Whatever1!"})]
+        (t/is (not (th/success? login-out)))
+        (t/is (= :restriction (-> login-out :error ex-data :type)))
+        (t/is (= :login-disabled (-> login-out :error ex-data :code)))))))
+
+(t/deftest register-profile-rejects-oidc-without-registration-flags
+  (with-redefs [app.config/flags #{:login-with-oidc}]
+    (let [email "oidc-rejected@example.com"
+          token (create-oidc-register-token email nil)
+          out   (th/command! {::th/type :register-profile
+                              :token token})]
+      (t/is (not (th/success? out)))
+      (t/is (= :registration-disabled (-> out :error ex-data :code)))
+      (t/is (nil? (th/db-get :profile {:email email}))))))
+
+(t/deftest register-profile-allows-oidc-with-public-registration-and-password-login-disabled
+  (with-redefs [app.config/flags #{:login-with-oidc :registration}]
+    (let [email  "oidc-public@example.com"
+          token  (create-oidc-register-token email nil)
+          out    (th/command! {::th/type :register-profile
+                               :token token})]
+      (t/is (th/success? out))
+      (let [profile (th/db-get :profile {:email email})]
+        (t/is (some? profile))
+        (t/is (= "oidc" (:auth-backend profile)))))))
+
+(t/deftest register-profile-allows-oidc-with-invitation-and-registration-disabled
+  (let [email   "oidc-invited@example.com"
+        fixture (create-invitation-fixture email (ct/in-future "48h"))]
+    (with-redefs [app.config/flags #{:login-with-oidc :oidc-registration}]
+      (let [itoken (create-test-invitation-token fixture email)
+            token  (create-oidc-register-token email {:invitation-token itoken})
+            out    (th/command! {::th/type :register-profile
+                                 :token token})
+            result (:result out)
+            mdata  (meta result)]
+        (t/is (th/success? out))
+        ;; Invitation branch: the token is echoed back and a session is
+        ;; minted so the frontend can complete the team-invitation flow.
+        (t/is (string? (:invitation-token result)))
+        (t/is (seq (:app.rpc/response-transform-fns mdata)))
+        (let [profile (th/db-get :profile {:email email})]
+          (t/is (some? profile))
+          (t/is (= "oidc" (:auth-backend profile))))))))
+
+(t/deftest register-profile-allows-oidc-with-canceled-invitation
+  ;; The invitation row is only consulted when no SSO registration
+  ;; flag is set: with `:oidc-registration` (as here), registration
+  ;; succeeds even when the invitation was canceled, and team
+  ;; membership fails later at `verify-token`.
+  (let [email   "oidc-canceled@example.com"
+        fixture (create-invitation-fixture email (ct/in-future "48h"))]
+    (with-redefs [app.config/flags #{:login-with-oidc :oidc-registration}]
+      (let [itoken (create-test-invitation-token fixture email)
+            token  (create-oidc-register-token email {:invitation-token itoken})]
+        (th/db-delete! :team-invitation
+                       {:team-id (:id (:team fixture))
+                        :email-to email})
+        (let [out    (th/command! {::th/type :register-profile
+                                   :token token})
+              result (:result out)
+              mdata  (meta result)]
+          (t/is (th/success? out))
+          (t/is (string? (:invitation-token result)))
+          (t/is (seq (:app.rpc/response-transform-fns mdata)))
+          (let [profile (th/db-get :profile {:email email})]
+            (t/is (some? profile))
+            (t/is (= "oidc" (:auth-backend profile))))
+          ;; The team is not joined: with the invitation row gone,
+          ;; accepting it fails.
+          (let [vout (th/command! {::th/type :verify-token
+                                   :token (:invitation-token result)})]
+            (t/is (not (th/success? vout)))
+            (t/is (= :validation (-> vout :error ex-data :type)))
+            (t/is (= :invalid-token (-> vout :error ex-data :code)))))))))
+
+(t/deftest register-profile-rejects-prepared-token-without-backend
+  ;; The `:backend` claim is mandatory: a prepared-register token
+  ;; without it is rejected loudly instead of falling into any
+  ;; registration branch.
+  (with-redefs [app.config/flags #{:login-with-oidc :oidc-registration}]
+    (let [token (tokens/generate th/*system*
+                                 {:iss :prepared-register
+                                  :exp (ct/in-future "48h")
+                                  :email "no-backend@example.com"
+                                  :fullname "No Backend"
+                                  :email-verified true
+                                  :props {}})
+          out   (th/command! {::th/type :register-profile
+                              :token token})]
+      (t/is (not (th/success? out)))
+      (t/is (= :validation (-> out :error ex-data :type)))
+      (t/is (= :invalid-token (-> out :error ex-data :code)))
+      (t/is (nil? (th/db-get :profile {:email "no-backend@example.com"}))))))
+
+(t/deftest register-profile-rejects-non-oidc-backend-token
+  ;; The SSO registration gate only applies to backends of OIDC type;
+  ;; a token carrying any other backend is rejected loudly instead of
+  ;; silently taking the SSO branch.
+  (with-redefs [app.config/flags #{:login-with-oidc :oidc-registration}]
+    (let [token (tokens/generate th/*system*
+                                 {:iss :prepared-register
+                                  :exp (ct/in-future "48h")
+                                  :backend "ldap"
+                                  :email "unknown-backend@example.com"
+                                  :fullname "Unknown Backend"
+                                  :email-verified true
+                                  :props {}})
+          out   (th/command! {::th/type :register-profile
+                              :token token})]
+      (t/is (not (th/success? out)))
+      (t/is (= :validation (-> out :error ex-data :type)))
+      (t/is (= :invalid-token (-> out :error ex-data :code)))
+      (t/is (nil? (th/db-get :profile {:email "unknown-backend@example.com"}))))))
+
+(t/deftest register-profile-allows-oidc-with-invitation-and-no-registration-flags
+  ;; Review of #12974: an invitation token is a substitute for the
+  ;; SSO registration flags, as it is for the password flow. With no
+  ;; `:registration` nor `:oidc-registration` flag, a user arriving
+  ;; through a team invitation can still register via OIDC.
+  (let [email   "oidc-invited-noflags@example.com"
+        fixture (create-invitation-fixture email (ct/in-future "48h"))]
+    (with-redefs [app.config/flags #{:login-with-oidc}]
+      (let [itoken (create-test-invitation-token fixture email)
+            token  (create-oidc-register-token email {:invitation-token itoken})
+            out    (th/command! {::th/type :register-profile
+                                 :token token})
+            result (:result out)
+            mdata  (meta result)]
+        (t/is (th/success? out))
+        ;; Invitation branch: the token is echoed back and a session is
+        ;; minted so the frontend can complete the team-invitation flow.
+        (t/is (string? (:invitation-token result)))
+        (t/is (seq (:app.rpc/response-transform-fns mdata)))
+        (let [profile (th/db-get :profile {:email email})]
+          (t/is (some? profile))
+          (t/is (= "oidc" (:auth-backend profile))))))))
+
+(t/deftest register-profile-rejects-oidc-invitation-email-mismatch-with-no-registration-flags
+  ;; Review of #12974: the invitation is a substitute for the SSO
+  ;; registration flags only when it was issued for the registering
+  ;; email. A forwarded invitation for another email must not unlock
+  ;; registration with closed registration.
+  (let [invited-email "oidc-invited-other@example.com"
+        attacker-mail "oidc-attacker-noflags@example.com"
+        fixture       (create-invitation-fixture invited-email (ct/in-future "48h"))]
+    (with-redefs [app.config/flags #{:login-with-oidc}]
+      (let [itoken (create-test-invitation-token fixture invited-email)
+            token  (create-oidc-register-token attacker-mail {:invitation-token itoken})
+            out    (th/command! {::th/type :register-profile
+                                 :token token})]
+        (t/is (not (th/success? out)))
+        (t/is (= :restriction (-> out :error ex-data :type)))
+        (t/is (= :email-does-not-match-invitation (-> out :error ex-data :code)))
+        (t/is (nil? (th/db-get :profile {:email attacker-mail})))))))
+
+(t/deftest register-profile-rejects-oidc-with-canceled-invitation-and-no-registration-flags
+  ;; Review of #12974: with no registration flag set, the invitation
+  ;; row is revalidated under a row lock before creating the profile.
+  ;; A canceled invitation stops signup and no account is created.
+  (let [email   "oidc-canceled-noflags@example.com"
+        fixture (create-invitation-fixture email (ct/in-future "48h"))]
+    (with-redefs [app.config/flags #{:login-with-oidc}]
+      (let [itoken (create-test-invitation-token fixture email)
+            token  (create-oidc-register-token email {:invitation-token itoken})]
+        (th/db-delete! :team-invitation
+                       {:team-id (:id (:team fixture))
+                        :email-to email})
+        (let [out (th/command! {::th/type :register-profile
+                                :token token})]
+          (t/is (not (th/success? out)))
+          (t/is (= :validation (-> out :error ex-data :type)))
+          (t/is (= :invalid-token (-> out :error ex-data :code)))
+          (t/is (nil? (th/db-get :profile {:email email}))))))))
 
 (t/deftest verify-token-redirects-invitation-based-on-member-id
   (with-redefs [app.config/flags #{:login-with-password}]
@@ -1181,7 +1443,7 @@
             "prepare-register must not embed existing profile id of an anonymous caller"))))
 
 (t/deftest register-profile-with-invitation-must-not-take-over-existing-account
-  (with-mocks [_mock {:target 'app.email/send :return nil}]
+  (with-mocks [_mock {:target 'app.email/send-template :return nil}]
     (let [;; Victim profile exists but is not yet active (e.g. registered
           ;; but has not clicked the verification link). This is the
           ;; remaining attack surface after fix 1b: `prepare-register`
@@ -1241,13 +1503,15 @@
         (t/is (not (contains? result :invitation-token))
               "register-profile must not return an invitation-token bound to an existing victim profile"))
 
-      ;; INVARIANT 3: the server must NOT have taken the
-      ;; "accept-invitation" branch (which is the one that mints a
-      ;; session). For an existing victim profile, the operation
-      ;; should fall through to the harmless "repeated registry" path.
-      (t/is (not= "accept-invitation"
-                  (get-in mdata [:app.loggers.audit/context :action]))
-            "register-profile must not run the accept-invitation branch for an existing victim profile")
+      ;; INVARIANT 3: the operation must fall through to the harmless
+      ;; "repeated registry" path, not to any branch that mints a
+      ;; session. The retry path identifies itself with its own event
+      ;; name and does not report the account as a completed signup.
+      (t/is (= "register-profile-retry"
+               (:app.loggers.audit/name mdata))
+            "register-profile must fall through to the retry path for an existing victim profile")
+      (t/is (nil? (get-in mdata [:app.loggers.audit/replace-props :activation]))
+            "an existing profile must not be reported as a completed signup")
       ;; The victim must remain inactive: nothing in this anonymous
       ;; flow should have flipped `is-active` to true.
       (let [reloaded (th/db-get :profile {:id (:id victim)})]
@@ -1287,7 +1551,7 @@
       (t/is (true? (:is-active reloaded))))))
 
 (t/deftest email-change-request
-  (with-mocks [mock {:target 'app.email/send :return nil}]
+  (with-mocks [mock {:target 'app.email/send-template :return nil}]
     (let [profile (th/create-profile* 1)
           pool    (:app.db/pool th/*system*)
           data    {::th/type :request-email-change
@@ -1327,7 +1591,7 @@
 
 
 (t/deftest email-change-request-without-smtp
-  (with-mocks [mock {:target 'app.email/send :return nil}]
+  (with-mocks [mock {:target 'app.email/send-template :return nil}]
     (with-redefs [app.config/flags #{}]
       (let [profile (th/create-profile* 1)
             pool    (:app.db/pool th/*system*)
@@ -1343,7 +1607,7 @@
 
 
 (t/deftest request-profile-recovery
-  (with-mocks [mock {:target 'app.email/send :return nil}]
+  (with-mocks [mock {:target 'app.email/send-template :return nil}]
     (let [profile1 (th/create-profile* 1 {:is-active false})
           profile2 (th/create-profile* 2 {:is-active true})
           pool  (:app.db/pool th/*system*)
@@ -1401,7 +1665,7 @@
 
 
 (t/deftest update-profile-password
-  (with-mocks [_ {:target 'app.email/send :return nil}]
+  (with-mocks [_ {:target 'app.email/send-template :return nil}]
     (let [profile (th/create-profile* 1)
           data  {::th/type :update-profile-password
                  ::rpc/profile-id (:id profile)
@@ -1413,7 +1677,7 @@
 
 
 (t/deftest update-profile-password-bad-old-password
-  (with-mocks [mock {:target 'app.email/send :return nil}]
+  (with-mocks [mock {:target 'app.email/send-template :return nil}]
     (let [profile (th/create-profile* 1)
           data  {::th/type :update-profile-password
                  ::rpc/profile-id (:id profile)
@@ -1700,7 +1964,7 @@
     (t/is (th/ex-of-code? (:error out) :weak-password))))
 
 (t/deftest update-profile-password-sends-notification
-  (with-mocks [mock {:target 'app.email/send :return nil}]
+  (with-mocks [mock {:target 'app.email/send-template :return nil}]
     (let [profile (th/create-profile* 1)
           data    {::th/type :update-profile-password
                    ::rpc/profile-id (:id profile)
@@ -1710,14 +1974,14 @@
       (t/is (nil? (:error out)))
       (t/is (nil? (:result out)))
       (t/is (= 1 (:call-count @mock)))
-      (let [[_cfg {:keys [::eml/factory :to :name]}] (first (:call-args-list @mock))]
-        (t/is (= eml/password-changed factory))
+      (let [[_cfg {:keys [::eml/template :to :name]}] (first (:call-args-list @mock))]
+        (t/is (= "password-changed" template))
         (t/is (= (:email profile) to))
         (t/is (= (:fullname profile) name))))))
 
 
 (t/deftest update-profile-password-sends-notification-for-first-password
-  (with-mocks [mock {:target 'app.email/send :return nil}]
+  (with-mocks [mock {:target 'app.email/send-template :return nil}]
     (let [profile (th/create-profile* 1 {:password "!"})
           data    {::th/type :update-profile-password
                    ::rpc/profile-id (:id profile)
@@ -1726,14 +1990,14 @@
       (t/is (nil? (:error out)))
       (t/is (nil? (:result out)))
       (t/is (= 1 (:call-count @mock)))
-      (let [[_cfg {:keys [::eml/factory :to :name]}] (first (:call-args-list @mock))]
-        (t/is (= eml/password-changed factory))
+      (let [[_cfg {:keys [::eml/template :to :name]}] (first (:call-args-list @mock))]
+        (t/is (= "password-changed" template))
         (t/is (= (:email profile) to))
         (t/is (= (:fullname profile) name))))))
 
 
 (t/deftest recover-profile-sends-notification
-  (with-mocks [mock {:target 'app.email/send :return nil}]
+  (with-mocks [mock {:target 'app.email/send-template :return nil}]
     (let [profile (th/create-profile* 1)
           token   (tokens/generate th/*system*
                                    {:iss :password-recovery
@@ -1745,8 +2009,8 @@
           out     (th/command! data)]
       (t/is (nil? (:error out)))
       (t/is (= 1 (:call-count @mock)))
-      (let [[_cfg {:keys [::eml/factory :to :name]}] (first (:call-args-list @mock))]
-        (t/is (= eml/password-changed factory))
+      (let [[_cfg {:keys [::eml/template :to :name]}] (first (:call-args-list @mock))]
+        (t/is (= "password-changed" template))
         (t/is (= (:email profile) to))
         (t/is (= (:fullname profile) name))))))
 
@@ -1802,3 +2066,43 @@
         (t/is (th/success? out))
         (t/is (= (:id member) event-pid))
         (t/is (not= (:id owner) event-pid))))))
+
+(t/deftest delete-profile-audit-event-carries-profile-data
+  ;; The event used to carry empty props because every param is namespaced and
+  ;; clean-props drops them; the projection needs the deleted identity.
+  (let [profile (th/create-profile* 1 {:is-active true})
+        out     (th/command-raw! {::th/type :delete-profile
+                                  ::rpc/profile-id (:id profile)})
+        props   (:app.loggers.audit/props (meta out))]
+    (t/is (= (:id profile) (:id props)))
+    (t/is (= "profile1.test@nodomain.com" (:email props)))
+    (t/is (= "Profile 1" (:fullname props)))
+    (t/is (ct/inst? (:created-at props)))
+    (t/is (ct/inst? (:modified-at props)))
+    (t/is (ct/inst? (:deleted-at props)))))
+
+(t/deftest delete-profile-is-idempotent
+  ;; Deleting an already-deleted profile (client retry after a lost response)
+  ;; succeeds: the row is still there, only marked.
+  (let [profile (th/create-profile* 1 {:is-active true})
+        params  {::th/type :delete-profile
+                 ::rpc/profile-id (:id profile)}
+        first-out (th/command-raw! params)]
+    (t/is (th/success? first-out))
+    (let [second-out (th/command-raw! params)]
+      (t/is (th/success? second-out))
+      (t/is (= (:id profile)
+               (get-in (meta second-out) [:app.loggers.audit/props :id]))))))
+
+(t/deftest update-profile-photo-rejects-forged-file
+  ;; A transit body like {"~:file": {"~:path": ["~#path", "/etc/passwd"]}}
+  ;; decodes to this exact map. Without a multipart request it must fail at
+  ;; params validation, before any file is read.
+  (let [prof (th/create-profile* 1)
+        out  (th/command! {::th/type :update-profile-photo
+                           ::rpc/profile-id (:id prof)
+                           :file {:filename "evil.jpg"
+                                  :size 123
+                                  :path (fs/path "/etc/passwd")
+                                  :mtype "image/jpeg"}})]
+    (t/is (th/ex-of-code? (:error out) :params-validation))))

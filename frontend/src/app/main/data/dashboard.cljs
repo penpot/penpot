@@ -23,6 +23,7 @@
    [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
+   [app.main.data.persistence :as dps]
    [app.main.data.team :as dtm]
    [app.main.data.websocket :as dws]
    [app.main.repo :as rp]
@@ -282,6 +283,13 @@
 
 ;; --- EVENT: duplicate-project
 
+(defn project-with-file-count
+  "Loads the file count missing from a duplicated project's RPC response."
+  [{:keys [id] :as project}]
+  (->> (rp/cmd! :get-project-files {:project-id id})
+       (rx/map (fn [files]
+                 (assoc project :count (count files) :is-pinned false)))))
+
 (defn project-duplicated
   [{:keys [id] :as project}]
   (ptk/reify ::project-duplicated
@@ -312,6 +320,7 @@
                                       (str " " copy-count))))
             new-name (cfh/generate-unique-name name unames :suffix-fn suffix-fn)]
         (->> (rp/cmd! :duplicate-project {:project-id id :name new-name})
+             (rx/mapcat project-with-file-count)
              (rx/tap on-success)
              (rx/map project-duplicated)
              (rx/catch on-error))))))
@@ -364,7 +373,7 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (let [params {:id id :name name}]
+      (let [params (with-meta {:id id :name name} (meta params))]
         (->> (rp/cmd! :rename-project params)
              (rx/ignore))))))
 
@@ -426,7 +435,7 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (let [params (select-keys params [:id :name])]
+      (let [params (with-meta (select-keys params [:id :name]) (meta params))]
         (->> (rp/cmd! :rename-file params)
              (rx/ignore))))))
 
@@ -451,15 +460,18 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (let [params {:id id :is-shared is-shared}]
+      (let [mdata  (meta params)
+            origin (::ev/origin mdata "dashboard")]
         (rx/concat
-         (->> (rp/cmd! :set-file-shared params)
+         (->> (rp/cmd! :set-file-shared (with-meta {:id id :is-shared is-shared} mdata))
               (rx/ignore))
          (when is-shared
            (->> (rp/cmd! :get-file-summary {:id id})
                 (rx/map (fn [summary]
                           (when (-> summary :variants :count pos?)
-                            (ev/event {::ev/name "set-file-variants-shared" ::ev/origin "dashboard"})))))))))))
+                            (ev/event (merge {::ev/name "set-file-variants-shared"
+                                              ::ev/origin origin}
+                                             (select-keys mdata [::ev/context])))))))))))))
 
 (defn set-file-thumbnail
   [file-id thumbnail-id]
@@ -527,29 +539,60 @@
              (rx/map #(with-meta (file-created %) (meta it)))
              (rx/catch on-error))))))
 
-;; --- EVENT: duplicate-file
+;; --- EVENT: duplicate-files
 
-(defn duplicate-file
-  [{:keys [id name] :as params}]
-  (dm/assert! (uuid? id))
-  (dm/assert! (string? name))
-  (ptk/reify ::duplicate-file
+;; Longest wait for the pending changes of a file to be saved before copying it.
+(def ^:private save-wait-timeout-ms 10000)
+
+(defn- notify-duplicated
+  "Tells the user the `n` copies exist. With `unsaved`, warns instead that
+  they miss the changes not saved yet."
+  [n unsaved]
+  (if unsaved
+    (ntf/show {:content (tr "dashboard.duplicate-unsaved-changes" (i18n/c n))
+               :type :toast
+               :level :warning
+               :timeout 8000})
+    (ntf/success (tr "dashboard.success-duplicate-file" (i18n/c n)))))
+
+(defn- copy-files
+  "Copies `files` on the server, then tells the user. A copy that fails
+  ends the stream with its error, so nothing is told."
+  [files]
+  (ptk/reify ::copy-files
     ptk/WatchEvent
     (watch [_ state _]
-      (let [{:keys [on-success on-error]
-             :or {on-success identity
-                  on-error rx/throw}} (meta params)
-            unames (cfh/get-used-names (get state :files))
+      (let [file-ids  (into #{} (map :id) files)
+            ;; The copies hold the server's data, so what is unsaved now is missing
+            unsaved   (dps/unsaved-changes? state file-ids)
+            unames    (cfh/get-used-names (get state :files))
             suffix-fn (fn [copy-count]
                         (str/concat " "
                                     (tr "dashboard.copy-suffix")
                                     (when (> copy-count 1)
-                                      (str " " copy-count))))
-            new-name (cfh/generate-unique-name name unames :suffix-fn suffix-fn)]
-        (->> (rp/cmd! :duplicate-file {:file-id id :name new-name})
-             (rx/tap on-success)
-             (rx/map file-created)
-             (rx/catch on-error))))))
+                                      (str " " copy-count))))]
+        (rx/concat
+         (->> (rx/from files)
+              (rx/merge-map
+               (fn [{:keys [id name]}]
+                 (let [new-name (cfh/generate-unique-name name unames :suffix-fn suffix-fn)]
+                   (->> (rp/cmd! :duplicate-file {:file-id id :name new-name})
+                        (rx/map file-created))))))
+         (rx/of (notify-duplicated (count files) unsaved)))))))
+
+(defn duplicate-files
+  "Sends the pending changes of `files`, copies them and tells the user
+  once every copy exists."
+  [files]
+  (dm/assert! (every? (comp uuid? :id) files))
+  (dm/assert! (every? (comp string? :name) files))
+  (ptk/reify ::duplicate-files
+    ptk/WatchEvent
+    (watch [_ _ _]
+      ;; The copy is made from the server's data: send the pending changes first.
+      (rx/concat
+       (dps/force-persist-files-and-wait (into #{} (map :id) files) save-wait-timeout-ms)
+       (rx/of (copy-files files))))))
 
 ;; --- EVENT: move-files
 
@@ -657,12 +700,17 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- handle-change-team-role
-  [params]
+  [{:keys [team-id] :as params}]
   (ptk/reify ::handle-change-team-role
     ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/of (dcm/change-team-role params)
-             (modal/hide)))))
+    (watch [_ state _]
+      (rx/concat
+       (rx/of (dcm/change-team-role params)
+              (modal/hide))
+       ;; The open members list shows the old role (and, after an
+       ;; ownership transfer, the old owner) until it is fetched again
+       (when (= team-id (:current-team-id state))
+         (rx/of (dtm/fetch-members team-id)))))))
 
 (defn- handle-user-organization-change
   "Handle :user-organization-change websocket messages.

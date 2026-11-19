@@ -42,14 +42,27 @@
    (map :data)
    (mapcat cfh/collect-used-media)))
 
+(defn- collect-snapshot-liveness
+  "Single snapshot scan collecting both fragment pointer ids and media
+  ids referenced by unpurged snapshots. Runs once per file-gc pass and
+  feeds clean-file-media! and clean-fragments!, so snapshot blobs are
+  read and decoded only once instead of once per cleaner."
+  [cfg file-id]
+  (let [xf (comp (filter :data)
+                 (map (fn [{:keys [data]}]
+                        {:pointers (feat.fdata/get-used-pointer-ids data)
+                         :media    (cfh/collect-used-media data)})))
+        rf (completing (fn [acc {:keys [pointers media]}]
+                         (-> acc
+                             (update :pointers into pointers)
+                             (update :media into media))))]
+    (fsnap/reduce-snapshots cfg file-id xf rf {:pointers #{} :media #{}})))
+
 (defn- clean-file-media!
   "Performs the garbage collection of file media objects."
-  [{:keys [::db/conn ::timestamp] :as cfg} {:keys [id] :as file}]
+  [{:keys [::db/conn ::timestamp] :as cfg} snap-media {:keys [id] :as file}]
   (let [used-media
-        (fsnap/reduce-snapshots cfg id xf:collect-used-media conj #{})
-
-        used-media
-        (into used-media xf:collect-used-media [file])
+        (into snap-media xf:collect-used-media [file])
 
         used-media
         (db/create-array conn "uuid" used-media)
@@ -186,8 +199,15 @@
         (mapcat feat.fdata/get-used-pointer-ids)))
 
 (defn- clean-fragments!
-  [{:keys [::db/conn ::timestamp] :as cfg} {:keys [id] :as file}]
-  (let [used   (into #{} xf:collect-pointers [file])
+  "Mark fragment rows referenced neither by the current main file data
+  nor by any unpurged snapshot. The file arrives unrealized (see
+  `get-file`), so `main-used` holds its stored fragment ids; combined
+  with `reattach-unchanged`, unchanged pages keep their ids and are
+  never marked. Runs inside the caller transaction, which already
+  holds FOR UPDATE on the file row."
+  [{:keys [::db/conn ::timestamp] :as cfg} snap-pointers {:keys [id] :as file}]
+  (let [main-used (into #{} xf:collect-pointers [file])
+        used      (into main-used snap-pointers)
         unused (->> (db/exec! conn [sql:mark-deleted-data-fragments timestamp id
                                     (db/create-array conn "uuid" used)])
                     (into #{} bfc/xf-map-id))]
@@ -201,10 +221,10 @@
     file))
 
 (defn- clean-media!
-  [cfg file]
+  [cfg {:keys [media]} file]
   (let [file (->> file
                   (clean-deleted-components! cfg)
-                  (clean-file-media! cfg)
+                  (clean-file-media! cfg media)
                   (clean-file-thumbnails! cfg)
                   (clean-file-object-thumbnails! cfg))]
     (cfv/validate-file-schema! file)
@@ -212,8 +232,12 @@
 
 (defn get-file
   [cfg {:keys [file-id revn]}]
+  ;; NOTE: deliberately NOT realized: `process-file!` binds the fragment
+  ;; loader and works on PointerMaps directly, so unchanged pages keep
+  ;; their fragment ids (see `reattach-unchanged`). Realizing here would
+  ;; force every page to be re-persisted under a new id on every pass.
   (let [file (bfc/get-file cfg file-id
-                           :realize? true
+                           :realize? false
                            :skip-locked? true
                            :lock-for-update? true)]
 
@@ -229,13 +253,21 @@
 (defn- process-file!
   [cfg {:keys [file-id] :as props}]
   (if-let [file (get-file cfg props)]
-    (let [file (->> file
-                    (bfl/clean-file)
-                    (clean-media! cfg)
-                    (clean-fragments! cfg))
-          file (assoc file :has-media-trimmed true)]
-      (bfc/update-file! cfg file)
-      true)
+    ;; Every fragment load goes through `with-pointers`. Each pointer
+    ;; instance loads its content once (`loaded?`), and the replacement
+    ;; instances `clean-file` creates already carry their content, so
+    ;; the pass reads each fragment once without a separate cache.
+    (feat.fdata/with-pointers cfg file-id
+      (let [liveness (collect-snapshot-liveness cfg file-id)
+            original (feat.fdata/original-pointers (:data file))
+            file (->> file
+                      (bfl/clean-file)
+                      (clean-media! cfg liveness)
+                      (feat.fdata/reattach-unchanged original)
+                      (clean-fragments! cfg (:pointers liveness)))
+            file (assoc file :has-media-trimmed true)]
+        (bfc/update-file! cfg file)
+        true))
 
     (do
       (l/dbg :hint "skip cleaning, criteria does not match" :file-id (str file-id))
@@ -258,9 +290,12 @@
                             processed? (process-file! cfg params)]
 
                         (when (and processed? (contains? cf/flags :tiered-file-data-storage))
+                          ;; Pass only the file id: the offload job ignores
+                          ;; any other file-gc param, and forwarding the whole
+                          ;; map would silently couple the two jobs.
                           (jobs/submit cfg
                                        {::jobs/name :offload-file-data
-                                        ::jobs/params params
+                                        ::jobs/params {:file-id (:file-id params)}
                                         ::jobs/priority 10
                                         ::jobs/delay 1000}))
                         processed?))))

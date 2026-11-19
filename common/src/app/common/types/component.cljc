@@ -251,6 +251,24 @@
   [shape]
   (boolean (:is-variant-container shape)))
 
+(defn is-variant-main?
+  "True when this shape is a variant component main and not the variant
+   container."
+  [shape]
+  (and (is-variant? shape)
+       (not (is-variant-container? shape))))
+
+(defn variant-formula-rename?
+  "True when renaming this shape with `name` should update the variant
+   formula instead of the layer or component name.
+
+   `name` must already be trimmed by the caller."
+  [shape name]
+  (and (is-variant-main? shape)
+       (some? (:variant-name shape))
+       (string? name)
+       (not (str/blank? name))))
+
 (defn set-touched-group
   [touched group]
   (when group

@@ -11,10 +11,6 @@
    [app.binfile.common :as bfc]
    [app.binfile.v3 :as v3]
    [app.common.exceptions :as ex]
-   [app.common.time :as ct]
-   [app.common.uuid :as uuid]
-   [app.config :as cf]
-   [app.db :as db]
    [app.jobs :as jobs]
    [app.storage :as sto]
    [app.storage.tmp :as tmp]
@@ -45,25 +41,6 @@
       (assoc ::bfc/team-id (:default-team-id profile))
       (assoc ::bfc/input (-> fixture io/resource jio/file))
       (v3/import-files!)))
-
-(defn- make-job!
-  "A job row as the substrate writes it: running and owned by a profile."
-  [profile-id]
-  (let [id (uuid/next)]
-    (th/db-insert! :job {:id           id
-                         :name         "export-binfile"
-                         :tenant       (cf/get :tenant)
-                         :queue        "binfile"
-                         :params       (db/json {})
-                         :priority     100
-                         :max-retries  0
-                         :retry-num    0
-                         :status       "running"
-                         :profile-id   profile-id
-                         :scheduled-at (ct/now)
-                         :created-at   (ct/now)
-                         :modified-at  (ct/now)})
-    id))
 
 (defn- run-export
   "Run the export handler of a job, as the runner does."
@@ -99,7 +76,7 @@
 (t/deftest the-export-handler-stores-the-artifact-of-its-job
   (let [profile (th/create-profile* 1)
         file-id (first (:file-ids (import-fixture! profile)))
-        job-id  (make-job! (:id profile))
+        job-id  (th/create-job* :export-binfile {:profile-id (:id profile)})
         result  (run-export job-id {:file-ids    #{file-id}
                                     :export-type :detach-libraries})
         object  (sto/get-object (get-storage) (:resource-id result))]
@@ -136,7 +113,7 @@
   (let [owner   (th/create-profile* 1)
         other   (th/create-profile* 2)
         file-id (first (:file-ids (import-fixture! owner)))
-        job-id  (make-job! (:id other))
+        job-id  (th/create-job* :export-binfile {:profile-id (:id other)})
         before  (count-storage-objects)]
 
     (t/testing "a job whose owner cannot read a file does not export it"
@@ -154,7 +131,7 @@
 (t/deftest the-export-handler-leaves-nothing-when-the-storage-fails
   (let [profile (th/create-profile* 1)
         file-id (first (:file-ids (import-fixture! profile)))
-        job-id  (make-job! (:id profile))
+        job-id  (th/create-job* :export-binfile {:profile-id (:id profile)})
         before  (count-storage-objects)]
 
     (with-redefs [sto/put-object! (fn [& _]
@@ -177,7 +154,7 @@
 (t/deftest the-export-handler-leaves-nothing-behind-when-the-job-is-cancelled
   (let [profile (th/create-profile* 1)
         file-id (first (:file-ids (import-fixture! profile)))
-        job-id  (make-job! (:id profile))
+        job-id  (th/create-job* :export-binfile {:profile-id (:id profile)})
         before  (count-storage-objects)]
 
     (th/db-update! :job {:status "cancelled"} {:id job-id})

@@ -419,7 +419,7 @@
     (try
       (-del conn keys)
       (catch RedisCommandTimeoutException cause
-        (l/err :hint "timeout on del redis key" :key key :cause cause)
+        (l/err :hint "timeout on del redis key" :keys keys :cause cause)
         nil))))
 
 (defn ping

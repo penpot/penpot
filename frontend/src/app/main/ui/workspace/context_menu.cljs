@@ -398,6 +398,8 @@
         objects         (deref refs/workspace-page-objects)
         any-in-copy?    (some #(ctn/has-any-copy-parent? objects %) shapes)
         any-is-variant? (some ctk/is-variant? shapes)
+        any-is-container? (some ctk/is-variant-container? shapes)
+        crosses-set?    (ctn/crosses-variant-set-boundary? objects shapes)
 
         ;; components can't be ungrouped
         has-frame? (->> shapes (d/seek #(and (cfh/frame-shape? %) (not (ctk/instance-head? %)) (not (ctk/is-variant-container? %)))))
@@ -416,7 +418,7 @@
         #(st/emit! (dwsh/create-artboard-from-selection))]
 
     [:*
-     (when (not (or any-in-copy? any-is-variant?))
+     (when (not (or any-in-copy? any-is-variant? any-is-container? crosses-set?))
        [:*
         (when (or has-bool? has-group? has-mask? has-frame?)
           [:> menu-entry* {:title (tr "workspace.shape.menu.ungroup")
@@ -621,6 +623,10 @@
         (and single? (every? ctl/grid-layout? shapes))
 
         any-is-variant? (some ctk/is-variant? shapes)
+        ;; shape-context-menu* already omits this menu for container-only;
+        ;; gate here too so a future caller cannot show Add flex/grid.
+        any-is-container? (some ctk/is-variant-container? shapes)
+        crosses-set?    (ctn/crosses-variant-set-boundary? objects shapes)
 
         on-add-layout
         (mf/use-fn
@@ -653,7 +659,9 @@
                              :shortcut-key :toggle-layout-grid
                              :on-click on-remove-layout}])]
 
-         (when (or single? (not any-is-variant?))
+         (when (and (not crosses-set?)
+                    (not any-is-container?)
+                    (or single? (not any-is-variant?)))
            [:div
             [:> menu-separator* {}]
             [:> menu-entry* {:title (tr "workspace.shape.menu.add-flex")
@@ -865,6 +873,10 @@
   {::mf/private true}
   [{:keys [mdata]}]
   (let [{:keys [type index grid-id]} mdata
+
+        objects  (deref refs/workspace-page-objects)
+        in-copy? (dwsl/grid-in-copy? objects (get objects grid-id))
+
         do-delete-track
         (mf/use-fn
          (mf/deps grid-id type index)
@@ -897,14 +909,14 @@
 
     (if (= type :column)
       [:*
-       [:> menu-entry* {:title (tr "workspace.context-menu.grid-track.column.duplicate") :on-click do-duplicate-track}]
+       [:> menu-entry* {:title (tr "workspace.context-menu.grid-track.column.duplicate") :on-click do-duplicate-track :disabled in-copy?}]
        [:> menu-entry* {:title (tr "workspace.context-menu.grid-track.column.add-before") :on-click do-add-track-before}]
        [:> menu-entry* {:title (tr "workspace.context-menu.grid-track.column.add-after") :on-click do-add-track-after}]
        [:> menu-entry* {:title (tr "workspace.context-menu.grid-track.column.delete") :on-click do-delete-track}]
        [:> menu-entry* {:title (tr "workspace.context-menu.grid-track.column.delete-shapes") :on-click do-delete-track-shapes}]]
 
       [:*
-       [:> menu-entry* {:title (tr "workspace.context-menu.grid-track.row.duplicate") :on-click do-duplicate-track}]
+       [:> menu-entry* {:title (tr "workspace.context-menu.grid-track.row.duplicate") :on-click do-duplicate-track :disabled in-copy?}]
        [:> menu-entry* {:title (tr "workspace.context-menu.grid-track.row.add-before") :on-click do-add-track-before}]
        [:> menu-entry* {:title (tr "workspace.context-menu.grid-track.row.add-after") :on-click do-add-track-after}]
        [:> menu-entry* {:title (tr "workspace.context-menu.grid-track.row.delete") :on-click do-delete-track}]
@@ -940,6 +952,9 @@
 
         grid-edition (mf/deref grid-edition-ref)
         has-copied-tracks? (some? (:copied-tracks grid-edition))
+
+        objects  (deref refs/workspace-page-objects)
+        in-copy? (dwsl/grid-in-copy? objects (get objects grid-id))
 
         do-merge-cells
         (mf/use-fn
@@ -994,7 +1009,7 @@
 
      [:> menu-entry* {:title (tr "workspace.context-menu.grid-cells.paste-tracks")
                       :on-click do-paste-tracks
-                      :disabled (not has-copied-tracks?)}]]))
+                      :disabled (or (not has-copied-tracks?) in-copy?)}]]))
 
 
 (def guide-color-presets

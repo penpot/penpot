@@ -25,7 +25,7 @@
    ;; profile renderer preference instead of the global feature flag alone.
    :profile {:props {:renderer :wasm}}})
 
-(defn- on-error
+(defn- report-error
   [cause]
   (js/console.error "STORE ERROR" (.-stack cause))
   (t/do-report {:type :error :message "Store error" :actual cause})
@@ -34,7 +34,7 @@
 
 (defn setup-store
   ([file] (setup-store file nil))
-  ([file {:keys [renderer libraries] :as _opts}]
+  ([file {:keys [renderer libraries on-error] :or {on-error report-error} :as _opts}]
    (let [state (-> initial-state
                    (assoc :current-file-id (:id file)
                           :current-page-id (cthf/current-page-id file)

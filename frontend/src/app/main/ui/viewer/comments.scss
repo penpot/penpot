@@ -4,91 +4,71 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
-@use "ds/_borders.scss" as *;
+// Only for the shared menu placeholders, which move to the DS with the
+// menus and dropdowns.
 @use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/typography.scss" as *;
 
 // COMMENT DROPDOWN ON HEADER
+.view-options-wrapper {
+  position: relative;
+}
+
 .view-options {
-  @include deprecated.body-small-typography;
+  @include use-typography("body-small");
 
   display: flex;
   align-items: center;
-  position: relative;
-  gap: deprecated.$s-4;
-  height: deprecated.$s-32;
-  padding: deprecated.$s-8;
-  border-radius: deprecated.$br-8;
-  background-color: var(--input-background-color);
+  border: none;
+  gap: var(--sp-xs);
+  block-size: $sz-32;
+  padding: var(--sp-s);
+  border-radius: $br-8;
+  background-color: var(--color-background-tertiary);
   cursor: pointer;
 }
 
 .dropdown {
   @extend %menu-dropdown;
 
-  right: deprecated.$s-2;
-  top: calc(deprecated.$s-2 + deprecated.$s-48);
-  width: deprecated.$s-272;
-  padding: deprecated.$s-6;
+  inset-inline-end: px2rem(2);
+  inset-block-start: px2rem(50);
+  inline-size: px2rem(272);
+  padding: px2rem(6);
 }
 
 .dropdown-title {
-  @include deprecated.body-small-typography;
+  @include use-typography("body-small");
 
   flex-grow: 1;
-  color: var(--input-foreground-color-active);
+  color: var(--color-foreground-primary);
 }
 
 .label {
   flex-grow: 1;
-  color: var(--input-foreground-color);
+  color: var(--color-foreground-secondary);
 }
 
 .icon,
 .icon-dropdown {
-  @include deprecated.flex-center;
-
-  height: 100%;
-  width: deprecated.$s-16;
-
-  svg {
-    @extend %button-icon-small;
-
-    stroke: var(--icon-foreground);
-  }
-}
-
-.icon-dropdown svg {
-  transform: rotate(90deg);
+  flex-shrink: 0;
+  color: var(--color-foreground-secondary);
 }
 
 .dropdown-element {
   @extend %dropdown-element-base;
 
-  .icon {
-    @include deprecated.flex-center;
-
-    height: 100%;
-    width: deprecated.$s-16;
-
-    svg {
-      @extend %button-icon-small;
-
-      stroke: var(--icon-foreground);
-    }
-  }
-
   &:hover .label {
-    color: var(--input-foreground-color-active);
+    color: var(--color-foreground-primary);
   }
 }
 
 .dropdown-element.selected {
   .label {
-    color: var(--input-foreground-color-active);
-  }
-
-  .icon svg {
-    stroke: var(--input-foreground-color);
+    color: var(--color-foreground-primary);
   }
 }
 
@@ -96,36 +76,41 @@
   position: relative;
   block-size: var(--sp-xs);
   inline-size: calc(100% + var(--sp-s));
-  border-top: $b-1 solid var(--color-background-quaternary);
-  left: calc(-1 * var(--sp-xs));
-  margin-top: var(--sp-s);
+  border-block-start: $b-1 solid var(--color-background-quaternary);
+  inset-inline-start: calc(-1 * var(--sp-xs));
+  margin-block-start: var(--sp-s);
 }
 
 // FLOATING COMMENT
 .viewer-comments-container {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: deprecated.$z-index-1;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  inline-size: 100%;
+  block-size: 100%;
+
+  // TODO: no DS z-index token for 1 (floating elements).
+  z-index: 1;
 }
 
 .threads {
   position: absolute;
-  top: 0;
-  left: 0;
+  inset-block-start: 0;
+  inset-inline-start: 0;
 }
 
 // COMMENT SIDEBAR
 .comments-sidebar {
   position: absolute;
-  right: 0;
-  top: deprecated.$s-44;
-  width: var(--right-sidebar-width);
-  height: calc(100vh - deprecated.$s-48);
-  z-index: deprecated.$z-index-10;
-  background-color: var(--panel-background-color);
+  inset-inline-end: 0;
+  inset-block-start: px2rem(44);
+  inline-size: var(--right-sidebar-width);
+  block-size: calc(100vh - #{$sz-48});
+  background-color: var(--color-background-primary);
+
+  // TODO: no DS z-index token for 10; it keeps the list above the viewer
+  // content.
+  z-index: 10;
 }
 
 .settings-bar-inside {
@@ -133,5 +118,5 @@
 }
 
 .comments-section {
-  background-color: var(--panel-background-color);
+  background-color: var(--color-background-primary);
 }

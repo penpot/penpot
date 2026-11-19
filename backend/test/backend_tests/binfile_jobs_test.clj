@@ -10,10 +10,10 @@
   (:require
    [app.binfile.common :as bfc]
    [app.binfile.jobs :as bfj]
+   [app.binfile.v1 :as v1]
    [app.binfile.v3 :as v3]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
-   [app.config :as cf]
    [app.db :as db]
    [app.jobs :as jobs]
    [app.jobs.storage :as js]
@@ -49,27 +49,6 @@
       (assoc ::bfc/input (fixture-path))
       (v3/import-files!)))
 
-(defn- make-job!
-  "A job row as the substrate writes it: running, owned by a profile and
-  holding a resource when the test needs one."
-  [profile-id resource-id]
-  (let [id (uuid/next)]
-    (th/db-insert! :job {:id           id
-                         :name         "export-binfile"
-                         :tenant       (cf/get :tenant)
-                         :queue        "binfile"
-                         :params       (db/json {})
-                         :priority     100
-                         :max-retries  0
-                         :retry-num    0
-                         :status       "running"
-                         :profile-id   profile-id
-                         :resource-id  resource-id
-                         :scheduled-at (ct/now)
-                         :created-at   (ct/now)
-                         :modified-at  (ct/now)})
-    id))
-
 (defn- job-cfg
   "The system cfg as the runner hands it to a handler. The job id is NOT
   bound here: the adapter takes it from the context, because the progress
@@ -81,6 +60,37 @@
   [job-id]
   (jobs/make-context (jobs/get-job th/*system* job-id)))
 
+(defn- run-export!
+  "Run an export through the adapter, as the job handler does: the
+  frozen cfg in, the progress out as job events."
+  [cfg context file-ids export-type output]
+  (let [cfg (bfc/export-cfg cfg {:file-ids    file-ids
+                                 :export-type export-type
+                                 :output      output})]
+    (bfj/check-active cfg context)
+    (bfj/run cfg context v3/export-files!)))
+
+(defn- run-import!
+  "Run an import through the adapter, as the job handler does: the
+  frozen cfg in, the progress out as job events. The project touch
+  stays in the handler, covered by its own tests."
+  [cfg context {:keys [profile-id project-id team name input version]}]
+  (bfj/check-active cfg context)
+  (let [cfg (bfc/import-cfg cfg {:profile-id profile-id
+                                 :project-id project-id
+                                 :team       team
+                                 :name       name
+                                 :input      input})]
+    (bfj/run cfg context
+             (fn [cfg]
+               (case (int version)
+                 1 (v1/import-files! cfg)
+                 3 (v3/import-files! cfg)
+                 (throw (ex-info "unsupported binfile version"
+                                 {:type    :validation
+                                  :code    :unsupported-version
+                                  :version version})))))))
+
 (defn- progress-events
   "The progress events of a job, oldest first, with decoded payloads."
   [job-id]
@@ -90,6 +100,46 @@
                      job-id])
        (mapv #(jobs/decode-progress (:payload %)))))
 
+(defn- export-link-later-package
+  "A package of one file that uses a shared library, exported so the
+  library is resolved while importing. The library of the package is gone
+  afterwards and two replacements share its name, so the import cannot
+  link it by itself and leaves the file pending resolution."
+  [profile]
+  (let [library (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared  true
+                                    :name       "Icons Library"})
+        file    (th/create-file* 2 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared  false})
+        output  (tmp/tempfile :suffix ".zip")]
+
+    (db/insert! th/*system* :file-library-rel
+                {:file-id (:id file)
+                 :library-file-id (:id library)})
+
+    (v3/export-files! (-> th/*system*
+                          (assoc ::bfc/file-ids #{(:id file)})
+                          (assoc ::bfc/export-type :link-later)
+                          (assoc ::bfc/output (io/output-stream output))))
+
+    (db/update! th/*system* :file
+                {:deleted-at (ct/now)}
+                {:id (:id library)})
+
+    (th/create-file* 3 {:profile-id (:id profile)
+                        :project-id (:default-project-id profile)
+                        :is-shared  true
+                        :name       "Icons Library"})
+    (th/create-file* 4 {:profile-id (:id profile)
+                        :project-id (:default-project-id profile)
+                        :is-shared  true
+                        :name       "Icons Library"})
+
+    {:library-id (:id library)
+     :output     output}))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ADAPTER
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -97,13 +147,11 @@
 (t/deftest export-through-the-adapter-produces-the-artifact
   (let [profile (th/create-profile* 1)
         file-id (first (:file-ids (import-fixture! profile)))
-        job-id  (make-job! (:id profile) nil)
+        job-id  (th/create-job* :export-binfile {:profile-id (:id profile)})
         output  (tmp/tempfile* :suffix ".penpot")]
 
-    (bfj/export-files (job-cfg) (job-context job-id)
-                      {:ids         #{file-id}
-                       :export-type :detach-libraries
-                       :output      output})
+    (run-export! (job-cfg) (job-context job-id)
+                 #{file-id} :detach-libraries output)
 
     (t/testing "the artifact is a penpot file with its manifest"
       (t/is (fs/exists? output))
@@ -129,15 +177,16 @@
                                   {:content  (sto/content (fixture-path))
                                    :filename "package.penpot"
                                    :mtype    "application/zip"})
-        job-id   (make-job! (:id profile) (:resource-id staged))
+        job-id   (th/create-job* :import-binfile {:profile-id (:id profile)
+                                                  :resource-id (:resource-id staged)})
         context  (job-context job-id)
-        result   (bfj/import-files (job-cfg) context
-                                   {:profile-id (:id profile)
-                                    :project-id (:default-project-id profile)
-                                    :team       team
-                                    :name       "imported"
-                                    :input      (js/load-input th/*system* context)
-                                    :version    3})]
+        result   (run-import! (job-cfg) context
+                              {:profile-id (:id profile)
+                               :project-id (:default-project-id profile)
+                               :team       team
+                               :name       "imported"
+                               :input      (js/load-input th/*system* context)
+                               :version    3})]
 
     (t/testing "the package is imported in the destination project"
       (t/is (= 1 (count (:file-ids result)))))
@@ -148,7 +197,7 @@
 (t/deftest the-adapter-composes-a-milestone-per-tap
   (let [profile (th/create-profile* 1)
         file-id (first (:file-ids (import-fixture! profile)))
-        job-id  (make-job! (:id profile) nil)
+        job-id  (th/create-job* :export-binfile {:profile-id (:id profile)})
         reports (atom [])]
 
     ;; the substrate throttles the durable events, so the whole stream of
@@ -156,10 +205,9 @@
     (with-redefs [jobs/heartbeat (fn [_cfg & {:as options}]
                                    (swap! reports conj (:progress options))
                                    1)]
-      (bfj/export-files (job-cfg) (job-context job-id)
-                        {:ids         #{file-id}
-                         :export-type :detach-libraries
-                         :output      (tmp/tempfile* :suffix ".penpot")}))
+      (run-export! (job-cfg) (job-context job-id)
+                   #{file-id} :detach-libraries
+                   (tmp/tempfile* :suffix ".penpot")))
 
     (t/testing "the file opens the run with its position"
       (let [event (first @reports)]
@@ -183,15 +231,14 @@
 (t/deftest a-tap-carries-the-outer-counters-in-course
   (let [profile (th/create-profile* 1)
         file-id (first (:file-ids (import-fixture! profile)))
-        job-id  (make-job! (:id profile) nil)
+        job-id  (th/create-job* :export-binfile {:profile-id (:id profile)})
         taps    (atom [])]
 
     ;; the taps themselves, before the adapter turns them into events
     (with-redefs [events/tap (fn [_type data] (swap! taps conj data))]
-      (bfj/export-files (job-cfg) (job-context job-id)
-                        {:ids         #{file-id}
-                         :export-type :detach-libraries
-                         :output      (tmp/tempfile* :suffix ".penpot")}))
+      (run-export! (job-cfg) (job-context job-id)
+                   #{file-id} :detach-libraries
+                   (tmp/tempfile* :suffix ".penpot")))
 
     (t/testing "the tap that opens the file carries the outer counters"
       (let [tap (first (filter #(= :file (:section %)) @taps))]
@@ -242,20 +289,21 @@
                                  {:content  (sto/content (fixture-path))
                                   :filename "package.penpot"
                                   :mtype    "application/zip"})
-        job-id  (make-job! (:id profile) (:resource-id staged))
+        job-id  (th/create-job* :import-binfile {:profile-id (:id profile)
+                                                 :resource-id (:resource-id staged)})
         context (job-context job-id)
         reports (atom [])]
 
     (with-redefs [jobs/heartbeat (fn [_cfg & {:as options}]
                                    (swap! reports conj (:progress options))
                                    1)]
-      (bfj/import-files (job-cfg) context
-                        {:profile-id (:id profile)
-                         :project-id (:default-project-id profile)
-                         :team       team
-                         :name       "imported"
-                         :input      (js/load-input th/*system* context)
-                         :version    3}))
+      (run-import! (job-cfg) context
+                   {:profile-id (:id profile)
+                    :project-id (:default-project-id profile)
+                    :team       team
+                    :name       "imported"
+                    :input      (js/load-input th/*system* context)
+                    :version    3}))
 
     (t/testing "the run opens with the manifest, which has no units to count"
       (let [event (first @reports)]
@@ -278,11 +326,11 @@
 (t/deftest a-job-that-is-no-longer-active-stops-the-work
   (let [profile (th/create-profile* 1)
         file-id (first (:file-ids (import-fixture! profile)))
-        job-id  (make-job! (:id profile) nil)
+        job-id  (th/create-job* :export-binfile {:profile-id (:id profile)})
         context (job-context job-id)]
 
-    (t/testing "a running job is active"
-      (t/is (nil? (bfj/check-active th/*system* context))))
+    (t/testing "a running job is active, and answers with the cfg to thread it"
+      (t/is (identical? th/*system* (bfj/check-active th/*system* context))))
 
     (t/testing "a cancelled job is not"
       (th/db-update! :job {:status "cancelled"} {:id job-id})
@@ -294,10 +342,8 @@
     (t/testing "so the export stops at its next progress point"
       (let [output (tmp/tempfile* :suffix ".penpot")
             cause  (try
-                     (bfj/export-files (job-cfg) context
-                                       {:ids         #{file-id}
-                                        :export-type :detach-libraries
-                                        :output      output})
+                     (run-export! (job-cfg) context
+                                  #{file-id} :detach-libraries output)
                      nil
                      (catch Throwable raised raised))]
         (t/is (= :interrupt (th/ex-type cause)))
@@ -322,14 +368,14 @@
         cause   (ex-info "the job is no longer active"
                          {:type :interrupt :code :job-interrupted})]
     (with-redefs [jobs/heartbeat (fn [& _] (throw cause))]
-      (let [raised (try (@#'bfj/with-progress th/*system* context
-                                              (fn []
-                                                (swap! steps conj :before)
-                                                ;; the sink calls the beat
-                                                ;; inline, so its interrupt
-                                                ;; aborts the run here
-                                                (events/tap :progress {:section :file})
-                                                (swap! steps conj :after)))
+      (let [raised (try (bfj/run th/*system* context
+                                 (fn [_cfg]
+                                   (swap! steps conj :before)
+                                   ;; the sink calls the beat
+                                   ;; inline, so its interrupt
+                                   ;; aborts the run here
+                                   (events/tap :progress {:section :file})
+                                   (swap! steps conj :after)))
                         nil
                         (catch Throwable stopped stopped))]
         (t/is (= :interrupt (:type (ex-data raised))))
@@ -369,7 +415,7 @@
 (t/deftest the-export-handler-runs-through-the-registry
   (let [profile (th/create-profile* 1)
         file-id (first (:file-ids (import-fixture! profile)))
-        job-id  (make-job! (:id profile) nil)
+        job-id  (th/create-job* :export-binfile {:profile-id (:id profile)})
         result  (jobs/invoke (-> th/*system*
                                  (assoc ::jobs/name :export-binfile)
                                  (assoc ::jobs/params {:file-ids    #{file-id}
@@ -389,7 +435,8 @@
                                   {:content  (sto/content (fixture-path))
                                    :filename "package.penpot"
                                    :mtype    "application/zip"})
-        job-id   (make-job! (:id profile) (:resource-id staged))
+        job-id   (th/create-job* :import-binfile {:profile-id (:id profile)
+                                                  :resource-id (:resource-id staged)})
         result   (jobs/invoke (-> th/*system*
                                   (assoc ::jobs/name :import-binfile)
                                   (assoc ::jobs/params {:project-id (:default-project-id profile)
@@ -401,3 +448,122 @@
       (t/is (pos? (count (:file-ids result)))))
     (t/testing "the handler reported progress without knowing the job id"
       (t/is (pos? (count (progress-events job-id)))))))
+
+(t/deftest the-import-result-keeps-the-type-of-its-ids
+  "The resolution of an import is a map keyed by the new file id, and it
+  crosses a plain JSON column: the result schema the job-def declares is
+  what keeps the keys and the values as uuids, which is what the dashboard
+  wizard matches against the ids it holds. Without the decoder the substrate
+  compiles from that schema, the key comes back as a keyword and the entry as
+  text, and this test fails."
+  (let [profile (th/create-profile* 1)
+        {:keys [library-id output]} (export-link-later-package profile)
+
+        staged  (js/put-resource th/*system* (:id profile)
+                                 {:content  (sto/content output)
+                                  :filename "package.penpot"
+                                  :mtype    "application/zip"})
+        job-id  (th/create-job* :import-binfile {:profile-id (:id profile)
+                                                 :resource-id (:resource-id staged)})
+        result  (jobs/invoke (-> th/*system*
+                                 (assoc ::jobs/name :import-binfile)
+                                 (assoc ::jobs/params {:project-id (:default-project-id profile)
+                                                       :name       "imported"
+                                                       :version    3})
+                                 (assoc ::jobs/context (job-context job-id))))]
+
+    (t/testing "the result of the job is stored as the substrate does"
+      (t/is (= 1 (jobs/complete th/*system* :job-id job-id :result result))))
+
+    (let [stored             (:result (jobs/get-job th/*system* job-id))
+          [file-id file-res] (first (:resolution stored))]
+
+      (t/testing "the resolution comes back keyed by the new file id"
+        (t/is (= 1 (count (:resolution stored))))
+        (t/is (uuid? file-id))
+        (t/is (= file-id (:id file-res))))
+
+      (t/testing "the ids of the entries keep their type"
+        (t/is (= [file-id] (:file-ids stored)))
+        (t/is (= [] (:done file-res)))
+        (t/is (= 1 (count (:pending file-res))))
+
+        (let [pending (first (:pending file-res))]
+          (t/is (= library-id (:id pending)))
+          (t/is (= 2 (count (:candidates pending))))
+          (t/is (every? (comp uuid? :id) (:candidates pending)))
+          (t/is (every? (comp uuid? :project-id) (:candidates pending))))))))
+
+(t/deftest a-package-without-external-libraries-reads-with-an-empty-resolution
+  (let [profile (th/create-profile* 1)
+        staged  (js/put-resource th/*system* (:id profile)
+                                 {:content  (sto/content (fixture-path))
+                                  :filename "package.penpot"
+                                  :mtype    "application/zip"})
+        job-id  (th/create-job* :import-binfile {:profile-id (:id profile)
+                                                 :resource-id (:resource-id staged)})
+        result  (jobs/invoke (-> th/*system*
+                                 (assoc ::jobs/name :import-binfile)
+                                 (assoc ::jobs/params {:project-id (:default-project-id profile)
+                                                       :name       "imported"
+                                                       :version    3})
+                                 (assoc ::jobs/context (job-context job-id))))]
+
+    (t/is (= 1 (jobs/complete th/*system* :job-id job-id :result result)))
+
+    (let [stored (:result (jobs/get-job th/*system* job-id))]
+
+      (t/testing "a package without external libraries resolves nothing"
+        (t/is (= {} (:resolution stored))))
+
+      (t/testing "and the file ids come back typed"
+        (t/is (= 1 (count (:file-ids stored))))
+        (t/is (every? uuid? (:file-ids stored)))))))
+
+(t/deftest a-version-1-result-reads-without-a-resolution
+  "A version 1 import answers with the file ids and no resolution: the read
+  path decodes it with the schema of the job-def, which declares the
+  resolution as optional. Without that schema the file ids come back as text."
+  (let [profile (th/create-profile* 1)
+        file-id (uuid/next)
+        job-id  (th/create-job* :import-binfile {:profile-id (:id profile)})]
+
+    (t/is (= 1 (jobs/complete th/*system* :job-id job-id
+                              :result {:file-ids [file-id]
+                                       :name     "imported-v1"
+                                       :version  1})))
+
+    (let [stored (:result (jobs/get-job th/*system* job-id))]
+
+      (t/testing "there is no resolution to decode"
+        (t/is (nil? (:resolution stored))))
+
+      (t/testing "and the file ids come back typed"
+        (t/is (= [file-id] (:file-ids stored)))
+        (t/is (= 1 (:version stored)))))))
+
+(t/deftest a-result-of-a-retired-job-def-reads-as-plain-json
+  "A registry that no longer knows the kind of the row answers with the JSON
+  the column holds, keywordized keys and uuid as text, instead of raising."
+  (let [profile (th/create-profile* 1)
+        file-id (uuid/next)
+        job-id  (th/create-job* :import-binfile {:profile-id (:id profile)})
+        key     (keyword (str file-id))]
+
+    (t/is (= 1 (jobs/complete th/*system* :job-id job-id
+                              :result {:file-ids   [file-id]
+                                       :resolution {file-id {:id      file-id
+                                                             :name    "card.penpot"
+                                                             :done    []
+                                                             :pending []}}
+                                       :name       "imported"
+                                       :version    3})))
+
+    (let [stored (:result (jobs/get-job (assoc th/*system* ::jobs/defs {}) job-id))]
+
+      (t/testing "the resolution comes back as it is on disk"
+        (t/is (= [key] (keys (:resolution stored))))
+        (t/is (= (str file-id) (get-in stored [:resolution key :id]))))
+
+      (t/testing "and so do the file ids"
+        (t/is (= [(str file-id)] (:file-ids stored)))))))

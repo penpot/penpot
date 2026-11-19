@@ -49,15 +49,22 @@ Get `team-id` from `(:current-team-id @app.main.store/state)`. Get file ids from
 
 ## Runtime patching with `set!`
 
-Some frontend vars are deliberately mutable escape hatches for runtime instrumentation or circular-dependency patching. From `cljs_repl`, use `set!` for temporary debugging of CLJS vars such as `app.main.store/on-event`, `app.main.errors/reload-file`, `app.main.errors/is-plugin-error?`, `app.main.errors/last-report`, or `app.main.errors/last-exception`. These patches affect only the live browser runtime and disappear on reload or recompilation.
+Some frontend vars are deliberately mutable escape hatches for runtime instrumentation or circular-dependency patching. From `cljs_repl`, use `set!` for temporary debugging of CLJS vars such as `app.main.errors/reload-file`, `app.main.errors/is-plugin-error?`, `app.main.errors/last-report`, or `app.main.errors/last-exception`. These patches affect only the live browser runtime and disappear on reload or recompilation.
+
+`set!` on `app.main.store/on-event` does nothing at runtime: the store captured the function when it was created. To watch events, subscribe to the store stream and dispose the subscription after:
 
 ```clojure
 ;; Log non-noisy Potok events temporarily.
-(set! app.main.store/on-event
-      (fn [event]
-        (when (potok.v2.core/event? event)
-          (.log js/console (potok.v2.core/repr-event event)))))
+(def sub
+  (beicon.v2.core/subs!
+   (fn [event]
+     (when (potok.v2.core/event? event)
+       (.log js/console (potok.v2.core/repr-event event))))
+   app.main.store/stream))
+;; (beicon.v2.core/dispose! sub)
 ```
+
+`cljs_repl` starts every call in `cljs.user`; begin a call with `(in-ns 'my-ns)` to reuse helpers defined in another namespace.
 
 Restore mutable hooks after debugging, or reload the frontend. Use JVM `alter-var-root` only for JVM Clojure; it is not the normal way to patch live CLJS browser vars.
 

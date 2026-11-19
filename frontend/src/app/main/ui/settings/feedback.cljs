@@ -131,7 +131,9 @@
                     :show-success? true}]
 
       (when report
-        [:a {:class (stl/css :link :download-button) :on-click on-download}
+        [:button {:type "button"
+                  :class (stl/css :link :download-button)
+                  :on-click on-download}
          (tr "labels.download" "report.txt")])]
 
      [:> fm/submit-button*

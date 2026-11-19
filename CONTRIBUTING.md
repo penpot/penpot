@@ -20,6 +20,7 @@ Center](https://help.penpot.app/).
     - [Title format](#title)
     - [Description](#description)
   - [Review process](#review-process)
+  - [Merging](#merging)
   - [What we won't accept](#what-we-wont-accept)
   - [Good first issues](#good-first-issues)
 - [Commit Guidelines](#commit-guidelines)
@@ -67,6 +68,11 @@ If AI-assisted content is used, it must be carefully reviewed and verified by a 
 Report bugs via [GitHub Issues](https://github.com/penpot/penpot/issues).
 Before filing, search existing issues to avoid duplicates.
 
+> **Note:** Every new issue starts under the `needs triage` label until the
+> product team reviews it. Issues under `needs triage` or `internal` are not
+> open to contributions — do not start work on them. Wait for a maintainer to
+> confirm it in the issue itself.
+
 Include the following when possible:
 
 1. Steps to reproduce the error.
@@ -106,8 +112,8 @@ Branch names are not enforced, but we recommend the following:
 - Otherwise, use a short, descriptive name with words separated by hyphens
   and no slashes (e.g. `fix-ellipse-icon-typo`, `feat-auto-link-libraries`).
 
-Since PRs are squash-merged, the branch name does not survive into the
-commit history — what matters is the [PR title](#title).
+Since PRs are squash-merged by default, the branch name does not survive
+into the commit history — what matters is the [PR title](#title).
 
 ### Format
 
@@ -119,7 +125,7 @@ commit history — what matters is the [PR title](#title).
 Pull request titles **must** follow the same convention as commit subjects:
 
 ```
-:emoji: Subject line (imperative, capitalized, no period, <=70 chars)
+:emoji: Subject line (imperative, capitalized, no period, <=80 chars)
 ```
 
 Read [Creating Commits](./.serena/memories/workflow/creating-commits.md)
@@ -151,8 +157,26 @@ for more concrete information.
 - Address review feedback by **pushing new commits** — do not
   force-push during review, as it breaks comment threads.
 - PRs require at least **one approval** before merge.
-- We use **squash-merge** by default. The PR title becomes the final
+- We **squash-merge** by default; see [Merging](#merging) for the reason
+  and for how to ask for a regular merge. The PR title becomes the final
   commit message, so follow the [title format](#title) above.
+
+### Merging
+
+PRs are **squash-merged** by default. One PR lands as one commit, which keeps
+the change atomic: the history stays readable, and `git bisect` never stops
+on an intermediate commit that fails the tests or the linter.
+
+This is the default, not a hard rule. If you keep your commits atomic and
+self-contained — each one builds, passes the linter and makes sense on its
+own — you may ask for a regular merge instead. Put the request in the first
+line of the PR description, above everything else:
+
+> **Merge:** do not squash; each commit is self-contained.
+
+Maintainers honor the request when the commits hold up, and squash-merge
+otherwise. After a squash merge the PR title becomes the commit subject on
+the main branch; see [Title format](#title).
 
 ### What we won't accept
 
@@ -164,10 +188,15 @@ To save time on both sides, please avoid submitting PRs that:
 - Submit AI-generated code without human review.
 - Skip local syntax and formatting checks before submitting.
 - Skip the [discussion step](#workflow) for non-bug-fix changes.
+- Open a PR for an issue under `needs triage` or `internal`. We may close
+  these PRs without review, without an explanation and without a reply.
 
 ### Good first issues
 
 We use the `good first issue` label to mark issues appropriate for newcomers.
+An issue is open to contributions only after a maintainer says so in the issue
+itself. Issues under `needs triage` or `internal` stay closed, however simple
+they look.
 
 ## Commit Guidelines
 
@@ -210,11 +239,20 @@ Commit messages must follow this format:
 - Capitalize the first letter of the subject
 - Add clear and concise description on the body
 - Do not end the subject with a period
-- Keep the subject to **70 characters** or fewer
-- **Wrap body lines at 76 characters or fewer** (trailers and URLs excepted)
+- Keep the subject to **80 characters** or fewer
+  (`Merge`/`Revert`/`Reapply` commits skip this limit, since git prepends
+  those prefixes to an existing subject)
+- **Wrap body lines at 80 characters or fewer** (trailers and URLs excepted)
 - Separate the subject from the body with a **blank line**
+- Use `Co-authored-by:` only for a human co-author
+  (`Co-authored-by: Name <email>`). AI providers, agents and bots are not
+  allowed there; for AI participation add an `AI-assisted-by: <model-name>`
+  trailer instead. `./scripts/check-commit` rejects the trailer when its value
+  names one of them.
 
 You can check a commit against these rules with `./scripts/check-commit`.
+CI runs the same script on every new commit in
+`.github/workflows/commit-checker.yml`, so violations fail the build.
 
 ### Examples
 

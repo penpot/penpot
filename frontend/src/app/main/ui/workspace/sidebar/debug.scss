@@ -4,26 +4,34 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
+@use "ds/_sizes.scss" as *;
+
+// Only for the checkbox placeholders (%input-checkbox, %checkbox-icon),
+// until the checkboxes move to the DS.
 @use "refactor/common-refactor.scss" as deprecated;
 
 .debug-panel {
   display: flex;
   flex-direction: column;
-  background-color: var(--panel-background-color);
+  background-color: var(--color-background-primary);
 }
 
 .debug-panel-title {
   margin: var(--sp-s) var(--sp-s) 0 var(--sp-s);
 }
 
+// The options list scrolls under the title when it does not fit.
 .debug-panel-inner {
-  padding: deprecated.$s-16 deprecated.$s-8;
+  flex: 1;
+  min-block-size: 0;
+  overflow-y: auto;
+  padding: var(--sp-l) var(--sp-s);
 }
 
 .checkbox-wrapper {
   @extend %input-checkbox;
 
-  height: deprecated.$s-32;
+  block-size: $sz-32;
   padding: 0;
 }
 

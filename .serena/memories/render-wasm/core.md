@@ -25,6 +25,7 @@
 - The lock covers setup, Cargo build, and artifact copy. The watch process releases it while waiting for changes. The operating system releases it on success, error, or signal; the file remains.
 - The lock only coordinates repository scripts. Manual Cargo commands do not take it.
 - Set `RENDER_WASM_LOCK_FILE` to the same path only when separate checkouts intentionally share a `CARGO_TARGET_DIR`.
+- Build output is gitignored and stays untracked everywhere it lands: `frontend/resources/public/js/render-wasm.{js,wasm}` and `frontend/src/app/render_wasm/api/shared.js` from `./build`, plus `exporter/resources/wasm/render-wasm.{js,wasm}` and `exporter/src/app/wasm/shared.js`. Never commit generated JS/WASM; rebuild instead.
 
 ## Commands
 
@@ -33,8 +34,10 @@ From `render-wasm/`:
 - Clean one target: `./clean [frontend|export]`; never run root `cargo clean` on the shared `target/`.
 - Watch rebuild: `./watch [frontend|export]`; its initial and change-triggered builds use `./build`.
 - Rust tests: `./test` or `cargo test <name>`.
+- Rust coverage: `RENDER_WASM_COVERAGE=1 ./test` runs the same tests under `cargo llvm-cov` (needs `cargo-llvm-cov` on PATH; the script adds `llvm-tools-preview`) and writes `target/coverage/` (`lcov.info` with absolute paths, `summary.json` llvm export totals, `html/`). Native build only: code behind wasm-only `cfg` is not measured. `tests-wasm.yml` downloads a pinned, checksum-verified `cargo-llvm-cov` release because the devenv image lacks it.
 - Cross-cutting testing principles and anti-patterns: `mem:testing`.
 - Lint: `./lint`.
-- Format check: `cargo fmt --check`.
+- Format: `./fmt`; check only: `./fmt --check`.
+- `./build`, `./test`, `./lint` and `./fmt` all run `setup`, which selects the Rust version pinned in `_build_env` (skip with `PENPOT_WASM_PREPARED=1`).
 
 Do not change exported WASM function signatures without updating the corresponding frontend bridge and verifying the frontend renderer path.

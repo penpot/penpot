@@ -727,15 +727,16 @@
         computed))))
 
 (defn- without-inherited-transforms
-  "Drops the entries that repeat their parent's transform. Only for WASM, which applies it to
-  the subtree; the UI looks transforms up per shape. WASM does not expand into bool operands
-  nor masks, so those are kept."
+  "Drops the pure-move entries that repeat their parent's transform. Only for WASM, which
+  applies a parent's move to the subtree; the UI looks transforms up per shape. WASM does not
+  expand into bool operands nor masks, so those are kept."
   [objects modifiers]
   (let [transforms (into {} modifiers)]
     (into []
           (remove (fn [[id transform]]
                     (let [parent (get objects (dm/get-in objects [id :parent-id]))]
                       (and (= transform (get transforms (:id parent)))
+                           (gmt/move? transform)
                            (not (cfh/bool-shape? parent))
                            (not (and (cfh/mask-shape? parent)
                                      (= id (first (:shapes parent)))))))))
@@ -744,8 +745,9 @@
 #_:clj-kondo/ignore
 (defn set-wasm-modifiers
   [modif-tree & {:keys [ignore-constraints ignore-snap-pixel snap-ignore-axis
-                        subtree-ids-by-id selection-rect-cache]
-                 :or {ignore-constraints false ignore-snap-pixel false snap-ignore-axis nil}
+                        subtree-ids-by-id selection-rect-cache interactive?]
+                 :or {ignore-constraints false ignore-snap-pixel false snap-ignore-axis nil
+                      interactive? true}
                  :as params}]
   (let [modif-tree (without-nil-ids modif-tree)]
     (ptk/reify ::set-wasm-modifiers
@@ -764,8 +766,10 @@
         ;; the renderer into fast + atlas-backdrop mode so the live
         ;; preview is cheap, tiles never appear sequentially and the main
         ;; thread is not blocked. The pair is closed in
-        ;; `clear-local-transform`.
-        (ensure-interactive-transform-start!)
+        ;; `clear-local-transform`. Previews outside a gesture pass
+        ;; `:interactive? false` to keep full quality rendering.
+        (when interactive?
+          (ensure-interactive-transform-start!))
         (let [snap-pixel?  (and (not ignore-snap-pixel) (contains? (:workspace-layout state) :snap-pixel-grid))
               translation? (every? #(ctm/only-move? (:modifiers %)) (vals modif-tree))]
 
@@ -967,34 +971,6 @@
    (remove #(get % :blocked false))
    (filter #(:rotation (get editable-attrs (:type %))))
    (map :id)))
-
-;; Rotation use different algorithm to calculate children
-;; modifiers (and do not use child constraints).
-(defn set-wasm-rotation-modifiers
-  ([angle shapes]
-   (set-wasm-rotation-modifiers angle shapes (-> shapes gsh/shapes->rect grc/rect->center)))
-
-  ([angle shapes center]
-   (ptk/reify ::set-wasm-rotation-modifiers
-     ptk/EffectEvent
-     (effect [_ state _]
-       (ensure-interactive-transform-start!)
-       (let [objects (dsh/lookup-page-objects state)
-             ids     (sequence xf-rotation-shape shapes)
-
-             get-modifier
-             (fn [shape]
-               (ctm/rotation-modifiers shape center angle))
-
-             modif-tree
-             (build-modif-tree ids objects get-modifier)
-
-             modifiers
-             (mapv (fn [[id {:keys [modifiers]}]]
-                     (d/vec2 id (ctm/modifiers->transform modifiers)))
-                   modif-tree)]
-
-         (wasm.api/set-modifiers modifiers))))))
 
 (defn set-rotation-modifiers
   ([angle shapes]

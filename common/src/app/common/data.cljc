@@ -1202,12 +1202,20 @@
     (str/replace (str s) #"([*_~`\[\]()>#+=\-|{}.!@\\])" (fn [[_ c]] (str "\\" c)))
     ""))
 
+;; \p{L} (Unicode letter) works in Java regex natively, but in JavaScript it
+;; requires the "u" flag which ClojureScript regex literals don't support.
+;; Do not use the "g" flag: a shared global RegExp mutates lastIndex and
+;; corrupts later get-initials calls (org avatar lists in the team switcher).
+(def ^:private letter-re
+  #?(:clj  #"\p{L}"
+     :cljs (js/RegExp. "\\p{L}" "u")))
+
 (defn get-initials
   "Returns up to two uppercase initials extracted from a string.
-  Non-letter prefixes in each token are ignored."
+  Non-letter prefixes in each token are ignored (Unicode letters)."
   [name]
   (->> (str/split (str/trim (or name "")) #"\s+")
-       (keep #(first (re-seq #"[a-zA-Z]" %)))
+       (keep #(re-find letter-re %))
        (take 2)
        (map str/upper)
        (apply str)))

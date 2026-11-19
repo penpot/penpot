@@ -57,6 +57,22 @@
    {:error/code :error.token/number-too-large
     :error/fn #(str (tr "errors.tokens.number-too-large" %))}
 
+   :error.token/division-by-zero
+   {:error/code :error.token/division-by-zero
+    :error/fn #(tr "errors.tokens.division-by-zero")}
+
+   :error.token/incompatible-units
+   {:error/code :error.token/incompatible-units
+    :error/fn #(tr "errors.tokens.incompatible-units" (str/join ", " %))}
+
+   :error.token/unknown-function
+   {:error/code :error.token/unknown-function
+    :error/fn #(tr "errors.tokens.unknown-function" %)}
+
+   :error.token/function-argument-out-of-range
+   {:error/code :error.token/function-argument-out-of-range
+    :error/fn #(tr "errors.tokens.function-argument-out-of-range" %)}
+
    ;; Surfaced when a token name conflicts with a token-group prefix
    ;; across the active sets (e.g. one set defines `a`, another set
    ;; defines `a.b`). DTCG/StyleDictionary cannot represent both as

@@ -16,7 +16,9 @@
    [app.main.data.modal :as modal]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.icons :as deprecated-icon]
+   [app.main.ui.ds.buttons.button :refer [button*]]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
    [app.main.ui.workspace.shapes :refer [shape-wrapper]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer  [tr c]]
@@ -24,15 +26,6 @@
    [app.util.theme :as theme]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
-
-(def ^:private neutral-icon
-  (deprecated-icon/icon-xref :msg-neutral (stl/css :icon)))
-
-(def ^:private error-icon
-  (deprecated-icon/icon-xref :delete-text (stl/css :icon)))
-
-(def ^:private close-icon
-  (deprecated-icon/icon-xref :close (stl/css :close-icon)))
 
 (mf/defc export-multiple-dialog*
   {::mf/private true}
@@ -83,9 +76,11 @@
 
       [:div {:class (stl/css :modal-header)}
        [:h2 {:class (stl/css :modal-title)} title]
-       [:button {:class (stl/css :modal-close-btn)
-                 :on-click cancel-fn}
-        deprecated-icon/close]]
+       [:> icon-button* {:variant "ghost"
+                         :tooltip-class (stl/css :modal-close-btn)
+                         :aria-label (tr "labels.close")
+                         :icon i/close
+                         :on-click cancel-fn}]]
 
       [:*
        [:div {:class (stl/css :modal-content)}
@@ -98,12 +93,12 @@
               (cond
                 all-checked? [:span {:class (stl/css-case :checkobox-tick true
                                                           :global/checked true)}
-                              deprecated-icon/tick]
+                              [:> icon* {:icon-id i/tick :size "s"}]]
                 all-unchecked? [:span {:class (stl/css-case :checkobox-tick true
                                                             :global/uncheked true)}]
                 :else [:span {:class (stl/css-case :checkobox-tick true
                                                    :global/intermediate true)}
-                       deprecated-icon/remove-icon])]]
+                       [:> icon* {:icon-id i/remove :size "s"}]])]]
             [:div {:class (stl/css :selection-title)}
              (tr "dashboard.export-multiple.selected"
                  (c (count enabled-exports))
@@ -122,7 +117,7 @@
                     (if (:enabled export)
                       [:span {:class (stl/css-case :checkobox-tick true
                                                    :global/checked true)}
-                       deprecated-icon/tick]
+                       [:> icon* {:icon-id i/tick :size "s"}]]
                       [:span {:class (stl/css-case :checkobox-tick true
                                                    :global/uncheked true)}])]
 
@@ -158,19 +153,16 @@
        (when (> (count all-exports) 0)
          [:div {:class (stl/css :modal-footer)}
           [:div {:class (stl/css :action-buttons)}
-           [:input {:class (stl/css :cancel-button)
-                    :type "button"
-                    :value (tr "labels.cancel")
-                    :on-click cancel-fn}]
+           [:> button* {:variant "secondary"
+                        :on-click cancel-fn}
+            (tr "labels.cancel")]
 
-           [:input {:class (stl/css-case :accept-btn true
-                                         :btn-disabled (or in-progress? all-unchecked?))
-                    :disabled (or in-progress? all-unchecked?)
-                    :type "button"
-                    :value (if in-progress?
-                             (tr "workspace.options.exporting-object")
-                             (tr "labels.export"))
-                    :on-click (when-not in-progress? accept-fn)}]]])]]]))
+           [:> button* {:variant "primary"
+                        :disabled (or in-progress? all-unchecked?)
+                        :on-click (when-not in-progress? accept-fn)}
+            (if in-progress?
+              (tr "workspace.options.exporting-object")
+              (tr "labels.export"))]]])]]]))
 
 (mf/defc shapes-no-selection []
   [:div {:class (stl/css :no-selection)}
@@ -215,8 +207,8 @@
   []
   (let [state             (mf/deref refs/export)
         profile           (mf/deref refs/profile)
-        theme             (or (:theme profile) theme/default)
-        is-default-theme? (= theme/default theme)
+        theme             (theme/use-theme profile)
+        dark-theme?       (= "dark" theme)
         error?            (:error state)
         ;; The exporter is at capacity: worth its own wording, so the user
         ;; knows retrying later is the thing to do.
@@ -231,12 +223,13 @@
         queued?           (and (some? job-id) (= "queued" status))
         cancelling?       (and (some? job-id) (= "cancelling" status))
         cancelled?        (and (some? job-id) (= "cancelled" status))
-        ;; Only the wasm backend can actually stop: a browser render holds its
-        ;; pool slot until playwright gives up.
-        cancellable?      (and (some? job-id)
-                               (= "wasm" (:backend state))
-                               (:in-progress state)
-                               (not cancelling?))
+        ;; Server wasm jobs and local client-side exports can stop; a non-wasm
+        ;; browser render holds its pool slot until playwright gives up.
+        cancellable?      (and (:in-progress state)
+                               (not cancelling?)
+                               (or (= "local" (:backend state))
+                                   (and (some? job-id)
+                                        (= "wasm" (:backend state)))))
         total             (or (:total state) (count items))
         complete?         (= progress total)
         circ              (* 2 Math/PI 12)
@@ -252,13 +245,13 @@
           error?         clr/new-danger
           (or cancelling?
               cancelled?) clr/new-warning
-          healthy?       (if is-default-theme?
+          healthy?       (if dark-theme?
                            clr/new-primary
                            clr/new-primary-light)
           (not healthy?) clr/new-warning)
 
         background-clr
-        (if is-default-theme?
+        (if dark-theme?
           clr/background-quaternary
           clr/background-quaternary-light)
 
@@ -290,8 +283,11 @@
 
     [:*
      (when widget-visible?
-       [:div {:class (stl/css :export-progress-widget)
-              :on-click toggle-detail-visibility}
+       [:button {:type "button"
+                 :class (stl/css :export-progress-widget)
+                 :aria-label title
+                 :aria-expanded (boolean detail-visible?)
+                 :on-click toggle-detail-visibility}
         [:svg {:width "24" :height "24"}
          [:circle {:r "10"
                    :cx "12"
@@ -313,9 +309,8 @@
      (when detail-visible?
        [:div {:class (stl/css-case :export-progress-modal true
                                    :has-error error?)}
-        (if error?
-          error-icon
-          neutral-icon)
+        [:> icon* {:icon-id (if error? i/delete-text i/msg-neutral)
+                   :class (stl/css :icon)}]
 
         [:div {:class (stl/css :export-progress-title)}
          [:div {:class (stl/css :title-text)} title]
@@ -341,9 +336,11 @@
            [:span {:class (stl/css :progress)}
             (dm/str progress " / " total)])]
 
-        [:button {:class (stl/css :progress-close-button)
-                  :on-click toggle-detail-visibility}
-         close-icon]
+        [:> icon-button* {:variant "action"
+                          :tooltip-class (stl/css :progress-close-button)
+                          :aria-label (tr "labels.close")
+                          :icon i/close
+                          :on-click toggle-detail-visibility}]
 
         (when-not error?
           [:svg {:class (stl/css :progress-bar)

@@ -18,8 +18,9 @@
    [app.main.ui.components.context-menu-a11y :refer [context-menu*]]
    [app.main.ui.components.search-bar :refer [search-bar*]]
    [app.main.ui.context :as ctx]
+   [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.icons :as deprecated-icon]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.main.ui.workspace.sidebar.assets.file-library :refer [file-library*]]
    [app.main.ui.workspace.sidebar.scroll :as sc]
@@ -201,14 +202,18 @@
      [:div {:class (stl/css :assets-header)}
       (when-not ^boolean read-only?
         (if (and (= num-libs 1) (empty? components) (not shared?))
-          [:button {:class (stl/css :add-library-button)
-                    :on-click show-libraries-dialog
-                    :data-testid "libraries"}
+          [:> button* {:variant "primary"
+                       :type "button"
+                       :class (stl/css :libraries-button)
+                       :on-click show-libraries-dialog
+                       :data-testid "libraries"}
            (tr "workspace.assets.add-library")]
 
-          [:button {:class (stl/css :libraries-button)
-                    :on-click show-libraries-dialog
-                    :data-testid "libraries"}
+          [:> button* {:variant "secondary"
+                       :type "button"
+                       :class (stl/css :libraries-button)
+                       :on-click show-libraries-dialog
+                       :data-testid "libraries"}
            (tr "workspace.assets.manage-library")]))
 
 
@@ -221,7 +226,8 @@
           :title (tr "workspace.assets.filter")
           :class (stl/css-case :section-button true
                                :opened menu-open?)}
-         deprecated-icon/filter-icon]]
+         [:> icon* {:icon-id i/filter
+                    :class (stl/css :section-icon)}]]]
 
        [:> context-menu*
         {:on-close on-menu-close
