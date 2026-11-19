@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-11-05 22:20+0000\n"
-"Last-Translator: Andrey Antukh <niwinz@users.noreply.hosted.weblate.org>\n"
-"Language-Team: Swedish "
-"<https://hosted.weblate.org/projects/penpot/frontend/sv/>\n"
+"PO-Revision-Date: 2026-11-09 10:06+0000\n"
+"Last-Translator: AntonPalmqvist <apq@users.noreply.hosted.weblate.org>\n"
+"Language-Team: Swedish <https://hosted.weblate.org/projects/penpot/frontend/"
+"sv/>\n"
 "Language: sv\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -9499,3 +9499,36 @@ msgstr ""
 #: src/app/main/ui/workspace/sidebar/versions.cljs:462
 msgid "workspace.versions.warning.text"
 msgstr "Autosparade versioner sparas i %s dagar."
+
+#: src/app/main/ui/dashboard/sidebar.cljs:228
+msgid "dashboard.clear-search"
+msgstr "Rensa sökning"
+
+#: src/app/main/ui/dashboard/fonts.cljs:442, src/app/main/ui/dashboard/fonts.cljs:443
+msgid "dashboard.fonts.delete-variant"
+msgstr "Radera typsnittsstil"
+
+#: src/app/main/ui/dashboard/import.cljs:625
+msgid "dashboard.import.check.message"
+msgstr ""
+"Säkerställer att varje fil kan importeras. Detta tar bara ett ögonblick."
+
+#: src/app/main/ui/dashboard/import.cljs:624
+msgid "dashboard.import.check.title"
+msgstr "Kontrollerar dina filer..."
+
+#: src/app/main/ui/dashboard/import.cljs:600
+msgid "dashboard.import.importing.done"
+msgid_plural "dashboard.import.importing.done"
+msgstr[0] "1 klar"
+msgstr[1] "%s klara"
+
+#: src/app/main/ui/dashboard/import.cljs:637
+msgid "dashboard.import.importing.message"
+msgstr "Bygger om sidor, komponenter och objekt i ditt projekt."
+
+#: src/app/main/ui/dashboard/import.cljs:598
+msgid "dashboard.import.importing.title"
+msgid_plural "dashboard.import.importing.title"
+msgstr[0] "Importerar 1 fil"
+msgstr[1] "Importerar %s filer"

@@ -5,7 +5,7 @@ name: Auto Label and Add to Project
 # code, it only reads ids from the event payload.
 on:
   issues:
-    types: [opened]
+    types: [opened, closed]
   pull_request_target:
     types: [opened]
 
@@ -43,12 +43,109 @@ jobs:
             // === 1. CONFIGURATION ===
             const PROJECT_NUMBER = 8; // <--- Replace with your project board number
             const IS_ORG = true;      // <--- Set to false if this is a personal project, true if an organization
+            const STATUS_FIELD_ID = 'PVTSSF_lADOAcyBPM4BV2pqzhRPY48';
+            const STATUS_BACKLOG = 'f75ad846';
+            const STATUS_TECH_REVIEW = 'b0f45db9';
             const OWNER = context.repo.owner;
             const REPO = context.repo.repo;
 
             const issueNumber = context.issue.number;
             const isPR = !!context.payload.pull_request;
             const contentId = isPR ? context.payload.pull_request.node_id : context.payload.issue.node_id;
+
+            // A completed issue is already closed by GitHub. Route its Main
+            // project status according to whether QA needs to verify it.
+            if (context.eventName === 'issues' && context.payload.action === 'closed') {
+              const issue = context.payload.issue;
+              if (issue.state_reason !== 'completed') {
+                console.log(`Issue #${issue.number} was closed as ${issue.state_reason}; leaving project status unchanged.`);
+                return;
+              }
+
+              const targetStatus = issue.labels.some(({ name }) => name === 'team-qa')
+                ? 'Ready for QA'
+                : 'Product Review';
+
+              const projectQuery = `
+                query($owner: String!, $number: Int!) {
+                  organization(login: $owner) {
+                    projectV2(number: $number) {
+                      id
+                      fields(first: 100) {
+                        nodes {
+                          ... on ProjectV2SingleSelectField {
+                            id
+                            name
+                            options { id name }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              `;
+              const projectRes = await github.graphql(projectQuery, {
+                owner: OWNER,
+                number: PROJECT_NUMBER
+              });
+              const project = projectRes.organization.projectV2;
+              if (!project) {
+                throw new Error(`Could not find Main project #${PROJECT_NUMBER}.`);
+              }
+
+              const statusField = project.fields.nodes.find(({ name }) => name === 'Status');
+              const statusOption = statusField?.options.find(({ name }) => name === targetStatus);
+              if (!statusField || !statusOption) {
+                throw new Error(`Could not find Status option "${targetStatus}" in Main.`);
+              }
+
+              const issueProjectItemsQuery = `
+                query($issueId: ID!) {
+                  node(id: $issueId) {
+                    ... on Issue {
+                      projectItems(first: 100) {
+                        nodes {
+                          id
+                          project { id }
+                        }
+                      }
+                    }
+                  }
+                }
+              `;
+              const issueProjectItemsRes = await github.graphql(issueProjectItemsQuery, {
+                issueId: contentId
+              });
+              const projectItems = issueProjectItemsRes.node?.projectItems?.nodes || [];
+              const projectItem = projectItems.find(
+                ({ project: itemProject }) => itemProject.id === project.id
+              );
+              if (!projectItem) {
+                console.log(`Issue #${issue.number} is not in Main project #${PROJECT_NUMBER}; skipping status update.`);
+                return;
+              }
+
+              const updateStatusMutation = `
+                mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
+                  updateProjectV2ItemFieldValue(input: {
+                    projectId: $projectId
+                    itemId: $itemId
+                    fieldId: $fieldId
+                    value: { singleSelectOptionId: $optionId }
+                  }) {
+                    projectV2Item { id }
+                  }
+                }
+              `;
+              await github.graphql(updateStatusMutation, {
+                projectId: project.id,
+                itemId: projectItem.id,
+                fieldId: statusField.id,
+                optionId: statusOption.id
+              });
+              console.log(`Issue #${issue.number} closed; Main status set to "${targetStatus}".`);
+              return;
+            }
 
             // Define your labels here
             const labelToApply = 'needs triage';
@@ -88,6 +185,65 @@ jobs:
               }
             `;
 
-            await github.graphql(addToProjectMutation, { projectId, contentId });
+            let itemId;
+            try {
+              const addRes = await github.graphql(addToProjectMutation, { projectId, contentId });
+              itemId = addRes.addProjectV2ItemById.item.id;
+            } catch (error) {
+              const messages = [
+                error && error.message,
+                ...(Array.isArray(error && error.errors)
+                  ? error.errors.map(e => e && e.message)
+                  : [])
+              ].filter(Boolean).join('\n');
+              if (!messages.includes('Content already exists in this project')) {
+                throw error;
+              }
+              console.log('Item already in project, fetching existing item...');
+              const existing = await github.graphql(
+                `query($contentId: ID!) {
+                  node(id: $contentId) {
+                    ... on Issue {
+                      projectItems(first: 50) {
+                        nodes { id project { id } }
+                      }
+                    }
+                    ... on PullRequest {
+                      projectItems(first: 50) {
+                        nodes { id project { id } }
+                      }
+                    }
+                  }
+                }`,
+                { contentId }
+              );
+              const nodes = (existing.node && existing.node.projectItems && existing.node.projectItems.nodes) || [];
+              const match = nodes.find(n => n.project.id === projectId);
+              if (!match) {
+                throw new Error(`Item already in a project, but not found in project ${projectId}`);
+              }
+              itemId = match.id;
+            }
+
+            // === 4. SET PROJECT STATUS ===
+            const statusOptionId = isPR ? STATUS_TECH_REVIEW : STATUS_BACKLOG;
+            const statusName = isPR ? 'Tech Review' : 'Backlog';
+            console.log(`Setting status to "${statusName}" for ${isPR ? 'PR' : 'Issue'} #${issueNumber}...`);
+            await github.graphql(
+              `mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
+                updateProjectV2ItemFieldValue(input: {
+                  projectId: $projectId,
+                  itemId: $itemId,
+                  fieldId: $fieldId,
+                  value: { singleSelectOptionId: $optionId }
+                }) {
+                  projectV2Item {
+                    id
+                  }
+                }
+              }`,
+              { projectId, itemId, fieldId: STATUS_FIELD_ID, optionId: statusOptionId }
+            );
+
             console.log("Automation successfully completed!");
 

@@ -18,7 +18,7 @@ push — the user pushes from their own shell.
 
 - The user asks to open or create a NEW PR for the current task branch, in
   any phrasing ("open a PR", "create the pull request", "put this up for
-  review") — or runs `/create-pr`. → **Open mode**.
+  review") — or invokes `@create-pr`. → **Open mode**.
 - The user asks to fix or update an EXISTING PR's title or description to
   match conventions. → **Update mode**.
 
@@ -59,7 +59,7 @@ Run all checks before reporting, then report every failure together:
 5. **Branch not pushed.** The remote-tracking ref `origin/<branch>` is
    missing, or `git rev-parse origin/<branch>` differs from HEAD — the
    branch was never pushed, or has commits the remote does not have. Never
-   push yourself; ask the user to push and to run `/create-pr` again
+   push yourself; ask the user to push and to invoke `@create-pr` again
    afterwards, then stop.
 
 ### 3. Already-open PR

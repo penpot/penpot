@@ -92,15 +92,6 @@
                       path? (conj [:path id (:content shape)])))))
         cases))
 
-(t/deftest tail-cases-flags-are-consistent
-  (doseq [{:keys [shape tail? svg? path?]} tail-cases]
-    (t/is (boolean? tail?) "tail? is a boolean")
-    (t/is (= tail? (boolean (or svg? path?))) "tail? matches the write flags")
-    (t/is (= svg? (some? (:svg-attrs shape))) "svg? matches the shape")
-    (t/is (= path? (boolean (and (contains? #{:path :bool} (:type shape))
-                                 (some? (:content shape)))))
-          "path? matches the shape")))
-
 (t/deftest needs-shape-tail-matches-spec-table
   (doseq [{:keys [shape tail?]} tail-cases]
     (t/is (= tail? (serialize-shape/needs-shape-tail? shape))

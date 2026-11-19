@@ -115,7 +115,9 @@ export class AppComponent {
   #messages$ = fromEvent<MessageEvent<PluginMessageEvent>>(window, 'message');
 
   #initialTheme$ = of(
-    new URLSearchParams(window.location.search).get('theme'),
+    // The theme arrives in the query string or in the query part of the hash.
+    new URLSearchParams(window.location.search).get('theme') ??
+      new URLSearchParams(window.location.hash.split('?')[1]).get('theme'),
   ).pipe(filter((theme) => !!theme));
 
   selection = toSignal(

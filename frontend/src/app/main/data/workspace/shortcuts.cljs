@@ -58,6 +58,14 @@
       (.preventDefault event)
       (st/emit! (toggle-layout-flag :display-guides)))))
 
+(defn- escape
+  "Leave the scale content mode when it is active, keeping the
+  selection; otherwise clear the current drawing and selection."
+  []
+  (if (contains? (deref refs/workspace-layout) :scale-text)
+    (st/emit! :interrupt (dw/remove-layout-flag :scale-text))
+    (st/emit! :interrupt (dwdc/clear-drawing) (dw/deselect-all true))))
+
 (defn- emit-when-no-readonly
   [& events]
   (let [can-edit?  (:can-edit (deref refs/permissions))
@@ -181,7 +189,7 @@
                           :subsections [:edit]
                           :section [:workspace]
                           :customizable false
-                          :fn #(st/emit! :interrupt (dwdc/clear-drawing) (dw/deselect-all true))}
+                          :fn escape}
 
    :find             {:tooltip (ds/meta "F") :command (ds/c-mod "f") :subsections [:edit]
                       :label (fn [] (tr "shortcuts.find"))
@@ -326,19 +334,19 @@
                           :subsections [:modify-layers]
                           :fn #(emit-when-no-readonly (dwt/move-selected :down false))}
 
-   :move-unit-left       {:tooltip ds/right-arrow
+   :move-unit-left       {:tooltip ds/left-arrow
                           :label (fn [] (tr "shortcuts.move-unit-left"))
-                          :command ["right" "alt+right"]
-                          :subsections [:modify-layers]
-                          :section [:workspace]
-                          :fn #(emit-when-no-readonly (dwt/move-selected :right false))}
-
-   :move-unit-right      {:tooltip ds/left-arrow
-                          :label (fn [] (tr "shortcuts.move-unit-right"))
                           :command ["left" "alt+left"]
+                          :subsections [:modify-layers]
+                          :section [:workspace]
+                          :fn #(emit-when-no-readonly (dwt/move-selected :left false))}
+
+   :move-unit-right      {:tooltip ds/right-arrow
+                          :label (fn [] (tr "shortcuts.move-unit-right"))
+                          :command ["right" "alt+right"]
                           :section [:workspace]
                           :subsections [:modify-layers]
-                          :fn #(emit-when-no-readonly (dwt/move-selected :left false))}
+                          :fn #(emit-when-no-readonly (dwt/move-selected :right false))}
 
    :artboard-selection   {:tooltip (ds/meta (ds/alt "G"))
                           :label (fn [] (tr "shortcuts.artboard-selection"))

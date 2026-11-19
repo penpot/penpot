@@ -128,6 +128,15 @@
    :name name
    :suffix suffix})
 
+(defn local-export-filename
+  "Use the requested download name; legacy single entries already include the suffix."
+  [kind entry export-name]
+  (case kind
+    :pdf-frames (str (or export-name "export") ".pdf")
+    :single     (wasm.exports/sanitize-filename {:name (or export-name (:name entry))
+                                                 :type (:type entry)} #{})
+    (str (or export-name "export") ".zip")))
+
 (defn- run-local-export
   [{:keys [job-id kind exports objects background] export-name :name}]
   (let [exports (mapv export-entry exports)]
@@ -162,14 +171,7 @@
 
                            :else
                            (let [entry    (first exports)
-                                 filename (case kind
-                                            :pdf-frames
-                                            (str (or export-name "export") ".pdf")
-
-                                            :single
-                                            (wasm.exports/sanitize-filename entry #{})
-
-                                            (str (or export-name "export") ".zip"))
+                                 filename (local-export-filename kind entry export-name)
                                  mtype    (case kind
                                             :pdf-frames "application/pdf"
                                             :single     (export-mtype (:type entry))

@@ -31,7 +31,58 @@
   [{:keys [id]}]
   (and (uuid? id) (not= id uuid/zero)))
 
+;; --- AUTH ORIGIN
+
+(def schema:auth-origin
+  [:map
+   [:source          [:enum "login" "register"]]
+   [:auth-backend    [:enum "penpot" "ldap" "google" "github" "gitlab" "oidc"]]
+   [:activation      {:optional true} [:enum "immediate" "email-verification"]]
+   [:from-invitation {:optional true} :boolean]])
+
+(defn auth-origin
+  "Canonical description of how an auth flow happened. The fields that
+  do not apply are omitted: a login carries no `:activation`."
+  [{:keys [source auth-backend activation from-invitation]}]
+  (let [origin (d/without-nils
+                {:source          source
+                 :auth-backend    auth-backend
+                 :activation      activation
+                 :from-invitation from-invitation})]
+    (assert (sm/check schema:auth-origin origin) "invalid auth-origin")
+    origin))
+
+(defn- profile-origin
+  [profile]
+  (let [m (meta profile)]
+    (auth-origin
+     {:source          (::ev/source m)
+      :activation      (::ev/activation m)
+      :auth-backend    (:auth-backend profile)
+      :from-invitation (some? (:invitation-token profile))})))
+
+(def ^:private iss->origin
+  {:auth         {:source "login"}
+   :verify-email {:source "register" :activation "email-verification"}})
+
+(defn- origin-meta
+  [{:keys [source activation]}]
+  (d/without-nils {::ev/source source
+                   ::ev/activation activation}))
+
 ;; --- EVENT: login
+
+(defn- get-invitation-nav
+  "Observable that emits the navigation to the token verification screen
+  when the profile carries an invitation token, and nothing otherwise.
+
+  It does not depend on the teams: `fetch-teams` has no error handling,
+  so waiting for it would leave the invitation unaccepted when that call
+  fails."
+  [profile]
+  (->> (rx/of (:invitation-token profile))
+       (rx/filter some?)
+       (rx/map #(rt/nav :auth-verify-token {:token %}))))
 
 (defn- logged-in
   "This is the main event that is executed once we have logged in
@@ -39,8 +90,11 @@
   accepting invitation, or third party auth signup or singin."
   [profile]
   (letfn [(get-redirect-events [teams]
-            (if-let [token (:invitation-token profile)]
-              (rx/of (rt/nav :auth-verify-token {:token token}))
+            (if (some? (:invitation-token profile))
+              ;; The invitation navigates on its own, without waiting for
+              ;; the teams; this branch must not move the user away from
+              ;; the token verification screen.
+              (rx/empty)
               (if-let [redirect-href (:login-redirect storage/session)]
                 (binding [storage/*sync* true]
                   (swap! storage/session dissoc :login-redirect)
@@ -69,17 +123,22 @@
                      (ws/initialize)
                      (dtm/fetch-teams))
 
+              ;; The invitation resolves on its own, without waiting for the
+              ;; teams.
+              (->> (get-invitation-nav profile)
+                   (rx/observe-on :async))
+
               ;; We schedule this event to be executed a bit later,
               ;; when the profile is already set
-              (->> (rx/of (ev/event {::ev/name "signin"
-                                     ::ev/type "identify"
-                                     :id (:id profile)
-                                     :email (:email profile)
-                                     :auth-backend (:auth-backend profile)
-                                     :fullname (:fullname profile)
-                                     :is-muted (:is-muted profile)
-                                     :default-team-id (:default-team-id profile)
-                                     :default-project-id (:default-project-id profile)}))
+              (->> (rx/of (ev/event (merge {::ev/name "signin"
+                                            ::ev/type "identify"
+                                            :id (:id profile)
+                                            :email (:email profile)
+                                            :fullname (:fullname profile)
+                                            :is-muted (:is-muted profile)
+                                            :default-team-id (:default-team-id profile)
+                                            :default-project-id (:default-project-id profile)}
+                                           (profile-origin profile))))
                    (rx/observe-on :async))
 
 
@@ -135,7 +194,7 @@
                                    (rx/filter is-authenticated?)
                                    (rx/map (fn [profile]
                                              (with-meta (merge data profile)
-                                               {::ev/source "login"})))
+                                               (origin-meta {:source "login"}))))
                                    (rx/tap on-success)
                                    (rx/map logged-in)
                                    (rx/observe-on :async)))))
@@ -161,7 +220,7 @@
              (rx/tap on-success)
              (rx/map (fn [profile]
                        (-> profile
-                           (with-meta {::ev/source "login-with-ldap"})
+                           (with-meta (origin-meta {:source "login"}))
                            (logged-in))))
              (rx/catch on-error))))))
 
@@ -193,7 +252,7 @@
 
 (defn login-from-token
   "Used mainly as flow continuation after token validation."
-  [{:keys [profile invitation-token] :as tdata}]
+  [{:keys [profile invitation-token iss] :as tdata}]
   (ptk/reify ::login-from-token
     ptk/WatchEvent
     (watch [_ _ _]
@@ -204,29 +263,35 @@
                                      (assoc :invitation-token invitation-token)
 
                                      :always
-                                     (with-meta {::ev/source "login-with-token"}))]
+                                     (with-meta (origin-meta (iss->origin iss))))]
                        (logged-in profile))))))))
+
+(defn- with-register-origin
+  [profile invitation-token]
+  (-> profile
+      (cond-> (some? invitation-token)
+        (assoc :invitation-token invitation-token))
+      (with-meta (origin-meta {:source "register" :activation "immediate"}))))
 
 (defn login-from-register
   "Event used mainly for mark current session as logged-in in after the
   user successfully registered using third party auth provider (in this
   case we dont need to verify the email)."
-  []
-  (ptk/reify ::login-from-register
-    ptk/WatchEvent
-    (watch [_ _ stream]
-      (rx/merge
-       (rx/of (dp/fetch-profile))
-       (->> stream
-            (rx/filter dp/profile-fetched?)
-            (rx/take 1)
-            (rx/map deref)
-            (rx/filter is-authenticated?)
-            (rx/map (fn [profile]
-                      (with-meta profile
-                        {::ev/source "register"})))
-            (rx/map logged-in)
-            (rx/observe-on :async))))))
+  ([] (login-from-register nil))
+  ([{:keys [invitation-token]}]
+   (ptk/reify ::login-from-register
+     ptk/WatchEvent
+     (watch [_ _ stream]
+       (rx/merge
+        (rx/of (dp/fetch-profile))
+        (->> stream
+             (rx/filter dp/profile-fetched?)
+             (rx/take 1)
+             (rx/map deref)
+             (rx/filter is-authenticated?)
+             (rx/map #(with-register-origin % invitation-token))
+             (rx/map logged-in)
+             (rx/observe-on :async)))))))
 
 ;; --- EVENT: logout
 

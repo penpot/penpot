@@ -1,9 +1,10 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-11-05 22:20+0000\n"
-"Last-Translator: Andrey Antukh <niwinz@users.noreply.hosted.weblate.org>\n"
-"Language-Team: Dutch "
-"<https://hosted.weblate.org/projects/penpot/frontend/nl/>\n"
+"PO-Revision-Date: 2026-11-07 07:51+0000\n"
+"Last-Translator: Stephan Paternotte <stephan-"
+"p@users.noreply.hosted.weblate.org>\n"
+"Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/"
+"nl/>\n"
 "Language: nl\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -266,11 +267,11 @@ msgstr "Werk samen!"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:234
 msgid "dashboard-restore-file-confirmation.description"
-msgstr "Je gaat %1 herstellen."
+msgstr "Je gaat %1 terugzetten."
 
 #: src/app/main/ui/dashboard/file_menu.cljs:233
 msgid "dashboard-restore-file-confirmation.title"
-msgstr "Bestand herstellen"
+msgstr "Bestand terugzetten"
 
 #: src/app/main/ui/dashboard/placeholder.cljs:40
 msgid "dashboard.add-file"
@@ -310,7 +311,7 @@ msgstr "De organisatie van het team wijzigen"
 msgid "dashboard.check-updates.available-message"
 msgstr ""
 "Nieuwere releases omvatten prestatieverbeteringen, nieuwe mogelijkheden en "
-"oplossingen die uw installatie actueel houden."
+"oplossingen die jouw installatie actueel houden."
 
 #: src/app/main/ui/dashboard/check_updates.cljs:309
 msgid "dashboard.check-updates.available-title"
@@ -426,7 +427,7 @@ msgstr "Team verwijderen"
 #: src/app/main/ui/dashboard/deleted.cljs:343
 msgid "dashboard.deleted.empty-state-description"
 msgstr ""
-"Je afval is leeg. Verwijderde bestanden en projecten zullen hier "
+"Je prullenbak is leeg. Verwijderde bestanden en projecten zullen hier "
 "verschijnen."
 
 #: src/app/main/ui/dashboard/grid.cljs:249
@@ -1002,15 +1003,15 @@ msgstr "Bestanden verwijderen…"
 
 #: src/app/main/data/dashboard.cljs:875
 msgid "dashboard.progress-notification.restoring-files"
-msgstr "Bestanden herstellen…"
+msgstr "Bestanden terugzetten…"
 
 #: src/app/main/data/dashboard.cljs:755
 msgid "dashboard.progress-notification.slow-delete"
-msgstr "Verwijdering onverwacht traag"
+msgstr "Verwijdering gaat onverwacht traag"
 
 #: src/app/main/data/dashboard.cljs:876
 msgid "dashboard.progress-notification.slow-restore"
-msgstr "Herstel onverwacht traag"
+msgstr "Terugzetten gaat onverwacht traag"
 
 #: src/app/main/ui/dashboard/deleted.cljs:69, src/app/main/ui/dashboard/projects.cljs:58
 msgid "dashboard.projects-title"
@@ -1026,23 +1027,23 @@ msgstr "Je maakt geen deel meer uit van het team “%s“."
 
 #: src/app/main/ui/dashboard/deleted.cljs:286
 msgid "dashboard.restore-all-confirmation.description"
-msgstr "Je gaat al je projecten en bestanden herstellen. Dit kan even duren."
+msgstr "Je gaat al je projecten en bestanden terugzetten. Dit kan even duren."
 
 #: src/app/main/ui/dashboard/deleted.cljs:285
 msgid "dashboard.restore-all-confirmation.title"
-msgstr "Alle projecten en bestanden herstellen"
+msgstr "Alle projecten en bestanden terugzetten"
 
 #: src/app/main/ui/dashboard/deleted.cljs:323
 msgid "dashboard.restore-all-deleted-button"
-msgstr "Alles herstellen"
+msgstr "Alles terugzetten"
 
 #: src/app/main/data/dashboard.cljs:935
 msgid "dashboard.restore-files-success-notification"
-msgstr "%s bestanden zijn met succes hersteld."
+msgstr "%s bestanden zijn met succes teruggezet."
 
 #: src/app/main/ui/dashboard/deleted.cljs:92
 msgid "dashboard.restore-project-button"
-msgstr "Project herstellen"
+msgstr "Project terugzetten"
 
 #: src/app/main/ui/dashboard/deleted.cljs:45
 msgid "dashboard.restore-project-confirmation.description"
@@ -1050,11 +1051,11 @@ msgstr "Je gaat het project %1 en alle daarin opgenomen bestanden herstellen."
 
 #: src/app/main/ui/dashboard/deleted.cljs:44
 msgid "dashboard.restore-project-confirmation.title"
-msgstr "Project herstellen"
+msgstr "Project terugzetten"
 
 #: src/app/main/data/dashboard.cljs:907, src/app/main/data/dashboard.cljs:934, src/app/main/data/dashboard.cljs:971, src/app/main/ui/dashboard/file_menu.cljs:224
 msgid "dashboard.restore-success-notification"
-msgstr "%s is met succes hersteld."
+msgstr "%s is met succes teruggezet."
 
 #: src/app/main/ui/settings/profile.cljs:82
 msgid "dashboard.save-settings"
@@ -1078,7 +1079,7 @@ msgstr "Teams"
 
 #: src/app/main/data/nitrate.cljs:529
 msgid "dashboard.select-organization-modal.accept"
-msgstr "ORGANISATIE TOEVOEGEN"
+msgstr "AAN ORGANISATIE TOEVOEGEN"
 
 #: src/app/main/data/nitrate.cljs:527
 msgid "dashboard.select-organization-modal.choose"
@@ -1463,7 +1464,7 @@ msgstr "Token {%s} zit niet in een actieve set of heeft een ongeldige waarde."
 #: src/app/main/ui/auth/login.cljs:113
 msgid "errors.account-locked"
 msgstr ""
-"Te veel mislukte pogingen. Uw account is voor %s minuten vergrendeld. "
+"Te veel mislukte pogingen. Jouw account is voor %s minuten vergrendeld. "
 "Probeer het later nog eens."
 
 #: src/app/main/data/auth.cljs:344
@@ -1515,7 +1516,7 @@ msgstr "Je browser kan deze functie niet uitvoeren"
 #: src/app/util/clipboard.cljs:271
 msgid "errors.clipboard-permission-denied"
 msgstr ""
-"Toegang klembord geweigerd. Verleen klembordrechten aan uw browser om "
+"Toegang klembord geweigerd. Verleen klembordrechten aan jouw browser om "
 "inhoud te plakken"
 
 #: src/app/main/errors.cljs:944
@@ -1524,7 +1525,8 @@ msgstr "Er is een fout opgetreden bij de opmerking"
 
 #: src/app/main/errors.cljs:586
 msgid "errors.connection-error"
-msgstr "Kan de server niet bereiken Controleer uw verbinding en probeer het opnieuw."
+msgstr ""
+"Kan de server niet bereiken Controleer je verbinding en probeer het opnieuw."
 
 #: src/app/main/errors.cljs:1013
 msgid "errors.deprecated"
@@ -1758,11 +1760,11 @@ msgid "errors.save-failed"
 msgstr ""
 "Autom. opslaan werkt niet vanwege een fout. Neem contact op met de "
 "ondersteuning om de fout te melden en laad de pagina opnieuw om verder te "
-"gaan vanaf uw laatst opgeslagen versie."
+"gaan vanaf je laatst opgeslagen versie."
 
 #: src/app/main/data/persistence.cljs:447
 msgid "errors.save-retrying"
-msgstr "Verbinding verbroken. Opnieuw proberen om uw wijzigingen op te slaan."
+msgstr "Verbinding verbroken. Opnieuw proberen om jouw wijzigingen op te slaan."
 
 #: src/app/main/errors.cljs:935
 msgid "errors.svg-parser.invalid-svg"
@@ -2155,7 +2157,7 @@ msgstr "Toepassen"
 
 #: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:102
 msgid "import-shortcuts.diff-modal-text"
-msgstr "De volgende sneltoetsen worden gewijzigd door de geïmporteerde configuratie."
+msgstr "Deze sneltoetsen zullen veranderen:"
 
 #: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:98
 msgid "import-shortcuts.diff-modal-title"
@@ -3486,7 +3488,7 @@ msgstr "Jouw account"
 #: src/app/main/ui/ds/product/loader.cljs:21
 msgid "loader.tips.01.message"
 msgstr ""
-"Zorg ervoor dat uw ontwerpen consistent zijn en eenvoudig kunnen worden "
+"Zorg ervoor dat jouw ontwerpen consistent zijn en eenvoudig kunnen worden "
 "bijgewerkt in verschillende projecten."
 
 #: src/app/main/ui/ds/product/loader.cljs:20
@@ -3948,7 +3950,7 @@ msgstr "Er zijn geen uitnodigingen verzonden"
 msgid "modals.invite-restricted-members.all-organization-members-in-team"
 msgstr ""
 "Alleen leden van de organisatie \"%s\" kunnen voor dit team worden "
-"uitgenodigd en ze zijn allemaal al teamleden. Als u meer informatie nodig "
+"uitgenodigd en ze zijn allemaal al teamleden. Als je meer informatie nodig "
 "heeft, neem dan contact op met de eigenaar van de organisatie."
 
 #: src/app/main/ui/dashboard/team.cljs:327
@@ -4731,7 +4733,7 @@ msgstr "Actie"
 
 #: src/app/main/ui/settings/restore_shortcuts_modal.cljs:94
 msgid "restore-shortcuts.modal-text"
-msgstr "De volgende sneltoetsen worden teruggezet naar hun standaardwaarden."
+msgstr "Deze sneltoetsen worden teruggezet naar standaard:"
 
 #: src/app/main/ui/settings/restore_shortcuts_modal.cljs:90
 msgid "restore-shortcuts.modal-title"
@@ -5097,7 +5099,7 @@ msgstr "Volgend bord"
 
 #: src/app/main/ui/settings/shortcuts.cljs:561
 msgid "shortcuts.no-disabled"
-msgstr "Er zijn geen uitgeschakelde sneltoetsen"
+msgstr "Geen uitgeschakelde sneltoetsen."
 
 #: src/app/main/ui/settings/shortcuts.cljs:551
 msgid "shortcuts.no-personalized"
@@ -5105,11 +5107,11 @@ msgstr "Ga naar Alles om te beginnen met het aanpassen van je sneltoetsen."
 
 #: src/app/main/ui/settings/shortcuts.cljs:289, src/app/main/ui/settings/shortcuts.cljs:542
 msgid "shortcuts.no-shortcuts"
-msgstr "Er zijn geen sneltoetsen die overeenkomen met de zoekopdracht"
+msgstr "Geen sneltoetsen die overeenkomen met de zoekopdracht."
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:158
 msgid "shortcuts.not-found"
-msgstr "Geen sneltoets gevonden"
+msgstr "Geen sneltoetsen die overeenkomen met de zoekopdracht."
 
 #: src/app/main/data/workspace/shortcuts.cljs:850
 msgid "shortcuts.opacity-0"
@@ -5735,7 +5737,7 @@ msgstr "Onbeperkte opslag"
 
 #: src/app/main/ui/dashboard/subscription.cljs:304, src/app/main/ui/settings/subscription.cljs:645, src/app/main/ui/settings/subscription.cljs:674, src/app/main/ui/settings/subscription.cljs:687, src/app/main/ui/settings/subscription.cljs:700, src/app/main/ui/settings/subscription.cljs:711
 msgid "subscription.settings.manage-your-subscription"
-msgstr "Beheer uw abonnement"
+msgstr "Abonnement beheren"
 
 #: src/app/main/ui/settings/subscription.cljs:356
 msgid "subscription.settings.management-dialog.step-2-add-payment-button"
@@ -5805,7 +5807,7 @@ msgstr ""
 
 #: src/app/main/ui/settings/subscription.cljs:737
 msgid "subscription.settings.member-since"
-msgstr "Lid van Penpot sinds: %s"
+msgstr "Lid van Penpot sinds: %s."
 
 #: src/app/main/ui/settings/subscription.cljs:759, src/app/main/ui/settings/subscription.cljs:774, src/app/main/ui/settings/subscription.cljs:790, src/app/main/ui/settings/subscription.cljs:810
 msgid "subscription.settings.more-information"
@@ -9069,7 +9071,7 @@ msgstr "Thema bewerken en verzamelingen beheren"
 #: src/app/main/ui/workspace/tokens/settings/menu.cljs:90
 msgid "workspace.tokens.setting-description"
 msgstr ""
-"Hier kunt u de basislettergrootte configureren, die de waarde van 1rem "
+"Hier kunt je de basislettergrootte configureren, die de waarde van 1rem "
 "definieert:"
 
 #: src/app/main/ui/workspace/tokens/settings/menu.cljs:83
@@ -9559,3 +9561,448 @@ msgstr ""
 #: src/app/main/ui/workspace/sidebar/versions.cljs:462
 msgid "workspace.versions.warning.text"
 msgstr "Automatisch opgeslagen versies worden %s dagen bewaard."
+
+#: src/app/main/ui/dashboard/sidebar.cljs:228
+msgid "dashboard.clear-search"
+msgstr "Zoekopdracht wissen"
+
+#: src/app/main/ui/dashboard/fonts.cljs:442, src/app/main/ui/dashboard/fonts.cljs:443
+msgid "dashboard.fonts.delete-variant"
+msgstr "Lettertypestijl verwijderen"
+
+#: src/app/main/ui/dashboard/import.cljs:625
+msgid "dashboard.import.check.message"
+msgstr "Zorgen dat elk bestand geïmporteerd kan worden. Dit kan even duren."
+
+#: src/app/main/ui/dashboard/import.cljs:624
+msgid "dashboard.import.check.title"
+msgstr "Bestanden controleren…"
+
+#: src/app/main/ui/dashboard/import.cljs:600
+msgid "dashboard.import.importing.done"
+msgid_plural "dashboard.import.importing.done"
+msgstr[0] "1 klaar"
+msgstr[1] "%s klaar"
+
+#: src/app/main/ui/dashboard/import.cljs:637
+msgid "dashboard.import.importing.message"
+msgstr "Opnieuw bouwen van pagina's, componenten en activa in jouw project."
+
+#: src/app/main/ui/dashboard/import.cljs:598
+msgid "dashboard.import.importing.title"
+msgid_plural "dashboard.import.importing.title"
+msgstr[0] "1 bestand importeren"
+msgstr[1] "%s bestanden importeren"
+
+#: src/app/main/ui/dashboard/import.cljs:634
+msgid "dashboard.import.queued.message"
+msgstr "Bestanden worden geüpload. De import start zodra een positie vrij is."
+
+#: src/app/main/ui/dashboard/import.cljs:328, src/app/main/ui/exports/files.cljs:103
+#, unused
+msgid "jobs.queued"
+msgstr "Wachtrijpositie"
+
+#: src/app/main/ui/dashboard/import.cljs:633
+msgid "dashboard.import.queued.title"
+msgstr "Wachten om te beginnen…"
+
+#: src/app/main/ui/dashboard/import.cljs:628
+msgid "dashboard.import.ready.message"
+msgstr "Bestanden kunnen worden geïmporteerd. Ga door met het uploaden ervan."
+
+#: src/app/main/ui/dashboard/import.cljs:627
+msgid "dashboard.import.ready.title"
+msgstr "Bestanden gereed"
+
+#: src/app/main/ui/dashboard/import.cljs:331
+msgid "dashboard.import.status.ready"
+msgstr "Gereed"
+
+#: src/app/main/ui/dashboard/import.cljs:568
+msgid "dashboard.import.steps.check"
+msgstr "Controleren"
+
+#: src/app/main/ui/dashboard/import.cljs:570
+msgid "dashboard.import.steps.import"
+msgstr "Importeren"
+
+#: src/app/main/ui/dashboard/import.cljs:573
+msgid "dashboard.import.steps.label"
+msgstr "Stappen importeren"
+
+#: src/app/main/ui/dashboard/import.cljs:569
+msgid "dashboard.import.steps.upload"
+msgstr "Uploaden"
+
+#: src/app/main/ui/dashboard/import.cljs:1130
+msgid "dashboard.import.title"
+msgstr "Bestand importeren"
+
+#: src/app/main/ui/dashboard/import.cljs:631
+msgid "dashboard.import.upload.message"
+msgstr ""
+"Bestanden verzenden. Houd dit dialoogvenster open totdat de uploaden "
+"voltooid is."
+
+#: src/app/main/ui/dashboard/import.cljs:630
+msgid "dashboard.import.upload.title"
+msgstr "Bestanden uploaden…"
+
+#: src/app/main/data/exports/assets.cljs:64, src/app/main/data/exports/assets.cljs:93
+msgid "errors.export-failed"
+msgstr "De export is mislukt. Probeer het zo nog eens."
+
+#: src/app/main/data/exports/assets.cljs:372
+msgid "errors.export-too-large"
+msgstr "Te groot om te exporteren, probeer een kleinere schaal"
+
+#: src/app/main/errors.cljs:886
+msgid "errors.profile-props-too-large"
+msgstr ""
+"Je profielinstellingen zijn te groot om op te slaan. Verwijder enkele "
+"plugins en probeer het opnieuw."
+
+#: src/app/main/errors.cljs:691
+msgid "errors.save-still-retrying"
+msgstr ""
+"Jouw wijzigingen worden nog niet opgeslagen omdat Penpot de server niet kan "
+"bereiken. Ze blijven behouden en Penpot blijft proberen ze op te slaan. Houd "
+"dit tabblad open totdat ze zijn opgeslagen."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:62
+msgid "errors.tokens.division-by-zero"
+msgstr "Ongeldige tokenwaarde: deling door nul"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:74
+msgid "errors.tokens.function-argument-out-of-range"
+msgstr "Ongeldige tokenwaarde: het argument van %s() ligt buiten bereik"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:66
+msgid "errors.tokens.incompatible-units"
+msgstr "Ongeldige tokenwaarde: de eenheden %s kunnen niet worden gecombineerd"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:70
+msgid "errors.tokens.unknown-function"
+msgstr "Ongeldige tokenwaarde: onbekende functie %s"
+
+#: src/app/main/ui/exports/files.cljs:392
+msgid "files-download-modal.unsaved-changes"
+msgstr ""
+"Sommige van uw laatste wijzigingen zijn nog niet opgeslagen, dus deze "
+"download bevat deze niet."
+
+#: src/app/main/ui/exports/files.cljs:467
+msgid "files-export-modal.cancel-export"
+msgstr "Export annuleren"
+
+#: src/app/main/ui/exports/files.cljs:471
+msgid "files-export-modal.done"
+msgstr "Klaar"
+
+#: src/app/main/ui/exports/files.cljs:210
+msgid "files-export-modal.export-error"
+msgstr "Kon niet exporteren: %s"
+
+#: src/app/main/ui/exports/files.cljs:246
+msgid "files-export-modal.exported.message"
+msgstr "Controleer je downloadmap."
+
+#: src/app/main/ui/exports/files.cljs:239
+msgid "files-export-modal.exported.title"
+msgid_plural "files-export-modal.exported.title"
+msgstr[0] "1 bestand geëxporteerd"
+msgstr[1] "%s bestanden geëxporteerd"
+
+#: src/app/main/ui/exports/files.cljs:245
+msgid "files-export-modal.exporting.message"
+msgstr "Elk bestand wordt gedownload zodra het klaar is."
+
+#: src/app/main/ui/exports/files.cljs:238
+msgid "files-export-modal.exporting.title"
+msgid_plural "files-export-modal.exporting.title"
+msgstr[0] "1 bestand exporteren"
+msgstr[1] "%s bestanden exporteren"
+
+#: src/app/main/ui/exports/files.cljs:179
+msgid "files-export-modal.status.exported"
+msgstr "Geëxporteerd"
+
+#: src/app/main/ui/exports/files.cljs:186
+msgid "files-export-modal.status.waiting"
+msgstr "Wachten…"
+
+#: src/app/main/ui/exports/files.cljs:381
+msgid "files-export-modal.title"
+msgstr "Bestand exporteren"
+
+#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:113
+msgid "import-shortcuts.imported"
+msgstr "Geïmporteerd"
+
+#: src/app/main/ui/settings/shortcuts.cljs:511, src/app/main/ui/settings/shortcuts.cljs:513
+msgid "import-shortcuts.invalid-file"
+msgstr "Dit bestand is geen geldige export van snelkoppelingen."
+
+#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:153
+msgid "import-shortcuts.skipped-entries"
+msgstr ""
+"Deze vermeldingen kunnen niet worden geïmporteerd: ze komen niet overeen met "
+"een Penpot-snelkoppeling en gebruiken geen gereserveerde sleutelcombinatie."
+
+#: src/app/main/ui/inspect/code.cljs:322, src/app/main/ui/inspect/code.cljs:365
+msgid "inspect.code.expand-panel"
+msgstr "Paneel uitbreiden"
+
+#: src/app/main/ui/exports/files.cljs:223
+msgid "jobs.export-cancelled"
+msgstr "Export geannuleerd"
+
+#: src/app/main/data/imports.cljs:376
+msgid "jobs.import-cancelled"
+msgstr "Import geannuleerd"
+
+#: src/app/main/ui/jobs/progress.cljs:26
+msgid "jobs.progress.stage.colors"
+msgstr "Kleuren verwerken"
+
+#: src/app/main/ui/jobs/progress.cljs:25
+msgid "jobs.progress.stage.components"
+msgstr "Componenten verwerken"
+
+#: src/app/main/ui/jobs/progress.cljs:21
+msgid "jobs.progress.stage.files"
+msgstr "Bestanden verwerken"
+
+#: src/app/main/ui/jobs/progress.cljs:32
+msgid "jobs.progress.stage.manifest"
+msgstr "Pakket lezen"
+
+#: src/app/main/ui/jobs/progress.cljs:23
+msgid "jobs.progress.stage.media"
+msgstr "Media verwerken"
+
+#: src/app/main/ui/jobs/progress.cljs:31
+msgid "jobs.progress.stage.metadata"
+msgstr "Metagegevens verwerken"
+
+#: src/app/main/ui/jobs/progress.cljs:22
+msgid "jobs.progress.stage.pages"
+msgstr "Pagina's verwerken"
+
+#: src/app/main/ui/jobs/progress.cljs:30
+msgid "jobs.progress.stage.relations"
+msgstr "Bibliotheekverwijzingen verwerken"
+
+#: src/app/main/ui/jobs/progress.cljs:29
+msgid "jobs.progress.stage.storage-objects"
+msgstr "Opslagobjecten verwerken"
+
+#: src/app/main/ui/jobs/progress.cljs:24
+msgid "jobs.progress.stage.thumbnails"
+msgstr "Miniaturen verwerken"
+
+#: src/app/main/ui/jobs/progress.cljs:28
+msgid "jobs.progress.stage.tokens"
+msgstr "Tokens verwerken"
+
+#: src/app/main/ui/jobs/progress.cljs:27
+msgid "jobs.progress.stage.typographies"
+msgstr "Typografieën verwerken"
+
+#: src/app/main/ui/jobs/progress.cljs:34
+msgid "jobs.progress.stage.unknown"
+msgstr "Aan het werk"
+
+#: src/app/main/ui/jobs/progress.cljs:33
+msgid "jobs.progress.stage.upload"
+msgstr "Bestand uploaden…"
+
+#: src/app/main/ui/viewer/thumbnails.cljs:96
+msgid "labels.expand"
+msgstr "Uitbreiden"
+
+#: src/app/main/ui/mcp_authorize.cljs:155
+msgid "mcp.oauth.access"
+msgstr ""
+"Deze client kan ontwerpen lezen en wijzigen via MCP-verbindingen die vanuit "
+"Penpot zijn opgezet."
+
+#: src/app/main/ui/mcp_authorize.cljs:153
+msgid "mcp.oauth.account"
+msgstr "Je bent aangemeld als %s."
+
+#: src/app/main/ui/mcp_authorize.cljs:162
+msgid "mcp.oauth.approve"
+msgstr "Toegang verlenen"
+
+#: src/app/main/ui/mcp_authorize.cljs:133
+msgid "mcp.oauth.cancelled"
+msgstr "Verbinding geannuleerd"
+
+#: src/app/main/ui/mcp_authorize.cljs:157
+msgid "mcp.oauth.enable"
+msgstr ""
+"Toegang verlenen maakt de MCP-integratie mogelijk en maakt indien nodig jouw "
+"MCP-token aan."
+
+#: src/app/main/ui/mcp_authorize.cljs:137
+msgid "mcp.oauth.failed"
+msgstr ""
+"Dit verzoek is verlopen, werd al gebruikt of kon niet worden voltooid. Start "
+"de verbinding opnieuw vanaf jouw MCP-client."
+
+#: src/app/main/ui/mcp_authorize.cljs:149
+msgid "mcp.oauth.request"
+msgstr "%s wil verbinding maken met Penpot."
+
+#: src/app/main/ui/mcp_authorize.cljs:129
+msgid "mcp.oauth.title"
+msgstr "Verbinding maken met Penpot MCP"
+
+#: src/app/main/ui/shortcuts.cljs:714
+msgid "shortcuts.edit"
+msgstr "%s bewerken"
+
+#: src/app/main/ui/shortcuts.cljs:771
+msgid "shortcuts.edit-modal.reserved"
+msgstr ""
+"Deze combinatie is gereserveerd door Penpot en kan niet worden toegewezen."
+
+#: src/app/main/ui/settings/shortcuts.cljs:53
+msgid "shortcuts.reset-all"
+msgstr "Alles herstellen"
+
+#: src/app/main/ui/settings/shortcuts.cljs:44, src/app/main/ui/workspace/sidebar/shortcuts.cljs:143
+msgid "shortcuts.search"
+msgstr "Sneltoetsen zoeken"
+
+#: src/app/main/ui/settings/subscription.cljs:724
+msgid "subscription.settings.trial-ends-on"
+msgstr "Je gratis proefperiode eindigt op %s."
+
+#: src/app/main/ui/viewer.cljs:127
+msgid "viewer.go-to-first-board"
+msgstr "Ga naar het eerste bord"
+
+#: src/app/main/ui/viewer/thumbnails.cljs:70
+msgid "viewer.thumbnails.scroll-left"
+msgstr "Links bladeren"
+
+#: src/app/main/ui/viewer/thumbnails.cljs:76
+msgid "viewer.thumbnails.scroll-right"
+msgstr "Rechts bladeren"
+
+#: src/app/main/ui/workspace/sidebar/assets/typographies.cljs:297
+msgid "workspace.assets.typography.multiple-texts-selected"
+msgstr "Selecteer één tekst om een typografiestijl aan te maken"
+
+#: src/app/main/data/exports/assets.cljs:47
+msgid "workspace.export.unsaved-changes"
+msgstr ""
+"Sommige laatste wijzigingen zijn nog niet opgeslagen en kunnen ontbreken aan "
+"deze export."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1050
+msgid "workspace.layout-grid.editor.columns"
+msgstr "Kolommen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1051
+msgid "workspace.layout-grid.editor.rows"
+msgstr "Rijen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:994
+msgid "workspace.layout-grid.editor.select-column"
+msgstr "Kolom selecteren"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:995
+msgid "workspace.layout-grid.editor.select-row"
+msgstr "Rij selecteren"
+
+#: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:926
+msgid "workspace.layout-grid.editor.track-options"
+msgstr "Opties voor bijhouden"
+
+#: src/app/main/ui/workspace/libraries.cljs:921
+msgid "workspace.libraries.add-shared-library"
+msgstr "Gedeelde bibliotheek toevoegen"
+
+#: src/app/main/ui/workspace/libraries.cljs:823
+msgid "workspace.libraries.assets-in-this-file"
+msgstr "ACTIVA IN DIT BESTAND"
+
+#: src/app/main/ui/workspace/libraries.cljs:1159
+msgid "workspace.libraries.this-file"
+msgstr "Dit bestand"
+
+#: src/app/main/data/workspace/notifications.cljs:282
+msgid "workspace.notifications.file-repaired"
+msgstr ""
+"We hebben een aantal problemen in dit bestand opgelost. In de "
+"versiegeschiedenis kun je een kopie van de originele versie vinden."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:44
+msgid "workspace.options.grid.params.guide-defaults"
+msgstr "Standaardhulplijnen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:516
+msgid "workspace.options.no-font-results"
+msgstr "Geen overeenkomende lettertypen"
+
+#: src/app/main/ui/workspace/plugins.cljs:344
+msgid "workspace.plugins.permissions.allow-global"
+msgstr ""
+"Actief houden terwijl je tussen het dashboard en bestanden beweegt, en jouw "
+"projecten en bestanden doorzoeken en openen."
+
+#: src/app/main/ui/workspace/plugins.cljs:365
+msgid "workspace.plugins.permissions.manage-delete"
+msgstr "Jouw bestanden en projecten verwijderen."
+
+#: src/app/main/ui/workspace/plugins.cljs:351
+msgid "workspace.plugins.permissions.manage-projects"
+msgstr "Jouw projecten aanmaken, hernoemen, vastmaken en dupliceren."
+
+#: src/app/main/ui/workspace/plugins.cljs:358
+msgid "workspace.plugins.permissions.manage-teams"
+msgstr ""
+"Jouw teams weergeven, aanmaken en hernoemen, en projecten daartussen "
+"verplaatsen."
+
+#: src/app/main/ui/workspace/plugins.cljs:188
+msgid "workspace.plugins.remove-confirmation.message"
+msgstr ""
+"Weet je zeker dat je de plugin %s wilt verwijderen? Je kunt het op elk "
+"gewenst moment opnieuw installeren."
+
+#: src/app/main/ui/workspace/plugins.cljs:187
+msgid "workspace.plugins.remove-confirmation.title"
+msgstr "Plugin verwijderen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs:53
+msgid "workspace.sidebar.options.svg-attrs.remove"
+msgstr "Kenmerk verwijderen"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:253, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:226
+msgid "workspace.tokens.detach-reference"
+msgstr "Verwijzing losmaken"
+
+#: src/app/main/ui/components/mcp_menu.cljs:136
+msgid "workspace.toolbar.mcp-copy-session-id"
+msgstr "Sessie-ID kopiëren"
+
+#: src/app/main/ui/components/mcp_menu.cljs:33
+msgid "workspace.toolbar.mcp-session-copied"
+msgstr "Sessie-ID gekopieerd"
+
+#: src/app/main/ui/components/mcp_menu.cljs:132
+msgid "workspace.toolbar.mcp-session-id"
+msgstr "Sessie-ID: %s"
+
+#: src/app/main/ui/workspace/palette.cljs:211
+msgid "workspace.toolbar.palette-options"
+msgstr "Opties voor het palet"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:371
+msgid "workspace.undo.entry.show-details"
+msgstr "Details weergeven"

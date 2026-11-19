@@ -19,6 +19,7 @@ import type {
   Page,
   Path,
   Penpot,
+  PenpotLocation,
   PenpotMgmt,
   Rectangle,
   Shape,
@@ -268,6 +269,11 @@ export function createApi(
       return plugin.context.theme;
     },
 
+    get location(): PenpotLocation {
+      checkPermission('content:read', false);
+      return plugin.context.location;
+    },
+
     get localStorage(): LocalStorage {
       checkPermission('allow:localstorage');
       return plugin.context.localStorage;
@@ -412,6 +418,11 @@ export function createApi(
     waitForLayoutUpdate(timeout?: number): Promise<void> {
       checkPermission('content:read');
       return plugin.context.waitForLayoutUpdate(timeout);
+    },
+
+    waitForSave(timeout?: number): Promise<void> {
+      checkPermission('content:read');
+      return plugin.context.waitForSave(timeout);
     },
   };
 

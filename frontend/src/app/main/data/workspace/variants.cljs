@@ -235,14 +235,10 @@
       (let [data (dsh/lookup-file-data state)]
         (with-main-page data {:variant-id variant-id}
           (fn [page-id objects]
-            (let [variant-components   (cfv/find-variant-components data objects variant-id)
-                  properties-empty-pos (->> variant-components
-                                            (mapcat :variant-properties)
-                                            (group-by :name)
+            (let [properties-empty-pos (->> (cfv/extract-properties-values data objects variant-id)
                                             (map-indexed
-                                             (fn [i [_ v]]
-                                               [i (->> v
-                                                       (map :value)
+                                             (fn [i {:keys [value]}]
+                                               [i (->> value
                                                        (remove empty?)
                                                        empty?)]))
                                             (reverse))
@@ -697,10 +693,13 @@
 
                      (transform-in-variant-stream state (first ids) variant-id delta prefix add-wrapper? false false current-page)
 
-                     (rx/of (dwsh/relocate-shapes (into #{} (rest ids)) variant-id 0)
-                            ;; relocate-shapes inserts the shapes in layer-tree
-                            ;; order, so restore the intended order afterwards
-                            (order-variant-children variant-id ids)
+                     ;; One relocation per main, in `ids` order, so the
+                     ;; generated property values follow the combine order
+                     (rx/from (map #(dwsh/relocate-shapes #{%} variant-id 0) (rest ids)))
+
+                     ;; Each relocation inserts at index 0, so restore the
+                     ;; intended order afterwards
+                     (rx/of (order-variant-children variant-id ids)
                             (dwsh/update-shapes ids #(-> %
                                                          (assoc :constraints-h :left)
                                                          (assoc :constraints-v :top)

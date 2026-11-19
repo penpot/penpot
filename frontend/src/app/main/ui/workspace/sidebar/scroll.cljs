@@ -7,11 +7,11 @@
 (ns app.main.ui.workspace.sidebar.scroll
   "Scroll position save/restore for sidebar panels.
 
-  Panels unmount on every tab switch, so positions that must survive it
-  cannot live in component state. The store is created once in
-  `left-sidebar*` (which stays mounted while tabs swap, unlike
-  `layers-content*` and the toolboxes) with `mf/use-var` and threaded to
-  the panels as a prop. Shape: {[panel id] scroll-top}."
+  Panels unmount on every tab switch, and the whole sidebar unmounts on
+  every page switch, so positions that must survive it cannot live in
+  component state. The store is created once in `workspace-inner*` (which
+  stays mounted while pages and tabs swap) with `mf/use-var` and threaded
+  to the panels as a prop. Shape: {[panel id] scroll-top}."
   (:require
    [app.util.dom :as dom]
    [app.util.timers :as tm]

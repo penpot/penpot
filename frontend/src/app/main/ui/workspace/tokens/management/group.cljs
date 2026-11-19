@@ -57,6 +57,31 @@
     :shadow i/drop-shadow
     "add"))
 
+(defn- type-unfolded?
+  "A token type's section only stays open for the file and set it was
+  opened in, so switching sets doesn't carry open sections over."
+  [unfolded-token-types file-id set-id type]
+  (and (= (:file-id unfolded-token-types) file-id)
+       (= (:set-id unfolded-token-types) set-id)
+       (contains? (set (:types unfolded-token-types)) type)))
+
+(defn- editing-text?
+  [editor-state edition objects]
+  (or (not (empty? editor-state))
+      (and (some? edition)
+           (= :text (:type (get objects edition))))))
+
+(defn- pill-click-action
+  "Clicking a token pill applies or removes the token on the selection,
+  or warns while a text is being edited. Number tokens and an empty
+  selection do nothing."
+  [token selected-shapes is-editing-text]
+  (cond
+    (= :number (:type token)) nil
+    (empty? selected-shapes)  nil
+    is-editing-text           :warn-text-edition
+    :else                     :toggle))
+
 (def ^:private schema:token-group
   [:map
    [:type :keyword]
@@ -80,17 +105,13 @@
 
         current-file (mf/deref refs/file)
 
-        is-same-file-set? (and (= (:file-id unfolded-token-types-state) (:id current-file))
-                               (= (:set-id unfolded-token-types-state) selected-token-set-id))
-        is-type-unfolded (and is-same-file-set?
-                              (contains? (set (:types unfolded-token-types-state)) type))
+        is-type-unfolded
+        (type-unfolded? unfolded-token-types-state (:id current-file) selected-token-set-id type)
 
-        editing-ref  (mf/deref refs/workspace-editor-state)
-        edition      (mf/deref refs/selected-edition)
-        objects      (mf/deref refs/workspace-page-objects)
-        not-editing? (and (empty? editing-ref)
-                          (not (and (some? edition)
-                                    (= :text (:type (get objects edition))))))
+        editing-ref     (mf/deref refs/workspace-editor-state)
+        edition         (mf/deref refs/selected-edition)
+        objects         (mf/deref refs/workspace-page-objects)
+        is-editing-text (editing-text? editing-ref edition objects)
 
         can-edit-tokens?
         (mf/use-ctx ctx/can-edit-tokens?)
@@ -151,20 +172,22 @@
 
         on-token-pill-click
         (mf/use-fn
-         (mf/deps not-editing? selected-ids tokens-lib selected-token-set-id)
+         (mf/deps is-editing-text selected-shapes selected-ids tokens-lib selected-token-set-id)
          (fn [event token]
            (let [token (ctob/get-token tokens-lib selected-token-set-id (:id token))]
              (dom/stop-propagation event)
-             ;; Number tokens can't be applied via button click
-             (when (not= (:type token) :number)
-               (if (and not-editing? (seq selected-shapes))
-                 (st/emit! (dwta/toggle-token {:token token
-                                               :shape-ids selected-ids}))
-                 (when (seq selected-shapes)
-                   (st/emit! (ntf/show {:content (tr "workspace.tokens.error-text-edition")
-                                        :type :toast
-                                        :level :warning
-                                        :timeout 3000}))))))))]
+             (case (pill-click-action token selected-shapes is-editing-text)
+               :toggle
+               (st/emit! (dwta/toggle-token {:token token
+                                             :shape-ids selected-ids}))
+
+               :warn-text-edition
+               (st/emit! (ntf/show {:content (tr "workspace.tokens.error-text-edition")
+                                    :type :toast
+                                    :level :warning
+                                    :timeout 3000}))
+
+               nil))))]
 
     (mf/use-effect
      (fn []

@@ -41,6 +41,27 @@ function sameIds(a: string[], b: string[]): boolean {
   return a.length === b.length && a.every((id, i) => id === b[i]);
 }
 
+// Value of the first property for each variant component, in variant order.
+function firstPropertyValues(container: VariantContainer): string[] {
+  const variants = container.variants;
+  if (!variants) return [];
+  const property = variants.properties[0];
+  return variants
+    .variantComponents()
+    .map((c) => (c as LibraryVariantComponent).variantProps[property]);
+}
+
+function variantValueOf(
+  container: VariantContainer,
+  componentId: string,
+): string | undefined {
+  const variants = container.variants;
+  const component = variants
+    ?.variantComponents()
+    .find((c) => c.id === componentId) as LibraryVariantComponent | undefined;
+  return component?.variantProps[variants!.properties[0]];
+}
+
 // Polls until the condition holds. On timeout it returns normally so the
 // assertion that follows reports the actual mismatch.
 async function waitFor(
@@ -132,6 +153,72 @@ describe('Variants', () => {
     const expected = [a.comp.id, b.comp.id];
     await waitFor(() => sameIds(variantComponentIds(container), expected));
     expect(variantComponentIds(container)).toEqual(expected);
+  });
+
+  // The components built here all share the name "Rectangle". Combining
+  // components with the same name must give every variant a unique,
+  // non-empty value, numbered in the combine order (#12878).
+  test('createVariantFromComponents gives same-name components unique values in input order', async (ctx) => {
+    const a = componentWithMain(ctx);
+    const b = componentWithMain(ctx);
+    const c = componentWithMain(ctx);
+    const container = ctx.penpot.createVariantFromComponents([
+      c.main,
+      a.main,
+      b.main,
+    ]);
+    const expected = ['Value 1', 'Value 2', 'Value 3'];
+    await waitFor(() => sameIds(firstPropertyValues(container), expected));
+    expect(firstPropertyValues(container)).toEqual(expected);
+    expect(variantComponentIds(container)).toEqual([
+      c.comp.id,
+      a.comp.id,
+      b.comp.id,
+    ]);
+  });
+
+  test('combineAsVariants gives same-name components unique values in combine order', async (ctx) => {
+    const a = componentWithMain(ctx);
+    const b = componentWithMain(ctx);
+    const c = componentWithMain(ctx);
+    const container = a.main.combineAsVariants([b.main.id, c.main.id]);
+    const expected = ['Value 1', 'Value 2', 'Value 3'];
+    await waitFor(() => sameIds(firstPropertyValues(container), expected));
+    expect(firstPropertyValues(container)).toEqual(expected);
+    expect(variantComponentIds(container)).toEqual([
+      a.comp.id,
+      b.comp.id,
+      c.comp.id,
+    ]);
+  });
+
+  test('a same-name main moved into a variant container takes the first free value', async (ctx) => {
+    const a = componentWithMain(ctx);
+    const b = componentWithMain(ctx);
+    const c = componentWithMain(ctx);
+    const container = ctx.penpot.createVariantFromComponents([
+      a.main,
+      b.main,
+      c.main,
+    ]);
+    await waitFor(() => firstPropertyValues(container).includes('Value 2'));
+
+    // Free "Value 2" so the moved main has a gap to fill.
+    const withValue2 = container
+      .variants!.variantComponents()
+      .find(
+        (comp) => variantValueOf(container, comp.id) === 'Value 2',
+      ) as LibraryVariantComponent;
+    withValue2.setVariantProperty(0, 'Renamed');
+    await waitFor(() => !firstPropertyValues(container).includes('Value 2'));
+
+    const d = componentWithMain(ctx);
+    container.appendChild(d.main);
+    await waitFor(() => variantValueOf(container, d.comp.id) !== undefined);
+    expect(variantValueOf(container, d.comp.id)).toBe('Value 2');
+
+    const values = firstPropertyValues(container);
+    expect(new Set(values).size).toBe(values.length);
   });
 
   test('variant component exposes variant props and Variants', (ctx) => {

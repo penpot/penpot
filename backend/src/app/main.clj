@@ -425,6 +425,9 @@
     ::db/read-only  (cf/get :database-readonly false)
     ::db/min-size   (cf/get :database-min-pool-size)
     ::db/max-size   (cf/get :database-max-pool-size)
+    ::db/prepared-statement-cache-threshold (cf/get :database-prepared-statement-cache-threshold)
+    ::db/prepared-statement-cache-queries   (cf/get :database-prepared-statement-cache-queries)
+    ::db/prepared-statement-cache-size      (cf/get :database-prepared-statement-cache-size)
     ::mtx/metrics   (ig/ref ::mtx/metrics)}
 
    ;; Default netty IO pool (shared between several services)
@@ -569,6 +572,11 @@
     ::mbus/msgbus       (ig/ref ::mbus/msgbus)
     ::setup/props       (ig/ref ::setup/props)
     ::session/manager   (ig/ref ::session/manager)
+    :app.nitrate/client (ig/ref :app.nitrate/client)}
+
+   ::http.ws/revocation-watcher
+   {::db/pool           (ig/ref ::db/pool)
+    ::mbus/msgbus       (ig/ref ::mbus/msgbus)
     :app.nitrate/client (ig/ref :app.nitrate/client)}
 
    :app.http.assets/routes

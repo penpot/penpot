@@ -26,8 +26,9 @@
    [app.util.webapi :as wapi]
    [app.util.websocket :as ws]
    [beicon.v2.core :as rx]
-   [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
+
+(def raster-export-types #{:png :jpeg :webp})
 
 (def default-timeout 5000)
 
@@ -95,9 +96,7 @@
 
 (defn normalize-export
   [{:keys [object-id name] :as export}]
-  (assoc export :name (if (str/blank? name)
-                        (str object-id)
-                        name)))
+  (assoc export :name (selection/export-name name object-id)))
 
 (defn- normalize-exports
   [exports]
@@ -354,7 +353,7 @@
 (declare request-local-export-wasm)
 
 (defn request-simple-export
-  [{:keys [export]}]
+  [{:keys [export name]}]
   (let [export (normalize-export export)
         target (volatile! nil)]
     (ptk/reify ::request-simple-export
@@ -376,18 +375,20 @@
                                         (tr "workspace.export.unsaved-changes-included"))
                   (request-local-export-wasm {:exports [export]
                                               :cmd :export-shapes
-                                              :name (:name export)
+                                              :name (or name (:name export))
                                               :kind :single})))
 
           :too-large
           (rx/of (ntf/error (tr "errors.export-too-large")))
 
           (let [profile-id (:profile-id state)
-                params     (normalize-export-shapes-params {:exports [export]
-                                                            :profile-id profile-id
-                                                            :cmd :export-shapes
-                                                            :wait true
-                                                            :is-wasm (wasm-export-enabled? state)})]
+                params     (cond-> (normalize-export-shapes-params
+                                    {:exports [export]
+                                     :profile-id profile-id
+                                     :cmd :export-shapes
+                                     :wait true
+                                     :is-wasm (wasm-export-enabled? state)})
+                             (some? name) (assoc :name name))]
             (rx/concat
              (dwp/force-persist-files-and-wait (export-file-ids [export]) save-wait-timeout-ms)
              (rx/of (warn-unsaved-changes (export-file-ids [export])
@@ -665,14 +666,12 @@
           :busy (rx/of (ntf/info (tr "workspace.export-selection.busy")))
           :ready
           (let [exports (:exports plan)
-                ;; The server's single-file path expects the full name.
-                ;; The WASM worker and batch exports append the suffix themselves.
-                exports (cond-> exports
-                          (and (= 1 (count exports))
-                               (not (wasm-export-enabled? state)))
-                          (update-in [0 :name] str (:suffix (first exports))))
-                request (request-export {:exports exports
-                                         :name (:name (dsh/lookup-page state))})]
+                ;; A single download has its own name; entries keep their preset suffix.
+                name    (if (= 1 (count exports))
+                          (let [{:keys [name suffix]} (first exports)]
+                            (str name suffix))
+                          (:name (dsh/lookup-page state)))
+                request (request-export {:exports exports :name name})]
             (rx/concat
              ;; Reserve the batch slot before the asynchronous job is created.
              ;; Single-file exports manage their own lifecycle (including WASM).

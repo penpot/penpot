@@ -27,7 +27,9 @@
    [app.http.session :as session]
    [app.jobs :as jobs]
    [app.loggers.audit :as audit]
+   [app.media.svg :as svg]
    [app.media.validation :as media.v]
+   [app.msgbus :as mbus]
    [app.nitrate :as nitrate]
    [app.rpc :as rpc]
    [app.rpc.commands.auth :as auth]
@@ -209,17 +211,19 @@
    ::sm/result schema:upload-organization-logo-result
    ::nitrate/sso false}
   [{:keys [::sto/storage]} {:keys [content organization-id previous-id]}]
-  (media.v/check-media-type content cm/image-types)
   (media.v/check-upload-path content)
+  (media.v/check-media-type content cm/image-types)
+  (media.v/check-media-size content)
   (when previous-id
     (sto/touch-object! storage previous-id))
-  (let [hash (sto/calculate-hash (:path content))
-        data (-> (sto/content (:path content))
+  (let [{:keys [path mtype]} (svg/sanitize-svg-upload content)
+        hash (sto/calculate-hash path)
+        data (-> (sto/content path)
                  (sto/wrap-with-hash hash))
         obj  (sto/put-object! storage {::sto/content      data
                                        ::sto/deduplicate? true
                                        :bucket            "organization"
-                                       :content-type      (:mtype content)
+                                       :content-type      mtype
                                        :organization-id   organization-id})]
     {:id (:id obj)}))
 
@@ -917,6 +921,124 @@ RETURNING id, deleted_at;")
                                          valid-teams-to-delete-ids
                                          (count valid-teams-to-transfer)
                                          (count valid-teams-to-exit))))
+
+;; API: set-organization-member-viewer
+
+;; The teams of the organization where the member can still edit: the
+;; ones whose role has to drop to viewer. Default teams stay out: an
+;; organization's "Your Penpot" team is not flagged `is_default` here,
+;; so Nitrate leaves it out of `team-ids`, and this check covers the
+;; profile's own default team.
+(def ^:private sql:get-member-editable-teams
+  "SELECT t.id, t.name, t.photo_id, tpr.is_owner
+     FROM team_profile_rel AS tpr
+     JOIN team AS t ON t.id = tpr.team_id
+    WHERE tpr.profile_id = ?
+      AND t.id = ANY(?)
+      AND t.deleted_at IS NULL
+      AND t.is_default IS FALSE
+      AND tpr.can_edit IS TRUE
+      FOR UPDATE OF tpr")
+
+(def ^:private sql:downgrade-member-team-invitations
+  "UPDATE team_invitation AS ti
+      SET role = 'viewer',
+          updated_at = now()
+     FROM profile AS p
+    WHERE p.id = ?
+      AND lower(ti.email_to) = lower(p.email)
+      AND ti.team_id = ANY(?)
+      AND ti.role IN ('editor', 'admin')")
+
+(def ^:private schema:set-organization-member-viewer-params
+  [:map
+   [:profile-id ::sm/uuid]
+   [:organization-owner-id ::sm/uuid]
+   [:team-ids [:vector ::sm/uuid]]])
+
+(def ^:private schema:set-organization-member-viewer-result
+  [:map
+   [:transferred-teams
+    [:vector [:map
+              [:id ::sm/uuid]
+              [:name ::sm/text]
+              [:photo-url {:optional true} ::sm/uri]]]]])
+
+(defn- assign-team-owner
+  "Makes `owner-id` the owner of the team, adding them to it when they
+  are not a member yet."
+  [{:keys [::db/conn] :as cfg} team-id owner-id]
+  (let [owner-flags (get ctt/permissions-for-role :owner)]
+    (if (db/get* conn :team-profile-rel {:team-id team-id :profile-id owner-id})
+      (db/update! conn :team-profile-rel
+                  owner-flags
+                  {:team-id team-id :profile-id owner-id})
+      (teams/add-profile-to-team! cfg (assoc owner-flags
+                                             :team-id team-id
+                                             :profile-id owner-id)))))
+
+(sv/defmethod ::set-organization-member-viewer
+  "Limits a member of an organization to viewer in every team of the
+  organization: their team roles drop to viewer, the teams they own pass
+  to the organization owner and their pending editor or admin team
+  invitations become viewer invitations. Answers the teams whose
+  ownership moved."
+  {::doc/added "2.20"
+   ::rpc/allowed-shared-keys allowed-shared-key-ids
+   ::sm/params schema:set-organization-member-viewer-params
+   ::sm/result schema:set-organization-member-viewer-result
+   ::db/transaction true
+   ::nitrate/sso false}
+  [{:keys [::db/conn ::mbus/msgbus] :as cfg} {:keys [profile-id organization-owner-id team-ids]}]
+  (when (= profile-id organization-owner-id)
+    (ex/raise :type :validation
+              :code :cant-change-organization-owner-role))
+
+  (let [team-ids-array (db/create-array conn "uuid" team-ids)
+        teams          (db/exec! conn [sql:get-member-editable-teams profile-id team-ids-array])
+        owned-teams    (filterv :is-owner teams)
+        owner-name     (when (seq owned-teams)
+                         (:fullname (db/get conn :profile {:id organization-owner-id})))
+        viewer-flags   (get ctt/permissions-for-role :viewer)]
+
+    ;; The organization owner asked for this from the admin console, so
+    ;; no message goes to their sessions: the dashboard reads the team
+    ;; again the next time they open it.
+    (doseq [{:keys [id]} owned-teams]
+      (assign-team-owner cfg id organization-owner-id))
+
+    (doseq [{:keys [id]} teams]
+      (db/update! conn :team-profile-rel
+                  viewer-flags
+                  {:team-id id :profile-id profile-id}))
+
+    (db/exec-one! conn [sql:downgrade-member-team-invitations profile-id team-ids-array])
+
+    ;; Deferred past the commit: the member's sessions read the team
+    ;; again when told, and a rolled back change must not be announced.
+    ;; The former owner learns who owns the team now; everybody else
+    ;; gets the plain role change.
+    (db/after-commit
+     (fn []
+       (doseq [{:keys [id name is-owner]} teams]
+         (mbus/pub! msgbus
+                    :topic profile-id
+                    :message (cond-> {:type :team-role-change
+                                      :topic profile-id
+                                      :team-id id
+                                      :role :viewer}
+                               is-owner
+                               (assoc :team-name name
+                                      :new-owner-name owner-name))))))
+
+    (when (seq teams)
+      (notifications/notify-permissions-changed cfg profile-id))
+
+    {:transferred-teams
+     (mapv (fn [{:keys [id name photo-id]}]
+             (cond-> {:id id :name name}
+               photo-id (assoc :photo-url (files/resolve-public-uri photo-id))))
+           owned-teams)}))
 
 ;; API: send-renewal-email
 

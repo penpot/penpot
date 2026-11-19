@@ -260,6 +260,23 @@
     (ctos/make-tokens-status :active-theme-ids #{(:id theme)}
                              :active-set-ids (into #{} (map ctob/get-id sets)))))
 
+(defn- toggle-set
+  "Ticks the set in the theme being edited, or unticks it when it is
+  ticked already."
+  [theme tokens-lib set-id]
+  (let [set (ctob/get-set tokens-lib set-id)]
+    (ctob/toggle-set theme (ctob/get-name set))))
+
+(defn- toggle-set-group
+  "Ticks every set in the group for the theme being edited. When some
+  or all of them are ticked already, unticks them all."
+  [theme sets group-path]
+  (let [lib       (make-lib-with-theme theme sets)
+        set-names (into #{} (map ctob/get-name) (ctob/get-sets-at-path lib group-path))]
+    (if (some (:sets theme) set-names)
+      (ctob/disable-sets theme set-names)
+      (ctob/enable-sets theme set-names))))
+
 (mf/defc edit-create-theme*
   [{:keys [change-view theme on-save is-editing has-prev-view]}]
   (let [ordered-token-sets (mf/deref refs/workspace-ordered-token-sets)
@@ -325,33 +342,15 @@
 
         on-toggle-token-set
         (mf/use-fn
-         (mf/deps current-theme tokens-lib)
+         (mf/deps tokens-lib)
          (fn [set-id]
-           (let [set (ctob/get-set tokens-lib set-id)]
-             (swap! current-theme* #(ctob/toggle-set % (ctob/get-name set))))))
+           (swap! current-theme* toggle-set tokens-lib set-id)))
 
         on-toggle-token-set-group
         (mf/use-fn
-         (mf/deps current-theme ordered-token-sets)
+         (mf/deps ordered-token-sets)
          (fn [group-path]
-           (swap! current-theme* (fn [theme']
-                                   ; TODOstatus ver si se puede añadir una función en files.tokens o types.tokens
-                                   ; según si necesitamos al final el status o no (que creo que no)
-                                   (let [lib' (make-lib-with-theme theme' ordered-token-sets)
-                                         status' (make-status-with-theme lib' theme')
-                                         active? (cfo/sets-at-path-all-active? status' lib' group-path)
-                                         sets-at-path (ctob/get-sets-at-path lib' group-path)
-                                         set-names (into #{} (map ctob/get-name) sets-at-path)]
-                                     (if (contains? #{:all :partial} active?)
-                                       (ctob/disable-sets theme' set-names)
-                                       (ctob/enable-sets theme' set-names)))))))
-
-        on-click-token-set
-        (mf/use-fn
-         (mf/deps on-toggle-token-set)
-         (fn [set-id]
-           (let [set (ctob/get-set lib-with-theme set-id)]
-             (on-toggle-token-set (ctob/get-name set)))))]
+           (swap! current-theme* toggle-set-group ordered-token-sets group-path)))]
 
     [:div {:class (stl/css :themes-modal-wrapper)}
      [:> heading* {:level 2 :typography "headline-medium" :class (stl/css :themes-modal-title)}
@@ -379,7 +378,7 @@
           :token-sets token-sets
           :is-token-set-active token-set-active?
           :is-token-set-group-active token-set-group-active?
-          :on-select on-click-token-set
+          :on-select on-toggle-token-set
           :can-edit false
           :on-toggle-token-set on-toggle-token-set
           :on-toggle-token-set-group on-toggle-token-set-group

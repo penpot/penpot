@@ -15,10 +15,12 @@
    [app.email :as eml]
    [app.http :as-alias http]
    [app.jobs :as jobs]
+   [app.media.svg :as svg]
    [app.msgbus :as mbus]
    [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.profile :as profile]
+   [app.storage :as sto]
    [app.util.ssrf :as ssrf]
    [backend-tests.helpers :as th]
    [clojure.set :as set]
@@ -2311,3 +2313,167 @@
                              :size 123}}
           out     (th/management-command! params)]
       (t/is (th/ex-of-code? (:error out) :params-validation)))))
+
+(t/deftest upload-organization-logo-sanitizes-svg
+  ;; The logo lands in a public bucket, so an SVG with live markup must
+  ;; be sanitized before it is stored.
+  (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}]
+    (let [profile (th/create-profile* 1 {:is-active true})
+          content "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"64\" height=\"64\" id=\"x' onload='alert(1)\"><rect width=\"10\" height=\"10\"/></svg>"]
+      (th/with-temp-file [path content]
+        (let [params {::th/type :upload-organization-logo
+                      ::rpc/profile-id (:id profile)
+                      :organization-id (uuid/random)
+                      :content {:filename "evil.svg"
+                                :path path
+                                :mtype "image/svg+xml"
+                                :size (fs/size path)}}
+              out    (th/multipart-management-command! params)]
+          (t/is (th/success? out))
+          (let [storage (:app.storage/storage th/*system*)
+                sobject (sto/get-object storage (get-in out [:result :id]))
+                stored  (slurp (sto/get-object-data storage sobject))
+                parsed  (svg/parse-svg stored)]
+            (t/is (not (contains? (:attrs parsed) :onload)))
+            (t/is (= "x' onload='alert(1)" (get (:attrs parsed) :id)))))))))
+
+(t/deftest upload-organization-logo-rejects-oversized-file
+  ;; The sanitizer reads the whole logo, so the logo must honor the media
+  ;; size limit before it is read.
+  (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}]
+    (let [profile (th/create-profile* 1 {:is-active true})]
+      (th/with-temp-file [path "<svg xmlns=\"http://www.w3.org/2000/svg\"><rect/></svg>"]
+        (with-redefs [app.config/config (assoc app.config/config :media-max-file-size 1)]
+          (let [params {::th/type :upload-organization-logo
+                        ::rpc/profile-id (:id profile)
+                        :organization-id (uuid/random)
+                        :content {:filename "big.svg"
+                                  :path path
+                                  :mtype "image/svg+xml"
+                                  :size (fs/size path)}}
+                out    (th/multipart-management-command! params)]
+            (t/is (th/ex-of-type? (:error out) :restriction))
+            (t/is (th/ex-of-code? (:error out) :media-max-file-size-reached))))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Tests: set-organization-member-viewer
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- get-team-role
+  [team-id profile-id]
+  (when-let [rel (th/db-get :team-profile-rel {:team-id team-id :profile-id profile-id})]
+    (cond
+      (:is-owner rel) :owner
+      (:is-admin rel) :admin
+      (:can-edit rel) :editor
+      :else           :viewer)))
+
+(defn- insert-team-invitation
+  [team-id email role created-by]
+  (th/db-insert! :team-invitation
+                 {:id (uuid/random)
+                  :team-id team-id
+                  :email-to email
+                  :created-by created-by
+                  :role role
+                  :valid-until (ct/in-future "24h")}))
+
+(t/deftest set-organization-member-viewer-limits-the-member-in-every-organization-team
+  (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}]
+    (let [calls         (atom [])
+          owner         (th/create-profile* 1 {:is-active true :fullname "Org Owner"})
+          member        (th/create-profile* 2 {:is-active true :email "member@example.com"})
+          other         (th/create-profile* 3 {:is-active true})
+          owned-team    (th/create-team* 1 {:profile-id (:id member)})
+          admin-team    (th/create-team* 2 {:profile-id (:id other)})
+          editor-team   (th/create-team* 3 {:profile-id (:id other)})
+          viewer-team   (th/create-team* 4 {:profile-id (:id other)})
+          outside-team  (th/create-team* 5 {:profile-id (:id other)})
+          invited-team  (th/create-team* 6 {:profile-id (:id other)})
+          _             (doseq [[team role] [[admin-team :admin]
+                                             [editor-team :editor]
+                                             [viewer-team :viewer]
+                                             [outside-team :editor]]]
+                          (th/create-team-role* {:team-id (:id team)
+                                                 :profile-id (:id member)
+                                                 :role role}))
+          _             (insert-team-invitation (:id invited-team) "member@example.com" "admin" (:id other))
+          _             (insert-team-invitation (:id outside-team) "member@example.com" "editor" (:id other))
+          team-ids      (mapv :id [owned-team admin-team editor-team viewer-team invited-team
+                                   {:id (:default-team-id member)}])
+          out           (with-redefs [mbus/pub! (fn [_msgbus & {:keys [topic message]}]
+                                                  (swap! calls conj {:topic topic :message message}))]
+                          (th/management-command! {::th/type :set-organization-member-viewer
+                                                   ::rpc/profile-id (:id owner)
+                                                   :profile-id (:id member)
+                                                   :organization-owner-id (:id owner)
+                                                   :team-ids team-ids}))]
+
+      (t/is (th/success? out))
+      (t/is (= [{:id (:id owned-team) :name (:name owned-team)}]
+               (-> out :result :transferred-teams)))
+
+      ;; Every organization team the member could edit in now has them as viewer.
+      (t/is (= :viewer (get-team-role (:id owned-team) (:id member))))
+      (t/is (= :viewer (get-team-role (:id admin-team) (:id member))))
+      (t/is (= :viewer (get-team-role (:id editor-team) (:id member))))
+      (t/is (= :viewer (get-team-role (:id viewer-team) (:id member))))
+
+      ;; The team they owned passes to the organization owner, who joins it.
+      (t/is (= :owner (get-team-role (:id owned-team) (:id owner))))
+
+      ;; Teams outside the organization and the personal team stay as they were.
+      (t/is (= :editor (get-team-role (:id outside-team) (:id member))))
+      (t/is (= :owner (get-team-role (:default-team-id member) (:id member))))
+
+      ;; Pending invitations to organization teams become viewer invitations.
+      (t/is (= "viewer" (:role (th/db-get :team-invitation {:team-id (:id invited-team)
+                                                            :email-to "member@example.com"}))))
+      (t/is (= "editor" (:role (th/db-get :team-invitation {:team-id (:id outside-team)
+                                                            :email-to "member@example.com"}))))
+
+      ;; The member's sessions learn about each change; only the former
+      ;; owner message names the team and its new owner.
+      (let [role-changes (->> @calls
+                              (filter #(= :team-role-change (-> % :message :type)))
+                              (map :message))]
+        (t/is (= #{(:id owned-team) (:id admin-team) (:id editor-team)}
+                 (into #{} (map :team-id) role-changes)))
+        (t/is (every? #(= (:id member) (:topic %)) role-changes))
+        (t/is (every? #(= :viewer (:role %)) role-changes))
+        (t/is (= [{:team-name (:name owned-team) :new-owner-name "Org Owner"}]
+                 (->> role-changes
+                      (filter :new-owner-name)
+                      (map #(select-keys % [:team-name :new-owner-name])))))))))
+
+(t/deftest set-organization-member-viewer-promotes-an-organization-owner-already-in-the-team
+  (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}
+               mbus-mock    {:target 'app.msgbus/pub! :return nil}]
+    (let [owner      (th/create-profile* 1 {:is-active true})
+          member     (th/create-profile* 2 {:is-active true})
+          owned-team (th/create-team* 1 {:profile-id (:id member)})
+          _          (th/create-team-role* {:team-id (:id owned-team)
+                                            :profile-id (:id owner)
+                                            :role :viewer})
+          out        (th/management-command! {::th/type :set-organization-member-viewer
+                                              ::rpc/profile-id (:id owner)
+                                              :profile-id (:id member)
+                                              :organization-owner-id (:id owner)
+                                              :team-ids [(:id owned-team)]})]
+      (t/is (th/success? out))
+      (t/is (= :owner (get-team-role (:id owned-team) (:id owner))))
+      (t/is (= :viewer (get-team-role (:id owned-team) (:id member))))
+      (t/is (= 2 (count (th/db-query :team-profile-rel {:team-id (:id owned-team)})))))))
+
+(t/deftest set-organization-member-viewer-rejects-the-organization-owner
+  (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}]
+    (let [owner      (th/create-profile* 1 {:is-active true})
+          owned-team (th/create-team* 1 {:profile-id (:id owner)})
+          out        (th/management-command! {::th/type :set-organization-member-viewer
+                                              ::rpc/profile-id (:id owner)
+                                              :profile-id (:id owner)
+                                              :organization-owner-id (:id owner)
+                                              :team-ids [(:id owned-team)]})]
+      (t/is (not (th/success? out)))
+      (t/is (th/ex-of-code? (:error out) :cant-change-organization-owner-role))
+      (t/is (= :owner (get-team-role (:id owned-team) (:id owner)))))))

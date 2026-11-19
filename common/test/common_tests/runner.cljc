@@ -11,19 +11,26 @@
    #?(:cljs [clojure.string :as str])
    #?(:cljs [clojure.tools.cli :refer [parse-opts]])
    #?(:cljs [common-tests.fonts-test])
+   #?(:cljs [common-tests.render-wasm.modifiers-test])
    #?(:cljs [goog.object :as gobj])
    [clojure.test :as t]
    [common-tests.attrs-test]
    [common-tests.buffer-test]
    [common-tests.colors-test]
+   [common-tests.data-macros-test]
    [common-tests.data-test]
    [common-tests.exceptions-test]
    [common-tests.files-builder-test]
    [common-tests.files-changes-test]
    [common-tests.files-migrations-0025-test]
    [common-tests.files-migrations-0026-test]
+   [common-tests.files-migrations-0033-test]
    [common-tests.files-migrations-0034-test]
    [common-tests.files-migrations-0035-test]
+   [common-tests.files-migrations-0036-test]
+   [common-tests.files-migrations-0037-test]
+   [common-tests.files-migrations-0038-test]
+   [common-tests.files-migrations-0039-test]
    [common-tests.files-migrations-test]
    [common-tests.files.comp-processors-test]
    [common-tests.files.helpers-test]
@@ -32,6 +39,7 @@
    [common-tests.files.shapes-builder-test]
    [common-tests.files.tokens-test]
    [common-tests.files.validate-test]
+   [common-tests.files.variant-test]
    [common-tests.geom-align-test]
    [common-tests.geom-bounds-layout-nil-test]
    [common-tests.geom-bounds-map-test]
@@ -81,6 +89,7 @@
    [common-tests.logic.text-touched-test]
    [common-tests.logic.token-apply-test]
    [common-tests.logic.token-test]
+   [common-tests.logic.variants-paste-test]
    [common-tests.logic.variants-reparent-test]
    [common-tests.logic.variants-switch-test]
    [common-tests.logic.variants-test]
@@ -96,11 +105,13 @@
    [common-tests.text-test]
    [common-tests.time-test]
    [common-tests.token-test]
+   [common-tests.transit-test]
    [common-tests.types-shape-tree-test]
    [common-tests.types.absorb-assets-test]
    [common-tests.types.color-test]
    [common-tests.types.components-test]
    [common-tests.types.container-test]
+   [common-tests.types.file-load-component-objects-test]
    [common-tests.types.fill-test]
    [common-tests.types.font-test]
    [common-tests.types.modifiers-test]
@@ -128,15 +139,22 @@
    'common-tests.attrs-test
    'common-tests.buffer-test
    'common-tests.colors-test
+   'common-tests.data-macros-test
    'common-tests.data-test
    'common-tests.exceptions-test
    'common-tests.files-builder-test
    #?(:cljs 'common-tests.fonts-test)
+   #?(:cljs 'common-tests.render-wasm.modifiers-test)
    'common-tests.files-changes-test
    'common-tests.files-migrations-0025-test
    'common-tests.files-migrations-0026-test
+   'common-tests.files-migrations-0033-test
    'common-tests.files-migrations-0034-test
    'common-tests.files-migrations-0035-test
+   'common-tests.files-migrations-0036-test
+   'common-tests.files-migrations-0037-test
+   'common-tests.files-migrations-0038-test
+   'common-tests.files-migrations-0039-test
    'common-tests.files-migrations-test
    'common-tests.files.comp-processors-test
    'common-tests.files.helpers-test
@@ -145,6 +163,7 @@
    'common-tests.files.shapes-builder-test
    'common-tests.files.tokens-test
    'common-tests.files.validate-test
+   'common-tests.files.variant-test
    'common-tests.geom-align-test
    'common-tests.geom-bounds-layout-nil-test
    'common-tests.geom-bounds-map-test
@@ -194,6 +213,7 @@
    'common-tests.logic.text-touched-test
    'common-tests.logic.token-apply-test
    'common-tests.logic.token-test
+   'common-tests.logic.variants-paste-test
    'common-tests.logic.variants-reparent-test
    'common-tests.logic.variants-switch-test
    'common-tests.logic.variants-test
@@ -209,11 +229,13 @@
    'common-tests.text-test
    'common-tests.time-test
    'common-tests.token-test
+   'common-tests.transit-test
    'common-tests.types-shape-tree-test
    'common-tests.types.absorb-assets-test
    'common-tests.types.color-test
    'common-tests.types.components-test
    'common-tests.types.container-test
+   'common-tests.types.file-load-component-objects-test
    'common-tests.types.fill-test
    'common-tests.types.font-test
    'common-tests.types.modifiers-test

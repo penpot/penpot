@@ -11,6 +11,7 @@
    [app.common.math :as mth]
    [app.common.render-wasm.helpers :as h]
    [app.common.render-wasm.wasm :as wasm]
+   [cuerdas.core :as str]
    [promesa.core :as p]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -314,3 +315,73 @@ void main() {
                  (resolve false)))
          (set! (.-src img) uri))))
     (p/resolved false)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Environment
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- get-gpu-family
+  "Normalize a GPU renderer string to a GPU family. Telemetry sends the
+  family, not the full string, which can help fingerprint a device."
+  [renderer]
+  (let [renderer (str/lower renderer)
+        has?     (fn [& parts] (some #(str/includes? renderer %) parts))]
+    (cond
+      (has? "swiftshader")                   "swiftshader"
+      (has? "llvmpipe" "softpipe")           "llvmpipe"
+      (has? "microsoft basic render")        "microsoft-basic-render"
+      (has? "apple")                         "apple"
+      (has? "nvidia" "geforce" "quadro")     "nvidia"
+      (has? "amd" "radeon")                  "amd"
+      (has? "intel")                         "intel"
+      (has? "adreno")                        "adreno"
+      (has? "mali")                          "mali"
+      (has? "powervr")                       "powervr"
+      :else                                  "other")))
+
+(defn- get-gpu-backend
+  "Graphics API behind the WebGL implementation (ANGLE names it in the
+  renderer string), or nil when the string does not say."
+  [renderer]
+  (let [renderer (str/lower renderer)
+        has?     (fn [& parts] (some #(str/includes? renderer %) parts))]
+    (cond
+      (has? "direct3d11" "d3d11") "d3d11"
+      (has? "direct3d9" "d3d9")   "d3d9"
+      (has? "metal")              "metal"
+      (has? "vulkan")             "vulkan"
+      (has? "opengl")             "opengl")))
+
+(defn- read-gpu-info
+  "GPU details of a live WebGL context, or nil when it is lost."
+  [^js gl]
+  (when-not (.isContextLost gl)
+    (let [^js ext  (.getExtension gl "WEBGL_debug_renderer_info")
+          renderer (or (when ext
+                         (.getParameter gl (.-UNMASKED_RENDERER_WEBGL ext)))
+                       (.getParameter gl (.-RENDERER gl)))]
+      (when (string? renderer)
+        {:gpu-family       (get-gpu-family renderer)
+         :gpu-backend      (get-gpu-backend renderer)
+         :max-texture-size (.getParameter gl (.-MAX_TEXTURE_SIZE gl))}))))
+
+(defonce ^:private gpu-info
+  (volatile! nil))
+
+(defn remember-gpu-info
+  "Keep the GPU details of `gl`, a context the renderer just created, so
+  later events can send them after that context is lost."
+  [gl]
+  (when-let [info (try (read-gpu-info gl) (catch :default _ nil))]
+    (vreset! gpu-info info)))
+
+(defn get-environment
+  "Environment details for WebGL telemetry: GPU family, GPU backend and max
+  texture size when already remembered, device memory, CPU cores and
+  whether the app runs inside Electron. Never creates a WebGL context."
+  []
+  (let [^js navigator js/navigator]
+    (assoc @gpu-info
+           :device-memory (.-deviceMemory navigator)
+           :cpu-cores     (.-hardwareConcurrency navigator)
+           :electron      (str/includes? (.-userAgent navigator) "Electron/"))))

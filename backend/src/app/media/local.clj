@@ -241,8 +241,12 @@
                   foutput (fs/path (str finput ".ttf"))]
               (try
                 (io/write* finput data)
+                ;; CID-keyed fonts (common in CJK) load as several sub-fonts and
+                ;; Generate only writes the active one unless they are merged.
                 (let [res (exec-font! system ["fontforge" "-lang=ff" "-c"
-                                              (str/fmt "Open('%s'); Generate('%s')"
+                                              (str/fmt (str "Open('%s'); "
+                                                            "if ($cidfontname != \"\"); CIDFlatten(); endif; "
+                                                            "Generate('%s')")
                                                        (str finput)
                                                        (str foutput))])]
                   (when (zero? (:exit res))

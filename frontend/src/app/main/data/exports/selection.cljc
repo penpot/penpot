@@ -8,10 +8,13 @@
   (:require
    [clojure.string :as str]))
 
+(defn export-name
+  [name object-id]
+  (if (str/blank? name) (str object-id) name))
+
 (defn plan-export
   "Plan an export using only the supplied selection and its saved presets.
-  Keep base names separate from suffixes; the chosen export transport owns
-  their combination. No shape or preset is modified."
+  Each entry carries its base name and preset suffix separately."
   [shapes file-id page-id in-progress?]
   (cond
     in-progress?
@@ -23,9 +26,7 @@
     :else
     (let [exports (into []
                         (mapcat (fn [shape]
-                                  (let [name (if (str/blank? (:name shape))
-                                               (str (:id shape))
-                                               (:name shape))]
+                                  (let [name (export-name (:name shape) (:id shape))]
                                     (map (fn [export]
                                            (assoc export
                                                   :enabled true

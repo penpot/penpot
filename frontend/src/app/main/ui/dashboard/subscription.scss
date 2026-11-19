@@ -208,25 +208,132 @@
 }
 
 .nitrate-banner {
+  --nitrate-enterprise-gradient-start: var(--color-accent-success);
+  --nitrate-enterprise-gradient-end: var(--color-token-border);
+
+  :global(.light) & {
+    --nitrate-enterprise-gradient-start: var(--color-background-info);
+    --nitrate-enterprise-gradient-end: var(--color-accent-primary-muted);
+  }
+
   display: flex;
   border-radius: var(--sp-s);
   flex-direction: column;
   margin: var(--sp-m) var(--sp-m) 0;
-  background: var(--color-accent-select);
+  background: linear-gradient(
+    110deg,
+    var(--nitrate-enterprise-gradient-start),
+    var(--nitrate-enterprise-gradient-end)
+  );
   border: $b-1 solid var(--color-accent-primary-muted);
   padding: var(--sp-l);
+}
+
+.nitrate-enterprise-banner {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  background: linear-gradient(
+    110deg,
+    var(--nitrate-enterprise-gradient-start),
+    var(--nitrate-enterprise-gradient-end)
+  );
+  transition: grid-template-rows 240ms ease;
+}
+
+.nitrate-enterprise-banner.collapsed {
+  grid-template-rows: auto minmax(0, 0fr);
+}
+
+.nitrate-enterprise-toggle {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  color: var(--color-foreground-primary);
+  cursor: pointer;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--sp-s);
+  inline-size: 100%;
+  padding: 0;
+  text-align: start;
+  font: inherit;
+
+  &:focus-visible {
+    outline: var(--color-accent-primary) solid $b-2;
+    outline-offset: var(--sp-xxs);
+    border-radius: $br-4;
+  }
+}
+
+.nitrate-enterprise-title {
+  @include use-typography("body-large");
+
+  color: var(--color-foreground-primary);
+  font-weight: 600;
+}
+
+.nitrate-enterprise-pencil {
+  --icon-fill-color: currentcolor;
+  --icon-stroke-color: none;
+
+  color: var(--color-foreground-primary);
+}
+
+.nitrate-enterprise-chevron {
+  color: var(--color-foreground-secondary);
+  transition: transform 240ms ease;
+}
+
+.collapsed .nitrate-enterprise-chevron {
+  transform: rotate(180deg);
+}
+
+.nitrate-enterprise-panel {
+  min-block-size: 0;
+  overflow: hidden;
+  opacity: 1;
+  transition: opacity 180ms ease;
+}
+
+.collapsed .nitrate-enterprise-panel {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.nitrate-enterprise-panel-inner {
+  display: flex;
+  flex-direction: column;
+  min-block-size: 0;
+  padding-block-start: var(--sp-s);
+}
+
+.nitrate-enterprise-description {
+  @include use-typography("body-medium");
+
+  color: var(--color-foreground-primary);
+  margin-block-end: var(--sp-l);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nitrate-enterprise-banner,
+  .nitrate-enterprise-chevron,
+  .nitrate-enterprise-panel {
+    transition: none;
+  }
 }
 
 .nitrate-title {
   @include use-typography("body-large");
 
   color: var(--color-foreground-primary);
+  font-weight: 600;
 }
 
 .nitrate-info {
   @include use-typography("body-medium");
 
-  color: var(--color-foreground-secondary);
+  color: var(--color-foreground-primary);
   margin-block: var(--sp-s) var(--sp-xxl);
 }
 

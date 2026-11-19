@@ -1064,3 +1064,63 @@ test.describe("Download report", () => {
     await expect(page.getByText("Send", { exact: true })).toBeVisible();
   });
 });
+
+test.describe("Team settings organization", () => {
+  test("Shows the Add to an organization link", async ({ page }) => {
+    const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+    // Organizations need the admin console flag, a team the user owns that
+    // is in no organization, and an organization the user belongs to.
+    await DashboardPage.mockConfigFlags(page, [
+      "disable-onboarding",
+      "enable-admin-console",
+    ]);
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.setupDashboardFull();
+    await dashboardPage.mockRPC(
+      "get-teams",
+      "dashboard/get-teams-organization.json",
+    );
+    await dashboardPage.mockRPC(
+      /check-nitrate-sso/,
+      "dashboard/check-nitrate-sso-authorized.json",
+    );
+    await dashboardPage.mockRPC(
+      /get-environment-data/,
+      "dashboard/get-environment-data-empty.json",
+    );
+    await dashboardPage.mockRPC(
+      "get-team-stats?team-id=*",
+      "dashboard/get-team-stats.json",
+    );
+    await dashboardPage.goToSecondTeamSettingsSection();
+
+    const add = page.getByText("Add to an organization", { exact: true });
+    await expect(add).toBeVisible();
+    await page.mouse.move(10, 700);
+    await expect(add).toHaveScreenshot(shot);
+
+    await add.hover();
+    await expect(add).toHaveScreenshot(shot);
+  });
+});
+
+test.describe("Team hero link", () => {
+  test("Shows the Team management link", async ({ page }) => {
+    const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.setupDashboardFull();
+    await dashboardPage.mockRPC(
+      `get-projects?team-id=${DashboardPage.secondTeamId}`,
+      "dashboard/get-projects-second-team.json",
+    );
+    await dashboardPage.goToSecondTeamDashboard();
+    await expect(page.getByText("Team Up")).toBeVisible();
+
+    const link = page.getByText("Team management", { exact: true });
+    await page.mouse.move(10, 700);
+    await expect(link).toHaveScreenshot(shot);
+
+    await link.hover();
+    await expect(link).toHaveScreenshot(shot);
+  });
+});

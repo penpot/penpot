@@ -21,6 +21,7 @@
    [app.util.i18n :as i18n]
    [app.util.webapi :as wapi]
    [app.util.websocket :as ws]
+   [app.worker.exports :as wexports]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.async :as async]
@@ -157,7 +158,7 @@
           (finally
             (rx/dispose! store)))))))
 
-(t/deftest export-selection-downloads-single-preset-with-suffix-once
+(t/deftest export-selection-requests-single-preset-and-downloads-server-filename
   (let [shape     (selected-shape "Icon" [{:type :png :scale 2 :suffix "@2x"}])
         state     (selection-state [shape])
         response  (rx/subject)
@@ -180,8 +181,9 @@
         (let [[cmd params] (first @calls)]
           (t/is (= :export cmd))
           (t/is (true? (:wait params)))
+          (t/is (= "Icon@2x" (:name params)))
           (t/is (= [{:type :png :scale 2 :suffix "@2x"
-                     :name "Icon@2x"
+                     :name "Icon"
                      :file-id (:current-file-id state)
                      :page-id (:current-page-id state)
                      :object-id (:id shape)}]
@@ -288,8 +290,10 @@
             mw/ask-many!            (mock/stub (fn [request]
                                                  (swap! requests conj request)
                                                  (rx/of {:type :done
-                                                         :filename (wasm.exports/sanitize-filename
-                                                                    (first (:exports request)) #{})
+                                                         :filename (wexports/local-export-filename
+                                                                    (:kind request)
+                                                                    (first (:exports request))
+                                                                    (:name request))
                                                          :mtype mtype
                                                          :blob (js/Blob. #js ["export"])})))
             wapi/create-uri         (mock/stub (constantly "blob:export"))
@@ -302,6 +306,7 @@
            (let [request (first @requests)]
              (t/is (= :exports/run-local (:cmd request)))
              (t/is (= :single (:kind request)))
+             (t/is (= "Icon@2x" (:name request)))
              (t/is (= [{:object-id (:id shape) :type format :scale 2
                         :name "Icon" :suffix "@2x"}]
                       (:exports request)))
@@ -497,7 +502,7 @@
         wasm.api/export-target (mock/stub (constantly :too-large))
         i18n/tr                (mock/stub #(str "translated:" %))}
        (ptk/emit! store (de/request-simple-export {:export one}))
-       (await (async/wait-for #(some? (:notification @store)) "the toast shows"))
+       (await (async/wait-for-store store #(some? (:notification @store)) "the toast shows"))
        (t/is (empty? @cmd-calls) "no exporter RPC")
        (t/is (= "translated:errors.export-too-large"
                 (get-in @store [:notification :content])))
@@ -615,14 +620,14 @@
                                                (reset! downloaded [filename mtype uri])))
         st/ongoing-tasks          (atom #{})}
        (ptk/emit! store (de/request-multiple-export {:exports exports :name "page"}))
-       (await (async/wait-for #(= "running" (get-in @store [:export :status]))
-                              "export is running"))
+       (await (async/wait-for-store store #(= "running" (get-in @store [:export :status]))
+                                    "export is running"))
        (rx/push! worker-bus {:type :progress :done 1 :total 2})
-       (await (async/wait-for #(= 1 (get-in @store [:export :progress]))
-                              "first progress lands"))
+       (await (async/wait-for-store store #(= 1 (get-in @store [:export :progress]))
+                                    "first progress lands"))
        (ptk/emit! store (de/cancel-export))
-       (await (async/wait-for #(= "cancelled" (get-in @store [:export :status]))
-                              "export is cancelled"))
+       (await (async/wait-for-store store #(= "cancelled" (get-in @store [:export :status]))
+                                    "export is cancelled"))
        (rx/push! worker-bus {:type :progress :done 2 :total 2})
        (rx/push! worker-bus {:type :done
                              :filename "page.zip"

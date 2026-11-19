@@ -156,5 +156,69 @@ class CommentsTests(unittest.TestCase):
         self.assertEqual(error.exception.code, 1)
 
 
+class AdvisoriesTests(unittest.TestCase):
+    def advisory(self, patched, ghsa="GHSA-aaaa-bbbb-cccc"):
+        return {
+            "ghsa_id": ghsa,
+            "severity": "medium",
+            "state": "draft",
+            "summary": "Something",
+            "html_url": f"https://github.com/penpot/penpot/security/advisories/{ghsa}",
+            "vulnerabilities": [
+                {
+                    "package": {"name": "penpot"},
+                    "vulnerable_version_range": "<2.19.1",
+                    "patched_versions": patched,
+                }
+            ],
+        }
+
+    def test_fixed_in_version_matches_exact_tokens(self):
+        self.assertTrue(gh.advisory_fixed_in_version(self.advisory("2.19.1"), "2.19.1"))
+        self.assertFalse(
+            gh.advisory_fixed_in_version(self.advisory("2.19.10"), "2.19.1")
+        )
+        self.assertFalse(gh.advisory_fixed_in_version(self.advisory(""), "2.19.1"))
+        self.assertFalse(
+            gh.advisory_fixed_in_version({"vulnerabilities": []}, "2.19.1")
+        )
+
+    def test_fixed_in_version_accepts_several_tokens(self):
+        self.assertTrue(
+            gh.advisory_fixed_in_version(self.advisory("2.19.0, 2.19.1"), "2.19.1")
+        )
+        self.assertTrue(
+            gh.advisory_fixed_in_version(self.advisory(" 2.19.1 "), "2.19.1")
+        )
+
+    @patch.object(gh, "fetch_advisories")
+    def test_cmd_advisories_filters_by_patched_version(self, fetch_advisories):
+        matching = self.advisory("2.19.1", "GHSA-j4vc-cmf6-jhr7")
+        other = self.advisory("2.19.0", "GHSA-4mmc-j8rh-74pf")
+        fetch_advisories.return_value = [matching, other]
+        args = types.SimpleNamespace(
+            ghsa_id=None,
+            severity=None,
+            state=None,
+            patched_version="2.19.1",
+        )
+        stdout = io.StringIO()
+
+        with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(
+            io.StringIO()
+        ):
+            gh.cmd_advisories(args)
+
+        results = json.loads(stdout.getvalue())
+        self.assertEqual([r["ghsa_id"] for r in results], ["GHSA-j4vc-cmf6-jhr7"])
+        # The list output keeps the summary schema: raw vulnerabilities stay
+        # internal to the filter.
+        self.assertNotIn("vulnerabilities", results[0])
+        self.assertEqual(
+            results[0]["url"],
+            "https://github.com/penpot/penpot/security/advisories/GHSA-j4vc-cmf6-jhr7",
+        )
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -1,4 +1,4 @@
-FROM dhi.io/nginx:1.31.8-debian13-dev@sha256:f69a0ea1762c51080fe96ce5f12103fb2977231308ae1784acd915bf63a0a1a2
+FROM dhi.io/nginx:1.31.9-debian13-dev@sha256:ce6bf9157eb3863aa49fc3a91158abc5c80fd21a5dc3c1d546553d11b79d4c19
 LABEL maintainer="Penpot <docker@penpot.app>"
 
 ENV DEBIAN_FRONTEND=noninteractive
