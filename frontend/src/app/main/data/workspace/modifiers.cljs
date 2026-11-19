@@ -32,6 +32,7 @@
    [app.main.data.workspace.undo :as dwu]
    [app.main.features :as features]
    [app.main.streams :as ms]
+   [app.main.worker :as mw]
    [app.render-wasm.api :as wasm.api]
    [app.render-wasm.gesture :as wasm-gesture]
    [app.render-wasm.shape :as wasm.shape]
@@ -837,6 +838,77 @@
           (recur pending modif-tree))
         modif-tree))))
 
+(defn- coerce-transforms
+  "Ensure every matrix in a transforms map is a `Matrix` after transit."
+  [transforms]
+  (reduce-kv (fn [acc id mtx]
+               (assoc acc id (gmt/coerce mtx)))
+             {}
+             transforms))
+
+(defn commit-wasm-transforms
+  "Commit WASM layout/geometry transforms into file data for `page-id`.
+
+  When `clear-local?` is true (current-page live path), also clears the
+  temporary workspace transform state and updates guides. Other-page
+  commits leave the live scene alone."
+  [objects transforms modif-tree
+   & {:keys [page-id undo-transation? translation? clear-local?]
+      :or {undo-transation? true clear-local? true}
+      :as params}]
+  (let [transforms      (coerce-transforms transforms)
+        translation?    (boolean translation?)
+        transform-shape (cached-transform transforms)
+        ignore-tree     (calculate-ignore-tree-wasm transforms objects transform-shape)
+        modif-tree      (propagate-structure-modifiers modif-tree objects)
+        ids             (into (set (keys modif-tree)) xf:without-uuid-zero (keys transforms))
+        options
+        (-> params
+            (dissoc :clear-local? :translation?)
+            (assoc :reg-objects? true)
+            (assoc :ignore-tree ignore-tree)
+            (assoc :translation? translation?)
+            (assoc :attrs transform-attrs)
+            (cond-> (some? page-id)
+              (assoc :page-id page-id))
+            (cond-> translation?
+              (assoc :resize-ids
+                     (into []
+                           (remove (fn [id]
+                                     (let [parent-id (dm/get-in objects [id :parent-id])]
+                                       (and (contains? ids parent-id)
+                                            (= (get transforms id)
+                                               (get transforms parent-id))))))
+                           ids))))
+        update-shape
+        (fn [shape]
+          (-> shape
+              (transform-shape)
+              (ctm/apply-structure-modifiers
+               (dm/get-in modif-tree [(dm/get-prop shape :id) :modifiers]))))
+        undo-id (js/Symbol)
+        events
+        (cond-> []
+          clear-local?
+          (conj (clear-local-transform))
+
+          clear-local?
+          (conj (ptk/event ::dwg/move-frame-guides {:ids ids :transforms transforms}))
+
+          clear-local?
+          (conj (ptk/event ::dwcm/move-frame-comment-threads transforms))
+
+          :always
+          (conj (dwsh/update-shapes ids update-shape options)))]
+    (rx/concat
+     (if undo-transation?
+       (rx/of (dwu/start-undo-transaction undo-id))
+       (rx/empty))
+     (rx/from events)
+     (if undo-transation?
+       (rx/of (dwu/commit-undo-transaction undo-id))
+       (rx/empty)))))
+
 #_:clj-kondo/ignore
 (defn apply-wasm-modifiers
   [modif-tree & {:keys [ignore-constraints ignore-snap-pixel snap-ignore-axis undo-transation?
@@ -908,62 +980,14 @@
                           geometry-entries))
 
                   :else
-                  (into {} (wasm.api/propagate-modifiers geometry-entries snap-pixel? snap-ignore-axis)))
+                  (into {} (wasm.api/propagate-modifiers geometry-entries snap-pixel? snap-ignore-axis)))]
 
-                transform-shape
-                (cached-transform transforms)
-
-                ignore-tree
-                (calculate-ignore-tree-wasm transforms objects transform-shape)
-
-                options
-                (-> params
-                    (assoc :reg-objects? true)
-                    (assoc :ignore-tree ignore-tree)
-                    (assoc :translation? translation?)
-                    ;; Attributes that can change in the transform. This
-                    ;; way we don't have to check all the attributes
-                    (assoc :attrs transform-attrs))
-
-                modif-tree
-                (propagate-structure-modifiers modif-tree (dsh/lookup-page-objects state))
-
-                ids
-                (into (set (keys modif-tree)) xf:without-uuid-zero (keys transforms))
-
-                options
-                (cond-> options
-                  translation?
-                  (assoc :resize-ids
-                         (into []
-                               (remove (fn [id]
-                                         (let [parent-id (dm/get-in objects [id :parent-id])]
-                                           (and (contains? ids parent-id)
-                                                (= (get transforms id)
-                                                   (get transforms parent-id))))))
-                               ids)))
-
-                update-shape
-                (fn [shape]
-                  (-> shape
-                      (transform-shape)
-                      (ctm/apply-structure-modifiers (dm/get-in modif-tree [(dm/get-prop shape :id) :modifiers]))))
-
-                undo-id (js/Symbol)]
-
-            (rx/concat
-             (if undo-transation?
-               (rx/of (dwu/start-undo-transaction undo-id))
-               (rx/empty))
-             (rx/of
-              (clear-local-transform)
-              (ptk/event ::dwg/move-frame-guides {:ids ids :transforms transforms})
-              (ptk/event ::dwcm/move-frame-comment-threads transforms)
-              (dwsh/update-shapes ids update-shape options))
-
-             (if undo-transation?
-               (rx/of (dwu/commit-undo-transaction undo-id))
-               (rx/empty)))))))))
+            (commit-wasm-transforms
+             objects transforms modif-tree
+             (assoc params
+                    :page-id (:current-page-id state)
+                    :translation? translation?
+                    :clear-local? true))))))))
 
 (def ^:private
   xf-rotation-shape
@@ -1101,6 +1125,72 @@
           (if undo-transation?
             (rx/of (dwu/commit-undo-transaction undo-id))
             (rx/empty))))))))
+
+(defn layout-other-page
+  "Stream of events that lay out `modif-tree` for `page-id` via the worker
+  WASM module and commit the transforms. WASM-only: no CLJS
+  `apply-modifiers` fallback.
+
+  Returned as a stream (not a nested event) so callers can wait for
+  completion before finishing reflow tasks."
+  [state page-id modif-tree
+   & {:keys [ignore-snap-pixel]
+      :or {ignore-snap-pixel false}
+      :as params}]
+  (let [modif-tree        (without-nil-ids modif-tree)
+        objects           (dsh/lookup-page-objects state page-id)
+        geometry-entries  (parse-geometry-modifiers modif-tree)
+        structure-entries (parse-structure-modifiers modif-tree)
+        snap-pixel?       (and (not ignore-snap-pixel)
+                               (contains? (:workspace-layout state) :snap-pixel-grid))
+        commit-transforms
+        (fn [transforms]
+          (commit-wasm-transforms
+           objects transforms modif-tree
+           (assoc params
+                  :page-id page-id
+                  :translation? false
+                  :clear-local? false)))
+        fail!
+        (fn [hint details]
+          (log/warn :hint hint
+                    :page-id (str page-id)
+                    :details details)
+          (rx/empty))]
+    (if (nil? mw/instance)
+      (fail! "other-page layout skipped: worker missing"
+             {:code :worker-missing})
+      (->> (mw/ask! {:cmd :layout/propagate-modifiers
+                     :objects objects
+                     :geometry-entries geometry-entries
+                     :structure-modifiers structure-entries
+                     :snap-pixel? snap-pixel?})
+           (rx/mapcat (fn [result]
+                        (let [transforms (or (:transforms result) {})]
+                          (cond
+                            (:error result)
+                            (fail! "other-page worker layout failed"
+                                   {:error (:error result)
+                                    :data (:data result)})
+
+                            (seq transforms)
+                            (commit-transforms transforms)
+
+                            :else
+                            (fail! "other-page worker returned no transforms"
+                                   {:code :empty-transforms})))))
+           (rx/catch
+            (fn [cause]
+              (fail! "other-page worker layout failed"
+                     {:cause cause})))))))
+
+(defn apply-wasm-modifiers-other-page
+  "Event wrapper around `layout-other-page` for call sites that emit an event."
+  [page-id modif-tree & {:as params}]
+  (ptk/reify ::apply-wasm-modifiers-other-page
+    ptk/WatchEvent
+    (watch [_ state _]
+      (apply layout-other-page state page-id modif-tree (apply concat params)))))
 
 ;; Pure function to determine next grow-type for text layers
 (defn next-grow-type

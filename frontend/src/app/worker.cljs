@@ -15,6 +15,7 @@
    [app.worker.exports]
    [app.worker.impl :as impl]
    [app.worker.index]
+   [app.worker.layout]
    [app.worker.messages :as wm]
    [app.worker.thumbnails]
    [beicon.v2.core :as rx]
