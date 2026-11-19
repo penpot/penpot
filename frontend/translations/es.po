@@ -8664,7 +8664,7 @@ msgstr "No se encuentran extensiones"
 msgid "workspace.plugins.error.global-not-allowed"
 msgstr ""
 "Por ahora, las extensiones que funcionan fuera de un archivo solo se pueden "
-"instalar desde localhost."
+"instalar desde fuentes de confianza."
 
 #: src/app/main/ui/workspace/plugins.cljs:237
 msgid "workspace.plugins.error.manifest"

@@ -42,6 +42,7 @@
    [frontend-tests.data.workspace-context-menu-test]
    [frontend-tests.data.workspace-focus-test]
    [frontend-tests.data.workspace-interactions-test]
+   [frontend-tests.data.workspace-layout-other-page-test]
    [frontend-tests.data.workspace-libraries-load-test]
    [frontend-tests.data.workspace-libraries-sync-test]
    [frontend-tests.data.workspace-mcp-test]
@@ -102,6 +103,7 @@
    [frontend-tests.plugins.interactions-test]
    [frontend-tests.plugins.library-test]
    [frontend-tests.plugins.local-storage-test]
+   [frontend-tests.plugins.location-test]
    [frontend-tests.plugins.management-test]
    [frontend-tests.plugins.page-active-validation-test]
    [frontend-tests.plugins.page-test]
@@ -270,6 +272,7 @@
    'frontend-tests.data.workspace-context-menu-test
    'frontend-tests.data.workspace-focus-test
    'frontend-tests.data.workspace-interactions-test
+   'frontend-tests.data.workspace-layout-other-page-test
    'frontend-tests.data.workspace-libraries-load-test
    'frontend-tests.data.workspace-libraries-sync-test
    'frontend-tests.data.workspace-mcp-test
@@ -331,6 +334,7 @@
    'frontend-tests.plugins.interactions-test
    'frontend-tests.plugins.library-test
    'frontend-tests.plugins.local-storage-test
+   'frontend-tests.plugins.location-test
    'frontend-tests.plugins.page-active-validation-test
    'frontend-tests.plugins.page-test
    'frontend-tests.plugins.parser-test
