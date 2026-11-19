@@ -290,3 +290,56 @@
 
     (th/create-global-complaint-for pool {:type :bounce :email (:email profile)})
     (t/is (true? (email/has-bounce-reports? pool (:email profile))))))
+
+(t/deftest test-has-reports-predicate-with-threshold
+  (let [profile (th/create-profile* 1)
+        email'  (:email profile)
+        pool    (:app.db/pool th/*system*)]
+
+    (t/is (false? (email/has-reports? pool email')))
+
+    (th/create-global-complaint-for pool {:type :complaint :email email'})
+    (t/testing "one report reaches the default threshold"
+      (t/is (true? (email/has-reports? pool email')))
+      (t/is (false? (email/has-reports? pool email' {:threshold 2}))))
+
+    (th/create-global-complaint-for pool {:type :bounce :email email'})
+    (t/testing "bounces and complaints both count"
+      (t/is (true? (email/has-reports? pool email' {:threshold 2}))))))
+
+(t/deftest test-has-complaint-reports-predicate-with-threshold
+  (let [profile (th/create-profile* 1)
+        email'  (:email profile)
+        pool    (:app.db/pool th/*system*)]
+
+    (th/create-global-complaint-for pool {:type :complaint :email email'})
+    (t/is (false? (email/has-complaint-reports? pool email' {:threshold 2})))
+
+    (th/create-global-complaint-for pool {:type :complaint :email email'})
+    (t/is (true? (email/has-complaint-reports? pool email' {:threshold 2})))))
+
+(t/deftest test-allow-send-messages-predicate-with-muted-profile
+  (let [profile (th/create-profile* 1)
+        pool    (:app.db/pool th/*system*)
+        muted   (assoc profile :is-muted true)]
+    (t/is (not (email/allow-send-emails? pool muted)))))
+
+(t/deftest test-allow-send-messages-predicate-with-complaint-max-age
+  (with-mocks [mock {:target 'app.config/get
+                     :return (th/config-get-mock
+                              {:profile-bounce-threshold 3
+                               :profile-complaint-threshold 1
+                               :profile-complaint-max-age (ct/duration {:days 2})
+                               :profile-bounce-max-age (ct/duration {:days 7})})}]
+    (let [profile (th/create-profile* 1)
+          pool    (:app.db/pool th/*system*)]
+
+      (th/create-complaint-for pool {:type :complaint
+                                     :id (:id profile)
+                                     :created-at (ct/in-past {:days 8})})
+      (t/testing "a complaint older than the max age does not block sending"
+        (t/is (true? (email/allow-send-emails? pool profile))))
+
+      (th/create-complaint-for pool {:type :complaint :id (:id profile)})
+      (t/testing "a recent complaint does block sending"
+        (t/is (false? (email/allow-send-emails? pool profile)))))))

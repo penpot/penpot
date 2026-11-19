@@ -335,3 +335,167 @@
                   (catch clojure.lang.ExceptionInfo e
                     (-> e ex-data :code)))]
     (t/is (= :unknown-email-template code))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; TEMPLATE COVERAGE
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:private comment-params
+  {:name "Member"
+   :source-user "Other User"
+   :comment-reference "comment-1"
+   :comment-content "A comment"
+   :comment-url "https://example.com/comment/1"})
+
+(def ^:private file-access-params
+  {:requested-by "Requester"
+   :requested-by-email "requester@example.com"
+   :team-name "Design Team"
+   :team-id (random-uuid)
+   :file-name "design.penpot"
+   :file-id (random-uuid)
+   :page-id (random-uuid)})
+
+(def ^:private template-recipes
+  {"feedback"                            {:feedback-subject "Subject"
+                                          :feedback-type "bug"
+                                          :feedback-content "Content"
+                                          :profile {:id (random-uuid)
+                                                    :fullname "User"
+                                                    :email "user@example.com"}}
+   "register"                            {:name "User"}
+   "password-recovery"                   {:name "User" :token "token"}
+   "password-changed"                    {:name "User"}
+   "change-email"                        {:name "User"
+                                          :pending-email "new@example.com"
+                                          :token "token"}
+   "invite-to-team"                      {:invited-by "Owner"
+                                          :team "Design Team"
+                                          :token "token"}
+   "invite-to-organization"              {:invited-by "Owner"
+                                          :token "token"
+                                          :organization {:name "Acme Inc"}}
+   "organization-setup-sso"              {:organization-name "Acme Inc"}
+   "renewal-notice"                      {:user-name "Billing"
+                                          :renewal-date "2026-12-01"
+                                          :estimated-amount "$10.00"
+                                          :organizations [{:name "Acme Inc"}]}
+   "join-team"                           {:invited-by "Owner"
+                                          :team "Design Team"
+                                          :team-id (random-uuid)}
+   "request-file-access"                 file-access-params
+   "request-file-access-yourpenpot"      file-access-params
+   "request-file-access-yourpenpot-view" file-access-params
+   "request-team-access"                 (dissoc file-access-params
+                                                 :file-name :file-id :page-id)
+   "comment-mention"                     comment-params
+   "comment-thread"                      comment-params
+   "comment-notification"                comment-params})
+
+(t/deftest all-templates-render
+  (t/is (= (set (keys emails/templates))
+           (set (keys template-recipes)))
+        "every registered template has example params")
+  (doseq [[template-id entry] emails/templates]
+    (t/testing template-id
+      (let [params (-> (get template-recipes template-id)
+                       (assoc :to "user@example.com"
+                              :public-uri (cf/get :public-uri)))
+            email  (emails/render (::emails/factory entry) params)]
+        (t/is (and (string? (:subject email))
+                   (not (str/blank? (:subject email)))))
+        (t/is (or (get-in email [:body "text/plain"])
+                  (get-in email [:body "text/html"])))
+        (t/is (= "user@example.com" (:to email)))))))
+
+(t/deftest render-with-unavailable-language-raises
+  (let [code (try
+               (emails/render emails/register {:to "user@example.com"
+                                               :name "User"
+                                               :lang "fr"})
+               nil
+               (catch clojure.lang.ExceptionInfo e
+                 (-> e ex-data :code)))]
+    (t/is (= :missing-email-templates code))))
+
+(t/deftest render-with-invalid-params-raises
+  (let [code (try
+               (emails/render emails/register {:to "user@example.com"})
+               nil
+               (catch clojure.lang.ExceptionInfo e
+                 (-> e ex-data :code)))]
+    (t/is (= :data-validation code))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SEND AND SEND-TEMPLATE COVERAGE
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- plain-job-def
+  []
+  (ig/init-key ::emails/job-def
+               {::emails/sendmail (fn [_] nil)}))
+
+(defn- submit-plain
+  [job-def params]
+  (emails/send {::db/pool th/*pool*
+                ::jobs/defs {:sendmail job-def}
+                ::mtx/metrics (get th/*system* :app.metrics/metrics)}
+               params))
+
+(t/deftest send-submits-job-without-reuse-conn
+  (let [job-def (plain-job-def)
+        job-id  (submit-plain job-def {:to "a@example.com"
+                                       :subject "hi"
+                                       :body "hello"})
+        params  (jobs/decode-params job-def
+                                    (:params (th/db-get :job {:id job-id})))]
+    (t/testing "the job is submitted through the pool"
+      (t/is (= "sendmail" (:name (th/db-get :job {:id job-id})))))
+    (t/testing "the rendered mail travels in the job params"
+      (t/is (= "hi" (:subject params)))
+      (t/is (= "hello" (:body params)))
+      (t/is (= "a@example.com" (:to params))))))
+
+(t/deftest send-rejects-invalid-params
+  (t/testing "an invalid address fails before submitting"
+    (t/is (thrown? clojure.lang.ExceptionInfo
+                   (emails/send {} {:to "not-an-email"
+                                    :subject "s"
+                                    :body "b"}))))
+  (t/testing "an invalid body fails before submitting"
+    (t/is (thrown? clojure.lang.ExceptionInfo
+                   (emails/send {} {:to "a@example.com"
+                                    :subject "s"
+                                    :body 42})))))
+
+(t/deftest send-renders-with-factory
+  (let [job-def (plain-job-def)
+        job-id  (submit-plain job-def
+                              {::emails/factory (fn [params]
+                                                  {:to (:to params)
+                                                   :subject "rendered"
+                                                   :body "body"})
+                               :to "a@example.com"})
+        params  (jobs/decode-params job-def
+                                    (:params (th/db-get :job {:id job-id})))]
+    (t/is (= "rendered" (:subject params)))
+    (t/is (= "body" (:body params)))))
+
+(t/deftest send-template-keeps-envelope-extras
+  (let [sent    (atom nil)
+        job-def (templated-job-def (fn [_ email] (reset! sent email)))
+        recipe  (assoc invite-to-team-recipe
+                       :extra-data "penpot-token"
+                       :attachments {"error.txt" "trace"})
+        job-id  (submit-templated job-def (assoc recipe
+                                                 ::emails/template "invite-to-team"))
+        params  (jobs/decode-params job-def
+                                    (:params (th/db-get :job {:id job-id})))]
+    (t/testing "extras survive the JSON roundtrip"
+      (t/is (= "penpot-token" (:extra-data params)))
+      (t/is (= {"error.txt" "trace"} (:attachments params)))
+      (t/is (string? (:public-uri params))))
+    (t/testing "the worker receives the same envelope"
+      ((::jobs/handler job-def) nil params)
+      (t/is (= "penpot-token" (:extra-data @sent)))
+      (t/is (= {"error.txt" "trace"} (:attachments @sent))))))
