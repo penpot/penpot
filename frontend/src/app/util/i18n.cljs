@@ -85,17 +85,20 @@
 (when-not (exists? (unchecked-get globals/global "penpotTranslations"))
   (unchecked-set globals/global "penpotTranslations" #js {}))
 
+;; First supported locale for a language tag, or the default language.
+(defn- resolve-locale
+  [tag]
+  (let [supported (into #{} (map :value) supported-locales)]
+    (loop [locales (seq (parse-locale tag))]
+      (if-let [locale (first locales)]
+        (if (contains? supported locale)
+          locale
+          (recur (rest locales)))
+        cf/default-language))))
+
 (defn- autodetect
-  ([]
-   (autodetect (.-language globals/navigator)))
-  ([language]
-   (let [supported (into #{} (map :value supported-locales))]
-     (loop [locales (seq (parse-locale language))]
-       (if-let [locale (first locales)]
-         (if (contains? supported locale)
-           locale
-           (recur (rest locales)))
-         cf/default-language)))))
+  []
+  (resolve-locale (.-language globals/navigator)))
 
 (defn get-current
   "Get the currently memoized locale or execute the autodetection"
@@ -146,13 +149,7 @@
   (let [lname (if (or (nil? lname)
                       (str/empty? lname))
                 (autodetect)
-                (let [supported (into #{} (map :value) supported-locales)]
-                  (loop [locales (seq (parse-locale lname))]
-                    (if-let [locale (first locales)]
-                      (if (contains? supported locale)
-                        locale
-                        (recur (rest locales)))
-                      cf/default-language))))]
+                (resolve-locale lname))]
 
     (->> (load lname)
          (p/fnly (fn [_r _c]

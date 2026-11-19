@@ -10,25 +10,25 @@
    [app.util.i18n :as i18n]
    [cljs.test :as t]))
 
-(defn- detect
+(defn- resolve-locale
   [language]
-  (#'i18n/autodetect language))
+  (#'i18n/resolve-locale language))
 
 (t/deftest traditional-chinese-browser-languages
   (doseq [language ["zh-TW" "zh-HK" "zh-MO" "zh-Hant" "zh-Hant-TW" "zh-Hant-HK"]]
-    (t/is (= "zh_hant" (detect language)) language)))
+    (t/is (= "zh_hant" (resolve-locale language)) language)))
 
 (t/deftest simplified-chinese-browser-languages
   (doseq [language ["zh" "zh-CN" "zh-SG" "zh-Hans" "zh-Hans-CN"]]
-    (t/is (= "zh_cn" (detect language)) language)))
+    (t/is (= "zh_cn" (resolve-locale language)) language)))
 
 (t/deftest stored-locales-still-resolve
   (doseq [{:keys [value]} i18n/supported-locales]
-    (t/is (= value (detect value)) value)))
+    (t/is (= value (resolve-locale value)) value)))
 
 (t/deftest region-falls-back-to-language
-  (t/is (= "en" (detect "en-US")))
-  (t/is (= "pt_br" (detect "pt-BR")))
-  (t/is (= "fr" (detect "fr-BE")))
-  (t/is (= "ja" (detect "ja-JP")))
-  (t/is (= cf/default-language (detect "xx-YY"))))
+  (t/is (= "en" (resolve-locale "en-US")))
+  (t/is (= "pt_br" (resolve-locale "pt-BR")))
+  (t/is (= "fr" (resolve-locale "fr-BE")))
+  (t/is (= "ja" (resolve-locale "ja-JP")))
+  (t/is (= cf/default-language (resolve-locale "xx-YY"))))
