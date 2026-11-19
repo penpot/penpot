@@ -212,6 +212,31 @@
          :library-name library-name
          :removable (if (seq removable) removable [library-name])}))))
 
+(defn disconnect-hint-segments
+  "Splits a translated disconnect hint template, which holds two `%s`
+  (the library that keeps this one, then the libraries to disconnect),
+  into `[:text s]` and `[:name s]` segments in reading order, so the UI
+  can highlight the library names. Each of `removable` is its own name
+  segment, separated by `[:text \", \"]`."
+  [template library-name removable]
+  (let [[before between after] (vec (.split ^string template "%s"))
+        names (into []
+                    (comp (map (fn [n] [:name n]))
+                          (interpose [:text ", "]))
+                    removable)]
+    (-> [[:text before] [:name library-name] [:text between]]
+        (into names)
+        (conj [:text after]))))
+
+(mf/defc disconnect-hint-text*
+  {::mf/private true}
+  [{:keys [template library-name removable]}]
+  [:*
+   (for [[idx [kind text]] (map-indexed vector (disconnect-hint-segments template library-name removable))]
+     (if (= kind :name)
+       [:span {:key idx :class (stl/css :library-name-highlight)} text]
+       [:span {:key idx} text]))])
+
 (defn- describe-library
   [components-count graphics-count colors-count typography-count]
   (let [all-zero? (and (zero? components-count)
@@ -963,11 +988,18 @@
                  [:> tooltip* {:class (stl/css :library-locked)
                                :tab-index 0
                                :data-testid "library-locked"
-                               :content (case (:reason hint)
-                                          :inherited (tr "workspace.libraries.inherited-from"
-                                                         hint-library hint-removable)
-                                          :used-by (tr "workspace.libraries.used-by"
-                                                       hint-library hint-removable))}
+                               :aria-label (case (:reason hint)
+                                             :inherited (tr "workspace.libraries.connected-through-hint"
+                                                            hint-library hint-removable)
+                                             :used-by (tr "workspace.libraries.used-by"
+                                                          hint-library hint-removable))
+                               :content #(mf/html
+                                          [:> disconnect-hint-text*
+                                           {:template (case (:reason hint)
+                                                        :inherited (tr "workspace.libraries.connected-through-hint")
+                                                        :used-by (tr "workspace.libraries.used-by"))
+                                            :library-name hint-library
+                                            :removable (:removable hint)}])}
                   [:> icon* {:icon-id (case (:reason hint)
                                         :inherited i/arrow-up
                                         :used-by i/info)}]]

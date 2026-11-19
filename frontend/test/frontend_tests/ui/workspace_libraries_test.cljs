@@ -177,3 +177,27 @@
             :b {:reason :inherited :library-name "a" :removable ["a"]}}
            (disconnect-hints [(lib :a true [:b])
                               (lib :b true [:a])]))))
+
+(t/deftest disconnect-hint-segments-highlight-every-library-name
+  (t/is (= [[:text "Connected through "]
+            [:name "App"]
+            [:text ". To remove it, disconnect "]
+            [:name "App"]
+            [:text ", "]
+            [:name "Brand"]
+            [:text "."]]
+           (wl/disconnect-hint-segments
+            "Connected through %s. To remove it, disconnect %s."
+            "App"
+            ["App" "Brand"]))))
+
+(t/deftest disconnect-hint-segments-keep-the-text-after-the-last-name
+  (t/is (= [[:text "Used by "]
+            [:name "a"]
+            [:text ". To remove it, disconnect "]
+            [:name "b"]
+            [:text " first."]]
+           (wl/disconnect-hint-segments
+            "Used by %s. To remove it, disconnect %s first."
+            "a"
+            ["b"]))))

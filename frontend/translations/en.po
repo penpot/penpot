@@ -7155,6 +7155,10 @@ msgstr "Connected library"
 msgid "workspace.libraries.connected-through"
 msgstr "Connected through"
 
+#: src/app/main/ui/workspace/libraries.cljs:934
+msgid "workspace.libraries.connected-through-hint"
+msgstr "Connected through %s. To remove it, disconnect %s."
+
 #: src/app/main/ui/workspace/libraries.cljs:507
 msgid "workspace.libraries.connected-to"
 msgstr "Connected to"
@@ -7192,10 +7196,6 @@ msgstr[1] "%s graphics"
 #: src/app/main/ui/workspace/libraries.cljs:470
 msgid "workspace.libraries.in-this-file"
 msgstr "LIBRARIES IN THIS FILE"
-
-#: src/app/main/ui/workspace/libraries.cljs:934
-msgid "workspace.libraries.inherited-from"
-msgstr "Inherited from %s. To remove it, disconnect %s."
 
 #: src/app/main/ui/workspace/libraries.cljs:1161, src/app/main/ui/workspace/libraries.cljs:1165, src/app/main/ui/workspace/libraries.cljs:1183
 msgid "workspace.libraries.libraries"
