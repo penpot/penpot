@@ -190,6 +190,7 @@
    [frontend-tests.ui.context-menu-prototype-test]
    [frontend-tests.ui.dashboard-import-errors-test]
    [frontend-tests.ui.dashboard-import-linking-test]
+   [frontend-tests.ui.delete-shared-test]
    [frontend-tests.ui.drawarea-test]
    [frontend-tests.ui.ds-controls-numeric-input-test]
    [frontend-tests.ui.ds-input-with-meta-test]
@@ -448,6 +449,7 @@
    'frontend-tests.ui.context-menu-prototype-test
    'frontend-tests.ui.dashboard-import-errors-test
    'frontend-tests.ui.dashboard-import-linking-test
+   'frontend-tests.ui.delete-shared-test
    'frontend-tests.ui.drawarea-test
    'frontend-tests.ui.ds-controls-numeric-input-test
    'frontend-tests.ui.ds-input-with-meta-test

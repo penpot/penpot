@@ -7,6 +7,7 @@
 (ns app.main.ui.delete-shared
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.main.data.modal :as modal]
    [app.main.repo :as rp]
@@ -23,6 +24,12 @@
    [rumext.v2 :as mf]))
 
 (def ^:private noop (constantly nil))
+
+(defn- distinct-references
+  "The `[file-id file-name]` pairs of `references` without repeated files: a
+  file that uses several of the libraries is listed once."
+  [references]
+  (into [] (d/distinct-xf first) references))
 
 (mf/defc delete-shared-dialog
   {::mf/register modal/components
@@ -84,6 +91,7 @@
            (rx/mapcat identity)
            (rx/map (juxt :id :name))
            (rx/reduce conj [])
+           (rx/map distinct-references)
            (rx/subs! #(reset! references* %))))
 
     (mf/with-effect [accept-fn]
