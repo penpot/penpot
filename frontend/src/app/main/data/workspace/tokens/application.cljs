@@ -31,6 +31,7 @@
    [app.main.data.workspace.reflow :as wrf]
    [app.main.data.workspace.reflow.signals :as wrfs]
    [app.main.data.workspace.shapes :as dwsh]
+   [app.main.data.workspace.tokens.page-values :as pv]
    [app.main.data.workspace.transforms :as dwtr]
    [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.wasm-text :as dwwt]
@@ -163,14 +164,6 @@
          (apply-geometry-step page-id #(cltp/position-modif-tree % updates) save-undo?)
          (apply-size-step page-id geometry text-ids save-undo?)))
 
-(defn- changed-shape-ids
-  [changes]
-  (into []
-        (comp (filter #(= :mod-obj (:type %)))
-              (map :id)
-              (distinct))
-        (:redo-changes changes)))
-
 (defn- content-changed-ids
   "Ids of the shapes whose content `changes` set."
   [changes]
@@ -205,7 +198,7 @@
           text-ids
           (when current?
             (seq (cond->> (:text-ids (wrfs/reflow-ids-of-changes state page-id objects changes
-                                                                 (changed-shape-ids changes) nil))
+                                                                 (pv/changed-shape-ids changes) nil))
                    wasm? (filter (set resize-ids)))))
 
           save-undo? (:save-undo? changes true)

@@ -8,6 +8,7 @@
   "The propagation of a change of the tokens to the pages of the file
   (`app.main.data.workspace.tokens.propagation`)."
   (:require
+   [app.common.logic.tokens-propagation :as cltp]
    [app.common.test-helpers.compositions :as ctho]
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.ids-map :as cthi]
@@ -21,6 +22,7 @@
    [app.main.data.workspace.thumbnails :as dwt]
    [app.main.data.workspace.tokens.correction :as dwtc]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
+   [app.main.data.workspace.tokens.page-values :as pv]
    [app.main.data.workspace.tokens.progress :as dwtpr]
    [app.main.data.workspace.tokens.propagation :as dwtp]
    [app.util.activity :as activity]
@@ -50,10 +52,18 @@
            (rx/take 1)
            (rx/mapcat #(rx/from events))))))
 
+(defn- with-lazy-flag
+  "Run `f` with the lazy token propagation flag on; it returns the restore
+  function to call when the test ends."
+  []
+  (let [flags cf/flags]
+    (set! cf/flags (conj flags :lazy-token-propagation))
+    #(set! cf/flags flags)))
+
 (t/deftest lazy-changes-set-only-the-current-page
   (t/async
     done
-    (let [restore (tohp/with-lazy-flag)
+    (let [restore (with-lazy-flag)
           file    (tohp/setup-file-with-pages)
           store   (ths/setup-store file)
           token   (ctob/get-token (ctht/get-tokens-lib file) (cthi/id :set) (cthi/id :radius))
@@ -69,7 +79,7 @@
 (t/deftest lazy-pages-are-set-when-opened
   (t/async
     done
-    (let [restore (tohp/with-lazy-flag)
+    (let [restore (with-lazy-flag)
           file    (tohp/setup-file-with-pages)
           store   (ths/setup-store file)
           token   (ctob/get-token (ctht/get-tokens-lib file) (cthi/id :set) (cthi/id :radius))
@@ -154,16 +164,6 @@
          (t/is (= [[:tokens true] [:add-work 1] [:current-page true] :undo-entry] @events)
                "the undo entry closes with the current page, nothing waits for the other pages"))))))
 
-(defn- without-drain
-  "Run with the lazy token propagation flag on and its drain off; it
-  returns the restore function to call when the test ends."
-  []
-  (let [flags cf/flags]
-    (set! cf/flags (-> flags
-                       (conj :lazy-token-propagation)
-                       (disj :lazy-token-propagation-drain)))
-    #(set! cf/flags flags)))
-
 (defn- component-thumbnail
   "Id of the component thumbnail of `label`, on the page `page-label`."
   [file page-label label]
@@ -172,7 +172,7 @@
 (t/deftest the-other-pages-wait-for-a-pause-of-the-user
   (t/async
     done
-    (let [restore (without-drain)
+    (let [restore (tohp/without-drain)
           idle    activity/idle
           pause   (rx/subject)
           file    (tohp/setup-file-with-pages)
@@ -208,7 +208,7 @@
 (t/deftest lazy-changes-clear-the-stale-main-thumbnails
   (t/async
     done
-    (let [restore (without-drain)
+    (let [restore (tohp/without-drain)
           file    (let [file          (tohp/setup-file)
                         first-page-id (cthf/current-page-id file)]
                     (-> file
@@ -235,7 +235,7 @@
 (t/deftest lazy-changes-clear-the-stale-frame-thumbnails
   (t/async
     done
-    (let [restore (without-drain)
+    (let [restore (tohp/without-drain)
           file    (let [file          (tohp/setup-file)
                         first-page-id (cthf/current-page-id file)]
                     (-> file
@@ -266,6 +266,54 @@
                  main      {:id main :parent-id container :type :frame :main-instance true}
                  rect      {:id rect :parent-id main :type :rect}
                  other     {:id other :parent-id container :type :rect}}]
-    (t/is (= #{main} (dwtp/main-instance-ids objects [rect])) "the main that holds it, inside a container")
-    (t/is (= #{main} (dwtp/main-instance-ids objects [main])))
-    (t/is (empty? (dwtp/main-instance-ids objects [other])) "no main holds it")))
+    (t/is (= #{main} (pv/main-instance-ids objects [rect])) "the main that holds it, inside a container")
+    (t/is (= #{main} (pv/main-instance-ids objects [main])))
+    (t/is (empty? (pv/main-instance-ids objects [other])) "no main holds it")))
+
+(defn- failed-propagation-ends-its-work
+  "Checks that a token change whose propagation fails, after `fail!` (that
+  returns how to undo it), reports the failure and ends its work."
+  [done fail!]
+  (let [flags   cf/flags
+        _       (set! cf/flags (disj flags :lazy-token-propagation))
+        restore (fail!)
+        file    (tohp/setup-file-with-pages)
+        errors  (atom 0)
+        store   (ths/setup-store file {:on-error (fn [_] (swap! errors inc))})
+        token   (ctob/get-token (ctht/get-tokens-lib file) (cthi/id :set) (cthi/id :radius))
+        events  (atom [])]
+    (rx/subs! #(cond
+                 (ptk/type? ::dwtpr/add-work %)  (swap! events conj [:add (deref %)])
+                 (ptk/type? ::dwtpr/work-done %) (swap! events conj [:done (deref %)]))
+              (ptk/input-stream store))
+    (tohs/run-store
+     store done [(dwtl/update-token (cthi/id :set) (cthi/id :radius) (assoc token :value 70))]
+     (fn [_]
+       (set! cf/flags flags)
+       (restore)
+       (let [added (reduce + (keep #(when (= :add (first %)) (second %)) @events))
+             ended (reduce + (keep #(when (= :done (first %)) (second %)) @events))]
+         (t/is (pos? @errors) "the failure is reported")
+         (t/is (pos? added))
+         (t/is (= added ended) "the dialog closes")))
+     (tohs/stop-on ::dwtp/propagation-finished))))
+
+(t/deftest a-failed-propagation-still-ends-its-work
+  (t/async
+    done
+    (failed-propagation-ends-its-work
+     done
+     (fn []
+       (let [propagation pv/page-propagation]
+         (set! pv/page-propagation (fn [& _] (throw (ex-info "failed" {}))))
+         #(set! pv/page-propagation propagation))))))
+
+(t/deftest a-failed-search-of-the-shapes-still-ends-its-work
+  (t/async
+    done
+    (failed-propagation-ends-its-work
+     done
+     (fn []
+       (let [targets cltp/out-of-date-targets]
+         (set! cltp/out-of-date-targets (fn [& _] (throw (ex-info "failed" {}))))
+         #(set! cltp/out-of-date-targets targets))))))

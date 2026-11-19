@@ -182,3 +182,22 @@
        (let [res (-> (omap/create) omap/->js-map omap/from-js-map)]
          (t/is (omap/objects-map? res))
          (t/is (zero? (count res)))))))
+
+#?(:cljs
+   (t/deftest compact-a-part-at-a-time
+     (let [id1 (uuid/custom 0 1)
+           id2 (uuid/custom 0 2)
+           id3 (uuid/custom 0 3)
+           obj (-> (omap/wrap {id1 {:foo 1} id2 {:bar 2}})
+                   (assoc id2 {:bar 3})
+                   (assoc id3 {:baz 4}))]
+       (t/is (= #{id2 id3} (set (omap/changed-ids obj))) "the objects set since it was compacted")
+
+       (omap/compact-ids obj [id2 id1])
+       (t/is (= [id3] (omap/changed-ids obj)) "the ones given are encoded")
+       (t/is (= {:bar 3} (transit/decode-str (get (:data (datafy obj)) id2))))
+
+       (omap/compact-ids obj [id3])
+       (t/is (empty? (omap/changed-ids obj)))
+       (t/is (= {id1 {:foo 1} id2 {:bar 3} id3 {:baz 4}} (into {} obj)))
+       (t/is (= obj (-> {:objects obj} transit/encode-str transit/decode-str :objects))))))

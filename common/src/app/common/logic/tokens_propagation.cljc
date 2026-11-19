@@ -761,15 +761,17 @@
   (into {} (map (fn [[token-name value]] [token-name {:name token-name :resolved-value value}])) values))
 
 (defn out-of-date-targets
-  "Targets with the token attributes of the shapes of `objects` that are out
-  of date with `resolved-tokens`; unassigned ones only with `unassigned?`."
-  [objects resolved-tokens unassigned?]
+  "Targets with the token attributes of the shapes of `objects` (only the
+  shapes `ids` with them) that are out of date with `resolved-tokens`;
+  unassigned ones only with `unassigned?`."
+  [objects resolved-tokens & {:keys [ids unassigned?]}]
   (into {}
-        (keep (fn [[id shape]]
-                (when (seq (:applied-tokens shape))
-                  (let [attrs (cttv/out-of-date-attrs shape resolved-tokens {:unassigned? unassigned?})]
-                    (when (seq attrs) [id attrs])))))
-        objects))
+        (keep (fn [id]
+                (let [shape (get objects id)]
+                  (when (seq (:applied-tokens shape))
+                    (let [attrs (cttv/out-of-date-attrs shape resolved-tokens {:unassigned? unassigned?})]
+                      (when (seq attrs) [id attrs]))))))
+        (or ids (keys objects))))
 
 (defn- top-shape-id
   "Id of the topmost shape of `objects` under the root that holds `id`; nil
@@ -820,7 +822,7 @@
         (pcb/with-page page)
         (generate-token-propagation objects
                                     resolved-tokens
-                                    (out-of-date-targets (scoped-objects objects ids) resolved-tokens false)
+                                    (out-of-date-targets (scoped-objects objects ids) resolved-tokens)
                                     {:fonts fonts :reset-position-data? true}))))
 
 (defn correct-objects

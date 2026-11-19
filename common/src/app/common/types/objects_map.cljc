@@ -510,6 +510,30 @@
   [o]
   (instance? ObjectsMap o))
 
+#?(:cljs
+   (defn changed-ids
+     "Ids of the objects set in `objects` since it was last compacted: the
+     ones `compact` encodes."
+     [^ObjectsMap objects]
+     (into [] (keep (fn [[id encoded]] (when (nil? encoded) id))) (.-data objects))))
+
+#?(:cljs
+   (defn compact-ids
+     "Encodes, of the objects set in `objects` since it was last compacted,
+     those of `ids`, so `compact` can be done a part at a time. Returns
+     `objects`."
+     [^ObjectsMap objects ids]
+     (let [cache (.-cache objects)]
+       (set! (.-data objects)
+             (persistent!
+              (reduce (fn [data id]
+                        (if (and (contains? data id) (nil? (get data id)))
+                          (assoc! data id (t/encode-str (get cache id)))
+                          data))
+                      (transient (.-data objects))
+                      ids)))
+       objects)))
+
 (defn create
   ([] (from-data {}))
   ([other]

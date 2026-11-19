@@ -86,6 +86,11 @@
      :buffer? true
      :transfer transfer})))
 
+(defn terminate
+  "Stops `worker` at once: the answers it owes never come."
+  [worker]
+  (.terminate ^js (:instance worker)))
+
 (defn init
   "Return a initialized webworker instance."
   [path on-error]

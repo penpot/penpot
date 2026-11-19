@@ -15,8 +15,11 @@
    [app.main.data.workspace.tokens.progress :as dwtpr]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
+   [frontend-tests.helpers.async :as async]
    [frontend-tests.helpers.pages :as thp]
+   [frontend-tests.helpers.state :as ths]
    [frontend-tests.helpers.wasm :as thw]
+   [frontend-tests.tokens.helpers.propagation :as tohp]
    [potok.v2.core :as ptk]))
 
 (t/use-fixtures :each
@@ -104,3 +107,12 @@
                        (t/is (= [::dps/force-persist] @emitted) "once it is painted")
                        (done))
                      (+ dwtpr/paint-timeout-ms 100)))))
+
+(t/deftest ^:async a-reload-closes-the-dialog-of-the-work-before
+  (let [store (ths/setup-store (tohp/setup-file))]
+    (ptk/emit! store (dwtpr/initialize) (dwtpr/add-work 1) (dwtpr/show))
+    (await (async/wait-for-store store #(::dwtpr/progress @store) "the dialog is shown"))
+    (ptk/emit! store (dwtpr/initialize) (dwtpr/work-done 1))
+    (await (async/wait-for-store store #(nil? (::dwtpr/progress @store)) "the dialog is closed"))
+    (ptk/emit! store (dwtpr/finalize))
+    (rx/dispose! store)))

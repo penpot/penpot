@@ -15,7 +15,6 @@
    [app.common.test-helpers.tokens :as ctht]
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.tokens-status :as ctos]
-   [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.changes :as dch]
    [app.main.data.workspace :as dw]
@@ -23,12 +22,14 @@
    [app.main.data.workspace.modifiers :as dwm]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.correction :as dwtc]
+   [app.main.data.workspace.tokens.leader :as leader]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.data.workspace.tokens.progress :as dwtpr]
    [app.main.data.workspace.tokens.propagation :as dwtp]
    [app.main.data.workspace.wasm-text :as dwwt]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
+   [frontend-tests.helpers.async :as async]
    [frontend-tests.helpers.pages :as thp]
    [frontend-tests.helpers.state :as ths]
    [frontend-tests.helpers.wasm :as thw]
@@ -459,78 +460,6 @@
                   (:tokens-resolved (:data (ths/get-file-from-state state))))))
        tohp/stop-on-ready))))
 
-(t/deftest lazy-changes-drain-the-other-pages
-  (t/async
-    done
-    (let [restore (tohp/with-lazy-flag)
-          file    (tohp/setup-file-with-pages)
-          store   (ths/setup-store file)
-          token   (ctob/get-token (ctht/get-tokens-lib file) (cthi/id :set) (cthi/id :radius))
-          other   (cthi/id :other)
-          commits (tohp/watch-commits store)]
-      (tohs/run-store
-       store done [(dwtl/update-token (cthi/id :set) (cthi/id :radius) (assoc token :value 70))]
-       (fn [state]
-         (restore)
-         (t/is (= 70 (:r1 (cths/get-shape (ths/get-file-from-state state) :other :page-label :page2)))
-               "the other page is set in the background")
-         (t/is (false? (:save-undo? (last @commits))) "not undoable"))
-       (fn [stream]
-         (->> stream
-              (rx/filter dch/commit?)
-              (rx/filter #(some (fn [change] (= other (:id change))) (:redo-changes (deref %))))
-              (rx/take 1)
-              (rx/delay 10)))))))
-
-(t/deftest the-drain-saves-the-change-and-each-page-at-once
-  (t/async
-    done
-    (let [pause   dwtp/drain-delay-ms
-          _       (set! dwtp/drain-delay-ms 1)
-          restore #(set! dwtp/drain-delay-ms pause)
-          stream  (rx/subject)
-          events  (atom [])
-          persist :app.main.data.persistence/force-persist
-          drain   (#'dwtp/drain-pages {} {} [(uuid/next) (uuid/next)])]
-      (rx/subs!
-       (fn [event]
-         (swap! events conj (if (= persist event) :persist :page))
-         (when (ptk/type? ::dwtp/drain-scope event)
-           ;; the page is set
-           (rx/push! stream (ptk/data-event ::dwtp/page-done {:scope-id (deref event)}))))
-       (fn [cause] (restore) (t/is (nil? cause)) (done))
-       (fn []
-         (restore)
-         (t/is (= [:persist :page :persist :page :persist] @events)
-               "the change before the drain, and each page right after it is set")
-         (done))
-       (ptk/watch drain {} stream)))))
-
-(t/deftest the-drain-stops-when-the-tokens-change
-  (t/async
-    done
-    (let [pause   dwtp/drain-delay-ms
-          _       (set! dwtp/drain-delay-ms 1)
-          restore #(set! dwtp/drain-delay-ms pause)
-          stream  (rx/subject)
-          events  (atom [])
-          persist :app.main.data.persistence/force-persist
-          drain   (#'dwtp/drain-pages {} {} [(uuid/next) (uuid/next)])]
-      (rx/subs!
-       (fn [event]
-         (swap! events conj (if (= persist event) :persist :page))
-         (when (ptk/type? ::dwtp/drain-scope event)
-           (rx/push! stream (ptk/data-event ::dwtp/page-done {:scope-id (deref event)}))
-           ;; an undo of the change, once the first page is set
-           (rx/push! stream (ptk/data-event ::dch/commit {:redo-changes [{:type :set-token}]}))))
-       (fn [cause] (restore) (t/is (nil? cause)) (done))
-       (fn []
-         (restore)
-         (t/is (= [:persist :page :persist] @events)
-               "the second page is left for the editors and readers")
-         (done))
-       (ptk/watch drain {} stream)))))
-
 ;; --- Main components with out of date values
 
 (defn- sample-file-with-radius
@@ -649,3 +578,58 @@
          (t/is (= [[:add 1] [:done 1]] @events) "the dialog closes")
          (t/is (empty? (::dwtc/guard state)) "the shapes are not taken as set"))
        tohp/stop-on-ready))))
+
+;; Scenario: with lazy changes, the token goes 50 -> 70 -> 80 -> 70 and the
+;; second page is opened after each change, so this session sets it each
+;; time. Proves: the value it set before is set again.
+(t/deftest ^:async a-value-set-before-is-set-again-after-a-change-of-the-tokens
+  (let [restore (tohp/without-drain)
+        file    (tohp/setup-file-with-pages)
+        store   (ths/setup-store file)
+        page1   (cthf/current-page-id file)
+        page2   (cthi/id :page2)
+        token   (ctob/get-token (ctht/get-tokens-lib file) (cthi/id :set) (cthi/id :radius))
+        radius  #(get-in @store [:files (:id file) :data :pages-index %2 :objects (cthi/id %1) :r1])]
+    (ptk/emit! store (dwtc/initialize (:id file)))
+    (doseq [value [70 80 70]]
+      (ptk/emit! store
+                 #(assoc % :current-page-id page1)
+                 (dwtl/update-token (cthi/id :set) (cthi/id :radius) (assoc token :value value)))
+      (await (async/wait-for-store store #(and (= value (radius :stale page1))
+                                               (empty? (::dwtp/running @store)))
+                                   "the current page is set"))
+      (ptk/emit! store
+                 #(assoc % :current-page-id page2)
+                 (dwtc/check-page {:opening? true}))
+      (await (async/wait-for-store store #(= value (radius :other page2))
+                                   (str "the second page is set to " value))))
+    (t/is (= 70 (radius :other page2)))
+    (ptk/emit! store (dwtc/finalize))
+    (restore)
+    (rx/dispose! store)))
+
+;; Scenario: the workspace is loaded again, which starts its watchers again
+;; without a finalize, and then a shape is edited. Proves: the page is
+;; checked once, and the dialog is hidden once.
+(t/deftest ^:async a-reload-keeps-one-watcher-of-the-commits
+  (let [file   (tohp/setup-file)
+        store  (ths/setup-store file)
+        events (atom [])]
+    (rx/subs! #(swap! events conj (ptk/type %))
+              (rx/filter #(or (ptk/type? ::dwtc/check-page %) (ptk/type? ::dwtpr/hide %))
+                         (ptk/input-stream store)))
+    (ptk/emit! store
+               (dwtc/initialize (:id file)) (dwtpr/initialize)
+               (dwtc/initialize (:id file)) (dwtpr/initialize)
+               (dch/commit-changes {:redo-changes [{:type :mod-obj :id (cthi/id :stale)
+                                                    :page-id (cthf/current-page-id file)
+                                                    :operations [{:type :set :attr :name :val "edited"}]}]
+                                    :undo-changes []
+                                    :save-undo? false})
+               (dwtpr/add-work 1) (dwtpr/show) (dwtpr/work-done 1))
+    (await (async/wait-for-store store #(some #{::dwtpr/hide} @events) "the dialog is hidden"))
+    (await (js/Promise. (fn [resolve] (js/setTimeout resolve (+ leader/settle-ms 600)))))
+    (t/is (= 1 (count (filter #{::dwtc/check-page} @events))) "the page is checked once")
+    (t/is (= 1 (count (filter #{::dwtpr/hide} @events))) "the dialog is hidden once")
+    (ptk/emit! store (dwtc/finalize) (dwtpr/finalize))
+    (rx/dispose! store)))

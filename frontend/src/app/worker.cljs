@@ -17,6 +17,7 @@
    [app.worker.index]
    [app.worker.messages :as wm]
    [app.worker.thumbnails]
+   [app.worker.tokens-drain]
    [beicon.v2.core :as rx]
    [promesa.core :as p]))
 

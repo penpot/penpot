@@ -51,6 +51,7 @@
    [app.main.data.workspace.thumbnails-wasm :as dwt.wasm]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.correction :as dwtc]
+   [app.main.data.workspace.tokens.drain :as-alias dwtd]
    [app.main.data.workspace.tokens.leader :as leader]
    [app.main.data.workspace.tokens.propagation :as dwtp]
    [app.main.data.workspace.transforms :as dwtr]
@@ -1887,14 +1888,15 @@
 
                 ;; Components changed by a token propagation are marked as
                 ;; modified once, when the propagation finishes, or when the
-                ;; page check is done with a page.
+                ;; page check or the drain is done with a page.
                 (->> component-events-s
                      (rx/filter (ptk/type? ::propagated-component-changed))
                      (rx/map deref)
                      (rx/buffer-until
                       (->> stream
                            (rx/filter #(contains? #{::dwtp/propagation-finished
-                                                    ::dwtc/tokens-ready}
+                                                    ::dwtc/tokens-ready
+                                                    ::dwtd/page-applied}
                                                   (ptk/type %)))
                            (rx/delay propagation-tail-ms)))
                      (rx/filter seq)

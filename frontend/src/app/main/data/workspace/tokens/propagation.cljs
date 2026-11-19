@@ -19,17 +19,18 @@
    [app.common.logic.tokens-propagation :as cltp]
    [app.common.thumbnails :as thc]
    [app.common.time :as ct]
-   [app.common.types.component :as ctk]
-   [app.common.types.token-values :as cttv]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.changes :as dch]
    [app.main.data.helpers :as dsh]
    [app.main.data.persistence :as-alias dps]
    [app.main.data.persistence.lock :as plk]
+   [app.main.data.workspace :as-alias dw]
    [app.main.data.workspace.thumbnails :as dwt]
    [app.main.data.workspace.tokens.application :as dwta]
+   [app.main.data.workspace.tokens.drain :as drain]
    [app.main.data.workspace.tokens.lookup :as lookup]
+   [app.main.data.workspace.tokens.page-values :as pv]
    [app.main.data.workspace.tokens.progress :as dwtpr]
    [app.main.data.workspace.undo :as dwu]
    [app.main.fonts :as fonts]
@@ -44,64 +45,17 @@
 
 ;; Targets ---------------------------------------------------------------------
 
-(defn out-of-date-targets
-  "Targets for `cltp/generate-token-propagation` with the token attributes
-  of the shapes `ids` of `objects` that are out of date with
-  `resolved-tokens`; unassigned ones too, unless `unassigned?` is false."
-  ([objects ids resolved-tokens]
-   (out-of-date-targets objects ids resolved-tokens true))
-  ([objects ids resolved-tokens unassigned?]
-   (into {}
-         (keep (fn [id]
-                 (when-let [shape (get objects id)]
-                   (let [attrs (cttv/out-of-date-attrs shape resolved-tokens {:unassigned? unassigned?})]
-                     (when (seq attrs) [id attrs])))))
-         ids)))
+(defn- token-names
+  "Names of the `changed` tokens, nil for any token."
+  [changed]
+  (when (some? changed) (vec (keys changed))))
 
 (defn- candidate-ids
   "Ids of the shapes of `objects` that may be out of date: the ones that
   apply some of the `changed` tokens, or every shape with tokens when
   `changed` is nil."
   [objects changed]
-  (if (some? changed)
-    (lookup/shapes-using objects (keys changed))
-    (into #{} cat (vals (lookup/token-shape-ids objects)))))
-
-(defn root-frame-ids
-  "Ids of the root frames that hold the shapes `ids` of `objects`."
-  [objects ids]
-  (into #{}
-        (keep (fn [id]
-                (->> (cfh/get-parent-ids objects id)
-                     (cons id)
-                     (take-while #(not= % uuid/zero))
-                     (map (d/getf objects))
-                     (d/seek cfh/root-frame?)
-                     :id)))
-        ids))
-
-(defn main-instance-ids
-  "Ids of the main components that hold the shapes `ids` of `objects`, at
-  any depth: their thumbnails are kept by that id."
-  [objects ids]
-  (into #{}
-        (comp (mapcat #(cfh/get-parent-ids-seq-with-self objects %))
-              (distinct)
-              (filter #(ctk/main-instance? (get objects %))))
-        ids))
-
-(defn clear-thumbnails
-  "Clear the thumbnails of the root frames and the main components that
-  hold the shapes `ids` of `objects`, and of the root frames `frame-ids`."
-  [file-id page-id objects ids frame-ids]
-  (let [frame-ids (into (set frame-ids) (root-frame-ids objects ids))]
-    (rx/concat
-     (->> (rx/from frame-ids)
-          (rx/mapcat (fn [frame-id]
-                       (rx/of (dwt/clear-thumbnail file-id page-id frame-id "frame")
-                              (dwt/clear-thumbnail file-id page-id frame-id "component")))))
-     (->> (rx/from (remove frame-ids (main-instance-ids objects ids)))
-          (rx/map #(dwt/clear-thumbnail file-id page-id % "component"))))))
+  (pv/candidate-ids objects (token-names changed)))
 
 (defn- main-ids
   "Ids of the main components on `page-id`, from the components of `fdata`,
@@ -155,10 +109,8 @@
   [file-id page-id objects frame-ids main-ids changed]
   (let [users  (users-by-root objects (concat frame-ids main-ids) changed)
         stale? #(contains? users %)]
-    (rx/concat
-     (clear-thumbnails file-id page-id objects nil (filter stale? frame-ids))
-     (->> (rx/from (filter stale? main-ids))
-          (rx/map #(dwt/clear-thumbnail file-id page-id % "component"))))))
+    (dwt/clear-stale-thumbnails file-id page-id {:frame-ids (filter stale? frame-ids)
+                                                 :main-ids  (filter stale? main-ids)})))
 
 ;; Propagation -----------------------------------------------------------------
 
@@ -173,7 +125,7 @@
   cleared. With `:background?` the commit is not undoable. The commit only
   follows tokens already committed, so it goes through while saves fail."
   [it state resolved-tokens changed
-   {:keys [page-id root-ids save-resolved? thumbnails-only? main-ids frame-ids drain? background?
+   {:keys [page-id root-ids save-resolved? thumbnails-only? main-ids frame-ids background?
            undo-group]
     scope-targets :targets} tags]
   (let [file-id (get state :current-file-id)
@@ -191,42 +143,34 @@
           {}
 
           (some? root-ids)
-          (out-of-date-targets objects
-                               (into [] (comp (mapcat #(cfh/get-children-ids-with-self objects %))
-                                              (distinct))
-                                     root-ids)
-                               resolved-tokens)
+          (cltp/out-of-date-targets objects resolved-tokens
+                                    :ids (into [] (comp (mapcat #(cfh/get-children-ids-with-self objects %))
+                                                        (distinct))
+                                               root-ids)
+                                    :unassigned? true)
 
           :else
-          (out-of-date-targets objects (candidate-ids objects changed) resolved-tokens))
-
-        background
-        (let [color (cltp/page-background page resolved-tokens)]
-          (when (and (some? color) (not= color (:background page)))
-            color))
+          (cltp/out-of-date-targets objects resolved-tokens
+                                    :ids (candidate-ids objects changed)
+                                    :unassigned? true))
 
         changes
         (-> (pcb/empty-changes it)
-            (pcb/with-page page)
-            (cltp/generate-token-propagation objects resolved-tokens targets
-                                             {:fonts @fonts/fontsdb
-                                              :geometry (dwta/geometry-mode state page-id)
-                                              :reset-position-data? other?})
-            (cond-> (some? background) (pcb/mod-page page {:background background}))
+            (pv/page-propagation page resolved-tokens targets
+                                 {:fonts @fonts/fontsdb
+                                  :geometry (dwta/geometry-mode state page-id)
+                                  :reset-position-data? other?})
             ;; The readers set their shapes with the values saved in the file
             (cond-> save-resolved?
               (pcb/set-tokens-resolved saved (cltp/values-to-save resolved-tokens saved)))
             (cond-> (seq tags) (update :tags (fnil into #{}) tags))
             ;; Work in the background is not something to undo
-            (cond-> (or drain? background?) (pcb/set-save-undo? false))
-            (cond-> (and (some? undo-group) (not (or drain? background?))) (assoc :undo-group undo-group)))
-
-        changed-ids
-        (keep #(when (= :mod-obj (:type %)) (:id %)) (:redo-changes changes))]
+            (cond-> background? (pcb/set-save-undo? false))
+            (cond-> (and (some? undo-group) (not background?)) (assoc :undo-group undo-group)))]
 
     (rx/concat
      (dwta/commit-token-values state changes page-id objects targets true)
-     (clear-thumbnails file-id page-id objects changed-ids nil)
+     (dwt/clear-stale-thumbnails file-id page-id (pv/stale-thumbnail-ids objects (pv/changed-shape-ids changes)))
      (if thumbnails-only?
        (stale-thumbnails file-id page-id objects frame-ids main-ids changed)
        (rx/empty)))))
@@ -234,9 +178,7 @@
 (defn- page-affected?
   "True when `page` may have something to set for the `changed` tokens."
   [page changed]
-  (or (nil? changed)
-      (some? (:background-token page))
-      (seq (candidate-ids (:objects page) changed))))
+  (pv/page-affected? page (token-names changed)))
 
 (defn- page-scopes
   "Scopes that cover the pages of the file that may have something to
@@ -289,41 +231,42 @@
 
     ptk/WatchEvent
     (watch [it state stream]
-      (let [whole?  (and (nil? (:targets scope))
-                         (not (:thumbnails-only? scope))
-                         (nil? (:root-ids scope))
-                         (not (:drain? scope)))
-            objects (when whole? (:objects (dsh/lookup-page state (:page-id scope))))
-            targets (when whole?
-                      (out-of-date-targets objects (candidate-ids objects changed) resolved-tokens))]
-        (cond
-          ;; The work in the background waits for a pause of the user
-          (and (or (:background? scope) (:drain? scope))
-               (not (::waited? scope)))
-          (->> (wait-for-user state stream)
-               (rx/map #(propagate-scope resolved-tokens changed (assoc scope ::waited? true)
-                                         tags scope-id)))
+      ;; A failure still ends its work, so the dialog closes
+      (->> (rx/defer
+            (fn []
+              (let [whole?  (and (nil? (:targets scope))
+                                 (not (:thumbnails-only? scope))
+                                 (nil? (:root-ids scope)))
+                    objects (when whole? (:objects (dsh/lookup-page state (:page-id scope))))
+                    targets (when whole?
+                              (cltp/out-of-date-targets objects resolved-tokens
+                                                        :ids (candidate-ids objects changed)
+                                                        :unassigned? true))]
+                (cond
+                  ;; The work in the background waits for a pause of the user
+                  (and (:background? scope)
+                       (not (::waited? scope)))
+                  (->> (wait-for-user state stream)
+                       (rx/map #(propagate-scope resolved-tokens changed (assoc scope ::waited? true)
+                                                 tags scope-id)))
 
-          (and whole? (dwtpr/long-work? objects targets))
-          ;; The dialog that blocks the workspace is painted before the work
-          (rx/concat
-           (rx/of (dwtpr/show))
-           (->> (rx/of (propagate-scope resolved-tokens changed (assoc scope :targets targets) tags scope-id))
-                (rx/delay dwtpr/paint-delay-ms)))
+                  (and whole? (dwtpr/long-work? objects targets))
+                  ;; The dialog that blocks the workspace is painted before the work
+                  (rx/concat
+                   (rx/of (dwtpr/show))
+                   (->> (rx/of (propagate-scope resolved-tokens changed (assoc scope :targets targets) tags scope-id))
+                        (rx/delay dwtpr/paint-delay-ms)))
 
-          :else
-          (->> (rx/defer
-                (fn []
+                  :else
                   (rx/concat
                    (propagate-page it state resolved-tokens changed
                                    (cond-> scope whole? (assoc :targets targets))
                                    tags)
                    (rx/of (dwtpr/work-done (:units scope 0))
-                          (page-done scope-id)))))
-               ;; A failure still ends its work, so the dialog closes
-               (rx/catch #(rx/concat (rx/of (dwtpr/work-done (:units scope 0))
-                                            (page-done scope-id))
-                                     (rx/throw %)))))))))
+                          (page-done scope-id)))))))
+           (rx/catch #(rx/concat (rx/of (dwtpr/work-done (:units scope 0))
+                                        (page-done scope-id))
+                                 (rx/throw %)))))))
 
 (defn- run-scopes
   "Observable that propagates `resolved-tokens` to each scope of `scopes`,
@@ -368,78 +311,6 @@
     (update [_ state]
       (update state ::running disj run-id))))
 
-(def token-change-types
-  "Types of the changes that may change the value of a token."
-  #{:set-tokens-lib :set-token :set-token-set :set-token-theme
-    :rename-token-set-group :move-token-set :move-token-set-group
-    :set-tokens-status :set-own-tokens-status :set-tokens-source
-    :set-base-font-size})
-
-(defn- tokens-commit?
-  "True when `event` commits a change of the tokens."
-  [event]
-  (and (dch/commit? event)
-       (some #(contains? token-change-types (:type %))
-             (:redo-changes (deref event)))))
-
-(def drain-delay-ms
-  "Pause before setting each page left out of date by a lazy change, so the
-  work goes in the background."
-  2000)
-
-(defn- drain-scope
-  "Set `page-id` after a pause when it has something to set for the
-  `changed` tokens; otherwise the page is done at once."
-  [resolved-tokens changed page-id scope-id]
-  (ptk/reify ::drain-scope
-    cljs.core/IDeref
-    (-deref [_] scope-id)
-
-    ptk/WatchEvent
-    (watch [_ state _]
-      (if (page-affected? (dsh/lookup-page state page-id) changed)
-        (->> (rx/of (propagate-scope resolved-tokens changed
-                                     {:page-id page-id :drain? true}
-                                     #{:token-propagation}
-                                     scope-id))
-             (rx/delay drain-delay-ms))
-        (rx/of (page-done scope-id))))))
-
-(defn- drain-page
-  "Set `page-id` after a pause and save it as soon as it is set."
-  [stream resolved-tokens changed page-id]
-  (let [scope-id (uuid/next)]
-    (rx/concat
-     (rx/merge
-      (->> stream
-           (rx/filter (partial page-done? scope-id))
-           (rx/take 1)
-           (rx/map (constantly ::dps/force-persist)))
-      (rx/of (drain-scope resolved-tokens changed page-id scope-id)))
-     (rx/ignore (tm/next-task)))))
-
-(defn- drain-pages
-  "Set, one after another and in the background, the pages that a lazy
-  change of the tokens left out of date, so the readers don't have to set
-  them every time. Stops when the tokens change again (another
-  propagation, an undo, a remote change) or the workspace closes.
-
-  The change and each page are saved as soon as they are set: the drain
-  commits more often than the persistence waits for a pause."
-  [resolved-tokens changed page-ids]
-  (ptk/reify ::drain-pages
-    ptk/WatchEvent
-    (watch [_ _ stream]
-      (let [stopper (rx/filter #(or (contains? #{::propagate-workspace-tokens
-                                                 :app.main.data.workspace/finalize-workspace}
-                                               (ptk/type %))
-                                    (tokens-commit? %))
-                               stream)]
-        (->> page-ids
-             (map #(rx/defer (fn [] (drain-page stream resolved-tokens changed %))))
-             (apply rx/concat (rx/of ::dps/force-persist))
-             (rx/take-until stopper))))))
-
 (defn- drain?
   "True when a lazy change of the tokens sets the other pages in the
   background."
@@ -453,75 +324,81 @@
   (ptk/reify ::run-propagation
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [tokens-tree (dwta/active-tokens state)
+      (rx/concat
+       ;; A failure still ends the run, so the next ones go on
+       (->> (rx/defer
+             (fn []
+               (let [tokens-tree (dwta/active-tokens state)
 
-            propagate
-            (fn [[resolved-tokens changed]]
-              (if (and (some? changed) (empty? changed))
-                ;; Nothing to set
-                (rx/empty)
-                (let [undo-id (js/Symbol)
-                      tpoint  (ct/tpoint-ms)
-                      scopes  (if (some? root-ids)
-                                [{:page-id page-id :root-ids root-ids}]
-                                (-> (vec (page-scopes state changed (dwta/lazy?) thumbnails-only?))
-                                    (assoc-in [0 :save-resolved?] true)))
-                      scopes  (cond->> scopes
-                                (some? undo-group) (mapv #(assoc % :undo-group undo-group)))
-                      ;; Thumbnails only, cleared while the user goes on working
-                      background? (and (next scopes) (every? :thumbnails-only? (rest scopes)))
-                      ;; The current page weighs as much as the other pages waited for
-                      scopes  (into [(assoc (first scopes) :units (if background? 1 (max 1 (dec (count scopes)))))]
-                                    (map #(if background? (assoc % :background? true :units 0) (assoc % :units 1)))
-                                    (rest scopes))
-                      units   (reduce + (map :units scopes))
-                      ;; Covering every shape it updates the copies itself
-                      tags    (when (nil? root-ids) #{:token-propagation})]
-                  (l/inf :status "START" :hint "propagate-tokens"
-                         :tokens (count resolved-tokens) :pages (count scopes))
-                  (->> (rx/concat
-                        (rx/of (dwtpr/add-work units)
-                               (dwu/start-undo-transaction undo-id :timeout false))
-                        (run-scopes stream resolved-tokens changed (take 1 scopes) tags)
-                        (if background?
-                          (rx/of (dwu/commit-undo-transaction undo-id))
-                          (rx/empty))
-                        ;; The texts of the current page are laid out before
-                        ;; the other pages are set; the change and the page
-                        ;; are saved once the dialog closes
-                        (if (next scopes)
-                          (rx/of :app.main.data.workspace/layout-texts
-                                 (dwtpr/persist-when-closed))
-                          (rx/empty))
-                        (run-scopes stream resolved-tokens changed (rest scopes) tags)
-                        (if background?
-                          (rx/empty)
-                          (rx/of (dwu/commit-undo-transaction undo-id)))
-                        ;; The pages left out of date
-                        (if (and (dwta/lazy?) (drain?) (nil? root-ids) (not thumbnails-only?))
-                          (let [current-page-id (:current-page-id state)]
-                            (rx/of (drain-pages resolved-tokens changed
-                                                (into [] (remove #(= % current-page-id))
-                                                      (:pages (dsh/lookup-file-data state))))))
-                          (rx/empty)))
-                       (rx/finalize
-                        #(l/inf :status "END" :hint "propagate-tokens" :elapsed (tpoint)))))))]
+                     propagate
+                     (fn [[resolved-tokens changed]]
+                       (if (and (some? changed) (empty? changed))
+                         ;; Nothing to set
+                         (rx/empty)
+                         (let [undo-id (js/Symbol)
+                               tpoint  (ct/tpoint-ms)
+                               ;; The drain sets the other pages and clears their thumbnails
+                               drain-pages? (and (dwta/lazy?) (drain?) (nil? root-ids) (not thumbnails-only?))
+                               scopes  (if (some? root-ids)
+                                         [{:page-id page-id :root-ids root-ids}]
+                                         (cond-> (vec (page-scopes state changed (dwta/lazy?) thumbnails-only?))
+                                           drain-pages? (subvec 0 1)
+                                           :always      (assoc-in [0 :save-resolved?] true)))
+                               scopes  (cond->> scopes
+                                         (some? undo-group) (mapv #(assoc % :undo-group undo-group)))
+                               ;; Thumbnails only, cleared while the user goes on working
+                               background? (and (next scopes) (every? :thumbnails-only? (rest scopes)))
+                               ;; The current page weighs as much as the other pages waited for
+                               scopes  (into [(assoc (first scopes) :units (if background? 1 (max 1 (dec (count scopes)))))]
+                                             (map #(if background? (assoc % :background? true :units 0) (assoc % :units 1)))
+                                             (rest scopes))
+                               units   (reduce + (map :units scopes))
+                               ;; Covering every shape it updates the copies itself
+                               tags    (when (nil? root-ids) #{:token-propagation})]
+                           (l/inf :status "START" :hint "propagate-tokens"
+                                  :tokens (count resolved-tokens) :pages (count scopes))
+                           (->> (rx/concat
+                                 (rx/of (dwtpr/add-work units)
+                                        (dwu/start-undo-transaction undo-id :timeout false))
+                                 (run-scopes stream resolved-tokens changed (take 1 scopes) tags)
+                                 (if background?
+                                   (rx/of (dwu/commit-undo-transaction undo-id))
+                                   (rx/empty))
+                                 ;; The texts of the current page are laid out before
+                                 ;; the other pages are set; the change and the page
+                                 ;; are saved once the dialog closes
+                                 (if (or (next scopes) drain-pages?)
+                                   (rx/of ::dw/layout-texts
+                                          (dwtpr/persist-when-closed))
+                                   (rx/empty))
+                                 (run-scopes stream resolved-tokens changed (rest scopes) tags)
+                                 (if background?
+                                   (rx/empty)
+                                   (rx/of (dwu/commit-undo-transaction undo-id)))
+                                 ;; The pages left out of date
+                                 (if drain-pages?
+                                   (let [current-page-id (:current-page-id state)]
+                                     (rx/of (drain/start resolved-tokens changed
+                                                         (into [] (remove #(= % current-page-id))
+                                                               (:pages (dsh/lookup-file-data state))))))
+                                   (rx/empty)))
+                                (rx/finalize
+                                 #(l/inf :status "END" :hint "propagate-tokens" :elapsed (tpoint)))))))]
 
-        (rx/concat
-         (->> (if (some? tokens-tree)
-                (->> (dwta/resolve-sets tokens-tree (dwta/base-font-size state))
-                     (rx/mapcat
-                      (fn [resolved-tokens]
-                        (if (some? previous-tokens)
-                          (->> (dwta/resolve-sets previous-tokens (dwta/base-font-size state))
-                               (rx/map #(vector resolved-tokens (changed-tokens resolved-tokens %))))
-                          (rx/of [resolved-tokens nil]))))
-                     (rx/mapcat propagate))
-                (rx/empty))
-              (rx/catch #(rx/concat
-                          (rx/of (propagation-finished run-id))
-                          (rx/throw %))))
-         (rx/of (propagation-finished run-id)))))))
+                 (if (some? tokens-tree)
+                   (->> (dwta/resolve-sets tokens-tree (dwta/base-font-size state))
+                        (rx/mapcat
+                         (fn [resolved-tokens]
+                           (if (some? previous-tokens)
+                             (->> (dwta/resolve-sets previous-tokens (dwta/base-font-size state))
+                                  (rx/map #(vector resolved-tokens (changed-tokens resolved-tokens %))))
+                             (rx/of [resolved-tokens nil]))))
+                        (rx/mapcat propagate))
+                   (rx/empty)))))
+            (rx/catch #(rx/concat
+                        (rx/of (propagation-finished run-id))
+                        (rx/throw %))))
+       (rx/of (propagation-finished run-id))))))
 
 (declare propagate-workspace-tokens)
 

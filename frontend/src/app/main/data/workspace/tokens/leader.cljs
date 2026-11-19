@@ -33,6 +33,11 @@
                   session-id)))
         presence))
 
+(defn page-editor?
+  "True when some session in `presence` that can edit has `page-id` open."
+  [presence page-id]
+  (boolean (seq (editors presence page-id))))
+
 (defn author-first
   "`author-id` when the author of a change of the tokens goes first on
   `page-id`: it sets every page, or with `lazy?` only the one it is on."

@@ -24,9 +24,11 @@
    [app.main.data.workspace :as-alias dw]
    [app.main.data.workspace.notifications :as-alias dwn]
    [app.main.data.workspace.pages :as-alias dwpg]
+   [app.main.data.workspace.thumbnails :as dwt]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.leader :as leader]
    [app.main.data.workspace.tokens.lookup :as lookup]
+   [app.main.data.workspace.tokens.page-values :as pv]
    [app.main.data.workspace.tokens.progress :as dwtpr]
    [app.main.data.workspace.tokens.propagation :as dwtp]
    [app.main.features :as features]
@@ -231,7 +233,7 @@
       editor
       (rx/concat
        (dwta/commit-token-values state changes page-id objects targets true)
-       (dwtp/clear-thumbnails file-id page-id objects (keys targets) nil))
+       (dwt/clear-stale-thumbnails file-id page-id (pv/stale-thumbnail-ids objects (keys targets))))
 
       :else
       (rx/of (apply-in-memory file-id changes)))))
@@ -278,7 +280,9 @@
             ids      (if (or (nil? ids) (nil? changed))
                        (into #{} cat (vals (lookup/token-shape-ids objects)))
                        (into (set ids) (lookup/shapes-using objects (keys changed))))
-            targets  (-> (dwtp/out-of-date-targets objects ids resolved (and editor (or opening? (nil? changed))))
+            targets  (-> (cltp/out-of-date-targets objects resolved
+                                                   :ids ids
+                                                   :unassigned? (and editor (or opening? (nil? changed))))
                          (without-guarded objects resolved (get state ::guard #{})))
             position (queue-position state opts)]
         (cond
@@ -367,7 +371,7 @@
   "What a commit may leave out of date: the token change, and the shapes it
   changes on any page."
   [{:keys [redo-changes source tags]}]
-  {:tokens? (boolean (some #(contains? dwtp/token-change-types (:type %)) redo-changes))
+  {:tokens? (pv/tokens-change? redo-changes)
    :remote? (= :remote source)
    :local?  (= :local source)
    ;; The texts laid out again after a change, not an edit
@@ -413,7 +417,7 @@
           (->> stream
                (rx/filter (ptk/type? ::dwn/handle-file-change))
                (rx/map deref)
-               (rx/filter #(some (fn [change] (contains? dwtp/token-change-types (:type change))) (:changes %)))
+               (rx/filter #(pv/tokens-change? (:changes %)))
                (rx/tap #(vreset! author* (:session-id %)))
                (rx/ignore))
 

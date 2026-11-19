@@ -69,10 +69,12 @@
         (cths/update-shape :main-root :token-values {:r1 50})
         (vary-meta assoc :current-page-id first-page-id))))
 
-(defn with-lazy-flag
-  "Run `f` with the lazy token propagation flag on; it returns the restore
-  function to call when the test ends."
+(defn without-drain
+  "Run with the lazy token propagation flag on and its drain off; it
+  returns the restore function to call when the test ends."
   []
   (let [flags cf/flags]
-    (set! cf/flags (conj flags :lazy-token-propagation))
+    (set! cf/flags (-> flags
+                       (conj :lazy-token-propagation)
+                       (disj :lazy-token-propagation-drain)))
     #(set! cf/flags flags)))

@@ -151,6 +151,19 @@
               (rx/map (fn [_] (clear-thumbnail-batch)))
               (rx/take-until stopper-s)))))))
 
+(defn clear-stale-thumbnails
+  "Events that clear the thumbnails of the root frames `frame-ids`, with
+  their component thumbnails, and of the main components `main-ids` of
+  `page-id`."
+  [file-id page-id {:keys [frame-ids main-ids]}]
+  (rx/concat
+   (->> (rx/from frame-ids)
+        (rx/mapcat (fn [id]
+                     (rx/of (clear-thumbnail file-id page-id id "frame")
+                            (clear-thumbnail file-id page-id id "component")))))
+   (->> (rx/from main-ids)
+        (rx/map #(clear-thumbnail file-id page-id % "component")))))
+
 (defn assoc-thumbnail
   [object-id uri]
   (let [prev-uri* (volatile! nil)]

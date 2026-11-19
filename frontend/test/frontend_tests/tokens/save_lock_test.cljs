@@ -105,3 +105,6 @@
 
 (t/deftest a-refused-token-change-sets-no-other-page
   (t/async done (refused-change-sets-no-page done #{})))
+
+(t/deftest a-refused-lazy-token-change-drains-no-page
+  (t/async done (refused-change-sets-no-page done #{:lazy-token-propagation :lazy-token-propagation-drain})))
