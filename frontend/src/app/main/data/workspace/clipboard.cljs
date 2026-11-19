@@ -1200,17 +1200,9 @@
   (ptk/reify ::copy-link-to-clipboard
     ptk/WatchEvent
     (watch [_ state _]
-      (let [objects   (dsh/lookup-page-objects state)
-            board-ids (into (d/ordered-set)
-                            (keep (fn [id]
-                                    (let [shape (get objects id)]
-                                      (cond
-                                        (cfh/frame-shape? shape) id
-                                        (some? shape)            (:frame-id shape)))))
-                            (dsh/lookup-selected state))
-            board-ids (disj board-ids uuid/zero)
-
-            link      (or (when (seq board-ids)
+      (let [board-ids (dws/selected-board-ids (dsh/lookup-page-objects state)
+                                              (dsh/lookup-selected state))
+            link      (or (when (some? board-ids)
                             (rt/resolve-uri (:router state)
                                             (rt/lookup-name state)
                                             (-> (rt/get-params state)
