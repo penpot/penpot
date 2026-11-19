@@ -32,6 +32,14 @@
                                 :detach-libraries :link-later}]]
    [:public-uri  {:optional true} ::sm/text]])
 
+(def schema:create-params
+  "Business params of an export as received from the caller. The base URI
+  is added by the backend after validating the request origin."
+  [:map {:title "export-binfile-create-params" :closed true}
+   [:file-ids    [::sm/set ::sm/uuid]]
+   [:export-type [::sm/one-of #{:include-libraries :merge-libraries
+                                :detach-libraries :link-later}]]])
+
 (def ^:private artifact
   "What the user sees of the package an export produces. A single name
   describes a set of files, so it does not come from any of them."

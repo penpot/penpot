@@ -124,6 +124,18 @@
           params   (jobs/decode-params job-def (:params job))]
       (t/is (= "https://alt.example.com" (:public-uri params))))))
 
+(t/deftest create-export-binfile-job-rejects-client-public-uri
+  (let [profile (th/create-profile* 1)
+        file-id (first (:file-ids (import-fixture! profile)))
+        out     (th/command! {::th/type       :create-export-binfile-job
+                              ::rpc/profile-id (:id profile)
+                              :params         {:file-ids    #{file-id}
+                                               :export-type :detach-libraries
+                                               :public-uri  "https://client.example.com"}})]
+    (t/is (not (th/success? out)))
+    (t/is (= :params-validation (th/ex-code (:error out))))
+    (t/is (zero? (count-jobs)))))
+
 (t/deftest create-export-binfile-job-requires-the-export-type
   ;; the type is part of the contract of the job: a caller that does not
   ;; say how to handle the libraries gets an error, not a package it did

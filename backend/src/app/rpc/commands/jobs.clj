@@ -42,7 +42,7 @@
   the backend runner; the business params are what the `:export-binfile`
   job-def declares."
   [:map {:title "create-export-binfile-job" :closed true}
-   [:params export-binfile/schema:params]])
+   [:params export-binfile/schema:create-params]])
 
 (def ^:private schema:create-import-binfile-job
   "The `.penpot` package the caller uploaded, imported into a project by

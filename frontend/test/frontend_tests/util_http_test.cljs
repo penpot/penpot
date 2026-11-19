@@ -9,7 +9,8 @@
    [app.util.globals :as globals]
    [app.util.http :as http]
    [cljs.test :as t :include-macros true]
-   [frontend-tests.helpers.async :as async]))
+   [frontend-tests.helpers.async :as async]
+   [frontend-tests.helpers.http :as http-mock]))
 
 (def ^:private uri "https://example.com/assets/file.json")
 
@@ -79,3 +80,23 @@
   (t/testing "every request with default headers carries the browser origin"
     (t/is (= (.-origin ^js globals/location)
              (get (http/default-headers) "x-penpot-origin")))))
+
+(t/deftest ^:async fetch-respects-omit-default-headers
+  (let [requests (atom [])
+        original (http-mock/install-fetch-mock!
+                  (fn [_url options]
+                    (swap! requests conj options)
+                    (js/Promise.resolve (js/Response. "" #js {:status 200}))))]
+    (try
+      (await (async/->promise (http/fetch {:method :get :uri uri})))
+      (await (async/->promise (http/fetch {:method :get
+                                           :uri uri
+                                           :omit-default-headers true})))
+      (finally
+        (http-mock/restore-fetch! original)))
+    (let [default-headers (aget (first @requests) "headers")
+          omitted-headers (aget (second @requests) "headers")]
+      (t/is (= (.-origin ^js globals/location)
+               (aget default-headers "x-penpot-origin")))
+      (t/is (nil? (aget omitted-headers "x-penpot-origin")))
+      (t/is (nil? (aget omitted-headers "x-frontend-version"))))))
