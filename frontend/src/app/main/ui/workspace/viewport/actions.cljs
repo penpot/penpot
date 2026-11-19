@@ -472,6 +472,8 @@
 
              picking-color?   (= "pixel-overlay" (.-id target))
              comments-layer?  (dom/is-child? (dom/get-element "comments") target)
+             ;; the marks, tags and bars drawn over the canvas
+             overlays?        (some? (dom/get-parent-with-data target "canvas-overlays"))
 
              raw-pt     (dom/get-client-position event)
              pt         (uwvv/point->viewport raw-pt)
@@ -492,7 +494,7 @@
              (schedule-zoom! (mf/ref-val scroll-state) scale pt)
              (schedule-scroll! (mf/ref-val scroll-state) (mf/ref-val zoom-ref) event delta-x delta-y)))
 
-         (when (and comments-layer? (or ctrl? mod?))
+         (when (and (or comments-layer? overlays?) (or ctrl? mod?))
            (dom/prevent-default event)
            (dom/stop-propagation event)
            (schedule-zoom! (mf/ref-val scroll-state) scale pt)))))))

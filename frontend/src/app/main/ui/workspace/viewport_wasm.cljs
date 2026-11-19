@@ -721,7 +721,10 @@
                            :grid-shape editing-shape
                            :single-select single-select?}]])
 
-     [:div {:class (stl/css :viewport-overlays)}
+     ;; the wheel with ctrl or cmd held zooms the canvas over them too
+     ;; (`actions/on-mouse-wheel`)
+     [:div {:class (stl/css :viewport-overlays)
+            :data-canvas-overlays true}
       (when show-comments?
         [:> comments/comments-layer* {:vbox vbox
                                       :page-id page-id

@@ -459,7 +459,7 @@
            :result (tr "workspace.compare.canvas.result")
            :main   (tr "workspace.compare.canvas.main"))])
       (when side?
-        [:> text* {:as "span" :typography t/body-small :class (stl/css :note :is-quiet)}
+        [:> text* {:as "span" :typography t/body-small :class (stl/css :note)}
          (cond
            (not aligned?)
            (tr "workspace.compare.side.linked")

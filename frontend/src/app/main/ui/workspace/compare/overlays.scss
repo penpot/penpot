@@ -52,7 +52,7 @@
 
 // what the canvas says of itself, under the toolbar at the top center
 // of the canvas: what it shows when it is not the branch as it is, and
-// that both halves move together
+// how main stands beside the branch
 .notes {
   position: absolute;
   inset-block-start: px2rem(96);
@@ -70,10 +70,6 @@
   background-color: var(--color-background-quaternary);
   color: var(--color-foreground-primary);
   white-space: nowrap;
-
-  &.is-quiet {
-    color: var(--color-foreground-secondary);
-  }
 }
 
 // the bar that goes through the list keeps one width, whatever the entry

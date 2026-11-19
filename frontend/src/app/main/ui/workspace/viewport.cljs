@@ -378,7 +378,10 @@
                            :grid-shape editing-shape
                            :single-select single-select?}]])
 
-     [:div {:class (stl/css :viewport-overlays)}
+     ;; the wheel with ctrl or cmd held zooms the canvas over them too
+     ;; (`actions/on-mouse-wheel`)
+     [:div {:class (stl/css :viewport-overlays)
+            :data-canvas-overlays true}
       ;; The behaviour inside a foreign object is a bit different that in plain HTML so we wrap
       ;; inside a foreign object "dummy" so this awkward behaviour is take into account
       [:svg {:style {:top 0 :left 0 :position "fixed" :width "100%" :height "100%" :opacity (when-not (dbg/enabled? :html-text) 0)}}
