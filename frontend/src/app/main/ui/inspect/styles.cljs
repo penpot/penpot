@@ -16,6 +16,7 @@
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.style-dictionary :as sd]
    [app.main.refs :as refs]
+   [app.main.ui.inspect.annotation :refer [annotation*]]
    [app.main.ui.inspect.exports :as exports]
    [app.main.ui.inspect.styles.panels.blur :refer [blur-panel*]]
    [app.main.ui.inspect.styles.panels.fill :refer [fill-panel*]]
@@ -110,6 +111,8 @@
         first-component    (ctkl/get-component data (:component-id first-shape))
         shape-type         (get-shape-type shapes first-shape first-component)
         panels             (type->panel-group shape-type)
+        annotation-content (when (= (count shapes) 1)
+                             (ctkl/get-component-annotation first-shape libraries))
 
         tokens-lib         (mf/deref refs/tokens-lib)
         tokens-status      (mf/deref refs/tokens-status)
@@ -279,6 +282,9 @@
            ;; DEFAULT WIP
            [:> style-box* {:panel panel}
             [:div color-space]])])]
+     (when annotation-content
+       [:div {:class (stl/css :annotation-wrapper)}
+        [:> annotation* {:content annotation-content}]])
      [:div {:class (stl/css :exports-wrapper)}
       [:& exports/exports
        {:shapes shapes
