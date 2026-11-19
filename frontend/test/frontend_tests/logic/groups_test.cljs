@@ -664,6 +664,40 @@
                (t/is (= (:id board) (:parent-id main')))))
            :commits commits))))
 
+(t/deftest create-layout-switches-a-variant-container-layout
+  (t/async
+    done
+    (let [file    (-> (variant-file)
+                      (cths/update-shape :variant :layout :flex))
+          commits (atom [])]
+      (run file
+           [(dws/select-shapes (d/ordered-set (cthi/id :variant)))
+            (dwsl/create-layout :grid)]
+           done
+           (fn [state]
+             (let [board' (cths/get-shape (ths/get-file-from-state state) :variant)]
+               (t/is (pos? (count @commits)))
+               (t/is (ctl/grid-layout? board'))
+               (t/is (ctk/is-variant-container? board'))))
+           :commits commits))))
+
+(t/deftest create-layout-switches-a-variant-main-layout
+  (t/async
+    done
+    (let [file    (-> (variant-file)
+                      (cths/update-shape :root1 :layout :grid))
+          commits (atom [])]
+      (run file
+           [(dws/select-shapes (d/ordered-set (cthi/id :root1)))
+            (dwsl/create-layout :flex)]
+           done
+           (fn [state]
+             (let [main' (cths/get-shape (ths/get-file-from-state state) :root1)]
+               (t/is (pos? (count @commits)))
+               (t/is (ctl/flex-layout? main'))
+               (t/is (ctk/is-variant? main'))))
+           :commits commits))))
+
 (t/deftest create-layout-of-one-nested-child-commits
   (t/async
     done

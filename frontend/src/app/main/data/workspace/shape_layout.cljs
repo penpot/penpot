@@ -209,7 +209,9 @@
             new-shape-id (uuid/next)
             undo-id      (js/Symbol)]
 
-        (if (or has-variant? has-container? crosses-set?)
+        ;; Only a selection that gets wrapped in a new board is refused; a
+        ;; shape that already has a layout switches it in place.
+        (if (and (not has-layout?) (or has-variant? has-container? crosses-set?))
           (rx/empty)
           (rx/concat
            (rx/of (dwu/start-undo-transaction undo-id))
