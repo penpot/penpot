@@ -82,9 +82,8 @@
      (seq (.-childNodes parent-node)))))
 
 (defn- calc-text-node-positions
-  [shape-id]
-  (let [text-nodes (-> (dom/query (dm/fmt "#html-text-node-%" shape-id))
-                       (dom/query-all ".text-node"))]
+  [root-node]
+  (let [text-nodes (dom/query-all root-node ".text-node")]
     (->> (p/all (map resolve-font text-nodes))
          (p/fmap (fn [fonts]
                    (cond-> (into [] (mapcat process-text-node) text-nodes)
@@ -97,7 +96,10 @@
   (true? (::font-failed (meta position-data))))
 
 (defn calc-position-data
-  [shape-id]
+  "Measure the position data of the text rendered in `root-node`, the
+  `.text-node-html` element of a text shape. Several renderers can hold an
+  element for the same shape at once, so it is never looked up by id."
+  [root-node]
   (letfn [(get-prop [styles prop]
             (let [value (.getPropertyValue styles prop)]
               (when (and (some? value) (not= value ""))
@@ -120,8 +122,8 @@
                                           txt/default-text-fills)
                      :text            text})))]
 
-    (when (some? shape-id)
-      (->> (calc-text-node-positions shape-id)
+    (when (some? root-node)
+      (->> (calc-text-node-positions root-node)
            (p/fmap (fn [text-data]
                      (with-meta (mapv transform-data text-data)
                        (meta text-data))))))))

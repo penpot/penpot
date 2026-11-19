@@ -121,7 +121,7 @@
   "Measure the text and commit its position-data and auto-grow size as
   `text-heal` decides for `phase`. Resolves to the next heal phase, if any."
   [{:keys [id] :as shape} node phase]
-  (->> (tsp/calc-position-data id)
+  (->> (tsp/calc-position-data node)
        (p/fmap (fn [position-data]
                  (let [;; A page-open check never writes a size laid out
                        ;; with a fallback font
@@ -151,7 +151,7 @@
 
 (defn- update-text-modifier
   [{:keys [grow-type id] :as shape} node]
-  (->> (tsp/calc-position-data id)
+  (->> (tsp/calc-position-data node)
        (p/fmap (fn [position-data]
                  (let [props {:position-data position-data}]
                    (if (contains? #{:auto-height :auto-width} grow-type)
