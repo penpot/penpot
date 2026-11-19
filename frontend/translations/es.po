@@ -1379,6 +1379,10 @@ msgstr "Este equipo no pertenece a ninguna organización"
 msgid "dashboard.team-organization.remove"
 msgstr "Eliminar equipo de la organización"
 
+#: src/app/main/data/common.cljs:213
+msgid "dashboard.team-owner-changed-by-organization"
+msgstr "Ahora eres lector en %s. %s es su nuevo propietario."
+
 #: src/app/main/ui/dashboard/team.cljs:1744
 msgid "dashboard.team-projects"
 msgstr "Proyectos del equipo"
@@ -8664,7 +8668,7 @@ msgstr "No se encuentran extensiones"
 msgid "workspace.plugins.error.global-not-allowed"
 msgstr ""
 "Por ahora, las extensiones que funcionan fuera de un archivo solo se pueden "
-"instalar desde localhost."
+"instalar desde fuentes de confianza."
 
 #: src/app/main/ui/workspace/plugins.cljs:237
 msgid "workspace.plugins.error.manifest"
