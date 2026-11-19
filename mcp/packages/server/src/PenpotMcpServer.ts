@@ -5,7 +5,7 @@ import type { Express } from "express";
 import { z } from "zod";
 import { AsyncLocalStorage } from "async_hooks";
 import { ExecuteCodeTool } from "./tools/ExecuteCodeTool";
-import { PluginBridge } from "./PluginBridge";
+import { PluginBridge, readTaskQueueLimits } from "./PluginBridge";
 import { RedisBridge } from "./RedisBridge";
 import { ConfigurationLoader } from "./ConfigurationLoader";
 import { PenpotBackendClient } from "./PenpotBackendClient";
@@ -37,6 +37,8 @@ const SHUTDOWN_REPLY_GRACE_MS = 2_000;
  */
 export interface SessionContext {
     userToken?: string;
+    /** the signal of the tool call being handled, aborted when the call is cancelled. */
+    signal?: AbortSignal;
 }
 
 /**
@@ -215,7 +217,13 @@ export class PenpotMcpServer {
             this.redisBridge = new RedisBridge(redisUri, this.tenant);
         }
 
-        this.pluginBridge = new PluginBridge(this, this.webSocketPort, toolTimeoutSecs, this.redisBridge);
+        this.pluginBridge = new PluginBridge(
+            this,
+            this.webSocketPort,
+            toolTimeoutSecs,
+            this.redisBridge,
+            readTaskQueueLimits(process.env)
+        );
 
         if (shouldStartReplServer(PenpotMcpServer.isReplEnabled(process.env), this.isMultiUserMode())) {
             this.replServer = new ReplServer(this.pluginBridge, this.requestGuard, this.replPort, this.replHost);
@@ -335,7 +343,11 @@ export class PenpotMcpServer {
         );
 
         for (const tool of this.tools) {
-            server.registerTool(tool.name, tool.config, async (args) => tool.instance.execute(args));
+            server.registerTool(tool.name, tool.config, async (args, ctx) =>
+                this.sessionContext.run({ ...this.getSessionContext(), signal: ctx.mcpReq.signal }, () =>
+                    tool.instance.execute(args)
+                )
+            );
         }
 
         return server;

@@ -127,6 +127,48 @@ test("passes an explicit Penpot session ID from the tool call to plugin dispatch
     assert.match(JSON.stringify(body), /chosen-tab/);
 });
 
+test("aborts the tool call's signal when the client disconnects during plugin dispatch", async (t) => {
+    let reportStarted!: (signal: AbortSignal) => void;
+    const started = new Promise<AbortSignal>((resolve) => {
+        reportStarted = resolve;
+    });
+    t.mock.method(server.pluginBridge, "executePluginTask", async () => {
+        const signal = server.getSessionContext()?.signal;
+        assert.ok(signal);
+        reportStarted(signal);
+        await new Promise((resolve) => signal.addEventListener("abort", resolve, { once: true }));
+        return { data: "aborted" };
+    });
+    const client = new AbortController();
+    const response = fetch(`${baseUrl}/mcp?userToken=alice`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json, text/event-stream" },
+        body: JSON.stringify({
+            jsonrpc: "2.0",
+            id: 1,
+            method: "tools/call",
+            params: { name: "execute_code", arguments: { code: "return 1;" } },
+        }),
+        signal: client.signal,
+    });
+    const signal = await started;
+    assert.equal(signal.aborted, false);
+    client.abort();
+    await assert.rejects(response);
+    await new Promise<void>((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error("signal not aborted")), 2000);
+        const done = () => {
+            clearTimeout(timer);
+            resolve();
+        };
+        if (signal.aborted) {
+            done();
+        } else {
+            signal.addEventListener("abort", done, { once: true });
+        }
+    });
+});
+
 test("accepts tool calls with request bodies larger than 100 KiB", async (t) => {
     t.mock.method(server.pluginBridge, "executePluginTask", async () => ({ data: "ok" }));
     const code = `return "${"x".repeat(200_000)}".length;`;

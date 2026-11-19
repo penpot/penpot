@@ -156,7 +156,7 @@ test("a failed discovery subscription is cleaned up and can be retried", async (
 });
 
 let port = 18_700;
-function instance(t: TestContext) {
+function instance(t: TestContext, taskTimeoutSecs = 0.1) {
     const redis = new RedisBridge("redis://localhost:6379", "test");
     const wsPort = ++port;
     const bridge = new PluginBridge(
@@ -167,7 +167,7 @@ function instance(t: TestContext) {
             requestGuard: RequestGuard.allowingAny(),
         } as PenpotMcpServer,
         wsPort,
-        0.1,
+        taskTimeoutSecs,
         redis
     );
     const sockets: WebSocket[] = [];
@@ -278,4 +278,39 @@ test("a reconnect on another instance closes the previous instance's connection 
     await current.connect("tab", "success", "current");
     assert.equal((await closed)[0], 1008);
     assert.equal((await requester.bridge.executePluginTask(new PluginTask("test", {}))).data, "current");
+});
+
+test("forwarded tasks for one session run one at a time on the instance holding its connection", async (t) => {
+    const owner = instance(t, 5);
+    const requester = instance(t, 5);
+    const plugin = await owner.connect("tab", "silent");
+    const received: string[] = [];
+    let onReceived = () => {};
+    plugin.on("message", (raw) => {
+        const request = JSON.parse(raw.toString());
+        if (request.id) {
+            received.push(request.id);
+            onReceived();
+        }
+    });
+    const receivedCount = (count: number) =>
+        new Promise<void>((resolve) => {
+            onReceived = () => received.length >= count && resolve();
+            onReceived();
+        });
+    const answer = (id: string) => plugin.send(JSON.stringify({ id, success: true, data: id }));
+    const results = [
+        requester.bridge.executePluginTask(new PluginTask("test", {}), "tab"),
+        requester.bridge.executePluginTask(new PluginTask("test", {}), "tab"),
+    ];
+    await receivedCount(1);
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    assert.equal(received.length, 1);
+    answer(received[0]);
+    await receivedCount(2);
+    answer(received[1]);
+    assert.deepEqual(
+        (await Promise.all(results)).map((result) => result.data),
+        received
+    );
 });
