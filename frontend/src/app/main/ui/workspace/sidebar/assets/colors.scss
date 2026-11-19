@@ -50,8 +50,23 @@ $assets-button-width: deprecated.$s-28;
     }
   }
 
-  &:hover {
+  &:hover,
+  &:focus-within {
     background-color: var(--assets-item-background-color-hover);
+
+    .element-set-actions {
+      --actions-visibility: visible;
+    }
+  }
+}
+
+.element-set-actions {
+  display: flex;
+  visibility: var(--actions-visibility, hidden);
+
+  // Touch devices have no hover, so keep the options button visible there
+  @media (hover: none) {
+    --actions-visibility: visible;
   }
 }
 
