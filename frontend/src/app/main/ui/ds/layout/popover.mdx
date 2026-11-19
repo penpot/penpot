@@ -1,0 +1,43 @@
+{ /* This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+  Copyright (c) KALEIDOS SUBSIDIARY SL */ }
+import { Canvas, Meta } from "@storybook/addon-docs/blocks";
+import * as Popover from "./popover.stories";
+
+<Meta title="Layout/Popover" />
+
+# Popover
+
+A panel that floats over the page while it is open, for content a
+[Menu](?path=/docs/layout-menu--docs) cannot hold: rows with a status,
+sections, a group that folds. It closes on a click out of it or on
+**Escape**, and gives the focus back to where it was.
+
+## Example
+
+<Canvas of={Popover.Default} />
+
+## Usage
+
+```clj
+[:> popover* {:is-open open?
+              :on-close on-close
+              :container trigger-ref}
+ [:div {:class (stl/css :panel)} ...]]
+```
+
+- `is-open` shows the panel; `on-close` is called when it should close.
+- `container` (optional) is a ref to an element whose clicks do not close
+  it either, such as the bar that holds the trigger.
+- A click on an element with a `data-no-close` property does not close it.
+
+## Technical notes
+
+The popover only behaves: it renders its children in place, with no box
+of its own, and places and draws nothing. The caller positions and
+styles the panel, so moving a panel to it changes nothing on screen.
+
+It starts listening on the next tick, so the click that opened it does
+not close it. On macOS the second event of a ctrl+click is ignored.

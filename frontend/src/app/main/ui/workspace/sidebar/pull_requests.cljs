@@ -27,6 +27,7 @@
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.input :refer [input*]]
+   [app.main.ui.ds.controls.textarea :refer [textarea*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.foundations.typography :as t]
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
@@ -131,7 +132,9 @@
 
 (mf/defc banner-button*
   "A quiet action inside a banner on the canvas, with what it does as
-  `children`."
+  `children`. Not the DS button: its ghost variant is uppercase and
+  turns the accent color on hover, too loud for a bar over the canvas,
+  and the DS has no quieter one yet."
   [{:keys [class children] :rest props}]
   (let [props (mf/spread-props props {:class [class (stl/css :banner-button)]
                                       :type "button"})]
@@ -179,6 +182,7 @@
   [{:keys [branch]}]
   (let [profile     (mf/deref refs/profile)
         team        (mf/deref refs/team)
+        desc-id     (mf/use-id)
         members     (->> (get team :members)
                          (filter :is-active)
                          (remove #(= (:id %) (:id profile))))
@@ -239,13 +243,14 @@
                   :on-change on-title-change}]
 
       [:div {:class (stl/css :field)}
-       [:label {:class (stl/css :field-label)}
+       [:label {:class (stl/css :field-label) :for desc-id}
         (tr "workspace.pull-requests.create.description-label")]
-       [:textarea {:class (stl/css :textarea)
-                   :value description
-                   :placeholder (tr "workspace.pull-requests.create.description-placeholder")
-                   :on-change on-description-change
-                   :rows 3}]]
+       [:> textarea* {:id desc-id
+                      :class (stl/css :field-textarea)
+                      :value description
+                      :placeholder (tr "workspace.pull-requests.create.description-placeholder")
+                      :on-change on-description-change
+                      :rows 3}]]
 
       [:div {:class (stl/css :field)}
        [:label {:class (stl/css :field-label)}
@@ -258,6 +263,10 @@
             [:li {:key (dm/str (:id member))}
              [:button {:class (stl/css-case :reviewer-option true
                                             :is-selected (contains? selected (:id member)))
+                       ;; a box to tick: the row keeps the avatar the DS
+                       ;; checkbox has no room for
+                       :role "checkbox"
+                       :aria-checked (contains? selected (:id member))
                        :data-reviewer-id (dm/str (:id member))
                        :on-click on-toggle-reviewer}
               [:> avatar* {:profile member :variant "S"}]
@@ -285,7 +294,8 @@
   {::mf/register modal/components
    ::mf/register-as :pull-request-review}
   [{:keys [pr]}]
-  (let [verdict*  (mf/use-state "approved")
+  (let [comment-id (mf/use-id)
+        verdict*  (mf/use-state "approved")
         verdict   (deref verdict*)
         comment*  (mf/use-state "")
         comment   (deref comment*)
@@ -319,9 +329,14 @@
                          :subtitle (:title pr)}]
 
      [:> modal-content* {:class (stl/css :dialog-content)}
-      [:div {:class (stl/css :verdict-options)}
+      ;; one of two, each with a hint the DS radio buttons have no room for
+      [:div {:class (stl/css :verdict-options)
+             :role "radiogroup"
+             :aria-label (tr "workspace.pull-requests.review.title")}
        [:button {:class (stl/css-case :verdict-option true
                                       :is-selected (= verdict "approved"))
+                 :role "radio"
+                 :aria-checked (= verdict "approved")
                  :data-verdict "approved"
                  :on-click on-select-verdict}
         [:> i/icon* {:icon-id i/tick}]
@@ -333,6 +348,8 @@
 
        [:button {:class (stl/css-case :verdict-option true
                                       :is-selected (= verdict "changes-requested"))
+                 :role "radio"
+                 :aria-checked (= verdict "changes-requested")
                  :data-verdict "changes-requested"
                  :on-click on-select-verdict}
         [:> i/icon* {:icon-id i/triangle-alert}]
@@ -343,13 +360,14 @@
           (tr "workspace.pull-requests.review.request-changes-hint")]]]]
 
       [:div {:class (stl/css :field)}
-       [:label {:class (stl/css :field-label)}
+       [:label {:class (stl/css :field-label) :for comment-id}
         (tr "workspace.pull-requests.review.comment-label")]
-       [:textarea {:class (stl/css :textarea)
-                   :value comment
-                   :placeholder (tr "workspace.pull-requests.review.comment-placeholder")
-                   :on-change on-comment-change
-                   :rows 3}]]]
+       [:> textarea* {:id comment-id
+                      :class (stl/css :field-textarea)
+                      :value comment
+                      :placeholder (tr "workspace.pull-requests.review.comment-placeholder")
+                      :on-change on-comment-change
+                      :rows 3}]]]
 
      [:> modal-footer* {:class (stl/css :dialog-footer)}
       [:> button* {:class (stl/css :dialog-action)

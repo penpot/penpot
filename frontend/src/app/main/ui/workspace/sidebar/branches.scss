@@ -208,17 +208,9 @@
   color: var(--color-foreground-secondary);
 }
 
-.textarea {
-  inline-size: 100%;
+// the DS text area (`textarea*`) keeps the height these fields had
+.field-textarea {
   min-block-size: $sz-64;
-  padding: var(--sp-s);
-  border-radius: $br-8;
-  border: $b-1 solid var(--color-background-quaternary);
-  background-color: var(--color-background-tertiary);
-  color: var(--color-foreground-primary);
-  resize: vertical;
-
-  @include use-typography("body-medium");
 }
 
 .derive-from {
@@ -558,15 +550,9 @@
   background-color: var(--color-background-tertiary);
 }
 
+// the DS input (`input*`) takes the width of the row
 .branch-rename-input {
   inline-size: 100%;
-  padding: var(--sp-xxs) var(--sp-xs);
-  border-radius: $br-8;
-  border: $b-1 solid var(--color-accent-primary);
-  background-color: var(--color-background-tertiary);
-  color: var(--color-foreground-primary);
-
-  @include use-typography("body-medium");
 }
 
 .limits-section {

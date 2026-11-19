@@ -23,8 +23,8 @@
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.ds.product.empty-state :refer [empty-state*]]
    [app.main.ui.ds.product.filter-chip :refer [filter-chip*]]
+   [app.main.ui.ds.product.tag :refer [tag*]]
    [app.main.ui.workspace.compare.common :as cc]
-   [app.main.ui.workspace.read-only-badge :refer [read-only-badge*]]
    [app.main.ui.workspace.sidebar.branch-review.common :as brc]
    [app.main.ui.workspace.sidebar.branch-review.list :as brli]
    [app.util.dom :as dom]
@@ -77,7 +77,8 @@
                        :aria-label (tr "workspace.branches.compare.export")
                        :on-click on-export}])
    ;; the same badge the pages panel shows on a file that takes no edits
-   [:> read-only-badge* {}]])
+   [:> tag* {:variant "pill" :icon i/lock}
+    (tr "labels.view-only")]])
 
 (mf/defc filters*
   {::mf/private true}

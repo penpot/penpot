@@ -36,9 +36,7 @@ test("opening a file with pr-id enters the design review", async ({ page }) => {
   // file name for the title of the review
   const bar = reviewBar(page);
   await expect(bar).toBeVisible();
-  await expect(
-    bar.getByText("In review", { exact: true }),
-  ).toBeVisible();
+  await expect(bar.getByText("In review", { exact: true })).toBeVisible();
   await expect(
     bar.getByText("Checkout redesign", { exact: true }),
   ).toBeVisible();
@@ -80,9 +78,7 @@ test("comparing shows the proposed changes on the canvas", async ({ page }) => {
 
   // leaving the comparison goes back to the review
   await bar.getByRole("button", { name: "Exit compare" }).click();
-  await expect(
-    bar.getByText("In review", { exact: true }),
-  ).toBeVisible();
+  await expect(bar.getByText("In review", { exact: true })).toBeVisible();
 });
 
 test("accepting the pull request opens the merge dialog", async ({ page }) => {
@@ -151,7 +147,10 @@ test("an assigned reviewer can submit a verdict from the review bar", async ({
     dialog.getByRole("heading", { name: "Submit review" }),
   ).toBeVisible();
 
-  await dialog.getByRole("button", { name: "Request changes" }).click();
+  // the verdicts are a choice of one: radios, each with its hint
+  const requestChanges = dialog.getByRole("radio", { name: /Request changes/ });
+  await requestChanges.click();
+  await expect(requestChanges).toBeChecked();
   await dialog.getByRole("button", { name: "Submit review" }).click();
 
   await expect(page.getByText("Review submitted")).toBeVisible();

@@ -26,6 +26,7 @@
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.checkbox :refer [checkbox*]]
    [app.main.ui.ds.controls.input :refer [input*]]
+   [app.main.ui.ds.controls.textarea :refer [textarea*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.layout.menu :refer [menu* menu-item* menu-separator*]]
    [app.main.ui.ds.layout.modal :refer [modal* modal-header* modal-content* modal-footer*]]
@@ -63,6 +64,7 @@
   []
   (let [;; a branch only grows from main, so the open file is main
         library?     (boolean (:is-shared (mf/deref refs/file)))
+        desc-id      (mf/use-id)
         branch-name* (mf/use-state "")
         description*  (mf/use-state "")
         branch-name   (deref branch-name*)
@@ -99,12 +101,13 @@
                   :on-change on-name-change}]
 
       [:div {:class (stl/css :field)}
-       [:label {:class (stl/css :field-label)}
+       [:label {:class (stl/css :field-label) :for desc-id}
         (tr "workspace.branches.create.description-label")]
-       [:textarea {:class (stl/css :textarea)
-                   :value description
-                   :on-change on-description-change
-                   :rows 2}]]
+       [:> textarea* {:id desc-id
+                      :class (stl/css :field-textarea)
+                      :value description
+                      :on-change on-description-change
+                      :rows 2}]]
 
       [:div {:class (stl/css :field)}
        [:label {:class (stl/css :field-label)}
@@ -347,12 +350,12 @@
        [:label {:class (stl/css :field-label)
                 :for "merge-branch-comment"}
         (tr "workspace.branches.merge.comment-label")]
-       [:textarea {:id "merge-branch-comment"
-                   :class (stl/css :textarea)
-                   :value comment
-                   :max-length 4000
-                   :on-change on-comment-change
-                   :rows 3}]]
+       [:> textarea* {:id "merge-branch-comment"
+                      :class (stl/css :field-textarea)
+                      :value comment
+                      :max-length 4000
+                      :on-change on-comment-change
+                      :rows 3}]]
 
       (when (seq open-tasks)
         [:div {:class (stl/css :merge-tasks)}
@@ -460,6 +463,7 @@
   (let [profile   (mf/deref refs/profile)
         profiles  (mf/deref refs/profiles)
         file-id   (mf/use-ctx ctx/current-file-id)
+        desc-id   (mf/use-id)
         author    (or (get profiles (:created-by branch))
                       (when (= (:created-by branch) (:id profile)) (avatar-profile profile)))
         author?   (= (:created-by branch) (:id profile))
@@ -512,17 +516,19 @@
       ;; description: shown read-only, editable inline by the author
       [:div {:class (stl/css :info-section)}
        [:div {:class (stl/css :info-section-head)}
-        [:span {:class (stl/css :field-label)} (tr "workspace.branches.info.description")]
+        [:label {:class (stl/css :field-label) :for desc-id}
+         (tr "workspace.branches.info.description")]
         (when (and author? (not (deref editing?)))
           [:> button* {:variant "ghost" :on-click on-edit} (tr "labels.edit")])]
        (if (deref editing?)
          [:div {:class (stl/css :info-desc-edit)}
-          [:textarea {:class (stl/css :textarea :info-desc-input)
-                      :value desc
-                      :on-change on-desc-change
-                      :rows 3
-                      :auto-focus true
-                      :placeholder (tr "workspace.branches.info.description-placeholder")}]
+          [:> textarea* {:id desc-id
+                         :class (stl/css :field-textarea :info-desc-input)
+                         :value desc
+                         :on-change on-desc-change
+                         :rows 3
+                         :auto-focus true
+                         :placeholder (tr "workspace.branches.info.description-placeholder")}]
           [:div {:class (stl/css :info-desc-actions)}
            [:> button* {:variant "secondary" :on-click on-cancel} (tr "labels.cancel")]
            [:> button* {:variant "primary" :on-click on-save} (tr "labels.save")]]]
@@ -783,12 +789,13 @@
 
      [:div {:class (stl/css :branch-entry-body)}
       (if (deref editing?)
-        [:input {:class (stl/css :branch-rename-input)
-                 :default-value (:name entry)
-                 :auto-focus true
-                 :on-click (fn [e] (dom/stop-propagation e))
-                 :on-blur on-rename-commit
-                 :on-key-down on-rename-key-down}]
+        [:> input* {:class (stl/css :branch-rename-input)
+                    :aria-label (tr "workspace.branches.rename.title")
+                    :default-value (:name entry)
+                    :auto-focus true
+                    :on-click dom/stop-propagation
+                    :on-blur on-rename-commit
+                    :on-key-down on-rename-key-down}]
         [:span {:class (stl/css :branch-entry-name)} (:name entry)])
       [:div {:class (stl/css :branch-entry-meta)}
        ;; Main is the default branch: always show it the same way (no avatar,
