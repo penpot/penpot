@@ -3580,31 +3580,127 @@
     (t/is (= change-id
              (:file-change-id (audit/clean-props props))))))
 
-(t/deftest get-team-shared-files-skips-files-that-fail-to-load
-  (let [profile  (th/create-profile* 1)
-        file1    (th/create-file* 1 {:profile-id (:id profile)
-                                     :project-id (:default-project-id profile)
-                                     :is-shared true})
-        file2    (th/create-file* 2 {:profile-id (:id profile)
-                                     :project-id (:default-project-id profile)
-                                     :is-shared true})
-        get-file (deref #'files/get-file-with-summary)]
+(defn- break-file-data!
+  "Replace the stored data of a file with bytes that do not decode, as in
+  a file whose blob got corrupted."
+  [file-id]
+  (th/db-update! :file-data
+                 {:data (.getBytes "not a valid blob" "UTF-8")}
+                 {:file-id file-id :type "main"}))
+
+(def ^:private empty-summary-counts
+  {:components 0 :variants 0 :colors 0 :typographies 0
+   :tokens-count 0 :token-sets-count 0 :token-themes-count 0})
+
+(defn- summary-counts
+  [{:keys [components variants colors typographies] :as summary}]
+  (-> (select-keys summary [:tokens-count :token-sets-count :token-themes-count])
+      (assoc :components (:count components)
+             :variants (:count variants)
+             :colors (:count colors)
+             :typographies (:count typographies))))
+
+(t/deftest get-team-shared-files-lists-files-that-fail-to-load-as-empty
+  (let [profile (th/create-profile* 1)
+        file1   (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared true})
+        file2   (th/create-file* 2 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared true})
+        _       (break-file-data! (:id file1))
+        out     (th/command! {::th/type :get-team-shared-files
+                              ::rpc/profile-id (:id profile)
+                              :team-id (:default-team-id profile)})
+        by-id   (into {} (map (juxt :id identity)) (:result out))]
+    (t/is (th/success? out))
+    (t/is (= #{(:id file1) (:id file2)} (set (keys by-id))))
+    (t/is (= (:name file1) (get-in by-id [(:id file1) :name])))
+    (t/is (= empty-summary-counts
+             (summary-counts (get-in by-id [(:id file1) :library-summary]))))))
+
+(t/deftest get-file-summary-of-a-file-that-fails-to-load-is-empty
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared true})
+        _       (break-file-data! (:id file))
+        out     (th/command! {::th/type :get-file-summary
+                              ::rpc/profile-id (:id profile)
+                              :id (:id file)})]
+    (t/is (th/success? out))
+    (t/is (= (:name file) (get-in out [:result :name])))
+    (t/is (= empty-summary-counts (summary-counts (:result out))))))
+
+(t/deftest get-file-summary-of-a-file-that-fails-to-load-keeps-its-error-when-not-shared
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+        _       (break-file-data! (:id file))
+        out     (th/command! {::th/type :get-file-summary
+                              ::rpc/profile-id (:id profile)
+                              :id (:id file)})
+        error   (:error out)]
+    (t/is (some? error))
+    (t/is (not= :file-not-loadable (th/ex-code error)))))
+
+(t/deftest get-file-of-a-file-that-fails-to-load-keeps-its-error-when-not-shared
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+        _       (break-file-data! (:id file))
+        out     (th/command! {::th/type :get-file
+                              ::rpc/profile-id (:id profile)
+                              :id (:id file)})
+        error   (:error out)]
+    (t/is (some? error))
+    (t/is (not= :file-not-loadable (th/ex-code error)))))
+
+(t/deftest get-file-of-a-file-that-fails-to-load-raises-file-not-loadable
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared true})
+        _       (break-file-data! (:id file))
+        out     (th/command! {::th/type :get-file
+                              ::rpc/profile-id (:id profile)
+                              :id (:id file)})
+        error   (:error out)]
+    (t/is (th/ex-info? error))
+    (t/is (= :internal (th/ex-type error)))
+    (t/is (= :file-not-loadable (th/ex-code error)))
+    (t/is (= (:id file) (:file-id (ex-data error))))))
+
+(t/deftest get-team-shared-files-lists-files-that-fail-with-an-error-as-empty
+  (let [profile   (th/create-profile* 1)
+        file1     (th/create-file* 1 {:profile-id (:id profile)
+                                      :project-id (:default-project-id profile)
+                                      :is-shared true})
+        file2     (th/create-file* 2 {:profile-id (:id profile)
+                                      :project-id (:default-project-id profile)
+                                      :is-shared true})
+        summarize (deref #'files/calculate-library-summary)]
 
     ;; Old file data can fail with a JVM Error (an assert or a deep
     ;; recursion), not only with an exception.
     (doseq [cause [(ex-info "broken file" {:type :assertion})
                    (AssertionError. "point instance expected")
                    (StackOverflowError.)]]
-      (let [broken  (fn [cfg id]
-                      (if (= id (:id file1))
-                        (throw cause)
-                        (get-file cfg id)))
-            out     (with-redefs-fn {#'files/get-file-with-summary broken}
-                      #(th/command! {::th/type :get-team-shared-files
-                                     ::rpc/profile-id (:id profile)
-                                     :team-id (:default-team-id profile)}))]
-        (t/is (th/success? out) (str "skips file failing with " (class cause)))
-        (t/is (= #{(:id file2)} (into #{} (map :id) (:result out))))))))
+      (let [broken (fn [file]
+                     (if (= (:id file) (:id file1))
+                       (throw cause)
+                       (summarize file)))
+            out    (with-redefs-fn {#'files/calculate-library-summary broken}
+                     #(th/command! {::th/type :get-team-shared-files
+                                    ::rpc/profile-id (:id profile)
+                                    :team-id (:default-team-id profile)}))
+            by-id  (into {} (map (juxt :id identity)) (:result out))]
+        (t/is (th/success? out) (str "lists file failing with " (class cause)))
+        (t/is (= #{(:id file1) (:id file2)} (set (keys by-id))))
+        (t/is (= empty-summary-counts
+                 (summary-counts (get-in by-id [(:id file1) :library-summary]))))))))
 
 (t/deftest get-team-shared-files-repairs-invalid-children-ids
   ;; A stored shared file that lists nil and a dangling id in :shapes and

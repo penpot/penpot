@@ -162,6 +162,33 @@
         perms (perms/get-file-read-permissions cfg profile-id id)]
     (assoc mfile :permissions perms)))
 
+(defn- data-load-error?
+  "True when `cause` comes from reading or migrating the data of a file
+  (a blob that does not decode, a migration that fails on old data).
+  Old data can also fail with a JVM Error (an assert or a deep
+  recursion), so any Throwable counts. Database errors, a missing file
+  and an interrupt keep their own handling: a SQL error aborts the
+  transaction, so nothing else can be read after it."
+  [cause]
+  (and (not (instance? java.sql.SQLException cause))
+       (not (instance? InterruptedException cause))
+       (not= :not-found (-> cause ex-data :type))))
+
+(defn- shared-file?
+  [cfg id]
+  (:is-shared (bfc/get-file cfg id :load-data? false)))
+
+(defn- raise-file-not-loadable
+  "Raise a typed error for a shared library whose data can not be loaded,
+  so the clients that load it as a library can tell it apart. Any other
+  file keeps the original error."
+  [id cause]
+  (ex/raise :type :internal
+            :code :file-not-loadable
+            :hint "unable to load file data"
+            :file-id id
+            :cause cause))
+
 (defn get-file-etag
   [{:keys [::rpc/profile-id]} {:keys [modified-at revn vern deleted-at permissions]}]
   (str profile-id "/" revn "/" vern "/" (hash fmg/available-migrations) "/"
@@ -196,8 +223,13 @@
                                :project-id project-id
                                :file-id id)
 
-          file (-> (bfc/get-file cfg id
-                                 :project-id project-id)
+          file (-> (try
+                     (bfc/get-file cfg id :project-id project-id)
+                     (catch Throwable cause
+                       (if (and (data-load-error? cause)
+                                (shared-file? cfg id))
+                         (raise-file-not-loadable id cause)
+                         (throw cause))))
                    (assoc :permissions perms)
                    (check-version!))]
 
@@ -562,8 +594,21 @@
   [id]
   (str "penpot.library-summary." (cf/get :tenant) "." id))
 
+(def ^:private empty-library-summary
+  {:components {:count 0 :sample []}
+   :variants {:count 0}
+   :colors {:count 0 :sample []}
+   :typographies {:count 0 :sample []}
+   :tokens-count 0
+   :token-sets-count 0
+   :token-themes-count 0})
+
 (defn- get-file-with-summary
-  "Get a file without data with a summary of its local library content"
+  "Get a file without data with a summary of its local library content.
+
+  A shared library whose data can not be loaded still answers, with an
+  empty summary, so the lists that show it do not break. That summary is
+  not cached: it is not the real content of the file."
   [cfg id]
   (let [get-from-cache
         (fn [{:keys [::rds/conn]} cache-key]
@@ -589,6 +634,32 @@
                 (dissoc :data :migrations)
                 (bfc/file->response))))
 
+        ;; Only a shared library gets the empty summary, so the library
+        ;; lists keep showing it; any other file keeps the original error.
+        empty-summary
+        (fn [cause]
+          (let [file (bfc/get-file cfg id :load-data? false)]
+            (if (:is-shared file)
+              (do
+                (l/error :hint "unable to load library data, answering an empty summary"
+                         :file-id (str id)
+                         :cause cause)
+                (-> file
+                    (assoc :library-summary empty-library-summary)
+                    (dissoc :data :migrations)
+                    (bfc/file->response)
+                    (vary-meta assoc ::not-loadable true)))
+              (throw cause))))
+
+        calculate
+        (fn []
+          (try
+            (calculate-from-db)
+            (catch Throwable cause
+              (if (data-load-error? cause)
+                (empty-summary cause)
+                (throw cause)))))
+
         persist-to-cache
         (fn [{:keys [::rds/conn]} data cache-key]
           (rds/set conn cache-key (t/encode-str data)
@@ -597,10 +668,11 @@
     (if (contains? cf/flags :redis-cache)
       (let [cache-key (file-summary-cache-key id)]
         (or (rds/run! cfg get-from-cache cache-key)
-            (let [file (calculate-from-db)]
-              (rds/run! cfg persist-to-cache (:library-summary file) cache-key)
+            (let [file (calculate)]
+              (when-not (::not-loadable (meta file))
+                (rds/run! cfg persist-to-cache (:library-summary file) cache-key))
               file)))
-      (calculate-from-db))))
+      (calculate))))
 
 (def ^:private sql:team-shared-files
   "WITH file_library_agg AS (
@@ -629,24 +701,13 @@
 
   (let [process-row
         (fn [{:keys [id library-file-ids]}]
-          ;; One shared file that fails to load (for example, a migration
-          ;; error on old data) must not break the whole list; skip it
-          ;; and report it with its id. Old data can also fail with a JVM
-          ;; Error (an assert or a deep recursion), so catch Throwable.
-          (try
-            (let [file (get-file-with-summary cfg id)]
-              (assoc file :library-file-ids (db/decode-pgarray library-file-ids #{})))
-            (catch Throwable cause
-              (when (instance? InterruptedException cause)
-                (.interrupt (Thread/currentThread)))
-              (l/error :hint "unable to load shared file"
-                       :file-id (str id)
-                       :team-id (str team-id)
-                       :cause cause)
-              nil)))
+          ;; A shared file whose data fails to load comes with an empty
+          ;; summary (see `get-file-with-summary`), so it stays listed.
+          (let [file (get-file-with-summary cfg id)]
+            (assoc file :library-file-ids (db/decode-pgarray library-file-ids #{}))))
 
         xform
-        (keep process-row)]
+        (map process-row)]
 
     (->> (db/plan conn [sql:team-shared-files team-id] {:fetch-size 1})
          (transduce xform conj #{}))))
