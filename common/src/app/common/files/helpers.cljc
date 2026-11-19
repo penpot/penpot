@@ -160,7 +160,7 @@
   ([objects id]
    (get-children-ids objects id {}))
   ([objects id {:keys [ignore-children-fn]
-                ;;ignore-children-fn should receive a shape and return a boolean
+                ;;ignore-children-fn should receive a shape id and return a boolean
                 :or {ignore-children-fn (constantly false)}}]
    (letfn [(collect [result id processed]
              (if (contains? processed id)

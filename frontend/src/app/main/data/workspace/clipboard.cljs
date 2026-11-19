@@ -95,7 +95,7 @@
                       level-delta)]
     (if (pos? level-delta)
       (reduce #(advance-subtree file libraries page head-id level-delta %1
-                                (get (:objects page) %2))
+                                (get %1 %2))
               (advance-shape file libraries page level-delta head-id objects shape)
               (:shapes shape))
       objects)))

@@ -245,8 +245,8 @@
                         allow-altering-copies
                         ;; We will delete the shapes and its descendants.
                         ;; ignore-children-fn is used to ignore some descendants
-                        ;; on the deletion process. It should receive a shape and
-                        ;; return a boolean
+                        ;; on the deletion process. It should receive a shape id
+                        ;; and return a boolean
                         ignore-children-fn
                         ignore-mask
                         ignore-flows-for]
