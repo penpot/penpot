@@ -1215,6 +1215,17 @@
                                     :value "16px"
                                     :description ""}))))))
 
+(t/deftest parse-theme-leaves-out-its-disabled-sets
+  (let [json {"light" {"color" {"$type" "color" "$value" "#ffffff"}}
+              "dark"  {"color" {"$type" "color" "$value" "#000000"}}
+              "$themes" [{"name" "Light"
+                          "group" ""
+                          "selectedTokenSets" {"light" "enabled"
+                                               "dark"  "disabled"}}]
+              "$metadata" {"tokenSetOrder" ["light" "dark"]}}
+        lib  (ctob/parse-decoded-json json "imported")]
+    (t/is (= #{"light"} (:sets (ctob/get-theme-by-name lib "" "Light"))))))
+
 #?(:clj
    (t/deftest parse-multi-set-legacy-json
      (let [json (-> (slurp "test/common_tests/types/data/tokens-multi-set-legacy-example.json")

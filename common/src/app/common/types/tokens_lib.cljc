@@ -1660,7 +1660,7 @@
                      :is-source is-source
                      :external-id id
                      :sets (into #{}
-                                 (comp (remove (comp #{:disabled} val))
+                                 (comp (remove (comp #{:disabled "disabled"} val))
                                        (map key)
                                        xf-normalize-set-name
                                        (filter #(contains? sets %)))
