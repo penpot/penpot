@@ -1712,31 +1712,46 @@
      (when (seq stale-ids)
        (schedule-stale-selrect-sync! stale-ids)))))
 
+(defn- shape-ids-for-failed-fonts
+  "Ids of the texts that use a face that failed to load. WASM lays them out
+   with a fallback font, so their measured size must not be saved: it would
+   be wrong and the heal records no undo step."
+  [{:keys [font-index]}]
+  (into #{}
+        (comp (filter f/font-failed?) (mapcat font-index))
+        (keys font-index)))
+
 (defn- sync-loaded-text-selrects
   "Check the auto-grow texts just loaded into WASM, so a text whose stored
    size came from elsewhere (e.g. a component sync while its page was closed)
    is resized to its layout. Texts still waiting for a font are left to
    `relayout-after-fonts!`, which checks them once the font arrives, with
-   its own 0.1px tolerance. This check runs on every page load, so it uses
+   its own 0.1px tolerance. Texts using a face that failed to load are
+   skipped: their layout comes from a fallback font and would save a wrong
+   size with no undo step. This check runs on every page load, so it uses
    1px: the classic renderer stores whole-pixel sizes and WASM fractional
    ones, and a finer tolerance would rewrite the same texts each time a page
    opens."
   [shapes text-font-state]
-  (let [pending-ids (or (shape-ids-for-pending-fonts text-font-state) #{})]
-    (sync-stale-text-selrects! (into [] (remove (comp pending-ids :id)) shapes) 1)))
+  (let [skip-ids (into (or (shape-ids-for-pending-fonts text-font-state) #{})
+                       (shape-ids-for-failed-fonts text-font-state))]
+    (sync-stale-text-selrects! (into [] (remove (comp skip-ids :id)) shapes) 1)))
 
 (defn- relayout-after-fonts!
   "Relayout text shapes once their pending fonts have resolved. Font fetches
    are deduped per URL, so only shapes that use a not-yet-ready face at upload
    time need a forced relayout; then re-sync selrects that drifted for those
-   shapes only."
+   shapes only, leaving out the texts whose face failed to load."
   [shapes text-font-state]
   (let [text-ids (into [] (comp (filter cfh/text-shape?) (map :id)) shapes)
         affected-ids (or (shape-ids-for-pending-fonts text-font-state) #{})
         shapes-by-id (d/index-by :id shapes)]
     (when (seq text-ids)
       (if (seq affected-ids)
-        (let [affected-shapes (into [] (keep shapes-by-id) affected-ids)]
+        (let [failed-ids      (shape-ids-for-failed-fonts text-font-state)
+              affected-shapes (into []
+                                    (comp (remove failed-ids) (keep shapes-by-id))
+                                    affected-ids)]
           (force-update-text-layouts affected-ids)
           (sync-stale-text-selrects! affected-shapes))
         (update-text-layouts text-ids)))))
