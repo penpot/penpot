@@ -602,7 +602,7 @@
     (when (and prototype? is-frame?)
       (if-let [flow (ctp/get-frame-flow flows (-> shapes first :id))]
         [:> menu-entry* {:title (tr "workspace.shape.menu.delete-flow-start")
-                         :on-click (do-remove-flow flow)}]
+                         :on-click #(do-remove-flow flow)}]
         [:> menu-entry* {:title (tr "workspace.shape.menu.flow-start")
                          :on-click do-add-flow}]))))
 
