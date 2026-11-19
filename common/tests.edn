@@ -1,6 +1,8 @@
 #kaocha/v1
 {:tests [{:id :unit
-          :test-paths ["test"]}]
+          :test-paths ["test"]
+          ;; The random component programs run on their own: tests-generative.edn
+          :skip-meta [:generative]}]
  :kaocha/reporter [kaocha.report/dots]
 
  ;; Only read when the cloverage plugin is on (`:coverage` alias).

@@ -340,6 +340,7 @@
 
      (def cli-options
        [["-f" "--focus FOCUS" "Run one test namespace or one test var, e.g. common-tests.logic.comp-sync-test/test-sync-when-changing-attribute"]
+        ["-g" "--generative" "Run only the generative tests (random component programs), which the default run leaves out"]
         ["-l" "--log-level LEVEL" "Set app logger level: trace|debug|info|warn|error"
          :parse-fn keyword
          :validate [log-levels "must be one of trace, debug, info, warn, error"]]
@@ -361,6 +362,8 @@
             "Focus examples:\n"
             "  pnpm run test:js -- --focus common-tests.logic.comp-sync-test\n"
             "  pnpm run test:js -- --focus common-tests.logic.comp-sync-test/test-sync-when-changing-attribute\n\n"
+            "Generative tests (left out of the default run):\n"
+            "  pnpm run test:generative:js\n\n"
             "Log level example (quiets app logging during the run):\n"
             "  pnpm run test:js -- --focus common-tests.logic.comp-sync-test --log-level warn"))
 
@@ -456,9 +459,25 @@
        [focus]
        (run-test-vars! [(selected-tests (parse-focus focus))]))
 
+     (defn- select-vars
+       "Keep in each of `tests` only the vars `pred` accepts, dropping the
+       namespaces left without any."
+       [pred tests]
+       (->> tests
+            (map #(update % :vars (partial filterv pred)))
+            (filter (comp seq :vars))))
+
+     (defn- generative?
+       [test-var]
+       (true? (:generative (meta test-var))))
+
      (defn- run-all-tests!
-       []
-       (run-test-vars! (map #(selected-tests {:ns %}) test-namespaces)))))
+       "Run every test but the generative ones, or only those with
+       `generative-only?`."
+       [generative-only?]
+       (run-test-vars!
+        (select-vars (if generative-only? generative? (complement generative?))
+                     (map #(selected-tests {:ns %}) test-namespaces))))))
 
 (defn -main
   [& _args]
@@ -479,6 +498,6 @@
              (l/setup! {:app level}))
            (if (:focus options)
              (run-focused-test! (:focus options))
-             (run-all-tests!)))))
+             (run-all-tests! (:generative options))))))
      :clj
      (apply t/run-tests test-namespaces)))

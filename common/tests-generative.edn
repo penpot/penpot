@@ -1,0 +1,5 @@
+#kaocha/v1
+{:tests [{:id :generative
+          :test-paths ["test"]
+          :focus-meta [:generative]}]
+ :kaocha/reporter [kaocha.report/dots]}

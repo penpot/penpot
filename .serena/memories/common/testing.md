@@ -22,6 +22,15 @@ From `common/`:
 - Build JS test target only (no run): `pnpm run build:test`
 - After `build:test` has been run, run the compiled runner directly: `node target/tests/test.js [--focus ...] [--log-level ...]`.
 
+The full runs above (and CI) leave out the generative tests: the `random-*`
+properties of `composable-gen-test`, tagged `^:generative`, which run random
+component programs and take most of the time. Run them on their own:
+- JVM: `pnpm run test:generative` (`clojure -M:dev:test --config-file tests-generative.edn`);
+  add `--focus common-tests.logic.composable-gen-test/random-grid-compositions` for one.
+  A `--focus` on one of them without `--config-file tests-generative.edn` skips it.
+- JS: `pnpm run test:generative:js` (`node target/tests/test.js --generative`);
+  a JS `--focus` on one of them runs it.
+
 New common JS test namespaces must be required/listed in `common_tests/runner.cljc`;
 new vars in existing namespaces need no runner change. Multiple JVM `--focus` flags
 compose as a union.
@@ -112,8 +121,10 @@ The regression rejects a 1e-5 height change and a 5e-15 opacity change.
 ## Generated component programs
 
 `composable/gen` builds seeded EDN programs and resolves targets from current
-shape-tree order. Run `common-tests.logic.composable-gen-test`; set
-`PENPOT_GEN_NUM` and `PENPOT_GEN_SEED` to replay a count and seed. Before merge,
+shape-tree order. Run the random properties with `pnpm run test:generative`
+(they are not part of the default run or CI); set `PENPOT_GEN_NUM` and
+`PENPOT_GEN_SEED` to replay a count and seed. Their coverage checks need the
+default number of programs; with very few they fail on insufficient coverage. Before merge,
 Phase 4 requires 5000 scenarios per property. `cg/run` accepts the printed
 program and an optional expected trace; changed targets or skips fail replay.
 Use separate fresh JVMs for concurrent checks: `world` resets the global test

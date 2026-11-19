@@ -1606,7 +1606,7 @@
   #?(:clj (apply cg/coverage-errors args)
      :cljs (do args [])))
 
-(t/deftest random-compositions
+(t/deftest ^:generative random-compositions
   (let [coverage (atom {})
         failure (atom nil)]
     (smt/check!
@@ -1618,7 +1618,7 @@
     (t/is (empty? (coverage-errors @coverage [:edit :reset :update-main :detach :sync :undo :redo]))
           (pr-str (coverage-errors @coverage [:edit :reset :update-main :detach :sync :undo :redo])))))
 
-(t/deftest random-structure-compositions
+(t/deftest ^:generative random-structure-compositions
   (let [coverage (atom {})
         failure (atom nil)]
     (smt/check!
@@ -1668,7 +1668,7 @@
       (t/is (some? index))
       (t/is (= (not differ?) (boolean (some #{:fill-group} groups)))))))
 
-(t/deftest random-swap-compositions
+(t/deftest ^:generative random-swap-compositions
   (let [coverage (atom {})
         failure (atom nil)]
     (smt/check!
@@ -2349,7 +2349,7 @@
                        :ops [[:make-variant 1] [:switch 11] [:make-variant 2] [:switch 10] [:swap 1 0 0 0]
                              [:update-main 0 0 0 0]]}))))
 
-(t/deftest random-variant-compositions
+(t/deftest ^:generative random-variant-compositions
   (let [coverage (atom {})
         failure (atom nil)]
     (smt/check!
@@ -2761,7 +2761,7 @@
                                     :layout-copies false :layout-children false}]
                        :ops [[:delete] [:swap] [:add-child 1] [:structure] [:structure 4 0 1] [:structure 2 5 3]]}))))
 
-(t/deftest random-shape-structure-compositions
+(t/deftest ^:generative random-shape-structure-compositions
   (let [coverage (atom {})
         failure (atom nil)]
     (smt/check!
@@ -2773,7 +2773,7 @@
     (t/is (empty? (coverage-errors @coverage cg/shape-structure-coverage-kinds))
           (pr-str (coverage-errors @coverage cg/shape-structure-coverage-kinds)))))
 
-(t/deftest random-grid-compositions
+(t/deftest ^:generative random-grid-compositions
   (let [coverage (atom {})
         failure (atom nil)]
     (smt/check!
@@ -2785,7 +2785,7 @@
     (t/is (empty? (coverage-errors @coverage cg/grid-coverage-kinds))
           (pr-str (coverage-errors @coverage cg/grid-coverage-kinds)))))
 
-(t/deftest random-token-compositions
+(t/deftest ^:generative random-token-compositions
   (let [coverage (atom {})
         failure (atom nil)]
     (smt/check!
@@ -2797,7 +2797,7 @@
     (t/is (empty? (coverage-errors @coverage cg/token-coverage-kinds))
           (pr-str (coverage-errors @coverage cg/token-coverage-kinds)))))
 
-(t/deftest random-scale-compositions
+(t/deftest ^:generative random-scale-compositions
   ;; scale programs run several times longer than the others; the gates draw more
   (let [coverage (atom {})
         failure (atom nil)]
@@ -2860,7 +2860,7 @@
                              [:library-text-style 19 0 1] [:library-delete 0 0 0 0]
                              [:library-variant-property 0 0 0 0] [:library-sync] [:switch 19]]}))))
 
-(t/deftest random-library-compositions
+(t/deftest ^:generative random-library-compositions
   (let [coverage (atom {})
         failure (atom nil)]
     (smt/check!
@@ -2872,7 +2872,7 @@
     (t/is (empty? (coverage-errors @coverage cg/library-kinds))
           (pr-str (coverage-errors @coverage cg/library-kinds)))))
 
-(t/deftest random-stale-library-compositions
+(t/deftest ^:generative random-stale-library-compositions
   (let [coverage (atom {})
         failure (atom nil)]
     (smt/check!
@@ -2884,7 +2884,7 @@
     (t/is (empty? (coverage-errors @coverage cg/stale-library-coverage-kinds #{:sync}))
           (pr-str (coverage-errors @coverage cg/stale-library-coverage-kinds #{:sync})))))
 
-(t/deftest random-library-dependency-compositions
+(t/deftest ^:generative random-library-dependency-compositions
   (let [coverage (atom {})
         failure (atom nil)]
     (smt/check!
