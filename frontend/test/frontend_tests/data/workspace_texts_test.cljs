@@ -19,6 +19,7 @@
    [app.main.data.workspace.texts :as dwt]
    [app.main.data.workspace.texts-events :as dwte]
    [app.main.ui.workspace.shapes.text.viewport-texts-html :as vth]
+   [app.util.text-editor :as ted]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.state :as ths]
@@ -356,6 +357,26 @@
                  "finalize must commit the edited content")
            (t/is (not (contains? (:touched copy') :geometry-group))
                  "auto-grow finalize must not mark :geometry-group on a component copy")))))))
+
+;; Scenario: a new text is left without typing anything, so it is deleted.
+;; Proves: its editor state goes with it, so the workspace is no longer seen as
+;; editing a text (tokens can be applied again).
+(t/deftest leaving-an-empty-text-clears-its-editor-state
+  (let [file   (-> (cthf/sample-file :file1)
+                   (cths/add-sample-shape :text1 :type :text :x 0 :y 0))
+        id     (:id (cths/get-shape file :text1))
+        state  (-> @(ths/setup-store file)
+                   (assoc-in [:workspace-editor-state id] (ted/create-editor-state)))
+        events (atom [])]
+    (rx/subs! #(swap! events conj %)
+              (ptk/watch (dwt/finalize-editor-state id true) state (rx/subject)))
+    (let [state' (reduce (fn [state event]
+                           (if (satisfies? ptk/UpdateEvent event)
+                             (ptk/update event state)
+                             state))
+                         state
+                         @events)]
+      (t/is (empty? (:workspace-editor-state state'))))))
 
 (t/deftest add-typography-normalises-float-line-height
   (t/async

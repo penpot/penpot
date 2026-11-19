@@ -369,7 +369,8 @@
                       :ignore-touched derived-attrs}))))))
 
             (when (some? id)
-              (rx/of (dws/deselect-shape id)
+              (rx/of (update-editor-state {:id id} nil)
+                     (dws/deselect-shape id)
                      (dwsh/delete-shapes #{id})))))))))
 
 (defn initialize-editor-state
