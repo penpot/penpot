@@ -131,23 +131,27 @@
                       (rx/of (dws/send endmsg)))))))))
 
 (defn- handle-change-team-role
-  [{:keys [role] :as msg}]
+  [{:keys [team-id role] :as msg}]
   (ptk/reify ::handle-change-team-role
     ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/concat
-       (rx/of :interrupt
-              (dwe/clear-edition-mode)
-              (dwc/set-workspace-read-only false))
-       (->> (rx/of (dc/change-team-role msg)
-                   ::dwt/update-editor-state)
-            ;; Delay so anything that launched :interrupt can finish
-            (rx/delay 100))
-       (if (= :viewer role)
-         (rx/of (modal/hide)
-                (dwly/set-options-mode :inspect)
-                (dpl/close-current-plugin {:close-only-edition-plugins? true}))
-         (rx/of (dwly/set-options-mode :design)))))))
+    (watch [_ state _]
+      ;; A change to another team must not touch the open file: only
+      ;; the team that owns it changes what can be done here
+      (if (not= team-id (:current-team-id state))
+        (rx/of (dc/change-team-role msg))
+        (rx/concat
+         (rx/of :interrupt
+                (dwe/clear-edition-mode)
+                (dwc/set-workspace-read-only false))
+         (->> (rx/of (dc/change-team-role msg)
+                     ::dwt/update-editor-state)
+              ;; Delay so anything that launched :interrupt can finish
+              (rx/delay 100))
+         (if (= :viewer role)
+           (rx/of (modal/hide)
+                  (dwly/set-options-mode :inspect)
+                  (dpl/close-current-plugin {:close-only-edition-plugins? true}))
+           (rx/of (dwly/set-options-mode :design))))))))
 
 (defn- process-message
   [{:keys [type] :as msg}]
