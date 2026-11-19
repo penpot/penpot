@@ -986,6 +986,9 @@
           (> (inst-ms (ct/diff modified-at (ct/now)))
              (inst-ms timeout))))))
 
+;; Ordered by `revn`: a repair row takes the revision below the save's,
+;; so the save's own row comes last, which the frontend's settle step
+;; (`persistence.cljs::settle-saved-commit`) relies on.
 (def ^:private sql:lagged-changes
   "select s.revn, s.session_id
      from file_change as s
