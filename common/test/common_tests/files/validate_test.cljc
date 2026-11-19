@@ -17,7 +17,9 @@
    pages / components and confirming that only the expected entities are
    validated."
   (:require
+   [app.common.files.changes :as cpc]
    [app.common.files.validate :as cfv]
+   [app.common.schema :as sm]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.types.file :as ctf]
@@ -493,6 +495,18 @@
     (t/testing "a guide on the invalid page raises"
       (t/is (schema-error? file [{:type :set-guide :page-id (thi/id :page2) :id (uuid/next) :params nil}])))))
 
+(t/deftest validate-file-schema-affected!-checks-the-page-add-page-writes
+  (let [file  (-> (thf/sample-file :file1 :page-label :page1)
+                  (thf/add-sample-page :page2)
+                  (inject-invalid-page :page2))
+        page2 (ctpl/get-page (:data file) (thi/id :page2))]
+
+    (t/testing "add-page that carries the invalid page alone raises"
+      (t/is (schema-error? file [{:type :add-page :page page2}])))
+
+    (t/testing "add-page that carries the invalid page under its own id raises"
+      (t/is (schema-error? file [{:type :add-page :id (thi/id :page2) :page page2}])))))
+
 (t/deftest validate-file-schema-affected!-skips-untouched-pages
   (let [file (-> (thf/sample-file :file1 :page-label :page1)
                  (thf/add-sample-page :page2)
@@ -516,3 +530,18 @@
                  (inject-invalid-page :page2))]
     (t/is (schema-error? file [{:type :mod-obj :page-id (thi/id :page1) :id uuid/zero :operations []}
                                {:type :some-future-change}]))))
+
+(t/deftest validate-file-schema-affected!-scopes-every-change-type
+  ;; A change type that the scope does not know widens the check to the
+  ;; whole file. Each change below names only the valid page, so the invalid
+  ;; page raises only when the check covers the whole file.
+  (let [page1-id (thi/id :page1)
+        file     (-> (thf/sample-file :file1 :page-label :page1)
+                     (thf/add-sample-page :page2)
+                     (inject-invalid-page :page2))
+        types    (map first (sm/children cpc/schema:change))]
+    (t/is (seq types))
+    (doseq [type types]
+      (t/is (not (schema-error? file [{:type type :id page1-id :page-id page1-id
+                                       :object-type :page :object-id page1-id}]))
+            (str type " checks the whole file")))))
