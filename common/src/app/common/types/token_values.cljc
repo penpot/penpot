@@ -22,7 +22,9 @@
   every runtime: a write to an attribute that a token sets marks it stale,
   unless the write is derived from other data or sets its value too."
   (:require
+   [app.common.colors :as cc]
    [app.common.data :as d]
+   [app.common.math :as mth]
    [app.common.types.stroke :as cts]
    [app.common.types.text :as txt]
    [app.common.types.token :as cto]
@@ -35,6 +37,44 @@
   [shape]
   (contains? shape :token-values))
 
+(defn- same-color?
+  "True when the strings `a` and `b` are the same color spelled in two ways,
+  like `#ffffff00` and `rgba(255, 255, 255, 0)`."
+  [a b]
+  (and (string? a)
+       (string? b)
+       (let [ca (cc/parse-css-color a)
+             cb (cc/parse-css-color b)]
+         (and (some? ca)
+              (some? cb)
+              (= (:color ca) (:color cb))
+              ;; Below one step of an 8 bit alpha
+              (mth/close? (:opacity ca) (:opacity cb) 0.002)))))
+
+(defn- same-value?
+  "True when `value` and `held` are the same value of the token attribute
+  `attr`: equal, or the same color for the color attributes."
+  [attr value held]
+  (or (= value held)
+      (and (contains? cto/color-keys attr)
+           (same-color? value held))))
+
+(defn same-resolved-value?
+  "True when `value` and `held`, resolved values of a token, are equal or
+  the same color spelled in another way."
+  [value held]
+  (or (= value held) (same-color? value held)))
+
+(defn same-resolved-values?
+  "True when `values` and `other`, maps of token name to resolved value,
+  hold the same values, the colors maybe spelled in another way."
+  [values other]
+  (or (= values other)
+      (and (= (count values) (count other))
+           (every? (fn [[token-name value]]
+                     (same-resolved-value? value (get other token-name ::missing)))
+                   values))))
+
 (defn out-of-date-attrs
   "Token attributes of `shape` whose token resolves, in `resolved-tokens`, to
   a value it doesn't hold: stale, with another value or, with
@@ -46,7 +86,7 @@
                   (when-let [value (get-in resolved-tokens [token-name :resolved-value])]
                     (when (if assigned
                             (or (not (contains? token-values attr))
-                                (not= value (get token-values attr)))
+                                (not (same-value? attr value (get token-values attr))))
                             unassigned?)
                       attr))))
           applied-tokens)))

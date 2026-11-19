@@ -332,3 +332,25 @@
         shape (ths/get-shape file :rect1)]
     (t/is (= (:token-values shape)
              (-> shape transit/encode-str transit/decode-str :token-values)))))
+
+(t/deftest colors-are-compared-as-colors
+  (let [shape    {:applied-tokens {:fill "color" :font-family "family"}
+                  :token-values {:fill "#ffffff00" :font-family "red"}}
+        out-of-date #(cttv/out-of-date-attrs shape (resolved %) {})]
+    (t/is (empty? (out-of-date {"color" "rgba(255, 255, 255, 0)" "family" "red"}))
+          "the same color spelled in another way")
+    (t/is (empty? (out-of-date {"color" "#FFFFFF00" "family" "red"})))
+    (t/is (= #{:fill} (out-of-date {"color" "rgba(255, 255, 255, 0.5)" "family" "red"}))
+          "another alpha")
+    (t/is (= #{:fill} (out-of-date {"color" "#000000" "family" "red"})))
+    (t/is (= #{:font-family} (out-of-date {"color" "#ffffff00" "family" "Red"}))
+          "other attributes are compared as they are")))
+
+(t/deftest resolved-values-are-compared-as-colors
+  (t/is (cttv/same-resolved-values? {"color" "#c0404080" "weight" "700"}
+                                    {"color" "rgba(192, 64, 64, 0.5)" "weight" "700"}))
+  (t/is (not (cttv/same-resolved-values? {"color" "#c04040"} {"color" "#c04041"})))
+  (t/is (not (cttv/same-resolved-values? {"weight" "700"} {"weight" 700})))
+  (t/is (not (cttv/same-resolved-values? {"color" "#c04040"} {"color" "#c04040" "size" 4})))
+  (t/is (not (cttv/same-resolved-values? {"color" "#c04040" "size" 4} {"color" "#c04040" "other" 4})))
+  (t/is (not (cttv/same-resolved-values? nil {"color" "#c04040"}))))

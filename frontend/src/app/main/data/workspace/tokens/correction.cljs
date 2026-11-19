@@ -17,6 +17,7 @@
    [app.common.files.changes-builder :as pcb]
    [app.common.logging :as l]
    [app.common.logic.tokens-propagation :as cltp]
+   [app.common.types.token-values :as cttv]
    [app.main.data.changes :as dch]
    [app.main.data.helpers :as dsh]
    [app.main.data.persistence :as-alias dps]
@@ -97,7 +98,7 @@
             values    (cltp/values-to-save resolved saved)]
         (when (and (editor? state)
                    (not (waiting? state opts))
-                   (not= saved values))
+                   (not (cttv/same-resolved-values? saved values)))
           (rx/of (dch/commit-changes
                   (-> (pcb/empty-changes it)
                       (pcb/set-save-undo? false)

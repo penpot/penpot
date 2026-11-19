@@ -21,6 +21,7 @@
    [app.common.logic.tokens-propagation :as cltp]
    [app.common.logic.tokenscript :as cts]
    [app.common.types.token :as cto]
+   [app.common.types.token-values :as cttv]
    [app.common.types.tokens-lib :as ctob]
    [cuerdas.core :as str]
    [promesa.core :as p]))
@@ -725,7 +726,7 @@
     (boolean
      (some (fn [token-name]
              (when-let [token (get resolved token-name)]
-               (not= (:resolved-value token) (get saved token-name))))
+               (not (cttv/same-resolved-value? (:resolved-value token) (get saved token-name)))))
            (cfo/page-token-names page)))))
 
 (defn resolve-page-for-reader
