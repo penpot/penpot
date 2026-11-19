@@ -1,4 +1,3 @@
-use crate::error::{Error, Result};
 use crate::math::{self as math, Bounds, Matrix, Point, Vector, VectorExt};
 use crate::shapes::{
     AlignContent, AlignItems, AlignSelf, ConstraintH, ConstraintV, FlexData, JustifyContent,
@@ -9,7 +8,7 @@ use crate::uuid::Uuid;
 
 use std::collections::{HashMap, VecDeque};
 
-use super::common::GetBounds;
+use super::common::{has_in_flow_children, GetBounds};
 
 const MIN_SIZE: f32 = 0.01;
 const MAX_SIZE: f32 = f32::INFINITY;
@@ -202,7 +201,7 @@ fn initialize_tracks(
             continue;
         };
 
-        if child.is_absolute() || child.hidden() {
+        if !child.is_in_flow() {
             continue;
         }
 
@@ -610,7 +609,7 @@ pub fn reflow_flex_layout(
     flex_data: &FlexData,
     shapes: ShapesPoolRef,
     bounds: &mut HashMap<Uuid, Bounds>,
-) -> Result<VecDeque<Modifier>> {
+) -> VecDeque<Modifier> {
     let mut result = VecDeque::new();
     let layout_bounds = &bounds.find(shape);
     let layout_axis = LayoutAxis::new(shape, layout_bounds, layout_data, flex_data);
@@ -686,7 +685,11 @@ pub fn reflow_flex_layout(
         }
     }
 
-    if layout_axis.is_auto_across || layout_axis.is_auto_main {
+    // With nothing to place, keep the size instead of collapsing to padding.
+    // CLJS would also size to hidden children; flex here leaves them out.
+    if (layout_axis.is_auto_across || layout_axis.is_auto_main)
+        && has_in_flow_children(shape, shapes)
+    {
         let width = layout_bounds.width();
         let height = layout_bounds.height();
 
@@ -749,9 +752,7 @@ pub fn reflow_flex_layout(
 
         let parent_transform = layout_bounds.transform_matrix().unwrap_or_default();
 
-        let parent_transform_inv = &parent_transform.invert().ok_or(Error::CriticalError(
-            "Failed to invert parent transform".to_string(),
-        ))?;
+        let parent_transform_inv = &parent_transform.invert().unwrap_or_default();
         let origin = parent_transform_inv.map_point(layout_bounds.nw);
 
         let mut scale = Matrix::scale((scale_width, scale_height));
@@ -784,7 +785,7 @@ pub fn reflow_flex_layout(
                 constraint_v,
                 scale,
                 child.ignore_constraints,
-            )?;
+            );
 
             result.push_back(Modifier::transform_propagate(child.id, child_transform));
         }
@@ -792,5 +793,5 @@ pub fn reflow_flex_layout(
         result.push_back(Modifier::parent(shape.id, scale));
         bounds.insert(shape.id, layout_bounds_after);
     }
-    Ok(result)
+    result
 }

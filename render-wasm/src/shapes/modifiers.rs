@@ -9,7 +9,6 @@ pub mod grid_layout;
 use crate::math::{self as math, bools, identitish, is_close_to, Bounds, Matrix, Point};
 use common::GetBounds;
 
-use crate::error::Result;
 use crate::shapes;
 use crate::shapes::{
     ConstraintH, ConstraintV, Frame, Group, GrowType, Layout, Modifier, PixelPrecision, Shape,
@@ -26,7 +25,7 @@ fn propagate_children(
     parent_bounds_after: &Bounds,
     transform: Matrix,
     bounds: &HashMap<Uuid, Bounds>,
-) -> Result<VecDeque<Modifier>> {
+) -> VecDeque<Modifier> {
     let mut result = VecDeque::new();
 
     // We use the identity transform as a mark that a reflow is needed.
@@ -35,7 +34,7 @@ fn propagate_children(
         for child_id in shape.children_ids_iter(true) {
             result.push_back(Modifier::transform_propagate(*child_id, transform));
         }
-        return Ok(result);
+        return result;
     }
 
     for child_id in shape.children_ids_iter(true) {
@@ -81,12 +80,12 @@ fn propagate_children(
             constraint_v,
             transform,
             child.ignore_constraints,
-        )?;
+        );
 
         result.push_back(Modifier::transform_propagate(*child_id, transform));
     }
 
-    Ok(result)
+    result
 }
 
 fn calculate_group_bounds(
@@ -240,9 +239,9 @@ fn propagate_transform(
     reflown: &mut HashSet<Uuid>,
     reflowed_shapes: &mut HashSet<Uuid>,
     pending_reflows: &mut HashSet<Uuid>,
-) -> Result<()> {
+) {
     let Some(shape) = state.shapes.get(&entry.id) else {
-        return Ok(());
+        return;
     };
 
     let shapes = &state.shapes;
@@ -349,7 +348,7 @@ fn propagate_transform(
             &shape_bounds_after,
             transform,
             bounds,
-        )?;
+        );
         entries.append(&mut children);
     }
 
@@ -378,7 +377,6 @@ fn propagate_transform(
             entries.push_back(Modifier::reflow(parent.id, false));
         }
     }
-    Ok(())
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -444,28 +442,27 @@ fn reflow_shape(
     reflown: &mut HashSet<Uuid>,
     entries: &mut VecDeque<Modifier>,
     bounds: &mut HashMap<Uuid, Bounds>,
-) -> Result<()> {
+) {
     let Some(shape) = state.shapes.get(id) else {
-        return Ok(());
+        return;
     };
 
     let shapes = &state.shapes;
 
     let Type::Frame(frame_data) = &shape.shape_type else {
-        return Ok(());
+        return;
     };
 
     if let Some(Layout::FlexLayout(layout_data, flex_data)) = &frame_data.layout {
         let mut children =
-            flex_layout::reflow_flex_layout(shape, layout_data, flex_data, shapes, bounds)?;
+            flex_layout::reflow_flex_layout(shape, layout_data, flex_data, shapes, bounds);
         entries.append(&mut children);
     } else if let Some(Layout::GridLayout(layout_data, grid_data)) = &frame_data.layout {
         let mut children =
-            grid_layout::reflow_grid_layout(shape, layout_data, grid_data, shapes, bounds)?;
+            grid_layout::reflow_grid_layout(shape, layout_data, grid_data, shapes, bounds);
         entries.append(&mut children);
     }
     reflown.insert(*id);
-    Ok(())
 }
 
 /// Propagates a set of transforms through the shape tree, returning one
@@ -477,7 +474,7 @@ pub fn propagate_modifiers(
     state: &State,
     modifiers: &[TransformEntry],
     pixel_precision: PixelPrecision,
-) -> Result<Vec<TransformEntry>> {
+) -> Vec<TransformEntry> {
     let mut entries: VecDeque<_> = modifiers
         .iter()
         .map(|entry| {
@@ -522,7 +519,7 @@ pub fn propagate_modifiers(
                     &mut reflown,
                     &mut reflowed_shapes,
                     &mut pending_reflows,
-                )?,
+                ),
                 Modifier::Reflow(id, force_reflow) => {
                     pending_reflows.remove(&id);
                     if force_reflow {
@@ -562,14 +559,14 @@ pub fn propagate_modifiers(
             if reflown.contains(id) {
                 continue;
             }
-            reflow_shape(id, state, &mut reflown, &mut entries, &mut bounds_temp)?;
+            reflow_shape(id, state, &mut reflown, &mut entries, &mut bounds_temp);
         }
     }
 
-    Ok(modifiers
+    modifiers
         .iter()
         .map(|(key, val)| TransformEntry::from_input(*key, *val))
-        .collect())
+        .collect()
 }
 
 #[cfg(test)]
@@ -617,8 +614,7 @@ mod tests {
             &bounds_after,
             transform,
             &HashMap::new(),
-        )
-        .unwrap();
+        );
 
         assert_eq!(result.len(), 1);
     }
@@ -677,7 +673,7 @@ mod tests {
         }
 
         let entry = TransformEntry::from_input(shape_id, Matrix::translate((5.2, 3.7)));
-        let result = propagate_modifiers(&state, &[entry], PixelPrecision::Both).unwrap();
+        let result = propagate_modifiers(&state, &[entry], PixelPrecision::Both);
 
         let transform = result
             .iter()
@@ -713,7 +709,7 @@ mod tests {
             resize.pre_translate(Point::new(-10.4, -20.6));
 
             let entry = TransformEntry::from_input(shape_id, resize);
-            let result = propagate_modifiers(&state, &[entry], PixelPrecision::Both).unwrap();
+            let result = propagate_modifiers(&state, &[entry], PixelPrecision::Both);
 
             let transform = result
                 .iter()
@@ -793,7 +789,7 @@ mod tests {
             state.shapes.clear_transform_modifiers();
 
             let entry = TransformEntry::from_input(shape_id, Matrix::translate((delta, delta)));
-            let result = propagate_modifiers(state, &[entry], PixelPrecision::Both).unwrap();
+            let result = propagate_modifiers(state, &[entry], PixelPrecision::Both);
             let transform = result
                 .iter()
                 .find(|entry| entry.id == shape_id)
@@ -845,7 +841,7 @@ mod tests {
         resize.pre_translate(Point::new(-10.4, -20.6));
 
         let entry = TransformEntry::from_input(shape_id, resize);
-        let result = propagate_modifiers(&state, &[entry], PixelPrecision::Both).unwrap();
+        let result = propagate_modifiers(&state, &[entry], PixelPrecision::Both);
 
         let transform = result
             .iter()
@@ -926,5 +922,205 @@ mod tests {
 
         assert_eq!(bounds.width(), 4.0);
         assert_eq!(bounds.height(), 4.0);
+    }
+
+    #[derive(Clone, Copy)]
+    enum TestLayout {
+        None,
+        Flex,
+        Grid,
+    }
+
+    #[derive(Clone, Copy, PartialEq)]
+    enum Child {
+        InFlow,
+        Absolute,
+        Hidden,
+    }
+
+    /// Adds a shape with no gaps or padding: auto-sized at the root, fixed below.
+    fn add_shape(
+        state: &mut State,
+        parent: Option<Uuid>,
+        (left, top, right, bottom): (f32, f32, f32, f32),
+        layout: TestLayout,
+    ) -> Uuid {
+        let id = Uuid::new_v4();
+        let sizing = if parent.is_some() {
+            Sizing::Fix
+        } else {
+            Sizing::Auto
+        };
+        let shape = state.shapes.add_shape(id);
+        if !matches!(layout, TestLayout::None) {
+            shape.set_shape_type(Type::Frame(Frame::default()));
+        }
+        let (align, justify) = (AlignItems::Start, JustifyContent::Start);
+        let (content, items) = (AlignContent::Start, JustifyItems::Start);
+        match layout {
+            TestLayout::Flex => shape.set_flex_layout_data(
+                FlexDirection::Row,
+                0.0,
+                0.0,
+                align,
+                content,
+                items,
+                justify,
+                WrapType::NoWrap,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+            ),
+            TestLayout::Grid => shape.set_grid_layout_data(
+                GridDirection::Row,
+                0.0,
+                0.0,
+                align,
+                content,
+                items,
+                justify,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+            ),
+            TestLayout::None => {}
+        }
+        shape.set_selrect(left, top, right, bottom);
+        shape.set_flex_layout_child_data(
+            0.0, 0.0, 0.0, 0.0, sizing, sizing, None, None, None, None, None, false, None,
+        );
+        if let Some(parent) = parent {
+            shape.set_parent(parent);
+            state.shapes.get_mut(&parent).unwrap().add_child(id);
+        }
+        id
+    }
+
+    fn shape_mut(state: &mut State, id: Uuid) -> &mut Shape {
+        state.shapes.get_mut(&id).unwrap()
+    }
+
+    fn set_absolute(state: &mut State, id: Uuid) {
+        shape_mut(state, id)
+            .layout_item
+            .as_mut()
+            .unwrap()
+            .is_absolute = true;
+    }
+
+    fn rotate(state: &mut State, id: Uuid, degrees: f32) {
+        let (sin, cos) = degrees.to_radians().sin_cos();
+        let shape = shape_mut(state, id);
+        shape.set_rotation(degrees);
+        shape.set_transform(cos, sin, -sin, cos, 0.0, 0.0);
+    }
+
+    /// Reflows every layout above `id`, as a committed text resize does.
+    fn reflow(state: &State, id: Uuid) -> Vec<TransformEntry> {
+        let entry = TransformEntry::from_input(id, Matrix::default());
+        propagate_modifiers(state, &[entry], PixelPrecision::Disabled)
+    }
+
+    fn size_after(state: &State, result: &[TransformEntry], id: Uuid) -> (f32, f32) {
+        let mut bounds = state.shapes.get_raw(&id).unwrap().bounds();
+        if let Some(entry) = result.iter().find(|e| e.id == id) {
+            bounds = bounds.transform(&entry.transform);
+        }
+        (bounds.width(), bounds.height())
+    }
+
+    fn assert_size((width, height): (f32, f32), (expected_w, expected_h): (f32, f32)) {
+        assert!(
+            is_close_to(width, expected_w) && is_close_to(height, expected_h),
+            "got {width}x{height}, expected {expected_w}x{expected_h}"
+        );
+    }
+
+    #[test]
+    fn test_rotated_shape_under_absolute_child_of_auto_flex_does_not_collapse() {
+        // Tree from #12763: auto flex > absolute frame > rotated flex row > leaf.
+        for absolute_layout in [TestLayout::Flex, TestLayout::Grid] {
+            let mut state = State::new();
+            state.shapes.initialize(10);
+            let root = (-1545.0, -72.0, 232.0, 824.0);
+            let auto = add_shape(&mut state, None, root, TestLayout::Flex);
+            let frame = (-1399.0, 9.0, 72.75, 763.0);
+            let absolute = add_shape(&mut state, Some(auto), frame, absolute_layout);
+            set_absolute(&mut state, absolute);
+            let row = (-1379.0, 29.0, -1043.0, 83.0);
+            let row = add_shape(&mut state, Some(absolute), row, TestLayout::Flex);
+            let leaf = (-1365.0, 47.0, -1335.0, 64.0);
+            let leaf = add_shape(&mut state, Some(row), leaf, TestLayout::None);
+            rotate(&mut state, row, 0.0915);
+            rotate(&mut state, leaf, 0.0915);
+
+            let result = reflow(&state, leaf);
+
+            for entry in &result {
+                let (width, height) = size_after(&state, &result, entry.id);
+                assert!(width > 1.0 && height > 1.0, "{} collapsed", entry.id);
+            }
+        }
+    }
+
+    /// Size of an auto-size 500x300 frame with one 100x50 child, after reflow.
+    /// Grids get two fixed 100px columns and one fixed 50px row.
+    fn auto_frame_size(layout: TestLayout, child: Child) -> (f32, f32) {
+        let mut state = State::new();
+        state.shapes.initialize(10);
+        let frame = add_shape(&mut state, None, (0.0, 0.0, 500.0, 300.0), layout);
+        let rect = (10.0, 10.0, 110.0, 60.0);
+        let child_id = add_shape(&mut state, Some(frame), rect, TestLayout::None);
+        match child {
+            Child::Absolute => set_absolute(&mut state, child_id),
+            Child::Hidden => shape_mut(&mut state, child_id).set_hidden(true),
+            Child::InFlow => {}
+        }
+        if matches!(layout, TestLayout::Grid) {
+            let column = GridTrack {
+                track_type: GridTrackType::Fixed,
+                value: 100.0,
+            };
+            let row = GridTrack {
+                track_type: GridTrackType::Fixed,
+                value: 50.0,
+            };
+            let shape = shape_mut(&mut state, frame);
+            shape.set_grid_columns(vec![column.clone(), column]);
+            shape.set_grid_rows(vec![row]);
+            if child != Child::Absolute {
+                shape.set_grid_cells(vec![GridCell {
+                    row: 1,
+                    row_span: 1,
+                    column: 1,
+                    column_span: 1,
+                    align_self: None,
+                    justify_self: None,
+                    shape: Some(child_id),
+                }]);
+            }
+        }
+        let result = reflow(&state, frame);
+        size_after(&state, &result, frame)
+    }
+
+    #[test]
+    fn test_auto_flex_size_by_child_kind() {
+        use Child::*;
+        assert_size(auto_frame_size(TestLayout::Flex, InFlow), (100.0, 50.0));
+        assert_size(auto_frame_size(TestLayout::Flex, Absolute), (500.0, 300.0));
+        // Known difference from CLJS, which sizes the frame to hidden children.
+        assert_size(auto_frame_size(TestLayout::Flex, Hidden), (500.0, 300.0));
+    }
+
+    #[test]
+    fn test_auto_grid_size_by_child_kind() {
+        use Child::*;
+        assert_size(auto_frame_size(TestLayout::Grid, InFlow), (200.0, 50.0));
+        assert_size(auto_frame_size(TestLayout::Grid, Absolute), (500.0, 300.0));
+        // Grid takes its size from its tracks; hidden children still count.
+        assert_size(auto_frame_size(TestLayout::Grid, Hidden), (200.0, 50.0));
     }
 }
