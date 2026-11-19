@@ -19,10 +19,41 @@ This allows you to inspect intermediate results while still being able to build 
 ## Asynchronous Updates
 
 Changes made to a design may take effect asynchronously. 
-So if you need to read the result of your executions/observe properties affected by a change in the same `execude_code` call, use 
+So if you need to read the result of your executions/observe properties affected by a change in the same `execute_code` call, use 
 `await penpot.waitForLayoutUpdate();`
 before trying to observe changes.
-Every `execude_code` call waits for updates before applying your code, so you never need to call `waitForLayoutUpdate` at the beginning of your code.
+To wait only for a single shape (and its children), use `await shape.waitForLayoutUpdate();`.
+Both accept an optional timeout in milliseconds (default 30000) and reject when it elapses.
+Every `execute_code` call waits for updates before applying your code, so you never need to call `waitForLayoutUpdate` at the beginning of your code.
+Every `execute_code` call also waits for pending changes to be saved before it returns success, so you should not call
+`await penpot.waitForSave()` at the end of your code (that would wait twice).
+That automatic save wait defaults to 60s and runs after the automatic layout wait (default 30s); both, plus your code,
+must fit inside the MCP tool timeout (`PENPOT_MCP_TOOL_TIMEOUT_S`, default 120s). If layout or saves are slow and tools
+time out before a save error appears, raise that env var.
+
+## Rejected Changes and Read-Only Mode
+
+`execute_code` only reports success after Penpot has saved the changes from that call (or confirmed there was nothing
+to save). If the save fails, times out, or the backend rejects the changes and the workspace rolls them back, the tool
+call fails with an error — do not treat a failed call as if the design was updated.
+A timeout while saves are still retrying means the save was not confirmed; it does not mean the file is fine.
+
+When a rollback is reported only on a later tool response (rare: concurrent edits, or a race after a timed-out response),
+that response starts with a warning that names the files, pages and shapes involved.
+When you get this warning:
+  * Do not trust what you know about the design from before: shapes you created may be gone, and removed ones may be back.
+  * Read the affected pages and shapes again (e.g. `penpotUtils.shapeStructure(page.root, 3)`) and check that they hold what you expect.
+  * Redo the missing changes, then check again; if the same changes are rejected again, stop and tell the user.
+
+While saves are failing, the workspace becomes read-only: every write through the API throws an error saying that the
+workspace is read-only because changes cannot be saved. Do not retry in a loop; wait and try again later, or tell the user.
+Once a save has failed for good, every `execute_code` call in that file fails with "Changes could not be saved", reads
+included, until the file is reopened. Tell the user to reopen the file. If the error says Penpot keeps retrying the
+saves, wait and try again later instead. Calls made from the dashboard do not wait for saves.
+A save failure does not undo `penpotMgmt` calls (projects, files, teams) made in the same code: read that state back
+before retrying them.
+Writes also throw when the user cannot edit the file, a version is being previewed or the canvas stopped rendering;
+the error says which. These do not pass by waiting: tell the user.
 
 # The Structure of Penpot Designs
 
@@ -57,6 +88,8 @@ Actual low-level shape types are `Rectangle`, `Path`, `Text`, `Ellipse`, `Image`
       The objects are not shared references; you can modify properties of the fills in the target shape without affecting the source shape.
     - Colors: Use hex strings with caps only (e.g. '#FF5533')
     - IMPORTANT: The contents of the arrays are read-only. You cannot modify individual fills/strokes; you need to replace the entire array to change them!  
+    - Per-side stroke widths (boards and rectangles only; other shapes raise a validation error): `strokeWidthTop`, `strokeWidthRight`, `strokeWidthBottom`, `strokeWidthLeft`.
+      Setting `strokeWidth` sets all four sides. Read-only `strokeWidthType` is `"simple"` when all four widths match, `"multiple"` otherwise.
   * `borderRadius` - Uniform border radius for all corners
   * `borderRadiusTopLeft`, `borderRadiusTopRight`, `borderRadiusBottomRight`, `borderRadiusBottomLeft` - Individual corner radii.
   * `blur: Blur` - Blur properties
@@ -173,6 +206,9 @@ A key object for navigating the currently active Penpot file is the `penpot` obj
   * `penpot.root` provides the root shape of the currently active page.
   * Generation of CSS content for elements via `penpot.generateStyle`
   * Generation of HTML/SVG content for elements via `penpot.generateMarkup`
+  * `penpot.location` gives the Penpot instance URL (`baseUrl`), the link to what the user is viewing (`href`, e.g. the open file and page)
+    and the query params of that link (`params`, e.g. `params["file-id"]`). Use `href` when you need a link to the open file;
+    never guess the instance domain or build the link by hand.
 Members of `penpot` (e.g. `penpot.currentFile` and `penpot.root`) will be null no Penpot file is currently opened.
 You can use `penpotMgmt` to navigate to a file if needed (see below).
 
@@ -206,6 +242,9 @@ General pointers for working with Penpot designs:
   * Prefer `penpotUtils` helper functions — avoid reimplementing shape searching.
   * To get an overview of a single page, use `penpotUtils.shapeStructure(page.root, 3)`.
     Note that `penpot.root` refers to the current page only. When working across pages, first determine the relevant page(s).
+  * IMPORTANT: Shapes can only be created or modified on the active page; changes to shapes on other pages raise a validation error.
+    To work on another page, first activate it with `await penpot.openPage(page)`.
+    `penpot.createPage()` does NOT activate the new page; call `openPage` before adding shapes to it.
   * Use `penpotUtils.findShapes()` or `penpotUtils.findShape()` with predicates to locate elements efficiently.
 
 Common tasks - Quick Reference (ALWAYS use penpotUtils for these):
@@ -295,6 +334,17 @@ Detaching:
   * When creating new design elements based on a component instance/copy, use `shape.detach()` to break the link to the main component, allowing independent modification.
   * Without detaching, some manipulations will have no effect; e.g. child/descendant removal will not work.
 
+Syncing copies and main components:
+  * `copy.resetOverrides()` - restores a copy (and its children) to the attributes of its main component.
+  * `copy.updateMain()` - applies the overrides of a copy to its main component and syncs all copies.
+    The copy must be a copy head on the active page, not nested in another copy.
+
+Managing components (current file's library only):
+  * `component.remove()` - deletes the component and its main instance; existing copies keep their link.
+  * `library.deletedComponents: LibraryComponent[]` - deleted components; `component.restore()` brings one back.
+  * `component.duplicate(): LibraryComponent` - duplicates the component and its main instance.
+  * `component.annotation: string | null` - writable annotation (max. 300 characters); set `null` to delete it.
+
 ### Variants
 
 Variants are a system for grouping related component versions along named property axes (e.g. Type, Style), powering a structured swap UI for designers using component instances.
@@ -318,7 +368,7 @@ Properties are often addressed positionally: `pos` parameter in various methods 
 Use `penpotUtils.createVariantContainer(components)` — it handles the full multi-step workflow in one call:
 ```js
 // Given three main components s, m, l (here: the first three main components on the page)
-const [s, m, l] = penpot.currentPage.findAllShapes(sh => sh.isMainComponent()).slice(0, 3);
+const [s, m, l] = penpotUtils.findShapes(sh => sh.isComponentMainInstance(), penpot.root).slice(0, 3);
 // Single property:
 const container = penpotUtils.createVariantContainer([
   { shape: s, properties: { Size: 'Small' } },
@@ -357,11 +407,16 @@ The token library: `penpot.library.local.tokens` (type: `TokenCatalog`)
   * `addSet({name: string}): TokenSet` - Create new set
   * `addTheme({group: string, name: string}): TokenTheme` - Create new theme
 
+Token source: `penpot.library.tokensSource: Library` is the library that supplies the file's tokens (default: `penpot.library.local`).
+  * Assigning a connected library makes its tokens the file's tokens; assign `penpot.library.local` to use local tokens again.
+  * With an external source, `penpot.library.local.tokens` lists the source's tokens and is where you toggle active sets/themes;
+    the source library's own catalog is read-only.
+
 `TokenSet` contains tokens with unique names:
   * `active: boolean` - Only active sets affect shapes; use `set.toggleActive()` to change: `if (!set.active) set.toggleActive();`
   * `tokens: Token[]` - All tokens in set
   * `addToken({type: TokenType, name: string, value: TokenValueString}): Token` - Creates a token, adding it to the set.
-     - `TokenType`: "color" | "dimension" | "spacing" | "typography" | "shadow" | "opacity" | "borderRadius" | "borderWidth" | "fontWeights" | "fontSizes" | "fontFamilies" | "letterSpacing" | "textDecoration" | "textCase"
+     - `TokenType`: "color" | "dimension" | "spacing" | "sizing" | "typography" | "shadow" | "opacity" | "number" | "rotation" | "borderRadius" | "borderWidth" | "fontWeights" | "fontSizes" | "fontFamilies" | "letterSpacing" | "textDecoration" | "textCase"
      - `value`: depends on the type of token (inspect `Token` and related types)
      - Examples:
        const token = set.addToken({type: "color", name: "color.primary", value: "#0066FF"}); // direct value
@@ -387,7 +442,7 @@ Applying tokens:
     - TokenBorderRadiusProps: "borderRadiusTopLeft", "borderRadiusTopRight", "borderRadiusBottomRight", "borderRadiusBottomLeft"
     - TokenShadowProps: "shadow"
     - TokenColorProps: "fill", "strokeColor"
-    - TokenDimensionProps: "x", "y", "strokeWidth"
+    - TokenDimensionProps: "x", "y", "strokeWidth", "strokeWidthTop", "strokeWidthRight", "strokeWidthBottom", "strokeWidthLeft"
     - TokenFontFamiliesProps: "fontFamilies"
     - TokenFontSizesProps: "fontSize"
     - TokenFontWeightProps: "fontWeight"
@@ -396,10 +451,11 @@ Applying tokens:
     - TokenOpacityProps: "opacity"
     - TokenSizingProps: "width", "height", "layoutItemMinW", "layoutItemMaxW", "layoutItemMinH", "layoutItemMaxH"
     - TokenSpacingProps: "rowGap", "columnGap", "paddingLeft", "paddingTop", "paddingRight", "paddingBottom", "marginLeft", "marginTop", "marginRight", "marginBottom"
-    - TokenBorderWidthProps: "strokeWidth"
+    - TokenBorderWidthProps: "strokeWidth", "strokeWidthTop", "strokeWidthRight", "strokeWidthBottom", "strokeWidthLeft"
     - TokenTextCaseProps: "textCase"
     - TokenTextDecorationProps: "textDecoration"
     - TokenTypographyProps: "typography"
+    The per-side stroke width properties apply only to boards and rectangles; `strokeWidth` works on every shape.
   * `token.applyToShapes(shapes, properties)` - Apply from token
   * Application is **asynchronous** (use `waitForLayoutUpdate`)
   * After application:

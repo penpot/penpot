@@ -15,6 +15,7 @@ From `common/`:
 - Full JS test run (always builds, build output visible): `pnpm run test`
 - Focus a JVM test namespace: `clojure -M:dev:test --focus common-tests.logic.variants-switch-test`
 - Focus a JVM test var: `clojure -M:dev:test --focus common-tests.logic.variants-switch-test/test-basic-switch`
+- JVM line coverage: `clojure -M:dev:test:coverage` (kaocha-cloverage, about 2x slower; `:cloverage/opts` in `tests.edn`, which excludes `app.common.test-helpers.*`; output in `target/coverage/` (lcov, HTML, and EMMA `coverage.xml` whose form counts the PR report shows as statements; cloverage measures no functions or branches)). `scripts/test` (CI) uses it; the JS side has no coverage.
 - Focus a JS test namespace: `pnpm run test:quiet -- --focus common-tests.logic.comp-sync-test`
 - Focus a JS test var: `pnpm run test:quiet -- --focus common-tests.logic.comp-sync-test/test-sync-when-changing-attribute`
 - Quiet logging during a JS run: append `--log-level warn` (or `trace|debug|info|warn|error`)
@@ -37,6 +38,10 @@ Useful builders:
 - `thv/add-variant-with-copy` creates variants whose children are component instances.
 
 `add-variant-with-copy` does not accept position params for children; use `gsh/absolute-move` after creation if positions matter.
+
+## Generative sampling caution
+
+- `sg/sample` is unseeded per run. If a test filters samples by type (e.g. keep only `:svg-raw`) then `first` can yield nil on unlucky seeds; `assoc` onto nil builds a typeless map that fails `:multi` dispatch on `:type`. Pin `:seed` in `sg/sample` opts whenever a test depends on a filtered subtype being present (verified seed 42 deals svg-raw shapes on JVM and JS).
 
 ## Driving production paths
 

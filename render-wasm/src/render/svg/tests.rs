@@ -2,8 +2,8 @@ use super::fixtures::*;
 
 use crate::shapes::{
     radius_to_sigma, AlignContent, AlignItems, BlendMode, Blur, BlurType, Fill, FlexDirection,
-    ImageFill, ImageFillTransform, JustifyContent, JustifyItems, Shadow, ShadowStyle, SolidColor,
-    StrokeCap, StrokeKind, WrapType,
+    ImageFill, ImageFillTransform, JustifyContent, JustifyItems, ListStyleType, Shadow,
+    ShadowStyle, SolidColor, StrokeCap, StrokeKind, WrapType,
 };
 use crate::state::ShapesPool;
 use crate::uuid::Uuid;
@@ -575,6 +575,43 @@ fn exports_leaf_drop_shadow_as_svg_filter() {
         "leaf drop must not use feMorphology for spread: {filter}"
     );
     insta::assert_snapshot!(svg);
+}
+
+fn render_rect_with_drop_shadow(fill: skia::Color) -> String {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_solid_rect(&mut pool, id, Uuid::nil(), (0.0, 0.0, 100.0, 80.0), fill);
+    pool.get_mut(&id).unwrap().add_shadow(Shadow::new(
+        skia::Color::BLACK,
+        8.0,
+        0.0,
+        (4.0, 6.0),
+        ShadowStyle::Drop,
+        false,
+    ));
+    render(&pool, id)
+}
+
+#[test]
+fn translucent_leaf_hides_drop_shadow_underneath() {
+    let svg = render_rect_with_drop_shadow(skia::Color::from_argb(100, 255, 0, 0));
+    let mask_at = svg
+        .find("mask=\"url(#dsmask")
+        .unwrap_or_else(|| panic!("drop shadow must be masked under a translucent fill: {svg}"));
+    let filter_at = svg.find("filter=\"url(#fx").expect("drop filter");
+    assert!(
+        mask_at < filter_at,
+        "the mask must wrap the drop shadow group: {svg}"
+    );
+}
+
+#[test]
+fn opaque_leaf_keeps_drop_shadow_unmasked() {
+    let svg = render_rect_with_drop_shadow(skia::Color::from_rgb(255, 0, 0));
+    assert!(
+        !svg.contains("dsmask"),
+        "an opaque fill hides the shadow already: {svg}"
+    );
 }
 
 #[test]
@@ -2023,6 +2060,33 @@ fn exports_text_with_multiple_solid_fills() {
         blue_pos.unwrap() < red_pos.unwrap(),
         "bottom fill must appear before top fill in SVG: {svg}"
     );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_list_bullets_before_list_paragraphs_only() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_text_with_list_paragraphs(
+        &mut pool,
+        id,
+        (40.0, 0.0, 300.0, 120.0),
+        30.0,
+        skia::Color::RED,
+        vec![
+            ("Bullet", ListStyleType::Disc),
+            ("Plain", ListStyleType::None),
+        ],
+    );
+    pool.get_mut(&id)
+        .unwrap()
+        .add_stroke(solid_stroke(StrokeKind::Center, 2.0, skia::Color::BLUE));
+
+    let svg = render(&pool, id);
+    // One bullet, before "Bullet" only: a red fill and a blue stroke.
+    assert_eq!(svg.matches("<ellipse").count(), 2, "{svg}");
+    assert!(svg.contains("<ellipse fill=\"red\""), "{svg}");
+    assert!(svg.contains("stroke=\"blue\""), "{svg}");
     insta::assert_snapshot!(svg);
 }
 

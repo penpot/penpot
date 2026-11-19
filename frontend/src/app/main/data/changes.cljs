@@ -16,6 +16,9 @@
    [app.common.uuid :as uuid]
    [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
+   [app.main.data.persistence.commits :as pcm]
+   [app.main.data.persistence.lock :as plk]
+   [app.main.data.workspace :as-alias dw]
    [app.main.features :as features]
    [app.main.worker :as mw]
    [app.render-wasm.api :as wasm.api]
@@ -67,12 +70,6 @@
                                    :cause cause)
                          (rx/empty)))
              (rx/ignore))))))
-
-(defn- get-pending-commits
-  [{:keys [persistence]}]
-  (->> (:queue persistence)
-       (map (d/getf (:index persistence)))
-       (not-empty)))
 
 (def ^:private xf:map-page-id
   ;; Component-only changes have no :page-id; keep drops those nils so
@@ -162,7 +159,7 @@
   "Create a commit event instance"
   [{:keys [commit-id redo-changes undo-changes origin save-undo? features
            file-id file-revn file-vern undo-group tags stack-undo? source ignore-wasm?
-           selected-before translation? skip-component-sync?]}]
+           selected-before translation? skip-component-sync? undo-index]}]
 
   (assert (cpc/check-changes redo-changes)
           "expect valid vector of changes for redo-changes")
@@ -191,7 +188,9 @@
                    :ignore-wasm? ignore-wasm?
                    :selected-before selected-before
                    :translation? translation?
-                   :skip-component-sync? skip-component-sync?}]
+                   :skip-component-sync? skip-component-sync?
+                   ;; Undo history index an undo or redo commit moved away from
+                   :undo-index undo-index}]
 
     (ptk/reify ::commit
       cljs.core/IDeref
@@ -200,7 +199,7 @@
       ptk/WatchEvent
       (watch [_ state _]
         (let [pending (when-not local?
-                        (get-pending-commits state))]
+                        (not-empty (pcm/pending-commits (:persistence state) file-id)))]
           (rx/concat
            (rx/of (apply-changes-localy commit pending))
            (if pending
@@ -211,6 +210,54 @@
               (->> (rx/from pending)
                    (rx/map (fn [commit] (update-indexes commit :redo-changes)))))
              (rx/of (update-indexes commit :redo-changes)))))))))
+
+(defn rebase-commits
+  "Undoes `undo`, applies `remote` and redoes `redo` on the local data of
+  `file-id`, commits oldest first. Nothing is saved or added to the undo
+  history; if the changes fail to apply, the file is reloaded.
+
+  Not a commit, so commit watchers miss it: once it has run, its deref
+  gives `{:file-id :changes :failed}` (`:failed` true when the file
+  reloads instead)."
+  [file-id {:keys [undo remote redo]}]
+  (let [commit  {:file-id file-id
+                 :redo-changes (-> []
+                                   (into (mapcat :undo-changes) (reverse undo))
+                                   (into remote)
+                                   (into (mapcat :redo-changes) redo))}
+        event   (apply-changes-localy commit nil)
+        failed? (volatile! false)]
+    (ptk/reify ::rebase-commits
+      IDeref
+      (-deref [_]
+        {:file-id file-id
+         :changes (:redo-changes commit)
+         :failed  @failed?})
+
+      ptk/UpdateEvent
+      (update [_ state]
+        (if (dsh/lookup-file-data state file-id)
+          (try
+            (ptk/update event state)
+            (catch :default cause
+              (log/error :hint "unable to rebase commits" :file-id (str file-id) :cause cause)
+              (vreset! failed? true)
+              state))
+          state))
+
+      ptk/WatchEvent
+      (watch [_ state stream]
+        (cond
+          @failed?
+          (rx/of (ptk/event ::dw/reload-current-file))
+
+          (dsh/lookup-file-data state file-id)
+          (rx/merge
+           (or (ptk/watch event state stream) (rx/empty))
+           (rx/of (update-indexes commit :redo-changes)))
+
+          :else
+          (rx/empty))))))
 
 (defn- resolve-file-revn
   [state file-id]
@@ -227,13 +274,17 @@
    Options:
    - save-undo?: if set to false, do not add undo changes.
    - undo-group: if some consecutive changes (or even transactions) share the same
-                 undo-group, they will be undone or redone in a single step
+                 undo-group, they will be undone or redone in a single step. Without
+                 it, a commit made while an undo transaction is open joins the
+                 transaction's group, and any other gets a new one.
+   - ignore-save-lock: commit even while the save-failure lock holds. Only for
+                 commits that are not user edits: the undo of rolled-back
+                 commits and data derived from commits already made.
    "
   [{:keys [redo-changes undo-changes save-undo? undo-group tags stack-undo? file-id
-           translation? skip-component-sync?]
+           translation? skip-component-sync? ignore-save-lock]
     :or {save-undo? true
          stack-undo? false
-         undo-group (uuid/next)
          tags #{}}
     :as params}]
   (ptk/reify ::commit-changes
@@ -249,13 +300,19 @@
 
         ;; Historical previews must not create edits to the live file. Check
         ;; this when creating commits so previously queued edits can still save.
+        ;; While saves fail, a user edit would queue behind the failed save.
         ;; Refusals answer with an empty stream (never nil) so callers can
         ;; uniformly subscribe and observe termination.
         (if (and (:can-edit permissions)
-                 (not (dm/get-in state [:workspace-global :preview-id])))
+                 (not (dm/get-in state [:workspace-global :preview-id]))
+                 (or ignore-save-lock (not (plk/locked? state))))
           (do
             (log/trace :hint "commit-changes" :redo-changes redo-changes)
-            (let [selected (dm/get-in state [:workspace-local :selected])]
+            (let [selected   (dm/get-in state [:workspace-local :selected])
+                  tx         (dm/get-in state [:workspace-undo :transaction])
+                  ;; Inside an undo transaction, the group of its history entry
+                  ;; (taken from its first commit), or the one it was opened with
+                  undo-group (or undo-group (:undo-group tx) (:commit-group tx) (uuid/next))]
               (rx/of (-> params
                          (assoc :undo-group undo-group)
                          (assoc :features features)

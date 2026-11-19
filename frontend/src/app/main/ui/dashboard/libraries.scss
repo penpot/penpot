@@ -4,17 +4,13 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
-@use "refactor/common-refactor.scss" as deprecated;
-@use "common/refactor/common-dashboard";
+@use "ds/_borders.scss" as *;
+@use "dashboard/common/header";
 
 .dashboard-container {
   flex: 1 0 0;
-  margin-right: deprecated.$s-16;
+  margin-inline-end: var(--sp-l);
   overflow-y: auto;
-  width: 100%;
-  border-top: deprecated.$s-1 solid var(--color-background-quaternary);
-
-  &.dashboard-projects {
-    user-select: none;
-  }
+  inline-size: 100%;
+  border-block-start: $b-1 solid var(--color-background-quaternary);
 }

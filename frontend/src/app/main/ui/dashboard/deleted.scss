@@ -4,9 +4,7 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
-// The shared dashboard header styles move in their own change: they are
-// used by ten dashboard modules.
-@use "common/refactor/common-dashboard";
+@use "dashboard/common/header";
 @use "ds/typography.scss" as *;
 @use "ds/spacing.scss" as *;
 @use "ds/z-index.scss" as *;

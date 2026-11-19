@@ -76,7 +76,10 @@
   (use-page-title team section)
   [:header {:class (stl/css :dashboard-header) :data-testid "dashboard-header"}
    [:div#dashboard-fonts-title {:class (stl/css :dashboard-title)}
-    [:h1 (tr "labels.fonts")]]])
+    [:> heading* {:level 1
+                  :typography t/title-large
+                  :class (stl/css :dashboard-title-text)}
+     (tr "labels.fonts")]]])
 
 (mf/defc font-variant-display-name*
   {::mf/private true}

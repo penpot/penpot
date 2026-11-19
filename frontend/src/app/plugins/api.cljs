@@ -43,9 +43,11 @@
    [app.plugins.history :as history]
    [app.plugins.library :as library]
    [app.plugins.local-storage :as local-storage]
+   [app.plugins.location :as location]
    [app.plugins.management :as management]
    [app.plugins.page :as page]
    [app.plugins.parser :as parser]
+   [app.plugins.persist :as wpsp]
    [app.plugins.reflow :as wrfp]
    [app.plugins.register :as r]
    [app.plugins.shape :as shape]
@@ -65,6 +67,7 @@
 ;;
 (defn create-shape
   [plugin-id type]
+  (r/check-writable)
   (let [page  (dsh/lookup-page @st/state)
         shape (cts/setup-shape {:type type
                                 :x 0 :y 0
@@ -111,6 +114,9 @@
     :theme
     {:this true
      :get #(.getTheme ^js %)}
+
+    :location
+    {:get (fn [] (clj->js (location/location @st/state)))}
 
     :localStorage
     {:this true
@@ -205,6 +211,7 @@
 
     :replaceColor
     (fn  [shapes old-color new-color]
+      (r/check-writable)
       (let [old-color (parser/parse-color-data old-color)
             new-color (parser/parse-color-data new-color)]
         (cond
@@ -261,6 +268,7 @@
 
     :uploadMediaUrl
     (fn  [name url]
+      (r/check-writable)
       (cond
         (not (string? name))
         (u/not-valid plugin-id :uploadMedia-name name)
@@ -274,12 +282,15 @@
            (fn [resolve reject]
              (->> (dwm/upload-media-url name file-id url)
                   (rx/take 1)
+                  ;; Saves may have failed while the upload ran
+                  (rx/tap (fn [_] (r/check-writable)))
                   (rx/map format/format-image)
                   (rx/tap #(st/emit! (se/event plugin-id "add-media")))
                   (rx/subs! resolve reject)))))))
 
     :uploadMediaData
     (fn [name data mime-type]
+      (r/check-writable)
       (let [file-id (:current-file-id @st/state)]
         (js/Promise.
          (fn [resolve reject]
@@ -307,12 +318,15 @@
                   :on-image identity
                   :on-svg identity})
                 (rx/take 1)
+                ;; Saves may have failed while the upload ran
+                (rx/tap (fn [_] (r/check-writable)))
                 (rx/map format/format-image)
                 (rx/tap #(st/emit! (se/event plugin-id "add-media")))
                 (rx/subs! resolve reject))))))
 
     :group
     (fn [shapes]
+      (r/check-writable)
       (let [valid-shapes? (and (array? shapes) (every? shape/shape-proxy? shapes))
             file-id       (:current-file-id @st/state)
             page-id       (:current-page-id @st/state)
@@ -343,6 +357,7 @@
 
     :ungroup
     (fn [group & rest]
+      (r/check-writable)
       (let [valid-group? (shape/shape-proxy? group)
             valid-rest?  (every? shape/shape-proxy? rest)
             shapes       (when (and valid-group? valid-rest?) (concat [group] rest))
@@ -382,6 +397,7 @@
 
     :createPath
     (fn []
+      (r/check-writable)
       (let [page  (dsh/lookup-page @st/state)
             shape (cts/setup-shape
                    {:type :path
@@ -399,6 +415,7 @@
 
     :createText
     (fn [text]
+      (r/check-writable)
       (cond
         (not (string? text))
         (u/not-valid plugin-id :createText text)
@@ -436,6 +453,7 @@
 
     :createShapeFromSvg
     (fn [svg-string]
+      (r/check-writable)
       (cond
         (not (dwm/valid-svg-string? svg-string))
         (u/not-valid plugin-id :createShapeFromSvg svg-string)
@@ -450,6 +468,7 @@
 
     :createShapeFromSvgWithImages
     (fn [svg-string]
+      (r/check-writable)
       (js/Promise.
        (fn [resolve reject]
          (cond
@@ -464,12 +483,15 @@
                  page-id (:current-page-id @st/state)]
              (st/emit! (dwm/create-svg-shape-with-images
                         file-id id "svg" svg-string (gpt/point 0 0)
-                        #(resolve (shape/shape-proxy plugin-id file-id page-id id))
-                        reject)
+                        {;; Saves may have failed while the images uploaded
+                         :check-writable r/check-writable
+                         :on-success #(resolve (shape/shape-proxy plugin-id file-id page-id id))
+                         :on-error reject})
                        (se/event plugin-id "create-shape" :type :text)))))))
 
     :createBoolean
     (fn [bool-type shapes]
+      (r/check-writable)
       (let [bool-type (keyword bool-type)]
         (cond
           (not (contains? cts/bool-types bool-type))
@@ -599,6 +621,7 @@
 
     :createPage
     (fn []
+      (r/check-writable)
       (let [file-id (:current-file-id @st/state)
             id (uuid/next)]
         (st/emit! (-> (dw/create-page {:page-id id :file-id file-id})
@@ -636,6 +659,7 @@
 
     :alignHorizontal
     (fn [shapes direction]
+      (r/check-writable)
       (let [dir (case direction
                   "left"   :hleft
                   "center" :hcenter
@@ -654,6 +678,7 @@
 
     :alignVertical
     (fn [shapes direction]
+      (r/check-writable)
       (let [dir (case direction
                   "top"   :vtop
                   "center" :vcenter
@@ -672,6 +697,7 @@
 
     :distributeHorizontal
     (fn [shapes]
+      (r/check-writable)
       (cond
         (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
         (u/not-valid plugin-id :distributeHorizontal-shapes "Not valid shapes")
@@ -682,6 +708,7 @@
 
     :distributeVertical
     (fn [shapes]
+      (r/check-writable)
       (cond
         (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
         (u/not-valid plugin-id :distributeVertical-shapes "Not valid shapes")
@@ -692,6 +719,7 @@
 
     :flatten
     (fn [shapes]
+      (r/check-writable)
       (cond
         (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
         (u/not-valid plugin-id :flatten-shapes "Not valid shapes")
@@ -707,6 +735,7 @@
 
     :createVariantFromComponents
     (fn [shapes]
+      (r/check-writable)
       (cond
         (or (not (array? shapes))
             (not (seq shapes))
@@ -741,4 +770,9 @@
     :waitForLayoutUpdate
     (fn [timeout]
       ;; Resolves once every shape with reflow work in flight has settled.
-      (wrfp/wait-for-layout-update timeout))))
+      (wrfp/wait-for-layout-update timeout))
+
+    :waitForSave
+    (fn [timeout]
+      ;; Resolves once pending edits are saved (or there is nothing to save).
+      (wpsp/wait-for-save timeout))))

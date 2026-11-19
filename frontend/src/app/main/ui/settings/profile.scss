@@ -19,10 +19,20 @@
   align-items: center;
 }
 
+// "Change email" and "Want to remove your account?" open modals, so they
+// are buttons that keep the look of a text link.
 .link {
   @include use-typography("body-medium");
 
   color: var(--color-accent-primary);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
 }
 
 .form-container {

@@ -31,15 +31,17 @@
         last-pos             (mf/use-var nil)
         negate?              (true? (:resize-negate? rect-data))
         axis                 (:resize-axis rect-data)
+        read-only?           (fcc/use-read-only-cancel resizing?)
 
         on-pointer-down
         (mf/use-fn
-         (mf/deps shape-id margin-num margin)
+         (mf/deps shape-id margin-num margin read-only?)
          (fn [event]
-           (dom/capture-pointer event)
-           (reset! resizing? true)
-           (reset! start (dom/get-client-position event))
-           (reset! original-value (:initial-value rect-data))))
+           (when-not read-only?
+             (dom/capture-pointer event)
+             (reset! resizing? true)
+             (reset! start (dom/get-client-position event))
+             (reset! original-value (:initial-value rect-data)))))
 
         calc-modifiers
         (mf/use-fn
@@ -76,17 +78,19 @@
          (fn [event]
            (dom/release-pointer event)
 
-           (when (features/active-feature? @st/state "render-wasm/v1")
-             (let [[_ modifiers]  (calc-modifiers @last-pos)]
-               (st/emit! (dwm/apply-wasm-modifiers modifiers)
-                         (dwt/finish-transform))))
+           ;; Nothing to apply for a resize the lock cancelled
+           (when @resizing?
+             (when (features/active-feature? @st/state "render-wasm/v1")
+               (let [[_ modifiers]  (calc-modifiers @last-pos)]
+                 (st/emit! (dwm/apply-wasm-modifiers modifiers)
+                           (dwt/finish-transform))))
+
+             (when (not (features/active-feature? @st/state "render-wasm/v1"))
+               (st/emit! (dwm/apply-modifiers))))
 
            (reset! resizing? false)
            (reset! start nil)
-           (reset! original-value 0)
-
-           (when (not (features/active-feature? @st/state "render-wasm/v1"))
-             (st/emit! (dwm/apply-modifiers)))))
+           (reset! original-value 0)))
 
         on-pointer-move
         (mf/use-fn

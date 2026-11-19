@@ -24,13 +24,12 @@
   block-size: $sz-32;
   min-block-size: $sz-32;
   margin-inline-end: var(--sp-xs);
+}
 
-  // The Penpot logo is brand art from the legacy icon set and has no class.
-  svg {
-    min-block-size: $sz-32;
-    inline-size: $sz-32;
-    fill: var(--color-foreground-primary);
-  }
+.logo {
+  inline-size: $sz-32;
+  block-size: $sz-32;
+  fill: var(--color-foreground-primary);
 }
 
 .project-tree {

@@ -357,6 +357,8 @@
 
            :text-direction
 
+           :list-style-type
+
            :line-height
            :letter-spacing
 

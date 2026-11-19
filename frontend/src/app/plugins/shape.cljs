@@ -365,6 +365,7 @@
 
    (let [data (u/locate-shape file-id page-id id)]
      (-> (obj/reify {:name "ShapeProxy"
+                     :on-set u/check-shape-writable
                      :on-error (u/handle-error plugin-id)}
            :$plugin {:enumerable false :get (fn [] plugin-id)}
            :$id {:enumerable false :get (fn [] id)}
@@ -1041,6 +1042,7 @@
            ;; Methods
            :resize
            (fn [width height]
+             (u/check-shape-located file-id page-id id)
              (cond
                (or (not (sm/valid-safe-number? width)) (<= width 0))
                (u/not-valid plugin-id :resize width)
@@ -1081,6 +1083,7 @@
 
            :rotate
            (fn [angle center]
+             (u/check-shape-located file-id page-id id)
              (let [center (when center {:x (obj/get center "x") :y (obj/get center "y")})]
                (cond
                  (not (sm/valid-safe-number? angle))
@@ -1469,18 +1472,22 @@
 
            :bringForward
            (fn []
+             (r/check-writable)
              (st/emit! (dw/vertical-order-selected (z-order-location plugin-id file-id page-id id :up) [id])))
 
            :sendBackward
            (fn []
+             (r/check-writable)
              (st/emit! (dw/vertical-order-selected (z-order-location plugin-id file-id page-id id :down) [id])))
 
            :bringToFront
            (fn []
+             (r/check-writable)
              (st/emit! (dw/vertical-order-selected (z-order-location plugin-id file-id page-id id :top) [id])))
 
            :sendToBack
            (fn []
+             (r/check-writable)
              (st/emit! (dw/vertical-order-selected (z-order-location plugin-id file-id page-id id :bottom) [id])))
 
            ;; COMPONENTS
@@ -1528,8 +1535,8 @@
              (let [objects (u/locate-objects file-id page-id)
                    shape (u/locate-shape file-id page-id id)]
                (when (ctn/in-any-component? objects shape)
-                 (let [[root component] (u/locate-component objects shape)]
-                   (shape-proxy plugin-id (:component-file root) (:main-instance-page component) (:id root))))))
+                 (let [root (ctn/get-instance-root objects shape)]
+                   (shape-proxy plugin-id file-id page-id (:id root))))))
 
            :componentHead
            (fn []
@@ -1544,8 +1551,10 @@
              (let [objects (u/locate-objects file-id page-id)
                    shape (u/locate-shape file-id page-id id)]
                (when (ctn/in-any-component? objects shape)
-                 (when-let [[head component] (u/locate-head-component objects shape)]
-                   (lib-component-proxy plugin-id (:component-file head) (:id component))))))
+                 (let [[head component] (u/locate-head-component objects shape)]
+                   ;; The component is nil when its library is not available
+                   (when (some? component)
+                     (lib-component-proxy plugin-id (:component-file head) (:id component)))))))
 
            :detach
            (fn []

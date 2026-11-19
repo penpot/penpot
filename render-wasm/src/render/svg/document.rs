@@ -5,6 +5,7 @@ use crate::shapes::{radius_to_sigma, Fill, Shadow, Shape, Type};
 use crate::state::ShapesPoolRef;
 
 use crate::render::vector::draw_shape_geometry;
+use crate::render::RenderState;
 
 // Skia's SVG backend (`SkSVGDevice`) silently drops everything drawn inside a
 // `save_layer`, so composite effects rendered with `save_layer` (opacity,
@@ -220,6 +221,35 @@ impl SvgLayerCanvas {
             draw_clip_geometry(cv, shape, tree, &paint, self.silhouette_offset);
         }
         self.finish_clip_path_fragment(id, canvas);
+    }
+
+    /// Opens a group whose mask hides `element`'s outline, so its drop shadows
+    /// never show under it (CSS `box-shadow`). Returns whether it opened one.
+    pub(super) fn open_drop_shadow_clear_group(&mut self, element: &Shape) -> bool {
+        if !element.clears_drop_shadow_underneath() {
+            return false;
+        }
+        let id = self.unique("dsmask");
+        let canvas = self.new_fragment();
+        {
+            let cv: &skia::Canvas = &canvas;
+            let mut paint = Paint::default();
+            paint.set_color(skia::Color::WHITE);
+            cv.save();
+            cv.reset_matrix();
+            cv.draw_rect(
+                skia::Rect::from_wh(self.page_rect.width(), self.page_rect.height()),
+                &paint,
+            );
+            cv.restore();
+            paint.set_anti_alias(true);
+            paint.set_color(skia::Color::BLACK);
+            cv.concat(&element.centered_transform());
+            cv.draw_path(&RenderState::drop_shadow_clear_path(element), &paint);
+        }
+        self.finish_mask_fragment(&id, canvas);
+        self.open_group(&format!("mask=\"url(#{id})\""));
+        true
     }
 
     /// Finalizes a fragment canvas as a `<clipPath>` def.

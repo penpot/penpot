@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "ng build contrast-plugin && pnpm run build:plugin",
+    "build": "pnpm run build:plugin && ng build contrast-plugin",
     "build:dev": "ng build contrast-plugin --configuration development",
     "build:plugin": "node ../../tools/scripts/build-plugin.mjs --plugin=contrast-plugin",
     "watch": "node ../../tools/scripts/build-plugin.mjs --plugin=contrast-plugin --watch",
@@ -13,5 +13,5 @@
     "lint": "eslint .",
     "test": "vitest"
   },
-  "packageManager": "pnpm@12.16.1+sha512.091d1dee7927575661b25dab3c2ae31cafc1c54d6b71ed6a6600cf0c1cb10434a447eae14015f1b23e2e6bedeed79df94a932e2164d2832280dce3fb32f656d1"
+  "packageManager": "pnpm@12.21.0+sha512.66fd8278ee28935ce951792d34367ff3af5c432a2756445823029533835b8da529bbe0be5130afd56ed0713fb8789e47bad82d93bd5ae2fe54b15562d6276ef0"
 }

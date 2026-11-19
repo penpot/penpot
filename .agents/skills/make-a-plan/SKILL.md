@@ -16,19 +16,18 @@ stop — this skill needs the build agent to save the plan.
 
 - The user asks to plan, design, or break down a task, in any phrasing:
   "make a plan", "how would we build X", "design an approach for Y" —
-  or runs `/make-a-plan`.
+  or invokes `@make-a-plan`.
 - The user asks to rework or extend an existing plan. While the plan is
   still unimplemented (pre-`implement-plan` iteration, e.g. after
-  `/review-plan` findings or user feedback), revise the saved plan file
+  `@review-plan` findings or user feedback), revise the saved plan file
   in place. Once the plan has been implemented and reviewed (post
-  `/review-code` findings on committed work), write a new derived plan
+  `@review-code` findings on committed work), write a new derived plan
   file instead — never rewrite the executed plan. The `planner` skill
   defines the derived naming (`--review-NN`, `--task-NN`).
-- The user says to apply `review-plan` findings to a still-unimplemented
-  plan: apply the agreed changes, flip `Status` to `reviewed`, and
-  append one UTC ISO 8601 line to `Review Log` describing what changed.
-  This apply step is the only pre-implementation write to those fields —
-  `review-plan` itself stays read-only and never writes.
+- The user says to apply additional review feedback to a still-unimplemented
+  plan: apply the agreed changes, flip `Status` to `reviewed`, and append one
+  UTC ISO 8601 line to `Review Log`. `review-plan` can also update the plan
+  and its metadata as part of its own review flow.
 
 Do not use it to execute a plan — that is the `implement-plan` flow.
 
@@ -39,6 +38,11 @@ Do not use it to execute a plan — that is the `implement-plan` flow.
    example, `delegated` in the user context), delegate to the `general` subagent
    instead — the delegate must also follow the `planner` skill and receive all
    the relevant session context (a review, user feedback, and so on).
+   When the plan addresses a code review, preserve the review target, reviewer
+   session ID if available, original findings and IDs, and decisions including
+   deferred or rejected findings and their reasons in the local plan. Map
+   accepted findings to tasks. If context is unavailable, mark it unknown; do
+   not invent it. Pass this context to a delegated planner too.
 2. Before asking me to decide anything, explain the plan and every open question in
    plain language. Assume I know only the high-level project goal, not the codebase,
    architecture, implementation terms, or the problem this task solves.
@@ -101,8 +105,8 @@ constraints and risks, what is deliberately out of scope, and the path where the
 is saved. Never assume that a short list of task names is enough context. End
 the final response by suggesting the next steps, in this order:
 
-1. `/review-plan` — to get a second opinion on the plan before executing it.
-2. `/implement-plan` — to execute the plan from the current session context.
+1. `@review-plan` — to get a second opinion on the plan before executing it.
+2. `@implement-plan` — to execute the plan from the current session context.
 
 These are suggestions, not a required pipeline — any instruction from me
 overrides them (for example, asking you to implement the plan directly).

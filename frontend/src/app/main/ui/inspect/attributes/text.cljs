@@ -31,7 +31,7 @@
        (map #(dm/str (d/name %) ": " (get style %) ";"))
        (str/join "\n")))
 
-(mf/defc typography-block
+(mf/defc typography-block*
   [{:keys [text style]}]
   (let [color-format*       (mf/use-state :hex)
         color-format        (deref color-format*)
@@ -129,6 +129,14 @@
              "uppercase" (tr "inspect.attributes.typography.text-transform.uppercase")
              "unset" (tr "inspect.attributes.typography.text-transform.unset"))]]]])
 
+     (when (types.text/list-paragraph? style)
+       [:div {:class (stl/css :text-row)}
+        [:div {:class (stl/css :global/attr-label)} "List Style"]
+        [:div {:class (stl/css :global/attr-value)}
+         [:> copy-button* {:data (copy-style-data style :list-style-type)}
+          [:div {:class (stl/css :button-children)}
+           (tr "inspect.attributes.typography.list-style-type.disc")]]]])
+
      [:> copy-button* {:data (str/trim text)
                        :class (stl/css :attributes-content-row)}
       [:span {:class (stl/css :content)
@@ -138,17 +146,17 @@
        (str/trim text)]]]))
 
 
-(mf/defc text-block [{:keys [shape]}]
+(mf/defc text-block* [{:keys [shape]}]
   (let [style-text-blocks (->> (:content shape)
                                (txt/content->text+styles)
                                (remove (fn [[_ text]] (str/empty? (str/trim text))))
                                (mapv (fn [[style text]] (vector (merge (types.text/get-default-text-attrs) style) text))))]
 
     (for [[idx [full-style text]] (map-indexed vector style-text-blocks)]
-      [:& typography-block {:key idx
-                            :shape shape
-                            :style full-style
-                            :text text}])))
+      [:> typography-block* {:key idx
+                             :shape shape
+                             :style full-style
+                             :text text}])))
 
 (mf/defc text-panel*
   [{:keys [shapes]}]
@@ -160,5 +168,5 @@
        :title-class (stl/css :text-atrr-title)}]
 
      (for [shape shapes]
-       [:& text-block {:shape shape
-                       :key (dm/str "text-block" (:id shape))}])]))
+       [:> text-block* {:shape shape
+                        :key (dm/str "text-block" (:id shape))}])]))

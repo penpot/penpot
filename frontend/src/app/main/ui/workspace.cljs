@@ -27,6 +27,7 @@
    [app.main.ui.workspace.components-debugger :refer [components-debugger*]]
    [app.main.ui.workspace.context-menu :refer [context-menu*]]
    [app.main.ui.workspace.coordinates :as coordinates]
+   [app.main.ui.workspace.file-restored-modal]
    [app.main.ui.workspace.libraries]
    [app.main.ui.workspace.nudge]
    [app.main.ui.workspace.palette :refer [palette*]]
@@ -53,7 +54,7 @@
 
 (mf/defc workspace-content*
   {::mf/private true}
-  [{:keys [file layout page wglobal]}]
+  [{:keys [file layout page wglobal scroll-store]}]
 
   (let [palete-size (mf/use-state nil)
         selected    (mf/deref refs/selected-shapes)
@@ -122,6 +123,7 @@
                      :file-id (get file :id)
                      :page-id page-id
                      :file file
+                     :scroll-store scroll-store
                      :selected selected
                      :section options-mode
                      :drawing-tool (get drawing :tool)}])]))
@@ -172,9 +174,14 @@
 (mf/defc workspace-inner*
   {::mf/private true}
   [{:keys [page-id file-id file layout wglobal]}]
-  (let [page-ref (mf/with-memo [file-id page-id]
-                   (make-page-ref file-id page-id))
-        page     (mf/deref page-ref)]
+  (let [page-ref      (mf/with-memo [file-id page-id]
+                        (make-page-ref file-id page-id))
+        page          (mf/deref page-ref)
+
+        ;; NOTE: lives here because the sidebar unmounts on every page
+        ;; switch (the loader replaces `workspace-content*` until the
+        ;; new page is ready), so the scroll positions must outlive it
+        scroll-store* (mf/use-var {})]
 
     (mf/with-effect []
       (let [focus-out #(st/emit! (dw/workspace-focus-lost))
@@ -190,7 +197,8 @@
       [:> workspace-content* {:file file
                               :page page
                               :wglobal wglobal
-                              :layout layout}]
+                              :layout layout
+                              :scroll-store scroll-store*}]
       [:> workspace-loader*])))
 
 (mf/defc workspace*

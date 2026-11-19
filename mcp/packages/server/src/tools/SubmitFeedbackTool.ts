@@ -12,7 +12,9 @@ export class SubmitFeedbackArgs implements Feedback {
             .min(1)
             .max(120)
             .regex(/\S/)
-            .regex(/^\P{Cc}*$/u)
+            // the Unicode Cc category; `\P{Cc}` is avoided because clients that compile
+            // advertised patterns with other regex engines (e.g. Python) reject it
+            .regex(/^[^\x00-\x1F\x7F-\x9F]*$/)
             .describe("Short, specific summary without line breaks or other control characters (max 120 characters)."),
         feedback: z
             .string()

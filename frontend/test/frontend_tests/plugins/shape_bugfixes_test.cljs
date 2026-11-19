@@ -102,7 +102,8 @@
         emitted  (atom nil)
         context  (api/create-context plugin-id)]
     (set! st/state (atom {:current-file-id file-id
-                          :current-page-id page-id}))
+                          :current-page-id page-id
+                          :permissions {:can-edit true}}))
     (with-redefs [dw/convert-selected-to-path
                   (mock/stub (fn [ids]
                                (reset! emitted ids)

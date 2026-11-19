@@ -16,7 +16,7 @@ static mut RENDER_RESOURCES: *mut RenderResources = std::ptr::null_mut();
 
 pub(crate) fn get_design_state() -> &'static mut State {
     unsafe {
-        debug_assert!(!DESIGN_STATE.is_null(), "Design State is null");
+        assert!(!DESIGN_STATE.is_null(), "Design State is null");
         &mut *DESIGN_STATE
     }
 }
@@ -35,7 +35,7 @@ pub(crate) fn get_gpu_state() -> &'static mut GpuState {
 #[inline(always)]
 pub(crate) fn get_render_state() -> &'static mut RenderState {
     unsafe {
-        debug_assert!(!RENDER_STATE.is_null(), "Render State is null");
+        assert!(!RENDER_STATE.is_null(), "Render State is null");
         &mut *RENDER_STATE
     }
 }
@@ -64,7 +64,7 @@ pub(crate) fn has_render_resources() -> bool {
 #[inline(always)]
 pub(crate) fn get_resources() -> &'static mut RenderResources {
     unsafe {
-        debug_assert!(!RENDER_RESOURCES.is_null(), "Render Resources is null");
+        assert!(!RENDER_RESOURCES.is_null(), "Render Resources is null");
         &mut *RENDER_RESOURCES
     }
 }
@@ -72,7 +72,7 @@ pub(crate) fn get_resources() -> &'static mut RenderResources {
 #[inline(always)]
 pub(crate) fn get_text_editor_state() -> &'static mut TextEditorState {
     unsafe {
-        debug_assert!(!TEXT_EDITOR_STATE.is_null(), "Text Editor state is null");
+        assert!(!TEXT_EDITOR_STATE.is_null(), "Text Editor state is null");
         &mut *TEXT_EDITOR_STATE
     }
 }
@@ -80,7 +80,7 @@ pub(crate) fn get_text_editor_state() -> &'static mut TextEditorState {
 #[inline(always)]
 pub(crate) fn get_ui_state() -> &'static mut UIState {
     unsafe {
-        debug_assert!(!UI_STATE.is_null(), "UI State is null");
+        assert!(!UI_STATE.is_null(), "UI State is null");
         &mut *UI_STATE
     }
 }
@@ -234,14 +234,28 @@ pub extern "C" fn init_headless(_width: i32, _height: i32) -> Result<()> {
     Ok(())
 }
 
+unsafe fn drop_global<T>(slot: *mut *mut T) {
+    let ptr = std::ptr::replace(slot, std::ptr::null_mut());
+    if !ptr.is_null() {
+        drop(Box::from_raw(ptr));
+    }
+}
+
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn clean_up() -> Result<()> {
-    // Cancel the current animation frame if it exists so
-    // it won't try to render without context
-    let render_state = get_render_state();
-    render_state.prepare_context_loss_cleanup();
-    unsafe { DESIGN_STATE = std::ptr::null_mut() }
+    if has_render_state() {
+        // Abandons the GL context, so the drops below issue no GL calls.
+        get_render_state().prepare_context_loss_cleanup();
+    }
+    unsafe {
+        drop_global(std::ptr::addr_of_mut!(DESIGN_STATE));
+        drop_global(std::ptr::addr_of_mut!(TEXT_EDITOR_STATE));
+        drop_global(std::ptr::addr_of_mut!(UI_STATE));
+        drop_global(std::ptr::addr_of_mut!(RENDER_STATE));
+        drop_global(std::ptr::addr_of_mut!(RENDER_RESOURCES));
+        drop_global(std::ptr::addr_of_mut!(GPU_STATE));
+    }
     mem::free_bytes()?;
     Ok(())
 }

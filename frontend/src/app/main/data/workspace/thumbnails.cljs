@@ -361,10 +361,12 @@
                  (rx/buffer 2 1)
                  (rx/share))
 
-            ;; All commits stream, indepentendly of the source of the commit
+            ;; All commits stream, indepentendly of the source of the commit.
+            ;; A rollback's rebase is not a commit but changes the data too.
             all-commits-s
             (->> stream
-                 (rx/filter dch/commit?)
+                 (rx/filter #(or (dch/commit? %)
+                                 (ptk/type? ::dch/rebase-commits %)))
                  (rx/map deref)
                  (rx/observe-on :async)
                  (rx/with-latest-from workspace-data-s)

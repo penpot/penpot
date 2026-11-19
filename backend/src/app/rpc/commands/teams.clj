@@ -31,6 +31,7 @@
    [app.rpc.commands.profile :as profile]
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
+   [app.rpc.notifications :as ntf]
    [app.rpc.permissions :as perms]
    [app.rpc.quotes :as quotes]
    [app.setup :as-alias setup]
@@ -84,6 +85,17 @@
 
 (def check-read-permissions!
   (perms/make-check-fn has-read-permissions?))
+
+(defn check-invitation-permissions
+  "Returns the team permissions of `profile-id`, raising the error of the
+  invitation family when they are not the admin ones that every invitation
+  command requires. Accepts a connection, a pool or a cfg."
+  [conn profile-id team-id]
+  (let [perms (get-permissions conn profile-id team-id)]
+    (when-not (:is-admin perms)
+      (ex/raise :type :validation
+                :code :insufficient-permissions))
+    perms))
 
 (defn decode-row
   [{:keys [features subscription] :as row}]
@@ -150,7 +162,8 @@
                           WHEN 'professional' THEN 'active'
                           ELSE COALESCE(p.props->'~:subscription'->>'~:status', 'incomplete')
                        END,
-            '~:seats', p.props->'~:subscription'->'~:quantity'
+            '~:seats', p.props->'~:subscription'->'~:quantity',
+            '~:owner-id', '~u' || p.id::text
           ) AS subscription
      FROM team_profile_rel AS tp
      JOIN team AS t ON (t.id = tp.team_id)
@@ -200,8 +213,9 @@
   (dm/with-open [conn (db/open pool)]
     (let [teams (get-teams conn profile-id)]
       (if (contains? cf/flags :admin-console)
-        (->> (nitrate/add-organization-info-to-teams cfg teams params)
-             (remove #(get-in % [:organization :expired-license])))
+        (as-> (nitrate/add-organization-info-to-teams cfg teams params) teams
+          (remove #(get-in % [:organization :expired-license]) teams)
+          (nitrate/add-owner-licence-to-teams cfg teams params))
         teams))))
 
 (def ^:private sql:get-owned-teams
@@ -247,7 +261,8 @@
   [cfg {:keys [::rpc/profile-id id file-id] :as params}]
   (let [team (get-team cfg :profile-id profile-id :team-id id :file-id file-id)]
     (if (contains? cf/flags :admin-console)
-      (nitrate/add-organization-info-to-team cfg team params)
+      (let [team (nitrate/add-organization-info-to-team cfg team params)]
+        (first (nitrate/add-owner-licence-to-teams cfg [team] params)))
       team)))
 
 (defn- get-organization-owner-viewer-team
@@ -257,13 +272,14 @@
   [cfg profile-id default-team-id params]
   (when-let [team-id (perms/resolve-team-id cfg params)]
     (when (nitrate/organization-owner-of-team? cfg profile-id team-id)
+      ;; resolve-team-id already proved the team row live; the guard
+      ;; that used to live here (when-not is-row-deleted?) was dead.
       (when-let [team (db/get* cfg :team {:id team-id})]
-        (when-not (db/is-row-deleted? team)
-          (-> team
-              (decode-row)
-              (merge perms/viewer-role-flags)
-              (assoc :is-default (= team-id default-team-id))
-              (process-permissions)))))))
+        (-> team
+            (decode-row)
+            (merge perms/viewer-role-flags)
+            (assoc :is-default (= team-id default-team-id))
+            (process-permissions))))))
 
 (defn get-team
   [cfg & {:keys [profile-id team-id project-id file-id] :as params}]
@@ -489,8 +505,9 @@
   {::doc/added "1.17"
    ::sm/params schema:get-team-invitations}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id]}]
+  (check-invitation-permissions cfg profile-id team-id)
+
   (dm/with-open [conn (db/open pool)]
-    (check-read-permissions! cfg profile-id team-id)
     (get-team-invitations conn team-id)))
 
 
@@ -544,7 +561,8 @@
     (nitrate/assert-membership cfg profile-id organization-id)
 
     (let [organization-perms (nitrate/call cfg :get-organization-permissions
-                                           {:organization-id organization-id})]
+                                           {:organization-id organization-id
+                                            ::rpc/profile-id profile-id})]
       (if (nil? organization-perms)
         (ex/raise :type :validation
                   :code :not-allowed
@@ -809,9 +827,10 @@
                                       :team-id team-id}))
 
 (defn leave-team
-  [{:keys [::db/conn ::mbus/msgbus]} {:keys [profile-id id reassign-to]}]
+  [{:keys [::db/conn ::mbus/msgbus] :as cfg} {:keys [profile-id id reassign-to]}]
   (let [perms   (get-permissions conn profile-id id)
-        members (get-team-members conn id)]
+        members (get-team-members conn id)
+        team    (db/get conn :team {:id id})]
 
     (cond
       ;; we can only proceed if there are more members in the team
@@ -860,6 +879,16 @@
 
     (delete-team-rels conn profile-id id)
 
+    ;; The leaver is told so, exactly as a removed member is, so the
+    ;; session stops asking for content it can no longer read.
+    (mbus/pub! msgbus
+               :topic profile-id
+               :message {:type :team-membership-change
+                         :change :removed
+                         :team-id id
+                         :team-name (:name team)})
+    (ntf/notify-permissions-changed cfg profile-id)
+
     nil))
 
 (def ^:private schema:leave-team
@@ -892,8 +921,7 @@
         can-delete?
         (if in-organization?
           (cto/allowed? :delete-team
-                        {:organization-perms {:owner-id    (dm/get-in team [:organization :owner-id])
-                                              :permissions (dm/get-in team [:organization :permissions])}
+                        {:organization-perms organization
                          :profile-id profile-id
                          :team-perms perms})
           (boolean (:is-owner perms)))]
@@ -926,6 +954,10 @@
                     ::jobs/params {:object :team
                                    :deleted-at (:deleted-at team)
                                    :id team-id}})
+      ;; The team is soft-deleted, so every subscription its members hold
+      ;; loses its authorization at once. One event: the watcher resolves
+      ;; the members itself.
+      (ntf/notify-team-permissions-changed cfg team-id)
       (rph/with-meta (rph/wrap team)
         {::audit/props {:organization-id organization-id
                         :team-id team-id
@@ -958,7 +990,7 @@
 ;; --- Mutation: Team Update Role
 
 (defn update-team-member-role
-  [{:keys [::db/conn ::mbus/msgbus]} {:keys [profile-id team-id member-id role] :as params}]
+  [{:keys [::db/conn ::mbus/msgbus] :as cfg} {:keys [profile-id team-id member-id role] :as params}]
   ;; We retrieve all team members instead of query the
   ;; database for a single member. This is just for
   ;; convenience, if this becomes a bottleneck or problematic,
@@ -1008,6 +1040,12 @@
                   params
                   {:team-id team-id
                    :profile-id member-id})
+
+      ;; A role change never removes read access on its own, but the open
+      ;; subscriptions are re-checked rather than assumed: the watcher
+      ;; decides from fresh data, which is also what keeps a downgrade to
+      ;; viewer from being mistaken for a revocation.
+      (ntf/notify-permissions-changed cfg member-id)
       nil)))
 
 (def ^:private schema:update-team-member-role
@@ -1081,6 +1119,11 @@
                            :team-id team-id
                            :team-name (:name team)}))
 
+    ;; Whatever this member may still read through another path (an
+    ;; organization owner keeps read-only access), the subscriptions they
+    ;; already hold have to be re-checked, not trusted from here on.
+    (ntf/notify-permissions-changed cfg member-id)
+
     nil))
 
 ;; --- Mutation: Update Team Photo
@@ -1102,9 +1145,9 @@
   [cfg {:keys [::rpc/profile-id file] :as params}]
   ;; Validate incoming mime type
 
+  (media.v/check-upload-path file)
   (media.v/check-media-type file #{"image/jpeg" "image/png" "image/webp"})
   (media.v/check-media-size file)
-  (media.v/check-upload-path file)
   (update-team-photo cfg (assoc params :profile-id profile-id)))
 
 (defn update-team-photo

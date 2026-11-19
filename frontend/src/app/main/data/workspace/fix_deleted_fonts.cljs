@@ -21,78 +21,68 @@
 ;; - Moving files from one team to another in the same instance
 ;; - Custom fonts are explicitly deleted in the team area
 
-(defn- calculate-alternative-font-id
-  [value]
-  (let [fonts (deref fonts/fontsdb)]
-    (reduce-kv (fn [_ _ font]
-                 (if (= (:family font) value)
-                   (reduced (:id font))
-                   nil))
-               nil
-               fonts)))
+(defn- index-fonts-by-family
+  [fonts]
+  (reduce-kv (fn [index id font]
+               (let [family (:family font)]
+                 (if (contains? index family)
+                   index
+                   (assoc index family id))))
+             {}
+             fonts))
 
 (defn- has-invalid-font-family?
-  [node]
-  (let [fonts (deref fonts/fontsdb)
-        font-family (:font-family node)]
-    (and (some? font-family)
-         (nil? (get fonts (:font-id node))))))
+  [fonts node]
+  (and (some? (:font-family node))
+       (nil? (get fonts (:font-id node)))))
 
-(defn- shape-has-invalid-font-family??
-  [shape]
-  (and (cfh/text-shape? shape)
-       (some has-invalid-font-family?
-             (txt/node-seq txt/is-text-node? (:content shape)))))
+(defn- fixable-font?
+  [fonts families node]
+  (and (has-invalid-font-family? fonts node)
+       (contains? families (:font-family node))))
 
 (defn- fix-deleted-font
-  [node]
-  (if-let [alternative-font-id (calculate-alternative-font-id (:font-family node))]
-    (assoc node :font-id alternative-font-id)
-    node))
-
-(defn- fix-shape-content
-  [shape]
-  (txt/transform-nodes has-invalid-font-family? fix-deleted-font
-                       (:content shape)))
-
-(defn- fix-typography
-  [typography]
-  (if-let [alternative-font-id (calculate-alternative-font-id (:font-family typography))]
-    (assoc typography :font-id alternative-font-id)
-    typography))
+  [families node]
+  (assoc node :font-id (get families (:font-family node))))
 
 (defn- generate-page-changes
   [{:keys [objects id]}]
-  (reduce-kv (fn [changes shape-id shape]
-               (if (shape-has-invalid-font-family?? shape)
-                 (let [fixed-content (fix-shape-content shape)]
-                   (if (not= fixed-content (:content shape))
+  (let [fonts    (deref fonts/fontsdb)
+        families (index-fonts-by-family fonts)
+        fixable? (partial fixable-font? fonts families)]
+    (reduce-kv (fn [changes shape-id shape]
+                 (let [content (:content shape)]
+                   (if (and (cfh/text-shape? shape)
+                            (some (partial has-invalid-font-family? fonts)
+                                  (txt/node-seq txt/is-text-node? content))
+                            (some fixable? (txt/node-seq txt/is-node? content)))
                      (conj changes {:type :mod-obj
                                     :id shape-id
                                     :page-id id
                                     :operations [{:type :set
                                                   :attr :content
-                                                  :val fixed-content}
+                                                  :val (txt/transform-nodes
+                                                        fixable?
+                                                        (partial fix-deleted-font families)
+                                                        content)}
                                                  {:type :set
                                                   :attr :position-data
                                                   :val nil}]})
-                     changes))
-                 changes))
-             []
-             objects))
+                     changes)))
+               []
+               objects)))
 
 (defn- generate-library-changes
   [fdata]
-  (reduce-kv (fn [changes _ typography]
-               (if (has-invalid-font-family? typography)
-                 (let [fixed-typography (fix-typography typography)]
-                   (if (not= fixed-typography typography)
-                     (conj changes {:type :mod-typography
-                                    :typography fixed-typography})
-                     changes))
-                 changes))
-             []
-             (:typographies fdata)))
+  (let [fonts    (deref fonts/fontsdb)
+        families (index-fonts-by-family fonts)]
+    (reduce-kv (fn [changes _ typography]
+                 (if (fixable-font? fonts families typography)
+                   (conj changes {:type :mod-typography
+                                  :typography (fix-deleted-font families typography)})
+                   changes))
+               []
+               (:typographies fdata))))
 
 (defn fix-deleted-fonts-for-local-library
   "Looks the file local library for deleted fonts and emit changes if

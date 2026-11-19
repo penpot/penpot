@@ -70,6 +70,21 @@ async function connect(multiUser: boolean, token?: string) {
 
 const feedback = { subject: "Export fails", feedback: "Expected a PNG, received an error." };
 
+/**
+ * Collects all `pattern` values in a JSON schema.
+ */
+function schemaPatterns(schema: unknown): string[] {
+    if (Array.isArray(schema)) {
+        return schema.flatMap(schemaPatterns);
+    }
+    if (schema === null || typeof schema !== "object") {
+        return [];
+    }
+    return Object.entries(schema).flatMap(([key, value]) =>
+        key === "pattern" && typeof value === "string" ? [value] : schemaPatterns(value)
+    );
+}
+
 for (const multiUser of [false, true]) {
     test(`feedback is absent without a backend URI (multi-user=${multiUser})`, async () => {
         const connected = await connect(multiUser, "alice");
@@ -82,6 +97,10 @@ for (const multiUser of [false, true]) {
         const tool = (await connected.listTools()).tools.find((tool) => tool.name === "submit_feedback");
         assert.ok(tool);
         assert.deepEqual(tool.inputSchema.required, ["subject", "feedback"]);
+        // advertised patterns must also compile outside ECMAScript (ChatGPT uses Python)
+        const patterns = schemaPatterns(tool.inputSchema);
+        assert.ok(patterns.length > 0);
+        assert.ok(!patterns.some((pattern) => /\\[pP]\{/.test(pattern)), patterns.join(", "));
         const result = await connected.callTool({ name: "submit_feedback", arguments: feedback });
         assert.deepEqual(result.content, [
             { type: "text", text: "Feedback queued. It is emailed in the background, so delivery is not confirmed." },

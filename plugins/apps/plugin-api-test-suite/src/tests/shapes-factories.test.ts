@@ -325,4 +325,41 @@ describe('Shapes', () => {
       expect(a.x).toBeCloseTo(10, 0);
     });
   });
+
+  // The factories place new shapes at the page origin. A board covering that
+  // point must not capture them: they belong to the page root until the plugin
+  // reparents them.
+  describe('Placement', () => {
+    const svg =
+      '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10">' +
+      '<rect width="10" height="10" fill="#ff0000"/></svg>';
+
+    test('createShapeFromSvg creates the shape at the page root', (ctx) => {
+      ctx.board.x = 0;
+      ctx.board.y = 0;
+      const group = ctx.penpot.createShapeFromSvg(svg);
+      expect(group).not.toBeNull();
+      if (!group) return;
+      try {
+        expect(group.parent?.id).toBe(ctx.penpot.root?.id);
+        expect(ctx.board.children.map((c) => c.id)).not.toContain(group.id);
+      } finally {
+        group.remove();
+      }
+    });
+
+    test('createShapeFromSvgWithImages creates the shape at the page root', async (ctx) => {
+      ctx.board.x = 0;
+      ctx.board.y = 0;
+      const group = await ctx.penpot.createShapeFromSvgWithImages(svg);
+      expect(group).not.toBeNull();
+      if (!group) return;
+      try {
+        expect(group.parent?.id).toBe(ctx.penpot.root?.id);
+        expect(ctx.board.children.map((c) => c.id)).not.toContain(group.id);
+      } finally {
+        group.remove();
+      }
+    });
+  });
 });

@@ -32,6 +32,19 @@ PR titles follow commit title conventions:
 
 See `mem:workflow/creating-commits` for emoji codes. Squash merge uses the PR title as the final commit subject, so title format matters.
 
+## Merge Strategy
+
+Policy: `CONTRIBUTING.md` → "Merging", under "Pull Requests".
+
+- Squash merge is the default, so the PR's own commits never reach `main`
+  and the PR title becomes the landed subject.
+- A regular merge is possible on request only. The request is the **first
+  line** of the PR body, above the `**Note:**` line:
+  `> **Merge:** do not squash; each commit is self-contained.`
+- Ask for it only when every commit on the branch is self-contained (builds
+  and passes lint on its own). Default to squash unless the user asks for
+  the opposite.
+
 ## Description Body
 
 Include concise sections covering:
@@ -60,13 +73,15 @@ PR descriptions follow this structure:
 ```
 
 The "Note:" line is required at the top. Adjust if this is a manual (non-AI) PR.
+When the PR requests a regular merge instead of a squash merge, its
+`**Merge:**` line goes above the `**Note:**` line (see Merge Strategy).
 
 ## Writing Principles
 
 - **Write for humans.** The diff shows what changed. The description explains why.
 - **Be concise.** Focus on reasoning: What was the problem? Why did it happen? How did you solve it?
 - **Prefer bullets over paragraphs.** Short bullet items, grouped by area with bold lead-ins where helpful, are far easier to digest than prose; keep any remaining paragraph to a few sentences.
-- **No manual line wraps.** Markdown renders adapting to the viewport; hard-wrapped lines degrade rendering. One line per paragraph or bullet, however long.
+- **No manual line wraps.** Markdown renders adapting to the viewport; hard-wrapped lines degrade rendering. One line per paragraph or bullet, however long. This applies to PR descriptions and to PR/issue comments and review replies alike.
 - **Skip the obvious.** Don't explain what `git diff` already shows.
 
 ### What NOT to Include
@@ -80,7 +95,7 @@ The "Note:" line is required at the top. Adjust if this is a manual (non-AI) PR.
 ## Explicit Issue Assignment
 
 - For each GitHub issue that a PR resolves, run `python3 scripts/gh.py link-issue <ISSUE_NUMBER> <PR_NUMBER>` after creating or editing the PR. Do not rely on `Closes #NNNN` in the body; it is only human-readable context.
-- The command calls `addCloseIssueReferences` and trusts the successful mutation: GitHub does not reliably report mutation-created links back through `closedByPullRequestsReferences(userLinkedOnly: true)`, so the command exits non-zero only when a link target is missing or the mutation fails. It is safe to rerun and also works for an already merged PR; it does not close an issue retroactively.
+- The command calls `addCloseIssueReferences` and trusts the successful mutation: GitHub does not reliably report mutation-created links back through `closedByPullRequestsReferences(userLinkedOnly: true)`, so the command exits non-zero only when a link target is missing or the mutation fails. It is safe to rerun and also works for an already merged PR. Do not rely on it to keep the issue open: adding `Closes #N` to the body of an already-merged PR closed the issue immediately when tried (#12896 / PR #12067, 2026-11-09).
 - Skip this process for `Relates to #NNNN` and Taiga references, which do not represent a closing relationship.
 
 ## Before Opening

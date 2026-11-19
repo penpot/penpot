@@ -186,6 +186,61 @@ test.describe("Tokens: Sets Tab", () => {
     await expect(darkSet).toHaveCount(0);
   });
 
+  test("Folding a group after reordering collapses only that group", async ({
+    page,
+  }) => {
+    const { tokenThemesSetsSidebar, tokenSetGroupItems } =
+      await setupTokensFileRender(page);
+
+    // The reorder swaps two groups, so every tree index changes while the DOM
+    // nodes keep their positions.
+    await createSet(tokenThemesSetsSidebar, "Colors/primary");
+
+    const lightDarkGroup = tokenSetGroupItems.filter({ hasText: "LightDark" });
+    const colorsGroup = tokenSetGroupItems.filter({ hasText: "Colors" });
+
+    await expect(tokenSetGroupItems).toHaveCount(2);
+    await expect(tokenSetGroupItems.first()).toContainText("LightDark");
+
+    // Drag the Colors group above the LightDark group. The sets list is a small
+    // scroll container, so both groups cannot be under the pointer at once and
+    // the HTML5 drag events are dispatched directly.
+    const target = await lightDarkGroup.boundingBox();
+    const dataTransfer = await page.evaluateHandle(() => new DataTransfer());
+
+    await colorsGroup.dispatchEvent("dragstart", { dataTransfer });
+    await lightDarkGroup.dispatchEvent("dragenter", { dataTransfer });
+    await lightDarkGroup.dispatchEvent("dragover", {
+      dataTransfer,
+      clientX: target.x + 100,
+      clientY: target.y + 2,
+    });
+    await lightDarkGroup.dispatchEvent("drop", {
+      dataTransfer,
+      clientX: target.x + 100,
+      clientY: target.y + 2,
+    });
+    await colorsGroup.dispatchEvent("dragend", { dataTransfer });
+
+    await expect(tokenSetGroupItems.first()).toContainText("Colors");
+
+    // Folding the first group hides only its own children.
+    await tokenSetGroupItems
+      .first()
+      .getByTestId("tokens-set-group-collapse")
+      .click();
+
+    await expect(
+      tokenThemesSetsSidebar.getByRole("button", {
+        name: "primary",
+        exact: true,
+      }),
+    ).toHaveCount(0);
+    await expect(
+      tokenThemesSetsSidebar.getByRole("button", { name: "dark", exact: true }),
+    ).toBeVisible();
+  });
+
   test("Change current theme", async ({ page }) => {
     const { tokenThemesSetsSidebar, tokenSetItems } =
       await setupTokensFileRender(page);

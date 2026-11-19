@@ -187,9 +187,11 @@
   padding: 0 var(--sp-xs) var(--sp-s) var(--sp-xs);
   border-radius: $br-8;
   border: $b-2 solid transparent;
+  background-color: transparent;
 
-  &:hover {
-    text-decoration: none;
+  &:hover,
+  &:focus-visible {
+    outline: none;
     border-color: var(--color-accent-primary);
 
     .download-icon {

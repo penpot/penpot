@@ -683,18 +683,23 @@
   (ptk/reify ::change-color-in-selected
     ptk/WatchEvent
     (watch [_ _ _]
-      (let [undo-id (js/Symbol)]
+      (let [undo-id                         (js/Symbol)
+            {text-ops true style-ops false} (group-by #(= :content (:prop %)) operations)
+            style-groups                    (group-by (juxt :prop :index) style-ops)]
         (rx/concat
          (rx/of (dwu/start-undo-transaction undo-id))
-         (->> (rx/from operations)
-              (rx/map (fn [{:keys [shape-id index] :as operation}]
-                        (case (:prop operation)
-                          :fill    (change-fill [shape-id] new-color index)
-                          :stroke  (change-stroke-color [shape-id] new-color index)
-                          :shadow  (change-shadow [shape-id] new-color index)
-                          :content (dwt/update-text-with-function
-                                    shape-id
-                                    (partial change-text-color old-color new-color index))))))
+         (->> (rx/from style-groups)
+              (rx/map (fn [[[prop index] operations]]
+                        (let [ids (mapv :shape-id operations)]
+                          (case prop
+                            :fill   (change-fill ids new-color index)
+                            :stroke (change-stroke-color ids new-color index)
+                            :shadow (change-shadow ids new-color index))))))
+         (->> (rx/from text-ops)
+              (rx/map (fn [{:keys [shape-id index]}]
+                        (dwt/update-text-with-function
+                         shape-id
+                         (partial change-text-color old-color new-color index)))))
          (rx/of (dwu/commit-undo-transaction undo-id)))))))
 
 (defn apply-color-from-palette
@@ -825,13 +830,19 @@
       (assoc :opacity alpha)
       (d/without-nils)))
 
+(defn merge-color-components
+  [color changes]
+  (cond-> (merge color changes)
+    (and (:hex changes) (not (:hsl changes)))
+    (dissoc :hsl)))
+
 (defn clear-color-components
   [data]
-  (dissoc data :hex :alpha :r :g :b :h :s :v :image))
+  (dissoc data :hex :alpha :r :g :b :h :s :v :hsl :image))
 
 (defn clear-image-components
   [data]
-  (dissoc data :hex :alpha :r :g :b :h :s :v :color))
+  (dissoc data :hex :alpha :r :g :b :h :s :v :hsl :color))
 
 (defn- create-gradient
   [type]
@@ -923,7 +934,9 @@
                             new-gradient (-> gradient
                                              (dissoc :stops)
                                              (assoc :shape-id shape-id))]
-                        (if (and (= (:stops state) new-stops) (= (:gradient state) new-gradient))
+                        (if (and (= (mapv #(dissoc % :hsl) (:stops state))
+                                    new-stops)
+                                 (= (:gradient state) new-gradient))
                           state
                           (-> state
                               (assoc :opacity (:opacity data))
@@ -1095,7 +1108,7 @@
               (fn [state]
                 (let [type  (:type state)
                       state (-> state
-                                (update :current-color merge changes)
+                                (update :current-color merge-color-components changes)
                                 (update :current-color materialize-color-components)
                                 (update :current-color #(if (not= type :image) (dissoc % :image) %))
                                 ;; current color can be a library one
@@ -1103,9 +1116,8 @@
                                 (update :current-color dissoc :ref-id :ref-file))]
 
                   (if-let [stop (:editing-stop state)]
-                    (update-in state [:stops stop] (fn [data] (->> changes
-                                                                   (merge data)
-                                                                   (materialize-color-components))))
+                    (update-in state [:stops stop] (fn [data] (-> (merge-color-components data changes)
+                                                                  (materialize-color-components))))
 
                     (-> state
                         (dissoc :gradient :stops :editing-stop)

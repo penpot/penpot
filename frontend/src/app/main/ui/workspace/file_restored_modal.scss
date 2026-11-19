@@ -1,0 +1,34 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS SUBSIDIARY SL
+
+@use "ds/_utils.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
+
+.modal-overlay {
+  @extend %modal-overlay-base;
+}
+
+.modal-dialog {
+  @extend %modal-container-base;
+
+  color: var(--color-foreground-secondary);
+  display: grid;
+  gap: var(--sp-s);
+  max-width: px2rem(482); // FIXME: This should be a token
+
+  & > * {
+    margin: 0; // FIXME: This should be in reset styles
+  }
+}
+
+.modal-title {
+  color: var(--color-foreground-primary);
+}
+
+.modal-footer {
+  margin-block-start: var(--sp-m);
+  justify-self: end;
+}

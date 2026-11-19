@@ -1,0 +1,156 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS SUBSIDIARY SL
+
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/typography.scss" as t;
+
+.scale-sidebar {
+  display: flex;
+  flex-direction: column;
+  block-size: 100%;
+  overflow-y: auto;
+  background-color: var(--color-background-primary);
+}
+
+.scale-title {
+  margin: var(--sp-s) var(--sp-s) 0;
+}
+
+.scale-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-l);
+  padding: var(--sp-m) var(--sp-m) var(--sp-l);
+}
+
+.scale-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+}
+
+.scale-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: start;
+  gap: var(--sp-xs);
+}
+
+.scale-field {
+  position: relative;
+  min-inline-size: 0;
+}
+
+// --- Anchor point selector ----------------------------------------
+
+.anchor-grid {
+  --anchor-side-size: #{$sz-24};
+  --anchor-center-size: #{px2rem(60)};
+
+  display: grid;
+  grid-template-areas:
+    "top-left top-center top-right"
+    "center-left center center-right"
+    "bottom-left bottom-center bottom-right";
+  grid-template-columns: var(--anchor-side-size) var(--anchor-center-size) var(--anchor-side-size);
+  grid-template-rows: var(--anchor-side-size) var(--anchor-center-size) var(--anchor-side-size);
+  inline-size: fit-content;
+  block-size: fit-content;
+  border-radius: $br-8;
+  background-color: var(--color-background-tertiary);
+}
+
+.anchor-grid .anchor-point-tooltip {
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+.anchor-point {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.anchor-top-left {
+  grid-area: top-left;
+}
+
+.anchor-top-center {
+  grid-area: top-center;
+}
+
+.anchor-top-right {
+  grid-area: top-right;
+}
+
+.anchor-center-left {
+  grid-area: center-left;
+}
+
+.anchor-center {
+  grid-area: center;
+}
+
+.anchor-center-right {
+  grid-area: center-right;
+}
+
+.anchor-bottom-left {
+  grid-area: bottom-left;
+}
+
+.anchor-bottom-center {
+  grid-area: bottom-center;
+}
+
+.anchor-bottom-right {
+  grid-area: bottom-right;
+}
+
+.center-area {
+  border-radius: $br-8;
+  background-color: var(--color-background-primary);
+}
+
+.anchor-input {
+  position: absolute;
+  inline-size: $sz-1;
+  block-size: $sz-1;
+  margin: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.anchor-mark {
+  inline-size: px2rem(10);
+  block-size: px2rem(10);
+  border-radius: px2rem(6);
+  outline: $b-2 solid transparent;
+  background-color: var(--color-foreground-secondary);
+}
+
+.anchor-point:hover .anchor-mark {
+  background-color: var(--color-foreground-primary);
+}
+
+.anchor-input:checked + .anchor-mark {
+  outline-color: var(--color-accent-primary-muted);
+  background-color: var(--color-accent-primary);
+}
+
+.anchor-input:focus-visible + .anchor-mark {
+  outline-color: var(--color-accent-primary);
+}
+
+.anchor-point.disabled .anchor-mark {
+  background-color: var(--color-foreground-disabled);
+}
+
+.anchor-point.disabled .anchor-input:checked + .anchor-mark {
+  background-color: var(--color-accent-primary-muted);
+}

@@ -43,10 +43,9 @@ that breaks them is wrong, even if the code is right.
   - For another commit: `./scripts/check-commit -c <ref>`
 - **NEVER** hand-wave the body as "one long line". If a line exceeds 80,
   break it at a space.
-- **NEVER add a `Co-authored-by:` trailer.** It is forbidden; `scripts/check-commit` fails the commit when any line matches it (case-insensitive).
+- **`Co-authored-by:` is for human co-authors only** (`Co-authored-by: Name <email>`). AI providers, agents and bots must not be credited that way; use `AI-assisted-by:` instead. `scripts/check-commit` rejects a trailer value that names an AI provider or agent (`Claude`, `Copilot`, `Cursor`, `Codex`, `Gemini`, `Aider`, `Cline`, `Windsurf`, `DeepSeek`, `OpenCode`, `devin-ai`, `amazon q`, and similar) or carries a bot identity (`[bot]`, `bot@`). `NON_HUMAN_COAUTHOR_PATTERN` is the list; extend it when a new tool starts adding trailers. A person whose own name or email matches one of those tokens (a surname like `Cline`, an address at a provider) is rejected too; amend the trailer or credit them with `Reviewed-by:`.
 - CI runs `scripts/check-commit` on every new commit (`mem:workflow/creating-commits` is enforced by `.github/workflows/commit-checker.yml`), so a forbidden trailer fails the build.
-- Exceptions inside the body (do not wrap these): `Signed-off-by:`,
-  `AI-assisted-by:` trailers, and lines carrying a URL.
+- Exceptions inside the body (do not wrap these): `Signed-off-by:`, `Co-authored-by:`, `AI-assisted-by:` trailers, and lines carrying a URL.
 
 **AI-assisted-by trailer rules:**
 - Use only the model name, e.g. `mimo-v2.5`, `deepseek-v4-flash`
@@ -55,6 +54,14 @@ that breaks them is wrong, even if the code is right.
 ## Commit Type Emojis
 
 `:bug:` bug fix · `:sparkles:` enhancement · `:tada:` new feature · `:recycle:` refactor · `:lipstick:` cosmetic · `:ambulance:` critical fix · `:books:` docs · `:construction:` WIP · `:boom:` breaking · `:wrench:` config · `:zap:` perf · `:whale:` docker · `:paperclip:` other · `:arrow_up:` dep upgrade · `:arrow_down:` dep downgrade · `:fire:` removal · `:globe_with_meridians:` translations · `:rocket:` epic/highlight
+
+## Atomic Commits
+
+A PR squash-merges into one commit by default, so the split inside the branch
+does not reach `main` and nothing depends on it. When the PR asks for a
+regular merge (`mem:workflow/creating-prs` → Merge Strategy), every commit
+must stand alone: it builds, passes the linter, and needs no later commit on
+the same branch to make sense.
 
 ## Referencing Issues
 

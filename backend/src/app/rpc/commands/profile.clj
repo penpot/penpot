@@ -70,6 +70,7 @@
    [:onboarding-questions {:optional true} [:map-of :keyword :string]]
    [:onboarding-questions-answered {:optional true} ::sm/boolean]
    [:nitrate-onboarding-viewed {:optional true} ::sm/boolean]
+   [:promotional-banner-collapsed {:optional true} ::sm/boolean]
    [:v2-info-shown {:optional true} ::sm/boolean]
    [:release-notes-viewed {:optional true}
     [::sm/text {:max 100}]]
@@ -225,11 +226,11 @@
 
     (update-profile-password! cfg (assoc profile :password password))
 
-    (eml/send cfg {::eml/reuse-conn true
-                   ::eml/factory eml/password-changed
-                   :public-uri (cf/get :public-uri)
-                   :to (:email profile)
-                   :name (:fullname profile)})
+    (eml/send-template cfg {::eml/reuse-conn true
+                            ::eml/template "password-changed"
+                            :public-uri (cf/get :public-uri)
+                            :to (:email profile)
+                            :name (:fullname profile)})
 
     (->> (rph/get-request params)
          (session/get-session)
@@ -313,9 +314,9 @@
    ::sm/result :nil}
   [cfg {:keys [::rpc/profile-id file] :as params}]
   ;; Validate incoming mime type
+  (media.v/check-upload-path file)
   (media.v/check-media-type file #{"image/jpeg" "image/png" "image/webp"})
   (media.v/check-media-size file)
-  (media.v/check-upload-path file)
   (update-profile-photo cfg (assoc params :profile-id profile-id)))
 
 (defn update-profile-photo
@@ -463,14 +464,14 @@
                 :email (:email profile)
                 :hint "looks like the email has spam complaint reports"))
 
-    (eml/send cfg {::eml/reuse-conn true
-                   ::eml/factory eml/change-email
-                   :public-uri (cf/get :public-uri)
-                   :to (:email profile)
-                   :name (:fullname profile)
-                   :pending-email email
-                   :token token
-                   :extra-data ptoken})
+    (eml/send-template cfg {::eml/reuse-conn true
+                            ::eml/template "change-email"
+                            :public-uri (cf/get :public-uri)
+                            :to (:email profile)
+                            :name (:fullname profile)
+                            :pending-email email
+                            :token token
+                            :extra-data ptoken})
     nil))
 
 ;; --- MUTATION: Update Profile Props

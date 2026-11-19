@@ -52,6 +52,7 @@
   "Retrieve a file bundle with data from a specific snapshot for
   read-only preview. Does not modify any database state."
   {::doc/added "2.16"
+   ::doc/changes [["2.20" "An unknown snapshot is reported with the :snapshot-not-found error code"]]
    ::sm/params schema:get-file-snapshot
    ::sm/result files/schema:file-with-permissions
    ::db/transaction true}
@@ -125,12 +126,15 @@
   ;; every unpurged snapshot as a liveness root, and readers
   ;; (get-file-snapshot, restore!, reduce-snapshots) resolve pointers
   ;; on demand.
-  ;; NOTE: the file is read with FOR SHARE inside this transaction so
+  ;; NOTE: the file is read with FOR UPDATE inside this transaction so
   ;; snapshot creation serializes with a concurrent :file-gc pass
-  ;; (which takes FOR UPDATE + SKIP LOCKED on the same row). Without
-  ;; the lock, a version pinned mid-pass could reference fragment rows
-  ;; the pass is recreating.
-  (let [file    (bfc/get-file cfg file-id :lock-for-share? true)
+  ;; (which takes FOR UPDATE + SKIP LOCKED on the same row) and with a
+  ;; concurrent save. Without the lock, a version pinned mid-pass could
+  ;; reference fragment rows the pass is recreating. The lock is
+  ;; exclusive, not shared, because the migration-on-read path may
+  ;; re-read the same row with FOR UPDATE; holding a shared lock while
+  ;; asking for the exclusive one deadlocks two concurrent readers.
+  (let [file    (bfc/get-file cfg file-id :lock-for-update? true)
         project (db/get-by-id cfg :project (:project-id file))]
 
     (-> cfg
@@ -166,12 +170,14 @@
         delay (ldel/get-deletion-delay team)
 
         ;; Create backup snapshot of the current state (committed immediately
-        ;; independent of the restore outcome). The read takes FOR SHARE so a
+        ;; independent of the restore outcome). The read takes FOR UPDATE so a
         ;; concurrent :file-gc pass (which holds FOR UPDATE + SKIP LOCKED on the
         ;; file row) either finishes first -- and we snapshot the new fragments --
         ;; or skips the file and retries later. Without the lock, the backup
         ;; could reference fragments the pass is about to mark as deleted,
-        ;; breaking the backup permanently.
+        ;; breaking the backup permanently. The lock is exclusive because the
+        ;; migration-on-read path may re-read the row with FOR UPDATE: a shared
+        ;; lock that upgrades deadlocks two concurrent readers.
         ;;
         ;; The backup read also provides the revn the guard below compares
         ;; against. An edit committed before this read is captured in the
@@ -180,7 +186,7 @@
         backup-revn
         (db/tx-run! cfg
                     (fn [cfg]
-                      (let [file (bfc/get-file cfg file-id :lock-for-share? true)]
+                      (let [file (bfc/get-file cfg file-id :lock-for-update? true)]
                         (fsnap/create! cfg file
                                        {:profile-id profile-id
                                         :deleted-at (ct/in-future delay)
@@ -196,39 +202,50 @@
                       (ex/raise :type :conflict
                                 :code :file-modified
                                 :hint "the file was modified during the restore process, please retry")))
-                  (let [vern (fsnap/restore! cfg file-id id)]
+                  (let [snapshot (fsnap/get-minimal-snapshot cfg file-id id)
+                        vern     (fsnap/restore! cfg file-id id)]
+                    ;; Peers name the restored version by its label when a
+                    ;; user named it, else by its date
                     (mbus/pub! msgbus
                                :topic file-id
-                               :message {:type :file-restored
-                                         :session-id session-id
-                                         :file-id file-id
-                                         :vern vern})
+                               :message (cond-> {:type :file-restored
+                                                 :session-id session-id
+                                                 :profile-id profile-id
+                                                 :file-id file-id
+                                                 :vern vern
+                                                 :created-at (:created-at snapshot)}
+                                          (= "user" (:created-by snapshot))
+                                          (assoc :label (:label snapshot))))
                     nil)))))
 
 (def ^:private schema:update-file-snapshot
   [:map {:title "update-file-snapshot"}
+   [:file-id ::sm/uuid]
    [:id ::sm/uuid]
    [:label ::sm/text]])
 
 (sv/defmethod ::update-file-snapshot
   {::doc/added "1.20"
+   ::doc/changes [["2.20" "The :file-id param is now required and an unknown snapshot answers :snapshot-not-found"]]
    ::sm/params schema:update-file-snapshot
    ::db/transaction true}
-  [{:keys [::db/conn]} {:keys [::rpc/profile-id id label]}]
-  (let [snapshot (fsnap/get-minimal-snapshot conn id)]
+  [{:keys [::db/conn]} {:keys [::rpc/profile-id file-id id label]}]
+  (let [snapshot (fsnap/get-minimal-snapshot conn file-id id)]
     (files/check-edition-permissions! conn profile-id (:file-id snapshot))
     (fsnap/update! conn (assoc snapshot :label label))))
 
 (def ^:private schema:remove-file-snapshot
   [:map {:title "remove-file-snapshot"}
+   [:file-id ::sm/uuid]
    [:id ::sm/uuid]])
 
 (sv/defmethod ::delete-file-snapshot
   {::doc/added "1.20"
+   ::doc/changes [["2.20" "The :file-id param is now required and an unknown snapshot answers :snapshot-not-found"]]
    ::sm/params schema:remove-file-snapshot
    ::db/transaction true}
-  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id id]}]
-  (let [snapshot (fsnap/get-minimal-snapshot conn id)]
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id file-id id]}]
+  (let [snapshot (fsnap/get-minimal-snapshot conn file-id id)]
     (files/check-edition-permissions! conn profile-id (:file-id snapshot))
 
     (when (not= (:created-by snapshot) "user")
@@ -256,14 +273,16 @@
 
 (def ^:private schema:lock-file-snapshot
   [:map {:title "lock-file-snapshot"}
+   [:file-id ::sm/uuid]
    [:id ::sm/uuid]])
 
 (sv/defmethod ::lock-file-snapshot
   {::doc/added "1.20"
+   ::doc/changes [["2.20" "The :file-id param is now required and an unknown snapshot answers :snapshot-not-found"]]
    ::sm/params schema:lock-file-snapshot
    ::db/transaction true}
-  [{:keys [::db/conn]} {:keys [::rpc/profile-id id]}]
-  (let [snapshot (fsnap/get-minimal-snapshot conn id)]
+  [{:keys [::db/conn]} {:keys [::rpc/profile-id file-id id]}]
+  (let [snapshot (fsnap/get-minimal-snapshot conn file-id id)]
     (files/check-edition-permissions! conn profile-id (:file-id snapshot))
 
     (when (not= (:created-by snapshot) "user")
@@ -291,18 +310,20 @@
                 :profile-id profile-id
                 :locked-by (:locked-by snapshot)))
 
-    (fsnap/lock-by! conn id profile-id)))
+    (fsnap/lock-by! conn (:file-id snapshot) id profile-id)))
 
 (def ^:private schema:unlock-file-snapshot
   [:map {:title "unlock-file-snapshot"}
+   [:file-id ::sm/uuid]
    [:id ::sm/uuid]])
 
 (sv/defmethod ::unlock-file-snapshot
   {::doc/added "1.20"
+   ::doc/changes [["2.20" "The :file-id param is now required and an unknown snapshot answers :snapshot-not-found"]]
    ::sm/params schema:unlock-file-snapshot
    ::db/transaction  true}
-  [{:keys [::db/conn]} {:keys [::rpc/profile-id id]}]
-  (let [snapshot (fsnap/get-minimal-snapshot conn id)]
+  [{:keys [::db/conn]} {:keys [::rpc/profile-id file-id id]}]
+  (let [snapshot (fsnap/get-minimal-snapshot conn file-id id)]
     (files/check-edition-permissions! conn profile-id (:file-id snapshot))
 
     (when (not= (:created-by snapshot) "user")
@@ -329,4 +350,4 @@
                 :snapshot-id id
                 :profile-id profile-id))
 
-    (fsnap/unlock! conn id)))
+    (fsnap/unlock! conn (:file-id snapshot) id)))

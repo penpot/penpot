@@ -8,7 +8,8 @@
   "Dispatcher for messages received from the main thread."
   (:require
    [app.common.logging :as log]
-   [app.config :as cf]))
+   [app.config :as cf]
+   [app.main.store :as st]))
 
 (log/set-level! :info)
 
@@ -42,4 +43,10 @@
   (when-let [build-date (get config :build-data)]
     (set! cf/build-date build-date))
 
+  nil)
+
+(defmethod handler :fonts/sync
+  [{:keys [fonts]}]
+  ;; The render looks the team's custom fonts up in the store
+  (swap! st/state assoc :fonts fonts)
   nil)

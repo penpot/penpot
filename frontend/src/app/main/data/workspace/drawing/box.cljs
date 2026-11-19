@@ -21,11 +21,11 @@
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [app.main.data.helpers :as dsh]
+   [app.main.data.persistence.lock :as plk]
    [app.main.data.workspace.drawing.common :as common]
    [app.main.snap :as snap]
    [app.main.streams :as ms]
    [app.util.array :as array]
-   [app.util.mouse :as mse]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -93,7 +93,8 @@
   (ptk/reify ::handle-drawing
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [stopper      (mse/drag-stopper stream)
+      (let [cancelled?   (volatile! false)
+            stopper      (plk/gesture-stopper stream cancelled?)
             layout       (get state :workspace-layout)
             zoom         (dm/get-in state [:workspace-local :zoom] 1)
 
@@ -149,5 +150,7 @@
                      (fn [[_ shift? mod? point]]
                        #(update-drawing % initial (cond-> point snap-pixel? (gpt/round-step 1)) shift? mod? snap-pixel?))))))
 
-         (->> (rx/of (common/handle-finish-drawing))
+         (->> (rx/defer #(rx/of (if @cancelled?
+                                  (common/cancel-drawing)
+                                  (common/handle-finish-drawing))))
               (rx/delay 100)))))))

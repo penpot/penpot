@@ -42,8 +42,8 @@
    [app.rpc.cond :as-alias cond]
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
+   [app.rpc.notifications :as ntf]
    [app.rpc.permissions :as perms]
-   [app.util.blob :as blob]
    [app.util.events :as events]
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
@@ -222,7 +222,11 @@
         (if (and (contains? (:features file) "fdata/objects-map")
                  (not (contains? (:features params) "fdata/objects-map")))
           (feat.fdata/realize-objects cfg file)
-          file)))))
+          file)
+
+        ;; The storage pointer is internal bookkeeping: it never leaves the
+        ;; backend in a response.
+        (bfc/file->response file)))))
 
 ;; --- COMMAND QUERY: get-file-fragment (by id)
 
@@ -231,7 +235,7 @@
    [:id ::sm/uuid]
    [:file-id ::sm/uuid]
    [:created-at ::ct/inst]
-   [:content ::sm/any]])
+   [:data ::sm/any]])
 
 (def schema:get-file-fragment
   [:map {:title "get-file-fragment"}
@@ -241,8 +245,17 @@
 
 (defn- get-file-fragment
   [cfg file-id fragment-id]
-  (some-> (db/get cfg :file-data {:file-id file-id :id fragment-id :type "fragment"})
-          (update :data blob/decode)))
+  ;; Resolve through the file data backend: a fragment can live on cold
+  ;; storage, and reading its row directly would hand `nil` to `blob/decode`.
+  ;; Only the public fields leave the backend: the row also carries the
+  ;; internal storage pointer and the backend metadata.
+  (when-let [row (db/get cfg :file-data {:file-id file-id
+                                         :id fragment-id
+                                         :type "fragment"})]
+    (let [fragment (->> row
+                        (feat.fdata/resolve-file-data cfg)
+                        (feat.fdata/decode-file-data cfg))]
+      (select-keys fragment (sm/keys schema:file-fragment)))))
 
 (defn- check-fragment-scope!
   "Checks that the fragment is reachable from the pages authorized by
@@ -556,17 +569,23 @@
             (let [file    (bfc/get-file cfg id :load-data? false)
                   summary (t/decode-str result)]
               (-> (assoc file :library-summary summary)
-                  (dissoc :data)))))
+                  (dissoc :data :migrations)
+                  (bfc/file->response)))))
 
         calculate-from-db
         (fn []
           (let [file   (bfc/get-file cfg id)
                 result (feat.fdata/with-pointers cfg id
                          (calculate-library-summary file))]
+            ;; The storage pointer is internal bookkeeping: this summary is an
+            ;; RPC response and must not expose it. The applied migrations go
+            ;; for the same reason: this endpoint is not where a client
+            ;; completes a read, and `schema:file` declares the key optional.
             (-> file
                 (assoc :library-summary result)
                 (dissoc :legacy-data)
-                (dissoc :data))))
+                (dissoc :data :migrations)
+                (bfc/file->response))))
 
         persist-to-cache
         (fn [{:keys [::rds/conn]} data cache-key]
@@ -610,11 +629,14 @@
         (fn [{:keys [id library-file-ids]}]
           ;; One shared file that fails to load (for example, a migration
           ;; error on old data) must not break the whole list; skip it
-          ;; and report it with its id.
+          ;; and report it with its id. Old data can also fail with a JVM
+          ;; Error (an assert or a deep recursion), so catch Throwable.
           (try
             (let [file (get-file-with-summary cfg id)]
               (assoc file :library-file-ids (db/decode-pgarray library-file-ids #{})))
-            (catch Exception cause
+            (catch Throwable cause
+              (when (instance? InterruptedException cause)
+                (.interrupt (Thread/currentThread)))
               (l/error :hint "unable to load shared file"
                        :file-id (str id)
                        :team-id (str team-id)
@@ -1007,13 +1029,10 @@
              :library-id (str (:id ldata))
              :file-id (str file-id))
 
-      (bfc/update-file! cfg {:id file-id
-                             :features (:features file)
-                             :migrations (:migrations file)
-                             :revn (inc (:revn file))
-                             :data (:data file)
-                             :modified-at (ct/now)
-                             :has-media-trimmed false}))))
+      (bfc/update-file! cfg file
+                        :revn (inc (:revn file))
+                        :modified-at (ct/now)
+                        :has-media-trimmed false))))
 
 (defn- get-referenced-files
   [cfg library-id]
@@ -1168,6 +1187,12 @@
                          :file-id id
                          :profile-id profile-id})
 
+    ;; Deleting the file ends read access for whoever had it open, and
+    ;; which profiles those are is only known to the connections
+    ;; themselves, so the whole team is announced and the watcher
+    ;; re-checks each of them.
+    (ntf/notify-team-permissions-changed cfg (:id team))
+
     (rph/with-meta (rph/wrap)
       {::audit/props {:team-id (:id team)
                       :project-id (:project-id file)
@@ -1240,11 +1265,10 @@
   (check-edition-permissions! conn profile-id library-id)
   (check-library-team-ownership! conn file-id library-id)
 
-  (let [transitive-deps (bfc/get-libraries cfg [library-id])]
-    (when (contains? transitive-deps file-id)
-      (ex/raise :type :validation
-                :code :circular-library-reference
-                :hint "linking this library would create a circular dependency")))
+  (when (= :circular (bfc/library-link-status cfg file-id library-id))
+    (ex/raise :type :validation
+              :code :circular-library-reference
+              :hint "linking this library would create a circular dependency"))
 
   (link-file-to-library conn params)
   (bfc/get-libraries cfg [library-id]))
@@ -1394,16 +1418,18 @@
     WHERE file_id = ANY(?::uuid[])")
 
 (def ^:private sql:restore-file-changes
-  ;; Only durable history comes back: a snapshot (carries `label`) or a legacy
-  ;; payload row (carries `data`, the column the new model replaces with
-  ;; `file_data`). Revisions have neither and are deliberately left alone: they
-  ;; are born already scheduled for deletion one hour later, and the collector
-  ;; only looks at rows that carry a date, so unmarking one here would keep it
-  ;; in the table for ever. The `data` half is a guard for the rows still
-  ;; pending migration, not a dependency: drop it with the last one.
-  "UPDATE file_change SET deleted_at = null
+  ;; Only durable history comes back: a snapshot, the rows that carry `label`.
+  ;; Everything else is deliberately left alone. Revisions are born already
+  ;; scheduled for deletion one hour later, and the collector only looks at
+  ;; rows that carry a date, so unmarking one here would keep it in the table
+  ;; for ever. Rows that still carry a legacy payload without a label are
+  ;; garbage that no read path reaches; 0157-migrate-legacy-file-data deletes
+  ;; them, so they must keep their date and go with the collector.
+  ;; Every write moves `updated_at`: the delta passes copy the rows whose
+  ;; `updated_at` changed, so a restore that left it stale could be missed.
+  "UPDATE file_change SET deleted_at = null, updated_at = now()
     WHERE file_id = ANY(?::uuid[])
-      AND (label IS NOT NULL OR data IS NOT NULL)")
+      AND label IS NOT NULL")
 
 (def ^:private sql:restore-file-data
   "UPDATE file_data SET deleted_at = null
@@ -1419,8 +1445,8 @@
 
 (def ^:private sql:restore-storage-objects
   ;; Collect referenced storage ids first (UUID set), then join by PK.
-  ;; Casting `storage_object.id` to text (or OR-ing that with `id IN`) forces
-  ;; a scan of deleted rows; cast the JSON side instead.
+  ;; `file_data` points at its object with the `storage_object_id` column, so
+  ;; the reference is already a uuid and no JSON cast is needed.
   "WITH ids AS (SELECT unnest(?::uuid[]) AS file_id),
         refs AS (
           SELECT fmo.media_id AS id
@@ -1447,11 +1473,11 @@
            WHERE fot.deleted_at IS NULL
              AND fot.media_id IS NOT NULL
           UNION
-          SELECT (fd.metadata->>'storage-ref-id')::uuid
+          SELECT fd.storage_object_id
             FROM file_data AS fd
             JOIN ids ON (ids.file_id = fd.file_id)
            WHERE fd.deleted_at IS NULL
-             AND (fd.metadata->>'storage-ref-id') IS NOT NULL
+             AND fd.storage_object_id IS NOT NULL
         )
    UPDATE storage_object AS so
       SET deleted_at = null

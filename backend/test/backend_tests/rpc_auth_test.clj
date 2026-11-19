@@ -10,19 +10,99 @@
    [app.auth.login-lockout :as lol]
    [app.common.flags :as flags]
    [app.common.generic-pool :as gpool]
+   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.http.session :as session]
    [app.loggers.audit :as-alias audit]
    [app.redis :as rds]
+   [app.rpc.commands.auth :as auth]
    [app.rpc.commands.ldap :as ldap-cmd]
+   [app.storage :as sto]
+   [app.tokens :as tokens]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
+   [datoteka.io :as io]
+   [mockery.core :refer [with-mocks]]
    [yetti.response :as yres])
   (:import
    java.lang.AutoCloseable))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
+
+(t/deftest recover-profile-invalidates-existing-sessions
+  "Regression: password recovery must delete the victim's server-side
+  sessions, otherwise a previously captured cookie keeps working
+  (GHSA-3j2p-qr45-q365)."
+  (let [prof    (th/create-profile* 1)
+        manager (::session/manager th/*system*)
+        sid1    (uuid/random)
+        sid2    (uuid/random)
+        _       (th/db-exec-one! ["INSERT INTO http_session_v2 (id, profile_id, user_agent) VALUES (?, ?, ?)"
+                                  sid1 (:id prof) "agent-1"])
+        _       (th/db-exec-one! ["INSERT INTO http_session_v2 (id, profile_id, user_agent) VALUES (?, ?, ?)"
+                                  sid2 (:id prof) "agent-2"])
+        token   (tokens/generate th/*system*
+                                 {:iss :password-recovery
+                                  :exp (ct/in-future "15m")
+                                  :profile-id (:id prof)})]
+    (with-mocks [_ {:target 'app.email/send-template :return nil}]
+      (let [out (th/command! {::th/type :recover-profile
+                              :token token
+                              :password "Foobar12!"})]
+        (t/is (nil? (:error out)))))
+    (t/is (nil? (session/read-session manager sid1))
+          "recover-profile must delete the victim's sessions (GHSA-3j2p-qr45-q365)")
+    (t/is (nil? (session/read-session manager sid2))
+          "recover-profile must delete the victim's sessions (GHSA-3j2p-qr45-q365)")))
+
+(t/deftest recover-profile-keeps-other-profiles-sessions
+  (let [prof-a  (th/create-profile* 1)
+        prof-b  (th/create-profile* 2)
+        manager (::session/manager th/*system*)
+        sid-a   (uuid/random)
+        sid-b   (uuid/random)
+        _       (th/db-exec-one! ["INSERT INTO http_session_v2 (id, profile_id, user_agent) VALUES (?, ?, ?)"
+                                  sid-a (:id prof-a) "agent-a"])
+        _       (th/db-exec-one! ["INSERT INTO http_session_v2 (id, profile_id, user_agent) VALUES (?, ?, ?)"
+                                  sid-b (:id prof-b) "agent-b"])
+        token   (tokens/generate th/*system*
+                                 {:iss :password-recovery
+                                  :exp (ct/in-future "15m")
+                                  :profile-id (:id prof-a)})]
+    (with-mocks [_ {:target 'app.email/send-template :return nil}]
+      (let [out (th/command! {::th/type :recover-profile
+                              :token token
+                              :password "Foobar12!"})]
+        (t/is (nil? (:error out)))))
+    (t/is (nil? (session/read-session manager sid-a)))
+    (t/is (some? (session/read-session manager sid-b))
+          "sessions of other profiles must survive the recovery")))
+
+(t/deftest recover-profile-rollback-keeps-password-and-sessions
+  "A failure after the password UPDATE rolls the transaction back, so the
+  captured session and the old password both survive
+  (GHSA-3j2p-qr45-q365)."
+  (let [prof    (th/create-profile* 1)
+        manager (::session/manager th/*system*)
+        sid     (uuid/random)
+        _       (th/db-exec-one! ["INSERT INTO http_session_v2 (id, profile_id, user_agent) VALUES (?, ?, ?)"
+                                  sid (:id prof) "agent-1"])
+        before  (:password (th/db-exec-one! ["SELECT password FROM profile WHERE id = ?" (:id prof)]))
+        token   (tokens/generate th/*system*
+                                 {:iss :password-recovery
+                                  :exp (ct/in-future "15m")
+                                  :profile-id (:id prof)})]
+    (with-mocks [_ {:target 'app.email/send-template
+                    :throw (ex-info "smtp down" {})}]
+      (let [out (th/command! {::th/type :recover-profile
+                              :token token
+                              :password "Foobar12!"})]
+        (t/is (some? (:error out)))))
+    (t/is (some? (session/read-session manager sid))
+          "a rolled-back recovery must not delete sessions")
+    (t/is (= before (:password (th/db-exec-one! ["SELECT password FROM profile WHERE id = ?" (:id prof)])))
+          "a rolled-back recovery must not change the password")))
 
 (t/deftest logout-invalidates-current-session
   (let [prof    (th/create-profile* 1)
@@ -122,7 +202,7 @@
         (.close ^AutoCloseable conn)))))
 
 (t/deftest login-with-password-locks-after-max-attempts
-  (with-redefs [app.config/flags (flags/parse flags/default [:enable-account-lockout])]
+  (with-redefs [app.config/flags (flags/parse flags/default [:enable-account-lockout :disable-admin-console])]
     (let [profile (th/create-profile* 200 {:is-active true})]
       (cleanup-redis (:id profile))
       ;; 4 failed attempts — not yet locked
@@ -141,7 +221,7 @@
         (t/is (th/ex-of-code? (:error out) :account-locked))))))
 
 (t/deftest login-with-password-returns-rate-limit-when-locked
-  (with-redefs [app.config/flags (flags/parse flags/default [:enable-account-lockout])]
+  (with-redefs [app.config/flags (flags/parse flags/default [:enable-account-lockout :disable-admin-console])]
     (let [profile (th/create-profile* 201 {:is-active true})]
       (cleanup-redis (:id profile))
       ;; Trigger lockout
@@ -161,7 +241,7 @@
           (t/is (pos? ttl) "ttl should be a positive number"))))))
 
 (t/deftest successful-login-clears-failed-attempts
-  (with-redefs [app.config/flags (flags/parse flags/default [:enable-account-lockout])]
+  (with-redefs [app.config/flags (flags/parse flags/default [:enable-account-lockout :disable-admin-console])]
     (let [profile (th/create-profile* 202 {:is-active true})]
       (cleanup-redis (:id profile))
       ;; 3 failed attempts
@@ -184,7 +264,7 @@
           (t/is (th/ex-of-code? (:error out) :wrong-credentials)))))))
 
 (t/deftest lockout-does-not-apply-when-flag-disabled
-  (with-redefs [app.config/flags (flags/parse flags/default [])]
+  (with-redefs [app.config/flags (flags/parse flags/default [:disable-admin-console])]
     (let [profile (th/create-profile* 203 {:is-active true})]
       (cleanup-redis (:id profile))
       ;; 10 failed attempts — no lockout without the flag
@@ -199,7 +279,7 @@
   "Verify that login-with-ldap short-circuits when account is locked,
    without attempting LDAP authentication. Calls the actual command
    function with a mock provider to test the full flow."
-  (with-redefs [app.config/flags (flags/parse flags/default [:enable-account-lockout :login-with-ldap])
+  (with-redefs [app.config/flags (flags/parse flags/default [:enable-account-lockout :login-with-ldap :disable-admin-console])
                 ldap/authenticate (constantly nil)]
     (let [profile (th/create-profile* 204 {:is-active true})
           cfg (assoc th/*system* ::ldap/provider {})]
@@ -217,7 +297,7 @@
 
 (t/deftest recover-profile-clears-lockout
   "Verify that clearing attempts (e.g. after password reset) unlocks the account."
-  (with-redefs [app.config/flags (flags/parse flags/default [:enable-account-lockout])]
+  (with-redefs [app.config/flags (flags/parse flags/default [:enable-account-lockout :disable-admin-console])]
     (let [profile (th/create-profile* 205 {:is-active true})
           cfg th/*system*]
       (cleanup-redis (:id profile))
@@ -253,3 +333,31 @@
               "session must not be bound to the typed-email profile")))))
 
 
+;; --- Profile picture import
+
+(def ^:private avatar-svg
+  "An SVG that smuggles a script element."
+  "<svg xmlns=\"http://www.w3.org/2000/svg\"><script>alert(1)</script></svg>")
+
+(defn- mock-download
+  "Mock the http client so that any url answers with `body` and `mtype`."
+  [mtype body]
+  {:target 'app.http.client/req-with-redirects
+   :return {:status 200
+            :headers {"content-type" mtype
+                      "content-length" (str (alength ^bytes body))}
+            :body (java.io.ByteArrayInputStream. ^bytes body)}})
+
+(t/deftest import-profile-picture-rejects-svg
+  (t/testing "an svg profile picture is not imported"
+    (with-mocks [http-mock (mock-download "image/svg+xml"
+                                          (.getBytes ^String avatar-svg "UTF-8"))]
+      (let [result (auth/import-profile-picture th/*system* "https://example.com/avatar.svg")]
+        (t/is (nil? result)))))
+
+  (t/testing "a png profile picture is imported"
+    (let [body (io/read* (io/resource "backend_tests/test_files/sample.png"))]
+      (with-mocks [http-mock (mock-download "image/png" body)]
+        (let [result (auth/import-profile-picture th/*system* "https://example.com/avatar.png")]
+          (t/is (some? result))
+          (t/is (some? (sto/get-object (:app.storage/storage th/*system*) result))))))))

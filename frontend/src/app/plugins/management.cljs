@@ -46,6 +46,14 @@
                 (update-fn state)
                 state))))
 
+;; Dashboard events are logged by the backend, which reads the origin from
+;; the `x-event-origin` header that `rp/cmd!` builds from the params meta.
+(defn- with-origin
+  "Tags RPC `params` with the plugin or MCP origin, as `se/add-event` does
+  for frontend events."
+  [plugin-id params]
+  (se/add-event params plugin-id))
+
 (defn- refresh-restored-project
   [team-id project-id]
   (if (dashboard-of-team? @st/state team-id)
@@ -65,8 +73,9 @@
 
 (defn- restore-deleted-files
   "Uses the dashboard's Trash operation and waits for its final result."
-  [team-id ids]
-  (->> (rp/cmd! ::sse/restore-deleted-team-files {:team-id team-id :ids ids})
+  [plugin-id team-id ids]
+  (->> (rp/cmd! ::sse/restore-deleted-team-files
+                (with-origin plugin-id {:team-id team-id :ids ids}))
        (rx/filter sse/end-of-stream?)
        (rx/take 1)
        (rx/map sse/get-payload)
@@ -90,6 +99,13 @@
       (when (<= 1 (count value) 250)
         value))))
 
+(defn- granted?
+  "True when the plugin was granted `permission`. Management calls act on
+  files through the backend, not on the open workspace, so the workspace's
+  read-only state does not apply to them."
+  [plugin-id permission]
+  (r/has-permission? plugin-id permission))
+
 (defn- permission-error
   [permission]
   (js/Error. (str "Permission " permission " is not granted")))
@@ -110,7 +126,7 @@
   "Resolves with the single value of the stream built by `make-stream` when
   the plugin has `permission`."
   [plugin-id permission make-stream]
-  (if (r/check-permission plugin-id permission)
+  (if (granted? plugin-id permission)
     (js/Promise.
      (fn [resolve reject]
        (rx/subs! resolve #(reject (backend-error %)) (make-stream))))
@@ -245,7 +261,7 @@
   [plugin-id team-id options]
   (if-let [name (valid-name (obj/get options "name"))]
     (request plugin-id "manage:projects"
-             #(->> (rp/cmd! :create-project {:team-id team-id :name name})
+             #(->> (rp/cmd! :create-project (with-origin plugin-id {:team-id team-id :name name}))
                    (rx/map (fn [project] (assoc project :count 0)))
                    (rx/tap (fn [project]
                              (update-dashboard team-id
@@ -294,7 +310,7 @@
        (fn [value]
          (let [name (valid-name value)]
            (cond
-             (not (r/check-permission plugin-id "manage:teams"))
+             (not (granted? plugin-id "manage:teams"))
              (u/not-valid plugin-id :name "Plugin doesn't have 'manage:teams' permission")
 
              (nil? name)
@@ -302,7 +318,7 @@
 
              :else
              (set-property plugin-id data :name name
-                           (dtm/update-team {:id (:id @data) :name name})))))}
+                           (dtm/update-team (with-origin plugin-id {:id (:id @data) :name name}))))))}
 
       :listProjects
       (fn [] (list-projects plugin-id (:id @data)))
@@ -340,7 +356,7 @@
        (fn [value]
          (let [name (valid-name value)]
            (cond
-             (not (r/check-permission plugin-id "manage:projects"))
+             (not (granted? plugin-id "manage:projects"))
              (u/not-valid plugin-id :name "Plugin doesn't have 'manage:projects' permission")
 
              (nil? name)
@@ -348,14 +364,14 @@
 
              :else
              (set-property plugin-id data :name name
-                           (dd/rename-project {:id (:id @data) :name name})))))}
+                           (dd/rename-project (with-origin plugin-id {:id (:id @data) :name name}))))))}
 
       :pinned
       {:get #(boolean (:is-pinned @data))
        :set
        (fn [value]
          (cond
-           (not (r/check-permission plugin-id "manage:projects"))
+           (not (granted? plugin-id "manage:projects"))
            (u/not-valid plugin-id :pinned "Plugin doesn't have 'manage:projects' permission")
 
            (not (boolean? value))
@@ -363,9 +379,10 @@
 
            :else
            (set-property plugin-id data :is-pinned value
-                         (set-project-pin {:id (:id @data)
-                                           :team-id (:team-id @data)
-                                           :is-pinned value}))))}
+                         (set-project-pin (with-origin plugin-id
+                                            {:id (:id @data)
+                                             :team-id (:team-id @data)
+                                             :is-pinned value})))))}
 
       :listFiles
       (fn []
@@ -388,7 +405,7 @@
                                       (let [ids (into #{} (comp (filter (fn [file] (= id (:project-id file))))
                                                                 (map :id)) files)]
                                         (if (seq ids)
-                                          (restore-deleted-files team-id ids)
+                                          (restore-deleted-files plugin-id team-id ids)
                                           (rx/throw (js/Error. "Cannot restore a project without recoverable files"))))))
                          (rx/tap (fn [_] (swap! data dissoc :deleted-at)))
                          (rx/mapcat (fn [_] (refresh-restored-project team-id id)))))))
@@ -399,7 +416,7 @@
           (request plugin-id "content:write"
                    #(let [{:keys [id team-id]} @data
                           features (set/difference (:features @st/state #{}) cfeat/frontend-only-features)]
-                      (->> (rp/cmd! :create-file {:project-id id :name name :features features})
+                      (->> (rp/cmd! :create-file (with-origin plugin-id {:project-id id :name name :features features}))
                            (rx/map (fn [file] (-> (dissoc file :data) (assoc :team-id team-id))))
                            (rx/tap (fn [file]
                                      (update-dashboard team-id (fn [state] (ptk/update (dd/file-created file) state)))))
@@ -413,8 +430,9 @@
             (js/Promise.reject (js/Error. "Expected a name with 1 to 250 characters"))
             (request plugin-id "manage:projects"
                      #(let [{:keys [id team-id]} @data]
-                        (->> (rp/cmd! :duplicate-project (cond-> {:project-id id}
-                                                           (some? name) (assoc :name (valid-name name))))
+                        (->> (rp/cmd! :duplicate-project (with-origin plugin-id
+                                                           (cond-> {:project-id id}
+                                                             (some? name) (assoc :name (valid-name name)))))
                              (rx/mapcat dd/project-with-file-count)
                              (rx/tap (fn [project]
                                        (update-dashboard team-id (fn [state] (ptk/update (dd/project-duplicated project) state)))))
@@ -425,7 +443,7 @@
         (if-let [team-id (uuid/parse* (obj/get team "id"))]
           (request plugin-id "manage:teams"
                    #(let [{:keys [id] :as project} @data]
-                      (->> (rp/cmd! :move-project {:project-id id :team-id team-id})
+                      (->> (rp/cmd! :move-project (with-origin plugin-id {:project-id id :team-id team-id}))
                            (rx/tap (fn [_]
                                      (swap! data assoc :team-id team-id)
                                      (update-dashboard (:team-id project) (fn [state] (update state :projects dissoc id)))))
@@ -436,7 +454,7 @@
       (fn []
         (request plugin-id "manage:delete"
                  #(let [{:keys [id team-id]} @data]
-                    (->> (rp/cmd! :delete-project {:id id})
+                    (->> (rp/cmd! :delete-project (with-origin plugin-id {:id id}))
                          (rx/tap (fn [_]
                                    (update-dashboard team-id (fn [state] (update state :projects dissoc id)))))
                          (rx/map (constantly nil)))))))))
@@ -465,7 +483,7 @@
        (fn [value]
          (let [name (valid-name value)]
            (cond
-             (not (r/check-permission plugin-id "content:write"))
+             (not (granted? plugin-id "content:write"))
              (u/not-valid plugin-id :name "Plugin doesn't have 'content:write' permission")
 
              (nil? name)
@@ -473,14 +491,14 @@
 
              :else
              (set-property plugin-id data :name name
-                           (dd/rename-file {:id (:id @data) :name name})))))}
+                           (dd/rename-file (with-origin plugin-id {:id (:id @data) :name name}))))))}
 
       :shared
       {:get #(boolean (:is-shared @data))
        :set
        (fn [value]
          (cond
-           (not (r/check-permission plugin-id "library:write"))
+           (not (granted? plugin-id "library:write"))
            (u/not-valid plugin-id :shared "Plugin doesn't have 'library:write' permission")
 
            (not (boolean? value))
@@ -488,18 +506,18 @@
 
            :else
            (set-property plugin-id data :is-shared value
-                         (dd/set-file-shared {:id (:id @data) :is-shared value}))))}
+                         (dd/set-file-shared (with-origin plugin-id {:id (:id @data) :is-shared value})))))}
 
       :open
       (fn []
-        (if (r/check-permission plugin-id "content:read")
+        (if (granted? plugin-id "content:read")
           (open-file (str (:id @data)) #js {:teamId (str (:team-id @data))})
           (js/Promise.reject (permission-error "content:read"))))
 
       :restore
       (fn []
         (request plugin-id "content:write"
-                 #(->> (restore-deleted-files (:team-id @data) #{(:id @data)})
+                 #(->> (restore-deleted-files plugin-id (:team-id @data) #{(:id @data)})
                        (rx/tap (fn [_]
                                  (swap! data dissoc :deleted-at :will-be-deleted-at)))
                        (rx/mapcat (fn [_] (refresh-restored-project (:team-id @data) (:project-id @data)))))))
@@ -512,7 +530,7 @@
                       (->> (rp/cmd! :get-project {:id project-id})
                            (rx/mapcat (fn [target]
                                         (if (= team-id (:team-id target))
-                                          (rp/cmd! :move-files {:ids #{id} :project-id project-id})
+                                          (rp/cmd! :move-files (with-origin plugin-id {:ids #{id} :project-id project-id}))
                                           (rx/throw (js/Error. "Cannot move a file to a project in another team")))))
                            (rx/tap (fn [_]
                                      (update-dashboard team-id (fn [state] (ptk/update (dd/move-files {:ids #{id} :project-id project-id}) state)))
@@ -527,8 +545,9 @@
             (js/Promise.reject (js/Error. "Expected a name with 1 to 250 characters"))
             (request plugin-id "content:write"
                      #(let [{:keys [id team-id]} @data]
-                        (->> (rp/cmd! :duplicate-file (cond-> {:file-id id}
-                                                        (some? name) (assoc :name (valid-name name))))
+                        (->> (rp/cmd! :duplicate-file (with-origin plugin-id
+                                                        (cond-> {:file-id id}
+                                                          (some? name) (assoc :name (valid-name name)))))
                              (rx/map (fn [file] (-> (dissoc file :data) (assoc :team-id team-id))))
                              (rx/tap (fn [file]
                                        (update-dashboard team-id (fn [state] (ptk/update (dd/file-created file) state)))))
@@ -538,7 +557,7 @@
       (fn []
         (request plugin-id "manage:delete"
                  #(let [{:keys [id project-id team-id]} @data]
-                    (->> (rp/cmd! :delete-file {:id id})
+                    (->> (rp/cmd! :delete-file (with-origin plugin-id {:id id}))
                          (rx/tap (fn [_]
                                    (update-dashboard team-id
                                                      (fn [state]
@@ -569,7 +588,7 @@
     (fn [options]
       (if-let [name (valid-name (obj/get options "name"))]
         (request plugin-id "manage:teams"
-                 #(->> (rp/cmd! :create-team {:name name :features features/global-enabled-features})
+                 #(->> (rp/cmd! :create-team (with-origin plugin-id {:name name :features features/global-enabled-features}))
                        (rx/tap (fn [_] (st/emit! (dtm/fetch-teams))))
                        (rx/map (partial team-proxy plugin-id))))
         (js/Promise.reject (js/Error. "Expected a name with 1 to 250 characters"))))

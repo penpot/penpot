@@ -77,8 +77,8 @@
                  component (.component copy)]
              (t/is (true? (get-in @store [:files (:id file) :data :components (thi/id :restorable) :deleted])))
              (.restore component)
-             (await (async/wait-for #(not (get-in @store [:files (:id file) :data :components (thi/id :restorable) :deleted]))
-                                    "component restored"))
+             (await (async/wait-for-store store #(not (get-in @store [:files (:id file) :data :components (thi/id :restorable) :deleted]))
+                                          "component restored"))
              (.restore component)
              (await (async/settle))
              (t/is (= (thi/id :main)
@@ -202,6 +202,46 @@
            (t/is (thrown-with-msg? js/Error (re-pattern denied) (.updateMain copy)))
            (await (async/settle))
            (t/is (empty? @events))))))))
+
+(t/deftest ^:async main-instance-of-a-deleted-component-is-null
+  (let [file  (file-with-deleted-component)
+        store (ths/setup-store file {:renderer :svg})]
+    (await
+     (mock/with-mocks*
+       {st/state                  store
+        shape/lib-component-proxy library/lib-component-proxy}
+       (let [copy      (shape/shape-proxy plugin-id (:id file) (thi/id :main-page) (thi/id :copy))
+             component (.component copy)]
+         (t/is (some? component))
+         (t/is (nil? (.mainInstance component))))))))
+
+(t/deftest ^:async component-root-of-a-copy-on-another-page-than-its-main
+  (let [file  (-> (cthf/sample-file :file :page-label :main-page)
+                  (cths/add-sample-shape :main :type :frame)
+                  (cths/add-sample-shape :child :parent-label :main)
+                  (cthc/make-component :component :main)
+                  (cthf/add-sample-page :other-page)
+                  (cthc/instantiate-component :component :copy :children-labels [:copy-child]))
+        store (ths/setup-store file {:renderer :svg})]
+    (await
+     (mock/with-mocks*
+       {st/state store}
+       (let [copy-child (shape/shape-proxy plugin-id (:id file) (thi/id :other-page) (thi/id :copy-child))
+             root       (.componentRoot copy-child)]
+         (t/is (= (str (thi/id :copy)) (.-id root)))
+         (t/is (= (str (thi/id :copy)) (.-id (.componentHead copy-child)))))))))
+
+(t/deftest ^:async component-of-a-copy-whose-library-is-missing-is-null
+  (let [file  (-> (file-with-component)
+                  (cths/update-shape :copy :component-file (uuid/next)))
+        store (ths/setup-store file {:renderer :svg})]
+    (await
+     (mock/with-mocks*
+       {st/state                  store
+        shape/lib-component-proxy library/lib-component-proxy}
+       (let [copy (shape/shape-proxy plugin-id (:id file) (thi/id :main-page) (thi/id :copy))]
+         (t/is (nil? (.component copy)))
+         (t/is (= (str (thi/id :copy)) (.-id (.componentRoot copy)))))))))
 
 (t/deftest library-asset-proxies-expose-library-id
   (let [file-id (random-uuid)
@@ -457,7 +497,8 @@
         library-id (uuid/next)
         stream     (rx/subject)
         events     (atom [])
-        state      (atom {:current-file-id file-id :current-team-id team-id})]
+        state      (atom {:current-file-id file-id :current-team-id team-id
+                          :permissions {:can-edit true}})]
     (await
      (mock/with-mocks*
        {st/state           state
@@ -490,7 +531,8 @@
         events     (atom [])]
     (await
      (mock/with-mocks*
-       {st/state           (atom {:current-file-id file-id :current-team-id (uuid/next)})
+       {st/state           (atom {:current-file-id file-id :current-team-id (uuid/next)
+                                  :permissions {:can-edit true}})
         st/emit!           (mock/stub (fn [& emitted] (swap! events into emitted)))
         rp/cmd!            (shared-files-cmd [{:id (uuid/next) :name "Other published"}])
         r/check-permission (mock/stub (constantly true))}
@@ -504,7 +546,8 @@
         events  (atom [])]
     (await
      (mock/with-mocks*
-       {st/state           (atom {:current-file-id file-id :current-team-id (uuid/next)})
+       {st/state           (atom {:current-file-id file-id :current-team-id (uuid/next)
+                                  :permissions {:can-edit true}})
         st/emit!           (mock/stub (fn [& emitted] (swap! events into emitted)))
         rp/cmd!            (shared-files-cmd [{:id file-id :name "Current file"}])
         r/check-permission (mock/stub (constantly true))}
@@ -558,3 +601,29 @@
                   (into #{} (map #(obj/get % "$id")) (.-connected context))))
          (t/is (= #{(str visited-id) (str other-id)}
                   (into #{} (map #(.-id %)) (await (.availableLibraries context))))))))))
+
+;; Scenario: a library is linked; while the list of published libraries
+;; loads, a save fails and locks the workspace. Proves: the library is not
+;; linked and the promise rejects with the read-only error.
+(t/deftest ^:async connect-library-is-refused-when-a-save-fails-meanwhile
+  (let [library-id (uuid/next)
+        state      (atom {:current-file-id (uuid/next)
+                          :current-team-id (uuid/next)
+                          :permissions {:can-edit true}})
+        answer     (rx/subject)
+        events     (atom [])]
+    (await
+     (mock/with-mocks*
+       {st/state state
+        st/emit! (mock/stub (fn [& emitted] (swap! events into emitted)))
+        rp/cmd!  (mock/stub (fn [cmd params]
+                              (swap! mock/rpc-calls conj {:cmd cmd :params params})
+                              (->> answer (rx/take 1) (rx/observe-on :async))))}
+       (let [context (library/library-subcontext plugin-id)
+             result  (settled (.connectLibrary context (str library-id)))]
+         (await (async/wait-for #(seq @mock/rpc-calls) "the published libraries are requested"))
+         (swap! state assoc-in [:workspace-global :persistence-lock] {:read-only? false})
+         (rx/push! answer [{:id library-id :name "Published"}])
+         (let [{:keys [rejected]} (await result)]
+           (t/is (str/includes? (ex-message rejected) "cannot be saved"))
+           (t/is (empty? @events) "the library is not linked")))))))

@@ -10,7 +10,8 @@
   If the user pushes, treat that commit as final from the agent's side.
 - **Never edit `CHANGES.md` by hand** in commits or PRs. The changelog is
   generated from GitHub milestones during the release process; update it only
-  via the `update-changelog` skill flow or on explicit user request.
+  via `mem:workflow/updating-changelog` (the `update-changelog` skill flow) or
+  on explicit user request.
 - **Never pipe test output directly to filters** (`| head`, `| tail`, `| grep`, etc.).
   Always redirect to a file first: `command > /tmp/output.txt 2>&1`, then read/grep the file.
   This prevents hiding test failures. See `mem:testing` for details.
@@ -27,6 +28,12 @@
   - Before `gh pr create` / `gh pr edit` → `mem:workflow/creating-prs` (title format, body structure, AI note)
   Don't infer format from the title of a previous commit/issue/PR — the memory
   is the source of truth.
+- **Everything in code MUST be in English.** Identifiers (functions,
+  variables, types, namespaces), code comments, docstrings, test
+  descriptions, log hints — always English, regardless of the language the
+  author works in. Tests are not an exception. The only place another
+  language may appear in the codebase is product copy rendered through the
+  i18n system.
 
 ## CRITICAL: Read module memories BEFORE writing any code
 
@@ -38,6 +45,8 @@ Do this **before planning, before coding, before touching any file**:
 3. Read each affected module's **core memory** — the name is `<module>/core`
    (e.g. `frontend/core`, `backend/core`, `common/core`).
 4. If the core memory references deeper `mem:` memories relevant to your task, read those too.
+5. Before writing or modifying Clojure or ClojureScript, read `mem:clojure/core`
+   and the relevant focused Clojure memories it references.
 
 **STOP: Do not proceed until you have read the core memory of every affected module.**
 Skipping this step is the #1 cause of incorrect or incomplete work.
@@ -79,11 +88,6 @@ Review every prose output against these rules before delivering.
 Memories are the **primary project guidance** — not docs or readme files.
 They are dense, agent-oriented notes: terse bullets, invariants, no prose.
 
-## Entry point
-
-Start at `critical-info` (the graph root). It describes the project structure,
-module dependency graph, and references section-level core memories.
-
 ## Progressive discovery model
 
 Memories form a **reference graph**, not a flat list:
@@ -95,11 +99,8 @@ critical-info          ← read first (graph root)
             └─ ...     ← deeper memories as needed
 ```
 
-When working on a task:
-1. Read `critical-info` to identify which sections are affected.
-2. Read the affected section's `core` memory for an overview.
-3. Follow `mem:` references in the core memory to focused memories relevant to your task.
-4. Continue following references deeper as needed.
+Follow the mandatory reading sequence above. Cross-cutting topics can also be
+referenced directly from `critical-info` or other memories.
 
 ## Accessing memories
 
@@ -119,9 +120,8 @@ When you encounter a `mem:` reference relevant to your task, read that memory ne
 
 ## Topic/folder organization
 
-Memories are grouped into folders that mirror project modules or topics:
-`backend/`, `common/`, `frontend/`, `render-wasm/`, `exporter/`, `workflow/`, etc.
-Each folder's top-level memory is `<folder>/core`.
+Memories are grouped into folders for modules or topics. Project modules have
+a `<module>/core` memory; other topic folders may contain focused memories only.
 
 ---
 
@@ -157,4 +157,3 @@ precision while maintaining a strong focus on maintainability and performance.
 - `scripts/check-fmt-clj` — Check Clojure formatting without modifying files.
 - `scripts/ci` — CI orchestration script for running lint, tests, format checks and, on request (`--build`), production builds across modules. See `mem:scripts/ci`.
 - `scripts/gh.py` — Multi-purpose GitHub CLI helper. Subcommands: `issues` (list issues in a milestone), `prs` (fetch PR details), `advisories` (list/inspect security advisories). See `python3 scripts/gh.py --help`.
-

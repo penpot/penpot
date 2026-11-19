@@ -14,7 +14,7 @@
    :svg-defs {"simple-filter"
               {:tag :filter
                :content [{:tag :feOffset :attrs {:dx "2" :dy "3"}}
-                         {:tag :feGaussianBlur :attrs {:stdDeviation "4"}}]}}})
+                         {:tag :feGaussianBlur :attrs {:std-deviation "4"}}]}}})
 
 (defn- filter-shape
   [content]
@@ -46,7 +46,7 @@
 
 (deftest derives-layer-blur-from-plain-blur-filter
   (let [shape (svg-derived/apply-svg-filters
-               (filter-shape [{:tag :feGaussianBlur :attrs {:stdDeviation "4"}}]))]
+               (filter-shape [{:tag :feGaussianBlur :attrs {:std-deviation "4"}}]))]
     (is (= :layer-blur (get-in shape [:blur :type])))
     (is (= 4.0 (get-in shape [:blur :value])))
     (is (nil? (:shadow shape)))))
@@ -55,7 +55,7 @@
   (is (= [{:color "#ff0000" :opacity 0.3}]
          (map :color (derived-shadow
                       [{:tag :feOffset :attrs {:in "SourceAlpha" :dx "12" :dy "12"}}
-                       {:tag :feGaussianBlur :attrs {:stdDeviation "4"}}
+                       {:tag :feGaussianBlur :attrs {:std-deviation "4"}}
                        {:tag :feColorMatrix
                         :attrs {:type "matrix"
                                 :values "0 0 0 0 1  0 0 0 0 0  0 0 0 0 0  0 0 0 0.3 0"}}])))))
@@ -70,7 +70,7 @@
                                 :type "matrix"
                                 :values "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"}}
                        {:tag :feOffset :attrs {:dy "4"}}
-                       {:tag :feGaussianBlur :attrs {:stdDeviation "2"}}
+                       {:tag :feGaussianBlur :attrs {:std-deviation "2"}}
                        {:tag :feColorMatrix
                         :attrs {:type "matrix"
                                 :values "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"}}])))))
@@ -79,12 +79,12 @@
   (is (= [{:color "#00ff00" :opacity 0.5}]
          (map :color (derived-shadow
                       [{:tag :feOffset :attrs {:dx "2" :dy "2"}}
-                       {:tag :feGaussianBlur :attrs {:stdDeviation "2"}}
+                       {:tag :feGaussianBlur :attrs {:std-deviation "2"}}
                        {:tag :feFlood :attrs {:flood-color "#00ff00" :flood-opacity "0.5"}}])))))
 
 (deftest derives-shadow-from-fe-drop-shadow
   (let [content [{:tag :feDropShadow
-                  :attrs {:dx "12" :dy "8" :stdDeviation "4"
+                  :attrs {:dx "12" :dy "8" :std-deviation "4"
                           :flood-color "#000" :flood-opacity "0.3"}}]
         shape   (svg-derived/apply-svg-filters (filter-shape content))]
     (is (nil? (:blur shape)))

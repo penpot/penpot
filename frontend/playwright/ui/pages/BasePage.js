@@ -101,7 +101,11 @@ export class BasePage {
 
   static async mockConfigFlags(page, flags, extras = {}) {
     const url = "**/js/config.js*";
-    const config = { penpotFlags: flags.join(" "), ...extras };
+    // The e2e suite mocks the backend and has no admin console behind it.
+    const config = {
+      penpotFlags: ["disable-admin-console", ...flags].join(" "),
+      ...extras,
+    };
     const body = Object.entries(config)
       .map(([key, value]) => `var ${key} = ${JSON.stringify(value)};`)
       .join("\n");

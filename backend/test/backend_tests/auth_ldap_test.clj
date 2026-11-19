@@ -7,8 +7,52 @@
 (ns backend-tests.auth-ldap-test
   (:require
    [app.auth.ldap :as ldap-auth]
+   [app.common.time :as ct]
+   [app.rpc.commands.ldap :as ldap-rpc]
+   [app.tokens :as tokens]
+   [backend-tests.helpers :as th]
    [clj-ldap.client :as ldap]
    [clojure.test :as t]))
+
+(t/use-fixtures :once th/state-init)
+(t/use-fixtures :each th/database-reset)
+
+;; --- login-with-ldap: the invitation branch returns the whole profile
+
+(defn- mock-authenticate
+  [email fullname]
+  (fn [_cfg _params]
+    {:email email :fullname fullname :backend "ldap"}))
+
+(t/deftest login-with-ldap-invitation-returns-full-profile
+  (t/testing "the invitation branch returns the profile, not only the token"
+    (let [email  "ldap-invitation@example.com"
+          system (assoc th/*system* ::ldap-auth/provider {:host "localhost"})
+          token  (tokens/generate system {:iss :team-invitation
+                                          :exp (ct/in-future {:hours 1})})]
+      (with-redefs [ldap-auth/authenticate (mock-authenticate email "Invited Person")]
+        (let [result (ldap-rpc/sm$login-with-ldap
+                      system
+                      {:email email
+                       :password "secret"
+                       :invitation-token token})]
+          (t/is (uuid? (:id result)))
+          (t/is (= email (:email result)))
+          (t/is (= "ldap" (:auth-backend result)))
+          (t/is (string? (:invitation-token result)))
+          (t/is (not= token (:invitation-token result))))))))
+
+(t/deftest login-with-ldap-without-invitation-returns-profile
+  (t/testing "the regular branch keeps returning the profile without a token"
+    (let [email  "ldap-plain@example.com"
+          system (assoc th/*system* ::ldap-auth/provider {:host "localhost"})]
+      (with-redefs [ldap-auth/authenticate (mock-authenticate email "Plain Person")]
+        (let [result (ldap-rpc/sm$login-with-ldap system {:email email
+                                                          :password "secret"})]
+          (t/is (uuid? (:id result)))
+          (t/is (= email (:email result)))
+          (t/is (= "ldap" (:auth-backend result)))
+          (t/is (nil? (:invitation-token result))))))))
 
 ;; --- search-user: filter must be escaped (RED: currently not escaped)
 

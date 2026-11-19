@@ -6,8 +6,9 @@ You are working on the GitHub project `penpot/penpot`, a monorepo.
 - A section's top-level memory is `<section>/core`. When a section is relevant, read the core memory before focused memories.
 - Edits/stale refs/duplication cleanup: `mem:memory-maintenance`.
 - Cross-cutting testing principles, TDD workflow, and anti-patterns: `mem:testing`.
+- Structured logging conventions (`:hint` casing and fields, log levels): `mem:clojure/logging` — read before adding or changing any log call.
 - Verified Clojure language behaviors that contradict common assumptions (e.g. `int?` covers `Long`; `integer?` is the general predicate): `mem:clojure/idioms` — read before assuming stdlib predicate semantics.
-- Read `mem:clojure/design-rules` (function shape, boundary checks, naming) before writing or modifying Clojure/ClojureScript code — not only when designing a solution or an API.
+- Read `mem:clojure/core` (function shape, boundary checks, naming) before writing or modifying Clojure/ClojureScript code — not only when designing a solution or an API.
 - Promises: which call style to use where (`fmap`/`mcat`/`merr` vs `then`/`catch`) and how they bridge to rx: `mem:clojure/promesa` — read before chaining promises or mixing them with observables.
 
 # Development workflow
@@ -16,13 +17,13 @@ You are working on the GitHub project `penpot/penpot`, a monorepo.
   - Before `git commit` → `mem:workflow/creating-commits` (subject/body format, 80-char body wrapping enforced by `scripts/check-commit`, `AI-assisted-by: model-name` trailer)
   - Before `gh issue create` → `mem:workflow/creating-issues` (title derivation, body template, labels, Issue Type)
   - Before `gh pr create` / `gh pr edit` → `mem:workflow/creating-prs` (title format, body structure, "Note:" line)
+- Before updating `CHANGES.md` → `mem:workflow/updating-changelog` (sources of truth, entry rules, the `:boom:`/`:rocket:` label contracts, pre-flight checks, anomaly report)
 - Before a repo-wide pnpm version update → `mem:workflow/updating-pnpm` (workspace layout, `scripts/sync-pnpm-version` flow, the stamp-missing-field and ignored-builds gotchas, verification steps)
 - Before a Node version update → `mem:workflow/updating-node` (the six pin sites in `.nvmrc`, the devenv and image Dockerfiles and the plugins-deploy workflows, the DHI tag and digest rules, what to verify)
 - Before bumping a non-JS dependency pinned in `docker/images/` (JDK, ImageMagick) → `mem:workflow/docker-images`
 - **Never `git push`, force-push, or modify `git origin`** (or any other remote). The user pushes from their own shell; if a push is required, say so and wait. Never amend a commit that the user has already pushed unless explicitly asked.
-- **Never edit `CHANGES.md` by hand.** The changelog is generated from GitHub milestones during the release process; update it only via the `update-changelog` skill flow or on explicit user request.
+- **Never edit `CHANGES.md` by hand.** The changelog is generated from GitHub milestones during the release process; update it only via `mem:workflow/updating-changelog` (the `update-changelog` skill flow) or on explicit user request.
 - You have access to the GitHub CLI `gh` or corresponding MCP tools.
-- Issues are also managed on Taiga. Read issues using the `read_taiga_issue` tool.
 - Before writing code, analyze the task in depth and describe your plan. If the task is complex, break it down into atomic steps. After making changes, run the applicable lint and format checks for the affected module before considering the work done (per example `mem:backend/core` or `mem:frontend/core`).
 - Align `let` binding values: when a `let` form has multiple bindings spanning several lines, align the value forms to the same column with spaces.
 - If you introduce delimiter errors (mismatched parens/brackets) in Clojure/CLJS files, fix them with `scripts/paren-repair` BEFORE running lint/format checks. See `mem:scripts/paren-repair` for usage.
@@ -59,8 +60,10 @@ The memory is structured in a way that you can get the critical information abou
 - `scripts/psql` — PostgreSQL client wrapper with devenv defaults. Companion: `scripts/db-schema` for DDL dumps. See `mem:scripts/psql`.
 - `scripts/taiga.py` — Fetch public issues, user stories, and tasks from the Penpot Taiga project without authentication. See `mem:scripts/taiga`.
 - `scripts/gh.py` — GitHub operations helper: list milestone issues, fetch PR details, compare against CHANGES.md. Requires `gh` CLI. See `mem:scripts/gh`.
+- `scripts/coverage-summary.mjs` — Renders an lcov file as a markdown table grouped by source area, for `$GITHUB_STEP_SUMMARY` (`--title`, `--lcov`, optional `--note`, `--unloaded`). Used by the backend, common and frontend test workflows; module coverage commands are in `mem:backend/testing`, `mem:common/testing`, `mem:frontend/testing`.
+- `scripts/coverage-comment.mjs` — Keeps one PR comment (`<!-- coverage-report -->`) with the coverage table of Backend, Common, Frontend and Render WASM, in the format of the Vitest Coverage Report Action (status, metric, %, covered/total, changed-file coverage, run/commit footer). Each test job updates its own project: the data of all three lives base64-encoded in a hidden `coverage-data` block, and the job re-reads after `SETTLE_MS` and rewrites if a concurrent job dropped its data; extra report comments from simultaneous creates are merged and deleted. Targets (`THRESHOLDS`, per project and metric, status colour only, never fail CI) are on lines only: 70 Backend, 70 Common, 50 Frontend, 40 Render WASM; other metrics get the blue dot. Statements are Clojure forms for Backend/Common (`--emma-xml`) and llvm regions for Render WASM (`--llvm-json`). Shared lcov parsing: `scripts/coverage-lcov.mjs`. The test workflows run it only for PRs from branches of this repo (job-level `pull-requests: write`, `continue-on-error`): fork PRs get a read-only token, so they only get the run-page summary. A fork-safe `workflow_run` commenter would run only from the default branch's copy of the workflow.
 - `scripts/project-anomalies.py` — Main-board anomaly check for a milestone (`check` writes `tmp/<MILESTONE>-ANOMALIES.md`). Bulk resolution via `scripts/gh.py`. See `mem:scripts/project-anomalies`.
-- `scripts/changelog.py` — Changelog checks for the `update-changelog` skill: `check-merged` (PR merge status), `cross-ref` (milestone PRs vs changelog section), `report` (anomaly report to CHANGES-ISSUES.md). Calls `scripts/gh.py` via subprocess. See `mem:scripts/changelog`.
+- `scripts/changelog.py` — Changelog checks for `mem:workflow/updating-changelog`: `boom` (generate the `:boom:` section from `breaking change` issues), `check-merged` (PR merge status), `cross-ref` (milestone PRs vs changelog section), `report` (anomaly report to CHANGES-ISSUES.md). Calls `scripts/gh.py` via subprocess. See `mem:scripts/changelog`.
 - `scripts/error-reports.mjs` — Query error reports via RPC API with token authentication. Supports list/get operations with filtering and pagination. See `mem:scripts/error-reports`.
 - `scripts/clean-node-modules` — Remove stale `node_modules` from all pnpm workspaces (root, modules, member packages). Keeps the shared pnpm store at `<repo>/.pnpm-store` unless `--store`; ignores `external/` and `.opencode/`. Usage and reinstall steps: `mem:workflow/updating-pnpm`.
 - `scripts/setup-opencode` — Install the opencode CLI in-container as a global pnpm package in `$PNPM_HOME`. Not part of the devenv image; see `mem:devenv/core`.

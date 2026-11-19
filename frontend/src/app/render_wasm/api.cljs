@@ -16,6 +16,7 @@
    [app.common.fonts :as cfnt]
    [app.common.logging :as log]
    [app.common.math :as mth]
+   [app.common.render-wasm.api.modifiers :as modifiers]
    [app.common.render-wasm.api.props :as props]
    [app.common.render-wasm.api.select :as wselect]
    [app.common.render-wasm.helpers :as h]
@@ -33,6 +34,7 @@
    [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
    [app.config :as cf]
+   [app.main.data.event :as-alias ev]
    [app.main.data.helpers :as dsh]
    [app.main.data.notifications :as ntf]
    [app.main.data.render-wasm :as drw]
@@ -227,13 +229,6 @@
 
 (def ^:const UUID-U8-SIZE 16)
 (def ^:const UUID-U32-SIZE (/ UUID-U8-SIZE 4))
-
-;; FIXME: Migrate this as we adjust the DTO structure in wasm
-(def ^:const MODIFIER-U8-SIZE 40)
-(def ^:const MODIFIER-U32-SIZE (/ MODIFIER-U8-SIZE 4))
-(def ^:const MODIFIER-TRANSFORM-U8-OFFSET-SIZE 16)
-(def ^:const INPUT-MODIFIER-U8-SIZE 44)
-(def ^:const INPUT-MODIFIER-U32-SIZE (/ INPUT-MODIFIER-U8-SIZE 4))
 
 (def ^:const GRID-LAYOUT-ROW-U8-SIZE 8)
 (def ^:const GRID-LAYOUT-COLUMN-U8-SIZE 8)
@@ -742,9 +737,14 @@
       (let [text (apply str (map :text spans))]
         (t/write-shape-text spans paragraph text)))))
 
-(defn set-shape-text-content
-  "This function sets shape text content and returns a stream that loads the needed fonts asynchronously"
-  [shape-id content]
+(defn- text-content-fonts
+  "Content fonts and fallback faces (emoji, Noto, ...) of a text content."
+  [content]
+  {:fonts          (f/get-content-fonts content)
+   :fallback-fonts (fonts-from-text-content content false)})
+
+(defn- upload-text-content
+  [shape-id content {:keys [fonts fallback-fonts]}]
 
   ;; Cache content for text editor sync
   (text-editor/cache-shape-text-content! shape-id content)
@@ -758,14 +758,16 @@
 
     (set-shape-vertical-align (get content :vertical-align))
 
-    (let [fonts          (f/get-content-fonts content)
-          fallback-fonts (fonts-from-text-content content false)
-          all-fonts      (concat fonts fallback-fonts)
-          result         (f/store-fonts all-fonts)]
+    (let [result (f/store-fonts (concat fonts fallback-fonts))]
       (write-text-content! content)
       (f/load-fallback-fonts-for-editor! fallback-fonts)
       (h/call wasm/internal-module "_update_shape_text_layout")
       result)))
+
+(defn set-shape-text-content
+  "This function sets shape text content and returns a stream that loads the needed fonts asynchronously"
+  [shape-id content]
+  (upload-text-content shape-id content (text-content-fonts content)))
 
 (defn apply-styles-to-selection
   "Apply style attrs to the currently selected text spans.
@@ -858,9 +860,9 @@
   (let [children (into [] (filter uuid?) children)]
     (if (empty? children)
       (h/call wasm/internal-module "_set_children_0")
-      (let [heap   (mem/get-heap-u32)
-            size   (mem/get-alloc-size children UUID-U8-SIZE)
-            offset (mem/alloc->offset-32 size)]
+      (let [size   (mem/get-alloc-size children UUID-U8-SIZE)
+            offset (mem/alloc->offset-32 size)
+            heap   (mem/get-heap-u32)]
         (reduce
          (fn [offset id]
            (mem.h32/write-uuid offset heap id))
@@ -1121,6 +1123,10 @@
 (defn set-shape-hidden
   [hidden]
   (h/call wasm/internal-module "_set_shape_hidden" hidden))
+
+(defn set-shape-hide-fill-on-export
+  [hide]
+  (h/call wasm/internal-module "_set_shape_hide_fill_on_export" hide))
 
 (defn clear-shape-fills!
   "Clear the fills of the currently-selected shape (call `use-shape` first).
@@ -1523,16 +1529,10 @@
 (def ^:private empty-text-font-state
   {:font-index {} :pending-faces #{}})
 
-(defn- text-layout-fonts
-  "Content and fallback faces (emoji, Noto, ...) that `set-shape-text-content`
-  uploads, must match that path for pending-face tracking."
-  [content]
-  (into #{} (concat (f/get-content-fonts content)
-                    (fonts-from-text-content content false))))
-
 (defn- text-font-face-keys-state
-  "All font-face keys for a text content, and the subset not WASM-ready yet."
-  [content]
+  "All font-face keys for the `text-content-fonts` of a text, and the subset
+  not WASM-ready yet."
+  [{:keys [fonts fallback-fonts]}]
   (reduce
    (fn [acc font]
      (let [font-data (f/make-font-data font)
@@ -1543,7 +1543,7 @@
            (cond-> pending?
              (update :pending-font-face-keys conj key)))))
    {:font-face-keys #{} :pending-font-face-keys #{}}
-   (text-layout-fonts content)))
+   (into #{} (concat fonts fallback-fonts))))
 
 (defn- acc-text-font-state
   [{:keys [font-index pending-faces]} id font-face-keys pending-font-face-keys]
@@ -1560,7 +1560,7 @@
   (if (cfh/text-shape? shape)
     (let [content (ensure-text-content (:content shape))
           {:keys [font-face-keys pending-font-face-keys]}
-          (text-font-face-keys-state content)]
+          (text-font-face-keys-state (text-content-fonts content))]
       (acc-text-font-state empty-text-font-state
                            (:id shape)
                            font-face-keys
@@ -1613,9 +1613,10 @@
           (set-layout-data shape)))
 
     (let [is-text? (= type :text)
+          text-fonts (when is-text? (text-content-fonts content))
           {:keys [font-face-keys pending-font-face-keys]}
-          (when is-text? (text-font-face-keys-state content))
-          text-content-pending (when is-text? (set-shape-text-content id content))
+          (when is-text? (text-font-face-keys-state text-fonts))
+          text-content-pending (when is-text? (upload-text-content id content text-fonts))
           pending-thumbnails (into [] (concat
                                        text-content-pending
                                        (when is-text? (set-shape-text-images id content true))
@@ -2060,8 +2061,8 @@
   [entries]
   (when (and (initialized?) (not ^boolean (empty? entries)))
     (let [size   (mem/get-alloc-size entries UUID-U8-SIZE)
-          heap   (mem/get-heap-u32)
-          offset (mem/alloc->offset-32 size)]
+          offset (mem/alloc->offset-32 size)
+          heap   (mem/get-heap-u32)]
 
       (reduce (fn [offset id]
                 (mem.h32/write-uuid offset heap id))
@@ -2084,8 +2085,8 @@
   (when (and (initialized?) (seq shape-ids))
     (let [ids    (vec shape-ids)
           size   (mem/get-alloc-size ids UUID-U8-SIZE)
-          heap   (mem/get-heap-u32)
-          offset (mem/alloc->offset-32 size)]
+          offset (mem/alloc->offset-32 size)
+          heap   (mem/get-heap-u32)]
       (reduce (fn [offset id]
                 (mem.h32/write-uuid offset heap id))
               offset
@@ -2094,85 +2095,25 @@
 
 (defn set-structure-modifiers
   [entries]
-  (when (and (initialized?) (not ^boolean (empty? entries)))
-    (let [size    (mem/get-alloc-size entries 44)
-          offset  (mem/alloc->offset-32 size)
-          heapu32 (mem/get-heap-u32)
-          heapf32 (mem/get-heap-f32)]
-
-
-      (reduce (fn [offset {:keys [type parent id index value]}]
-                (-> offset
-                    (mem.h32/write-u32 heapu32 (sr/translate-structure-modifier-type type))
-                    (mem.h32/write-u32 heapu32 (d/nilv index 0))
-                    (mem.h32/write-uuid heapu32 parent)
-                    (mem.h32/write-uuid heapu32 id)
-                    (mem.h32/write-f32 heapf32 value)))
-              offset
-              entries)
-
-      (h/call wasm/internal-module "_set_structure_modifiers"))))
+  (when (initialized?)
+    (modifiers/set-structure-modifiers entries)))
 
 ;; Axes the pixel grid rounds, as `propagate_modifiers` expects them.
-(def ^:private pixel-precision
-  {:disabled 0
-   :both     1
-   :only-x   2
-   :only-y   3})
-
-(defn- pixel-precision-mode
-  "Encodes the pixel grid snapping for the renderer. `snap-ignore-axis`
-  names the axis to leave alone (`:x`, `:y` or nil)."
-  [snap-pixel? snap-ignore-axis]
-  (pixel-precision
-   (cond
-     (not snap-pixel?)       :disabled
-     (= :x snap-ignore-axis) :only-y
-     (= :y snap-ignore-axis) :only-x
-     :else                   :both)))
-
 (defn propagate-modifiers
-  "Propagates geometry modifiers through the WASM shape tree.
+  "Propagates geometry transforms when the renderer is ready.
 
-  Rounds the resulting geometry to the pixel grid when `snap-pixel?` is set,
-  skipping the axis named by `snap-ignore-axis` (`:x`, `:y` or nil).
+  Args:
+    entries: Collection of [uuid {:transform matrix :kind kind}].
+    snap-pixel?: Whether to round geometry to the pixel grid.
+    snap-ignore-axis: Axis to leave unsnapped, :x, :y or nil.
 
-  Always returns a vector. When the context is not ready (lost / mid-reload)
-  or `entries` is empty, returns `[]` so callers never receive `nil` (which
-  would trip `set-modifiers`' vector assert)."
+  Returns:
+    A vector of [uuid matrix], or [] for an unavailable renderer or empty
+    entries."
   [entries snap-pixel? snap-ignore-axis]
-  (if-not (and (initialized?) (not ^boolean (empty? entries)))
-    []
-    (let [heapf32 (mem/get-heap-f32)
-          heapu32 (mem/get-heap-u32)
-          size    (mem/get-alloc-size entries INPUT-MODIFIER-U8-SIZE)
-          offset  (mem/alloc->offset-32 size)]
-
-      (reduce (fn [offset [id data]]
-                (let [transform (:transform data)
-                      kind (:kind data)]
-                  (-> offset
-                      (mem.h32/write-uuid heapu32 id)
-                      (mem.h32/write-matrix heapf32 transform)
-                      (mem.h32/write-u32 heapu32 (sr/translate-transform-entry-kind kind)))))
-              offset
-              entries)
-
-      (let [precision  (pixel-precision-mode snap-pixel? snap-ignore-axis)
-            offset     (-> (h/call wasm/internal-module "_propagate_modifiers" precision)
-                           (mem/->offset-32))
-            length     (aget heapu32 offset)
-            max-offset (+ offset 1 (* length MODIFIER-U32-SIZE))
-            result     (loop [result (transient [])
-                              offset (inc offset)]
-                         (if (< offset max-offset)
-                           (let [entry (dr/read-modifier-entry heapu32 heapf32 offset)]
-                             (recur (conj! result entry)
-                                    (+ offset MODIFIER-U32-SIZE)))
-                           (persistent! result)))]
-
-        (mem/free)
-        result))))
+  (if (initialized?)
+    (modifiers/propagate-modifiers entries snap-pixel? snap-ignore-axis)
+    []))
 
 (defn get-selection-rect
   [entries]
@@ -2180,8 +2121,7 @@
   (when (and (initialized?) (not ^boolean (empty? entries)))
     (let [size    (mem/get-alloc-size entries UUID-U8-SIZE)
           offset  (mem/alloc->offset-32 size)
-          heapu32 (mem/get-heap-u32)
-          heapf32 (mem/get-heap-f32)]
+          heapu32 (mem/get-heap-u32)]
 
       (reduce (fn [offset id]
                 (mem.h32/write-uuid offset heapu32 id))
@@ -2190,7 +2130,7 @@
 
       (let [offset (-> (h/call wasm/internal-module "_get_selection_rect")
                        (mem/->offset-32))
-            result (dr/read-selection-rect heapf32 offset)]
+            result (dr/read-selection-rect (mem/get-heap-f32) offset)]
         (mem/free)
         result))))
 
@@ -2208,48 +2148,29 @@
 (defn clean-modifiers
   []
   (when (initialized?)
-    (h/call wasm/internal-module "_clean_modifiers")))
+    (modifiers/clean-modifiers)))
 
 (defn set-modifiers-start
-  "Enter interactive transform mode (drag / resize / rotate). Enables
-   fast-mode effect skipping in the renderer and activates an atlas
-   backdrop so tiles do not appear sequentially or flicker while the
-   gesture is in progress."
+  "Enables interactive rendering for shape transforms when the renderer is ready."
   []
   (when (initialized?)
-    (h/call wasm/internal-module "_set_modifiers_start")))
+    (modifiers/set-modifiers-start)))
 
 (defn set-modifiers-end
-  "Leave interactive transform mode. Cancels any pending async render
-   scheduled under it; the caller is expected to trigger a full-quality
-   render (via `request-render`) once the gesture is committed."
+  "Ends interactive rendering for shape transforms when the renderer is ready.
+
+  A subsequent render produces the final full-quality image."
   []
   (when (initialized?)
-    (h/call wasm/internal-module "_set_modifiers_end")))
+    (modifiers/set-modifiers-end)))
 
 (defn set-modifiers
-  [modifiers]
+  [entries]
   (when (initialized?)
-    ;; Assert only when we would touch WASM; callers may still build
-    ;; modifiers while the context is unavailable.
-    (assert (vector? modifiers) "expected a vector for `set-modifiers`")
-
-    (let [length (count modifiers)]
-      (when (pos? length)
-        (let [offset  (mem/alloc->offset-32 (* MODIFIER-U8-SIZE length))
-              heapu32 (mem/get-heap-u32)
-              heapf32 (mem/get-heap-f32)]
-
-          (reduce (fn [offset [id transform]]
-                    (-> offset
-                        (mem.h32/write-uuid heapu32 id)
-                        (mem.h32/write-matrix heapf32 transform)))
-                  offset
-                  modifiers)
-
-          (h/call wasm/internal-module "_set_modifiers")
-
-          (request-render "set-modifiers"))))))
+    (assert (vector? entries) "expected a vector for `set-modifiers`")
+    (when (seq entries)
+      (modifiers/set-modifiers entries)
+      (request-render "set-modifiers"))))
 
 (defn initialize-viewport
   [base-objects zoom vbox &
@@ -2386,6 +2307,17 @@
        (set-render-options! new-dpr)
        (resize-viewbox css-w css-h)))))
 
+(defn- emit-webgl-event
+  "Send a WebGL audit event with the environment details. Built as a plain
+  data event so this namespace does not load `app.main.data.event`, which
+  the worker build cannot run."
+  [event-name props]
+  (st/emit! (ptk/data-event ::ev/event
+                            (merge (webgl/get-environment)
+                                   props
+                                   {::ev/name event-name
+                                    ::ev/origin "workspace"}))))
+
 (defn- on-webgl-context-lost
   [event]
   (dom/prevent-default event)
@@ -2402,7 +2334,8 @@
               :type :toast
               :level :warning
               :timeout 5000}))
-  (st/emit! (drw/context-lost)))
+  (st/emit! (drw/context-lost))
+  (emit-webgl-event "webgl-context-lost" {}))
 
 (defn- on-webgl-context-restored
   [event]
@@ -2419,6 +2352,7 @@
                   ;; only after the full reload so layout/viewport sync runs
                   ;; against a live renderer with `wasm/ready?` true.
                   (st/emit! (drw/context-restored))
+                  (emit-webgl-event "webgl-context-restored" {})
                   (listen-tiles-render-complete-once! end-context-loss-overlay!)
                   (st/async-emit!
                    (ntf/show {:content (tr "webgl.webgl-context-recovered.toast")
@@ -2469,6 +2403,7 @@
         (let [{:keys [context handle]} result]
           (set! wasm/gl-context-handle handle)
           (set! wasm/gl-context context)
+          (webgl/remember-gpu-info context)
 
           ;; `init-context` already ran `_init` through `_set_browser` in
           ;; order. Publish the handles, then mark live before sizing so the
@@ -2606,6 +2541,9 @@
         (p/catch
          (fn [cause]
            (ug/dispatch! (ug/event "penpot:wasm:reload-failed"))
+           (emit-webgl-event "webgl-reload-failed"
+                             {:hint (ex-message cause)
+                              :code (some-> (ex-data cause) :code name)})
            (reset! wasm/reloading? false)
            (reset! wasm/context-lost? true)
            (clear-canvas)
@@ -2759,8 +2697,8 @@
 (defn calculate-bool*
   [bool-type ids]
   (let [size   (mem/get-alloc-size ids UUID-U8-SIZE)
-        heap   (mem/get-heap-u32)
-        offset (mem/alloc->offset-32 size)]
+        offset (mem/alloc->offset-32 size)
+        heap   (mem/get-heap-u32)]
 
     (reduce (fn [offset id]
               (mem.h32/write-uuid offset heap id))
@@ -2772,6 +2710,7 @@
             (-> (h/call wasm/internal-module "_calculate_bool" (sr/translate-bool-type bool-type))
                 (mem/->offset-32))
 
+            heap    (mem/get-heap-u32)
             length  (aget heap offset)
             data    (mem/slice heap
                                (+ offset 1)
@@ -2827,10 +2766,10 @@
   [shape]
   (when (initialized?)
     (wselect/use-shape (:id shape))
-    (let [heapf32 (mem/get-heap-f32)
-          heapu32 (mem/get-heap-u32)
-          offset (-> (h/call wasm/internal-module "_calculate_position_data")
+    (let [offset (-> (h/call wasm/internal-module "_calculate_position_data")
                      (mem/->offset-32))
+          heapf32 (mem/get-heap-f32)
+          heapu32 (mem/get-heap-u32)
           length (aget heapu32 offset)
 
           max-offset (+ offset 1 (* length POSITION-DATA-U32-SIZE))
@@ -2912,8 +2851,9 @@
 (defn render-shape-pixels
   "Renders a shape subtree to encoded image bytes on the GPU export surface.
   `format` is :png, :jpeg or :webp; jpeg is flattened onto white on the Rust
-  side, since it has no alpha channel."
-  [shape-id scale format]
+  side, since it has no alpha channel. With `export?` the root drops its
+  fills when it hides them on export."
+  [shape-id scale format export?]
   (when (initialized?)
     (let [buffer (uuid/get-u32 shape-id)
           offset (h/call wasm/internal-module "_render_shape_pixels"
@@ -2922,7 +2862,8 @@
                          (aget buffer 2)
                          (aget buffer 3)
                          scale
-                         (sr/translate-raster-format format))]
+                         (sr/translate-raster-format format)
+                         export?)]
       (read-raster-result offset))))
 
 (defn render-shape-raster
@@ -3001,8 +2942,8 @@
   (when (and (initialized?) (seq shape-ids))
     (let [ids    (vec shape-ids)
           size   (mem/get-alloc-size ids UUID-U8-SIZE)
-          heap   (mem/get-heap-u32)
           offset (mem/alloc->offset-32 size)
+          heap   (mem/get-heap-u32)
 
           _ (reduce (fn [offset id]
                       (mem.h32/write-uuid offset heap id))
@@ -3080,8 +3021,8 @@
   (when (and (initialized?) (seq shape-ids))
     (let [ids    (vec shape-ids)
           size   (mem/get-alloc-size ids UUID-U8-SIZE)
-          heap   (mem/get-heap-u32)
           offset (mem/alloc->offset-32 size)
+          heap   (mem/get-heap-u32)
 
           _ (reduce (fn [offset id]
                       (mem.h32/write-uuid offset heap id))

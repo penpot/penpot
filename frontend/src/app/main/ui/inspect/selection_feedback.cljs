@@ -31,7 +31,7 @@
 ;; COMPONENTS
 ;; ------------------------------------------------
 
-(mf/defc selection-rect [{:keys [selrect zoom]}]
+(mf/defc selection-rect* [{:keys [selrect zoom]}]
   (let [{:keys [x y width height]} selrect
         selection-rect-width (/ mconst/selection-rect-width zoom)]
     [:g.selection-rect
@@ -43,7 +43,7 @@
                      :stroke mconst/select-color
                      :stroke-width selection-rect-width}}]]))
 
-(mf/defc selection-feedback
+(mf/defc selection-feedback*
   [{:keys [frame local objects size]}]
   (let [{:keys [hover selected zoom]} local
 
@@ -55,7 +55,7 @@
     (when (d/not-empty? selected-shapes)
       [:g.selection-feedback {:pointer-events "none"}
        [:g.selected-shapes
-        [:& selection-rect {:selrect selrect :zoom zoom}]
+        [:> selection-rect* {:selrect selrect :zoom zoom}]
         [:> size-display* {:selrect selrect :zoom zoom}]]
 
        [:> measurement* {:bounds (assoc size :x 0 :y 0)

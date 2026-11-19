@@ -16,6 +16,7 @@
    [app.main.data.nitrate :as dnt]
    [app.main.data.notifications :as ntf]
    [app.main.data.workspace :as-alias dw]
+   [app.main.features :as features]
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.main.store :as st]
@@ -23,7 +24,7 @@
    [app.util.dom :as dom]
    [app.util.globals :as g]
    [app.util.http :as http]
-   [app.util.i18n :refer [tr]]
+   [app.util.i18n :as i18n :refer [tr]]
    [app.util.timers :as ts]
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
@@ -410,7 +411,8 @@
               :hint hint
               :href (rt/get-current-href)
               :report report
-              :occurrences occurrences})))
+              :occurrences occurrences
+              :renderer (features/get-active-renderer @st/state)})))
 
 (defn submit-report
   "Report the error report to the audit log subsystem, subject to the
@@ -506,7 +508,8 @@
 (defn flash
   "Show error notification banner and emit error report.
   A nil timeout keeps the notification visible until dismissed or replaced.
-  A `:tag` lets the notification be hidden later by that tag.
+  A `:tag` lets the notification be hidden later by that tag. `:level`
+  defaults to `:error`.
 
   The payload format is derived from the cause: environment failures get a
   compact report. The audit event name is the canonical one requested by
@@ -537,8 +540,8 @@
   synchronously from inside an error handler creates a re-entrant
   event-processing cycle that can exhaust the JS call stack
   (RangeError: Maximum call stack size exceeded)."
-  [& {:keys [type hint cause timeout tag report-link? links]
-      :or {type :handled timeout 5000}}]
+  [& {:keys [type hint cause timeout tag report-link? links level]
+      :or {type :handled timeout 5000 level :error}}]
   (js/Promise.
    (fn [resolve _reject]
      (ts/schedule
@@ -563,7 +566,7 @@
                 (ntf/show
                  (cond-> {:content (or ^boolean hint (tr "errors.generic"))
                           :type :toast
-                          :level :error
+                          :level level
                           :timeout timeout}
                    (some? tag)
                    (assoc :tag tag)
@@ -621,8 +624,10 @@
 
 (def ^:private delegated-persistence-types
   "Save failure causes routed to their own error handler: retaining the
-  changes cannot resolve them."
-  #{:authentication :not-found})
+  changes cannot resolve them. A save answered not-found (file gone, edit
+  rights lost, missing data) is not here: it keeps the workspace open and
+  notifies like any other failed save."
+  #{:authentication})
 
 (defn- delegated-persistence-failure?
   [{:keys [type cause-type code]}]
@@ -672,8 +677,9 @@
 (defn flash-persistence
   "Notifies a save failure. With `:retrying` the failure is transient and
   the queue keeps trying in the background, so the toast says the changes
-  are kept and offers no reload, which would lose them."
-  [cause & {:keys [retrying]}]
+  are kept and offers no reload, which would lose them. `:busy` tells that
+  the server was too busy, not out of reach."
+  [cause & {:keys [retrying busy]}]
   (let [data (ex-data cause)]
     (cond
       (delegated-persistence-failure? data)
@@ -688,7 +694,18 @@
              :timeout nil
              :tag persistence-failed-tag
              :report-link? true
-             :hint (tr "errors.save-still-retrying"))
+             :hint (if busy
+                     (tr "errors.save-still-retrying-busy")
+                     (tr "errors.save-still-retrying")))
+
+      (= :save-permission-denied (:code data))
+      (flash :cause cause
+             :type (persistence-report-type data)
+             :timeout nil
+             :tag persistence-failed-tag
+             :report-link? true
+             :links [(reload-page-link)]
+             :hint (tr "errors.save-permission-lost" (i18n/c (:unsaved-commits data 0))))
 
       :else
       (flash :cause cause
@@ -721,17 +738,41 @@
       (ex/print-throwable cause :prefix "Unexpected Error")
       (flash :cause cause :type :unhandled))))
 
+(def recoverable-wasm-codes
+  "WASM error codes that show a toast; any other code shows the error page."
+  #{:non-blocking :wasm-reload-context-failure :viewer-canvas-failed})
+
 (defmethod ptk/handle-error :wasm-error
   [error]
   (when-let [cause (::instance error)]
     (ex/print-throwable cause)
-    (let [code (get error :code)]
-      (cond
-        (= code :panic)
-        (st/emit! (rt/assign-exception error))
+    (if (contains? recoverable-wasm-codes (:code error))
+      (flash :type :handled :cause cause)
+      (st/emit! (rt/assign-exception error)))))
 
-        :else
-        (flash :type :handled :cause cause)))))
+(defn- handle-wasm-effect-error
+  [cause]
+  (let [{:keys [type code]} (ex-data cause)]
+    (if (and (= type :wasm-error) (contains? recoverable-wasm-codes code))
+      (on-error cause)
+      (throw cause))))
+
+(defn wrap-wasm-effect
+  "Runs the React effect fn `f` and guards the cleanup fn it returns: a
+  recoverable WASM error goes to `on-error`, any other error is rethrown."
+  [f]
+  (let [result (try
+                 (f)
+                 (catch :default cause
+                   (handle-wasm-effect-error cause)
+                   nil))]
+    (if (fn? result)
+      (fn []
+        (try
+          (result)
+          (catch :default cause
+            (handle-wasm-effect-error cause))))
+      result)))
 
 ;; We receive a explicit authentication error; If the uri is for
 ;; workspace, dashboard, viewer or settings, then assign the exception
@@ -789,11 +830,11 @@
   [{:keys [organization-id team-id] :as error}]
   (when-not @sso-renewal-pending?
     (vreset! sso-renewal-pending? true)
-    (let [dest-url (rt/get-current-href)]
+    (let [query-string (rt/get-current-query-string)]
       (->> (dnt/check-organization-sso
             {:organization-id organization-id
              :team-id team-id
-             :dest-url dest-url})
+             :query-string query-string})
            ;; Release the guard however the check ends, including an
            ;; unsubscription or a completion without a result: a stuck guard
            ;; would silently drop every later rejection.

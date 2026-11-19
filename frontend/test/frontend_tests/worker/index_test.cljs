@@ -7,12 +7,14 @@
 (ns frontend-tests.worker.index-test
   (:require
    [app.common.files.builder :as fb]
+   [app.common.files.changes :as ch]
    [app.common.geom.rect :as grc]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.worker.impl :as impl]
    [app.worker.index :as idx]
-   [cljs.test :as t :include-macros true]))
+   [cljs.test :as t :include-macros true]
+   [clojure.set :as set]))
 
 (t/use-fixtures :each
   {:before #(reset! idx/state {:pages-index {}})})
@@ -97,3 +99,62 @@
                                          :page-id page-id
                                          :rect (grc/make-rect 190 190 70 70)}))
                      shape-id))))
+
+(defn- get-stored-shape
+  [page-id shape-id]
+  (get-in @idx/state [:pages-index page-id :objects shape-id]))
+
+(t/deftest initialize-stores-a-trimmed-page
+  (let [page     (make-page "Page 1")
+        shape-id (-> page :objects (dissoc uuid/zero) keys first)]
+    (initialize page)
+    (t/is (some? (get-stored-shape (:id page) shape-id)))
+    (t/is (nil? (:name (get-stored-shape (:id page) shape-id))))))
+
+(t/deftest update-stores-trimmed-fills
+  (let [page     (make-page "Page 1")
+        page-id  (:id page)
+        shape-id (-> page :objects (dissoc uuid/zero) keys first)]
+    (initialize page)
+    (update-index page-id [{:type :mod-obj :id shape-id :page-id page-id
+                            :operations [{:type :set :attr :fills
+                                          :val [{:fill-color "#ff0000" :fill-opacity 1}]}]}])
+    (t/is (= [{}] (:fills (get-stored-shape page-id shape-id))))))
+
+(t/deftest update-renaming-a-shape-keeps-the-indexes
+  (let [page     (make-page "Page 1")
+        page-id  (:id page)
+        shape-id (-> page :objects (dissoc uuid/zero) keys first)]
+    (initialize page)
+    (let [before @idx/state]
+      (update-index page-id [{:type :mod-obj :id shape-id :page-id page-id
+                              :operations [{:type :set :attr :name :val "renamed"}]}])
+      (t/is (identical? (::idx/selection before) (::idx/selection @idx/state)))
+      (t/is (identical? (::idx/snap before) (::idx/snap @idx/state))))))
+
+(t/deftest update-skips-changes-the-indexes-do-not-read
+  (let [page     (make-page "Page 1")
+        page-id  (:id page)
+        shape-id (-> page :objects (dissoc uuid/zero) keys first)]
+    (initialize page)
+    (let [before (get-in @idx/state [:pages-index page-id])]
+      (update-index page-id [{:type :set-plugin-data :object-type :shape
+                              :object-id shape-id :page-id page-id
+                              :namespace "ns" :key "k" :value "v"}
+                             {:type :mod-page :id page-id :page-id page-id :name "Renamed"}])
+      (t/is (= before (get-in @idx/state [:pages-index page-id]))))))
+
+(t/deftest every-change-type-is-replayed-or-skipped
+  (let [known (set/union idx/index-change-types idx/skipped-change-types)]
+    (t/is (= #{} (set/difference (set (keys (methods ch/process-change))) known))
+          "Add the new change type to one set; replaying it may need attributes in `app.worker.trim`")
+    (t/is (= #{} (set/intersection idx/index-change-types idx/skipped-change-types)))))
+
+(t/deftest update-skips-unknown-change-types
+  (let [page     (make-page "Page 1")
+        page-id  (:id page)
+        shape-id (-> page :objects (dissoc uuid/zero) keys first)]
+    (initialize page)
+    (let [before (get-in @idx/state [:pages-index page-id])]
+      (update-index page-id [{:type :unknown-change :id shape-id :page-id page-id}])
+      (t/is (= before (get-in @idx/state [:pages-index page-id]))))))

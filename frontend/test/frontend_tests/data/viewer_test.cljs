@@ -131,9 +131,13 @@
   ;; because update-zoom-querystring navigated unconditionally.
   ;; At HEAD the guard breaks the cycle, so a bundle fetch must not
   ;; emit any navigation.
-  (let [state (-> (base-state {:frames [{:selrect {:width 100 :height 100}}]
-                               :index  0})
-                  (assoc-in [:route :query-params :zoom] "fill"))]
+  (let [state (as-> (base-state {:frames [{:selrect {:width 100 :height 100}}]
+                                 :index  0}) state
+                ;; The router stores the same query map under both keys.
+                (let [query (assoc (rt/get-params state) :zoom "fill")]
+                  (-> state
+                      (assoc-in [:route :params :query] query)
+                      (assoc-in [:route :query-params] query))))]
     (let [events (watch-events (dv/bundle-fetched
                                 {:file {:id page-id
                                         :data {:pages [page-id]
@@ -149,5 +153,51 @@
           ;; `update-page-position-data` and `go-to-frame-auto` are part
           ;; of the normal init sequence; the navigation events are the
           ;; ones that can restart the zoom cycle.
+          navigations (filter #(= :app.main.router/navigate (ptk/type %)) events)]
+      (t/is (empty? navigations)))))
+
+(defn- minimal-bundle
+  [page-ids]
+  {:file {:id (uuid/custom 2 2)
+          :data {:pages (vec page-ids)
+                 :pages-index (into {} (map (fn [id] [id {:objects {}}])) page-ids)}}
+   :project {}
+   :team {:features []}
+   :share-links []
+   :libraries []
+   :users []
+   :permissions {}
+   :thumbnails {}})
+
+(defn- route-without-page-id
+  []
+  (let [query {:file-id (str (uuid/custom 2 2)) :section "interactions" :index "0"}]
+    {:route {:params {:query query} :query-params query}}))
+
+(t/deftest initialize-without-page-id-fetches-the-bundle
+  ;; The viewer route passes `:page-id nil` when the URL has none; the
+  ;; params check used to reject it before any fetch.
+  (let [events (watch-events (dv/initialize {:file-id (uuid/custom 2 2)
+                                             :page-id nil
+                                             :share-id nil})
+                             {})]
+    (t/is (= [::dv/fetch-bundle] (map ptk/type (remove nil? events))))))
+
+(t/deftest bundle-fetched-without-page-id-names-the-first-page
+  (t/testing "the route is replaced by one naming the first page"
+    (let [first-page (uuid/custom 3 1)
+          events (watch-events (dv/bundle-fetched
+                                (minimal-bundle [first-page (uuid/custom 3 2)]))
+                               (route-without-page-id))
+          {:keys [id params options]} (some-> (first events) deref)]
+      (t/is (= 1 (count events)))
+      (t/is (= :viewer id))
+      (t/is (= first-page (:page-id params)))
+      (t/is (= "interactions" (:section params)))
+      (t/is (true? (::rt/replace options)))))
+
+  (t/testing "a file without pages keeps the route"
+    (let [events (watch-events (dv/bundle-fetched (minimal-bundle []))
+                               (route-without-page-id))
           navigations (filter #(= :app.main.router/navigate (ptk/type %)) events)]
       (t/is (empty? navigations)))))

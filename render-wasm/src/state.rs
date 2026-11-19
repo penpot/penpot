@@ -98,16 +98,24 @@ impl State {
         scale: f32,
         timestamp: i32,
         format: RasterFormat,
+        export: bool,
     ) -> Result<(Vec<u8>, i32, i32)> {
-        get_render_state().render_shape_pixels(id, &self.shapes, scale, timestamp, format)
+        let render = |tree: &ShapesPool| {
+            get_render_state().render_shape_pixels(id, tree, scale, timestamp, format)
+        };
+        if export {
+            self.shapes.with_export_root(id, render)
+        } else {
+            render(&self.shapes)
+        }
     }
 
     pub fn render_shape_pdf(&mut self, id: &Uuid) -> Result<Vec<u8>> {
-        crate::render::pdf::render_to_pdf(get_resources(), id, &self.shapes)
+        crate::render::pdf::render_to_pdf(get_resources(), id, &mut self.shapes)
     }
 
     pub fn render_shapes_pdf(&mut self, ids: &[Uuid]) -> Result<Vec<u8>> {
-        crate::render::pdf::render_to_pdf_multi(get_resources(), ids, &self.shapes)
+        crate::render::pdf::render_to_pdf_multi(get_resources(), ids, &mut self.shapes)
     }
 
     pub fn pdf_export_begin(&mut self) -> Result<()> {
@@ -115,7 +123,10 @@ impl State {
     }
 
     pub fn pdf_export_add_page(&mut self, id: &Uuid) -> Result<()> {
-        crate::render::pdf::export_add_page(&mut self.pdf_export, get_resources(), id, &self.shapes)
+        let session = &mut self.pdf_export;
+        self.shapes.with_export_root(id, |tree| {
+            crate::render::pdf::export_add_page(session, get_resources(), id, tree)
+        })
     }
 
     pub fn pdf_export_finish(&mut self) -> Result<Vec<u8>> {
@@ -127,7 +138,9 @@ impl State {
     }
 
     pub fn render_shape_svg(&mut self, id: &Uuid, scale: f32) -> Result<Vec<u8>> {
-        crate::render::svg::render_to_svg(get_resources(), id, &self.shapes, scale)
+        self.shapes.with_export_root(id, |tree| {
+            crate::render::svg::render_to_svg(get_resources(), id, tree, scale)
+        })
     }
 
     pub fn render_shapes_svg(&mut self, ids: &[Uuid], scale: f32) -> Result<Vec<u8>> {
@@ -142,7 +155,9 @@ impl State {
         scale: f32,
         format: RasterFormat,
     ) -> Result<(Vec<u8>, i32, i32)> {
-        crate::render::raster::render_to_raster(get_resources(), id, &self.shapes, scale, format)
+        self.shapes.with_export_root(id, |tree| {
+            crate::render::raster::render_to_raster(get_resources(), id, tree, scale, format)
+        })
     }
 
     /// Distinct font families used by the (visible) subtree rooted at `id`, in

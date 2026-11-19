@@ -17,6 +17,7 @@
    [app.common.logic.libraries :as cll]
    [app.common.types.color :as clr]
    [app.common.types.component :as ctc]
+   [app.common.types.container :as ctn]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
@@ -111,7 +112,8 @@
             update-positions-stream
             (if (d/not-empty? ids)
               (let [modif-tree (dwm/create-modif-tree ids (ctm/reflow-modifiers))]
-                (if (features/active-feature? state "render-wasm/v1")
+                (if (and (features/active-feature? state "render-wasm/v1")
+                         (= page-id (:current-page-id state)))
                   (rx/of (dwm/apply-wasm-modifiers modif-tree
                                                    :stack-undo? true
                                                    :undo-group undo-group
@@ -150,7 +152,10 @@
   (ptk/reify ::initialize-shape-layout
     ptk/WatchEvent
     (watch [_ _ stream]
-      (let [stopper (rx/filter (ptk/type? ::finalize-shape-layout) stream)]
+      (let [;; A workspace reload starts a new one, which replaces this one
+            stopper (rx/filter #(or (ptk/type? ::finalize-shape-layout %)
+                                    (ptk/type? ::initialize-shape-layout %))
+                               stream)]
         (->> stream
              (rx/filter (ptk/type? :layout/update))
              ;; Keeps each update's page and the shapes that can be laid out;
@@ -216,13 +221,15 @@
             has-component?  (some true? (map ctc/instance-root? selected-shapes))
             is-component?   (and single? has-component?)
             has-variant?    (some ctc/is-variant? selected-shapes)
+            has-container?  (some ctc/is-variant-container? selected-shapes)
+            crosses-set?    (ctn/crosses-variant-set-boundary? objects selected-shapes)
 
             has-layout?     (and single? (ctl/any-layout? (first selected-shapes)))
 
             new-shape-id (uuid/next)
             undo-id      (js/Symbol)]
 
-        (if has-variant?
+        (if (or has-variant? has-container? crosses-set?)
           (rx/empty)
           (rx/concat
            (rx/of (dwu/start-undo-transaction undo-id))
@@ -294,12 +301,16 @@
 
             undo-id          (js/Symbol)]
 
-        (rx/of
-         (dwu/start-undo-transaction undo-id)
-         (if (and single? is-frame? (not has-layout?))
-           (create-layout-from-id (first selected) type :from-frame? true)
-           (create-layout-from-selection type))
-         (dwu/commit-undo-transaction undo-id))))))
+        ;; Refuse before undo: container or cross-boundary. Leave single
+        ;; mains on the from-id branch (selection refuses has-variant?).
+        (if (ctn/crosses-variant-set-boundary? objects selected-shapes)
+          (rx/empty)
+          (rx/of
+           (dwu/start-undo-transaction undo-id)
+           (if (and single? is-frame? (not has-layout?))
+             (create-layout-from-id (first selected) type :from-frame? true)
+             (create-layout-from-selection type))
+           (dwu/commit-undo-transaction undo-id)))))))
 
 (defn toggle-layout
   [type]
@@ -426,6 +437,14 @@
                (ptk/data-event :layout/update {:ids ids})
                (dwu/commit-undo-transaction undo-id))))))
 
+(defn grid-in-copy?
+  "Check if the grid is a component copy or lives inside one. Copies
+  must keep the structure of their main, so tracks that add shapes are
+  not allowed there."
+  [objects grid]
+  (or (ctc/in-component-copy? grid)
+      (ctn/has-any-copy-parent? objects grid)))
+
 (defn duplicate-layout-track
   [ids type index]
   (assert (#{:row :column} type))
@@ -433,53 +452,53 @@
   (ptk/reify ::duplicate-layout-track
     ptk/WatchEvent
     (watch [it state _]
-      (let [file-id      (:current-file-id state)
-            page         (dsh/lookup-page state)
-            objects      (:objects page)
-            libraries    (dsh/lookup-libraries state)
-            library-data (dsh/lookup-file state file-id)
-            shape-id     (first ids)
-            base-shape   (get objects shape-id)
+      (let [objects    (dsh/lookup-page-objects state)
+            base-shape (get objects (first ids))]
+        (when-not (grid-in-copy? objects base-shape)
+          (let [file-id      (:current-file-id state)
+                page         (dsh/lookup-page state)
+                libraries    (dsh/lookup-libraries state)
+                library-data (dsh/lookup-file state file-id)
 
-            shapes-by-track
-            (if (= type :column)
-              (ctl/shapes-by-column base-shape index false)
-              (ctl/shapes-by-row base-shape index false))
+                shapes-by-track
+                (if (= type :column)
+                  (ctl/shapes-by-column base-shape index false)
+                  (ctl/shapes-by-row base-shape index false))
 
-            ;; Change to set in order to use auxiliary functions
-            selected (set shapes-by-track)
+                ;; Change to set in order to use auxiliary functions
+                selected (set shapes-by-track)
 
-            changes
-            (-> (pcb/empty-changes it)
-                (cll/generate-duplicate-changes objects page selected (gpt/point 0 0) libraries library-data file-id)
-                (cll/generate-duplicate-changes-update-indices objects selected))
+                changes
+                (-> (pcb/empty-changes it)
+                    (cll/generate-duplicate-changes objects page selected (gpt/point 0 0) libraries library-data file-id)
+                    (cll/generate-duplicate-changes-update-indices objects selected))
 
-            ;; Creates a map with shape-id => duplicated-shape-id
-            ids-map
-            (->> changes
-                 :redo-changes
-                 (filter #(= (:type %) :add-obj))
-                 (filter #(selected (:old-id %)))
-                 (map #(vector (:old-id %) (get-in % [:obj :id])))
-                 (into {}))
+                ;; Creates a map with shape-id => duplicated-shape-id
+                ids-map
+                (->> changes
+                     :redo-changes
+                     (filter #(= (:type %) :add-obj))
+                     (filter #(selected (:old-id %)))
+                     (map #(vector (:old-id %) (get-in % [:obj :id])))
+                     (into {}))
 
-            changes
-            (-> changes
-                (pcb/update-shapes
-                 ids
-                 (fn [shape objects]
-                   ;; The duplication could have altered the grid so we restore the values, we'll calculate the good ones now
-                   (let [shape (merge shape (select-keys base-shape [:layout-grid-cells :layout-grid-columns :layout-grid-rows]))]
-                     (case type
-                       :row    (ctl/duplicate-row shape objects index ids-map)
-                       :column (ctl/duplicate-column shape objects index ids-map))))
-                 {:with-objects? true}))
+                changes
+                (-> changes
+                    (pcb/update-shapes
+                     ids
+                     (fn [shape objects]
+                       ;; The duplication could have altered the grid so we restore the values, we'll calculate the good ones now
+                       (let [shape (merge shape (select-keys base-shape [:layout-grid-cells :layout-grid-columns :layout-grid-rows]))]
+                         (case type
+                           :row    (ctl/duplicate-row shape objects index ids-map)
+                           :column (ctl/duplicate-column shape objects index ids-map))))
+                     {:with-objects? true}))
 
-            undo-id (js/Symbol)]
-        (rx/of (dwu/start-undo-transaction undo-id)
-               (dch/commit-changes changes)
-               (ptk/data-event :layout/update {:ids ids})
-               (dwu/commit-undo-transaction undo-id))))))
+                undo-id (js/Symbol)]
+            (rx/of (dwu/start-undo-transaction undo-id)
+                   (dch/commit-changes changes)
+                   (ptk/data-event :layout/update {:ids ids})
+                   (dwu/commit-undo-transaction undo-id))))))))
 
 (defn reorder-layout-track
   [ids type from-index to-index move-content?]
@@ -908,7 +927,9 @@
             type          (:type copied)
             undo-id       (js/Symbol)]
 
-        (when (and (seq track-indices) (some? type))
+        (when (and (seq track-indices)
+                   (some? type)
+                   (not (grid-in-copy? objects grid)))
           (let [shapes-by-track-fn
                 (if (= type :row)
                   ctl/shapes-by-row

@@ -212,130 +212,118 @@ const setupTypographyTokensFileRender = async (page, options = {}) => {
   });
 };
 
-const testTokenCreationFlow = async (
+const tokenValuePlaceholder = "Enter a value or alias with {alias}";
+
+const openTokenCreationForm = async (
   page,
-  {
-    tokenLabel,
-    namePlaceholder,
-    valuePlaceholder,
-    validValue,
-    invalidValue,
-    selfReferenceValue,
-    missingReferenceValue,
-    secondValidValue,
-    resolvedValueText,
-    secondResolvedValueText,
-  },
+  tokensUpdateCreateModal,
+  { tokenLabel, namePlaceholder },
 ) => {
-  const invalidValueError = "Invalid token value";
-  const emptyNameError = "Name should be at least 1 character";
-  const selfReferenceError = "Token has self reference";
-  const missingReferenceError = "Missing token references";
-
-  const { tokensUpdateCreateModal, tokensSidebar } =
-    await setupEmptyTokensFileRender(page);
-
-  // Open modal
   const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
 
-  const addTokenButton = tokensTabPanel.getByRole("button", {
-    name: `Add Token: ${tokenLabel}`,
-  });
+  await tokensTabPanel
+    .getByRole("button", { name: `Add Token: ${tokenLabel}` })
+    .click();
 
-  await addTokenButton.click();
   await expect(tokensUpdateCreateModal).toBeVisible();
 
-  // Placeholder checks
   await expect(
     tokensUpdateCreateModal.getByPlaceholder(namePlaceholder),
   ).toBeVisible();
   await expect(
-    tokensUpdateCreateModal.getByPlaceholder(valuePlaceholder),
+    tokensUpdateCreateModal.getByPlaceholder(tokenValuePlaceholder),
   ).toBeVisible();
+};
 
+const assertTokenCreationLadder = async (
+  tokensUpdateCreateModal,
+  { name, invalidValue = "red" },
+) => {
   const nameField = tokensUpdateCreateModal.getByLabel("Name");
   const valueField = tokensUpdateCreateModal.getByLabel("Value");
   const submitButton = tokensUpdateCreateModal.getByRole("button", {
     name: "Save",
   });
 
-  // 1. Name filled + empty value → disabled
-  await nameField.fill("my-token");
+  // 1. Name filled + empty value -> disabled
+  await nameField.fill(name);
   await expect(submitButton).toBeDisabled();
 
-  // 2. Invalid value → disabled + error message
+  // 2. Invalid value -> disabled + error message
   await valueField.fill(invalidValue);
-
-  const invalidValueErrorNode =
-    tokensUpdateCreateModal.getByText(invalidValueError);
-
-  await expect(invalidValueErrorNode).toBeVisible();
+  await expect(
+    tokensUpdateCreateModal.getByText("Invalid token value"),
+  ).toBeVisible();
   await expect(submitButton).toBeDisabled();
 
-  // 3. Empty name → disabled + error message
+  // 3. Empty name -> disabled + error message
   await nameField.fill("");
-
-  const emptyNameErrorNode = tokensUpdateCreateModal.getByText(emptyNameError);
-
-  await expect(emptyNameErrorNode).toBeVisible();
-  await expect(submitButton).toBeDisabled();
-
-  // 4. Self reference → disabled + error message
-  await nameField.fill("my-token");
-  await valueField.fill(selfReferenceValue);
-
-  const selfRefErrorNode =
-    tokensUpdateCreateModal.getByText(selfReferenceError);
-
-  await expect(selfRefErrorNode).toBeVisible();
-  await expect(submitButton).toBeDisabled();
-
-  // 5. Missing reference → disabled + error message
-  await valueField.fill(missingReferenceValue);
-
-  const missingRefErrorNode = tokensUpdateCreateModal.getByText(
-    missingReferenceError,
-  );
-
-  await expect(missingRefErrorNode).toBeVisible();
-  await expect(submitButton).toBeDisabled();
-
-  //
-  // ------- SUCCESSFUL CREATION -------
-  //
-
-  // 6. Basic valid value → enabled
-  await valueField.fill(validValue);
   await expect(
-    tokensUpdateCreateModal.getByText(resolvedValueText),
+    tokensUpdateCreateModal.getByText("Name should be at least 1 character"),
   ).toBeVisible();
-  await expect(submitButton).toBeEnabled();
+  await expect(submitButton).toBeDisabled();
 
+  // 4. Self reference -> disabled + error message
+  await nameField.fill(name);
+  await valueField.fill(`{${name}}`);
+  await expect(
+    tokensUpdateCreateModal.getByText("Token has self reference"),
+  ).toBeVisible();
+  await expect(submitButton).toBeDisabled();
+
+  // 5. Missing reference -> disabled + error message
+  await valueField.fill("{missing-token}");
+  await expect(
+    tokensUpdateCreateModal.getByText("Missing token references"),
+  ).toBeVisible();
+  await expect(submitButton).toBeDisabled();
+};
+
+const saveToken = async (
+  page,
+  tokensUpdateCreateModal,
+  { tokenLabel, name, value, resolvedText },
+) => {
+  const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
+
+  await tokensUpdateCreateModal.getByLabel("Name").fill(name);
+  await tokensUpdateCreateModal.getByLabel("Value").fill(value);
+
+  await expect(tokensUpdateCreateModal.getByText(resolvedText)).toBeVisible();
+
+  const submitButton = tokensUpdateCreateModal.getByRole("button", {
+    name: "Save",
+  });
+  await expect(submitButton).toBeEnabled();
   await submitButton.click();
 
-  await expect(
-    tokensTabPanel.getByRole("button", { name: "my-token" }),
-  ).toBeEnabled();
+  await unfoldTokenType(tokensTabPanel, tokenLabel.toLocaleLowerCase());
 
-  //
-  // ------- SECOND TOKEN WITH VALID REFERENCE -------
-  //
+  await expect(tokensTabPanel.getByRole("button", { name })).toBeEnabled();
+};
 
-  await addTokenButton.click();
+const createTokenWithValue = async (
+  page,
+  tokensUpdateCreateModal,
+  {
+    tokenLabel,
+    namePlaceholder,
+    name,
+    value = "2 + 3",
+    resolvedText = "Resolved value: 5",
+  },
+) => {
+  await openTokenCreationForm(page, tokensUpdateCreateModal, {
+    tokenLabel,
+    namePlaceholder,
+  });
 
-  await nameField.fill("my-token-2");
-  await valueField.fill(secondValidValue);
-
-  await expect(
-    tokensUpdateCreateModal.getByText(secondResolvedValueText),
-  ).toBeVisible();
-  await expect(submitButton).toBeEnabled();
-
-  await submitButton.click();
-
-  await expect(
-    tokensTabPanel.getByRole("button", { name: "my-token-2" }),
-  ).toBeEnabled();
+  await saveToken(page, tokensUpdateCreateModal, {
+    tokenLabel,
+    name,
+    value,
+    resolvedText,
+  });
 };
 
 const unfoldTokenType = async (tokensTabPanel, type) => {
@@ -427,7 +415,10 @@ export {
   setupTokensFileRender,
   setupTypographyTokensFile,
   setupTypographyTokensFileRender,
-  testTokenCreationFlow,
+  openTokenCreationForm,
+  assertTokenCreationLadder,
+  saveToken,
+  createTokenWithValue,
   unfoldTokenType,
   createToken,
   createSet,
