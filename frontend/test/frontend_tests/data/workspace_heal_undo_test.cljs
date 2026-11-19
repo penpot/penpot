@@ -10,22 +10,32 @@
   own last edit."
   (:require
    [app.common.math :as mth]
+   [app.common.test-helpers.components :as cthc]
    [app.common.test-helpers.compositions :as ctho]
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.ids-map :as cthi]
    [app.common.test-helpers.shapes :as cths]
    [app.main.data.changes :as dch]
    [app.main.data.helpers :as dsh]
+   [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.pages :as dwpg]
    [app.main.data.workspace.shape-layout :as dwsl]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.texts :as dwt]
+   [app.main.data.workspace.thumbnails :as dwth]
+   [app.main.data.workspace.thumbnails-wasm :as dwth.wasm]
    [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.wasm-text :as dwwt]
+   [app.main.refs :as refs]
+   [app.main.store :as st]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.async :as async]
+   [frontend-tests.helpers.mock :as mock]
    [frontend-tests.helpers.state :as ths]
    [frontend-tests.helpers.wasm :as thw]
    [frontend-tests.tokens.helpers.state :as tohs]
+   [okulary.core :as l]
    [potok.v2.core :as ptk]))
 
 (t/use-fixtures :each
@@ -356,3 +366,79 @@
           :svg
           #(dwt/resize-text % 60 40)
           #(dwt/resize-text % 50 30 {:save-undo? false}))))
+
+;; Main text edit, its own resize and the component sync
+
+(defn- get-shape-in-store
+  [store id]
+  (get (dsh/lookup-page-objects @store) id))
+
+(defn- noop-render-thumbnail
+  [& _]
+  (ptk/reify ::noop-render-thumbnail
+    ptk/WatchEvent
+    (watch [_ _ _] (rx/empty))))
+
+;; Scenario: the user edits a main text, the main text then resizes itself
+;; (`resize-text`, a stacked commit in its own undo transaction), and the
+;; real component watcher syncs both changes to the copy. Proves: one Ctrl+Z
+;; reverts the edit, the resize and the syncs, on the main and on the copy.
+;; Before, the resize kept the group of its transaction, the sync it started
+;; inherited it and became an undo entry of its own, so the first Ctrl+Z
+;; undid only that sync.
+(t/deftest ^:async one-undo-reverts-a-main-text-edit-its-resize-and-their-sync
+  (let [file    (-> (cthf/sample-file :file1)
+                    (ctho/add-frame-with-text :main-root :main-child "hello world"
+                                              :child-params {:grow-type :auto-height})
+                    (cthc/make-component :component1 :main-root)
+                    (cthc/instantiate-component :component1 :copy-root
+                                                {:children-labels [:copy-child]}))
+        store   (ths/setup-store file {:renderer :svg})
+        page-id (cthf/current-page-id file)
+        main-id (cthi/id :main-child)
+        copy-id (cthi/id :copy-child)
+        before  (fn [id] (select-keys (get-shape-in-store store id) [:opacity :width :height]))
+        main-0  (before main-id)
+        copy-0  (before copy-id)]
+    (await
+     (mock/with-mocks*
+       {;; The component watcher reads the file data through this lens
+        refs/workspace-data        (l/derived dsh/lookup-file-data store)
+        ;; Thumbnail renders read the global store
+        st/state                   store
+        dwth.wasm/render-thumbnail noop-render-thumbnail
+        ;; The SVG renderer updates the main's thumbnail after the sync; its
+        ;; render needs a DOM and finishes after the test
+        dwth/update-thumbnail      noop-render-thumbnail
+        ;; sync-file clears frame thumbnails on a timer that outlives the test
+        dwth/clear-thumbnail       (mock/stub (constantly nil))}
+
+       (ptk/emit! store (tohs/watch-undo-stack))
+       (ptk/emit! store (dwl/watch-component-changes))
+
+       ;; The user edit, synced to the copy
+       (ptk/emit! store (dwsh/update-shapes [main-id] #(assoc % :opacity 0.5)))
+       (await (async/wait-for #(= 0.5 (:opacity (get-shape-in-store store copy-id)))
+                              "the edit to reach the copy" {:max-ticks 400}))
+
+       ;; The main text resizes itself, synced to the copy
+       (ptk/emit! store (dwt/resize-text main-id 60 40))
+       (await (async/wait-for #(mth/close? 40 (:height (get-shape-in-store store copy-id)))
+                              "the resize to reach the copy" {:max-ticks 400}))
+       (await (async/settle))
+
+       (let [index (get-in @store [:workspace-undo :index])]
+         (ptk/emit! store dwu/undo)
+         (await (async/wait-for #(not= index (get-in @store [:workspace-undo :index]))
+                                "the undo" {:max-ticks 400})))
+       (await (async/settle))
+
+       (t/is (= -1 (get-in @store [:workspace-undo :index]))
+             "one undo reverts the whole action")
+       (t/is (= main-0 (before main-id))
+             "the main is back to its size and opacity")
+       (t/is (= copy-0 (before copy-id))
+             "the copy is back to its size and opacity")
+
+       (ptk/emit! store (dwpg/finalize-page (:id file) page-id))
+       (await (async/settle))))))
