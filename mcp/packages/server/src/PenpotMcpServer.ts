@@ -1,6 +1,6 @@
-import { createMcpHandler, McpServer, type McpHttpHandler } from "@modelcontextprotocol/server";
-import { toNodeHandler } from "@modelcontextprotocol/node";
-import type { Server as HttpServer } from "node:http";
+import { createMcpHandler, isLegacyRequest, McpServer, type McpHttpHandler } from "@modelcontextprotocol/server";
+import { NodeStreamableHTTPServerTransport, toNodeHandler, toWebRequest } from "@modelcontextprotocol/node";
+import type { IncomingMessage, Server as HttpServer, ServerResponse } from "node:http";
 import type { Express } from "express";
 import { z } from "zod";
 import { AsyncLocalStorage } from "async_hooks";
@@ -26,6 +26,11 @@ import { ReplServer } from "./ReplServer";
 import { ApiDocs } from "./ApiDocs";
 import { McpAuthentication } from "./McpAuthentication";
 import { RequestGuard } from "./RequestGuard";
+
+/**
+ * Time that in-flight requests get to deliver their replies during shutdown.
+ */
+const SHUTDOWN_REPLY_GRACE_MS = 2_000;
 
 /**
  * Session context for request-scoped data.
@@ -121,6 +126,19 @@ export class PenpotMcpServer {
      * Check of the `Host` and `Origin` headers of HTTP and plugin WebSocket requests.
      */
     public readonly requestGuard: RequestGuard;
+
+    /**
+     * Whether stateless legacy requests receive a single JSON reply instead of an SSE stream
+     * (`PENPOT_MCP_JSON_RESPONSE=true`).
+     */
+    private readonly jsonResponse = process.env.PENPOT_MCP_JSON_RESPONSE === "true";
+    private readonly jsonLegacyTransports = new Set<NodeStreamableHTTPServerTransport>();
+
+    /**
+     * HTTP requests currently being handled, so that shutdown can let them deliver their replies.
+     */
+    private readonly inFlightRequests = new Set<Promise<void>>();
+
     public readonly pluginBridge: PluginBridge;
     private readonly replServer: ReplServer | null;
     private apiDocs: ApiDocs;
@@ -185,7 +203,9 @@ export class PenpotMcpServer {
         this.connectionInstructions = this.configLoader.getBaseInstructions();
 
         this.tools = this.initTools();
-        this.mcpHandler = createMcpHandler(() => this.createMcpServer());
+        this.mcpHandler = createMcpHandler(() => this.createMcpServer(), {
+            responseMode: this.jsonResponse ? "json" : "auto",
+        });
 
         // Enable multi-instance task routing when running in multi-user mode with a
         // configured Redis URI. Without it, the server operates in single-instance mode,
@@ -321,6 +341,28 @@ export class PenpotMcpServer {
         return server;
     }
 
+    /**
+     * Handles a stateless legacy request with a dedicated transport that replies with a single JSON body.
+     */
+    private async handleJsonLegacyRequest(
+        req: IncomingMessage & { body?: unknown },
+        res: ServerResponse
+    ): Promise<void> {
+        const transport = new NodeStreamableHTTPServerTransport({
+            sessionIdGenerator: undefined,
+            enableJsonResponse: true,
+        });
+        const server = this.createMcpServer();
+        this.jsonLegacyTransports.add(transport);
+        try {
+            await server.connect(transport);
+            await transport.handleRequest(req, res, req.body);
+        } finally {
+            this.jsonLegacyTransports.delete(transport);
+            await server.close();
+        }
+    }
+
     private setupHttpEndpoints(): void {
         const handleMcpRequest = toNodeHandler(this.mcpHandler);
         this.app.all("/mcp", async (req, res) => {
@@ -331,9 +373,20 @@ export class PenpotMcpServer {
             this.logger.info(
                 `Received MCP request: method=${req.body?.method ?? "<none>"}; userTokenFp=${PenpotMcpServer.tokenFingerprint(authResult.userToken)}`
             );
-            await this.sessionContext.run({ userToken: authResult.userToken }, () =>
-                handleMcpRequest(req, res, req.body)
-            );
+            const request = this.sessionContext.run({ userToken: authResult.userToken }, async () => {
+                // keep upstream's stateless legacy protocol, opting in only to JSON replies
+                if (this.jsonResponse && (await isLegacyRequest(await toWebRequest(req, req.body), req.body))) {
+                    await this.handleJsonLegacyRequest(req, res);
+                    return;
+                }
+                await handleMcpRequest(req, res, req.body);
+            });
+            this.inFlightRequests.add(request);
+            try {
+                await request;
+            } finally {
+                this.inFlightRequests.delete(request);
+            }
         });
     }
 
@@ -393,13 +446,33 @@ export class PenpotMcpServer {
                   this.httpServer!.close((error) => (error ? reject(error) : resolve()));
               })
             : Promise.resolve();
+        // reject pending plugin tasks first, so that their requests can still report the unknown outcome
+        await this.pluginBridge.close();
+        await this.awaitInFlightRequests(SHUTDOWN_REPLY_GRACE_MS);
+        // open SSE streams and requests exceeding the grace period would otherwise keep the server alive
+        this.httpServer?.closeAllConnections();
+        await Promise.all([...this.jsonLegacyTransports].map((transport) => transport.close()));
         await this.mcpHandler.close();
         await httpClosed;
-        await this.pluginBridge.close();
         await this.redisBridge?.close();
         if (this.replServer) {
             await this.replServer.stop();
         }
         this.logger.info("Penpot MCP Server stopped");
+    }
+
+    /**
+     * Waits until all in-flight HTTP requests have been handled or the given time has elapsed.
+     */
+    private async awaitInFlightRequests(timeoutMs: number): Promise<void> {
+        if (this.inFlightRequests.size === 0) {
+            return;
+        }
+        let timer: NodeJS.Timeout | undefined;
+        const timeout = new Promise<void>((resolve) => {
+            timer = setTimeout(resolve, timeoutMs);
+        });
+        await Promise.race([Promise.allSettled([...this.inFlightRequests]), timeout]);
+        clearTimeout(timer);
     }
 }

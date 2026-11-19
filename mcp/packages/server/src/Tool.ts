@@ -76,7 +76,9 @@ export abstract class Tool<TArgs extends object> {
             return result;
         } catch (error) {
             this.logger.error("Tool execution #%d failed: %s; error: %s", executionId, this.getToolName(), error);
-            return new TextResponse(`Tool execution failed: ${String(error)}`);
+            const response = new TextResponse(`Tool execution failed: ${String(error)}`);
+            response.isError = true;
+            return response;
         }
     }
 
