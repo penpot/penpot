@@ -22,6 +22,7 @@
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
    [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.thumbnails :as dwt]
    [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.wasm-text :as dwwt]
    [beicon.v2.core :as rx]
@@ -31,7 +32,13 @@
 
 (def ^:private orig-resize-wasm-text-all dwwt/resize-wasm-text-all)
 
+(def ^:private orig-clear-thumbnail dwt/clear-thumbnail)
+
 (def ^:private resize-calls (atom []))
+
+(defn- mock-clear-thumbnail
+  ([_ _] nil)
+  ([_ _ _ _] nil))
 
 (defn- mock-resize-wasm-text-all
   ([ids] (mock-resize-wasm-text-all ids nil))
@@ -43,9 +50,13 @@
   {:before (fn []
              (cthi/reset-idmap!)
              (reset! resize-calls [])
-             (set! dwwt/resize-wasm-text-all mock-resize-wasm-text-all))
+             (set! dwwt/resize-wasm-text-all mock-resize-wasm-text-all)
+             ;; sync-file clears frame thumbnails on a 200ms timer that
+             ;; outlives the test and calls rp/cmd! inside later tests.
+             (set! dwt/clear-thumbnail mock-clear-thumbnail))
    :after  (fn []
-             (set! dwwt/resize-wasm-text-all orig-resize-wasm-text-all))})
+             (set! dwwt/resize-wasm-text-all orig-resize-wasm-text-all)
+             (set! dwt/clear-thumbnail orig-clear-thumbnail))})
 
 (defn- setup-file
   [& {:keys [grow-type] :or {grow-type :auto-width}}]

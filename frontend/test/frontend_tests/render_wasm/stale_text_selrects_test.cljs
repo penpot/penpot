@@ -14,7 +14,9 @@
    [app.common.uuid :as uuid]
    [app.main.store :as st]
    [app.render-wasm.api :as wasm.api]
+   [app.render-wasm.api.fonts :as wasm.fonts]
    [app.util.timers :as timers]
+   [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.async :as async]
    [frontend-tests.helpers.mock :as mock]
@@ -63,19 +65,21 @@
 (defn- run-with-wasm
   "Run `f` with the WASM boundaries mocked and resolve to the events emitted
   to the store. `dims` maps shape id to its measured layout size,
-  `host-attrs` stands in for the per-shape upload and `process-pending`
-  replaces the pending fetches (a no-op unless given). `f` may return a
-  promise, which is awaited."
-  [{:keys [dims host-attrs process-pending]} f]
+  `host-attrs` stands in for the per-shape upload, `failed-faces` holds the
+  font faces that failed to load and `process-pending` replaces the pending
+  fetches (a no-op unless given). `f` may return a promise, which is
+  awaited."
+  [{:keys [dims host-attrs failed-faces process-pending]} f]
   (let [emitted         (atom [])
         host-attrs      (or host-attrs no-pending-fonts)
         process-pending (or process-pending (mock/stub (constantly nil)))]
     (->> (mock/with-mocks*
            {wasm/live?                                  (mock/stub (constantly true))
-            wasm/internal-module                        #js {"_set_view_end"                 (fn [& _] nil)
-                                                             "_begin_loading"                (fn [& _] nil)
-                                                             "_end_loading"                  (fn [& _] nil)
-                                                             "_update_shape_text_layout_for" (fn [& _] nil)}
+            wasm/internal-module                        #js {"_set_view_end"                       (fn [& _] nil)
+                                                             "_begin_loading"                      (fn [& _] nil)
+                                                             "_end_loading"                        (fn [& _] nil)
+                                                             "_update_shape_text_layout_for"       (fn [& _] nil)
+                                                             "_force_update_shape_text_layout_for" (fn [& _] nil)}
             serialize-shape/serialize-shapes-batch      (mock/stub (fn [shapes _] shapes))
             ;; Private: the only seam that feeds the font state of the load.
             #_{:clj-kondo/ignore [:private-call]}
@@ -83,6 +87,7 @@
             wasm.api/process-pending                    process-pending
             wasm.api/request-render                     (mock/stub (constantly nil))
             wasm.api/get-text-dimensions                (mock/stub (fn [id] (get dims id)))
+            wasm.fonts/font-failed?                     (mock/stub #(contains? (or failed-faces #{}) %))
             wasm.api/listen-tiles-render-complete-once! (mock/stub (fn [f] (f)))
             timers/schedule-on-idle                     mock/schedule-on-idle-mock
             st/emit!                                    (mock/stub (fn [& events] (swap! emitted into events) nil))}
@@ -96,7 +101,9 @@
   ([objects dims]
    (load-page objects dims nil))
   ([objects dims host-attrs]
-   (run-with-wasm {:dims dims :host-attrs host-attrs}
+   (load-page objects dims host-attrs #{}))
+  ([objects dims host-attrs failed-faces]
+   (run-with-wasm {:dims dims :host-attrs host-attrs :failed-faces failed-faces}
                   #(wasm.api/set-objects objects nil nil true))))
 
 (defn- load-large-page
@@ -171,6 +178,25 @@
     (t/is (= #{(:id ready)} (stale-selrect-ids events))
           "a text waiting for a font is not checked when the page loads")))
 
+(t/deftest ^:async page-load-skips-texts-using-a-failed-font
+  (let [failed (text-shape :auto-height 100 17)
+        ready  (text-shape :auto-height 100 17)
+        events (await (load-page
+                       (page-objects failed ready)
+                       {(:id failed) {:width 100 :height 34}
+                        (:id ready)  {:width 100 :height 34}}
+                       ;; WASM counts the failed face as ready and lays the
+                       ;; text out with a fallback font.
+                       (fn [shape & _]
+                         (if (= (:id shape) (:id failed))
+                           {:thumbnails [] :full []
+                            :font-face-keys #{"failed-key"}
+                            :pending-font-face-keys #{}}
+                           (no-pending-fonts)))
+                       #{"failed-key"}))]
+    (t/is (= #{(:id ready)} (stale-selrect-ids events))
+          "a text measured with a fallback font keeps its stored size")))
+
 (t/deftest ^:async pending-shape-updates-do-not-check-text-sizes
   (let [text   (text-shape :auto-height 100 17)
         events (await (run-with-wasm
@@ -179,3 +205,20 @@
                        #(wasm.api/process-pending [text] [] [] {} nil)))]
     (t/is (empty? (stale-selrect-ids events))
           "shape updates while editing do not resize texts to their layout")))
+
+(t/deftest ^:async font-load-skips-texts-whose-font-failed
+  (let [failed     (text-shape :auto-height 100 17)
+        loaded     (text-shape :auto-height 100 17)
+        font-state {:font-index    {"failed-key" #{(:id failed)}
+                                    "loaded-key" #{(:id loaded)}}
+                    :pending-faces #{"failed-key" "loaded-key"}}
+        ;; A pending fetch, so the font relayout runs once it completes.
+        full       [{:key "font" :callback #(rx/of nil)}]
+        events     (await (run-with-wasm
+                           {:dims            {(:id failed) {:width 100 :height 34}
+                                              (:id loaded) {:width 100 :height 34}}
+                            :failed-faces    #{"failed-key"}
+                            :process-pending wasm.api/process-pending}
+                           #(wasm.api/process-pending [failed loaded] [] full font-state nil)))]
+    (t/is (= #{(:id loaded)} (stale-selrect-ids events))
+          "a text laid out with a fallback font after its face failed keeps its stored size")))
