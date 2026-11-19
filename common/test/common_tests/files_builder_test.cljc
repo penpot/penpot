@@ -123,6 +123,88 @@
         shape (fb/get-shape state shape-id)]
     (t/is (= "Group / Subgroup / Name" (:name shape)))))
 
+(t/deftest add-shape-uniquifies-default-names
+  (let [file-id  (uuid/next)
+        page-id  (uuid/next)
+        board-a  (uuid/next)
+        board-b  (uuid/next)
+        state    (-> (fb/create-state)
+                     (fb/add-file {:id file-id :name "Test file"})
+                     (fb/add-page {:id page-id :name "Page 1"})
+                     (fb/add-board {:id board-a :x 0 :y 0 :width 10 :height 10})
+                     (fb/add-board {:id board-b :x 20 :y 0 :width 10 :height 10}))]
+    (t/is (= "Board" (:name (fb/get-shape state board-a))))
+    (t/is (= "Board-1" (:name (fb/get-shape state board-b))))))
+
+(t/deftest add-shape-uniquifies-names-that-clean-to-the-same-path
+  (let [file-id  (uuid/next)
+        page-id  (uuid/next)
+        shape-a  (uuid/next)
+        shape-b  (uuid/next)
+        state    (-> (fb/create-state)
+                     (fb/add-file {:id file-id :name "Test file"})
+                     (fb/add-page {:id page-id :name "Page 1"})
+                     (fb/add-shape {:id shape-a :type :frame :name "Group/Name"
+                                    :x 0 :y 0 :width 10 :height 10})
+                     (fb/add-shape {:id shape-b :type :frame :name "Group  /  Name"
+                                    :x 20 :y 0 :width 10 :height 10}))]
+    (t/is (= "Group / Name" (:name (fb/get-shape state shape-a))))
+    (t/is (= "Group / Name-1" (:name (fb/get-shape state shape-b))))))
+
+(t/deftest add-shape-uniquifies-names-used-by-component-roots
+  (let [file-id      (uuid/next)
+        page-id      (uuid/next)
+        frame-id     (uuid/next)
+        component-id (uuid/next)
+        shape-id     (uuid/next)
+        state        (-> (fb/create-state)
+                         (fb/add-file {:id file-id :name "Test file"})
+                         (fb/add-page {:id page-id :name "Page 1"})
+                         (fb/add-board {:id frame-id :name "Draft"
+                                        :x 0 :y 0 :width 10 :height 10})
+                         (fb/add-component {:component-id component-id
+                                            :name "Button"
+                                            :path "Forms"})
+                         (fb/close-board)
+                         (fb/add-shape {:id shape-id :type :frame :name "Forms/Button"
+                                        :x 20 :y 0 :width 10 :height 10}))]
+    (t/is (= "Forms / Button" (:name (fb/get-shape state frame-id))))
+    (t/is (= "Forms / Button-1" (:name (fb/get-shape state shape-id))))))
+
+(t/deftest add-shape-keeps-unique-names-per-page
+  (let [file-id  (uuid/next)
+        page-a   (uuid/next)
+        page-b   (uuid/next)
+        board-a  (uuid/next)
+        board-b  (uuid/next)
+        state    (-> (fb/create-state)
+                     (fb/add-file {:id file-id :name "Test file"})
+                     (fb/add-page {:id page-a :name "Page 1"})
+                     (fb/add-board {:id board-a :x 0 :y 0 :width 10 :height 10})
+                     (fb/add-page {:id page-b :name "Page 2"})
+                     (fb/add-board {:id board-b :x 0 :y 0 :width 10 :height 10}))
+        name-of  (fn [page-id shape-id]
+                   (get-in state [::fb/files file-id :data :pages-index
+                                  page-id :objects shape-id :name]))]
+    (t/is (= "Board" (name-of page-a board-a)))
+    (t/is (= "Board" (name-of page-b board-b)))))
+
+(t/deftest add-component-without-name-is-anonymous
+  (let [file-id      (uuid/next)
+        page-id      (uuid/next)
+        frame-id     (uuid/next)
+        component-id (uuid/next)
+        state        (-> (fb/create-state)
+                         (fb/add-file {:id file-id :name "Test file"})
+                         (fb/add-page {:id page-id :name "Page 1"})
+                         (fb/add-board {:id frame-id :name "Draft"
+                                        :x 0 :y 0 :width 10 :height 10})
+                         (fb/add-component {:component-id component-id}))
+        component    (get-in state [::fb/files file-id :data
+                                    :components component-id])]
+    (t/is (= "anonymous" (:name component)))
+    (t/is (= "anonymous" (:name (fb/get-shape state frame-id))))))
+
 (t/deftest add-component-renames-frame-to-match-component
   (t/testing "the main instance frame name is aligned with the component's path+name"
     (let [file-id      (uuid/next)
