@@ -11,7 +11,7 @@ of Penpot application.
 The [Architecture][1] and [Data model][2] sections provide a bird's eye view of
 the whole system, to better understand how is structured.
 
-The [Dev Env][3] section explains how to setup the development enviroment that
+The [Dev Env][3] section explains how to setup the development environment that
 we (the core team) use internally.
 
 And the rest of sections are a list categorized of probably not deeply

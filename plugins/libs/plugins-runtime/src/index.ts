@@ -1,6 +1,7 @@
 import 'ses';
 import './lib/modal/plugin-modal';
 
+import { bootstrapSES } from './lib/bootstrap.js';
 import {
   ɵloadPlugin,
   setContextBuilder,
@@ -15,19 +16,27 @@ import type { Context } from '@penpot/plugin-types';
 
 console.log('%c[PLUGINS] Loading plugin system', 'color: #008d7c');
 
-repairIntrinsics({
-  evalTaming: 'unsafeEval',
-  stackFiltering: 'verbose',
-  errorTaming: 'unsafe',
-  consoleTaming: 'unsafe',
-  errorTrapping: 'none',
-  unhandledRejectionTrapping: 'none',
-});
+const sesError = bootstrapSES();
+
+if (sesError) {
+  console.error(
+    '[PLUGINS] SES bootstrap failed; plugins disabled in this environment.',
+    sesError,
+  );
+}
+
+/** Returns the SES bootstrap error, or null when the runtime can be used. */
+export const getPluginsRuntimeError = (): Error | null => sesError;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const globalThisAny$ = globalThis as any;
 
 export const initPluginsRuntime = (contextBuilder: (id: string) => Context) => {
+  if (sesError) {
+    console.error('[PLUGINS] Skipping plugin runtime initialization.');
+    return;
+  }
+
   try {
     console.log('%c[PLUGINS] Initialize runtime', 'color: #008d7c');
     setContextBuilder(contextBuilder);

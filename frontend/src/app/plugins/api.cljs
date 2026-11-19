@@ -43,9 +43,11 @@
    [app.plugins.history :as history]
    [app.plugins.library :as library]
    [app.plugins.local-storage :as local-storage]
+   [app.plugins.location :as location]
    [app.plugins.management :as management]
    [app.plugins.page :as page]
    [app.plugins.parser :as parser]
+   [app.plugins.persist :as wpsp]
    [app.plugins.reflow :as wrfp]
    [app.plugins.register :as r]
    [app.plugins.shape :as shape]
@@ -112,6 +114,9 @@
     :theme
     {:this true
      :get #(.getTheme ^js %)}
+
+    :location
+    {:get (fn [] (clj->js (location/location @st/state)))}
 
     :localStorage
     {:this true
@@ -765,4 +770,9 @@
     :waitForLayoutUpdate
     (fn [timeout]
       ;; Resolves once every shape with reflow work in flight has settled.
-      (wrfp/wait-for-layout-update timeout))))
+      (wrfp/wait-for-layout-update timeout))
+
+    :waitForSave
+    (fn [timeout]
+      ;; Resolves once pending edits are saved (or there is nothing to save).
+      (wpsp/wait-for-save timeout))))

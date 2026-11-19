@@ -26,6 +26,12 @@ Respect the intended abstraction direction in new/refactored code:
 
 Some legacy code violates this layering; do not copy those violations into new code when a focused refactor is practical.
 
+## Build-mode dependent laziness
+
+`app.common.data.macros/lazy-delay` returns a delay whose expression is evaluated eagerly by default. Only the builds that set the `app.common.data.macros/lazy-delay?` closure define to `true` defer it to the first deref; every production build does (frontend `main` and `worker`, exporter, library), so the Closure compiler replaces the constant and drops the eager branch. On the JVM it is always eager.
+
+`app.common.schema/check-fn` resolves its schema through it: an invalid schema definition fails when the namespace loads in development and in tests, and only on the first check call in production. The other lazily built parts of `check-fn` (validator and explainer) are always deferred.
+
 ## Focused memory routing
 
 Model, schema, and persistence shape:

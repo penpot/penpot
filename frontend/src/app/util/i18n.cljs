@@ -59,33 +59,46 @@
    {:label "简体中文 (community)" :value "zh_cn"}
    {:label "繁體中文 (community)" :value "zh_hant"}])
 
+;; Browser tags that name a supported locale under another code. Bare
+;; "zh" defaults to Simplified Chinese, as in CLDR likely subtags.
+(def ^:private locale-aliases
+  {"zh" "zh_cn"
+   "zh_hans" "zh_cn"
+   "zh_tw" "zh_hant"
+   "zh_hk" "zh_hant"
+   "zh_mo" "zh_hant"})
+
+;; Candidate locale codes for a BCP 47 tag, most specific first.
 (defn- parse-locale
   [locale]
-  (let [locale (-> (str/lower locale)
-                   (str/replace "-" "_"))]
-    (cond-> [locale]
-      (str/includes? locale "_")
-      (conj (subs locale 0 2)))))
-
-(def ^:private browser-locales
-  (delay
-    (-> (.-language globals/navigator)
-        (parse-locale))))
+  (let [parts (-> (str/lower locale)
+                  (str/replace "-" "_")
+                  (str/split "_"))]
+    (->> (range (count parts) 0 -1)
+         (map #(str/join "_" (take % parts)))
+         (map #(get locale-aliases % %))
+         (distinct)
+         (vec))))
 
 ;; Set initial translation loading state as globaly stored variable;
 ;; this facilitates hot reloading
 (when-not (exists? (unchecked-get globals/global "penpotTranslations"))
   (unchecked-set globals/global "penpotTranslations" #js {}))
 
-(defn- autodetect
-  []
-  (let [supported (into #{} (map :value supported-locales))]
-    (loop [locales (seq @browser-locales)]
+;; First supported locale for a language tag, or the default language.
+(defn- resolve-locale
+  [tag]
+  (let [supported (into #{} (map :value) supported-locales)]
+    (loop [locales (seq (parse-locale tag))]
       (if-let [locale (first locales)]
         (if (contains? supported locale)
           locale
           (recur (rest locales)))
         cf/default-language))))
+
+(defn- autodetect
+  []
+  (resolve-locale (.-language globals/navigator)))
 
 (defn get-current
   "Get the currently memoized locale or execute the autodetection"
@@ -136,13 +149,7 @@
   (let [lname (if (or (nil? lname)
                       (str/empty? lname))
                 (autodetect)
-                (let [supported (into #{} (map :value) supported-locales)]
-                  (loop [locales (seq (parse-locale lname))]
-                    (if-let [locale (first locales)]
-                      (if (contains? supported locale)
-                        locale
-                        (recur (rest locales)))
-                      cf/default-language))))]
+                (resolve-locale lname))]
 
     (->> (load lname)
          (p/fnly (fn [_r _c]

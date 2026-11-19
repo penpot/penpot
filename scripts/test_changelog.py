@@ -131,8 +131,13 @@ class IssueExcludedTests(unittest.TestCase):
         self.assertTrue(ch.issue_excluded(self.issue(state="OPEN")))
         self.assertTrue(ch.issue_excluded(self.issue(issue_type="Task")))
         self.assertTrue(ch.issue_excluded(self.issue(project_status="Rejected")))
-        self.assertTrue(ch.issue_excluded(self.issue(labels=["release blocker"])))
         self.assertTrue(ch.issue_excluded(self.issue(labels=["no changelog"])))
+
+    def test_keeps_a_release_blocker_issue(self):
+        # `release blocker` marks work that blocks the release; it is not a
+        # changelog exclusion. Bugs go through dev-only-bugs, anything else is
+        # a human call in the pre-flight.
+        self.assertFalse(ch.issue_excluded(self.issue(labels=["release blocker"])))
 
 
 class RenderBoomEntryTests(unittest.TestCase):
@@ -377,6 +382,355 @@ class ReportTests(unittest.TestCase):
         self.assertIn("### :boom: out of sync with breaking change label", report)
         self.assertIn("issues/2", report)
         self.assertIn("**:boom: entry without breaking change label:** 1", report)
+
+
+ADVISORY = {
+    "ghsa_id": "GHSA-j4vc-cmf6-jhr7",
+    "url": "https://github.com/penpot/penpot/security/advisories/GHSA-j4vc-cmf6-jhr7",
+    "summary": (
+        "Missing authorization in mark-all-threads-as-read lets a user update "
+        "inaccessible threads"
+    ),
+}
+
+SECURITY_CHANGES = """# CHANGELOG
+
+## 2.19.1
+
+### :bug: Bugs fixed
+
+- Fix something [#1](https://github.com/penpot/penpot/issues/1)
+"""
+
+SECURITY_CHANGES_WITH_ROCKET = """# CHANGELOG
+
+## 2.19.1
+
+### :rocket: Epics and highlights
+
+- Add highlights [#1](https://github.com/penpot/penpot/issues/1)
+
+### :bug: Bugs fixed
+
+- Fix something [#2](https://github.com/penpot/penpot/issues/2)
+"""
+
+SECURITY_CHANGES_WITH_BOOM = """# CHANGELOG
+
+## 2.19.1
+
+### :boom: Breaking changes & Deprecations
+
+#### Old entry
+
+[#1](https://github.com/penpot/penpot/issues/1)
+
+### :bug: Bugs fixed
+
+- Fix something [#2](https://github.com/penpot/penpot/issues/2)
+"""
+
+
+class ImperativeDescriptionTests(unittest.TestCase):
+    def test_prefixes_fix_and_decapitalizes(self):
+        self.assertEqual(
+            ch.imperative_description("Missing authorization in foo"),
+            "Fix missing authorization in foo",
+        )
+
+    def test_keeps_acronyms(self):
+        self.assertEqual(
+            ch.imperative_description("SVG sanitizer escapes nothing"),
+            "Fix SVG sanitizer escapes nothing",
+        )
+        self.assertEqual(
+            ch.imperative_description("CVE-2026-105694: sanitizer escapes nothing"),
+            "Fix CVE-2026-105694: sanitizer escapes nothing",
+        )
+
+    def test_strips_emoji_prefix_and_handles_empty(self):
+        self.assertEqual(
+            ch.imperative_description(":bug: Missing check"), "Fix missing check"
+        )
+        self.assertEqual(ch.imperative_description(""), "")
+
+
+class RenderSecurityEntryTests(unittest.TestCase):
+    def test_entry_has_description_advisory_and_prs(self):
+        self.assertEqual(
+            ch.render_security_entry(ADVISORY, [8, 9]),
+            "- Fix missing authorization in mark-all-threads-as-read lets a user "
+            "update inaccessible threads "
+            "(https://github.com/penpot/penpot/security/advisories/GHSA-j4vc-cmf6-jhr7)"
+            " (PR: [#8](https://github.com/penpot/penpot/pull/8),"
+            " [#9](https://github.com/penpot/penpot/pull/9))",
+        )
+
+    def test_entry_without_prs_links_only_the_advisory(self):
+        entry = ch.render_security_entry(ADVISORY, [])
+        self.assertNotIn("PR:", entry)
+        self.assertIn("security/advisories/GHSA-j4vc-cmf6-jhr7", entry)
+
+    def test_entry_builds_the_url_when_the_advisory_lacks_it(self):
+        advisory = dict(ADVISORY)
+        del advisory["url"]
+        self.assertIn(
+            "(https://github.com/penpot/penpot/security/advisories/GHSA-j4vc-cmf6-jhr7)",
+            ch.render_security_entry(advisory, []),
+        )
+
+
+class FetchSecurityPrsTests(unittest.TestCase):
+    def test_maps_merged_pr_pt_prs_by_ghsa(self):
+        prs = [
+            {
+                "number": 10,
+                "state": "MERGED",
+                "labels": ["internal", "pr pt"],
+                "body": "Relates to [GHSA-4mmc-j8rh-74pf]"
+                "(https://github.com/penpot/penpot/security/advisories/GHSA-4mmc-j8rh-74pf)",
+            },
+            {
+                "number": 11,
+                "state": "CLOSED",
+                "labels": ["pr pt"],
+                "body": "Closes GHSA-j4vc-cmf6-jhr7",
+            },
+            {
+                "number": 12,
+                "state": "MERGED",
+                "labels": ["bug"],
+                "body": "GHSA-qwhj-rchj-58mg",
+            },
+            {
+                "number": 13,
+                "state": "MERGED",
+                "labels": ["pr pt"],
+                "body": "No advisory here",
+            },
+        ]
+        with patch.object(ch, "fetch_milestone_prs", return_value=prs):
+            result = ch.fetch_security_prs("2.19.1")
+        self.assertEqual(result, {"GHSA-4MMC-J8RH-74PF": [10]})
+
+
+class ReplaceSecuritySectionTests(unittest.TestCase):
+    ENTRY = (
+        "- Fix missing check (https://example.test/ghsa)"
+        " (PR: [#8](https://example.test/pr/8))"
+    )
+
+    def test_inserts_after_rocket(self):
+        updated = ch.replace_security_section(
+            SECURITY_CHANGES_WITH_ROCKET, "2.19.1", [self.ENTRY]
+        )
+        self.assertIn(
+            "### :rocket: Epics and highlights\n\n"
+            "- Add highlights [#1](https://github.com/penpot/penpot/issues/1)\n\n"
+            "### :lock: Security fixes\n\n"
+            f"{self.ENTRY}\n\n"
+            "### :bug: Bugs fixed",
+            updated,
+        )
+
+    def test_inserts_after_boom_when_there_is_no_rocket(self):
+        updated = ch.replace_security_section(
+            SECURITY_CHANGES_WITH_BOOM, "2.19.1", [self.ENTRY]
+        )
+        self.assertIn(
+            "#### Old entry\n\n[#1](https://github.com/penpot/penpot/issues/1)\n\n"
+            "### :lock: Security fixes\n\n"
+            f"{self.ENTRY}\n\n"
+            "### :bug: Bugs fixed",
+            updated,
+        )
+
+    def test_inserts_after_the_header_when_no_anchor_exists(self):
+        updated = ch.replace_security_section(
+            SECURITY_CHANGES, "2.19.1", [self.ENTRY]
+        )
+        self.assertIn(
+            "## 2.19.1\n\n"
+            "### :lock: Security fixes\n\n"
+            f"{self.ENTRY}\n\n"
+            "### :bug: Bugs fixed",
+            updated,
+        )
+
+    def test_replacement_is_idempotent(self):
+        once = ch.replace_security_section(
+            SECURITY_CHANGES, "2.19.1", [self.ENTRY]
+        )
+        twice = ch.replace_security_section(once, "2.19.1", [self.ENTRY])
+        self.assertEqual(once, twice)
+        self.assertEqual(once.count("### :lock: Security fixes"), 1)
+
+    def test_empty_entries_remove_the_subsection(self):
+        once = ch.replace_security_section(
+            SECURITY_CHANGES, "2.19.1", [self.ENTRY]
+        )
+        removed = ch.replace_security_section(once, "2.19.1", [])
+        self.assertNotIn(":lock:", removed)
+        self.assertEqual(removed, SECURITY_CHANGES)
+
+    def test_empty_entries_leave_a_section_without_heading_untouched(self):
+        self.assertEqual(
+            ch.replace_security_section(SECURITY_CHANGES, "2.19.1", []),
+            SECURITY_CHANGES,
+        )
+
+    def test_unknown_version_raises(self):
+        with self.assertRaises(ValueError):
+            ch.replace_security_section(SECURITY_CHANGES, "9.9.9", [self.ENTRY])
+
+
+class CmdSecurityTests(unittest.TestCase):
+    ADVISORIES = [ADVISORY]
+    PRS = [
+        {
+            "number": 8,
+            "state": "MERGED",
+            "labels": ["pr pt"],
+            "body": "Closes GHSA-j4vc-cmf6-jhr7",
+        }
+    ]
+
+    def setUp(self):
+        self.calls = []
+
+        def fake_run_gh_py(*args, input_text=None):
+            self.calls.append(args)
+            if args[0] == "advisories":
+                return json.dumps(self.ADVISORIES)
+            if args[0] == "prs":
+                return json.dumps(self.PRS)
+            raise AssertionError(f"unexpected gh.py call: {args}")
+
+        patcher = patch.object(ch, "run_gh_py", side_effect=fake_run_gh_py)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def run_security(self, changes=SECURITY_CHANGES, write=False):
+        args = argparse.Namespace(milestone="2.19.1", changes=changes, write=write)
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            ch.cmd_security(args)
+        return out.getvalue(), err.getvalue()
+
+    def test_prints_the_section_with_the_linked_pr(self):
+        out, _ = self.run_security()
+        self.assertIn("### :lock: Security fixes", out)
+        self.assertIn("security/advisories/GHSA-j4vc-cmf6-jhr7", out)
+        self.assertIn("(PR: [#8](https://github.com/penpot/penpot/pull/8))", out)
+        self.assertEqual(
+            self.calls[0], ("advisories", "--patched-version", "2.19.1")
+        )
+
+    def test_no_advisories_prints_no_section(self):
+        self.ADVISORIES = []
+        self.PRS = []
+        out, err = self.run_security()
+        self.assertEqual(out, "")
+        self.assertIn("No advisories", err)
+
+    def test_writes_the_section_in_place(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = pathlib.Path(tmp) / "CHANGES.md"
+            path.write_text(SECURITY_CHANGES)
+            _, err = self.run_security(changes=str(path), write=True)
+            updated = path.read_text()
+        self.assertIn("### :lock: Security fixes", updated)
+        self.assertIn("(PR: [#8](https://github.com/penpot/penpot/pull/8))", updated)
+        self.assertIn(":lock: section updated", err)
+
+    def test_no_advisories_leaves_the_file_untouched(self):
+        self.ADVISORIES = []
+        self.PRS = []
+        with tempfile.TemporaryDirectory() as tmp:
+            path = pathlib.Path(tmp) / "CHANGES.md"
+            path.write_text(SECURITY_CHANGES)
+            _, err = self.run_security(changes=str(path), write=True)
+            updated = path.read_text()
+        self.assertEqual(updated, SECURITY_CHANGES)
+        self.assertIn(":lock: section already up to date", err)
+
+    def test_warns_when_a_pr_references_an_unmatched_advisory(self):
+        self.ADVISORIES = []
+        _, err = self.run_security()
+        self.assertIn("GHSA-J4VC-CMF6-JHR7", err)
+        self.assertIn("#8", err)
+        self.assertIn("will not be listed", err)
+
+
+def bug(number, body="", parent=None, labels=()):
+    return {
+        "number": number,
+        "title": f"Bug {number}",
+        "state": "CLOSED",
+        "issue_type": "Bug",
+        "labels": list(labels),
+        "body": body,
+        "parent": parent,
+    }
+
+
+class OnlyUnreleasedEnvsTests(unittest.TestCase):
+    def check(self, text):
+        return ch.only_unreleased_envs(text, "2.19.0")
+
+    def test_dev_environments(self):
+        for text in ["HOURLY", "https://hourly.penpot.dev/", "PRE & hourly",
+                     "staging (current)", "develop (2.19.0 unreleased)",
+                     "2.19.0-RC1 (develop)", "2.19.0"]:
+            with self.subTest(text=text):
+                self.assertTrue(self.check(text))
+
+    def test_production_hints(self):
+        for text in ["PRO", "pre/pro/hourly", "develop / staging / main",
+                     "2.18.0-RC5", "2.18.1, 2.19.0-RC1", "self-hosted: 2.17.2",
+                     "design.penpot.app and self-host"]:
+            with self.subTest(text=text):
+                self.assertFalse(self.check(text))
+
+    def test_no_signal(self):
+        for text in ["", "_No response_", "-", "development build"]:
+            with self.subTest(text=text):
+                self.assertFalse(self.check(text))
+
+    def test_released_patch_of_the_same_minor_is_production(self):
+        # 2.19.0/2.19.1 are released versions, not this milestone (2.19.2):
+        # any version other than the milestone itself keeps the bug in.
+        for text in ["2.19.0 and later", "2.19.1", "2.19.0-RC1", "since 2.16"]:
+            with self.subTest(text=text):
+                self.assertFalse(ch.only_unreleased_envs(text, "2.19.2"))
+
+    def test_milestone_version_itself_is_unreleased(self):
+        for text in ["2.19.2", "2.19.2-RC1 (develop)"]:
+            with self.subTest(text=text):
+                self.assertTrue(ch.only_unreleased_envs(text, "2.19.2"))
+
+
+class FindDevOnlyBugsTests(unittest.TestCase):
+    def test_splits_auto_and_suggested(self):
+        issues = [
+            bug(1, parent={"number": 10, "issue_type": "Feature", "milestone": "2.19.0"}),
+            bug(2, parent={"number": 11, "issue_type": "Enhancement", "milestone": "2.19.0"}),
+            bug(3, parent={"number": 12, "issue_type": "EPIC", "milestone": "2.19.0"}),
+            bug(4, parent={"number": 13, "issue_type": "Feature", "milestone": "2.18.0"}),
+            bug(5, body="### Affected versions\n\nhourly\n"),
+            bug(6, body="### Affected versions\n\n2.18.2\n"),
+            bug(7, parent={"number": 10, "issue_type": "Feature", "milestone": "2.19.0"},
+                labels=["no changelog"]),
+            {**bug(8, parent={"number": 10, "issue_type": "Feature", "milestone": "2.19.0"}),
+             "issue_type": "Enhancement"},
+            bug(9, body="### Affected versions\n\n2.18.2\n", labels=["regression"]),
+            bug(10, parent={"number": 10, "issue_type": "Feature", "milestone": "2.19.0"},
+                labels=["release blocker"]),
+            bug(11, body="### Affected versions\n\nhourly\n", labels=["release blocker"]),
+        ]
+        auto, suggested = ch.find_dev_only_bugs("2.19.0", issues)
+        self.assertEqual([e["issue"] for e in auto], [1, 2, 10])
+        self.assertEqual([e["issue"] for e in suggested], [3, 5, 9, 11])
 
 
 if __name__ == "__main__":

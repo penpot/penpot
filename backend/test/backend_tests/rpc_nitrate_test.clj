@@ -87,6 +87,15 @@
        :issuer "https://idp.example.com"
        :organization-id organization-id}
 
+      :get-organization-membership
+      {:is-member true
+       :organization-id organization-id}
+
+      :get-organization-summary
+      {:id organization-id
+       :owner-id organization-owner-id
+       :teams []}
+
       nil)))
 
 (defn- unauthorized-sso-mock
@@ -127,7 +136,7 @@
                            {::th/type :check-nitrate-sso
                             ::rpc/profile-id (:id external-profile)
                             :team-id (:id team)
-                            :url "https://penpot.example.com/#/workspace"}
+                            :query-string "screen=workspace&team-id=0e5f-1a2b"}
                            {::http/request {}})]
     (binding [cf/flags (conj cf/flags :admin-console)]
       (with-redefs [nitrate/call
@@ -154,7 +163,7 @@
                           {::th/type :check-nitrate-sso
                            ::rpc/profile-id (:id team-owner)
                            :team-id (:id team)
-                           :url "https://penpot.example.com/#/workspace"}
+                           :query-string "screen=workspace&team-id=0e5f-1a2b"}
                           {::http/request {}})]
     (binding [cf/flags (conj cf/flags :admin-console)]
       (with-redefs [nitrate/call
@@ -175,8 +184,9 @@
           (t/is (= {:authorized false
                     :redirect-uri redirect-uri}
                    (:result out)))
-          (t/is (= #{:dest-url :organization-id} (set (keys @redirect-options))))
-          (t/is (= "https://penpot.example.com/#/workspace" (str (:dest-url @redirect-options))))
+          (t/is (= #{:query-string :organization-id :profile-id} (set (keys @redirect-options))))
+          (t/is (= "screen=workspace&team-id=0e5f-1a2b" (:query-string @redirect-options)))
+          (t/is (= (:id team-owner) (:profile-id @redirect-options)))
           (t/is (nil? (:organization-id @redirect-options)))
           (t/is (= {:profile-id (:id team-owner)
                     :organization-id organization-id}
@@ -191,10 +201,16 @@
                           {::th/type :check-nitrate-sso
                            ::rpc/profile-id (:id profile)
                            :organization-id organization-id
-                           :url "https://penpot.example.com/#/workspace"}
+                           :query-string "screen=workspace&team-id=0e5f-1a2b"}
                           {::http/request {}})]
     (binding [cf/flags (conj cf/flags :admin-console)]
       (with-redefs [nitrate/sso-session-authorized? (unauthorized-sso-mock organization-id)
+                    nitrate/call
+                    (fn [_cfg method _params]
+                      (case method
+                        :get-organization-membership {:is-member true
+                                                      :organization-id organization-id}
+                        nil))
                     oidc/build-organization-sso-auth-redirect-uri (fn [& _] (throw cause))
                     oidc/submit-organization-sso-auth-failed-event
                     (fn [_cfg _request profile-id received-organization-id received-cause]
@@ -218,7 +234,7 @@
                           {::th/type :check-nitrate-sso
                            ::rpc/profile-id (:id organization-owner)
                            :team-id (:id team)
-                           :url "https://penpot.example.com/#/workspace"}
+                           :query-string "screen=workspace&team-id=0e5f-1a2b"}
                           {::http/request {}})]
     (binding [cf/flags (conj cf/flags :admin-console)]
       (with-redefs [nitrate/organization-owner-of-team?
@@ -246,7 +262,7 @@
                           {::th/type :check-nitrate-sso
                            ::rpc/profile-id (:id team-owner)
                            :team-id (:id team)
-                           :url "https://penpot.example.com/#/workspace"}
+                           :query-string "screen=workspace&team-id=0e5f-1a2b"}
                           {::http/request {}})]
     (binding [cf/flags (conj cf/flags :admin-console)]
       (with-redefs [nitrate/sso-session-authorized?
@@ -258,6 +274,153 @@
         (let [out (th/command! params)]
           (t/is (th/success? out))
           (t/is (= {:authorized true :reason :sso-satisfied} (:result out))))))))
+
+(t/deftest check-nitrate-sso-denies-an-organization-the-profile-does-not-belong-to
+  (let [profile         (th/create-profile* 1 {:is-active true})
+        organization-id (uuid/random)
+        params          (with-meta
+                          {::th/type :check-nitrate-sso
+                           ::rpc/profile-id (:id profile)
+                           :organization-id organization-id
+                           :query-string "screen=workspace"}
+                          {::http/request {}})]
+    (binding [cf/flags (conj cf/flags :admin-console)]
+      (with-redefs [nitrate/call
+                    (fn [_cfg method _params]
+                      (case method
+                        :get-organization-membership {:is-member false
+                                                      :organization-id organization-id}
+                        :get-organization-summary {:id organization-id
+                                                   :owner-id (uuid/random)
+                                                   :teams []}
+                        :get-organization-sso {:active true
+                                               :issuer "https://idp.example.com"
+                                               :organization-id organization-id}
+                        nil))
+                    oidc/build-organization-sso-auth-redirect-uri
+                    (constantly "https://idp.example.com/authorize")]
+        (let [out (th/command! params)]
+          (t/is (th/success? out))
+          ;; The organization id comes from the client: a profile that does
+          ;; not belong to the organization must not start a flow for it.
+          (t/is (= {:authorized true :reason :no-organization-access} (:result out))))))))
+
+(t/deftest check-nitrate-sso-denies-an-organization-the-profile-does-not-belong-to-even-with-a-team
+  (let [profile         (th/create-profile* 1 {:is-active true})
+        team            (th/create-team* 1 {:profile-id (:id profile)})
+        organization-id (uuid/random)
+        params          (with-meta
+                          {::th/type :check-nitrate-sso
+                           ::rpc/profile-id (:id profile)
+                           :team-id (:id team)
+                           :organization-id organization-id
+                           :query-string "screen=workspace"}
+                          {::http/request {}})]
+    (binding [cf/flags (conj cf/flags :admin-console)]
+      (with-redefs [nitrate/call
+                    (fn [_cfg method _params]
+                      (case method
+                        :get-organization-membership {:is-member false
+                                                      :organization-id organization-id}
+                        :get-organization-summary {:id organization-id
+                                                   :owner-id (uuid/random)
+                                                   :teams []}
+                        :get-organization-sso {:active true
+                                               :issuer "https://idp.example.com"
+                                               :organization-id organization-id}
+                        nil))
+                    oidc/build-organization-sso-auth-redirect-uri
+                    (constantly "https://idp.example.com/authorize")]
+        (let [out (th/command! params)]
+          (t/is (th/success? out))
+          ;; The organization id comes from the client too when the team is
+          ;; also sent, so the check applies to both shapes.
+          (t/is (= {:authorized true :reason :no-organization-access} (:result out))))))))
+
+(t/deftest check-nitrate-sso-survives-an-organization-that-does-not-exist
+  (let [profile         (th/create-profile* 1 {:is-active true})
+        organization-id (uuid/random)
+        params          (with-meta
+                          {::th/type :check-nitrate-sso
+                           ::rpc/profile-id (:id profile)
+                           :organization-id organization-id
+                           :query-string "screen=workspace"}
+                          {::http/request {}})]
+    (binding [cf/flags (conj cf/flags :admin-console)]
+      (with-redefs [nitrate/call
+                    (fn [_cfg _method _params] nil)
+                    oidc/build-organization-sso-auth-redirect-uri
+                    (constantly "https://idp.example.com/authorize")]
+        (let [out (th/command! params)]
+          (t/is (th/success? out))
+          ;; Nitrate knows nothing about the organization: that is a denial,
+          ;; not a crash.
+          (t/is (= {:authorized true :reason :no-organization-access} (:result out))))))))
+
+(t/deftest check-nitrate-sso-ignores-a-value-that-is-not-a-route
+  (let [profile         (th/create-profile* 1 {:is-active true})
+        organization-id (uuid/random)
+        redirect-uri    "https://idp.example.com/authorize"]
+    (doseq [query-string ["https://evil.example/" ""]]
+      (let [params (with-meta
+                     {::th/type :check-nitrate-sso
+                      ::rpc/profile-id (:id profile)
+                      :organization-id organization-id
+                      :query-string query-string}
+                     {::http/request {}})]
+        (binding [cf/flags (conj cf/flags :admin-console)]
+          (with-redefs [nitrate/call
+                        (fn [_cfg method _params]
+                          (case method
+                            :get-organization-membership {:is-member true
+                                                          :organization-id organization-id}
+                            :get-organization-summary {:id organization-id
+                                                       :owner-id (:id profile)
+                                                       :teams []}
+                            :get-organization-sso {:active true
+                                                   :issuer "https://idp.example.com"
+                                                   :organization-id organization-id}
+                            nil))
+                        oidc/prepare-organization-sso-provider (constantly {:type "oidc"})
+                        oidc/build-auth-redirect-uri           (constantly redirect-uri)]
+            (let [out (th/command! params)]
+              (t/is (th/success? out))
+              ;; A destination the server cannot render must not break the
+              ;; flow: the user lands on the public uri instead.
+              (t/is (= {:authorized false
+                        :redirect-uri redirect-uri}
+                       (:result out))))))))))
+
+(t/deftest check-nitrate-sso-allows-the-owner-of-the-organization
+  (let [profile         (th/create-profile* 1 {:is-active true})
+        organization-id (uuid/random)
+        redirect-uri    "https://idp.example.com/authorize"
+        params          (with-meta
+                          {::th/type :check-nitrate-sso
+                           ::rpc/profile-id (:id profile)
+                           :organization-id organization-id
+                           :query-string "screen=workspace"}
+                          {::http/request {}})]
+    (binding [cf/flags (conj cf/flags :admin-console)]
+      (with-redefs [nitrate/call
+                    (fn [_cfg method _params]
+                      (case method
+                        :get-organization-membership {:is-member false
+                                                      :organization-id organization-id}
+                        :get-organization-summary {:id organization-id
+                                                   :owner-id (:id profile)
+                                                   :teams []}
+                        :get-organization-sso {:active true
+                                               :issuer "https://idp.example.com"
+                                               :organization-id organization-id}
+                        nil))
+                    oidc/build-organization-sso-auth-redirect-uri
+                    (constantly redirect-uri)]
+        (let [out (th/command! params)]
+          (t/is (th/success? out))
+          (t/is (= {:authorized false
+                    :redirect-uri redirect-uri}
+                   (:result out))))))))
 
 (t/deftest nitrate-sso-required-error-resolves-the-team-from-the-file
   (t/testing "the workspace path, where the file id arrives as :id, still reports the team"

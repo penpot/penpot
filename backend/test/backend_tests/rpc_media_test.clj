@@ -10,10 +10,12 @@
    [app.db :as db]
    [app.http.client :as http]
    [app.media :as media]
+   [app.media.svg :as svg]
    [app.rpc :as-alias rpc]
    [app.storage :as sto]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
+   [cuerdas.core :as str]
    [datoteka.fs :as fs]
    [datoteka.io :as io]
    [mockery.core :refer [with-mocks]])
@@ -22,6 +24,14 @@
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
+
+(def ^:private evil-svg
+  "An SVG that smuggles an event handler inside an attribute value."
+  "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"64\" height=\"64\" id=\"x' onload='alert(1)\"><rect width=\"10\" height=\"10\"/></svg>")
+
+(def ^:private evil-text-svg
+  "An SVG that smuggles a script element inside a text node."
+  "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"64\" height=\"64\"><text>&lt;/text&gt;&lt;script&gt;alert(1)&lt;/script&gt;</text></svg>")
 
 (t/deftest media-object-from-url
   (let [prof   (th/create-profile* 1)
@@ -93,6 +103,123 @@
         (t/is (= 312043 (:size mobj1)))
         (t/is (= 3890   (:size mobj2)))))))
 
+
+(t/deftest upload-file-media-object-sanitizes-svg
+  (let [prof (th/create-profile* 1)
+        file (th/create-file* 1 {:profile-id (:id prof)
+                                 :project-id (:default-project-id prof)
+                                 :is-shared false})]
+    (th/with-temp-file [path evil-svg]
+      (let [params {::th/type :upload-file-media-object
+                    ::rpc/profile-id (:id prof)
+                    :file-id (:id file)
+                    :is-local true
+                    :name "evil.svg"
+                    :content {:filename "evil.svg"
+                              :path path
+                              :mtype "image/svg+xml"
+                              :size (fs/size path)}}
+            out    (th/multipart-command! params)]
+
+        (t/is (nil? (:error out)))
+
+        (let [{:keys [media-id]} (:result out)
+              storage (:app.storage/storage th/*system*)
+              sobject (sto/get-object storage media-id)
+              content (slurp (sto/get-object-data storage sobject))
+              parsed  (svg/parse-svg content)]
+          (t/is (not (contains? (:attrs parsed) :onload)))
+          (t/is (= "x' onload='alert(1)" (get (:attrs parsed) :id)))
+          (t/is (str/includes? content "&apos;")))))))
+
+(t/deftest upload-file-media-object-sanitizes-svg-text
+  (let [prof (th/create-profile* 1)
+        file (th/create-file* 1 {:profile-id (:id prof)
+                                 :project-id (:default-project-id prof)
+                                 :is-shared false})]
+    (th/with-temp-file [path evil-text-svg]
+      (let [params {::th/type :upload-file-media-object
+                    ::rpc/profile-id (:id prof)
+                    :file-id (:id file)
+                    :is-local true
+                    :name "evil.svg"
+                    :content {:filename "evil.svg"
+                              :path path
+                              :mtype "image/svg+xml"
+                              :size (fs/size path)}}
+            out    (th/multipart-command! params)]
+
+        (t/is (nil? (:error out)))
+
+        (let [{:keys [media-id]} (:result out)
+              storage (:app.storage/storage th/*system*)
+              sobject (sto/get-object storage media-id)
+              content (slurp (sto/get-object-data storage sobject))
+              parsed  (svg/parse-svg content)]
+          (t/is (not (str/includes? content "<script")))
+          (t/is (= "</text><script>alert(1)</script>"
+                   (get-in parsed [:content 0 :content 0]))))))))
+
+(t/deftest create-file-media-object-from-url-sanitizes-svg
+  (let [prof (th/create-profile* 1)
+        file (th/create-file* 1 {:profile-id (:id prof)
+                                 :project-id (:default-project-id prof)
+                                 :is-shared false})
+        body (.getBytes ^String evil-svg "UTF-8")]
+    (with-mocks [http-mock {:target 'app.http.client/req-with-redirects
+                            :return {:status 200
+                                     :headers {"content-type" "image/svg+xml"
+                                               "content-length" (str (alength ^bytes body))}
+                                     :body (java.io.ByteArrayInputStream. ^bytes body)}}]
+      (let [params {::th/type :create-file-media-object-from-url
+                    ::rpc/profile-id (:id prof)
+                    :file-id (:id file)
+                    :is-local true
+                    :url "https://example.com/evil.svg"}
+            out   (th/command! params)]
+        (t/is (nil? (:error out)))
+
+        (let [{:keys [media-id]} (:result out)
+              storage (:app.storage/storage th/*system*)
+              sobject (sto/get-object storage media-id)
+              content (slurp (sto/get-object-data storage sobject))
+              parsed  (svg/parse-svg content)]
+          (t/is (not (contains? (:attrs parsed) :onload)))
+          (t/is (not (str/includes? content "<script>")))
+          (t/is (= "x' onload='alert(1)" (get (:attrs parsed) :id)))
+          (t/is (str/includes? content "&apos;")))))))
+
+(def ^:private xhtml-child-svg
+  "An SVG whose root is in the SVG namespace but whose child rebinds the
+   default namespace to XHTML and embeds live HTML."
+  "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"64\" height=\"64\"><g xmlns=\"http://www.w3.org/1999/xhtml\"><iframe srcdoc=\"&lt;script&gt;alert(1)&lt;/script&gt;\"/><meta http-equiv=\"refresh\" content=\"0;url=javascript:alert(1)\"/></g><rect width=\"10\" height=\"10\"/></svg>")
+
+(t/deftest create-file-media-object-from-url-sanitizes-xhtml-child
+  (let [prof (th/create-profile* 1)
+        file (th/create-file* 1 {:profile-id (:id prof)
+                                 :project-id (:default-project-id prof)
+                                 :is-shared false})
+        body (.getBytes ^String xhtml-child-svg "UTF-8")]
+    (with-mocks [http-mock {:target 'app.http.client/req-with-redirects
+                            :return {:status 200
+                                     :headers {"content-type" "image/svg+xml"
+                                               "content-length" (str (alength ^bytes body))}
+                                     :body (java.io.ByteArrayInputStream. ^bytes body)}}]
+      (let [params {::th/type :create-file-media-object-from-url
+                    ::rpc/profile-id (:id prof)
+                    :file-id (:id file)
+                    :is-local true
+                    :url "https://example.com/evil.svg"}
+            out   (th/command! params)]
+        (t/is (nil? (:error out)))
+
+        (let [{:keys [media-id]} (:result out)
+              storage (:app.storage/storage th/*system*)
+              sobject (sto/get-object storage media-id)
+              content (slurp (sto/get-object-data storage sobject))]
+          (t/is (not (str/includes? content "iframe")))
+          (t/is (not (str/includes? content "srcdoc")))
+          (t/is (not (str/includes? content "http-equiv"))))))))
 
 (t/deftest media-object-from-url-command
   (let [prof   (th/create-profile* 1)

@@ -64,7 +64,7 @@
                     #(assoc-in % [:workspace-local :selected] (d/ordered-set (:id rect)))
                     (start rect))
          (rx/push! ms/mouse-position (gpt/point 160 260))
-         (await (async/wait-for #(seq (:workspace-modifiers @store)) "the drag shows a preview"))
+         (await (async/wait-for-store store #(seq (:workspace-modifiers @store)) "the drag shows a preview"))
          (ptk/emit! store stop)
          (await (async/settle))
          (finally
@@ -147,8 +147,8 @@
          (await (move store))
          (ptk/emit! store stop)
          ;; A box drawing ends 100 ms after its stop
-         (await (async/wait-for #(nil? (get-in @store [:workspace-drawing :object]))
-                                "the drawing ends" {:max-ticks 500}))
+         (await (async/wait-for-store store #(nil? (get-in @store [:workspace-drawing :object]))
+                                      "the drawing ends"))
          (await (async/settle))
          (finally
            (rx/push! ms/mouse-position nil)
@@ -158,21 +158,21 @@
 (defn- ^:async drag-box
   [store]
   (rx/push! ms/mouse-position (gpt/point 160 180))
-  (await (async/wait-for #(< 50 (get-in @store [:workspace-drawing :object :width] 0))
-                         "the box follows the pointer")))
+  (await (async/wait-for-store store #(< 50 (get-in @store [:workspace-drawing :object :width] 0))
+                               "the box follows the pointer")))
 
 (defn- ^:async drag-curve
   [store]
   (doseq [x [110 130 150 170]]
     (rx/push! ms/mouse-position (gpt/point x (+ x 20)))
-    (await (async/wait-for #(some (fn [p] (= x (:x p)))
-                                  (get-in @store [:workspace-drawing :object ::dwdc/points]))
-                           "the curve takes the point"))))
+    (await (async/wait-for-store store #(some (fn [p] (= x (:x p)))
+                                              (get-in @store [:workspace-drawing :object ::dwdc/points]))
+                                 "the curve takes the point"))))
 
 (defn- ^:async click-path
   "Stands for the pen clicks: the drawn path gets two nodes."
   [store]
-  (await (async/wait-for #(some? (get-in @store [:workspace-drawing :object])) "the pen starts"))
+  (await (async/wait-for-store store #(some? (get-in @store [:workspace-drawing :object])) "the pen starts"))
   (ptk/emit! store #(assoc-in % [:workspace-drawing :object :content]
                               (path/content [{:command :move-to :params {:x 100 :y 100}}
                                              {:command :line-to :params {:x 180 :y 160}}]))))

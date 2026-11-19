@@ -1,0 +1,45 @@
+name: Require Milestone
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - edited
+      - milestoned
+      - demilestoned
+      - ready_for_review
+      - converted_to_draft
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  check-milestone:
+    name: Require Milestone
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check milestone
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          pr_api="repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}"
+
+          is_draft=$(gh api "$pr_api" --jq '.draft')
+          milestone=$(gh api "$pr_api" --jq '.milestone.title // ""')
+
+          if [ "$is_draft" = "true" ]; then
+            echo "Draft PR: milestone check skipped."
+            exit 0
+          fi
+
+          if [ -z "$milestone" ]; then
+            echo "::error::This pull request must have a milestone."
+            exit 1
+          fi
+
+          echo "Milestone assigned: $milestone"

@@ -60,6 +60,7 @@ the issue (`scripts/changelog.py boom`), so the issue must carry both:
 Post the note as a new comment. Do not add a breaking-change section to the
 issue body and do not hand-write the changelog block. When the issue comes
 from a PR, reuse the text of the PR's breaking-change section.
+Do not hard-wrap the note: one line per paragraph or bullet.
 
 The full changelog rules (sections, exclusions, `:rocket:`, pre-flight and
 anomaly report) live in `mem:workflow/updating-changelog`.
@@ -314,7 +315,7 @@ Add `Closes #<ISSUE_NUMBER>` to the PR body for readable context, then run the e
 python3 scripts/gh.py link-issue <ISSUE_NUMBER> <PR_NUMBER>
 ```
 
-The command creates the GitHub Development link by calling `addCloseIssueReferences` and trusts the successful mutation (GitHub does not reliably report mutation-created links back through the API). It is safe to rerun and does not close an issue retroactively when the PR is already merged. Do not rely on the body keyword as the assignment operation.
+The command creates the GitHub Development link by calling `addCloseIssueReferences` and trusts the successful mutation (GitHub does not reliably report mutation-created links back through the API). It is safe to rerun. Do not rely on it to keep the issue open: adding `Closes #N` to the body of an already-merged PR closed the issue immediately when tried (#12896 / PR #12067, 2026-11-09; the timeline shows a cross-reference plus a ClosedEvent with no closer). For changelog units that outcome is fine — a merged fix means a closed issue — but be aware when linking old merged PRs. Do not rely on the body keyword as the assignment operation.
 
 ### Clean up
 

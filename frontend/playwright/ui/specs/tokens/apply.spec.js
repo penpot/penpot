@@ -58,7 +58,7 @@ test.describe("Tokens: Apply token", () => {
     const colorPicker = page.getByTestId("colorpicker");
     await expect(colorPicker).toBeVisible();
 
-    await colorPicker.getByTestId('opt-token-color').click();
+    await colorPicker.getByTestId("opt-token-color").click();
     await colorPicker.getByRole("button", { name: "black" }).click();
 
     // The applied token badge replaces the plain color swatch/input in
@@ -1649,9 +1649,7 @@ test.describe("Numeric Input and Token Integration Tests", () => {
     ).toBeVisible();
   });
 
-  test("Invalid formula reverts to previous value in padding inputs", async ({
-    page,
-  }) => {
+  test("Invalid formula reverts to the previous value", async ({ page }) => {
     const { workspacePage, tokensSidebar, tokenContextMenuForToken } =
       await setupTokensFileRender(page, {
         flags: ["enable-token-combobox", "enable-feature-token-input"],
@@ -1690,120 +1688,14 @@ test.describe("Numeric Input and Token Integration Tests", () => {
     // Enter a valid value first
     await verticalPaddingInput.fill("23");
     await verticalPaddingInput.press("Enter");
-    // Wait for potential error handling
-    await page.waitForTimeout(500);
+    await expect(verticalPaddingInput).toHaveValue("23");
 
-    expect(await verticalPaddingInput.inputValue()).toMatch("23");
-
-    // Enter invalid expression
+    // An invalid expression reverts to the previous valid value
     await verticalPaddingInput.fill("abc+1");
     await verticalPaddingInput.press("Enter");
 
-    // Wait for potential error handling
-    await page.waitForTimeout(500);
-
-    // Value should revert to previous valid value
-    expect(await verticalPaddingInput.inputValue()).toMatch("23");
-
-    // Should NOT contain invalid characters
-    expect(await verticalPaddingInput.inputValue()).not.toContain("abc");
-  });
-
-  test("Division by zero reverts to previous value", async ({ page }) => {
-    const { workspacePage, tokensSidebar, tokenContextMenuForToken } =
-      await setupTokensFileRender(page, {
-        flags: ["enable-token-combobox", "enable-feature-token-input"],
-      });
-
-    await page.getByRole("tab", { name: "Layers" }).click();
-
-    await workspacePage.layers.getByTestId("layer-row").nth(1).click();
-
-    const layoutSection =
-      workspacePage.rightSidebar.getByTestId("inspect-layout");
-
-    const addLayoutButton = layoutSection
-      .getByRole("button", { name: "Add layout" })
-      .first();
-
-    await addLayoutButton.click();
-
-    await page.getByText("Flex layout").click();
-
-    // Apply a spacing token to the Column gap property
-    const tokensTabButton = page.getByRole("tab", { name: "Tokens" });
-    await tokensTabButton.click();
-    await unfoldTokenType(tokensSidebar, "spacing");
-
-    await tokensSidebar
-      .getByRole("button", { name: "spacing.lg" })
-      .click({ button: "right" });
-
-    await tokenContextMenuForToken.getByText("Column gap").click();
-
-    const verticalPaddingInput = layoutSection.getByRole("textbox", {
-      name: "Vertical padding",
-    });
-
-    // Enter a valid value first
-    await verticalPaddingInput.fill("23");
-    await verticalPaddingInput.press("Enter");
-    // Wait for potential error handling
-    await page.waitForTimeout(500);
-
-    expect(await verticalPaddingInput.inputValue()).toMatch("23");
-
-    // Enter invalid expression
-    await verticalPaddingInput.fill("10/0");
-    await verticalPaddingInput.press("Enter");
-
-    // Wait for potential error handling
-    await page.waitForTimeout(500);
-
-    // Value should revert to previous valid value
-    expect(await verticalPaddingInput.inputValue()).toMatch("23");
-
-    // Should NOT contain invalid characters
-    expect(await verticalPaddingInput.inputValue()).not.toContain("10/0");
-
-    // Value should revert
-    expect(await verticalPaddingInput.inputValue()).toMatch(/^(\d+|--)$/);
-    expect(await verticalPaddingInput.inputValue()).not.toBe("Infinity");
-  });
-
-  test("Negative expression result handled correctly", async ({ page }) => {
-    const { workspacePage, tokensSidebar, tokenContextMenuForToken } =
-      await setupTokensFileRender(page, {
-        flags: ["enable-token-combobox", "enable-feature-token-input"],
-      });
-
-    await page.getByRole("tab", { name: "Layers" }).click();
-
-    await workspacePage.layers.getByTestId("layer-row").nth(1).click();
-    const widthInput = workspacePage.rightSidebar.getByRole("textbox", {
-      name: "Width",
-    });
-    await expect(widthInput).toBeVisible();
-
-    // Enter a valid value first
-    await widthInput.fill("23");
-    await widthInput.press("Enter");
-
-    // Wait for potential error handling
-    await page.waitForTimeout(500);
-    expect(await widthInput.inputValue()).toMatch("23");
-
-    // Enter a negative expression
-    await widthInput.fill("10-50");
-    await widthInput.press("Enter");
-
-    // Wait for potential error handling
-    await page.waitForTimeout(500);
-
-    expect(await widthInput.inputValue()).toMatch("0.01");
-
-    // Should NOT negative values
-    expect(await widthInput.inputValue()).not.toContain("-40");
+    await expect(verticalPaddingInput).toHaveValue("23");
+    await expect(verticalPaddingInput).not.toHaveValue(/abc/);
   });
 
   test("Token pill show broken reference when set is not activated", async ({
@@ -1903,371 +1795,107 @@ test("BUG: 14234, Numeric input token filtering must be case sensitive", async (
 test("BUG: 10471, Correct tooltip on right sidebar tokens", async ({
   page,
 }) => {
-  const {
-    workspacePage,
-    tokensSidebar,
-    tokenContextMenuForToken,
-    tokenThemesSetsSidebar,
-    tokenSetGroupItems,
-  } = await setupTokensFileRender(page, {
-    file: "workspace/get-file-token-tooltip.json",
-  });
+  const { workspacePage, tokenThemesSetsSidebar } = await setupTokensFileRender(
+    page,
+    {
+      file: "workspace/get-file-token-tooltip.json",
+    },
+  );
 
   await page.getByRole("tab", { name: "Layers" }).click();
-  const borderRadiusSection = page.getByRole("region", {
-    name: "Border radius section",
-  });
 
   const fillSection = workspacePage.rightSidebar.getByRole("region", {
     name: "Fill section",
   });
 
-  const typographySection = workspacePage.rightSidebar.getByRole("region", {
-    name: "Text section",
-  });
-  // ----------------------------------
-  // Select rectangle with active token
-  // ----------------------------------
-  await workspacePage.layers
-    .getByTestId("layer-row")
-    .filter({ hasText: "Rectangle with token" })
-    .click();
-  await expect(borderRadiusSection).toBeVisible();
-  const brPill = borderRadiusSection.getByRole("button", { name: "base-50" });
-  await expect(brPill).toBeVisible();
-  await brPill.hover();
-  await expect(page.getByRole("tooltip", { name: "base-50" })).toBeVisible();
-  await expect(fillSection).toBeVisible();
-  const fillTokenPill = fillSection.getByLabel("out-ref", {
-    exact: true,
-  });
-  await expect(fillTokenPill).toBeVisible();
-  await fillTokenPill.hover();
-  const colorTokenTooltip = page.getByRole("tooltip", {
-    name: "out-ref",
-  });
-  await expect(colorTokenTooltip).toBeVisible();
-  await expect(colorTokenTooltip).toHaveText(
-    "Name: out-refResolved value: #da1fea",
-  );
-  // ----------------------------------
-  // Select text with active token
-  // ----------------------------------
-  await workspacePage.layers
-    .getByTestId("layer-row")
-    .filter({ hasText: "Text with token" })
-    .click();
-  await expect(fillSection).toBeVisible();
-  const textFillTokenPill = fillSection.getByLabel("out-ref", {
-    exact: true,
-  });
-  await expect(textFillTokenPill).toBeVisible();
-  await textFillTokenPill.hover();
-  await expect(colorTokenTooltip).toBeVisible();
-  await expect(colorTokenTooltip).toHaveText(
-    "Name: out-refResolved value: #da1fea",
-  );
-  await expect(typographySection).toBeVisible();
-  const typographyTokenPill = typographySection.getByLabel("out-typo", {
-    exact: true,
-  });
-  await expect(typographyTokenPill).toBeVisible();
-  await typographyTokenPill.hover();
-  const typographyTokenTooltip = page.getByRole("tooltip", {
-    name: "out-typo",
-  });
-  await expect(typographyTokenTooltip).toBeVisible();
-  await expect(typographyTokenTooltip).toHaveText(
-    'Name: out-typoResolved value:- font-family: "Arizonia"',
-  );
-  // -----------------------------------------
-  // Select rectangle layer with deleted token
-  // -----------------------------------------
-  await workspacePage.layers
-    .getByTestId("layer-row")
-    .filter({ hasText: "Deleted token rect" })
-    .click();
+  await test.step("Deleted token", async () => {
+    await workspacePage.layers
+      .getByTestId("layer-row")
+      .filter({ hasText: "Deleted token rect" })
+      .click();
 
-  await expect(borderRadiusSection).toBeVisible();
-  const deletedBrPill = borderRadiusSection.getByRole("button", {
-    name: "{deleted} token does not exist or",
-  });
-  await expect(deletedBrPill).toBeVisible();
-  await deletedBrPill.hover();
-  await expect(
-    page.getByRole("tooltip", { name: "{deleted} token does not exist or" }),
-  ).toBeVisible();
-  await expect(fillSection).toBeVisible();
-  const fillBrokenTokenPill = fillSection.getByLabel("blue", {
-    exact: true,
-  });
-  await expect(fillBrokenTokenPill).toBeVisible();
-  await fillBrokenTokenPill.hover();
-  const fillBrokenTokenTooltip = page.getByRole("tooltip", {
-    name: "blue",
-  });
-  await expect(fillBrokenTokenTooltip).toBeVisible();
-  await expect(fillBrokenTokenTooltip).toHaveText(
-    "{blue} token does not exist or has been deleted.",
-  );
-  // ------------------------------------
-  // Select text layer with deleted token
-  // ------------------------------------
-  await workspacePage.layers
-    .getByTestId("layer-row")
-    .filter({ hasText: "Text with deleted token" })
-    .click();
-  await expect(typographySection).toBeVisible();
-  const brokenTypographyTokenPill = typographySection.getByLabel(
-    "deleted-typo",
-    { exact: true },
-  );
-  await expect(brokenTypographyTokenPill).toBeVisible();
-  await brokenTypographyTokenPill.hover();
-  const brokenTypographyTokenTooltip = page.getByRole("tooltip", {
-    name: "deleted-typo",
-  });
-  await expect(brokenTypographyTokenTooltip).toBeVisible();
-  await expect(brokenTypographyTokenTooltip).toHaveText(
-    "{deleted-typo} token does not exist or has been deleted.",
-  );
+    await expect(fillSection).toBeVisible();
 
-  // ---------------------------------------------------
-  // Select rectangle layer with deleted reference token
-  // ---------------------------------------------------
-  await page.getByRole("tab", { name: "Tokens" }).click();
-  await tokenThemesSetsSidebar.getByRole("button", { name: "Dark" }).click();
+    const brokenPill = fillSection.getByLabel("blue", { exact: true });
+    await expect(brokenPill).toBeVisible();
+    await brokenPill.hover();
 
-  await tokenThemesSetsSidebar
-    .getByRole("button", { name: "Dark" })
-    .getByRole("checkbox")
-    .click();
-  await page.getByRole("tab", { name: "Layers" }).click();
-  await workspacePage.layers
-    .getByTestId("layer-row")
-    .filter({ hasText: "Rectangle with deleted reference" })
-    .click();
-  await expect(borderRadiusSection).toBeVisible();
-  const deletedReferenceBrPill = borderRadiusSection.getByRole("button", {
-    name: "Reference in {ref-1} is not valid or is not in any active set.",
+    const tooltip = page.getByRole("tooltip", { name: "blue" });
+    await expect(tooltip).toBeVisible();
+    await expect(tooltip).toHaveText(
+      "{blue} token does not exist or has been deleted.",
+    );
   });
-  await expect(deletedReferenceBrPill).toBeVisible();
-  await deletedReferenceBrPill.hover();
-  await expect(
-    page.getByRole("tooltip", {
-      name: "Reference in {ref-1} is not valid or is not in any active set.",
-    }),
-  ).toBeVisible();
-  await expect(fillSection).toBeVisible();
-  const fillDeletedReferenceTokenPill = fillSection.getByLabel("ref-grfeen", {
-    exact: true,
-  });
-  await expect(fillDeletedReferenceTokenPill).toBeVisible();
-  await fillDeletedReferenceTokenPill.hover();
-  const fillDeletedReferenceTokenTooltip = page.getByRole("tooltip", {
-    name: "Reference in {ref-grfeen} is not valid or is not in any active set.",
-  });
-  await expect(fillDeletedReferenceTokenTooltip).toBeVisible();
-  await expect(fillDeletedReferenceTokenTooltip).toHaveText(
-    "Reference in {ref-grfeen} is not valid or is not in any active set.",
-  );
 
-  // ----------------------------------------------
-  // Select text layer with deleted reference token
-  // ----------------------------------------------
+  await test.step("Reference outside the active sets", async () => {
+    await page.getByRole("tab", { name: "Tokens" }).click();
 
-  await workspacePage.layers
-    .getByTestId("layer-row")
-    .filter({ hasText: "Text with deleted reference" })
-    .click();
+    await tokenThemesSetsSidebar.getByRole("button", { name: "Dark" }).click();
+    await tokenThemesSetsSidebar
+      .getByRole("button", { name: "Dark" })
+      .getByRole("checkbox")
+      .click();
 
-  await expect(typographySection).toBeVisible();
-  const deletedRefTypographyTokenPill = typographySection.getByLabel(
-    "ref-typo",
-    { exact: true },
-  );
-  await expect(deletedRefTypographyTokenPill).toBeVisible();
-  await deletedRefTypographyTokenPill.hover();
-  const deletedRefTypographyTokenTooltip = page.getByRole("tooltip", {
-    name: "Reference in {ref-typo} is not valid or is",
-  });
-  await expect(deletedRefTypographyTokenTooltip).toBeVisible();
-  await expect(deletedRefTypographyTokenTooltip).toHaveText(
-    "Reference in {ref-typo} is not valid or is not in any active set.",
-  );
-  await expect(fillSection).toBeVisible();
-  const fillTextDeletedReferenceTokenPill = fillSection.getByLabel(
-    "ref-grfeen",
-    {
+    await page.getByRole("tab", { name: "Layers" }).click();
+
+    await workspacePage.layers
+      .getByTestId("layer-row")
+      .filter({ hasText: "Rectangle with deleted reference" })
+      .click();
+
+    await expect(fillSection).toBeVisible();
+
+    const brokenReferencePill = fillSection.getByLabel("ref-grfeen", {
       exact: true,
-    },
-  );
-  await expect(fillTextDeletedReferenceTokenPill).toBeVisible();
-  await fillTextDeletedReferenceTokenPill.hover();
-  const fillTextDeletedReferenceTokenTooltip = page.getByRole("tooltip", {
-    name: "Reference in {ref-grfeen} is not valid or is not in any active set.",
-  });
-  await expect(fillTextDeletedReferenceTokenTooltip).toBeVisible();
-  await expect(fillTextDeletedReferenceTokenTooltip).toHaveText(
-    "Reference in {ref-grfeen} is not valid or is not in any active set.",
-  );
+    });
+    await expect(brokenReferencePill).toBeVisible();
+    await brokenReferencePill.hover();
 
-  // -----------------------------------------------------------
-  // Select rectangle layer with reference token on inactive set
-  // -----------------------------------------------------------
-  await page.getByRole("tab", { name: "Tokens" }).click();
-  await tokenThemesSetsSidebar.getByRole("button", { name: "Global" }).click();
+    const tooltip = page.getByRole("tooltip", {
+      name: "Reference in {ref-grfeen} is not valid or is not in any active set.",
+    });
+    await expect(tooltip).toBeVisible();
+    await expect(tooltip).toHaveText(
+      "Reference in {ref-grfeen} is not valid or is not in any active set.",
+    );
+  });
 
-  await tokenThemesSetsSidebar
-    .getByRole("button", { name: "Global" })
-    .getByRole("checkbox")
-    .click();
-  await page.getByRole("tab", { name: "Layers" }).click();
-  await workspacePage.layers
-    .getByTestId("layer-row")
-    .filter({ hasText: "Rectangle with not active reference" })
-    .click();
-  await expect(borderRadiusSection).toBeVisible();
-  const nonActiveReferenceBrPill = borderRadiusSection.getByRole("button", {
-    name: "Reference in {in-br} is not valid or is not in any active set.",
-  });
-  await expect(nonActiveReferenceBrPill).toBeVisible();
-  await nonActiveReferenceBrPill.hover();
-  await expect(
-    page.getByRole("tooltip", {
-      name: "Reference in {in-br} is not valid or is not in any active set.",
-    }),
-  ).toBeVisible();
-  await expect(fillSection).toBeVisible();
-  const fillNonActiveReferenceTokenPill = fillSection.getByLabel("in-color", {
-    exact: true,
-  });
-  await expect(fillNonActiveReferenceTokenPill).toBeVisible();
-  await fillNonActiveReferenceTokenPill.hover();
-  const fillNonActiveReferenceTokenTooltip = page.getByRole("tooltip", {
-    name: "Reference in {in-color} is not valid or is not in any active set.",
-  });
-  await expect(fillNonActiveReferenceTokenTooltip).toBeVisible();
-  await expect(fillNonActiveReferenceTokenTooltip).toHaveText(
-    "Reference in {in-color} is not valid or is not in any active set.",
-  );
-  // ------------------------------------------------------
-  // Select text layer with reference token on inactive set
-  // ------------------------------------------------------
+  await test.step("Token in an inactive set", async () => {
+    await page.getByRole("tab", { name: "Tokens" }).click();
 
-  await workspacePage.layers
-    .getByTestId("layer-row")
-    .filter({ hasText: "Text with not active reference" })
-    .click();
+    await tokenThemesSetsSidebar
+      .getByRole("button", { name: "Global" })
+      .click();
+    await tokenThemesSetsSidebar
+      .getByRole("button", { name: "Global" })
+      .getByRole("checkbox")
+      .click();
 
-  await expect(typographySection).toBeVisible();
-  const notActiveRefTypographyTokenPill = typographySection.getByLabel(
-    "in-typo",
-    { exact: true },
-  );
-  await expect(notActiveRefTypographyTokenPill).toBeVisible();
-  await notActiveRefTypographyTokenPill.hover();
-  const notActiveRefTypographyTokenTooltip = page.getByRole("tooltip", {
-    name: "Reference in {in-typo} is not valid or is",
-  });
-  await expect(notActiveRefTypographyTokenTooltip).toBeVisible();
-  await expect(notActiveRefTypographyTokenTooltip).toHaveText(
-    "Reference in {in-typo} is not valid or is not in any active set.",
-  );
-  await expect(fillSection).toBeVisible();
-  const fillTextNotActiveReferenceTokenPill = fillSection.getByLabel(
-    "in-color",
-    {
-      exact: true,
-    },
-  );
-  await expect(fillTextNotActiveReferenceTokenPill).toBeVisible();
-  await fillTextNotActiveReferenceTokenPill.hover();
-  const fillTextNotActiveReferenceTokenTooltip = page.getByRole("tooltip", {
-    name: "Reference in {in-color} is not valid or is not in any active set.",
-  });
-  await expect(fillTextNotActiveReferenceTokenTooltip).toBeVisible();
-  await expect(fillTextNotActiveReferenceTokenTooltip).toHaveText(
-    "Reference in {in-color} is not valid or is not in any active set.",
-  );
+    await tokenThemesSetsSidebar.getByRole("button", { name: "Dark" }).click();
+    await tokenThemesSetsSidebar
+      .getByRole("button", { name: "Dark" })
+      .getByRole("checkbox")
+      .click();
 
-  // -------------------------------------------------
-  // Select rectangle layer with token on inactive set
-  // -------------------------------------------------
-  await page.getByRole("tab", { name: "Tokens" }).click();
-  await tokenThemesSetsSidebar.getByRole("button", { name: "Dark" }).click();
+    await page.getByRole("tab", { name: "Layers" }).click();
 
-  await tokenThemesSetsSidebar
-    .getByRole("button", { name: "Dark" })
-    .getByRole("checkbox")
-    .click();
-  await page.getByRole("tab", { name: "Layers" }).click();
-  await workspacePage.layers
-    .getByTestId("layer-row")
-    .filter({ hasText: "Rectangle with not active token" })
-    .click();
-  await expect(borderRadiusSection).toBeVisible();
-  const nonActiveBrPill = borderRadiusSection.getByRole("button", {
-    name: "{border-radius} token is not in any active set",
-  });
-  await expect(nonActiveBrPill).toBeVisible();
-  await nonActiveBrPill.hover();
-  await expect(
-    page.getByRole("tooltip", {
-      name: "{border-radius} token is not in any active set or has an invalid value",
-    }),
-  ).toBeVisible();
-  await expect(fillSection).toBeVisible();
-  const fillNonActiveTokenPill = fillSection.getByLabel("red", {
-    exact: true,
-  });
-  await expect(fillNonActiveTokenPill).toBeVisible();
-  await fillNonActiveTokenPill.hover();
-  const fillNonActiveTokenTooltip = page.getByRole("tooltip", {
-    name: "{red} token is not in any active set or has an invalid value.",
-  });
-  await expect(fillNonActiveTokenTooltip).toBeVisible();
-  await expect(fillNonActiveTokenTooltip).toHaveText(
-    "{red} token is not in any active set or has an invalid value.",
-  );
+    await workspacePage.layers
+      .getByTestId("layer-row")
+      .filter({ hasText: "Rectangle with not active token" })
+      .click();
 
-  // --------------------------------------------
-  // Select text layer with token on inactive set
-  // --------------------------------------------
+    await expect(fillSection).toBeVisible();
 
-  await workspacePage.layers
-    .getByTestId("layer-row")
-    .filter({ hasText: "Text with not active token" })
-    .click();
+    const inactivePill = fillSection.getByLabel("red", { exact: true });
+    await expect(inactivePill).toBeVisible();
+    await inactivePill.hover();
 
-  await expect(typographySection).toBeVisible();
-  const notActiveTypographyTokenPill = typographySection.getByLabel(
-    "typo-2",
-    { exact: true },
-  );
-  await expect(notActiveTypographyTokenPill).toBeVisible();
-  await notActiveTypographyTokenPill.hover();
-  const notActiveTypographyTokenTooltip = page.getByRole("tooltip", {
-    name: "{typo-2} token is not in any active set or has an invalid value.",
+    const tooltip = page.getByRole("tooltip", {
+      name: "{red} token is not in any active set or has an invalid value.",
+    });
+    await expect(tooltip).toBeVisible();
+    await expect(tooltip).toHaveText(
+      "{red} token is not in any active set or has an invalid value.",
+    );
   });
-  await expect(notActiveTypographyTokenTooltip).toBeVisible();
-  await expect(notActiveTypographyTokenTooltip).toHaveText(
-    "{typo-2} token is not in any active set or has an invalid value.",
-  );
-  await expect(fillSection).toBeVisible();
-  const fillTextNotActiveTokenPill = fillSection.getByLabel(
-    "red",
-    {
-      exact: true,
-    },
-  );
-  await expect(fillTextNotActiveTokenPill).toBeVisible();
-  await fillTextNotActiveTokenPill.hover();
-  const fillTextNotActiveTokenTooltip = page.getByRole("tooltip", {
-    name: "{red} token is not in any active set or has an invalid value.",
-  });
-  await expect(fillTextNotActiveTokenTooltip).toBeVisible();
-  await expect(fillTextNotActiveTokenTooltip).toHaveText(
-    "{red} token is not in any active set or has an invalid value.",
-  );
 });

@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use skia_safe::{self as skia, Canvas, Paint, RRect};
+use skia_safe::{self as skia, Canvas, Matrix, Paint, RRect};
 
 use crate::error::Result;
 use crate::shapes::{
@@ -129,6 +129,8 @@ impl ShapeRenderer for VectorRenderer<'_> {
 
     fn draw_drop_shadows(&mut self, shape: &Shape) -> Result<()> {
         let layer_bounds = shape.layer_bounds();
+        self.canvas.save();
+        clip_out_drop_shadow_underneath(self.canvas, shape, &Matrix::default());
         for shadow in shape.drop_shadows_visible() {
             if let Some(filter) = shadow.get_drop_shadow_blur_filter() {
                 let mut paint = Paint::default();
@@ -150,6 +152,7 @@ impl ShapeRenderer for VectorRenderer<'_> {
                 self.canvas.restore();
             }
         }
+        self.canvas.restore();
         Ok(())
     }
 
@@ -1026,6 +1029,8 @@ fn render_container_drop_shadows(
     opts: &TreeOpts,
 ) -> Result<()> {
     let subtree_bounds = element.extrect(tree, scale);
+    canvas.save();
+    clip_out_drop_shadow_underneath(canvas, element, &element.centered_transform());
     for shadow in element.drop_shadows_visible() {
         let Some(filter) = shadow.get_drop_shadow_blur_filter() else {
             continue;
@@ -1064,7 +1069,17 @@ fn render_container_drop_shadows(
 
         canvas.restore();
     }
+    canvas.restore();
     Ok(())
+}
+
+/// Like CSS `box-shadow`, a drop shadow never shows under its shape.
+/// `local_to_canvas` maps shape-local space to the current canvas space.
+fn clip_out_drop_shadow_underneath(canvas: &Canvas, shape: &Shape, local_to_canvas: &Matrix) {
+    if shape.clears_drop_shadow_underneath() {
+        let path = RenderState::drop_shadow_clear_path(shape).make_transform(local_to_canvas);
+        canvas.clip_path(&path, skia::ClipOp::Difference, true);
+    }
 }
 
 /// `shape` grown by a drop-shadow `spread` for its silhouette, through its own

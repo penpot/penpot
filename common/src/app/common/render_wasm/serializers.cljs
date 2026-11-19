@@ -302,6 +302,16 @@
   [text-direction]
   (untranslate "text-direction" text-direction "ltr"))
 
+(defn translate-list-style-type
+  [list-style-type]
+  (let [values  (unchecked-get wasm/serializers "list-style-type")
+        default (unchecked-get values "none")]
+    (d/nilv (unchecked-get values (d/name list-style-type)) default)))
+
+(defn untranslate-list-style-type
+  [list-style-type]
+  (untranslate "list-style-type" list-style-type "none"))
+
 
 (defn translate-font-style
   [font-style]

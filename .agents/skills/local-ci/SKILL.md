@@ -86,7 +86,7 @@ log path.
 ./scripts/ci --lint frontend
 
 # Changed common/ — validate its consumers too
-./scripts/ci frontend backend exporter
+./scripts/ci common frontend backend exporter
 
 # Preview what would run, without running it
 ./scripts/ci --dry-run --all

@@ -175,17 +175,26 @@
                                 (d/update-when result :error wte/resolve-error-assoc-message)))
                       (rx/subs! (fn [{:keys [error value]}]
                                   (let [touched? (get-in @form [:touched input-name])]
-                                    (when touched?
-                                      (if error
-                                        (let [error' (:message error)]
-                                          (if (csu/group-name-conflict-error? error' token-name)
-                                            (swap! form assoc-in [:extra-errors ""] error')
-                                            (do
-                                              (swap! form assoc-in [:extra-errors input-name] error')
-                                              (reset! hint* {:message error' :type "error"}))))
-                                        (let [message (tr "workspace.tokens.resolved-value" value)]
-                                          (swap! form update :extra-errors dissoc input-name)
-                                          (reset! hint* {:message message :type "hint"}))))))))]
+                                    (cond
+                                      ;; Untouched field (form just opened)
+                                      (not touched?)
+                                      (when (and (not error)
+                                                 (csu/show-hint-on-open? (get-in @form [:data input-name]) value))
+                                        (reset! hint* {:message (tr "workspace.tokens.resolved-value" value)
+                                                       :type "hint"}))
+
+                                      error
+                                      (let [error' (:message error)]
+                                        (if (csu/group-name-conflict-error? error' token-name)
+                                          (swap! form assoc-in [:extra-errors ""] error')
+                                          (do
+                                            (swap! form assoc-in [:extra-errors input-name] error')
+                                            (reset! hint* {:message error' :type "error"}))))
+
+                                      :else
+                                      (let [message (tr "workspace.tokens.resolved-value" value)]
+                                        (swap! form update :extra-errors dissoc input-name)
+                                        (reset! hint* {:message message :type "hint"})))))))]
         (fn []
           (rx/dispose! subs))))
 

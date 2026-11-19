@@ -46,14 +46,13 @@
 
 (t/deftest upload-tempfile-returns-fresh-object-for-same-content
   (let [profile (th/create-profile* 1 {:is-active true})
-        path    (fs/create-tempfile :dir "/tmp/penpot" :prefix "test-upload-tempfile-")
-        _       (io/write* path "content")
+        path    (th/tempfile "backend_tests/test_files/sample.png")
         params  {::th/type :upload-tempfile
                  ::rpc/profile-id (:id profile)
                  :content {:filename "export.png"
                            :path path
                            :mtype "image/png"
-                           :size 7}}
+                           :size (fs/size path)}}
         config  (assoc cf/config :public-uri "https://example.com/penpot")
         out1    (binding [cf/config config]
                   (th/multipart-management-command! params))
@@ -92,9 +91,7 @@
 (t/deftest upload-tempfile-accepts-both-declared-keys
   (let [profile (th/create-profile* 1 {:is-active true})]
     (doseq [key-id [:exporter :media-processor]]
-      (let [path (fs/create-tempfile :dir "/tmp/penpot"
-                                     :prefix (str "test-upload-" (name key-id) "-"))
-            _    (io/write* path "content")
+      (let [path (th/tempfile "backend_tests/test_files/sample.png")
             out  (th/multipart-management-command!
                   {::th/type :upload-tempfile
                    ::rpc/auth-key-id key-id
@@ -102,7 +99,7 @@
                    :content {:filename "export.png"
                              :path path
                              :mtype "image/png"
-                             :size 7}})]
+                             :size (fs/size path)}})]
         (t/is (nil? (:error out)) (name key-id))))))
 
 (t/deftest duplicate-file
@@ -173,6 +170,39 @@
         ;; Check the total number of files
         (let [rows (th/db-query :file {:project-id (:id project)})]
           (t/is (= 3 (count rows))))))))
+
+(t/deftest duplicate-file-does-not-touch-the-source-storage-object
+  (let [profile (th/create-profile* 1 {:is-active true})
+        project (th/create-project* 1 {:team-id (:default-team-id profile)
+                                       :profile-id (:id profile)})
+        file1   (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:id project)})]
+
+    (th/run-task! :offload-file-data {:file-id (:id file1)})
+    (th/run-task! :storage-gc-touched {:skip-delay true})
+
+    (let [sobject (:storage-object-id (th/db-get :file-data {:file-id (:id file1)
+                                                             :id (:id file1)}))]
+      (t/is (uuid? sobject))
+      (t/is (nil? (:touched-at (th/db-get :storage-object {:id sobject}
+                                          {::db/remove-deleted false}))))
+
+      (let [out (th/command! {::th/type :duplicate-file
+                              ::rpc/profile-id (:id profile)
+                              :file-id (:id file1)})]
+        (t/is (nil? (:error out)))
+        (t/is (not (contains? (:result out) :storage-object-id)))
+
+        (t/testing "duplication does not write to the source object"
+          (t/is (nil? (:touched-at (th/db-get :storage-object {:id sobject}
+                                              {::db/remove-deleted false})))))
+
+        (let [file-id (:id (:result out))
+              row     (th/db-get :file-data {:file-id file-id :id file-id})]
+          (t/testing "the new file does not inherit the source pointer"
+            (t/is (= "db" (:backend row)))
+            (t/is (nil? (:storage-object-id row)))
+            (t/is (bytes? (:data row)))))))))
 
 (t/deftest duplicate-file-with-deleted-relations
   (let [storage (-> (:app.storage/storage th/*system*)

@@ -122,9 +122,10 @@ async function fontConvert(
       // FontForge's own lexer uses doubled single quotes for escaping.
       const escInput = inputPath.replace(/'/g, "''");
       const escOutput = outputPath.replace(/'/g, "''");
-      await execCommand("fontforge", ["-lang=ff", "-c", `Open('${escInput}'); Generate('${escOutput}')`], undefined, {
-        signal,
-      });
+      // CID-keyed fonts (common in CJK) load as several sub-fonts and Generate
+      // only writes the active one unless they are merged first.
+      const script = `Open('${escInput}'); if ($cidfontname != ""); CIDFlatten(); endif; Generate('${escOutput}')`;
+      await execCommand("fontforge", ["-lang=ff", "-c", script], undefined, { signal });
       return await readFile(outputPath);
     } catch (err: unknown) {
       const error = err as NodeJS.ErrnoException & { killed?: boolean; signal?: string };

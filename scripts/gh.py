@@ -15,7 +15,7 @@ Subcommands:
 Usage:
   python3 scripts/gh.py issues <milestone-title>            (default: state=closed)
   python3 scripts/gh.py issues "2.16.0" --state all
-  python3 scripts/gh.py issues "2.16.0" --exclude "release blocker,no changelog"
+  python3 scripts/gh.py issues "2.16.0" --exclude "no changelog"
   python3 scripts/gh.py issues "2.16.0" --label "bug"       (include only issues with label)
   python3 scripts/gh.py issues "2.16.0" --label "bug,regression" --exclude "no changelog"
   python3 scripts/gh.py issues "2.16.0" --compare CHANGES.md
@@ -31,6 +31,7 @@ Usage:
   python3 scripts/gh.py comments 11235 11236
   python3 scripts/gh.py advisories                          (list all advisories)
   python3 scripts/gh.py advisories --severity critical      (filter by severity)
+  python3 scripts/gh.py advisories --patched-version 2.19.1 (filter by patched version)
   python3 scripts/gh.py advisories GHSA-xvj6-fh9w-gjw7     (single advisory detail)
   python3 scripts/gh.py link-issue 11235 11243
 
@@ -751,8 +752,10 @@ GQL_ISSUE_BY_NUMBER_QUERY_ITEM = """\
       number
       title
       state
+      body
       milestone {{ title }}
       issueType {{ name }}
+      parent {{ number issueType {{ name }} milestone {{ title }} }}
       labels(first: 20) {{ nodes {{ name }} }}
       assignees(first: 10) {{ nodes {{ login }} }}
       closedByPullRequestsReferences(first: 5) {{ nodes {{ number }} }}
@@ -774,12 +777,19 @@ def issue_node_to_dict(node: dict) -> dict:
     """Convert a GraphQL issue node to the shared issue dict shape."""
     issue_type = node.get("issueType")
     ms = node.get("milestone")
+    parent = node.get("parent")
     return {
         "number": node["number"],
         "title": node["title"],
         "state": node["state"],
+        "body": node.get("body"),
         "milestone": ms["title"] if ms else None,
         "issue_type": issue_type["name"] if issue_type else None,
+        "parent": {
+            "number": parent["number"],
+            "issue_type": (parent.get("issueType") or {}).get("name"),
+            "milestone": (parent.get("milestone") or {}).get("title"),
+        } if parent else None,
         "labels": [lbl["name"] for lbl in node["labels"]["nodes"]],
         "assignees": node_assignees(node),
         "closing_prs": [pr["number"] for pr in node["closedByPullRequestsReferences"]["nodes"]],
@@ -980,6 +990,22 @@ def format_advisory_summary(adv: dict) -> dict:
     }
 
 
+def advisory_patched_versions(adv: dict) -> list[str]:
+    """Return every patched version declared by an advisory's vulnerabilities."""
+    versions: list[str] = []
+    for vuln in adv.get("vulnerabilities", []):
+        for token in re.split(r"[,;]", vuln.get("patched_versions") or ""):
+            token = token.strip()
+            if token and token not in versions:
+                versions.append(token)
+    return versions
+
+
+def advisory_fixed_in_version(adv: dict, version: str) -> bool:
+    """Return True when the advisory declares ``version`` among its patched ones."""
+    return version in advisory_patched_versions(adv)
+
+
 def format_advisory_detail(adv: dict) -> dict:
     """Extract full detail view of an advisory."""
     summary = format_advisory_summary(adv)
@@ -1020,6 +1046,16 @@ def cmd_advisories(args: argparse.Namespace) -> None:
     advisories = fetch_advisories()
     print(f"Fetched {len(advisories)} advisories", file=sys.stderr)
 
+    if args.patched_version:
+        version = args.patched_version.strip()
+        advisories = [
+            adv for adv in advisories if advisory_fixed_in_version(adv, version)
+        ]
+        print(
+            f"After patched-version filter ({version}): {len(advisories)} advisories",
+            file=sys.stderr,
+        )
+
     results = [format_advisory_summary(adv) for adv in advisories]
 
     # Apply filters
@@ -1056,7 +1092,7 @@ def main() -> None:
     )
     p_issues.add_argument(
         "--exclude", "--exclude-labels",
-        help="Comma-separated labels to exclude, e.g. 'release blocker,no changelog'"
+        help="Comma-separated labels to exclude, e.g. 'no changelog'"
     )
     p_issues.add_argument(
         "--label", "--labels",
@@ -1159,6 +1195,10 @@ def main() -> None:
     p_adv.add_argument(
         "--state", choices=["triage", "draft", "published", "closed", "withdrawn"],
         help="Filter by advisory state"
+    )
+    p_adv.add_argument(
+        "--patched-version", type=str,
+        help="Filter by patched version declared in the advisory (e.g. '2.19.1')"
     )
     p_adv.set_defaults(func=cmd_advisories)
 
