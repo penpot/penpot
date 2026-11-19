@@ -223,6 +223,7 @@ async function generateManifest() {
     render_main: "./js/render.js",
     rasterizer_main: "./js/rasterizer.js",
 
+    event_callbacks: "./js/event-callbacks.js?version=" + VERSION_TAG,
     config: "./js/config.js?version=" + VERSION_TAG,
     config_render: "./js/config-render.js?version=" + VERSION_TAG,
     polyfills: "./js/polyfills.js?version=" + VERSION_TAG,
@@ -657,6 +658,13 @@ export async function compilePolyfills() {
 
   await fs.mkdir("./resources/public/js", { recursive: true });
   fs.writeFile("resources/public/js/polyfills.js", result.join("\n"));
+
+  // Host event-callback registry must load before config.js (see
+  // index.mustache). Keep the public copy in sync with the source file.
+  await fs.copyFile(
+    "resources/js/event-callbacks.js",
+    "resources/public/js/event-callbacks.js",
+  );
 
   const end = process.hrtime(start);
   log.info("done: compile polyfills", `(${ppt(end)})`);
