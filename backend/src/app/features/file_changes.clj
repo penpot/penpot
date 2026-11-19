@@ -14,7 +14,8 @@
   (:require
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
-   [app.db :as db]))
+   [app.db :as db]
+   [app.util.blob :as blob]))
 
 (def snapshot-kind
   "The kind of a snapshot row."
@@ -26,24 +27,31 @@
 
 (defn insert-revision!
   "Inserts the revision row of a save on `file`: `changes` is the whole of
-  what the save applied, encoded, and the row expires one hour after
-  `timestamp` (retention, when it comes, is decided here). Every writer of
-  a revision row goes through this function, so that the `kind`, the data
-  `version`, and the `updated_at` the partition runbook copies by are
-  always set. `id` is optional: a save passes the id its audit event
-  carries, so that the event points at the row really inserted."
+  what the save applied, not encoded, and the row expires one hour after
+  `timestamp`. Every writer of a revision row goes through this function,
+  so that the `kind`, the data `version`, the `updated_at` the partition
+  runbook copies by, and the expiry are always set, and so that retention,
+  when it comes, is decided here alone.
+
+  `id` is optional. A save passes the id its audit event carries, so that
+  the event points at the row really inserted. Returns the row's `:id`
+  and `:deleted-at`, so that a caller that writes a companion row for the
+  same revision can give it the same identity and the same expiry."
   [{:keys [::db/conn] :as _cfg} {:keys [version] :as file} timestamp
    {:keys [id session-id profile-id revn changes]}]
-  (db/insert! conn :file-change
-              {:id (or id (uuid/next))
-               :kind revision-kind
-               :session-id session-id
-               :profile-id profile-id
-               :created-at timestamp
-               :updated-at timestamp
-               :deleted-at (ct/plus timestamp (ct/duration {:hours 1}))
-               :file-id (:id file)
-               :revn revn
-               :version version
-               :changes changes}
-              {::db/return-keys false}))
+  (let [id         (or id (uuid/next))
+        deleted-at (ct/plus timestamp (ct/duration {:hours 1}))]
+    (db/insert! conn :file-change
+                {:id id
+                 :kind revision-kind
+                 :session-id session-id
+                 :profile-id profile-id
+                 :created-at timestamp
+                 :updated-at timestamp
+                 :deleted-at deleted-at
+                 :file-id (:id file)
+                 :revn revn
+                 :version version
+                 :changes (blob/encode changes)}
+                {::db/return-keys false})
+    {:id id :deleted-at deleted-at}))

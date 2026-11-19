@@ -377,7 +377,7 @@
                                      {:session-id repair-session-id
                                       :profile-id profile-id
                                       :revn (:revn repair)
-                                      :changes (blob/encode (:changes repair))})
+                                      :changes (:changes repair)})
           (l/wrn :hint "file auto-repaired"
                  :file-id (str (:id file))
                  :error-codes (error-codes (:errors repair))
@@ -395,7 +395,7 @@
                                     :session-id session-id
                                     :profile-id profile-id
                                     :revn (:revn file)
-                                    :changes (blob/encode changes)})
+                                    :changes changes})
         (persist-file! cfg (dissoc file ::repair))
 
         (when (contains? cf/flags :redis-cache)
@@ -883,6 +883,13 @@
       :else
       (throw cause))))
 
+(defn- append-saved-changes
+  "Appends `changes` to `::changes`, the changes the save stores in its
+  revision row, the notification, and the response. The media rewrite
+  goes through it, so a rename of that key meets the rewrite here."
+  [file changes]
+  (update file ::changes into changes))
+
 (defn- media-rewrite-changes
   "The changes of the media reference rewrite: one `:mod-obj` per touched
   shape, setting every attribute the rewrite changed. Appended to the
@@ -970,7 +977,7 @@
             rewrite   (media-rewrite-changes file rewritten media-refs)]
         (cond-> rewritten
           (seq rewrite)
-          (update ::changes into rewrite)))
+          (append-saved-changes rewrite)))
       file)))
 
 (defn- take-snapshot?

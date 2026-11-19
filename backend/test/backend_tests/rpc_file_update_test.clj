@@ -14,6 +14,7 @@
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.config :as cf]
+   [app.db :as db]
    [app.features.file-changes :as fchanges]
    [app.loggers.audit :as-alias audit]
    [app.msgbus :as mbus]
@@ -582,9 +583,31 @@
             "the row carries the file's data version")
       (t/is (= (:created-at row) (:updated-at row)))
       (t/is (= (ct/plus (:created-at row) (ct/duration {:hours 1}))
-
                (:deleted-at row))
             "the row expires an hour after it was stored"))))
+
+;; Scenario: a writer of a companion row for the same revision. Proves:
+;; the revision writer takes the row's id and answers the expiry it set,
+;; so the companion can share the revision's identity and expiry.
+(t/deftest the-revision-writer-answers-the-identity-and-expiry
+  (let [{:keys [file-id]} (create-file)
+        file   (th/db-get :file {:id file-id})
+        id     (uuid/next)
+        now    (ct/inst (inst-ms (ct/now)))
+        out    (db/tx-run! th/*system*
+                           (fn [cfg]
+                             (fchanges/insert-revision! cfg file now
+                                                        {:id id
+                                                         :session-id (uuid/next)
+                                                         :revn 1
+                                                         :changes []})))
+        [row]  (th/db-query :file-change {:file-id file-id :id id})]
+    (t/is (= id (:id out) (:id row)))
+    (t/is (= (ct/plus now (ct/duration {:hours 1}))
+             (:deleted-at out)
+             (:deleted-at row)))
+    (t/is (= [] (blob/decode (:changes row)))
+          "the writer encodes the changes it receives")))
 
 ;; Scenario: a shape references an image of another file. The save copies
 ;; the media object into this file and rewrites the reference. Proves: the
