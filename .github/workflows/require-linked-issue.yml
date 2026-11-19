@@ -1,7 +1,7 @@
 name: Require Linked Issue
 
 # A pull request must have at least one closing-issue reference, unless it
-# carries the `no issue required` label.
+# carries the `no issue required` or `pr pt` label.
 on:
   pull_request:
     types:
@@ -69,10 +69,10 @@ jobs:
           fi
 
           has_exemption=$(echo "$pull_request" | jq -r '
-            .labels.nodes | map(.name) | index("no issue required") != null
+            any(.labels.nodes[]; .name == "no issue required" or .name == "pr pt")
           ')
           if [ "$has_exemption" = "true" ]; then
-            echo 'Label "no issue required" found: linked issue check skipped.'
+            echo 'Exempt label found: linked issue check skipped.'
             exit 0
           fi
 
@@ -82,7 +82,7 @@ jobs:
           ')
 
           if [ -z "$issues" ]; then
-            echo '::error::This pull request must have a linked issue, or the "no issue required" label.'
+            echo '::error::This pull request must have a linked issue, or an exempt label ("no issue required").'
             exit 1
           fi
 
