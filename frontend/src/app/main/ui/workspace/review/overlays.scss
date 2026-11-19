@@ -118,6 +118,11 @@
     --navigator-border-color: var(--color-accent-warning);
   }
 
+  // the grey of the bar at the bottom of the canvas (`.branch-banner`)
+  &.tone-neutral {
+    --navigator-border-color: var(--color-background-quaternary);
+  }
+
   // half a ruler after the middle (`rulers/ruler-area-size`)
   &.has-rulers {
     inset-inline-start: calc(50% + #{px2rem(11)});

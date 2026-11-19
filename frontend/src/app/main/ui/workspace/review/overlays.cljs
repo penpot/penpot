@@ -76,14 +76,16 @@
   and what can be done with it (`children`). It stands over the bar at
   the bottom of the canvas, in the middle of the canvas the rulers leave
   as that bar is, and over its strip when that bar is folded
-  (`is-lowered`)."
+  (`is-lowered`). Its border is blue, unless a `tone` (\"warning\" or
+  \"neutral\") says otherwise."
   [{:keys [class index total tone is-lowered on-previous on-next children] :rest props}]
   (let [rulers? (mf/deref refs/rulers?)
         props (mf/spread-props props
                                {:class [class (stl/css-case :navigator true
                                                             :has-rulers rulers?
                                                             :is-lowered is-lowered
-                                                            :tone-warning (= tone "warning"))]
+                                                            :tone-warning (= tone "warning")
+                                                            :tone-neutral (= tone "neutral"))]
                                 :role "region"})]
     [:> :div props
      [:> icon-button* {:variant "ghost"

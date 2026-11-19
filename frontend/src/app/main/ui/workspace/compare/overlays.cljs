@@ -148,7 +148,7 @@
 
 (mf/defc compare-navigator*
   {::mf/private true}
-  [{:keys [comparison can-peek]}]
+  [{:keys [comparison can-peek is-review]}]
   (let [{:keys [rows selected item phase res attr incoming resolutions]} comparison
         resolving? (= phase :resolve)
         index      (or (first (keep-indexed (fn [idx row]
@@ -174,7 +174,10 @@
                         :index index
                         :is-lowered folded?
                         :total (count rows)
-                        :tone (when (and resolving? (not all-done?)) "warning")
+                        ;; blue inside a review alone
+                        :tone (cond
+                                (and resolving? (not all-done?)) "warning"
+                                (not is-review) "neutral")
                         :aria-label (if resolving?
                                       (tr "workspace.compare.navigator.decisions")
                                       (tr "workspace.compare.navigator.changes"))
@@ -437,4 +440,6 @@
      ;; the bar goes through the list from the entry chosen: with none
      ;; chosen the canvas marks them all and the bar has nothing to say
      (when (some? item)
-       [:> compare-navigator* {:comparison comparison :can-peek wasm?}])]))
+       [:> compare-navigator* {:comparison comparison
+                               :can-peek wasm?
+                               :is-review review?}])]))
