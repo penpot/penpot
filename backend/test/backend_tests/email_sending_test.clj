@@ -456,17 +456,21 @@
       (t/is (= "hello" (:body params)))
       (t/is (= "a@example.com" (:to params))))))
 
+(defn- validation-code
+  [params]
+  (try
+    (emails/send {} params)
+    nil
+    (catch clojure.lang.ExceptionInfo e
+      (-> e ex-data :code))))
+
 (t/deftest send-rejects-invalid-params
-  (t/testing "an invalid address fails before submitting"
-    (t/is (thrown? clojure.lang.ExceptionInfo
-                   (emails/send {} {:to "not-an-email"
-                                    :subject "s"
-                                    :body "b"}))))
-  (t/testing "an invalid body fails before submitting"
-    (t/is (thrown? clojure.lang.ExceptionInfo
-                   (emails/send {} {:to "a@example.com"
-                                    :subject "s"
-                                    :body 42})))))
+  (t/testing "an invalid address fails validation"
+    (t/is (= :data-validation
+             (validation-code {:to "not-an-email" :subject "s" :body "b"}))))
+  (t/testing "an invalid body fails validation"
+    (t/is (= :data-validation
+             (validation-code {:to "a@example.com" :subject "s" :body 42})))))
 
 (t/deftest send-renders-with-factory
   (let [job-def (plain-job-def)

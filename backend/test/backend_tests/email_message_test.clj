@@ -199,15 +199,16 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (t/deftest sendmail-handler-without-flags-does-not-send
-  (let [handler (ig/init-key ::emails/sendmail {})]
-    (t/is (nil? (handler nil {:to "one@example.com"
-                              :subject "subject"
-                              :body "hello"})))))
+  (with-redefs [cf/flags (disj cf/flags :smtp :log-emails)]
+    (let [handler (ig/init-key ::emails/sendmail {})]
+      (t/is (nil? (handler nil {:to "one@example.com"
+                                :subject "subject"
+                                :body "hello"}))))))
 
 (t/deftest sendmail-handler-with-log-emails-dumps-message
   (let [dump    (atom nil)
         handler (ig/init-key ::emails/sendmail {})]
-    (with-redefs [cf/flags (conj cf/flags :log-emails)
+    (with-redefs [cf/flags (-> cf/flags (disj :smtp) (conj :log-emails))
                   l/slf4j-log-handler (fn [_ _ _ record]
                                         (reset! dump (force (::l/message record))))]
       (handler nil {:id :test

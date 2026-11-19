@@ -336,7 +336,7 @@
 
       (th/create-complaint-for pool {:type :complaint
                                      :id (:id profile)
-                                     :created-at (ct/in-past {:days 8})})
+                                     :created-at (ct/in-past {:days 3})})
       (t/testing "a complaint older than the max age does not block sending"
         (t/is (true? (email/allow-send-emails? pool profile))))
 
