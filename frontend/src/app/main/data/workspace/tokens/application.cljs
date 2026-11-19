@@ -24,6 +24,7 @@
    [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
    [app.main.data.notifications :as ntf]
+   [app.main.data.persistence.lock :as plk]
    [app.main.data.style-dictionary :as sd]
    [app.main.data.tokenscript :as ts]
    [app.main.data.workspace.modifiers :as dwm]
@@ -88,12 +89,15 @@
     :cljs))
 
 (defn- geometry-step
-  "`apply-wasm-modifiers` of the modifier tree `tree`, or nil when it is empty."
+  "`apply-wasm-modifiers` of the modifier tree `tree`, or nil when it is empty.
+  It follows token values already committed, so it goes through while saves
+  fail."
   [tree save-undo?]
   (when (seq tree)
     (dwm/apply-wasm-modifiers tree
                               :ignore-touched true
                               :ignore-snap-pixel true
+                              :ignore-save-lock true
                               :derived? true
                               :save-undo? save-undo?
                               ;; The tokens set the copies themselves
@@ -181,9 +185,14 @@
   "Events that commit `changes`, with the new token values of the shapes of
   `page-id`, and announce the texts of the current page that the renderer
   has to measure again. `objects` are the shapes before the changes and
-  `targets` the token attributes that were set."
-  [state changes page-id objects targets]
-  (if (empty? (:redo-changes changes))
+  `targets` the token attributes that were set.
+
+  `derived?` when `changes` hold only values that follow tokens already
+  committed: they go through while saves fail. Otherwise they carry an edit
+  of the user, refused then with the steps that would follow it."
+  [state changes page-id objects targets derived?]
+  (if (or (empty? (:redo-changes changes))
+          (and (not derived?) (plk/locked? state)))
     (rx/empty)
     (let [current?   (= page-id (:current-page-id state))
           wasm?      (features/active-feature? state "render-wasm/v1")
@@ -207,7 +216,7 @@
        (if text-ids
          (rx/of (ptk/data-event :text/reflow {:ids text-ids :page-id page-id}))
          (rx/empty))
-       (rx/of (dch/commit-changes changes))
+       (rx/of (dch/commit-changes (cond-> changes derived? (assoc :ignore-save-lock true))))
        (cond
          (some? geometry)
          (apply-pending-geometry page-id geometry (when one-pass? (vec resize-ids)) save-undo?)
@@ -220,7 +229,8 @@
        (if (and resize-ids (not one-pass?))
          (rx/of (dwwt/resize-wasm-text-all (vec resize-ids)
                                            {:skip-component-sync? true
-                                            :save-undo? save-undo?}))
+                                            :save-undo? save-undo?
+                                            :ignore-save-lock true}))
          (rx/empty))))))
 
 ;; Events to apply / unapply tokens to shapes ------------------------------------------------------------
@@ -296,7 +306,7 @@
                 :from-library from-library}
                (merge (meta it))))
           (dwu/start-undo-transaction undo-id))
-         (commit-token-values state changes (:id page) objects targets)
+         (commit-token-values state changes (:id page) objects targets false)
          (when @mismatch?
            (rx/of (warn-font-variant-not-found)))
          (when (= type :text-decoration)

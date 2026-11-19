@@ -160,6 +160,7 @@
    [frontend-tests.tokens.propagation-test]
    [frontend-tests.tokens.readers-test]
    [frontend-tests.tokens.referenced-token-value-test]
+   [frontend-tests.tokens.save-lock-test]
    [frontend-tests.tokens.shadow-form-test]
    [frontend-tests.tokens.style-dictionary-test]
    [frontend-tests.tokens.theme-create-modal-test]
@@ -404,6 +405,7 @@
    'frontend-tests.tokens.correction-test
    'frontend-tests.tokens.readers-test
    'frontend-tests.tokens.propagation-test
+   'frontend-tests.tokens.save-lock-test
    'frontend-tests.tokens.progress-test
    'frontend-tests.tokens.leader-test
    'frontend-tests.tokens.import-export-test

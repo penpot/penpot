@@ -102,7 +102,9 @@
                   (-> (pcb/empty-changes it)
                       (pcb/set-save-undo? false)
                       (pcb/set-tokens-resolved saved values)
-                      (assoc :tags #{:token-propagation})))))))))
+                      (assoc :tags #{:token-propagation})
+                      ;; Follows the tokens already committed
+                      (assoc :ignore-save-lock true)))))))))
 
 ;; --- Loop guard
 
@@ -227,7 +229,7 @@
 
       editor
       (rx/concat
-       (dwta/commit-token-values state changes page-id objects targets)
+       (dwta/commit-token-values state changes page-id objects targets true)
        (dwtp/clear-thumbnails file-id page-id objects (keys targets) nil))
 
       :else

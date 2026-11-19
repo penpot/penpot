@@ -42,16 +42,6 @@
              (thw/setup-wasm-mocks!))
    :after  thw/teardown-wasm-mocks!})
 
-(defn- watch-commits
-  [store]
-  (let [commits (atom [])]
-    (rx/subs! #(swap! commits conj (deref %))
-              (rx/filter dch/commit? (ptk/input-stream store)))
-    commits))
-
-(def ^:private stop-on-ready
-  (tohs/stop-on ::dwtc/tokens-ready))
-
 (t/deftest a-page-without-tokens-is-ready-when-it-opens
   (t/async
     done
@@ -66,7 +56,7 @@
   (t/async
     done
     (let [store   (ths/setup-store (tohp/setup-file))
-          commits (watch-commits store)]
+          commits (tohp/watch-commits store)]
       (tohs/run-store
        store done [(dwtc/check-page {:opening? true})]
        (fn [state]
@@ -77,7 +67,7 @@
            (t/is (= :local (:source commit)))
            (t/is (false? (:save-undo? commit)) "corrections are not undoable")
            (t/is (contains? (:tags commit) :token-propagation))))
-       stop-on-ready))))
+       tohp/stop-on-ready))))
 
 (t/deftest a-long-correction-blocks-the-workspace-first
   (t/async
@@ -100,14 +90,14 @@
          (t/is (= [[:add 1] :show] (take 2 (remove #{:commit} @events)))
                "the dialog shows before the values are set")
          (t/is (= [:done 1] (last @events))))
-       stop-on-ready))))
+       tohp/stop-on-ready))))
 
 (t/deftest readers-set-the-values-in-memory
   (t/async
     done
     (let [store   (ths/setup-store (tohp/setup-file))
           _       (swap! store assoc :permissions {:can-edit false})
-          commits (watch-commits store)]
+          commits (tohp/watch-commits store)]
       (tohs/run-store
        store done [(dwtc/check-page {:opening? true})]
        (fn [state]
@@ -115,7 +105,7 @@
            (t/is (= 50 (:r1 (cths/get-shape file' :stale))))
            (t/is (= 10 (:r1 (cths/get-shape file' :legacy))) "readers trust unassigned values")
            (t/is (every? #(= :in-memory (:source %)) @commits) "nothing is saved")))
-       stop-on-ready))))
+       tohp/stop-on-ready))))
 
 (defn- answer-from-another-session
   "Set the radius of `id` back to 10, as a session that resolves the token
@@ -144,7 +134,7 @@
   (t/async
     done
     (let [store   (ths/setup-store (tohp/setup-file))
-          commits (watch-commits store)
+          commits (tohp/watch-commits store)
           stale   (cthi/id :stale)]
       (tohs/run-store
        store done [(dwtc/check-page {:ids [stale]})
@@ -176,7 +166,7 @@
     done
     (let [file    (tohp/setup-file)
           store   (ths/setup-store file)
-          commits (watch-commits store)
+          commits (tohp/watch-commits store)
           stale   (cthi/id :stale)]
       (tohs/run-store
        store done [(dwtc/initialize (:id file))
@@ -222,7 +212,7 @@
   (t/async
     done
     (let [store   (with-two-editors (tohp/setup-file) false)
-          commits (watch-commits store)]
+          commits (tohp/watch-commits store)]
       (tohs/run-store
        store done [(dwtc/check-page {:remote? true})]
        (fn [_]
@@ -233,7 +223,7 @@
   (t/async
     done
     (let [store    (with-two-editors (tohp/setup-file) true)
-          commits  (watch-commits store)
+          commits  (tohp/watch-commits store)
           persists (watch-event store :app.main.data.persistence/force-persist)]
       (tohs/run-store
        store done [(dwtc/check-page {:remote? true})]
@@ -241,7 +231,7 @@
          (t/is (= 50 (:r1 (cths/get-shape (ths/get-file-from-state state) :stale))))
          (t/is (some (fn [commit] (some #(= :set-tokens-resolved (:type %)) (:redo-changes commit))) @commits))
          (t/is (= 1 (count @persists)) "the others wait for these values"))
-       stop-on-ready))))
+       tohp/stop-on-ready))))
 
 (t/deftest the-tokens-are-resolved-again-only-when-they-change
   (t/async
@@ -299,7 +289,7 @@
           page-id (cthf/current-page-id file)
           store   (ths/setup-store file)
           _       (swap! store assoc :features #{"render-wasm/v1"})
-          commits (watch-commits store)
+          commits (tohp/watch-commits store)
           before  (atom nil)
           ;; the renderer loads the shapes of the page a while after it opens
           loaded  (ptk/reify ::loaded
@@ -352,9 +342,9 @@
        store done [(dwtc/check-page {:opening? true})]
        (fn [_]
          (set! dwwt/resize-wasm-text-all resize)
-         (t/is (= [{:skip-component-sync? true :save-undo? false}] @calls)
-               "the copies get their values from the tokens and nothing is undoable"))
-       stop-on-ready))))
+         (t/is (= [{:skip-component-sync? true :save-undo? false :ignore-save-lock true}] @calls)
+               "the copies get their values from the tokens, nothing is undoable and it follows them while saves fail"))
+       tohp/stop-on-ready))))
 
 (t/deftest the-texts-are-resized-in-the-pass-of-the-sizes
   (t/async
@@ -411,7 +401,7 @@
          (t/is (= 0 @resized) "no second pass")
          (t/is (= [[{text-id {:modifiers :measured}} false]] @passes)
                "the text gets its measured size in a single pass, not undoable"))
-       stop-on-ready))))
+       tohp/stop-on-ready))))
 
 (t/deftest only-the-texts-the-renderer-resizes-wait-for-it
   (t/async
@@ -454,7 +444,7 @@
                  "both texts are set")
            (t/is (= #{(cthi/id :sized)} @reflows)
                  "a new color leaves the size of the text as it is")))
-       stop-on-ready))))
+       tohp/stop-on-ready))))
 
 ;; --- Values for the readers
 
@@ -467,7 +457,7 @@
        (fn [state]
          (t/is (= {"radius" 50}
                   (:tokens-resolved (:data (ths/get-file-from-state state))))))
-       stop-on-ready))))
+       tohp/stop-on-ready))))
 
 (t/deftest lazy-changes-drain-the-other-pages
   (t/async
@@ -477,7 +467,7 @@
           store   (ths/setup-store file)
           token   (ctob/get-token (ctht/get-tokens-lib file) (cthi/id :set) (cthi/id :radius))
           other   (cthi/id :other)
-          commits (watch-commits store)]
+          commits (tohp/watch-commits store)]
       (tohs/run-store
        store done [(dwtl/update-token (cthi/id :set) (cthi/id :radius) (assoc token :value 70))]
        (fn [state]
@@ -603,7 +593,7 @@
                        (cthc/instantiate-component :component1 :copy-root :library library)
                        (with-radius :copy-root 50))
           store    (ths/setup-store consumer {:libraries [library]})
-          commits  (watch-commits store)
+          commits  (tohp/watch-commits store)
           copy-id  (cthi/id :copy-root)]
       (run-correction
        store done consumer [(dwl/sync-file (:id consumer) (:id library))]
@@ -628,7 +618,7 @@
                       (cthc/instantiate-component :component1 :copy-root)
                       (with-radius :copy-root 50))
           store   (ths/setup-store file)
-          commits (watch-commits store)
+          commits (tohp/watch-commits store)
           copy-id (cthi/id :copy-root)]
       (run-correction
        store done file [(dwl/reset-component copy-id)]
@@ -658,4 +648,4 @@
          (set! dwta/commit-token-values commit)
          (t/is (= [[:add 1] [:done 1]] @events) "the dialog closes")
          (t/is (empty? (::dwtc/guard state)) "the shapes are not taken as set"))
-       stop-on-ready))))
+       tohp/stop-on-ready))))

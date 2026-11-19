@@ -110,14 +110,16 @@
 
 (defn- merge-resize-debounce-opts
   "Merge the options of a request into its batch. The batch records no undo
-  step, or skips the component sync, only when every request in it asked
-  for that, so a user resize that lands in the same window keeps its undo
-  entry and still reaches the copies."
-  [prev {:keys [undo-group undo-id skip-component-sync? save-undo?]}]
-  (let [prev (or prev {:skip-component-sync? true :save-undo? false})]
+  step, skips the component sync, or goes through the save lock only when
+  every request in it asked for that, so a user resize that lands in the
+  same window keeps its undo entry, still reaches the copies and is still
+  refused while saves fail."
+  [prev {:keys [undo-group undo-id skip-component-sync? save-undo? ignore-save-lock]}]
+  (let [prev (or prev {:skip-component-sync? true :save-undo? false :ignore-save-lock true})]
     (cond-> (assoc prev
                    :skip-component-sync? (and (:skip-component-sync? prev) (boolean skip-component-sync?))
-                   :save-undo?           (or (:save-undo? prev) (not (false? save-undo?))))
+                   :save-undo?           (or (:save-undo? prev) (not (false? save-undo?)))
+                   :ignore-save-lock     (and (:ignore-save-lock prev) (boolean ignore-save-lock)))
       (some? undo-group) (assoc :undo-group undo-group)
       (some? undo-id)    (assoc :undo-id undo-id))))
 
@@ -127,7 +129,8 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [ids (get state ::resize-wasm-text-debounce-ids)
-            {:keys [undo-group undo-id skip-component-sync? save-undo?]} (get state ::resize-wasm-text-debounce-opts)
+            {:keys [undo-group undo-id skip-component-sync? save-undo? ignore-save-lock]}
+            (get state ::resize-wasm-text-debounce-opts)
             objects (dsh/lookup-page-objects state)
 
             modifiers
@@ -151,7 +154,8 @@
                          (some? undo-group) (assoc :undo-group undo-group)
                          extend-tx? (assoc :undo-transation? false)
                          skip-component-sync? (assoc :skip-component-sync? true)
-                         (false? save-undo?) (assoc :save-undo? false))]
+                         (false? save-undo?) (assoc :save-undo? false)
+                         ignore-save-lock (assoc :ignore-save-lock true))]
         (cond
           (not (empty? modifiers))
           (if extend-tx?

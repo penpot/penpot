@@ -225,7 +225,8 @@
     {:as props
      :keys [reg-objects? save-undo? stack-undo? attrs ignore-tree page-id
             ignore-touched undo-group with-objects? changed-sub-attr changed-item-index translation?
-            skip-grid-reassignment? skip-component-sync? moved-bool-ids derived? resize-ids]
+            skip-grid-reassignment? skip-component-sync? moved-bool-ids derived? resize-ids
+            ignore-save-lock]
      :or {reg-objects? false
           save-undo? true
           stack-undo? false
@@ -287,7 +288,9 @@
               (rx/empty))
 
             (if (seq (:redo-changes changes))
-              (let [changes (cond-> changes reg-objects? (pcb/resize-parents (or resize-ids ids) moved-bool-ids))]
+              (let [changes (cond-> changes
+                              reg-objects?     (pcb/resize-parents (or resize-ids ids) moved-bool-ids)
+                              ignore-save-lock (assoc :ignore-save-lock true))]
                 (rx/of (dch/commit-changes changes)))
               (rx/empty))
 

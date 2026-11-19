@@ -26,6 +26,7 @@
    [app.main.data.changes :as dch]
    [app.main.data.helpers :as dsh]
    [app.main.data.persistence :as-alias dps]
+   [app.main.data.persistence.lock :as plk]
    [app.main.data.workspace.thumbnails :as dwt]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.lookup :as lookup]
@@ -169,7 +170,8 @@
   them when `changed` is nil. With `:thumbnails-only?` no shape is set: the
   page is set when it is opened or read, and the thumbnails of its frames
   `frame-ids` and main components `main-ids` that are left out of date are
-  cleared. With `:background?` the commit is not undoable."
+  cleared. With `:background?` the commit is not undoable. The commit only
+  follows tokens already committed, so it goes through while saves fail."
   [it state resolved-tokens changed
    {:keys [page-id root-ids save-resolved? thumbnails-only? main-ids frame-ids drain? background?
            undo-group]
@@ -223,7 +225,7 @@
         (keep #(when (= :mod-obj (:type %)) (:id %)) (:redo-changes changes))]
 
     (rx/concat
-     (dwta/commit-token-values state changes page-id objects targets)
+     (dwta/commit-token-values state changes page-id objects targets true)
      (clear-thumbnails file-id page-id objects changed-ids nil)
      (if thumbnails-only?
        (stale-thumbnails file-id page-id objects frame-ids main-ids changed)
@@ -525,12 +527,14 @@
 
 (defn commit-token-changes
   "Commit `changes`, a change of the tokens, at once, and then set the
-  shapes to the new values; one undo step reverts both."
+  shapes to the new values; one undo step reverts both. While saves fail
+  the change is refused, and nothing follows it."
   [changes]
   (ptk/reify ::commit-token-changes
     ptk/WatchEvent
     (watch [_ state _]
-      (when (seq (:redo-changes changes))
+      (when (and (seq (:redo-changes changes))
+                 (not (plk/locked? state)))
         (let [undo-group (d/nilv (:undo-group changes) (uuid/next))]
           (rx/of (dch/commit-changes (-> changes
                                          (assoc :undo-group undo-group)

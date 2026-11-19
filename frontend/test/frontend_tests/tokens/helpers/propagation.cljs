@@ -14,7 +14,12 @@
    [app.common.test-helpers.tokens :as ctht]
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.tokens-status :as ctos]
-   [app.config :as cf]))
+   [app.config :as cf]
+   [app.main.data.changes :as dch]
+   [app.main.data.workspace.tokens.correction :as dwtc]
+   [beicon.v2.core :as rx]
+   [frontend-tests.tokens.helpers.state :as tohs]
+   [potok.v2.core :as ptk]))
 
 (defn setup-file
   []
@@ -37,6 +42,16 @@
       ;; from before the values were kept
       (ctho/add-frame :legacy)
       (ctht/apply-token-to-shape :legacy "radius" [:r1] [:r1] 10)))
+
+(defn watch-commits
+  [store]
+  (let [commits (atom [])]
+    (rx/subs! #(swap! commits conj (deref %))
+              (rx/filter dch/commit? (ptk/input-stream store)))
+    commits))
+
+(def stop-on-ready
+  (tohs/stop-on ::dwtc/tokens-ready))
 
 (defn setup-file-with-pages
   "`setup-file` with a second page that has a board and a main component
