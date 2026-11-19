@@ -11,6 +11,7 @@ repository via GraphQL and REST APIs through the authenticated `gh` CLI.
 - Comparing milestone issues against CHANGES.md to find missing entries.
 - Explicitly linking a GitHub issue to a pull request.
 - Creating an issue with its Issue Type set in a single command.
+- Creating a pull request with optional issue linking in a single command.
 - Listing or inspecting GitHub Security Advisories (GHSA).
 - Fetching issue comments (the `## Breaking change note` markdown for the changelog).
 
@@ -123,6 +124,40 @@ python3 scripts/gh.py create-issue --type bug --title "..." \
 `--type` is a name from the Issue Type table in `mem:workflow/creating-issues` (`bug`, `enhancement`, `feature`, `task`, `question`, `docs`, `epic`); it is case-insensitive and the ID mapping lives in `ISSUE_TYPE_IDS` in `scripts/gh.py`. The command prints JSON with `number`, `url`, `title` and `issue_type` to stdout, and progress to stderr. If the type assignment fails after creation, the issue is left in place and the error reports its number and URL so it can be fixed by hand. This shortcut does not replace the workflow in `mem:workflow/creating-issues`: title derivation, body templates and verification still follow that memory.
 
 **Output**: JSON object on stdout; progress and errors on stderr. A bad type, a `gh` failure, or a type that was not applied exits non-zero.
+
+### `create-pr`
+
+Create a pull request and optionally link its issue in one command.
+
+```bash
+python3 scripts/gh.py create-pr \
+  --title "Expand backend email tests" --body-file /tmp/pr-body.md \
+  [--issue 13202] [--base staging] [--head issue-13202] \
+  [--project Main] [--draft]
+```
+
+`gh pr create` is run with `--repo penpot/penpot`, `--base`, `--head`,
+`--title`, `--project` (default `Main`) and `--body-file`, plus `--draft`
+when requested.
+`--base` defaults to `detect_target_branch()`, a port of
+`scripts/detect-target-branch` that uses `git name-rev` plus a graph-walk
+fallback; it is local-only and needs no network. It strips trailing `~`/`^`
+suffixes and `remotes/<remote>/`, `heads/`, `refs/heads/` and `tags/` prefixes,
+then checks the result is a local branch. If it is not, the command fails with
+`detected base '<name>' is not a local branch; pass --base explicitly`, and the
+caller retries with that `--base`. Pass `--base` to override the detection.
+`--head` defaults to the current branch. The PR number is parsed
+from the URL returned by `gh`. The URL is printed to stderr immediately, before
+any issue linking. When `--issue N` is given, the command calls
+`link_issue_to_pr(N, PR)` after creation; a failure there leaves the PR in
+place and exits non-zero with the URL in the error message.
+
+**Output**: JSON object on stdout with `number`, `url`, `title`, `base`,
+`head` and `linked_issue`; progress and errors on stderr. A blank title, an
+undetectable base, a URL without a number or a `gh` failure exits non-zero.
+The command does not check authentication or push state: `gh` reports those
+errors itself. Keep `scripts/detect-target-branch` and `detect_target_branch`
+in sync — the heuristic is implemented twice by decision.
 
 ### `advisories`
 

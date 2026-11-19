@@ -12,6 +12,7 @@ Subcommands:
   advisories  List or inspect GitHub security advisories
   link-issue  Explicitly link a GitHub issue to a pull request
   create-issue  Create an issue and set its Issue Type in one command
+  create-pr   Create a pull request, optionally linking its issue
 
 Usage:
   python3 scripts/gh.py issues <milestone-title>            (default: state=closed)
@@ -37,6 +38,8 @@ Usage:
   python3 scripts/gh.py link-issue 11235 11243
   python3 scripts/gh.py create-issue --type task \
       --title "Expand backend email tests" --body-file /tmp/issue-body.md
+  python3 scripts/gh.py create-pr --title "Expand backend email tests" \
+      --body-file /tmp/pr-body.md --issue 13202 [--base staging]
 
 Prerequisites:
   - gh CLI authenticated (gh auth status)
@@ -133,6 +136,17 @@ def run_gh_rest(path: str) -> Any:
         return json.loads(run_gh_command(["gh", "api", path]))
     except GhCommandFailed as err:
         fail_gh(err.stderr)
+
+
+def run_git(*args: str) -> str:
+    """Run a ``git`` command and return its stripped stdout.
+
+    Raises `GhCommandFailed` on failure so callers can degrade gracefully.
+    """
+    result = subprocess.run(["git", *args], capture_output=True, text=True)
+    if result.returncode != 0:
+        raise GhCommandFailed(result.stderr)
+    return result.stdout.strip()
 
 
 # ─────────────────────────────────────────────
@@ -252,6 +266,166 @@ def cmd_create_issue(args: argparse.Namespace) -> None:
         sys.exit(1)
 
     print(f"Created issue #{result['number']}: {result['url']}", file=sys.stderr)
+    print(json.dumps(result, indent=2))
+
+
+# ─────────────────────────────────────────────
+#  Subcommand: create-pr
+# ─────────────────────────────────────────────
+
+PR_URL_RE = re.compile(r"/pull/(\d+)")
+
+
+def normalize_branch_ref(ref: str) -> str:
+    """Turn a ``git name-rev`` description into a local branch name.
+
+    ``name-rev`` can return ``remotes/origin/staging~1``, ``develop^2~1`` or
+    ``tags/v2.0``; none of them is a valid ``--base`` value.
+    """
+    name = re.split(r"[~^]", ref.strip(), maxsplit=1)[0]
+    for prefix in ("refs/heads/", "heads/"):
+        if name.startswith(prefix):
+            return name[len(prefix):]
+    if name.startswith("remotes/"):
+        name = name[len("remotes/"):]
+        return name.split("/", 1)[1] if "/" in name else ""
+    if name.startswith("tags/"):
+        return name[len("tags/"):]
+    return name
+
+
+def local_branch_exists(name: str) -> bool:
+    """Return whether ``name`` is a local branch (no network involved)."""
+    try:
+        run_git("show-ref", "--verify", "--quiet", f"refs/heads/{name}")
+        return True
+    except GhCommandFailed:
+        return False
+
+
+def detect_target_branch() -> str:
+    """Return the nearest ancestor branch of HEAD, using only local git.
+
+    Port of ``scripts/detect-target-branch``: ``git name-rev`` picks the
+    closest ref and a graph walk is the fallback when it resolves to the
+    current branch. The result is normalized and checked against the local
+    branches because ``name-rev`` describes refs, not branch names.
+    """
+    current = run_git("rev-parse", "--abbrev-ref", "HEAD")
+    try:
+        raw = run_git("name-rev", "--name-only", "HEAD")
+    except GhCommandFailed:
+        raw = ""
+    target = normalize_branch_ref(raw) if raw else ""
+    if not target or target == current:
+        target = ""
+        for commit in run_git("rev-list", "HEAD").splitlines():
+            branches = run_git(
+                "branch", "--points-at", commit, "--format=%(refname:short)"
+            ).splitlines()
+            found = next(
+                (
+                    branch.strip()
+                    for branch in branches
+                    if branch.strip() and branch.strip() != current
+                ),
+                None,
+            )
+            if found:
+                target = normalize_branch_ref(found)
+                break
+    if not target:
+        raise RuntimeError("unable to determine target branch")
+    if not local_branch_exists(target):
+        raise RuntimeError(
+            f"detected base {target!r} is not a local branch; pass --base explicitly"
+        )
+    return target
+
+
+def create_pr(
+    title: str,
+    body_file: str,
+    base: str | None = None,
+    head: str | None = None,
+    issue_number: int | None = None,
+    project: str = "Main",
+    draft: bool = False,
+) -> dict:
+    """Create a PR and optionally link its issue in one sequence of calls.
+
+    The base defaults to the nearest ancestor branch of HEAD and the head to
+    the current branch, so the caller only needs to supply the title and the
+    body. A failed issue link leaves the PR in place and reports its URL.
+    """
+    if not title.strip():
+        raise ValueError("pull request title must not be empty")
+    resolved_base = (base or detect_target_branch()).strip()
+    if not resolved_base:
+        raise ValueError("pull request base must not be empty")
+    resolved_head = (head or run_git("rev-parse", "--abbrev-ref", "HEAD")).strip()
+
+    cmd = [
+        "gh", "pr", "create",
+        "--repo", REPO,
+        "--base", resolved_base,
+        "--head", resolved_head,
+        "--title", title,
+        "--project", project,
+        "--body-file", body_file,
+    ]
+    if draft:
+        cmd.append("--draft")
+    stdout = run_gh_command(cmd)
+    url = stdout.strip().splitlines()[-1].strip()
+    match = PR_URL_RE.search(url)
+    if not match:
+        raise RuntimeError(
+            f"could not read PR number from gh output: {url!r};"
+            " check whether the PR was created"
+        )
+    number = int(match.group(1))
+    print(f"Created PR #{number}: {url}", file=sys.stderr)
+
+    linked_issue = None
+    if issue_number is not None:
+        try:
+            link_issue_to_pr(issue_number, number)
+        except SystemExit:
+            raise RuntimeError(
+                f"issue linking failed; the PR was created at {url}"
+            ) from None
+        except (ValueError, RuntimeError) as error:
+            raise RuntimeError(f"{error}; the PR was created at {url}") from error
+        linked_issue = issue_number
+
+    return {
+        "number": number,
+        "url": url,
+        "title": title,
+        "base": resolved_base,
+        "head": resolved_head,
+        "linked_issue": linked_issue,
+    }
+
+
+def cmd_create_pr(args: argparse.Namespace) -> None:
+    """Handle the ``create-pr`` subcommand."""
+    print("Creating pull request...", file=sys.stderr)
+    try:
+        result = create_pr(
+            args.title,
+            args.body_file,
+            base=args.base,
+            head=args.head,
+            issue_number=args.issue,
+            project=args.project,
+            draft=args.draft,
+        )
+    except (ValueError, RuntimeError, GhCommandFailed) as error:
+        print(f"ERROR: {error}", file=sys.stderr)
+        sys.exit(1)
+
     print(json.dumps(result, indent=2))
 
 
@@ -1290,6 +1464,33 @@ def main() -> None:
         "--label", help="Comma-separated labels to add, e.g. 'breaking change'"
     )
     p_create.set_defaults(func=cmd_create_issue)
+
+    # --- create-pr ---
+    p_create_pr = sub.add_parser(
+        "create-pr",
+        help="Create a pull request, optionally linking its issue",
+    )
+    p_create_pr.add_argument("--title", required=True, help="Pull request title")
+    p_create_pr.add_argument(
+        "--body-file", required=True,
+        help="Path to the file holding the Markdown body",
+    )
+    p_create_pr.add_argument(
+        "--base", help="Base branch (default: nearest ancestor branch of HEAD)"
+    )
+    p_create_pr.add_argument(
+        "--head", help="Head branch (default: current branch)"
+    )
+    p_create_pr.add_argument(
+        "--issue", type=int, help="Issue number to link to the new PR"
+    )
+    p_create_pr.add_argument(
+        "--draft", action="store_true", help="Create the PR as a draft"
+    )
+    p_create_pr.add_argument(
+        "--project", default="Main", help="Project to add the PR to (default: Main)"
+    )
+    p_create_pr.set_defaults(func=cmd_create_pr)
 
     # --- issue (by-number lookup) ---
     p_issue = sub.add_parser(

@@ -10,13 +10,15 @@ PR only on explicit request.
 
 ## Target Branch
 
-Auto-detect the base branch with `scripts/detect-target-branch`:
-
-```bash
-TARGET=$(scripts/detect-target-branch)
-```
-
-This outputs `staging` or `develop` by walking the local commit graph (pure local, no remote/network). Do not ask the user for the target branch unless the tool fails.
+The `create-pr` shortcut detects the base branch automatically: it ports the
+heuristic of `scripts/detect-target-branch` into `detect_target_branch()` in
+`scripts/gh.py` (local commit graph, no remote/network), usually yielding
+`staging` or `develop`. Do not ask the user for the target branch unless the
+command fails. Pass `--base` only when the detected branch is not the one
+wanted; explicit user context overrides the detection. If detection fails
+with `detected base '<name>' is not a local branch; pass --base explicitly`,
+rerun with `--base <name>` using the name from the error; do not ask the
+user and do not add pre-flight checks for this case.
 
 ## Metadata
 
@@ -107,20 +109,22 @@ When the PR requests a regular merge instead of a squash merge, its
 
 ## Creating the PR
 
+Write the body to a temp file and run the shortcut. It detects the base, runs
+`gh pr create` with `--project Main`, parses the PR number and, with
+`--issue N`, creates the explicit issue link (see `mem:scripts/gh`):
+
 ```bash
 cat > /tmp/pr-body.md << 'PR_BODY'
 <body content here>
 PR_BODY
 
-TARGET=$(scripts/detect-target-branch)
-
-gh pr create \
-  --repo penpot/penpot \
-  --base "$TARGET" \
-  --head <branch> \
-  --title "<title>" \
-  --project "Main" \
-  --body-file /tmp/pr-body.md
+python3 scripts/gh.py create-pr \
+  --title "<title>" --body-file /tmp/pr-body.md \
+  [--issue NNNN] [--base <branch>] [--project <project>]
 
 rm -f /tmp/pr-body.md
 ```
+
+Do not pre-check authentication, push state or an existing PR: the command
+and `gh` report those errors. Never push yourself; ask the user if the
+command reports that the branch was not pushed.

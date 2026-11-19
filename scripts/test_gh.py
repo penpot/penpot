@@ -179,6 +179,333 @@ class CreateIssueTests(unittest.TestCase):
         self.assertIn("boom", stderr.getvalue())
 
 
+class CreatePrBaseDetectionTests(unittest.TestCase):
+    @staticmethod
+    def fake_git(mapping):
+        def run(*args):
+            return mapping.get(args, "")
+        return run
+
+    def test_normalize_branch_ref(self):
+        cases = [
+            ("remotes/origin/staging~2", "staging"),
+            ("develop^2~1", "develop"),
+            ("tags/v2.0", "v2.0"),
+            ("refs/heads/topic~1", "topic"),
+            ("heads/topic", "topic"),
+        ]
+        for raw, expected in cases:
+            with self.subTest(raw=raw):
+                self.assertEqual(gh.normalize_branch_ref(raw), expected)
+
+    @patch.object(gh, "run_git")
+    def test_detects_normalized_base_and_validates_it(self, run_git):
+        calls = []
+
+        def fake(*args):
+            calls.append(args)
+            if args == ("rev-parse", "--abbrev-ref", "HEAD"):
+                return "topic"
+            if args == ("name-rev", "--name-only", "HEAD"):
+                return "remotes/origin/staging~2"
+            return ""
+        run_git.side_effect = fake
+
+        self.assertEqual(gh.detect_target_branch(), "staging")
+        self.assertIn(
+            ("show-ref", "--verify", "--quiet", "refs/heads/staging"), calls
+        )
+
+    @patch.object(gh, "run_git")
+    def test_rejects_detected_base_without_local_branch(self, run_git):
+        def fake(*args):
+            if args == ("rev-parse", "--abbrev-ref", "HEAD"):
+                return "topic"
+            if args == ("name-rev", "--name-only", "HEAD"):
+                return "tags/v2.0"
+            if args[:1] == ("show-ref",):
+                raise gh.GhCommandFailed("not found")
+            return ""
+        run_git.side_effect = fake
+
+        with self.assertRaisesRegex(RuntimeError, "pass --base"):
+            gh.detect_target_branch()
+
+    @patch.object(gh, "run_git")
+    def test_detects_base_from_name_rev(self, run_git):
+        run_git.side_effect = self.fake_git({
+            ("rev-parse", "--abbrev-ref", "HEAD"): "issue-13202",
+            ("name-rev", "--name-only", "HEAD"): "staging~3",
+        })
+
+        self.assertEqual(gh.detect_target_branch(), "staging")
+
+    @patch.object(gh, "run_git")
+    def test_falls_back_to_graph_walk(self, run_git):
+        def fake(*args):
+            if args == ("rev-parse", "--abbrev-ref", "HEAD"):
+                return "issue-13202"
+            if args == ("name-rev", "--name-only", "HEAD"):
+                return "issue-13202"
+            if args == ("rev-list", "HEAD"):
+                return "a\nb\nc\n"
+            if args[:2] == ("branch", "--points-at"):
+                return "staging\n" if args[2] == "b" else ""
+            return ""
+        run_git.side_effect = fake
+
+        self.assertEqual(gh.detect_target_branch(), "staging")
+
+    @patch.object(gh, "run_git")
+    def test_tolerates_name_rev_failure(self, run_git):
+        def fake(*args):
+            if args == ("name-rev", "--name-only", "HEAD"):
+                raise gh.GhCommandFailed("boom")
+            if args == ("rev-parse", "--abbrev-ref", "HEAD"):
+                return "topic"
+            if args == ("rev-list", "HEAD"):
+                return "a\n"
+            if args[:2] == ("branch", "--points-at"):
+                return "staging\n"
+            return ""
+        run_git.side_effect = fake
+
+        self.assertEqual(gh.detect_target_branch(), "staging")
+
+    @patch.object(gh, "run_git")
+    def test_raises_when_no_other_branch(self, run_git):
+        run_git.side_effect = self.fake_git({
+            ("rev-parse", "--abbrev-ref", "HEAD"): "topic",
+            ("name-rev", "--name-only", "HEAD"): "",
+            ("rev-list", "HEAD"): "a\n",
+        })
+
+        with self.assertRaisesRegex(RuntimeError, "unable to determine target branch"):
+            gh.detect_target_branch()
+
+
+class CreatePrTests(unittest.TestCase):
+    def setUp(self):
+        self.url = "https://github.com/penpot/penpot/pull/13204"
+        self.create_response = self.url + "\n"
+
+    def args(self, **overrides):
+        values = dict(
+            title="A title",
+            body_file="/tmp/pr-body.md",
+            base=None,
+            head=None,
+            issue=None,
+            project="Main",
+            draft=False,
+        )
+        values.update(overrides)
+        return types.SimpleNamespace(**values)
+
+    @patch.object(gh, "link_issue_to_pr")
+    @patch.object(gh, "run_gh_command")
+    @patch.object(gh, "run_git")
+    @patch.object(gh, "detect_target_branch")
+    def test_create_pr_detects_base_and_links_issue(
+        self, detect, run_git, run_command, link_issue
+    ):
+        detect.return_value = "staging"
+        run_git.return_value = "issue-13202"
+        run_command.return_value = self.create_response
+
+        with contextlib.redirect_stderr(io.StringIO()):
+            result = gh.create_pr(
+                "A title", "/tmp/pr-body.md", issue_number=13202
+            )
+
+        self.assertEqual(result, {
+            "number": 13204,
+            "url": self.url,
+            "title": "A title",
+            "base": "staging",
+            "head": "issue-13202",
+            "linked_issue": 13202,
+        })
+        self.assertEqual(run_command.call_args.args[0], [
+            "gh", "pr", "create",
+            "--repo", "penpot/penpot",
+            "--base", "staging",
+            "--head", "issue-13202",
+            "--title", "A title",
+            "--project", "Main",
+            "--body-file", "/tmp/pr-body.md",
+        ])
+        link_issue.assert_called_once_with(13202, 13204)
+        detect.assert_called_once_with()
+
+    @patch.object(gh, "run_gh_command")
+    @patch.object(gh, "run_git")
+    @patch.object(gh, "detect_target_branch")
+    def test_create_pr_uses_explicit_base(self, detect, run_git, run_command):
+        run_git.return_value = "topic"
+        run_command.return_value = self.create_response
+
+        with contextlib.redirect_stderr(io.StringIO()):
+            result = gh.create_pr("T", "/tmp/pr-body.md", base="release/1.0")
+
+        self.assertEqual(result["base"], "release/1.0")
+        detect.assert_not_called()
+        cmd = run_command.call_args.args[0]
+        self.assertEqual(cmd[cmd.index("--base") + 1], "release/1.0")
+
+    @patch.object(gh, "run_gh_command")
+    @patch.object(gh, "detect_target_branch", return_value="staging")
+    def test_create_pr_passes_head_and_draft(self, _detect, run_command):
+        run_command.return_value = self.create_response
+
+        with contextlib.redirect_stderr(io.StringIO()):
+            result = gh.create_pr(
+                "T", "/tmp/pr-body.md", head="custom", draft=True
+            )
+
+        cmd = run_command.call_args.args[0]
+        self.assertEqual(cmd[cmd.index("--head") + 1], "custom")
+        self.assertIn("--draft", cmd)
+        self.assertIsNone(result["linked_issue"])
+
+    @patch.object(gh, "run_gh_command")
+    @patch.object(gh, "detect_target_branch")
+    def test_create_pr_rejects_empty_title(self, _detect, run_command):
+        with self.assertRaisesRegex(ValueError, "title must not be empty"):
+            gh.create_pr("   ", "/tmp/pr-body.md")
+        run_command.assert_not_called()
+
+    @patch.object(gh, "run_gh_command", return_value="created")
+    @patch.object(gh, "run_git", return_value="topic")
+    @patch.object(gh, "detect_target_branch", return_value="staging")
+    def test_create_pr_fails_when_url_has_no_number(
+        self, _detect, _run_git, _run_command
+    ):
+        with self.assertRaisesRegex(RuntimeError, "could not read PR number"):
+            gh.create_pr("T", "/tmp/pr-body.md")
+
+    @patch.object(gh, "run_gh_command", side_effect=gh.GhCommandFailed("boom"))
+    @patch.object(gh, "run_git", return_value="topic")
+    @patch.object(gh, "detect_target_branch", return_value="staging")
+    def test_create_pr_propagates_gh_failure(
+        self, _detect, _run_git, _run_command
+    ):
+        with self.assertRaises(gh.GhCommandFailed):
+            gh.create_pr("T", "/tmp/pr-body.md")
+
+    @patch.object(gh, "link_issue_to_pr")
+    @patch.object(gh, "run_gh_command")
+    @patch.object(gh, "run_git", return_value="topic")
+    @patch.object(gh, "detect_target_branch", return_value="staging")
+    def test_create_pr_prints_url_once_on_success(
+        self, _detect, _run_git, run_command, _link_issue
+    ):
+        run_command.return_value = self.create_response
+        stderr = io.StringIO()
+
+        with contextlib.redirect_stderr(stderr):
+            gh.create_pr("T", "/tmp/pr-body.md", issue_number=13202)
+
+        self.assertEqual(stderr.getvalue().count("Created PR #13204"), 1)
+
+    @patch.object(gh, "link_issue_to_pr", side_effect=RuntimeError("link missing"))
+    @patch.object(gh, "run_gh_command")
+    @patch.object(gh, "run_git", return_value="topic")
+    @patch.object(gh, "detect_target_branch", return_value="staging")
+    def test_cmd_create_pr_keeps_url_when_link_raises_runtime_error(
+        self, _detect, _run_git, run_command, _link_issue
+    ):
+        run_command.return_value = self.create_response
+        stderr = io.StringIO()
+
+        with contextlib.redirect_stderr(stderr):
+            with self.assertRaises(SystemExit) as error:
+                gh.cmd_create_pr(self.args(issue=13202))
+
+        self.assertEqual(error.exception.code, 1)
+        self.assertIn("Created PR #13204", stderr.getvalue())
+        self.assertIn(self.url, stderr.getvalue())
+
+    @patch.object(gh, "link_issue_to_pr", side_effect=SystemExit(1))
+    @patch.object(gh, "run_gh_command")
+    @patch.object(gh, "run_git", return_value="topic")
+    @patch.object(gh, "detect_target_branch", return_value="staging")
+    def test_cmd_create_pr_keeps_url_when_link_exits(
+        self, _detect, _run_git, run_command, _link_issue
+    ):
+        run_command.return_value = self.create_response
+        stderr = io.StringIO()
+
+        with contextlib.redirect_stderr(stderr):
+            with self.assertRaises(SystemExit) as error:
+                gh.cmd_create_pr(self.args(issue=13202))
+
+        self.assertEqual(error.exception.code, 1)
+        self.assertIn("Created PR #13204", stderr.getvalue())
+        self.assertIn("issue linking failed", stderr.getvalue())
+        self.assertIn(self.url, stderr.getvalue())
+        self.assertNotIn("ERROR: 1", stderr.getvalue())
+
+    @patch.object(gh, "create_pr")
+    def test_cmd_create_pr_outputs_result(self, create_pr):
+        expected = {
+            "number": 13204,
+            "url": self.url,
+            "title": "T",
+            "base": "staging",
+            "head": "topic",
+            "linked_issue": None,
+        }
+        create_pr.return_value = expected
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+
+        with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+            gh.cmd_create_pr(self.args())
+
+        self.assertEqual(json.loads(stdout.getvalue()), expected)
+        self.assertIn("Creating pull request...", stderr.getvalue())
+        create_pr.assert_called_once_with(
+            "A title", "/tmp/pr-body.md",
+            base=None, head=None, issue_number=None,
+            project="Main", draft=False,
+        )
+
+    @patch.object(gh, "create_pr")
+    def test_cmd_create_pr_forwards_project(self, create_pr):
+        create_pr.return_value = {"number": 13204, "url": self.url}
+
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(
+            io.StringIO()
+        ):
+            gh.cmd_create_pr(self.args(project="Other"))
+
+        self.assertEqual(create_pr.call_args.kwargs["project"], "Other")
+
+    @patch.object(gh, "run_gh_command")
+    @patch.object(gh, "run_git", return_value="topic")
+    @patch.object(gh, "detect_target_branch", return_value="staging")
+    def test_create_pr_uses_explicit_project(self, _detect, _run_git, run_command):
+        run_command.return_value = self.create_response
+
+        with contextlib.redirect_stderr(io.StringIO()):
+            gh.create_pr("T", "/tmp/pr-body.md", project="Other")
+
+        cmd = run_command.call_args.args[0]
+        self.assertEqual(cmd[cmd.index("--project") + 1], "Other")
+
+    @patch.object(gh, "create_pr", side_effect=gh.GhCommandFailed("boom"))
+    def test_cmd_create_pr_exits_on_error(self, _create_pr):
+        stderr = io.StringIO()
+
+        with contextlib.redirect_stderr(stderr):
+            with self.assertRaises(SystemExit) as error:
+                gh.cmd_create_pr(self.args())
+
+        self.assertEqual(error.exception.code, 1)
+        self.assertIn("boom", stderr.getvalue())
+
+
 class LinkIssueTests(unittest.TestCase):
     def setUp(self):
         self.target_response = {
