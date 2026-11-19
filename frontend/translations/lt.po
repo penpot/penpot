@@ -386,6 +386,10 @@ msgstr "Nustatymai"
 msgid "dashboard.password-change"
 msgstr "Keisti slaptažodį"
 
+#: src/app/main/ui/dashboard/project_menu.cljs:108
+msgid "dashboard.pin"
+msgstr "Prisegti"
+
 #: src/app/main/ui/dashboard/files.cljs:132, src/app/main/ui/dashboard/project_menu.cljs:98, src/app/main/ui/dashboard/projects.cljs:260
 msgid "dashboard.pin-unpin"
 msgstr "Prisegti/Atsegti"
@@ -401,6 +405,10 @@ msgstr "Norite pašalinti paskyrą?"
 #: src/app/main/ui/settings/options.cljs:77
 msgid "dashboard.theme-change"
 msgstr "Vartotojo sąsajos tema"
+
+#: src/app/main/ui/dashboard/project_menu.cljs:107
+msgid "dashboard.unpin"
+msgstr "Atsegti"
 
 #: src/app/main/ui/auth/recovery.cljs:47
 msgid "errors.invalid-recovery-token"

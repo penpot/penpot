@@ -349,6 +349,10 @@ msgstr "リリースノートを表示"
 msgid "dashboard.clear-trash-button"
 msgstr "ゴミ箱を空にする"
 
+#: src/app/main/ui/dashboard/file_menu.cljs:323, src/app/main/ui/dashboard/project_menu.cljs:119
+msgid "dashboard.copy-link"
+msgstr "リンクをコピー"
+
 #: src/app/main/data/dashboard.cljs:317, src/app/main/data/dashboard.cljs:553, src/app/main/data/workspace/pages.cljs:206
 msgid "dashboard.copy-suffix"
 msgstr "(コピー)"
@@ -925,6 +929,10 @@ msgstr "このチームでのあなたのロールが閲覧者になりました
 msgid "dashboard.personal-projects"
 msgstr "個人プロジェクト"
 
+#: src/app/main/ui/dashboard/project_menu.cljs:108
+msgid "dashboard.pin"
+msgstr "ピン留め"
+
 #: src/app/main/ui/dashboard/files.cljs:132, src/app/main/ui/dashboard/project_menu.cljs:98, src/app/main/ui/dashboard/projects.cljs:260
 msgid "dashboard.pin-unpin"
 msgstr "ピン留め/ピン留めを解除"
@@ -1141,6 +1149,10 @@ msgstr "すべてのファイルを表示"
 msgid "dashboard.show-version-history"
 msgstr "バージョン履歴"
 
+#: src/app/main/data/dashboard.cljs:377
+msgid "dashboard.success-copy-link"
+msgstr "リンクをクリップボードにコピーしました"
+
 #: src/app/main/ui/dashboard/file_menu.cljs:129
 msgid "dashboard.success-delete-file"
 msgid_plural "dashboard.success-delete-file"
@@ -1252,6 +1264,10 @@ msgstr "気が変わった場合は、各ファイルのメニューから復元
 #: src/app/main/ui/dashboard/search.cljs:74
 msgid "dashboard.type-something"
 msgstr "入力して検索"
+
+#: src/app/main/ui/dashboard/project_menu.cljs:107
+msgid "dashboard.unpin"
+msgstr "ピン留めを解除"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:322, src/app/main/ui/workspace/main_menu.cljs:693
 msgid "dashboard.unpublish-shared"

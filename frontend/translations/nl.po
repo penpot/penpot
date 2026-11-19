@@ -365,6 +365,10 @@ msgstr "Uitgavenotities weergeven"
 msgid "dashboard.clear-trash-button"
 msgstr "Prullenbak wissen"
 
+#: src/app/main/ui/dashboard/file_menu.cljs:323, src/app/main/ui/dashboard/project_menu.cljs:119
+msgid "dashboard.copy-link"
+msgstr "Link kopiëren naar klembord"
+
 #: src/app/main/data/dashboard.cljs:317, src/app/main/data/dashboard.cljs:553, src/app/main/data/workspace/pages.cljs:206
 msgid "dashboard.copy-suffix"
 msgstr "(kopie)"
@@ -981,6 +985,10 @@ msgstr "Je bent nu een lezer in dit team."
 msgid "dashboard.personal-projects"
 msgstr "Persoonlijke projecten"
 
+#: src/app/main/ui/dashboard/project_menu.cljs:108
+msgid "dashboard.pin"
+msgstr "Vastzetten"
+
 #: src/app/main/ui/dashboard/files.cljs:132, src/app/main/ui/dashboard/project_menu.cljs:98, src/app/main/ui/dashboard/projects.cljs:260
 msgid "dashboard.pin-unpin"
 msgstr "Vastzetten/losmaken"
@@ -1204,6 +1212,10 @@ msgstr "Alle bestanden tonen"
 msgid "dashboard.show-version-history"
 msgstr "Versie-geschiedenis"
 
+#: src/app/main/data/dashboard.cljs:377
+msgid "dashboard.success-copy-link"
+msgstr "Link gekopieerd naar klembord"
+
 #: src/app/main/ui/dashboard/file_menu.cljs:129
 msgid "dashboard.success-delete-file"
 msgid_plural "dashboard.success-delete-file"
@@ -1321,6 +1333,10 @@ msgstr ""
 #: src/app/main/ui/dashboard/search.cljs:74
 msgid "dashboard.type-something"
 msgstr "Typ om te zoeken"
+
+#: src/app/main/ui/dashboard/project_menu.cljs:107
+msgid "dashboard.unpin"
+msgstr "Losmaken"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:322, src/app/main/ui/workspace/main_menu.cljs:693
 msgid "dashboard.unpublish-shared"

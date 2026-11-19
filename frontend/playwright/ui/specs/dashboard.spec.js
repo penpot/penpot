@@ -71,12 +71,38 @@ test("User has context menu options for edit file", async ({ page }) => {
   await button.click();
   await button.click({ button: "right" });
 
+  await expect(dashboardPage.page.getByText("open in new tab")).toBeVisible();
   await expect(dashboardPage.page.getByText("rename")).toBeVisible();
   await expect(dashboardPage.page.getByText("duplicate")).toBeVisible();
+  await expect(dashboardPage.page.getByText("copy link")).toBeVisible();
   await expect(
     dashboardPage.page.getByText("add as shared library"),
   ).toBeVisible();
   await expect(dashboardPage.page.getByText("delete")).toBeVisible();
+});
+
+test("User can copy a file's link from the context menu", async ({ page }) => {
+  await DashboardPage.mockRPC(
+    page,
+    "get-all-projects",
+    "dashboard/get-all-projects.json",
+  );
+
+  const dashboardPage = new DashboardPage(page);
+  await dashboardPage.setupDrafts();
+  await dashboardPage.goToDrafts();
+
+  const button = page.getByRole("button", { name: /New File 2/ });
+  await button.click({ button: "right" });
+  await page.getByTestId("file-copy-link").click();
+
+  await expect(
+    page.getByRole("alert").filter({ hasText: "Link copied to clipboard" }),
+  ).toBeVisible();
+
+  const link = await page.evaluate(() => navigator.clipboard.readText());
+  expect(link).toContain("screen=workspace");
+  expect(link).toContain("file-id=8b479b80-e02d-8074-8004-4088dc6bfd11");
 });
 
 test("Multiple elements in context", async ({ page }) => {

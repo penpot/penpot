@@ -365,6 +365,10 @@ msgstr "مشاهدهٔ یادداشت‌های انتشار"
 msgid "dashboard.clear-trash-button"
 msgstr "خالی کردن سطل زباله"
 
+#: src/app/main/ui/dashboard/file_menu.cljs:323, src/app/main/ui/dashboard/project_menu.cljs:119
+msgid "dashboard.copy-link"
+msgstr "کپی پیوند"
+
 #: src/app/main/data/dashboard.cljs:317, src/app/main/data/dashboard.cljs:553, src/app/main/data/workspace/pages.cljs:206
 msgid "dashboard.copy-suffix"
 msgstr "(کپی)"
@@ -970,6 +974,10 @@ msgstr "اکنون در این تیم بیننده هستید."
 msgid "dashboard.personal-projects"
 msgstr "پروژه‌های شخصی"
 
+#: src/app/main/ui/dashboard/project_menu.cljs:108
+msgid "dashboard.pin"
+msgstr "پین"
+
 #: src/app/main/ui/dashboard/files.cljs:132, src/app/main/ui/dashboard/project_menu.cljs:98, src/app/main/ui/dashboard/projects.cljs:260
 msgid "dashboard.pin-unpin"
 msgstr "پین/برداشتن پین"
@@ -1194,6 +1202,10 @@ msgstr "نمایش همه فایل‌ها"
 msgid "dashboard.show-version-history"
 msgstr "تاریخچهٔ نسخه‌ها"
 
+#: src/app/main/data/dashboard.cljs:377
+msgid "dashboard.success-copy-link"
+msgstr "پیوند در کلیپ‌بورد کپی شد"
+
 #: src/app/main/ui/dashboard/file_menu.cljs:129
 msgid "dashboard.success-delete-file"
 msgid_plural "dashboard.success-delete-file"
@@ -1309,6 +1321,10 @@ msgstr ""
 #: src/app/main/ui/dashboard/search.cljs:74
 msgid "dashboard.type-something"
 msgstr "برای نمایش نتایج جستجو تایپ کنید"
+
+#: src/app/main/ui/dashboard/project_menu.cljs:107
+msgid "dashboard.unpin"
+msgstr "برداشتن پین"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:322, src/app/main/ui/workspace/main_menu.cljs:693
 msgid "dashboard.unpublish-shared"

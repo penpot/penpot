@@ -280,6 +280,10 @@ msgstr "ईमेल बदलें"
 msgid "dashboard.clear-trash-button"
 msgstr "कचरा साफ़ करें"
 
+#: src/app/main/ui/dashboard/file_menu.cljs:323, src/app/main/ui/dashboard/project_menu.cljs:119
+msgid "dashboard.copy-link"
+msgstr "लिंक कॉपी"
+
 #: src/app/main/data/dashboard.cljs:317, src/app/main/data/dashboard.cljs:553, src/app/main/data/workspace/pages.cljs:206
 msgid "dashboard.copy-suffix"
 msgstr "(कॉपी)"
@@ -734,6 +738,10 @@ msgstr "आप अब इस टीम के मालिक (Owner) बन ग
 msgid "dashboard.permissions-change.viewer"
 msgstr "आप अब इस टीम के दृश्यकर्ता (Viewer) बन गए हैं।"
 
+#: src/app/main/ui/dashboard/project_menu.cljs:108
+msgid "dashboard.pin"
+msgstr "पिन"
+
 #: src/app/main/ui/dashboard/files.cljs:132, src/app/main/ui/dashboard/project_menu.cljs:98, src/app/main/ui/dashboard/projects.cljs:260
 msgid "dashboard.pin-unpin"
 msgstr "पिन/अनपिन"
@@ -921,6 +929,10 @@ msgstr "खोज के परिणाम"
 #: src/app/main/ui/dashboard/search.cljs:74
 msgid "dashboard.type-something"
 msgstr "परिणाम खोजने के लिए टाइप करें"
+
+#: src/app/main/ui/dashboard/project_menu.cljs:107
+msgid "dashboard.unpin"
+msgstr "अनपिन"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:322, src/app/main/ui/workspace/main_menu.cljs:693
 msgid "dashboard.unpublish-shared"

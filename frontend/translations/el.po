@@ -207,6 +207,10 @@ msgstr "Άνοιγμα αρχείου σε νέα καρτέλα"
 msgid "dashboard.password-change"
 msgstr "Αλλαξε κωδικό"
 
+#: src/app/main/ui/dashboard/project_menu.cljs:108
+msgid "dashboard.pin"
+msgstr "Καρφίτσωμα"
+
 #: src/app/main/ui/dashboard/files.cljs:132, src/app/main/ui/dashboard/project_menu.cljs:98, src/app/main/ui/dashboard/projects.cljs:260
 msgid "dashboard.pin-unpin"
 msgstr "Καρφίτσωμα / ξεκαρφίτσωμα"
@@ -286,6 +290,10 @@ msgstr "Αποτελέσματα αναζήτησης"
 #: src/app/main/ui/dashboard/search.cljs:74
 msgid "dashboard.type-something"
 msgstr "Γράψτε κάτι για αναζήτηση"
+
+#: src/app/main/ui/dashboard/project_menu.cljs:107
+msgid "dashboard.unpin"
+msgstr "Ξεκαρφίτσωμα"
 
 #: src/app/main/ui/settings/options.cljs:88
 msgid "dashboard.update-settings"

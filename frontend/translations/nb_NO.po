@@ -111,6 +111,10 @@ msgstr "Åpne fil i ny fane"
 msgid "dashboard.password-change"
 msgstr "Endre passord"
 
+#: src/app/main/ui/dashboard/project_menu.cljs:108
+msgid "dashboard.pin"
+msgstr "Fest"
+
 #: src/app/main/ui/dashboard/files.cljs:132, src/app/main/ui/dashboard/project_menu.cljs:98, src/app/main/ui/dashboard/projects.cljs:260
 msgid "dashboard.pin-unpin"
 msgstr "Fest/løsne"
@@ -158,6 +162,10 @@ msgstr "Lagprosjekter"
 #: src/app/main/ui/settings/options.cljs:77
 msgid "dashboard.theme-change"
 msgstr "Utseende"
+
+#: src/app/main/ui/dashboard/project_menu.cljs:107
+msgid "dashboard.unpin"
+msgstr "Løsne"
 
 #: src/app/main/ui/settings.cljs:42
 msgid "dashboard.your-account-title"

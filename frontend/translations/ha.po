@@ -433,6 +433,10 @@ msgstr "zavi"
 msgid "dashboard.password-change"
 msgstr "sauya lambar tsaro"
 
+#: src/app/main/ui/dashboard/project_menu.cljs:108
+msgid "dashboard.pin"
+msgstr "Rufewa"
+
 #: src/app/main/ui/dashboard/files.cljs:132, src/app/main/ui/dashboard/project_menu.cljs:98, src/app/main/ui/dashboard/projects.cljs:260
 msgid "dashboard.pin-unpin"
 msgstr "rufewa/buxewa"
@@ -524,6 +528,10 @@ msgstr "neman sakamako"
 #: src/app/main/ui/dashboard/search.cljs:74
 msgid "dashboard.type-something"
 msgstr "rubuta neman sakamako"
+
+#: src/app/main/ui/dashboard/project_menu.cljs:107
+msgid "dashboard.unpin"
+msgstr "Buxewa"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:322, src/app/main/ui/workspace/main_menu.cljs:693
 msgid "dashboard.unpublish-shared"

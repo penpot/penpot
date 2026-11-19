@@ -370,6 +370,10 @@ msgstr "Borrar búsqueda"
 msgid "dashboard.clear-trash-button"
 msgstr "Vaciar papelera"
 
+#: src/app/main/ui/dashboard/file_menu.cljs:323, src/app/main/ui/dashboard/project_menu.cljs:119
+msgid "dashboard.copy-link"
+msgstr "Copiar enlace"
+
 #: src/app/main/data/dashboard.cljs:318, src/app/main/data/dashboard.cljs:568, src/app/main/data/workspace/pages.cljs:206
 msgid "dashboard.copy-suffix"
 msgstr "(copia)"
@@ -1030,7 +1034,7 @@ msgstr "Ver notificaciones"
 msgid "dashboard.num-of-members"
 msgstr "%s integrantes"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:293
+#: src/app/main/ui/dashboard/file_menu.cljs:302
 msgid "dashboard.open-in-new-tab"
 msgstr "Abrir en una pestaña nueva"
 
@@ -1078,7 +1082,11 @@ msgstr "Ahora eres lector del equipo."
 msgid "dashboard.personal-projects"
 msgstr "Proyectos Personales"
 
-#: src/app/main/ui/dashboard/files.cljs:132, src/app/main/ui/dashboard/project_menu.cljs:98, src/app/main/ui/dashboard/projects.cljs:260
+#: src/app/main/ui/dashboard/project_menu.cljs:108
+msgid "dashboard.pin"
+msgstr "Anclar"
+
+#: src/app/main/ui/dashboard/files.cljs:132, src/app/main/ui/dashboard/projects.cljs:269
 msgid "dashboard.pin-unpin"
 msgstr "Anclar/Desanclar"
 
@@ -1301,6 +1309,10 @@ msgstr "Ver todos los archivos"
 msgid "dashboard.show-version-history"
 msgstr "Histórico de versiones"
 
+#: src/app/main/data/dashboard.cljs:377
+msgid "dashboard.success-copy-link"
+msgstr "Enlace copiado al portapapeles"
+
 #: src/app/main/ui/dashboard/file_menu.cljs:128
 msgid "dashboard.success-delete-file"
 msgid_plural "dashboard.success-delete-file"
@@ -1420,6 +1432,10 @@ msgstr ""
 #: src/app/main/ui/dashboard/search.cljs:74
 msgid "dashboard.type-something"
 msgstr "Escribe algo para buscar"
+
+#: src/app/main/ui/dashboard/project_menu.cljs:107
+msgid "dashboard.unpin"
+msgstr "Desanclar"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:321, src/app/main/ui/workspace/main_menu.cljs:693
 msgid "dashboard.unpublish-shared"

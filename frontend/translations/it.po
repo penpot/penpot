@@ -362,6 +362,10 @@ msgstr "Visualizza note di rilascio"
 msgid "dashboard.clear-trash-button"
 msgstr "Svuota il cestino"
 
+#: src/app/main/ui/dashboard/file_menu.cljs:323, src/app/main/ui/dashboard/project_menu.cljs:119
+msgid "dashboard.copy-link"
+msgstr "Copia link negli appunti"
+
 #: src/app/main/data/dashboard.cljs:317, src/app/main/data/dashboard.cljs:553, src/app/main/data/workspace/pages.cljs:206
 msgid "dashboard.copy-suffix"
 msgstr "(copia)"
