@@ -248,7 +248,7 @@ function connectToMcpServer(baseUrl?: string, token?: string): void {
             if (ws !== socket) return;
             connectionTimer = null;
             if (socket.readyState !== WebSocket.CONNECTING) return;
-            // Retire the attempt before close: browsers may delay its close event.
+            // retire the attempt before close: browsers may delay its close event.
             ws = null;
             connectionRequestId = null;
             connectionSessionId = null;

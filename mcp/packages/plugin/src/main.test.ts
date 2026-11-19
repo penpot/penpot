@@ -1,15 +1,19 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { stripTypeScriptTypes } from "node:module";
 import test from "node:test";
 import vm from "node:vm";
-import { shouldReconnectAfterClose } from "./ReconnectPolicy.ts";
+import ts from "typescript";
+import { shouldReconnectAfterClose, WS_CLOSE_POLICY_VIOLATION } from "./ReconnectPolicy.ts";
 import { SessionId } from "./SessionId.ts";
+import { SessionIdDisplay } from "./SessionIdDisplay.ts";
 import { webcrypto } from "node:crypto";
 
-const source = stripTypeScriptTypes(
-    readFileSync(new URL("./main.ts", import.meta.url), "utf8").replace(/^import .*;\r?\n/gm, "")
-);
+const source = ts.transpileModule(readFileSync(new URL("./main.ts", import.meta.url), "utf8"), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 },
+}).outputText;
+
+const WS_CLOSE_ABNORMAL = 1006;
+const SocketState = { OPEN: 1, CLOSING: 2, CLOSED: 3 } as const;
 
 function browser() {
     let now = 0;
@@ -54,14 +58,20 @@ function browser() {
         initialized() {
             this.onmessage?.({ data: JSON.stringify({ type: "initialized" }) });
         }
-        closed(code = 1006, reason = "") {
+        closed(code = WS_CLOSE_ABNORMAL, reason = "") {
             this.readyState = Socket.CLOSED;
             this.onclose?.({ code, reason });
         }
     }
     vm.runInNewContext(source, {
-        shouldReconnectAfterClose,
-        SessionId,
+        exports: {},
+        require: (name: string) => {
+            if (name === "./style.css") return {};
+            if (name === "./ReconnectPolicy") return { shouldReconnectAfterClose };
+            if (name === "./SessionId") return { SessionId };
+            if (name === "./SessionIdDisplay") return { SessionIdDisplay };
+            throw new Error(`Unexpected import: ${name}`);
+        },
         crypto: webcrypto,
         PENPOT_MCP_WEBSOCKET_URL: "ws://localhost:4402",
         URLSearchParams,
@@ -119,7 +129,7 @@ test("a stalled handshake times out and retries with the same URL and token with
     b.start();
     assert.equal(b.sockets.length, 1);
     b.tick(1);
-    assert.equal(b.sockets[0].readyState, 2);
+    assert.equal(b.sockets[0].readyState, SocketState.CLOSING);
     assert.equal(b.status(), "error");
     b.tick(999);
     assert.equal(b.sockets.length, 1);
@@ -146,7 +156,7 @@ test("late events from an expired socket cannot replace the new connection or fo
     old.initialized();
     old.onerror?.({});
     old.onmessage?.({ data: JSON.stringify({ id: "old-task", task: "execute-code" }) });
-    old.closed(1008);
+    old.closed(WS_CLOSE_POLICY_VIOLATION);
     b.tick(100);
     assert.equal(b.status(), "connected");
     assert.equal(b.messages.length, count);
@@ -200,7 +210,7 @@ test("policy rejection stops automatic recovery until explicitly connected again
     b.start();
     b.sockets[0].open();
     b.sockets[0].initialized();
-    b.sockets[0].closed(1008);
+    b.sockets[0].closed(WS_CLOSE_POLICY_VIOLATION);
     b.tick(120_000);
     b.events.resume();
     b.events.visibilitychange();
@@ -221,7 +231,7 @@ test("late close of a replaced closing socket cannot stop a live connection", ()
     const active = b.sockets[1];
     active.open();
     active.initialized();
-    old.closed(1008);
+    old.closed(WS_CLOSE_POLICY_VIOLATION);
     b.tick(30_000);
     assert.equal(b.status(), "connected");
     assert.equal(b.sockets.length, 2);
@@ -240,14 +250,14 @@ test("repeated stalled handshakes retain capped exponential backoff", () => {
 });
 
 test("a queued policy close is not replaced by a handshake timeout", () => {
-    for (const readyState of [2, 3]) {
+    for (const readyState of [SocketState.CLOSING, SocketState.CLOSED]) {
         const b = browser();
         b.start();
         const socket = b.sockets[0];
         socket.readyState = readyState;
         b.tick(31_000);
         assert.equal(b.sockets.length, 1);
-        socket.closed(1008);
+        socket.closed(WS_CLOSE_POLICY_VIOLATION);
         b.tick(120_000);
         assert.equal(b.sockets.length, 1);
         assert.equal(b.status(), "disconnected");
@@ -257,10 +267,10 @@ test("a queued policy close is not replaced by a handshake timeout", () => {
 test("an open socket waiting for its open event is not timed out", () => {
     const b = browser();
     b.start();
-    b.sockets[0].readyState = 1;
+    b.sockets[0].readyState = SocketState.OPEN;
     b.tick(31_000);
     assert.equal(b.sockets.length, 1);
-    assert.equal(b.sockets[0].readyState, 1);
+    assert.equal(b.sockets[0].readyState, SocketState.OPEN);
     b.sockets[0].open();
     b.sockets[0].initialized();
     b.tick(100);
@@ -303,7 +313,7 @@ test("OPEN without parent metadata stays unready on resume and does not request 
     b.tick(30_000);
     assert.equal(b.status(), "connecting");
     assert.equal(b.sockets.length, 1);
-    assert.equal(socket.readyState, 1);
+    assert.equal(socket.readyState, SocketState.OPEN);
     assert.deepEqual(socket.sent, []);
     assert.equal(b.messages.filter((message) => message.type === "connection-metadata-request").length, 1);
 });
@@ -326,7 +336,7 @@ test("metadata delayed across freeze and resume still needs the server acknowled
     assert.equal(socket.sent.length, 1);
     assert.deepEqual(JSON.parse(socket.sent[0]), {
         type: "initialize",
-        session: { sessionId: "ftdmhltgwk", fileId: "file-1", fileName: "Design" },
+        session: { sessionId: await SessionId.forSession("tab-1"), fileId: "file-1", fileName: "Design" },
     });
     b.events.freeze();
     b.events.resume();
@@ -351,7 +361,10 @@ test("server initialization timeout with 1008 stops recovery with missing metada
         if (metadataSent) await b.emit("initialize", metadata);
         b.events.freeze();
         b.tick(10_000);
-        socket.closed(1008, "Connection initialization timed out; please update the Penpot MCP plugin.");
+        socket.closed(
+            WS_CLOSE_POLICY_VIOLATION,
+            "Connection initialization timed out; please update the Penpot MCP plugin."
+        );
         b.events.resume();
         b.events.visibilitychange();
         await b.emit("initialize", metadata);
