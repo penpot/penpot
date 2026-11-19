@@ -19,7 +19,7 @@
 - `commit-shape` emits `:add-obj` with `:ignore-touched true`, using the current parent, frame, and page from the stack.
 - Layer names are uniqued per current page; duplicate names get generated suffixes.
 - `addBool` converts an existing group into a bool shape and updates style/content/geometry via `:mod-obj` operations rather than adding a new object.
-- Media blobs are stored separately from file-media metadata; `add-file-media` requires a `BlobWrapper`.
+- Media blobs are stored separately from file-media metadata; `add-file-media` requires a `BlobWrapper`. A storage object is unique and shared by many `file_media_object` rows, each with its own id, its own file and a pointer to that storage object; the shape references the link id, never the storage id. The builder maintains `::fb/file-media-by-file` (`file-id → {descriptor-id descriptor}`) so the exporter asks for the descriptors of a file instead of filtering the flat `::fb/file-media` once per file, and the flat map stays for the by-id lookups (`getMediaAsImage`). Because the model cannot represent anything else, `add-file-media` refuses to run without a current file (`:media-without-file`) and refuses an id that already exists, in the same file or in another (`:media-id-in-use`); a fresh id per link is the rule. Sharing one storage object between files is not expressible yet.
 
 ## Export package
 

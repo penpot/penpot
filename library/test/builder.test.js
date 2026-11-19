@@ -604,6 +604,132 @@ test("export compact format packs every family", async () => {
   await zipReader.close();
 });
 
+test("export places every media under its own file", async () => {
+  const context = penpot.createBuildContext();
+  const png = Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+    "base64",
+  );
+  const addMedia = (name) =>
+    context.addFileMedia({name, width: 1, height: 1},
+                         new Blob([png], {type: "image/png"}));
+
+  const fileA = context.addFile({name: "two media"});
+  context.addPage({name: "page a"});
+  const mediaA1 = addMedia("a1.png");
+  const mediaA2 = addMedia("a2.png");
+
+  const fileB = context.addFile({name: "no media"});
+  context.addPage({name: "page b"});
+
+  const fileC = context.addFile({name: "one media"});
+  context.addPage({name: "page c"});
+  const mediaC = addMedia("c1.png");
+
+  for (const version of [1, 2]) {
+    const blob = await penpot.exportAsBlob(context, {version});
+    const zipReader = new ZipReader(new BlobReader(new Blob([blob])));
+    const entries = await zipReader.getEntries();
+    const names = entries.map((e) => e.filename);
+    const entryText = async (name) => {
+      const entry = entries.find((e) => e.filename === name);
+      assert.ok(entry, `${name} should exist`);
+      return entry.getData(new TextWriter());
+    };
+
+    // No media entry travels under a file that has none.
+    assert.ok(!names.some((n) => n.includes("/media") && n.includes(fileB)),
+              `version ${version}: the file without media writes no family`);
+
+    if (version === 2) {
+      const lines = async (fileId) =>
+        (await entryText(`files/${fileId}/media/chunks/0.json`))
+          .split("\n").filter(Boolean).map(JSON.parse);
+
+      const linesA = await lines(fileA);
+      const linesC = await lines(fileC);
+
+      assert.deepEqual(linesA.map(([id]) => id).sort(),
+                       [mediaA1, mediaA2].sort(),
+                       "both media of the first file travel in its chunk");
+      assert.deepEqual(linesC.map(([id]) => id), [mediaC],
+                       "the third file carries its own media");
+      assert.equal(JSON.parse(await entryText(`files/${fileA}/media.json`)).chunks, 1);
+      assert.equal(JSON.parse(await entryText(`files/${fileC}/media.json`)).chunks, 1);
+    } else {
+      const mediaNames = names.filter((n) => n.includes("/media/"));
+      assert.deepEqual(
+        mediaNames.sort(),
+        [`files/${fileA}/media/${mediaA1}.json`,
+         `files/${fileA}/media/${mediaA2}.json`,
+         `files/${fileC}/media/${mediaC}.json`].sort(),
+        "every media is written once, under its own file",
+      );
+    }
+
+    assert.ok(!names.includes(`files/${fileB}/media.json`),
+              `version ${version}: no empty family`);
+
+    await zipReader.close();
+  }
+});
+
+test("addFileMedia refuses media that would leave invalid state", () => {
+  const png = Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+    "base64",
+  );
+  const blob = () => new Blob([png], {type: "image/png"});
+  const isInvalid = (code) => (error) =>
+    error.type === "validation" && error.code === code;
+
+  // A media belongs to a file: there is no current file yet.
+  const empty = penpot.createBuildContext();
+  assert.throws(
+    () => empty.addFileMedia({name: "orphan.png", width: 1, height: 1}, blob()),
+    isInvalid("media-without-file"),
+  );
+
+  const context = penpot.createBuildContext();
+  context.addFile({name: "a"});
+  context.addPage({name: "pa"});
+  const firstId = context.addFileMedia(
+    {name: "one.png", width: 1, height: 1},
+    blob(),
+  );
+
+  // The same link id cannot be used twice, in the same file or in another.
+  assert.throws(
+    () => context.addFileMedia(
+      {id: firstId, name: "again.png", width: 1, height: 1}, blob()),
+    isInvalid("media-id-in-use"),
+  );
+
+  context.addFile({name: "b"});
+  context.addPage({name: "pb"});
+  assert.throws(
+    () => context.addFileMedia(
+      {id: firstId, name: "elsewhere.png", width: 1, height: 1}, blob()),
+    isInvalid("media-id-in-use"),
+  );
+
+  const refused = context.getInternalState();
+  assert.deepEqual(Object.keys(refused.fileMedia), [firstId],
+                   "a refused call adds nothing to the state");
+
+  // A fresh id in the second file is accepted and lands under it.
+  const secondId = context.addFileMedia(
+    {name: "two.png", width: 1, height: 1},
+    blob(),
+  );
+  assert.notEqual(secondId, firstId);
+
+  const after = context.getInternalState();
+  assert.equal(Object.keys(after.fileMedia).length, 2);
+  assert.equal(Object.keys(after.fileMediaByFile).length, 2,
+               "each media belongs to its own file");
+});
+
 test("export legacy format produces per-shape entries", async () => {
   const context = penpot.createBuildContext();
   const fileId = context.addFile({name: "test file"});

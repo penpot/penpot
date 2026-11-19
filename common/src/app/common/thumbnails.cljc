@@ -38,12 +38,28 @@
     (catch #?(:clj Exception :cljs :default) _ nil)))
 
 (defn- control-char?
-  "True for a control character, which the tag cannot carry because it becomes
-  one segment of the key of an exported package."
+  "True for a control character: C0 (U+0000–U+001F), DEL (U+007F) and the C1
+  block (U+0080–U+009F), which `Character/isISOControl` also covers. Both
+  branches must answer the same, so the tag of an exported key means the same
+  in the backend and in the browser."
   [ch]
   #?(:clj  (Character/isISOControl (int ch))
      :cljs (let [n (.charCodeAt ch 0)]
-             (or (<= 0 n 31) (= n 127)))))
+             (or (<= 0 n 31)
+                 (= n 127)
+                 (<= 128 n 159)))))
+
+(defn valid-tag?
+  "True when `tag` can be one segment of an exported key: a non-blank string
+  without the separator and without control characters. The export writes it
+  as the first segment of `tag/page-id/frame-id`, so a blank tag, one carrying
+  a control character or one containing `/` produces a key the reader cannot
+  carry back."
+  [tag]
+  (and (string? tag)
+       (not (str/blank? tag))
+       (not (str/includes? tag "/"))
+       (not-any? control-char? tag)))
 
 (defn parse-object-id-strict
   "The `{:file-id :page-id :frame-id :tag}` of an object id that has the
@@ -68,8 +84,7 @@
           (when (and (some? file-id)
                      (some? page-id)
                      (some? frame-id)
-                     (not (str/blank? tag))
-                     (not-any? control-char? tag))
+                     (valid-tag? tag))
             {:file-id file-id
              :page-id page-id
              :frame-id frame-id

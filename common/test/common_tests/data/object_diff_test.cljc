@@ -474,6 +474,31 @@
       (catch #?(:clj clojure.lang.ExceptionInfo :cljs cljs.core.ExceptionInfo) e
         (t/is (= :invalid-diff (:type (ex-data e))))))))
 
+(t/deftest apply-diff-vector-group-checks-the-index-type-test
+  ;; Sorting a vector group compares the indices as numbers: a mixed collection
+  ;; throws on the JVM before the documented error, and JS orders it silently
+  ;; and fails differently. The type is checked first.
+  (let [data-of (fn [diff]
+                  (try
+                    (od/apply-diff [1 2] diff)
+                    nil
+                    (catch #?(:clj clojure.lang.ExceptionInfo :cljs cljs.core.ExceptionInfo) e
+                      (ex-data e))))]
+
+    (t/testing "a del group with a non integer index"
+      (let [data (data-of [{:path [] :del [0 :x]}])]
+        (t/is (= :diff-mismatch (:type data)))
+        (t/is (= :del (:op data)))
+        (t/is (= [:x] (:path data)))
+        (t/is (= :absent (:reason data)))))
+
+    (t/testing "an add group with a non integer index"
+      (let [data (data-of [{:path [] :add [[0 1] [:x 2]]}])]
+        (t/is (= :diff-mismatch (:type data)))
+        (t/is (= :add (:op data)))
+        (t/is (= [:x] (:path data)))
+        (t/is (= :index-out-of-range (:reason data)))))))
+
 (t/deftest apply-diff-rejects-a-malformed-group-test
   (let [invalid? (fn invalid?
                    ([diff] (invalid? {:a 1 :b 2} diff))

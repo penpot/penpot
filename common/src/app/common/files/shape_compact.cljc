@@ -63,6 +63,11 @@
    ;; vector back on the types that cannot be read without it.
    :shapes              #{:frame :group :bool}})
 
+;; `:grow-type` is deliberately absent from this map: a text without the key is
+;; re-measured after a style change and one carrying `:fixed` is not (see
+;; `app.main.data.workspace.texts`), and the wasm uploader carries a presence
+;; bit, so absence and `:fixed` are different states of the shape. The writer
+;; keeps the key as it is instead of turning its absence into a value.
 (def ^:private default-attrs
   {:rotation               0
    :shapes                 []
@@ -76,7 +81,6 @@
    :hidden                 false
    :masked-group           false
    :fixed-scroll           false
-   :grow-type              :fixed
    :opacity                1
    :blend-mode             :normal
    :layout-item-absolute   false

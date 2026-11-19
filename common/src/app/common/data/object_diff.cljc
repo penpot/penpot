@@ -21,20 +21,22 @@
          :add  [[segment value] ...]  ; insert missing keys or indices
          :del  [segment ...]}         ; remove keys or indices
 
-  A map that changes in exactly one place is emitted as an operation,
-  which is the smaller object; a map with two or more changes is
-  emitted as a group, which stores the shared path once. A vector never
-  produces a group: it emits one operation per replaced element plus
-  the insertions and deletions its size change needs, in the order
-  `apply-diff` expects (replacements first, then removals from the
-  highest index, then insertions from the lowest). Both kinds produce
-  the same result, and appliers read either without a flag.
+  A container that changes in exactly one place is emitted as an
+  operation, which is the smaller object; two or more changes share the
+  container path in a group. A vector is diffed by index and emits at
+  most two local elements: one with the replacements and one with the
+  insertions and deletions. Each of the two is an operation when it
+  carries a single change and a group when it carries two or more, in
+  the order `apply-diff` expects (replacements first, then removals
+  from the highest index, then insertions from the lowest). Both kinds
+  produce the same result, and appliers read either without a flag.
 
   A path walks the value segment by segment: a map is entered by a key
   (any value, including nil) and a vector by an integer index. The
   container found at each step decides how the next segment is read,
-  so an integer is a key in a map and an index in a vector. Because the
-  path segments are values, JSON keeps their types.
+  so an integer is a key in a map and an index in a vector. In memory
+  the segments keep their type; a JSON round trip does not keep it, so
+  a keyword or a uuid comes back as a string.
 
   Operations do not carry the previous value: applying a diff replaces
   or deletes whatever the path holds. Only the shape of the target is
@@ -439,8 +441,24 @@
             container
             (:add group))))
 
+(defn- check-vector-indices
+  "Fails when an index of a vector group is not an integer, before the sort
+  that would compare it as a number: on the JVM that comparison throws a
+  `ClassCastException` instead of the documented error, and on JS it silently
+  orders a value that the reduce then refuses. The reason is the one the reduce
+  already uses for a well-typed index: a `:del` index that does not exist is
+  `:absent`, an `:add` index outside `0..count` is `:index-out-of-range`."
+  [group path]
+  (doseq [idx (:del group)
+          :when (not (integer? idx))]
+    (raise-mismatch :del (conj path idx) :absent))
+  (doseq [[idx _] (:add group)
+          :when (not (integer? idx))]
+    (raise-mismatch :add (conj path idx) :index-out-of-range)))
+
 (defn- apply-vector-ops
   [container group path]
+  (check-vector-indices group path)
   (let [container (reduce (fn [container [idx v]]
                             (if (and (integer? idx) (<= 0 idx) (< idx (count container)))
                               (assoc container idx v)
