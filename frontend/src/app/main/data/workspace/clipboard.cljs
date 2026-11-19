@@ -239,6 +239,31 @@
                      (rx/catch on-copy-error)
                      (rx/ignore))))))))))
 
+(defn remember-cut
+  "Record the selected shapes as cut, with the undo group of their delete,
+  so that their paste can join it (see `cut-undo-group`)."
+  [undo-group]
+  (ptk/reify ::remember-cut
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [objects (dsh/lookup-page-objects state)]
+        (assoc state ::cut {:undo-group undo-group
+                            :file-id (:current-file-id state)
+                            :ids (set (cfh/clean-loops objects (dsh/lookup-selected state)))})))))
+
+(defn- cut-undo-group
+  "The undo group of the cut that `pdata` pastes, while that cut is still the
+  last step of the undo history."
+  [state pdata]
+  (let [{:keys [undo-group file-id ids]} (get state ::cut)
+        {:keys [items index]} (:workspace-undo state)
+        last-step (get items (or index (dec (count items))))]
+    (when (and (some? undo-group)
+               (= file-id (:file-id pdata))
+               (= ids (set (:selected pdata)))
+               (= undo-group (:undo-group last-step)))
+      undo-group)))
+
 (declare ^:private paste-transit-shapes)
 (declare ^:private paste-transit-props)
 (declare ^:private paste-html-text)
@@ -954,7 +979,11 @@
                   drop-cell    (when (ctl/grid-layout? all-objects parent-id)
                                  (gslg/get-drop-cell frame-id all-objects position))
 
+                  ;; Pasting what was just cut joins its undo step
+                  cut-group    (cut-undo-group state pdata)
+
                   changes      (-> (pcb/empty-changes it)
+                                   (cond-> (some? cut-group) (pcb/set-undo-group cut-group))
                                    (cld/generate-duplicate-changes all-objects page selected delta
                                                                    libraries ldata file-id {:variant-props variant-props})
                                    (pcb/amend-changes (partial process-rchange media-idx))
@@ -1022,7 +1051,8 @@
                                                :type (get shape :type)
                                                :parent-type parent-type})))))))
 
-               (rx/of (dwu/start-undo-transaction undo-id)
+               (rx/of #(dissoc % ::cut)
+                      (dwu/start-undo-transaction undo-id)
                       (dch/commit-changes changes)
                       (dws/select-shapes selected)
                       (ptk/data-event :layout/update {:ids [frame-id]})

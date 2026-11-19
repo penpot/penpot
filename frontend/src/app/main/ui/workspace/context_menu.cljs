@@ -167,8 +167,7 @@
         do-copy-link      #(st/emit! (dw/copy-link-to-clipboard))
         do-copy-id        #(st/emit! (dw/copy-id-to-clipboard (-> shapes first :id str)))
 
-        do-cut            #(st/emit! (dw/copy-selected)
-                                     (dw/delete-selected))
+        do-cut            #(st/emit! (dw/cut-selected))
         do-paste          #(st/emit! (dw/paste-from-clipboard))
         do-duplicate      #(st/emit! (dwv/duplicate-or-add-variant))
 

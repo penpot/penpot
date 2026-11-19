@@ -118,9 +118,7 @@
                           :command (ds/c-mod "x")
                           :subsections [:edit]
                           :section [:workspace]
-                          :fn #(emit-when-no-readonly
-                                (dw/copy-selected)
-                                (dw/delete-selected))}
+                          :fn #(emit-when-no-readonly (dw/cut-selected))}
 
    :paste                {:tooltip (ds/meta "V")
                           :label (fn [] (tr "shortcuts.paste"))

@@ -872,6 +872,24 @@
           (rx/of (dwgu/remove-guides hover-guides)))))))
 
 
+(defn cut-selected
+  "Copy the selected shapes to the clipboard and delete them. The delete
+  takes an undo group that the paste of these shapes joins while the cut is
+  the last undo step, so one undo reverts the cut and the paste."
+  []
+  (ptk/reify ::cut-selected
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [selected (dsh/lookup-selected state)]
+        (if (d/not-empty? selected)
+          (let [undo-group (uuid/next)]
+            (rx/of (dwcp/copy-selected)
+                   (dwcp/remember-cut undo-group)
+                   (dwsh/delete-shapes nil selected {:undo-group undo-group})
+                   (dws/deselect-all)))
+          (rx/of (dwcp/copy-selected)
+                 (delete-selected)))))))
+
 ;; --- Start renaming selected shape
 
 (defn start-rename-selected

@@ -93,6 +93,7 @@
    [frontend-tests.logic.components-and-tokens]
    [frontend-tests.logic.copy-paste-typography-test]
    [frontend-tests.logic.copying-and-duplicating-test]
+   [frontend-tests.logic.cut-paste-undo-test]
    [frontend-tests.logic.drag-on-save-failure-test]
    [frontend-tests.logic.frame-guides-test]
    [frontend-tests.logic.groups-test]
@@ -353,6 +354,7 @@
    'frontend-tests.logic.components-and-tokens
    'frontend-tests.logic.copy-paste-typography-test
    'frontend-tests.logic.copying-and-duplicating-test
+   'frontend-tests.logic.cut-paste-undo-test
    'frontend-tests.logic.drag-on-save-failure-test
    'frontend-tests.logic.frame-guides-test
    'frontend-tests.logic.groups-test
