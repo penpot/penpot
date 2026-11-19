@@ -212,10 +212,10 @@ test("exiting the review takes the user back to the file", async ({ page }) => {
   await setupPullRequestSandbox(workspacePage);
   await workspacePage.goToWorkspace({ extraParams: `&pr-id=${PR_ID}` });
 
+  // the way out is an icon button on the bar, named by its tooltip
   const banner = reviewBar(page);
   await expect(banner).toBeVisible();
-  await banner.getByRole("button", { name: "Options" }).click();
-  await page.getByText("Exit review").click();
+  await banner.getByRole("button", { name: "Exit review" }).click();
 
   // exiting drops the review context and the pr-id param; the file (the
   // live branch) stays as it was
