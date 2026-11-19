@@ -53,7 +53,11 @@
 (defn default-headers
   []
   {"x-frontend-version" (:full cfg/version)
-   "x-client" (str "penpot-frontend/" (:full cfg/version))})
+   "x-client" (str "penpot-frontend/" (:full cfg/version))
+   ;; The backend validates this against PENPOT_TRUSTED_ORIGINS before using
+   ;; it, so the browser origin can be sent on every /api call, including
+   ;; the GETs where no Origin header is present.
+   "x-penpot-origin" (.-origin ^js globals/location)})
 
 ;; Storage to save the average time of the requests
 (defonce network-averages

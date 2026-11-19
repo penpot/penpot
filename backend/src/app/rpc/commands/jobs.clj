@@ -147,11 +147,17 @@
    ::sm/params schema:create-export-binfile-job
    ::sm/result schema:job-summary}
   [cfg {:keys [::rpc/profile-id] :as envelope}]
-  (let [job-def  (resolve-job-def cfg :export :export-binfile)
+  (let [job-def   (resolve-job-def cfg :export :export-binfile)
+        ;; The job runs after the request, so the base its download link
+        ;; must use travels in the frozen params instead of a thread binding.
+        base      (-> (meta envelope)
+                      (get :app.http/request)
+                      (:app.http/trusted-origin))
         ;; the RPC layer decoded the params against the job-def schema
         ;; before the command ran
-        params   (jobs/validate-params job-def (:params envelope))
-        file-ids (:file-ids params)]
+        params    (cond-> (jobs/validate-params job-def (:params envelope))
+                    (some? base) (assoc :public-uri base))
+        file-ids  (:file-ids params)]
 
     (when (empty? file-ids)
       (ex/raise :type :validation

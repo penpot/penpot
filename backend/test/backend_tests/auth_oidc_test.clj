@@ -1168,7 +1168,7 @@
                     app.loggers.audit/submit              (constantly nil)]
         (let [result (#'oidc/callback-handler cfg request)
               loc    (redirect-location result)]
-          (t/is (= "https://alt.example.com" @seen))
+          (t/is (= "https://alt.example.com" (str @seen)))
           (t/is (.contains loc "https://alt.example.com?screen=auth-verify-token&")))))))
 
 (t/deftest callback-token-exchange-uses-stored-trusted-origin

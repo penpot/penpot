@@ -413,6 +413,9 @@ Existing bookmarks and integrations that use the previous root URL must be
 updated. You may also configure a redirect from the previous URL. If the scheme
 or hostname changes in addition to the path, review your authentication provider
 callback URLs and cookie settings. Active users may need to sign in again.
+After upgrading, register `<public-uri>/api/auth/oidc/callback` at the identity
+provider even when the scheme and hostname stay the same: the callback now keeps
+the configured subpath.
 
 <p class="advice">
     If you plan to serve Penpot under different domain than `localhost` without HTTPS,
@@ -431,13 +434,16 @@ browsing the alternate domain then get links (for example in invitation emails) 
 send them to the canonical deployment.
 
 `PENPOT_TRUSTED_ORIGINS` lets operators list the alternate origins the backend may use
-instead. When a request carries an `Origin` header that matches one of the listed
-origins, the backend uses that origin as the base for the links it generates while
-serving the request (transactional emails, asset URLs, audit and webhook link fields,
-and redirects). Origins that are not listed, and requests without an `Origin` header,
-keep using `PENPOT_PUBLIC_URI`. Removing an origin from the list does not
-invalidate OIDC states already signed with it; they keep using it until they
-expire (up to four hours).
+instead. The frontend sends its own origin in the `X-Penpot-Origin` header on every
+`/api` request made through the shared client, including the `get-*` reads where the
+browser does not send `Origin`. The backend uses that header only when it matches the
+list; otherwise it falls back to the browser's `Origin` header, and finally to
+`PENPOT_PUBLIC_URI`. Links generated while serving the request (transactional emails,
+asset URLs, audit and webhook link fields, and redirects) use that base. A top-level
+navigation cannot carry a custom header: the OIDC callback instead reuses the origin
+stored in the signed state, and MCP OAuth always uses the canonical base. Removing an
+origin from the list does not invalidate OIDC states already signed with it; they keep
+using it until they expire (up to four hours).
 
 ```bash
 # Backend
@@ -447,17 +453,16 @@ PENPOT_TRUSTED_ORIGINS: https://alt.penpot.mycompany.com, https://staging.penpot
 - The value is a comma or whitespace separated list of bare origins
   (`scheme://host[:port]`). Paths are not supported; malformed entries are ignored
   and a warning is logged at startup.
-- The setting is optional and backend-only. With no value, behavior is unchanged
-  (fail-closed).
+- The setting is configured on the backend only; no frontend setting is needed.
+  With no value, behavior is unchanged (fail-closed).
 - Each alternate origin must register its own OIDC callback URL
   (`https://<origin>/api/auth/oidc/callback`) at the identity provider. If you use SSO
   logout, its post-logout redirect URL must be registered as well.
-- Notifications sent later by background workers keep the canonical `PENPOT_PUBLIC_URI`,
-  because they run outside the request that triggered them. The same applies to
-  server-to-server calls (for example the management API) that carry no `Origin`.
-- MCP OAuth endpoints (discovery metadata, the approval redirect and the
-  code-exchange `iss`) follow the stamped origin the same way; without a trusted
-  `Origin` they keep the canonical `PENPOT_PUBLIC_URI`.
+- SSE streams keep the base of the request that opened them. The export job stores
+  that base when it is created and uses it for the download link, because the job
+  runs outside the request. Other notifications sent later by background workers
+  keep the canonical `PENPOT_PUBLIC_URI`, and so do server-to-server calls (for
+  example the management API) that carry no origin.
 
 ## Email configuration
 

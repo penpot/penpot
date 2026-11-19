@@ -770,34 +770,60 @@
                    {}))]
     (with-redefs [cf/config (assoc cf/config
                                    :public-uri "http://localhost:3449"
-                                   :trusted-origins #{"https://alt.example.com"})]
+                                   :trusted-origins #{"https://alt.example.com"
+                                                      "https://other.example.com"
+                                                      "null"})]
       (t/testing "trusted origin overrides the public base and stamps the request"
         (reset! seen nil)
         (handler (th/make-dummy-request {:headers {"origin" "https://alt.example.com"}}))
-        (t/is (= "https://alt.example.com" (:public-uri @seen)))
+        (t/is (= "https://alt.example.com" (str (:public-uri @seen))))
         (t/is (= "https://alt.example.com" (:stamp @seen))))
 
       (t/testing "origin is normalized before matching and use"
         (reset! seen nil)
         (handler (th/make-dummy-request {:headers {"origin" "  HTTPS://Alt.Example.com  "}}))
-        (t/is (= "https://alt.example.com" (:public-uri @seen)))
+        (t/is (= "https://alt.example.com" (str (:public-uri @seen))))
         (t/is (= "https://alt.example.com" (:stamp @seen))))
 
       (t/testing "untrusted origin is ignored"
         (reset! seen nil)
         (handler (th/make-dummy-request {:headers {"origin" "https://evil.example.com"}}))
-        (t/is (= "http://localhost:3449" (:public-uri @seen)))
+        (t/is (= "http://localhost:3449" (str (:public-uri @seen))))
         (t/is (nil? (:stamp @seen))))
 
       (t/testing "missing origin is ignored"
         (reset! seen nil)
         (handler (th/make-dummy-request {}))
-        (t/is (= "http://localhost:3449" (:public-uri @seen)))
+        (t/is (= "http://localhost:3449" (str (:public-uri @seen))))
+        (t/is (nil? (:stamp @seen))))
+
+      (t/testing "trusted x-penpot-origin is used without an origin header"
+        (reset! seen nil)
+        (handler (th/make-dummy-request {:headers {"x-penpot-origin" "https://alt.example.com"}}))
+        (t/is (= "https://alt.example.com" (str (:public-uri @seen))))
+        (t/is (= "https://alt.example.com" (:stamp @seen))))
+
+      (t/testing "trusted x-penpot-origin wins over a different origin header"
+        (reset! seen nil)
+        (handler (th/make-dummy-request {:headers {"x-penpot-origin" "https://alt.example.com"
+                                                   "origin" "https://other.example.com"}}))
+        (t/is (= "https://alt.example.com" (str (:public-uri @seen)))))
+
+      (t/testing "an untrusted x-penpot-origin falls back to a trusted origin"
+        (reset! seen nil)
+        (handler (th/make-dummy-request {:headers {"x-penpot-origin" "https://evil.example.com"
+                                                   "origin" "https://other.example.com"}}))
+        (t/is (= "https://other.example.com" (str (:public-uri @seen)))))
+
+      (t/testing "a listed null custom header never matches"
+        (reset! seen nil)
+        (handler (th/make-dummy-request {:headers {"x-penpot-origin" "null"}}))
+        (t/is (= "http://localhost:3449" (str (:public-uri @seen))))
         (t/is (nil? (:stamp @seen))))
 
       (t/testing "the binding does not leak past the request"
         (handler (th/make-dummy-request {:headers {"origin" "https://alt.example.com"}}))
-        (t/is (= "http://localhost:3449" (cf/get :public-uri)))))))
+        (t/is (= "http://localhost:3449" (str (cf/get :public-uri))))))))
 
 (t/deftest root-middleware-registers-trusted-origin-before-auth
   ;; The feature only works if `mw/trusted-origin` is part of the root chain

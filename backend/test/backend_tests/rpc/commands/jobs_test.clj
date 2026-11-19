@@ -107,6 +107,23 @@
         ;; artifact produced is what proves the call does not wait
         (t/is (= before (count-storage-objects)))))))
 
+(t/deftest create-export-binfile-job-freezes-the-trusted-origin
+  (let [profile (th/create-profile* 1)
+        file-id (first (:file-ids (import-fixture! profile)))
+        data    {::th/type       :create-export-binfile-job
+                 ::rpc/profile-id (:id profile)
+                 :params         {:file-ids    #{file-id}
+                                  :export-type :detach-libraries}}
+        out     (binding [cf/config (assoc cf/config
+                                           :trusted-origins #{"https://alt.example.com"})]
+                  (th/command-through-middleware!
+                   data {:headers {"x-penpot-origin" "https://alt.example.com"}}))]
+    (t/is (th/success? out))
+    (let [job      (jobs/get-job th/*system* (:id (:result out)))
+          job-def  (jobs/get-job-def (::jobs/defs th/*system*) :export-binfile)
+          params   (jobs/decode-params job-def (:params job))]
+      (t/is (= "https://alt.example.com" (:public-uri params))))))
+
 (t/deftest create-export-binfile-job-requires-the-export-type
   ;; the type is part of the contract of the job: a caller that does not
   ;; say how to handle the libraries gets an error, not a package it did

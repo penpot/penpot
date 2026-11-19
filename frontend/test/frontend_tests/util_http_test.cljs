@@ -6,6 +6,7 @@
 
 (ns frontend-tests.util-http-test
   (:require
+   [app.util.globals :as globals]
    [app.util.http :as http]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.async :as async]))
@@ -73,3 +74,8 @@
     (t/is (false? (http/network-failure? (make-error "Error" "Failed to fetch")))))
   (t/testing "Other TypeErrors are not network failures"
     (t/is (false? (http/network-failure? (make-error "TypeError" "x is not a function"))))))
+
+(t/deftest default-headers-carry-the-browser-origin
+  (t/testing "every request with default headers carries the browser origin"
+    (t/is (= (.-origin ^js globals/location)
+             (get (http/default-headers) "x-penpot-origin")))))

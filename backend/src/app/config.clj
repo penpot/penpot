@@ -555,22 +555,25 @@
 
 (defn trusted-origin?
   "Returns true when `origin` matches one of the configured
-  :trusted-origins. Matching is exact on the normalized origin (trimmed
-  and lowercased); no paths, wildcards or subdomain matching."
+  :trusted-origins. Only bare origins are compared: malformed entries
+  (for example `null` or a path) never match. Matching is exact on the
+  normalized origin (trimmed and lowercased); no wildcards or subdomain
+  matching."
   [origin]
   (let [origin (normalize-origin origin)]
     (boolean
-     (and (some? origin)
-          (some #(= origin (normalize-origin %))
+     (and (valid-origin? origin)
+          (some #(and (valid-origin? %)
+                      (= origin (normalize-origin %)))
                 (c/get config :trusted-origins))))))
 
 (defn with-public-uri
-  "Returns a copy of `config` with :public-uri replaced by `base`. When
-  `base` is nil the config is returned unchanged, so callers can use it
-  for requests (or tokens) without a trusted origin."
+  "Returns a copy of `config` with :public-uri replaced by `base` as a URI.
+  When `base` is nil the config is returned unchanged, so callers can use
+  it for requests (or tokens) without a trusted origin."
   [base config]
   (if (some? base)
-    (assoc config :public-uri base)
+    (assoc config :public-uri (u/uri base))
     config))
 
 (defn get

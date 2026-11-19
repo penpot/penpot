@@ -35,18 +35,29 @@
   {:name ::server-timing
    :compile (constantly ymw/wrap-server-timing)})
 
+(defn- resolve-trusted-origin
+  "Prefer the `x-penpot-origin` header sent by the frontend; fall back to
+  the browser's `origin` header. Both are checked against the same
+  allowlist, so neither can widen the base on its own."
+  [request]
+  (let [custom (cf/normalize-origin (yreq/get-header request "x-penpot-origin"))]
+    (if (cf/trusted-origin? custom)
+      custom
+      (let [origin (cf/normalize-origin (yreq/get-header request "origin"))]
+        (when (cf/trusted-origin? origin)
+          origin)))))
+
 (defn wrap-trusted-origin
-  "When the request carries an `origin` header listed in
-  :trusted-origins, stamp it on the request and bind the config
-  :public-uri to it for the dynamic extent of the request. Otherwise the
-  request is left untouched and the canonical :public-uri is used."
+  "When the request carries a trusted origin, stamp it on the request and
+  bind the config :public-uri to it for the dynamic extent of the request.
+  Otherwise the request is left untouched and the canonical :public-uri
+  is used."
   [handler]
   (fn [request]
-    (let [origin (cf/normalize-origin (yreq/get-header request "origin"))]
-      (if (cf/trusted-origin? origin)
-        (binding [cf/config (cf/with-public-uri origin cf/config)]
-          (handler (assoc request ::http/trusted-origin origin)))
-        (handler request)))))
+    (if-let [origin (resolve-trusted-origin request)]
+      (binding [cf/config (cf/with-public-uri origin cf/config)]
+        (handler (assoc request ::http/trusted-origin origin)))
+      (handler request))))
 
 (defn- warn-invalid-trusted-origins!
   "Log a warning for :trusted-origins entries that are not bare origins.
