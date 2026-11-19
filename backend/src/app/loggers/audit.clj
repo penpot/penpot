@@ -130,6 +130,8 @@
     :name
     :type
     :profile-id
+    :profile-name
+    :profile-email
     :ip-addr
     :props
     :context
@@ -307,7 +309,12 @@
   ;; webhook trigger row links back to its origin event through props
   ;; `:event-id`, which used to land nil because the id was generated
   ;; inside `append-audit-entry` without reaching the worker params.
-  (let [event (assoc event :id (or (:id event) (uuid/next)))]
+  ;; The actor snapshot columns belong to `with-actor-snapshots` alone:
+  ;; drop whatever a caller passes so no other row (telemetry shadow,
+  ;; non-allowlisted event) or the webhook payload can carry them.
+  (let [event (-> event
+                  (assoc :id (or (:id event) (uuid/next)))
+                  (dissoc :profile-name :profile-email))]
     (when (contains? cf/flags :audit-log-logger)
       (l/log! ::l/logger "app.audit"
               ::l/level :info
@@ -319,7 +326,9 @@
               :context (json/encode (:context event) :key-fn json/write-camel-key)))
 
     (when (contains? cf/flags :audit-log)
-      (append-audit-entry cfg event))
+      ;; Only the full row carries the actor snapshot: the telemetry
+      ;; shadow and the webhook below keep using `event` as is.
+      (append-audit-entry cfg (first (consumer/with-actor-snapshots cfg [event]))))
 
     (when (contains? cf/flags :telemetry)
       ;; NOTE: when both audit-log and telemetry are enabled, events are stored
@@ -658,6 +667,10 @@
                     (update :props d/nilv {})
                     (update :context d/nilv {})
                     (update :source d/nilv "backend")
+                    ;; The actor snapshot columns belong to
+                    ;; `with-actor-snapshots` alone, which this path
+                    ;; skips with the rest of `process-event`.
+                    (dissoc :profile-name :profile-email)
                     (select-keys event-keys)
                     (check-event))]
       (db/tx-run! cfg append-audit-entry event))))

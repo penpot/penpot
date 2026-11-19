@@ -350,6 +350,104 @@
           (t/is (= day-now (:created-at row2)))
           (t/is (= day-now (:tracked-at row2))))))))
 
+(defn- backend-event
+  [profile-id name]
+  {:id (uuid/next)
+   :type "action"
+   :name name
+   :profile-id profile-id
+   :props {}
+   :context {}
+   :tracked-at (ct/now)
+   :created-at (ct/now)
+   :source "backend"})
+
+(t/deftest backend-process-event-snapshots-the-actor-for-the-admin-console
+  ;; The full row of an admin-console event keeps the actor's name and
+  ;; email as of the event; the telemetry shadow never gets them.
+  ;; The profile is created before enabling :admin-console: team
+  ;; bootstrap calls the real nitrate client, unconfigured in tests.
+  (let [prof (th/create-profile* 1 {:is-active true})]
+    (with-redefs [cf/flags #{:audit-log :telemetry :admin-console}]
+      (audit/submit* th/*system* (backend-event (:id prof) "create-project"))
+      (let [[full shadow] (th/db-exec! ["select * from audit_log order by source"])]
+        (t/is (= "backend" (:source full)))
+        (t/is (= (:fullname prof) (:profile-name full)))
+        (t/is (= (:email prof) (:profile-email full)))
+        (t/is (= "telemetry:backend" (:source shadow)))
+        (t/is (nil? (:profile-name shadow)))
+        (t/is (nil? (:profile-email shadow)))))))
+
+(t/deftest backend-process-event-skips-the-actor-snapshot
+  ;; No snapshot for events the admin console does not archive, nor
+  ;; while its consumer is off.
+  (let [prof (th/create-profile* 1 {:is-active true})]
+    (with-redefs [cf/flags #{:audit-log :admin-console}]
+      (audit/submit* th/*system* (backend-event (:id prof) "test-cmd")))
+    (with-redefs [cf/flags #{:audit-log :nexus}]
+      (audit/submit* th/*system* (backend-event (:id prof) "create-project")))
+    (let [rows (th/db-exec! ["select * from audit_log"])]
+      (t/is (= 2 (count rows)))
+      (t/is (every? (comp nil? :profile-name) rows))
+      (t/is (every? (comp nil? :profile-email) rows)))))
+
+(t/deftest backend-process-event-ignores-caller-actor-fields
+  ;; Only the snapshot writes the actor columns: values a caller puts
+  ;; on the event never reach a row, telemetry shadow included.
+  (let [prof  (th/create-profile* 1 {:is-active true})
+        event (-> (backend-event (:id prof) "test-cmd")
+                  (assoc :profile-name "Caller Name"
+                         :profile-email "caller@example.com"))]
+    (with-redefs [cf/flags #{:audit-log :telemetry :admin-console}]
+      (audit/submit* th/*system* event))
+    (let [rows (th/db-exec! ["select * from audit_log"])]
+      (t/is (= 2 (count rows)))
+      (t/is (every? (comp nil? :profile-name) rows))
+      (t/is (every? (comp nil? :profile-email) rows)))))
+
+(t/deftest insert-ignores-caller-actor-fields
+  ;; `audit/insert` skips `process-event`, so it must drop the actor
+  ;; columns itself: caller values never reach the row, even for an
+  ;; event the admin console archives.
+  (let [prof (th/create-profile* 1 {:is-active true})]
+    (with-redefs [cf/flags #{:audit-log :admin-console}]
+      (audit/insert th/*system* {:name "create-project"
+                                 :type "action"
+                                 :profile-id (:id prof)
+                                 :profile-name "Caller Name"
+                                 :profile-email "caller@example.com"}))
+    (let [[row :as rows] (th/db-exec! ["select * from audit_log"])]
+      (t/is (= 1 (count rows)))
+      (t/is (nil? (:profile-name row)))
+      (t/is (nil? (:profile-email row))))))
+
+(t/deftest push-events-snapshots-the-actor-for-the-admin-console
+  ;; Frontend events the admin console archives (auditlog-exported
+  ;; comes from the admin console UI) keep the actor as of the event.
+  (let [prof (th/create-profile* 1 {:is-active true})]
+    (with-redefs [cf/flags #{:audit-log :admin-console}]
+      (let [params (-> {::th/type :push-audit-events
+                        ::rpc/profile-id (:id prof)
+                        :events [{:name "auditlog-exported"
+                                  :props {:organization-id (str (uuid/next))}
+                                  :context {}
+                                  :timestamp (ct/now)
+                                  :type "action"}
+                                 {:name "navigate"
+                                  :props {:route "dashboard"}
+                                  :context {}
+                                  :timestamp (ct/now)
+                                  :type "action"}]}
+                       (with-meta {:app.http/request http-request}))
+            out    (th/command! params)]
+        (t/is (nil? (:error out)))
+        (let [by-name (->> (th/db-exec! ["select * from audit_log"])
+                           (into {} (map (juxt :name identity))))]
+          (t/is (= (:fullname prof) (get-in by-name ["auditlog-exported" :profile-name])))
+          (t/is (= (:email prof) (get-in by-name ["auditlog-exported" :profile-email])))
+          (t/is (nil? (get-in by-name ["navigate" :profile-name])))
+          (t/is (nil? (get-in by-name ["navigate" :profile-email]))))))))
+
 (t/deftest backend-process-event-forwards-id-to-webhook-task
   ;; The `webhook/trigger` row links back to its origin event through
   ;; props `:event-id`, so `process-event` must forward the stored row
