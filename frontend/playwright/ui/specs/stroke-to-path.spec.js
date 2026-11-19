@@ -21,36 +21,20 @@ async function setupShapesWithStrokes(page) {
   return workspace;
 }
 
-const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
-// `getByText` matches substrings and the conversion names the derived path
-// "<shape> (stroke)", so an unanchored lookup can click the child and then
-// assert a row that already existed. The anchored match assumes the row shows
-// only the layer name: with the debug flags on, the row appends text to the
-// same node (layer_name.cljs:138-146).
-function layerRow(workspace, name) {
-  return workspace.layers
-    .getByTestId("layer-row")
-    .filter({ hasText: new RegExp(`^${escapeRegExp(name)}$`) })
-    .first();
-}
-
 async function strokeToPath(page, workspace, shapeName, strokeName) {
-  const row = layerRow(workspace, shapeName);
-  await expect(row).toBeVisible();
+  await expect(workspace.layerRow(shapeName)).toBeVisible();
   const rowsBefore = await workspace.layers.getByTestId("layer-row").count();
 
-  await row.click({ button: "right" });
-  // The menu entry converts the current selection, and a right click selects
-  // the shape before the menu opens (data/workspace.cljs:1299-1302). The
-  // guard is what attributes the conversion to this row instead of a stale
-  // selection or a "(stroke)" child.
-  await expect(row).toHaveAttribute("aria-checked", "true");
+  // The menu entry converts the current selection, and
+  // `show-shape-context-menu` selects the shape before opening the menu. The
+  // selection assertion attributes the conversion to this row instead of a
+  // stale selection or a "(stroke)" child.
+  await workspace.selectLayer(shapeName, { button: "right" });
 
   await page.getByText("Stroke to path").click();
 
-  await expect(layerRow(workspace, strokeName)).toBeVisible();
-  await expect(layerRow(workspace, shapeName)).toBeVisible();
+  await expect(workspace.layerRow(strokeName)).toBeVisible();
+  await expect(workspace.layerRow(shapeName)).toBeVisible();
   await expect(workspace.layers.getByTestId("layer-row")).toHaveCount(
     rowsBefore + 1,
   );

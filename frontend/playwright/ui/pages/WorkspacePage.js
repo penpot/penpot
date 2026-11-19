@@ -589,11 +589,14 @@ export class WorkspacePage extends BaseWebSocketPage {
   // append text to the same node. Matching by accessible name is not an
   // option: a selected row shows its hide and lock buttons, whose titles
   // join the name.
-  layerRow(name) {
+  layerRows(name) {
     return this.layers
       .getByTestId("layer-row")
-      .filter({ hasText: new RegExp(`^${escapeRegExp(name)}$`, "i") })
-      .first();
+      .filter({ hasText: new RegExp(`^${escapeRegExp(name)}$`, "i") });
+  }
+
+  layerRow(name) {
+    return this.layerRows(name).first();
   }
 
   async selectLayer(name, clickOptions = {}) {

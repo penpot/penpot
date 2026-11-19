@@ -28,16 +28,6 @@ async function setupWorkspaceWithFrames(workspacePage) {
   });
 }
 
-const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
-// `getByText` matches substrings anywhere on the page; the row is anchored so a
-// click lands on the frame the step names and not on a shape that contains it.
-function layerRow(workspacePage, name) {
-  return workspacePage.layers
-    .getByTestId("layer-row")
-    .filter({ hasText: new RegExp(`^${escapeRegExp(name)}$`) });
-}
-
 // The "file" entry of the main menu has a stable id, so it does not depend on
 // which text on the page happens to contain the word. "Export shapes" always
 // renders, and it is the anchor that proves the submenu really opened: without
@@ -81,8 +71,8 @@ test.describe("Export frames to PDF", () => {
     const workspacePage = new WasmWorkspacePage(page);
     await setupWorkspaceWithFrames(workspacePage);
 
-    const boardOne = layerRow(workspacePage, "Board 1");
-    const boardTwo = layerRow(workspacePage, "Board 2");
+    const boardOne = workspacePage.layerRows("Board 1");
+    const boardTwo = workspacePage.layerRows("Board 2");
 
     // One dialog row per frame; they are the only buttons named after a board.
     const dialogRow = (name) => page.getByRole("button", { name });

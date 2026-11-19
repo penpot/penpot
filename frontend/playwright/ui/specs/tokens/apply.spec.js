@@ -726,7 +726,8 @@ test.describe("Tokens: Apply token", () => {
     });
 
     await test.step("border radius", async () => {
-      // The radius case uses the second shape of the fixture.
+      // The radius case uses the third layer row, a rectangle no earlier step
+      // has touched.
       await selectShape(2);
 
       const radiusSection = page.getByRole("region", {

@@ -84,6 +84,13 @@ test("Sidebar maintains independent scroll positions per tab", async ({
   const tokensPos = await tokensContainers[0].evaluate((el) => el.scrollTop);
   expect(tokensPos).toBeGreaterThan(0);
 
+  // A hop through Assets must bring back the Tokens position: this round trip
+  // was its own test before the merge.
+  await page.getByRole("tab", { name: "Assets" }).click();
+  await page.getByRole("tab", { name: "Tokens" }).click();
+  const tokensAfterAssets = (await scrollableContainers(page))[0];
+  await expectScrollRestored(tokensAfterAssets, tokensPos);
+
   // Switch to Layers: fresh panel, must start at top (not contaminated
   // by the Tokens position saved under a different key).
   await page.getByRole("tab", { name: "Layers" }).click();

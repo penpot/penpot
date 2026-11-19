@@ -15,10 +15,9 @@ test.afterEach(async ({ context }) => {
 });
 
 // One `setupEmptyFile` only: a second call registered `get-team?id=*` again and,
-// because the route added last wins (`WorkspacePage.js:286-290`), it cancelled
-// the variants team fixture that used to sit between the two calls. These tests
-// have always run with the default team, so that fixture is gone and the
-// effective mocks stay the same.
+// because the route added last wins, it cancelled the variants team fixture
+// that used to sit between the two calls. These tests have always run with the
+// default team, so that fixture is gone and the effective mocks stay the same.
 const setupVariantsFile = async (workspacePage) => {
   await workspacePage.setupEmptyFile();
   await workspacePage.mockRPC(
@@ -50,13 +49,16 @@ const waitForComponentIcon = async (workspacePage, name) => {
 const setupVariantsFileWithVariant = async (workspacePage) => {
   await setupVariantsFile(workspacePage);
 
-  await workspacePage.clickLeafLayer("Rectangle");
+  await workspacePage.selectLayer("Rectangle");
   await workspacePage.page.keyboard.press("ControlOrMeta+k");
-  await workspacePage.page.waitForTimeout(500);
-  await workspacePage.page.keyboard.press("ControlOrMeta+k");
-  await workspacePage.page.waitForTimeout(500);
-
   await waitForComponentIcon(workspacePage, "Rectangle");
+  await workspacePage.page.keyboard.press("ControlOrMeta+k");
+
+  // The second shortcut turns the main component into a variant container and
+  // its children into variants; wait for those rows instead of a fixed delay.
+  const variant = await findVariant(workspacePage, 0);
+  await expect(variant.variant1).toBeVisible();
+  await expect(variant.variant2).toBeVisible();
 };
 
 const findVariant = async (workspacePage, index) => {
@@ -111,16 +113,11 @@ const findVariantNoWait = (workspacePage, index) => {
   };
 };
 
-// The layer rows are draggable and drop a click now and then while the document
-// settles, and copy/cut/duplicate act on the selection as it is at that moment,
-// so retry the click until the row reports the selection.
+// Selecting acts on the selection as it is at that moment, so click once and
+// assert the state. A retry would hide a lost click instead of reporting it.
 const selectRow = async (row) => {
-  await expect(async () => {
-    await row.click();
-    await expect(row).toHaveAttribute("aria-checked", "true", {
-      timeout: 1000,
-    });
-  }).toPass({ timeout: 10000 });
+  await row.click();
+  await expect(row).toHaveAttribute("aria-checked", "true");
 };
 
 // A container keeps its children rows in the tree only while it is expanded, and
@@ -165,7 +162,7 @@ test("User creates a variant", async ({ page }) => {
   await validateVariant(variant);
 
   // Extra validators
-  await variant.container.click();
+  await selectRow(variant.container);
 
   const variants = await workspacePage.layers
     .getByTestId("layer-row")
@@ -202,8 +199,7 @@ test("User duplicates a variant container", async ({ page }) => {
   await expect(containerRows).toHaveCount(2);
 
   // The copy is inserted above the original: index 0 is the duplicate and index
-  // 1 is the original, checked by comparing the rows' ids with the one the
-  // container had before duplicating.
+  // 1 is the original.
   const variant_original = await findVariant(workspacePage, 1);
   const variant_duplicate = await findVariant(workspacePage, 0);
 
@@ -414,7 +410,7 @@ test("User cut paste a component inside a variant", async ({ page }) => {
   await workspacePage.cut("keyboard");
 
   //Paste the component inside the variant
-  await variant.container.click();
+  await selectRow(variant.container);
   await workspacePage.paste("keyboard");
 
   const variant3 = await workspacePage.layers
@@ -470,11 +466,14 @@ test("User takes a component with a path into a variant", async ({ page }) => {
   });
 
   await test.step("cut and paste", async () => {
+    const before = await variantNamed("button, hover").count();
+
     await createNamedComponent();
     await workspacePage.cut("keyboard");
-    await variant.container.click();
+    await selectRow(variant.container);
     await workspacePage.paste("keyboard");
-    await expect(variantNamed("button, hover")).toHaveCount(2);
+
+    await expect(variantNamed("button, hover")).toHaveCount(before + 1);
   });
 });
 
