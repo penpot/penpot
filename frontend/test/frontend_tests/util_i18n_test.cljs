@@ -6,14 +6,13 @@
 
 (ns frontend-tests.util-i18n-test
   (:require
+   [app.config :as cf]
    [app.util.i18n :as i18n]
    [cljs.test :as t]))
 
 (defn- detect
-  "First supported candidate for a browser language, as autodetect picks."
   [language]
-  (let [supported (into #{} (map :value) i18n/supported-locales)]
-    (some supported (#'i18n/parse-locale language))))
+  (#'i18n/autodetect language))
 
 (t/deftest traditional-chinese-browser-languages
   (doseq [language ["zh-TW" "zh-HK" "zh-MO" "zh-Hant" "zh-Hant-TW" "zh-Hant-HK"]]
@@ -32,4 +31,4 @@
   (t/is (= "pt_br" (detect "pt-BR")))
   (t/is (= "fr" (detect "fr-BE")))
   (t/is (= "ja" (detect "ja-JP")))
-  (t/is (nil? (detect "xx-YY"))))
+  (t/is (= cf/default-language (detect "xx-YY"))))
