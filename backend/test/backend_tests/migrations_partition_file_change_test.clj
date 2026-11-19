@@ -126,14 +126,20 @@
                   (run-migration! conn)
 
                   (let [rows     (db/exec! conn ["SELECT id, revn, kind, label, data, changes,
-                                                         created_at, updated_at, deleted_at, created_by
-                                                    FROM file_change
-                                                   ORDER BY revn"])
+                                                          created_at, updated_at, deleted_at, created_by
+                                                     FROM file_change
+                                                    ORDER BY revn"])
                         snapshot (first rows)
                         revision (second rows)
-                        legacy   (db/exec! conn ["SELECT id, revn, data, changes
+                        legacy   (db/exec! conn ["SELECT id, revn, data, changes, created_at,
+                                                         updated_at, deleted_at
                                                     FROM file_change_legacy
-                                                   ORDER BY revn"])]
+                                                   ORDER BY revn"])
+                        ;; Compare with source rows read back from PostgreSQL:
+                        ;; timestamptz stores microseconds, while the fixture
+                        ;; Instants can carry nanoseconds.
+                        legacy-snapshot (first legacy)
+                        legacy-revision (second legacy)]
 
                     (t/testing "both rows are in the partitioned table"
                       (t/is (= 2 (count rows)))
@@ -145,16 +151,16 @@
                       (t/is (= "user" (:created-by snapshot)))
                       (t/is (= (seq snap-data) (seq ^bytes (:data snapshot))))
                       (t/is (nil? (:changes snapshot)))
-                      (t/is (= (inst-ms created-at) (inst-ms (:created-at snapshot))))
-                      (t/is (= (inst-ms updated-at) (inst-ms (:updated-at snapshot))))
-                      (t/is (= (inst-ms deleted-at) (inst-ms (:deleted-at snapshot)))))
+                      (t/is (= (:created-at legacy-snapshot) (:created-at snapshot)))
+                      (t/is (= (:updated-at legacy-snapshot) (:updated-at snapshot)))
+                      (t/is (= (:deleted-at legacy-snapshot) (:deleted-at snapshot))))
 
                     (t/testing "the unlabelled row is a revision with its changes"
                       (t/is (= 2 (:kind revision)))
                       (t/is (nil? (:label revision)))
                       (t/is (= (seq rev-changes) (seq ^bytes (:changes revision))))
                       (t/is (nil? (:data revision)))
-                      (t/is (= (inst-ms created-at) (inst-ms (:created-at revision)))))
+                      (t/is (= (:created-at legacy-revision) (:created-at revision))))
 
                     (t/testing "the legacy table keeps the rows for the rollback"
                       (t/is (= 2 (count legacy)))
