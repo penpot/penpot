@@ -14,6 +14,22 @@
   inset-block-end: 0;
   overflow: hidden;
   border-inline-end: $b-2 solid var(--color-background-quaternary);
+  border-start-start-radius: $br-12;
+  border-end-start-radius: $br-12;
+
+  // the frame of the canvas (`rulers/viewport-frame*`) is drawn under
+  // this half: it is drawn again on top, with its rounded corners. Over
+  // the pictures, and not as a border, which would move them
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border: $b-2 solid var(--panel-border-color);
+    border-inline-end: none;
+    border-start-start-radius: $br-12;
+    border-end-start-radius: $br-12;
+    pointer-events: none;
+  }
 }
 
 .layer {

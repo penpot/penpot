@@ -345,7 +345,7 @@
                                         (str reviewed-n) (str total)))])))
      :progress (when loaded?
                  (tr "workspace.branches.review.footer.reviewed" (str reviewed-n) (str total)))
-     :exit   {:label (tr "workspace.compare.bar.exit") :on-click on-exit}
+     :exit   {:label (tr "workspace.compare.bar.exit") :icon i/close :on-click on-exit}
      :action (cond
                (not loaded?)
                nil
@@ -380,7 +380,7 @@
                 (tr "workspace.branches.banner.status.conflicts" (i18n/c total)))
      :detail  (tr "workspace.compare.bar.decided" (str decided) (str total))
      :progress (tr "workspace.compare.bar.decided" (str decided) (str total))
-     :exit    {:label (tr "workspace.compare.bar.back") :on-click on-back}
+     :exit    {:label (tr "workspace.compare.bar.back") :icon i/arrow-left :on-click on-back}
      :action  {:label (if incoming
                         (tr "workspace.compare.bar.apply-update")
                         (tr "workspace.branches.conflicts.apply"))
@@ -394,8 +394,9 @@
   "What the bar at the bottom of the canvas says and offers in the
   compare mode, for the banner that draws it: its `:icon` (a `:warning`
   one while conflicts wait), `:title` and `:detail`, the `:progress` of
-  the review or of the decisions, the way out (`:exit`) and the main
-  `:action`, each `{:label :on-click}` with `:disabled` and `:icon`. An
+  the review or of the decisions, the way out (`:exit`, drawn as its
+  `:icon` alone, its `:label` in a tooltip) and the main `:action`, each
+  `{:label :on-click}` with `:disabled` and `:icon`. An
   action that merges into main says so (`:merge`), as not everybody may
   merge."
   [comparison]

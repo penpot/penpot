@@ -117,11 +117,12 @@
 (t/deftest ^:async main-is-known-by-the-changes-of-both-directions
   (let [calls   (atom [])
         change  {:kind :shape :status :modified :id (uuid/next)}
+        clash   {:kind :shape :status :conflict :id (uuid/next)}
         answers (mock/stub (fn [cmd params]
                              (swap! calls conj [cmd params])
                              (if (and (= :get-branch-diff cmd)
                                       (= :main->branch (:direction params)))
-                               (rx/of {:changes [change] :conflicts []})
+                               (rx/of {:changes [change] :conflicts [clash]})
                                (rx/subject))))]
     (await
      (mock/with-mocks* {rp/cmd! answers}
@@ -137,9 +138,12 @@
                        (mapv (comp :direction second))))
                "the diff listed, then its other direction")
          (t/is (= [change] (get-in @store [:workspace-compare :other-changes])))
+         (t/is (= [clash] (get-in @store [:workspace-compare :other-conflicts]))
+               "with its conflicts, which its tab counts")
          (ptk/emit! store (dwcp/set-direction :main->branch))
          (t/is (nil? (get-in @store [:workspace-compare :other-changes]))
                "the ones of the direction left do not stay")
+         (t/is (nil? (get-in @store [:workspace-compare :other-conflicts])))
          (rx/push! stopper :stop)
          (rx/dispose! store))))))
 

@@ -329,6 +329,17 @@
         loaded?    (= status :loaded)
         direction  (if incoming :main->branch :branch->main)
         total      (get-in model [:counts :all])
+        other-dir  (if incoming :branch->main :main->branch)
+        ;; the changes of the other direction come with every diff, so
+        ;; its tab can count them before it is shown
+        other-total (mf/with-memo [(:other-changes mode) (:other-conflicts mode) data]
+                      (when (some? (:other-changes mode))
+                        (-> (brc/change-model {:changes (:other-changes mode)
+                                               :conflicts (:other-conflicts mode)}
+                                              {:filter :all
+                                               :pages-index (:pages-index data)
+                                               :pages (:pages data)})
+                            (get-in [:counts :all]))))
         first-key  (some-> (first rows) dwcp/item-key)
         ;; the entry of the layer under the pointer, while the canvas
         ;; answers for the layers with a change (`hover-ids`)
@@ -399,6 +410,10 @@
     (mf/with-effect [loaded? direction total]
       (when (and loaded? (not resolving?))
         (st/emit! (dwcp/set-count direction total))))
+
+    (mf/with-effect [other-dir other-total]
+      (when (and (some? other-total) (not resolving?))
+        (st/emit! (dwcp/set-count other-dir other-total))))
 
     ;; the edits one side made alone are not in doubt: they are filled in
     ;; from that side, so only the conflicting properties wait

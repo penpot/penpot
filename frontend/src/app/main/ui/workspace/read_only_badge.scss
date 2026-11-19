@@ -1,0 +1,26 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS SUBSIDIARY SL
+
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+
+// quiet: it says how the file is, it asks for nothing
+.badge {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--sp-xxs);
+  block-size: $sz-24;
+  padding-inline: var(--sp-xs) var(--sp-s);
+  border-radius: $br-6;
+  background-color: var(--color-background-tertiary);
+  color: var(--color-foreground-secondary);
+  white-space: nowrap;
+}
+
+.icon {
+  color: var(--color-foreground-secondary);
+}

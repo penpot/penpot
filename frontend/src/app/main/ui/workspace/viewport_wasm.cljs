@@ -725,14 +725,6 @@
      ;; (`actions/on-mouse-wheel`)
      [:div {:class (stl/css :viewport-overlays)
             :data-canvas-overlays true}
-      (when show-comments?
-        [:> comments/comments-layer* {:vbox vbox
-                                      :page-id page-id
-                                      :file-id file-id
-                                      :vport vport
-                                      :zoom zoom
-                                      :show-rulers show-rulers?}])
-
       ;; the changes of a design review and the layer picker of a task
       [:> review-overlays* {:vbox vbox
                             :vport vport
@@ -749,6 +741,16 @@
                                :hover-ids (when picking?
                                             (cond-> (vec @hover-ids)
                                               (some? (:id @hover)) (conj (:id @hover))))}])
+
+      ;; above the marks of the changes: a thread or a task opened from
+      ;; a bubble covers them
+      (when show-comments?
+        [:> comments/comments-layer* {:vbox vbox
+                                      :page-id page-id
+                                      :file-id file-id
+                                      :vport vport
+                                      :zoom zoom
+                                      :show-rulers show-rulers?}])
 
       (when picking-color?
         [:> pixel-overlay/pixel-overlay-wasm* {:viewport-ref viewport-ref

@@ -6939,6 +6939,10 @@ msgstr "Token de %s"
 msgid "workspace.branches.review.copies.via"
 msgstr "%s sigue el cambio a través de su copia de %s"
 
+#: src/app/main/ui/workspace/sidebar/branch_review/compare.cljs:750
+msgid "workspace.branches.review.footer.reviewed"
+msgstr "%s de %s revisados"
+
 #: src/app/main/ui/workspace/sidebar/branch_review/compare.cljs:201
 msgid "workspace.branches.review.view.side"
 msgstr "Lado a lado"
@@ -10494,6 +10498,10 @@ msgstr ""
 #: src/app/main/ui/workspace/sidebar/pull_requests.cljs:623
 msgid "workspace.pull-requests.banner.cancel"
 msgstr "Cancelar revisión"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:759
+msgid "workspace.pull-requests.banner.exit"
+msgstr "Salir de la revisión"
 
 #: src/app/main/ui/workspace/sidebar/pull_requests.cljs
 msgid "workspace.pull-requests.banner.publish"

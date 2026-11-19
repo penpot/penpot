@@ -554,7 +554,7 @@
      (when (some? progress)
        [:*
         [:div {:class (stl/css :pr-banner-separator)}]
-        [:span {:class (stl/css :pr-banner-title)} progress]])
+        [:span {:class (stl/css :pr-banner-title :pr-banner-progress)} progress]])
 
      [:div {:class (stl/css :pr-banner-separator)}]
 
@@ -565,8 +565,11 @@
                      :disabled (boolean (:disabled action))
                      :on-click (:on-click action)}
          (:label action)])
-      [:> button* {:variant "ghost" :on-click (:on-click exit)}
-       (:label exit)]]]))
+      [:> icon-button* {:variant "ghost"
+                        :icon (:icon exit)
+                        :aria-label (:label exit)
+                        :tooltip-placement "top"
+                        :on-click (:on-click exit)}]]]))
 
 (defn canvas-center
   "The middle of the canvas, in pixels from the left of the window. The bar of
@@ -690,8 +693,11 @@
            (when reviewer?
              [:> button* {:variant "primary" :on-click on-review}
               (tr "workspace.review.submit")])
-           [:> button* {:variant "ghost" :on-click on-exit}
-            (tr "workspace.pull-requests.banner.exit")]
+           [:> icon-button* {:variant "ghost"
+                             :icon i/exit
+                             :aria-label (tr "workspace.pull-requests.banner.exit")
+                             :tooltip-placement "top"
+                             :on-click on-exit}]
 
            ;; the bar sits at the bottom of the canvas: its menu opens upwards
            [:div {:class (stl/css :pr-banner-menu)}

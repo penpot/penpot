@@ -38,7 +38,9 @@
      :counts    how many changes each direction lists, once it loaded
      :other-changes the changes of the direction the diff does not list,
                 once they loaded (`watch-events`): main is the branch
-                without its own changes and with the ones main made}
+                without its own changes and with the ones main made
+     :other-conflicts the conflicts that direction lists, which its tab
+                counts before it is shown}
 
   The diff itself, its direction, the per-change selection, the review
   marks and the conflict choices stay in `:workspace-branch-diff`
@@ -597,11 +599,13 @@
           (rx/empty))))))
 
 (defn- set-other-changes
-  [changes]
+  [{:keys [changes conflicts]}]
   (ptk/reify ::set-other-changes
     ptk/UpdateEvent
     (update [_ state]
-      (d/update-when state :workspace-compare assoc :other-changes changes))))
+      (d/update-when state :workspace-compare assoc
+                     :other-changes changes
+                     :other-conflicts conflicts))))
 
 (defn- fetch-other-changes
   "Load the changes of the direction the diff of the mode does not list.
@@ -613,7 +617,7 @@
   (ptk/reify ::fetch-other-changes
     ptk/UpdateEvent
     (update [_ state]
-      (d/update-when state :workspace-compare dissoc :other-changes))
+      (d/update-when state :workspace-compare dissoc :other-changes :other-conflicts))
 
     ptk/WatchEvent
     (watch [_ state stream]
@@ -624,7 +628,7 @@
                         :main->branch)]
         (if (and (some? branch-id) (= branch-id (:branch-id diff-st)))
           (->> (rp/cmd! :get-branch-diff {:branch-id branch-id :direction direction})
-               (rx/map #(set-other-changes (:changes %)))
+               (rx/map set-other-changes)
                (rx/catch (fn [_] (rx/empty)))
                (rx/take-until
                 (rx/filter #(or (ptk/type? ::fetch-other-changes %)

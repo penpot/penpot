@@ -426,6 +426,13 @@
   color: var(--color-foreground-primary);
 }
 
+// how far the review of the comparison is, beside its route
+.pr-banner-progress {
+  @include use-typography("body-small");
+
+  white-space: nowrap;
+}
+
 .pr-banner-actions {
   display: flex;
   align-items: center;

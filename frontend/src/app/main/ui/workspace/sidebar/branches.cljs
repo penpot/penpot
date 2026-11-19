@@ -1143,14 +1143,17 @@
       [:span {:class (stl/css :branch-banner-review)} detail]]
      [:div {:class (stl/css :branch-banner-separator)}]
      [:div {:class (stl/css :branch-banner-actions)}
-      [:> button* {:variant "secondary" :on-click (:on-click exit)}
-       (:label exit)]
       (when (some? action)
         [:> button* {:variant "primary"
                      :icon (:icon action)
                      :disabled (boolean (:disabled action))
                      :on-click (:on-click action)}
-         (:label action)])]]))
+         (:label action)])
+      [:> icon-button* {:variant "ghost"
+                        :icon (:icon exit)
+                        :aria-label (:label exit)
+                        :tooltip-placement "top"
+                        :on-click (:on-click exit)}]]]))
 
 (mf/defc branch-context-banner*
   [{:keys [file-id]}]
