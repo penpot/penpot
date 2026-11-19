@@ -30,7 +30,7 @@ Compose-based dev environment under `docker/devenv/`, driven by `manage.sh`. Par
 
 ## Worker policy
 
-Backend workers run only on ws0. `_env` gates `enable-backend-worker` on `PENPOT_BACKEND_WORKER`; ws1+ inject it as false. Workers are pure fire-and-forget: `jobs/submit` inserts a row into the shared Postgres `job` table and returns (the legacy `task` table stays dormant); RPC handlers never wait on completion and workers never publish to msgbus. The reason for "ws0 only" is avoiding multi-instance worker races (cron dedup is best-effort across instances, `jobs/submit` `dedupe` is racy across submitters); details in `mem:prod-infra/core`.
+Backend workers run only on ws0. `_env` gates `enable-backend-worker` on `PENPOT_BACKEND_WORKER`; ws1+ inject it as false. Workers are fire-and-forget from the RPC's point of view: `jobs/submit` inserts a row into the shared Postgres `job` table and returns (the legacy `task` table stays dormant) and RPC handlers never wait on completion. A job with an owner profile does publish `:job-event` on that profile's msgbus topic after the commit, on the msgbus of the workspace that executes it; with per-workspace valkey, a job enqueued from ws1 and run on ws0 notifies ws0's bus, not ws1's. The reason for "ws0 only" is avoiding multi-instance worker races (cron dedup is best-effort across instances; `jobs/submit` resolves its dedupe and exclusivity in the database, so the submit itself does not race); details in `mem:prod-infra/core`.
 
 Each workspace is independent and can be started/stopped in any order. Shared infra (Postgres, RustFS, etc.) is shut down only when no instances remain running.
 

@@ -16,7 +16,6 @@
    [app.db :as db]
    [app.http :as-alias http]
    [app.loggers.audit :as audit]
-   [app.loggers.audit.consumer-task :as consumer]
    [app.loggers.database :as loggers.db]
    [app.loggers.mattermost :as loggers.mm]
    [app.metrics :as mtx]
@@ -125,10 +124,10 @@
 (defn- insert-rows!
   [tx rows]
   (when (seq rows)
-    (db/insert-many! tx :audit-log event-columns rows)
-    ;; Same transaction as the rows: every ingested record is born
-    ;; pending for every enabled consumer (see consumer-task).
-    (consumer/queue-pendings tx (map first rows))))
+    ;; The producer only inserts: each consumer reads the row from its
+    ;; own cursor, so there is no queue to fill here (and no consumer
+    ;; contract to keep in sync with this namespace).
+    (db/insert-many! tx :audit-log event-columns rows)))
 
 (defn- handle-events
   [{:keys [::db/pool] :as cfg} params]
@@ -141,9 +140,9 @@
       (run! (partial loggers.db/emit cfg) events)
       (run! (partial loggers.mm/emit cfg) events))
 
-    ;; Rows and their pendings commit together in one transaction: a
-    ;; row never outlives its queue. Both faces are best-effort, so a
-    ;; failure drops the whole batch (counted below as failed); the
+    ;; The rows of both faces commit together (the consumers read them
+    ;; from their own cursors afterwards). Both faces are best-effort,
+    ;; so a failure drops the whole batch (counted below as failed); the
     ;; endpoint still answers without breaking the request.
     (let [metrics     (mtx/instance cfg)
           full-rows   (if (contains? cf/flags :audit-log)

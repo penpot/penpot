@@ -221,29 +221,18 @@
 (def ^:private sql:aged-telemetry
   "source LIKE 'telemetry:%' AND created_at < now() - interval '7 days'")
 
-(def ^:private sql:gc-pendings
-  (str "DELETE FROM audit_log_pending WHERE audit_log_id IN"
-       " (SELECT id FROM audit_log WHERE " sql:aged-telemetry ")"))
-
 (def ^:private sql:gc-events
   (str "DELETE FROM audit_log WHERE " sql:aged-telemetry))
 
 (defn- gc-events
   "Delete telemetry-mode events older than `telemetry-retention-days`
-  so that the buffer stays bounded."
+  so that the buffer stays bounded. The telemetry shadows are outside
+  the consumer GC on purpose: this task owns them."
   [{:keys [::db/conn]}]
-  ;; One transaction for both deletes: a crash between them would
-  ;; leave pending-less rows for the consumer sweep to delete unsent.
-  ;; Pendings first: the queue holds a row per consumer for every
-  ;; record, and the FK would reject deleting a row that still has
-  ;; pendings.
-  (db/tx-run! conn
-              (fn [{:keys [::db/conn]}]
-                (db/exec-one! conn [sql:gc-pendings])
-                (let [result (db/exec-one! conn [sql:gc-events])]
-                  (when (pos? (:next.jdbc/update-count result))
-                    (l/warn :hint "purged stale telemetry events"
-                            :count (:next.jdbc/update-count result)))))))
+  (let [result (db/exec-one! conn [sql:gc-events])]
+    (when (pos? (:next.jdbc/update-count result))
+      (l/warn :hint "purged stale telemetry events"
+              :count (:next.jdbc/update-count result)))))
 
 (def ^:private sql:fetch-telemetry-events
   "SELECT id, name, type, source, tracked_at, profile_id, props, context
@@ -287,17 +276,13 @@
         false))))
 
 (defn- delete-sent-events
-  "Delete rows by their ids after a successful send. One transaction
-  for both deletes: a crash between them would leave pending-less
-  rows for the consumer sweep to delete unsent."
+  "Delete rows by their ids after a successful send. The telemetry
+  shadows are outside the consumer GC, so this task is their only
+  deleter: it can remove a row a consumer has not read yet (the cursor
+  simply skips over the missing position)."
   [conn ids]
-  (db/tx-run! conn
-              (fn [tx]
-                (let [tx-conn (::db/conn tx)
-                      arr (db/create-array tx-conn "uuid" ids)]
-                  ;; Pendings first: same FK reason as in `gc-events`.
-                  (db/exec-one! tx-conn ["DELETE FROM audit_log_pending WHERE audit_log_id = ANY(?)" arr])
-                  (db/exec-one! tx-conn ["DELETE FROM audit_log WHERE id = ANY(?)" arr])))))
+  (let [arr (db/create-array conn "uuid" ids)]
+    (db/exec-one! conn ["DELETE FROM audit_log WHERE id = ANY(?)" arr])))
 
 (defn- collect-and-send-audit-events
   "Collect anonymous telemetry-mode audit events and ship them to the

@@ -21,8 +21,6 @@
    [app.http :as-alias http]
    [app.http.access-token :as-alias actoken]
    [app.jobs :as jobs]
-   [app.loggers.audit.consumer-task :as consumer]
-   [app.loggers.audit.tasks :as-alias tasks]
    [app.loggers.webhooks :as-alias webhooks]
    [app.rpc :as-alias rpc]
    [app.setup :as-alias setup]
@@ -87,6 +85,17 @@
     :sync-succeeded
     :sync-failed
     :snapshot-complete})
+
+(def ^:private telemetry-sources
+  #{"telemetry:backend" "telemetry:frontend"})
+
+(defn telemetry-shadow-source?
+  "True for the anonymized shadow sources of the telemetry consumer. A
+  selective consumer must skip them: the full row carries the event
+  already, and the shadow keeps the event name, so processing it would
+  ingest the same event twice (once full, once anonymized)."
+  [source]
+  (contains? telemetry-sources (str source)))
 
 (def ^:private safe-backend-context-keys
   #{:version
@@ -282,13 +291,13 @@
                    (update :props db/tjson)
                    (update :context db/tjson)
                    (update :ip-addr db/inet))
-        params (select-keys params event-keys)
-        row    (db/insert! cfg :audit-log params)]
-    ;; The consumer queue follows the row in the same transaction: one
-    ;; pending per enabled consumer. A rollback takes both on its way
-    ;; out, so a row never outlives its queue.
-    (consumer/queue-pendings cfg [(:id row)])
-    row))
+        params (select-keys params event-keys)]
+    ;; The producer knows nothing about the consumers: one row, and each
+    ;; consumer reads it from its own cursor. The row and the cursor
+    ;; position commit independently, so a consumer can process a row
+    ;; only after it is visible here (the snapshot cut in the consumer
+    ;; guarantees it).
+    (db/insert! cfg :audit-log params)))
 
 (def ^:private xf:filter-telemetry-props
   "Transducer that keeps only map entries whose values are UUIDs,
@@ -350,14 +359,17 @@
                             (ifn? batch-key)    (dm/str label ":" (batch-key (::rpc/params event)))
                             (string? batch-key) (dm/str label ":" batch-key)
                             :else               label)
-            dedupe?       (boolean (and batch-key batch-timeout))]
+            debounce?     (boolean (and batch-key batch-timeout))]
 
         (jobs/submit cfg
                      {::jobs/name :process-webhook-event
                       ::jobs/queue :webhooks
                       ::jobs/max-retries 0
                       ::jobs/delay (or batch-timeout 0)
-                      ::jobs/dedupe dedupe?
+                      ;; A batch slides its window with every event and
+                      ;; delivers the last payload, so the receiver is
+                      ;; told once about the whole burst.
+                      ::jobs/debounce debounce?
                       ::jobs/label label
                       ;; The event travels as an opaque transit blob:
                       ;; transit preserves the instant/UUID/set types
@@ -373,13 +385,13 @@
     event))
 
 (defn submit*
-  "A public API, lower-level than submit, assumes all required fields are filled"
+  "A public API, lower-level than submit, assumes all required fields are
+  filled. A failure propagates: an event that cannot be stored never
+  reaches any consumer, and nothing records that it was lost. Swallowing
+  it here made that invisible."
   [cfg event]
-  (try
-    (let [event (check-event event)]
-      (db/tx-run! cfg process-event event))
-    (catch Throwable cause
-      (l/error :hint "unexpected error processing event" :cause cause))))
+  (let [event (check-event event)]
+    (db/tx-run! cfg process-event event)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PUBLIC API
@@ -454,12 +466,14 @@
 (defn- coerce-profile-id
   "Normalize a hand-written `::audit/profile-id` override to a uuid.
 
-  `schema:event` requires a uuid and `submit*` swallows the validation
-  error, so a value that is not a uuid loses the event instead of
-  failing loudly. Commands read the override from places that are not
-  typed by us (token claims, stringly-typed drivers), so a string has
-  to be accepted. Anything that cannot become a uuid is discarded, and
-  the event falls back to the caller, which is always a valid uuid."
+  `schema:event` requires a uuid and `submit*` propagates the validation
+  error; `wrap-audit` runs after the command commits (moving it inside the
+  transaction is project P8 in `TODO.md`), so an invalid override would fail
+  the response over an already committed action. Commands read the
+  override from places that are not typed by us (token claims,
+  stringly-typed drivers), so a string has to be accepted. Anything that
+  cannot become a uuid is discarded, and the event falls back to the
+  caller, which is always a valid uuid."
   [v]
   (let [coerced (cond
                   ;; Fast path: the override comes straight from a `profile`
@@ -478,15 +492,57 @@
 
     coerced))
 
-(def ^:private sql:team-id-by-project
-  "SELECT id FROM team
-    WHERE id = (SELECT team_id FROM project WHERE id = ?)")
+(def ^:private sql:team-ids-by-projects
+  "SELECT team_id
+     FROM project
+    WHERE id = ANY(?::uuid[])")
 
-(def ^:private sql:team-id-by-file
-  "SELECT t.id FROM team AS t
-     JOIN project AS p ON (p.team_id = t.id)
-     JOIN file AS f ON (f.project_id = p.id)
-    WHERE f.id = ?")
+(def ^:private sql:team-ids-by-files
+  "SELECT p.team_id AS team_id
+     FROM file AS f
+     JOIN project AS p ON (p.id = f.project_id)
+    WHERE f.id = ANY(?::uuid[])")
+
+(def ^:private xf:team-ids
+  "Transducer: pull the team id out of a team/project/file resolution
+  row. Allocated once so hot paths (every audited RPC) do not rebuild
+  it per call."
+  (map :team-id))
+
+(defn- resolve-team-ids
+  "Resolve one bag of project or file ids to team ids with one ANY(?)
+  query on a plain connection. The result holds one tiny row per id,
+  so neither a cursor nor a transaction is needed."
+  [cfg kind ids]
+  ;; Fetch inside the connection, reduce outside it: the rows are
+  ;; already materialized, so the pool connection is held as briefly
+  ;; as possible.
+  (->> (db/run! cfg
+                (fn [{:keys [::db/conn]}]
+                  (db/exec! conn [(case kind
+                                    :project sql:team-ids-by-projects
+                                    :file sql:team-ids-by-files)
+                                  (db/create-array conn "uuid" ids)])))
+       (into #{} xf:team-ids)))
+
+(defn get-team-ids
+  "Resolve a mixed bag of team, project and file ids to team ids with
+  two batched lookups. Producers of cascade-style events call it so
+  consumers never join production tables. The pure part runs without
+  touching the database; each lookup resolves its connection lazily,
+  only when it has ids (reusing the caller transaction). Every id
+  reaching this function is a UUID already (RPC params and frontend
+  ingest travel as transit, jobs read DB rows): anything else is a
+  bug at the source, never coerced here."
+  [cfg {:keys [team-ids project-ids file-ids]}]
+  (let [direct (into #{} team-ids)]
+    (-> direct
+        (into (if (seq project-ids)
+                (resolve-team-ids cfg :project project-ids)
+                #{}))
+        (into (if (seq file-ids)
+                (resolve-team-ids cfg :file file-ids)
+                #{})))))
 
 (def ^:private read-event-names
   "Read commands excluded from team-id resolution on top of the `get-*`
@@ -513,9 +569,9 @@
     (let [project-id (:project-id props)
           file-id    (:file-id props)
           team-id    (or (when (some? project-id)
-                           (:id (db/exec-one! cfg [sql:team-id-by-project project-id])))
+                           (first (get-team-ids cfg {:project-ids [project-id]})))
                          (when (some? file-id)
-                           (:id (db/exec-one! cfg [sql:team-id-by-file file-id]))))]
+                           (first (get-team-ids cfg {:file-ids [file-id]}))))]
       (cond-> props
         (some? team-id) (assoc :team-id team-id)))))
 
@@ -648,8 +704,8 @@
   logic."
   [cfg event]
   (when (contains? cf/flags :audit-log)
-    ;; Transactional (not a bare connection): the row and its
-    ;; pendings commit or vanish together (see append-audit-entry).
+    ;; Transactional (not a bare connection): the row commits or
+    ;; vanishes whole (see append-audit-entry).
     (let [tnow  (ct/now)
           event (-> event
                     (assoc :created-at tnow)

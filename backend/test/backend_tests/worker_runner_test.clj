@@ -82,7 +82,7 @@
 (defn- make-metrics []
   (ig/init-key :app.metrics/metrics
                {:default (select-keys main/default-metrics
-                                      [:jobs-queue-wait-timing
+                                      [:jobs-claim-wait-timing
                                        :jobs-execution-timing
                                        :jobs-total-timing
                                        :tasks-timing])}))
@@ -241,7 +241,7 @@
           (t/is (not (contains? context :queue))
                 "the tenant-prefixed queue is a routing detail, not context"))))))
 
-(t/deftest runner-records-queue-wait-execution-and-total
+(t/deftest runner-records-claim-wait-execution-and-total
   (let [metrics (make-metrics)
         cfg     (assoc (mk-cfg {}) ::mtx/metrics metrics)
         at      (ct/truncate (ct/now) :millisecond)
@@ -249,14 +249,14 @@
     (push-payload job-id at)
     (run-one cfg)
     (t/is (= 1 (histogram-sample-count metrics
-                                       :jobs-queue-wait-timing
-                                       ["echo-runner" "test"])))
+                                       :jobs-claim-wait-timing
+                                       ["echo-runner"])))
     (t/is (= 1 (histogram-sample-count metrics
                                        :jobs-execution-timing
-                                       ["echo-runner" "test"])))
+                                       ["echo-runner"])))
     (t/is (= 1 (histogram-sample-count metrics
                                        :jobs-total-timing
-                                       ["echo-runner" "test" "completed"])))
+                                       ["echo-runner" "completed"])))
     (t/testing "the legacy histogram is still emitted, with its raw name label"
       (t/is (= 1 (histogram-sample-count metrics
                                          :tasks-timing
@@ -408,11 +408,12 @@
       (t/is (= 1 (#'wrkr/claim-job (mk-cfg {}) job-id at)))
       (t/is (= "running" (:status (get-row job-id)))))))
 
-(t/deftest runner-skips-stale-payload-after-reschedule
+(t/deftest runner-skips-a-payload-with-a-stale-timestamp
   (let [stale-at (ct/truncate (ct/now) :millisecond)
         job-id   (mk-job {:scheduled-at stale-at})
         fresh-at (ct/plus stale-at (ct/duration {:minutes 6}))]
-    ;; dispatcher reschedules: new scheduled_at + fresh payload
+    ;; A duplicate payload (or one whose row was edited by hand) carries a
+    ;; timestamp that no longer matches the row.
     (th/db-update! :job {:status "scheduled" :scheduled-at fresh-at} {:id job-id})
 
     (t/testing "stale payload is skipped, handler never invoked"
