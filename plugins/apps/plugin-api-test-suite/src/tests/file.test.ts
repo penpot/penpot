@@ -22,6 +22,20 @@ describe('File', () => {
     }
   });
 
+  test('currentFile lists its features sorted', (ctx) => {
+    const file = ctx.penpot.currentFile;
+    expect(file).not.toBeNull();
+    if (file) {
+      const { features } = file;
+      expect(features).not.toBeNull();
+      if (!features) return;
+      expect(features.every((f) => typeof f === 'string')).toBe(true);
+      expect(features).toContain('components/v2');
+      expect(features).toEqual([...features].sort());
+      expect(file.features === features).toBe(false);
+    }
+  });
+
   test('file lists its pages', (ctx) => {
     const file = ctx.penpot.currentFile;
     if (file) {

@@ -5,6 +5,7 @@
 - The Plugin API is a public facade over internal frontend/common data. Do not expect Plugin API property names, value shapes, or behavior boundaries to match internal CLJS attrs or helper APIs; inspect the relevant proxy and internal code path before using Plugin API observations in production internals or tests.
 - `plugins/libs/plugin-types/index.d.ts` contains TypeScript declarations only. Runtime objects are CLJS proxies built under `frontend/src/app/plugins/*.cljs` with `obj/reify`.
 - `shape.cljs` builds shape proxies with hidden ids and per-property CLJS implementations. `library.cljs` builds library proxies such as `LibraryComponentProxy`.
+- A new or changed proxy member needs its type in `plugins/libs/plugin-types/index.d.ts`, a `plugins/CHANGELOG.md` entry and a Plugin API test suite test: see `mem:plugins/core`.
 - `shape.cljs`, `library.cljs`, and related namespaces break circular dependencies with mutable nil vars patched from `app.plugins` at load time. If a proxy constructor appears nil, check the patching path in `frontend/src/app/plugins.cljs`.
 
 ## Key Domain Namespaces

@@ -430,6 +430,19 @@ describe('Management', () => {
       expect(finished).toContain(other.id);
     });
 
+    test('features is null on a file that is not open', async (ctx) => {
+      const home = ctx.penpot.currentFile;
+      expect(home).not.toBeNull();
+      if (!home) return;
+      expect(home.features).not.toBeNull();
+      const other = await temporaryFile(ctx, 'Features');
+
+      await inFile(ctx, other, () => {
+        expect(home.features).toBeNull();
+        expect(ctx.penpot.currentFile?.features).toContain('components/v2');
+      });
+    });
+
     test('off stops workspacechange notifications', async (ctx) => {
       const other = await temporaryFile(ctx, 'Unsubscribed');
       let count = 0;

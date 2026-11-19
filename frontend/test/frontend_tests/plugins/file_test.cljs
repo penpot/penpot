@@ -131,3 +131,30 @@
                   (.-label pinned)))
          (t/is (false? (.-isAutosave pinned)))
          (t/is (identical? created-at (.-createdAt pinned))))))))
+
+(t/deftest open-file-features-add-the-session-features
+  (let [file-id (uuid/next)
+        state   {:current-file-id file-id
+                 :features #{"render-wasm/v1" "components/v2"}
+                 :files {file-id {:id file-id
+                                  :features #{"variants/v1" "components/v2"}}}}]
+    (t/is (= ["components/v2" "render-wasm/v1" "variants/v1"]
+             (file/get-file-features state file-id)))))
+
+(t/deftest open-file-features-take-the-renderer-from-the-session
+  (let [file-id (uuid/next)
+        state   {:current-file-id file-id
+                 :features #{"components/v2"}
+                 :files {file-id {:id file-id
+                                  :features #{"render-wasm/v1" "components/v2"}}}}]
+    (t/is (= ["components/v2"]
+             (file/get-file-features state file-id)))))
+
+(t/deftest other-file-features-are-nil
+  (let [file-id  (uuid/next)
+        other-id (uuid/next)
+        state    {:current-file-id file-id
+                  :features #{"render-wasm/v1"}
+                  :files {other-id {:id other-id
+                                    :features #{"variants/v1" "components/v2"}}}}]
+    (t/is (nil? (file/get-file-features state other-id)))))

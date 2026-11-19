@@ -152,6 +152,7 @@
     "Export": ["scale", "skipChildren", "suffix", "type"],
     "File": [
       "export",
+      "features",
       "findVersions",
       "id",
       "name",
@@ -3140,6 +3141,12 @@
         "kind": "get",
         "type": null,
         "array": false
+      },
+      "features": {
+        "decl": "File",
+        "kind": "get",
+        "type": null,
+        "array": true
       },
       "pages": {
         "decl": "File",
