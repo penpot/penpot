@@ -80,7 +80,7 @@
 
    :update-file-refused
    {::mdef/name "penpot_rpc_update_file_refused_total"
-    ::mdef/help "Saves update-file validation refused, or accepted only in part, by the furthest validation step reached, the error code, and whether every commit or only a tail of them was rejected. A save whose auto-repair gave up appears here too, as refused or partial, and in penpot_rpc_update_file_repair_total as unrepaired."
+    ::mdef/help "Saves update-file refused, or accepted only in part, by the step at which the save first failed, the error code, and whether every commit or only a tail of them was rejected. The code infrastructure marks a database, input-output, or interruption failure, which refuses the save without any validation failing. A save whose auto-repair gave up appears here too, as refused or partial, and in penpot_rpc_update_file_repair_total as unrepaired."
     ::mdef/labels ["stage" "code" "outcome"]
     ::mdef/type :counter}
 

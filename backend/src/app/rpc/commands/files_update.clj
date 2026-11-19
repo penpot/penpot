@@ -49,6 +49,7 @@
 (declare ^:private process-changes-and-validate)
 (declare ^:private take-snapshot?)
 (declare ^:private invalidate-caches!)
+(declare ^:private infrastructure-error?)
 
 ;; PUBLIC API; intended to be used outside of this module
 (declare update-file!)
@@ -159,40 +160,69 @@
 
 (defn- data-code
   "Bounded label for the error described by the ex-data `data`: its
-  `:code`, the `:type` when it carries no code, or `unknown`.
+  `:code`, or its `:type` when it carries no code. An error without a
+  `:type`, such as an exception without ex-data, is `unexpected-error`,
+  the code `rejection` gives it on the commit path, so one failure is
+  one series whatever the shape of the save.
 
   Both are keywords written in this codebase, so the label set stays
   bounded by the source."
   [data]
-  (let [code (or (:code data) (:type data))]
-    (if (keyword? code) (name code) "unknown")))
+  (let [type (:type data)
+        code (or (:code data) type)]
+    (if (and (keyword? type) (keyword? code))
+      (name code)
+      "unexpected-error")))
 
 (defn- refusal-code
-  "Bounded label for the error that refused a save; see `data-code`."
+  "Bounded label for the error that refused a save: `infrastructure` for
+  the failures `infrastructure-error?` matches (database, input-output,
+  interruption, a file fragment that cannot be loaded), which say
+  nothing about the save itself, and the label of `data-code` for any
+  other."
   [cause]
-  (data-code (ex-data cause)))
+  (if (infrastructure-error? cause)
+    "infrastructure"
+    (data-code (ex-data cause))))
 
-(defn- refusal-stage
-  "Bounded label for the stage a refused save, or a save whose tail was
-  rejected, had reached. Read from the step timings that `apply-changes`
-  and `validate-file` record in `finally` forms: a step's timing is
-  present whether it completed or raised, so the furthest step present
-  is the one that raised, or the last one before the failing step. Only
-  the first attempt, with all the changes, records timings: the retries
-  of `apply-commits` do not, so a partial rejection reports the stage of
-  the attempt over the whole change set.
+(defn- step-stage
+  "Bounded label for the furthest step whose timing `timings` holds.
+  `apply-changes` and `validate-file` record a step's timing in a
+  `finally` form, so the timing is present whether the step completed or
+  raised: the furthest step present is the one that raised, or the last
+  one before the failing step. A step that is off records nothing, so
+  the label does not depend on which validation flags are on.
 
   `changes` covers the change-application step, the change schema
   checks included. A failing file version check comes before it and
-  reports `pre-changes`. The hard referential gate is the last step
-  before the write whenever `:file-schema-validation` is off, so a
-  write failure reports `referential`."
+  reports `pre-changes`. A failure after validation, such as the write,
+  reports the last validation step that ran."
   [timings]
   (cond
-    (nil? (:process-changes-ms timings))   "pre-changes"
-    (nil? (:validate-affected-ms timings)) "changes"
-    (nil? (:validate-schema-ms timings))   "referential"
-    :else                                  "schema"))
+    (contains? timings :validate-schema-ms)   "schema"
+    (contains? timings :validate-affected-ms) "referential"
+    (contains? timings :process-changes-ms)   "changes"
+    :else                                     "pre-changes"))
+
+(defn- record-failed-stage!
+  "Record, as `::failed-stage` of the step timings, the stage at which
+  applying and validating all the changes at once failed. The repair and
+  the bisection that follow run steps of their own (the repair times its
+  schema check as `:validate-schema-ms`), and they would otherwise move
+  `step-stage` past the step that refused the save."
+  [cfg]
+  (when-let [timings (::validation-timings cfg)]
+    (swap! timings #(assoc % ::failed-stage (step-stage %)))))
+
+(defn- refusal-stage
+  "Bounded label for the stage a refused save, or a save whose tail was
+  rejected, had reached: the stage `record-failed-stage!` recorded at the
+  first failure, or else the furthest step timed (`step-stage`). The
+  retries of `apply-commits` record no timings, so a partial rejection
+  reports the stage of the attempt over the whole change set."
+  [timings]
+  (or (::failed-stage timings)
+      (step-stage timings)))
 
 (defn- record-rejection!
   "Record a save whose `rejected` commits, out of `total`, were not
@@ -200,11 +230,11 @@
 
   `apply-commits` keeps the valid prefix of the commits and rejects the
   rest without raising, so the refusal counter in the error handler of
-  `update-file` never sees such a save. It is counted here, where the
-  decision is made, in the same family as a whole refusal: the `outcome`
-  label tells a save that stored nothing (`refused`, which is also what
-  a save of a single rejected commit reports) from one that stored the
-  commits before the first rejected one (`partial`).
+  `update-file` never sees such a save. It is counted once the save is
+  stored, in the same family as a whole refusal: the `outcome` label
+  tells a save that stored nothing (`refused`, which is also what a save
+  of a single rejected commit reports) from one that stored the commits
+  before the first rejected one (`partial`).
 
   The rejected commits are counted once each, all under the code of the
   first rejected commit, because the retries report only that error."
@@ -258,7 +288,7 @@
    ::doc/module :files
    ::doc/added "1.17"
    ::db/transaction true}
-  [{:keys [::db/conn] :as cfg}
+  [{:keys [::mtx/metrics ::db/conn] :as cfg}
    {:keys [::rpc/profile-id id changes changes-with-metadata] :as params}]
 
   (files/check-edition-permissions! conn profile-id id)
@@ -336,7 +366,7 @@
                     {::db/return-keys false})))
 
 
-    (record-metric! cfg {:id :update-file-changes :inc (count changes)})
+    (mtx/run! metrics {:id :update-file-changes :inc (count changes)})
 
     (binding [l/*context* (some-> (meta params)
                                   (get :app.http/request)
@@ -503,6 +533,13 @@
         (when repair
           (send-repair-notifications cfg params file repair))
         (send-notifications! cfg params file))
+
+      ;; A save whose tail was rejected never raises, so the error
+      ;; handler of `update-file` does not see it. It is counted here,
+      ;; once stored: a step above that raises refuses the whole save,
+      ;; and that handler counts it then, once.
+      (when (some? rejected)
+        (record-rejection! cfg rejected (count commits)))
 
       (with-meta (cond-> {:revn revn :lagged (get-lagged-changes conn params)}
                    (some? rejected)
@@ -1049,13 +1086,9 @@
             (-> (apply-changes cfg file libs changes skip-validate)
                 (assoc ::changes changes))
             (catch Throwable cause
+              (record-failed-stage! cfg)
               (repair-or-reject cfg original file libs changes commits
                                 skip-validate tracked cause))))]
-
-    ;; A save whose tail was rejected never raises, so this is the only
-    ;; place that sees it.
-    (when-let [rejected (::rejected file)]
-      (record-rejection! cfg rejected (count commits)))
 
     (if-let [media-refs (-> @state :media-refs not-empty)]
       (bfc/update-media-references! cfg file media-refs)
