@@ -79,6 +79,24 @@
            (t/is (= (:stroke-color stroke') "#FABADA"))
            (t/is (= (:stroke-width stroke') 2))))))))
 
+(t/deftest test-update-stroke-color-preserves-inner-alignment
+  (t/async
+    done
+    (let [store (ths/setup-store
+                 (-> (cthf/sample-file :file1 :page-label :page1)
+                     (cths/add-sample-shape :shape1 :strokes [{:stroke-color "#000000"
+                                                               :stroke-opacity 1
+                                                               :stroke-width 2
+                                                               :stroke-alignment :inner}])))
+          events [(dc/change-stroke-color #{(cthi/id :shape1)} {:color "#FABADA"} 0)]]
+      (ths/run-store
+       store done events
+       (fn [new-state]
+         (let [objects (dsh/lookup-page-objects new-state)
+               stroke' (first (:strokes (get objects (cthi/id :shape1))))]
+           (t/is (= (:stroke-alignment stroke') :inner))
+           (t/is (= (:stroke-color stroke') "#FABADA"))))))))
+
 (t/deftest test-update-stroke-attrs-preserves-missing-alignment
   ;; Existing strokes without :stroke-alignment keep effective :center
   ;; on the change-stroke-attrs path; explicit alignments are untouched.

@@ -349,8 +349,8 @@
 (defn- build-stroke-style-attrs
   "Completes the stroke style attributes, preserving the effective
   `:center` alignment of existing strokes that have no explicit
-  `:stroke-alignment` (e.g. strokes imported from SVG). Genuinely new
-  strokes (nil) keep the current `:inner` default."
+  `:stroke-alignment` (e.g. strokes imported from SVG). A nil stroke
+  means no stroke exists at that position and uses the `:inner` default."
   [stroke]
   (let [existing-stroke? (some? stroke)
         attrs            (select-keys stroke stroke-style-attrs)]
