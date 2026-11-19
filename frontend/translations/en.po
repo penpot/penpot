@@ -12962,9 +12962,6 @@ msgstr "Changes (%s)"
 msgid "workspace.compare.toolbar.label"
 msgstr "Compare tools"
 
-msgid "workspace.compare.view.side-aligned"
-msgstr "Side by side - aligned"
-
 msgid "workspace.compare.view.side.aligned"
 msgstr "Aligned to the change"
 

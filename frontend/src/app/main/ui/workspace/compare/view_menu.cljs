@@ -54,10 +54,8 @@
         side      (tr "workspace.branches.review.view.side")
         linked    (tr "workspace.compare.view.side.linked")
         lined-up  (tr "workspace.compare.view.side.aligned")
-        current   (cond
-                    (not (and wasm? (= view :side))) highlight
-                    aligned?                         (tr "workspace.compare.view.side-aligned")
-                    :else                            side)]
+        ;; the mode of the side view is told by the note on the canvas
+        current   (if (and wasm? (= view :side)) side highlight)]
     [:> menu* {:is-open open?
                :on-open-change on-change
                :on-action on-action
