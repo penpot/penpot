@@ -1621,6 +1621,84 @@
     ;; The rect still has width 25 after the switch
     (t/is (= (:width rect02') 25))))
 
+(defn- setup-touched-child-in-deleted-outer
+  "Variants `:c01` / `:c02` with a child rect, and a component `:external01`
+  whose main holds a copy of `:c01` with `update-fn` applied to its rect.
+  A copy of `:external01` is placed with its nested variant copy labelled
+  `:c01-in-copy`, and then `:external01` is deleted, so the ref chain of the
+  copy goes through a deleted component."
+  [variant-params update-fn]
+  (let [file    (-> (thf/sample-file :file1)
+                    (thv/add-variant-with-child
+                     :v01 :c01 :m01 :c02 :m02 :r01 :r02
+                     variant-params)
+                    (tho/add-simple-component :external01 :external01-root :external01-child)
+                    (thc/instantiate-component :c01
+                                               :c01-in-root
+                                               :children-labels [:r01-in-c01-in-root]
+                                               :parent-label :external01-root))
+        page    (thf/current-page file)
+        changes (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                            #{(thi/id :r01-in-c01-in-root)}
+                                            update-fn
+                                            (:objects page)
+                                            {})]
+    (-> (thf/apply-changes file changes)
+        (thc/instantiate-component :external01
+                                   :external-copy01
+                                   :children-labels [:external-copy01-rect :c01-in-copy])
+        (tho/delete-shape :external01-root))))
+
+(t/deftest test-switch-keeps-main-width-override-when-outer-component-deleted
+  (let [;; ==== Setup
+        file        (setup-touched-child-in-deleted-outer
+                     {:child1-params {:width 5}
+                      :child2-params {:width 5}}
+                     #(assoc % :width 25))
+        page        (thf/current-page file)
+        c01-in-copy (ths/get-shape file :c01-in-copy)
+        rect01      (get-in page [:objects (-> c01-in-copy :shapes first)])
+
+        ;; ==== Action
+        file'        (tho/swap-component-in-shape file :c01-in-copy :c02 {:new-shape-label :c02-in-copy :keep-touched? true})
+
+        page'        (thf/current-page file')
+        c02-in-copy' (ths/get-shape file' :c02-in-copy)
+        rect02'      (get-in page' [:objects (-> c02-in-copy' :shapes first)])]
+
+    ;; The outer component is deleted
+    (t/is (nil? (thc/get-component file :external01)))
+    (t/is (some? (thc/get-component file :external01 :include-deleted? true)))
+    ;; The rect had width 25 before the switch
+    (t/is (= (:width rect01) 25))
+    ;; The rect still has width 25 after the switch
+    (t/is (= (:width rect02') 25))))
+
+(t/deftest test-switch-keeps-main-fill-override-when-outer-component-deleted
+  (let [;; ==== Setup
+        fills       (ths/sample-fills-color :fill-color "#fabada")
+        file        (setup-touched-child-in-deleted-outer
+                     {}
+                     #(assoc % :fills fills))
+        page        (thf/current-page file)
+        c01-in-copy (ths/get-shape file :c01-in-copy)
+        rect01      (get-in page [:objects (-> c01-in-copy :shapes first)])
+
+        ;; ==== Action
+        file'        (tho/swap-component-in-shape file :c01-in-copy :c02 {:new-shape-label :c02-in-copy :keep-touched? true})
+
+        page'        (thf/current-page file')
+        c02-in-copy' (ths/get-shape file' :c02-in-copy)
+        rect02'      (get-in page' [:objects (-> c02-in-copy' :shapes first)])]
+
+    ;; The outer component is deleted
+    (t/is (nil? (thc/get-component file :external01)))
+    (t/is (some? (thc/get-component file :external01 :include-deleted? true)))
+    ;; The rect had the fill override before the switch
+    (t/is (= (:fills rect01) fills))
+    ;; The rect still has the fill override after the switch
+    (t/is (= (:fills rect02') fills))))
+
 ;; ============================================================
 ;; LAYOUT ITEM SIZING - HORIZONTAL (fix, auto, fill, none)
 ;; ============================================================
