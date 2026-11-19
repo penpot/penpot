@@ -510,10 +510,9 @@
         take-snapshot?
         (take-snapshot? file)
 
-        ;; Captured before anything mutates the data: the migration runs on
-        ;; plain data and the pages it does not change must keep their
-        ;; original fragment ids on persist, instead of being re-wrapped
-        ;; with fresh ones. Nothing is loaded here.
+        ;; Captured before anything mutates the data so pages that remain
+        ;; value-equal can keep their original fragment ids. Nothing is
+        ;; loaded here.
         original
         (fdata/original-pointers (:data file))
 
@@ -524,13 +523,21 @@
         file
         (cond-> file
           take-snapshot?
-          (->> (attach-snapshot))
+          (->> (attach-snapshot)))
 
-          need-migration?
-          (fmg/migrate-file libs)
+        ;; A migration may create modified pointers that reattach-unchanged
+        ;; discards. Do not track those intermediate pointers; encode-file
+        ;; tracks the pointers that remain in the final data.
+        file
+        (if need-migration?
+          (fdata/with-untracked
+            (fmg/migrate-file file libs))
+          file)
 
-          need-migration?
-          (->> (fdata/reattach-unchanged original)))]
+        file
+        (if need-migration?
+          (fdata/reattach-unchanged original file)
+          file)]
 
     (apply update-fn cfg file args)))
 

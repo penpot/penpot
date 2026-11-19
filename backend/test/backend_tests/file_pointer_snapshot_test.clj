@@ -23,6 +23,7 @@
    [app.util.blob :as blob]
    [app.util.pointer-map :as pmap]
    [backend-tests.helpers :as th]
+   [clojure.set :as set]
    [clojure.test :as t]))
 
 (t/use-fixtures :once th/state-init)
@@ -898,47 +899,80 @@
         (t/is (not (fmg/need-migration? returned)))))))
 
 (t/deftest save-migration-keeps-unchanged-page-fragments
-  ;; A save that triggers a pending migration keeps the fragment ids of the
-  ;; pages the migration does not change; only the page it changes gets a new
-  ;; one. `update-file` reads the file with `:decode? false`, so the migration
-  ;; runs in the save path and not on the read.
+  ;; A save that triggers a pending migration keeps the fragment ids of pages
+  ;; the migration does not change, persists pages changed by the migration,
+  ;; and does not write fragments for discarded intermediate pointers.
+  ;; `update-file` reads with `:decode? false`, so the migration runs on save.
   (let [profile (th/create-profile* 1)
         file    (th/create-file* 1 {:profile-id (:id profile)
                                     :project-id (:default-project-id profile)
                                     :is-shared false})
         file-id (:id file)
         page-a  (uuid/random)
-        page-b  (uuid/random)]
+        page-b  (uuid/random)
+        page-c  (uuid/random)
+        shape-b (uuid/random)]
 
     (update-file! :profile-id (:id profile)
                   :file-id file-id
                   :revn 0
                   :changes [{:type :add-page :name "a" :id page-a}
                             {:type :add-page :name "b" :id page-b}
+                            {:type :add-page :name "c" :id page-c}
                             (first (add-rect-change page-a (uuid/random)))
-                            (-> (first (add-rect-change page-b (uuid/random)))
+                            (-> (first (add-rect-change page-b shape-b))
                                 (update :obj assoc :applied-tokens
-                                        {:stroke-width "token"}))])
+                                        {:stroke-width "token"}))
+                            (first (add-rect-change page-c (uuid/random)))])
 
     (let [ids-before (page-pointer-ids file-id)]
       (t/is (contains? ids-before page-a))
       (t/is (contains? ids-before page-b))
+      (t/is (contains? ids-before page-c))
 
       ;; Force the 0031 migration on the next save.
       (th/db-delete! :file-migration
                      {:file-id file-id
                       :name "0031-migrate-stroke-width-token-attr"})
 
-      (update-file! :profile-id (:id profile)
-                    :file-id file-id
-                    :revn 1
-                    :changes (add-rect-change page-b (uuid/random)))
+      (let [fragments-before (live-fragment-ids file-id)]
+        (update-file! :profile-id (:id profile)
+                      :file-id file-id
+                      :revn 1
+                      :changes (add-rect-change page-c (uuid/random)))
 
-      (let [ids-after (page-pointer-ids file-id)]
-        (t/is (= (get ids-before page-a) (get ids-after page-a)))
-        (t/is (not= (get ids-before page-b) (get ids-after page-b))))
+        (let [main             (bfc/get-file th/*system* file-id :migrate? false)
+              snapshot         (first (snapshots-by-revn file-id 1))
+              snapshot-data    (when snapshot
+                                 (:data (fsnap/get-snapshot th/*system*
+                                                            file-id
+                                                            (:id snapshot))))
+              refs             (into (fdata/get-used-pointer-ids (:data main))
+                                     (when snapshot-data
+                                       (fdata/get-used-pointer-ids snapshot-data)))
+              fragments-after  (live-fragment-ids file-id)
+              ids-after        (page-pointer-ids file-id)
+              migrated-page-id (get ids-after page-b)]
 
-      (t/is (not (fmg/need-migration? (bfc/get-file th/*system* file-id)))))))
+          (t/is (= (get ids-before page-a) (get ids-after page-a)))
+          (t/is (not= (get ids-before page-b) (get ids-after page-b)))
+          (t/is (not= (get ids-before page-c) (get ids-after page-c)))
+          (t/is (some? snapshot) "the save should keep its pre-migration snapshot")
+
+          ;; Every newly written fragment must be referenced by the saved
+          ;; main file or this save's snapshot. An unreferenced migration
+          ;; pointer would add an id to fragments-after but not refs.
+          (t/is (= (set/difference fragments-after fragments-before)
+                   (set/difference refs fragments-before)))
+
+          ;; The migration-only change must still be persisted even though
+          ;; tracking is disabled while the migration runs.
+          (let [tokens (get-in (fragment-objects file-id migrated-page-id)
+                               [shape-b :applied-tokens])]
+            (t/is (contains? tokens :stroke-width-top))
+            (t/is (not (contains? tokens :stroke-width)))))
+
+        (t/is (not (fmg/need-migration? (bfc/get-file th/*system* file-id))))))))
 
 (t/deftest migration-read-only-keeps-fragments-untouched
   ;; A read-only migration returns realized data but does not persist:
