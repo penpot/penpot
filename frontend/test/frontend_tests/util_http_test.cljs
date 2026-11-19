@@ -8,7 +8,8 @@
   (:require
    [app.util.http :as http]
    [cljs.test :as t :include-macros true]
-   [frontend-tests.helpers.async :as async]))
+   [frontend-tests.helpers.async :as async]
+   [frontend-tests.helpers.http :as http-mock]))
 
 (def ^:private uri "https://example.com/assets/file.json")
 
@@ -73,3 +74,24 @@
     (t/is (false? (http/network-failure? (make-error "Error" "Failed to fetch")))))
   (t/testing "Other TypeErrors are not network failures"
     (t/is (false? (http/network-failure? (make-error "TypeError" "x is not a function"))))))
+
+(t/deftest ^:async fetch-respects-omit-default-headers
+  (let [requests (atom [])
+        original (http-mock/install-fetch-mock!
+                  (fn [_url options]
+                    (swap! requests conj options)
+                    (js/Promise.resolve (js/Response. "" #js {:status 200}))))]
+    (try
+      (await (async/->promise (http/fetch {:method :get :uri uri})))
+      (await (async/->promise (http/fetch {:method :get
+                                           :uri uri
+                                           :omit-default-headers true})))
+      (finally
+        (http-mock/restore-fetch! original)))
+    (let [default-headers (aget (first @requests) "headers")
+          omitted-headers (aget (second @requests) "headers")]
+      (t/is (not (js/Object.hasOwn default-headers "x-penpot-origin")))
+      (t/is (not (js/Object.hasOwn omitted-headers "x-penpot-origin")))
+      (doseq [header ["x-frontend-version" "x-client"]]
+        (t/is (js/Object.hasOwn default-headers header) header)
+        (t/is (not (js/Object.hasOwn omitted-headers header)) header)))))

@@ -13,7 +13,11 @@
    [app.common.uri :as u]
    [app.common.uuid :as uuid]
    [app.config :as cf]
+   [app.http :as-alias http]
+   [app.http.middleware :as mw]
    [app.http.session :as session]
+   [app.rpc :as-alias rpc]
+   [app.rpc.commands.nitrate :as nitrate-rpc]
    [app.setup :as-alias setup]
    [app.tokens :as tokens]
    [clojure.test :as t]
@@ -1170,7 +1174,7 @@
                     app.loggers.audit/submit              (constantly nil)]
         (let [result (#'oidc/callback-handler cfg request)
               loc    (redirect-location result)]
-          (t/is (= "https://alt.example.com" @seen))
+          (t/is (= "https://alt.example.com" (str @seen)))
           (t/is (.contains loc "https://alt.example.com?screen=auth-verify-token&")))))))
 
 (t/deftest callback-token-exchange-uses-stored-trusted-origin
@@ -1290,3 +1294,138 @@
         (t/is (= 302 (::yres/status result)))
         (t/is (.contains loc "http://localhost:3449?screen=auth-login&"))
         (t/is (.contains loc "error=unable-to-auth"))))))
+
+(defn- get-uri-query
+  [uri]
+  (u/query-string->map (:query (u/uri uri))))
+
+(t/deftest oidc-round-trip-preserves-the-alternate-public-subpath
+  (let [cfg            (-> base-cfg
+                           (dissoc :app.email/blacklist :app.email/whitelist)
+                           (assoc ::session/manager (session/inmemory-manager)))
+        provider       (assoc trusted-origin-provider
+                              :user-info-source "userinfo"
+                              :token-uri "https://idp.example.com/token"
+                              :user-uri "https://idp.example.com/userinfo")
+        public-config  {:public-uri "http://localhost:3449/penpot"
+                        :trusted-origins #{"https://alt.example.com"}}
+        authorize      (mw/wrap-trusted-origin (partial #'oidc/auth-handler cfg))
+        callback       (mw/wrap-trusted-origin (partial #'oidc/callback-handler cfg))
+        token-request  (atom nil)]
+    (with-redefs [app.auth.oidc/resolve-provider        (constantly provider)
+                  app.auth.oidc/get-profile             (constantly test-profile)
+                  app.auth.oidc/update-profile-with-info (fn [_ profile _] profile)
+                  app.loggers.audit/submit              (constantly nil)]
+      (with-mocks [http-mock {:target 'app.http.client/req
+                              :return (fn [_ request & _]
+                                        (case (:uri request)
+                                          "https://idp.example.com/token"
+                                          (do (reset! token-request request)
+                                              {:status 200
+                                               :body "{\"access_token\":\"at\",\"token_type\":\"Bearer\"}"})
+
+                                          "https://idp.example.com/userinfo"
+                                          {:status 200
+                                           :body "{\"email\":\"u@e.com\",\"name\":\"U\"}"}))}]
+        (let [auth-response (binding [cf/config public-config]
+                              (authorize {:params {}
+                                          :headers {"x-penpot-origin" "https://alt.example.com"}}))
+              auth-query    (get-uri-query (get-in auth-response [::yres/body :redirect-uri]))
+              state         (:state auth-query)
+              claims        (tokens/verify cfg {:token state :iss "oidc"})
+              request       (default-request cfg :state state)]
+          (t/is (= "https://alt.example.com" (:origin claims)))
+          (t/is (= "https://alt.example.com/penpot/api/auth/oidc/callback"
+                   (:redirect_uri auth-query)))
+
+          (t/testing "the headerless callback uses the same redirect_uri even after alias removal"
+            (binding [cf/config (assoc public-config :trusted-origins #{})]
+              (let [response (callback request)
+                    location (redirect-location response)
+                    token-form (u/query-string->map (:body @token-request))]
+                (t/is (= :post (:method @token-request)))
+                (t/is (= (:redirect_uri auth-query) (:redirect_uri token-form)))
+                (t/is (= 302 (::yres/status response)))
+                (t/is (= "https://alt.example.com/penpot"
+                         (str (assoc (u/uri location) :query nil))))
+                (t/is (= "auth-verify-token" (:screen (get-uri-query location)))))))
+
+          (t/testing "a provider error still redirects under the alias subpath"
+            (binding [cf/config public-config]
+              (let [response (callback (assoc-in request [:params :error] "access_denied"))
+                    location (redirect-location response)]
+                (t/is (= 302 (::yres/status response)))
+                (t/is (= "https://alt.example.com/penpot"
+                         (str (assoc (u/uri location) :query nil))))
+                (t/is (= {:screen "auth-login" :error "unable-to-auth" :hint "access_denied"}
+                         (get-uri-query location))))))
+
+          (t/testing "without state or origin headers the error keeps the canonical subpath"
+            (binding [cf/config public-config]
+              (let [response (callback (update request :params dissoc :state))
+                    location (redirect-location response)]
+                (t/is (= 302 (::yres/status response)))
+                (t/is (= "http://localhost:3449/penpot"
+                         (str (assoc (u/uri location) :query nil))))
+                (t/is (= "auth-login" (:screen (get-uri-query location))))
+                (t/is (= "unable-to-auth" (:error (get-uri-query location))))))))))))
+
+(t/deftest organization-sso-round-trip-preserves-the-alternate-public-subpath
+  (let [manager   (session/inmemory-manager)
+        cfg       (assoc base-cfg ::session/manager manager)
+        sso       {:active true
+                   :organization-id test-organization-id
+                   :issuer "https://idp.example.com"
+                   :client-id "test-client"
+                   :client-secret "test-secret"}
+        params    {::rpc/profile-id test-profile-id
+                   ::rpc/request-at (ct/now)
+                   :organization-id test-organization-id
+                   :query-string "screen=workspace&team-id=0e5f"}
+        start-sso (mw/wrap-trusted-origin
+                   (fn [request]
+                     (nitrate-rpc/sm$check-nitrate-sso
+                      cfg (with-meta params {::http/request request}))))
+        callback  (mw/wrap-trusted-origin (partial #'oidc/callback-handler cfg))
+        events    (atom [])]
+    (binding [cf/config {:public-uri "http://localhost:3449/penpot/"
+                         :trusted-origins #{"https://alt.example.com"}}
+              cf/flags (conj cf/flags :admin-console)]
+      (with-redefs [app.nitrate/organization-access?                (constantly true)
+                    app.nitrate/sso-session-authorized?             (constantly {:authorized false :sso sso})
+                    app.nitrate/call                                (constantly sso)
+                    app.auth.oidc/prepare-organization-sso-provider (constantly trusted-origin-provider)
+                    app.auth.oidc/get-info                          (constantly {})
+                    app.loggers.audit/submit                        (fn [_cfg event] (swap! events conj event))]
+        (let [result      (start-sso {:headers {"origin" "https://alt.example.com"}})
+              auth-query  (get-uri-query (:redirect-uri result))
+              state       (:state auth-query)
+              claims      (tokens/verify cfg {:token state :iss "oidc"})
+              destination (:dest-url claims)
+              sess        {:id (uuid/next) :profile-id test-profile-id :props {}}
+              request     (assoc (default-request cfg :state state) ::session/session sess)]
+          (t/is (false? (:authorized result)))
+          (t/is (= "https://alt.example.com" (:origin claims)))
+          (t/is (= "https://alt.example.com/penpot/api/auth/oidc/callback" (:redirect_uri auth-query)))
+          (t/is (= "https://alt.example.com/penpot/" (str (assoc (u/uri destination) :query nil))))
+          (t/is (= {:screen "workspace" :team-id "0e5f"} (get-uri-query destination)))
+
+          (t/testing "the headerless callback accepts the server-built destination and grants the session entry"
+            (let [response (callback request)
+                  stored   (session/read-session manager (:id sess))]
+              (t/is (= 302 (::yres/status response)))
+              (t/is (= destination (redirect-location response)))
+              (t/is (contains? (get-in stored [:props :sso]) test-organization-id))))
+
+          (t/testing "a different profile returns to the same destination without an SSO entry"
+            (let [other    (assoc sess :id (uuid/next) :profile-id (uuid/next))
+                  response (callback (assoc request ::session/session other))
+                  stored   (session/read-session manager (:id other))]
+              (t/is (= destination (redirect-location response)))
+              (t/is (nil? (get-in stored [:props :sso])))
+              (t/is (= "session-mismatch" (get-in (last @events) [:props :failure-reason])))))
+
+          (t/testing "a legacy destination outside the public subpath falls back to the alias base"
+            (let [legacy   (tokens/generate cfg (assoc claims :dest-url "https://alt.example.com/other/?screen=workspace"))
+                  response (callback (default-request cfg :state legacy))]
+              (t/is (= "https://alt.example.com/penpot/" (redirect-location response))))))))))

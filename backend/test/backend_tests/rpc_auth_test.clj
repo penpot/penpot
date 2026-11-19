@@ -353,7 +353,7 @@
     (with-redefs [oidc/get-provider (fn [_ _] provider)]
       (t/testing "trusted origin becomes the post-logout redirect"
         (with-redefs [cf/config config]
-          (let [out (th/command-through-middleware!
+          (let [out (th/command-through-middleware
                      data {:headers {"origin" "https://alt.example.com"}
                            :request-attrs attrs})
                 q   (u/query-string->map (:query (:redirect-uri (:result out))))]
@@ -361,7 +361,7 @@
 
       (t/testing "without a trusted origin the canonical base is used"
         (with-redefs [cf/config config]
-          (let [out (th/command-through-middleware!
+          (let [out (th/command-through-middleware
                      data {:headers {"origin" "https://evil.example.com"}
                            :request-attrs attrs})
                 q   (u/query-string->map (:query (:redirect-uri (:result out))))]

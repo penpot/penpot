@@ -141,6 +141,29 @@
                                  :name       "imported"}
                 :upload-id      (upload-chunked! profile)}))
 
+(t/deftest export-job-keeps-the-request-public-uri-in-the-runner
+  (let [profile (th/create-profile* 1)
+        file-id (first (:file-ids (import-fixture! profile)))
+        out     (binding [cf/config (assoc cf/config
+                                           :public-uri "https://canonical.example.com/penpot"
+                                           :trusted-origins #{"https://alt.example.com"})]
+                  (th/command-through-middleware
+                   {::th/type       :create-export-binfile-job
+                    ::rpc/profile-id (:id profile)
+                    :params         {:file-ids #{file-id}
+                                     :export-type :detach-libraries}}
+                   {:headers {"x-penpot-origin" "https://alt.example.com"}}))
+        job-id  (get-in out [:result :id])]
+    (t/is (th/success? out))
+    (wdisp/run-batch (dispatcher-cfg))
+    (binding [cf/config (assoc cf/config :public-uri "https://worker.example.com/another-path")]
+      (run-one (runner-cfg "binfile")))
+    (let [row (job-row job-id)]
+      (t/is (= "completed" (:status row)))
+      (t/is (some? (:resource-id row)))
+      (t/is (= (str "https://alt.example.com/penpot/assets/by-id/" (:resource-id row))
+               (get-in row [:result :resource-uri]))))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TESTS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

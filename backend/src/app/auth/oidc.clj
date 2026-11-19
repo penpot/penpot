@@ -1321,7 +1321,7 @@
   redirect target)."
   [cfg {:keys [params] :as request}]
   (let [[state failure] (parse-state cfg params)]
-    (binding [cf/config (cf/with-public-uri (:origin state) cf/config)]
+    (binding [cf/config (cf/with-public-origin (:origin state) cf/config)]
       (handle-oidc-callback cfg request state failure))))
 
 (def ^:private schema:routes-params

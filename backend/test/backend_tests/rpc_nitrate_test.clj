@@ -217,7 +217,7 @@
                       "https://idp.example.com/authorize")
                     oidc/submit-organization-sso-auth-started-event
                     (constantly nil)]
-        (let [out (th/command-through-middleware!
+        (let [out (th/command-through-middleware
                    params {:headers {"origin" "https://alt.example.com"}})]
           (t/is (th/success? out))
           (t/is (= "https://alt.example.com" (:origin @redirect-options))))))))

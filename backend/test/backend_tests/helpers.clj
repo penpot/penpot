@@ -533,41 +533,37 @@
                     scheme protocol path query ssl-client-cert)))
 
 (defn- build-rpc-params
-  "Builds the params map for a command from `data` and a ring request.
-  A plain-map `:app.http/request` in `data`'s metadata is honored, so
-  tests can inject headers, remote address and auth context (e.g.
-  :app.http/auth-key-id). Non-map requests (reify IRequest stubs) fall
-  back to `request`."
+  "Builds the params map for a command from `data` and the final request."
   [data request]
-  (let [params   (reduce-kv (fn [params k v]
-                              (if (qualified-keyword? k)
-                                (assoc params k v)
-                                params))
-                            {}
-                            (dissoc data ::type))
-        supplied (-> data meta :app.http/request)
-        request  (if (map? supplied)
-                   (assoc supplied :params (merge (:params supplied)
-                                                  (d/without-qualified data)))
-                   (assoc request :params (d/without-qualified data)))]
-
+  (let [params  (reduce-kv (fn [params k v]
+                             (if (qualified-keyword? k)
+                               (assoc params k v)
+                               params))
+                           {}
+                           (dissoc data ::type))
+        request (update request :params merge (d/without-qualified data))]
     (-> params
         (assoc :app.rpc/request-at (ct/now))
         ;; Mirror of the production flag in `app.rpc/make-rpc-handler`:
-        ;; upload maps are only trusted over multipart. Tests declare it
-        ;; with a content-type header on the supplied request map.
+        ;; upload maps are only trusted over multipart.
         (assoc ::rpc/is-multipart
                (str/starts-with?
                 (str (yreq/get-header request "content-type"))
                 "multipart/"))
         (with-meta {:app.http/request request}))))
 
-(defn- prepare-rpc-params
-  ([data] (prepare-rpc-params data {}))
-  ([data headers]
-   (build-rpc-params data (make-dummy-request {:headers (or headers {})}))))
+(defn- get-supplied-request
+  [data]
+  (let [request (-> data meta :app.http/request)]
+    ;; Non-map IRequest stubs cannot carry the body params.
+    (when (map? request)
+      request)))
 
-(defn- resolve-method!
+(defn- prepare-rpc-params
+  [data]
+  (build-rpc-params data (or (get-supplied-request data) (make-dummy-request))))
+
+(defn- resolve-method
   "Resolve a registered method fn from a method registry, raising the
   standard `rpc-method-not-found` error when missing."
   [registry type label]
@@ -579,26 +575,19 @@
     [mdata method-fn]))
 
 (defn command!
-  ([data]
-   (command! data {}))
-  ([{:keys [::type] :as data} {:keys [headers]}]
-   (let [[_ method-fn] (resolve-method! :app.rpc/methods type "rpc method")]
-     (let [params (prepare-rpc-params data headers)]
-       (try-on! (method-fn params))))))
+  [{:keys [::type] :as data}]
+  (let [[_ method-fn] (resolve-method :app.rpc/methods type "rpc method")
+        params        (prepare-rpc-params data)]
+    (try-on! (method-fn params))))
 
 (defn command-raw!
   "Like `command!`, but returns the raw result without unwrapping it, so a test
   can read the result metadata (for example the audit props a command sets on a
   nil result). The HTTP layer unwraps it the same way in production."
   [{:keys [::type] :as data}]
-  (let [[_ method-fn] (get-in *system* [:app.rpc/methods type])]
-    (when-not method-fn
-      (ex/raise :type :assertion
-                :code :rpc-method-not-found
-                :hint (str/ffmt "rpc method '%' not found" (name type))))
-
-    (let [params (prepare-rpc-params data)]
-      (method-fn params))))
+  (let [[_ method-fn] (resolve-method :app.rpc/methods type "rpc method")
+        params        (prepare-rpc-params data)]
+    (method-fn params)))
 
 (defn management-command!
   "Invokes a management RPC method.
@@ -609,7 +598,7 @@
   tests exercise the allowed path without repeating the key; a test that
   checks a rejection declares the key explicitly, including `nil`."
   [{:keys [::type] :as data}]
-  (let [[mdata method-fn] (resolve-method! :app.rpc/management-methods type "management rpc method")]
+  (let [[mdata method-fn] (resolve-method :app.rpc/management-methods type "management rpc method")]
     (let [request (-> data meta :app.http/request)
           key-id  (cond
                     (contains? data ::rpc/auth-key-id)
@@ -631,21 +620,23 @@
           params  (prepare-rpc-params data)]
       (try-on! (method-fn params)))))
 
-(defn command-through-middleware!
+(defn command-through-middleware
   "Runs an RPC method wrapped in the HTTP trusted-origin middleware, so
-  the request `Origin` header can override the config :public-uri.
+  the request origin can override the config :public-uri.
 
-  Accepts the same data map as `command!` plus an options map with
-  `:headers` for the dummy request and `:request-attrs` merged into it
-  (for request-scoped values such as `:app.http/auth-data`)."
+  Accepts the same data map as `command!`. Its request metadata and the
+  optional `:headers` and `:request-attrs` are merged into the dummy
+  request before middleware runs. Explicit options take precedence."
   ([data]
-   (command-through-middleware! data {}))
+   (command-through-middleware data {}))
   ([{:keys [::type] :as data} {:keys [headers request-attrs]}]
-   (let [[_ method-fn] (resolve-method! :app.rpc/methods type "rpc method")
-         request  (merge (make-dummy-request {:headers (or headers {})})
-                         request-attrs)
-         handler  (fn [request]
-                    (try-on! (method-fn (build-rpc-params data request))))]
+   (let [[_ method-fn] (resolve-method :app.rpc/methods type "rpc method")
+         supplied      (get-supplied-request data)
+         request       (-> (make-dummy-request)
+                           (merge supplied request-attrs)
+                           (assoc :headers (merge {} (:headers supplied) headers (:headers request-attrs))))
+         handler       (fn [request]
+                         (try-on! (method-fn (build-rpc-params data request))))]
      ((mw/wrap-trusted-origin handler) request))))
 
 (def multipart-headers

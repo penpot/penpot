@@ -70,6 +70,21 @@
       (t/is (str/includes? (str (:resource-uri result))
                            (str (:resource-id result)))))))
 
+(t/deftest put-resource-uses-the-base-passed-by-the-caller
+  (let [cfg        (make-cfg)
+        profile-id (:id (th/create-profile* 1))]
+    (t/testing "the download uri is built on the alternate base"
+      (let [result (js/put-resource cfg profile-id
+                                    {:content    (sto/content "x")
+                                     :filename   "x.penpot"
+                                     :mtype      "application/zip"
+                                     :public-uri "https://alt.example.com"})]
+        (t/is (str/starts-with? (:resource-uri result)
+                                "https://alt.example.com/"))))
+    (t/testing "without a base the canonical public uri is used"
+      (let [result (put-artifact cfg profile-id "y")]
+        (t/is (str/starts-with? (:resource-uri result) "http://"))))))
+
 (t/deftest put-resource-requires-an-owner
   (let [cfg (make-cfg)]
     (t/testing "an artifact without an owner is a caller bug"

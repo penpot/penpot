@@ -21,7 +21,10 @@
    [cuerdas.core :as str]
    [datoteka.fs :as fs]
    [environ.core :refer [env]]
-   [integrant.core :as ig]))
+   [integrant.core :as ig])
+  (:import
+   java.net.URI
+   java.net.URISyntaxException))
 
 (defmethod ig/init-key :default
   [_ data]
@@ -438,6 +441,54 @@
 (def explain-config
   (sm/explainer schema:config))
 
+(defn- parse-origin
+  [origin]
+  (when (string? origin)
+    (try
+      (let [uri    (URI. (-> origin str/trim str/lower))
+            scheme (.getScheme uri)
+            host   (.getHost uri)
+            port   (.getPort uri)]
+        (when (and (#{"http" "https"} scheme)
+                   (some? host)
+                   (<= -1 port 65535)
+                   (nil? (.getRawUserInfo uri))
+                   (empty? (.getRawPath uri))
+                   (nil? (.getRawQuery uri))
+                   (nil? (.getRawFragment uri))
+                   (not (str/ends-with? (.getRawAuthority uri) ":")))
+          uri))
+      (catch URISyntaxException _ nil))))
+
+(defn- origin-string
+  [^URI uri]
+  (let [scheme (.getScheme uri)
+        port   (.getPort uri)]
+    (str scheme "://" (.getHost uri)
+         (when (and (not= -1 port)
+                    (not= port (if (= scheme "https") 443 80)))
+           (str ":" port)))))
+
+(defn- normalize-origin
+  "Return the canonical string for a bare HTTP(S) origin, or nil."
+  [origin]
+  (some-> origin parse-origin origin-string))
+
+(defn- prepare-trusted-origins
+  [config]
+  (if-some [origins (:trusted-origins config)]
+    (let [parsed (mapv parse-origin origins)]
+      (when (some nil? parsed)
+        (l/wrn :hint "ignoring malformed entries in PENPOT_TRUSTED_ORIGINS (expected http(s)://host[:port])"))
+      (when (some (fn [^URI uri]
+                    (and (some? uri)
+                         (= "http" (.getScheme uri))
+                         (not= "localhost" (.getHost uri))))
+                  parsed)
+        (l/wrn :hint "unencrypted HTTP origins in PENPOT_TRUSTED_ORIGINS; use HTTPS outside localhost"))
+      (assoc config :trusted-origins (into #{} (comp (remove nil?) (map origin-string)) parsed)))
+    config))
+
 (defn- normalize-file-data-backend
   "The file data moved to `file_data` (migration `0157-migrate-legacy-file-data`), so
   `file.data` and `file_change.data` are read-only leftovers and the `legacy-db`
@@ -462,7 +513,8 @@
        (merge default)
        (normalize-tenant)
        (decode-config)
-       (normalize-file-data-backend)))
+       (normalize-file-data-backend)
+       (prepare-trusted-origins)))
 
 (def version
   (v/parse (or (some-> (io/resource "version.txt")
@@ -555,41 +607,29 @@
   (or (c/get config :jobs-user-ttl)
       (ct/duration {:days 7})))
 
-(defn normalize-origin
-  "Normalize an origin string for comparison: trim and lowercase it.
-  Returns nil for nil/blank input."
-  [s]
-  (some-> s str/trim str/lower not-empty))
-
-(def ^:private origin-re
-  #"(?i)^[a-z][a-z0-9+.\-]*://[^/?#\s]+$")
-
-(defn valid-origin?
-  "Returns true when `s` is a bare origin: `scheme://host[:port]` with no
-  path, query, fragment or trailing slash. Used to warn about malformed
-  :trusted-origins entries; matching stays fail-closed regardless."
-  [s]
-  (let [s (normalize-origin s)]
-    (boolean (and (some? s) (re-matches origin-re s)))))
-
-(defn trusted-origin?
-  "Returns true when `origin` matches one of the configured
-  :trusted-origins. Matching is exact on the normalized origin (trimmed
-  and lowercased); no paths, wildcards or subdomain matching."
+(defn get-trusted-origin
+  "Return the normalized origin if it is in the prepared allowlist."
   [origin]
-  (let [origin (normalize-origin origin)]
-    (boolean
-     (and (some? origin)
-          (some #(= origin (normalize-origin %))
-                (c/get config :trusted-origins))))))
+  (when-let [origin (normalize-origin origin)]
+    (when (contains? (:trusted-origins config) origin)
+      origin)))
+
+(defn with-public-origin
+  "Apply a trusted origin to the public URI without replacing its path."
+  [origin config]
+  (if (some? origin)
+    (let [{:keys [scheme host port]} (u/uri origin)]
+      (update config :public-uri
+              #(assoc (u/uri %) :scheme scheme :host host :port port)))
+    config))
 
 (defn with-public-uri
-  "Returns a copy of `config` with :public-uri replaced by `base`. When
-  `base` is nil the config is returned unchanged, so callers can use it
-  for requests (or tokens) without a trusted origin."
+  "Replace the full :public-uri with an already resolved `base`, as used
+  by export jobs. Leave `config` unchanged when `base` is nil. Use
+  `with-public-origin` to change only the origin and keep the public path."
   [base config]
   (if (some? base)
-    (assoc config :public-uri base)
+    (assoc config :public-uri (u/uri base))
     config))
 
 (defn get

@@ -2697,7 +2697,7 @@
                       :team-id (:id team)
                       :role :editor
                       :emails [email]}
-                out  (th/command-through-middleware! data {:headers {"origin" origin}})
+                out  (th/command-through-middleware data {:headers {"origin" origin}})
                 sent (-> @mock :call-args-list first second)]
             (t/is (th/success? out) origin)
-            (t/is (= expected (:public-uri sent)) origin)))))))
+            (t/is (= expected (str (:public-uri sent))) origin)))))))

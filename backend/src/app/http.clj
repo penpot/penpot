@@ -254,9 +254,9 @@
   (assert (sm/check schema:router-params params)))
 
 (defn- root-middleware
-  "Root middleware chain applied to every route. Exposed as a function so
-  tests can assert the trusted-origin middleware is registered and ordered
-  so it wraps the rest of the chain."
+  "Middleware chain for routes under the root group. MCP OAuth uses its
+  own chain. Defined as a function so tests can check that the trusted-origin
+  middleware is registered and wraps the middleware that follows it."
   [cfg]
   [[mw/server-timing]
    [mw/trusted-origin]
