@@ -6,18 +6,22 @@
 
 (ns app.main.ui.workspace.compare.detail
   "The right sidebar of the compare mode: the change or the conflict
-  chosen in the list. Inside a design review it adds the comments of the
-  review on the layer of that change."
+  chosen in the list, and under it the comments and the tasks on its
+  layer."
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data.macros :as dm]
    [app.main.data.workspace.compare :as dwcp]
+   [app.main.data.workspace.tasks :as dwtk]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.ds.foundations.assets.icon :as i]
-   [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
+   [app.main.ui.ds.foundations.typography :as t]
+   [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.product.empty-state :refer [empty-state*]]
    [app.main.ui.workspace.compare.common :as cc]
-   [app.main.ui.workspace.review.panel :refer [comments-tab*]]
+   [app.main.ui.workspace.review.panel :refer [thread-card*]]
+   [app.main.ui.workspace.review.tasks :refer [task-list*]]
    [app.main.ui.workspace.sidebar.branch-review.common :as brc]
    [app.main.ui.workspace.sidebar.branch-review.detail :as brd]
    [app.util.i18n :refer [tr]]
@@ -75,34 +79,62 @@
                               :on-clear on-clear
                               :on-attr on-attr}]))
 
-(mf/defc review-tabs*
-  "Inside a design review: the change beside the comments the review has
-  on its layer."
+(defn layer-threads
+  "The comment threads of `threads` (by id) on the layer `layer-id` that
+  wait for an answer, in the order they were opened."
+  [threads layer-id]
+  (->> (vals threads)
+       (filter #(and (= layer-id (:shape-id %)) (not (:is-resolved %))))
+       (sort-by :seqn)
+       (vec)))
+
+(defn layer-tasks
+  "The tasks of `tasks` (by id) on the layer `layer-id` still to be done
+  or verified."
+  [tasks layer-id]
+  (->> (vals tasks)
+       (filter #(and (= layer-id (:shape-id %)) (not (dwtk/closed? %))))
+       (vec)))
+
+(mf/defc context-head*
   {::mf/private true}
-  [{:keys [item pr-id children]}]
-  (let [threads* (mf/deref refs/threads)
-        tab*     (mf/use-state "changes")
-        tab      (deref tab*)
-        threads  (mf/with-memo [threads* pr-id item]
-                   (filterv #(and (= pr-id (:pull-request-id %))
-                                  (= (:id item) (:shape-id %)))
-                            (vals threads*)))
-        tabs     (mf/with-memo [item threads]
-                   [{:id "changes"
-                     :label (tr "workspace.compare.tab.changes"
-                                (count (brc/visible-attrs (:changed-attrs item))))}
-                    {:id "comments"
-                     :label (tr "workspace.review.tab.comments" (count threads))}])
-        on-tab   (mf/use-fn #(reset! tab* %))]
-    [:> tab-switcher* {:tabs tabs
-                       :selected tab
-                       :on-change on-tab
-                       :scrollable-panel true
-                       :class (stl/css :tabs)}
-     [:div {:class (stl/css :tab-content)}
-      (if (= tab "comments")
-        [:> comments-tab* {:threads threads}]
-        children)]]))
+  [{:keys [icon label]}]
+  [:> heading* {:level 3 :typography t/body-small :class (stl/css :context-head)}
+   [:> i/icon* {:icon-id icon :size "s" :class (stl/css :context-icon)}]
+   label])
+
+(mf/defc layer-context*
+  "What else the layer of `item` carries: the comments that wait for an
+  answer and the tasks still open on it, for the context of its change.
+  Nothing for an entry that is no layer, or a layer without them."
+  {::mf/private true}
+  [{:keys [item data]}]
+  (let [threads  (mf/deref refs/threads)
+        tasks    (mf/deref refs/tasks)
+        clocal   (mf/deref refs/comments-local)
+        layer-id (when (= :shape (:kind item)) (:id item))
+        on-layer (mf/with-memo [threads layer-id]
+                   (if layer-id (layer-threads threads layer-id) []))
+        todo     (mf/with-memo [tasks layer-id]
+                   (if layer-id (layer-tasks tasks layer-id) []))
+        objects  (dm/get-in data [:pages-index (:page-id item) :objects])]
+    (when (or (seq on-layer) (seq todo))
+      [:div {:class (stl/css :context)}
+       (when (seq on-layer)
+         [:section {:class (stl/css :context-group)}
+          [:> context-head* {:icon i/comments
+                             :label (tr "workspace.compare.layer.comments" (count on-layer))}]
+          (for [thread on-layer]
+            [:> thread-card* {:key (dm/str (:id thread))
+                              :thread thread
+                              :objects objects
+                              :show-review true
+                              :is-open (= (:id thread) (:open clocal))}])])
+       (when (seq todo)
+         [:section {:class (stl/css :context-group)}
+          [:> context-head* {:icon i/view-as-list
+                             :label (tr "workspace.compare.layer.tasks" (count todo))}]
+          [:> task-list* {:tasks todo :show-review true}]])])))
 
 (mf/defc compare-detail*
   []
@@ -119,14 +151,10 @@
 
       (= phase :resolve)
       [:div {:class (stl/css :compare-detail)}
-       [:> conflict* {:comparison comparison :is-review review?}]]
-
-      ;; a layer can carry comments of the review
-      (and review? (= :shape (:kind item)))
-      [:div {:class (stl/css :compare-detail :has-tabs)}
-       [:> review-tabs* {:key (dwcp/item-key item) :item item :pr-id (:pr-id preview)}
-        [:> change* {:comparison comparison}]]]
+       [:> conflict* {:comparison comparison :is-review review?}]
+       [:> layer-context* {:item item :data (:data comparison)}]]
 
       :else
       [:div {:class (stl/css :compare-detail)}
-       [:> change* {:comparison comparison}]])))
+       [:> change* {:comparison comparison}]
+       [:> layer-context* {:item item :data (:data comparison)}]])))

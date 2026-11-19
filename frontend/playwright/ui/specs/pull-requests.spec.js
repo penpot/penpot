@@ -37,7 +37,7 @@ test("opening a file with pr-id enters the design review", async ({ page }) => {
   const bar = reviewBar(page);
   await expect(bar).toBeVisible();
   await expect(
-    bar.getByText("Reviewing the design review", { exact: true }),
+    bar.getByText("In review", { exact: true }),
   ).toBeVisible();
   await expect(
     bar.getByText("Checkout redesign", { exact: true }),
@@ -81,7 +81,7 @@ test("comparing shows the proposed changes on the canvas", async ({ page }) => {
   // leaving the comparison goes back to the review
   await bar.getByRole("button", { name: "Exit compare" }).click();
   await expect(
-    bar.getByText("Reviewing the design review", { exact: true }),
+    bar.getByText("In review", { exact: true }),
   ).toBeVisible();
 });
 

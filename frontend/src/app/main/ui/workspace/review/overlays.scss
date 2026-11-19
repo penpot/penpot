@@ -135,6 +135,13 @@
   }
 }
 
+// the arrows and the place in the list between them, with no gap
+.navigator-steps {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+}
+
 // a bar of a fixed width gives the place in the list a width too
 // (`--navigator-count-size`), so the arrows do not move with its digits
 .navigator-count {

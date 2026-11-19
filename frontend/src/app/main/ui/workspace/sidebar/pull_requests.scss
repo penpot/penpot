@@ -7,6 +7,7 @@
 @use "ds/_borders.scss" as *;
 @use "ds/_sizes.scss" as *;
 @use "ds/_utils.scss" as *;
+@use "ds/mixins.scss" as *;
 @use "ds/typography.scss" as *;
 
 // --- State badges
@@ -410,19 +411,26 @@
   color: var(--color-accent-info);
 }
 
+// one line: a long name is cut short instead of growing the bar
 .pr-banner-text {
   display: flex;
   align-items: center;
   gap: var(--sp-xs);
+  min-inline-size: 0;
+  white-space: nowrap;
 
   @include use-typography("body-small");
 }
 
 .pr-banner-title {
+  flex-shrink: 0;
   color: var(--color-foreground-secondary);
 }
 
 .pr-banner-name {
+  @include text-ellipsis;
+
+  max-inline-size: px2rem(280);
   color: var(--color-foreground-primary);
 }
 

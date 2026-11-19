@@ -663,7 +663,8 @@
           [:div {:class (stl/css :pr-banner-text)}
            [:span {:class (stl/css :pr-banner-title)}
             (tr "workspace.pull-requests.banner.reviewing")]
-           [:span {:class (stl/css :pr-banner-name)} (:title pr)]
+           ;; cut short when it is long: the whole of it on hover
+           [:span {:class (stl/css :pr-banner-name) :title (:title pr)} (:title pr)]
            ;; the author publishes them with the button instead
            (when (and outdated? (not author?))
              [:> tooltip* {:content (tr "workspace.pull-requests.badge.outdated-hint")

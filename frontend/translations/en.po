@@ -9684,7 +9684,7 @@ msgstr ""
 
 #: src/app/main/ui/workspace/sidebar/pull_requests.cljs:710
 msgid "workspace.pull-requests.banner.reviewing"
-msgstr "Reviewing the design review"
+msgstr "In review"
 
 #: src/app/main/ui/workspace/sidebar/pull_requests.cljs:504
 msgid "workspace.pull-requests.close.message"
@@ -12660,6 +12660,14 @@ msgstr "main has no changes this branch is missing"
 msgid "workspace.compare.filter.layers"
 msgstr "Layers"
 
+#: src/app/main/ui/workspace/compare/detail.cljs
+msgid "workspace.compare.layer.comments"
+msgstr "Comments on this layer (%s)"
+
+#: src/app/main/ui/workspace/compare/detail.cljs
+msgid "workspace.compare.layer.tasks"
+msgstr "Tasks on this layer (%s)"
+
 msgid "workspace.compare.navigator.changes"
 msgstr "Changes of the comparison"
 
@@ -12689,9 +12697,6 @@ msgstr "Both sides changed this text. Pick the one to keep."
 
 msgid "workspace.compare.tab-count"
 msgstr "%s (%s)"
-
-msgid "workspace.compare.tab.changes"
-msgstr "Changes (%s)"
 
 msgid "workspace.compare.toolbar.label"
 msgstr "Compare tools"

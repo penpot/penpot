@@ -52,6 +52,36 @@
   gap: var(--sp-s);
 }
 
+// a block over the whole width of the sidebar, on the background the
+// inspect tab gives each of its blocks: it undoes the padding of the
+// panel around the detail (`compare/detail.scss`)
+.section {
+  margin-inline: calc(-1 * var(--sp-m));
+  padding: var(--sp-m);
+  background-color: var(--low-emphasis-background);
+}
+
+// two blocks in a row read as one: the second one takes away the gap of
+// the detail (`.detail`) and keeps a little of its top padding, so the
+// two groups stay apart on the one background
+.section + .section {
+  margin-block-start: calc(-1 * var(--sp-l));
+  padding-block-start: var(--sp-s);
+}
+
+// what can be done about the change, one button over the other
+.stacked-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+}
+
+// a full-width DS button does not center its label on its own
+.wide-action {
+  inline-size: 100%;
+  justify-content: center;
+}
+
 .legend {
   display: flex;
   flex-wrap: wrap;

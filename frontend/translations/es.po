@@ -12007,7 +12007,7 @@ msgstr ""
 
 #: src/app/main/ui/workspace/sidebar/pull_requests.cljs:710
 msgid "workspace.pull-requests.banner.reviewing"
-msgstr "Revisando la revisión de diseño"
+msgstr "En revisión"
 
 #: src/app/main/ui/workspace/sidebar/pull_requests.cljs:504
 msgid "workspace.pull-requests.close.message"
@@ -12814,6 +12814,14 @@ msgstr "main no tiene cambios que le falten a esta rama"
 msgid "workspace.compare.filter.layers"
 msgstr "Capas"
 
+#: src/app/main/ui/workspace/compare/detail.cljs
+msgid "workspace.compare.layer.comments"
+msgstr "Comentarios en esta capa (%s)"
+
+#: src/app/main/ui/workspace/compare/detail.cljs
+msgid "workspace.compare.layer.tasks"
+msgstr "Tareas en esta capa (%s)"
+
 msgid "workspace.compare.navigator.changes"
 msgstr "Cambios de la comparación"
 
@@ -12843,9 +12851,6 @@ msgstr "Main y la rama cambiaron este texto. Elige cuál conservar."
 
 msgid "workspace.compare.tab-count"
 msgstr "%s (%s)"
-
-msgid "workspace.compare.tab.changes"
-msgstr "Cambios (%s)"
 
 msgid "workspace.compare.toolbar.label"
 msgstr "Herramientas de comparación"

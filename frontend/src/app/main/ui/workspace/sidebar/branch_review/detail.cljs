@@ -93,7 +93,8 @@
      ;; says what the rule decided instead
      (when-not (bm/settled? item)
        (if (seq visible)
-         [:> brl/value-steps* {:attrs visible :incoming incoming}]
+         [:div {:class (stl/css :section)}
+          [:> brl/value-steps* {:attrs visible :incoming incoming}]]
          (when (= :modified (:status item))
            [:> text* {:as "p" :typography t/body-small :class (stl/css :summary)}
             (tr "workspace.branches.compare.no-props")])))
@@ -128,19 +129,19 @@
          nil))
 
      (when (or on-edit on-toggle on-resolve)
-       [:div {:class (stl/css :actions)}
+       [:div {:class (stl/css :section :stacked-actions)}
         (when on-edit
-          [:> button* {:variant "secondary" :on-click on-edit}
+          [:> button* {:variant "secondary" :class (stl/css :wide-action) :on-click on-edit}
            (tr "workspace.compare.action.edit-layer")])
         (when on-toggle
-          [:> button* {:variant "secondary" :on-click on-toggle}
+          [:> button* {:variant "secondary" :class (stl/css :wide-action) :on-click on-toggle}
            (cond
              (and excluded incoming) (tr "workspace.compare.action.include-update")
              excluded                (tr "workspace.compare.action.include-merge")
              incoming                (tr "workspace.compare.action.leave-out-update")
              :else                   (tr "workspace.compare.action.leave-out-merge"))])
         (when on-resolve
-          [:> button* {:variant "secondary" :on-click on-resolve}
+          [:> button* {:variant "secondary" :class (stl/css :wide-action) :on-click on-resolve}
            (tr "workspace.branches.review.row.choose")])])]))
 
 ;; --- A choice between the two sides

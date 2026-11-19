@@ -88,18 +88,20 @@
                                                             :tone-neutral (= tone "neutral"))]
                                 :role "region"})]
     [:> :div props
-     [:> icon-button* {:variant "ghost"
-                       :icon i/arrow-left
-                       :aria-label (tr "workspace.review.changes.previous")
-                       :disabled (zero? total)
-                       :on-click on-previous}]
-     [:> text* {:as "span" :typography t/body-small :class (stl/css :navigator-count)}
-      (tr "workspace.review.changes.position" (if (pos? total) (inc index) 0) total)]
-     [:> icon-button* {:variant "ghost"
-                       :icon i/arrow-right
-                       :aria-label (tr "workspace.review.changes.next")
-                       :disabled (zero? total)
-                       :on-click on-next}]
+     ;; the arrows hold the place in the list between them
+     [:div {:class (stl/css :navigator-steps)}
+      [:> icon-button* {:variant "ghost"
+                        :icon i/arrow-left
+                        :aria-label (tr "workspace.review.changes.previous")
+                        :disabled (zero? total)
+                        :on-click on-previous}]
+      [:> text* {:as "span" :typography t/body-small :class (stl/css :navigator-count)}
+       (tr "workspace.review.changes.position" (if (pos? total) (inc index) 0) total)]
+      [:> icon-button* {:variant "ghost"
+                        :icon i/arrow-right
+                        :aria-label (tr "workspace.review.changes.next")
+                        :disabled (zero? total)
+                        :on-click on-next}]]
      children]))
 
 (mf/defc navigator-text*

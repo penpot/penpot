@@ -12,6 +12,7 @@
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.main.ui.workspace.compare.common :as cc]
+   [app.main.ui.workspace.compare.detail :as detail]
    [app.main.ui.workspace.compare.side :as side]
    [app.main.ui.workspace.sidebar.branch-review.sides :as brs]
    [cljs.test :as t :include-macros true]))
@@ -318,3 +319,24 @@
              (select-keys (cc/main-extent main) [:x :y :width :height])))
     (t/is (nil? (cc/main-extent {uuid/zero {:id uuid/zero :type :frame :shapes []}}))
           "an empty page")))
+
+;; --- What else the layer of the change carries
+
+(t/deftest the-layer-shows-the-comments-that-wait-for-an-answer
+  (let [layer   (uuid/next)
+        threads {1 {:id 1 :seqn 2 :shape-id layer}
+                 2 {:id 2 :seqn 1 :shape-id layer}
+                 3 {:id 3 :seqn 3 :shape-id layer :is-resolved true}
+                 4 {:id 4 :seqn 4 :shape-id (uuid/next)}}]
+    (t/is (= [2 1] (mapv :id (detail/layer-threads threads layer)))
+          "its own, in the order they were opened, the resolved ones left out")
+    (t/is (= [] (detail/layer-threads threads (uuid/next))) "a layer without any")))
+
+(t/deftest the-layer-shows-the-tasks-still-open
+  (let [layer (uuid/next)
+        tasks {1 {:id 1 :shape-id layer :status "open"}
+               2 {:id 2 :shape-id layer :status "done"}
+               3 {:id 3 :shape-id layer :status "verified"}
+               4 {:id 4 :shape-id (uuid/next) :status "open"}}]
+    (t/is (= [1 2] (sort (mapv :id (detail/layer-tasks tasks layer))))
+          "one to do and one to verify; a verified one is closed")))
