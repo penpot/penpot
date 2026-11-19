@@ -11,6 +11,7 @@
    [app.common.files.shapes-helpers :as cfsh]
    [app.common.files.validate :as cfv]
    [app.common.geom.point :as gpt]
+   [app.common.geom.shapes :as gsh]
    [app.common.logic.duplicate :as cld]
    [app.common.logic.instances :as cli]
    [app.common.logic.libraries :as cll]
@@ -20,6 +21,7 @@
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
+   [app.common.test-helpers.variants :as thv]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.file :as ctf]
@@ -493,6 +495,51 @@
     (t/is (ctk/main-instance? main1-root'))
     (t/is (ctk/main-instance-of? (:id main1-root') (:id page) component1'))
     (t/is (nil? saved-objects'))))
+
+(defn- delete-and-restore-variant
+  "Delete the variant whose main is `deleted-label` from a row flex set where
+  :root1 is laid out at x 30 and :root2 at x 150, move the other variant to
+  `remaining-x` as the layout would, and restore the deleted one. Returns
+  the restored file."
+  [deleted-label remaining-label remaining-x component-label]
+  (let [file     (-> (thf/sample-file :file1)
+                     (thv/add-variant :variant :component1 :root1 :component2 :root2
+                                      :variant1-params {:x 30 :y 30 :width 100 :height 100}
+                                      :variant2-params {:x 150 :y 30 :width 100 :height 100})
+                     (ths/update-shape :variant :layout :flex)
+                     (ths/update-shape :variant :layout-flex-dir :row))
+        page     (thf/current-page file)
+        [_ changes]
+        (cls/generate-delete-shapes (pcb/empty-changes) file page (:objects page)
+                                    #{(thi/id deleted-label)} {})
+        file     (thf/apply-changes file changes)
+        page     (thf/current-page file)
+        remaining (ths/get-shape file remaining-label)
+        file     (thf/apply-changes
+                  file
+                  (-> (pcb/empty-changes)
+                      (pcb/with-page page)
+                      (pcb/with-objects (:objects page))
+                      (pcb/update-shapes [(:id remaining)]
+                                         #(gsh/move % (gpt/point (- remaining-x (:x remaining)) 0)))))
+        page     (thf/current-page file)
+        changes  (cli/generate-restore-component (pcb/empty-changes) (:data file)
+                                                 (thi/id component-label) (:id file)
+                                                 page (:objects page))]
+    (thf/apply-changes file changes)))
+
+(t/deftest restored-variant-takes-its-old-place-in-a-flex-set
+  ;; :root1 is laid out first (x 30); after its delete :root2 moves there
+  (let [file' (delete-and-restore-variant :root1 :root2 30 :component1)]
+    (t/is (= [(thi/id :root2) (thi/id :root1)]
+             (:shapes (ths/get-shape file' :variant)))
+          "the flex set lays :root1 out first again")))
+
+(t/deftest restored-last-variant-stays-last-in-a-flex-set
+  (let [file' (delete-and-restore-variant :root2 :root1 30 :component2)]
+    (t/is (= [(thi/id :root2) (thi/id :root1)]
+             (:shapes (ths/get-shape file' :variant)))
+          "the flex set lays :root2 out last again")))
 
 (defn- restore-after-page-deletion
   "Delete :component1, whose main lives on :page-2, then delete that page,

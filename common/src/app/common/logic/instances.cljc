@@ -433,22 +433,52 @@
 
     [root (:id root-shape) changes]))
 
+(defn- laid-out-from?
+  "Whether `child` of the flex `parent` is laid out at or after `position`,
+  the old place of a shape that left the layout."
+  [parent position child]
+  (let [row?     (ctsl/row? parent)
+        sign     (if (ctsl/reverse? parent) -1 1)
+        main     (fn [p] (* sign (if row? (:x p) (:y p))))
+        cross    (fn [p] (if row? (:y p) (:x p)))
+        tolerance 0.5]
+    (if (and (ctsl/wrap? parent)
+             (> (cross child) (+ (cross position) tolerance)))
+      true
+      (and (>= (+ (cross child) tolerance) (cross position))
+           (>= (+ (main child) tolerance) (main position))))))
+
+(defn- restored-flex-children
+  "The children of the flex `parent` with `shape` restored at its old place:
+  before the first child laid out at or after the position it was saved
+  with, or last when there is none."
+  [objects parent shape]
+  (let [reverse? (ctsl/reverse? parent)
+        ;; A non-reversed flex lays its children out last to first
+        in-order (fn [ids] (if reverse? (vec ids) (vec (rseq (vec ids)))))
+        laid-out (in-order (:shapes parent))
+        position (select-keys shape [:x :y])
+        index    (d/index-of-pred laid-out #(some->> (get objects %) (laid-out-from? parent position)))
+        laid-out (if (some? index)
+                   (d/insert-at-index laid-out index [(:id shape)])
+                   (conj laid-out (:id shape)))]
+    (in-order laid-out)))
+
 (defn generate-restore-component
-  "Restore a deleted component, with the given id, in the given file library."
+  "Restore a deleted component, with the given id, in the given file library.
+  In a flex layout the main takes back its old place among its siblings."
   [changes library-data component-id library-id current-page objects]
   (let [{:keys [changes shape]} (prepare-restore-component changes library-data component-id current-page)
         parent-id (:parent-id shape)
-
-        insert-before?
-        (and (ctsl/flex-layout? objects parent-id)
-             (not (ctsl/reverse? objects parent-id)))
+        parent    (get objects parent-id)
 
         objects
         (-> objects
             (assoc (:id shape) shape)
-            (cond-> (and (some? parent-id) insert-before?)
-              (update-in [parent-id :shapes] #(d/concat-vec [(:id shape)] %)))
-            (cond-> (and (some? parent-id) (not insert-before?))
+            (cond-> (and (some? parent) (ctsl/flex-layout? parent))
+              (assoc-in [parent-id :shapes]
+                        (restored-flex-children objects parent shape)))
+            (cond-> (and (some? parent) (not (ctsl/flex-layout? parent)))
               (update-in [parent-id :shapes] conj (:id shape))))
 
         ;; Adds a resize-parents operation so the groups are updated. We add all the new objects
