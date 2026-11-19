@@ -363,10 +363,44 @@
   (t/is (preg/global-allowed? {:plugin-id preg/mcp-plugin-id
                                :host "https://design.penpot.app/plugins/mcp/"}))
   (doseq [host ["http://localhost:4400/" "http://127.0.0.1:4400/" "http://[::1]:4400/"
-                "http://LOCALHOST:4400/" "http://LocalHost/" "http://localhost.:4400/"]]
+                "http://LOCALHOST:4400/" "http://LocalHost/" "http://localhost.:4400/"
+                "https://localhost:4400/" "https://127.0.0.1/"]]
     (t/is (preg/global-allowed? {:plugin-id "local" :host host}) host))
   (t/is (not (preg/global-allowed? {:plugin-id "remote" :host "https://plugins.example.com/"})))
   (t/is (not (preg/global-allowed? {:plugin-id "remote" :host "https://localhost.example.com/"}))))
+
+(t/deftest global-plugins-are-allowed-for-penpot-domains
+  (doseq [host ["https://api-test-suite.plugins.penpot.dev/"
+                "https://design.penpot.dev/plugins/x/"
+                "https://plugins.penpot.app/"
+                "https://Plugins.PENPOT.app./"]]
+    (t/is (preg/global-allowed? {:plugin-id "penpot" :host host}) host))
+  (doseq [host ["http://api-test-suite.plugins.penpot.dev/"
+                "https://penpot.dev/"
+                "https://penpot.app/"
+                "https://evilpenpot.app/"
+                "https://penpot.app.example.com/"
+                "https://plugins.penpot.dev.example.com/"]]
+    (t/is (not (preg/global-allowed? {:plugin-id "remote" :host host})) host)))
+
+(t/deftest parse-manifest-keeps-localhost-management-permissions
+  (let [manifest (preg/parse-manifest
+                  "http://localhost:4400/manifest.json"
+                  #js {:name "Local management plugin"
+                       :code "plugin.js"
+                       :permissions #js ["content:read" "manage:projects" "manage:teams" "manage:delete"]})]
+    (t/is (= #{"content:read" "manage:projects" "manage:teams" "manage:delete"}
+             (:permissions manifest)))))
+
+(t/deftest parse-manifest-keeps-penpot-domain-global-scope
+  (let [manifest (preg/parse-manifest
+                  "https://api-test-suite.plugins.penpot.dev/manifest.json"
+                  #js {:name "Penpot global plugin"
+                       :code "plugin.js"
+                       :scope "global"
+                       :permissions #js ["content:read" "manage:projects"]})]
+    (t/is (= "global" (:scope manifest)))
+    (t/is (contains? (:permissions manifest) "manage:projects"))))
 
 (t/deftest parse-manifest-rejects-remote-global-scope
   (t/is (= ::preg/global-not-allowed
@@ -413,5 +447,11 @@
        (t/is (preg/has-permission? "reg-global-remote" "content:read"))
        (t/is (not (preg/has-permission? "reg-global-remote" "allow:global")))
        (t/is (not (preg/has-permission? "reg-global-remote" "manage:projects")))
+       (preg/install-plugin! {:plugin-id "reg-global-penpot"
+                              :host "https://api-test-suite.plugins.penpot.dev/"
+                              :scope "global"
+                              :permissions permissions})
        (t/is (preg/has-permission? "reg-global-local" "allow:global"))
-       (t/is (preg/has-permission? "reg-global-local" "manage:projects"))))))
+       (t/is (preg/has-permission? "reg-global-local" "manage:projects"))
+       (t/is (preg/has-permission? "reg-global-penpot" "allow:global"))
+       (t/is (preg/has-permission? "reg-global-penpot" "manage:projects"))))))

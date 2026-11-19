@@ -34,14 +34,25 @@
 (def global-permissions
   #{"allow:global" "manage:projects" "manage:teams" "manage:delete"})
 
-(def ^:private local-hosts
+;; Loopback hosts that may serve global plugins over any scheme
+(def ^:private trusted-hosts
   #{"localhost" "127.0.0.1" "[::1]" "::1"})
 
-(defn- local-url?
-  "True when the url host is a loopback name, ignoring case and a
-  trailing dot."
+;; Domains whose https subdomains may serve global plugins
+(def ^:private trusted-domains
+  #{"penpot.dev" "penpot.app"})
+
+(defn- trusted-url?
+  "True when the url host is one of `trusted-hosts`, or the url uses
+  https and its host is a subdomain of one of `trusted-domains`. Hosts
+  are compared ignoring case and a trailing dot."
   [url]
-  (contains? local-hosts (some-> url u/uri :host str/lower (str/rtrim "."))))
+  (let [uri  (some-> url u/uri)
+        host (some-> uri :host str/lower (str/rtrim "."))]
+    (or (contains? trusted-hosts host)
+        (and (= "https" (some-> uri :scheme str/lower))
+             (some? host)
+             (boolean (some #(str/ends-with? host (str "." %)) trusted-domains))))))
 
 (defn global-requested?
   "True when the plugin asks for global scope or a management permission."
@@ -52,10 +63,10 @@
 (defn global-allowed?
   "True when the plugin may run with global scope and use the management
   API. The feature is still in progress, so only the bundled MCP plugin
-  and plugins served from localhost get it."
+  and plugins served from a trusted url get it."
   [{:keys [plugin-id host]}]
   (or (= plugin-id mcp-plugin-id)
-      (local-url? host)))
+      (trusted-url? host)))
 
 ;; Promise that resolves when plugins runtime is initialized.
 ;; Lives here to avoid circular dependency: workspace.mcp -> app.plugins -> app.plugins.api -> workspace
@@ -155,7 +166,7 @@
 
       (and (global-requested? manifest)
            (not (global-allowed? manifest)))
-      (throw (ex-info "Global plugins can only be loaded from localhost"
+      (throw (ex-info "Global plugins are not allowed from this host"
                       {:type ::global-not-allowed
                        :host origin}))
 
