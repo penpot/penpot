@@ -881,7 +881,10 @@
              target-objects-siblings
              (with-target-frames exclude-frames-siblings)
 
+             ;; An asset dragged from the sidebar starts its move before the
+             ;; pointer has been over the viewport, with no position yet.
              position (->> ms/mouse-position
+                           (rx/filter some?)
                            (rx/map #(gpt/to-vec from-position %)))
 
              snap-delta

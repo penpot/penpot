@@ -41,8 +41,9 @@
 
 (defn- ^:async drag
   "Drags rect1 with the gesture `start` makes, from (120, 220) to (160, 260),
-  then emits `stop`. Resolves to the commits made and the store."
-  [start stop]
+  then emits `stop`. Resolves to the commits made and the store. The mouse
+  position is `initial` when the gesture starts, (120, 220) by default."
+  [start stop & {:keys [initial] :or {initial (gpt/point 120 220)}}]
   (let [file    (-> (cthf/sample-file :file1)
                     (ctho/add-rect :rect1 :x 100 :y 200 :width 50 :height 50))
         rect    (cths/get-shape file :rect1)
@@ -59,7 +60,7 @@
         ;; Moves a DOM node the tests lack
         dwt/set-ghost-displacement (mock/stub (fn [_] (ptk/data-event ::ghost-moved)))}
        (try
-         (rx/push! ms/mouse-position (gpt/point 120 220))
+         (rx/push! ms/mouse-position initial)
          (ptk/emit! store
                     #(assoc-in % [:workspace-local :selected] (d/ordered-set (:id rect)))
                     (start rect))
@@ -95,6 +96,14 @@
 ;; drag commits where it stopped (the case the lock must not follow).
 (t/deftest ^:async an-interrupted-move-commits-its-position
   (let [{:keys [commits store]} (await (drag move :interrupt))]
+    (t/is (pos? commits))
+    (t/is (= 140 (:x (shape-rect store))))))
+
+;; Scenario: an asset dragged from the sidebar starts its move before the
+;; pointer has been over the viewport, so there is no mouse position yet.
+;; Proves: the move waits for the first position instead of failing.
+(t/deftest ^:async a-move-started-without-a-mouse-position-follows-the-pointer
+  (let [{:keys [commits store]} (await (drag move :interrupt :initial nil))]
     (t/is (pos? commits))
     (t/is (= 140 (:x (shape-rect store))))))
 
