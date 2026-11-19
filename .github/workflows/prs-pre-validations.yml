@@ -1,0 +1,138 @@
+name: PRs Pre-Validations
+
+# pull_request_target is required so the job gets a write token for PRs from
+# forks. It is safe here: the workflow never checks out or runs PR code, it
+# only reads ids from the event payload and calls the GitHub API.
+on:
+  pull_request_target:
+    types:
+      - opened
+      - reopened
+      - ready_for_review
+
+permissions: {}
+
+jobs:
+  validate-public-pr:
+    name: Validate public PR
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Close public PR that does not meet the validation rules
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const ASSOCIATIONS_WITH_ACCESS = new Set(['COLLABORATOR', 'MEMBER', 'OWNER']);
+            const CONTRIBUTION_GUIDE_URL = 'https://github.com/penpot/penpot/blob/develop/CONTRIBUTING.md';
+            const REASONS = {
+              NO_LINKED_ISSUE: [
+                'Thank you for taking the time to contribute to Penpot!',
+                '',
+                'This pull request was closed automatically because it is not linked to any issue yet. Please open an issue describing the change, or find an existing one, link it to this pull request and reopen it. We will be happy to review it then.'
+              ].join('\n'),
+              NEEDS_TRIAGE: [
+                'Thank you for your interest in improving Penpot.',
+                '',
+                'This pull request was closed automatically because it is linked to an issue labelled `needs triage`. Our product team is still reviewing that issue, so it is not open for contributions yet. Once a maintainer confirms that the issue is ready, please reopen this pull request.'
+              ].join('\n'),
+              INTERNAL_ISSUE: [
+                'Thank you for wanting to help with Penpot.',
+                '',
+                'This pull request was closed automatically because it is linked to an issue labelled `internal`. Internal issues are not open to outside contributions. Please choose an issue that is explicitly open for contributions, or ask in the issue first, and then reopen this pull request.'
+              ].join('\n')
+            };
+            const GUIDE_FOOTER = [
+              '',
+              'If you are unsure where to start, our [contribution guide](' +
+                CONTRIBUTION_GUIDE_URL +
+                ') explains how we triage issues and when they become open for contributions.'
+            ].join('\n');
+
+            const pr = context.payload.pull_request;
+            if (!pr) {
+              throw new Error('This workflow only runs for pull_request_target events.');
+            }
+            if (pr.draft) {
+              console.log(`PR #${pr.number} is a draft; skipping.`);
+              return;
+            }
+            if (pr.user.type === 'Bot') {
+              console.log(`PR #${pr.number} was opened by a bot; skipping.`);
+              return;
+            }
+            // Exemption labels such as `no issue required` do not apply to
+            // public contributors: the author classification wins.
+            if (ASSOCIATIONS_WITH_ACCESS.has(pr.author_association)) {
+              console.log(`PR #${pr.number} was opened by ${pr.author_association}; skipping.`);
+              return;
+            }
+            if (pr.author_association === 'MANNEQUIN') {
+              console.log(`PR #${pr.number} was opened by a migrated placeholder user; skipping.`);
+              return;
+            }
+
+            const { owner, repo } = context.repo;
+            const result = await github.graphql(
+              `query($owner: String!, $repo: String!, $number: Int!) {
+                repository(owner: $owner, name: $repo) {
+                  pullRequest(number: $number) {
+                    isDraft
+                    closingIssuesReferences(first: 100) {
+                      nodes {
+                        number
+                        labels(first: 100) {
+                          nodes {
+                            name
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }`,
+              { owner, repo, number: pr.number }
+            );
+
+            const pullRequest = result.repository.pullRequest;
+            if (pullRequest.isDraft) {
+              console.log(`PR #${pr.number} became a draft; skipping.`);
+              return;
+            }
+
+            const issues = pullRequest.closingIssuesReferences.nodes;
+            const hasLabel = (issue, name) =>
+              issue.labels.nodes.some(({ name: labelName }) => labelName === name);
+            const reasons = [];
+            if (issues.length === 0) {
+              reasons.push('NO_LINKED_ISSUE');
+            } else {
+              if (issues.some((issue) => hasLabel(issue, 'needs triage'))) {
+                reasons.push('NEEDS_TRIAGE');
+              }
+              if (issues.some((issue) => hasLabel(issue, 'internal'))) {
+                reasons.push('INTERNAL_ISSUE');
+              }
+            }
+            if (reasons.length === 0) {
+              console.log(`PR #${pr.number} has a suitable linked issue; skipping.`);
+              return;
+            }
+
+            const body = reasons.map((reason) => REASONS[reason]).join('\n\n') + GUIDE_FOOTER;
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: pr.number,
+              body
+            });
+            await github.rest.pulls.update({
+              owner,
+              repo,
+              pull_number: pr.number,
+              state: 'closed'
+            });
+            console.log(`Closed PR #${pr.number}: ${reasons.join(', ')}.`);
