@@ -124,12 +124,13 @@
 
 (defn- collect-actor-ids-needing-profile
   "Actor ids (event :profile-id) that still need top-level :profile-email
-  and/or :profile-name. Skips uuid/zero and non-uuids."
+  and/or :profile-name (nil: the row has no write-time snapshot). Skips
+  uuid/zero and non-uuids."
   [events]
   (into #{}
         (keep (fn [event]
-                (when (or (not (contains? event :profile-email))
-                          (not (contains? event :profile-name)))
+                (when (or (nil? (:profile-email event))
+                          (nil? (:profile-name event)))
                   (when-let [id (uuid/coerce (:profile-id event))]
                     (when-not (uuid/zero? id)
                       id)))))
@@ -174,25 +175,28 @@
                        props
                        id->email-prop))))
 
+(defn- resolve-actor-field
+  "Keep the event value when it has one (an empty write-time snapshot
+  counts), else take `fallback`; drop the key when the result is empty."
+  [event k fallback]
+  (let [value (get event k)]
+    (if-let [value (not-empty (if (some? value) value fallback))]
+      (assoc event k value)
+      (dissoc event k))))
+
 (defn- maybe-assoc-actor-profile
   "Fill-only top-level :profile-email / :profile-name from the event
-  actor (:profile-id). Omits keys when the id is missing, zero, the
-  profile row is absent, or the corresponding column is empty
+  actor (:profile-id), for rows without a write-time snapshot (nil, see
+  `app.loggers.audit/with-actor-snapshots`). Omits keys when the id is
+  missing, zero, the profile row is absent, or the value is empty
   (fullname defaults to \"\" in the schema)."
   [event profiles]
-  (let [id (uuid/coerce (:profile-id event))]
-    (if (or (nil? id) (uuid/zero? id))
-      event
-      (if-let [profile (get profiles id)]
-        (cond-> event
-          (and (not (contains? event :profile-email))
-               (not-empty (:email profile)))
-          (assoc :profile-email (:email profile))
-
-          (and (not (contains? event :profile-name))
-               (not-empty (:fullname profile)))
-          (assoc :profile-name (:fullname profile)))
-        event))))
+  (let [id      (uuid/coerce (:profile-id event))
+        profile (when (and (some? id) (not (uuid/zero? id)))
+                  (get profiles id))]
+    (-> event
+        (resolve-actor-field :profile-email (:email profile))
+        (resolve-actor-field :profile-name (:fullname profile)))))
 
 (defn- enrich-events
   "Enrich allowlisted events before the admin-console ingest:
@@ -202,7 +206,9 @@
      :user-who-send-invitation-email.
   3. Fill missing top-level :profile-email / :profile-name from the
      event actor (:profile-id), including soft-deleted profiles; omit
-     when there is no usable actor id or the value is empty."
+     when there is no usable actor id or the value is empty. Rows
+     normally carry them from the write-time snapshot; this is the
+     fallback for rows written without one."
   [{:keys [::db/conn]} events]
   (let [team-ids    (collect-team-ids-needing-name events)
         profile-ids (into (collect-profile-ids-needing-email events)

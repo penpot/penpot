@@ -590,8 +590,8 @@
                    (:user-who-send-invitation-email props))))))))
 
 (t/deftest consumer-admin-console-does-not-overwrite-existing-actor-profile-fields
-  ;; Top-level :profile-email / :profile-name are not stored on the row;
-  ;; exercise fill-only via the enrich helper directly.
+  ;; Exercise fill-only via the enrich helper directly; the row path is
+  ;; covered by consumer-admin-console-keeps-the-actor-as-of-the-event.
   (let [actor (th/create-profile* 72 {:is-active true})
         event {:profile-id    (:id actor)
                :profile-email "preset@example.com"
@@ -603,6 +603,73 @@
                                          cfg [event]))]
                     (t/is (= "preset@example.com" (:profile-email enriched)))
                     (t/is (= "Preset Name" (:profile-name enriched))))))))
+
+;; `audit/submit` is stubbed out by the test fixture: these tests call
+;; `audit/submit*`, the real producer path, which takes the snapshot.
+(defn- submit-event
+  [profile-id name props]
+  (audit/submit* {::db/pool (:app.db/pool th/*system*)}
+                 {:type       "action"
+                  :name       name
+                  :source     "backend"
+                  :profile-id profile-id
+                  :ip-addr    "127.0.0.1"
+                  :props      props
+                  :context    {}
+                  :tracked-at (ct/now)
+                  :created-at (ct/now)}))
+
+(t/deftest consumer-admin-console-keeps-the-actor-as-of-the-event
+  ;; penpot-nitrate#846: the admin console shows the user as they were
+  ;; when the event happened. A rename or email change between the
+  ;; event and the archive pass must not reach it.
+  (let [actor (th/create-profile* 75 {:is-active true :fullname "Before Rename"})
+        team  (th/create-team* 75 {:profile-id (:id actor)})]
+    (th/with-audit-config #{:admin-console}
+      (with-mocks [admin-console-mock {:target 'app.nitrate/call :return nil}]
+        (submit-event (:id actor) "create-project" {:team-id (:id team)})
+        (th/db-update! :profile
+                       {:fullname "After Rename"
+                        :email    "after-rename@example.com"}
+                       {:id (:id actor)})
+        (run-admin-console)
+        (let [event (admin-console-event admin-console-mock)]
+          (t/is (= "Before Rename" (:profile-name event)))
+          (t/is (= (:email actor) (:profile-email event))))))))
+
+(t/deftest consumer-admin-console-keeps-an-empty-actor-name-as-of-the-event
+  ;; A user with no name when the event happened must not show the name
+  ;; set afterwards: the empty snapshot wins over the fallback.
+  (let [actor (th/create-profile* 76 {:is-active true})
+        team  (th/create-team* 76 {:profile-id (:id actor)})]
+    (th/db-update! :profile {:fullname ""} {:id (:id actor)})
+    (th/with-audit-config #{:admin-console}
+      (with-mocks [admin-console-mock {:target 'app.nitrate/call :return nil}]
+        (submit-event (:id actor) "create-project" {:team-id (:id team)})
+        (th/db-update! :profile {:fullname "Named Later"} {:id (:id actor)})
+        (run-admin-console)
+        (let [event (admin-console-event admin-console-mock)]
+          (t/is (= (:email actor) (:profile-email event)))
+          (t/is (not (contains? event :profile-name))))))))
+
+(t/deftest consumer-nexus-never-sends-the-actor-snapshot
+  ;; The snapshot is for the admin console only: Nexus gets the same
+  ;; event keys as before the columns existed.
+  (let [actor  (th/create-profile* 77 {:is-active true})
+        bodies (atom [])]
+    (th/with-audit-config #{:nexus :admin-console}
+      (with-mocks [_http-mock {:target 'app.http.client/req
+                               :return (fn [_ params & _]
+                                         (swap! bodies conj (:body params))
+                                         {:status 204})}]
+        (submit-event (:id actor) "create-project" {:team-id (uuid/next)})
+        (let [[row] (th/db-exec! ["SELECT * FROM audit_log"])]
+          (t/is (= (:fullname actor) (:profile-name row))))
+        (run-nexus {:uri archive-uri})
+        (let [[event :as events] (mapcat #(:events (transit/decode %)) @bodies)]
+          (t/is (= 1 (count events)))
+          (t/is (not (contains? event :profile-name)))
+          (t/is (not (contains? event :profile-email))))))))
 
 (t/deftest consumer-admin-console-fills-missing-actor-profile-field-independently
   ;; Each top-level key fills on its own; guards an or→and regression in

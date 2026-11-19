@@ -34,6 +34,8 @@
    :tracked-at
    :created-at
    :profile-id
+   :profile-name
+   :profile-email
    :ip-addr
    :props
    :context])
@@ -46,6 +48,8 @@
    (:tracked-at event)
    (:created-at event)
    (:profile-id event)
+   (:profile-name event)
+   (:profile-email event)
    (db/inet (:ip-addr event))
    (db/tjson (:props event))
    (db/tjson (d/without-nils (:context event)))])
@@ -144,8 +148,8 @@
     ;; so a failure drops the whole batch (counted below as failed); the
     ;; endpoint still answers without breaking the request.
     (let [metrics     (mtx/instance cfg)
-          full-rows   (if cf/audit-persist?
-                        (into [] xf:map-event-row events)
+          full-events (if cf/audit-persist?
+                        (vec events)
                         [])
           shadow-rows (if cf/telemetry-enabled?
                         (into [] xf:map-telemetry-event-row events)
@@ -153,14 +157,17 @@
       (try
         (db/tx-run! pool
                     (fn [tx]
-                      (insert-rows! tx full-rows)
+                      ;; Only the full rows carry the actor snapshot,
+                      ;; taken in the same transaction as the insert.
+                      (insert-rows! tx (into [] xf:map-event-row
+                                             (audit/with-actor-snapshots tx full-events)))
                       (insert-rows! tx shadow-rows)))
-        (record-ingested metrics "full" "inserted" (count full-rows))
+        (record-ingested metrics "full" "inserted" (count full-events))
         (record-ingested metrics "shadow" "inserted" (count shadow-rows))
         (catch Throwable cause
           ;; Whatever never landed counts as failed per attempted
           ;; kind; the endpoint logs the cause as before.
-          (record-ingested metrics "full" "failed" (count full-rows))
+          (record-ingested metrics "full" "failed" (count full-events))
           (record-ingested metrics "shadow" "failed" (count shadow-rows))
           (throw cause))))))
 

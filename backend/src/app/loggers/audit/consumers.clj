@@ -184,6 +184,8 @@
           a.created_at,
           a.tracked_at,
           a.profile_id,
+          a.profile_name,
+          a.profile_email,
           a.ip_addr,
           %s AS props,
           %s AS context,
