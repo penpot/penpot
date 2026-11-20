@@ -7,6 +7,7 @@
 (ns frontend-tests.data.workspace-shortcuts-test
   (:require
    [app.config :as cf]
+   [app.main.data.exports.assets :as de]
    [app.main.data.shortcuts :as ds]
    [app.main.data.workspace.path :as drp]
    [app.main.data.workspace.path.shortcuts :as path-shortcuts]
@@ -14,7 +15,8 @@
    [app.main.data.workspace.transforms :as dwt]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [cljs.test :as t :include-macros true]))
+   [cljs.test :as t :include-macros true]
+   [potok.v2.core :as ptk]))
 
 (defn- keyboard-event
   [{:keys [ctrl? meta? shift? code prevented?]}]
@@ -115,6 +117,32 @@
          (keyboard-event {:ctrl? true :code "Backslash" :prevented? prevented?})))
       (t/is (false? @prevented?))
       (t/is (empty? @emitted)))))
+
+
+(t/deftest export-selected-shape-shortcut-emits-data-event
+  (let [shortcut (get shortcuts/base-shortcuts :export-selected-shape)
+        dialog   (get shortcuts/base-shortcuts :export-shapes)
+        emitted  (atom [])]
+    (t/is (= (ds/c-mod "alt+shift+e") (:command shortcut)))
+    (t/is (= (ds/meta-alt (ds/shift "E")) (:tooltip shortcut)))
+    (t/is (= (:section dialog) (:section shortcut)))
+    (t/is (= (:subsections dialog) (:subsections shortcut)))
+    (t/is (not= false (:customizable shortcut)))
+    (let [customized (ds/apply-custom-overrides
+                      shortcuts/base-shortcuts
+                      {:workspace {:export-selected-shape "ctrl+alt+e"}}
+                      :workspace)]
+      (t/is (= "ctrl+alt+e" (get-in customized [:export-selected-shape :command])))
+      (t/is (identical? (:fn shortcut) (get-in customized [:export-selected-shape :fn])))
+      (t/is (= (:command dialog) (get-in customized [:export-shapes :command]))))
+    (with-redefs [st/emit! (mock-emit! emitted)]
+      ((:fn shortcut)))
+    (t/is (= [::de/export-selected-shape] (mapv ptk/type @emitted)))
+    (t/is (= (ds/c-mod "shift+e") (:command dialog)))
+    (reset! emitted [])
+    (with-redefs [st/emit! (mock-emit! emitted)]
+      ((:fn dialog)))
+    (t/is (= [::de/show-workspace-export-dialog] (mapv ptk/type @emitted)))))
 
 (def ^:private arrows
   {:up    ds/up-arrow
