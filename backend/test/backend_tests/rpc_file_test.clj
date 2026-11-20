@@ -3537,6 +3537,22 @@
         (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
         (t/is (empty? (:call-args-list @audit-mock)))))))
 
+(t/deftest file-gc-keeps-unused-media-with-the-retention-flag
+  ;; A kept revision row can name a media object that the head no longer
+  ;; names, and file-gc does not read revision rows, so the flag turns its
+  ;; media clean-up off.
+  (let [[_ file-1] (unused-media-fixture 1)
+        [_ file-2] (unused-media-fixture 2)
+        media-row  (fn [file] (th/db-get :file-media-object {:file-id (:id file)}
+                                         {::db/remove-deleted false}))]
+    (t/is (true? (th/run-task! :file-gc {:file-id (:id file-1)})))
+    (with-redefs [cf/flags (conj cf/flags :file-change-retention)]
+      (t/is (true? (th/run-task! :file-gc {:file-id (:id file-2)}))))
+
+    (t/is (ct/inst? (:deleted-at (media-row file-1))))
+    (t/is (nil? (:deleted-at (media-row file-2))))
+    (t/is (true? (:has-media-trimmed (th/db-get :file {:id (:id file-2)}))))))
+
 (t/deftest update-file-audit-event-carries-the-file-change-id
   ;; The event says that a file was saved, but not what changed: the
   ;; change row (xlog) is the only place with that, so its id travels
