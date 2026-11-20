@@ -15,18 +15,25 @@
    [app.common.types.token :as ctt]
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.tokens-status :as ctos]
+   [app.main.data.notifications :as ntf]
    [app.main.data.workspace.colors :as dc]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.data.workspace.wasm-text :as dwwt]
+   [app.main.store :as st]
+   [app.util.i18n :refer [tr]]
    [app.util.storage :as storage]
+   [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
    [cuerdas.core :as str]
+   [frontend-tests.helpers.async :as async]
+   [frontend-tests.helpers.mock :as mock]
    [frontend-tests.helpers.pages :as thp]
    [frontend-tests.helpers.state :as ths]
    [frontend-tests.helpers.wasm :as thw]
    [frontend-tests.tokens.helpers.state :as tohs]
-   [frontend-tests.tokens.helpers.tokens :as toht]))
+   [frontend-tests.tokens.helpers.tokens :as toht]
+   [potok.v2.core :as ptk]))
 
 (t/use-fixtures :each
   {:before (fn []
@@ -462,7 +469,7 @@
             events [(dwta/apply-token {:shape-ids [(:id rect-1)]
                                        :attributes #{:width :height}
                                        :token (toht/get-token file "sizing.sm")
-                                       :on-update-shape dwta/apply-dimensions-token})]]
+                                       :on-update-shape dwta/apply-sizing-token})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -1034,6 +1041,34 @@
                              :on-update-shape dwta/update-stroke-width})]
          step2)))))
 
+(t/deftest test-detach-tokens-by-attribute
+  (t/testing "detaching attributes removes whichever token they have, also one missing from the library"
+    (t/async
+      done
+      (let [file   (-> (setup-file-with-tokens)
+                       (ctht/apply-token-to-shape :rect-1 "radius.md" #{:r1 :r2 :r3 :r4} #{:r1 :r2 :r3 :r4} 8)
+                       (ctht/apply-token-to-shape :rect-2 "radius.lg" #{:r1} #{:r1} 16))
+            store  (ths/setup-store file)
+            events [(dwta/unapply-multiple-tokens {:attributes #{:r1 :r2}
+                                                   :shape-ids [(cthi/id :rect-1) (cthi/id :rect-2) (cthi/id :rect-3)]})]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file'   (ths/get-file-from-state new-state)
+                 rect-1' (cths/get-shape file' :rect-1)
+                 rect-2' (cths/get-shape file' :rect-2)]
+             (t/testing "removes the tokens from those attributes only"
+               (t/is (= {:r3 "radius.md" :r4 "radius.md"} (:applied-tokens rect-1')))
+               (t/is (empty? (:applied-tokens rect-2'))))
+
+             (t/testing "keeps the values the tokens had set"
+               (t/is (= 8 (:r1 rect-1')))
+               (t/is (= 16 (:r1 rect-2'))))
+
+             (t/testing "a shape without tokens stays as it is"
+               (t/is (= (:applied-tokens (cths/get-shape file :rect-3))
+                        (:applied-tokens (cths/get-shape file' :rect-3))))))))))))
+
 (t/deftest test-apply-shadow
   (t/testing "applies shadow token and updates the shapes with shadow"
     (t/async
@@ -1336,6 +1371,79 @@
                (t/is (pos? (thw/call-count :set-shape-text-content)))
                (t/is (pos? (thw/call-count :get-text-dimensions))))))
          debounce-text-stop)))))
+
+(defn- text-styles
+  "The styles of the first run of text in `shape`."
+  [shape]
+  (->> (txt/content->text+styles (:content shape))
+       (some (fn [[style text]]
+               (when (seq text)
+                 style)))))
+
+(defn- add-font-weight-token
+  [file token-name value]
+  (update-in file [:data :tokens-lib]
+             #(ctob/add-token % (cthi/id :set-a)
+                              (ctob/make-token {:name token-name
+                                                :value value
+                                                :type :font-weight}))))
+
+(defn- ^:async apply-font-weight-token
+  "Applies the font weight token to the text the way the token pill does,
+  and waits until the text has been measured again."
+  [store file token-name]
+  (let [resized (async/observe
+                 (->> (ptk/input-stream store)
+                      (rx/filter (ptk/type? ::dwwt/resize-wasm-text-debounce-commit))
+                      (rx/take 1)))]
+    (ptk/emit! store (dwta/apply-token {:shape-ids [(cthi/id :text-1)]
+                                        :attributes #{:font-weight}
+                                        :token (toht/get-token file token-name)
+                                        :on-update-shape dwta/update-font-weight-interactive}))
+    (await resized)))
+
+(t/deftest ^:async test-apply-font-weight-without-matching-variant
+  (let [file    (-> (setup-file-with-tokens)
+                    (add-font-weight-token "font-weight.thin" "100"))
+        store   (ths/setup-store file)
+        emitted (atom [])]
+    (await (mock/with-mocks*
+             {st/emit! (mock/stub (fn [& events] (swap! emitted into events) nil))}
+             (await (apply-font-weight-token store file "font-weight.thin"))))
+
+    (let [styles (text-styles (cths/get-shape (ths/get-file-from-state @store) :text-1))]
+      (t/testing "keeps the token's weight and uses the closest variant of the font"
+        (t/is (= "100" (:font-weight styles)))
+        (t/is (= "200" (:font-variant-id styles)))))
+
+    (t/testing "warns that the font has no variant for the weight"
+      (t/is (= {:content (tr "workspace.tokens.font-variant-not-found")
+                :type :toast
+                :level :warning}
+               (some #(when (ptk/type? ::ntf/show %)
+                        (-> (ptk/update % {})
+                            :notification
+                            (select-keys [:content :type :level])))
+                     @emitted))))
+
+    (rx/dispose! store)))
+
+(t/deftest ^:async test-apply-font-weight-with-matching-variant
+  (let [file    (-> (setup-file-with-tokens)
+                    (add-font-weight-token "font-weight.light-italic" "300 italic"))
+        store   (ths/setup-store file)
+        emitted (atom [])]
+    (await (mock/with-mocks*
+             {st/emit! (mock/stub (fn [& events] (swap! emitted into events) nil))}
+             (await (apply-font-weight-token store file "font-weight.light-italic"))))
+
+    (let [styles (text-styles (cths/get-shape (ths/get-file-from-state @store) :text-1))]
+      (t/is (= "300" (:font-weight styles)))
+      (t/is (= "italic" (:font-style styles)))
+      (t/is (= "300italic" (:font-variant-id styles))))
+    (t/is (not-any? (ptk/type? ::ntf/show) @emitted))
+
+    (rx/dispose! store)))
 
 (t/deftest test-toggle-token-none
   (t/testing "should apply token to all selected items, where no item has the token applied"
