@@ -272,9 +272,14 @@
     (feat.fdata/with-pointers cfg file-id
       (let [liveness (collect-snapshot-liveness cfg file-id)
             original (feat.fdata/original-pointers (:data file))
+            file (bfl/clean-file file)
+            ;; With retention on, kept revision rows can name media and
+            ;; components that neither the head nor the snapshots name,
+            ;; and the media cleaners do not read those rows.
+            file (if (contains? cf/flags :file-change-retention)
+                   file
+                   (clean-media! cfg liveness file))
             file (->> file
-                      (bfl/clean-file)
-                      (clean-media! cfg liveness)
                       (feat.fdata/reattach-unchanged original)
                       (clean-fragments! cfg (:pointers liveness)))
             file (assoc file :has-media-trimmed true)]
