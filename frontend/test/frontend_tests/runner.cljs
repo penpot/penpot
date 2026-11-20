@@ -194,6 +194,7 @@
    [frontend-tests.ui.sortable-auto-scroll-test]
    [frontend-tests.ui.static-test]
    [frontend-tests.ui.stroke-menu-test]
+   [frontend-tests.ui.subscription-dashboard-test]
    [frontend-tests.ui.subscription-test]
    [frontend-tests.ui.team-container-test]
    [frontend-tests.ui.text-attrs-multiple-test]
@@ -431,6 +432,7 @@
    'frontend-tests.ui.sortable-auto-scroll-test
    'frontend-tests.ui.static-test
    'frontend-tests.ui.stroke-menu-test
+   'frontend-tests.ui.subscription-dashboard-test
    'frontend-tests.ui.subscription-test
    'frontend-tests.ui.team-container-test
    'frontend-tests.ui.text-attrs-multiple-test
