@@ -16,6 +16,7 @@
    [app.common.schema.test :as smt]
    [app.common.time :as ct]
    [app.common.types.file :as ctf]
+   [app.common.types.page :as ctp]
    [app.common.types.shape :as cts]
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.tokens-status :as ctos]
@@ -47,6 +48,19 @@
          (dissoc value :modified-at)
          value)))
    data))
+
+(t/deftest add-page-uses-the-page-id-for-redo-and-undo
+  (let [data    (make-file-data (uuid/next) (uuid/next))
+        page-id (uuid/next)
+        page    (ctp/make-empty-page {:id page-id :name "Duplicate"})
+        changes (pcb/add-page (pcb/empty-changes nil) page)
+        added   (ch/process-changes data (:redo-changes changes))
+        undone  (ch/process-changes added (:undo-changes changes))]
+    (t/is (= [{:type :add-page :id page-id :page page}]
+             (:redo-changes changes)))
+    (t/is (= page (get-in added [:pages-index page-id])))
+    (t/is (= (:pages data) (:pages undone)))
+    (t/is (= (:pages-index data) (:pages-index undone)))))
 
 (defn- assert-idempotent
   [data changes]
