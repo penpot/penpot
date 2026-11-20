@@ -376,6 +376,10 @@ msgstr "Create new organization"
 msgid "dashboard.create-new-team"
 msgstr "Create new team"
 
+#: src/app/main/ui/dashboard/team_form.cljs:122
+msgid "dashboard.create-team-in-organization"
+msgstr "Create new team in %s"
+
 #: src/app/main/ui/workspace/main_menu.cljs:712
 msgid "dashboard.create-version-menu"
 msgstr "Pin this version"
@@ -1354,6 +1358,10 @@ msgstr "This team is not part of any organization"
 #: src/app/main/ui/dashboard/team.cljs:1716
 msgid "dashboard.team-organization.remove"
 msgstr "Remove team from organization"
+
+#: src/app/main/data/common.cljs:213
+msgid "dashboard.team-owner-changed-by-organization"
+msgstr "You are now a viewer in %s. %s is its new owner."
 
 #: src/app/main/ui/dashboard/team.cljs:1744
 msgid "dashboard.team-projects"
@@ -2408,7 +2416,10 @@ msgstr "Letter Spacing"
 msgid "inspect.attributes.typography.line-height"
 msgstr "Line Height"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:638
+msgid "inspect.attributes.typography.list-style-type.disc"
+msgstr "Disc"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:594
 msgid "inspect.attributes.typography.mixed-font-family"
 msgstr "Mixed Font Families"
 
@@ -4959,6 +4970,13 @@ msgstr "Start designing"
 msgid "options.deleted-token-with-name"
 msgstr "{%s} token does not exist or has been deleted."
 
+#: src/app/main/data/plugins.cljs:129
+msgid "plugins.runtime-unavailable"
+msgstr ""
+"Plugins are unavailable in this browser. Something in your environment (for "
+"example, an extension such as Tampermonkey) is preventing the plugin "
+"runtime from starting. Disable extensions or reload the page to try again."
+
 #: src/app/plugins/utils.cljs:579
 msgid "plugins.validation.invalid-value"
 msgstr "expected %s, got %s (%s)"
@@ -5808,14 +5826,12 @@ msgid "subscription.dashboard.banner.subscription-expired"
 msgstr "Your Enterprise subscription has expired. (%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:217
-msgid "subscription.dashboard.banner.unlock-features"
-msgstr "Unlock Enterprise features"
+msgid "subscription.dashboard.banner.unlock-enterprise"
+msgstr "Unlock Enterprise"
 
 #: src/app/main/ui/dashboard/subscription.cljs:219
-msgid "subscription.dashboard.banner.unlock-features-description-text"
-msgstr ""
-"Set fine-grained permissions and stay in control, without compromising the "
-"open-source freedom your team loves."
+msgid "subscription.dashboard.banner.unlock-features-description"
+msgstr "For organizations that need advanced governance, centralized administration, and secure collaboration."
 
 #: src/app/main/ui/dashboard/subscription.cljs:224
 msgid "subscription.dashboard.banner.upgrade-nitrate"
@@ -7104,6 +7120,10 @@ msgstr "Add a shared library"
 msgid "workspace.libraries.assets-in-this-file"
 msgstr "ASSETS IN THIS FILE"
 
+#: src/app/main/data/workspace/libraries.cljs:1963
+msgid "workspace.libraries.broken-library-disconnected"
+msgstr "The library \"%s\" couldn't be loaded and has been disconnected from this file. Components and colors already used in the file aren't affected but will be orphan until the library is fixed and connected again."
+
 #: src/app/main/ui/workspace/libraries.cljs:178, src/app/main/ui/workspace/libraries.cljs:207, src/app/main/ui/workspace/libraries.cljs:251
 msgid "workspace.libraries.colors"
 msgid_plural "workspace.libraries.colors"
@@ -7159,6 +7179,10 @@ msgstr "Connected library"
 #: src/app/main/ui/workspace/libraries.cljs:235
 msgid "workspace.libraries.connected-through"
 msgstr "Connected through"
+
+#: src/app/main/ui/workspace/libraries.cljs:934
+msgid "workspace.libraries.connected-through-hint"
+msgstr "Connected through %s. To remove it, disconnect %s."
 
 #: src/app/main/ui/workspace/libraries.cljs:507
 msgid "workspace.libraries.connected-to"
@@ -7305,6 +7329,10 @@ msgstr "see all changes"
 #: src/app/main/ui/workspace/libraries.cljs:1163, src/app/main/ui/workspace/libraries.cljs:1167
 msgid "workspace.libraries.updates"
 msgstr "UPDATES"
+
+#: src/app/main/ui/workspace/libraries.cljs:936
+msgid "workspace.libraries.used-by"
+msgstr "Used by %s. To remove it, disconnect %s first."
 
 #: src/app/main/ui/ds/notifications/shared/notification_pill.cljs:61
 msgid "workspace.notification-pill.detail"
@@ -7604,6 +7632,22 @@ msgstr[1] "Export %s elements"
 #: src/app/main/ui/inspect/exports.cljs:167, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:216
 msgid "workspace.options.export.add-export"
 msgstr "Add export"
+
+#: src/app/main/ui/exports/preview.cljs:170
+msgid "workspace.options.export.preview"
+msgstr "Preview"
+
+#: src/app/main/ui/exports/preview.cljs:98
+msgid "workspace.options.export.preview-error"
+msgstr "Could not load the preview"
+
+#: src/app/main/ui/exports/preview.cljs:94, src/app/main/ui/exports/preview.cljs:156
+msgid "workspace.options.export.preview-image"
+msgstr "Export preview"
+
+#: src/app/main/ui/exports/preview.cljs:142
+msgid "workspace.options.export.preview-preset"
+msgstr "Preview export preset"
 
 #: src/app/main/ui/inspect/exports.cljs:177, src/app/main/ui/inspect/exports.cljs:211, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:228, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:263
 msgid "workspace.options.export.remove-export"
@@ -8425,6 +8469,14 @@ msgstr "Letter Spacing"
 msgid "workspace.options.text-options.line-height"
 msgstr "Line height"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:251
+msgid "workspace.options.text-options.list-bullets"
+msgstr "Bullet list"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:247
+msgid "workspace.options.text-options.list-none"
+msgstr "No list"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:212
 msgid "workspace.options.text-options.strikethrough"
 msgstr "Strikethrough (%s)"
@@ -8541,6 +8593,10 @@ msgstr "Discover [more plugins](%s)"
 #: src/app/main/ui/workspace/plugins.cljs:251
 msgid "workspace.plugins.empty-plugins"
 msgstr "No plugins installed yet"
+
+#: src/app/main/data/plugins.cljs, src/app/main/ui/dashboard.cljs, src/app/main/ui/workspace/plugins.cljs
+msgid "workspace.plugins.error.global-not-allowed"
+msgstr "Plugins that work outside a file can only be installed from trusted sources for now."
 
 #: src/app/main/ui/workspace/plugins.cljs:237
 msgid "workspace.plugins.error.manifest"
@@ -8710,6 +8766,54 @@ msgstr "**Editing is disabled** because changes can’t be saved."
 #, markdown
 msgid "workspace.save-failure.stopped"
 msgstr "**Editing is disabled** because changes can’t be saved."
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.anchor-point"
+msgstr "Anchor point"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.anchor.bottom-center"
+msgstr "Bottom center"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.anchor.bottom-left"
+msgstr "Bottom left"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.anchor.bottom-right"
+msgstr "Bottom right"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.anchor.center"
+msgstr "Center"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.anchor.center-left"
+msgstr "Center left"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.anchor.center-right"
+msgstr "Center right"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.anchor.top-center"
+msgstr "Top center"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.anchor.top-left"
+msgstr "Top left"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.anchor.top-right"
+msgstr "Top right"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.scale-and-anchor"
+msgstr "Scale and anchor point"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.title"
+msgstr "Scale"
 
 #: src/app/main/ui/workspace/context_menu.cljs:667
 msgid "workspace.shape.menu.add-flex"
@@ -9621,6 +9725,16 @@ msgstr ""
 #: src/app/main/data/workspace/tokens/import_export.cljs:60
 msgid "workspace.tokens.unknown-token-type-section"
 msgstr "Type '%s' is not supported (%s):"
+
+#: src/app/main/data/workspace/tokens/import_export.cljs:80
+msgid "workspace.tokens.unsupported-token-data-message"
+msgstr ""
+"Import was successful, but some token data was skipped because Penpot "
+"does not support it. Expand details to see what was skipped."
+
+#: src/app/main/data/workspace/tokens/import_export.cljs:83
+msgid "workspace.tokens.unsupported-token-data-section"
+msgstr "'%s' is not supported (%s):"
 
 #: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:316, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:270
 msgid "workspace.tokens.use-reference"

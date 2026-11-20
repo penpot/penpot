@@ -368,8 +368,8 @@
             :or {session-id (uuid/next) revn 0}}]
    (-> system
        (assoc ::files.update/timestamp (ct/now))
-       (db/tx-run! (fn [{:keys [::db/conn] :as system}]
-                     (let [file (files.update/get-file conn file-id)]
+       (db/tx-run! (fn [system]
+                     (let [file (files.update/get-file system file-id)]
                        (#'files.update/update-file* system
                                                     {:id file-id
                                                      :revn revn
@@ -777,6 +777,21 @@
              (io/file tmp))
     tmp))
 
+(defmacro with-temp-file
+  "Evaluate `body` with `sym` bound to the path of a temporary file that
+   holds `content`. The file is created under /tmp/penpot, one of the two
+   places the upload validation accepts (/tmp/undertow is the other one),
+   and it is deleted when the body ends, also when it throws."
+  [[sym content] & body]
+  `(let [path# (fs/create-tempfile :dir "/tmp/penpot" :prefix "penpot-test-")]
+     (try
+       (spit (str path#) ~content :encoding "UTF-8")
+       (let [~sym path#]
+         ~@body)
+       (finally
+         (when (fs/exists? path#)
+           (fs/delete path#))))))
+
 (defn pause
   []
   (let [^java.io.Console cnsl (System/console)]
@@ -826,6 +841,19 @@
 (defn db-get
   [& params]
   (apply db/get* *pool* params))
+
+(defn read-recording-sql
+  "Run `f` and return [result sqls], where `sqls` are the SQL statements of
+  every `db/get-with-sql` call. Those are exactly the file reads of
+  `binfile.common/get-file`: the fragment loads go through `db/get*`."
+  [f]
+  (let [sqls (atom [])]
+    (with-redefs [db/get-with-sql
+                  (let [orig db/get-with-sql]
+                    (fn [ds sql & opts]
+                      (swap! sqls conj (first sql))
+                      (apply orig ds sql opts)))]
+      [(f) @sqls])))
 
 (defn sleep
   [ms-or-duration]

@@ -1,0 +1,5 @@
+/* Workspace entry point for the public `@penpot/plugin-styles/styles.css` import.
+   The published package ships a bundled file at this path; when the workspace
+   package is linked, its source lives under src/lib instead. Keep both layouts
+   exposing the same path so consumers resolve it identically. */
+@import './src/lib/styles.css';

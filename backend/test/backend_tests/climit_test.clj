@@ -445,10 +445,9 @@
         (t/is (thrown? clojure.lang.ExceptionInfo
                        (invoke! cfg (fn [_ _] :never) {}))))
 
-      ;; the count came back down instead of staying up for good. Only the
-      ;; last publication is asserted, not the exact list: the sampler
-      ;; republishes the same count when its first tick lands inside the
-      ;; window.
+      ;; the count came back down instead of staying up for good. The
+      ;; republisher daemon thread can add publications inside the window,
+      ;; so what is asserted is the last value, not the whole sequence.
       (t/is (= 0 (waiting-count climit name)))
       (t/is (= 0 (waiting-last name)))
 

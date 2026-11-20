@@ -1,0 +1,76 @@
+name: Require Milestone on Linked Issues
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - edited
+      - ready_for_review
+      - converted_to_draft
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+  issues: read
+
+jobs:
+  check-linked-issues:
+    name: Require Milestones on Linked Issues
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check linked issues
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          IS_DRAFT: ${{ github.event.pull_request.draft }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          if [ "$IS_DRAFT" = "true" ]; then
+            echo "Draft PR: milestone check skipped."
+            exit 0
+          fi
+
+          OWNER="${REPOSITORY%%/*}"
+          REPO="${REPOSITORY#*/}"
+
+          # shellcheck disable=SC2016  # GraphQL variables, not shell expansion.
+          ISSUES=$(gh api graphql \
+            -F owner="$OWNER" \
+            -F repo="$REPO" \
+            -F number="$PR_NUMBER" \
+            -f query='
+              query($owner: String!, $repo: String!, $number: Int!) {
+                repository(owner: $owner, name: $repo) {
+                  pullRequest(number: $number) {
+                    closingIssuesReferences(first: 100) {
+                      nodes {
+                        number
+                        title
+                        url
+                        milestone {
+                          title
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            ')
+
+          MISSING=$(echo "$ISSUES" | jq -r '
+            .data.repository.pullRequest.closingIssuesReferences.nodes[]
+            | select(.milestone == null)
+            | "- #\(.number): \(.title) (\(.url))"
+          ')
+
+          if [ -n "$MISSING" ]; then
+            echo "::error::The following linked issues have no milestone:"
+            echo "$MISSING"
+            exit 1
+          fi
+
+          echo "All linked issues have a milestone."

@@ -11,7 +11,7 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.uuid :as uuid]
-   [app.main.data.auth :refer [is-authenticated?]]
+   [app.main.data.auth :as da :refer [is-authenticated?]]
    [app.main.data.common :as dcm]
    [app.main.data.nitrate :as dnt]
    [app.main.errors :as errors]
@@ -127,7 +127,8 @@
          (fn [data]
            (cond
              (:invitation-token data)
-             (st/emit! (rt/nav :auth-verify-token {:token (:invitation-token data)}))
+             (st/emit! (da/login-from-register
+                        {:invitation-token (:invitation-token data)}))
 
              (:is-active data)
              (st/emit! (rt/reload true))
@@ -523,11 +524,13 @@
   SSO exchange with the identity provider fails."
   {::mf/private true}
   [{:keys [organization-id team-id profile is-workspace is-dashboard organization-name]}]
-  (let [clean-url
+  (let [clean-token
         (mf/with-memo []
-          (-> (rt/get-current-href)
+          (-> (rt/get-current-token)
               (dom/remove-query-param :sso-error)
               (dom/remove-query-param :organization-id)))
+
+        clean-url (rt/token->url clean-token)
 
         _ (mf/with-effect []
             ;; Consume the marker once: scrub it from the URL bar so a
@@ -544,14 +547,14 @@
 
         on-retry
         (mf/use-fn
-         (mf/deps organization-id team-id clean-url)
+         (mf/deps organization-id team-id clean-token)
          (fn []
            (st/emit! (rt/assign-exception nil))
            (if (or team-id organization-id)
              ;; Retry with team-id and/or organization-id to trigger SSO check
              (st/emit! (dnt/retry-organization-sso {:team-id team-id
                                                     :organization-id organization-id
-                                                    :dest-url clean-url}))
+                                                    :query-string (rt/token->query-string clean-token)}))
              ;; Fallback: just navigate to clean URL
              (st/emit! (rt/nav-raw :uri clean-url)))))]
 

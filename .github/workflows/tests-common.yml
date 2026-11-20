@@ -32,6 +32,9 @@ permissions:
 jobs:
   test-common:
     if: ${{ !github.event.pull_request.draft }}
+    permissions:
+      contents: read
+      pull-requests: write  # coverage comment on the PR
     name: "Common Tests"
     runs-on: penpot-extended-runner
     container:
@@ -58,3 +61,38 @@ jobs:
         working-directory: ./common
         run: |
           ./scripts/test
+
+      - name: Coverage summary
+        if: ${{ !cancelled() && hashFiles('common/target/coverage/lcov.info') != '' }}
+        run: |
+          node scripts/coverage-summary.mjs \
+            --title "Common JVM test coverage" \
+            --note "Namespaces under \`common/src/app\`, measured by the JVM tests." \
+            --lcov common/target/coverage/lcov.info \
+            > common/target/coverage/summary.md
+          cat common/target/coverage/summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Coverage comment
+        # Fork PRs get a read-only token, so only branches of this repo comment.
+        if: ${{ !cancelled() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && hashFiles('common/target/coverage/lcov.info') != '' }}
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          node scripts/coverage-comment.mjs \
+            --project Common \
+            --lcov common/target/coverage/lcov.info \
+            --emma-xml common/target/coverage/coverage.xml \
+            --prefix common/
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: ${{ !cancelled() }}
+        with:
+          name: common-coverage
+          path: common/target/coverage/
+          overwrite: true
+          if-no-files-found: ignore
+          retention-days: 7

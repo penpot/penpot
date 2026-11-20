@@ -300,6 +300,32 @@
         ((::jobs/handler job-def) nil params)
         (t/is (= (emails/render factory recipe) @sent))))))
 
+;; `send-template` drops nil values before enqueuing, so a nil
+;; `:user-name` (e.g. inviting an unregistered email) must still render.
+(t/deftest send-template-renders-with-nil-user-name
+  (doseq [[template factory recipe]
+          [["invite-to-organization" emails/invite-to-organization
+            {:to "invitee@example.com"
+             :public-uri (cf/get :public-uri)
+             :invited-by "Owner User"
+             :user-name nil
+             :organization {:name "Acme Inc"}
+             :token "test-token"}]
+           ["renewal-notice" emails/renewal-notice
+            {:to "billing@example.com"
+             :public-uri (cf/get :public-uri)
+             :user-name nil
+             :renewal-date "2026-12-01"
+             :estimated-amount "$10.00"
+             :organizations [{:name "Acme"}]}]]]
+    (t/testing template
+      (let [sent    (atom nil)
+            job-def (templated-job-def (fn [_ email] (reset! sent email)))
+            job-id  (submit-templated job-def (assoc recipe ::emails/template template))
+            params  (jobs/decode-params job-def (:params (th/db-get :job {:id job-id})))]
+        ((::jobs/handler job-def) nil params)
+        (t/is (= (emails/render factory recipe) @sent))))))
+
 (t/deftest send-templated-mail-handler-rejects-unknown-template
   (let [job-def (templated-job-def (fn [_] nil))
         code    (try

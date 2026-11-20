@@ -17,6 +17,7 @@ use crate::shapes::{
 };
 use crate::state::{ShapesPoolRef, State};
 use crate::uuid::Uuid;
+use crate::{get_render_state, has_render_state};
 
 #[allow(clippy::too_many_arguments)]
 fn propagate_children(
@@ -438,6 +439,22 @@ fn propagate_reflow(
     }
 }
 
+fn propagate_nested_reflows(
+    ids: &[Uuid],
+    shapes: ShapesPoolRef,
+    reflown: &HashSet<Uuid>,
+    entries: &mut VecDeque<Modifier>,
+) {
+    for shape in ids.iter().filter_map(|id| shapes.get(id)) {
+        for child_id in shape.all_children_iter(shapes, false, false) {
+            if !reflown.contains(&child_id) && shapes.get(&child_id).is_some_and(Shape::has_layout)
+            {
+                entries.push_back(Modifier::reflow(child_id, false));
+            }
+        }
+    }
+}
+
 fn reflow_shape(
     id: &Uuid,
     state: &State,
@@ -504,6 +521,16 @@ pub fn propagate_modifiers(
     // are transformed in the same pass.
     let mut pending_reflows = HashSet::<Uuid>::new();
 
+    let requested_reflows: Vec<Uuid> = entries
+        .iter()
+        .filter_map(|modifier| match modifier {
+            Modifier::Reflow(id, _) => Some(*id),
+            Modifier::Transform(..) => None,
+        })
+        .collect();
+    let interactive = has_render_state() && get_render_state().options.is_interactive_transform();
+    let mut nested_layouts_queued = interactive || requested_reflows.is_empty();
+
     // We first propagate the transforms to the children and then after
     // recalculate the layouts. The layout can create further transforms that
     // we need to re-propagate.
@@ -563,6 +590,14 @@ pub fn propagate_modifiers(
                 continue;
             }
             reflow_shape(id, state, &mut reflown, &mut entries, &mut bounds_temp)?;
+        }
+
+        // A requested reflow also lays out the layouts below it that kept
+        // their size, so were skipped: a component sync can leave their
+        // children where the layout would not put them.
+        if entries.is_empty() && !nested_layouts_queued {
+            nested_layouts_queued = true;
+            propagate_nested_reflows(&requested_reflows, shapes, &reflown, &mut entries);
         }
     }
 
@@ -926,5 +961,82 @@ mod tests {
 
         assert_eq!(bounds.width(), 4.0);
         assert_eq!(bounds.height(), 4.0);
+    }
+
+    fn add_flex_row(shape: &mut Shape) {
+        shape.set_shape_type(Type::Frame(Frame::default()));
+        shape.set_flex_layout_data(
+            FlexDirection::Row,
+            0.0,
+            0.0,
+            AlignItems::Start,
+            AlignContent::Start,
+            JustifyItems::Start,
+            JustifyContent::Start,
+            WrapType::NoWrap,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+        );
+    }
+
+    fn add_fixed_layout_child(shape: &mut Shape, parent_id: Uuid) {
+        shape.set_parent(parent_id);
+        shape.set_flex_layout_child_data(
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            Sizing::Fix,
+            Sizing::Fix,
+            None,
+            None,
+            None,
+            None,
+            None,
+            false,
+            None,
+        );
+    }
+
+    #[test]
+    fn test_reflow_lays_out_nested_layout_that_keeps_its_size() {
+        let outer_id = Uuid::new_v4();
+        let inner_id = Uuid::new_v4();
+        let child_id = Uuid::new_v4();
+
+        let mut state = State::new();
+        state.shapes.initialize(10);
+        {
+            let child = state.shapes.add_shape(child_id);
+            child.set_selrect(100.0, 0.0, 116.0, 16.0);
+            add_fixed_layout_child(child, inner_id);
+
+            let inner = state.shapes.add_shape(inner_id);
+            add_flex_row(inner);
+            add_fixed_layout_child(inner, outer_id);
+            inner.add_child(child_id);
+            inner.set_selrect(0.0, 0.0, 300.0, 16.0);
+
+            let outer = state.shapes.add_shape(outer_id);
+            add_flex_row(outer);
+            outer.add_child(inner_id);
+            outer.set_selrect(0.0, 0.0, 300.0, 16.0);
+        }
+
+        let entry = TransformEntry::from_input(outer_id, Matrix::new_identity());
+        let result = propagate_modifiers(&state, &[entry], PixelPrecision::Disabled).unwrap();
+
+        let transform = result
+            .iter()
+            .find(|entry| entry.id == child_id)
+            .map(|entry| entry.transform)
+            .expect("the child of the nested layout is laid out");
+
+        let child = state.shapes.get(&child_id).unwrap();
+        let bounds = child.bounds().transform(&transform);
+
+        assert!(is_close_to(bounds.min_x(), 0.0));
     }
 }

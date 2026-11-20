@@ -118,6 +118,16 @@
                         [(ct/now) chunk-size]])]
     (db/exec! conn (into [sql] params))))
 
+(defn- server-error
+  "Return the PostgreSQL server error of a foreign key violation, or nil. It
+  carries the constraint and the referencing table, which is what the operator
+  needs: any `NO ACTION` foreign key on `storage_object` can block the delete,
+  not only the `file_data` one."
+  [cause]
+  (when (and (instance? org.postgresql.util.PSQLException cause)
+             (= "23503" (.getSQLState ^java.sql.SQLException cause)))
+    (.getServerErrorMessage ^org.postgresql.util.PSQLException cause)))
+
 (defn- clean-deleted
   "Processes the pending objects chunk by chunk with keyset pagination: each
   chunk is one short transaction that reads and locks the next `chunk-size`
@@ -127,11 +137,16 @@
   marked as deleted.
 
   A chunk that fails aborts its transaction: nothing of the chunk is deleted,
-  its locks are released, and it is logged and skipped. The cursor advances
-  to the `(deleted_at, id)` of the last row of each read chunk regardless of
-  the deletion result, so a failed chunk is not visited again in the same
-  run. There is no long-lived read transaction: each transaction lives only
-  as long as one chunk, letting the vacuum proceed between chunks. Rows
+  its locks are released, and it is logged and skipped. A chunk blocked by a
+  foreign key (SQLState 23503) keeps its log at error level with a hint and the
+  constraint and table the database reports, and is retried on the next run;
+  the reference must be fixed for the chunk to make progress. Any `NO ACTION`
+  foreign key on `storage_object` can block the delete, not only the one of
+  `file_data`. The cursor advances to the `(deleted_at, id)` of
+  the last row of each read chunk regardless of the deletion result, so a
+  failed chunk is not visited again in the same run. There is no long-lived
+  read transaction: each transaction lives only as long as one chunk, letting
+  the vacuum proceed between chunks. Rows
   locked by a concurrent run are skipped and deferred to the next run; a
   chunk that fails after a partial backend delete self-heals on the next
   run (physical deletes are idempotent). Every `throttle-every` deleted
@@ -155,9 +170,22 @@
                               ;; afterwards is a JDBC no-op on the already
                               ;; rolled-back connection.
                               (db/rollback! conn)
-                              (l/err :hint "unexpected error on chunk deletion"
-                                     :ids (map :id rows)
-                                     :cause cause)
+                              (if-let [serr (server-error cause)]
+                                ;; A NO ACTION foreign key refused a physical
+                                ;; delete: a live row of another table still
+                                ;; references an object marked for deletion.
+                                ;; That is a real anomaly (the reference scan
+                                ;; should have frozen it), so it stays an
+                                ;; error and the chunk is retried on the next
+                                ;; run until the reference is fixed.
+                                (l/err :hint "chunk deletion blocked by a live reference; fix the reference and let the next run reclaim the chunk"
+                                       :ids (map :id rows)
+                                       :constraint (.getConstraint ^org.postgresql.util.ServerErrorMessage serr)
+                                       :table (.getTable ^org.postgresql.util.ServerErrorMessage serr)
+                                       :cause cause)
+                                (l/err :hint "unexpected error on chunk deletion"
+                                       :ids (map :id rows)
+                                       :cause cause))
                               [rows {}])))))]
 
       ;; Reported only after the chunk commits: a rolled-back chunk leaves

@@ -65,7 +65,7 @@ When the user press one of the "Log in with XXX" button, frontend calls
 generates a request token and redirects the user to the service provider to
 authenticate in it.
 
-If succesful, the provider redirects to the<code class="language-clojure">/auth/oauth/:provider/callback</code>.
+If successful, the provider redirects to the<code class="language-clojure">/auth/oauth/:provider/callback</code>.
 This verifies the call with the request token, extracts another access token
 from the auth response, and uses it to request the email and full name from the
 service provider.

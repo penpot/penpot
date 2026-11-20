@@ -210,6 +210,112 @@
     (t/testing "what the container occupies is kept apart"
       (t/is (= [10000 10000 10000] (mapv :container-size @seen))))))
 
+(t/deftest ^:async the-references-of-a-container-are-read-one-at-a-time
+  (let [file-id   (uuid/next)
+        media-id  (str (uuid/next))
+        thumb-id  (str (uuid/next))
+        seen      (atom [])
+        in-flight (atom 0)
+        peak      (atom 0)
+        entries
+        #js [#js {:filename "manifest.json"
+                  :compressedSize 100}
+             #js {:filename (str "files/" file-id ".json")
+                  :compressedSize 200}
+             #js {:filename (str "files/" file-id "/media/one.json")
+                  :compressedSize 10
+                  :content (str "{\"mediaId\": \"" media-id "\"}")}
+             #js {:filename (str "files/" file-id "/thumbnails/t/p/f.json")
+                  :compressedSize 10
+                  :content (str "{\"thumbnailId\": \"" thumb-id "\"}")}
+             #js {:filename (str "objects/" media-id ".json")
+                  :compressedSize 20}
+             #js {:filename (str "objects/" media-id ".png")
+                  :compressedSize 1000}
+             #js {:filename (str "objects/" thumb-id ".json")
+                  :compressedSize 5}
+             #js {:filename (str "objects/" thumb-id ".png")
+                  :compressedSize 40}]]
+
+    (await
+     (mock/with-mocks*
+       {http/send! (slurp-stub zip-magic)
+        uz/get-entry (mock/stub (fn [_ _]
+                                  (p/resolved #js {:content (manifest [file-id "One"])})))
+        uz/get-entries (mock/stub (fn [_] (p/resolved entries)))
+        ;; every read counts how many are open at the same time
+        uz/read-as-text
+        (mock/stub (fn [entry]
+                     (swap! in-flight inc)
+                     (swap! peak max @in-flight)
+                     (->> (p/resolved (.-content entry))
+                          (p/fmap (fn [content]
+                                    (swap! in-flight dec)
+                                    content)))))
+        uz/close (mock/stub (fn [_] nil))}
+
+       (await (hva/observe (imp/analyze [{:uri uri :name "package.penpot" :size 10000}])
+                           {:on-next #(swap! seen conj %)}))))
+
+    (t/testing "a container of many references never opens more than one read"
+      ;; a container of a big file holds thousands of references, and every
+      ;; read opens its own decompression stream: reading them all at once
+      ;; is what breaks the analysis in the browser
+      (t/is (= 1 @peak)))
+
+    (t/testing "every reference is still counted"
+      ;; 200 + 10 + 10 of its own, and 20 + 1000 and 5 + 40 of the two
+      ;; objects its media and its thumbnail point at
+      (t/is (= [1285] (mapv :size @seen))))))
+
+(t/deftest ^:async a-reference-that-cannot-be-read-leaves-its-file-without-size
+  (let [readable-id (uuid/next)
+        broken-id   (uuid/next)
+        object-id   (str (uuid/next))
+        broken-path (str "files/" broken-id "/media/two.json")
+        seen        (atom [])
+        entries
+        #js [#js {:filename "manifest.json"
+                  :compressedSize 100}
+             #js {:filename (str "files/" readable-id ".json")
+                  :compressedSize 200}
+             #js {:filename (str "files/" readable-id "/media/one.json")
+                  :compressedSize 10
+                  :content (str "{\"mediaId\": \"" object-id "\"}")}
+             #js {:filename (str "objects/" object-id ".json")
+                  :compressedSize 20}
+             #js {:filename (str "objects/" object-id ".png")
+                  :compressedSize 1000}
+             #js {:filename (str "files/" broken-id ".json")
+                  :compressedSize 400}
+             #js {:filename broken-path
+                  :compressedSize 10}]]
+
+    (await
+     (mock/with-mocks*
+       {http/send! (slurp-stub zip-magic)
+        uz/get-entry (mock/stub (fn [_ _]
+                                  (p/resolved #js {:content (manifest [readable-id "Readable"]
+                                                                      [broken-id "Broken"])})))
+        uz/get-entries (mock/stub (fn [_] (p/resolved entries)))
+        uz/read-as-text
+        (mock/stub (fn [entry]
+                     (if (= broken-path (.-filename entry))
+                       (p/rejected (ex-info "cannot read the entry" {:path broken-path}))
+                       (p/resolved (.-content entry)))))
+        uz/close (mock/stub (fn [_] nil))}
+
+       (await (hva/observe (imp/analyze [{:uri uri :name "package.penpot" :size 10000}])
+                           {:on-next #(swap! seen conj %)}))))
+
+    (t/testing "one unreadable reference does not fail the package"
+      (t/is (= [readable-id broken-id] (mapv :file-id @seen)))
+      (t/is (every? #(= :success (:status %)) @seen)))
+
+    (t/testing "the file whose reference could not be read has no size"
+      ;; a number that misses one of its objects is worse than no number
+      (t/is (= [1230 nil] (mapv :size @seen))))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; IMPORTING A PACKAGE
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

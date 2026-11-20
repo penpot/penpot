@@ -7,6 +7,7 @@
 (ns common-tests.files.tokens-test
   (:require
    [app.common.files.tokens :as cfo]
+   [app.common.schema :as sm]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.tokens :as tht]
@@ -1709,3 +1710,42 @@
     (t/is (not (contains? (:data detached) :tokens-source)))
     (t/is (not (contains? (:data detached) :tokens-status)))
     (t/is (= detached (ctf/check-file detached)))))
+
+;; Token name schema
+
+(t/deftest test-make-token-name-schema
+  (t/testing "rejects a name that already exists as a token"
+    (let [schema (cfo/make-token-name-schema {"foo" {:name "foo"}})]
+      (t/is (false? (sm/validate schema "foo")))))
+
+  (t/testing "rejects a token inside an existing token"
+    (let [schema (cfo/make-token-name-schema {"foo" {:name "foo"}})]
+      (t/is (false? (sm/validate schema "foo.bar")))))
+
+  (t/testing "rejects a token name that collides with a group"
+    (let [schema (cfo/make-token-name-schema {"foo" {"child" {:name "foo.child"}}})]
+      (t/is (false? (sm/validate schema "foo")))))
+
+  (t/testing "rejects a name that exists as a child token"
+    (let [schema (cfo/make-token-name-schema {"foo" {"bar" {:name "foo.bar"}}})]
+      (t/is (false? (sm/validate schema "foo.bar")))))
+
+  (t/testing "accepts a valid sibling name"
+    (let [schema (cfo/make-token-name-schema {"foo" {:name "foo"}})]
+      (t/is (true? (sm/validate schema "bar")))
+      (t/is (true? (sm/validate schema "bar.baz")))))
+
+  (t/testing "rejects every name when there is no tokens tree"
+    (let [schema (cfo/make-token-name-schema nil)]
+      (t/is (false? (sm/validate schema "foo")))))
+
+  (t/testing "rejects names that do not match the token name format"
+    (let [schema (cfo/make-token-name-schema {})]
+      (t/is (false? (sm/validate schema "")))
+      (t/is (false? (sm/validate schema "$foo")))
+      (t/is (false? (sm/validate schema "foo.")))
+      (t/is (false? (sm/validate schema "foo..bar")))))
+
+  (t/testing "rejects names longer than 255 characters"
+    (let [schema (cfo/make-token-name-schema {})]
+      (t/is (false? (sm/validate schema (apply str (repeat 256 "a"))))))))

@@ -17,9 +17,12 @@ rules:
   # Accepted: auto-label.yml needs pull_request_target so the GitHub App
   # secrets are available for PRs from forks. It never checks out or runs
   # PR code, it only reads ids from the event payload.
+  # prs-pre-validations.yml needs pull_request_target so it can close
+  # PRs from forks. It never checks out or runs PR code either.
   dangerous-triggers:
     ignore:
       - auto-label.yml
+      - prs-pre-validations.yml
   # Style nudge towards the `$/...` syntax; not worth enforcing.
   self-repository:
     disable: true

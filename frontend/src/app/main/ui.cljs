@@ -64,16 +64,14 @@
                 :code :invalid-team-id
                 :hint "provided team-id is invalid or nil")))
 
-  (if-not (uuid? team-id)
-    nil
-    (let [{:keys [permissions] :as team} (mf/deref refs/team)]
-      (when (= team-id (:id team))
-        [:> (mf/provider ctx/current-team-id) {:value team-id}
-         [:> (mf/provider ctx/permissions) {:value permissions}
-          [:> (mf/provider ctx/can-edit?) {:value (:can-edit permissions)}
-           ;; The `:key` is mandatory here because we want to reinitialize
-           ;; all dom tree instead of simple rerender.
-           [:* {:key (str team-id)} children]]]]))))
+  (let [{:keys [permissions] :as team} (mf/deref refs/team)]
+    (when (and (uuid? team-id) (= team-id (:id team)))
+      [:> (mf/provider ctx/current-team-id) {:value team-id}
+       [:> (mf/provider ctx/permissions) {:value permissions}
+        [:> (mf/provider ctx/can-edit?) {:value (:can-edit permissions)}
+         ;; The `:key` is mandatory here because we want to reinitialize
+         ;; all dom tree instead of simple rerender.
+         [:* {:key (str team-id)} children]]]])))
 
 (mf/defc page*
   {::mf/props :obj

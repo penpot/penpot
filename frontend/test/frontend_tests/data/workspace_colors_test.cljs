@@ -6,9 +6,12 @@
 
 (ns frontend-tests.data.workspace-colors-test
   (:require
+   [app.common.types.color :as cc]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.colors :as dwc]
-   [clojure.test :as t]
+   [app.main.ui.workspace.colorpicker.hsl :as hsl]
+   [cljs.test :as t :include-macros true]
+   [frontend-tests.helpers.async :as async]
    [potok.v2.core :as ptk]))
 
 (t/deftest build-change-fill-event
@@ -82,3 +85,76 @@
                                    :current-color {:color "#ff0000" :opacity 1}}}
         event (dwc/update-colorpicker-color {} true)]
     (t/is (some? (ptk/watch event valid-state nil)))))
+
+(t/deftest hsl-boundary-editing
+  (let [original (dwc/split-color-components {:color "#0d5af2" :opacity 1})
+        expected (hsl/components original)]
+    (doseq [lightness [0 1]]
+      (let [boundary (hsl/update-color original :hsl-l lightness)
+            restored (hsl/update-color boundary :hsl-l 0.5)]
+        (t/is (= expected (hsl/components restored)))
+        (t/is (= "#0d5af2" (:hex restored)))
+        (t/is (every? js/Number.isFinite (map restored [:r :g :b])))))
+    (let [gray (hsl/update-color original :hsl-s 0)
+          green (hsl/update-color gray :h 120)
+          saturated (hsl/update-color green :hsl-s 0.5)]
+      (t/is (= [120 0.5 0.5] (:hsl saturated))))))
+
+(t/deftest hsl-draft-stays-in-colorpicker
+  (let [color (dwc/materialize-color-components
+               (hsl/update-color (dwc/split-color-components
+                                  {:color "#0d5af2" :opacity 1}) :hsl-l 0))
+        state {:colorpicker {:type :color :current-color color}}
+        changed (ptk/update (dwc/update-colorpicker-color
+                             {:hex "#ff0000" :r 255 :g 0 :b 0 :h 0 :s 1 :v 255} false)
+                            state)]
+    (t/is (not (contains? (get-in changed [:colorpicker :current-color]) :hsl)))
+    (t/is (not (contains? (dwc/get-color-from-colorpicker-state (:colorpicker state)) :hsl)))
+    (let [gradient {:type :linear-gradient :current-color color
+                    :editing-stop 0 :stops [(assoc color :offset 0)]
+                    :gradient {} :opacity 1}]
+      (t/is (not (contains? (get-in (dwc/get-color-from-colorpicker-state gradient)
+                                    [:gradient :stops 0]) :hsl))))))
+
+(t/deftest hsl-white-is-finite
+  (t/is (= [0 0 1] (cc/rgb->hsl [255 255 255]))))
+
+(t/deftest hsl-gradient-echo-preserves-draft
+  (doseq [[property value] [[:hsl-l 0] [:hsl-l 1] [:hsl-s 0]]]
+    (let [original (dwc/split-color-components {:color "#0d5af2" :opacity 1})
+          color (assoc (dwc/materialize-color-components
+                        (merge original (hsl/update-color original property value))) :offset 0)
+          state {:colorpicker {:type :linear-gradient :current-color color
+                               :editing-stop 0 :stops [color]
+                               :gradient {:type :linear :shape-id nil} :opacity 1}}
+          data (dwc/get-color-from-colorpicker-state (:colorpicker state))
+          echoed (ptk/update (dwc/update-colorpicker data) state)
+          changed (ptk/update (dwc/update-colorpicker-color {:hex "#ff0000"} false) state)]
+      (t/is (= (:hsl color) (get-in echoed [:colorpicker :current-color :hsl])))
+      (when (= property :hsl-s)
+        (t/is (= "#406bbf" (:hex (hsl/update-color
+                                  (get-in echoed [:colorpicker :current-color]) :hsl-s 0.5)))))
+      (t/is (not (contains? (get-in changed [:colorpicker :stops 0]) :hsl))))))
+
+(t/deftest ^:async color-change-updates-the-shapes-of-a-property-in-one-event
+  ;; Changing a color in a selection of many shapes must not commit once per
+  ;; shape: each commit makes the page objects a new map, and everything that
+  ;; derives from them runs again.
+  (let [[a b c d e] (repeatedly 5 uuid/next)
+        color      {:color "#ff0000" :opacity 1}
+        old-color  {:color "#000000" :opacity 1}
+        operations [{:prop :fill :shape-id a :index 0}
+                    {:prop :fill :shape-id b :index 0}
+                    {:prop :fill :shape-id c :index 1}
+                    {:prop :stroke :shape-id a :index 0}
+                    {:prop :stroke :shape-id d :index 0}
+                    {:prop :stroke :shape-id e :index 0}]
+        types      (atom [])]
+    (await (async/observe (ptk/watch (dwc/change-color-in-selected operations color old-color) {} nil)
+                          :on-next #(swap! types conj (ptk/type %))))
+
+    (t/is (= {:app.main.data.workspace.undo/start-undo-transaction  1
+              :app.main.data.workspace.colors/change-fill           2
+              :app.main.data.workspace.colors/change-stroke-color   1
+              :app.main.data.workspace.undo/commit-undo-transaction 1}
+             (frequencies @types)))))

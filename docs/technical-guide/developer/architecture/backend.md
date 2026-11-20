@@ -63,13 +63,16 @@ Rel(backend_app, redis, "Notifies", "pub/sub")
     ▸ tasks/
       main.clj
       config.clj
+      health.clj
       http.clj
+      jobs.clj
       metrics.clj
       migrations.clj
-      notifications.clj
+      nitrate.clj
       rpc.clj
       setup.clj
       srepl.clj
+      system.clj
       worker.clj
       ...
 ```
@@ -82,9 +85,11 @@ Rel(backend_app, redis, "Notifies", "pub/sub")
 * <code class="language-text">migrations</code> contains the SQL scripts that define the database schema, in
   the form of a sequence of migrations.
 * <code class="language-text">rpc</code> is the main module to handle the RPC API calls.
-* <code class="language-text">notifications.clj</code> is the main module that manages the websocket. It allows
-  clients to subscribe to open files, intercepts update RPC calls and notify
-  them to all subscribers of the file.
+* <code class="language-text">http/websocket.clj</code> manages the websocket endpoint: clients subscribe
+  to open files or teams and the server keeps the subscriptions; revoked access
+  is re-checked and dropped. <code class="language-text">rpc/notifications.clj</code> publishes
+  access-change events on the bus so the websocket re-checks the subscriptions
+  it owns.
 * <code class="language-text">setup</code> initializes the environment (loads config variables, sets up the
   database, executes migrations, loads initial data, etc).
 * <code class="language-text">srepl</code> sets up an interactive REPL shell, with some useful commands to be

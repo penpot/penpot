@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "types": "./dist/index.d.ts",
   "type": "module",
-  "packageManager": "pnpm@12.18.0+sha512.9d7882d5dc82147ecfc4e062aa34834e0ad0296710a1837a1115ae012127d36b7109e321ac1598a1dd0a65597681b1e99917e12ed0d749eae91187943363beb3",
+  "packageManager": "pnpm@12.21.0+sha512.66fd8278ee28935ce951792d34367ff3af5c432a2756445823029533835b8da529bbe0be5130afd56ed0713fb8789e47bad82d93bd5ae2fe54b15562d6276ef0",
   "exports": {
     ".": {
       "import": "./dist/index.js"
@@ -20,25 +20,26 @@
   },
   "scripts": {
     "watch": "vite build --watch",
-    "build": "vite build"
+    "build": "vite build",
+    "test": "vitest run --config vite.config.mts"
   },
   "devDependencies": {
-    "@babel/core": "^8.0.6",
+    "@babel/core": "^8.1.2",
     "@babel/preset-react": "^8.0.1",
-    "@storybook/react": "10.6.1",
-    "@storybook/react-vite": "10.6.1",
+    "@storybook/react": "10.6.7",
+    "@storybook/react-vite": "10.6.7",
     "@testing-library/dom": "10.4.2",
     "@testing-library/react": "16.3.3",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
-    "@vitejs/plugin-react": "^6.1.2",
+    "@vitejs/plugin-react": "^6.3.0",
     "babel-plugin-react-compiler": "^1.0.0",
     "react-compiler-runtime": "^1.0.0",
-    "storybook": "10.6.1",
+    "storybook": "10.6.7",
     "vite-plugin-dts": "^5.1.2"
   },
   "dependencies": {
-    "react-aria-components": "^1.20.0"
+    "react-aria-components": "^1.22.1"
   },
   "peerDependencies": {
     "react": ">=19.2",

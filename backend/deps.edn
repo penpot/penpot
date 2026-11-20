@@ -3,10 +3,10 @@
 
  :deps
  {penpot/common {:local/root "../common"}
-  org.clojure/clojure {:mvn/version "1.12.6"}
+  org.clojure/clojure {:mvn/version "1.12.7"}
   org.clojure/tools.namespace {:mvn/version "1.5.1"}
 
-  com.github.luben/zstd-jni {:mvn/version "1.5.7-21"}
+  com.github.luben/zstd-jni {:mvn/version "1.5.7-28"}
 
   io.prometheus/simpleclient {:mvn/version "0.16.0"}
   io.prometheus/simpleclient_hotspot {:mvn/version "0.16.0"}
@@ -17,7 +17,7 @@
 
   io.prometheus/simpleclient_httpserver {:mvn/version "0.16.0"}
 
-  io.lettuce/lettuce-core {:mvn/version "7.8.0.RELEASE"}
+  io.lettuce/lettuce-core {:mvn/version "7.9.0.RELEASE"}
   ;; Minimal dependencies required by lettuce, we need to include them
   ;; explicitly because clojure dependency management does not support
   ;; yet the BOM format.
@@ -25,7 +25,7 @@
   io.micrometer/micrometer-observation {:mvn/version "1.14.2"}
 
   java-http-clj/java-http-clj {:mvn/version "0.4.3"}
-  com.google.guava/guava {:mvn/version "33.7.1-jre"}
+  com.google.guava/guava {:mvn/version "33.8.0-jre"}
 
   funcool/yetti
   {:git/tag "v11.11"
@@ -34,13 +34,12 @@
    :exclusions [org.slf4j/slf4j-api]}
 
   com.github.seancorfield/next.jdbc
-  {:mvn/version "1.3.1118"}
+  {:mvn/version "1.4.72"}
 
   metosin/reitit-core {:mvn/version "0.11.0"}
   nrepl/nrepl {:mvn/version "1.8.0"}
 
-  org.postgresql/postgresql {:mvn/version "42.7.13"}
-  org.xerial/sqlite-jdbc {:mvn/version "3.53.4.0"}
+  org.postgresql/postgresql {:mvn/version "42.7.14"}
 
   com.zaxxer/HikariCP {:mvn/version "7.1.0"}
 
@@ -50,24 +49,26 @@
   buddy/buddy-sign {:mvn/version "3.6.1-359"}
   org.passay/passay {:mvn/version "2.0.0"}
 
-  com.github.ben-manes.caffeine/caffeine {:mvn/version "3.3.0"}
+  com.github.ben-manes.caffeine/caffeine {:mvn/version "3.3.1"}
 
-  org.jsoup/jsoup {:mvn/version "1.23.2"}
+  org.jsoup/jsoup {:mvn/version "1.24.1"}
+
+  com.j256.simplemagic/simplemagic {:mvn/version "1.17"}
 
   at.yawk.lz4/lz4-java
-  {:mvn/version "1.12.0"}
+  {:mvn/version "1.14.1"}
 
   org.clojars.pntblnk/clj-ldap {:mvn/version "0.0.17"}
 
   dawran6/emoji {:mvn/version "0.2.0"}
-  markdown-clj/markdown-clj {:mvn/version "1.12.10"}
+  markdown-clj/markdown-clj {:mvn/version "1.12.14"}
 
   ;; Pretty Print specs
   pretty-spec/pretty-spec {:mvn/version "0.1.4"}
-  software.amazon.awssdk/s3 {:mvn/version "2.55.11"}
-  software.amazon.awssdk/sts {:mvn/version "2.55.11"}
+  software.amazon.awssdk/s3 {:mvn/version "2.59.4"}
+  software.amazon.awssdk/sts {:mvn/version "2.59.4"}
 
-  com.ladybugdb/lbug {:mvn/version "0.21.2"}
+  com.ladybugdb/lbug {:mvn/version "0.22.3"}
   ;; Required by Arrow RootAllocator (lbug only pulls arrow-memory-core).
   org.apache.arrow/arrow-memory-netty {:mvn/version "19.0.0"}}
 
@@ -95,6 +96,11 @@
   {:main-opts ["-m" "kaocha.runner"]
    :jvm-opts ["-Dlog4j2.configurationFile=log4j2-devenv-repl.xml"]
    :extra-deps {lambdaisland/kaocha {:mvn/version "1.91.1392"}}}
+
+  ;; Use after :test (`-M:dev:test:coverage`) to run the suite with cloverage.
+  :coverage
+  {:main-opts ["-m" "kaocha.runner" "--plugin" "cloverage"]
+   :extra-deps {lambdaisland/kaocha-cloverage {:mvn/version "1.1.89"}}}
 
   :outdated
   {:extra-deps {com.github.liquidz/antq {:mvn/version "2.11.1276"}}

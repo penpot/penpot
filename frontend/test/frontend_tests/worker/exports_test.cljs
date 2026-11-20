@@ -7,6 +7,7 @@
 (ns frontend-tests.worker.exports-test
   (:require
    [app.common.uuid :as uuid]
+   [app.worker.exports :as wexports]
    [app.worker.wasm :as wwasm]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
@@ -47,6 +48,14 @@
               :b-end]
              @order)
           "job B starts only after job A has finished")))
+
+(t/deftest single-export-filename-does-not-repeat-suffix
+  (t/is (= "Ellipseabc.svg"
+           (wexports/local-export-filename
+            :single {:name "Ellipseabc" :suffix "abc" :type :svg} nil)))
+  (t/is (= "Ellipse.png"
+           (wexports/local-export-filename
+            :single {:name "Ellipse" :suffix nil :type :png} nil))))
 
 (t/deftest cancel-job-is-visible-to-cancelled
   (let [job-id (uuid/next)]

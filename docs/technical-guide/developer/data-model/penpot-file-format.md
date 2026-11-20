@@ -21,7 +21,7 @@ The `.penpot` format (version 3) uses a ZIP container with JSON files for metada
 | Version | Description | Status |
 |---------|-------------|--------|
 | v1 | Custom binary format | Deprecated |
-| v2 | SQLite-based format | Never released (internal only) |
+| v2 | SQLite-based format | Removed (never released) |
 | v3 | ZIP + JSON format | **Current** |
 
 ## File Structure

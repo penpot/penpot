@@ -26,11 +26,16 @@ in the local working tree.
 
 - The user asks to implement or execute a plan, in any phrasing:
   "implement the plan", "execute it", "go build it" — or runs
-  `/implement-plan`.
+  `@implement-plan`.
 - A ready, reviewed plan is in the session context or a plan file path
-  was given (typically after `/make-a-plan` or `/review-plan`).
+  was given (typically after `@make-a-plan` or `@review-plan`).
 
 Do not use it to produce plans — that is the `make-a-plan` flow.
+
+For a plan derived from a code review, retain its review target, reviewer
+session ID, original findings and decisions. Record the starting revision and
+the exact commits or diff produced by this implementation, plus test evidence,
+in session context for follow-up. Do not put commit hashes in the plan file.
 
 ## 1. Read the plan first
 
@@ -111,18 +116,19 @@ Implement every task in one go. Work methodically, keeping changes
 focused on what the issue requires. Respect the plan's proposed
 parallelization when it applies.
 
-When the implementation is complete, close the plan file first: flip its
-`Status` to `done` and append one UTC ISO 8601 line to its `Review Log`
-with the issue URL when one exists (standalone mode, e.g.
-`https://github.com/penpot/penpot/issues/NNNN`); in continue/direct
-mode with no issue, just `done` with no invented identifier. Never
-record commit hashes. Leave the closed plan file local and uncommitted.
-Then load the **`create-commit`** skill and follow its workflow to commit
+When the implementation is complete, load the **`create-commit`** skill and
+follow its workflow to commit
 only the implementation, tests, memory, and documentation changes. Before
 committing, verify that the staged file list does not contain the plan
 file. Provide a brief summary of what was implemented and why, the issue
 reference (`issue-NNNN`) when there is one, and the model name you are
 running as so the `AI-assisted-by` trailer is set correctly.
+
+Only after the commit exists and passes its checks, close the plan: flip
+`Status` to `done` and append one UTC ISO 8601 line to `Review Log` with the
+issue URL when one exists; otherwise record `done` without inventing an
+identifier. Never record commit hashes. Leave the plan local and uncommitted.
+If the commit or its checks fail, do not close the plan.
 
 ### Step-by-step mode (on request)
 
@@ -146,12 +152,23 @@ stop and ask the user before splitting it.
 
 ## When you are done
 
+After the entire plan is implemented and verified, including the final task in
+step-by-step mode, if it addresses code review findings, ask whether the user
+wants the original reviewer to verify the corrections. Use the `question` tool
+if available; otherwise ask in chat. Wait for the answer. Do not start the
+follow-up without consent, and do not ask after each intermediate task.
+
+If the user accepts, follow `@review-code`'s follow-up procedure with the
+review context, decisions, exact correction range or diff and test evidence.
+If the original reviewer cannot be resumed, say so and use a new reviewer with
+the same context. If the user declines, stop without starting a review. The
+follow-up is read-only; further fixes require the user's direction.
+
 End by suggesting the next steps (suggestions, not a required pipeline — any
 instruction from me overrides them):
 
-- `/review-code` — to review the changes just committed; it routes to
-  `/make-a-plan` by itself if the findings need one.
-- `/create-pr` — when the task is done and the branch is ready to merge.
+- `@review-code` — for a new independent review of the changes.
+- `@create-pr` — when the task is done and the branch is ready to merge.
 
 ## User input, overrides and additional context
 

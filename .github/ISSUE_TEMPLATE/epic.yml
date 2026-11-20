@@ -1,0 +1,26 @@
+description: An epic is a large user story that cannot be delivered as defined within a single iteration
+labels: ["needs triage"]
+name: "EPIC"
+type: EPIC
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Before you start
+
+        Please search our [existing issues](https://github.com/penpot/penpot/issues) and open [pull requests](https://github.com/penpot/penpot/pulls) to lessen the change of filing duplicate issues or feature requests. Thank you.
+
+        ---
+  - type: textarea
+    id: description
+    attributes:
+      label: Epic description
+      description: Tell us which epic feature do you want to discuss
+    validations:
+      required: true
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: Add any other context or screenshots about the feature request here

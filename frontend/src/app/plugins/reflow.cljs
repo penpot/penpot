@@ -9,34 +9,15 @@
   argument validation, the default deadline and the rejection shape; the
   workspace only reports when its pending work has drained."
   (:require
-   [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.reflow :as wrf]
+   [app.plugins.utils :as u]
    [beicon.v2.core :as rx]))
 
 ;; Ceiling for callers that pass no timeout, so a pipeline that never drains
 ;; its marks rejects the promise rather than leaving it unsettled.
 (def ^:private default-timeout 30000)
-
-;; Largest value a signed 32-bit timer accepts.
-(def ^:private max-timeout 2147483647)
-
-(defn- valid-timeout?
-  "Checks that a plugin timeout fits a signed 32-bit timer."
-  [value]
-  (or (nil? value)
-      (and (number? value)
-           (pos? value)
-           (<= value max-timeout)
-           (js/Number.isFinite value))))
-
-(defn- reject-invalid!
-  [reject value]
-  (let [msg (dm/str "[PENPOT PLUGIN] Value not valid: " value
-                    ". Code: " :waitForLayoutUpdate)]
-    (.error js/console msg)
-    (reject (js/Error. msg))))
 
 (defn shape-wait-ids
   "Ids a per-shape wait covers: the shape subtree, its ancestors, and the file
@@ -59,8 +40,8 @@
   ([ids timeout]
    (js/Promise.
     (fn [resolve reject]
-      (if-not (valid-timeout? timeout)
-        (reject-invalid! reject timeout)
+      (if-not (u/valid-timeout? timeout)
+        (u/reject-not-valid reject :waitForLayoutUpdate timeout)
         ;; Race the settle signal against the deadline; the loser is
         ;; unsubscribed. `settled` replays on subscribe, so an already drained
         ;; map wins even against a 1ms deadline.

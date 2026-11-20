@@ -28,6 +28,8 @@
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
 
+(def raster-export-types #{:png :jpeg :webp})
+
 (def default-timeout 5000)
 
 ;; Longest wait for the pending changes of the exported files to be saved.
@@ -49,7 +51,7 @@
                           :level :warning
                           :timeout 8000}))))))
 
-(defn- export-request-failed
+(defn- export-failed
   "Shows an export failure as a toast, keeping the workspace open: the
   failure is never raised to the global error handler, which would
   replace the workspace with an error page."
@@ -249,8 +251,7 @@
       (if (and resource-id (= resource-id (get-in state [:export :resource-id])))
         (let [time-diff (ct/diff-ms (get-in state [:export :last-update]) (ct/now))
               healthy?  (< time-diff 6000)
-            ;; The legacy path has no server-side figures to track; it keeps
-            ;; reporting progress over the client's own list.
+              ;; Local jobs store a job-id for the widget status labels.
               job?      (some? (get-in state [:export :job-id]))
               current   (get-in state [:export :status])
               ;; Cancel settles the widget immediately; a late worker
@@ -285,32 +286,6 @@
       (when (and (= status "ended")
                  (= resource-id (get-in state [:export :resource-id])))
         (dom/trigger-download-uri filename mtype resource-uri)))))
-
-;; The exporter is at capacity. Not a crash: the widget says so and the user
-;; retries, instead of the generic error dialog.
-(def ^:private saturation-codes #{:queue-full})
-
-(defn- export-failed
-  "Reports a failure that happened before the export ever started, so the widget
-  settles instead of waiting for progress that will never arrive."
-  [request-id exports cmd cause]
-  (ptk/reify ::export-failed
-    ptk/UpdateEvent
-    (update [_ state]
-      (if (= request-id (get-in state [:export :id]))
-        (assoc state :export {:id request-id
-                              :in-progress false
-                              :widget-visible true
-                              :detail-visible true
-                              :healthy? true
-                              :progress 0
-                              :total (count exports)
-                              :exports exports
-                              :cmd cmd
-                              :error (or (ex-message cause) true)
-                              :error-code (:code (ex-data cause))
-                              :last-update (ct/now)})
-        state))))
 
 (def ^:private local-export-job-id*
   "Job id of the in-flight worker multi-export, if any."
@@ -388,7 +363,7 @@
 
 (defn request-simple-export
   [{:keys [export]}]
-  (let [export (normalize-export export)
+  (let [export     (normalize-export export)
         request-id (uuid/next)
         target     (volatile! nil)]
     (ptk/reify ::request-simple-export
@@ -406,38 +381,38 @@
                   (= request-id (get-in state [:export :id])))
           (case @target
           ;; Drawn from the local data, which a rejected save may still change
-          :client
-          (rx/concat
-           (dwp/force-persist-files-and-wait (export-file-ids [export]) save-wait-timeout-ms)
-           (rx/of (warn-unsaved-changes (export-file-ids [export])
-                                        (tr "workspace.export.unsaved-changes-included"))
-                  (request-local-export-wasm {:exports [export]
-                                              :request-id request-id
-                                              :cmd :export-shapes
-                                              :name (:name export)
-                                              :kind :single})))
-
-          :too-large
-            (rx/of (ntf/error (tr "errors.export-too-large")))
-
-          (let [profile-id (:profile-id state)
-                params     (normalize-export-shapes-params {:exports [export]
-                                                            :profile-id profile-id
-                                                            :cmd :export-shapes
-                                                            :wait true
-                                                            :is-wasm (wasm-export-enabled? state)})]
+            :client
             (rx/concat
              (dwp/force-persist-files-and-wait (export-file-ids [export]) save-wait-timeout-ms)
              (rx/of (warn-unsaved-changes (export-file-ids [export])
-                                          (tr "workspace.export.unsaved-changes")))
+                                          (tr "workspace.export.unsaved-changes-included"))
+                    (request-local-export-wasm {:exports [export]
+                                                :request-id request-id
+                                                :cmd :export-shapes
+                                                :name (:name export)
+                                                :kind :single})))
 
-             (->> (rp/cmd! :export params)
-                  (rx/map (fn [{:keys [filename mtype uri]}]
-                            (dom/trigger-download-uri filename mtype uri)
-                            (clear-export-state request-id)))
-                  (rx/catch (fn [cause]
-                              (rx/of (clear-export-state request-id)
-                                      (export-request-failed cause)))))))))))))
+            :too-large
+            (rx/of (ntf/error (tr "errors.export-too-large")))
+
+            (let [profile-id (:profile-id state)
+                  params     (normalize-export-shapes-params {:exports [export]
+                                                              :profile-id profile-id
+                                                              :cmd :export-shapes
+                                                              :wait true
+                                                              :is-wasm (wasm-export-enabled? state)})]
+              (rx/concat
+               (dwp/force-persist-files-and-wait (export-file-ids [export]) save-wait-timeout-ms)
+               (rx/of (warn-unsaved-changes (export-file-ids [export])
+                                            (tr "workspace.export.unsaved-changes")))
+
+               (->> (rp/cmd! :export params)
+                    (rx/map (fn [{:keys [filename mtype uri]}]
+                              (dom/trigger-download-uri filename mtype uri)
+                              (clear-export-state request-id)))
+                    (rx/catch (fn [cause]
+                                (rx/of (clear-export-state request-id)
+                                       (export-failed cause)))))))))))))
 
 (defn- export-file-page-ids
   [state exports]
@@ -515,10 +490,9 @@
                 :name name})
               (rx/mapcat
                (fn [{:keys [type] :as message}]
-                 ;; Cancel clears `local-export-job-id*` and settles the
-                 ;; widget locally. Ignore every later worker message so a
-                 ;; stray `:progress` cannot flip the UI back to "running".
-                 (if (nil? @local-export-job-id*)
+                 ;; Only the current worker job may update the widget.
+                 ;; Cancelled or superseded jobs can still send messages.
+                 (if (not= job-id @local-export-job-id*)
                    (rx/empty)
                    (case type
                      :progress
@@ -565,7 +539,7 @@
                    (rx/of (export-widget-failed resource-id exports cmd cause)))))
               (rx/finalize
                (fn []
-                 (reset! local-export-job-id* nil)
+                 (compare-and-set! local-export-job-id* job-id nil)
                  (swap! st/ongoing-tasks disj [:export request-id])))))))))
 
 (defn- request-multiple-export-server
@@ -648,7 +622,7 @@
   [{:keys [exports cmd]
     :or {cmd :export-shapes}
     :as params}]
-  (let [exports (normalize-exports exports)
+  (let [exports    (normalize-exports exports)
         request-id (uuid/next)
         params     (assoc params :exports exports :cmd cmd :request-id request-id)]
     (ptk/reify ::request-multiple-export
@@ -669,7 +643,7 @@
                (rx/of (warn-unsaved-changes file-ids
                                             (tr "workspace.export.unsaved-changes-included"))
                       (request-local-export-wasm params))))
-             (rx/of (request-multiple-export-server params))))))))
+            (rx/of (request-multiple-export-server params))))))))
 
 (defn request-export
   [{:keys [exports] :as params}]
@@ -715,8 +689,7 @@
                  (not (get-in state [:export :in-progress])))
           (let [suffix   (:suffix (first presets))
                 name     (cond-> (:name shape)
-                           (and (= 1 (count presets)) (some? suffix)
-                                (not= :client (export-target state (first presets))))
+                           (and (= 1 (count presets)) (some? suffix))
                            (str suffix))
                 defaults {:page-id page-id
                           :file-id file-id

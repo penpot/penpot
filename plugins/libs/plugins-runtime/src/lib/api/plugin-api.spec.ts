@@ -37,6 +37,8 @@ describe('Plugin api', () => {
         theme: 'dark',
         addListener: vi.fn().mockReturnValueOnce(Symbol()),
         removeListener: vi.fn(),
+        waitForSave: vi.fn().mockResolvedValue(undefined),
+        waitForLayoutUpdate: vi.fn().mockResolvedValue(undefined),
       },
     };
   }
@@ -186,6 +188,30 @@ describe('Plugin api', () => {
     });
   });
 
+  describe('waitForSave', () => {
+    it('forwards to plugin.context.waitForSave', async () => {
+      await expect(api.penpot.waitForSave(1234)).resolves.toBeUndefined();
+      expect(pluginManager.context.waitForSave).toHaveBeenCalledWith(1234);
+    });
+
+    it('requires content:read', () => {
+      const waitForSave = vi.fn().mockResolvedValue(undefined);
+      const { penpot } = createApi({
+        ...pluginManager,
+        manifest: {
+          ...pluginManager.manifest,
+          permissions: [],
+        },
+        context: { ...pluginManager.context, waitForSave },
+      } as any);
+
+      expect(() => penpot.waitForSave(100)).toThrow(
+        'Permission content:read is not granted',
+      );
+      expect(waitForSave).not.toHaveBeenCalled();
+    });
+  });
+
   describe('ui', () => {
     describe.concurrent('permissions', () => {
       const api = createApi({
@@ -248,6 +274,40 @@ describe('Plugin api', () => {
       const currentSelection = api.penpot.selection;
 
       expect(currentSelection).toEqual(selection);
+    });
+  });
+
+  describe('location', () => {
+    const location = {
+      baseUrl: 'https://design.penpot.app/',
+      href: 'https://design.penpot.app/?screen=dashboard-recent&team-id=t',
+      params: { screen: 'dashboard-recent', 'team-id': 't' },
+    };
+
+    it('returns the location while no workspace is ready', () => {
+      const { penpot } = createApi({
+        ...pluginManager,
+        manifest: { ...pluginManager.manifest, scope: 'global' },
+        context: {
+          ...pluginManager.context,
+          location,
+          management: { workspace: { status: 'none' } },
+        },
+      } as any);
+
+      expect(penpot.location).toEqual(location);
+    });
+
+    it('requires content:read', () => {
+      const { penpot } = createApi({
+        ...pluginManager,
+        manifest: { ...pluginManager.manifest, permissions: [] },
+        context: { ...pluginManager.context, location },
+      } as any);
+
+      expect(() => penpot.location).toThrow(
+        'Permission content:read is not granted',
+      );
     });
   });
 });

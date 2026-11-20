@@ -1,0 +1,46 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
+
+(ns benches.render-wasm.node.report.compare
+  "Offline comparison of two saved schema:run records.
+
+  Inputs are user file paths resolved from the caller's cwd."
+  (:require
+   [benches.render-wasm.node.storage.runs :as runs]
+   [benches.render-wasm.report.compare :as compare]
+   [benches.render-wasm.report.format :as format]
+   [benches.render-wasm.result :as result]))
+
+(defn execute
+  "Reads and compares two saved run files.
+
+  Runs are only compared if the build options and scene configuration match.
+  These can be overriden via flags.
+
+  It is also possible to restrict comparison to specific scene ids.
+
+  Options:
+   - `:case-pair` contains the baseline and candidate selectors, or nil.
+   - The three `:allow-*-differences` options select build, scene or all
+     compatibility permissions.
+
+  Returns the validated `comparison` with its selected permissions, retained
+  differences and formatted text."
+  [baseline-path candidate-path {:keys [case-pair allow-build-differences
+                                        allow-scene-differences allow-all-differences]}]
+  (let [baseline   (runs/get-record baseline-path {:role :baseline})
+        candidate  (runs/get-record candidate-path {:role :candidate})
+        comparison (result/check-record
+                    (compare/compare-runs
+                     baseline candidate
+                     (cond-> {:allow-build-differences (boolean allow-build-differences)
+                              :allow-scene-differences (boolean allow-scene-differences)
+                              :allow-all-differences (boolean allow-all-differences)}
+                       case-pair
+                       (assoc :pairs (compare/selector-pair baseline candidate
+                                                            case-pair)))))]
+    {:comparison comparison
+     :text (format/format-comparison comparison)}))

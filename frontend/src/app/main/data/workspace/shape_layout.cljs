@@ -101,25 +101,31 @@
 ;; Never call this directly but through the data-event `:layout/update`
 ;; Otherwise a lot of cycle dependencies could be generated
 (defn- update-layout-positions
-  [{:keys [page-id ids undo-group reflow-tasks]}]
+  [{:keys [page-id ids undo-group reflow-tasks save-undo? skip-component-sync?]}]
   (ptk/reify ::update-layout-positions
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [page-id (or page-id (:current-page-id state))
-            objects (dsh/lookup-page-objects state page-id)
-            ids (->> ids (remove uuid/zero?) (filter #(contains? objects %)))
+      (let [page-id    (or page-id (:current-page-id state))
+            objects    (dsh/lookup-page-objects state page-id)
+            ids        (->> ids (remove uuid/zero?) (filter #(contains? objects %)))
+            save-undo? (not (false? save-undo?))
 
             update-positions-stream
             (if (d/not-empty? ids)
               (let [modif-tree (dwm/create-modif-tree ids (ctm/reflow-modifiers))]
-                (if (features/active-feature? state "render-wasm/v1")
+                (if (and (features/active-feature? state "render-wasm/v1")
+                         (= page-id (:current-page-id state)))
                   (rx/of (dwm/apply-wasm-modifiers modif-tree
                                                    :stack-undo? true
+                                                   :save-undo? save-undo?
+                                                   :skip-component-sync? skip-component-sync?
                                                    :undo-group undo-group
                                                    :ignore-touched true))
                   (rx/of (dwm/apply-modifiers {:page-id page-id
                                                :modifiers modif-tree
                                                :stack-undo? true
+                                               :save-undo? save-undo?
+                                               :skip-component-sync? skip-component-sync?
                                                :ignore-touched true
                                                :undo-group undo-group}))))
               (rx/empty))
@@ -168,11 +174,20 @@
              (rx/filter #(d/not-empty? %))
              (rx/mapcat
               (fn [updates]
-                (->> (group-by :page-id updates)
-                     (map (fn [[page-id updates]]
+                ;; Updates flagged `:save-undo? false` and
+                ;; `:skip-component-sync?` (automatic text size heals) are
+                ;; laid out apart, so their reflow records no undo and does
+                ;; not change components.
+                (->> (group-by (juxt :page-id
+                                     #(not (false? (:save-undo? %)))
+                                     #(boolean (:skip-component-sync? %)))
+                               updates)
+                     (map (fn [[[page-id save-undo? skip-component-sync?] updates]]
                             (let [ids (into #{} (mapcat :ids) updates)]
                               (update-layout-positions {:page-id page-id
                                                         :ids ids
+                                                        :save-undo? save-undo?
+                                                        :skip-component-sync? skip-component-sync?
                                                         :reflow-tasks (mapv ::reflow-task updates)})))))))
              (rx/take-until stopper)
              ;; On workspace teardown clear everything still pending.
@@ -302,8 +317,7 @@
 
         ;; Refuse before undo: container or cross-boundary. Leave single
         ;; mains on the from-id branch (selection refuses has-variant?).
-        (if (or (some ctc/is-variant-container? selected-shapes)
-                (ctn/crosses-variant-set-boundary? objects selected-shapes))
+        (if (ctn/crosses-variant-set-boundary? objects selected-shapes)
           (rx/empty)
           (rx/of
            (dwu/start-undo-transaction undo-id)
@@ -437,6 +451,14 @@
                (ptk/data-event :layout/update {:ids ids})
                (dwu/commit-undo-transaction undo-id))))))
 
+(defn grid-in-copy?
+  "Check if the grid is a component copy or lives inside one. Copies
+  must keep the structure of their main, so tracks that add shapes are
+  not allowed there."
+  [objects grid]
+  (or (ctc/in-component-copy? grid)
+      (ctn/has-any-copy-parent? objects grid)))
+
 (defn duplicate-layout-track
   [ids type index]
   (assert (#{:row :column} type))
@@ -444,53 +466,53 @@
   (ptk/reify ::duplicate-layout-track
     ptk/WatchEvent
     (watch [it state _]
-      (let [file-id      (:current-file-id state)
-            page         (dsh/lookup-page state)
-            objects      (:objects page)
-            libraries    (dsh/lookup-libraries state)
-            library-data (dsh/lookup-file state file-id)
-            shape-id     (first ids)
-            base-shape   (get objects shape-id)
+      (let [objects    (dsh/lookup-page-objects state)
+            base-shape (get objects (first ids))]
+        (when-not (grid-in-copy? objects base-shape)
+          (let [file-id      (:current-file-id state)
+                page         (dsh/lookup-page state)
+                libraries    (dsh/lookup-libraries state)
+                library-data (dsh/lookup-file state file-id)
 
-            shapes-by-track
-            (if (= type :column)
-              (ctl/shapes-by-column base-shape index false)
-              (ctl/shapes-by-row base-shape index false))
+                shapes-by-track
+                (if (= type :column)
+                  (ctl/shapes-by-column base-shape index false)
+                  (ctl/shapes-by-row base-shape index false))
 
-            ;; Change to set in order to use auxiliary functions
-            selected (set shapes-by-track)
+                ;; Change to set in order to use auxiliary functions
+                selected (set shapes-by-track)
 
-            changes
-            (-> (pcb/empty-changes it)
-                (cll/generate-duplicate-changes objects page selected (gpt/point 0 0) libraries library-data file-id)
-                (cll/generate-duplicate-changes-update-indices objects selected))
+                changes
+                (-> (pcb/empty-changes it)
+                    (cll/generate-duplicate-changes objects page selected (gpt/point 0 0) libraries library-data file-id)
+                    (cll/generate-duplicate-changes-update-indices objects selected))
 
-            ;; Creates a map with shape-id => duplicated-shape-id
-            ids-map
-            (->> changes
-                 :redo-changes
-                 (filter #(= (:type %) :add-obj))
-                 (filter #(selected (:old-id %)))
-                 (map #(vector (:old-id %) (get-in % [:obj :id])))
-                 (into {}))
+                ;; Creates a map with shape-id => duplicated-shape-id
+                ids-map
+                (->> changes
+                     :redo-changes
+                     (filter #(= (:type %) :add-obj))
+                     (filter #(selected (:old-id %)))
+                     (map #(vector (:old-id %) (get-in % [:obj :id])))
+                     (into {}))
 
-            changes
-            (-> changes
-                (pcb/update-shapes
-                 ids
-                 (fn [shape objects]
-                   ;; The duplication could have altered the grid so we restore the values, we'll calculate the good ones now
-                   (let [shape (merge shape (select-keys base-shape [:layout-grid-cells :layout-grid-columns :layout-grid-rows]))]
-                     (case type
-                       :row    (ctl/duplicate-row shape objects index ids-map)
-                       :column (ctl/duplicate-column shape objects index ids-map))))
-                 {:with-objects? true}))
+                changes
+                (-> changes
+                    (pcb/update-shapes
+                     ids
+                     (fn [shape objects]
+                       ;; The duplication could have altered the grid so we restore the values, we'll calculate the good ones now
+                       (let [shape (merge shape (select-keys base-shape [:layout-grid-cells :layout-grid-columns :layout-grid-rows]))]
+                         (case type
+                           :row    (ctl/duplicate-row shape objects index ids-map)
+                           :column (ctl/duplicate-column shape objects index ids-map))))
+                     {:with-objects? true}))
 
-            undo-id (js/Symbol)]
-        (rx/of (dwu/start-undo-transaction undo-id)
-               (dch/commit-changes changes)
-               (ptk/data-event :layout/update {:ids ids})
-               (dwu/commit-undo-transaction undo-id))))))
+                undo-id (js/Symbol)]
+            (rx/of (dwu/start-undo-transaction undo-id)
+                   (dch/commit-changes changes)
+                   (ptk/data-event :layout/update {:ids ids})
+                   (dwu/commit-undo-transaction undo-id))))))))
 
 (defn reorder-layout-track
   [ids type from-index to-index move-content?]
@@ -919,7 +941,9 @@
             type          (:type copied)
             undo-id       (js/Symbol)]
 
-        (when (and (seq track-indices) (some? type))
+        (when (and (seq track-indices)
+                   (some? type)
+                   (not (grid-in-copy? objects grid)))
           (let [shapes-by-track-fn
                 (if (= type :row)
                   ctl/shapes-by-row

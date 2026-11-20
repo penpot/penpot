@@ -8,7 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.config :as cf]
-   [app.main.router :as rt]
+   [app.main.data.auth :as da]
    [app.main.store :as st]
    [app.main.ui.auth.login :refer [login-dialog*]]
    [app.main.ui.auth.recovery-request :refer [recovery-request-page*]]
@@ -68,7 +68,8 @@
         (fn [data]
           (cond
             (:invitation-token data)
-            (st/emit! (rt/nav :auth-verify-token {:token (:invitation-token data)}))
+            (st/emit! (da/login-from-register
+                       {:invitation-token (:invitation-token data)}))
 
             (:is-active data)
             (if on-register (on-register) (on-close))

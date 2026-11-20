@@ -255,16 +255,25 @@
                                 (d/update-when result :error wte/resolve-error-message)))
                       (rx/subs! (fn [{:keys [error value]}]
                                   (let [touched? (get-in @form [:touched input-name])]
-                                    (when touched?
-                                      (if error
-                                        (if (csu/group-name-conflict-error? error token-name)
-                                          (swap! form assoc-in [:extra-errors ""] {:message error})
-                                          (do
-                                            (swap! form assoc-in [:extra-errors input-name] {:message error})
-                                            (reset! hint* {:message error :type "error"})))
-                                        (let [message (tr "workspace.tokens.resolved-value" value)]
-                                          (swap! form update :extra-errors dissoc input-name)
-                                          (reset! hint* {:message message :type "hint"}))))))))]
+                                    (cond
+                                      ;; Untouched field (form just opened)
+                                      (not touched?)
+                                      (when (and (not error)
+                                                 (csu/show-hint-on-open? (get-in @form [:data input-name]) value))
+                                        (reset! hint* {:message (tr "workspace.tokens.resolved-value" value)
+                                                       :type "hint"}))
+
+                                      error
+                                      (if (csu/group-name-conflict-error? error token-name)
+                                        (swap! form assoc-in [:extra-errors ""] {:message error})
+                                        (do
+                                          (swap! form assoc-in [:extra-errors input-name] {:message error})
+                                          (reset! hint* {:message error :type "error"})))
+
+                                      :else
+                                      (let [message (tr "workspace.tokens.resolved-value" value)]
+                                        (swap! form update :extra-errors dissoc input-name)
+                                        (reset! hint* {:message message :type "hint"})))))))]
 
         (fn []
           (rx/dispose! subs))))
@@ -309,7 +318,11 @@
 
         resolve-stream
         (mf/with-memo [token]
-          (if-let [value (get-in token [:value input-name])]
+          ;; An alias token keeps its reference as a plain string value
+          (if-let [value (if (= input-name :reference)
+                           (let [value (:value token)]
+                             (when (string? value) value))
+                           (get-in token [:value input-name]))]
             (rx/behavior-subject value)
             (rx/subject)))
 

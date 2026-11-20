@@ -1,0 +1,90 @@
+name: Require Linked Issue
+
+# A pull request must have at least one closing-issue reference, unless it
+# carries the `no issue required` or `pr pt` label.
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - edited
+      - labeled
+      - unlabeled
+      - ready_for_review
+      - converted_to_draft
+
+permissions:
+  contents: read
+  pull-requests: read
+  issues: read
+
+jobs:
+  check-linked-issue:
+    name: Require Linked Issue
+    if: ${{ !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check linked issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          OWNER: ${{ github.repository_owner }}
+          REPO: ${{ github.event.repository.name }}
+        run: |
+          set -euo pipefail
+
+          # shellcheck disable=SC2016  # GraphQL variables, not shell expansion.
+          result=$(gh api graphql \
+            -F owner="$OWNER" \
+            -F repo="$REPO" \
+            -F number="$PR_NUMBER" \
+            -f query='
+              query($owner: String!, $repo: String!, $number: Int!) {
+                repository(owner: $owner, name: $repo) {
+                  pullRequest(number: $number) {
+                    isDraft
+                    labels(first: 100) {
+                      nodes {
+                        name
+                      }
+                    }
+                    closingIssuesReferences(first: 100) {
+                      nodes {
+                        number
+                        title
+                        url
+                      }
+                    }
+                  }
+                }
+              }
+            ')
+
+          pull_request=$(echo "$result" | jq '.data.repository.pullRequest')
+
+          if [ "$(echo "$pull_request" | jq -r '.isDraft')" = "true" ]; then
+            echo "Draft PR: linked issue check skipped."
+            exit 0
+          fi
+
+          has_exemption=$(echo "$pull_request" | jq -r '
+            any(.labels.nodes[]; .name == "no issue required" or .name == "pr pt")
+          ')
+          if [ "$has_exemption" = "true" ]; then
+            echo 'Exempt label found: linked issue check skipped.'
+            exit 0
+          fi
+
+          issues=$(echo "$pull_request" | jq -r '
+            .closingIssuesReferences.nodes[]
+            | "- #\(.number): \(.title) (\(.url))"
+          ')
+
+          if [ -z "$issues" ]; then
+            echo '::error::This pull request must have a linked issue, or an exempt label ("no issue required").'
+            exit 1
+          fi
+
+          echo "Linked issue(s):"
+          echo "$issues"

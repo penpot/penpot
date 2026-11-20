@@ -9,7 +9,23 @@
    [app.common.data.macros :as dm]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes.common :as gco]
-   [app.common.geom.shapes.transforms :as gtr]))
+   [app.common.geom.shapes.transforms :as gtr]
+   [app.common.math :as mth]
+   [app.common.types.shape.layout :as ctl]))
+
+(defn text-size-drifted?
+  "True when a measured auto-grow size is off the stored one by more than
+  `tolerance` on an axis that grows (width for :auto-width, height for both
+  auto-grow types). An axis that fills its layout parent takes its size
+  from the layout, so it never drifts. Other grow types never drift."
+  [{:keys [grow-type width height] :as shape} new-width new-height tolerance]
+  (boolean
+   (or (and (= :auto-width grow-type)
+            (not (ctl/fill-width? shape))
+            (not (mth/close? width new-width tolerance)))
+       (and (contains? #{:auto-width :auto-height} grow-type)
+            (not (ctl/fill-height? shape))
+            (not (mth/close? height new-height tolerance))))))
 
 (defn position-data->rect
   [{:keys [x y width height]}]

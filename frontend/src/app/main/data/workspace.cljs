@@ -190,15 +190,20 @@
                        (rx/merge
                         (->> (rx/from libraries)
                              (rx/merge-map
-                              (fn [{:keys [id synced-at is-indirect]}]
+                              (fn [{:keys [id synced-at is-indirect] :as library}]
                                 (->> (rp/cmd! :get-file {:id id :features features})
                                      (rx/map (fn [file]
                                                (-> file
                                                    (assoc :synced-at synced-at)
                                                    (assoc :library-of file-id)
-                                                   (assoc :is-indirect is-indirect)))))))
-                             (rx/mapcat resolve-file)
-                             (rx/map library-resolved))
+                                                   (assoc :is-indirect is-indirect))))
+                                     (rx/mapcat resolve-file)
+                                     (rx/map library-resolved)
+                                     ;; A broken library must not break the whole file
+                                     (rx/catch (fn [cause]
+                                                 (if (dwl/broken-library-error? cause)
+                                                   (rx/of (dwl/library-load-failed file-id library cause))
+                                                   (rx/throw cause))))))))
                         (->> (rx/from libraries)
                              (rx/map :id)
                              (rx/mapcat (fn [file-id]
@@ -314,7 +319,8 @@
                                 ::ev/name "open-workspace-file"
                                 ::ev/origin "workspace"
                                 :file-id file-id
-                                :team-id team-id)))))))
+                                :team-id team-id
+                                :renderer (features/get-active-renderer state))))))))
 
 (defn- restore-pending-changes
   "Applies the edits still waiting to be saved to a freshly loaded `file`.
@@ -523,12 +529,15 @@
                (rx/of (dwcm/watch-comment-thread-position-changes stoper-s))
 
                ;; Resize auto-grow text shapes whose selrect does not match
-               ;; the WASM text layout once their fonts finish loading.
+               ;; the WASM text layout (on page load or once their fonts
+               ;; finish loading). These automatic heals record no undo
+               ;; step, so Ctrl+Z reverts the user's own last edit.
                (->> stream
                     (rx/filter (ptk/type? :app.render-wasm.api/stale-text-selrects))
                     (rx/map deref)
                     (rx/map (fn [{:keys [ids]}]
-                              (dwwt/resize-wasm-text-all ids {:skip-component-sync? true}))))
+                              (dwwt/resize-wasm-text-all ids {:skip-component-sync? true
+                                                              :save-undo? false}))))
 
                (let [local-commits-s
                      (->> stream
@@ -592,13 +601,14 @@
                     (rx/filter dch/commit?)
                     (rx/map deref)
                     (rx/mapcat
-                     (fn [{:keys [save-undo? undo-changes redo-changes undo-group tags stack-undo? selected-before]}]
+                     (fn [{:keys [save-undo? undo-changes redo-changes undo-group tags stack-undo? selected-before translation?]}]
                        (if (and save-undo? (seq undo-changes))
                          (let [entry {:undo-changes undo-changes
                                       :redo-changes redo-changes
                                       :undo-group undo-group
                                       :tags tags
-                                      :selected-before selected-before}]
+                                      :selected-before selected-before
+                                      :translation (boolean translation?)}]
                            (rx/of (dwu/append-undo entry stack-undo?)))
                          (rx/empty))))))
 
@@ -1712,6 +1722,7 @@
 (dm/export dwt/update-positions)
 (dm/export dwt/flip-horizontal-selected)
 (dm/export dwt/flip-vertical-selected)
+(dm/export dwt/scale-selected)
 (dm/export dwly/set-opacity)
 
 ;; Common

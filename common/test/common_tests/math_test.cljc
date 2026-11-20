@@ -57,3 +57,21 @@
      :clj
      (t/testing "finite? returns false for Double/NaN (CLJ)"
        (t/is (false? (mth/finite? Double/NaN))))))
+
+(t/deftest close-map?-test
+  (t/testing "numbers within tolerance are close"
+    (t/is (mth/close-map? {:x 1.0 :y 2.0} {:x 1.0004 :y 2.0})))
+
+  (t/testing "numbers beyond tolerance are not close"
+    (t/is (not (mth/close-map? {:x 1.0} {:x 1.01}))))
+
+  (t/testing "non-numeric values compare exactly"
+    (t/is (mth/close-map? {:text "a"} {:text "a"}))
+    (t/is (not (mth/close-map? {:text "a"} {:text "b"}))))
+
+  (t/testing "different key sets are not close"
+    (t/is (not (mth/close-map? {:x 1.0} {:x 1.0 :y 1.0})))
+    (t/is (not (mth/close-map? {:x 1.0 :y nil} {:x 1.0 :z nil}))))
+
+  (t/testing "a number is not close to a non-number"
+    (t/is (not (mth/close-map? {:x 1.0} {:x "1.0"})))))

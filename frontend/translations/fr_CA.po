@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-11-05 22:20+0000\n"
-"Last-Translator: Andrey Antukh <niwinz@users.noreply.hosted.weblate.org>\n"
-"Language-Team: French (Canada) "
-"<https://hosted.weblate.org/projects/penpot/frontend/fr_CA/>\n"
+"PO-Revision-Date: 2026-11-09 10:07+0000\n"
+"Last-Translator: Alexis Morin <alexismo@users.noreply.hosted.weblate.org>\n"
+"Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
+"frontend/fr_CA/>\n"
 "Language: fr_CA\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -9326,3 +9326,355 @@ msgstr ""
 #: src/app/main/ui/workspace/sidebar/versions.cljs:462
 msgid "workspace.versions.warning.text"
 msgstr "Les versions auto-sauvegardées seront conservées pendant %s jours."
+
+#: src/app/main/ui/dashboard/sidebar.cljs:228
+msgid "dashboard.clear-search"
+msgstr "Effacer la recherche"
+
+#: src/app/main/ui/dashboard/fonts.cljs:442, src/app/main/ui/dashboard/fonts.cljs:443
+msgid "dashboard.fonts.delete-variant"
+msgstr "Supprimer le style de police"
+
+#: src/app/main/ui/dashboard/import.cljs:625
+msgid "dashboard.import.check.message"
+msgstr ""
+"Nous nous assurons que chaque fichier peut être importé. Ça ne prend qu'un "
+"moment."
+
+#: src/app/main/ui/dashboard/import.cljs:624
+msgid "dashboard.import.check.title"
+msgstr "Vérification des fichiers..."
+
+#: src/app/main/ui/dashboard/import.cljs:600
+msgid "dashboard.import.importing.done"
+msgid_plural "dashboard.import.importing.done"
+msgstr[0] "1 complété"
+msgstr[1] "%s complétés"
+
+#: src/app/main/ui/dashboard/import.cljs:637
+msgid "dashboard.import.importing.message"
+msgstr "Reconstruction des pages, composants et atouts de ton projet."
+
+#: src/app/main/ui/dashboard/import.cljs:598
+msgid "dashboard.import.importing.title"
+msgid_plural "dashboard.import.importing.title"
+msgstr[0] "Importation de 1 fichier"
+msgstr[1] "Importation de %s fichiers"
+
+#: src/app/main/ui/dashboard/import.cljs:634
+msgid "dashboard.import.queued.message"
+msgstr ""
+"Les fichiers sont téléversés. L'importation commencera dès qu'un espace se "
+"libère."
+
+#: src/app/main/ui/dashboard/import.cljs:633
+msgid "dashboard.import.queued.title"
+msgstr "En attente de commencer..."
+
+#: src/app/main/ui/dashboard/import.cljs:628
+msgid "dashboard.import.ready.message"
+msgstr "Les fichiers peuvent être importés. Continue de les téléverser."
+
+#: src/app/main/ui/dashboard/import.cljs:627
+msgid "dashboard.import.ready.title"
+msgstr "Fichiers prêts"
+
+#: src/app/main/ui/dashboard/import.cljs:331
+msgid "dashboard.import.status.ready"
+msgstr "Prêt"
+
+#: src/app/main/ui/dashboard/import.cljs:568
+msgid "dashboard.import.steps.check"
+msgstr "Vérification"
+
+#: src/app/main/ui/dashboard/import.cljs:570
+msgid "dashboard.import.steps.import"
+msgstr "Importation"
+
+#: src/app/main/ui/dashboard/import.cljs:573
+msgid "dashboard.import.steps.label"
+msgstr "Étapes d'importation"
+
+#: src/app/main/ui/dashboard/import.cljs:569
+msgid "dashboard.import.steps.upload"
+msgstr "Téléversement"
+
+#: src/app/main/ui/dashboard/import.cljs:1130
+msgid "dashboard.import.title"
+msgstr "Importer un fichier"
+
+#: src/app/main/ui/dashboard/import.cljs:631
+msgid "dashboard.import.upload.message"
+msgstr ""
+"Envoi des fichiers. Garder cette boîte de dialogue ouverte jusqu'à ce que le "
+"téléversement soit terminé."
+
+#: src/app/main/ui/dashboard/import.cljs:630
+msgid "dashboard.import.upload.title"
+msgstr "Téléversement des fichiers..."
+
+#: src/app/main/data/exports/assets.cljs:64, src/app/main/data/exports/assets.cljs:93
+msgid "errors.export-failed"
+msgstr "L'exportation a échoué. Réessaye de nouveau."
+
+#: src/app/main/data/exports/assets.cljs:372
+msgid "errors.export-too-large"
+msgstr "Trop grand pour être exporté, essaye une échelle plus petite"
+
+#: src/app/main/errors.cljs:886
+msgid "errors.profile-props-too-large"
+msgstr ""
+"La configuration de ton profil est trop lourde pour sauvegader. Supprime des "
+"plugiciels et essaye à nouveau."
+
+#: src/app/main/errors.cljs:691
+msgid "errors.save-still-retrying"
+msgstr ""
+"Les changements n'ont pu être sauvegardés car Penpot ne peut joindre le "
+"serveur. Ils seront maintenus et Penpot tentera de les sauvegarder. "
+"Maintiens cet onglet ouvert jusqu'à ce qu'ils soient sauvegardés."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:62
+msgid "errors.tokens.division-by-zero"
+msgstr "Valeur de token invalide : division par zéro"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:74
+msgid "errors.tokens.function-argument-out-of-range"
+msgstr "Valeur de token invalide : l'argument %s() est hors de portée"
+
+#: src/app/main/ui/jobs/progress.cljs:32
+msgid "jobs.progress.stage.manifest"
+msgstr "Lecture de l'archive"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:66
+msgid "errors.tokens.incompatible-units"
+msgstr "Valeur de token invalide : les unités %s ne peuvent être combinées"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:70
+msgid "errors.tokens.unknown-function"
+msgstr "Valeur de token invalide : fonction inconnue %s"
+
+#: src/app/main/ui/exports/files.cljs:392
+msgid "files-download-modal.unsaved-changes"
+msgstr ""
+"Quelques-uns des derniers changements ne sont pas encore sauvegardés, alors "
+"ce téléchargement ne les inclura pas."
+
+#: src/app/main/ui/exports/files.cljs:467
+msgid "files-export-modal.cancel-export"
+msgstr "Annuler l'exportation"
+
+#: src/app/main/ui/exports/files.cljs:471
+msgid "files-export-modal.done"
+msgstr "Terminé"
+
+#: src/app/main/ui/exports/files.cljs:210
+msgid "files-export-modal.export-error"
+msgstr "Impossible d'exporter : %s"
+
+#: src/app/main/ui/exports/files.cljs:246
+msgid "files-export-modal.exported.message"
+msgstr "Vérifier le dossier des téléchargements."
+
+#: src/app/main/ui/exports/files.cljs:239
+msgid "files-export-modal.exported.title"
+msgid_plural "files-export-modal.exported.title"
+msgstr[0] "1 fichier exporté"
+msgstr[1] "%s fichiers exportés"
+
+#: src/app/main/ui/exports/files.cljs:245
+msgid "files-export-modal.exporting.message"
+msgstr "Chaque fichier se télécharge dès qu'il est prêt."
+
+#: src/app/main/ui/exports/files.cljs:238
+msgid "files-export-modal.exporting.title"
+msgid_plural "files-export-modal.exporting.title"
+msgstr[0] "Exportation de 1 fichier"
+msgstr[1] "Exportation de %s fichiers"
+
+#: src/app/main/ui/exports/files.cljs:430
+msgid "files-export-modal.options.merge-libraries.message"
+msgstr ""
+"Le fichier sera exporté avec toutes les bibliothèques d'atouts externes "
+"intégrés au fichier."
+
+#: src/app/main/ui/exports/files.cljs:424
+msgid "files-export-modal.options.merge-libraries.title"
+msgstr "Inclure les bibliothèques d'atouts dans le fichier"
+
+#: src/app/main/ui/exports/files.cljs:179
+msgid "files-export-modal.status.exported"
+msgstr "Exporté"
+
+#: src/app/main/ui/exports/files.cljs:186
+msgid "files-export-modal.status.waiting"
+msgstr "En attente"
+
+#: src/app/main/ui/exports/files.cljs:381
+msgid "files-export-modal.title"
+msgstr "Exporter fichier"
+
+#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:113
+msgid "import-shortcuts.imported"
+msgstr "Importé"
+
+#: src/app/main/ui/settings/shortcuts.cljs:511, src/app/main/ui/settings/shortcuts.cljs:513
+msgid "import-shortcuts.invalid-file"
+msgstr "Ce fichier n'est pas une exportation de raccourcis valide."
+
+#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:153
+msgid "import-shortcuts.skipped-entries"
+msgstr ""
+"Ces entrées ne peuvent être importées : elles ne correspondent à aucun "
+"raccourci Penpot ou combinaison de touches réservées."
+
+#: src/app/main/ui/inspect/code.cljs:322, src/app/main/ui/inspect/code.cljs:365
+msgid "inspect.code.expand-panel"
+msgstr "Agrandir le panneau"
+
+#: src/app/main/ui/exports/files.cljs:223
+msgid "jobs.export-cancelled"
+msgstr "Exportation annulée"
+
+#: src/app/main/data/imports.cljs:376
+msgid "jobs.import-cancelled"
+msgstr "Importation annulée"
+
+#: src/app/main/ui/jobs/progress.cljs:26
+msgid "jobs.progress.stage.colors"
+msgstr "Traitement des couleurs"
+
+#: src/app/main/ui/jobs/progress.cljs:25
+msgid "jobs.progress.stage.components"
+msgstr "Traitement des composants"
+
+#: src/app/main/ui/jobs/progress.cljs:21
+msgid "jobs.progress.stage.files"
+msgstr "Traitement des fichiers"
+
+#: src/app/main/ui/jobs/progress.cljs:23
+msgid "jobs.progress.stage.media"
+msgstr "Traitement des médias"
+
+#: src/app/main/ui/jobs/progress.cljs:31
+msgid "jobs.progress.stage.metadata"
+msgstr "Lecture des métadonnées"
+
+#: src/app/main/ui/jobs/progress.cljs:22
+msgid "jobs.progress.stage.pages"
+msgstr "Traitement des pages"
+
+#: src/app/main/ui/jobs/progress.cljs:30
+msgid "jobs.progress.stage.relations"
+msgstr "Traitement des relations de bibliothèque"
+
+#: src/app/main/ui/jobs/progress.cljs:29
+msgid "jobs.progress.stage.storage-objects"
+msgstr "Traitement des objets de stockage"
+
+#: src/app/main/ui/jobs/progress.cljs:24
+msgid "jobs.progress.stage.thumbnails"
+msgstr "Traitement des imagettes"
+
+#: src/app/main/ui/jobs/progress.cljs:28
+msgid "jobs.progress.stage.tokens"
+msgstr "Traitement des tokens"
+
+#: src/app/main/ui/jobs/progress.cljs:27
+msgid "jobs.progress.stage.typographies"
+msgstr "Traitement des polices de caractères"
+
+#: src/app/main/ui/jobs/progress.cljs:34
+msgid "jobs.progress.stage.unknown"
+msgstr "Travail en cours"
+
+#: src/app/main/ui/jobs/progress.cljs:33
+msgid "jobs.progress.stage.upload"
+msgstr "Téléversement du fichier…"
+
+#: src/app/main/ui/dashboard/import.cljs:328, src/app/main/ui/exports/files.cljs:103
+#, unused
+msgid "jobs.queued"
+msgstr "En attente d'un créneau de travail"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:546
+msgid "labels.check-for-updates"
+msgstr "Vérifier pour une mise à jour"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:545
+msgid "labels.checking-for-updates"
+msgstr "Vérification d'une mise à jour…"
+
+#: src/app/main/ui/viewer/thumbnails.cljs:96
+msgid "labels.expand"
+msgstr "Agrandir"
+
+#: src/app/main/ui/static.cljs:367
+msgid "labels.nitrate-not-configured.desc-message"
+msgstr ""
+"Cette instance nécessite une étape de configuration incluse avec la dernière "
+"version."
+
+#: src/app/main/ui/static.cljs:370
+msgid "labels.nitrate-not-configured.learn-more"
+msgstr "Va voir nos"
+
+#: src/app/main/ui/static.cljs:365
+msgid "labels.nitrate-not-configured.main-message"
+msgstr "Penpot ne peut pas encore démarrer."
+
+#: src/app/main/ui/static.cljs:375
+msgid "labels.nitrate-not-configured.technical-guide"
+msgstr "guide technique"
+
+#: src/app/main/ui/dashboard/import.cljs:808
+msgid "labels.skip"
+msgstr "Sauter"
+
+#: src/app/main/ui/static.cljs:562
+msgid "labels.sso-error.desc-message"
+msgstr ""
+"La connexion via le fournisseur d'identité n'a pu se compléter. Il est "
+"possible que le fournisseur soit indisponible ou que le compte ne figure pas "
+"encore au répertoire."
+
+#: src/app/main/ui/static.cljs:563
+msgid "labels.sso-error.retry"
+msgstr "Réessayer"
+
+#: src/app/main/ui/static.cljs:561
+msgid "labels.sso-error.title"
+msgstr "Connexion impossible %s"
+
+#: src/app/main/ui/dashboard/organization_team_switch.cljs:657
+msgid "labels.team-management"
+msgstr "Gestion des équipes"
+
+#: src/app/main/ui/mcp_authorize.cljs:155
+msgid "mcp.oauth.access"
+msgstr ""
+"Ce client peut lire et modifier les designs via les connexions MCP établies "
+"depuis Penpot."
+
+#: src/app/main/ui/mcp_authorize.cljs:153
+msgid "mcp.oauth.account"
+msgstr "Tu es connecté en tant que %s."
+
+#: src/app/main/ui/mcp_authorize.cljs:162
+msgid "mcp.oauth.approve"
+msgstr "Autoriser l'accès"
+
+#: src/app/main/ui/mcp_authorize.cljs:133
+msgid "mcp.oauth.cancelled"
+msgstr "Connexion annulée"
+
+#: src/app/main/ui/mcp_authorize.cljs:157
+msgid "mcp.oauth.enable"
+msgstr ""
+"Autoriser l'accès permet à l'intégration MCP et crée un token MCP au besoin."
+
+#: src/app/main/ui/mcp_authorize.cljs:137
+msgid "mcp.oauth.failed"
+msgstr ""
+"Cette requête a expiré, a déjà été utilisée ou n'a pu être complétée. "
+"Démarrer la connexion de nouveau à partir du client MCP."
