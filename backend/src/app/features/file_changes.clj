@@ -14,6 +14,7 @@
   (:require
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as db]
    [app.util.blob :as blob]))
 
@@ -27,11 +28,14 @@
 
 (defn insert-revision
   "Inserts the revision row of a save on `file`: `changes` is the whole of
-  what the save applied, not encoded, and the row expires one hour after
-  `timestamp`. Every writer of a revision row goes through this function,
-  so that the `kind`, the data `version`, the `updated_at` the partition
-  runbook copies by, and the expiry are always set, and so that retention,
-  when it comes, is decided here alone.
+  what the save applied, not encoded. The row expires one hour after
+  `timestamp`, unless the `file-change-retention` flag is set, which keeps
+  it: `objects-gc` collects only rows with a `deleted_at`. The same flag
+  makes file-gc skip its media clean-up, which does not read these rows,
+  so the flag must be set only where both halves are deployed. Every writer
+  of a revision row goes through this function, so that the `kind`, the
+  data `version`, the `updated_at` the partition runbook copies by, and the
+  expiry are always set, and retention is decided here alone.
 
   `id` is optional. A save passes the id its audit event carries, so that
   the event points at the row really inserted. Returns the row's `:id`
@@ -40,7 +44,8 @@
   [{:keys [::db/conn] :as _cfg} {:keys [version] :as file} timestamp
    {:keys [id session-id profile-id revn changes]}]
   (let [id         (or id (uuid/next))
-        deleted-at (ct/plus timestamp (ct/duration {:hours 1}))]
+        deleted-at (when-not (contains? cf/flags :file-change-retention)
+                     (ct/plus timestamp (ct/duration {:hours 1})))]
     (db/insert! conn :file-change
                 {:id id
                  :kind revision-kind

@@ -609,6 +609,17 @@
     (t/is (= [] (blob/decode (:changes row)))
           "the writer encodes the changes it receives")))
 
+;; Scenario: a save with the `file-change-retention` flag set. Proves: the
+;; revision row carries no expiry, so `objects-gc` never collects it.
+(t/deftest a-save-keeps-its-revision-row-under-the-retention-flag
+  (let [{:keys [page-id file-id] :as ctx} (create-file)]
+    (with-redefs [cf/flags (conj cf/flags :file-change-retention)]
+      (update-file ctx {:changes [(th/add-rect-change page-id (uuid/next))]}))
+    (let [[row] (->> (th/db-query :file-change {:file-id file-id})
+                     (filter :changes))]
+      (t/is (some? row))
+      (t/is (nil? (:deleted-at row)) "the row never expires"))))
+
 ;; Scenario: a shape references an image of another file. The save copies
 ;; the media object into this file and rewrites the reference. Proves: the
 ;; rewrite is part of the save's own change vector, so the row carries the
