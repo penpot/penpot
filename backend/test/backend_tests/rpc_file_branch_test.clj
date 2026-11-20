@@ -3236,3 +3236,83 @@
                             (= main-1 (:id %))
                             (= :deleted (:status %)))
                       (:changes diff))))))))
+
+;;; --- The changes a profile marked as reviewed ---
+
+(t/deftest review-marks-belong-to-a-profile-a-direction-and-a-change
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [owner    (th/create-profile* 1 {:is-active true})
+          mate     (th/create-profile* 2 {:is-active true})
+          stranger (th/create-profile* 3 {:is-active true})
+          file     (th/create-file* 1 {:profile-id (:id owner)
+                                       :project-id (:default-project-id owner)
+                                       :is-shared false})
+          _        (th/create-team-role* {:team-id (:default-team-id owner)
+                                          :profile-id (:id mate)
+                                          :role :editor})
+          branch   (:result (th/command! {::th/type :create-file-branch
+                                          ::rpc/profile-id (:id owner)
+                                          :file-id (:id file)
+                                          :name "review-marks"}))
+          mark     (fn [profile direction change-key fingerprint reviewed]
+                     (th/command! {::th/type :set-branch-change-review
+                                   ::rpc/profile-id (:id profile)
+                                   :branch-id (:id branch)
+                                   :direction direction
+                                   :change-key change-key
+                                   :fingerprint fingerprint
+                                   :reviewed reviewed}))
+          marks    (fn [profile direction]
+                     (let [out (th/command! {::th/type :get-branch-change-reviews
+                                             ::rpc/profile-id (:id profile)
+                                             :branch-id (:id branch)
+                                             :direction direction})]
+                       (t/is (nil? (:error out)))
+                       (into {} (map (juxt :change-key :fingerprint)) (:result out))))]
+
+      (t/testing "a mark is read back with its fingerprint"
+        (t/is (nil? (:error (mark owner :branch->main "shape/p/1" "a1" true))))
+        (t/is (nil? (:error (mark owner :branch->main "shape/p/2" "b1" true))))
+        (t/is (= {"shape/p/1" "a1" "shape/p/2" "b1"} (marks owner :branch->main))))
+
+      (t/testing "marking again keeps one mark, with the newest fingerprint"
+        (t/is (nil? (:error (mark owner :branch->main "shape/p/1" "a2" true))))
+        (t/is (= {"shape/p/1" "a2" "shape/p/2" "b1"} (marks owner :branch->main))))
+
+      (t/testing "each direction has its own marks"
+        (t/is (= {} (marks owner :main->branch)))
+        (t/is (nil? (:error (mark owner :main->branch "shape/p/1" "m1" true))))
+        (t/is (= {"shape/p/1" "m1"} (marks owner :main->branch)))
+        (t/is (= "a2" (get (marks owner :branch->main) "shape/p/1"))))
+
+      (t/testing "the marks of a profile are not anybody else's"
+        (t/is (= {} (marks mate :branch->main)))
+        (t/is (nil? (:error (mark mate :branch->main "shape/p/2" "theirs" true))))
+        (t/is (= {"shape/p/2" "theirs"} (marks mate :branch->main)))
+        (t/is (= "b1" (get (marks owner :branch->main) "shape/p/2"))))
+
+      (t/testing "clearing a mark removes that one alone"
+        (t/is (nil? (:error (mark owner :branch->main "shape/p/1" "a2" false))))
+        (t/is (= {"shape/p/2" "b1"} (marks owner :branch->main)))
+        (t/is (= {"shape/p/1" "m1"} (marks owner :main->branch)))
+        (t/is (= {"shape/p/2" "theirs"} (marks mate :branch->main))))
+
+      (t/testing "a profile that cannot read the file neither marks nor reads"
+        (let [out (mark stranger :branch->main "shape/p/1" "x" true)]
+          (t/is (th/ex-info? (:error out)))
+          (t/is (= :not-found (th/ex-type (:error out)))))
+        (let [out (th/command! {::th/type :get-branch-change-reviews
+                                ::rpc/profile-id (:id stranger)
+                                :branch-id (:id branch)
+                                :direction :branch->main})]
+          (t/is (= :not-found (th/ex-type (:error out)))))
+        (t/is (= {"shape/p/2" "b1"} (marks owner :branch->main))
+              "the refused mark was not written"))
+
+      (t/testing "a branch that does not exist is not found"
+        (let [out (th/command! {::th/type :get-branch-change-reviews
+                                ::rpc/profile-id (:id owner)
+                                :branch-id (uuid/next)
+                                :direction :branch->main})]
+          (t/is (= :not-found (th/ex-type (:error out))))
+          (t/is (= :branch-not-found (th/ex-code (:error out)))))))))

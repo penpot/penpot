@@ -27,6 +27,7 @@
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.workspace.compare.view-menu :refer [view-mode-menu*]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -294,32 +295,29 @@
                                       :ref ref
                                       :on-selected on-selected}]]))
 
-(mf/defc review-toolbar*
-  "The toolbar of the review mode: the review is read-only, so it offers
-  moving around, commenting on a spot or a layer, commenting on an area,
-  creating a task and showing the changes of the branch."
+(defn- on-select-review-tool
+  [event]
+  (let [tool (-> (dom/get-current-target event)
+                 (dom/get-data "tool")
+                 (keyword))]
+    (st/emit! (dwrv/set-tool tool))))
+
+(mf/defc read-only-toolbar*
+  "The toolbar of a read-only mode of the workspace (a design review, the
+  comparison of a branch with main). It offers no drawing: moving
+  around, commenting on a spot or a layer, commenting on an area and
+  creating a task, and then what the mode adds (`children`). Inside a
+  design review (`is-review`) the tool in use takes the review colour;
+  outside it, the accent of the drawing tools."
   {::mf/private true}
-  [{:keys [rulers-enabled toolbar-hidden on-toggle-toolbar]}]
+  [{:keys [aria-label is-review rulers-enabled toolbar-hidden on-toggle-toolbar children]}]
   (let [local   (mf/deref refs/review-local)
         drawing (mf/deref refs/selected-drawing-tool)
         tool    (if (= drawing :comments)
                   (get local :tool :comment)
-                  :move)
-        changes (some? (:show-changes local))
-
-        on-select-tool
-        (mf/use-fn
-         (fn [event]
-           (let [tool (-> (dom/get-current-target event)
-                          (dom/get-data "tool")
-                          (keyword))]
-             (st/emit! (dwrv/set-tool tool)))))
-
-        on-toggle-changes
-        (mf/use-fn #(st/emit! (dwrv/toggle-changes)))]
-
+                  :move)]
     [:div {:role "toolbar"
-           :aria-label (tr "workspace.review.toolbar.label")
+           :aria-label aria-label
            :tab-index "0"
            :class (stl/css-case :toolbar true
                                 :no-rulers (not rulers-enabled)
@@ -331,27 +329,60 @@
                              [:task i/view-as-list (tr "workspace.review.toolbar.task")]]]
         [:li {:key (name id) :class (stl/css :toolbar-option)}
          [:> icon-button* {:variant "ghost"
-                           :class (stl/css :review-tool)
+                           :class (stl/css-case :review-tool is-review)
                            :tooltip-placement "bottom"
                            :aria-pressed (= tool id)
                            :aria-label label
                            :icon icon
                            :data-tool (name id)
-                           :on-click on-select-tool}]])
+                           :on-click on-select-review-tool}]])
       [:div {:class (stl/css :toolbar-separator)}]
-      [:li {:class (stl/css :toolbar-option)}
-       [:> icon-button* {:variant "ghost"
-                         :class (stl/css :review-tool)
-                         :tooltip-placement "bottom"
-                         :aria-pressed changes
-                         :aria-label (tr "workspace.review.toolbar.show-changes")
-                         :icon i/shown
-                         :on-click on-toggle-changes}]]]
+      [:li {:class (stl/css :toolbar-option)} children]]
      [:button {:title (tr "workspace.toolbar.toggle-toolbar")
                :aria-label (tr "workspace.toolbar.toggle-toolbar")
                :class (stl/css :toolbar-handler)
                :on-click on-toggle-toolbar}
       [:div {:class (stl/css :toolbar-handler-indicator)}]]]))
+
+(mf/defc review-toolbar*
+  "The toolbar of the review mode, which also shows the changes of the
+  branch since the review opened."
+  {::mf/private true}
+  [{:keys [rulers-enabled toolbar-hidden on-toggle-toolbar]}]
+  (let [local   (mf/deref refs/review-local)
+        changes (some? (:show-changes local))
+
+        on-toggle-changes
+        (mf/use-fn #(st/emit! (dwrv/toggle-changes)))]
+
+    [:> read-only-toolbar* {:aria-label (tr "workspace.review.toolbar.label")
+                            :is-review true
+                            :rulers-enabled rulers-enabled
+                            :toolbar-hidden toolbar-hidden
+                            :on-toggle-toolbar on-toggle-toolbar}
+     [:> icon-button* {:variant "ghost"
+                       :class (stl/css :review-tool)
+                       :tooltip-placement "bottom"
+                       :aria-pressed changes
+                       :aria-label (tr "workspace.review.toolbar.show-changes")
+                       :icon i/shown
+                       :on-click on-toggle-changes}]]))
+
+(mf/defc compare-toolbar*
+  "The toolbar of the compare mode, with or without a design review
+  around it: the same tools, and the control that says how the canvas
+  shows the changes in place of the one that shows them."
+  {::mf/private true}
+  [{:keys [mode is-review rulers-enabled toolbar-hidden on-toggle-toolbar]}]
+  [:> read-only-toolbar* {:aria-label (tr "workspace.compare.toolbar.label")
+                          :is-review is-review
+                          :rulers-enabled rulers-enabled
+                          :toolbar-hidden toolbar-hidden
+                          :on-toggle-toolbar on-toggle-toolbar}
+   [:> view-mode-menu* {:view (:view mode)
+                        :side-mode (:side-mode mode)
+                        :hidden (boolean (:hidden mode))
+                        :is-review is-review}]])
 
 (mf/defc top-toolbar*
   {::mf/wrap [mf/memo]}
@@ -365,6 +396,7 @@
         plugins-enabled? (features/active-feature? @st/state "plugins/runtime")
         read-only?       (mf/use-ctx ctx/workspace-read-only?)
         reviewing?       (some? (mf/deref refs/pull-request-preview))
+        compare-mode     (mf/deref refs/compare-mode)
 
         mcp-conn-status  (get mcp :connection-status)
         mcp-valid-token? (get mcp :token-valid)
@@ -419,6 +451,13 @@
            (st/emit! (dwc/toggle-toolbar-visibility))))]
 
     (cond
+      (some? compare-mode)
+      [:> compare-toolbar* {:mode compare-mode
+                            :is-review reviewing?
+                            :rulers-enabled rulers-enabled
+                            :toolbar-hidden toolbar-hidden
+                            :on-toggle-toolbar on-toggle-toolbar}]
+
       ^boolean reviewing?
       [:> review-toolbar* {:rulers-enabled rulers-enabled
                            :toolbar-hidden toolbar-hidden

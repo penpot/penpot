@@ -36,9 +36,7 @@ test("opening a file with pr-id enters the design review", async ({ page }) => {
   // file name for the title of the review
   const bar = reviewBar(page);
   await expect(bar).toBeVisible();
-  await expect(
-    bar.getByText("Reviewing the design review", { exact: true }),
-  ).toBeVisible();
+  await expect(bar.getByText("In review", { exact: true })).toBeVisible();
   await expect(
     bar.getByText("Checkout redesign", { exact: true }),
   ).toBeVisible();
@@ -60,17 +58,27 @@ test("opening a file with pr-id enters the design review", async ({ page }) => {
   await expect(page.getByText("Cancel review")).toBeVisible();
 });
 
-test("the compare dialog shows the proposed changes", async ({ page }) => {
+test("comparing shows the proposed changes on the canvas", async ({ page }) => {
   const workspacePage = new WorkspacePage(page);
   await setupPullRequestSandbox(workspacePage);
   await workspacePage.goToWorkspace({ extraParams: `&pr-id=${PR_ID}` });
 
   // comparing is one of the review bar's options
-  await reviewBar(page).getByRole("button", { name: "Options" }).click();
+  const bar = reviewBar(page);
+  await bar.getByRole("button", { name: "Options" }).click();
   await page.getByText("Compare", { exact: true }).click();
 
-  // the branching compare dialog is reused to inspect the changes
-  await expect(page.getByText("Review changes")).toBeVisible();
+  // the review bar belongs to the comparison, and the changes take the
+  // left sidebar: no dialog opens
+  await expect(bar.getByText("Comparing", { exact: true })).toBeVisible();
+  await expect(page.getByRole("dialog")).toBeHidden();
+  await expect(
+    page.getByTestId("left-sidebar").getByText("View only"),
+  ).toBeVisible();
+
+  // leaving the comparison goes back to the review
+  await bar.getByRole("button", { name: "Exit compare" }).click();
+  await expect(bar.getByText("In review", { exact: true })).toBeVisible();
 });
 
 test("accepting the pull request opens the merge dialog", async ({ page }) => {
@@ -139,7 +147,10 @@ test("an assigned reviewer can submit a verdict from the review bar", async ({
     dialog.getByRole("heading", { name: "Submit review" }),
   ).toBeVisible();
 
-  await dialog.getByRole("button", { name: "Request changes" }).click();
+  // the verdicts are a choice of one: radios, each with its hint
+  const requestChanges = dialog.getByRole("radio", { name: /Request changes/ });
+  await requestChanges.click();
+  await expect(requestChanges).toBeChecked();
   await dialog.getByRole("button", { name: "Submit review" }).click();
 
   await expect(page.getByText("Review submitted")).toBeVisible();
@@ -200,10 +211,10 @@ test("exiting the review takes the user back to the file", async ({ page }) => {
   await setupPullRequestSandbox(workspacePage);
   await workspacePage.goToWorkspace({ extraParams: `&pr-id=${PR_ID}` });
 
+  // the way out is an icon button on the bar, named by its tooltip
   const banner = reviewBar(page);
   await expect(banner).toBeVisible();
-  await banner.getByRole("button", { name: "Options" }).click();
-  await page.getByText("Exit review").click();
+  await banner.getByRole("button", { name: "Exit review" }).click();
 
   // exiting drops the review context and the pr-id param; the file (the
   // live branch) stays as it was

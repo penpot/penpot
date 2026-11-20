@@ -1,0 +1,50 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS SUBSIDIARY SL
+
+@use "ds/mixins.scss" as *;
+
+// its blocks over the whole width undo this padding
+// (`branch_review/detail.scss`)
+.compare-detail {
+  @include custom-scrollbar;
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xl);
+  block-size: 100%;
+  min-block-size: 0;
+  padding: var(--sp-m);
+  overflow-y: auto;
+}
+
+// the comments and the tasks on the layer of the change
+.context {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-l);
+}
+
+.context-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+}
+
+.context-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  margin: 0;
+  color: var(--color-foreground-secondary);
+}
+
+.context-icon {
+  flex-shrink: 0;
+}
+
+.empty {
+  padding: var(--sp-xxl) var(--sp-m);
+}

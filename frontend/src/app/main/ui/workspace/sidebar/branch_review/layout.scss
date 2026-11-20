@@ -10,175 +10,24 @@
 @use "ds/mixins.scss" as *;
 @use "ds/typography.scss" as *;
 
-// The dialog draws its own rows edge to edge (header, filter bar, panes,
-// footer), so it opts out of the padded `modal*` body.
-//
-// These dialogs carry more to read than a `modal*` size allows, so they
-// size to the window instead, within bounds:
-// - width: 88% of the window, between 960 and 1440, and never wider than
-//   the window less a margin; a 4K screen stops at the upper bound;
-// - panes: all the height the header, filters, footer and margins leave,
-//   up to 880. The height stays fixed for a given window, so moving
-//   between changes or decisions never resizes the dialog; the panes
-//   scroll instead.
-// The previews grow with the panes too.
-// Bounds are in rem, so the dialog follows the interface scale.
-.review-modal {
-  --review-modal-inline-size: clamp(#{px2rem(960)}, 88vw, #{px2rem(1440)});
-  --review-panes-block-size: min(calc(100dvh - #{px2rem(280)}), #{px2rem(880)});
-  --review-list-inline-size: clamp(#{px2rem(320)}, 26%, #{$sz-400});
-
-  // the previews grow with the panes: about a third of their height in
-  // the detail, about two thirds when expanded, within bounds
-  --preview-card-stage-block-size: clamp(
-    #{px2rem(100)},
-    calc(var(--review-panes-block-size) * 0.3),
-    #{px2rem(260)}
-  );
-  --preview-card-stage-large-block-size: clamp(
-    #{px2rem(320)},
-    calc(var(--review-panes-block-size) * 0.62),
-    #{px2rem(600)}
-  );
-
-  max-inline-size: min(var(--review-modal-inline-size), calc(100vw - #{$sz-32}));
-  overflow: hidden;
-}
-
-.review-header {
-  gap: var(--sp-m);
-  padding: var(--sp-xl) var(--sp-xxxl) var(--sp-xl) var(--sp-xl);
-  border-block-end: $b-1 solid var(--color-background-quaternary);
-}
-
-.header-icon {
-  --header-icon-color: var(--color-foreground-secondary);
-
-  display: flex;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
-  inline-size: $sz-32;
-  block-size: $sz-32;
-  border-radius: $br-8;
-  color: var(--header-icon-color);
-  background-color: var(--color-background-tertiary);
-
-  &.is-warning {
-    --header-icon-color: var(--color-accent-warning);
-  }
-}
-
-.header-text {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  gap: var(--sp-xs);
-  min-inline-size: 0;
-}
-
-.header-title {
-  color: var(--color-foreground-primary);
-}
-
-.route {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-xs);
-  min-inline-size: 0;
-}
-
-.route-arrow {
-  display: flex;
-  color: var(--color-foreground-secondary);
-}
-
-.route-swap {
-  --route-swap-color: var(--color-foreground-secondary);
-
-  display: flex;
-  align-items: center;
-  padding: var(--sp-xxs);
-  border: none;
-  border-radius: $br-4;
-  background: none;
-  color: var(--route-swap-color);
-  cursor: pointer;
-
-  &:hover {
-    --route-swap-color: var(--color-accent-primary);
-  }
-}
-
-.filter-bar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--sp-s);
-  padding: var(--sp-s) var(--sp-xl);
-  background-color: var(--color-background-secondary);
-}
-
-.filter-label {
-  color: var(--color-foreground-secondary);
-}
-
-.review-body {
-  display: grid;
-  grid-template-columns: var(--review-list-inline-size) 1fr;
-  block-size: var(--review-panes-block-size);
-  min-block-size: 0;
-
-  &.is-single {
-    grid-template-columns: 1fr;
-  }
-}
-
-.review-list {
-  @include custom-scrollbar;
-
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-xxs);
-  padding: var(--sp-m);
-  overflow-block: auto;
-  border-inline-end: $b-1 solid var(--color-background-quaternary);
-}
-
-.review-detail {
-  @include custom-scrollbar;
-
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-l);
-  min-inline-size: 0;
-  padding: var(--sp-xl);
-  overflow-block: auto;
-}
-
-.review-footer {
-  padding: var(--sp-l) var(--sp-xl);
-  border-block-start: $b-1 solid var(--color-background-quaternary);
-}
-
 .group-head {
   display: flex;
   align-items: center;
   gap: var(--sp-s);
-  padding-block: var(--sp-s);
-  padding-inline: var(--sp-s) px2rem(10);
+  min-block-size: $sz-32;
+  padding-inline: var(--sp-xs);
 }
 
 .group-toggle {
   display: flex;
   flex: 1;
   align-items: center;
-  gap: var(--sp-s);
+  gap: var(--sp-xs);
   min-inline-size: 0;
   padding: 0;
   border: none;
   background: none;
-  color: var(--color-foreground-primary);
+  color: var(--color-foreground-secondary);
   cursor: pointer;
 }
 
@@ -208,6 +57,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--sp-xs);
+  min-inline-size: 0;
   max-inline-size: 100%;
   padding: var(--sp-xxs) var(--sp-s);
   overflow: hidden;
@@ -234,28 +84,20 @@
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  padding-block: var(--sp-xs);
-  border: $b-1 solid var(--color-background-quaternary);
-  border-radius: $br-8;
-  background-color: var(--color-background-tertiary);
+  gap: var(--sp-m);
 }
 
 .steps-row {
-  display: grid;
-  grid-template-columns: px2rem(180) 1fr;
-  align-items: center;
-  gap: var(--sp-s);
-  padding: var(--sp-s) var(--sp-m);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  min-inline-size: 0;
 }
 
 .steps-name {
   @include text-ellipsis;
 
-  color: var(--color-foreground-primary);
-
-  // TODO: No exact DS typography match found.
-  // Closest match: body-small (weight 500 vs 400).
-  font-weight: 500;
+  color: var(--color-foreground-secondary);
 }
 
 .steps-values {

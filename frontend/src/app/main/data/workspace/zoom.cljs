@@ -22,11 +22,61 @@
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
+(defn- split?
+  "True while the compare mode puts main beside the branch
+  (`app.main.data.workspace.compare`): main takes the first half of the
+  viewport, and the page shows in the second one."
+  [state]
+  (= :side (get-in state [:workspace-compare :view])))
+
+(defn- get-split-extent
+  "The rect of the page as main has it, which main shows beside the
+  branch (`:main-extent` of the compare mode); nil when none is shown."
+  [state]
+  (when (split? state)
+    (get-in state [:workspace-compare :main-extent])))
+
+(defn room-center
+  "The point of the page at the middle of the room the canvas shows it
+  in: the middle of `vbox`, or of its second half while main takes the
+  first one (`split`)."
+  [{:keys [x y width height]} split]
+  (gpt/point (+ x (* width (if split 0.75 0.5)))
+             (+ y (/ height 2))))
+
+(defn fit-rect
+  "`local` (the `:workspace-local` entry) with the zoom and the viewbox
+  that fit `rect`, with `padding` around it, in the room the canvas
+  shows the page in: the whole viewport, or its second half while main
+  takes the first one (`split`)."
+  [{:keys [vport] :as local} rect padding split]
+  (let [room  (cond-> vport split (update :width / 2))
+        srect (gal/adjust-to-viewport room rect {:padding padding :min-zoom 0.01})
+        zoom  (/ (:width room) (:width srect))
+        vbox  (if split
+                ;; `srect` is centred on `rect`, and so is the second half
+                (let [width  (/ (:width vport) zoom)
+                      height (/ (:height vport) zoom)]
+                  (grc/make-rect (- (+ (:x srect) (/ (:width srect) 2)) (* width 0.75))
+                                 (- (+ (:y srect) (/ (:height srect) 2)) (/ height 2))
+                                 width
+                                 height))
+                srect)]
+    (-> local
+        (assoc :zoom zoom)
+        (assoc :zoom-inverse (/ 1 zoom))
+        (update :vbox merge vbox))))
+
 (defn impl-update-zoom
-  [{:keys [vbox] :as local} center zoom]
+  "`local` at `zoom` (a number, or a fn of the zoom it has), with the
+  point `center` of the page kept where it is on the screen. Without a
+  `center`, the middle of the room the canvas shows the page in stays
+  (`room-center`), which takes the second half of the viewport while
+  main takes the first one (`split`)."
+  [{:keys [vbox] :as local} center zoom & {:keys [split]}]
   (let [new-zoom (if (fn? zoom) (zoom (:zoom local)) zoom)
         old-zoom (:zoom local)
-        center   (if center center (grc/rect->center vbox))
+        center   (if center center (room-center vbox split))
         scale    (/ old-zoom new-zoom)
         mtx      (gmt/scale-matrix (gpt/point scale) center)
         vbox'    (gsh/transform-rect vbox mtx)]
@@ -48,7 +98,7 @@
          state
          (let [center (if (= center ::auto) @ms/mouse-position center)]
            (update state :workspace-local
-                   #(impl-update-zoom % center (fn [z] (min (* z 1.3) 200)))))))
+                   #(impl-update-zoom % center (fn [z] (min (* z 1.3) 200)) :split (split? state))))))
 
      ptk/EffectEvent
      (effect [_ state _]
@@ -67,7 +117,7 @@
          state
          (let [center (if (= center ::auto) @ms/mouse-position center)]
            (update state :workspace-local
-                   #(impl-update-zoom % center (fn [z] (max (/ z 1.3) 0.01)))))))
+                   #(impl-update-zoom % center (fn [z] (max (/ z 1.3) 0.01)) :split (split? state))))))
 
      ptk/EffectEvent
      (effect [_ state _]
@@ -84,10 +134,8 @@
      (update [_ state]
        (if (dwvw/render-context-lost? state)
          state
-         (let [vp (dm/get-in state [:workspace-local :vbox])
-               x (+ (:x vp) (/ (:width vp) 2))
-               y (+ (:y vp) (/ (:height vp) 2))
-               center (d/nilv center (gpt/point x y))]
+         (let [vp     (dm/get-in state [:workspace-local :vbox])
+               center (d/nilv center (room-center vp (split? state)))]
            (update state :workspace-local
                    #(impl-update-zoom % center (fn [z] (-> (* z scale)
                                                            (max 0.01)
@@ -104,7 +152,7 @@
       (if (dwvw/render-context-lost? state)
         state
         (update state :workspace-local
-                #(impl-update-zoom % nil 1))))
+                #(impl-update-zoom % nil 1 :split (split? state)))))
 
     ptk/EffectEvent
     (effect [_ state _]
@@ -119,17 +167,13 @@
         (let [page-id (:current-page-id state)
               objects (dsh/lookup-page-objects state page-id)
               shapes  (cfh/get-immediate-children objects)
-              srect   (gsh/shapes->rect shapes)]
+              srect   (gsh/shapes->rect shapes)
+              ;; main beside the branch can reach further than it
+              main    (get-split-extent state)
+              srect   (if (some? main) (grc/join-rects [srect main]) srect)]
           (if (empty? shapes)
             state
-            (update state :workspace-local
-                    (fn [{:keys [vport] :as local}]
-                      (let [srect (gal/adjust-to-viewport vport srect {:padding 160 :min-zoom 0.01})
-                            zoom  (/ (:width vport) (:width srect))]
-                        (-> local
-                            (assoc :zoom zoom)
-                            (assoc :zoom-inverse (/ 1 zoom))
-                            (update :vbox merge srect)))))))))
+            (update state :workspace-local fit-rect srect 160 (split? state))))))
 
     ptk/EffectEvent
     (effect [_ state _]
@@ -175,14 +219,7 @@
                   srect   (->> selected
                                (map #(get objects %))
                                (gsh/shapes->rect))]
-              (update state :workspace-local
-                      (fn [{:keys [vport] :as local}]
-                        (let [srect (gal/adjust-to-viewport vport srect {:padding 40 :min-zoom 0.01})
-                              zoom  (/ (:width vport) (:width srect))]
-                          (-> local
-                              (assoc :zoom zoom)
-                              (assoc :zoom-inverse (/ 1 zoom))
-                              (update :vbox merge srect))))))))))
+              (update state :workspace-local fit-rect srect 40 (split? state)))))))
 
     ptk/EffectEvent
     (effect [_ state _]
@@ -201,17 +238,7 @@
                            (map #(get objects %))
                            (gsh/shapes->rect))]
 
-          (update state :workspace-local
-                  (fn [{:keys [vport] :as local}]
-                    (let [srect (gal/adjust-to-viewport
-                                 vport srect
-                                 {:padding 40 :min-zoom 0.01})
-                          zoom  (/ (:width vport)
-                                   (:width srect))]
-                      (-> local
-                          (assoc :zoom zoom)
-                          (assoc :zoom-inverse (/ 1 zoom))
-                          (update :vbox merge srect))))))))
+          (update state :workspace-local fit-rect srect 40 (split? state)))))
 
     ptk/EffectEvent
     (effect [_ state _]

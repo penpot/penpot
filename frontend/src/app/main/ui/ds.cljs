@@ -29,6 +29,7 @@
                                                                     token-status-list]]
    [app.main.ui.ds.layout.menu :refer [menu* menu-item* menu-separator* sub-menu* context-menu*]]
    [app.main.ui.ds.layout.modal :refer [modal* modal-header* modal-content* modal-footer*]]
+   [app.main.ui.ds.layout.popover :refer [popover*]]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.ds.notifications.actionable :refer [actionable*]]
    [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
@@ -51,7 +52,6 @@
    [app.main.ui.ds.product.milestone :refer [milestone*]]
    [app.main.ui.ds.product.milestone-group :refer [milestone-group*]]
    [app.main.ui.ds.product.panel-title :refer [panel-title*]]
-   [app.main.ui.ds.product.preview-card :refer [preview-card*]]
    [app.main.ui.ds.product.progress-bar :refer [progress-bar*]]
    [app.main.ui.ds.product.review-label :refer [review-label*]]
    [app.main.ui.ds.product.review-marker :refer [review-marker*]]
@@ -104,7 +104,6 @@
     :BranchStatus branch-status*
     :ChangeRow change-row*
     :FilterChip filter-chip*
-    :PreviewCard preview-card*
     :Tag tag*
     :CommentCard comment-card*
     :LayerChip layer-chip*
@@ -128,6 +127,7 @@
     :MenuSeparator menu-separator*
     :SubMenu sub-menu*
     :ContextMenu context-menu*
+    :Popover popover*
 
     :set-default-translations
     (fn [data]

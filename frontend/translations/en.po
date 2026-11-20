@@ -6704,16 +6704,8 @@ msgid "workspace.branches.banner.expand"
 msgstr "Expand"
 
 #, unused
-msgid "workspace.branches.banner.from-main"
-msgstr "from main"
-
-#, unused
 msgid "workspace.branches.banner.merged"
 msgstr "Merged branch"
-
-#, unused
-msgid "workspace.branches.banner.on-branch"
-msgstr "On branch"
 
 #: src/app/main/ui/workspace/sidebar/branches.cljs:1853
 msgid "workspace.branches.banner.status.ahead"
@@ -6748,11 +6740,6 @@ msgstr "View in main"
 #: src/app/main/ui/workspace/sidebar/branches.cljs:529, src/app/main/ui/workspace/sidebar/branches.cljs:685, src/app/main/ui/workspace/sidebar/branches.cljs:1619
 msgid "workspace.branches.compare"
 msgstr "Compare"
-
-#: src/app/main/ui/workspace/sidebar/branches.cljs:463
-#, unused
-msgid "workspace.branches.compare.attr"
-msgstr "Property"
 
 #: src/app/main/ui/workspace/sidebar/branches.cljs:99
 msgid "workspace.branches.compare.attr.blend-mode"
@@ -6821,50 +6808,6 @@ msgid_plural "workspace.branches.compare.footer-changes"
 msgstr[0] "1 change"
 msgstr[1] "%s changes"
 
-#: src/app/main/ui/workspace/sidebar/branches.cljs:1358
-msgid "workspace.branches.compare.footer-conflicts"
-msgid_plural "workspace.branches.compare.footer-conflicts"
-msgstr[0] "1 to resolve before merging"
-msgstr[1] "%s to resolve before merging"
-
-#: src/app/main/ui/workspace/sidebar/branches.cljs:1354
-msgid "workspace.branches.compare.footer-selected"
-msgid_plural "workspace.branches.compare.footer-selected"
-msgstr[0] "%s of 1 selected"
-msgstr[1] "%s of %s selected"
-
-#, unused
-msgid "workspace.branches.compare.group.colors"
-msgstr "Colors"
-
-#: src/app/main/ui/workspace/sidebar/branches.cljs:1098
-msgid "workspace.branches.compare.group.component"
-msgstr "Component"
-
-#, unused
-msgid "workspace.branches.compare.group.components"
-msgstr "Components"
-
-#, unused
-msgid "workspace.branches.compare.group.media"
-msgstr "Media"
-
-#: src/app/main/ui/workspace/sidebar/branches.cljs:1099
-msgid "workspace.branches.compare.group.other"
-msgstr "Other changes"
-
-#, unused
-msgid "workspace.branches.compare.group.pages"
-msgstr "Pages"
-
-#, unused
-msgid "workspace.branches.compare.group.tokens"
-msgstr "Tokens"
-
-#, unused
-msgid "workspace.branches.compare.group.typographies"
-msgstr "Typographies"
-
 #: src/app/main/ui/workspace/sidebar/branches.cljs:1054, src/app/main/ui/workspace/sidebar/branches.cljs:1439
 msgid "workspace.branches.compare.loading"
 msgstr "Computing changes…"
@@ -6889,10 +6832,6 @@ msgstr[1] "%s properties"
 #: src/app/main/ui/workspace/sidebar/branches.cljs:934
 msgid "workspace.branches.compare.no-props"
 msgstr "No property-level changes"
-
-#: src/app/main/ui/workspace/sidebar/branches.cljs:924
-msgid "workspace.branches.compare.prop-changes"
-msgstr "Property changes"
 
 #: src/app/main/ui/workspace/sidebar/branches.cljs:912
 msgid "workspace.branches.compare.select-hint"
@@ -6953,47 +6892,9 @@ msgstr "Text"
 msgid "workspace.branches.compare.shape.variant"
 msgstr "Variant"
 
-#: src/app/main/ui/workspace/sidebar/branches.cljs:1262
-msgid "workspace.branches.compare.stats.added"
-msgid_plural "workspace.branches.compare.stats.added"
-msgstr[0] "1 added"
-msgstr[1] "%s added"
-
-#: src/app/main/ui/workspace/sidebar/branches.cljs:1269
-msgid "workspace.branches.compare.stats.conflicts"
-msgid_plural "workspace.branches.compare.stats.conflicts"
-msgstr[0] "1 conflict"
-msgstr[1] "%s conflicts"
-
-#: src/app/main/ui/workspace/sidebar/branches.cljs:1266
-msgid "workspace.branches.compare.stats.deleted"
-msgid_plural "workspace.branches.compare.stats.deleted"
-msgstr[0] "1 deleted"
-msgstr[1] "%s deleted"
-
-#: src/app/main/ui/workspace/sidebar/branches.cljs:1264
-msgid "workspace.branches.compare.stats.modified"
-msgid_plural "workspace.branches.compare.stats.modified"
-msgstr[0] "1 modified"
-msgstr[1] "%s modified"
-
-#: src/app/main/ui/workspace/sidebar/branches.cljs:1089
-msgid "workspace.branches.compare.subtitle-mods"
-msgid_plural "workspace.branches.compare.subtitle-mods"
-msgstr[0] "1 property change"
-msgstr[1] "%s property changes"
-
 #: src/app/main/ui/workspace/sidebar/branches.cljs:876
 msgid "workspace.branches.compare.subtitle-new"
 msgstr "New %s"
-
-#: src/app/main/ui/workspace/sidebar/branches.cljs:1013, src/app/main/ui/workspace/sidebar/branches.cljs:1014, src/app/main/ui/workspace/sidebar/branches.cljs:1025, src/app/main/ui/workspace/sidebar/branches.cljs:1026
-msgid "workspace.branches.compare.swap"
-msgstr "Swap direction (branch ↔ main)"
-
-#: src/app/main/ui/workspace/sidebar/branches.cljs:1005
-msgid "workspace.branches.compare.title"
-msgstr "Compare changes"
 
 #, unused
 msgid "workspace.branches.compare.type.color"
@@ -7027,88 +6928,13 @@ msgstr "false"
 msgid "workspace.branches.compare.value-true"
 msgstr "true"
 
-#: src/app/main/ui/workspace/sidebar/branches.cljs:1430
-msgid "workspace.branches.conflicts.all-branch"
-msgstr "Use branch for all"
-
-#: src/app/main/ui/workspace/sidebar/branches.cljs:1428
-msgid "workspace.branches.conflicts.all-main"
-msgstr "Use main for all"
-
 #: src/app/main/ui/workspace/sidebar/branches.cljs:1534
 msgid "workspace.branches.conflicts.apply"
 msgstr "Apply and merge"
 
-#: src/app/main/ui/workspace/sidebar/branches.cljs:1426
-msgid "workspace.branches.conflicts.bulk-label"
-msgstr "Bulk actions:"
-
-#, unused
-msgid "workspace.branches.conflicts.card.base"
-msgstr "Base (ancestor)"
-
-#: src/app/main/ui/workspace/sidebar/branches.cljs:1369
-msgid "workspace.branches.conflicts.card.base-meta"
-msgstr "at branch creation"
-
-#: src/app/main/ui/workspace/sidebar/branches.cljs:1497
-msgid "workspace.branches.conflicts.card.branch"
-msgstr "Your branch"
-
-#: src/app/main/ui/workspace/sidebar/branches.cljs:1495
-msgid "workspace.branches.conflicts.card.main"
-msgstr "Main"
-
-#, unused
-msgid "workspace.branches.conflicts.card.result"
-msgstr "Result"
-
-#: src/app/main/ui/workspace/sidebar/branches.cljs:1372
-msgid "workspace.branches.conflicts.card.you"
-msgstr "You"
-
-#: src/app/main/ui/workspace/sidebar/branches.cljs:992
-#, unused
-msgid "workspace.branches.conflicts.chosen"
-msgstr "Chosen"
-
-#: src/app/main/ui/workspace/sidebar/branches.cljs:777
-#, unused
-msgid "workspace.branches.conflicts.chosen-branch"
-msgstr "branch"
-
-#: src/app/main/ui/workspace/sidebar/branches.cljs:775
-#, unused
-msgid "workspace.branches.conflicts.chosen-main"
-msgstr "main"
-
 #: src/app/main/ui/workspace/sidebar/branches.cljs:1444
 msgid "workspace.branches.conflicts.empty"
 msgstr "No conflicts to resolve"
-
-#: src/app/main/ui/workspace/sidebar/branches.cljs:1520
-msgid "workspace.branches.conflicts.footer-pending"
-msgstr "%s conflict(s) pending. Resolve all to merge"
-
-#: src/app/main/ui/workspace/sidebar/branches.cljs:1515
-msgid "workspace.branches.conflicts.footer-ready"
-msgstr "All conflicts resolved"
-
-#: src/app/main/ui/workspace/sidebar/branches.cljs:1450
-msgid "workspace.branches.conflicts.list-head"
-msgstr "%s conflicts"
-
-#: src/app/main/ui/workspace/sidebar/branches.cljs:1433
-msgid "workspace.branches.conflicts.pending"
-msgstr "%s pending"
-
-#: src/app/main/ui/workspace/sidebar/branches.cljs:1419
-msgid "workspace.branches.conflicts.progress"
-msgstr "%s of %s resolved"
-
-#: src/app/main/ui/workspace/sidebar/branches.cljs:1493
-msgid "workspace.branches.conflicts.prop-header"
-msgstr "Property"
 
 #, unused
 msgid "workspace.branches.conflicts.reason.add-add"
@@ -7130,63 +6956,18 @@ msgstr "edited in main and in the branch since the base"
 msgid "workspace.branches.conflicts.resolve"
 msgstr "Resolve conflicts"
 
-#: src/app/main/ui/workspace/sidebar/branches.cljs:1198
-msgid "workspace.branches.conflicts.side-branch"
-msgstr "branch"
-
-#: src/app/main/ui/workspace/sidebar/branches.cljs:1194
-msgid "workspace.branches.conflicts.side-main"
-msgstr "main"
-
-#: src/app/main/ui/workspace/sidebar/branches.cljs:1190
-msgid "workspace.branches.conflicts.side-mixed"
-msgstr "mixed"
-
-#, unused
-msgid "workspace.branches.conflicts.state-pending"
-msgstr "unresolved"
-
-#, unused
-msgid "workspace.branches.conflicts.state-resolved"
-msgstr "resolved"
-
-#: src/app/main/ui/workspace/sidebar/branches.cljs:1417
-msgid "workspace.branches.conflicts.subtitle"
-msgstr "Merge %s into main"
-
-#: src/app/main/ui/workspace/sidebar/branches.cljs:1415
-msgid "workspace.branches.conflicts.title"
-msgstr "Resolve conflicts"
-
-#: src/app/main/ui/workspace/sidebar/branches.cljs:1477
-msgid "workspace.branches.conflicts.use-branch"
-msgstr "Use branch"
-
-#: src/app/main/ui/workspace/sidebar/branches.cljs:1474
-msgid "workspace.branches.conflicts.use-main"
-msgstr "Use main"
-
-#: src/app/main/ui/workspace/sidebar/branches.cljs:994
-#, unused
-msgid "workspace.branches.conflicts.use-this"
-msgstr "Use this"
-
-#: src/app/main/ui/workspace/sidebar/branches.cljs:1508
-msgid "workspace.branches.conflicts.whole-hint"
-msgstr "This element was added or removed on one side. Choose which version to keep."
-
 #: src/app/main/ui/workspace/sidebar/branches.cljs:593, src/app/main/ui/workspace/sidebar/branches.cljs:824, src/app/main/ui/workspace/sidebar/branches.cljs:1933
 msgid "workspace.branches.counts.ahead"
 msgstr ""
 "Changes this branch has and main does not. Counts entity-level changes "
-"(shapes, pages, components, colours, typographies, media, and tokens), not "
+"(shapes, pages, components, colors, typographies, media, and tokens), not "
 "saves."
 
 #: src/app/main/ui/workspace/sidebar/branches.cljs:596, src/app/main/ui/workspace/sidebar/branches.cljs:828, src/app/main/ui/workspace/sidebar/branches.cljs:1936
 msgid "workspace.branches.counts.behind"
 msgstr ""
 "Changes main has and this branch does not. Counts entity-level changes "
-"(shapes, pages, components, colours, typographies, media, and tokens), not "
+"(shapes, pages, components, colors, typographies, media, and tokens), not "
 "saves."
 
 #: src/app/main/ui/workspace/sidebar/branches.cljs:606, src/app/main/ui/workspace/sidebar/branches.cljs:842, src/app/main/ui/workspace/sidebar/branches.cljs:1956, src/app/main/ui/dashboard/branches_popover.cljs:85
@@ -7252,11 +7033,6 @@ msgstr "Delete branch \"%s\"? This cannot be undone."
 #: src/app/main/ui/workspace/sidebar/branches.cljs:628
 msgid "workspace.branches.delete.title"
 msgstr "Delete branch"
-
-#: src/app/main/ui/workspace/sidebar/branches.cljs:356
-#, unused
-msgid "workspace.branches.empty"
-msgstr "No branches yet"
 
 #: src/app/main/ui/workspace/left_header.cljs:169
 msgid "workspace.branches.header-badge-tooltip"
@@ -7565,11 +7341,6 @@ msgstr ""
 msgid "workspace.branches.merge.confirm-title"
 msgstr "Merge into main"
 
-#: src/app/main/data/workspace/branches.cljs:415
-#, unused
-msgid "workspace.branches.merge.conflicts"
-msgstr "This branch has conflicts that must be resolved before merging"
-
 #: src/app/main/ui/workspace/sidebar/branches.cljs:378
 msgid "workspace.branches.merge.delete-info"
 msgstr "After merging, this branch and its file will be deleted to free up storage."
@@ -7597,10 +7368,6 @@ msgid "workspace.branches.merge.unsupported"
 msgstr ""
 "This branch changes elements that can't be merged automatically yet "
 "(components, pages or tokens)"
-
-#, unused
-msgid "workspace.branches.new"
-msgstr "New"
 
 msgid "workspace.branches.rename.title"
 msgstr "Rename branch"
@@ -7705,10 +7472,6 @@ msgstr "Reviews"
 msgid "workspace.branches.switcher.tooltip"
 msgstr "Switch branch"
 
-#, unused
-msgid "workspace.branches.tab"
-msgstr "Branches"
-
 #: src/app/main/ui/workspace/sidebar/branches.cljs:688, src/app/main/ui/workspace/sidebar/branches.cljs:1141, src/app/main/ui/workspace/sidebar/branches.cljs:1632
 msgid "workspace.branches.update"
 msgstr "Update from main"
@@ -7727,10 +7490,6 @@ msgstr ""
 msgid "workspace.branches.update.confirm-title"
 msgstr "Update from main"
 
-#, unused
-msgid "workspace.branches.update.conflicts"
-msgstr "main has conflicting changes; resolve them when merging"
-
 #: src/app/main/data/workspace/branches.cljs:362, src/app/main/data/workspace/branches.cljs:364
 msgid "workspace.branches.update.error"
 msgstr "Could not update the branch"
@@ -7744,11 +7503,6 @@ msgid "workspace.branches.update.unsupported"
 msgstr ""
 "main changed elements that can't be brought in automatically yet "
 "(components, pages or token structure)"
-
-#: src/app/main/ui/workspace/sidebar/branches.cljs:439
-#, unused
-msgid "workspace.branches.you-editing"
-msgstr "%s - editing now"
 
 #: src/app/main/data/workspace/clipboard.cljs:1242
 msgid "workspace.clipboard.copying"
@@ -9928,13 +9682,9 @@ msgstr ""
 "Reviewers will see the latest changes of the branch. Approvals given so far "
 "will have to be renewed."
 
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:748
-msgid "workspace.pull-requests.banner.review"
-msgstr "Review"
-
 #: src/app/main/ui/workspace/sidebar/pull_requests.cljs:710
 msgid "workspace.pull-requests.banner.reviewing"
-msgstr "Reviewing the design review"
+msgstr "In review"
 
 #: src/app/main/ui/workspace/sidebar/pull_requests.cljs:504
 msgid "workspace.pull-requests.close.message"
@@ -10053,10 +9803,6 @@ msgstr "An error occurred while updating the design review"
 msgid "workspace.pull-requests.lifecycle.reopened"
 msgstr "Design review reopened"
 
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:555, src/app/main/ui/workspace/sidebar/pull_requests.cljs:731
-msgid "workspace.pull-requests.menu.info"
-msgstr "Details"
-
 #: src/app/main/ui/workspace/sidebar/pull_requests.cljs:558
 msgid "workspace.pull-requests.menu.publish"
 msgstr "Publish latest changes"
@@ -10068,10 +9814,6 @@ msgstr "Request review"
 #: src/app/main/ui/workspace/sidebar/branches.cljs:700
 msgid "workspace.pull-requests.menu.review-details"
 msgstr "Review details"
-
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:618
-msgid "workspace.pull-requests.new"
-msgstr "New"
 
 #: src/app/main/data/workspace/pull_requests.cljs:396
 msgid "workspace.pull-requests.preview.unavailable"
@@ -10140,18 +9882,6 @@ msgstr "Review submitted"
 #: src/app/main/ui/workspace/sidebar/pull_requests.cljs:242
 msgid "workspace.pull-requests.review.title"
 msgstr "Submit review"
-
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:632
-msgid "workspace.pull-requests.section.empty"
-msgstr "No design reviews yet. Create one from a branch to request a review."
-
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:639
-msgid "workspace.pull-requests.section.history"
-msgstr "Finished"
-
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:611
-msgid "workspace.pull-requests.section.title"
-msgstr "Design reviews"
 
 #: src/app/main/ui/workspace/sidebar/pull_requests.cljs:100
 #, unused
@@ -11542,17 +11272,9 @@ msgstr ""
 msgid "workspace.versions.warning.text"
 msgstr "Autosaved versions will be kept for %s days."
 
-#: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:540
-msgid "workspace.branches.resolve.back"
-msgstr "Back to review"
-
 #: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:361
 msgid "workspace.branches.resolve.change-choice"
 msgstr "Change choice"
-
-#: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:150
-msgid "workspace.branches.resolve.choose-side"
-msgstr "Choose a side"
 
 #: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:241
 msgid "workspace.branches.resolve.copy-dropped"
@@ -11592,31 +11314,15 @@ msgstr "This cannot be split by property. Keep one of the two versions."
 
 #: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:503
 msgid "workspace.branches.resolve.keep-all-branch"
-msgstr "Keep branch for all"
+msgstr "Keep all branch"
 
 #: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:501
 msgid "workspace.branches.resolve.keep-all-main"
-msgstr "Keep main for all"
-
-#: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:328
-msgid "workspace.branches.resolve.keep-branch"
-msgstr "Keep branch - %s"
-
-#: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:227
-msgid "workspace.branches.resolve.keep-branch-text"
-msgstr "Keep your text"
+msgstr "Keep all main"
 
 #: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:254
 msgid "workspace.branches.resolve.keep-branch-version"
 msgstr "Keep your version"
-
-#: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:325
-msgid "workspace.branches.resolve.keep-main"
-msgstr "Keep main - %s"
-
-#: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:226
-msgid "workspace.branches.resolve.keep-main-text"
-msgstr "Keep main's text"
 
 #: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:253
 msgid "workspace.branches.resolve.keep-main-version"
@@ -11625,10 +11331,6 @@ msgstr "Keep main's version"
 #: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:239
 msgid "workspace.branches.resolve.keep-safe"
 msgstr "Keep the dropped edit safe:"
-
-#: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:545
-msgid "workspace.branches.resolve.next"
-msgstr "Next decision"
 
 #: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:79
 msgid "workspace.branches.resolve.row.both-changed"
@@ -11658,49 +11360,9 @@ msgstr "Loses work"
 msgid "workspace.branches.resolve.tag.conflict"
 msgstr "Conflict"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:160
-msgid "workspace.branches.resolve.tag.from-branch"
-msgstr "From branch"
-
-#: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:158
-msgid "workspace.branches.resolve.tag.from-main"
-msgstr "From main"
-
 #: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:154
 msgid "workspace.branches.resolve.tag.your-choice"
 msgstr "Your choice"
-
-#: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:118
-msgid "workspace.branches.resolve.th.branch"
-msgstr "Branch"
-
-#: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:117
-msgid "workspace.branches.resolve.th.main"
-msgstr "Main"
-
-#: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:116
-msgid "workspace.branches.resolve.th.property"
-msgstr "Property"
-
-#: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:119
-msgid "workspace.branches.resolve.th.result"
-msgstr "Result"
-
-#: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:476
-msgid "workspace.branches.resolve.title"
-msgstr "Resolve decisions"
-
-#: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:135
-msgid "workspace.branches.resolve.unchanged"
-msgstr "unchanged"
-
-#: src/app/main/ui/workspace/sidebar/branch_review/compare.cljs:772
-msgid "workspace.branches.review.action.mark-next"
-msgstr "Mark reviewed - next"
-
-#: src/app/main/ui/workspace/sidebar/branch_review/compare.cljs:768
-msgid "workspace.branches.review.action.previous"
-msgstr "Previous"
 
 #: src/app/main/ui/workspace/sidebar/branch_review/common.cljs:141
 msgid "workspace.branches.review.attr.fill"
@@ -11722,33 +11384,9 @@ msgstr "Stroke"
 msgid "workspace.branches.review.attr.text"
 msgstr "Text"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs:258
-msgid "workspace.branches.review.category.colour"
-msgstr "Color"
-
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs:260
-msgid "workspace.branches.review.category.components"
-msgstr "Components"
-
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs:257
-msgid "workspace.branches.review.category.copy"
-msgstr "Copy"
-
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs:256
-msgid "workspace.branches.review.category.decisions"
-msgstr "Decisions"
-
 #: src/app/main/ui/workspace/sidebar/branch_review/common.cljs:259
 msgid "workspace.branches.review.category.layout"
 msgstr "Layout"
-
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs:262
-msgid "workspace.branches.review.category.other"
-msgstr "Other"
-
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs:261
-msgid "workspace.branches.review.category.tokens"
-msgstr "Tokens"
 
 #: src/app/main/ui/workspace/sidebar/branch_review/compare.cljs:342
 msgid "workspace.branches.review.decision.body"
@@ -11765,10 +11403,6 @@ msgstr "Needs your decision (%s)"
 #: src/app/main/ui/workspace/sidebar/branch_review/common.cljs:392
 msgid "workspace.branches.review.group.library"
 msgstr "Library"
-
-#: src/app/main/ui/workspace/sidebar/branch_review/compare.cljs:279
-msgid "workspace.branches.review.overlay-detail"
-msgstr "Branch over main"
 
 #: src/app/main/ui/workspace/sidebar/branch_review/compare.cljs:72
 msgid "workspace.branches.review.row.choose"
@@ -11790,10 +11424,6 @@ msgstr "Branch"
 msgid "workspace.branches.review.side.main"
 msgstr "Main"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:337
-msgid "workspace.branches.review.side.result"
-msgstr "Result"
-
 #: src/app/main/ui/workspace/sidebar/branch_review/common.cljs:321
 msgid "workspace.branches.review.summary.changed"
 msgstr "Changed"
@@ -11802,31 +11432,13 @@ msgstr "Changed"
 msgid "workspace.branches.review.summary.deleted"
 msgstr "Deleted %s"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/layout.cljs:72
-msgid "workspace.branches.review.this-branch"
-msgstr "Changes:"
-
-#: src/app/main/ui/workspace/sidebar/branch_review/compare.cljs:643
-msgid "workspace.branches.review.title"
-msgstr "Review changes"
-
 #: src/app/main/ui/workspace/sidebar/branch_review/common.cljs:381
 msgid "workspace.branches.review.unknown-page"
 msgstr "Unknown page"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/compare.cljs:202
-msgid "workspace.branches.review.view.overlay"
-msgstr "Overlay"
-
 #: src/app/main/ui/workspace/sidebar/branch_review/compare.cljs:201
 msgid "workspace.branches.review.view.side"
 msgstr "Side by side"
-
-#: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:535
-msgid "workspace.branches.resolve.footer.blocked"
-msgid_plural "workspace.branches.resolve.footer.blocked"
-msgstr[0] "Merge blocked: 1 decision left"
-msgstr[1] "Merge blocked: %s decisions left"
 
 #: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:297
 msgid "workspace.branches.resolve.tag.conflicts"
@@ -11858,18 +11470,6 @@ msgid_plural "workspace.branches.review.action.update"
 msgstr[0] "Update with 1 change"
 msgstr[1] "Update with %s changes"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/compare.cljs:130
-msgid "workspace.branches.review.board.inside"
-msgid_plural "workspace.branches.review.board.inside"
-msgstr[0] "Board - 1 change inside"
-msgstr[1] "Board - %s changes inside"
-
-#: src/app/main/ui/workspace/sidebar/branch_review/compare.cljs:753
-msgid "workspace.branches.review.footer.blocked"
-msgid_plural "workspace.branches.review.footer.blocked"
-msgstr[0] "merge blocked by 1 decision"
-msgstr[1] "merge blocked by %s decisions"
-
 #: src/app/main/ui/workspace/sidebar/branch_review/compare.cljs:755
 msgid "workspace.branches.review.footer.left-out"
 msgid_plural "workspace.branches.review.footer.left-out"
@@ -11881,42 +11481,6 @@ msgid "workspace.branches.review.row.edits"
 msgid_plural "workspace.branches.review.row.edits"
 msgstr[0] "1 edit"
 msgstr[1] "%s edits"
-
-#: src/app/main/ui/workspace/sidebar/branch_review/previews.cljs
-msgid "workspace.branches.review.missing.not-in-main"
-msgstr "Not in main"
-
-#: src/app/main/ui/workspace/sidebar/branch_review/previews.cljs
-msgid "workspace.branches.review.missing.not-in-branch"
-msgstr "Not in this branch"
-
-#: src/app/main/ui/workspace/sidebar/branch_review/previews.cljs
-msgid "workspace.branches.review.missing.new-in-branch"
-msgstr "New in this branch"
-
-#: src/app/main/ui/workspace/sidebar/branch_review/previews.cljs
-msgid "workspace.branches.review.missing.new-in-main"
-msgstr "New in main"
-
-#: src/app/main/ui/workspace/sidebar/branch_review/previews.cljs
-msgid "workspace.branches.review.missing.deleted-in-main"
-msgstr "Deleted in main"
-
-#: src/app/main/ui/workspace/sidebar/branch_review/previews.cljs
-msgid "workspace.branches.review.missing.deleted-in-branch"
-msgstr "Deleted in this branch"
-
-#: src/app/main/ui/workspace/sidebar/branch_review/previews.cljs
-msgid "workspace.branches.review.missing.no-preview"
-msgstr "No preview"
-
-#: src/app/main/ui/workspace/sidebar/branch_review/previews.cljs
-msgid "workspace.branches.review.missing.open-main"
-msgstr "Open main to see it"
-
-#: src/app/main/ui/workspace/sidebar/branch_review/previews.cljs
-msgid "workspace.branches.review.missing.open-branch"
-msgstr "Open the branch to see it"
 
 #: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
 msgid "workspace.branches.review.summary.text"
@@ -12041,10 +11605,6 @@ msgid "workspace.branches.review.facts.page-goes-update"
 msgstr "Updating deletes this page and everything on it: %s and %s."
 
 #: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
-msgid "workspace.branches.review.facts.changes-on-page"
-msgstr "Changes on this page (%s)"
-
-#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
 msgid "workspace.branches.review.facts.type"
 msgstr "Type"
 
@@ -12166,10 +11726,6 @@ msgstr "Pages"
 msgid "workspace.branches.review.facts.empty-page"
 msgstr "Empty page"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.category.variants"
-msgstr "Variants"
-
 #: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs
 msgid "workspace.branches.resolve.drops.main-short"
 msgstr "Main's %s:"
@@ -12195,14 +11751,6 @@ msgid "workspace.branches.merge.left-out-lost"
 msgid_plural "workspace.branches.merge.left-out-lost"
 msgstr[0] "The change you left out is lost when the branch is deleted."
 msgstr[1] "The %s changes you left out are lost when the branch is deleted."
-
-#: src/app/main/ui/workspace/sidebar/branch_review/compare.cljs
-msgid "workspace.branches.review.view.expand"
-msgstr "Expand preview"
-
-#: src/app/main/ui/workspace/sidebar/branch_review/compare.cljs
-msgid "workspace.branches.review.view.collapse"
-msgstr "Collapse preview"
 
 #: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
 msgid "workspace.branches.review.copies.settled-row"
@@ -12902,10 +12450,6 @@ msgid "workspace.tasks.status.wont-do"
 msgstr "Won't do"
 
 #: src/app/main/ui/workspace/review/tasks.cljs
-msgid "workspace.tasks.task"
-msgstr "Task"
-
-#: src/app/main/ui/workspace/review/tasks.cljs
 msgid "workspace.tasks.title"
 msgstr "Task title"
 
@@ -13044,3 +12588,163 @@ msgid "workspace.sidebar.layers.comments"
 msgid_plural "workspace.sidebar.layers.comments"
 msgstr[0] "1 open comment"
 msgstr[1] "%s open comments"
+
+msgid "workspace.branches.open"
+msgstr "Open branch"
+
+msgid "workspace.branches.resolve.group.decided"
+msgstr "Decided (%s)"
+
+msgid "workspace.branches.resolve.group.pending"
+msgstr "Needs a decision (%s)"
+
+msgid "workspace.branches.resolve.paragraphs"
+msgid_plural "workspace.branches.resolve.paragraphs"
+msgstr[0] "1 paragraph"
+msgstr[1] "%s paragraphs"
+
+msgid "workspace.branches.resolve.tag.from"
+msgstr "From %s"
+
+msgid "workspace.compare.action.edit-layer"
+msgstr "Edit layer"
+
+msgid "workspace.compare.action.include-merge"
+msgstr "Include in merge"
+
+msgid "workspace.compare.action.include-update"
+msgstr "Include in update"
+
+msgid "workspace.compare.action.leave-out-merge"
+msgstr "Leave out of merge"
+
+msgid "workspace.compare.action.leave-out-update"
+msgstr "Leave out of update"
+
+msgid "workspace.compare.bar.all-decided"
+msgstr "All conflicts decided"
+
+msgid "workspace.compare.bar.apply-update"
+msgstr "Apply and update"
+
+msgid "workspace.compare.bar.back"
+msgstr "Back to compare"
+
+msgid "workspace.compare.bar.comparing"
+msgstr "Comparing"
+
+msgid "workspace.compare.bar.comparing-main"
+msgstr "Comparing with main"
+
+msgid "workspace.compare.bar.decided"
+msgstr "%s of %s decided"
+
+msgid "workspace.compare.bar.exit"
+msgstr "Exit compare"
+
+msgid "workspace.compare.changes"
+msgstr "Changes"
+
+msgid "workspace.compare.decisions"
+msgstr "Decisions (%s)"
+
+msgid "workspace.compare.direction.branch"
+msgstr "In this branch"
+
+msgid "workspace.compare.direction.main"
+msgstr "In main"
+
+msgid "workspace.compare.empty-main"
+msgstr "main has no changes this branch is missing"
+
+msgid "workspace.compare.filter.layers"
+msgstr "Layers"
+
+#: src/app/main/ui/workspace/compare/detail.cljs
+msgid "workspace.compare.layer.comments"
+msgstr "Comments on this layer (%s)"
+
+#: src/app/main/ui/workspace/compare/detail.cljs
+msgid "workspace.compare.layer.tasks"
+msgstr "Tasks on this layer (%s)"
+
+msgid "workspace.compare.navigator.changes"
+msgstr "Changes of the comparison"
+
+msgid "workspace.compare.navigator.decisions"
+msgstr "Conflicts to resolve"
+
+msgid "workspace.compare.navigator.in-main"
+msgstr "%s in main"
+
+msgid "workspace.compare.navigator.mark-reviewed"
+msgstr "Mark as reviewed"
+
+msgid "workspace.compare.navigator.next-pending"
+msgstr "Next pending"
+
+msgid "workspace.compare.popover.applies-merge"
+msgstr "Nothing changes until you apply and merge."
+
+msgid "workspace.compare.popover.applies-update"
+msgstr "Nothing changes until you apply and update."
+
+msgid "workspace.compare.popover.attr"
+msgstr "Both sides changed it. Pick the one to keep."
+
+msgid "workspace.compare.popover.text"
+msgstr "Both sides changed this text. Pick the one to keep."
+
+msgid "workspace.compare.tab-count"
+msgstr "%s (%s)"
+
+msgid "workspace.compare.toolbar.label"
+msgstr "Compare tools"
+
+msgid "workspace.compare.view.side.aligned"
+msgstr "Aligned to the change"
+
+msgid "workspace.compare.view.side.linked"
+msgstr "Linked"
+
+msgid "workspace.compare.view.hidden"
+msgstr "Changes hidden"
+
+msgid "workspace.compare.view.hide"
+msgstr "Hide changes"
+
+msgid "workspace.compare.view.highlight"
+msgstr "Highlight"
+
+msgid "workspace.compare.view.label"
+msgstr "How the canvas shows the changes"
+
+msgid "workspace.compare.view.show"
+msgstr "Show changes"
+
+msgid "workspace.compare.canvas.main"
+msgstr "main as it is now"
+
+msgid "workspace.compare.canvas.result"
+msgstr "Preview - the result of your choices"
+
+msgid "workspace.compare.canvas.update"
+msgstr "Preview - %s after the update"
+
+msgid "workspace.compare.navigator.peek"
+msgstr "%s - hold M to see main"
+
+msgid "workspace.compare.popover.hover"
+msgstr "Hovering an option previews it on the canvas."
+
+msgid "workspace.compare.side.aligned"
+msgstr "Main is shifted %s, %s to line up the change"
+
+msgid "workspace.compare.side.aligned-none"
+msgstr "Nothing to line up for this change"
+
+msgid "workspace.compare.side.linked"
+msgstr "Zoom and pan are linked"
+
+msgid "workspace.compare.side.not-in-main"
+msgstr "Not in main"

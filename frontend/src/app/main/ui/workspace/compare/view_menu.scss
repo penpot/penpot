@@ -1,0 +1,57 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS SUBSIDIARY SL
+
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+
+// the active element of the toolbar: the accent of the drawing tools on a
+// branch, the blue of the review inside a design review
+.trigger {
+  --trigger-bg-color: var(--color-background-quaternary);
+  --trigger-fg-color: var(--color-accent-primary);
+
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  block-size: $sz-32;
+  padding-inline: var(--sp-s);
+  border: none;
+  border-radius: $br-8;
+  background-color: var(--trigger-bg-color);
+  color: var(--trigger-fg-color);
+  white-space: nowrap;
+  cursor: pointer;
+
+  &.is-review {
+    --trigger-bg-color: var(--color-background-info);
+    --trigger-fg-color: var(--color-accent-info);
+  }
+
+  &.is-hidden {
+    --trigger-bg-color: transparent;
+    --trigger-fg-color: var(--color-foreground-secondary);
+  }
+
+  &:focus-visible {
+    outline: $b-1 solid var(--color-accent-primary);
+  }
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-l);
+  inline-size: 100%;
+
+  &.is-selected {
+    color: var(--color-accent-primary);
+  }
+}
+
+.item-label {
+  flex: 1;
+}

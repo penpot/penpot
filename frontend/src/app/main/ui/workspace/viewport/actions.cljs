@@ -14,6 +14,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.compare :as dwcp]
    [app.main.data.workspace.drawing :as dd]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.media :as dwm]
@@ -40,12 +41,15 @@
 (def scale-per-pixel -0.0057)
 
 (defn on-pointer-down
+  "`view-only?` leaves the pointer the view alone (pan and zoom): no
+  selection, no area and no move start from it."
   [{:keys [id blocked hidden type]} selected edition drawing-tool text-editing?
-   node-editing? grid-editing? drawing-path? create-comment? space? panning z? read-only?]
+   node-editing? grid-editing? drawing-path? create-comment? space? panning z? read-only?
+   view-only?]
   (mf/use-callback
    (mf/deps id blocked hidden type selected edition drawing-tool text-editing?
             node-editing? grid-editing? drawing-path? create-comment? @z? @space?
-            panning read-only?)
+            panning read-only? view-only?)
    (fn [event]
      ;; We need to handle editor related stuff here because
      ;; handling on editor dom node does not works properly.
@@ -97,7 +101,8 @@
                           (not blocked)
                           (not hidden)
                           (not create-comment?)
-                          (not drawing-path?))
+                          (not drawing-path?)
+                          (not view-only?))
                  (cond
                    node-editing?
                    ;; Handle path node area selection
@@ -194,6 +199,29 @@
            (if alt?
              (st/emit! (dw/decrease-zoom pt))
              (st/emit! (dw/increase-zoom pt)))))))))
+
+(defn- canvas-target?
+  [event]
+  (dom/class? (dom/get-target event) "viewport-controls"))
+
+(defn on-pick-change
+  "The click of the canvas in the compare mode: it chooses the change of
+  the layer under the pointer, or none on any other spot."
+  [space? z?]
+  (mf/use-fn
+   (fn [event]
+     (when (and (canvas-target? event) (not @space?) (not @z?))
+       (st/emit! (dwcp/pick-hovered))))))
+
+(defn on-pick-change-fit
+  "The double click of the canvas in the compare mode: it zooms to the
+  layer of the change under the pointer."
+  [space? z?]
+  (mf/use-fn
+   (fn [event]
+     (dom/stop-propagation event)
+     (when (and (canvas-target? event) (not @space?) (not @z?))
+       (st/emit! (dwcp/fit-hovered))))))
 
 (defn on-double-click
   [hover hover-ids selected hover-top-frame-id drawing-path? objects edition drawing-tool z? read-only?]
@@ -444,6 +472,8 @@
 
              picking-color?   (= "pixel-overlay" (.-id target))
              comments-layer?  (dom/is-child? (dom/get-element "comments") target)
+             ;; the marks, tags and bars drawn over the canvas
+             overlays?        (some? (dom/get-parent-with-data target "canvas-overlays"))
 
              raw-pt     (dom/get-client-position event)
              pt         (uwvv/point->viewport raw-pt)
@@ -464,7 +494,7 @@
              (schedule-zoom! (mf/ref-val scroll-state) scale pt)
              (schedule-scroll! (mf/ref-val scroll-state) (mf/ref-val zoom-ref) event delta-x delta-y)))
 
-         (when (and comments-layer? (or ctrl? mod?))
+         (when (and (or comments-layer? overlays?) (or ctrl? mod?))
            (dom/prevent-default event)
            (dom/stop-propagation event)
            (schedule-zoom! (mf/ref-val scroll-state) scale pt)))))))

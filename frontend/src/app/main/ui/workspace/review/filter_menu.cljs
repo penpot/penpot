@@ -5,28 +5,29 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.review.filter-menu
-  "The dropdown that picks which comments or tasks a list shows."
+  "The menu that picks which comments or tasks a list shows."
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
-   [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.foundations.typography :as t]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
-   [app.util.dom :as dom]
+   [app.main.ui.ds.layout.menu :refer [menu* menu-item* menu-separator*]]
    [rumext.v2 :as mf]))
 
-(mf/defc menu-item*
+(def ^:private toggle-id
+  "The id of the item that turns `toggle-label` on or off; the options
+  use the names of their ids."
+  "__toggle")
+
+(mf/defc item-content*
+  "The label of an item, with a tick when it is in use."
   {::mf/private true}
-  [{:keys [label id is-selected on-click]}]
-  [:li
-   [:button {:class (stl/css-case :item true
-                                  :is-selected is-selected)
-             :type "button"
-             :data-id id
-             :on-click on-click}
-    [:> text* {:as "span" :typography t/body-small :class (stl/css :item-label)} label]
-    [:> icon* {:icon-id i/tick :size "s" :class (stl/css :item-tick)}]]])
+  [{:keys [label is-selected]}]
+  [:span {:class (stl/css-case :item true :is-selected is-selected)}
+   [:> text* {:as "span" :typography t/body-small :class (stl/css :item-label)} label]
+   (when is-selected
+     [:> icon* {:icon-id i/tick :size "s" :class (stl/css :item-tick)}])])
 
 (mf/defc filter-menu*
   "A button naming the view of a list that opens the views to pick from
@@ -37,41 +38,38 @@
         open?   (deref open*)
         current (d/seek #(= selected (:id %)) options)
 
-        on-trigger
-        (mf/use-fn
-         (fn [event]
-           (dom/stop-propagation event)
-           (swap! open* not)))
+        on-trigger (mf/use-fn #(swap! open* not))
+        on-change  (mf/use-fn #(reset! open* %))
 
-        on-close (mf/use-fn #(reset! open* false))
-
-        on-item
+        on-action
         (mf/use-fn
-         (mf/deps on-select)
-         (fn [event]
-           (on-select (-> (dom/get-current-target event)
-                          (dom/get-data "id")
-                          (keyword)))))]
+         (mf/deps on-select on-toggle)
+         (fn [action]
+           (if (= toggle-id action)
+             (on-toggle)
+             (on-select (keyword action)))))]
 
     [:div {:class (stl/css :filter-menu)}
-     [:button {:class (stl/css :trigger)
-               :type "button"
-               :aria-haspopup "menu"
-               :aria-expanded open?
-               :on-click on-trigger}
-      [:> text* {:as "span" :typography t/body-small :class (stl/css :trigger-label)}
-       (:label current)]
-      [:> icon* {:icon-id i/arrow-down :size "s" :class (stl/css :trigger-icon)}]]
-
-     [:& dropdown {:show open? :on-close on-close}
-      [:ul {:class (stl/css :menu)}
-       (for [{:keys [id label]} options]
-         [:> menu-item* {:key (name id)
-                         :id (name id)
-                         :label label
-                         :is-selected (= selected id)
-                         :on-click on-item}])
-       [:li {:class (stl/css :separator) :role "separator"}]
-       [:> menu-item* {:label toggle-label
-                       :is-selected is-toggled
-                       :on-click on-toggle}]]]]))
+     [:> menu* {:is-open open?
+                :on-open-change on-change
+                :on-action on-action
+                :placement "bottom start"
+                ;; as wide as the button that opens it (`.menu`)
+                :max-width "none"
+                :class (stl/css :menu)
+                :trigger
+                (mf/html
+                 [:button {:class (stl/css :trigger)
+                           :type "button"
+                           :aria-haspopup "menu"
+                           :aria-expanded open?
+                           :on-click on-trigger}
+                  [:> text* {:as "span" :typography t/body-small :class (stl/css :trigger-label)}
+                   (:label current)]
+                  [:> icon* {:icon-id i/arrow-down :size "s" :class (stl/css :trigger-icon)}]])}
+      (for [{:keys [id label]} options]
+        [:> menu-item* {:key (name id) :id (name id) :text-value label}
+         [:> item-content* {:label label :is-selected (= selected id)}]])
+      [:> menu-separator* {}]
+      [:> menu-item* {:id toggle-id :text-value toggle-label}
+       [:> item-content* {:label toggle-label :is-selected (boolean is-toggled)}]]]]))

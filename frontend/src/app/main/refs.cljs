@@ -46,6 +46,20 @@
   ;; consumers only care about the branch row itself
   (l/derived #(get-in % [:workspace-branch-context :info]) st/state))
 
+(def branch-diff
+  "The diff of a branch against main, its per-change selection, review
+  marks and conflict choices."
+  (l/derived :workspace-branch-diff st/state))
+
+(def branch-conflicts
+  "The conflict set the last merge or update attempt returned."
+  (l/derived :workspace-branch-conflicts st/state))
+
+(def compare-mode
+  "The compare mode: the branch compared and what its panels show. Nil
+  outside it."
+  (l/derived :workspace-compare st/state))
+
 (def pull-requests
   (l/derived :workspace-pull-requests st/state))
 
@@ -110,13 +124,20 @@
   [state]
   (some? (:workspace-pr-preview state)))
 
+(defn- comparing?
+  "True while the open branch is compared with main: the comparison is
+  read-only, the branch is edited outside it."
+  [state]
+  (some? (:workspace-compare state)))
+
 (def permissions
-  "The team permissions, without edition on a merged or archived branch
-  nor inside a design review."
+  "The team permissions, without edition on a merged or archived branch,
+  inside a design review or while comparing a branch with main."
   (l/derived (fn [state]
                (cond-> (:permissions (dsh/lookup-team state))
                  (or (open-closed-branch? state)
-                     (reviewing? state))
+                     (reviewing? state)
+                     (comparing? state))
                  (assoc :can-edit false)))
              st/state))
 

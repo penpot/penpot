@@ -13,8 +13,8 @@
    [app.common.uuid :as uuid]
    [app.main.data.workspace.branches :as dwb]
    [app.main.store :as st]
-   [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.ds.layout.popover :refer [popover*]]
    [app.main.ui.ds.product.branch-row :refer [branch-row*]]
    [app.main.ui.ds.product.branch-status :refer [branch-status*]]
    [app.util.dom :as dom]
@@ -60,7 +60,7 @@
       [:span (dm/str n)]]
 
      ;; a switcher only: branches are created from inside the file
-     [:& dropdown {:show (deref show?) :on-close on-close}
+     [:> popover* {:is-open (deref show?) :on-close on-close}
       [:div {:class (stl/css :branches-popover)
              :role "dialog"
              :aria-label (tr "dashboard.branches-badge" (dm/str n))}

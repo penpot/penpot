@@ -228,6 +228,7 @@ autoguardado
 autoreferencia
 ayudarnos
 ayudarte
+bloqueo
 borradores
 borrarlo
 bloquearla
@@ -249,6 +250,9 @@ contactarnos
 contener
 contiene
 contexto
+contraer
+convertirla
+convertirse
 danos
 demás
 desactivarlos
@@ -256,6 +260,7 @@ desbloquearla
 deseleccionar
 desuscripción
 durante
+editarla
 editores
 eje
 eliminarla
@@ -263,6 +268,8 @@ eliminarlo
 eliminarlos
 ella
 ellos
+enlazarla
+enviarla
 ese
 eso
 esos
@@ -278,11 +285,17 @@ hubo
 importada
 iniciarse
 instalarla
+intentarlo
 invitaciones
+lados
 lectores
+leen
 letras
+mal
 manifiesto
 menos
+mesa
+nodos
 nosotros
 otras
 pero
@@ -295,7 +308,10 @@ proveedores
 publicarla
 publicarlo
 puesto
+queda
+quienes
 regenerada
+restaurarla
 restaurarlo
 restaurarlos
 sal
@@ -306,6 +322,7 @@ sino
 solicitudes
 soportada
 sufijo
+suya
 tanto
 temas
 tenerte
@@ -319,6 +336,7 @@ unos
 usarlas
 utilizada
 verla
+verlo
 versiones
 verticales
 vincularse

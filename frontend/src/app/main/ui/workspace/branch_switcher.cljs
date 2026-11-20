@@ -19,11 +19,11 @@
    [app.main.data.workspace.pull-requests :as dwpr]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.ds.controls.input :refer [input*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.foundations.typography :as t]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
+   [app.main.ui.ds.layout.popover :refer [popover*]]
    [app.main.ui.ds.product.branch-chip :refer [branch-chip*]]
    [app.main.ui.ds.product.branch-row :refer [branch-row*]]
    [app.main.ui.ds.product.branch-status :refer [branch-status*]]
@@ -201,7 +201,7 @@
         (mf/use-fn
          (fn [event]
            ;; the button unmounts as the listing reloads, so the
-           ;; dropdown would take the click for an outside one and close
+           ;; popover would take the click for an outside one and close
            (dom/stop-propagation event)
            (st/emit! (dwb/init-branches-state))))]
 
@@ -314,7 +314,7 @@
         on-toggle
         (mf/use-fn
          (fn [event]
-           ;; the dropdown closes itself on any outside click: the click
+           ;; the popover closes itself on any outside click: the click
            ;; that opens it must not reach it
            (dom/stop-propagation event)
            (st/emit! (dwb/toggle-branch-switcher))))
@@ -401,7 +401,7 @@
            :else
            [:> row-status* {:row ctx :pr pr}]))
 
-       [:& dropdown {:show open? :on-close on-close :container bar-ref}
+       [:> popover* {:is-open (boolean open?) :on-close on-close :container bar-ref}
         [:> switcher-popover* {:current current
                                :prs-by-branch prs-by-branch
                                :on-close on-close}]]])))

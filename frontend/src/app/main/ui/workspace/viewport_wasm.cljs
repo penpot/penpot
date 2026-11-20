@@ -29,6 +29,7 @@
    [app.main.ui.hooks :as ui-hooks]
    [app.main.ui.hooks.wasm-effect :refer [with-wasm-effect]]
    [app.main.ui.measurements :as msr]
+   [app.main.ui.workspace.compare.overlays :refer [compare-overlays*]]
    [app.main.ui.workspace.review.overlays :refer [review-overlays*]]
    [app.main.ui.workspace.shapes.path.editor :refer [path-editor*]]
    [app.main.ui.workspace.shapes.text.editor :as editor-v1]
@@ -331,6 +332,13 @@
         context-loss-overlay? (mf/deref wasm.api/context-loss-overlay?)
         transition-reveal-rulers? (mf/deref wasm.api/transition-reveal-rulers?)
 
+        compare-mode      (mf/deref refs/compare-mode)
+        comparing?        (some? compare-mode)
+        ;; comparing, the canvas answers for the layers with a change
+        ;; alone: no layer is selected, and a click picks a change. A
+        ;; commenting tool takes the canvas back
+        picking?          (and comparing? (nil? drawing-tool))
+
         on-click          (actions/on-click hover selected edition path-drawing? drawing-tool space? selrect z?)
         on-context-menu   (actions/on-context-menu hover hover-ids read-only?)
         on-double-click   (actions/on-double-click hover hover-ids selected hover-top-frame-id path-drawing? base-objects edition drawing-tool z? read-only?)
@@ -341,7 +349,12 @@
         on-drag-end       (actions/on-drag-over comp-inst-ref)
         on-drop           (actions/on-drop file comp-inst-ref)
         on-pointer-down   (actions/on-pointer-down @hover selected edition drawing-tool text-editing? path-editing? grid-editing?
-                                                   path-drawing? create-comment? space? panning z? read-only?)
+                                                   path-drawing? create-comment? space? panning z? read-only?
+                                                   picking?)
+        on-pick           (actions/on-pick-change space? z?)
+        on-pick-fit       (actions/on-pick-change-fit space? z?)
+        on-click          (if picking? on-pick on-click)
+        on-double-click   (if picking? on-pick-fit on-double-click)
 
         on-pointer-up     (actions/on-pointer-up disable-paste-ref)
 
@@ -681,7 +694,12 @@
             (wasm.api/set-shape-hidden false)
             (wasm.api/request-render "stop-path-edition")))))
 
-    [:div {:class (dm/str @cursor " " (stl/css :viewport)) :style #js {"--zoom" zoom} :data-testid "viewport"}
+    [:div {:class (dm/str @cursor " " (stl/css :viewport))
+           ;; a layer with a change says it answers to a click
+           :style (if (and picking? (= :canvas (:hovered-from compare-mode)) (some? (:hovered compare-mode)))
+                    #js {"--zoom" zoom :cursor "pointer"}
+                    #js {"--zoom" zoom})
+           :data-testid "viewport"}
 
      (cond
        (some? preview-id)
@@ -704,7 +722,29 @@
                            :grid-shape editing-shape
                            :single-select single-select?}]])
 
-     [:div {:class (stl/css :viewport-overlays)}
+     ;; the wheel with ctrl or cmd held zooms the canvas over them too
+     ;; (`actions/on-mouse-wheel`)
+     [:div {:class (stl/css :viewport-overlays)
+            :data-canvas-overlays true}
+      ;; the changes of a design review and the layer picker of a task
+      [:> review-overlays* {:vbox vbox
+                            :vport vport
+                            :zoom zoom
+                            :page-id page-id}]
+
+      ;; the changes of the branch against main, in the compare mode
+      (when ^boolean comparing?
+        [:> compare-overlays* {:vbox vbox
+                               :vport vport
+                               :zoom zoom
+                               :page-id page-id
+                               :show-rulers show-rulers?
+                               :hover-ids (when picking?
+                                            (cond-> (vec @hover-ids)
+                                              (some? (:id @hover)) (conj (:id @hover))))}])
+
+      ;; above the marks of the changes: a thread or a task opened from
+      ;; a bubble covers them
       (when show-comments?
         [:> comments/comments-layer* {:vbox vbox
                                       :page-id page-id
@@ -712,12 +752,6 @@
                                       :vport vport
                                       :zoom zoom
                                       :show-rulers show-rulers?}])
-
-      ;; the changes of a design review and the layer picker of a task
-      [:> review-overlays* {:vbox vbox
-                            :vport vport
-                            :zoom zoom
-                            :page-id page-id}]
 
       (when picking-color?
         [:> pixel-overlay/pixel-overlay-wasm* {:viewport-ref viewport-ref
@@ -801,7 +835,7 @@
            :else [:& editor-v1/text-editor-svg {:shape editing-shape
                                                 :ref text-editor-ref}]))
 
-       (when show-frame-outline?
+       (when (and show-frame-outline? (not picking?))
          (let [outlined-frame-id (->> @hover-ids
                                       (filter #(cfh/frame-shape? (get base-objects %)))
                                       (remove selected)
@@ -826,7 +860,7 @@
          [:> outline/shape-outlines*
           {:objects objects-for-outlines
            :selected (when-not comments-mode? selected)
-           :hover (when-not comments-mode? #{(:id @hover) @frame-hover})
+           :hover (when-not (or comments-mode? picking?) #{(:id @hover) @frame-hover})
            :highlighted highlighted
            :edition edition
            :zoom zoom}])

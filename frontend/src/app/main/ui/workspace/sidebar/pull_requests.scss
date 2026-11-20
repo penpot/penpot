@@ -7,6 +7,7 @@
 @use "ds/_borders.scss" as *;
 @use "ds/_sizes.scss" as *;
 @use "ds/_utils.scss" as *;
+@use "ds/mixins.scss" as *;
 @use "ds/typography.scss" as *;
 
 // --- State badges
@@ -129,17 +130,9 @@
   color: var(--color-foreground-secondary);
 }
 
-.textarea {
-  inline-size: 100%;
+// the DS text area (`textarea*`) keeps the height these fields had
+.field-textarea {
   min-block-size: $sz-64;
-  padding: var(--sp-s);
-  border-radius: $br-8;
-  border: $b-1 solid var(--color-background-quaternary);
-  background-color: var(--color-background-tertiary);
-  color: var(--color-foreground-primary);
-  resize: vertical;
-
-  @include use-typography("body-medium");
 }
 
 // --- Reviewer picker (create dialog)
@@ -383,10 +376,9 @@
   border: $b-2 solid var(--color-accent-info);
   background-color: var(--color-background-primary);
 
-  // it must beat the viewport controls, which are raised to z-index 1
-  // while a drawing tool is active
-  // TODO: no DS z-index token for 2.
-  z-index: 2;
+  // over the canvas and what is drawn on it (the viewport controls, the
+  // marks, main beside the branch), as the toolbar is
+  z-index: var(--z-index-panels);
   transition:
     inset-block-end 0.2s,
     block-size 0.2s;
@@ -411,20 +403,34 @@
   color: var(--color-accent-info);
 }
 
+// one line: a long name is cut short instead of growing the bar
 .pr-banner-text {
   display: flex;
   align-items: center;
   gap: var(--sp-xs);
+  min-inline-size: 0;
+  white-space: nowrap;
 
   @include use-typography("body-small");
 }
 
 .pr-banner-title {
+  flex-shrink: 0;
   color: var(--color-foreground-secondary);
 }
 
 .pr-banner-name {
+  @include text-ellipsis;
+
+  max-inline-size: px2rem(280);
   color: var(--color-foreground-primary);
+}
+
+// how far the review of the comparison is, beside its route
+.pr-banner-progress {
+  @include use-typography("body-small");
+
+  white-space: nowrap;
 }
 
 .pr-banner-actions {
@@ -465,8 +471,4 @@
     --banner-button-bg-color: var(--color-background-tertiary);
     --banner-button-fg-color: var(--color-foreground-primary);
   }
-}
-
-.pr-banner-progress {
-  inline-size: $sz-64;
 }

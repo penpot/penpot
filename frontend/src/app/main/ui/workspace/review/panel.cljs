@@ -44,7 +44,6 @@
   "A comment thread of the review: its number and board, who wrote it and
   when, what it points at, its text and its replies. With `show-review`,
   it names the design review it belongs to."
-  {::mf/private true}
   [{:keys [thread objects is-open show-review]}]
   (let [owner   (d/without-nils (dcmt/get-owner thread))
         replies (dec (or (:count-comments thread) 1))

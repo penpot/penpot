@@ -25,13 +25,29 @@
 
 .change-box {
   --change-color: var(--color-accent-info);
+  --change-bg-color: var(--color-background-info);
 
   position: absolute;
   border: $b-1 dashed var(--change-color);
   pointer-events: none;
 
-  &.is-added {
+  &.tone-success {
     --change-color: var(--color-accent-success);
+    --change-bg-color: var(--color-background-success);
+  }
+
+  &.tone-error {
+    --change-color: var(--color-accent-error);
+    --change-bg-color: var(--color-background-error);
+  }
+
+  &.tone-warning {
+    --change-color: var(--color-accent-warning);
+    --change-bg-color: var(--color-background-warning);
+  }
+
+  &.is-pick {
+    --change-color: var(--color-accent-primary);
   }
 
   &.is-active {
@@ -41,8 +57,8 @@
 }
 
 .change-tag {
-  --change-tag-bg-color: var(--color-background-info);
-  --change-tag-fg-color: var(--color-accent-info);
+  --change-tag-bg-color: var(--change-bg-color);
+  --change-tag-fg-color: var(--change-color);
 
   @include use-typography("body-small");
 
@@ -51,53 +67,97 @@
   inset-inline-end: 0;
   margin-block-end: var(--sp-xxs);
   padding: 0 var(--sp-xs);
+  border: none;
   border-radius: $br-4 $br-4 0 0;
   background-color: var(--change-tag-bg-color);
   color: var(--change-tag-fg-color);
   white-space: nowrap;
 
-  &.is-added {
-    --change-tag-bg-color: var(--color-background-success);
-    --change-tag-fg-color: var(--color-accent-success);
-  }
-
   &.is-active {
-    --change-tag-bg-color: var(--color-accent-info);
+    --change-tag-bg-color: var(--change-color);
     --change-tag-fg-color: var(--color-background-primary);
 
     inset-inline: 0 auto;
   }
 
-  &.is-pick {
-    --change-tag-bg-color: var(--color-accent-primary);
+  // the tag picks its change; the box around it lets the pointer through
+  &.is-button {
+    pointer-events: auto;
+    cursor: pointer;
   }
 }
 
-// right above the review bar (`.pr-banner`): its offset from the bottom,
-// its height (the buttons, its padding and its border) and a small gap
+// the change in front of a design review keeps its tag in the colour of
+// the review, added or not
+.review-change .change-tag.is-active {
+  --change-tag-bg-color: var(--color-accent-info);
+}
+
+// right above the bar at the bottom of the canvas (`.pr-banner`,
+// `.branch-banner`): its offset from the bottom, its height (the buttons,
+// its padding and its border) and a small gap
 .navigator {
+  --navigator-border-color: var(--color-accent-info);
+
   position: absolute;
   inset-block-end: calc(var(--sp-m) + #{$sz-32} + var(--sp-s) * 2 + #{$b-2} * 2 + var(--sp-s));
   inset-inline-start: 50%;
   transform: translateX(-50%);
+  transition: inset-block-end 0.2s;
   display: flex;
   align-items: center;
   gap: var(--sp-s);
+  max-inline-size: calc(100% - var(--sp-xxl));
   padding: var(--sp-xs) var(--sp-s);
-  border: $b-1 solid var(--color-accent-info);
+  border: $b-1 solid var(--navigator-border-color);
   border-radius: $br-8;
   background-color: var(--color-background-primary);
   pointer-events: auto;
+
+  &.tone-warning {
+    --navigator-border-color: var(--color-accent-warning);
+  }
+
+  // the grey of the bar at the bottom of the canvas (`.branch-banner`)
+  &.tone-neutral {
+    --navigator-border-color: var(--color-background-quaternary);
+  }
+
+  // half a ruler after the middle (`rulers/ruler-area-size`)
+  &.has-rulers {
+    inset-inline-start: calc(50% + #{px2rem(11)});
+  }
+
+  // over the strip the bar folds down to (`.branch-banner.is-collapsed`),
+  // with the same gap
+  &.is-lowered {
+    inset-block-end: calc(var(--sp-m) + var(--sp-s));
+  }
 }
 
+// the arrows and the place in the list between them, with no gap
+.navigator-steps {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+}
+
+// a bar of a fixed width gives the place in the list a width too
+// (`--navigator-count-size`), so the arrows do not move with its digits
 .navigator-count {
+  min-inline-size: var(--navigator-count-size, auto);
   color: var(--color-foreground-secondary);
+  text-align: center;
   white-space: nowrap;
 }
 
 .navigator-text {
+  flex-grow: 1;
+  min-inline-size: 0;
+  overflow: hidden;
   color: var(--color-foreground-secondary);
   white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .navigator-name {

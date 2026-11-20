@@ -41,6 +41,7 @@
    [frontend-tests.data.workspace-branches-test]
    [frontend-tests.data.workspace-colors-test]
    [frontend-tests.data.workspace-comments-test]
+   [frontend-tests.data.workspace-compare-test]
    [frontend-tests.data.workspace-context-menu-test]
    [frontend-tests.data.workspace-focus-test]
    [frontend-tests.data.workspace-interactions-test]
@@ -159,7 +160,7 @@
    [frontend-tests.tokens.typography-form-test]
    [frontend-tests.tokens.workspace-tokens-remap-test]
    [frontend-tests.ui.branch-review-common-test]
-   [frontend-tests.ui.branch-review-previews-test]
+   [frontend-tests.ui.branch-review-sides-test]
    [frontend-tests.ui.branches-compare-labels-test]
    [frontend-tests.ui.check-updates-test]
    [frontend-tests.ui.color-token-position-test]
@@ -170,6 +171,7 @@
    [frontend-tests.ui.dashboard-import-linking-test]
    [frontend-tests.ui.drawarea-test]
    [frontend-tests.ui.ds-controls-numeric-input-test]
+   [frontend-tests.ui.ds-popover-test]
    [frontend-tests.ui.error-boundary-test]
    [frontend-tests.ui.export-preview-test]
    [frontend-tests.ui.file-restored-modal-test]
@@ -275,6 +277,7 @@
    'frontend-tests.data.uploads-test
    'frontend-tests.data.viewer-test
    'frontend-tests.data.workspace-branches-test
+   'frontend-tests.data.workspace-compare-test
    'frontend-tests.data.workspace-tasks-test
    'frontend-tests.data.workspace-colors-test
    'frontend-tests.data.workspace-comments-test
@@ -394,7 +397,7 @@
    'frontend-tests.tokens.logic.tokens-status-test
    'frontend-tests.tokens.workspace-tokens-remap-test
    'frontend-tests.ui.branch-review-common-test
-   'frontend-tests.ui.branch-review-previews-test
+   'frontend-tests.ui.branch-review-sides-test
    'frontend-tests.ui.branches-compare-labels-test
    'frontend-tests.ui.check-updates-test
    'frontend-tests.ui.color-token-position-test
@@ -406,6 +409,7 @@
    'frontend-tests.ui.drawarea-test
    'frontend-tests.ui.ds-controls-numeric-input-test
    'frontend-tests.ui.error-boundary-test
+   'frontend-tests.ui.ds-popover-test
    'frontend-tests.ui.export-preview-test
    'frontend-tests.ui.file-restored-modal-test
    'frontend-tests.ui.gradient-handlers-test

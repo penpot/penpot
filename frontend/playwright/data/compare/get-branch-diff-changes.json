@@ -1,0 +1,34 @@
+{
+  "~:changes": [
+    {
+      "~:kind": "~:color",
+      "~:status": "~:modified",
+      "~:id": "~uc7ce0794-0992-8105-8004-38f2804439a1",
+      "~:key": "color//c7ce0794-0992-8105-8004-38f2804439a1",
+      "~:label": "Brand",
+      "~:changed-attrs": {
+        "~:color": { "~:main": "#000000", "~:branch": "#ff0000" }
+      }
+    },
+    {
+      "~:kind": "~:typography",
+      "~:status": "~:added",
+      "~:id": "~uc7ce0794-0992-8105-8004-38f2804439a2",
+      "~:key": "typography//c7ce0794-0992-8105-8004-38f2804439a2",
+      "~:label": "Heading"
+    }
+  ],
+  "~:conflicts": [],
+  "~:stats": {
+    "~:added": 1,
+    "~:modified": 1,
+    "~:deleted": 0,
+    "~:conflicts": 0
+  },
+  "~:meta": {
+    "~:base-at": "~m1713536343369",
+    "~:main-at": "~m1713873823633",
+    "~:branch-at": "~m1713873823633",
+    "~:main-revn": 11
+  }
+}

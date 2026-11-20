@@ -21,8 +21,8 @@
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
+   [app.main.ui.ds.product.tag :refer [tag*]]
    [app.main.ui.hooks :as hooks]
-   [app.main.ui.notifications.badge :refer [badge-notification]]
    [app.main.ui.workspace.sidebar.scroll :as sc]
    [app.render-wasm.api :as wasm.api]
    [app.util.dom :as dom]
@@ -335,9 +335,8 @@
 
       (if ^boolean read-only?
         (when (or ^boolean (:can-edit permissions) ^boolean reviewing?)
-          [:& badge-notification {:is-focus true
-                                  :size :small
-                                  :content (tr "labels.view-only")}])
+          [:> tag* {:variant "pill" :icon i/lock}
+           (tr "labels.view-only")])
         [:> icon-button* {:variant "ghost"
                           :aria-label (tr "workspace.sidebar.sitemap.add-page")
                           :on-click on-create

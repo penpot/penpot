@@ -123,20 +123,22 @@
 
 // ahead/behind: a side with changes stands out, a zero stays quiet
 .count {
+  --count-foreground-color: var(--color-foreground-secondary);
+
   @include use-typography("code-font");
 
   display: inline-flex;
   align-items: center;
   gap: var(--sp-xxs);
-  color: var(--color-foreground-secondary);
+  color: var(--count-foreground-color);
 
   &.has-changes {
-    color: var(--color-accent-primary);
+    --count-foreground-color: var(--color-accent-primary);
   }
 
   // what main has and the branch lacks reads in the error color
   &.is-behind.has-changes {
-    color: var(--color-foreground-error);
+    --count-foreground-color: var(--color-foreground-error);
   }
 }
 
@@ -206,17 +208,9 @@
   color: var(--color-foreground-secondary);
 }
 
-.textarea {
-  inline-size: 100%;
+// the DS text area (`textarea*`) keeps the height these fields had
+.field-textarea {
   min-block-size: $sz-64;
-  padding: var(--sp-s);
-  border-radius: $br-8;
-  border: $b-1 solid var(--color-background-quaternary);
-  background-color: var(--color-background-tertiary);
-  color: var(--color-foreground-primary);
-  resize: vertical;
-
-  @include use-typography("body-medium");
 }
 
 .derive-from {
@@ -404,10 +398,9 @@
   border: $b-2 solid var(--color-background-quaternary);
   background-color: var(--color-background-primary);
 
-  // it must beat the viewport controls, which are raised to z-index 1
-  // while a drawing tool is active
-  // TODO: no DS z-index token for 2.
-  z-index: 2;
+  // over the canvas and what is drawn on it (the viewport controls, the
+  // marks, main beside the branch), as the toolbar is
+  z-index: var(--z-index-panels);
   transition:
     inset-block-end 0.2s,
     block-size 0.2s;
@@ -446,6 +439,8 @@
   inset-block-start: 0;
   block-size: var(--sp-m);
   inline-size: 100%;
+
+  // TODO: no DS z-index token for 1.
   z-index: 1;
 }
 
@@ -555,15 +550,9 @@
   background-color: var(--color-background-tertiary);
 }
 
+// the DS input (`input*`) takes the width of the row
 .branch-rename-input {
   inline-size: 100%;
-  padding: var(--sp-xxs) var(--sp-xs);
-  border-radius: $br-8;
-  border: $b-1 solid var(--color-accent-primary);
-  background-color: var(--color-background-tertiary);
-  color: var(--color-foreground-primary);
-
-  @include use-typography("body-medium");
 }
 
 .limits-section {

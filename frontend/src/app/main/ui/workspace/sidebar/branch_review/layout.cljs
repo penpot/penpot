@@ -5,91 +5,23 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.sidebar.branch-review.layout
-  "The frame the compare and conflict dialogs share: a header with the
-  route between the two branches, a bar of filters, an
-  optional banner, a list beside a detail pane (or a single pane), and a
-  footer with a status line and the actions."
+  "The small pieces the list and the detail of a comparison share: the
+  heading of a group, a note, and a property value alone or as `before →
+  after`."
   (:require-macros [app.main.style :as stl])
   (:require
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.foundations.typography :as t]
-   [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
-   [app.main.ui.ds.layout.modal :refer [modal* modal-header* modal-footer*]]
    [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
-   [app.main.ui.ds.product.branch-pill :refer [branch-pill*]]
    [app.main.ui.workspace.sidebar.branch-review.common :as brc]
-   [app.main.ui.workspace.sidebar.pull-requests :as prui]
-   [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
-(mf/defc route*
-  "`from → to` between the branch and main. With `on-swap` the arrow
-  turns the comparison around."
-  [{:keys [branch-name is-review incoming on-swap]}]
-  (let [branch (mf/html [:> branch-pill* {:label branch-name :is-review (boolean is-review)}])
-        main   (mf/html [:> branch-pill* {:label (tr "workspace.branches.main") :is-main true}])
-        arrow  (if on-swap
-                 (mf/html
-                  [:button {:class (stl/css :route-swap)
-                            :title (tr "workspace.branches.compare.swap")
-                            :aria-label (tr "workspace.branches.compare.swap")
-                            :on-click on-swap}
-                   [:> i/icon* {:icon-id i/arrow-long-right :size "s"}]])
-                 (mf/html
-                  [:span {:class (stl/css :route-arrow) :aria-hidden true}
-                   [:> i/icon* {:icon-id i/arrow-long-right :size "s"}]]))]
-    [:div {:class (stl/css :route)}
-     (if incoming
-       [:* main arrow branch]
-       [:* branch arrow main])]))
-
-(mf/defc review-modal*
-  "`list` and `detail` are the two panes; with no `list` the `detail`
-  takes the whole width. `filters` go in the bar under the header,
-  after the \"This branch:\" label; `banner` sits under that bar."
-  [{:keys [icon tone title route filters banner list detail
-           footer-start footer-end on-close]}]
-  [:> modal* {:is-open true
-              :on-open-change (prui/on-dismiss on-close)
-              :size "xlarge"
-              :show-body false
-              :class (stl/css :review-modal)}
-   [:> modal-header* {:class (stl/css :review-header)}
-    [:div {:class (stl/css-case :header-icon true
-                                :is-warning (= tone :warning))}
-     [:> i/icon* {:icon-id icon}]]
-    [:div {:class (stl/css :header-text)}
-     [:> heading* {:level 2
-                   :typography t/body-large
-                   :class (stl/css :header-title)}
-      title]
-     route]]
-
-   (when filters
-     [:div {:class (stl/css :filter-bar)}
-      [:> text* {:as "span" :typography t/body-small :class (stl/css :filter-label)}
-       (tr "workspace.branches.review.this-branch")]
-      filters])
-
-   banner
-
-   (if list
-     [:div {:class (stl/css :review-body)}
-      [:div {:class (stl/css :review-list)} list]
-      [:div {:class (stl/css :review-detail)} detail]]
-     [:div {:class (stl/css :review-body :is-single)}
-      [:div {:class (stl/css :review-detail)} detail]])
-
-   [:> modal-footer* {:variant "split"
-                      :class (stl/css :review-footer)
-                      :start footer-start
-                      :end footer-end}]])
-
 (mf/defc group-head*
-  "The heading of a group in the change list: a fold toggle, the group
-  name and count, and an optional control before them (a checkbox)."
-  [{:keys [label is-open on-toggle start end]}]
+  "The heading of a group in a list: a fold toggle, the group name and
+  count with an optional `icon` before them, and an optional control at
+  each end (a checkbox at the `start`)."
+  [{:keys [label icon is-open on-toggle start end]}]
   [:div {:class (stl/css :group-head)}
    start
    [:button {:class (stl/css :group-toggle)
@@ -98,6 +30,8 @@
     [:> i/icon* {:icon-id (if is-open i/arrow-down i/arrow-right)
                  :size "s"
                  :class (stl/css :group-chevron)}]
+    (when icon
+      [:> i/icon* {:icon-id icon :size "s" :class (stl/css :group-chevron)}])
     [:> text* {:as "span" :typography t/body-small :class (stl/css :group-label)}
      label]]
    end])
@@ -128,14 +62,16 @@
        (brc/display-val value))]))
 
 (mf/defc value-steps*
-  "Each property of a change as `before → after`, one row per property."
-  [{:keys [attrs]}]
+  "Each property of a change as `before → after`, the name of the
+  property over its two values. `incoming` says the change is main's,
+  going to the branch: its new value is then main's."
+  [{:keys [attrs incoming]}]
   [:div {:class (stl/css :steps)}
    (for [[attr {:keys [main branch]}] attrs]
      [:div {:class (stl/css :steps-row) :key (str attr)}
       [:> text* {:as "span" :typography t/body-small :class (stl/css :steps-name)}
        (brc/attr-label attr)]
       [:div {:class (stl/css :steps-values)}
-       [:> value-chip* {:value main :is-old true}]
+       [:> value-chip* {:value (if incoming branch main) :is-old true}]
        [:> i/icon* {:icon-id i/arrow-long-right :size "s" :class (stl/css :steps-arrow)}]
-       [:> value-chip* {:value branch}]]])])
+       [:> value-chip* {:value (if incoming main branch)}]]])])

@@ -1,0 +1,96 @@
+{
+  "~:changes": [],
+  "~:conflicts": [
+    {
+      "~:kind": "~:color",
+      "~:status": "~:conflict",
+      "~:reason": "~:modify-modify",
+      "~:id": "~uc7ce0794-0992-8105-8004-38f2804439b1",
+      "~:key": "color//c7ce0794-0992-8105-8004-38f2804439b1",
+      "~:label": "Brand",
+      "~:base": { "~:name": "Brand", "~:color": "#000000", "~:opacity": 1 },
+      "~:main": { "~:name": "Brand", "~:color": "#00ff00", "~:opacity": 1 },
+      "~:branch": { "~:name": "Brand", "~:color": "#ff0000", "~:opacity": 1 },
+      "~:changed-attrs": {
+        "~:color": { "~:main": "#00ff00", "~:branch": "#ff0000" }
+      }
+    },
+    {
+      "~:kind": "~:shape",
+      "~:status": "~:conflict",
+      "~:reason": "~:modify-modify",
+      "~:id": "~uc7ce0794-0992-8105-8004-38f2804439b2",
+      "~:page-id": "~u66697432-c33d-8055-8006-2c62cc084cad",
+      "~:key": "shape/66697432-c33d-8055-8006-2c62cc084cad/c7ce0794-0992-8105-8004-38f2804439b2",
+      "~:label": "Legal footnote",
+      "~:shape-type": "~:text",
+      "~:base": {
+        "~:type": "~:text",
+        "~:content": {
+          "~:type": "root",
+          "~:children": [
+            {
+              "~:type": "paragraph-set",
+              "~:children": [
+                { "~:type": "paragraph", "~:children": [{ "~:text": "Terms apply." }] }
+              ]
+            }
+          ]
+        }
+      },
+      "~:main": {
+        "~:type": "~:text",
+        "~:content": {
+          "~:type": "root",
+          "~:children": [
+            {
+              "~:type": "paragraph-set",
+              "~:children": [
+                { "~:type": "paragraph", "~:children": [{ "~:text": "Our terms apply." }] }
+              ]
+            }
+          ]
+        }
+      },
+      "~:branch": {
+        "~:type": "~:text",
+        "~:content": {
+          "~:type": "root",
+          "~:children": [
+            {
+              "~:type": "paragraph-set",
+              "~:children": [
+                { "~:type": "paragraph", "~:children": [{ "~:text": "The terms of sale apply." }] }
+              ]
+            }
+          ]
+        }
+      },
+      "~:changed-attrs": {
+        "~:content": {}
+      }
+    },
+    {
+      "~:kind": "~:typography",
+      "~:status": "~:conflict",
+      "~:reason": "~:modify-delete",
+      "~:id": "~uc7ce0794-0992-8105-8004-38f2804439b3",
+      "~:key": "typography//c7ce0794-0992-8105-8004-38f2804439b3",
+      "~:label": "Heading",
+      "~:main": null,
+      "~:branch": { "~:name": "Heading", "~:font-size": "32" }
+    }
+  ],
+  "~:stats": {
+    "~:added": 0,
+    "~:modified": 0,
+    "~:deleted": 0,
+    "~:conflicts": 3
+  },
+  "~:meta": {
+    "~:base-at": "~m1713536343369",
+    "~:main-at": "~m1713873823633",
+    "~:branch-at": "~m1713873823633",
+    "~:main-revn": 11
+  }
+}

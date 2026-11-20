@@ -6,7 +6,6 @@
 
 @use "ds/_borders.scss" as *;
 @use "ds/_sizes.scss" as *;
-@use "ds/_utils.scss" as *;
 @use "ds/mixins.scss" as *;
 @use "ds/typography.scss" as *;
 
@@ -14,19 +13,15 @@
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  padding-block: var(--sp-xs);
-  border: $b-1 solid var(--color-background-quaternary);
-  border-radius: $br-8;
-  background-color: var(--color-background-tertiary);
+  gap: var(--sp-m);
 }
 
+// the label over its value: the sidebar is too narrow for two columns
 .fact {
-  display: grid;
-  grid-template-columns: px2rem(180) 1fr;
-  align-items: center;
-  gap: var(--sp-s);
-  min-block-size: $sz-32;
-  padding: var(--sp-xs) var(--sp-m);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xxs);
+  min-inline-size: 0;
 }
 
 .fact-label {
@@ -35,9 +30,9 @@
 
 .fact-value {
   @include use-typography("body-small");
-  @include text-ellipsis;
 
   color: var(--color-foreground-primary);
+  overflow-wrap: anywhere;
 }
 
 .section {
@@ -49,12 +44,6 @@
 
 .section-title {
   color: var(--color-foreground-primary);
-}
-
-.inner-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-xxs);
 }
 
 .copy-list {

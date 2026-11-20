@@ -53,7 +53,9 @@ pub fn render_wasm_label(render_state: &mut RenderState) {
     }
 
     let canvas = render_state.surfaces.canvas(SurfaceId::Target);
-    let canvas_width = canvas.base_layer_size().width as f32;
+    let canvas_size = canvas.base_layer_size();
+    let canvas_width = canvas_size.width as f32;
+    let canvas_height = canvas_size.height as f32;
     let mut paint = skia::Paint::default();
     paint.set_color(skia::Color::GRAY);
 
@@ -64,7 +66,12 @@ pub fn render_wasm_label(render_state: &mut RenderState) {
     };
     let dpr = render_state.options.dpr;
     let (scalar, _) = get_resources().fonts.debug_font().measure_str(str, None);
-    let mut p = skia::Point::new(canvas_width - (20.0 * dpr) - scalar, 50.0 * dpr);
+    // at the bottom right corner of the canvas: the top ones hold labels
+    // of the workspace
+    let mut p = skia::Point::new(
+        canvas_width - (20.0 * dpr) - scalar,
+        canvas_height - (20.0 * dpr),
+    );
 
     let debug_font = get_resources().fonts.debug_font();
     canvas.draw_str(str, p, debug_font, &paint);
@@ -74,7 +81,7 @@ pub fn render_wasm_label(render_state: &mut RenderState) {
 
         let (scalar, _) = get_resources().fonts.debug_font().measure_str(str, None);
         p.x = canvas_width - (20.0 * dpr) - scalar;
-        p.y += 15.0 * dpr;
+        p.y -= 15.0 * dpr;
         canvas.draw_str(str, p, debug_font, &paint);
     }
 }
