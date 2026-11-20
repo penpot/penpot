@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { hkdfSync } from "node:crypto";
+import { readFileSync, statSync } from "node:fs";
 import type { AppConfig } from "./types.js";
 
 const envSchema = z.object({
@@ -16,6 +17,7 @@ const envSchema = z.object({
   PENPOT_MEDIA_PROCESSOR_FONT_PROCESS_CPU_TIME: z.coerce.number().int().positive().default(30),
   PENPOT_MEDIA_PROCESSOR_FONT_TIMEOUT: z.coerce.number().int().positive().default(120000),
   PENPOT_MEDIA_PROCESSOR_SHARED_KEY: z.string().optional(),
+  PENPOT_MEDIA_PROCESSOR_SHARED_KEY_FILE: z.string().optional(),
   PENPOT_SECRET_KEY: z.string().optional(),
   PENPOT_MEDIA_PROCESSOR_LOG_LEVEL: z
     .enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"])
@@ -31,13 +33,47 @@ function deriveSharedKey(secret: string): string {
   return Buffer.from(key).toString("base64url");
 }
 
+const MAX_KEY_FILE_SIZE = 4096;
+
+function readSharedKeyFile(variable: string, path: string): string {
+  let info;
+  try {
+    info = statSync(path);
+  } catch (error) {
+    console.error("unable to read configuration key file", variable, path, error);
+  }
+  if (!info || !info.isFile()) {
+    console.error("configuration key file is not a regular file", variable, path);
+    throw new Error(`${variable} key file is missing or empty: ${path}`);
+  }
+  if (info.size > MAX_KEY_FILE_SIZE) {
+    throw new Error(`${variable} key file is too large: ${path}`);
+  }
+  let value: string | undefined;
+  try {
+    value = readFileSync(path, "utf8").trim().replace(/\s+/g, "");
+  } catch (error) {
+    console.error("unable to read configuration key file", variable, path, error);
+  }
+  if (!value) {
+    throw new Error(`${variable} key file is missing or empty: ${path}`);
+  }
+  return value;
+}
+
 export function loadConfig(): AppConfig {
   const parsed = envSchema.parse(process.env);
 
   let sharedKey: string | null = null;
-  if (parsed.PENPOT_MEDIA_PROCESSOR_SHARED_KEY) {
-    sharedKey = parsed.PENPOT_MEDIA_PROCESSOR_SHARED_KEY;
-  } else if (parsed.PENPOT_SECRET_KEY) {
+  const explicitKey = parsed.PENPOT_MEDIA_PROCESSOR_SHARED_KEY;
+  if (explicitKey !== undefined) {
+    sharedKey = explicitKey.trim() === "" ? null : explicitKey.trim();
+  } else if (parsed.PENPOT_MEDIA_PROCESSOR_SHARED_KEY_FILE) {
+    sharedKey = readSharedKeyFile(
+      "PENPOT_MEDIA_PROCESSOR_SHARED_KEY_FILE",
+      parsed.PENPOT_MEDIA_PROCESSOR_SHARED_KEY_FILE
+    );
+  } else if (parsed.PENPOT_SECRET_KEY?.trim()) {
     sharedKey = deriveSharedKey(parsed.PENPOT_SECRET_KEY);
   }
 

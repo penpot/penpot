@@ -169,3 +169,96 @@
       (t/is (not (contains? flags :audit-log)))
       (t/is (contains? flags :nexus))
       (t/is (cf/persist-audit-events? flags)))))
+
+;; Key files are the delivery channel for the per-service shared keys written
+;; by an external generator. A direct environment value still wins.
+
+(defn- with-key-file
+  [content f]
+  (let [file (java.io.File/createTempFile "penpot-key" ".txt")]
+    (spit file content)
+    (try
+      (f (.getAbsolutePath file))
+      (finally (.delete file)))))
+
+(defn- with-temp-dir
+  [f]
+  (let [dir (java.nio.file.Files/createTempDirectory
+             "penpot-key"
+             (into-array java.nio.file.attribute.FileAttribute []))]
+    (try
+      (f (str dir))
+      (finally (java.nio.file.Files/deleteIfExists dir)))))
+
+(defn- key-file-error
+  [config]
+  (try
+    (read-config config)
+    nil
+    (catch Exception e e)))
+
+(t/deftest read-config-reads-key-files
+  (with-key-file "from-file\n"
+    (fn [path]
+      (let [cfg (read-config {:secret-key-file path
+                              :exporter-shared-key-file path
+                              :admin-console-shared-key-file path
+                              :nexus-shared-key-file path
+                              :media-processor-shared-key-file path})]
+        (t/testing "all five key files are read and trimmed"
+          (t/is (= "from-file" (:secret-key cfg)))
+          (t/is (= "from-file" (:exporter-shared-key cfg)))
+          (t/is (= "from-file" (:admin-console-shared-key cfg)))
+          (t/is (= "from-file" (:nexus-shared-key cfg)))
+          (t/is (= "from-file" (:media-processor-shared-key cfg))))))))
+
+(t/deftest read-config-removes-internal-whitespace
+  (with-key-file "from-\n file \tkey"
+    (fn [path]
+      (t/is (= "from-filekey" (:secret-key (read-config {:secret-key-file path})))))))
+
+(t/deftest read-config-prefers-direct-env-key-over-file
+  (with-temp-dir
+    (fn [dir]
+      (let [cfg (read-config {:exporter-shared-key "direct"
+                              :exporter-shared-key-file (str dir "/missing")})]
+        (t/is (= "direct" (:exporter-shared-key cfg)))))))
+
+(t/deftest read-config-rejects-a-missing-key-file
+  (with-temp-dir
+    (fn [dir]
+      (let [path (str dir "/missing")
+            err  (key-file-error {:secret-key-file path})]
+        (t/is (some? err))
+        (t/is (= "PENPOT_SECRET_KEY_FILE" (:variable (ex-data err))))
+        (t/is (= path (:path (ex-data err))))))))
+
+(t/deftest read-config-rejects-a-directory-as-key-file
+  (with-temp-dir
+    (fn [dir]
+      (let [err (key-file-error {:secret-key-file dir})]
+        (t/is (some? err))
+        (t/is (= "PENPOT_SECRET_KEY_FILE" (:variable (ex-data err))))))))
+
+(t/deftest read-config-rejects-an-empty-key-file
+  (with-key-file "  \n\t"
+    (fn [path]
+      (let [err (key-file-error {:nexus-shared-key-file path})]
+        (t/is (some? err))
+        (t/is (= "PENPOT_NEXUS_SHARED_KEY_FILE" (:variable (ex-data err))))))))
+
+(t/deftest read-config-rejects-an-oversized-key-file
+  (with-key-file (apply str (repeat 5000 "a"))
+    (fn [path]
+      (let [err (key-file-error {:secret-key-file path})]
+        (t/is (some? err))
+        (t/is (= "PENPOT_SECRET_KEY_FILE" (:variable (ex-data err))))))))
+
+(t/deftest read-config-without-key-files-is-unchanged
+  (let [cfg (read-config {})]
+    (t/is (nil? (:secret-key cfg)))
+    (t/is (nil? (:exporter-shared-key cfg)))))
+
+(t/deftest read-config-keeps-a-blank-direct-key
+  (let [cfg (read-config {:exporter-shared-key ""})]
+    (t/is (= "" (:exporter-shared-key cfg)))))
