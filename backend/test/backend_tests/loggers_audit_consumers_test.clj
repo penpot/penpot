@@ -30,7 +30,6 @@
    [app.rpc :as-alias rpc]
    [app.rpc.commands.audit :as cmd-audit]
    [app.setup :as-alias setup]
-   [app.worker :as-alias wrk]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
    [cuerdas.core :as str]
@@ -169,6 +168,43 @@
 (defn- run-gc
   []
   (th/run-task! :audit-log-gc {}))
+
+(t/deftest telemetry-sends-old-shadows-still-in-the-buffer
+  (with-redefs [cf/flags #{:telemetry}]
+    (with-mocks [http-mock {:target 'app.http.client/req :return {:status 200}}]
+      (insert-audit-row uuid/zero "full")
+      (insert-shadow-row uuid/zero "old"
+                         (ct/minus (ct/now) (ct/duration {:days 8})))
+      (insert-shadow-row uuid/zero "recent")
+      (insert-audit-row uuid/zero "last-full")
+      (let [process (:process consumer.telemetry/consumer)
+            chunks  (atom [])]
+        (consumer/run-pass
+         (telemetry-cfg telemetry-uri)
+         (assoc consumer.telemetry/consumer
+                :process (fn [cfg rows]
+                           (swap! chunks into rows)
+                           (process cfg rows))))
+        (let [body (json/decode (-> @http-mock :call-args second :body)
+                                :key-fn json/read-kebab-key)
+              full (remove #(= "telemetry:backend" (:source %)) @chunks)]
+          (t/is (= ["old" "recent"] (mapv :name (:events body))))
+          (t/is (= ["full" "last-full"] (mapv :name full)))
+          (t/is (every? #(and (nil? (:props %)) (nil? (:context %))) full))
+          (t/is (= 0 (unread-count consumer/telemetry))))))))
+
+(t/deftest telemetry-only-gc-cleans-shadows-and-keeps-pending-full-rows
+  (th/db-exec! ["DELETE FROM audit_log_consumer_cursor"])
+  (with-redefs [cf/flags #{:telemetry}]
+    (with-mocks [http-mock {:target 'app.http.client/req :return {:status 200}}]
+      (insert-audit-row uuid/zero "pending-full")
+      (insert-shadow-row uuid/zero "confirmed")
+      (run-telemetry {:uri telemetry-uri})
+      (insert-shadow-row uuid/zero "expired"
+                         (ct/minus (ct/now) (ct/duration {:days 8})))
+      (t/is (= 2 (run-gc)))
+      (t/is (= ["pending-full"]
+               (mapv :name (th/db-exec! ["SELECT name FROM audit_log"])))))))
 
 (defn- admin-console-event
   [admin-console-mock]
@@ -1562,7 +1598,6 @@
         metrics (make-consumer-metrics)
         job-def (ig/init-key :app.loggers.audit.gc/job-def
                              {::db/pool      (:app.db/pool th/*system*)
-                              ::wrk/executor (:app.worker/executor th/*system*)
                               ::mtx/metrics  metrics})]
     (with-redefs [cf/flags #{:nexus :admin-console}]
       (with-mocks [http-mock  {:target 'app.http.client/req :return {:status 204}}
@@ -1657,11 +1692,83 @@
     (insert-shadow-row (:id prof) "navigate"
                        (ct/minus (ct/now) (ct/duration {:days 8})))
     (insert-shadow-row (:id prof) "create-project")
-    (t/is (= 1 (with-redefs-fn {#'gc/delete-full-rows
-                                (fn [_] (throw (ex-info "boom" {})))}
+    (t/is (= 1 (with-redefs-fn {#'gc/delete-batch
+                                (fn [& _] (throw (ex-info "boom" {})))}
                  #(run-gc))))
     (let [rows (th/db-exec! ["SELECT source FROM audit_log"])]
       (t/is (= ["telemetry:backend"] (mapv :source rows))))))
+
+(t/deftest gc-counts-confirmed-batches-before-a-path-fails
+  (let [metrics (make-consumer-metrics)
+        cfg     {::db/pool (:app.db/pool th/*system*) ::mtx/metrics metrics}
+        delete  @#'gc/delete-batch
+        calls   (atom 0)]
+    (th/db-exec! ["DELETE FROM audit_log_consumer_cursor"])
+    (with-redefs [cf/flags #{:nexus}]
+      (with-mocks [http-mock {:target 'app.http.client/req :return {:status 204}}]
+        (insert-audit-row uuid/zero "first")
+        (insert-audit-row uuid/zero "second")
+        (insert-shadow-row uuid/zero "expired"
+                           (ct/minus (ct/now) (ct/duration {:days 8})))
+        (run-nexus {:uri archive-uri})
+        (with-bindings {#'gc/batch-size 1}
+          (t/is (= 2 (with-redefs-fn
+                       {#'gc/delete-batch
+                        (fn [cfg cursor sql]
+                          (if (and (= sql @#'gc/sql:delete-full-batch)
+                                   (= 2 (swap! calls inc)))
+                            (throw (ex-info "Second batch failed" {}))
+                            (delete cfg cursor sql)))}
+                       #(gc/delete-consumed cfg)))))
+        (t/is (= ["second"] (mapv :name (th/db-exec! ["SELECT name FROM audit_log"]))))
+        (t/is (= 2.0 (counter-value metrics :audit-consumer-discarded ["gc"])))))))
+
+(t/deftest gc-does-not-start-another-batch-after-budget-expires
+  (let [metrics (make-consumer-metrics)
+        cfg     {::mtx/metrics metrics}
+        expired (atom false)]
+    (with-redefs-fn
+      {#'gc/budget-spent? (fn [_] @expired)}
+      #(t/is (= 1 (@#'gc/run-path cfg "full"
+                                  (fn []
+                                    (if (compare-and-set! expired false true)
+                                      1
+                                      (throw (AssertionError. "Started a late batch"))))))))
+    (t/is (= 1.0 (counter-value metrics :audit-consumer-discarded ["gc"])))))
+
+(t/deftest gc-interruption-counts-the-completed-batch-without-starting-another
+  (let [metrics (make-consumer-metrics)
+        cfg     {::db/pool (:app.db/pool th/*system*) ::mtx/metrics metrics}
+        entered (promise)
+        release (promise)
+        result  (promise)
+        batches (atom [])
+        thread  (Thread.
+                 (fn []
+                   (try
+                     (deliver result (gc/delete-consumed cfg))
+                     (catch Throwable cause
+                       (deliver result cause)))))]
+    (with-redefs-fn
+      {#'gc/delete-batch
+       (fn [_ _ sql]
+         (swap! batches conj sql)
+         (deliver entered true)
+         (while (not (realized? release))
+           (Thread/onSpinWait))
+         1)}
+      (fn []
+        (.start thread)
+        (try
+          (t/is (= true (deref entered 5000 ::timeout)))
+          (.interrupt thread)
+          (deliver release true)
+          (t/is (instance? InterruptedException (deref result 5000 ::timeout)))
+          (t/is (= [@#'gc/sql:delete-full-batch] @batches))
+          (t/is (= 1.0 (counter-value metrics :audit-consumer-discarded ["gc"])))
+          (finally
+            (deliver release true)
+            (.join thread 5000)))))))
 
 (t/deftest gc-waits-for-a-consumer-that-has-not-drained-yet
   ;; A consumer that has just started registers its cursor at (0, 0)

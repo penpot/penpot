@@ -24,14 +24,13 @@
   retention is the only deletion that does not wait for a consumer, and it
   can remove copies that were never sent.
 
-  Every loop stops when the run budget expires, so a stream that keeps
-  feeding rows cannot keep the job alive forever: whatever is left waits
-  for the next cron run.
+  Each loop stops starting batches when its budget expires. A batch
+  already in progress can still commit; remaining rows wait for the next
+  cron run.
 
   The consumer framework (ids, flags and cursor helpers) lives in
   `app.loggers.audit.consumers`."
   (:require
-   [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.time :as ct]
@@ -39,12 +38,7 @@
    [app.jobs :as jobs]
    [app.loggers.audit.consumers :as consumers]
    [app.metrics :as mtx]
-   [app.worker :as-alias wrk]
-   [integrant.core :as ig]
-   [promesa.core :as p]
-   [promesa.exec :as px])
-  (:import
-   java.util.concurrent.ExecutorService))
+   [integrant.core :as ig]))
 
 (def ^:private ^:dynamic batch-size
   "Rows per delete: a big buffer is cleaned in bounded statements, each
@@ -53,10 +47,8 @@
   5000)
 
 (def ^:private ^:dynamic run-budget
-  "Wall-clock budget of one path of a pass. The three paths run in parallel,
-  each with its own checkpoint, so the pass lasts at most this long (inside
-  the five-minute cron interval) and whatever is left waits for the next run.
-  Dynamic so a test can bind a different one."
+  "Wall-clock budget for starting batches in one path. The paths run in
+  series, each with its own clock. Dynamic so a test can bind a different one."
   (ct/duration {:seconds 120}))
 
 (defn- budget-spent?
@@ -186,67 +178,62 @@
                           0)
                       0))))
 
-(defn- delete-path
-  "Drain one cursor path in batches until a pass deletes nothing or its budget
-  is spent. The path owns its checkpoint, so it has a full budget of its own.
-  Answers the total deleted; what is left waits for the next cron run."
-  [cfg get-cursor sql]
-  (let [tpoint (ct/tpoint)]
-    (loop [total 0]
-      (if (budget-spent? tpoint)
-        total
-        (let [deleted (delete-batch cfg get-cursor sql)]
-          (if (pos? (long deleted))
-            (do
+(defn- check-interrupted
+  []
+  (when (Thread/interrupted)
+    (throw (InterruptedException.))))
+
+(defn- run-path
+  "Drain one path on the runner thread. Return the total committed before
+  the path ran out of work or time, or met an ordinary failure. Propagate
+  interruptions so the runner does not start another path."
+  [cfg path batch]
+  (let [tpoint (ct/tpoint)
+        total  (volatile! 0)]
+    (try
+      (loop []
+        (check-interrupted)
+        (when-not (budget-spent? tpoint)
+          (let [deleted (long (batch))]
+            (when (pos? deleted)
+              (vswap! total + deleted)
+              (consumers/record-count (mtx/instance cfg) :audit-consumer-discarded ["gc"] deleted))
+            (check-interrupted)
+            (when (pos? deleted)
               (jobs/heartbeat cfg)
-              (px/sleep 100)
-              (recur (+ total (long deleted))))
-            total))))))
+              (Thread/sleep 100)
+              (recur)))))
+      (catch InterruptedException cause
+        (throw cause))
+      (catch Exception cause
+        (when (= :interrupt (:type (ex-data cause)))
+          (throw cause))
+        (check-interrupted)
+        (l/err :hint "audit log GC path failed" :path path :cause cause)))
+    @total))
 
 (defn- delete-full-rows
   "The normal path: the full rows every one of their consumers has passed."
   [cfg]
-  (delete-path cfg get-oldest-full-cursor sql:delete-full-batch))
+  (run-path cfg "full" #(delete-batch cfg get-oldest-full-cursor sql:delete-full-batch)))
 
 (defn- delete-shadow-rows
   "The telemetry path: the shadows the telemetry consumer has passed."
   [cfg]
-  (delete-path cfg get-telemetry-cursor sql:delete-shadow-batch))
+  (run-path cfg "shadow" #(delete-batch cfg get-telemetry-cursor sql:delete-shadow-batch)))
 
 (defn- delete-expired-shadows
   "The telemetry retention window: shadows older than seven days, in
-  batches, whatever the cursors say. Runs after the cursor paths, shares
-  their budget and answers the number of deleted rows."
+  batches, whatever the cursors say. Runs after the cursor paths with its
+  own budget and answers the number of deleted rows."
   [cfg]
-  (let [tpoint (ct/tpoint)
-        total  (loop [total 0]
-                 (if (budget-spent? tpoint)
-                   total
-                   (let [deleted (or (db/get-update-count
-                                      (db/exec-one! cfg [sql:delete-expired-shadows batch-size]))
-                                     0)]
-                     (if (pos? (long deleted))
-                       (do
-                         (jobs/heartbeat cfg)
-                         (px/sleep 100)
-                         (recur (+ total (long deleted))))
-                       total))))]
+  (let [total (run-path cfg "shadow-expired"
+                        #(or (db/get-update-count
+                              (db/exec-one! cfg [sql:delete-expired-shadows batch-size]))
+                             0))]
     (when (pos? total)
       (l/warn :hint "purged stale telemetry events" :count total))
     total))
-
-(defn- run-path
-  "Run one path of the pass. Never throws: a failure is logged with its path
-  and answers 0, so the other paths and the counts of the run are unaffected
-  and the next cron run retries it."
-  [path f]
-  (try
-    (f)
-    (catch InterruptedException cause
-      (throw cause))
-    (catch Throwable cause
-      (l/err :hint "audit log GC path failed" :path path :cause cause)
-      0)))
 
 (defn delete-consumed
   "Delete the rows of the two paths, each one independently:
@@ -263,46 +250,23 @@
   component starts, so a consumer that is enabled but has not drained yet
   still holds its path at position 0.
 
-  The three paths run in parallel on the shared executor and the pass waits
-  for all of them. Each one owns its wall-clock budget and handles its own
-  failure: a path that fails logs the error and answers 0 instead of failing
-  the job, so a slow destination does not hide the work of the others, and
-  the next cron run retries it.
+  The three paths run in order on the runner thread. Each one owns its
+  wall-clock budget for starting batches, not for finishing them. An ordinary
+  failure is logged and ends only that path, preserving its committed count.
+  An interruption stops the whole pass.
 
   Retention is the explicit exception: copies older than seven days are
   deleted even if no cursor passed them. They still count as removed by the
   GC, and that path logs its own warning because each one is a copy that was
   never sent.
 
-  Every path stops when its budget is spent, so a stream that keeps feeding
-  rows cannot hold the job forever: whatever is left waits for the next cron
-  run.
-
-  Returns every row this run deleted (both cursor paths plus the retention
-  window); the count goes to the `discarded` metric with reason `gc`."
+  Returns the total number of rows deleted. Each committed batch contributes
+  to the `discarded` metric with reason `gc` before its heartbeat."
   [cfg]
-  (let [executor (::wrk/executor cfg)
-        tasks    [(px/submit executor
-                             #(run-path "full" (fn [] (delete-full-rows cfg))))
-                  (px/submit executor
-                             #(run-path "shadow" (fn [] (delete-shadow-rows cfg))))
-                  (px/submit executor
-                             #(run-path "shadow-expired" (fn [] (delete-expired-shadows cfg))))]
-        result   (p/await (p/all tasks))]
-
-    ;; `p/await` answers a Throwable as a value instead of throwing. The paths
-    ;; catch their own failures, so this one is the executor itself (a
-    ;; rejected submission): fail the job instead of destructuring it.
-    (when (instance? Throwable result)
-      (ex/raise :type :internal
-                :code :gc-run-failed
-                :hint "audit log GC could not run its paths"
-                :cause result))
-
-    (let [total (reduce + 0 result)]
-      (when (pos? total)
-        (consumers/record-count (mtx/instance cfg) :audit-consumer-discarded ["gc"] total))
-      total)))
+  (let [cfg (db/own-transaction cfg)]
+    (+ (delete-full-rows cfg)
+       (delete-shadow-rows cfg)
+       (delete-expired-shadows cfg))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; JOB
@@ -316,8 +280,7 @@
 (defmethod ig/assert-key ::job-def
   [_ cfg]
   (assert (db/pool? (::db/pool cfg)) "expected a valid database pool")
-  (assert (mtx/metrics? (::mtx/metrics cfg)) "expected a valid metrics instance")
-  (assert (instance? ExecutorService (::wrk/executor cfg)) "expected a valid executor"))
+  (assert (mtx/metrics? (::mtx/metrics cfg)) "expected a valid metrics instance"))
 
 (defmethod ig/init-key ::job-def
   [_ cfg]

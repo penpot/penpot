@@ -99,10 +99,11 @@
   advances over them, they are not its business. Throws on refusal, so the
   chunk rolls back and the cursor stays where it was."
   [cfg rows]
-  (let [decoded (mapv consumers/decode-row rows)
-        shadows (filterv (comp audit/telemetry-shadow-source? :source) decoded)
-        events  (mapv row->event shadows)
-        total   (count decoded)]
+  (let [events (into []
+                     (comp (filter (comp audit/telemetry-shadow-source? :source))
+                           (map (comp row->event consumers/decode-row)))
+                     rows)
+        total  (count rows)]
     (when (seq events)
       (send-events cfg events)
       (l/trc :hint "events chunk sent"

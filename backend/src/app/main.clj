@@ -759,9 +759,8 @@
     ::mtx/metrics (ig/ref ::mtx/metrics)}
 
    :app.loggers.audit.gc/job-def
-   {::db/pool      (ig/ref ::db/pool)
-    ::wrk/executor (ig/ref ::wrk/executor)
-    ::mtx/metrics  (ig/ref ::mtx/metrics)}
+   {::db/pool     (ig/ref ::db/pool)
+    ::mtx/metrics (ig/ref ::mtx/metrics)}
 
    ::email/blacklist
    {}

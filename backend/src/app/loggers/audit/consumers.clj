@@ -175,7 +175,7 @@
 
   No `SKIP LOCKED` and no row lock: the tick mutex and the cursor lock
   already serialize the passes of this consumer, and the rows are only
-  read."
+   read."
   "SELECT a.id,
           a.name,
           a.type,
@@ -184,8 +184,8 @@
           a.tracked_at,
           a.profile_id,
           a.ip_addr,
-          a.props,
-          a.context,
+          %s AS props,
+          %s AS context,
           a.seq,
           a.xid::text AS xid_text
      FROM audit_log a
@@ -193,7 +193,15 @@
       AND (a.xid, a.seq) <= (?::xid8, ?::bigint)
       AND a.xid <= pg_snapshot_xmin(pg_current_snapshot())
     ORDER BY a.xid ASC, a.seq ASC
-    LIMIT ?")
+     LIMIT ?")
+
+(def ^:private sql:full-chunk
+  (format sql:chunk "a.props" "a.context"))
+
+(def ^:private sql:telemetry-chunk
+  (format sql:chunk
+          "CASE WHEN a.source LIKE 'telemetry:%' THEN a.props END"
+          "CASE WHEN a.source LIKE 'telemetry:%' THEN a.context END"))
 
 (def ^:private sql:last-visible
   "The frontier of the pass: the newest row whose transaction is already
@@ -264,7 +272,9 @@
 
 (defn- get-chunk-rows
   [cfg consumer cursor watermark]
-  (->> (db/exec! cfg [sql:chunk
+  (->> (db/exec! cfg [(if (= telemetry (:id consumer))
+                        sql:telemetry-chunk
+                        sql:full-chunk)
                       (:xid-text cursor) (:seq cursor)
                       (:xid-text watermark) (:seq watermark)
                       (or (:chunk-size (:options consumer)) chunk-size)])
@@ -438,9 +448,9 @@
   5000)
 
 (defn run-pass
-  "Run one pass of a consumer. Answers the totals of the pass, ::busy when
-  another instance holds the tick or ::disabled when the flag is off. Direct
-  callers (REPL, tests) get the same behavior the loop gets."
+  "Run one pass of a consumer with its prepared cfg. Returns nil on success
+  and publishes totals as metrics. Returns ::busy when another instance
+  holds the tick or ::disabled when the flag is off."
   [cfg consumer]
   (check consumer)
   (drain cfg consumer))

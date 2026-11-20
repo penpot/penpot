@@ -17,7 +17,6 @@
    [app.worker.cron :as wcron]
    [app.worker.dispatcher :as wdisp]
    [app.worker.runner :as wrkr]
-   [backend-tests.helpers :as th]
    [clojure.test :as t]
    [integrant.core :as ig]))
 
@@ -67,13 +66,11 @@
           (str "update this set and helpers/init-system's dissoc: " keys))))
 
 (t/deftest audit-log-gc-cron-is-gated-by-its-own-flag
-  (t/testing "the GC entry is present only with :audit-log-gc"
-    (with-redefs [cf/flags #{:audit-log-gc}]
-      (t/is (some #(= :audit-log-gc (:job %)) (main/worker-cron-entries))))
-    (th/with-audit-config #{}
-      (t/is (not (some #(= :audit-log-gc (:job %))
-                       (main/worker-cron-entries)))))
-    (with-redefs [cf/flags #{}]
+  (t/testing "default configuration schedules the GC"
+    (binding [cf/flags (#'cf/parse-flags {})]
+      (t/is (some #(= :audit-log-gc (:job %)) (main/worker-cron-entries)))))
+  (t/testing "an explicit disable suppresses the GC even with telemetry enabled"
+    (binding [cf/flags (#'cf/parse-flags {:flags [:enable-telemetry :disable-audit-log-gc]})]
       (t/is (not (some #(= :audit-log-gc (:job %))
                        (main/worker-cron-entries)))))))
 
