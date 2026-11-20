@@ -25,9 +25,9 @@
    [app.rpc.commands.projects :as proj]
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
-    [app.rpc.notifications :as ntf]
-    [app.rpc.permissions :as perms]
-    [app.rpc.helpers :as rph]
+   [app.rpc.helpers :as rph]
+   [app.rpc.notifications :as ntf]
+   [app.rpc.permissions :as perms]
    [app.setup :as-alias setup]
    [app.setup.templates :as tmpl]
    [app.storage.tmp :as tmp]
@@ -371,19 +371,19 @@
           (recur (rest project-ids)
                  (ct/plus modified-at 10))))
 
-    ;; Moving files can take them out of the reach of the team they came
-    ;; from. Only the open connections know who was relying on them, so
-    ;; the source teams are announced wholesale and the watcher re-checks
-    ;; each member against the subscriptions they actually hold.
-    (notify-team-access-changed
-     cfg
-     (keep (partial perms/get-team-id-for-project conn) source))
+      ;; Moving files can take them out of the reach of the team they came
+      ;; from. Only the open connections know who was relying on them, so
+      ;; the source teams are announced wholesale and the watcher re-checks
+      ;; each member against the subscriptions they actually hold.
+      (notify-team-access-changed
+       cfg
+       (keep (partial perms/get-team-id-for-project conn) source))
 
-    ;; Both teams travel explicitly in the event props so a consumer
-    ;; never joins production tables.
-    (rph/with-meta (rph/wrap)
-      {::audit/props {:source-team-id (first source-teams)
-                      :dest-team-id (:id dest-team)}}))))
+      ;; Both teams travel explicitly in the event props so a consumer
+      ;; never joins production tables.
+      (rph/with-meta (rph/wrap)
+        {::audit/props {:source-team-id (first source-teams)
+                        :dest-team-id (:id dest-team)}}))))
 
 (def ^:private
   schema:move-files

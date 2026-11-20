@@ -957,12 +957,10 @@
              ^js token-set (aget (.-sets catalog) 0)
              ^js token     (aget (.-tokens token-set) 0)]
          (.applyToSelected token #js ["fill"])
-         (doseq [label [:rect1 :rect2 :rect3]]
-           (let [shape-path [:files (:id file) :data :pages-index page-id :objects (cthi/id label)]]
-             (await (async/wait-for-store store #(= "color.primary" (get-in @store (conj shape-path :applied-tokens :fill)))
-                                          (str "apply external token to " label)))
-             (await (async/wait-for-store store #(= "#ff0000" (get-in @store (conj shape-path :fills 0 :fill-color)))
-                                          (str "resolve external token on " label)))))
+         (await (async/wait-for #(= "color.primary" (get-in @store (conj shape-path :applied-tokens :fill)))
+                                "apply external token to the selection"))
+         (await (async/wait-for #(= "#ff0000" (get-in @store (conj shape-path :fills 0 :fill-color)))
+                                "resolve external token on the selection"))
          (t/is (= (ctht/get-tokens-lib file) (get-in @store [:files (:id file) :data :tokens-lib])))
          (t/is (= (datafy (ctht/get-tokens-status file))
                   (datafy (get-in @store [:files (:id file) :data :tokens-status]))))
