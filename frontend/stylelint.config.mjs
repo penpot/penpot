@@ -13,6 +13,11 @@ export default {
   rules: {
     "at-rule-no-unknown": null,
     "declaration-property-value-no-unknown": null,
+    // TODO: stylelint-config-standard-scss@18 enables these rules; clean up the
+    //       flagged legacy styles before turning them on.
+    "selector-no-deprecated": null,
+    "declaration-block-no-shorthand-property-overrides": null,
+    "scss/dollar-variable-no-missing-interpolation": null,
     "property-no-unknown": [true, { ignoreProperties: ["text-box"] }],
     "declaration-block-no-redundant-longhand-properties": [
       true,
