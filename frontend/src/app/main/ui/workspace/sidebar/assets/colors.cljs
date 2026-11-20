@@ -143,30 +143,31 @@
                          :data color
                          :position :right})))
 
-        on-context-menu
+        open-menu
         (mf/use-fn
          (mf/deps color-id selected on-clear-selection read-only?)
+         (fn [pos]
+           (when (and is-local (not read-only?))
+             (when-not (contains? selected color-id)
+               (on-clear-selection))
+             (swap! menu-state cmm/open-context-menu pos))))
+
+        on-context-menu
+        (mf/use-fn
+         (mf/deps open-menu)
          (fn [event]
            (dom/prevent-default event)
-           (let [pos (dom/get-client-position event)]
-             (when (and is-local (not read-only?))
-               (when-not (contains? selected color-id)
-                 (on-clear-selection))
-               (swap! menu-state cmm/open-context-menu pos)))))
+           (open-menu (dom/get-client-position event))))
 
         on-menu-button-click
         (mf/use-fn
-         (mf/deps color-id selected on-clear-selection read-only?)
+         (mf/deps open-menu)
          (fn [event]
            ;; Opens the same menu as a right click, for devices without one
            ;; (tablets). Stop the click so it doesn't also apply the color.
            (dom/stop-propagation event)
-           (let [rect (dom/get-bounding-rect (dom/get-current-target event))
-                 pos  {:x (:left rect) :y (:bottom rect)}]
-             (when (and is-local (not read-only?))
-               (when-not (contains? selected color-id)
-                 (on-clear-selection))
-               (swap! menu-state cmm/open-context-menu pos)))))
+           (let [rect (dom/get-bounding-rect (dom/get-current-target event))]
+             (open-menu {:x (:left rect) :y (:bottom rect)}))))
 
         on-close-menu
         (mf/use-fn
