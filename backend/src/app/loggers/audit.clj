@@ -330,7 +330,7 @@
     (when cf/audit-persist?
       (append-audit-entry cfg event))
 
-    (when (contains? cf/flags :telemetry)
+    (when cf/telemetry-enabled?
       ;; NOTE: when both persistence and telemetry are enabled, events are stored
       ;; twice: once with full details (above) and once stripped of props and
       ;; ip-addr, tagged with source="telemetry" so the telemetry task can
@@ -350,7 +350,7 @@
                       (assoc :ip-addr "0.0.0.0"))]
         (append-audit-entry cfg event)))
 
-    (when (and (contains? cf/flags :webhooks)
+    (when (and cf/webhooks-enabled?
                (::webhooks/event? event))
       (let [batch-key     (::webhooks/batch-key event)
             batch-timeout (::webhooks/batch-timeout event)

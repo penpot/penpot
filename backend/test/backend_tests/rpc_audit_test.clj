@@ -180,7 +180,7 @@
   ;; When telemetry is enabled and no consumer persists rows, frontend events
   ;; must be stored with source="telemetry", empty props, zeroed ip,
   ;; and context filtered to safe keys only.
-  (with-redefs [cf/flags #{:telemetry}]
+  (th/with-audit-config #{:telemetry}
     (let [prof    (th/create-profile* 1 {:is-active true})
           team-id (:default-team-id prof)
           proj-id (:default-project-id prof)
@@ -299,7 +299,7 @@
         (t/is (not= "0.0.0.0" (str (:ip-addr row))))))))
 
 (t/deftest backend-process-event-only-telemetry
-  (with-redefs [cf/flags #{:telemetry}]
+  (th/with-audit-config #{:telemetry}
     (let [prof  (th/create-profile* 1 {:is-active true})
           event {:id (uuid/next)
                  :type "action"
@@ -455,6 +455,28 @@
 
       (t/is (nil? (:error out)))
       (t/is (= 0 (count (th/db-exec! ["select * from audit_log"])))))))
+
+(t/deftest push-events-error-reporting-without-a-consumer
+  ;; :error-reporting tells the frontend to collect events, so the ingest
+  ;; must accept the batch and hand crash events to the reporters even
+  ;; with no cursor consumer and no telemetry. No rows are stored.
+  (with-mocks [db-emit {:target 'app.loggers.database/emit :return nil}
+               mm-emit {:target 'app.loggers.mattermost/emit :return nil}]
+    (th/with-audit-config #{:error-reporting}
+      (let [prof   (th/create-profile* 1 {:is-active true})
+            params {::th/type :push-audit-events
+                    ::rpc/profile-id (:id prof)
+                    :events [{:name "unhandled-exception"
+                              :props {:hint "crash"}
+                              :timestamp (ct/now)
+                              :type "action"}]}
+            params (with-meta params
+                     {:app.http/request http-request})
+            out    (th/command! params)]
+        (t/is (nil? (:error out)))
+        (t/is (= 1 (:call-count @db-emit)))
+        (t/is (= 1 (:call-count @mm-emit)))
+        (t/is (= 0 (count (th/db-exec! ["select * from audit_log"]))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; GET-ENVIRONMENT-DATA
@@ -998,7 +1020,7 @@
   ;; Two events of the same batch key share one pending job: the second
   ;; moves its schedule and leaves the last payload behind, so the
   ;; receiver is told once about the burst and with the newest event.
-  (with-redefs [cf/flags #{:webhooks}]
+  (th/with-audit-config #{:webhooks}
     (let [prof  (th/create-profile* 1 {:is-active true})
           label "rpc:update-file:the-key"
           event (fn [n batch-timeout]

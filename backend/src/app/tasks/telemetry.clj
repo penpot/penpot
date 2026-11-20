@@ -335,7 +335,7 @@
   [cfg params]
   (let [send?    (get params :send? true)
         enabled? (or (get params :enabled? false)
-                     (contains? cf/flags :telemetry))
+                     cf/telemetry-enabled?)
         ;; Deferred so the query runs only when a report is
         ;; actually going to be sent.
         subs     (delay (get-subscriptions cfg))]

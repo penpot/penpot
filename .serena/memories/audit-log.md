@@ -151,7 +151,7 @@ Cases already covered by tests, do not break: `accept-organization-invitation` t
 
 ## 6. Penpot frontend events: what is collected, with what guarantees
 
-The browser **never writes to the table**; it POSTs transit batches to `push-audit-events` (`backend/src/app/rpc/commands/audit.clj`), which stamps server `id`, session `profile-id`, request IP, server `created-at`, and server-side `:initiator` (from the `x-client` header, see section 8; anything the client sends as `initiator` is overwritten), and distrusts the client clock (future or >1h-late `tracked-at` is reset, the original kept in `context.original-tracked-at`). Without persistence or `:telemetry`, or on a read-only pool, the endpoint is a no-op.
+The browser **never writes to the table**; it POSTs transit batches to `push-audit-events` (`backend/src/app/rpc/commands/audit.clj`), which stamps server `id`, session `profile-id`, request IP, server `created-at`, and server-side `:initiator` (from the `x-client` header, see section 8; anything the client sends as `initiator` is overwritten), and distrusts the client clock (future or >1h-late `tracked-at` is reset, the original kept in `context.original-tracked-at`). Without persistence, `:telemetry` or `:error-reporting`, or on a read-only pool, the endpoint is a no-op. With `:error-reporting` alone the batch is accepted only to feed the reporters: no full row and no telemetry shadow is written.
 
 Valid types (`schema:frontend-event`): `"action"`, `"identify"`, `"trigger"`. Names must match `#"[\d\w-]{1,50}"` (max 250). `props` is a free map with no schema: **tests are the only guard of the contract** (see section 13).
 
@@ -321,15 +321,20 @@ Flags (`common/src/app/common/flags.cljc`, varia; enabled with `PENPOT_FLAGS=ena
 | `:nexus` | Send flag of the Nexus consumer; it appends the ingest path to `:nexus-uri`, and the component raises `:task-not-configured` at boot when the flag is on and no URI is configured |
 | `:admin-console` | Send flag of the admin-console consumer; also the module flag for the admin-console integration |
 | `:audit-log-logger` | Structured `app.audit` log per event |
-| `:error-reporting` | Starts the error reporters (off by default); database reporter on flag alone, Mattermost on flag plus webhook URL |
+| `:error-reporting` | Starts the error reporters (off by default); database reporter on flag alone, Mattermost on flag plus webhook URL; also opens `push-audit-events` for crash batches without any other sink |
 | `:telemetry` | Stores shadow rows and turns on shipping (auto with `:telemetry-enabled`) |
 
 `:audit-log` is **not a flag any more**. `app.config` computes
 `cf/audit-persist?` once at boot from the consumer flags (`:nexus` or
 `:admin-console`): when neither is on, no full rows are written anywhere, and
-telemetry shadows are the only rows the producer inserts. All write sites read
-that boolean: `process-event`, `submit-create-event`, `insert`, the frontend
-ingest, `wrap-audit`, and the membership/GC emitters. `get-environment-data`
+telemetry shadows are the only rows the producer inserts. The other event-path
+sinks get the same treatment: `cf/webhooks-enabled?`, `cf/telemetry-enabled?`
+and `cf/error-reporting-enabled?` are computed at boot from their flags and
+read by `wrap-audit`, `process-event`, the frontend ingest and the telemetry
+task. Component startup (`ig/init-key` of the reporters) still reads the flags
+directly; it is not a per-event path. All write sites read `cf/audit-persist?`:
+`process-event`, `submit-create-event`, `insert`, the frontend ingest,
+`wrap-audit`, and the membership/GC emitters. `get-environment-data`
 still puts `:audit-log` on the wire as a derived signal (persistence,
 `:telemetry`, or `:error-reporting`), so `event.cljs` and the RPC schema do not
 change. Telemetry keeps shipping shadows and reports on its own flag; with

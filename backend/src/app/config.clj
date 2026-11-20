@@ -461,6 +461,9 @@
 (defonce ^:dynamic config (read-config :default default))
 (defonce ^:dynamic flags (parse-flags config))
 (defonce ^:dynamic audit-persist? (persist-audit-events? flags))
+(defonce ^:dynamic webhooks-enabled? (contains? flags :webhooks))
+(defonce ^:dynamic telemetry-enabled? (contains? flags :telemetry))
+(defonce ^:dynamic error-reporting-enabled? (contains? flags :error-reporting))
 
 (defn validate!
   "Validate the currently loaded configuration data."

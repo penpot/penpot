@@ -228,9 +228,9 @@
 
 (defn- wrap-audit
   [_ f mdata]
-  (if (or (contains? cf/flags :webhooks)
+  (if (or cf/webhooks-enabled?
           cf/audit-persist?
-          (contains? cf/flags :telemetry))
+          cf/telemetry-enabled?)
     (if-not (::audit/skip mdata)
       (fn [cfg params]
         (let [result (f cfg params)]

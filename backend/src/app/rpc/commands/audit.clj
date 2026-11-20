@@ -147,7 +147,7 @@
           full-rows   (if cf/audit-persist?
                         (into [] xf:map-event-row events)
                         [])
-          shadow-rows (if (contains? cf/flags :telemetry)
+          shadow-rows (if cf/telemetry-enabled?
                         (into [] xf:map-telemetry-event-row events)
                         [])]
       (try
@@ -194,9 +194,14 @@
    ::doc/skip true
    ::doc/added "1.17"}
   [{:keys [::db/pool] :as cfg} params]
-  (let [telemetry? (contains? cf/flags :telemetry)
+  (let [telemetry? cf/telemetry-enabled?
+        ;; :error-reporting also needs the batch: the crash events reach
+        ;; the reporters here, before any row is written. The wire signal
+        ;; in get-environment-data includes the same case.
         enabled?   (and (not (db/read-only? pool))
-                        (or cf/audit-persist? telemetry?))]
+                        (or cf/audit-persist?
+                            telemetry?
+                            cf/error-reporting-enabled?))]
     (when enabled?
       (try
         (handle-events cfg params)
@@ -218,10 +223,10 @@
   {:deployment (if (cf/get :is-saas) "saas" "selfhost")
    :flags      (cond-> #{}
                  (or cf/audit-persist?
-                     (contains? cf/flags :error-reporting))
+                     cf/error-reporting-enabled?)
                  (conj :audit-log)
 
-                 (contains? cf/flags :telemetry)
+                 cf/telemetry-enabled?
                  (conj :telemetry))})
 
 (def ^:private schema:get-environment-data-result

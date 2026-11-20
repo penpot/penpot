@@ -64,14 +64,21 @@
 (def ^:dynamic *pool* nil)
 
 (defmacro with-audit-config
-  "Rebind the flags and the boot-computed audit persistence value together.
-  Tests describe which sinks are active with a flag set; the value is derived
-  from that same set so one argument controls both."
+  "Rebind the flags and the values derived from them at boot. An optional
+  binding vector rebinds other vars in the same scope."
   [flags & body]
-  `(let [flags# ~flags]
-     (with-redefs [cf/flags flags#
-                   cf/audit-persist? (cf/persist-audit-events? flags#)]
-       ~@body)))
+  (let [extra (if (and (seq body) (vector? (first body)))
+                (first body)
+                [])
+        body  (if (seq extra) (rest body) body)]
+    `(let [flags# ~flags]
+       (with-redefs [cf/flags flags#
+                     cf/audit-persist? (cf/persist-audit-events? flags#)
+                     cf/webhooks-enabled? (contains? flags# :webhooks)
+                     cf/telemetry-enabled? (contains? flags# :telemetry)
+                     cf/error-reporting-enabled? (contains? flags# :error-reporting)
+                     ~@extra]
+         ~@body))))
 
 ;; Fallback values used when no PENPOT_TEST_* env vars are set (e.g. CI sets
 ;; them explicitly, see .github/workflows/tests-backend.yml). Inside the
@@ -107,6 +114,9 @@
    (let [flags (flags/parse flags/default (into default-flags extra-flags))]
      (with-redefs [app.config/flags flags
                    app.config/audit-persist? (cf/persist-audit-events? flags)
+                   app.config/webhooks-enabled? (contains? flags :webhooks)
+                   app.config/telemetry-enabled? (contains? flags :telemetry)
+                   app.config/error-reporting-enabled? (contains? flags :error-reporting)
                    app.config/config config
                    app.loggers.audit/submit (constantly nil)
                    app.auth/derive-password identity

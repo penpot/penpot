@@ -104,7 +104,7 @@
   ;; make-legacy-request must not be called at all.
   (with-mocks [mock {:target 'app.tasks.telemetry/make-legacy-request
                      :return nil}]
-    (with-redefs [cf/flags #{}]
+    (th/with-audit-config #{}
       (th/create-profile* 1 {:is-active true})
       (th/run-task! :telemetry {:send? true})
       (t/is (not (:called? @mock))))))
@@ -114,7 +114,7 @@
   ;; make-legacy-request is called once with only subscriptions + version (no stats).
   (with-mocks [mock {:target 'app.tasks.telemetry/make-legacy-request
                      :return nil}]
-    (with-redefs [cf/flags #{}]
+    (th/with-audit-config #{}
       (let [prof (th/create-profile* 1 {:is-active true
                                         :props {:newsletter-updates true}})]
         (th/run-task! :telemetry {:send? true})
@@ -130,7 +130,7 @@
   ;; Passing send?=false must suppress all HTTP calls even when enabled.
   (with-mocks [mock {:target 'app.tasks.telemetry/make-legacy-request
                      :return nil}]
-    (with-redefs [cf/flags #{:telemetry}]
+    (th/with-audit-config #{:telemetry}
       (th/create-profile* 1 {:is-active true})
       (th/run-task! :telemetry {:send? false :enabled? true})
       (t/is (not (:called? @mock))))))
@@ -156,8 +156,7 @@
                                                 "https://penpot.dev"])]
     (with-mocks [mock {:target 'app.tasks.telemetry/make-legacy-request
                        :return nil}]
-      (with-redefs [cf/flags  #{}
-                    cf/config (assoc cf/config :public-uri public-uri)]
+      (th/with-audit-config #{} [cf/config (assoc cf/config :public-uri public-uri)]
         (th/create-profile* (+ 10 idx) {:is-active true
                                         :props {:newsletter-updates true}})
         (th/run-task! :telemetry {:send? true})
@@ -168,8 +167,7 @@
   ;; since nothing is going to be sent.
   (with-mocks [mock {:target 'app.tasks.telemetry/get-subscriptions
                      :return []}]
-    (with-redefs [cf/flags  #{}
-                  cf/config (assoc cf/config :public-uri "https://design.penpot.app")]
+    (th/with-audit-config #{} [cf/config (assoc cf/config :public-uri "https://design.penpot.app")]
       (th/create-profile* 1 {:is-active true
                              :props {:newsletter-updates true}})
       (th/run-task! :telemetry {:send? true})
@@ -180,8 +178,7 @@
   ;; only the implicit newsletter fallback is excluded.
   (with-mocks [mock {:target 'app.tasks.telemetry/make-legacy-request
                      :return nil}]
-    (with-redefs [cf/flags  #{:telemetry}
-                  cf/config (assoc cf/config :public-uri "https://design.penpot.app")]
+    (th/with-audit-config #{:telemetry} [cf/config (assoc cf/config :public-uri "https://design.penpot.app")]
       (th/create-profile* 1 {:is-active true
                              :props {:newsletter-updates true}})
       (th/run-task! :telemetry {:send? true :enabled? true})
@@ -198,7 +195,7 @@
                             :return nil}
                batch-mock  {:target 'app.tasks.telemetry/send-event-batch
                             :return true}]
-    (with-redefs [cf/flags #{:telemetry}]
+    (th/with-audit-config #{:telemetry}
       (th/run-task! :telemetry {:send? true :enabled? true})
       (t/is (:called? @legacy-mock))
       (t/is (not (:called? @batch-mock))))))
@@ -210,7 +207,7 @@
                             :return nil}
                batch-mock  {:target 'app.tasks.telemetry/send-event-batch
                             :return true}]
-    (with-redefs [cf/flags #{:telemetry}]
+    (th/with-audit-config #{:telemetry}
       (insert-telemetry-row! "navigate")
       (insert-telemetry-row! "create-file")
       (insert-telemetry-row! "update-file")
@@ -232,7 +229,7 @@
                             :return nil}
                batch-mock  {:target 'app.tasks.telemetry/send-event-batch
                             :return false}]
-    (with-redefs [cf/flags #{:telemetry}]
+    (th/with-audit-config #{:telemetry}
       (insert-telemetry-row! "navigate")
       (insert-telemetry-row! "create-file")
 
@@ -264,11 +261,10 @@
   (let [captured (atom nil)]
     (with-mocks [legacy-mock {:target 'app.tasks.telemetry/make-legacy-request
                               :return nil}]
-      (with-redefs [cf/flags #{:telemetry}
-                    telemetry/send-event-batch
-                    (fn [_cfg batch]
-                      (reset! captured batch)
-                      true)]
+      (th/with-audit-config #{:telemetry} [telemetry/send-event-batch
+                                           (fn [_cfg batch]
+                                             (reset! captured batch)
+                                             true)]
         (insert-telemetry-row! "navigate")
         (insert-telemetry-row! "create-file")
 
@@ -311,12 +307,11 @@
   (let [call-count (atom 0)]
     (with-mocks [legacy-mock {:target 'app.tasks.telemetry/make-legacy-request
                               :return nil}]
-      (with-redefs [cf/flags             #{:telemetry}
-                    telemetry/batch-size 1
-                    telemetry/send-event-batch
-                    (fn [_cfg _batch]
-                      (swap! call-count inc)
-                      true)]
+      (th/with-audit-config #{:telemetry} [telemetry/batch-size 1
+                                           telemetry/send-event-batch
+                                           (fn [_cfg _batch]
+                                             (swap! call-count inc)
+                                             true)]
         (insert-telemetry-row! "navigate")
         (insert-telemetry-row! "create-file")
         (insert-telemetry-row! "update-file")
@@ -335,13 +330,12 @@
   (let [call-count (atom 0)]
     (with-mocks [legacy-mock {:target 'app.tasks.telemetry/make-legacy-request
                               :return nil}]
-      (with-redefs [cf/flags             #{:telemetry}
-                    telemetry/batch-size 1
-                    telemetry/send-event-batch
-                    (fn [_cfg _batch]
-                      (swap! call-count inc)
-                      ;; fail on the second call
-                      (not= 2 @call-count))]
+      (th/with-audit-config #{:telemetry} [telemetry/batch-size 1
+                                           telemetry/send-event-batch
+                                           (fn [_cfg _batch]
+                                             (swap! call-count inc)
+                                             ;; fail on the second call
+                                             (not= 2 @call-count))]
         (insert-telemetry-row! "navigate")
         (insert-telemetry-row! "create-file")
         (insert-telemetry-row! "update-file")
@@ -365,7 +359,7 @@
                             :return nil}
                batch-mock  {:target 'app.tasks.telemetry/send-event-batch
                             :return true}]
-    (with-redefs [cf/flags #{:telemetry}]
+    (th/with-audit-config #{:telemetry}
       (let [now        (ct/now)
             eight-days (ct/minus now (ct/duration {:days 8}))]
         ;; Stale events (older than 7 days)
@@ -388,11 +382,10 @@
   (let [batch-events (atom nil)]
     (with-mocks [legacy-mock {:target 'app.tasks.telemetry/make-legacy-request
                               :return nil}]
-      (with-redefs [cf/flags #{:telemetry}
-                    telemetry/send-event-batch
-                    (fn [_cfg batch]
-                      (reset! batch-events batch)
-                      true)]
+      (th/with-audit-config #{:telemetry} [telemetry/send-event-batch
+                                           (fn [_cfg batch]
+                                             (reset! batch-events batch)
+                                             true)]
         (let [six-days-ago (ct/minus (ct/now) (ct/duration {:days 6}))]
           (insert-telemetry-row! "recent-1" {:created-at six-days-ago :tracked-at six-days-ago})
           (insert-telemetry-row! "recent-2" {:created-at six-days-ago :tracked-at six-days-ago}))
@@ -409,11 +402,10 @@
   (let [batch-events (atom nil)]
     (with-mocks [legacy-mock {:target 'app.tasks.telemetry/make-legacy-request
                               :return nil}]
-      (with-redefs [cf/flags #{:telemetry}
-                    telemetry/send-event-batch
-                    (fn [_cfg batch]
-                      (reset! batch-events batch)
-                      true)]
+      (th/with-audit-config #{:telemetry} [telemetry/send-event-batch
+                                           (fn [_cfg batch]
+                                             (reset! batch-events batch)
+                                             true)]
         (let [eight-days (ct/minus (ct/now) (ct/duration {:days 8}))
               one-day    (ct/minus (ct/now) (ct/duration {:days 1}))]
           (insert-telemetry-row! "stale" {:created-at eight-days :tracked-at eight-days})
@@ -437,7 +429,7 @@
   ;; empty props, zeroed ip, profile-id=zero, source='telemetry'.
   ;; Safe context fields (browser, os, version, etc.) are preserved
   ;; but session-linking and access-token fields are stripped.
-  (with-redefs [cf/flags #{:telemetry}]
+  (th/with-audit-config #{:telemetry}
     (let [_prof (th/create-profile* 1 {:is-active true})
           safe-ctx {:browser "Chrome"
                     :browser-version "120.0"
@@ -476,11 +468,10 @@
                         :external-session-id "also-stripped"}]
     (with-mocks [legacy-mock {:target 'app.tasks.telemetry/make-legacy-request
                               :return nil}]
-      (with-redefs [cf/flags #{:telemetry}
-                    telemetry/send-event-batch
-                    (fn [_cfg batch]
-                      (reset! captured-batch batch)
-                      true)]
+      (th/with-audit-config #{:telemetry} [telemetry/send-event-batch
+                                           (fn [_cfg batch]
+                                             (reset! captured-batch batch)
+                                             true)]
         ;; Insert with safe context already pre-filtered (as the ingest path does)
         (th/db-insert! :audit-log
                        {:id         (uuid/next)
@@ -518,7 +509,7 @@
 (t/deftest test-telemetry-rows-have-day-precision-timestamps
   ;; Telemetry events must be stored with timestamps truncated to day
   ;; precision so that exact event timing cannot be inferred.
-  (with-redefs [cf/flags #{:telemetry}]
+  (th/with-audit-config #{:telemetry}
     (let [process-event (ns-resolve 'app.loggers.audit 'process-event)
           profile       (th/create-profile* 1 {:is-active true})
           tnow          (ct/now)
@@ -545,7 +536,7 @@
   ;; Verify the full row shape stored by process-event in telemetry mode:
   ;; source=telemetry:backend, empty props, zeroed ip, context filtered to safe
   ;; backend keys only, profile-id preserved, timestamps truncated.
-  (with-redefs [cf/flags #{:telemetry}]
+  (th/with-audit-config #{:telemetry}
     (let [process-event (ns-resolve 'app.loggers.audit 'process-event)
           profile       (th/create-profile* 1 {:is-active true})
           tnow          (ct/now)
@@ -912,7 +903,7 @@
                               :return nil}
                  http-mock   {:target 'app.http.client/req
                               :return {:status 200}}]
-      (with-redefs [cf/flags #{:telemetry}]
+      (th/with-audit-config #{:telemetry}
         (insert-telemetry-row! "navigate")
         (insert-telemetry-row! "create-file")
 
@@ -953,7 +944,7 @@
                             :return nil}
                batch-mock  {:target 'app.tasks.telemetry/send-event-batch
                             :return true}]
-    (with-redefs [cf/flags #{:telemetry}]
+    (th/with-audit-config #{:telemetry}
       ;; No profiles with newsletter-updates, no telemetry rows
       (th/run-task! :telemetry {:send? true :enabled? true})
 
@@ -976,7 +967,7 @@
                             :return nil}
                batch-mock  {:target 'app.tasks.telemetry/send-event-batch
                             :return false}]
-    (with-redefs [cf/flags #{:telemetry}]
+    (th/with-audit-config #{:telemetry}
       (insert-telemetry-row! "navigate")
 
       (th/run-task! :telemetry {:send? true :enabled? true})
@@ -1002,7 +993,7 @@
                             :return nil}
                batch-mock  {:target 'app.tasks.telemetry/send-event-batch
                             :return false}]
-    (with-redefs [cf/flags #{:telemetry}]
+    (th/with-audit-config #{:telemetry}
       (let [eight-days (ct/minus (ct/now) (ct/duration {:days 8}))
             one-day    (ct/minus (ct/now) (ct/duration {:days 1}))]
         ;; Stale events (should be GC'd)
@@ -1053,11 +1044,10 @@
   (let [send-count (atom 0)]
     (with-mocks [legacy-mock {:target 'app.tasks.telemetry/make-legacy-request
                               :return nil}]
-      (with-redefs [cf/flags #{:telemetry}
-                    telemetry/send-event-batch
-                    (fn [_cfg _batch]
-                      (swap! send-count inc)
-                      true)]
+      (th/with-audit-config #{:telemetry} [telemetry/send-event-batch
+                                           (fn [_cfg _batch]
+                                             (swap! send-count inc)
+                                             true)]
         (insert-telemetry-row! "navigate")
         (insert-telemetry-row! "create-file")
 
