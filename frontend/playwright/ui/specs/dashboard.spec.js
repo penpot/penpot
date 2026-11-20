@@ -116,7 +116,9 @@ test("User has create file button", async ({ page }) => {
 test("User has add font button", async ({ page }) => {
   const dashboardPage = new DashboardPage(page);
   await dashboardPage.goToFonts();
-  await expect(dashboardPage.page.getByText("add custom font")).toBeVisible();
+  await expect(
+    dashboardPage.page.getByTestId("add-custom-font"),
+  ).toBeVisible();
 });
 
 test("Bug 9443, Admin can not demote owner", async ({ page }) => {

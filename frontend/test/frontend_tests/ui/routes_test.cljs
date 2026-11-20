@@ -157,3 +157,34 @@
             (swap! storage/session dissoc :template))
           (done'))
         done))))
+
+;; --- Legacy hash table -----------------------------------------------------
+;; The router built from `legacy-routes` is a `defonce`, so its entries are
+;; fixed when the namespace loads. These tests only reach the unconditional
+;; ones; a flag cannot add or remove routes here.
+
+(t/deftest legacy-match-resolves-a-top-level-path
+  (let [match (#'routes/legacy-match "/auth/login")]
+    (t/is (= :auth-login (:name match)))
+    (t/is (= {} (:params match)))))
+
+(t/deftest legacy-match-resolves-a-nested-path
+  (let [match (#'routes/legacy-match "/dashboard/files")]
+    (t/is (= :dashboard-files (:name match)))
+    (t/is (= {} (:params match)))))
+
+(t/deftest legacy-match-keeps-the-query-string-params
+  (let [team-id (str (uuid/next))
+        match   (#'routes/legacy-match (str "/workspace?team-id=" team-id))]
+    (t/is (= :workspace (:name match)))
+    (t/is (= team-id (:team-id (:params match))))))
+
+(t/deftest legacy-match-returns-nil-for-an-unknown-path
+  (t/is (nil? (#'routes/legacy-match "/nope"))))
+
+(t/deftest legacy-match-keeps-the-path-params
+  ;; /render-sprite is the only legacy route with a path param.
+  (let [file-id (str (uuid/next))
+        match   (#'routes/legacy-match (str "/render-sprite/" file-id))]
+    (t/is (= :render-sprite (:name match)))
+    (t/is (= file-id (:file-id (:params match))))))

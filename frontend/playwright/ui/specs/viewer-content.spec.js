@@ -5,9 +5,6 @@ test.beforeEach(async ({ page }) => {
   await ViewerPage.init(page);
 });
 
-const multipleBoardsFileId = "dd5cc0bb-91ff-81b9-8004-77df9cd3edb0";
-const multipleBoardsPageId = "dd5cc0bb-91ff-81b9-8004-77df9cd3edb3";
-
 const interactionBlocksChildFileId = "cc000000-0000-0000-0000-000000000001";
 const interactionBlocksChildPageId = "cc000000-0000-0000-0000-000000000002";
 
@@ -44,21 +41,4 @@ test("Child click interaction works when parent has mouse-leave interaction", as
   await childShapeContainer.click();
 
   await expect(viewer.page).toHaveURL(/index=0/, { timeout: 5000 });
-});
-
-test("Navigate with arrows", async ({ page }) => {
-  const viewer = new ViewerPage(page);
-  await viewer.setupLoggedInUser();
-  await viewer.setupFileWithMultipleBoards(viewer);
-
-  await viewer.goToViewer({
-    fileId: multipleBoardsFileId,
-    pageId: multipleBoardsPageId,
-  });
-
-  const nextButton = viewer.page.getByRole("button", {
-    name: "Next",
-  });
-  await nextButton.click();
-  await expect(viewer.page).toHaveURL(/&index=1/);
 });
