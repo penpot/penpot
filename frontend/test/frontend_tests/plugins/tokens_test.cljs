@@ -1306,6 +1306,27 @@
         (t/is (= 1 (count @errors)))
         (t/is (= [plugin-id :addToken "Plugin doesn't have 'content:write' permission"] (first @errors)))))))
 
+(t/deftest add-token-not-valid-reports-token-value
+  ;; Issue #13113: an unresolvable addToken value leaked the raw resolver
+  ;; error map through (str errors). The error should carry the offending
+  ;; value, matching the :value setter.
+  (let [plugin-id  "test-plugin"
+        file-id    (uuid/next)
+        set-id     (cthi/new-id! :set)
+        tokens-lib (-> (ctob/make-tokens-lib)
+                       (ctob/add-set (ctob/make-token-set :id set-id :name "core")))
+        errors     (atom [])]
+    (with-redefs [u/locate-token-set (constantly {:id set-id :name "core"})
+                  u/locate-tokens-lib (constantly tokens-lib)
+                  u/check-editable-tokens (constantly nil)
+                  u/not-valid (mock/stub (fn [pid prop msg] (swap! errors conj [pid prop msg])))
+                  r/check-permission (constantly true)
+                  st/emit! mock/noop]
+      (let [proxy (ptok/token-set-proxy plugin-id file-id set-id "core")]
+        (.addToken proxy #js {"type" "sizing" "name" "bad" "value" "{nope}"})
+        (t/is (= 1 (count @errors)))
+        (t/is (= [plugin-id :addToken "{nope}"] (first @errors)))))))
+
 (t/deftest token-set-proxy-duplicate-checks-permission
   (let [plugin-id "test-plugin"
         file-id   (uuid/next)
