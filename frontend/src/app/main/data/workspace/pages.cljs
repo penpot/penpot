@@ -190,6 +190,44 @@
              (rx/of (update-page-root file-id id))
              (rx/empty))))))))
 
+(defn start-rename-page-item
+  [id]
+  (ptk/reify ::start-rename-page-item
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-local :page-item] id))))
+
+(defn stop-rename-page-item
+  []
+  (ptk/reify ::stop-rename-page-item
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [local (-> (:workspace-local state)
+                      (dissoc :page-item))]
+        (assoc state :workspace-local local)))))
+
+(defn add-page
+  "Create a page from the sitemap and move the focus to it: open the new
+  page and start renaming it. Only the user who adds the page gets the
+  focus; a page added by someone else arrives as a change and leaves
+  their sitemap alone."
+  [{:keys [file-id]}]
+  (let [id (uuid/next)]
+    (ptk/reify ::add-page
+      ptk/WatchEvent
+      (watch [_ _ stream]
+        ;; The rename waits for the new page to initialize, because
+        ;; initializing a page replaces `:workspace-local`.
+        (rx/merge
+         (->> stream
+              (rx/filter (ptk/type? ::initialized))
+              (rx/filter #(= id (deref %)))
+              (rx/take 1)
+              (rx/map #(start-rename-page-item id)))
+         (rx/of (create-page {:page-id id :file-id file-id})
+                :interrupt
+                (dcm/go-to-workspace :file-id file-id :page-id id)))))))
+
 (defn duplicate-page
   [page-id]
   (ptk/reify ::duplicate-page

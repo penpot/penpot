@@ -10,9 +10,14 @@
    [app.common.files.changes-builder :as pcb]
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.ids-map :as cthi]
+   [app.common.uuid :as uuid]
+   [app.main.data.event :as ev]
    [app.main.data.workspace.pages :as dwpg]
+   [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
-   [frontend-tests.helpers.state :as ths]))
+   [frontend-tests.helpers.async :as tha]
+   [frontend-tests.helpers.state :as ths]
+   [potok.v2.core :as ptk]))
 
 (t/use-fixtures :each
   {:before cthi/reset-idmap!})
@@ -127,3 +132,34 @@
                  "at least one page remains")
            (t/is (= page1-id (first pgs))
                  "the first page (in page order) is kept")))))))
+
+;; ---------------------------------------------------------------------------
+;; Adding a page from the sitemap opens it and starts renaming it, once
+;; the new page has initialized.
+;; ---------------------------------------------------------------------------
+
+(t/deftest ^:async add-page-opens-and-renames-the-new-page
+  (let [file-id (uuid/next)
+        stream  (rx/subject)
+        event   (dwpg/add-page {:file-id file-id})
+        events  (atom [])
+        done    (tha/observe (ptk/watch event {} stream)
+                             :on-next #(swap! events conj %))]
+
+    (await (tha/settle))
+    (let [[create interrupt go-to] @events
+          page-id                   (:id (ev/-data create))]
+      (t/is (= ::dwpg/create-page (ptk/type create)))
+      (t/is (= :interrupt interrupt))
+      (t/is (= :app.main.data.common/go-to-workspace (ptk/type go-to)))
+
+      ;; A page added by someone else initializes first: no rename.
+      (rx/push! stream (ptk/data-event ::dwpg/initialized (uuid/next)))
+      (rx/push! stream (ptk/data-event ::dwpg/initialized page-id))
+      (await done)
+
+      (let [rename (last @events)
+            state  (ptk/update rename {:workspace-local {}})]
+        (t/is (= 4 (count @events)))
+        (t/is (= ::dwpg/start-rename-page-item (ptk/type rename)))
+        (t/is (= page-id (get-in state [:workspace-local :page-item])))))))
