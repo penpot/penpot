@@ -974,7 +974,9 @@
   (st/emit! (dw/finalize-edit-watchers)
             ;; the component and token watchers stop when the page closes
             (ptk/data-event :app.main.data.workspace.pages/finalize-page)
-            (ptk/data-event ::stop-headless-text-measurement))
+            (ptk/data-event ::stop-headless-text-measurement)
+            ;; a pending batch finds nothing to delete when its timer fires
+            #(dissoc % ::dwth/thumbnails-deletion-queue))
   (wrf/reset-pending!))
 
 (defn start-generated
