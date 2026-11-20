@@ -415,6 +415,12 @@
   margin-block-start: var(--sp-l);
 }
 
+// The tooltip trigger is a fit-content grid, which the text-align of the
+// empty state does not center.
+.empty-invitations-tooltip {
+  margin-inline: auto;
+}
+
 .title-field-status {
   position: relative;
   cursor: default;
