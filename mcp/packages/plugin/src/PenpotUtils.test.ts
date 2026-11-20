@@ -161,3 +161,23 @@ test("findShapes — excludes the root shape itself from the results", () => {
 
     assert.ok(!result.includes(root as any));
 });
+
+test("isWasmRenderer — true when the open file has render-wasm/v1", () => {
+    (globalThis as any).penpot = { currentFile: { features: ["components/v2", "render-wasm/v1"] } };
+    assert.equal(PenpotUtils.isWasmRenderer(), true);
+});
+
+test("isWasmRenderer — false when the open file lacks render-wasm/v1", () => {
+    (globalThis as any).penpot = { currentFile: { features: ["components/v2"] } };
+    assert.equal(PenpotUtils.isWasmRenderer(), false);
+});
+
+test("isWasmRenderer — throws when no file is open", () => {
+    (globalThis as any).penpot = { currentFile: null };
+    assert.throws(() => PenpotUtils.isWasmRenderer(), /No file is open/);
+});
+
+test("isWasmRenderer — throws when the file features are not exposed", () => {
+    (globalThis as any).penpot = { currentFile: {} };
+    assert.throws(() => PenpotUtils.isWasmRenderer(), /does not expose the file features/);
+});

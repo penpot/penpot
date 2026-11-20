@@ -18,6 +18,7 @@
 
 - From `plugins/`: install `pnpm -r install`; runtime dev server `pnpm run start` or `pnpm run start:app:runtime`; sample plugin `pnpm run start:plugin:<name>`; build runtime `pnpm run build:runtime`; build plugins `pnpm run build:plugins`; lint `pnpm run lint`; format `pnpm run format:check` / `pnpm run format`; tests `pnpm run test`; e2e `pnpm run test:e2e`.
 - If a change affects public Plugin API types or runtime, update `plugins/CHANGELOG.md`. Prefix type/signature entries with `**plugin-types:**`; runtime behavior entries with `**plugin-runtime:**`.
+- Every new or changed Plugin API member gets a test in `apps/plugin-api-test-suite/src/tests/` in the same change, whenever the suite can reach the case (skip only what its README lists as not reachable headless, such as needing a second user or closing the plugin). Cover each new behavior, including null and error cases. Read `apps/plugin-api-test-suite/README.md` before writing one: call the API through `ctx.penpot`/`ctx.penpotMgmt`, tag backend-dependent tests `skipIfMocked`, and rerun `gen:api` (then prettier on `src/generated/api-surface.json`, since the generator writes it unformatted) after changing `libs/plugin-types/index.d.ts`.
 - Cross-cutting testing principles and anti-patterns: `mem:testing`.
 - JS Plugin API behavior inside Penpot app: `mem:frontend/plugin-api-to-cljs-binding`; TS declarations are not runtime code; many API objects are CLJS proxies in `frontend/src/app/plugins/*.cljs`.
 

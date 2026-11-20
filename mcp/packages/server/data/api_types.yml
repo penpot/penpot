@@ -38,6 +38,7 @@ Penpot:
         currentUser: User;
         activeUsers: ActiveUser[];
         theme: Theme;
+        location: PenpotLocation;
         localStorage: LocalStorage;
         selection: Shape[];
         shapesColors(shapes: Shape[]): (Color & ColorShapeInfo)[];
@@ -308,6 +309,20 @@ Penpot:
         ```
         const currentTheme = context.theme;
         console.log(currentTheme);
+        ```
+      location: |-
+        ```
+        readonly location: PenpotLocation
+        ```
+
+        The Penpot instance URL and the current address in the app, in the
+        dashboard as well as in the workspace. Requires `content:read` permission.
+
+        Example
+        ```
+        const { baseUrl, href, params } = penpot.location;
+        console.log(baseUrl); // "https://design.penpot.app/"
+        console.log(params['file-id']);
         ```
       localStorage: |-
         ```
@@ -5917,6 +5932,7 @@ Context:
         currentUser: User;
         activeUsers: ActiveUser[];
         theme: Theme;
+        location: PenpotLocation;
         localStorage: LocalStorage;
         selection: Shape[];
         shapesColors(shapes: Shape[]): (Color & ColorShapeInfo)[];
@@ -6119,6 +6135,20 @@ Context:
         ```
         const currentTheme = context.theme;
         console.log(currentTheme);
+        ```
+      location: |-
+        ```
+        readonly location: PenpotLocation
+        ```
+
+        The Penpot instance URL and the current address in the app, in the
+        dashboard as well as in the workspace. Requires `content:read` permission.
+
+        Example
+        ```
+        const { baseUrl, href, params } = penpot.location;
+        console.log(baseUrl); // "https://design.penpot.app/"
+        console.log(params['file-id']);
         ```
       localStorage: |-
         ```
@@ -8390,6 +8420,7 @@ File:
         id: string;
         name: string;
         revn: number;
+        features: string[] | null;
         pages: Page[];
         export(
             exportType: "penpot" | "zip",
@@ -8437,6 +8468,24 @@ File:
         ```
 
         The `revn` will change for every document update
+      features: |-
+        ```
+        readonly features: string[] | null
+        ```
+
+        The features of the open file, sorted by name, e.g. `"components/v2"`
+        or `"variants/v1"`. It also lists the features active in the session,
+        such as `"render-wasm/v1"` when the new render engine (WebGL) draws the
+        file. Each read returns a new array.
+
+        Only `penpot.currentFile` answers it: for any other file, such as a
+        library, or a `File` kept after the user opens another file, it is
+        `null`.
+
+        Example
+        ```
+        const webgl = penpot.currentFile.features.includes('render-wasm/v1');
+        ```
       pages: |-
         ```
         readonly pages: Page[]
@@ -14204,6 +14253,51 @@ LibraryTypography:
         const sharedKeys = shape.getSharedPluginDataKeys('exampleNamespace');
         console.log(sharedKeys);
         ```
+PenpotLocation:
+  overview: |-
+    Interface PenpotLocation
+    ========================
+
+    The Penpot instance URL and the current address in the app.
+    Each read of `penpot.location` returns a new snapshot.
+
+    Query params that carry secrets (`share-id`, any param ending in
+    `token`, `secret` or `password`, and the OAuth params `request`,
+    `code` and `state`) are left out of `params` and `href`.
+
+    ```
+    interface PenpotLocation {
+        baseUrl: string;
+        href: string;
+        params: Record<string, string>;
+    }
+    ```
+
+    Referenced by: Context, Penpot
+  members:
+    Properties:
+      baseUrl: |-
+        ```
+        readonly baseUrl: string
+        ```
+
+        The public URL of the Penpot instance, ending in `/`,
+        e.g. `"https://design.penpot.app/"`.
+      href: |-
+        ```
+        readonly href: string
+        ```
+
+        The URL of the current screen, e.g. the open file and page:
+        `"https://design.penpot.app/?screen=workspace&team-id=…&file-id=…&page-id=…"`.
+        Use it to link to what the user is looking at.
+      params: |-
+        ```
+        readonly params: Record<string, string>
+        ```
+
+        The query params of the current URL, e.g. `screen`, `team-id`,
+        `file-id` and `page-id`. A param repeated in the URL keeps its last value.
 LocalStorage:
   overview: |-
     Interface LocalStorage
