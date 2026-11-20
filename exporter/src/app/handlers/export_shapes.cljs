@@ -82,10 +82,10 @@
   [job auth-token resource {:keys [exports is-wasm]}]
   (let [failure (volatile! nil)
 
-        zip     (rsc/create-zip :resource resource
-                                :on-error (fn [cause] (vreset! failure cause))
-                                :on-progress (fn [{:keys [done]}]
-                                               (jobs/progress! job done)))
+        [zip out] (rsc/create-zip :resource resource
+                                  :on-error (fn [cause] (vreset! failure cause))
+                                  :on-progress (fn [{:keys [done]}]
+                                                 (jobs/progress! job done)))
 
         append  (fn [{:keys [filename path] :as _object}]
                   (job.utils/track! (:id job) path)
@@ -98,7 +98,7 @@
          (p/mcat (fn [_]
                    (if-let [cause @failure]
                      (p/rejected cause)
-                     (rsc/close-zip zip))))
+                     (rsc/close-zip zip out))))
          (p/fmap (constantly resource))
          (p/mcat (partial rsc/upload-resource auth-token))
          (p/fmap (fn [resource] (dissoc resource :path))))))

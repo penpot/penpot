@@ -51,18 +51,44 @@
                        (let [name (unchecked-get data "name")
                              num  (swap! progress inc)]
                          (on-progress {:done num :filename name}))))
+    (.on out "error" on-error)
     (.pipe zip out)
-    zip))
+    [zip out]))
 
 (defn add-to-zip
   [zip path name]
   (.file ^js zip path #js {:name name}))
 
 (defn close-zip
-  [zip]
-  (p/create (fn [resolve]
-              (.on ^js zip "close" resolve)
-              (.finalize ^js zip))))
+  [zip out]
+  (p/create (fn [resolve reject]
+              (let [zipped  (atom false)
+                    flushed (atom false)
+                    done    (atom false)
+                    settle  (fn [err]
+                              (when-not @done
+                                (reset! done true)
+                                (if err
+                                  (reject err)
+                                  (resolve nil))))
+                    check   #(when (and @zipped @flushed) (settle nil))
+                    note-z  #(do (reset! zipped true) (check))
+                    note-o  #(do (reset! flushed true) (check))]
+                ;; Wait for the archiver to be done AND for the destination
+                ;; file stream to be flushed. The archiver's `close` event
+                ;; does not guarantee the last chunks received by the pipe
+                ;; have been written to disk, so resolving on it alone used
+                ;; to race with `readFile` in `upload-resource`, yielding
+                ;; truncated (unusable) zip archives.
+                (.on ^js zip "end" note-z)
+                (.on ^js zip "close" note-z)
+                (if (some? out)
+                  (doto ^js out
+                    (.on "finish" note-o)
+                    (.on "close" note-o)
+                    (.on "error" settle))
+                  (reset! flushed true))
+                (.then (.finalize ^js zip) note-z settle)))))
 
 (defn upload-resource
   [auth-token resource]
