@@ -6,7 +6,12 @@
 
 - `libs/plugin-types`: TypeScript declarations for the public Penpot Plugin API. Type-only package; runtime behavior is implemented elsewhere.
 - `libs/plugins-runtime`: runtime that loads plugins and exposes/generated API behavior to plugin code.
-- `libs/plugins-styles`: reusable styling package for plugins.
+- `libs/plugins-styles`: reusable styling package for plugins. Keep its root
+  `styles.css`: it imports `src/lib/styles.css` and mirrors the bundled file
+  `tools/scripts/build-css.mjs` publishes. When a consumer depends on the same
+  version as this package, pnpm links the source tree instead of the published
+  package, and the documented `@penpot/plugin-styles/styles.css` import must
+  still resolve.
 - `apps/*-plugin`: sample/development plugins. `apps/e2e`: plugin e2e tests.
 
 ## Dev Workflow

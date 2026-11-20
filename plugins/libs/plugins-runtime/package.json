@@ -4,7 +4,7 @@
   "dependencies": {
     "@penpot/plugin-types": "^1.6.0",
     "ses": "^2.3.0",
-    "zod": "^4.6.5"
+    "zod": "^4.6.7"
   },
   "module": "./dist/index.js",
   "typings": "./dist/index.d.ts",
