@@ -891,11 +891,10 @@
   (update file ::changes into changes))
 
 (defn- media-rewrite-changes
-  "The changes of the media reference rewrite: one `:mod-obj` per touched
-  shape, setting every attribute the rewrite changed. Appended to the
-  save's own change vector they make the row carry the whole of what the
-  save applied. `before` is the file the rewrite received, `after` the one
-  it returned; the refs name the shapes it may have touched."
+  "Maybe remapped media references, as changes: one `:mod-obj` per shape
+  that `update-media-references!` pointed at a copy in this file. The
+  client never learns the copies' ids, so the save appends these changes
+  to its row, its notification, and its response."
   [before after refs]
   (into []
         (comp (map (juxt :page-id :shape-id))
