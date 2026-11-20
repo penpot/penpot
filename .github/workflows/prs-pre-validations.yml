@@ -64,18 +64,29 @@ jobs:
               console.log(`PR #${pr.number} was opened by a bot; skipping.`);
               return;
             }
+            const { owner, repo } = context.repo;
+
+            // Use the API instead of the webhook, because
+            // the API reports their real relationship to the repository.
+            const { data: currentPR } = await github.rest.pulls.get({
+              owner,
+              repo,
+              pull_number: pr.number
+            });
+            const association = currentPR.author_association;
+            console.log(`PR #${pr.number} author association from API: ${association}.`);
+
             // Exemption labels such as `no issue required` do not apply to
             // public contributors: the author classification wins.
-            if (ASSOCIATIONS_WITH_ACCESS.has(pr.author_association)) {
-              console.log(`PR #${pr.number} was opened by ${pr.author_association}; skipping.`);
+            if (ASSOCIATIONS_WITH_ACCESS.has(association)) {
+              console.log(`PR #${pr.number} was opened by ${association}; skipping.`);
               return;
             }
-            if (pr.author_association === 'MANNEQUIN') {
+            if (association === 'MANNEQUIN') {
               console.log(`PR #${pr.number} was opened by a migrated placeholder user; skipping.`);
               return;
             }
 
-            const { owner, repo } = context.repo;
             const result = await github.graphql(
               `query($owner: String!, $repo: String!, $number: Int!) {
                 repository(owner: $owner, name: $repo) {
