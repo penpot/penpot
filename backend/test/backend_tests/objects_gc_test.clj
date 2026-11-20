@@ -276,9 +276,9 @@
             (t/is (= [(:id file)] (get-in event [:props :file-ids])))
             (t/is (= "objects-gc" (get-in event [:context :triggered-by])))))))))
 
-(t/deftest gc-emits-no-event-without-a-consumer
-  ;; The GC must stay silent when the audit log is off, even though the row is
-  ;; still purged.
+(t/deftest gc-emits-an-event-without-an-archive-consumer
+  ;; Full-row persistence remains enabled for Team Storage when the archive
+  ;; consumers are off.
   (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
     (let [profile (th/create-profile* 1 {:is-active true})
           team    (th/create-team* 74 {:profile-id (:id profile)})]
@@ -289,7 +289,7 @@
       (th/reset-mock! audit-mock)
       (th/run-task! :objects-gc {:skip-delay true})
       (t/is (nil? (th/db-get :team {:id (:id team)} {::db/remove-deleted false})))
-      (t/is (empty? (:call-args-list @audit-mock))))))
+      (t/is (seq (:call-args-list @audit-mock))))))
 
 (t/deftest gc-deletes-file-data-and-touches-its-storage-object
   (let [profile (th/create-profile* 1)

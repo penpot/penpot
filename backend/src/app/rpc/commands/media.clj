@@ -40,14 +40,24 @@
 
 (declare create-file-media-object)
 
-;; TEMPORARILY DISABLED (2026-10-19): the media-storage-bytes-per-team
-;; quote check that used this lookup is disabled below. Kept active
-;; because the audit props of the upload still report the team id.
+;; Resolves the team of the target file for the quota check and audit props.
 (def ^:private sql:get-team-id-for-file
   "SELECT p.team_id
      FROM file AS f
      JOIN project AS p ON (p.id = f.project_id)
     WHERE f.id = ?")
+
+(defn- check-media-storage-quote
+  "Apply the media-storage-bytes-per-team quota to a file that is about
+  to receive `size` bytes, and answer its team id for the audit props."
+  [cfg file-id profile-id size]
+  (let [team-id (:team-id (db/exec-one! (db/get-connectable cfg)
+                                        [sql:get-team-id-for-file file-id]))]
+    (quotes/check! cfg {::quotes/id         ::quotes/media-storage-bytes-per-team
+                        ::quotes/profile-id profile-id
+                        ::quotes/team-id     team-id
+                        ::quotes/incr        size})
+    team-id))
 
 (def ^:private schema:upload-file-media-object
   [:map {:title "upload-file-media-object" :closed true}
@@ -69,16 +79,7 @@
   (media.v/check-media-size content)
   (media.v/check-upload-path content)
 
-  (let [team-id (:team-id (db/exec-one! pool [sql:get-team-id-for-file file-id]))]
-    ;; TEMPORARILY DISABLED (2026-10-19): media-storage-bytes-per-team
-    ;; quote performs a full SUM over storage_object per upload (3-12s in
-    ;; prod on a 3.5TB DB, ~34 slow executions/hour). Disabled until we
-    ;; land a cheaper approximation (cached counter / rewritten query).
-    ;; TODO: re-enable with the new implementation.
-    ;; (quotes/check! cfg {::quotes/id        ::quotes/media-storage-bytes-per-team
-    ;;                     ::quotes/profile-id profile-id
-    ;;                     ::quotes/team-id    team-id
-    ;;                     ::quotes/incr       (:size content)})
+  (let [team-id (check-media-storage-quote cfg file-id profile-id (:size content))]
     (db/run! cfg (fn [{:keys [::db/conn] :as cfg}]
                    ;; We get the minimal file for proper checking if
                    ;; file is not already deleted
@@ -231,7 +232,8 @@
 
 (sv/defmethod ::create-file-media-object-from-url
   {::doc/added "1.17"
-   ::doc/changes [["2.19" "The optional :id param is rejected with a params-validation error; the server always generates the identifier"]]
+   ::doc/changes [["2.19" "The optional :id param is rejected with a params-validation error; the server always generates the identifier"]
+                  ["2.19" "The upload pays the media-storage-bytes-per-team quota like upload-file-media-object"]]
    ::climit/id [[:process-image/by-profile ::rpc/profile-id]
                 [:process-image/global]]
    ::sm/params schema:create-file-media-object-from-url}
@@ -251,12 +253,13 @@
     mobj))
 
 (defn- create-file-media-object-from-url
-  [cfg {:keys [url name] :as params}]
+  [cfg {:keys [url name file-id profile-id] :as params}]
   (let [content (media/download-image cfg url)
         params  (-> params
                     (assoc :from-url? true)
                     (assoc :content content)
                     (assoc :name (d/nilv name "unknown")))]
+    (check-media-storage-quote cfg file-id profile-id (:size content))
     (db/run! cfg create-file-media-object params)))
 
 
@@ -556,7 +559,8 @@
 
 (sv/defmethod ::assemble-file-media-object
   {::doc/added "2.17"
-   ::doc/changes [["2.19" "The optional :id param is rejected with a params-validation error; the server always generates the identifier"]]
+   ::doc/changes [["2.19" "The optional :id param is rejected with a params-validation error; the server always generates the identifier"]
+                  ["2.19" "The upload pays the media-storage-bytes-per-team quota like upload-file-media-object"]]
    ::sm/params schema:assemble-file-media-object
    ::climit/id [[:process-image/by-profile ::rpc/profile-id]
                 [:process-image/global]]}
@@ -572,6 +576,7 @@
                                   (assoc :mtype mtype)
                                   (media.v/check-media-type)
                                   (media.v/check-media-size))
+                      _       (check-media-storage-quote cfg file-id profile-id (:size content))
                       mobj    (create-file-media-object cfg (assoc params
                                                                    :from-chunks? true
                                                                    :content content))]
@@ -588,4 +593,3 @@
                       :file-id   file-id
                       :is-local  is-local
                       :mtype     mtype}})))))
-

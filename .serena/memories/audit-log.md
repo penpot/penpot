@@ -90,6 +90,8 @@ The telemetry consumer scans the same stream, skips full rows, and ships shadows
 
 `audit_log` is a buffer, not the archive. Producers insert rows without knowing the destinations. Each consumer keeps its own position in `audit_log_consumer_cursor`. Worker instances run consumers in background threads, not jobs. A session advisory lock allows only one pass per consumer per database. The pass holds a pool connection and fixes its upper bound (the *frontier*) at the start, so it ends even while new events arrive.
 
+The always-on Team Storage consumer uses full rows to mark teams whose cached storage usage may be stale. It processes selected event names and team ids from props; it does not send events to an external archive.
+
 ### Ordering and retry
 
 The cursor orders rows by `(xid, seq)`: transaction id first, then sequence within the transaction. A snapshot cut based on `pg_snapshot_xmin` keeps the reader from moving past an earlier open transaction. For example, A inserts a row and stays open. B inserts and commits while A is open; then A inserts a second row and commits. A sequence-only cursor could read B and skip A's first, still invisible row. With the cut, the drain waits and can then deliver both A rows before B. This is neither global insertion order nor commit order.
@@ -100,7 +102,7 @@ Each chunk sends and advances its cursor in one local transaction. A refusal abo
 
 ### Registration, deletion and replay
 
-The component registers its cursor at `(0, 0)` after configuration succeeds and before its loop starts, so a new consumer replays what remains in the buffer. Consumer ids are stable and never reused: `0` telemetry, `1` Nexus, `2` admin console. A disabled consumer keeps its position until retired. Turning off both full-row consumers stops new full rows; it does not empty the buffer or stop telemetry shadows.
+The component registers its cursor at `(0, 0)` after configuration succeeds and before its loop starts, so a new consumer replays what remains in the buffer. Consumer ids are stable and never reused: `0` telemetry, `1` Nexus, `2` admin console, `3` Team Storage. Nexus and admin-console are flag-gated; Team Storage always runs on writable worker instances and its cursor is part of full-row GC. A disabled consumer keeps its position until retired. Full-row persistence is always on because Team Storage needs the stream, even when both archive consumers are off. This adds database writes and storage; the GC still bounds retention by the oldest full-row cursor.
 
 Only the GC deletes. For full rows it deletes through the oldest registered cursor other than `0`; for shadows it deletes through cursor `0`. A missing cursor leaves its cursor-based path idle. A separate seven-day retention path deletes shadows by age regardless of cursors. It can delete unsent shadows; an older shadow can still ship if the consumer reads it before GC removes it.
 
@@ -116,15 +118,15 @@ The GC reads cursors again for each batch but does not serialize deletion with r
 
 | Setting | Effect |
 |---|---|
-| `:nexus`, `:admin-console` | Start the corresponding archive consumers and enable full-row persistence. Set the intended flags consistently on web and worker instances: each computes persistence at boot. Nexus needs `:nexus-uri`. |
+| `:nexus`, `:admin-console` | Start the corresponding archive consumers. Full-row persistence is always on for Team Storage, regardless of these flags. Nexus needs `:nexus-uri`. |
 | `:telemetry` | Collect and ship shadow rows to `:telemetry-uri`, separately from full-row persistence. |
 | `:error-reporting` | Start error reporters and enable public ingest for crash reports without requiring stored audit rows. |
 | `:audit-log-gc` | Schedule the GC, on by default. Use `disable-audit-log-gc` during a mixed-version rollout and follow the runbook before restoring it. |
 | `:audit-log-logger` | Log backend audit events, including event data. This is not the archive or a substitute for persistence. |
 
-`:audit-log` is not a configurable flag. As a wire signal it means full-row persistence **or** error reporting. `:telemetry` is a separate wire signal. Public ingest skips processing on a read-only pool or when none of those destinations is enabled.
+`:audit-log` is not a configurable flag. As a wire signal it means full-row persistence **or** error reporting. Full-row persistence is always on for the Team Storage consumer, so writable public ingest accepts batches even when both archive consumers are off. It skips processing on a read-only pool. `:telemetry` is a separate wire signal.
 
-To add a consumer, give it a non-reused id and a transport definition for the shared `run-pass` loop. Configure its `:process`, optional `:prepare` and worker component; do not add producer-specific fan-out or seed its cursor in a migration. For contract tests, drive the real pass with prepared cfg; see `mem:backend/testing` for the test system and stubs. When changing an emitter, assert actor, props and exact emission counts for the specific backend action. Checking only the first matching event misses duplicates. Do not assert exact global counts from best-effort browser collection.
+To add a consumer, give it a non-reused id and a transport definition for the shared `run-pass` loop. Configure its `:process`, optional `:prepare` and worker component; do not add producer-specific fan-out or seed its cursor in a migration. An always-on consumer can set `:always? true` instead of a `:flag`; full-row persistence must then cover its lifecycle. Team Storage uses id `3`, marks relevant teams dirty from event props, and relies on scheduled jobs in the `:storage` queue to recompute `team_storage_usage`. For contract tests, drive the real pass with prepared cfg; see `mem:backend/testing` for the test system and stubs. When changing an emitter, assert actor, props and exact emission counts for the specific backend action. Checking only the first matching event misses duplicates. Do not assert exact global counts from best-effort browser collection.
 
 ### Where to look
 

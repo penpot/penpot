@@ -154,14 +154,11 @@
   (t/is (= "db" (c/get (read-config {} :default cf/default)
                        :file-data-backend))))
 
-(t/deftest audit-persistence-follows-consumer-flags
-  (t/testing "a consumer flag enables persistence"
-    (t/is (cf/persist-audit-events? #{:nexus}))
-    (t/is (cf/persist-audit-events? #{:admin-console})))
-  (t/testing "other sinks alone do not enable persistence"
+(t/deftest audit-persistence-is-always-on-for-team-storage
+  (t/testing "the always-on Team Storage consumer needs the full event stream"
     (doseq [flags [#{} #{:webhooks} #{:telemetry} #{:error-reporting}
-                   #{:audit-log-logger}]]
-      (t/is (not (cf/persist-audit-events? flags)) (str flags))))
+                   #{:audit-log-logger} #{:nexus} #{:admin-console}]]
+      (t/is (cf/persist-audit-events? flags) (str flags))))
   (t/testing "the boot value is derived from the loaded flags"
     (t/is (= (cf/persist-audit-events? cf/flags) cf/audit-persist?)))
   (t/testing "a stale enable-audit-log in the environment is dropped"

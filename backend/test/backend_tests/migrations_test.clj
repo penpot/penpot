@@ -78,6 +78,19 @@
              "resource_id" "expires_at"}
            (table-columns "job"))))
 
+(t/deftest team-storage-usage-migration-creates-the-counter-table
+  (let [apply! (mg/resource "app/migrations/sql/0160-team-storage-usage.sql")]
+    (t/is (true? (apply! th/*pool*)))
+    (t/is (true? (apply! th/*pool*))))
+  (t/is (= #{"team_id" "total_bytes" "dirty_at" "updated_at"}
+           (table-columns "team_storage_usage")))
+  (t/is (contains? (table-indexes "team_storage_usage")
+                   "team_storage_usage__dirty_at__idx"))
+  (t/is (contains? (table-indexes "team_storage_usage")
+                   "team_storage_usage__updated_at__idx"))
+  (t/is (contains? (table-foreign-keys "team_storage_usage")
+                   ["team_storage_usage_team_id_fkey" "c"])))
+
 (t/deftest job-tenant-column-is-not-nullable
   (t/testing "every job belongs to an instance, so the column is required"
     (t/is (= "NO"

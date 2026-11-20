@@ -84,7 +84,7 @@
 
 ## Storage and media
 
-- The `media-storage-bytes-per-team` quota check on `upload-file-media-object` is TEMPORARILY DISABLED (2026-10-19, kept commented in `app.rpc.commands.media` with its `sql:get-team-id-for-file` lookup still active for the audit props): the quote performs a full `SUM` over `storage_object` per upload and was too slow in production. The `upload-sessions-per-profile` quota is unaffected and stays active. Re-enable only with a cheaper approximation.
+- `media-storage-bytes-per-team` uses `team_storage_usage`, a cached per-team total maintained by the always-on audit-log consumer (id `3`) and the scheduler/recompute jobs on queue `:storage`. Upload, URL-download and chunk-assembly paths read the cached total, not the live `SUM`; the first quote check creates a zero-byte dirty row when missing, so a new team fails open while awaiting recompute. `:quotes` still controls whether upload quotas are applied, not whether the consumer or counter runs. Full audit rows are persisted even when Nexus and admin-console are disabled because the consumer needs the stream; see `mem:audit-log`.
 - `file-gc` trims emit `file-gc` with the cleaned `:file-id` and its `:team-id`; `delete-object-with-cascade` carries flat `:team-ids` next to the nested `:cascade` map. A consumer can key on those props without joining production tables.
 - Storage abstraction, backend configuration, logical buckets, object lifecycle, deduplication, access rules, and garbage collection: `mem:backend/storage`.
 - SVG validation strips DOCTYPE and uses secure SAX parsing. Basic SVG info falls back to 100x100 dimensions when width/height/viewBox are missing.

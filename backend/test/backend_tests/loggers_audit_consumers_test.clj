@@ -22,6 +22,7 @@
    [app.loggers.audit.consumers :as consumer]
    [app.loggers.audit.consumers.admin-console :as consumer.admin-console]
    [app.loggers.audit.consumers.nexus :as consumer.nexus]
+   [app.loggers.audit.consumers.team-storage :as consumer.team-storage]
    [app.loggers.audit.consumers.telemetry :as consumer.telemetry]
    [app.loggers.audit.gc :as gc]
    [app.main :as main]
@@ -58,7 +59,8 @@
   [next]
   (doseq [consumer-id [consumer/telemetry
                        consumer/nexus
-                       consumer/admin-console]]
+                       consumer/admin-console
+                       consumer/team-storage]]
     (th/db-exec! ["INSERT INTO audit_log_consumer_cursor (consumer, xid, seq)
                    VALUES (?::smallint, '0'::xid8, 0)"
                   consumer-id]))
@@ -129,6 +131,13 @@
   (consumer/run-pass
    (admin-console-cfg (:app.metrics/metrics th/*system*))
    consumer.admin-console/consumer))
+
+(defn- run-team-storage
+  []
+  (consumer/run-pass
+   {::db/pool     (:app.db/pool th/*system*)
+    ::mtx/metrics (:app.metrics/metrics th/*system*)}
+   consumer.team-storage/consumer))
 
 (def ^:private telemetry-uri "http://telemetry.example/")
 
@@ -1507,6 +1516,7 @@
                    admin-mock   {:target 'app.nitrate/call :return nil}]
         (insert-audit-row (:id prof) "create-project")
         (run-nexus {:uri archive-uri})
+        (run-team-storage)
         ;; Nexus passed it, the admin console has not: nothing to delete.
         (t/is (= 0 (run-gc)))
         (t/is (= 1 (count (th/db-exec! ["SELECT * FROM audit_log"]))))
@@ -1557,6 +1567,7 @@
                         WHERE consumer = ?::smallint" consumer/admin-console])
         (insert-audit-row (:id prof) "create-project")
         (run-nexus {:uri archive-uri})
+        (run-team-storage)
         (insert-shadow-row (:id prof) "navigate")
         (t/is (= 1 (run-gc)))
         (let [rows (th/db-exec! ["SELECT source FROM audit_log"])]
@@ -1613,6 +1624,7 @@
                            (ct/minus (ct/now) (ct/duration {:days 8})))
         (run-nexus {:uri archive-uri})
         (run-admin-console)
+        (run-team-storage)
         (t/is (= 3 ((::jobs/handler job-def) nil {})))
         (t/is (= 3.0 (counter-value metrics :audit-consumer-discarded ["gc"])))))))
 
@@ -1625,6 +1637,7 @@
           (insert-audit-row (:id prof) (str "event-" i)))
         (run-nexus {:uri archive-uri})
         (run-admin-console)
+        (run-team-storage)
         (with-bindings {#'gc/batch-size 2}
           (t/is (= 5 (run-gc))))
         (t/is (= 0 (count (th/db-exec! ["SELECT * FROM audit_log"]))))))))
@@ -1679,6 +1692,7 @@
         (dotimes [i 3]
           (insert-audit-row (:id prof) (str "event-" i)))
         (run-nexus {:uri archive-uri})
+        (run-team-storage)
         (with-bindings {#'gc/run-budget (ct/duration {:seconds 0})}
           (t/is (= 0 (run-gc))))
         (t/is (= 3 (count (th/db-exec! ["SELECT * FROM audit_log"]))))
@@ -1789,6 +1803,7 @@
         ;; Its first drain processes the history and advances, so the
         ;; next GC can delete.
         (run-admin-console)
+        (run-team-storage)
         (t/is (:called? @admin-console-mock))
         (t/is (some? (cursor-of consumer/admin-console)))
         (t/is (= 1 (run-gc)))
@@ -1805,6 +1820,9 @@
     (th/db-exec! ["UPDATE audit_log_consumer_cursor
                       SET xid = ?::xid8, seq = 3 WHERE consumer = ?::smallint"
                   (str high) consumer/admin-console])
+    (th/db-exec! ["UPDATE audit_log_consumer_cursor
+                      SET xid = ?::xid8, seq = 7 WHERE consumer = ?::smallint"
+                  (str high) consumer/team-storage])
     (let [cursor (@#'gc/get-oldest-full-cursor {::db/pool th/*pool*})]
       (t/is (= (str low) (:xid-text cursor)))
       (t/is (= 7 (:seq cursor))))))
@@ -1821,6 +1839,7 @@
         (dotimes [i 4]
           (insert-audit-row (:id prof) (str "event-" i)))
         (run-nexus {:uri archive-uri})
+        (run-team-storage)
         ;; The admin console has not registered yet: its cursor is absent.
         (th/db-exec! ["DELETE FROM audit_log_consumer_cursor
                         WHERE consumer = ?::smallint"

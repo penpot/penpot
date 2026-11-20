@@ -2518,14 +2518,14 @@
                                                   {::db/on-conflict-do-nothing? true})))
         (t/is (empty? (:call-args-list @audit-mock)))))))
 
-(t/deftest no-add-team-member-event-without-a-consumer
+(t/deftest add-team-member-event-is-emitted-without-an-archive-consumer
   (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
     (let [owner  (th/create-profile* 1 {:is-active true})
           _team  (th/create-team* 23 {:profile-id (:id owner)})
           events (->> (:call-args-list @audit-mock)
                       (map second)
                       (filter #(= "add-team-member" (:name %))))]
-      (t/is (empty? events)))))
+      (t/is (= 2 (count events))))))
 
 (t/deftest add-team-member-event-carries-derived-role
   ;; `team_profile_rel` has no role column, so no caller can pass it: the

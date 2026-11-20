@@ -61,7 +61,8 @@
                   (into #{}))]
     (t/is (= #{:app.loggers.audit.consumers.nexus/consumer
                :app.loggers.audit.consumers.admin-console/consumer
-               :app.loggers.audit.consumers.telemetry/consumer}
+               :app.loggers.audit.consumers.telemetry/consumer
+               :app.loggers.audit.consumers.team-storage/consumer}
              keys)
           (str "update this set and helpers/init-system's dissoc: " keys))))
 
@@ -104,7 +105,9 @@
                      [::db/pool :app.nitrate/client ::mtx/metrics]]
                     [:app.loggers.audit.consumers.telemetry/consumer
                      [::db/pool :app.http.client/client
-                      :app.setup/props ::mtx/metrics]]]]
+                      :app.setup/props ::mtx/metrics]]
+                    [:app.loggers.audit.consumers.team-storage/consumer
+                     [::db/pool ::mtx/metrics]]]]
     (t/testing (str k)
       (let [cfg (get main/worker-config k)]
         (t/is (some? cfg))

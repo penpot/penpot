@@ -234,6 +234,7 @@
     [:worker-webhook-parallelism {:optional true} ::sm/int]
     [:worker-cron-parallelism {:optional true} ::sm/int]
     [:worker-binfile-parallelism {:optional true} ::sm/int]
+    [:worker-storage-parallelism {:optional true} ::sm/int]
 
     [:database-password {:optional true} [:maybe :string]]
     [:database-uri {:optional true} ::sm/uri]
@@ -399,11 +400,10 @@
         (disj :audit-log))))
 
 (defn persist-audit-events?
-  "True when at least one audit-log consumer is enabled. The result is
-  computed once at boot into `audit-persist?`; event paths read that value
-  instead of checking the flags on every event."
-  [flags]
-  (boolean (some #{:nexus :admin-console} flags)))
+  "True because the always-on Team Storage consumer needs the full audit
+  event stream. The result is computed once at boot into `audit-persist?`."
+  [_flags]
+  true)
 
 (defn read-env
   [prefix]

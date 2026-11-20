@@ -614,15 +614,45 @@
      JOIN storage_object AS so ON (so.id = refs.so_id)
     WHERE so.deleted_at IS NULL")
 
+(defn get-live-media-storage-bytes
+  "Total live media storage bytes of a team, computed from domain tables.
+  The background recompute job calls this query; uploads read the cached
+  counter instead."
+  [conn team-id]
+  (:total (db/exec-one! conn [sql:get-media-storage-bytes-per-team
+                              team-id team-id team-id team-id team-id team-id])))
+
+(def ^:private sql:ensure-team-storage-usage
+  "Create a dirty counter row when it is missing. The team existence
+  condition handles a team purged between the read and insert."
+  "INSERT INTO team_storage_usage (team_id, dirty_at)
+   SELECT ?, now()
+    WHERE EXISTS (SELECT 1 FROM team AS t WHERE t.id = ?)
+   ON CONFLICT (team_id) DO NOTHING")
+
+(def ^:private sql:get-team-storage-usage-row
+  "SELECT team_id FROM team_storage_usage WHERE team_id = ?")
+
+(defn- ensure-team-storage-usage
+  [conn team-id]
+  (when-not (db/exec-one! conn [sql:get-team-storage-usage-row team-id])
+    (db/exec-one! conn [sql:ensure-team-storage-usage team-id team-id])))
+
+(def ^:private sql:get-cached-media-storage-bytes-per-team
+  "A team with no usage row must fail open instead of returning no count."
+  "SELECT COALESCE((SELECT total_bytes
+                      FROM team_storage_usage
+                     WHERE team_id = ?), 0) AS total")
+
 (defmethod check-quote ::media-storage-bytes-per-team
-  [{:keys [::profile-id ::team-id ::target] :as cfg}]
+  [{:keys [::db/conn ::profile-id ::team-id ::target] :as cfg}]
   (assert (valid-media-storage-bytes-per-team-quote? cfg) "invalid quote parameters")
+  (ensure-team-storage-usage conn team-id)
   (-> cfg
       (assoc ::default (cf/get :quotes-media-storage-bytes-per-team
                                (* 20 1024 1024 1024)))
       (assoc ::quote-sql [sql:get-quotes-2 target team-id profile-id profile-id])
-      (assoc ::count-sql [sql:get-media-storage-bytes-per-team
-                          team-id team-id team-id team-id team-id team-id])
+      (assoc ::count-sql [sql:get-cached-media-storage-bytes-per-team team-id])
       (generic-check!)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

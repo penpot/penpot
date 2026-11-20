@@ -33,6 +33,7 @@
    ;; the config keys).
    [app.loggers.audit.consumers.admin-console]
    [app.loggers.audit.consumers.nexus]
+   [app.loggers.audit.consumers.team-storage]
    [app.loggers.audit.consumers.telemetry]
    [app.loggers.audit.gc]
    [app.loggers.webhooks :as-alias webhooks]
@@ -654,6 +655,10 @@
     :run-webhook           (ig/ref ::webhooks/run-webhook-job-def)
     :process-webhook-event (ig/ref ::webhooks/process-webhook-event-job-def)
     :file-gc               (ig/ref :app.tasks.file-gc/job-def)
+    :schedule-recompute-team-storage
+    (ig/ref :app.tasks.team-storage/schedule-recompute-job-def)
+    :recompute-team-storage
+    (ig/ref :app.tasks.team-storage/recompute-job-def)
     :offload-file-data     (ig/ref :app.tasks.offload-file-data/job-def)
     :objects-gc            (ig/ref :app.tasks.objects-gc/job-def)
     :export-binfile        (ig/ref :app.tasks.export-binfile/job-def)
@@ -755,6 +760,14 @@
     ::mtx/metrics (ig/ref ::mtx/metrics)}
 
    :app.tasks.file-gc-scheduler/job-def
+   {::db/pool     (ig/ref ::db/pool)
+    ::mtx/metrics (ig/ref ::mtx/metrics)}
+
+   :app.tasks.team-storage/schedule-recompute-job-def
+   {::db/pool     (ig/ref ::db/pool)
+    ::mtx/metrics (ig/ref ::mtx/metrics)}
+
+   :app.tasks.team-storage/recompute-job-def
    {::db/pool     (ig/ref ::db/pool)
     ::mtx/metrics (ig/ref ::mtx/metrics)}
 
@@ -878,6 +891,9 @@
          {:cron #penpot/cron "0 0 2 * * ?" ;; daily
           :job :file-gc-scheduler}
 
+         {:cron #penpot/cron "45 */10 * * * ?" ;; every 10m
+          :job :schedule-recompute-team-storage}
+
          {:cron #penpot/cron "0 30 */3,23 * * ?"
           :job :telemetry}
 
@@ -929,6 +945,17 @@
     ::db/pool         (ig/ref ::db/pool)
     ::mbus/msgbus     (ig/ref ::mbus/msgbus)}
 
+   ;; The per-team storage SUM runs separately from the default runner.
+   [::storage ::wrk/runner]
+   {::wrk/parallelism (cf/get :worker-storage-parallelism 2)
+    ::wrk/queue       :storage
+    ::wrk/tenant      (cf/get :tenant)
+    ::rds/client      (ig/ref ::rds/client)
+    ::jobs/defs       (ig/ref ::jobs/defs)
+    ::mtx/metrics     (ig/ref ::mtx/metrics)
+    ::db/pool         (ig/ref ::db/pool)
+    ::mbus/msgbus     (ig/ref ::mbus/msgbus)}
+
    [::cron ::wrk/runner]
    {::wrk/parallelism (cf/get :worker-cron-parallelism 2)
     ::wrk/queue       :cron
@@ -957,7 +984,11 @@
    {::db/pool            (ig/ref ::db/pool)
     ::http.client/client (ig/ref ::http.client/client)
     ::setup/props        (ig/ref ::setup/props)
-    ::mtx/metrics        (ig/ref ::mtx/metrics)}})
+    ::mtx/metrics        (ig/ref ::mtx/metrics)}
+
+   :app.loggers.audit.consumers.team-storage/consumer
+   {::db/pool     (ig/ref ::db/pool)
+    ::mtx/metrics (ig/ref ::mtx/metrics)}})
 
 
 (defn start
