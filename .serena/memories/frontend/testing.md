@@ -31,6 +31,10 @@ To assert over emitted event sequences, observe termination: subscribe through `
 - `cljs.test` keeps its env in a `set!` var: assertions inside deferred ticks count. `run-block`: double `done` only warns; missing `done` stalls.
 - `t/async` discards the body promise — completion signals ONLY via `done`. `t/deftest ^:async` adds auto async-context + auto `done`, but awaiting stays the author's job; without it the test passes empty.
 - `take 1` is per-subscription on a hot subject: subscribe-before-push or hang. `end!`/`.error` with pending takes only forwards valueless completion.
+- Single-arity and variadic `defn`s compile to JS functions with no argument-count check (any target), so missing required args arrive as `undefined` instead of throwing; the analyzer 
+`:fn-arity` warning is the only signal. Treat `:fn-arity` in `compile test` as a defect, never as noise.
+- `:infer-warning` on a JS interop fixes with `^js` on the target (`(.-foo ^js x)`, `(.method ^js x ...)`). Inside `set!` the hint must sit on a symbol: `(set! (.-foo ^js (f x)) v)` still warns, so bind `(let [^js y (f x)] (set! (.-foo y) v))`.
+- A helper that returns a JS object carries the hint on its name (`(defn- ^js catalog [id] ...)`), and call sites then need no hint at all — `(.method (catalog id))` and `(.-prop (catalog id))` stop warning. This is the cheapest way to keep interop out of the test bodies; `^js` on the arglist instead of the name does not work.
 
 ### Traps that bit
 

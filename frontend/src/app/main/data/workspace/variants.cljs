@@ -249,7 +249,10 @@
                                         (fn [changes [pos property-empty?]]
                                           (if property-empty?
                                             (-> changes
-                                                (clvp/generate-remove-property variant-id pos))
+                                                ;; Removing a property that is empty everywhere
+                                                ;; cannot make two variants equal: keep any
+                                                ;; duplicate the rename made, so its warning shows.
+                                                (clvp/generate-remove-property variant-id pos :sanitize-set? false))
                                             changes))
                                         changes
                                         properties-empty-pos)

@@ -14,3 +14,4 @@ not grow with procedures that nobody will run again.
 |---|---|
 | [Migrate legacy file payloads to `file_data`](2.19.0-migrate-legacy-file-data.md) | 2.19.0 |
 | [Partition `file_change` by `file_id`](2.20.0-file-change-partition.md) | 2.20.0 |
+| [Unified 2.20.0 upgrade](2.20.0-unified.md) | 2.20.0 |

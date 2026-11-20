@@ -15,6 +15,16 @@ Recommended order after CLJ/CLJC/CLJS source edits:
 
 `clj_check_parentheses` analyzes one Clojure/ClojureScript source file and reports the area likely responsible for unclosed parentheses/brackets/braces. Use it when compiler output points near EOF, points at a misleading later form, or says delimiter-related syntax errors.
 
+## Test build warnings
+
+`clojure -M:dev:shadow-cljs compile test` (from `frontend/`) is the compile that
+prints the analyzer warnings CI reports. Warnings are printed only for the
+namespaces the compiler actually recompiles, so a cached build reports none
+while old ones are still latent: force it with
+`find test -name '*.cljs' -exec touch {} +` (or by clearing
+`.shadow-cljs/builds/test`) before claiming a clean tree. Why `:fn-arity`
+cannot be ignored: `mem:frontend/testing`.
+
 ## Hot reload notes
 
 When the frontend shadow-cljs watch process is running, edits to CLJC files in `common/` are normally recompiled into the browser automatically. Do not restart the frontend before checking `cljs_compiler_output`; stale behavior is often a failed build.
