@@ -336,8 +336,7 @@
 ;; middleware. Only the approval UI endpoints require a Penpot login session.
 (defmethod ig/init-key ::routes
   [_ cfg]
-  [""
-   ["/.well-known/oauth-authorization-server/api/mcp/oauth"
+  [["/.well-known/oauth-authorization-server/api/mcp/oauth"
     (endpoint cfg (fn [_ _] (response (authorization-metadata))) :get true)]
    ["/api/mcp/oauth"
     ["/resource" (endpoint cfg (fn [_ _] (response (resource-metadata))) :get true)]

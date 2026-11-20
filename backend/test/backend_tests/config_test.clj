@@ -9,6 +9,7 @@
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.time :as ct]
+   [app.common.uri :as u]
    [app.config :as cf]
    [clojure.core :as c]
    [clojure.test :as t]))
@@ -153,3 +154,64 @@
 (t/deftest read-config-takes-the-default-back-end
   (t/is (= "db" (c/get (read-config {} :default cf/default)
                        :file-data-backend))))
+
+(t/deftest trusted-origins-decodes-from-env-string
+  (t/testing "comma and whitespace separated origins become a set"
+    (let [config (cf/decode-config {:tenant "default"
+                                    :host "localhost"
+                                    :public-uri "http://localhost:3449"
+                                    :trusted-origins "https://a.example.com, https://b.example.com https://c.example.com"})]
+      (t/is (= #{"https://a.example.com" "https://b.example.com" "https://c.example.com"}
+               (:trusted-origins config))))))
+
+(t/deftest trusted-origin?-checks-normalized-allowlist
+  (with-redefs [cf/config (assoc cf/config :trusted-origins #{"https://alt.example.com"})]
+    (t/testing "exact and normalized matches"
+      (t/is (cf/trusted-origin? "https://alt.example.com"))
+      (t/is (cf/trusted-origin? "  HTTPS://Alt.Example.com  ")))
+    (t/testing "nil, blank, unlisted, subdomain and path variants are rejected"
+      (t/is (not (cf/trusted-origin? nil)))
+      (t/is (not (cf/trusted-origin? "")))
+      (t/is (not (cf/trusted-origin? "https://other.example.com")))
+      (t/is (not (cf/trusted-origin? "https://sub.alt.example.com")))
+      (t/is (not (cf/trusted-origin? "https://alt.example.com/penpot"))))))
+
+(t/deftest trusted-origin?-ignores-malformed-allowlist-entries
+  (with-redefs [cf/config (assoc cf/config
+                                 :trusted-origins #{"null"
+                                                    "https://alt.example.com/penpot"
+                                                    "https://valid.example.com"})]
+    (t/testing "null and path entries never match, even when listed"
+      (t/is (not (cf/trusted-origin? "null")))
+      (t/is (not (cf/trusted-origin? "https://alt.example.com/penpot"))))
+    (t/testing "valid entries still match"
+      (t/is (cf/trusted-origin? "https://valid.example.com")))))
+
+(t/deftest trusted-origin?-without-configuration
+  (with-redefs [cf/config (assoc cf/config :trusted-origins nil)]
+    (t/is (not (cf/trusted-origin? "https://alt.example.com")))))
+
+(t/deftest with-public-uri-overrides-base
+  (let [config     {:public-uri "http://localhost:3449" :host "localhost"}
+        overridden (cf/with-public-uri "https://alt.example.com" config)]
+    (t/testing "the base keeps the URI type used by the configuration"
+      (t/is (u/uri? (:public-uri overridden)))
+      (t/is (= "alt.example.com" (:host (:public-uri overridden)))))
+    (t/testing "a nil base leaves the config unchanged"
+      (t/is (= config (cf/with-public-uri nil config))))))
+
+(t/deftest valid-origin?-checks-bare-origin-shape
+  (t/testing "accepts scheme://host[:port], including IPv6"
+    (doseq [origin ["http://localhost:3449"
+                    "https://alt.example.com"
+                    "https://alt.example.com:8443"
+                    "https://[::1]:3449"
+                    "HTTPS://Alt.Example.com"]]
+      (t/is (cf/valid-origin? origin) origin)))
+
+  (t/testing "rejects nil, blank, missing scheme, paths, query and trailing slash"
+    (doseq [origin [nil "" "   " "alt.example.com" "localhost:3449"
+                    "https://alt.example.com/" "https://alt.example.com/penpot"
+                    "https://alt.example.com?x=1" "https://alt.example.com#frag"]]
+      (t/is (not (cf/valid-origin? origin)) (str origin)))))
+

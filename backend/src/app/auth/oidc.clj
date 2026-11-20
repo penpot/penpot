@@ -455,8 +455,7 @@
 
 (defn- build-redirect-uri
   []
-  (let [public (u/uri (cf/get :public-uri))]
-    (str (assoc public :path "/api/auth/oidc/callback"))))
+  (cf/get-public-uri "api/auth/oidc/callback"))
 
 (defn build-auth-redirect-uri
   [provider token]
@@ -1020,8 +1019,11 @@
   can never point outside the public URI.
   `profile-id` is the profile that started the flow; it travels in the
   state token so the callback only grants the organization SSO entry to that
-  very session."
-  [cfg sso & {:keys [query-string organization-id provider profile-id]}]
+  very session.
+  `origin` is the trusted alternate origin stamped by the http trusted-origin
+  middleware; it travels in the state token so the callback, a navigation
+  without Origin, can rebuild the links on the same base."
+  [cfg sso & {:keys [query-string organization-id provider profile-id origin]}]
   (let [organization-id (or organization-id (:organization-id sso))
         issuer          (organization-sso-discovery-uri sso)
         dest-url        (build-dest-url query-string)]
@@ -1036,6 +1038,7 @@
                                                 :organization-id organization-id
                                                 :profile-id      profile-id
                                                 :issuer          issuer
+                                                :origin          origin
                                                 :exp             (ct/in-future "4h")})]
         (build-auth-redirect-uri oidc-provider state-token))
       (catch Throwable cause
@@ -1119,6 +1122,11 @@
                   :provider (:id provider)
                   :invitation-token (:invitation-token params)
                   :external-session-id esid
+                  ;; Trusted alternate origin stamped by the http
+                  ;; trusted-origin middleware; carried through the signed
+                  ;; state so the callback (a navigation without Origin)
+                  ;; can rebuild links and the token-exchange redirect_uri.
+                  :origin (:app.http/trusted-origin request)
                   :props props
                   :exp (ct/in-future "4h")}
         state  (tokens/generate cfg (d/without-nils params))
@@ -1210,16 +1218,27 @@
             (profile/clean-email email)))))
     (catch Throwable _ false)))
 
-(defn- callback-handler
-  [cfg {:keys [params] :as request}]
+(defn- parse-state
+  "Verifies the OIDC state token once. Returns `[state failure]` where
+  exactly one of the two is non-nil: the decoded claims on success, or the
+  verification error when the token is missing, invalid or expired."
+  [cfg params]
+  (try
+    [(tokens/verify cfg {:token (:state params) :iss "oidc"}) nil]
+    (catch Throwable cause
+      [nil cause])))
+
+(defn- handle-oidc-callback
+  [cfg {:keys [params] :as request} state failure]
   (if-let [error (get params :error)]
     (do
       (submit-organization-sso-oauth-failed-event cfg request (:state params) error)
       (redirect-with-error "unable-to-auth" error))
     (try
-      (let [code     (get params :code)
-            state    (get params :state)
-            state    (tokens/verify cfg {:token state :iss "oidc"})]
+      (when (some? failure)
+        (throw failure))
+
+      (let [code (get params :code)]
 
         ;; Organization SSO flow: state carries :dest-url — exchange the authorization
         ;; code with the OIDC provider to verify authentication actually occurred.
@@ -1293,6 +1312,17 @@
             (l/wrn :hint "error on process oidc callback" :cause cause)
             (l/err :hint "error on process oidc callback" :cause cause))
           (redirect-with-error "unable-to-auth" (ex-message cause)))))))
+
+(defn- callback-handler
+  "Callback entrypoint. The IdP redirect is a browser navigation that
+  normally carries no Origin, so the http trusted-origin middleware
+  cannot help here; re-apply the trusted origin stored in the signed
+  state for the whole callback (token exchange redirect_uri and every
+  redirect target)."
+  [cfg {:keys [params] :as request}]
+  (let [[state failure] (parse-state cfg params)]
+    (binding [cf/config (cf/with-public-uri (:origin state) cf/config)]
+      (handle-oidc-callback cfg request state failure))))
 
 (def ^:private schema:routes-params
   [:map

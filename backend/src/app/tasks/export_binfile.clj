@@ -24,11 +24,18 @@
 
 (def schema:params
   "Business params of an export: the files to export, frozen when the job
-  was created, and how their libraries are handled."
+  was created, how their libraries are handled, and the base URI the
+  download link must use once the job runs outside the request."
   [:map {:title "export-binfile-params" :closed true}
    [:file-ids    [::sm/set ::sm/uuid]]
    [:export-type [::sm/one-of #{:include-libraries :merge-libraries
-                                :detach-libraries :link-later}]]])
+                                :detach-libraries :link-later}]]
+   [:public-uri  {:optional true} ::sm/text]])
+
+(def schema:create-params
+  "Business params an export caller may provide. The backend adds the base
+  URI after validating the request origin."
+  (sm/dissoc-key schema:params :public-uri))
 
 (def ^:private artifact
   "What the user sees of the package an export produces. A single name
@@ -73,7 +80,9 @@
       (try
         (bfj/check-active cfg context)
         (bfj/run cfg context bf.v3/export-files!)
-        (let [resource (->> (assoc artifact :content (sto/content output))
+        (let [resource (->> (assoc artifact
+                                   :content    (sto/content output)
+                                   :public-uri (:public-uri params))
                             (js/put-resource cfg profile-id))
               result   (check-result (dissoc resource :resource-id))]
           {:result result

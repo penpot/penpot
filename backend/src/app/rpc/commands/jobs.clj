@@ -7,10 +7,11 @@
 (ns app.rpc.commands.jobs
   "Creation of durable, user-facing jobs.
 
-  One command per job type: the body carries the business params its
-  job-def declares and nothing else, and the job-def schema is the single
-  place that says what those params are. Creating a job never runs it: it
-  freezes what the job will do, and the work belongs to the runner."
+  One command per job type. The creation schema defines what the caller may
+  send; the job-def schema defines the params stored for the runner. A command
+  may add server-owned params after validating the request. Creating a job
+  never runs it: it freezes what the job will do, and the work belongs to the
+  runner."
   (:require
    [app.binfile.common :as bfc]
    [app.binfile.v3 :as bf.v3]
@@ -39,10 +40,10 @@
 
 (def ^:private schema:create-export-binfile-job
   "The `.penpot` package of the files frozen in the params, produced by
-  the backend runner; the business params are what the `:export-binfile`
-  job-def declares."
+  the backend runner; the caller's params are the public subset of the
+  `:export-binfile` job-def params."
   [:map {:title "create-export-binfile-job" :closed true}
-   [:params export-binfile/schema:params]])
+   [:params export-binfile/schema:create-params]])
 
 (def ^:private schema:create-import-binfile-job
   "The `.penpot` package the caller uploaded, imported into a project by
@@ -147,11 +148,17 @@
    ::sm/params schema:create-export-binfile-job
    ::sm/result schema:job-summary}
   [cfg {:keys [::rpc/profile-id] :as envelope}]
-  (let [job-def  (resolve-job-def cfg :export :export-binfile)
-        ;; the RPC layer decoded the params against the job-def schema
-        ;; before the command ran
-        params   (jobs/validate-params job-def (:params envelope))
-        file-ids (:file-ids params)]
+  (let [job-def   (resolve-job-def cfg :export :export-binfile)
+        ;; The job runs after the request, so the base its download link
+        ;; must use travels in the frozen params instead of a thread binding.
+        base      (-> (meta envelope)
+                      (get :app.http/request)
+                      (:app.http/trusted-origin))
+        ;; The RPC decoded the public creation params. Validate them against
+        ;; the stored job schema before adding the backend-owned base URI.
+        params    (cond-> (jobs/validate-params job-def (:params envelope))
+                    (some? base) (assoc :public-uri base))
+        file-ids  (:file-ids params)]
 
     (when (empty? file-ids)
       (ex/raise :type :validation

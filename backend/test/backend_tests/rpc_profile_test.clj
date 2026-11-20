@@ -2106,3 +2106,85 @@
                                   :path (fs/path "/etc/passwd")
                                   :mtype "image/jpeg"}})]
     (t/is (th/ex-of-code? (:error out) :params-validation))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Trusted origin on the sensitive email links
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:private canonical-public-uri "http://localhost:3449")
+
+(def ^:private trusted-link-cases
+  [{:headers {"x-penpot-origin" "https://alt.example.com"}
+    :expected "https://alt.example.com"}
+   {:headers {"origin" "https://alt.example.com"}
+    :expected "https://alt.example.com"}
+   {:headers {"x-penpot-origin" "https://evil.example.com"}
+    :expected canonical-public-uri}
+   {:headers {"x-penpot-origin" "null"}
+    :expected canonical-public-uri}
+   {:headers {}
+    :expected canonical-public-uri}])
+
+(defn- with-trusted-link-config
+  [f]
+  (binding [cf/config (assoc cf/config
+                             :public-uri canonical-public-uri
+                             :trusted-origins #{"https://alt.example.com"})]
+    (f)))
+
+(defn- sent-public-uri
+  [mock]
+  (some-> mock deref :call-args-list first second :public-uri str))
+
+(t/deftest recovery-link-base-follows-trusted-origins
+  (doseq [[i {:keys [headers expected]}] (map-indexed vector trusted-link-cases)]
+    (with-trusted-link-config
+      #(with-mocks [mock {:target 'app.email/send-template :return nil}
+                    _    {:target 'app.rpc.commands.auth/elapsed-verify-threshold?
+                          :return true}]
+         (let [profile (th/create-profile* (inc i) {:is-active true})
+               out     (th/command-through-middleware!
+                        {::th/type :request-profile-recovery
+                         :email    (:email profile)}
+                        {:headers headers})]
+           (t/is (th/success? out) headers)
+           (t/is (= expected (sent-public-uri mock)) headers))))))
+
+(t/deftest email-change-link-base-follows-trusted-origins
+  (doseq [[i {:keys [headers expected]}] (map-indexed vector trusted-link-cases)]
+    (with-trusted-link-config
+      #(with-mocks [mock {:target 'app.email/send-template :return nil}]
+         (let [profile (th/create-profile* (inc i))
+               out     (th/command-through-middleware!
+                        {::th/type       :request-email-change
+                         ::rpc/profile-id (:id profile)
+                         :email          (str "changed-" i "@example.com")}
+                        {:headers headers})]
+           (t/is (th/success? out) headers)
+           (t/is (= expected (sent-public-uri mock)) headers))))))
+
+(t/deftest verification-link-base-follows-trusted-origins
+  (doseq [[i {:keys [headers expected]}] (map-indexed vector trusted-link-cases)]
+    (with-trusted-link-config
+      #(with-mocks [mock {:target 'app.email/send-template :return nil}]
+         (let [email   (str "verify-" (uuid/next) "@example.com")
+               itoken  (tokens/generate th/*system*
+                                        {:iss :team-invitation
+                                         :exp (ct/in-future "48h")
+                                         :role :editor
+                                         :team-id uuid/zero
+                                         :member-email email})
+               prep    (th/command-through-middleware!
+                        {::th/type :prepare-register-profile
+                         :invitation-token itoken
+                         :fullname "foobar"
+                         :email email
+                         :password "Foobar12!"}
+                        {:headers headers})
+               reg     (th/command-through-middleware!
+                        {::th/type :register-profile
+                         :token (:token (:result prep))}
+                        {:headers headers})]
+           (t/is (th/success? prep) headers)
+           (t/is (th/success? reg) headers)
+           (t/is (= expected (sent-public-uri mock)) headers))))))
