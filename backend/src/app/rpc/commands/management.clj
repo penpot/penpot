@@ -25,6 +25,9 @@
    [app.rpc.commands.projects :as proj]
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
+   [app.rpc.helpers :as rph]
+   [app.rpc.notifications :as ntf]
+   [app.rpc.permissions :as perms]
    [app.setup :as-alias setup]
    [app.setup.templates :as tmpl]
    [app.storage.tmp :as tmp]
@@ -88,7 +91,9 @@
                                fmeds)]
         (db/insert! conn :file-media-object params ::db/return-keys false))
 
-      file)))
+      ;; The storage pointer of the source file is internal bookkeeping: the
+      ;; new file does not inherit it, and it never leaves the backend.
+      (bfc/file->response file))))
 
 (def ^:private
   schema:duplicate-file
@@ -272,8 +277,22 @@
 
 ;; --- COMMAND: Move file
 
+(defn- notify-team-access-changed
+  "Announces a possible read-access change for `team-ids`.
+
+  Moving content can take it out of the reach of a whole team, and the
+  only place that knows who was relying on it is the set of open
+  connections. One event per team: the watcher resolves the members
+  itself, so a large team cannot overflow the bounded publish buffers."
+  [cfg team-ids]
+  (doseq [team-id (into #{} (remove nil?) team-ids)]
+    (ntf/notify-team-permissions-changed cfg team-id)))
+
 (def sql:get-files
-  "select id, features, project_id from file where id = ANY(?)")
+  "select f.id, f.features, f.project_id, p.team_id
+     from file as f
+     join project as p on (p.id = f.project_id)
+    where f.id = ANY(?)")
 
 (def sql:move-files
   "update file set project_id = ? where id = ANY(?)")
@@ -301,7 +320,15 @@
                      (map files/decode-row))
         source  (into #{} (map :project-id) files)
         pids    (->> (conj source project-id)
-                     (db/create-array conn "uuid"))]
+                     (db/create-array conn "uuid"))
+        ;; A move carries a single origin team in its props: refuse
+        ;; mixed-origin requests up front instead of guessing.
+        source-teams (into #{} (keep :team-id) files)]
+
+    (when (> (count source-teams) 1)
+      (ex/raise :type :validation
+                :code :cant-move-from-multiple-teams
+                :hint "Unable to move files from different teams at once"))
 
     (when (contains? source project-id)
       (ex/raise :type :validation
@@ -315,7 +342,9 @@
     (doseq [project-id source]
       (proj/check-edition-permissions! conn profile-id project-id))
 
-    ;; Check the team compatibility
+    ;; Check the team compatibility, then move: the destination team
+    ;; is already loaded here, so the event props below need no extra
+    ;; query.
     (let [orig-team (teams/get-team conn :profile-id profile-id :project-id (first source))
           dest-team (teams/get-team conn :profile-id profile-id :project-id project-id)]
       (cfeat/check-teams-compatibility! orig-team dest-team)
@@ -323,26 +352,38 @@
       ;; Check if all pending to move files are compaib
       (let [features (cfeat/get-team-enabled-features cf/flags dest-team)]
         (doseq [file files]
-          (cfeat/check-file-features! features (:features file)))))
+          (cfeat/check-file-features! features (:features file))))
 
-    ;; move all files to the project
-    (db/exec-one! conn [sql:move-files project-id fids])
+      ;; move all files to the project
+      (db/exec-one! conn [sql:move-files project-id fids])
 
-    ;; delete possible broken relations on moved files
-    (db/exec-one! conn [sql:delete-broken-relations pids])
+      ;; delete possible broken relations on moved files
+      (db/exec-one! conn [sql:delete-broken-relations pids])
 
-    ;; Update the modification date of the all affected projects
-    ;; ensuring that the destination project is the most recent one.
-    (loop [project-ids (into (list project-id) source)
-           modified-at (ct/now)]
-      (when-let [project-id (first project-ids)]
-        (db/update! conn :project
-                    {:modified-at modified-at}
-                    {:id project-id})
-        (recur (rest project-ids)
-               (ct/plus modified-at 10))))
+      ;; Update the modification date of the all affected projects
+      ;; ensuring that the destination project is the most recent one.
+      (loop [project-ids (into (list project-id) source)
+             modified-at (ct/now)]
+        (when-let [project-id (first project-ids)]
+          (db/update! conn :project
+                      {:modified-at modified-at}
+                      {:id project-id})
+          (recur (rest project-ids)
+                 (ct/plus modified-at 10))))
 
-    nil))
+      ;; Moving files can take them out of the reach of the team they came
+      ;; from. Only the open connections know who was relying on them, so
+      ;; the source teams are announced wholesale and the watcher re-checks
+      ;; each member against the subscriptions they actually hold.
+      (notify-team-access-changed
+       cfg
+       (keep (partial perms/get-team-id-for-project conn) source))
+
+      ;; Both teams travel explicitly in the event props so a consumer
+      ;; never joins production tables.
+      (rph/with-meta (rph/wrap)
+        {::audit/props {:source-team-id (first source-teams)
+                        :dest-team-id (:id dest-team)}}))))
 
 (def ^:private
   schema:move-files
@@ -353,6 +394,7 @@
 (sv/defmethod ::move-files
   "Move a set of files from one project to other."
   {::doc/added "1.16"
+   ::doc/changes [["2.20" "Files from more than one source team are rejected with :cant-move-from-multiple-teams"]]
    ::webhooks/event? true
    ::sm/params schema:move-files}
   [cfg {:keys [::rpc/profile-id] :as params}]
@@ -411,7 +453,15 @@
     ;; delete possible broken relations on moved files
     (db/exec-one! conn [sql:delete-broken-relations pids])
 
-    nil))
+    ;; The project, and everything under it, leaves the source team. The
+    ;; destination team only gains access, so it is not announced.
+    (notify-team-access-changed cfg [(:team-id project)])
+
+    ;; Both teams travel explicitly in the event props so a consumer
+    ;; never joins production tables.
+    (rph/with-meta (rph/wrap)
+      {::audit/props {:source-team-id (:team-id project)
+                      :dest-team-id team-id}})))
 
 (def ^:private
   schema:move-project

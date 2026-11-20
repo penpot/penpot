@@ -119,6 +119,12 @@
       (t/is (= (ctv/compare-properties [props-1 props-2 props-3] "&")
                [{:name "border" :value "&"} {:name "color" :value "&"}])))))
 
+(t/deftest compare-properties-preserves-order-past-eight
+  (let [names  (mapv #(str "Property " %) (range 1 10))
+        props1 (mapv (fn [n] {:name n :value "a"}) names)
+        props2 (mapv (fn [n] {:name n :value "b"}) names)]
+    (t/is (= names (mapv :name (ctv/compare-properties [props1 props2]))))))
+
 
 (t/deftest check-belong-same-variant
   (let [components-1 [{:variant-id "a variant"} {:variant-id "a variant"}]

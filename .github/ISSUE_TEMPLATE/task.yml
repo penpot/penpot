@@ -1,0 +1,26 @@
+description: A specific piece of work
+labels: []
+name: "Task"
+type: Task
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Before you start
+
+        Please search our [existing issues](https://github.com/penpot/penpot/issues) and open [pull requests](https://github.com/penpot/penpot/pulls) to lessen the change of filing duplicate issues or feature requests. Thank you.
+
+        ---
+  - type: textarea
+    id: task
+    attributes:
+      description: A clear and concise description of the task
+      label: Please describe
+    validations:
+      required: true
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: Add any other context or screenshots about the task here

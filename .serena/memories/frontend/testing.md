@@ -17,7 +17,8 @@ Frontend testing is async-first: everything essentially asynchronous is modeled 
 - `mock/with-mocks` (callback style, legacy compat): installs with `set!` so mocks survive async boundaries; bodies run deferred past the current tick via `asap`, so only done-chained (`t/async`) contexts are allowed; `done'` restores and completes exactly once (twice only warns; never calling it stalls the run and leaks the mocks). Prefer `mock/with-mocks*` for new tests.
 - `mock/with-mocks*` (direction): body forms wrapped in a generated `^:async` fn, evaluates to a promise — `await` it, `await` nested scopes too, no `done` in test code. Rejections and non-promise returns report as `:error` via `run-mocked`.
 - `mock/stub` wraps fns for arities 0-6 (the `:esm` test build dispatches multi-arity vars as `cljs$core$IFn$_invoke$arity$N`); when the mocked var is variadic-defined (or called with more than 6 args), the call compiles to variadic dispatch, so use a plain variadic `fn` — the stub does not forward variadic. A mock must not call the mocked var again (self-delegation inside a multi-arity function recurses).
-- Helpers in `frontend-tests.helpers.async`: `->promise` (single-value observable → promise; beicon has no `to-promise`), `await-response` (subscribe→push→await, atomic), `settle`, `wait-for` (immediate check + bounded poll, fails instead of hanging), `observe` (stream → termination promise; asserts provided, timeout rejects).
+- Helpers in `frontend-tests.helpers.async`: `->promise` (single-value observable → promise; beicon has no `to-promise`), `await-response` (subscribe→push→await, atomic), `settle`, `wait-for`, `wait-for-store`, `observe` (stream → termination promise; asserts provided, timeout rejects).
+- `wait-for` waits on a **signal**, not on turns: `:signal` (an observable) re-checks the predicate on every emission and resolves on the event that changes the state; `:timeout-ms` (default 5000) only bounds failure then. Without a signal it polls against a real-time deadline — 50 turns were ~54 ms idle, and turns are not a unit of time. `wait-for-store` passes `ptk/input-stream` as the signal (the store notifies after applying the update, so the predicate sees the new state); the persistence fixture exposes `requests$` for `(= N (count @requests))`. A wait that resolves on an event consumes no turn. The waits with nothing to listen to stay on the poll: test atoms filled outside the store (`@cycles`, `@reports`, `@done`), `@failures`, and predicates over JS objects or closures.
 - Fixtures return promises (`with-watchdog`, `with-persistence`); `await` them from `^:async` tests. `main_errors` and `fonts` are fully migrated (no legacy `with-mocks` left).
 - Valid `^:async` placements: `mem:clojure/idioms`.
 
@@ -30,6 +31,10 @@ To assert over emitted event sequences, observe termination: subscribe through `
 - `cljs.test` keeps its env in a `set!` var: assertions inside deferred ticks count. `run-block`: double `done` only warns; missing `done` stalls.
 - `t/async` discards the body promise — completion signals ONLY via `done`. `t/deftest ^:async` adds auto async-context + auto `done`, but awaiting stays the author's job; without it the test passes empty.
 - `take 1` is per-subscription on a hot subject: subscribe-before-push or hang. `end!`/`.error` with pending takes only forwards valueless completion.
+- Single-arity and variadic `defn`s compile to JS functions with no argument-count check (any target), so missing required args arrive as `undefined` instead of throwing; the analyzer 
+`:fn-arity` warning is the only signal. Treat `:fn-arity` in `compile test` as a defect, never as noise.
+- `:infer-warning` on a JS interop fixes with `^js` on the target (`(.-foo ^js x)`, `(.method ^js x ...)`). Inside `set!` the hint must sit on a symbol: `(set! (.-foo ^js (f x)) v)` still warns, so bind `(let [^js y (f x)] (set! (.-foo y) v))`.
+- A helper that returns a JS object carries the hint on its name (`(defn- ^js catalog [id] ...)`), and call sites then need no hint at all — `(.method (catalog id))` and `(.-prop (catalog id))` stop warning. This is the cheapest way to keep interop out of the test bodies; `^js` on the arglist instead of the name does not work.
 
 ### Traps that bit
 
@@ -37,9 +42,15 @@ To assert over emitted event sequences, observe termination: subscribe through `
 - `st/emit!` doubles collect heterogeneous events: audit `DataEvent`s deref, toast reify-objects do not — discriminate with `ptk/type` (total, never throws), never blind `deref`.
 - Subscription order decides delivery order: never resolve settlement from a pre-subscribed branch racing the pipeline.
 - Auto-answering mocks lose deadline expressiveness (can't time answers), need teardown timer-cancellation, and post-teardown deliveries hit real implementations — explicit pushes + async delivery + `wait-for` won on every axis.
+- A wait that observes an effect the test asserts takes a signal. A wait that means "the side effect advanced before the next emit" has no event to listen to: keep the poll (or an explicit `settle`) and say so, because a signal would resolve inside the same `emit!` and the next step would overtake the pipeline (`persistence-rollback-test` drove its four emits this way).
+- With `rp/cmd!` mocked, a store-state wait can resolve before the flow that changes it ends, and the mock scope then closes in flight: the next call hits the real HTTP layer (malformed URL from a nil `cf/public-uri`) and the error is reported on a later test. `unlink-file-from-library` dissocs the library before its async chain, so the only proof the chain ran inside the mock is its second RPC call; wait for that, through the mock.
 - Teardown belongs to the terminal continuation, never to `finally`-around-triggers (it would dispose in-flight flows).
 - A body that awaits must be `(^:async fn …)` even if the rest is sync; sync sequences are atomic vs the event loop.
+- `app.main.errors` prints every handled cause with `ex/print-throwable` before notifying, and the app logger does not gate it. A test that runs a real handler end to end stubs that var (`main-errors-test/quiet-throwable`): without it, the 10 000-error governor test alone wrote 190 k of the 192 k lines of a run log (13,8 MB), and GitHub truncates a step log past ~4 MB, cutting the summary and any failing assertion. Same for a production `console.error` a test provokes on purpose: `code-gen-markup-svg-wasm-test` silences `(.-error js/console)` in a `try/finally` while two WASM panics go through `get-svg-markup` (2 blocks, 70 lines, and the exception dumps its own `data`/`arr`).
 - The `:esm` test build cannot load the CommonJS `sax` module behind `tubax`, so SVG parsing fails in tests (`dwm/valid-svg-string?` answers false, `dwm/svg->clj` errors): mock both with the parsed data.
+- A hook-order violation in a mounted component reaches neither the root's `onUncaughtError`/`onCaughtError`/`onRecoverableError` nor the markup: React logs an internal error to `console.error` and recovers, so the callbacks stay empty and the tree repaints. Assert on a captured `console.error` too. It only fires when a render *adds* hooks (nil → uuid); a render that calls none at all slips through React's bookkeeping, so the regression test needs the "hooks arrive" direction. `frontend-tests.ui.team-container-test` does both, with a jsdom document.
+- `beicon.v2.core` has no `never`. A stream that must **not emit** is `(rx/empty)`: it completes at once, which is enough for `merge`, `filter` and `take` where only the emission matters. A stream that must **stay open** is a `(rx/subject)` nobody pushes to; `rx/empty` would complete the flow behind it. An undeclared `rx/never` compiles to an undefined var and the test dies as a rejected body, which `cljs.test` reports as a test with zero assertions instead of a failure.
+- `set!` mocks are global and outlive the fixture, so a flow another module left running (a store's pending timer) can still reach the mocked transport mid-test; `with-persistence` records every command for that reason. Filter to the commands your layer issues — persistence only sends `update-file` — before counting or asserting emptiness, and never let a stray call release a `wait-for` on one.
 
 From `frontend/`:
 - Full unit test run (always builds, suppressed output): `pnpm run test:quiet`.
@@ -50,12 +61,15 @@ From `frontend/`:
 - Build test target only (no run): `pnpm run build:test`.
 - After `build:test` has been run, run the compiled runner directly: `node target/tests/test.js [--focus ...] [--log-level ...]`.
 - Watch tests: `pnpm run watch:test`.
+- Coverage: `pnpm run test:coverage` (builds, runs the suite under `NODE_V8_COVERAGE`, keeps its exit code). `scripts/coverage.js` maps V8 data back to `.cljs`/`.cljc` through the test build's source maps (`ast-v8-to-istanbul` + acorn) and writes `coverage/` (`lcov.info`, `coverage-summary.json`, `html/`, `unloaded.txt`); `tests-frontend.yml` renders the step summary with `scripts/coverage-summary.mjs` and uploads `coverage/` as the `frontend-coverage` artifact. `scripts/test` (CI) runs `test:coverage`, not `test`. Scope: `frontend/src/app/**` minus `app/main/ui/` (`EXCLUDED_DIRS`); namespaces no test loads are listed apart, never counted. Never pass `ignoreSourceCode` to `convert`: CLJS maps point past source lines and it throws. Trust line % over branch % (branches are of the generated JS).
 
 New frontend test namespaces must be required/listed in `frontend_tests/runner.cljs`; new vars in existing namespaces need no runner change.
 
 ## Playwright integration tests
 
-Do not add, modify, or run Playwright integration tests under `frontend/playwright` unless explicitly asked. When explicitly asked, use `pnpm run test:e2e` or `pnpm run test:e2e --grep "pattern"` from `frontend/`; ensure dependencies are installed through `./scripts/setup` if the environment is not prepared.
+Do not add, modify, or run Playwright integration tests under `frontend/playwright` unless explicitly asked. When explicitly asked, run the whole suite with a worker count sized to the machine: `pnpm run test:e2e --workers=N` from `frontend/`, about one worker per two hardware threads, because each keeps two or three busy and holds about 2 GB of browser memory. The config's default of one worker leaves it slow; four take a 16-thread host from 48 minutes to 35 and fit a 64 GB machine beside a watching devenv, while a 32 GB machine takes two, or four with a slim devenv. `--grep "pattern"` narrows the run. Ensure dependencies are installed through `./scripts/setup` if the environment is not prepared.
+
+The suite runs against the release bundle in `frontend/resources/public`, not against the sources: the app under test is that build. Rebuild it with `./scripts/build` from `frontend/` (the CI build-bundle step) whenever the product source state changes — a branch switch that brings different CLJS/CLJC, SCSS, assets or packages, or any product edit. Spec-only edits need no rebuild: Playwright reads `frontend/playwright` at run time. A stale bundle is still served by the config's `webServer` (`scripts/e2e-server.js`) and makes the app fail at boot; that failure says nothing about the specs.
 
 Integration tests fake backend behavior by intercepting network/websocket traffic, so every RPC or websocket the page needs must be mocked. Use existing Page Object Models:
 - `BasePage.mockRPC` intercepts RPC calls and already prefixes `/api/rpc/command/`; pass command names such as `get-profile`, not full URLs.
@@ -63,6 +77,8 @@ Integration tests fake backend behavior by intercepting network/websocket traffi
 - Prefer common locators/actions in POMs; ad-hoc locators can stay in a single test.
 
 Locator priority should follow user-facing semantics: `getByRole`, `getByLabel`, `getByPlaceholder`, `getByText`, then semantic alternatives such as alt/title, with `getByTestId` as the last resort. Name tests from the user's perspective and prefer positive, single-purpose assertions.
+
+Layer rows are the exception: a selected row's hide and lock button titles join its accessible name, so role-plus-name matching breaks on selected rows. Use `WorkspacePage.layerRow`/`layerRows` (anchored text on the `layer-row` test id) and `selectRow`/`selectLayer`, which click once and wait for `aria-checked`.
 
 ## CI (E2E)
 

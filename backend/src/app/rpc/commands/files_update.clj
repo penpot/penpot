@@ -21,6 +21,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.features.fdata :as fdata]
+   [app.features.file-changes :as fchanges]
    [app.features.file-snapshots :as fsnap]
    [app.features.logical-deletion :as ldel]
    [app.http.errors :as errors]
@@ -339,6 +340,12 @@
           deleted-at
           (ct/plus timestamp (ct/duration {:hours 1}))
 
+          ;; The id of the change row (xlog) goes to the audit event
+          ;; too: a consumer that reads the event needs to know what the
+          ;; save changed, and that row is the only place with it.
+          file-change-id
+          (uuid/next)
+
           repair
           (::repair file)
 
@@ -371,6 +378,7 @@
         (when repair
           (db/insert! conn :file-change
                       {:id (uuid/next)
+                       :kind fchanges/revision-kind
                        :session-id repair-session-id
                        :profile-id profile-id
                        :created-at timestamp
@@ -379,7 +387,6 @@
                        :file-id (:id file)
                        :revn (:revn repair)
                        :version (:version file)
-                       :features (into-array (:features file))
                        :changes (blob/encode (:changes repair))}
                       {::db/return-keys false})
           (l/wrn :hint "file auto-repaired"
@@ -391,8 +398,13 @@
 
         ;; Insert change (xlog) with deleted_at in a future data for
         ;; make them automatically eleggible for GC once they expires
+        ;;
+        ;; The revision carries only the delta of the save: the features of the
+        ;; file are not repeated here (nobody reads them from a revision, and
+        ;; they are duplicated on every save).
         (db/insert! conn :file-change
-                    {:id (uuid/next)
+                    {:id file-change-id
+                     :kind fchanges/revision-kind
                      :session-id session-id
                      :profile-id profile-id
                      :created-at change-created-at
@@ -401,7 +413,6 @@
                      :file-id (:id file)
                      :revn (:revn file)
                      :version (:version file)
-                     :features (into-array (:features file))
                      :changes (blob/encode changes)}
                     {::db/return-keys false})
 
@@ -419,23 +430,46 @@
                    (some? rejected)
                    (assoc :rejected rejected))
         {::audit/replace-props
-         {:id          (:id file)
-          :name        (:name file)
-          :features    (:features file)
-          :project-id  (:project-id file)
-          :team-id     (:team-id file)
-          ;; NOTE: `file` carries the post-update revn here (`revn`
-          ;; above is the pre-update one kept for the response), and
-          ;; `modified-at` mirrors `persist-file!`: same `::timestamp`
-          ;; fallback, so both agree to the millisecond when the
-          ;; request timestamp exists.
-          :revn        (if saved? (:revn file) revn)
-          :modified-at (or timestamp (ct/now))}}))))
+         (cond-> {:id          (:id file)
+                  :name        (:name file)
+                  :features    (:features file)
+                  :project-id  (:project-id file)
+                  :team-id     (:team-id file)
+                  ;; NOTE: `file` carries the post-update revn here (`revn`
+                  ;; above is the pre-update one kept for the response).
+                  :revn        (if saved? (:revn file) revn)
+                  ;; How the save ended: every change written, the accepted
+                  ;; prefix written and the rest rejected, or nothing
+                  ;; written. A consumer must not read `update-file` as a
+                  ;; state change without looking at this.
+                  :outcome     (cond
+                                 (not saved?)     "rejected"
+                                 (some? rejected) "partial"
+                                 :else            "saved")
+                  ;; A rejected save does not call `persist-file!`, so the
+                  ;; row keeps its previous instant: mirror the persisted
+                  ;; value instead of claiming a modification.
+                  :modified-at (if saved?
+                                 (or timestamp (ct/now))
+                                 (:modified-at file))}
+
+           ;; The id of the change row inserted above: what the save
+           ;; changed lives in that row, not in the event. A fully rejected
+           ;; save writes no row, and an id that resolves to nothing cannot
+           ;; be told apart from one the GC already purged.
+           saved?
+           (assoc :file-change-id file-change-id))}))))
 
 (defn get-file
-  "Get not-decoded file, only decodes the features set."
+  "Get not-decoded file, only decodes the features set.
+
+  The read takes the `file` row with FOR UPDATE: the save persists the
+  map it read, so it must hold the row from the read to the write. The
+  lock is exclusive, not shared, because the migration-on-read path may
+  re-read the same row with FOR UPDATE, and a shared lock that upgrades
+  deadlocks two concurrent readers."
   [cfg id]
-  (bfc/get-file cfg id :decode? false :lock-for-share? true))
+  (bfc/get-file cfg id :decode? false :lock-for-update? true))
 
 (defn persist-file!
   "Function responsible of persisting already encoded file. Should be

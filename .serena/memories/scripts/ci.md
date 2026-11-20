@@ -17,6 +17,10 @@ assertion is compiled out. GitHub Actions sets the same flag.
   finishing (AGENTS.md: run the applicable lint and format checks).
 - When `common/` changed: validate its consumers too (frontend, backend,
   exporter; see the dependency graph in `mem:critical-info`).
+- Pass every module you touched, `common` included: the backend `lint:clj`
+  lints `../common/src` with clj-kondo but does not run `cljfmt` over it, so
+  a `common/` formatting error only shows in the `common:fmt` task (its own
+  `check-fmt:clj`), which is what CI runs.
 - To fix formatting across a module (`--fix`) or repair delimiters
   (`--paren-repair`) before linting.
 
@@ -107,6 +111,9 @@ produce deployable artifacts.
 
 - `mcp` has no lint task and `media-processor` has no lint task; both show
   as skipped. `render-wasm` uses `./lint`, `./test`, and `./fmt`.
+- The exporter test task supplies `PENPOT_SECRET_KEY=test-secret-key` when the
+  environment does not set it, matching the package's regular test command.
+  The library format task uses its `check-fmt` script.
 - `scripts/test_ci.py` (unittest, `python3 scripts/test_ci.py`) covers the
   flag wiring, one build command per module and the help text through
   `--dry-run`; it executes no real build.
@@ -114,7 +121,8 @@ produce deployable artifacts.
   existing value, so backend test runs compile in and exercise
   precondition asserts; see `mem:backend/testing`.
 - Test and build tasks are long-running (backend: `clojure -M:dev:test`;
-  frontend build: ~2 min warm); use a generous timeout when calling it from
-  an agent shell.
+  frontend build: ~2 min warm). Use a timeout of at least 20 minutes when
+  running the complete CI across all modules; shorter limits can terminate
+  valid checks before they finish.
 - Skill entry point: `.agents/skills/local-ci/SKILL.md`.
 - Testing principles and output discipline: `mem:testing`.

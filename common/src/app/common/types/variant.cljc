@@ -235,6 +235,126 @@
                             :value (:value prop)}))
                [])))
 
+;; Sanitize stored property sets. Unlike `prepare-property-name` and
+;; `prepare-property-value`, which reject invalid user input with nil,
+;; these helpers always return valid text, so they can repair data.
+
+(defn clip-property-text
+  "Cut `text` to at most `max-length` characters."
+  [text max-length]
+  (if (> (count text) max-length)
+    (subs text 0 max-length)
+    text))
+
+(defn- numbered-property-text
+  "Join `base` and the ` (n)` suffix. Clip and trim `base` so the result
+   fits in `property-max-length`, whatever the length of the suffix. An
+   empty base yields \"(n)\"."
+  [base n]
+  (let [suffix (str " (" n ")")
+        base   (-> base
+                   (clip-property-text (- property-max-length (count suffix)))
+                   str/trim)]
+    (if (str/empty? base)
+      (str "(" n ")")
+      (str base suffix))))
+
+(defn unique-property-text
+  "Return `text`, trimmed and fitted in `property-max-length`. When the
+   result is in `taken`, add or raise a ` (n)` suffix until it is not.
+   A ` (n)` suffix is never cut: the base is clipped to leave room for it."
+  [taken text]
+  (let [text       (str/trim (or text ""))
+        [base num] (split-base-name-and-number text)
+        text       (if (and (pos? num) (> (count text) property-max-length))
+                     (numbered-property-text base num)
+                     (-> text
+                         (clip-property-text property-max-length)
+                         str/trim))
+        taken      (set taken)]
+    (if-not (contains? taken text)
+      text
+      (let [[base num] (split-base-name-and-number text)]
+        (->> (iterate inc (max num 1))
+             (map #(numbered-property-text base %))
+             (d/seek #(not (contains? taken %))))))))
+
+(defn sanitize-property-name
+  "Return a valid property name for `name`, unique against the names in
+   `taken`. Strip forbidden characters and trim. A blank or non-string
+   name becomes a generated `Property N`."
+  [name taken]
+  (let [text (or (sanitize-property-text name) "")
+        text (if (str/blank? text)
+               (str property-prefix
+                    (next-property-number (map (fn [name] {:name name}) taken)))
+               text)]
+    (unique-property-text taken text)))
+
+(defn sanitize-property-value
+  "Return a valid property value for `value`. Strip forbidden characters,
+   trim and clip. A non-string value becomes \"\"."
+  [value]
+  (-> (or (sanitize-property-text value) "")
+      (clip-property-text property-max-length)
+      str/trim))
+
+(defn sanitize-properties
+  "Sanitize the name and value of every property in `props`, keeping
+   names unique. Other keys of each property are kept."
+  [props]
+  (reduce (fn [acc prop]
+            (conj acc (assoc prop
+                             :name  (sanitize-property-name (:name prop) (map :name acc))
+                             :value (sanitize-property-value (:value prop)))))
+          []
+          props))
+
+(defn properties-names
+  "Return every property name in `props-seq` (a seq of property vectors),
+   without repeats, in the order they first appear."
+  [props-seq]
+  (into [] (comp cat (map :name) (distinct)) props-seq))
+
+(defn align-properties
+  "Return the properties of `props` in the order of `names`. A name with
+   no property in `props` gets an empty value."
+  [props names]
+  (mapv (fn [name]
+          (or (d/seek #(= name (:name %)) props)
+              {:name name :value ""}))
+        names))
+
+(defn unique-values-tuple
+  "Return `props` with a value combination that is not in `seen` (a seq of
+   value vectors). On a clash, number the last non-blank value, or the
+   first value when all are blank."
+  [props seen]
+  (let [seen (set seen)]
+    (if (or (empty? props)
+            (not (contains? seen (mapv :value props))))
+      props
+      (let [idx   (or (last (keep-indexed (fn [idx prop]
+                                            (when-not (str/blank? (:value prop)) idx))
+                                          props))
+                      0)
+            taken (map #(nth % idx "") seen)]
+        (update-in props [idx :value] #(unique-property-text taken %))))))
+
+(defn sanitize-properties-set
+  "Sanitize the property vectors of all the variants of one set, given in
+   layers-panel order (top first). Every vector gets the same names in the
+   same order, and no two vectors share a value combination. Earlier
+   vectors keep their values."
+  [props-seq]
+  (let [cleaned (mapv sanitize-properties props-seq)
+        names   (properties-names cleaned)]
+    (reduce (fn [acc props]
+              (conj acc (unique-values-tuple (align-properties props names)
+                                             (map #(mapv :value %) acc))))
+            []
+            cleaned)))
+
 (defn find-index-for-property-name
   "Finds the index of a name in a property map"
   [props name]
@@ -315,6 +435,16 @@
          props2)
         :props)))
 
+(defn group-properties-by-name
+  "Group properties by :name, preserving first-seen name order.
+   clojure.core/group-by loses order once maps grow past ArrayMap's
+   8-key threshold."
+  [props]
+  (reduce (fn [m p]
+            (update m (:name p) (fnil conj []) p))
+          (d/ordered-map)
+          props))
+
 (defn compare-properties
   "Compares vectors of properties keeping the value if it is the same for all
    or setting a custom value where their values do not coincide"
@@ -322,7 +452,7 @@
    (compare-properties props-list nil))
 
   ([props-list distinct-mark]
-   (let [grouped (group-by :name (apply concat props-list))
+   (let [grouped (group-properties-by-name (apply concat props-list))
          check-values (fn [values]
                         (let [vals (map :value values)]
                           (if (apply = vals)

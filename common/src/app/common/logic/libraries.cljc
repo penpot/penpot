@@ -58,6 +58,44 @@
        ;; We don't do automatic update of the `layout-grid-cells` property.
        (remove #(= :layout-grid-cells %))))
 
+;; Attrs whose value drifts by float noise when a shape is moved; they
+;; are compared with tolerance during sync. The rest compare exactly.
+(def ^:private drifting-geometry-attrs
+  #{:x :y :width :height :selrect :points})
+
+(defn- position-data-close?
+  "Compares text position-data entry by entry: numbers with tolerance,
+  every other field (fills, fonts, text) exactly."
+  [a b]
+  (let [a (vec a)
+        b (vec b)]
+    (and (= (count a) (count b))
+         (every? true? (map mth/close-map? a b)))))
+
+(defn- attr-equal?
+  [attr origin-shape dest-shape]
+  (let [origin-val (get origin-shape attr)
+        dest-val   (get dest-shape attr)]
+    (or (= origin-val dest-val)
+        (cond
+          ;; close-attrs? zips :points and would ignore a length mismatch
+          (= :points attr)
+          (and (= (count origin-val) (count dest-val))
+               (gsh/close-attrs? attr origin-val dest-val))
+
+          (contains? drifting-geometry-attrs attr)
+          (gsh/close-attrs? attr origin-val dest-val)
+
+          (and (= :content attr)
+               (or (cfh/path-shape? origin-shape) (cfh/bool-shape? origin-shape)))
+          (segment/content-close? origin-val dest-val)
+
+          (= :position-data attr)
+          (position-data-close? origin-val dest-val)
+
+          :else
+          false))))
+
 ;; Flex-child layout attrs synced between main and copy (interactions are only kept on swap)
 (def ^:private flex-child-attrs
   (disj ctk/swap-keep-attrs :interactions))
@@ -370,10 +408,18 @@
   [changes file container libraries shape-id]
   (log/trace :msg "  -> advance-nesting-level")
   (let [detached-ids (atom #{})
-        children  (cfh/get-children-with-self (:objects container) shape-id)  ;; TODO: this function should be refactored to be a recursive tree traversal.
-        skip-near (fn [changes shape]                                         ;;       this way we could shake the tree more easily when detaching shapes
-                    (shape-log :trace (:id shape) container                   ;;       and perhaps even allow to recover nested instances that have been
-                               :msg "     * advancing" :shape-id (:id shape)) ;;       swapped and so we can access the main instance again.
+        ;; Nested heads swapped in this copy, and their descendants, already
+        ;; point to the swapped-in main, so they must not be advanced
+        children  (let [objects       (:objects container)
+                        swapped-head? #(let [shape (get objects %)]
+                                         (and (ctk/instance-head? shape)
+                                              (some? (ctk/get-swap-slot shape))))]
+                    (->> (cfh/get-children-ids objects shape-id {:ignore-children-fn swapped-head?})
+                         (cons shape-id)
+                         (map (d/getf objects))))
+        skip-near (fn [changes shape]
+                    (shape-log :trace (:id shape) container
+                               :msg "     * advancing" :shape-id (:id shape))
                     (if (contains? @detached-ids (:id shape))
                       (do (log/trace :msg "       (detached)")
                           changes)
@@ -1146,26 +1192,69 @@
 
         initial-root?  (:component-root shape-inst)
 
+        ;; The component name is normalized (path separators with one space at
+        ;; each side), so the name synced to the main instance root must be
+        ;; normalized too. Otherwise the root would not match the component's
+        ;; path+name and the file would fail :invalid-main-instance-name.
+        rename?        (and (some? component)
+                            (contains? (:touched shape-inst) :name-group))
+        original-name  (:name shape-inst)
+        clean-name     (when rename?
+                         (cpn/clean-path original-name))
+        shape-inst     (cond-> shape-inst
+                         (some? clean-name)
+                         (assoc :name clean-name))
+
         root-inst      shape-inst
         root-main      (ctf/get-component-root library component)
 
-        changes        (cond-> changes
-                         (and component (contains? (:touched shape-inst) :name-group))
-                         (generate-rename-component (:component-id shape-inst) (:name shape-inst) library))]
+        ;; When the synced shape is itself the component's main instance root,
+        ;; `find-remote-shape` returns nil and the recursive sync never reaches
+        ;; it, so it must be renamed explicitly to keep it matching the
+        ;; component's path+name.
+        main-root?     (and (some? component)
+                            (= (:id shape-inst) (:main-instance-id component)))
 
-    (if component
-      (generate-sync-shape-inverse-recursive changes
-                                             container
-                                             shape-inst
-                                             component
-                                             library
-                                             file
-                                             libraries
-                                             shape-main
-                                             root-inst
-                                             root-main
-                                             initial-root?)
-      changes)))
+        changes        (cond-> changes
+                         (some? clean-name)
+                         (generate-rename-component (:component-id shape-inst) clean-name library))
+
+        changes        (if component
+                         (generate-sync-shape-inverse-recursive changes
+                                                                container
+                                                                shape-inst
+                                                                component
+                                                                library
+                                                                file
+                                                                libraries
+                                                                shape-main
+                                                                root-inst
+                                                                root-main
+                                                                initial-root?)
+                         changes)
+
+        changes        (cond-> changes
+                         (and (some? clean-name)
+                              main-root?
+                              (not= clean-name original-name))
+                         (-> (update :redo-changes conj
+                                     (make-change container
+                                                  {:type :mod-obj
+                                                   :id (:id shape-inst)
+                                                   :local-change? true
+                                                   :operations [{:type :set
+                                                                 :attr :name
+                                                                 :val clean-name}]}))
+                             (update :undo-changes conj
+                                     (make-change container
+                                                  {:type :mod-obj
+                                                   :id (:id shape-inst)
+                                                   :local-change? true
+                                                   :operations [{:type :set
+                                                                 :attr :name
+                                                                 :val original-name}]}))))]
+
+    changes))
 
 (defn- generate-sync-shape-inverse-recursive
   [changes container shape-inst component library file libraries shape-main root-inst root-main initial-root?]
@@ -1993,7 +2082,7 @@
                 reset-pos-data?
                 (and (cfh/text-shape? origin-shape)
                      (= attr :position-data)
-                     (not= (:position-data origin-shape) (:position-data dest-shape))
+                     (not (attr-equal? :position-data origin-shape dest-shape))
                      (touched :geometry-group))
 
                 ;; On texts, when we want to omit the touched attrs, both text (the actual letters)
@@ -2007,7 +2096,7 @@
                      (touched sync-group))
 
                 skip-operations?
-                (or (= (get origin-shape attr) (get dest-shape attr))
+                (or (attr-equal? attr origin-shape dest-shape)
                     (and (touched sync-group)
                          omit-touched?
                          ;; When it is a text-partial-change, we should generate operations
@@ -2716,10 +2805,20 @@
 
         [path name] (cpn/split-group-name name)
 
+        ;; The name of the main instance root must match the path+name of the
+        ;; component. The component name is normalized here (via split-group-name),
+        ;; so the root shape name must be normalized too. Otherwise creating a
+        ;; component from a shape with an unnormalized name (e.g. "Group/Subgroup")
+        ;; would leave a main instance failing :invalid-main-instance-name.
+        normalized-name (cpn/merge-path-item path name)
+
         [root-shape updated-shapes]
-        (ctn/convert-shape-in-component root objects file-id)
+        (ctn/convert-shape-in-component (assoc root :name normalized-name) objects file-id)
 
         changes     (-> changes
+                        (cond-> (not= normalized-name (:name root))
+                          (pcb/update-shapes [(:id root)] #(assoc % :name normalized-name)
+                                             {:ignore-touched true}))
                         (pcb/add-component (:id root-shape)
                                            path
                                            name
@@ -2728,7 +2827,8 @@
                                            page-id
                                            nil
                                            variant-id
-                                           props))]
+                                           props
+                                           {:apply-changes-local-library? true}))]
     [root-shape changes]))
 
 (defn generate-add-component
@@ -3165,6 +3265,7 @@
            is-component-main?     (ctk/main-instance? obj)
            subinstance-head?      (ctk/subinstance-head? obj)
            instance-root?         (ctk/instance-root? obj)
+           parent-not-in-copy     (not (ctk/in-component-copy? parent))
 
            into-component?        (and duplicating-component?
                                        (ctn/in-any-component? objects parent))
@@ -3173,6 +3274,8 @@
                                     level-delta
                                     (ctn/get-nesting-level-delta objects obj parent))
            new-shape-ref          (ctf/advance-shape-ref nil page libraries obj level-delta {:include-deleted? true})
+
+
 
            regenerate-component
            (fn [changes shape]
@@ -3188,7 +3291,8 @@
 
                (cond-> (and (not instance-root?)
                             subinstance-head?
-                            remove-swap-slot?)
+                            remove-swap-slot?
+                            parent-not-in-copy)
                  (ctk/remove-swap-slot))
 
                (dissoc :shapes
@@ -3239,6 +3343,25 @@
            changes (cond-> changes
                      (and is-component-root? is-component-main?)
                      (regenerate-component new-obj))
+
+           ;; Unknown-component paste into a variant set: align props/names
+           ;; after regenerate. Reload the shape so we use the new component-id.
+           ;; Prefit the component name/path to the container so
+           ;; create-new-properties-from-variant does not treat the component
+           ;; full name as a former set name and inflate properties (add-name?).
+           changes (cond-> changes
+                     (and is-component-root?
+                          is-component-main?
+                          (ctk/is-variant-container? parent))
+                     (as-> $
+                           (let [shape         (get (pcb/get-objects $) (:id new-obj))
+                                 [cpath cname] (cpn/split-group-name (:name parent))
+                                 changes       (pcb/update-component
+                                                $
+                                                (:component-id shape)
+                                                #(assoc % :name cname :path cpath)
+                                                {:apply-changes-local-library? true})]
+                             (clvp/generate-make-shapes-variant changes [shape] parent))))
 
            ;; This is needed for the recursive call to find the new object as parent
            page' (ctst/add-shape (:id new-obj)

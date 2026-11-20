@@ -382,6 +382,10 @@ msgstr "Crear nueva organización"
 msgid "dashboard.create-new-team"
 msgstr "Crear nuevo equipo"
 
+#: src/app/main/ui/dashboard/team_form.cljs:122
+msgid "dashboard.create-team-in-organization"
+msgstr "Crea un nuevo equipo en %s"
+
 #: src/app/main/ui/workspace/main_menu.cljs:712
 msgid "dashboard.create-version-menu"
 msgstr "Guardar esta versión"
@@ -1374,6 +1378,10 @@ msgstr "Este equipo no pertenece a ninguna organización"
 #: src/app/main/ui/dashboard/team.cljs:1716
 msgid "dashboard.team-organization.remove"
 msgstr "Eliminar equipo de la organización"
+
+#: src/app/main/data/common.cljs:213
+msgid "dashboard.team-owner-changed-by-organization"
+msgstr "Ahora eres lector en %s. %s es su nuevo propietario."
 
 #: src/app/main/ui/dashboard/team.cljs:1744
 msgid "dashboard.team-projects"
@@ -2458,7 +2466,10 @@ msgstr "Espaciado de letras"
 msgid "inspect.attributes.typography.line-height"
 msgstr "Interlineado"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:638
+msgid "inspect.attributes.typography.list-style-type.disc"
+msgstr "Disco"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:594
 msgid "inspect.attributes.typography.mixed-font-family"
 msgstr "Varias Familias tipográficas"
 
@@ -5009,6 +5020,13 @@ msgstr "Empezar a diseñar"
 msgid "options.deleted-token-with-name"
 msgstr "El token {%s} no existe o ha sido borrado."
 
+#: src/app/main/data/plugins.cljs:129
+msgid "plugins.runtime-unavailable"
+msgstr ""
+"Los plugins no están disponibles en este navegador. Algo en tu entorno (por "
+"ejemplo, una extensión como Tampermonkey) impide que se inicie el entorno de "
+"plugins. Desactiva las extensiones o vuelve a cargar la página."
+
 #: src/app/plugins/utils.cljs:579
 msgid "plugins.validation.invalid-value"
 msgstr "esperado %s, obtenido %s (%s)"
@@ -5853,14 +5871,14 @@ msgid "subscription.dashboard.banner.subscription-expired"
 msgstr "Tu suscripción Enterprise ha caducado. (%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:217
-msgid "subscription.dashboard.banner.unlock-features"
-msgstr "Desbloquea las funciones Enterprise"
+msgid "subscription.dashboard.banner.unlock-enterprise"
+msgstr "Desbloquea Enterprise"
 
 #: src/app/main/ui/dashboard/subscription.cljs:219
-msgid "subscription.dashboard.banner.unlock-features-description-text"
+msgid "subscription.dashboard.banner.unlock-features-description"
 msgstr ""
-"Establece permisos detallados y mantén el control, sin renunciar a la "
-"libertad del código abierto que tanto valora tu equipo."
+"Para organizaciones que necesitan una gobernanza avanzada, una "
+"administración centralizada y una colaboración segura."
 
 #: src/app/main/ui/dashboard/subscription.cljs:224
 msgid "subscription.dashboard.banner.upgrade-nitrate"
@@ -7171,6 +7189,14 @@ msgstr "Añadir una biblioteca compartida"
 msgid "workspace.libraries.assets-in-this-file"
 msgstr "RECURSOS EN ESTE ARCHIVO"
 
+#: src/app/main/data/workspace/libraries.cljs:1963
+msgid "workspace.libraries.broken-library-disconnected"
+msgstr ""
+"No se ha podido cargar la biblioteca \"%s\" y se ha desconectado de este "
+"archivo. Los componentes y colores que ya usa el archivo no se ven "
+"afectados, pero quedarán huérfanos hasta que la biblioteca se arregle y se "
+"vuelva a conectar."
+
 #: src/app/main/ui/workspace/libraries.cljs:178, src/app/main/ui/workspace/libraries.cljs:207, src/app/main/ui/workspace/libraries.cljs:251
 msgid "workspace.libraries.colors"
 msgid_plural "workspace.libraries.colors"
@@ -7226,6 +7252,10 @@ msgstr "Biblioteca conectada"
 #: src/app/main/ui/workspace/libraries.cljs:235
 msgid "workspace.libraries.connected-through"
 msgstr "Conectada mediante"
+
+#: src/app/main/ui/workspace/libraries.cljs:934
+msgid "workspace.libraries.connected-through-hint"
+msgstr "Conectada mediante %s. Para quitar esta biblioteca, desconecta %s."
 
 #: src/app/main/ui/workspace/libraries.cljs:507
 msgid "workspace.libraries.connected-to"
@@ -7372,6 +7402,10 @@ msgstr "ver todos los cambios"
 #: src/app/main/ui/workspace/libraries.cljs:1163, src/app/main/ui/workspace/libraries.cljs:1167
 msgid "workspace.libraries.updates"
 msgstr "ACTUALIZACIONES"
+
+#: src/app/main/ui/workspace/libraries.cljs:936
+msgid "workspace.libraries.used-by"
+msgstr "Usada por %s. Para quitar esta biblioteca, desconecta primero %s."
 
 #: src/app/main/ui/ds/notifications/shared/notification_pill.cljs:61
 msgid "workspace.notification-pill.detail"
@@ -7674,6 +7708,22 @@ msgstr[1] "Exportar %s elementos"
 #: src/app/main/ui/inspect/exports.cljs:167, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:216
 msgid "workspace.options.export.add-export"
 msgstr "Añadir exportación"
+
+#: src/app/main/ui/exports/preview.cljs:170
+msgid "workspace.options.export.preview"
+msgstr "Vista previa"
+
+#: src/app/main/ui/exports/preview.cljs:98
+msgid "workspace.options.export.preview-error"
+msgstr "No se ha podido cargar la vista previa"
+
+#: src/app/main/ui/exports/preview.cljs:94, src/app/main/ui/exports/preview.cljs:156
+msgid "workspace.options.export.preview-image"
+msgstr "Resultado de la exportación"
+
+#: src/app/main/ui/exports/preview.cljs:142
+msgid "workspace.options.export.preview-preset"
+msgstr "Exportación mostrada"
 
 #: src/app/main/ui/inspect/exports.cljs:177, src/app/main/ui/inspect/exports.cljs:211, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:228, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:263
 msgid "workspace.options.export.remove-export"
@@ -8497,6 +8547,14 @@ msgstr "Espaciado entre letras"
 msgid "workspace.options.text-options.line-height"
 msgstr "Altura de línea"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:251
+msgid "workspace.options.text-options.list-bullets"
+msgstr "Lista con viñetas"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:247
+msgid "workspace.options.text-options.list-none"
+msgstr "Sin lista"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:212
 msgid "workspace.options.text-options.strikethrough"
 msgstr "Tachado (%s)"
@@ -8613,6 +8671,12 @@ msgstr "Descubre [más extensiones](%s)"
 #: src/app/main/ui/workspace/plugins.cljs:251
 msgid "workspace.plugins.empty-plugins"
 msgstr "No se encuentran extensiones"
+
+#: src/app/main/data/plugins.cljs, src/app/main/ui/dashboard.cljs, src/app/main/ui/workspace/plugins.cljs
+msgid "workspace.plugins.error.global-not-allowed"
+msgstr ""
+"Por ahora, las extensiones que funcionan fuera de un archivo solo se pueden "
+"instalar desde fuentes de confianza."
 
 #: src/app/main/ui/workspace/plugins.cljs:237
 msgid "workspace.plugins.error.manifest"
@@ -8784,6 +8848,54 @@ msgstr "**Edición desactivada** porque no se pueden guardar los cambios."
 #, markdown
 msgid "workspace.save-failure.stopped"
 msgstr "**Edición desactivada** porque no se pueden guardar los cambios."
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.anchor-point"
+msgstr "Punto de anclaje"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.anchor.bottom-center"
+msgstr "Abajo en el centro"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.anchor.bottom-left"
+msgstr "Abajo a la izquierda"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.anchor.bottom-right"
+msgstr "Abajo a la derecha"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.anchor.center"
+msgstr "Centro"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.anchor.center-left"
+msgstr "Centro a la izquierda"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.anchor.center-right"
+msgstr "Centro a la derecha"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.anchor.top-center"
+msgstr "Arriba en el centro"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.anchor.top-left"
+msgstr "Arriba a la izquierda"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.anchor.top-right"
+msgstr "Arriba a la derecha"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.scale-and-anchor"
+msgstr "Escala y punto de anclaje"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.title"
+msgstr "Escalado"
 
 #: src/app/main/ui/workspace/context_menu.cljs:667
 msgid "workspace.shape.menu.add-flex"
@@ -9710,6 +9822,17 @@ msgstr ""
 #: src/app/main/data/workspace/tokens/import_export.cljs:60
 msgid "workspace.tokens.unknown-token-type-section"
 msgstr "El tipo '%s' no está soportado (%s):"
+
+#: src/app/main/data/workspace/tokens/import_export.cljs:80
+msgid "workspace.tokens.unsupported-token-data-message"
+msgstr ""
+"La importación se ha realizado correctamente, pero algunos datos de los "
+"tokens fueron omitidos porque Penpot no los soporta. Expande los detalles "
+"para ver qué se omitió."
+
+#: src/app/main/data/workspace/tokens/import_export.cljs:83
+msgid "workspace.tokens.unsupported-token-data-section"
+msgstr "'%s' no está soportado (%s):"
 
 #: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:316, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:270
 msgid "workspace.tokens.use-reference"

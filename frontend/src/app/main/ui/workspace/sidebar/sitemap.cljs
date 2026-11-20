@@ -23,6 +23,7 @@
    [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.notifications.badge :refer [badge-notification]]
+   [app.main.ui.workspace.sidebar.scroll :as sc]
    [app.render-wasm.api :as wasm.api]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -291,10 +292,16 @@
 ;; --- Sitemap Toolbox
 
 (mf/defc sitemap*
-  [{:keys [height collapsed on-toggle-collapsed]}]
+  [{:keys [height collapsed on-toggle-collapsed scroll-store]}]
   (let [file           (mf/deref ref:file-with-pages)
         file-id        (get file :id)
         project-id     (get file :project-id)
+        content-ref    (mf/use-ref nil)
+
+        on-scroll      (mf/use-fn
+                        (mf/deps scroll-store file-id)
+                        (fn [event]
+                          (sc/save-scroll! scroll-store [:sitemap file-id] event)))
 
         on-create      (mf/use-fn
                         (mf/deps file-id project-id)
@@ -305,6 +312,15 @@
 
         read-only?     (mf/use-ctx ctx/workspace-read-only?)
         permissions    (mf/use-ctx ctx/permissions)]
+
+    ;; NOTE: a layout effect, so the saved position is back before the
+    ;; selected page item runs its `scroll-into-view-if-needed!` effect.
+    ;; With nothing saved the list is left alone, so the selected page
+    ;; still scrolls into view when the file opens.
+    (mf/with-layout-effect [file-id collapsed]
+      (when-not ^boolean collapsed
+        (when-some [saved (get @scroll-store [:sitemap file-id])]
+          (sc/restore-scroll! (mf/ref-val content-ref) saved))))
 
     [:div {:class (stl/css :sitemap)
            :style {:--height (dm/str height "px")}}
@@ -326,6 +342,8 @@
                           :icon i/add}])]
 
      (when-not ^boolean collapsed
-       [:div {:class (stl/css :sitemap-content)}
+       [:div {:class (stl/css :sitemap-content)
+              :ref content-ref
+              :on-scroll on-scroll}
         [:> pages-list* {:key (dm/str (:id file))
                          :file file}]])]))

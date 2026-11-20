@@ -147,6 +147,20 @@ Some naming conventions:
     [(subs s 0 (inc last-period)) (subs s (inc last-period))]
     [s ""]))
 
+(defn remove-extension
+  "Removes the extension (the text after the last period, including the
+   period itself) from a name:
+     'photo.svg'      ->  'photo'
+     'icon.SVG'       ->  'icon'
+     'my.svg.icon.svg' ->  'my.svg.icon'
+     'archive.tar.gz' ->  'archive.tar'
+     'design'         ->  'design'"
+  [name]
+  (let [[base ext] (split-by-last-period name)]
+    (if (str/empty? ext)
+      name
+      (subs base 0 (dec (count base))))))
+
 ;; Tree building functions --------------------------------------------------
 
 (defn- attach-remaining-path

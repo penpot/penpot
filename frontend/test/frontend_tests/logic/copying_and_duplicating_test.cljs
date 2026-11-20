@@ -12,16 +12,19 @@
    [app.common.test-helpers.ids-map :as cthi]
    [app.common.test-helpers.shapes :as cths]
    [app.common.types.component :as ctk]
+   [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.colors :as dc]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.pages :as dwp]
    [app.main.data.workspace.selection :as dws]
+   [app.main.data.workspace.shape-layout :as dwsl]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.mock :as mock]
    [frontend-tests.helpers.pages :as thp]
-   [frontend-tests.helpers.state :as ths]))
+   [frontend-tests.helpers.state :as ths]
+   [potok.v2.core :as ptk]))
 
 (t/use-fixtures :each
   {:before thp/reset-idmap!})
@@ -653,3 +656,160 @@
                      "Pasted text shapes have nil position-data"))))))
       done)))
 
+
+;; Grid tracks in component copies
+
+(defn- add-grid-with-child
+  "Adds a grid board with one rect child and assigns the child to a cell."
+  [file grid-label rect-label & {:keys [parent-label params]}]
+  (let [file (-> file
+                 (ctho/add-frame grid-label
+                                 (merge {:name "grid"
+                                         :parent-label parent-label
+                                         :layout :grid
+                                         :layout-grid-dir :row
+                                         :layout-grid-columns []
+                                         :layout-grid-rows []
+                                         :layout-grid-cells {}}
+                                        params))
+                 (cths/add-sample-shape rect-label :parent-label grid-label))
+        grid (->> (cths/get-shape file grid-label)
+                  (#(ctl/assign-cells % (:objects (cthf/current-page file)))))]
+    (reduce (fn [file attr] (cths/update-shape file grid-label attr (get grid attr)))
+            file
+            [:layout-grid-columns :layout-grid-rows :layout-grid-cells])))
+
+(defn- grid-root-file
+  "Main component whose root board is the grid, and a copy of it."
+  []
+  (-> (cthf/sample-file :file1 :page-label :page-1)
+      (add-grid-with-child :grid-main :rect-main)
+      (cthc/make-component :comp :grid-main)
+      (cthc/instantiate-component :comp :grid-copy :children-labels [:rect-copy])))
+
+(defn- grid-nested-file
+  "Main component with a wrapper board that contains the grid, and a copy."
+  []
+  (-> (cthf/sample-file :file1 :page-label :page-1)
+      (ctho/add-frame :wrapper-main :name "wrapper")
+      (add-grid-with-child :grid-main :rect-main :parent-label :wrapper-main)
+      (cthc/make-component :comp :wrapper-main)
+      (cthc/instantiate-component :comp :wrapper-copy :children-labels [:grid-copy :rect-copy])))
+
+(defn- grid-user-added-in-copy-file
+  "Copy of a wrapper board, with a plain grid (no :shape-ref) added inside
+  the copy. Only its parent is a copy."
+  []
+  (let [file (-> (grid-nested-file)
+                 (add-grid-with-child :grid-user :rect-user :parent-label :wrapper-copy))]
+    (assert (nil? (:shape-ref (cths/get-shape file :grid-user))))
+    file))
+
+(defn- grid-variant-file
+  "Variant main whose root board is the grid. The root has :variant-id and
+  no :shape-ref."
+  []
+  (let [file       (-> (cthf/sample-file :file1 :page-label :page-1)
+                       (cths/add-sample-shape :variant :type :frame :is-variant-container true))
+        variant-id (cthi/id :variant)]
+    (-> file
+        (add-grid-with-child :grid-main :rect-main
+                             :parent-label :variant
+                             :params {:variant-id variant-id :variant-name "Value1"})
+        (cthc/make-component :comp :grid-main)
+        (cthc/update-component :comp {:variant-id variant-id
+                                      :variant-properties [{:name "Property 1" :value "Value1"}]}))))
+
+(defn- copied-tracks-event
+  [grid-id]
+  (ptk/reify ::set-copied-tracks
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-grid-edition grid-id :copied-tracks]
+                {:track-indices [0] :type :column :grid-id grid-id}))))
+
+(defn- run-grid-track-events
+  [file make-events check-fn]
+  (t/async done
+    (mock/with-mocks {uuid/next cthi/next-uuid}
+      (fn [done']
+        (let [store  (ths/setup-store file)
+              events (make-events file)]
+          (ths/run-store
+           store done' events
+           (fn [new-state]
+             (check-fn (cthf/current-page file)
+                       (ths/get-file-from-state new-state))))))
+      done)))
+
+(defn- duplicate-events
+  [grid-label]
+  (fn [file]
+    [(dwsl/duplicate-layout-track [(:id (cths/get-shape file grid-label))] :column 0)]))
+
+(defn- paste-events
+  [grid-label]
+  (fn [file]
+    (let [grid-id (:id (cths/get-shape file grid-label))]
+      [(copied-tracks-event grid-id)
+       (dwsl/paste-grid-tracks grid-id)])))
+
+(defn- objects-of
+  [file]
+  (:objects (cthf/current-page file)))
+
+(defn- column-count
+  [file label]
+  (count (:layout-grid-columns (cths/get-shape file label))))
+
+(defn- check-blocked
+  [file make-events grid-label]
+  (run-grid-track-events
+   file make-events
+   (fn [page file']
+     (t/is (= (:objects page) (objects-of file')))
+     (t/is (= (column-count file grid-label) (column-count file' grid-label))))))
+
+(defn- check-works
+  [file make-events grid-label]
+  (run-grid-track-events
+   file make-events
+   (fn [page file']
+     (t/is (> (count (objects-of file')) (count (:objects page))))
+     (t/is (> (column-count file' grid-label) (column-count file grid-label))))))
+
+(t/deftest duplicate-track-blocked-in-copy-root-grid
+  (check-blocked (grid-root-file) (duplicate-events :grid-copy) :grid-copy))
+
+(t/deftest paste-tracks-blocked-in-copy-root-grid
+  (check-blocked (grid-root-file) (paste-events :grid-copy) :grid-copy))
+
+(t/deftest duplicate-track-blocked-in-nested-copy-grid
+  (check-blocked (grid-nested-file) (duplicate-events :grid-copy) :grid-copy))
+
+(t/deftest paste-tracks-blocked-in-nested-copy-grid
+  (check-blocked (grid-nested-file) (paste-events :grid-copy) :grid-copy))
+
+(t/deftest duplicate-track-blocked-in-user-added-grid-inside-copy
+  (check-blocked (grid-user-added-in-copy-file) (duplicate-events :grid-user) :grid-user))
+
+(t/deftest paste-tracks-blocked-in-user-added-grid-inside-copy
+  (check-blocked (grid-user-added-in-copy-file) (paste-events :grid-user) :grid-user))
+
+(t/deftest duplicate-track-works-in-main-grid
+  (check-works (grid-root-file) (duplicate-events :grid-main) :grid-main))
+
+(t/deftest paste-tracks-works-in-main-grid
+  (check-works (grid-root-file) (paste-events :grid-main) :grid-main))
+
+(t/deftest duplicate-track-works-in-main-nested-grid
+  (check-works (grid-nested-file) (duplicate-events :grid-main) :grid-main))
+
+(t/deftest paste-tracks-works-in-main-nested-grid
+  (check-works (grid-nested-file) (paste-events :grid-main) :grid-main))
+
+(t/deftest duplicate-track-works-in-variant-main-grid
+  (check-works (grid-variant-file) (duplicate-events :grid-main) :grid-main))
+
+(t/deftest paste-tracks-works-in-variant-main-grid
+  (check-works (grid-variant-file) (paste-events :grid-main) :grid-main))

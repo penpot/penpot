@@ -127,6 +127,19 @@
 
 ;; --- Toggle shape's selection status (selected or deselected)
 
+(defn selected-board-ids
+  "The ids of the boards `ids` belong to: the id itself for a board, the
+  frame of any other shape. Returns them without repeats, in selection
+  order, or nil when `ids` is empty or has a shape on the root, which
+  is not a board to point at."
+  [objects ids]
+  (let [board-ids (into (d/ordered-set)
+                        (keep #(:id (cfh/get-frame objects %)))
+                        ids)]
+    (when (and (seq board-ids)
+               (not (contains? board-ids uuid/zero)))
+      (vec board-ids))))
+
 (defn select-shape
   ([id]
    (select-shape id false))
@@ -146,21 +159,15 @@
      (watch [_ state _]
        (let [page-id              (:current-page-id state)
              objects              (dsh/lookup-page-objects state page-id)
-             selected-id          (dsh/lookup-selected state)
-             selected             (dsh/lookup-shapes state selected-id)
-             frame-ids            (map (fn [item] (let [parent (cfh/get-frame objects (:id item))]
-                                                    (:id parent))) selected)
-             params-without-board (-> (rt/get-params state)
-                                      (dissoc :board-id))
-             params-board         (-> (rt/get-params state)
-                                      (assoc :board-id frame-ids))]
+             board-ids            (selected-board-ids objects (dsh/lookup-selected state))
+             params               (rt/get-params state)]
 
          (rx/of (dwc/expand-all-parents [id] objects)
                 :interrupt
                 ::dwsp/interrupt
-                (if (some #(= % uuid/zero) frame-ids)
-                  (rt/nav :workspace params-without-board {::rt/replace true})
-                  (rt/nav :workspace params-board {::rt/replace true}))))))))
+                (if (some? board-ids)
+                  (rt/nav :workspace (assoc params :board-id board-ids) {::rt/replace true})
+                  (rt/nav :workspace (dissoc params :board-id) {::rt/replace true}))))))))
 
 (defn select-prev-shape
   ([]

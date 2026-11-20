@@ -13,6 +13,7 @@
    [app.common.logging :as l]
    [app.common.uuid :as uuid]
    [app.config :as cf]
+   [app.loggers.audit :as-alias audit]
    [app.msgbus :as mbus]
    [app.rpc :as-alias rpc]
    [app.util.blob :as blob]
@@ -146,6 +147,59 @@
     (t/is (= 1 (:revn (th/db-get :file {:id (:file-id ctx)}))))
     (t/is (= 1 (count (get-file-changes ctx))))
     (t/is (empty? messages))))
+
+(t/deftest update-file-audit-event-carries-the-change-id-only-when-written
+  ;; `:file-change-id` points at the revision row of the save. A save whose
+  ;; first commit is rejected and keeps no prefix writes no row, so its
+  ;; event must not carry the id: an id that resolves to nothing cannot be
+  ;; told apart from a row the GC already purged. `command-raw!` keeps the
+  ;; result metadata, which is where the command leaves the audit props.
+  (let [{:keys [profile-id file-id page-id] :as ctx} (create-file)
+        shape (uuid/next)
+        save! (fn [params]
+                (th/command-raw! (merge {::th/type :update-file
+                                         ::rpc/profile-id profile-id
+                                         :id file-id
+                                         :session-id (uuid/next)
+                                         :vern 0
+                                         :features cfeat/supported-features}
+                                        params)))
+        props (fn [out] (::audit/replace-props (meta out)))]
+
+    (t/testing "a save that writes the revision carries its id"
+      (let [out (save! {:revn 0
+                        :changes [(th/add-rect-change page-id shape)]})
+            id  (:file-change-id (props out))]
+        (t/is (uuid? id))
+        (t/is (= [id] (mapv :id (th/db-query :file-change {:id id}))))
+        (t/is (= "saved" (:outcome (props out))))
+        (t/is (inst? (:modified-at (props out))))))
+
+    (t/testing "a fully rejected save carries no id and says so"
+      (let [commit1 (commit (break-parent page-id shape))
+            commit2 (commit (th/add-rect-change page-id (uuid/next)))
+            out     (save! {:revn 1
+                            :changes-with-metadata [commit1 commit2]})]
+        (t/is (some? (:rejected out)))
+        (t/is (= 1 (:revn (th/db-get :file {:id file-id}))))
+        (t/is (= 1 (count (get-file-changes ctx))))
+        (t/is (not (contains? (props out) :file-change-id)))
+        (t/is (= "rejected" (:outcome (props out))))
+        ;; The rejected save does not persist: the event mirrors the row.
+        (t/is (= (inst-ms (:modified-at (th/db-get :file {:id file-id})))
+                 (inst-ms (:modified-at (props out)))))))
+
+    (t/testing "a partially rejected save says so and carries the id"
+      (let [commit1 (commit (th/add-rect-change page-id (uuid/next)))
+            commit2 (commit (conflicting-page-change))
+            out     (save! {:revn 1
+                            :changes-with-metadata [commit1 commit2]})
+            row     (th/db-get :file {:id file-id})]
+        (t/is (some? (:rejected out)))
+        (t/is (= "partial" (:outcome (props out))))
+        (t/is (uuid? (:file-change-id (props out))))
+        (t/is (= (inst-ms (:modified-at row))
+                 (inst-ms (:modified-at (props out)))))))))
 
 (t/deftest rejects-a-commit-that-throws-while-applied
   (let [{:keys [page-id] :as ctx} (create-file)
@@ -282,18 +336,20 @@
 
 (defn- update-file-logged
   "Updates the file and returns the response in `:out` and, in `:rejected`,
-  the props of the log record of the rejection, if any."
+  the props of the log record of the rejection, if any. Keeps the watch
+  until the record arrives: the logger writes it on another thread, so it
+  can land after the update returns."
   [ctx params]
-  (let [records (atom [])
-        out     (try
-                  (add-watch l/log-record ::capture
-                             (fn [_ _ _ record] (swap! records conj record)))
-                  (update-file ctx params)
-                  (finally
-                    (remove-watch l/log-record ::capture)))]
-    {:out      out
-     :rejected (some-> (wait-for-record records "update-file commit rejected")
-                       ::l/props)}))
+  (let [records (atom [])]
+    (try
+      (add-watch l/log-record ::capture
+                 (fn [_ _ _ record] (swap! records conj record)))
+      (let [out (update-file ctx params)]
+        {:out      out
+         :rejected (some-> (wait-for-record records "update-file commit rejected")
+                           ::l/props)})
+      (finally
+        (remove-watch l/log-record ::capture)))))
 
 (t/deftest bisects-the-commits-to-find-the-invalid-one
   (let [{:keys [page-id] :as ctx} (create-file)

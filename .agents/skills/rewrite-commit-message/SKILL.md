@@ -6,9 +6,8 @@ slash: true
 
 # Skill: rewrite-commit-message
 
-HEAD's message is a concatenation of older messages (typical after a
-squash): several subjects, bodies and repeated trailers stacked in a
-single message. Replace it with one proper message and amend HEAD.
+Rewrite HEAD's title and description from its own diff. This also handles a
+squash message with several subjects, bodies and repeated trailers.
 
 ## When to Use
 
@@ -17,9 +16,11 @@ single message. Replace it with one proper message and amend HEAD.
 
 ## Steps
 
-1. Read the full current message (`git log -1 --format=%B HEAD`) and
-   the branch diff (`git diff develop..HEAD --stat`, plus the code
-   when the summary needs grounding).
+1. Check `git diff --cached` first. If any changes are staged, stop and ask
+   the user to handle them; an amend must never include those changes. Read
+   the full current message (`git log -1 --format=%B HEAD`) and HEAD's own
+   diff (`git show --format= --stat HEAD` and the patch). Respect the project
+   rule on amending pushed commits.
 2. Collect every DISTINCT `AI-assisted-by:` value in the current
    message. All of them survive into the new message, one line each:
    attributions are never dropped in a rewrite, even when most of
@@ -27,7 +28,7 @@ single message. Replace it with one proper message and amend HEAD.
 3. Draft one message per `mem:workflow/creating-commits` (read it
    end-to-end first): single subject (imperative, capitalized, no
    trailing period, ≤80 chars), blank line, body wrapped at ≤80
-   chars covering the whole diff (not the old per-commit slices),
+   chars covering HEAD's diff (not the old per-commit slices),
    then the preserved trailers.
 4. Write it to a file (a heredoc keeps real newlines; inline `-m`
    with `\n` does not) and `git commit --amend -F <file>`.

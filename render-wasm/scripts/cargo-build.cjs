@@ -15,6 +15,38 @@ async function main() {
   // A failed invocation must not leave facts from an earlier build.
   fs.rmSync(infoFile, { force: true });
 
+  // This helper inherits the same shell setup as Cargo. Keep only build inputs,
+  // excluding credentials, invocation identities and artifact destinations.
+  const environmentKeys = new Set([
+    "RUSTFLAGS",
+    "RUSTC_WRAPPER",
+    "CARGO_TARGET_DIR",
+    "CARGO_HOME",
+    "CC",
+    "CFLAGS",
+    "CXXFLAGS",
+    "LDFLAGS",
+    "PENPOT_WASM_FUNCTION_NAMES",
+    "CARGO_ENCODED_RUSTFLAGS",
+    "CARGO_BUILD_TARGET",
+    "BUILD_MODE",
+    "EMCC_CFLAGS",
+    "EM_INITIAL_HEAP",
+    "EM_MEMORY_GROWTH_GEOMETRIC_STEP",
+    "EM_MALLOC",
+    "EM_CACHE",
+    "NODE_ENV",
+    "CARGO_NET_OFFLINE",
+  ]);
+  const environment = Object.fromEntries(
+    Object.entries(process.env).filter(
+      ([key]) =>
+        environmentKeys.has(key) ||
+        key.startsWith("CARGO_PROFILE_") ||
+        key.startsWith("EMSDK"),
+    ),
+  );
+
   const artifacts = [];
   const buildScripts = new Map();
   let succeeded = false;
@@ -99,6 +131,7 @@ async function main() {
     package_id: artifact.package_id,
     features: artifact.features,
     profile: artifact.profile,
+    environment,
     out_dir: outDir,
     artifact_dir: path.dirname(path.resolve(jsFiles[0])),
     shared_file: sharedFile,

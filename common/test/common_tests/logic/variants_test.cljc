@@ -7,6 +7,7 @@
 (ns common-tests.logic.variants-test
   (:require
    [app.common.files.changes-builder :as pcb]
+   [app.common.files.variant :as cfv]
    [app.common.geom.point :as gpt]
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
@@ -210,7 +211,76 @@
     (t/is (= (count (:variant-properties comp01')) 1))
     (t/is (= (count (:variant-properties comp02)) 2))
     (t/is (= (count (:variant-properties comp02')) 1))
-    (t/is (= (-> comp01' :variant-properties first :name) "Property 2"))))
+    (t/is (= (-> comp01' :variant-properties first :name) "Property 2"))
+    ;; :m01 is higher in the layers panel, so it keeps its value.
+    (t/is (= "" (-> comp01' :variant-properties first :value)))
+    (t/is (= "(1)" (-> comp02' :variant-properties first :value)))
+    (t/is (= "" (:variant-name (ths/get-shape file' :m01))))
+    (t/is (= "(1)" (:variant-name (ths/get-shape file' :m02))))))
+
+(defn- size-color-shape
+  [size color shape]
+  [{:name "Size" :value size}
+   {:name "Color" :value color}
+   {:name "Shape" :value shape}])
+
+(defn- variant-set-file
+  "Two variants; :m01 is higher in the layers panel than :m02."
+  [props1 props2]
+  (-> (thf/sample-file :file1)
+      (thv/add-variant :v01 :c01 :m01 :c02 :m02)
+      (thc/update-component :c01 {:variant-properties props1})
+      (thc/update-component :c02 {:variant-properties props2})
+      (ths/update-shape :m01 :variant-name (ctv/properties-to-name props1))
+      (ths/update-shape :m02 :variant-name (ctv/properties-to-name props2))))
+
+(defn- remove-property-changes
+  [file pos & {:keys [sanitize-set?] :or {sanitize-set? true}}]
+  (let [page (thf/current-page file)]
+    (-> (pcb/empty-changes nil)
+        (pcb/with-page-id (:id page))
+        (pcb/with-library-data (:data file))
+        (pcb/with-objects (:objects page))
+        (clvp/generate-remove-property (thi/id :v01) pos :sanitize-set? sanitize-set?))))
+
+(defn- values
+  [file component-label]
+  (mapv :value (:variant-properties (thc/get-component file component-label))))
+
+(t/deftest test-remove-property-numbers-the-lower-variant-on-a-clash
+  (let [file  (variant-set-file (size-color-shape "Big" "red" "round")
+                                (size-color-shape "Big" "blue" "round"))
+        file' (thf/apply-changes file (remove-property-changes file 1))]
+
+    (t/is (= ["Big" "round"] (values file' :c01)))
+    (t/is (= ["Big" "round (1)"] (values file' :c02)))
+    (t/is (= "Big, round" (:variant-name (ths/get-shape file' :m01))))
+    (t/is (= "Big, round (1)" (:variant-name (ths/get-shape file' :m02))))))
+
+(t/deftest test-remove-property-without-a-clash-keeps-the-values
+  (let [file  (variant-set-file (size-color-shape "Big" "red" "round")
+                                (size-color-shape "Small" "blue" "square"))
+        file' (thf/apply-changes file (remove-property-changes file 1))]
+
+    (t/is (= ["Big" "round"] (values file' :c01)))
+    (t/is (= ["Small" "square"] (values file' :c02)))
+    (t/is (= "Small, square" (:variant-name (ths/get-shape file' :m02))))))
+
+(t/deftest test-remove-property-without-sanitize-keeps-a-duplicate
+  (let [file  (variant-set-file (size-color-shape "Big" "red" "round")
+                                (size-color-shape "Big" "blue" "round"))
+        file' (thf/apply-changes file (remove-property-changes file 1 :sanitize-set? false))]
+
+    (t/is (= ["Big" "round"] (values file' :c01)))
+    (t/is (= ["Big" "round"] (values file' :c02)))
+    (t/is (= "Big, round" (:variant-name (ths/get-shape file' :m02))))))
+
+(t/deftest test-remove-property-out-of-range-does-nothing
+  (let [file (variant-set-file (size-color-shape "Big" "red" "round")
+                               (size-color-shape "Big" "blue" "round"))]
+
+    (t/is (empty? (:redo-changes (remove-property-changes file -1))))
+    (t/is (empty? (:redo-changes (remove-property-changes file 3))))))
 
 (t/deftest test-update-property-value
   (let [;; ==== Setup
@@ -411,6 +481,42 @@
                        set)]
 
     (t/is (contains? values "Bigred"))))
+
+(t/deftest test-make-shapes-variant-same-name-components-get-unique-values
+  ;; Mirrors combine-as-variants with components that share the container
+  ;; name: the first main defines the container, the rest are moved into it.
+  (let [file       (-> (thf/sample-file :file1)
+                       (tho/add-frame :v01 {:name "Tag"})
+                       (tho/add-simple-component :c01 :m01 :r01
+                                                 :root-params {:parent-label :v01 :name "Tag"})
+                       (tho/add-simple-component :c02 :m02 :r02
+                                                 :root-params {:name "Tag"})
+                       (tho/add-simple-component :c03 :m03 :r03
+                                                 :root-params {:name "Tag"}))
+        page       (thf/current-page file)
+        define     (-> (pcb/empty-changes nil (:id page))
+                       (pcb/with-objects (:objects page))
+                       (pcb/with-library-data (:data file))
+                       (clv/generate-define-variant-container
+                        (thi/id :v01) (thi/id :m01) (thi/id :c01) "Tag"))
+        file       (thf/apply-changes file define)
+
+        page       (thf/current-page file)
+        container  (ths/get-shape file :v01)
+        shapes     [(ths/get-shape file :m02) (ths/get-shape file :m03)]
+        changes    (-> (pcb/empty-changes nil)
+                       (pcb/with-page-id (:id page))
+                       (pcb/with-library-data (:data file))
+                       (pcb/with-objects (:objects page))
+                       (clvp/generate-make-shapes-variant shapes container)
+                       (pcb/change-parent (:id container) shapes 0))
+        file'      (thf/apply-changes file changes)
+        values     (mapv #(-> (thc/get-component file' %) :variant-properties first :value)
+                         [:c01 :c02 :c03])]
+
+    (t/is (= ["Value 1" "Value 2" "Value 3"] values))
+    (t/is (= "Value 2" (:variant-name (ths/get-shape file' :m02))))
+    (t/is (= "Value 3" (:variant-name (ths/get-shape file' :m03))))))
 
 
 (t/deftest test-duplicate-variant-container
@@ -686,3 +792,16 @@
              (cpn/merge-path-item (:path comp2') (:name comp2'))))
     (t/is (some? (:variant-id comp1')))
     (t/is (some? (:variant-id comp2')))))
+
+(t/deftest test-extract-properties-values-preserves-order-past-eight
+  (let [names  (mapv #(str "Property " %) (range 1 10))
+        props1 (mapv (fn [n] {:name n :value (str n "-a")}) names)
+        props2 (mapv (fn [n] {:name n :value (str n "-b")}) names)
+        file   (-> (thf/sample-file :file1)
+                   (thv/add-variant :v01 :c01 :m01 :c02 :m02)
+                   (thc/update-component :c01 {:variant-properties props1})
+                   (thc/update-component :c02 {:variant-properties props2}))
+        page   (thf/current-page file)
+        v-id   (:id (ths/get-shape file :v01))
+        result (cfv/extract-properties-values (:data file) (:objects page) v-id)]
+    (t/is (= names (mapv :name result)))))

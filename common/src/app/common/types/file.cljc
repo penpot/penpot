@@ -95,7 +95,6 @@
 
 (def schema:file-metadata
   [:map {:title "Metadata"}
-   [:storage-ref-id {:optional true} ::sm/uuid]
    [:generated-by {:optional true} :string]
    [:referer {:optional true} :string]])
 
@@ -616,16 +615,28 @@
   ([file-data component]
    (load-component-objects file-data component (gpt/point 0 0)))
   ([file-data component delta]
-   (if (and component (empty? (:objects component))) ;; This operation may be called twice, e.g. in an idempotent change
+   ;; nil? not empty?: a missing-main soft-delete stores {}, which must
+   ;; still count as already loaded so render/library callers do not re-enter.
+   (if (and component (nil? (:objects component))) ;; This operation may be called twice, e.g. in an idempotent change
      (let [component-page (get-component-page file-data component)
            page-objects   (:objects component-page)
-           objects        (->> (cons (:main-instance-id component)
-                                     (cfh/get-children-ids page-objects (:main-instance-id component)))
-                               (map #(get page-objects %))
+           ids            (into []
+                                (cons (:main-instance-id component)
+                                      (cfh/get-children-ids page-objects (:main-instance-id component))))
+           ;; Skip ids already gone from the page. Calling gsh/move on nil
+           ;; builds {:selrect nil :points []} and index-by :id stores it
+           ;; under nil, which later fails duplicate-file schema checks.
+           shapes         (into [] (keep #(get page-objects %)) ids)
+           objects        (->> shapes
                                ;; when it is an undo of a cut-paste, we need to undo the movement
                                ;; of the shapes so we need to move them delta
                                (map #(gsh/move % delta))
                                (d/index-by :id))]
+       (when (not= (count shapes) (count ids))
+         (l/wrn :hint "skipping missing shapes when loading component objects"
+                :component-id (str (:id component))
+                :main-instance-id (str (:main-instance-id component))
+                :file-id (str (:id file-data))))
        (assoc component :objects objects))
      component)))
 
@@ -1272,9 +1283,33 @@
          container container]
     (if (= (:id current) target-ref)
       chain
-      (if-let [ref (find-ref-shape nil container libraries current :with-context? true)]
+      (if-let [ref (find-ref-shape nil container libraries current
+                                   :include-deleted? true
+                                   :with-context? true)]
         (recur (conj chain ref) ref (:container (meta ref)))
         chain))))
+
+(defn get-swap-level
+  "Returns the level (0 is the shape itself) of the first shape in the ref
+   chain of `shape` that has been swapped there, looking at most
+   `max-levels` levels up. Returns `max-levels` if none is found."
+  [container libraries shape max-levels]
+  (loop [level     0
+         current   shape
+         container container]
+    (cond
+      (>= level max-levels)
+      max-levels
+
+      (some? (ctk/get-swap-slot current))
+      level
+
+      :else
+      (if-let [ref (find-ref-shape nil container libraries current
+                                   :include-deleted? true
+                                   :with-context? true)]
+        (recur (inc level) ref (:container (meta ref)))
+        max-levels))))
 
 (defn get-touched-from-ref-chain-until-target-ref
   "Returns a set with the :touched of all the items on the shape

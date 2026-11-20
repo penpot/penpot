@@ -7,6 +7,7 @@
 (ns common-tests.files.tokens-test
   (:require
    [app.common.files.tokens :as cfo]
+   [app.common.schema :as sm]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.tokens :as tht]
@@ -1242,6 +1243,77 @@
       (t/is (= 1 (count tokens)))
       (t/is (= "8px" (:value (get tokens "spacing")))))))
 
+(defn- three-sets-lib
+  "A library with the sets `set-a`, `set-b` and `set-c`, in that order,
+  each defining `spacing`; `set-b` also defines `radius`."
+  []
+  (-> (ctob/make-tokens-lib)
+      (ctob/add-set (ctob/make-token-set :id (thi/new-id! :set-a) :name "set-a"))
+      (ctob/add-set (ctob/make-token-set :id (thi/new-id! :set-b) :name "set-b"))
+      (ctob/add-set (ctob/make-token-set :id (thi/new-id! :set-c) :name "set-c"))
+      (ctob/add-token (thi/id :set-a) (ctob/make-token :name "spacing" :type :spacing :value "8px"))
+      (ctob/add-token (thi/id :set-b) (ctob/make-token :name "spacing" :type :spacing :value "16px"))
+      (ctob/add-token (thi/id :set-b) (ctob/make-token :name "radius" :type :border-radius :value "4px"))
+      (ctob/add-token (thi/id :set-c) (ctob/make-token :name "spacing" :type :spacing :value "32px"))))
+
+(t/deftest test-get-active-token-sets
+  (t/testing "returns the active sets unmerged, in set order"
+    (let [tokens-lib    (three-sets-lib)
+          tokens-status (ctos/make-tokens-status :active-set-ids #{(thi/id :set-c) (thi/id :set-a)})
+          sets          (cfo/get-active-token-sets tokens-status tokens-lib)]
+      (t/is (= [(thi/id :set-a) (thi/id :set-c)] (mapv first sets)))
+      (t/is (identical? (ctob/get-tokens tokens-lib (thi/id :set-a)) (second (first sets)))
+            "the tokens are the set's own map, so an unchanged set is the same object")))
+
+  (t/testing "returns no sets when no sets are active"
+    (t/is (= [] (cfo/get-active-token-sets (ctos/make-tokens-status) (three-sets-lib))))))
+
+(t/deftest test-get-active-token-sets-force
+  (t/testing "an inactive forced set comes first, with the lowest precedence"
+    (let [tokens-lib    (three-sets-lib)
+          tokens-status (ctos/make-tokens-status :active-set-ids #{(thi/id :set-a)})
+          sets          (cfo/get-active-token-sets-force tokens-status tokens-lib (thi/id :set-b))]
+      (t/is (= [(thi/id :set-b) (thi/id :set-a)] (mapv first sets)))))
+
+  (t/testing "an active forced set keeps its place and is not added twice"
+    (let [tokens-lib    (three-sets-lib)
+          tokens-status (ctos/make-tokens-status :active-set-ids #{(thi/id :set-a) (thi/id :set-b)})
+          sets          (cfo/get-active-token-sets-force tokens-status tokens-lib (thi/id :set-b))]
+      (t/is (= [(thi/id :set-a) (thi/id :set-b)] (mapv first sets)))))
+
+  (t/testing "an unknown forced set id adds nothing"
+    (let [tokens-lib    (three-sets-lib)
+          tokens-status (ctos/make-tokens-status :active-set-ids #{(thi/id :set-a)})
+          sets          (cfo/get-active-token-sets-force tokens-status tokens-lib (uuid/next))]
+      (t/is (= [(thi/id :set-a)] (mapv first sets))))))
+
+(t/deftest test-get-token-sets-for-edit
+  (t/testing "returns every set, with the edited set moved last"
+    (let [sets (cfo/get-token-sets-for-edit (three-sets-lib) (thi/id :set-a))]
+      (t/is (= [(thi/id :set-b) (thi/id :set-c) (thi/id :set-a)] (mapv first sets)))))
+
+  (t/testing "keeps the set order without a set id"
+    (let [sets (cfo/get-token-sets-for-edit (three-sets-lib) nil)]
+      (t/is (= [(thi/id :set-a) (thi/id :set-b) (thi/id :set-c)] (mapv first sets)))))
+
+  (t/testing "keeps the set order for an unknown set id"
+    (let [sets (cfo/get-token-sets-for-edit (three-sets-lib) (uuid/next))]
+      (t/is (= [(thi/id :set-a) (thi/id :set-b) (thi/id :set-c)] (mapv first sets))))))
+
+(t/deftest test-without-token
+  (let [sets (cfo/get-token-sets-for-edit (three-sets-lib) nil)]
+    (t/testing "leaves the token out of every set that defines it"
+      (let [sets' (cfo/without-token sets "spacing")]
+        (t/is (= (mapv first sets) (mapv first sets')))
+        (t/is (not-any? #(contains? (second %) "spacing") sets'))
+        (t/is (contains? (second (nth sets' 1)) "radius"))))
+
+    (t/testing "keeps the sets without the token as the same objects"
+      (t/is (= [true false true] (mapv identical? sets (cfo/without-token sets "radius")))))
+
+    (t/testing "keeps every set when no set defines the token"
+      (t/is (every? true? (map identical? sets (cfo/without-token sets "missing")))))))
+
 (t/deftest test-sync-tokens-status-with-lib
   (t/testing "removes theme ids that no longer exist in the lib"
     (let [theme-1-id (thi/new-id! :theme-1)
@@ -1709,3 +1781,42 @@
     (t/is (not (contains? (:data detached) :tokens-source)))
     (t/is (not (contains? (:data detached) :tokens-status)))
     (t/is (= detached (ctf/check-file detached)))))
+
+;; Token name schema
+
+(t/deftest test-make-token-name-schema
+  (t/testing "rejects a name that already exists as a token"
+    (let [schema (cfo/make-token-name-schema {"foo" {:name "foo"}})]
+      (t/is (false? (sm/validate schema "foo")))))
+
+  (t/testing "rejects a token inside an existing token"
+    (let [schema (cfo/make-token-name-schema {"foo" {:name "foo"}})]
+      (t/is (false? (sm/validate schema "foo.bar")))))
+
+  (t/testing "rejects a token name that collides with a group"
+    (let [schema (cfo/make-token-name-schema {"foo" {"child" {:name "foo.child"}}})]
+      (t/is (false? (sm/validate schema "foo")))))
+
+  (t/testing "rejects a name that exists as a child token"
+    (let [schema (cfo/make-token-name-schema {"foo" {"bar" {:name "foo.bar"}}})]
+      (t/is (false? (sm/validate schema "foo.bar")))))
+
+  (t/testing "accepts a valid sibling name"
+    (let [schema (cfo/make-token-name-schema {"foo" {:name "foo"}})]
+      (t/is (true? (sm/validate schema "bar")))
+      (t/is (true? (sm/validate schema "bar.baz")))))
+
+  (t/testing "rejects every name when there is no tokens tree"
+    (let [schema (cfo/make-token-name-schema nil)]
+      (t/is (false? (sm/validate schema "foo")))))
+
+  (t/testing "rejects names that do not match the token name format"
+    (let [schema (cfo/make-token-name-schema {})]
+      (t/is (false? (sm/validate schema "")))
+      (t/is (false? (sm/validate schema "$foo")))
+      (t/is (false? (sm/validate schema "foo.")))
+      (t/is (false? (sm/validate schema "foo..bar")))))
+
+  (t/testing "rejects names longer than 255 characters"
+    (let [schema (cfo/make-token-name-schema {})]
+      (t/is (false? (sm/validate schema (apply str (repeat 256 "a"))))))))

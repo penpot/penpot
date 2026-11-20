@@ -38,15 +38,17 @@
                    (fn [command params]
                      (t/is (= :check-nitrate-sso command))
                      (t/is (= team-id (:team-id params)))
+                     (t/is (= "screen=workspace&team-id=1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d"
+                              (:query-string params)))
                      (swap! rpc-calls inc)
                      (rx/of {:authorized true})))
          st/emit! (mock/stub
                    (fn [& emitted]
                      (swap! events into emitted)))}
         (fn [done']
-          (#'routes/check-sso-and-navigate match true "https://penpot.example.com/#/workspace")
+          (#'routes/check-sso-and-navigate match true "screen=workspace&team-id=1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d")
           (reset! now (ct/plus @now #js {:minutes 4 :seconds 59}))
-          (#'routes/check-sso-and-navigate match true "https://penpot.example.com/#/workspace")
+          (#'routes/check-sso-and-navigate match true "screen=workspace&team-id=1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d")
           (t/is (= 1 @rpc-calls))
           (t/is (= 2 (count @events)))
           (done'))
@@ -67,9 +69,9 @@
                      (rx/of {:authorized true})))
          st/emit! mock/noop}
         (fn [done']
-          (#'routes/check-sso-and-navigate match true "https://penpot.example.com/#/workspace")
+          (#'routes/check-sso-and-navigate match true "screen=workspace&team-id=1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d")
           (reset! now (ct/plus @now #js {:minutes 5}))
-          (#'routes/check-sso-and-navigate match true "https://penpot.example.com/#/workspace")
+          (#'routes/check-sso-and-navigate match true "screen=workspace&team-id=1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d")
           (t/is (= 2 @rpc-calls))
           (done'))
         done))))
@@ -91,8 +93,8 @@
                    (fn [& emitted]
                      (swap! events into emitted)))}
         (fn [done']
-          (#'routes/check-sso-and-navigate match true "https://penpot.example.com/#/workspace")
-          (#'routes/check-sso-and-navigate match true "https://penpot.example.com/#/workspace")
+          (#'routes/check-sso-and-navigate match true "screen=workspace&team-id=1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d")
+          (#'routes/check-sso-and-navigate match true "screen=workspace&team-id=1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d")
           (t/is (= 2 @rpc-calls))
           (t/is (= 2 (count @events)))
           (done'))
@@ -155,3 +157,34 @@
             (swap! storage/session dissoc :template))
           (done'))
         done))))
+
+;; --- Legacy hash table -----------------------------------------------------
+;; The router built from `legacy-routes` is a `defonce`, so its entries are
+;; fixed when the namespace loads. These tests only reach the unconditional
+;; ones; a flag cannot add or remove routes here.
+
+(t/deftest legacy-match-resolves-a-top-level-path
+  (let [match (#'routes/legacy-match "/auth/login")]
+    (t/is (= :auth-login (:name match)))
+    (t/is (= {} (:params match)))))
+
+(t/deftest legacy-match-resolves-a-nested-path
+  (let [match (#'routes/legacy-match "/dashboard/files")]
+    (t/is (= :dashboard-files (:name match)))
+    (t/is (= {} (:params match)))))
+
+(t/deftest legacy-match-keeps-the-query-string-params
+  (let [team-id (str (uuid/next))
+        match   (#'routes/legacy-match (str "/workspace?team-id=" team-id))]
+    (t/is (= :workspace (:name match)))
+    (t/is (= team-id (:team-id (:params match))))))
+
+(t/deftest legacy-match-returns-nil-for-an-unknown-path
+  (t/is (nil? (#'routes/legacy-match "/nope"))))
+
+(t/deftest legacy-match-keeps-the-path-params
+  ;; /render-sprite is the only legacy route with a path param.
+  (let [file-id (str (uuid/next))
+        match   (#'routes/legacy-match (str "/render-sprite/" file-id))]
+    (t/is (= :render-sprite (:name match)))
+    (t/is (= file-id (:file-id (:params match))))))

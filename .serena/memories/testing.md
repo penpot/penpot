@@ -73,6 +73,8 @@ a test that reproduces it:
 - **One Assertion Per Concept** — each test verifies one behavior; split
   compound assertions
 - **Descriptive Test Names** — names read like specifications
+- **English Only** — test names, `testing` strings, comments, and every
+  code-facing text MUST be in English; see the hard rule in `AGENTS.md`.
 
 ## Prefer Real Implementations Over Mocks
 
@@ -103,6 +105,11 @@ suite-level) are only for expensive, immutable shared setup.
 Use your test framework's parametrize/table-driven mechanism to test multiple
 scenarios with a single test body. Keeps tests concise and surfaces all cases
 at a glance.
+
+Only when the body is short and identical for every row. A loop that builds its
+own world per row (fresh store, fixtures, several awaits) or that nests two
+dimensions hides which case failed and shares state across cases: write one
+test per case instead, with a shared fixture for the arrangement.
 
 ## Test Pyramid
 
@@ -142,10 +149,10 @@ E2E tests should not be added unless explicitly requested.
 When running ANY test command (CLJS/JS or JVM):
 
 1. **NEVER pipe test output directly to `| head`, `| tail`, `| grep`, or similar filters** — this can hide failures and cause you to miss critical errors.
-2. **ALWAYS pipe to a file first, then read the file:**
+2. **ALWAYS redirect to a file first, then read the file:**
    ```bash
    # CORRECT:
-   pnpm run test 2>&1 > /tmp/test-output.txt
+   pnpm run test > /tmp/test-output.txt 2>&1
    grep -A 5 "failures" /tmp/test-output.txt
    
    # WRONG:

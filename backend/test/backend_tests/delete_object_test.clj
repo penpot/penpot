@@ -32,7 +32,7 @@
   ;; carries every affected id so a projection can follow without reading
   ;; production tables.
   (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
-    (with-redefs [cf/flags (conj cf/flags :audit-log)]
+    (th/with-audit-config (conj cf/flags :nexus)
       (let [profile    (th/create-profile* 1 {:is-active true})
             team       (th/create-team* 91 {:profile-id (:id profile)})
             project    (th/create-project* 91 {:profile-id (:id profile)
@@ -56,9 +56,13 @@
             (t/is (= "team" (name (:object props))))
             (t/is (= (:id team) (:id props)))
             (t/is (= deleted-at (:deleted-at props)))
-            (t/is (not (contains? props :team-ids)))
-            (t/is (not (contains? props :project-ids)))
-            (t/is (not (contains? props :file-ids)))
+            ;; The shape is the contract: only the team ids go flat, the
+            ;; rest stays under `:cascade`.
+            (t/is (= #{:object :id :deleted-at :team-ids :cascade}
+                     (set (keys props))))
+            ;; Flat team ids for team-keyed consumers, next to the
+            ;; per-entity cascade breakdown.
+            (t/is (= #{(:id team)} (set (:team-ids props))))
             (t/is (= #{(:id team)} (set (get-in props [:cascade :team-ids]))))
             (t/is (= #{(:default-project-id team) (:id project)}
                      (set (get-in props [:cascade :project-ids]))))
@@ -66,7 +70,7 @@
 
 (t/deftest delete-object-file-cascade-emits-event
   (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
-    (with-redefs [cf/flags (conj cf/flags :audit-log)]
+    (th/with-audit-config (conj cf/flags :nexus)
       (let [profile    (th/create-profile* 1 {:is-active true})
             team       (th/create-team* 92 {:profile-id (:id profile)})
             project    (th/create-project* 92 {:profile-id (:id profile)
@@ -85,12 +89,13 @@
             (t/is (= (:id file) (:id props)))
             (t/is (= [] (get-in props [:cascade :team-ids])))
             (t/is (= [] (get-in props [:cascade :project-ids])))
-            (t/is (= [(:id file)] (get-in props [:cascade :file-ids])))))))))
+            (t/is (= [(:id file)] (get-in props [:cascade :file-ids])))
+            (t/is (= #{(:id team)} (set (:team-ids props))))))))))
 
 (t/deftest delete-object-missing-row-emits-nothing
   ;; A cascade over an unknown id marks nothing, so there is nothing to report.
   (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
-    (with-redefs [cf/flags (conj cf/flags :audit-log)]
+    (th/with-audit-config (conj cf/flags :nexus)
       (th/run-task! :delete-object {:object :team
                                     :id (uuid/next)
                                     :deleted-at (ct/now)})
@@ -99,7 +104,7 @@
 (t/deftest delete-object-snapshot-emits-nothing
   ;; Snapshots have no projection table; their cascade stays silent.
   (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
-    (with-redefs [cf/flags (conj cf/flags :audit-log)]
+    (th/with-audit-config (conj cf/flags :nexus)
       (th/run-task! :delete-object {:object :snapshot
                                     :id (uuid/next)
                                     :file-id (uuid/next)

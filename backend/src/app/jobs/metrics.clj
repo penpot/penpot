@@ -5,27 +5,22 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.jobs.metrics
-  "Metric names, labels and the jobs backlog sampler.
+  "Metric names and labels used by the jobs substrate.
 
   Labels are bounded by construction, not by allowlist: every value
   recorded here comes from a fixed call site (a job name from the
-  registry, a queue from submit, an outcome from the lifecycle
-  writers), never from params, IDs or exception text. A new value
-  showing up in Prometheus means new code, which is exactly what you
-  want to see: folding it into some other bucket would only hide it.
+  registry, a queue from the dispatcher batch, an outcome from submit or
+  the lifecycle writers), never from params, IDs or exception text. A new
+  value showing up in Prometheus means new code, which is exactly what
+  you want to see: folding it into some other bucket would only hide it.
 
   This namespace is intentionally free of job handlers. Callers pass only
   values already known at their boundary; IDs, props and exception text never
   become metric labels."
   (:require
    [app.common.data :as d]
-   [app.common.logging :as l]
-   [app.common.schema :as sm]
-   [app.db :as db]
    [app.metrics :as mtx]
-   [cuerdas.core :as str]
-   [integrant.core :as ig]
-   [promesa.exec :as px]))
+   [cuerdas.core :as str]))
 
 (set! *warn-on-reflection* true)
 
@@ -59,29 +54,40 @@
 (defn- record-count [metrics id labels amount]
   (mtx/run! metrics :id id :labels labels :inc amount))
 
-(defn record-submitted
-  [cfg name queue]
-  (record-count (mtx/instance cfg) :jobs-submitted
-                [(name-label name) (queue-label queue)]
+(defn- record-submit
+  "One measurement with three outcomes: the submit created a row, skipped
+  it because a live job covered the key (`::jobs/skip-if-active`, any status
+  from `new` to `retry`), or refreshed the not-started row that covered it
+  (`::jobs/debounce`). The outcome comes from a fixed call site, so it has
+  no fallback, unlike `outcome-label`, which would say `failed` for a
+  submission that cannot fail."
+  [cfg outcome name]
+  (record-count (mtx/instance cfg) :jobs-submit
+                [(name-label name) (d/name outcome)]
                 1))
+
+(defn record-created
+  [cfg name]
+  (record-submit cfg :created name))
 
 (defn record-skipped
-  [cfg name queue]
-  (record-count (mtx/instance cfg) :jobs-skipped
-                [(name-label name) (queue-label queue)]
-                1))
+  [cfg name]
+  (record-submit cfg :skipped name))
+
+(defn record-refreshed
+  [cfg name]
+  (record-submit cfg :refreshed name))
 
 (defn record-dispatched
-  [cfg name queue amount]
+  [cfg name amount]
   (record-count (mtx/instance cfg) :jobs-dispatched
-                [(name-label name) (queue-label queue)]
+                [(name-label name)]
                 amount))
 
 (defn record-retry
-  [cfg name queue reason]
+  [cfg name reason]
   (record-count (mtx/instance cfg) :jobs-retries
-                [(name-label name) (queue-label queue)
-                 (retry-reason-label reason)]
+                [(name-label name) (retry-reason-label reason)]
                 1))
 
 (defn record-event
@@ -91,53 +97,41 @@
   [cfg]
   (record-count (mtx/instance cfg) :jobs-events-total [] 1))
 
-(defn record-orphan
-  [cfg queue]
-  (record-count (mtx/instance cfg) :jobs-orphaned
-                [(queue-label queue)]
-                1))
-
-(defn record-rescheduled
-  [cfg queue]
-  (record-count (mtx/instance cfg) :jobs-rescheduled
-                [(queue-label queue)]
-                1))
-
-(defn record-queue-wait
-  [cfg name queue millis]
-  (record-value (mtx/instance cfg) :jobs-queue-wait-timing
-                [(name-label name) (queue-label queue)]
+(defn record-claim-wait
+  "How late a claim happened: `now - scheduled_at` at the moment the
+  runner takes the job, including the gap the dispatcher added. It is not
+  time spent inside a queue, hence the name."
+  [cfg name millis]
+  (record-value (mtx/instance cfg) :jobs-claim-wait-timing
+                [(name-label name)]
                 (max 0 (long millis))))
 
 (defn record-execution
-  [cfg name queue millis]
+  [cfg name millis]
   (record-value (mtx/instance cfg) :jobs-execution-timing
-                [(name-label name) (queue-label queue)]
+                [(name-label name)]
                 (max 0 (long millis))))
 
 (defn record-legacy-execution
   "Histogram `penpot_tasks_timing`, from the pre-jobs `task` queue.
 
-  It only carries the job name label, with no queue to tell jobs of the
-  same name apart. Use `record-execution`, which adds the queue label,
-  for anything new. Kept exported only so the dashboards and the alerts
-  that already read it keep working: like every other jobs metric,
-  the label is the raw job name."
+  It carries the job name label, like every other jobs metric. Kept
+  exported only so the dashboards and the alerts that already read it
+  keep working: the label is the raw job name."
   [cfg name millis]
   (record-value (mtx/instance cfg) :tasks-timing
                 [(mtx/label name "other")]
                 (max 0 (long millis))))
 
 (defn record-total
-  [cfg name queue outcome millis]
+  [cfg name outcome millis]
   (record-value (mtx/instance cfg) :jobs-total-timing
-                [(name-label name) (queue-label queue)
-                 (outcome-label outcome)]
+                [(name-label name) (outcome-label outcome)]
                 (max 0 (long millis))))
 
 (defn record-dispatcher-batch
   [cfg stage outcome millis]
-  (record-value (mtx/instance cfg) :jobs-dispatcher-timing
+  (record-value (mtx/instance cfg) :jobs-dispatcher-batch-timing
                 [(stage-label stage) (outcome-label outcome)]
                 (max 0 (long millis))))
 
@@ -155,8 +149,9 @@
                 amount))
 
 (defn record-gc-duration
+  "One pass of the jobs garbage collector, `expired` or `retained`."
   [cfg kind millis]
-  (record-value (mtx/instance cfg) :jobs-gc-timing
+  (record-value (mtx/instance cfg) :jobs-gc-pass-timing
                 [(gc-kind-label kind)]
                 (max 0 (long millis))))
 
@@ -215,74 +210,3 @@
   (record-value (mtx/instance cfg) :file-data-offload-timing
                 [(offload-result-label result)]
                 (max 0 (long millis))))
-
-(def ^:private backlog-statuses
-  ["new" "scheduled" "running" "retry" "completed" "failed" "cancelled" "aborted"])
-
-(def ^:private sql:backlog
-  "SELECT status, count(*) AS n
-     FROM job
-    GROUP BY status")
-
-(def ^:private sql:oldest-pending
-  "SELECT coalesce(extract(epoch FROM (now() - min(created_at))), 0) AS age
-     FROM job
-    WHERE status IN ('new', 'scheduled', 'retry')")
-
-(defn sample-backlog
-  "Update the current job backlog gauges. The query is intentionally small
-  and runs periodically rather than from the worker hot path."
-  [{:keys [::db/pool] :as cfg}]
-  (let [rows    (db/exec! pool [sql:backlog])
-        by-id   (into {} (map (juxt :status #(or (:n %) 0))) rows)
-        age     (-> (db/exec-one! pool [sql:oldest-pending])
-                    :age
-                    (max 0)
-                    (double))
-        metrics (mtx/instance cfg)]
-    (doseq [status backlog-statuses]
-      (record-value metrics :jobs-backlog [status] (get by-id status 0)))
-    (record-value metrics :jobs-oldest-pending-age [] age)
-    age))
-
-(defn- sample-jobs-metrics [cfg]
-  (try
-    (sample-backlog cfg)
-    (catch Throwable cause
-      (l/warn :hint "unable to sample jobs metrics" :cause cause))))
-
-(def ^:private sample-interval-ms 30000)
-
-(defn create-sampler
-  "Create the daemon scheduler used by the jobs metrics component."
-  [cfg]
-  (let [scheduler (px/scheduled-executor
-                   :parallelism 1
-                   :factory (px/thread-factory :prefix "penpot/jobs-metrics/"
-                                               :daemon true))
-        sample    (fn sample []
-                    (try
-                      (sample-jobs-metrics cfg)
-                      (finally
-                        (px/schedule scheduler sample-interval-ms sample))))]
-    (px/schedule scheduler 0 sample)
-    scheduler))
-
-(def ^:private schema:sampler
-  [:map
-   ::db/pool
-   ::mtx/metrics])
-
-(defmethod ig/assert-key ::sampler
-  [_ cfg]
-  (assert (sm/check schema:sampler cfg)))
-
-(defmethod ig/init-key ::sampler
-  [_ {:keys [::db/pool] :as cfg}]
-  (if (db/read-only? pool)
-    (l/warn :hint "not started (db is read-only)")
-    (create-sampler cfg)))
-
-(defmethod ig/halt-key! ::sampler
-  [_ sampler]
-  (some-> sampler px/shutdown-now))

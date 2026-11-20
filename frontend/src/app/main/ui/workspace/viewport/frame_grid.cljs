@@ -167,8 +167,9 @@
 (mf/defc frame-grid*
   {::mf/wrap [mf/memo]}
   [{:keys [zoom transform selected focus vbox clip-rulers] :or {clip-rulers false}}]
-  (let [frames        (->> (mf/deref refs/workspace-frames)
-                           (filter has-grid?))
+  (let [frames        (mf/deref refs/workspace-frames)
+        frames        (mf/with-memo [frames]
+                        (into [] (filter has-grid?) frames))
         transforming  (when (some? transform) selected)]
 
     [:g.grid-display {:style {:pointer-events "none"}

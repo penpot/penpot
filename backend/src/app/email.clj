@@ -475,7 +475,7 @@
 (def ^:private schema:invite-to-organization
   [:map
    [:invited-by ::sm/text]
-   [:user-name [:maybe ::sm/text]]
+   [:user-name {:optional true} [:maybe ::sm/text]]
    [:token ::sm/text]
    [:organization schema:organization-data]])
 
@@ -497,7 +497,7 @@
 
 (def ^:private schema:renewal-notice
   [:map
-   [:user-name [:maybe :string]]
+   [:user-name {:optional true} [:maybe :string]]
    [:renewal-date ::sm/text]
    [:estimated-amount ::sm/text]
    [:organizations [:vector schema:organization-data]]])

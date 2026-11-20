@@ -8,6 +8,7 @@
   (:require
    ["@penpot/ua-parser" :as ua]
    [app.common.data :as d]
+   [app.common.exceptions :as ex]
    [app.common.json :as json]
    [app.common.logging :as l]
    [app.common.math :as math]
@@ -375,6 +376,18 @@
   (or (contains? flags :audit-log)
       (contains? flags :telemetry)))
 
+(defn- run-event-callbacks
+  "Invoke host callbacks registered for this prepared audit event's
+  `:name`. Errors in a callback are swallowed so the audit pipeline
+  keeps running."
+  [event]
+  (let [name     (:name event)
+        cbs      (some-> name cf/get-event-callbacks)
+        js-event (when (seq cbs) (json/->js event))]
+    (when js-event
+      (doseq [f cbs]
+        (ex/ignoring (f js-event))))))
+
 (defn initialize
   []
   (ptk/reify ::initialize
@@ -477,6 +490,8 @@
                                  (-> event
                                      (assoc :timestamp (ct/now))
                                      (assoc :context context)))))
+
+                     (rx/tap run-event-callbacks)
 
                      (rx/tap (fn [event]
                                (l/debug :hint "event enqueued")

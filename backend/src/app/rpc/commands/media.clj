@@ -65,9 +65,9 @@
                 [:process-image/global]]}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id content] :as params}]
   (files/check-edition-permissions! pool profile-id file-id)
+  (media.v/check-upload-path content)
   (media.v/check-media-type content)
   (media.v/check-media-size content)
-  (media.v/check-upload-path content)
 
   (let [team-id (:team-id (db/exec-one! pool [sql:get-team-id-for-file file-id]))]
     ;; TEMPORARILY DISABLED (2026-10-19): media-storage-bytes-per-team
@@ -137,15 +137,7 @@
 
 (defn- process-main-image
   [info]
-  (let [path  (:path info)
-        mtype (:mtype info)
-        path  (if (= mtype "image/svg+xml")
-                (let [content   (slurp path)
-                      sanitized (svg/sanitize-svg content)
-                      temp-path (tmp/tempfile :prefix "penpot-svg-" :suffix ".svg" :min-age "5m")]
-                  (spit (str temp-path) sanitized)
-                  temp-path)
-                path)
+  (let [{:keys [path mtype]} (svg/sanitize-svg-upload info)
         hash  (sto/calculate-hash path)
         data  (-> (sto/content path)
                   (sto/wrap-with-hash hash))]

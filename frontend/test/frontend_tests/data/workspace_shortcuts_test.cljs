@@ -7,7 +7,12 @@
 (ns frontend-tests.data.workspace-shortcuts-test
   (:require
    [app.config :as cf]
+   [app.main.data.shortcuts :as ds]
+   [app.main.data.workspace.path :as drp]
+   [app.main.data.workspace.path.shortcuts :as path-shortcuts]
    [app.main.data.workspace.shortcuts :as shortcuts]
+   [app.main.data.workspace.transforms :as dwt]
+   [app.main.refs :as refs]
    [app.main.store :as st]
    [cljs.test :as t :include-macros true]))
 
@@ -110,3 +115,50 @@
          (keyboard-event {:ctrl? true :code "Backslash" :prevented? prevented?})))
       (t/is (false? @prevented?))
       (t/is (empty? @emitted)))))
+
+(def ^:private arrows
+  {:up    ds/up-arrow
+   :down  ds/down-arrow
+   :left  ds/left-arrow
+   :right ds/right-arrow})
+
+(defn- move-shortcuts
+  "The move shortcuts of `shortcuts-map` as `[id direction fast?]`."
+  [shortcuts-map]
+  (for [dir   (keys arrows)
+        fast? [false true]
+        :let  [id (keyword (str (if fast? "move-fast-" "move-unit-") (name dir)))]
+        :when (contains? shortcuts-map id)]
+    [id dir fast?]))
+
+(defn- run-move-shortcut
+  "Runs the :fn of shortcut `id` in `shortcuts-map` with the moves stubbed
+  and returns the moves it emitted, as `[direction fast?]`."
+  [shortcuts-map id]
+  (let [emitted (atom [])]
+    (with-redefs [dwt/move-selected         (fn [dir fast?] [::move dir fast?])
+                  drp/move-selected         (fn [dir fast?] [::move dir fast?])
+                  refs/permissions          (atom {:can-edit true})
+                  refs/workspace-read-only? (atom false)
+                  st/emit!                  (mock-emit! emitted)]
+      ((:fn (get shortcuts-map id))))
+    (into [] (keep (fn [[tag dir fast?]] (when (= ::move tag) [dir fast?]))) @emitted)))
+
+(t/deftest move-shortcuts-move-in-their-direction
+  (doseq [[map-name shortcuts-map] [["workspace" shortcuts/shortcuts]
+                                    ["path editor" path-shortcuts/shortcuts]]
+          [id dir fast?]           (move-shortcuts shortcuts-map)]
+    (t/is (= [[dir fast?]] (run-move-shortcut shortcuts-map id))
+          (str map-name " " id " moves " (name dir) (when fast? " fast")))))
+
+(t/deftest move-shortcuts-show-the-arrow-of-their-direction
+  (doseq [[map-name shortcuts-map] [["workspace" shortcuts/shortcuts]
+                                    ["path editor" path-shortcuts/shortcuts]]
+          [id dir fast?]           (move-shortcuts shortcuts-map)]
+    (t/is (= (cond-> (get arrows dir) fast? ds/shift)
+             (:tooltip (get shortcuts-map id)))
+          (str map-name " " id " shows the " (name dir) " arrow"))))
+
+(t/deftest move-shortcuts-cover-every-direction
+  (t/is (= 8 (count (move-shortcuts shortcuts/shortcuts))))
+  (t/is (= 8 (count (move-shortcuts path-shortcuts/shortcuts)))))

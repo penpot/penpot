@@ -3224,7 +3224,7 @@
               "~:r1": 0,
               "~:id": "~u6ce76eb4-b183-804e-8007-04b6eb5e1080",
               "~:parent-id": "~u6ce76eb4-b183-804e-8007-04b6f725fae8",
-              "~:applied-tokens": { "~:r2": "radius", "~:r3": "radius" },
+              "~:applied-tokens": { "~:r2": "radius-md", "~:r3": "radius-md" },
               "~:frame-id": "~u6ce76eb4-b183-804e-8007-04b6f725fae8",
               "~:strokes": [],
               "~:x": 1758,
@@ -5932,11 +5932,11 @@
                         }
                       ],
                       [
-                        "radius",
+                        "radius-md",
                         {
                           "~#penpot/token": {
                             "~:id": "~u6ce76eb4-b183-804e-8007-04b769351486",
-                            "~:name": "radius",
+                            "~:name": "radius-md",
                             "~:type": "~:border-radius",
                             "~:value": "20px",
                             "~:description": "",

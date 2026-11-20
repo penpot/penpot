@@ -34,6 +34,7 @@ From `render-wasm/`:
 - Clean one target: `./clean [frontend|export]`; never run root `cargo clean` on the shared `target/`.
 - Watch rebuild: `./watch [frontend|export]`; its initial and change-triggered builds use `./build`.
 - Rust tests: `./test` or `cargo test <name>`.
+- Rust coverage: `RENDER_WASM_COVERAGE=1 ./test` runs the same tests under `cargo llvm-cov` (needs `cargo-llvm-cov` on PATH; the script adds `llvm-tools-preview`) and writes `target/coverage/` (`lcov.info` with absolute paths, `summary.json` llvm export totals, `html/`). Native build only: code behind wasm-only `cfg` is not measured. `tests-wasm.yml` downloads a pinned, checksum-verified `cargo-llvm-cov` release because the devenv image lacks it.
 - Cross-cutting testing principles and anti-patterns: `mem:testing`.
 - Lint: `./lint`.
 - Format: `./fmt`; check only: `./fmt --check`.

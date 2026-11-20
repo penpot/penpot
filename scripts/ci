@@ -44,7 +44,7 @@ declare -A TEST_CMD=(
   [backend]="clojure -M:dev:test"
   [common]="clojure -M:dev:test && pnpm run test:quiet"
   [render-wasm]="./test"
-  [exporter]="pnpm run test:quiet"
+  [exporter]="PENPOT_SECRET_KEY=${PENPOT_SECRET_KEY:-test-secret-key} pnpm run test:quiet"
   [mcp]="pnpm run test"
   [plugins]="pnpm run test"
   [library]="pnpm run test"
@@ -59,7 +59,7 @@ declare -A FMT_CHECK_CMD=(
   [exporter]="pnpm run check-fmt:clj"
   [mcp]="pnpm run fmt:check"
   [plugins]="pnpm run format:check"
-  [library]="pnpm run check-fmt:clj"
+  [library]="pnpm run check-fmt"
   [media-processor]="pnpm run fmt:check"
 )
 

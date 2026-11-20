@@ -9,6 +9,7 @@
    [app.common.math :as mth]
    [app.common.test-helpers.components :as cthc]
    [app.common.test-helpers.compositions :as ctho]
+   [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.ids-map :as cthi]
    [app.common.test-helpers.shapes :as cths]
    [app.common.test-helpers.tokens :as ctht]
@@ -36,6 +37,7 @@
 (defn- setup-base-file
   []
   (-> (ctht/sample-file-with-tokens
+       :page-label :page1
        :lib-fn #(-> %
                     (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :test-token-set)
                                                        :name "test-token-set"))
@@ -439,3 +441,141 @@
 
       (tohs/run-store-async
        store step2 events identity))))
+
+(defn- setup-file-with-stale-values
+  "Adds :frame2 (with a :rect1 child) and :frame3 in :page1, and :frame4
+  in :page2, whose stored radius differs from the resolved token value."
+  []
+  (-> (setup-base-file)
+      (ctho/add-frame-with-child :frame2 :rect1)
+      (ctho/add-frame :frame3)
+      (ctht/apply-token-to-shape :frame2 "test-token-2" [:r1 :r2 :r3 :r4] [:r1 :r2 :r3 :r4] 10)
+      (ctht/apply-token-to-shape :rect1 "test-token-3" [:r1 :r2 :r3 :r4] [:r1 :r2 :r3 :r4] 10)
+      (ctht/apply-token-to-shape :frame3 "test-token-2" [:r1 :r2 :r3 :r4] [:r1 :r2 :r3 :r4] 10)
+      (cthf/add-sample-page :page2)
+      (ctho/add-frame :frame4)
+      (ctht/apply-token-to-shape :frame4 "test-token-2" [:r1 :r2 :r3 :r4] [:r1 :r2 :r3 :r4] 10)
+      (cthf/switch-to-page :page1)))
+
+(t/deftest scoped-propagation-updates-only-the-scoped-tree
+  (t/async
+    done
+    (let [;; ==== Setup
+          file  (setup-file-with-stale-values)
+          store (ths/setup-store file)
+
+          ;; ==== Action
+          events [(dwtp/propagate-workspace-tokens
+                   {:page-id  (cthf/current-page-id file)
+                    :root-ids [(cthi/id :frame2)]})]]
+
+      (tohs/run-store-async
+       store done events
+       (fn [new-state]
+         (let [;; ==== Get
+               file'   (ths/get-file-from-state new-state)
+               frame2' (cths/get-shape file' :frame2)
+               rect1'  (cths/get-shape file' :rect1)
+               frame3' (cths/get-shape file' :frame3)
+               frame4' (cths/get-shape file' :frame4 :page-label :page2)]
+
+           ;; ==== Check
+           (t/is (= (:r1 frame2') 50))
+           (t/is (= (:r1 rect1') 75))
+           (t/is (= (:r1 frame3') 10))
+           (t/is (= (:r1 frame4') 10))))))))
+
+(t/deftest unscoped-propagation-updates-every-shape
+  (t/async
+    done
+    (let [;; ==== Setup
+          file  (setup-file-with-stale-values)
+          store (ths/setup-store file)
+
+          ;; ==== Action
+          events [(dwtp/propagate-workspace-tokens)]]
+
+      (tohs/run-store-async
+       store done events
+       (fn [new-state]
+         (let [;; ==== Get
+               file'   (ths/get-file-from-state new-state)
+               frame2' (cths/get-shape file' :frame2)
+               rect1'  (cths/get-shape file' :rect1)
+               frame3' (cths/get-shape file' :frame3)
+               frame4' (cths/get-shape file' :frame4 :page-label :page2)]
+
+           ;; ==== Check
+           (t/is (= (:r1 frame2') 50))
+           (t/is (= (:r1 rect1') 75))
+           (t/is (= (:r1 frame3') 50))
+           (t/is (= (:r1 frame4') 50))))))))
+
+(defn- setup-file-with-stale-components
+  "Adds :component1 (from :frame1) and :component2 (from :frame2), and a
+  plain :frame3, all of them with a stored radius that differs from the
+  resolved token value."
+  []
+  (-> (setup-base-file)
+      (ctht/apply-token-to-shape :frame1 "test-token-1" [:r1 :r2 :r3 :r4] [:r1 :r2 :r3 :r4] 10)
+      (cthc/make-component :component1 :frame1)
+      (ctho/add-frame :frame2)
+      (ctht/apply-token-to-shape :frame2 "test-token-2" [:r1 :r2 :r3 :r4] [:r1 :r2 :r3 :r4] 10)
+      (cthc/make-component :component2 :frame2)
+      (ctho/add-frame :frame3)
+      (ctht/apply-token-to-shape :frame3 "test-token-3" [:r1 :r2 :r3 :r4] [:r1 :r2 :r3 :r4] 10)))
+
+(t/deftest instantiate-component-applies-token-values
+  (t/async
+    done
+    (let [;; ==== Setup
+          file  (setup-file-with-stale-components)
+          store (ths/setup-store file)
+
+          ;; ==== Action
+          events [(dwl/instantiate-component (:id file)
+                                             (cthi/id :component1)
+                                             (geom/point 0 0))]]
+
+      (tohs/run-store-async
+       store done events
+       (fn [new-state]
+         (let [;; ==== Get
+               copy'   (dsh/lookup-shape new-state (first (dsh/lookup-selected new-state)))
+               file'   (ths/get-file-from-state new-state)
+               frame3' (cths/get-shape file' :frame3)]
+
+           ;; ==== Check
+           (t/is (= (get-in copy' [:applied-tokens :r1]) "test-token-1"))
+           (t/is (= (:r1 copy') 25))
+           (t/is (= (:r4 copy') 25))
+           (t/is (= (:r1 frame3') 10))))))))
+
+(t/deftest component-swap-applies-token-values
+  (t/async
+    done
+    (let [;; ==== Setup
+          file  (-> (setup-file-with-stale-components)
+                    (cthc/instantiate-component :component1 :c-frame1))
+          store (ths/setup-store file)
+
+          ;; ==== Action
+          events [(dwl/component-swap (cths/get-shape file :c-frame1)
+                                      (:id file)
+                                      (cthi/id :component2)
+                                      true)]]
+
+      (tohs/run-store-async
+       store done events
+       (fn [new-state]
+         (let [;; ==== Get
+               copy'   (dsh/lookup-shape new-state (first (dsh/lookup-selected new-state)))
+               file'   (ths/get-file-from-state new-state)
+               frame3' (cths/get-shape file' :frame3)]
+
+           ;; ==== Check
+           (t/is (= (:component-id copy') (cthi/id :component2)))
+           (t/is (= (get-in copy' [:applied-tokens :r1]) "test-token-2"))
+           (t/is (= (:r1 copy') 50))
+           (t/is (= (:r4 copy') 50))
+           (t/is (= (:r1 frame3') 10))))))))

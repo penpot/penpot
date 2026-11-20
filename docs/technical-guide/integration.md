@@ -14,7 +14,7 @@ The system is relatively simple for now, but expect more functions in the future
 ## Webhooks
 
 Outbound webhooks are event calls from Penpot to other applications, that
-notifiy some particular event has occured (e.g. a file has been created or
+notify some particular event has occurred (e.g. a file has been created or
 updated, a comment has been added, etc.).
 
 #### Webhooks managament

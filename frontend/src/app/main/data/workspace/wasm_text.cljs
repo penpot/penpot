@@ -92,7 +92,8 @@
      (watch [_ state _]
        (let [objects (dsh/lookup-page-objects state)
              shape   (get objects id)
-             apply-opts (or opts {})
+             ;; Auto-grow size is derived from content; never mark geometry overrides.
+             apply-opts (assoc (or opts {}) :ignore-touched true)
              resize-stream
              (if (and (some? shape)
                       (cfh/text-shape? shape)
@@ -102,11 +103,17 @@
          (wrf/with-pending :text-resize [id] resize-stream))))))
 
 (defn- merge-resize-debounce-opts
-  [prev {:keys [undo-group undo-id skip-component-sync?]}]
-  (cond-> (or prev {})
-    (some? undo-group) (assoc :undo-group undo-group)
-    (some? undo-id) (assoc :undo-id undo-id)
-    skip-component-sync? (assoc :skip-component-sync? true)))
+  "Merge the options of a request into its batch. The batch records no undo
+  step, or skips the component sync, only when every request in it asked
+  for that, so a user resize that lands in the same window keeps its undo
+  entry and still reaches the copies."
+  [prev {:keys [undo-group undo-id skip-component-sync? save-undo?]}]
+  (let [prev (or prev {:skip-component-sync? true :save-undo? false})]
+    (cond-> (assoc prev
+                   :skip-component-sync? (and (:skip-component-sync? prev) (boolean skip-component-sync?))
+                   :save-undo?           (or (:save-undo? prev) (not (false? save-undo?))))
+      (some? undo-group) (assoc :undo-group undo-group)
+      (some? undo-id)    (assoc :undo-id undo-id))))
 
 (defn resize-wasm-text-debounce-commit
   []
@@ -114,7 +121,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [ids (get state ::resize-wasm-text-debounce-ids)
-            {:keys [undo-group undo-id skip-component-sync?]} (get state ::resize-wasm-text-debounce-opts)
+            {:keys [undo-group undo-id skip-component-sync? save-undo?]} (get state ::resize-wasm-text-debounce-opts)
             objects (dsh/lookup-page-objects state)
 
             modifiers
@@ -132,10 +139,13 @@
             ;; When undo-id is present, extend the current undo transaction instead of
             ;; creating a new one, and commit it after the resize (single undo action).
             extend-tx? (some? undo-id)
-            apply-opts (cond-> {}
+            ;; Auto-grow size is derived; hardcode here (debounce caller opts
+            ;; whitelist does not forward :ignore-touched).
+            apply-opts (cond-> {:ignore-touched true}
                          (some? undo-group) (assoc :undo-group undo-group)
                          extend-tx? (assoc :undo-transation? false)
-                         skip-component-sync? (assoc :skip-component-sync? true))]
+                         skip-component-sync? (assoc :skip-component-sync? true)
+                         (false? save-undo?) (assoc :save-undo? false))]
         (cond
           (not (empty? modifiers))
           (if extend-tx?
@@ -167,8 +177,7 @@
          (-> state
              (update ::resize-wasm-text-debounce-ids (fnil conj []) id)
              (update ::resize-wasm-text-reflow-tasks (fnil conj []) reflow-task)
-             (cond-> (seq opts)
-               (update ::resize-wasm-text-debounce-opts merge-resize-debounce-opts opts))
+             (update ::resize-wasm-text-debounce-opts merge-resize-debounce-opts opts)
              (cond-> (nil? (::resize-wasm-text-debounce-event state))
                (assoc ::resize-wasm-text-debounce-event cur-event))))
 
@@ -202,7 +211,7 @@
 (defn resize-wasm-text-debounce
   ([id]
    (resize-wasm-text-debounce id nil))
-  ([id {:keys [undo-group undo-id skip-component-sync?] :as opts}]
+  ([id opts]
    (ptk/reify ::resize-wasm-text-debounce
      ptk/WatchEvent
      (watch [_ state _]
@@ -220,12 +229,8 @@
 
              resize-wasm-stream
              (if fonts-ready?
-               (let [pass-opts (when (or (some? undo-group) (some? undo-id) skip-component-sync?)
-                                 (cond-> {}
-                                   (some? undo-group) (assoc :undo-group undo-group)
-                                   (some? undo-id) (assoc :undo-id undo-id)
-                                   skip-component-sync? (assoc :skip-component-sync? true)))]
-                 (rx/of (resize-wasm-text-debounce-inner id pass-opts)))
+               ;; `merge-resize-debounce-opts` reads only the keys it knows.
+               (rx/of (resize-wasm-text-debounce-inner id opts))
 
                ;; Fonts not loaded; retry after 20 msecs
                (->> (rx/of (resize-wasm-text-debounce id opts))

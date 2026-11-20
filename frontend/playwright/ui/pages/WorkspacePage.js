@@ -4,6 +4,8 @@ import { MockWebSocketHelper } from "../../helpers/MockWebSocketHelper";
 import { BaseWebSocketPage } from "./BaseWebSocketPage";
 import { Transit } from "../../helpers/Transit";
 
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 export class WorkspacePage extends BaseWebSocketPage {
   static TextEditor = class TextEditor {
     constructor(workspacePage) {
@@ -250,6 +252,23 @@ export class WorkspacePage extends BaseWebSocketPage {
       // Already on the target file (e.g. Tokens tab open, where the
       // sitemap page name is not rendered): just ensure the canvas is
       // present instead of waiting for the page name.
+      await expect(this.viewport).toBeVisible({ timeout: 30000 });
+    }
+  }
+
+  // Reload the workspace keeping the mocked backend: the socket registry
+  // still holds the mock of the document that is about to be destroyed, and
+  // the new document's socket has to be reopened. `waitForPageName` is false
+  // for reloads that keep the sidebar on Assets or Tokens: there the sitemap
+  // page name is not rendered, so the canvas is the settle signal.
+  async reloadWorkspace({ pageName = "Page 1", waitForPageName = true } = {}) {
+    MockWebSocketHelper.clear();
+    await this.page.reload();
+    this.#ws = await this.waitForNotificationsWebSocket();
+    await this.#ws.mockOpen();
+    if (waitForPageName) {
+      await this.#waitForWebSocketReadiness(pageName);
+    } else {
       await expect(this.viewport).toBeVisible({ timeout: 30000 });
     }
   }
@@ -564,6 +583,36 @@ export class WorkspacePage extends BaseWebSocketPage {
     ).toBeVisible();
   }
 
+  // Layer rows print the name verbatim, so an anchored text match tells
+  // "shape - text" from "shape - text - token - composite". It assumes the
+  // row shows only the name: the :show-ids and :show-touched debug flags
+  // append text to the same node. Matching by accessible name is not an
+  // option: a selected row shows its hide and lock buttons, whose titles
+  // join the name.
+  layerRows(name) {
+    return this.layers
+      .getByTestId("layer-row")
+      .filter({ hasText: new RegExp(`^${escapeRegExp(name)}$`, "i") });
+  }
+
+  layerRow(name) {
+    return this.layerRows(name).first();
+  }
+
+  // Selecting acts on the selection as it is at that moment: click once and
+  // assert the state instead of retrying, which would hide a lost click.
+  // Plain selections only: a plain layer-row click replaces the selection, so
+  // the assertion means exactly this row is selected. Additive selections
+  // (mod/shift) keep their own click options and assertions.
+  async selectRow(row, clickOptions = {}) {
+    await row.click(clickOptions);
+    await expect(row).toHaveAttribute("aria-checked", "true");
+  }
+
+  async selectLayer(name, clickOptions = {}) {
+    await this.selectRow(this.layerRow(name), clickOptions);
+  }
+
   async getSelectedShapeName() {
     const selectedLayer = this.layers
       .getByRole("checkbox", { checked: true })
@@ -572,11 +621,11 @@ export class WorkspacePage extends BaseWebSocketPage {
     return (await selectedLayer.innerText()).trim();
   }
 
-  async waitForSelectedShapeName(expectedName) {
+  async waitForSelectedShapeName(expectedName, options = {}) {
     const selectedLayer = this.layers
       .getByRole("checkbox", { checked: true })
       .first();
-    await expect(selectedLayer).toHaveText(expectedName);
+    await expect(selectedLayer).toHaveText(expectedName, options);
   }
 
   async expectHiddenToolbarOptions() {

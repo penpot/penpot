@@ -35,6 +35,26 @@
       (thv/add-variant-two-properties :v01 :c01 :m01 :c02 :m02)
       (cthf/add-sample-page :page2)))
 
+(defn- nine-property-file-with-empty-middle
+  "Nine properties; Property 5 is empty on every variant."
+  []
+  (let [names  (mapv #(str "Property " %) (range 1 10))
+        props1 (mapv (fn [n i]
+                       {:name n :value (if (= i 4) "" (str "a" (inc i)))})
+                     names
+                     (range))
+        props2 (mapv (fn [n i]
+                       {:name n :value (if (= i 4) "" (str "b" (inc i)))})
+                     names
+                     (range))]
+    (-> (cthf/sample-file :file1 :page-label :page1)
+        (thv/add-variant :v01 :c01 :m01 :c02 :m02)
+        (cthc/update-component :c01 {:variant-properties props1})
+        (cthc/update-component :c02 {:variant-properties props2})
+        (cths/update-shape :m01 :variant-name (ctv/properties-to-name props1))
+        (cths/update-shape :m02 :variant-name (ctv/properties-to-name props2))
+        (cthf/add-sample-page :page2))))
+
 (defn- run
   [file events done assert-fn]
   (ths/run-store
@@ -124,6 +144,51 @@
                (t/is (= "crítica" (-> props second :value)))
                (t/is (= (ctv/properties-to-name props) (variant-name file :m01)))))))))
 
+(t/deftest remove-empty-properties-preserves-order-past-eight
+  (t/async
+    done
+    (let [file       (nine-property-file-with-empty-middle)
+          variant-id (cthi/id :v01)
+          expected   ["Property 1" "Property 2" "Property 3" "Property 4"
+                      "Property 6" "Property 7" "Property 8" "Property 9"]]
+      (run file
+           [(dwv/remove-empty-properties variant-id)]
+           done
+           (fn [state]
+             (let [file   (ths/get-file-from-state state)
+                   names1 (mapv :name (:variant-properties (cthc/get-component file :c01)))
+                   names2 (mapv :name (:variant-properties (cthc/get-component file :c02)))]
+               (t/is (= expected names1))
+               (t/is (= expected names2))
+               (t/is (not-any? #(= "Property 5" %) names1))))))))
+
+(t/deftest remove-empty-properties-keeps-a-duplicate
+  ;; A rename made both variants "Big, red"; removing the empty property
+  ;; must not renumber either one, so the duplicate warning still shows.
+  (t/async
+    done
+    (let [props      [{:name "Size" :value "Big"}
+                      {:name "Color" :value "red"}
+                      {:name "Extra" :value ""}]
+          file       (-> (cthf/sample-file :file1 :page-label :page1)
+                         (thv/add-variant :v01 :c01 :m01 :c02 :m02)
+                         (cthc/update-component :c01 {:variant-properties props})
+                         (cthc/update-component :c02 {:variant-properties props})
+                         (cths/update-shape :m01 :variant-name (ctv/properties-to-name props))
+                         (cths/update-shape :m02 :variant-name (ctv/properties-to-name props)))
+          variant-id (cthi/id :v01)]
+      (run file
+           [(dwv/remove-empty-properties variant-id)]
+           done
+           (fn [state]
+             (let [file    (ths/get-file-from-state state)
+                   values1 (mapv :value (:variant-properties (cthc/get-component file :c01)))
+                   values2 (mapv :value (:variant-properties (cthc/get-component file :c02)))]
+               (t/is (= ["Big" "red"] values1))
+               (t/is (= ["Big" "red"] values2))
+               (t/is (= "Big, red" (variant-name file :m01)))
+               (t/is (= "Big, red" (variant-name file :m02)))))))))
+
 (t/deftest update-property-name-from-another-page
   (t/async
     done
@@ -189,6 +254,16 @@
                                 :root-params {:name "UI / Alpha" :x 0 :y 0 :width 100 :height 80})
       (tho/add-simple-component :c02 :m02 :r02
                                 :root-params {:name "UI / Beta" :x 150 :y 0 :width 100 :height 80})))
+
+(defn- three-same-name-mains-file
+  []
+  (-> (cthf/sample-file :file1)
+      (tho/add-simple-component :c01 :m01 :r01
+                                :root-params {:name "Tag" :x 0 :y 0 :width 100 :height 80})
+      (tho/add-simple-component :c02 :m02 :r02
+                                :root-params {:name "Tag" :x 150 :y 0 :width 100 :height 80})
+      (tho/add-simple-component :c03 :m03 :r03
+                                :root-params {:name "Tag" :x 300 :y 0 :width 100 :height 80})))
 
 (defn- path-named-main-file
   []
@@ -522,6 +597,49 @@
            (t/is (= variant-id (:variant-id m01') (:variant-id m02')
                     (:variant-id c01') (:variant-id c02')))
            (t/is (= variant-id (:parent-id m01') (:parent-id m02')))))
+       after-commits-idle))))
+
+(t/deftest combine-as-variants-same-name-gives-unique-values
+  (t/async
+    done
+    (let [file       (three-same-name-mains-file)
+          ids        [(cthi/id :m01) (cthi/id :m02) (cthi/id :m03)]
+          variant-id (uuid/next)
+          store      (ths/setup-store file)]
+      (ths/run-store
+       store
+       done
+       [(dwv/combine-as-variants ids {:variant-id variant-id :trigger "test"})]
+       (fn [state]
+         (let [file'  (ths/get-file-from-state state)
+               values (mapv #(-> (cthc/get-component file' %) :variant-properties first :value)
+                            [:c01 :c02 :c03])]
+           (cthf/validate-file! file')
+           (t/is (= ["Value 1" "Value 2" "Value 3"] values))))
+       after-commits-idle))))
+
+(t/deftest combine-as-variants-same-name-values-follow-combine-order
+  ;; The combine order differs from the layer order of the mains
+  (t/async
+    done
+    (let [file       (three-same-name-mains-file)
+          ids        [(cthi/id :m03) (cthi/id :m01) (cthi/id :m02)]
+          variant-id (uuid/next)
+          store      (ths/setup-store file)]
+      (ths/run-store
+       store
+       done
+       [(dwv/combine-as-variants ids {:variant-id variant-id :trigger "test"})]
+       (fn [state]
+         (let [file'   (ths/get-file-from-state state)
+               objects (page-objects file')
+               values  (mapv #(-> (cthc/get-component file' %) :variant-properties first :value)
+                             [:c03 :c01 :c02])
+               ordered (->> (cfv/find-variant-components (:data file') objects variant-id)
+                            (mapv #(-> % :variant-properties first :value)))]
+           (cthf/validate-file! file')
+           (t/is (= ["Value 1" "Value 2" "Value 3"] values))
+           (t/is (= ["Value 1" "Value 2" "Value 3"] ordered))))
        after-commits-idle))))
 
 (t/deftest combine-as-variants-from-another-page-validates-after-every-commit

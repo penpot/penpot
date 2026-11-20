@@ -5,15 +5,22 @@ Run with:
 
     python3 scripts/test_check_commit.py
 
-Covers the body line-wrapping validator added to enforce the commit body
-wrap rule documented in .serena/memories/workflow/creating-commits.md.
+Covers the commit message rules enforced by scripts/check-commit and documented
+in .serena/memories/workflow/creating-commits.md: the body line-wrapping
+validator, the Co-authored-by validator (which allows human co-authors and
+rejects AI providers and bots), and message checking from files.
 """
 
+import contextlib
 import importlib.machinery
 import importlib.util
+import io
+import os
 import pathlib
 import sys
+import tempfile
 import unittest
+import unittest.mock
 
 # Loading scripts/check-commit would otherwise emit scripts/__pycache__/.
 sys.dont_write_bytecode = True
@@ -87,6 +94,14 @@ class BodyLineLengthTests(unittest.TestCase):
         line = "Signed-off-by: Someone With A Long Name <someone@example.com>"
         self.assert_ok(":bug: Fix crash\n\nBody.\n\n" + line + "\n")
 
+    def test_human_co_author_trailer_passes(self):
+        line = (
+            "Co-authored-by: Someone With A Very Long Name "
+            "<someone.with.a.long.address@example.com>"
+        )
+        self.assertGreater(len(line), 80)
+        self.assert_ok(":bug: Fix crash\n\nBody.\n\n" + line + "\n")
+
     def test_unbreakable_token_passes(self):
         line = "a" * 100  # no whitespace to wrap at
         self.assert_ok(":bug: Fix crash\n\n" + line + "\n")
@@ -106,14 +121,16 @@ class BodyLineLengthTests(unittest.TestCase):
         self.assertIn("line 4", error)
 
 
-class ForbiddenTrailerTests(unittest.TestCase):
+class CoAuthorTrailerTests(unittest.TestCase):
+    """Co-authored-by is allowed for humans, forbidden for AI providers/bots."""
+
     def assert_ok(self, message):
-        ok, error = check_commit.check_no_co_authored_by(message)
+        ok, error = check_commit.check_co_authored_by(message)
         self.assertTrue(ok, error)
         self.assertIsNone(error)
 
     def assert_fail(self, message):
-        ok, error = check_commit.check_no_co_authored_by(message)
+        ok, error = check_commit.check_co_authored_by(message)
         self.assertFalse(ok)
         self.assertIsNotNone(error)
         return error
@@ -121,15 +138,57 @@ class ForbiddenTrailerTests(unittest.TestCase):
     def test_body_without_trailer_passes(self):
         self.assert_ok(":bug: Fix crash\n\nBody.\n\nSigned-off-by: Someone <someone@example.com>\n")
 
-    def test_co_authored_by_fails(self):
-        error = self.assert_fail(":bug: Fix crash\n\nBody.\n\nCo-authored-by: Someone <someone@example.com>\n")
-        self.assertIn("Co-authored-by", error)
+    def test_human_co_author_passes(self):
+        self.assert_ok(":bug: Fix crash\n\nBody.\n\nCo-authored-by: Jane Doe <jane@example.com>\n")
 
-    def test_co_authored_by_case_insensitive_fails(self):
-        self.assert_fail(":bug: Fix crash\n\nBody.\n\nco-authored-by: Someone <someone@example.com>\n")
+    def test_human_with_github_noreply_email_passes(self):
+        self.assert_ok(
+            ":bug: Fix crash\n\nBody.\n\n"
+            "Co-authored-by: Jane Doe <1234+jane@users.noreply.github.com>\n"
+        )
+
+    def test_human_whose_email_ends_with_bot_passes(self):
+        # "abbot@" must not count as a "bot@" identity.
+        self.assert_ok(
+            ":bug: Fix crash\n\nBody.\n\n"
+            "Co-authored-by: Jane Abbot <abbot@example.com>\n"
+        )
+
+    def test_claude_fails(self):
+        error = self.assert_fail(
+            ":bug: Fix crash\n\nBody.\n\n"
+            "Co-authored-by: Claude <noreply@anthropic.com>\n"
+        )
+        self.assertIn("Co-authored-by", error)
+        self.assertIn("AI-assisted-by", error)
+
+    def test_cursor_fails(self):
+        self.assert_fail(
+            ":bug: Fix crash\n\nBody.\n\n"
+            "Co-authored-by: Cursor Agent <cursoragent@cursor.com>\n"
+        )
+
+    def test_copilot_fails(self):
+        self.assert_fail(
+            ":bug: Fix crash\n\nBody.\n\n"
+            "Co-authored-by: Copilot <175728472+Copilot@users.noreply.github.com>\n"
+        )
+
+    def test_case_insensitive_fails(self):
+        self.assert_fail(
+            ":bug: Fix crash\n\nBody.\n\nco-authored-by: CHATGPT <x@example.com>\n"
+        )
+
+    def test_bot_identity_fails(self):
+        self.assert_fail(
+            ":bug: Fix crash\n\nBody.\n\n"
+            "Co-authored-by: dependabot[bot] <support@github.com>\n"
+        )
 
     def test_co_authored_by_in_body_fails(self):
-        self.assert_fail(":bug: Fix crash\n\nCo-authored-by: Someone <someone@example.com>\nBody.\n")
+        self.assert_fail(
+            ":bug: Fix crash\n\nCo-authored-by: Gemini <gemini@example.com>\nBody.\n"
+        )
 
     def test_similar_trailer_passes(self):
         self.assert_ok(":bug: Fix crash\n\nBody.\n\nCo-developed-by: Someone <someone@example.com>\n")
@@ -178,6 +237,72 @@ class SubjectRulesRegressionTests(unittest.TestCase):
         self.assertGreater(len(subject), 80)
         ok, error = check_commit.check_subject_length(subject)
         self.assertTrue(ok, error)
+
+
+class MessageFileTests(unittest.TestCase):
+    def setUp(self):
+        self.tmpdir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmpdir.cleanup)
+        env = unittest.mock.patch.dict(
+            os.environ,
+            {
+                "GIT_CONFIG_COUNT": "1",
+                "GIT_CONFIG_KEY_0": "core.commentChar",
+                "GIT_CONFIG_VALUE_0": "#",
+            },
+        )
+        env.start()
+        self.addCleanup(env.stop)
+
+    def write_message(self, text):
+        path = pathlib.Path(self.tmpdir.name) / "COMMIT_EDITMSG"
+        path.write_text(text, encoding="utf-8")
+        return str(path)
+
+    def test_reads_message_from_file(self):
+        path = self.write_message(":bug: Fix crash\n\nBody.\n")
+        self.assertEqual(
+            check_commit.get_message_from_file(path),
+            ":bug: Fix crash\n\nBody.",
+        )
+
+    def test_ignores_comment_lines(self):
+        path = self.write_message(
+            ":bug: Fix crash\n\nBody.\n\n"
+            "# Please enter the commit message for your changes.\n"
+            "# " + "long comment " * 20 + "\n"
+        )
+        message = check_commit.get_message_from_file(path)
+        self.assertEqual(message, ":bug: Fix crash\n\nBody.")
+        ok, error = check_commit.check_body_line_length(message)
+        self.assertTrue(ok, error)
+
+    def test_comment_only_file_exits(self):
+        path = self.write_message("# Nothing but a comment\n")
+        with contextlib.redirect_stderr(io.StringIO()):
+            with self.assertRaises(SystemExit):
+                check_commit.get_message_from_file(path)
+
+    def test_ignores_diff_after_scissors_line(self):
+        path = self.write_message(
+            ":bug: Fix crash\n\nBody.\n\n"
+            "# ------------------------ >8 ------------------------\n"
+            "diff --git a/f b/f\n"
+            "+" + "long diff line " * 10 + "\n"
+        )
+        message = check_commit.get_message_from_file(path)
+        self.assertEqual(message, ":bug: Fix crash\n\nBody.")
+
+
+class CommandLineTests(unittest.TestCase):
+    def test_empty_message_file_path_is_rejected(self):
+        argv = ["check-commit", "--message-file", ""]
+        with unittest.mock.patch.object(sys, "argv", argv):
+            with contextlib.redirect_stdout(io.StringIO()):
+                with contextlib.redirect_stderr(io.StringIO()):
+                    with self.assertRaises(SystemExit) as raised:
+                        check_commit.main()
+        self.assertEqual(raised.exception.code, 1)
 
 
 if __name__ == "__main__":

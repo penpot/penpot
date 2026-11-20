@@ -1,8 +1,9 @@
 /**
  * WebSocket close code the MCP server uses for policy violations.
  *
- * The server rejects a second plugin connection for the same user token, and
- * connections missing a token in multi-user mode, with this code.
+ * The server rejects a second plugin connection for the same user token,
+ * connections missing a token in multi-user mode, and connections whose `Host`
+ * or `Origin` is not allowed, with this code.
  */
 export const WS_CLOSE_POLICY_VIOLATION = 1008;
 
