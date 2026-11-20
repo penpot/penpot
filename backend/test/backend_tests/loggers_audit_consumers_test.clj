@@ -845,7 +845,7 @@
   ;; gate the pass would count the nil as success and advance the cursor
   ;; over events that never reached the destination.
   (let [prof (th/create-profile* 47 {:is-active true})]
-    (with-redefs [cf/flags #{:audit-log}]
+    (th/with-audit-config #{:nexus}
       (with-mocks [http-mock {:target 'app.http.client/req :return {:status 204}}]
         (insert-audit-row (:id prof) "create-project")
         (th/db-exec! ["DELETE FROM audit_log_consumer_cursor
@@ -1255,7 +1255,7 @@
 
 (t/deftest producer-inserts-one-row-and-no-queue
   (let [prof (th/create-profile* 50 {:is-active true})]
-    (with-redefs [cf/flags #{:audit-log :nexus :admin-console}]
+    (th/with-audit-config #{:nexus :admin-console}
       (audit/submit* {::db/pool (:app.db/pool th/*system*)}
                      (full-event (:id prof)))
       (t/is (= 1 (count (th/db-exec! ["SELECT * FROM audit_log"]))))
@@ -1272,7 +1272,7 @@
 
 (t/deftest producer-rollback-leaves-no-row
   (let [prof (th/create-profile* 51 {:is-active true})]
-    (with-redefs [cf/flags #{:audit-log :nexus :admin-console}]
+    (th/with-audit-config #{:nexus :admin-console}
       (db/tx-run! {::db/pool    (:app.db/pool th/*system*)
                    ::db/rollback true}
                   (fn [cfg]

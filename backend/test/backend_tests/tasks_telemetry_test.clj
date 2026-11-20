@@ -242,14 +242,14 @@
       ;; rows still present — not deleted on failure
       (t/is (= 2 (count-telemetry-rows))))))
 
-(t/deftest test-audit-events-not-collected-when-audit-log-flag-set
-  ;; When the :audit-log flag is active, mode C is disabled and the
-  ;; batch path must never run (audit-log owns those rows instead).
+(t/deftest test-audit-events-not-collected-when-consumer-persists
+  ;; When a consumer persists rows, mode C is disabled and the
+  ;; batch path must never run (the buffer owns those rows instead).
   (with-mocks [legacy-mock {:target 'app.tasks.telemetry/make-legacy-request
                             :return nil}
                batch-mock  {:target 'app.tasks.telemetry/send-event-batch
                             :return true}]
-    (with-redefs [cf/flags #{:telemetry :audit-log}]
+    (th/with-audit-config #{:telemetry :nexus}
       (insert-telemetry-row! "navigate")
 
       (th/run-task! :telemetry {:send? true :enabled? true})

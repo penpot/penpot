@@ -654,7 +654,7 @@
   action owner, defaulting to the member) and `:rpc-params` (request context,
   which sibling events get from `prepare-rpc-event`)."
   [cfg {:keys [profile-id team-id] :as params} {:keys [actor-id rpc-params]}]
-  (when (contains? cf/flags :audit-log)
+  (when cf/audit-persist?
     (audit/submit cfg
                   (-> (audit/event-from-rpc-params (or rpc-params {}))
                       (assoc :name "add-team-member"

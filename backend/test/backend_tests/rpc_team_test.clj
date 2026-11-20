@@ -2491,7 +2491,7 @@
   ;; Team creation adds the owner through add-profile-to-team!, which used to
   ;; leave no membership event.
   (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
-    (with-redefs [cf/flags (conj cf/flags :audit-log)]
+    (th/with-audit-config (conj cf/flags :nexus)
       (let [owner  (th/create-profile* 1 {:is-active true})
             team   (th/create-team* 21 {:profile-id (:id owner)})
             events (->> (:call-args-list @audit-mock)
@@ -2506,7 +2506,7 @@
   ;; Adding an existing member with on-conflict-do-nothing inserts nothing and
   ;; must not report a membership that already exists.
   (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
-    (with-redefs [cf/flags (conj cf/flags :audit-log)]
+    (th/with-audit-config (conj cf/flags :nexus)
       (let [owner (th/create-profile* 1 {:is-active true})
             team  (th/create-team* 22 {:profile-id (:id owner)})]
         (th/reset-mock! audit-mock)
@@ -2518,7 +2518,7 @@
                                                   {::db/on-conflict-do-nothing? true})))
         (t/is (empty? (:call-args-list @audit-mock)))))))
 
-(t/deftest no-add-team-member-event-without-audit-log
+(t/deftest no-add-team-member-event-without-a-consumer
   (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
     (let [owner  (th/create-profile* 1 {:is-active true})
           _team  (th/create-team* 23 {:profile-id (:id owner)})
@@ -2531,7 +2531,7 @@
   ;; `team_profile_rel` has no role column, so no caller can pass it: the
   ;; emitter derives it from the flags, inverse of permissions-for-role.
   (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
-    (with-redefs [cf/flags (conj cf/flags :audit-log)]
+    (th/with-audit-config (conj cf/flags :nexus)
       (let [owner  (th/create-profile* 1 {:is-active true})
             team   (th/create-team* 26 {:profile-id (:id owner)})
             editor (th/create-profile* 27 {:is-active true})
@@ -2560,7 +2560,7 @@
   ;; Sibling events built by `prepare-rpc-event` carry the request context;
   ;; the hand-built membership event must not lose it when rpc params travel.
   (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
-    (with-redefs [cf/flags (conj cf/flags :audit-log)]
+    (th/with-audit-config (conj cf/flags :nexus)
       (let [owner  (th/create-profile* 1 {:is-active true})
             member (th/create-profile* 2 {:is-active true})
             team   (th/create-team* 30 {:profile-id (:id owner)})]
@@ -2585,7 +2585,7 @@
   ;; With email verification off, inviting an existing profile adds the
   ;; member directly; the event belongs to the inviter, not the member.
   (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
-    (with-redefs [cf/flags #{:audit-log}]
+    (th/with-audit-config #{:nexus}
       (let [owner  (th/create-profile* 1 {:is-active true})
             member (th/create-profile* 2 {:is-active true})
             team   (th/create-team* 31 {:profile-id (:id owner)})]
@@ -2640,7 +2640,7 @@
   ;; the manual event must carry its id for a projection to key it.
   (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}
                email-mock {:target 'app.email/send-template :return nil}]
-    (with-redefs [cf/flags (conj cf/flags :audit-log)]
+    (th/with-audit-config (conj cf/flags :nexus)
       (let [profile (th/create-profile* 1 {:is-active true})
             out     (th/command-raw! {::th/type :create-team-with-invitations
                                       ::rpc/profile-id (:id profile)

@@ -3519,7 +3519,7 @@
   ;; `file-gc` with the file and its team so the audit trail records it.
   (let [[profile file] (unused-media-fixture 1)]
     (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
-      (with-redefs [cf/flags (conj cf/flags :audit-log)]
+      (th/with-audit-config (conj cf/flags :nexus)
         (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
         (let [event (->> (:call-args-list @audit-mock)
                          (map second)
@@ -3533,7 +3533,7 @@
 (t/deftest file-gc-does-not-emit-an-audit-event-with-the-flag-off
   (let [[_ file] (unused-media-fixture 2)]
     (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
-      (with-redefs [cf/flags (disj cf/flags :audit-log)]
+      (th/with-audit-config (disj cf/flags :nexus)
         (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
         (t/is (empty? (:call-args-list @audit-mock)))))))
 

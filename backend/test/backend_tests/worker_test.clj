@@ -17,6 +17,7 @@
    [app.worker.cron :as wcron]
    [app.worker.dispatcher :as wdisp]
    [app.worker.runner :as wrkr]
+   [backend-tests.helpers :as th]
    [clojure.test :as t]
    [integrant.core :as ig]))
 
@@ -68,7 +69,7 @@
   (t/testing "the GC entry is present only with :audit-log-gc"
     (with-redefs [cf/flags #{:audit-log-gc}]
       (t/is (some #(= :audit-log-gc (:job %)) (main/worker-cron-entries))))
-    (with-redefs [cf/flags #{:audit-log}]
+    (th/with-audit-config #{}
       (t/is (not (some #(= :audit-log-gc (:job %))
                        (main/worker-cron-entries)))))
     (with-redefs [cf/flags #{}]

@@ -360,8 +360,8 @@
                    :cause cause)))
 
         ;; Ship any anonymous audit-log events accumulated in
-        ;; telemetry mode (only when audit-log feature is off).
-        (when-not (contains? cf/flags :audit-log)
+        ;; telemetry mode (only when the buffer has no consumer).
+        (when-not cf/audit-persist?
           (try
             (db/run! cfg collect-and-send-audit-events)
             (catch Exception cause

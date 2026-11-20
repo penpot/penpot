@@ -24,8 +24,7 @@
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
    [app.util.inet :as inet]
-   [app.util.services :as sv]
-   [clojure.set :as set]))
+   [app.util.services :as sv]))
 
 (def ^:private event-columns
   [:id
@@ -145,7 +144,7 @@
     ;; so a failure drops the whole batch (counted below as failed); the
     ;; endpoint still answers without breaking the request.
     (let [metrics     (mtx/instance cfg)
-          full-rows   (if (contains? cf/flags :audit-log)
+          full-rows   (if cf/audit-persist?
                         (into [] xf:map-event-row events)
                         [])
           shadow-rows (if (contains? cf/flags :telemetry)
@@ -196,9 +195,8 @@
    ::doc/added "1.17"}
   [{:keys [::db/pool] :as cfg} params]
   (let [telemetry? (contains? cf/flags :telemetry)
-        audit-log? (contains? cf/flags :audit-log)
         enabled?   (and (not (db/read-only? pool))
-                        (or audit-log? telemetry?))]
+                        (or cf/audit-persist? telemetry?))]
     (when enabled?
       (try
         (handle-events cfg params)
@@ -212,15 +210,19 @@
 ;; GET-ENVIRONMENT-DATA
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:private enabled-flags
-  "Subset of the backend flags that are safe to expose publicly and that
-  drive frontend event collection."
-  #{:audit-log :telemetry})
-
 (defn- environment-data
+  "The audit-log signal on the wire means the backend stores full rows. It is
+  derived from the boot-computed persistence value, not from a configurable
+  flag, and also covers error reporting so frontend crash events keep flowing."
   []
   {:deployment (if (cf/get :is-saas) "saas" "selfhost")
-   :flags      (set/intersection cf/flags enabled-flags)})
+   :flags      (cond-> #{}
+                 (or cf/audit-persist?
+                     (contains? cf/flags :error-reporting))
+                 (conj :audit-log)
+
+                 (contains? cf/flags :telemetry)
+                 (conj :telemetry))})
 
 (def ^:private schema:get-environment-data-result
   [:map

@@ -81,7 +81,7 @@
     ;; A trimmed file is a destructive action that no RPC reports: emit
     ;; it so the audit trail records it. The team id travels in props so
     ;; a consumer never joins production tables.
-    (when (and (seq unused-media) (contains? cf/flags :audit-log))
+    (when (and (seq unused-media) cf/audit-persist?)
       (let [team-id (first (audit/get-team-ids cfg {:file-ids [id]}))]
         (audit/submit cfg {:name "file-gc"
                            :type "action"

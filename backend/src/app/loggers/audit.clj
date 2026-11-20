@@ -327,11 +327,11 @@
               :props (json/encode (:props event) :key-fn json/write-camel-key)
               :context (json/encode (:context event) :key-fn json/write-camel-key)))
 
-    (when (contains? cf/flags :audit-log)
+    (when cf/audit-persist?
       (append-audit-entry cfg event))
 
     (when (contains? cf/flags :telemetry)
-      ;; NOTE: when both audit-log and telemetry are enabled, events are stored
+      ;; NOTE: when both persistence and telemetry are enabled, events are stored
       ;; twice: once with full details (above) and once stripped of props and
       ;; ip-addr, tagged with source="telemetry" so the telemetry task can
       ;; collect and ship them.  The profile-id is preserved (UUIDs are already
@@ -678,7 +678,7 @@
   event is built by hand and does not pass through `prepare-rpc-event`, so its
   props are passed as-is minus nils."
   [cfg params event-name props]
-  (when (contains? cf/flags :audit-log)
+  (when cf/audit-persist?
     (submit cfg
             (-> (event-from-rpc-params params)
                 (assoc :name event-name)
@@ -703,7 +703,7 @@
   command line helpers because this skips all webhooks and telemetry
   logic."
   [cfg event]
-  (when (contains? cf/flags :audit-log)
+  (when cf/audit-persist?
     ;; Transactional (not a bare connection): the row commits or
     ;; vanishes whole (see append-audit-entry).
     (let [tnow  (ct/now)

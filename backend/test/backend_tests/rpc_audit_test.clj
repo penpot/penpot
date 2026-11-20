@@ -109,7 +109,7 @@
                                 (assoc base :app.http/auth-key-id :nexus)))))))
 
 (t/deftest push-events-1
-  (with-redefs [app.config/flags #{:audit-log :nexus}]
+  (th/with-audit-config #{:nexus}
     (let [prof    (th/create-profile* 1 {:is-active true})
           team-id (:default-team-id prof)
           proj-id (:default-project-id prof)
@@ -142,7 +142,7 @@
         (t/is (= "frontend" (:source row)))))))
 
 (t/deftest push-events-2
-  (with-redefs [app.config/flags #{:audit-log}]
+  (th/with-audit-config #{:nexus}
     (let [prof    (th/create-profile* 1 {:is-active true})
           team-id (:default-team-id prof)
           proj-id (:default-project-id prof)
@@ -177,7 +177,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (t/deftest push-events-telemetry-mode-stores-anonymized-row
-  ;; When telemetry is enabled and audit-log is NOT, frontend events
+  ;; When telemetry is enabled and no consumer persists rows, frontend events
   ;; must be stored with source="telemetry", empty props, zeroed ip,
   ;; and context filtered to safe keys only.
   (with-redefs [cf/flags #{:telemetry}]
@@ -238,13 +238,13 @@
           (t/is (not (contains? ctx :external-session-id))))))))
 
 (t/deftest push-events-both-flags-creates-two-rows
-  ;; When both :audit-log and :telemetry flags are active, two rows
+  ;; When a consumer persists rows and :telemetry is active, two rows
   ;; should be stored: one full audit entry and one telemetry entry.
   ;; The profile is created before enabling :admin-console: team
   ;; bootstrap calls the real nitrate client, which is unconfigured
   ;; in tests.
   (let [prof (th/create-profile* 1 {:is-active true})]
-    (with-redefs [cf/flags #{:audit-log :telemetry :nexus :admin-console}]
+    (th/with-audit-config #{:telemetry :nexus :admin-console}
       (let [params {::th/type :push-audit-events
                     ::rpc/profile-id (:id prof)
                     :events [{:name "navigate"
@@ -278,8 +278,8 @@
 ;; BACKEND PROCESS-EVENT PATH (RPC commands)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(t/deftest backend-process-event-only-audit-log
-  (with-redefs [cf/flags #{:audit-log}]
+(t/deftest backend-process-event-only-persisted-rows
+  (th/with-audit-config #{:nexus}
     (let [prof  (th/create-profile* 1 {:is-active true})
           event {:id (uuid/next)
                  :type "action"
@@ -318,10 +318,10 @@
         (t/is (= "0.0.0.0" (str (:ip-addr row))))))))
 
 (t/deftest backend-process-event-both-flags-creates-two-rows
-  ;; When both :audit-log and :telemetry are active, the backend
+  ;; When persistence and :telemetry are active, the backend
   ;; process-event must store two rows: one full audit entry and one
   ;; telemetry entry.
-  (with-redefs [cf/flags #{:audit-log :telemetry}]
+  (th/with-audit-config #{:nexus :telemetry}
     (let [prof  (th/create-profile* 1 {:is-active true})
           event {:id (uuid/next)
                  :type "action"
@@ -354,7 +354,7 @@
   ;; the id used to be generated inside `append-audit-entry` without
   ;; ever reaching the worker params, so `:event-id` always landed nil.
   (with-mocks [submit-mock {:target 'app.jobs/submit :return nil}]
-    (with-redefs [cf/flags #{:audit-log :webhooks}]
+    (th/with-audit-config #{:nexus :webhooks}
       (let [prof  (th/create-profile* 1 {:is-active true})
             event {:type "action"
                    :name "delete-project"
@@ -376,11 +376,11 @@
             (t/is (= (:id row) (:id task-event)))))))))
 
 (t/deftest backend-process-event-telemetry-row-gets-own-id
-  ;; When both `:audit-log` and `:telemetry` are active, the shadow
+  ;; When persistence and `:telemetry` are active, the shadow
   ;; telemetry row must not reuse the full row id (shared PK), while
   ;; the webhook task still carries the full row id.
   (with-mocks [submit-mock {:target 'app.jobs/submit :return nil}]
-    (with-redefs [cf/flags #{:audit-log :telemetry :webhooks}]
+    (th/with-audit-config #{:nexus :telemetry :webhooks}
       (let [prof  (th/create-profile* 1 {:is-active true})
             event {:type "action"
                    :name "delete-project"
@@ -401,10 +401,47 @@
             (t/is (= (:id (first (filter #(= "backend" (:source %)) rows)))
                      (:id task-event)))))))))
 
+(t/deftest process-event-stores-no-row-without-a-consumer
+  ;; No cursor consumer means no full row, even when a webhook is active:
+  ;; the webhook job carries the event blob and does not read the buffer.
+  (with-mocks [submit-mock {:target 'app.jobs/submit :return nil}]
+    (th/with-audit-config #{:webhooks}
+      (let [prof  (th/create-profile* 1 {:is-active true})
+            event {:type "action"
+                   :name "delete-project"
+                   :profile-id (:id prof)
+                   :props {:team-id (:default-team-id prof)}
+                   :context {:version "2.0.0" :initiator "app"}
+                   :tracked-at (ct/now)
+                   :created-at (ct/now)
+                   :source "backend"
+                   :app.loggers.webhooks/event? true}]
+        (audit/submit* th/*system* event)
+        (t/is (= 0 (count (th/db-exec! ["select * from audit_log"]))))
+        (t/is (= 1 (:call-count @submit-mock)))))))
+
+(t/deftest process-event-stores-row-with-a-single-consumer
+  ;; A single consumer is enough to make the backend persist full rows.
+  (th/with-audit-config #{:nexus}
+    (let [prof  (th/create-profile* 1 {:is-active true})
+          event {:type "action"
+                 :name "delete-project"
+                 :profile-id (:id prof)
+                 :props {:team-id (:default-team-id prof)}
+                 :context {:version "2.0.0" :initiator "app"}
+                 :tracked-at (ct/now)
+                 :created-at (ct/now)
+                 :source "backend"}]
+      (audit/submit* th/*system* event)
+      (let [[row :as rows] (->> (th/db-exec! ["select * from audit_log"])
+                                (mapv decode-row))]
+        (t/is (= 1 (count rows)))
+        (t/is (= "backend" (:source row)))))))
+
 (t/deftest push-events-disabled-when-no-flags-and-no-telemetry
-  ;; When neither audit-log nor telemetry is enabled, no rows should
+  ;; When neither persistence nor telemetry is enabled, no rows should
   ;; be stored.
-  (with-redefs [cf/flags #{}]
+  (th/with-audit-config #{}
     (let [prof   (th/create-profile* 1 {:is-active true})
           params {::th/type :push-audit-events
                   ::rpc/profile-id (:id prof)
@@ -424,32 +461,32 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (t/deftest get-environment-data-returns-selfhost-by-default
-  (with-redefs [cf/flags #{:audit-log}]
+  (th/with-audit-config #{:nexus}
     (let [out (th/command! {::th/type :get-environment-data})]
       (t/is (th/success? out))
       (t/is (= "selfhost" (-> out :result :deployment))))))
 
 (t/deftest get-environment-data-returns-saas-when-configured
-  (with-redefs [cf/flags #{:telemetry}]
+  (th/with-audit-config #{:telemetry}
     (binding [cf/config (assoc cf/config :is-saas true)]
       (let [out (th/command! {::th/type :get-environment-data})]
         (t/is (th/success? out))
         (t/is (= "saas" (-> out :result :deployment)))))))
 
 (t/deftest get-environment-data-only-exposes-event-flags
-  (with-redefs [cf/flags #{:audit-log :telemetry :graph :nrepl-server}]
+  (th/with-audit-config #{:nexus :telemetry :graph :nrepl-server}
     (let [out (th/command! {::th/type :get-environment-data})]
       (t/is (th/success? out))
       (t/is (= #{:audit-log :telemetry} (-> out :result :flags))))))
 
 (t/deftest get-environment-data-returns-empty-flags-when-none-enabled
-  (with-redefs [cf/flags #{:graph}]
+  (th/with-audit-config #{:graph}
     (let [out (th/command! {::th/type :get-environment-data})]
       (t/is (th/success? out))
       (t/is (= #{} (-> out :result :flags))))))
 
 (t/deftest get-enabled-flags-still-returns-flat-set
-  (with-redefs [cf/flags #{:audit-log :telemetry :graph}]
+  (th/with-audit-config #{:nexus :telemetry :graph}
     (let [out (th/command! {::th/type :get-enabled-flags})]
       (t/is (th/success? out))
       (t/is (= #{:audit-log :telemetry} (:result out))))))
@@ -652,7 +689,7 @@
     (t/is (= "app" (audit/get-client-initiator (request "something-else/1.0"))))))
 
 (t/deftest push-events-assigns-initiator-from-x-client
-  (with-redefs [app.config/flags #{:audit-log}]
+  (th/with-audit-config #{:nexus}
     (let [prof   (th/create-profile* 1 {:is-active true})
           params {::th/type :push-audit-events
                   ::rpc/profile-id (:id prof)
@@ -674,7 +711,7 @@
         (t/is (= "admin-console" (-> row :context :initiator)))))))
 
 (t/deftest push-events-initiator-defaults-to-app
-  (with-redefs [app.config/flags #{:audit-log}]
+  (th/with-audit-config #{:nexus}
     (let [prof   (th/create-profile* 1 {:is-active true})
           params {::th/type :push-audit-events
                   ::rpc/profile-id (:id prof)
@@ -695,15 +732,15 @@
 ;; INSERT DEFAULTS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(t/deftest insert-only-runs-with-audit-log-flag
-  ;; insert must be a no-op when :audit-log flag is not set
+(t/deftest insert-only-runs-when-a-consumer-is-enabled
+  ;; insert must be a no-op when no consumer is enabled
   (with-redefs [app.config/flags #{:telemetry}]
     (audit/insert th/*system* {:name "test" :type "action"})
     (t/is (= 0 (count (th/db-exec! ["select * from audit_log"]))))))
 
 (t/deftest insert-sets-defaults
-  ;; insert must set defaults and persist when :audit-log is set
-  (with-redefs [app.config/flags #{:audit-log}]
+  ;; insert must set defaults and persist when a consumer is enabled
+  (th/with-audit-config #{:nexus}
     (audit/insert th/*system* {:name "test-action" :type "action"})
     (let [[row] (->> (th/db-exec! ["select * from audit_log"])
                      (mapv decode-row))]
@@ -924,7 +961,7 @@
 (t/deftest push-handle-events-records-inserted
   (let [prof    (th/create-profile* 1 {:is-active true})
         metrics (make-ingest-metrics)]
-    (with-redefs [cf/flags #{:audit-log :telemetry :nexus :admin-console}]
+    (th/with-audit-config #{:telemetry :nexus :admin-console}
       (@#'cmd-audit/handle-events {::db/pool th/*pool* ::mtx/metrics metrics}
                                   (push-params (:id prof)))
       (t/is (= 1.0 (ingest-counter metrics "full" "inserted")))
@@ -934,7 +971,7 @@
 (t/deftest push-handle-events-records-failed-on-error
   (let [prof    (th/create-profile* 1 {:is-active true})
         metrics (make-ingest-metrics)]
-    (with-redefs [cf/flags #{:audit-log :telemetry :nexus :admin-console}]
+    (th/with-audit-config #{:telemetry :nexus :admin-console}
       (with-mocks [insert-mock {:target 'app.db/insert-many!
                                 :throw (ex-info "boom" {})}]
         (t/is (thrown? clojure.lang.ExceptionInfo
@@ -945,12 +982,12 @@
         (t/is (= 0 (count (th/db-exec! ["select * from audit_log"]))))))))
 
 (t/deftest push-handle-events-single-face-emits-no-empty-series
-  ;; With only :audit-log on, exactly one ingest series exists: the
+  ;; With a consumer enabled and telemetry off, exactly one ingest series exists: the
   ;; pos? guard in record-ingested emits no phantom shadow series.
   ;; (No send flags either, so R3 leaves the row pending-less.)
   (let [prof    (th/create-profile* 1 {:is-active true})
         metrics (make-ingest-metrics)]
-    (with-redefs [cf/flags #{:audit-log}]
+    (th/with-audit-config #{:nexus}
       (@#'cmd-audit/handle-events {::db/pool th/*pool* ::mtx/metrics metrics}
                                   (push-params (:id prof)))
       (t/is (= 1.0 (ingest-counter metrics "full" "inserted")))

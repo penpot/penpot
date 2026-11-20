@@ -63,6 +63,16 @@
 (def ^:dynamic *system* nil)
 (def ^:dynamic *pool* nil)
 
+(defmacro with-audit-config
+  "Rebind the flags and the boot-computed audit persistence value together.
+  Tests describe which sinks are active with a flag set; the value is derived
+  from that same set so one argument controls both."
+  [flags & body]
+  `(let [flags# ~flags]
+     (with-redefs [cf/flags flags#
+                   cf/audit-persist? (cf/persist-audit-events? flags#)]
+       ~@body)))
+
 ;; Fallback values used when no PENPOT_TEST_* env vars are set (e.g. CI sets
 ;; them explicitly, see .github/workflows/tests-backend.yml). Inside the
 ;; devenv each wsN container receives per-instance values via
@@ -94,8 +104,9 @@
   ([next]
    (init-config nil next))
   ([extra-flags next]
-   (let [flags (into default-flags extra-flags)]
-     (with-redefs [app.config/flags (flags/parse flags/default flags)
+   (let [flags (flags/parse flags/default (into default-flags extra-flags))]
+     (with-redefs [app.config/flags flags
+                   app.config/audit-persist? (cf/persist-audit-events? flags)
                    app.config/config config
                    app.loggers.audit/submit (constantly nil)
                    app.auth/derive-password identity

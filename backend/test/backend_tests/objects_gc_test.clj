@@ -206,7 +206,7 @@
   ;; When the GC physically deletes a team, the projection must drop its row,
   ;; so the event carries the purged ids.
   (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
-    (with-redefs [cf/flags (conj cf/flags :audit-log)]
+    (th/with-audit-config (conj cf/flags :nexus)
       (let [profile (th/create-profile* 1 {:is-active true})
             team    (th/create-team* 71 {:profile-id (:id profile)})]
         (th/command! {::th/type :delete-team
@@ -230,7 +230,7 @@
 
 (t/deftest gc-emits-hard-delete-objects-for-projects
   (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
-    (with-redefs [cf/flags (conj cf/flags :audit-log)]
+    (th/with-audit-config (conj cf/flags :nexus)
       (let [profile (th/create-profile* 1 {:is-active true})
             team    (th/create-team* 72 {:profile-id (:id profile)})
             project (th/create-project* 72 {:profile-id (:id profile)
@@ -253,7 +253,7 @@
 
 (t/deftest gc-emits-hard-delete-objects-for-files
   (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
-    (with-redefs [cf/flags (conj cf/flags :audit-log)]
+    (th/with-audit-config (conj cf/flags :nexus)
       (let [profile (th/create-profile* 1 {:is-active true})
             team    (th/create-team* 73 {:profile-id (:id profile)})
             project (th/create-project* 73 {:profile-id (:id profile)
@@ -276,7 +276,7 @@
             (t/is (= [(:id file)] (get-in event [:props :file-ids])))
             (t/is (= "objects-gc" (get-in event [:context :triggered-by])))))))))
 
-(t/deftest gc-emits-no-event-without-audit-log-flag
+(t/deftest gc-emits-no-event-without-a-consumer
   ;; The GC must stay silent when the audit log is off, even though the row is
   ;; still purged.
   (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
@@ -321,7 +321,7 @@
 
 (t/deftest gc-emits-events-only-for-committed-chunks
   (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
-    (with-redefs [cf/flags (conj cf/flags :audit-log)]
+    (th/with-audit-config (conj cf/flags :nexus)
       (let [profile     (th/create-profile* 1)
             rolled-back (create-deleted-file! profile 1 (ct/in-past "30m"))
             blocked     (create-deleted-file! profile 2 (ct/in-past "20m"))

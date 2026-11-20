@@ -554,7 +554,7 @@
         file3    (th/create-file* 3 {:profile-id (:id profile)
                                      :project-id (:id project2)})]
     (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
-      (with-redefs [cf/flags (conj cf/flags :audit-log)]
+      (th/with-audit-config (conj cf/flags :nexus)
         (let [out   (th/command! {::th/type :move-files
                                   ::rpc/profile-id (:id profile)
                                   :project-id (:id project2)
@@ -794,7 +794,7 @@
   ;; The per-file `create-file` events are built by hand, so they do not pass
   ;; through the generic resolver: the command must copy the team id itself.
   (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
-    (with-redefs [cf/flags (conj cf/flags :audit-log)]
+    (th/with-audit-config (conj cf/flags :nexus)
       (let [prof    (th/create-profile* 1 {:is-active true})
             team    (th/create-team* 1 {:profile-id (:id prof)})
             project (th/create-project* 1 {:profile-id (:id prof)
@@ -815,7 +815,7 @@
   ;; The duplicated project and files are created by internal calls, so the
   ;; command emits one create event per entity for a local projection.
   (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
-    (with-redefs [cf/flags (conj cf/flags :audit-log)]
+    (th/with-audit-config (conj cf/flags :nexus)
       (let [profile (th/create-profile* 1 {:is-active true})
             team    (th/create-team* 52 {:profile-id (:id profile)})
             project (th/create-project* 52 {:profile-id (:id profile)

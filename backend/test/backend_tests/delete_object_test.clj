@@ -32,7 +32,7 @@
   ;; carries every affected id so a projection can follow without reading
   ;; production tables.
   (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
-    (with-redefs [cf/flags (conj cf/flags :audit-log)]
+    (th/with-audit-config (conj cf/flags :nexus)
       (let [profile    (th/create-profile* 1 {:is-active true})
             team       (th/create-team* 91 {:profile-id (:id profile)})
             project    (th/create-project* 91 {:profile-id (:id profile)
@@ -70,7 +70,7 @@
 
 (t/deftest delete-object-file-cascade-emits-event
   (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
-    (with-redefs [cf/flags (conj cf/flags :audit-log)]
+    (th/with-audit-config (conj cf/flags :nexus)
       (let [profile    (th/create-profile* 1 {:is-active true})
             team       (th/create-team* 92 {:profile-id (:id profile)})
             project    (th/create-project* 92 {:profile-id (:id profile)
@@ -95,7 +95,7 @@
 (t/deftest delete-object-missing-row-emits-nothing
   ;; A cascade over an unknown id marks nothing, so there is nothing to report.
   (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
-    (with-redefs [cf/flags (conj cf/flags :audit-log)]
+    (th/with-audit-config (conj cf/flags :nexus)
       (th/run-task! :delete-object {:object :team
                                     :id (uuid/next)
                                     :deleted-at (ct/now)})
@@ -104,7 +104,7 @@
 (t/deftest delete-object-snapshot-emits-nothing
   ;; Snapshots have no projection table; their cascade stays silent.
   (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
-    (with-redefs [cf/flags (conj cf/flags :audit-log)]
+    (th/with-audit-config (conj cf/flags :nexus)
       (th/run-task! :delete-object {:object :snapshot
                                     :id (uuid/next)
                                     :file-id (uuid/next)
