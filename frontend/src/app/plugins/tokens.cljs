@@ -632,7 +632,7 @@
                     (do (st/emit! (-> (dwtl/create-token id token)
                                       (se/add-event plugin-id)))
                         (token-proxy plugin-id file-id id (:id token)))
-                    (do (u/not-valid plugin-id :addToken (str errors))
+                    (do (u/not-valid plugin-id :addToken (:value token))
                         nil))))))}
 
      :duplicate
