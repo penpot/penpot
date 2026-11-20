@@ -7175,6 +7175,10 @@ msgstr "Connected library"
 msgid "workspace.libraries.connected-through"
 msgstr "Connected through"
 
+#: src/app/main/ui/workspace/libraries.cljs:934
+msgid "workspace.libraries.connected-through-hint"
+msgstr "Connected through %s. To remove it, disconnect %s."
+
 #: src/app/main/ui/workspace/libraries.cljs:507
 msgid "workspace.libraries.connected-to"
 msgstr "Connected to"
@@ -7320,6 +7324,10 @@ msgstr "see all changes"
 #: src/app/main/ui/workspace/libraries.cljs:1163, src/app/main/ui/workspace/libraries.cljs:1167
 msgid "workspace.libraries.updates"
 msgstr "UPDATES"
+
+#: src/app/main/ui/workspace/libraries.cljs:936
+msgid "workspace.libraries.used-by"
+msgstr "Used by %s. To remove it, disconnect %s first."
 
 #: src/app/main/ui/ds/notifications/shared/notification_pill.cljs:61
 msgid "workspace.notification-pill.detail"
