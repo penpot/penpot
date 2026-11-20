@@ -63,7 +63,7 @@
    java.util.UUID
    org.postgresql.ds.PGSimpleDataSource))
 
-(declare verify-save!)
+(declare verify-save)
 
 (def ^:dynamic *system* nil)
 (def ^:dynamic *pool* nil)
@@ -577,7 +577,7 @@
 
     (let [params (prepare-rpc-params data)
           out    (try-on! (method-fn params))]
-      (verify-save! data out)
+      (verify-save data out)
       out)))
 
 (defn command-raw!
@@ -975,7 +975,7 @@
         (d/update-when :tokens-status pr-str)
         (d/update-when :own-tokens-status pr-str))))
 
-(defn verify-file!
+(defn verify-file
   "Folds the newest checkpoint of `file` at or below `from-revn` (its head
   revision by default) and the revision rows after it, and compares the
   result with the stored head. The comparison runs on realized documents,
@@ -1017,12 +1017,12 @@
                        :match)))
                  :no-checkpoint)))))
 
-(defn verify-file-log!
-  "Reads the `file` row of `file-id` and verifies its log (`verify-file!`)."
+(defn verify-file-log
+  "Reads the `file` row of `file-id` and verifies its log (`verify-file`)."
   [file-id & {:as opts}]
-  (verify-file! (db/get *pool* :file {:id file-id}) opts))
+  (verify-file (db/get *pool* :file {:id file-id}) opts))
 
-(defn- verify-save!
+(defn- verify-save
   "The verifier `command!` runs after a successful `update-file`, from the
   revision before the save: the checkpoint the save wrote and the rows
   above it must explain the head, or the save stored less than it applied
@@ -1031,7 +1031,7 @@
   (when (and *verify-saves?*
              (= type :update-file)
              (nil? (:error out)))
-    (let [verdict (verify-file-log! id :from-revn (:revn (:result out)))]
+    (let [verdict (verify-file-log id :from-revn (:revn (:result out)))]
       (t/is (contains? #{:match :no-checkpoint} verdict)
             (str "the log explains the head after update-file: "
                  (pr-str verdict))))))

@@ -25,7 +25,7 @@
   "The kind of a revision row."
   2)
 
-(defn insert-revision!
+(defn insert-revision
   "Inserts the revision row of a save on `file`: `changes` is the whole of
   what the save applied, not encoded, and the row expires one hour after
   `timestamp`. Every writer of a revision row goes through this function,

@@ -373,11 +373,11 @@
 
       (when saved?
         (when repair
-          (fchanges/insert-revision! cfg file timestamp
-                                     {:session-id repair-session-id
-                                      :profile-id profile-id
-                                      :revn (:revn repair)
-                                      :changes (:changes repair)})
+          (fchanges/insert-revision cfg file timestamp
+                                    {:session-id repair-session-id
+                                     :profile-id profile-id
+                                     :revn (:revn repair)
+                                     :changes (:changes repair)})
           (l/wrn :hint "file auto-repaired"
                  :file-id (str (:id file))
                  :error-codes (error-codes (:errors repair))
@@ -388,14 +388,14 @@
         ;; The revision carries only the delta of the save: the features of
         ;; the file are not repeated here (nobody reads them from a revision,
         ;; and they are duplicated on every save). It expires in an hour,
-        ;; which `insert-revision!` decides. The caller's `file-change-id`
+        ;; which `insert-revision` decides. The caller's `file-change-id`
         ;; travels with it, so the audit event points at this very row.
-        (fchanges/insert-revision! cfg file change-created-at
-                                   {:id file-change-id
-                                    :session-id session-id
-                                    :profile-id profile-id
-                                    :revn (:revn file)
-                                    :changes changes})
+        (fchanges/insert-revision cfg file change-created-at
+                                  {:id file-change-id
+                                   :session-id session-id
+                                   :profile-id profile-id
+                                   :revn (:revn file)
+                                   :changes changes})
         (persist-file! cfg (dissoc file ::repair))
 
         (when (contains? cf/flags :redis-cache)

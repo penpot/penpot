@@ -596,11 +596,11 @@
         now    (ct/inst (inst-ms (ct/now)))
         out    (db/tx-run! th/*system*
                            (fn [cfg]
-                             (fchanges/insert-revision! cfg file now
-                                                        {:id id
-                                                         :session-id (uuid/next)
-                                                         :revn 1
-                                                         :changes []})))
+                             (fchanges/insert-revision cfg file now
+                                                       {:id id
+                                                        :session-id (uuid/next)
+                                                        :revn 1
+                                                        :changes []})))
         [row]  (th/db-query :file-change {:file-id file-id :id id})]
     (t/is (= id (:id out) (:id row)))
     (t/is (= (ct/plus now (ct/duration {:hours 1}))
@@ -646,7 +646,7 @@
                                :ignore-touched true}]}]
                rewrite)
             "the row carries the rewrite as a change of its own")
-      (t/is (= :match (th/verify-file-log! file-id))
+      (t/is (= :match (th/verify-file-log file-id))
             "the log explains the head"))))
 
 ;; Scenario: three saves on a file with a snapshot per save. Proves:
@@ -656,7 +656,7 @@
     (update-file ctx {:changes [(th/add-rect-change page-id (uuid/next))]})
     (update-file ctx {:revn 1 :changes [(th/add-rect-change page-id (uuid/next))]})
     (update-file ctx {:revn 2 :changes [(th/add-rect-change page-id (uuid/next))]})
-    (t/is (= :match (th/verify-file-log! file-id)))))
+    (t/is (= :match (th/verify-file-log file-id)))))
 
 ;; Scenario: a revision row is lost. Proves: the verifier says so instead
 ;; of matching, naming the revision the fold reached.
@@ -664,7 +664,7 @@
   (let [{:keys [page-id file-id] :as ctx} (create-file)]
     (update-file ctx {:changes [(th/add-rect-change page-id (uuid/next))]})
     (th/db-delete! :file-change {:file-id file-id :revn 1})
-    (let [verdict (th/verify-file-log! file-id)]
+    (let [verdict (th/verify-file-log file-id)]
       (t/is (map? verdict))
       (t/is (= {:folded-to 0 :head-revn 1 :differing-keys ["pages-index"]}
                (:mismatch verdict))
@@ -674,4 +674,4 @@
 ;; a branch has no stored head of its own to compare a fold against.
 (t/deftest the-log-verifier-skips-branch-files
   (t/is (= :skipped-branch
-           (th/verify-file! {:id (uuid/next) :revn 7 :is-branch true}))))
+           (th/verify-file {:id (uuid/next) :revn 7 :is-branch true}))))
