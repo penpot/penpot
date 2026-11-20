@@ -3,6 +3,9 @@
 set -ex
 pnpm install;
 
+# Fast JS package unit tests (no wasm/browser needed)
+pnpm --filter @penpot/draft-js test;
+
 # Build render wasm binary
 pushd ../render-wasm;
 ./build
