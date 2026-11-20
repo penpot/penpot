@@ -17,6 +17,10 @@ assertion is compiled out. GitHub Actions sets the same flag.
   finishing (AGENTS.md: run the applicable lint and format checks).
 - When `common/` changed: validate its consumers too (frontend, backend,
   exporter; see the dependency graph in `mem:critical-info`).
+- Pass every module you touched, `common` included: the backend `lint:clj`
+  lints `../common/src` with clj-kondo but does not run `cljfmt` over it, so
+  a `common/` formatting error only shows in the `common:fmt` task (its own
+  `check-fmt:clj`), which is what CI runs.
 - To fix formatting across a module (`--fix`) or repair delimiters
   (`--paren-repair`) before linting.
 

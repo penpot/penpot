@@ -59,8 +59,7 @@
 
 (def varia
   "Rest of the flags"
-  #{
-    ;; Runs the audit-log buffer GC. Keep it off while the old and the new
+  #{;; Runs the audit-log buffer GC. Keep it off while the old and the new
     ;; version coexist; the runbook turns it on after the rollout.
     :audit-log-gc
     ;; Enables shipping audit_log chunks to Nexus.
