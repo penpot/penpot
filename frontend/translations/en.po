@@ -5225,6 +5225,10 @@ msgstr "Customize shortcuts"
 msgid "shortcuts.escape"
 msgstr "Cancel"
 
+#: src/app/main/data/workspace/shortcuts.cljs:631
+msgid "shortcuts.export-selection"
+msgstr "Export selection with saved settings"
+
 #: src/app/main/data/workspace/shortcuts.cljs:608
 msgid "shortcuts.export-shapes"
 msgstr "Export shapes"
@@ -6719,13 +6723,29 @@ msgstr "Remove guide"
 msgid "workspace.debug.title"
 msgstr "Debugging tools"
 
-#: src/app/main/data/exports/assets.cljs:388, src/app/main/data/exports/assets.cljs:564
+#: src/app/main/ui/workspace/main_menu.cljs:741
+msgid "workspace.export-selection"
+msgstr "Export selection"
+
+#: src/app/main/data/exports/assets.cljs:666
+msgid "workspace.export-selection.busy"
+msgstr "An export is already in progress."
+
+#: src/app/main/data/exports/assets.cljs:664
+msgid "workspace.export-selection.empty"
+msgstr "Select an object to export."
+
+#: src/app/main/data/exports/assets.cljs:665
+msgid "workspace.export-selection.no-settings"
+msgstr "Add an export setting in the right sidebar."
+
+#: src/app/main/data/exports/assets.cljs:395, src/app/main/data/exports/assets.cljs:572
 msgid "workspace.export.unsaved-changes"
 msgstr ""
 "Some of your latest changes are not saved yet, so this export may not "
 "include them."
 
-#: src/app/main/data/exports/assets.cljs:370, src/app/main/data/exports/assets.cljs:612
+#: src/app/main/data/exports/assets.cljs:375, src/app/main/data/exports/assets.cljs:620
 msgid "workspace.export.unsaved-changes-included"
 msgstr "Some of your latest changes are not saved yet. This export includes them."
 
