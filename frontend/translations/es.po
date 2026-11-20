@@ -1719,7 +1719,7 @@ msgstr ""
 msgid "errors.font-family-invalid-chars"
 msgstr ""
 "El nombre de la familia tipográfica solo puede contener letras, números, "
-"espacios, guiones, guiones bajos y puntos."
+"espacios, guiones, guiones bajos, puntos y apóstrofos."
 
 #: src/app/main/data/auth.cljs:352, src/app/main/errors.cljs:565, src/app/main/ui/auth/login.cljs:116, src/app/main/ui/auth/register.cljs:131, src/app/main/ui/auth/register.cljs:317, src/app/main/ui/auth/verify_token.cljs:131, src/app/main/ui/dashboard/fonts.cljs:125, src/app/main/ui/dashboard/fonts.cljs:403, src/app/main/ui/dashboard/team.cljs:234, src/app/main/ui/dashboard/team.cljs:1132, src/app/main/ui/onboarding/team_choice.cljs:125, src/app/main/ui/settings/feedback.cljs:84, src/app/main/ui/settings/integrations.cljs:143, src/app/main/ui/workspace/main_menu.cljs:967
 msgid "errors.generic"

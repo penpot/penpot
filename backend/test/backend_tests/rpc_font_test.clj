@@ -609,12 +609,12 @@
         (t/is (th/ex-of-type? (:error out) :validation))
         (t/is (th/ex-of-code? (:error out) :params-validation)))
 
-      ;; name with ' should fail
+      ;; name with " should fail
       (let [session-id (upload-font-chunked! prof data "font/ttf" (* 4 1024 1024))
             params {::th/type :create-font-variant
                     ::rpc/profile-id (:id prof)
                     :team-id team-id :font-id font-id
-                    :font-family "evil'name"
+                    :font-family "evil\"name"
                     :font-weight 400 :font-style "normal"
                     :uploads {"font/ttf" session-id}}
             out    (th/command! params)]
@@ -639,6 +639,17 @@
                     ::rpc/profile-id (:id prof)
                     :team-id team-id :font-id (uuid/custom 10 101)
                     :font-family "Source Sans Pro"
+                    :font-weight 400 :font-style "normal"
+                    :uploads {"font/ttf" session-id}}
+            out    (th/command! params)]
+        (t/is (th/success? out)))
+
+      ;; name with an apostrophe should succeed
+      (let [session-id (upload-font-chunked! prof data "font/ttf" (* 4 1024 1024))
+            params {::th/type :create-font-variant
+                    ::rpc/profile-id (:id prof)
+                    :team-id team-id :font-id (uuid/custom 10 103)
+                    :font-family "Suisse Int'l"
                     :font-weight 400 :font-style "normal"
                     :uploads {"font/ttf" session-id}}
             out    (th/command! params)]
@@ -672,11 +683,11 @@
         (t/is (th/ex-of-type? (:error out) :validation))
         (t/is (th/ex-of-code? (:error out) :params-validation)))
 
-      ;; rename with ' should fail
+      ;; rename with " should fail
       (let [params {::th/type :update-font
                     ::rpc/profile-id (:id prof)
                     :team-id team-id :id font-id
-                    :name "evil'name"}
+                    :name "evil\"name"}
             out    (th/command! params)]
         (t/is (not (th/success? out)))
         (t/is (th/ex-of-type? (:error out) :validation)))
@@ -686,6 +697,14 @@
                     ::rpc/profile-id (:id prof)
                     :team-id team-id :id font-id
                     :name "Valid Font Name"}
+            out    (th/command! params)]
+        (t/is (th/success? out)))
+
+      ;; rename with an apostrophe should succeed
+      (let [params {::th/type :update-font
+                    ::rpc/profile-id (:id prof)
+                    :team-id team-id :id font-id
+                    :name "Suisse Int'l"}
             out    (th/command! params)]
         (t/is (th/success? out))))))
 
