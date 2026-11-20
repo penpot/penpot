@@ -44,7 +44,7 @@
   their transactions. Runs inside the caller transaction, next to the
   deletes: if the purge aborts, the event aborts with it."
   [cfg ids-key ids]
-  (when (contains? cf/flags :audit-log)
+  (when cf/audit-persist?
     (audit/submit cfg
                   {:name "hard-delete-objects"
                    :type "command"

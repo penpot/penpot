@@ -42,7 +42,6 @@ export PENPOT_FLAGS="\
        enable-backend-asserts \
        disable-feature-fdata-pointer-map \
        enable-feature-fdata-objects-map \
-       enable-audit-log \
        enable-transit-readable-response \
        disable-remote-media-processing \
        enable-demo-users \
