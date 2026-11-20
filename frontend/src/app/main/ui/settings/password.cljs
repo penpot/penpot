@@ -12,6 +12,8 @@
    [app.main.data.profile :as udu]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
+   [app.main.ui.ds.foundations.typography :as t]
+   [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
@@ -123,5 +125,9 @@
   [:section {:class (stl/css :dashboard-settings)
              :aria-labelledby "password-section-title"}
    [:div {:class (stl/css :form-container)}
-    [:h2 {:id "password-section-title"} (tr "dashboard.password-change")]
+    [:> heading* {:level 2
+                  :typography t/title-large
+                  :class (stl/css :page-title)
+                  :id "password-section-title"}
+     (tr "dashboard.password-change")]
     [:> password-form*]]])
