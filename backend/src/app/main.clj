@@ -78,6 +78,29 @@
     ::mdef/buckets mtx/default-request-histogram-buckets
     ::mdef/type :histogram}
 
+   :update-file-refused
+   {::mdef/name "penpot_rpc_update_file_refused_total"
+    ::mdef/help "Saves update-file refused, or accepted only in part, by the step at which the save first failed, the error code, and whether every commit or only a tail of them was rejected. The code infrastructure marks a database, input-output, or interruption failure, which refuses the save without any validation failing. A save whose auto-repair gave up appears here too, as refused or partial, and in penpot_rpc_update_file_repair_total as unrepaired."
+    ::mdef/labels ["stage" "code" "outcome"]
+    ::mdef/type :counter}
+
+   :update-file-rejected-commits
+   {::mdef/name "penpot_rpc_update_file_rejected_commits_total"
+    ::mdef/help "Commits update-file validation rejected, by the error code of the first rejected commit of their save."
+    ::mdef/labels ["code"]
+    ::mdef/type :counter}
+
+   :update-file-soft-failure
+   {::mdef/name "penpot_rpc_update_file_soft_failure_total"
+    ::mdef/help "Soft file validation failures, by the check that failed and a bounded reason."
+    ::mdef/labels ["check" "reason"]
+    ::mdef/type :counter}
+
+   :update-file-lagged
+   {::mdef/name "penpot_rpc_update_file_lagged_total"
+    ::mdef/help "Saves that passed the revision check with a revn behind the stored head."
+    ::mdef/type :counter}
+
    :update-file-repair
    {::mdef/name "penpot_rpc_update_file_repair_total"
     ::mdef/help "update-file auto-repair attempts by outcome (repaired or unrepaired)."
