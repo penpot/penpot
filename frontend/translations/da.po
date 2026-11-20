@@ -243,6 +243,10 @@ msgstr "Åben fil i en ny fane"
 msgid "dashboard.password-change"
 msgstr "Skift adgangskode"
 
+#: src/app/main/ui/dashboard/project_menu.cljs:108
+msgid "dashboard.pin"
+msgstr "Fastgør"
+
 #: src/app/main/ui/dashboard/files.cljs:132, src/app/main/ui/dashboard/project_menu.cljs:98, src/app/main/ui/dashboard/projects.cljs:260
 msgid "dashboard.pin-unpin"
 msgstr "Fastgør/Løsne"
@@ -326,6 +330,10 @@ msgstr "Søgeresultater"
 #: src/app/main/ui/dashboard/search.cljs:74
 msgid "dashboard.type-something"
 msgstr "Skriv for at søge i resultater"
+
+#: src/app/main/ui/dashboard/project_menu.cljs:107
+msgid "dashboard.unpin"
+msgstr "Løsne"
 
 #: src/app/main/ui/settings/options.cljs:88
 msgid "dashboard.update-settings"

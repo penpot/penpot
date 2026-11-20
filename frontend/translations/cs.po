@@ -259,6 +259,10 @@ msgstr "Přidat jako sdílenou knihovnu"
 msgid "dashboard.change-email"
 msgstr "Změnit e-mail"
 
+#: src/app/main/ui/dashboard/file_menu.cljs:323, src/app/main/ui/dashboard/project_menu.cljs:119
+msgid "dashboard.copy-link"
+msgstr "Zkopírovat odkaz do schránky"
+
 #: src/app/main/data/dashboard.cljs:317, src/app/main/data/dashboard.cljs:553, src/app/main/data/workspace/pages.cljs:206
 msgid "dashboard.copy-suffix"
 msgstr "(zkopírovat)"
@@ -572,6 +576,10 @@ msgstr "Nyní jste vlastníkem tohoto týmu."
 msgid "dashboard.permissions-change.viewer"
 msgstr "Nyní jste v tomto týmu divákem."
 
+#: src/app/main/ui/dashboard/project_menu.cljs:108
+msgid "dashboard.pin"
+msgstr "Připnout"
+
 #: src/app/main/ui/dashboard/files.cljs:132, src/app/main/ui/dashboard/project_menu.cljs:98, src/app/main/ui/dashboard/projects.cljs:260
 msgid "dashboard.pin-unpin"
 msgstr "Připnout/Odepnout"
@@ -745,6 +753,10 @@ msgstr "Výsledky vyhledávání"
 #: src/app/main/ui/dashboard/search.cljs:74
 msgid "dashboard.type-something"
 msgstr "Zadejte výraz pro hledání"
+
+#: src/app/main/ui/dashboard/project_menu.cljs:107
+msgid "dashboard.unpin"
+msgstr "Odepnout"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:322, src/app/main/ui/workspace/main_menu.cljs:693
 msgid "dashboard.unpublish-shared"

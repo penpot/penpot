@@ -258,6 +258,10 @@ msgstr "Dodaj kao zajedničku biblioteku"
 msgid "dashboard.change-email"
 msgstr "Promijeni e-mail"
 
+#: src/app/main/ui/dashboard/file_menu.cljs:323, src/app/main/ui/dashboard/project_menu.cljs:119
+msgid "dashboard.copy-link"
+msgstr "Kopiraj vezu u međuspremnik"
+
 #: src/app/main/data/dashboard.cljs:317, src/app/main/data/dashboard.cljs:553, src/app/main/data/workspace/pages.cljs:206
 msgid "dashboard.copy-suffix"
 msgstr "(kopiraj)"
@@ -571,6 +575,10 @@ msgstr "Sada ste vlasnik ovog tima."
 msgid "dashboard.permissions-change.viewer"
 msgstr "Sada ste gledatelj u ovom timu."
 
+#: src/app/main/ui/dashboard/project_menu.cljs:108
+msgid "dashboard.pin"
+msgstr "Prikvači"
+
 #: src/app/main/ui/dashboard/files.cljs:132, src/app/main/ui/dashboard/project_menu.cljs:98, src/app/main/ui/dashboard/projects.cljs:260
 msgid "dashboard.pin-unpin"
 msgstr "Prikvači/Otkvači"
@@ -744,6 +752,10 @@ msgstr "Pretraži rezultate"
 #: src/app/main/ui/dashboard/search.cljs:74
 msgid "dashboard.type-something"
 msgstr "Upiši za rezultate pretraživanja"
+
+#: src/app/main/ui/dashboard/project_menu.cljs:107
+msgid "dashboard.unpin"
+msgstr "Otkvači"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:322, src/app/main/ui/workspace/main_menu.cljs:693
 msgid "dashboard.unpublish-shared"

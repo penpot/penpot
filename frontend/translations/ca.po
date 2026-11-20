@@ -368,6 +368,10 @@ msgstr "Mostra les notes de la versió"
 msgid "dashboard.clear-trash-button"
 msgstr "Buida la paperera"
 
+#: src/app/main/ui/dashboard/file_menu.cljs:323, src/app/main/ui/dashboard/project_menu.cljs:119
+msgid "dashboard.copy-link"
+msgstr "Copia l'enllaç"
+
 #: src/app/main/data/dashboard.cljs:317, src/app/main/data/dashboard.cljs:553, src/app/main/data/workspace/pages.cljs:206
 msgid "dashboard.copy-suffix"
 msgstr "(còpia)"
@@ -950,6 +954,10 @@ msgstr "Ara sou lectors d'aquest equip."
 msgid "dashboard.personal-projects"
 msgstr "Projectes personals"
 
+#: src/app/main/ui/dashboard/project_menu.cljs:108
+msgid "dashboard.pin"
+msgstr "Fixa"
+
 #: src/app/main/ui/dashboard/files.cljs:132, src/app/main/ui/dashboard/project_menu.cljs:98, src/app/main/ui/dashboard/projects.cljs:260
 msgid "dashboard.pin-unpin"
 msgstr "Fixa/Deixa de fixar"
@@ -1175,6 +1183,10 @@ msgstr "Mostra tots els fitxers"
 msgid "dashboard.show-version-history"
 msgstr "Historial de versions"
 
+#: src/app/main/data/dashboard.cljs:377
+msgid "dashboard.success-copy-link"
+msgstr "S'ha copiat l'enllaç al porta-retalls"
+
 #: src/app/main/ui/dashboard/file_menu.cljs:129
 msgid "dashboard.success-delete-file"
 msgid_plural "dashboard.success-delete-file"
@@ -1290,6 +1302,10 @@ msgstr ""
 #: src/app/main/ui/dashboard/search.cljs:74
 msgid "dashboard.type-something"
 msgstr "Escriviu per cercar resultats"
+
+#: src/app/main/ui/dashboard/project_menu.cljs:107
+msgid "dashboard.unpin"
+msgstr "Deixa de fixar"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:322, src/app/main/ui/workspace/main_menu.cljs:693
 msgid "dashboard.unpublish-shared"

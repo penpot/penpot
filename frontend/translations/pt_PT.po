@@ -254,6 +254,10 @@ msgstr "Adicionar como biblioteca partilhada"
 msgid "dashboard.change-email"
 msgstr "Alterar e-mail"
 
+#: src/app/main/ui/dashboard/file_menu.cljs:323, src/app/main/ui/dashboard/project_menu.cljs:119
+msgid "dashboard.copy-link"
+msgstr "Copiar ligação para a área de transferência"
+
 #: src/app/main/data/dashboard.cljs:317, src/app/main/data/dashboard.cljs:553, src/app/main/data/workspace/pages.cljs:206
 msgid "dashboard.copy-suffix"
 msgstr "(copiar)"
@@ -581,6 +585,10 @@ msgstr "Passaste a ser editor(a) nesta equipa."
 msgid "dashboard.permissions-change.owner"
 msgstr "Passaste a ser dono(a) nesta equipa."
 
+#: src/app/main/ui/dashboard/project_menu.cljs:108
+msgid "dashboard.pin"
+msgstr "Afixar"
+
 #: src/app/main/ui/dashboard/files.cljs:132, src/app/main/ui/dashboard/project_menu.cljs:98, src/app/main/ui/dashboard/projects.cljs:260
 msgid "dashboard.pin-unpin"
 msgstr "Afixar/Desafixar"
@@ -748,6 +756,10 @@ msgstr "Resultados da pesquisa"
 #: src/app/main/ui/dashboard/search.cljs:74
 msgid "dashboard.type-something"
 msgstr "Escreve para pesquisar resultados"
+
+#: src/app/main/ui/dashboard/project_menu.cljs:107
+msgid "dashboard.unpin"
+msgstr "Desafixar"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:322, src/app/main/ui/workspace/main_menu.cljs:693
 msgid "dashboard.unpublish-shared"

@@ -384,6 +384,10 @@ msgstr "Nhọrọ gasị"
 msgid "dashboard.password-change"
 msgstr "Gbanwee akara mpịbanye"
 
+#: src/app/main/ui/dashboard/project_menu.cljs:108
+msgid "dashboard.pin"
+msgstr "Nọmba"
+
 #: src/app/main/ui/dashboard/files.cljs:132, src/app/main/ui/dashboard/project_menu.cljs:98, src/app/main/ui/dashboard/projects.cljs:260
 msgid "dashboard.pin-unpin"
 msgstr "Nọmba /Wepụ nọmba"
@@ -447,6 +451,10 @@ msgstr "Chọọ risọltụ gasị"
 #: src/app/main/ui/dashboard/search.cljs:74
 msgid "dashboard.type-something"
 msgstr "Pinye ịchọ risọltụ"
+
+#: src/app/main/ui/dashboard/project_menu.cljs:107
+msgid "dashboard.unpin"
+msgstr "Wepụ nọmba"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:322, src/app/main/ui/workspace/main_menu.cljs:693
 msgid "dashboard.unpublish-shared"

@@ -274,6 +274,10 @@ msgstr "修改电子邮件"
 msgid "dashboard.clear-trash-button"
 msgstr "清空回收站"
 
+#: src/app/main/ui/dashboard/file_menu.cljs:323, src/app/main/ui/dashboard/project_menu.cljs:119
+msgid "dashboard.copy-link"
+msgstr "复制链接"
+
 #: src/app/main/data/dashboard.cljs:317, src/app/main/data/dashboard.cljs:553, src/app/main/data/workspace/pages.cljs:206
 msgid "dashboard.copy-suffix"
 msgstr "（复制）"
@@ -748,6 +752,10 @@ msgstr "你现在是此团队的所有者。"
 msgid "dashboard.permissions-change.viewer"
 msgstr "你现在是此团队的查看者。"
 
+#: src/app/main/ui/dashboard/project_menu.cljs:108
+msgid "dashboard.pin"
+msgstr "固定到侧边栏"
+
 #: src/app/main/ui/dashboard/files.cljs:132, src/app/main/ui/dashboard/project_menu.cljs:98, src/app/main/ui/dashboard/projects.cljs:260
 msgid "dashboard.pin-unpin"
 msgstr "固定到侧边栏/取消固定"
@@ -928,6 +936,10 @@ msgstr "显示所有文件"
 msgid "dashboard.show-version-history"
 msgstr "版本历史"
 
+#: src/app/main/data/dashboard.cljs:377
+msgid "dashboard.success-copy-link"
+msgstr "链接已复制到剪贴板"
+
 #: src/app/main/ui/dashboard/file_menu.cljs:129
 msgid "dashboard.success-delete-file"
 msgid_plural "dashboard.success-delete-file"
@@ -1023,6 +1035,10 @@ msgstr "如果你改变主意，可以在每个文件的菜单中恢复或永久
 #: src/app/main/ui/dashboard/search.cljs:74
 msgid "dashboard.type-something"
 msgstr "输入内容以搜索"
+
+#: src/app/main/ui/dashboard/project_menu.cljs:107
+msgid "dashboard.unpin"
+msgstr "取消固定"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:322, src/app/main/ui/workspace/main_menu.cljs:693
 msgid "dashboard.unpublish-shared"

@@ -364,6 +364,10 @@ msgstr "Visa versionsinformation"
 msgid "dashboard.clear-trash-button"
 msgstr "Töm papperskorgen"
 
+#: src/app/main/ui/dashboard/file_menu.cljs:323, src/app/main/ui/dashboard/project_menu.cljs:119
+msgid "dashboard.copy-link"
+msgstr "Kopiera länken till urklipp"
+
 #: src/app/main/data/dashboard.cljs:317, src/app/main/data/dashboard.cljs:553, src/app/main/data/workspace/pages.cljs:206
 msgid "dashboard.copy-suffix"
 msgstr "(kopia)"
@@ -971,6 +975,10 @@ msgstr "Du är nu en läsare i det här teamet."
 msgid "dashboard.personal-projects"
 msgstr "Egna projekt"
 
+#: src/app/main/ui/dashboard/project_menu.cljs:108
+msgid "dashboard.pin"
+msgstr "Klistra fast"
+
 #: src/app/main/ui/dashboard/files.cljs:132, src/app/main/ui/dashboard/project_menu.cljs:98, src/app/main/ui/dashboard/projects.cljs:260
 msgid "dashboard.pin-unpin"
 msgstr "Klistra fast/Lossa"
@@ -1194,6 +1202,10 @@ msgstr "Visa alla filer"
 msgid "dashboard.show-version-history"
 msgstr "Versionshistorik"
 
+#: src/app/main/data/dashboard.cljs:377
+msgid "dashboard.success-copy-link"
+msgstr "Länk kopierad till urklipp"
+
 #: src/app/main/ui/dashboard/file_menu.cljs:129
 msgid "dashboard.success-delete-file"
 msgid_plural "dashboard.success-delete-file"
@@ -1311,6 +1323,10 @@ msgstr ""
 #: src/app/main/ui/dashboard/search.cljs:74
 msgid "dashboard.type-something"
 msgstr "Skriv för att söka i resultatet"
+
+#: src/app/main/ui/dashboard/project_menu.cljs:107
+msgid "dashboard.unpin"
+msgstr "Lossa"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:322, src/app/main/ui/workspace/main_menu.cljs:693
 msgid "dashboard.unpublish-shared"

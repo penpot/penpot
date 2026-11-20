@@ -259,6 +259,10 @@ msgstr "Tambahkan sebagai Pustaka Bersama"
 msgid "dashboard.change-email"
 msgstr "Ubah surel"
 
+#: src/app/main/ui/dashboard/file_menu.cljs:323, src/app/main/ui/dashboard/project_menu.cljs:119
+msgid "dashboard.copy-link"
+msgstr "Salin tautan ke papan klip"
+
 #: src/app/main/data/dashboard.cljs:317, src/app/main/data/dashboard.cljs:553, src/app/main/data/workspace/pages.cljs:206
 msgid "dashboard.copy-suffix"
 msgstr "(salin)"
@@ -606,6 +610,10 @@ msgstr "Anda sekarang seorang pemilik di tim ini."
 msgid "dashboard.permissions-change.viewer"
 msgstr "Anda sekarang seorang peninjau di tim ini."
 
+#: src/app/main/ui/dashboard/project_menu.cljs:108
+msgid "dashboard.pin"
+msgstr "Semat"
+
 #: src/app/main/ui/dashboard/files.cljs:132, src/app/main/ui/dashboard/project_menu.cljs:98, src/app/main/ui/dashboard/projects.cljs:260
 msgid "dashboard.pin-unpin"
 msgstr "Semat/Lepas semat"
@@ -779,6 +787,10 @@ msgstr "Hasil pencarian"
 #: src/app/main/ui/dashboard/search.cljs:74
 msgid "dashboard.type-something"
 msgstr "Ketik untuk mencari hasil"
+
+#: src/app/main/ui/dashboard/project_menu.cljs:107
+msgid "dashboard.unpin"
+msgstr "Lepas semat"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:322, src/app/main/ui/workspace/main_menu.cljs:693
 msgid "dashboard.unpublish-shared"

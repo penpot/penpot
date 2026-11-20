@@ -413,6 +413,10 @@ msgstr "Valmøguleikar"
 msgid "dashboard.password-change"
 msgstr "Broyt loyniorð"
 
+#: src/app/main/ui/dashboard/project_menu.cljs:108
+msgid "dashboard.pin"
+msgstr "Fest"
+
 #: src/app/main/ui/dashboard/files.cljs:132, src/app/main/ui/dashboard/project_menu.cljs:98, src/app/main/ui/dashboard/projects.cljs:260
 msgid "dashboard.pin-unpin"
 msgstr "Fest/Loys"
@@ -492,6 +496,10 @@ msgstr "Leitiúrslit"
 #: src/app/main/ui/dashboard/search.cljs:74
 msgid "dashboard.type-something"
 msgstr "Skriva fyri at leita eftir úrslitum"
+
+#: src/app/main/ui/dashboard/project_menu.cljs:107
+msgid "dashboard.unpin"
+msgstr "Loys"
 
 #: src/app/main/ui/alert.cljs:38
 msgid "ds.alert-ok"

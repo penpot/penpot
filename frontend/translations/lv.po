@@ -266,6 +266,10 @@ msgstr "Pievienot kā koplietojamu bibliotēku"
 msgid "dashboard.change-email"
 msgstr "Mainīt e-pasta adresi"
 
+#: src/app/main/ui/dashboard/file_menu.cljs:323, src/app/main/ui/dashboard/project_menu.cljs:119
+msgid "dashboard.copy-link"
+msgstr "Ievietot saiti starpliktuvē"
+
 #: src/app/main/data/dashboard.cljs:317, src/app/main/data/dashboard.cljs:553, src/app/main/data/workspace/pages.cljs:206
 msgid "dashboard.copy-suffix"
 msgstr "(kopija)"
@@ -675,6 +679,10 @@ msgstr "Tu tagad esi šīs komandas īpašnieks."
 msgid "dashboard.permissions-change.viewer"
 msgstr "Tev tagad šajā komandā ir skatīšanās tiesības."
 
+#: src/app/main/ui/dashboard/project_menu.cljs:108
+msgid "dashboard.pin"
+msgstr "Piespraust"
+
 #: src/app/main/ui/dashboard/files.cljs:132, src/app/main/ui/dashboard/project_menu.cljs:98, src/app/main/ui/dashboard/projects.cljs:260
 msgid "dashboard.pin-unpin"
 msgstr "Piespraust/Atspraust"
@@ -864,6 +872,10 @@ msgstr "Meklēšanas rezultāti"
 #: src/app/main/ui/dashboard/search.cljs:74
 msgid "dashboard.type-something"
 msgstr "Jāievada, lai meklētu"
+
+#: src/app/main/ui/dashboard/project_menu.cljs:107
+msgid "dashboard.unpin"
+msgstr "Atspraust"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:322, src/app/main/ui/workspace/main_menu.cljs:693
 msgid "dashboard.unpublish-shared"

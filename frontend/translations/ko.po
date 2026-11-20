@@ -265,6 +265,10 @@ msgstr "이메일 변경"
 msgid "dashboard.clear-trash-button"
 msgstr "휴지통 비우기"
 
+#: src/app/main/ui/dashboard/file_menu.cljs:323, src/app/main/ui/dashboard/project_menu.cljs:119
+msgid "dashboard.copy-link"
+msgstr "링크 복사"
+
 #: src/app/main/data/dashboard.cljs:317, src/app/main/data/dashboard.cljs:553, src/app/main/data/workspace/pages.cljs:206
 msgid "dashboard.copy-suffix"
 msgstr "(복사)"
@@ -709,6 +713,10 @@ msgstr "이제 이 팀의 소유자(Owner)입니다."
 msgid "dashboard.permissions-change.viewer"
 msgstr "이제 이 팀의 뷰어(Viewer)입니다."
 
+#: src/app/main/ui/dashboard/project_menu.cljs:108
+msgid "dashboard.pin"
+msgstr "고정"
+
 #: src/app/main/ui/dashboard/files.cljs:132, src/app/main/ui/dashboard/project_menu.cljs:98, src/app/main/ui/dashboard/projects.cljs:260
 msgid "dashboard.pin-unpin"
 msgstr "고정/고정 해제"
@@ -958,6 +966,10 @@ msgstr "필요한 경우, 각 파일 메뉴에서 복원하거나 영구 삭제�
 #: src/app/main/ui/dashboard/search.cljs:74
 msgid "dashboard.type-something"
 msgstr "검색어를 입력하세요"
+
+#: src/app/main/ui/dashboard/project_menu.cljs:107
+msgid "dashboard.unpin"
+msgstr "고정 해제"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:322, src/app/main/ui/workspace/main_menu.cljs:693
 msgid "dashboard.unpublish-shared"

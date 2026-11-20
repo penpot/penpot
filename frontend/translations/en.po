@@ -364,6 +364,10 @@ msgstr "Clear search"
 msgid "dashboard.clear-trash-button"
 msgstr "Clear trash"
 
+#: src/app/main/ui/dashboard/file_menu.cljs:323, src/app/main/ui/dashboard/project_menu.cljs:119
+msgid "dashboard.copy-link"
+msgstr "Copy link"
+
 #: src/app/main/data/dashboard.cljs:318, src/app/main/data/dashboard.cljs:568, src/app/main/data/workspace/pages.cljs:206
 msgid "dashboard.copy-suffix"
 msgstr "(copy)"
@@ -1011,9 +1015,9 @@ msgstr "View notifications"
 msgid "dashboard.num-of-members"
 msgstr "%s members"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:293
+#: src/app/main/ui/dashboard/file_menu.cljs:302
 msgid "dashboard.open-in-new-tab"
-msgstr "Open file in a new tab"
+msgstr "Open in new tab"
 
 #: src/app/main/ui/dashboard/deleted.cljs:167, src/app/main/ui/dashboard/files.cljs:153, src/app/main/ui/dashboard/grid.cljs:441, src/app/main/ui/dashboard/grid.cljs:452, src/app/main/ui/dashboard/grid.cljs:494, src/app/main/ui/dashboard/projects.cljs:226, src/app/main/ui/dashboard/projects.cljs:283, src/app/main/ui/dashboard/sidebar.cljs:143
 msgid "dashboard.options"
@@ -1059,7 +1063,11 @@ msgstr "You are now a viewer on this team."
 msgid "dashboard.personal-projects"
 msgstr "Personal Projects"
 
-#: src/app/main/ui/dashboard/files.cljs:132, src/app/main/ui/dashboard/project_menu.cljs:98, src/app/main/ui/dashboard/projects.cljs:260
+#: src/app/main/ui/dashboard/project_menu.cljs:108
+msgid "dashboard.pin"
+msgstr "Pin"
+
+#: src/app/main/ui/dashboard/files.cljs:132, src/app/main/ui/dashboard/projects.cljs:269
 msgid "dashboard.pin-unpin"
 msgstr "Pin/Unpin"
 
@@ -1281,6 +1289,10 @@ msgstr "Show all files"
 msgid "dashboard.show-version-history"
 msgstr "Version history"
 
+#: src/app/main/data/dashboard.cljs:377
+msgid "dashboard.success-copy-link"
+msgstr "Link copied to clipboard"
+
 #: src/app/main/ui/dashboard/file_menu.cljs:128
 msgid "dashboard.success-delete-file"
 msgid_plural "dashboard.success-delete-file"
@@ -1400,6 +1412,10 @@ msgstr ""
 #: src/app/main/ui/dashboard/search.cljs:74
 msgid "dashboard.type-something"
 msgstr "Type to search results"
+
+#: src/app/main/ui/dashboard/project_menu.cljs:107
+msgid "dashboard.unpin"
+msgstr "Unpin"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:321, src/app/main/ui/workspace/main_menu.cljs:693
 msgid "dashboard.unpublish-shared"

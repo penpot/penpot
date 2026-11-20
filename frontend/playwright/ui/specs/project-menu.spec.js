@@ -33,7 +33,8 @@ test("User can open a project's options menu from the \"...\" button", async ({
   const menu = page.getByRole("menu");
   await expect(menu.getByTestId("project-rename")).toBeVisible();
   await expect(menu.getByTestId("project-duplicate")).toBeVisible();
-  await expect(menu.getByTestId("project-pin")).toBeVisible();
+  await expect(menu.getByTestId("project-pin")).toHaveText("Pin");
+  await expect(menu.getByTestId("project-copy-link")).toBeVisible();
   await expect(menu.getByTestId("project-delete")).toBeVisible();
   // project-move-to is covered separately below: it only renders once there
   // is at least one other team to move to, which the default single-team
@@ -72,6 +73,27 @@ test("The default Drafts project has a limited options menu", async ({
   await expect(menu.getByTestId("project-pin")).toHaveCount(0);
   await expect(menu.getByTestId("project-move-to")).toHaveCount(0);
   await expect(menu.getByTestId("project-delete")).toHaveCount(0);
+  await expect(menu.getByTestId("project-copy-link")).toBeVisible();
+});
+
+test("User can copy a project's link from the options menu", async ({
+  page,
+}) => {
+  const dashboardPage = new DashboardPage(page);
+  await setupTwoProjects(dashboardPage);
+  await dashboardPage.goToDashboard();
+
+  const row = projectRow(page, "New Project 1");
+  await row.getByTestId("project-options").click();
+  await page.getByTestId("project-copy-link").click();
+
+  await expect(
+    page.getByRole("alert").filter({ hasText: "Link copied to clipboard" }),
+  ).toBeVisible();
+
+  const link = await page.evaluate(() => navigator.clipboard.readText());
+  expect(link).toContain("screen=dashboard-files");
+  expect(link).toContain("project-id=e5a24d1b-ef1e-812f-8004-52bab84be6f7");
 });
 
 test("User can rename a project from the options menu", async ({ page }) => {
