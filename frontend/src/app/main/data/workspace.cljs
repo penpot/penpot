@@ -379,7 +379,9 @@
     (watch [_ _ stream]
       (log/debug :hint "fetch bundle" :file-id (dm/str file-id))
 
-      (let [stopper-s (rx/filter (ptk/type? ::finalize-workspace) stream)]
+      (let [stopper-s (rx/filter #(or (ptk/type? ::finalize-workspace %)
+                                      (ptk/type? ::initialize-workspace %))
+                                 stream)]
         (->> (rx/zip (rp/cmd! :get-file {:id file-id :features features})
                      (get-file-object-thumbnails file-id))
              (rx/take 1)
@@ -418,6 +420,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
+          (dps/clear-workspace-coverage)
           (assoc :recent-colors (:recent-colors storage/user))
           (assoc :recent-fonts (:recent-fonts storage/user))
           (assoc :current-file-id file-id)
@@ -625,6 +628,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
+          (dps/clear-workspace-coverage)
           ;; FIXME: revisit
           (dissoc
            :current-file-id

@@ -19,8 +19,10 @@
    [app.main.data.persistence :as dps]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.comments :as dwcm]
+   [app.main.data.workspace.notifications :as dwn]
    [app.main.data.workspace.undo :as dwu]
    [app.main.errors :as errors]
+   [app.main.worker :as mw]
    [app.util.i18n :as i18n]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
@@ -54,6 +56,121 @@
   "The changes of each group of the `n`th save request."
   [requests n]
   (mapv :changes (get-in (nth @requests n) [1 :changes-with-metadata])))
+
+(defn- two-page-file
+  [local-page local-shape peer-page peer-shape]
+  (let [local (thp/file-data local-page local-shape "Local")
+        peer  (thp/file-data peer-page peer-shape "Peer")]
+    (-> local
+        (update :pages conj peer-page)
+        (update :pages-index merge (:pages-index peer)))))
+
+(t/deftest ^:async independent-renames-skip-rebase-but-survive-save-rejection
+  (await
+   (thp/with-persistence
+     (^:async fn [{:keys [file-id response requests store]}]
+       (let [local-page  (uuid/next)
+             local-shape (uuid/next)
+             peer-page   (uuid/next)
+             peer-shape  (uuid/next)
+             data        (two-page-file local-page local-shape peer-page peer-shape)
+             remote      [(thp/rename peer-page peer-shape "Peer edit")]
+             indexes     (atom [])]
+         (ptk/emit! store (thp/open-file file-id local-page data))
+         (ptk/emit! store (dw/end-rename-shape local-shape "Local edit"))
+         (await (async/wait-for #(seq (get-in @store [:persistence :buffer])) "the rename is buffered"))
+         (let [[pending] (get-in @store [:persistence :buffer])
+               local-path [:files file-id :data :pages-index local-page :objects]
+               before     (get-in @store local-path)
+               reference  (ptk/store {:state @store :on-error #(t/is false (str %))})]
+           (try
+             (ptk/emit! reference (dch/rebase-commits file-id {:undo [pending] :remote remote :redo [pending]}))
+             (await (async/wait-for #(= "Peer edit" (thp/shape-name reference file-id peer-page peer-shape))
+                                    "the reference rebase is applied"))
+             (await (async/settle))
+             (await
+              (mock/with-mocks*
+                {mw/ask! (mock/stub (fn [message]
+                                      (swap! indexes conj message)
+                                      (rx/empty)))}
+                (ptk/emit! store (dwn/handle-file-change {:type :file-change
+                                                          :profile-id (uuid/next)
+                                                          :session-id (uuid/next)
+                                                          :file-id file-id
+                                                          :revn 1
+                                                          :vern 0
+                                                          :changes remote}))
+                (await (async/wait-for #(= "Peer edit" (thp/shape-name store file-id peer-page peer-shape))
+                                       "the peer rename is applied"))
+                (await (async/settle))
+                (t/is (= [{:cmd :index/update :page-id peer-page :changes remote}] @indexes))
+                (t/is (identical? before (get-in @store local-path))
+                      "the model does not undo or replay the local rename")
+                (t/is (= (get-in @reference [:files file-id :data])
+                         (get-in @store [:files file-id :data])))
+                (t/is (= [remote] (mapv :changes (get-in @store [:persistence :remote-changes file-id]))))))
+             (ptk/emit! store ::dps/force-persist)
+             (await (async/wait-for #(= 1 (count @requests)) "the rename is sent"))
+             (rx/push! response (thp/rejection (:id pending)))
+             (await (async/wait-for #(= :saved (get-in @store [:persistence :status])) "the rejection settles"))
+             (t/is (= "Local" (thp/shape-name store file-id local-page local-shape)))
+             (t/is (= "Peer edit" (thp/shape-name store file-id peer-page peer-shape)))
+             (finally
+               (rx/dispose! reference)))))))))
+
+(t/deftest ^:async remote-rebase-falls-back-on-uncertain-independence
+  (doseq [scenario [:same-target :component-ancestor :structural :mixed :unknown-operation :other-file]]
+    (await
+     (thp/with-persistence
+       (^:async fn [{:keys [file-id store]}]
+         (let [local-page   (uuid/next)
+               local-shape  (uuid/next)
+               peer-page    (uuid/next)
+               peer-shape   (uuid/next)
+               component-id (uuid/next)
+               data         (two-page-file local-page local-shape peer-page peer-shape)
+               data         (if (= :component-ancestor scenario)
+                              (-> data
+                                  (thp/add-shape peer-page
+                                                 (cts/setup-shape {:id component-id :type :frame
+                                                                   :parent-id uuid/zero :frame-id uuid/zero
+                                                                   :component-id component-id :main-instance true
+                                                                   :shapes [peer-shape]}))
+                                  (assoc-in [:pages-index peer-page :objects uuid/zero :shapes] [component-id])
+                                  (assoc-in [:pages-index peer-page :objects peer-shape :parent-id] component-id)
+                                  (assoc-in [:pages-index peer-page :objects peer-shape :frame-id] component-id))
+                              data)
+               pending      (thp/rename-commit (if (= :other-file scenario) (uuid/next) file-id)
+                                               local-page local-shape "Local" "Local edit")
+               rename       (thp/rename peer-page peer-shape "Peer edit")
+               remote       (case scenario
+                              :same-target [(thp/rename local-page local-shape "Peer edit")]
+                              :other-file [(thp/rename local-page local-shape "Peer edit")]
+                              :structural [{:type :del-obj :id peer-shape :page-id peer-page}]
+                              :mixed [rename (thp/set-attr peer-page peer-shape :opacity 0.3)]
+                              :unknown-operation [(assoc rename :operations [{:type :assign :value {:name "Peer edit"}}])]
+                              [rename])
+               indexes      (atom [])]
+           (ptk/emit! store (thp/open-file file-id local-page
+                                           (assoc-in data [:pages-index local-page :objects local-shape :name] "Local edit")))
+           (ptk/emit! store pending)
+           (await (async/wait-for #(seq (get-in @store [:persistence :buffer])) "the rename is buffered"))
+           (await
+            (mock/with-mocks*
+              {mw/ask! (mock/stub (fn [message]
+                                    (swap! indexes conj (:changes message))
+                                    (rx/empty)))}
+              (ptk/emit! store (thp/remote-commit file-id 1 remote))
+              (await (async/wait-for #(seq @indexes) "the worker receives the remote changes"))
+              (await (async/settle))
+              (t/is (= (if (= :other-file scenario)
+                         [remote]
+                         [(:undo-changes @pending) remote (:redo-changes @pending)])
+                       @indexes)
+                    (name scenario))
+              (t/is (= (if (= :other-file scenario) "Peer edit" "Local edit")
+                       (thp/shape-name store file-id local-page local-shape))
+                    (name scenario))))))))))
 
 ;; Scenario: the first save carries two commits; while it is in flight a
 ;; third one is queued, an edit of another file is queued too, and a fourth

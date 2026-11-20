@@ -79,6 +79,39 @@
   (let [events (await (watch-file-change (file-change-msg {})))]
     (t/is (= [::dch/commit] (mapv ptk/type events)))))
 
+(t/deftest ^:async a-recovered-revision-still-notifies-about-repair-once
+  (let [msg    (file-change-msg {:revn 6 :repaired true})
+        id     (:file-id msg)
+        events (atom [])
+        store  (ptk/store {:state (-> {:current-file-id id}
+                                      (dps/remember-loaded-revn {:id id :revn 6 :vern 0}))
+                           :on-event #(swap! events conj (ptk/type %))})]
+    (try
+      (ptk/emit! store (dwntf/handle-file-change msg) (dwntf/handle-file-change msg))
+      (await (async/settle))
+      (t/is (not-any? #{::dch/commit} @events))
+      (t/is (= 1 (count (filter #{::dps/notify-repaired} @events))))
+      (t/is (= dps/file-repaired-tag (get-in @store [:notification :tag])))
+      (finally (rx/dispose! store)))))
+
+(t/deftest ^:async another-version-cannot-apply-to-the-open-file
+  (let [msg    (file-change-msg {:revn 6 :vern 0 :repaired true})
+        id     (:file-id msg)
+        state  (dps/remember-loaded-revn {:current-file-id id} {:id id :revn 5 :vern 1})
+        events (atom [])]
+    (await (async/observe (ptk/watch (dwntf/handle-file-change msg) state (rx/empty))
+                          :on-next #(swap! events conj %)))
+    (t/is (empty? @events))))
+
+(t/deftest ^:async a-background-file-does-not-request-catch-up
+  (let [msg    (file-change-msg {:revn 8})
+        id     (uuid/next)
+        state  (dps/remember-loaded-revn {:current-file-id id} {:id id :revn 5 :vern 0})
+        events (atom [])]
+    (await (async/observe (ptk/watch (dwntf/handle-file-change msg) state (rx/empty))
+                          :on-next #(swap! events conj (ptk/type %))))
+    (t/is (= [::dch/commit] @events))))
+
 (defn- restored-events
   "Events the watch of `handle-file-restored` emits for `msg` on `state`."
   [state msg]

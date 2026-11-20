@@ -68,12 +68,24 @@
         _    (save ctx a 1)
         out  (save ctx b 0)]
     (t/is (= 2 (:revn out)) "the revision before this save")
+    (t/is (= 3 (:saved-revn out)))
+    (t/is (= 2 (:latest-remote-revn out)))
     (t/is (= [{:revn 1 :session-id a}
               {:revn 2 :session-id a}
               {:revn 3 :session-id b}]
              (:lagged out))
           "revision and session only, in order, the save's own last")
     (t/is (not (contains? out :reload)))))
+
+(t/deftest the-save-summary-skips-own-and-already-known-revisions
+  (let [ctx (create-file)
+        a   (uuid/next)
+        b   (uuid/next)
+        _   (save ctx b 0)
+        _   (save ctx a 1)
+        out (save ctx a 0)]
+    (t/is (= 1 (:latest-remote-revn out)))
+    (t/is (not (contains? (save ctx a 1) :latest-remote-revn)))))
 
 (t/deftest the-save-answer-says-reload-past-the-row-cap
   (let [ctx (create-file)
@@ -85,6 +97,8 @@
             "one row is within the cap")
       (let [out (save ctx (uuid/next) 0)]
         (t/is (true? (:reload out)))
+        (t/is (= 4 (:saved-revn out)))
+        (t/is (not (contains? out :latest-remote-revn)))
         (t/is (= [] (:lagged out)))))))
 
 (t/deftest a-client-23-hours-behind-catches-up

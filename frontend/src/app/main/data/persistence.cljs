@@ -38,6 +38,8 @@
 (declare ^:private slow-retry-cycle)
 (declare ^:private flush-buffer)
 (declare ^:private commit-persisted)
+(declare ^:private cover-revision)
+(declare ^:private coverage-changed)
 
 (log/set-level! :warn)
 
@@ -313,25 +315,29 @@
       (swap! revn-data update file-id (fnil max 0) revn))))
 
 (defn- record-remote-changes
-  "Numbers a remote commit, keeps the highest revision received per file
-  (`:remote-revn`) and, while `file-id` has pending commits, keeps its
-  changes for a rollback to apply again."
-  [file-id revn changes]
+  "Records an applied remote commit for rollback, then advances coverage
+  for the matching opening if the revision is consecutive."
+  [{:keys [file-id file-revn file-vern redo-changes opening]}]
   (ptk/reify ::record-remote-changes
-    IDeref
-    (-deref [_] {:file-id file-id :revn revn})
-
     ptk/UpdateEvent
     (update [_ state]
-      (update state :persistence
-              (fn [pstate]
-                (let [number (inc (:remote-seq pstate 0))]
-                  (cond-> (-> pstate
-                              (assoc :remote-seq number)
-                              (update-in [:remote-revn file-id] (fnil max revn) revn))
-                    (seq (pcm/pending-commits pstate file-id))
-                    (update-in [:remote-changes file-id] (fnil conj [])
-                               {:seq number :changes changes}))))))))
+      (let [coverage (dm/get-in state [:persistence :coverage])]
+        (cond-> (update state :persistence
+                        (fn [pstate]
+                          (let [number (inc (:remote-seq pstate 0))]
+                            (cond-> (assoc pstate :remote-seq number)
+                              (seq (pcm/pending-commits pstate file-id))
+                              (update-in [:remote-changes file-id] (fnil conj [])
+                                         {:seq number :changes redo-changes})))))
+          (and (= file-id (:file-id coverage) (:current-file-id state))
+               (= file-vern (:vern coverage))
+               (or (nil? opening) (= opening (:opening coverage)))
+               (= file-revn (inc (:revn coverage))))
+          (update-in [:persistence :coverage] cover-revision file-revn))))
+
+    ptk/WatchEvent
+    (watch [_ state _]
+      (coverage-changed state))))
 
 (defn- stale-commit?
   "True when `commit` was made on another version of its file than the
@@ -343,209 +349,222 @@
     (and (some? vern)
          (not= vern file-vern))))
 
-(defn- last-unseen-revn
-  "The highest revision above `seen` (the highest one received) of the rows
-  other sessions stored in `lagged`, the rows a save answer lists after
-  the revision it was sent with. Nil when there is none, or when the save
-  stored nothing (the last row is not this session's)."
-  [lagged session-id seen]
-  (let [own? #(= session-id (:session-id %))]
-    (when (own? (last lagged))
-      (transduce (comp (remove own?)
-                       (map :revn)
-                       (filter #(> % seen)))
-                 (completing (fnil max 0))
-                 nil
-                 lagged))))
+(defn clear-workspace-coverage
+  [state]
+  (update state :persistence dissoc :coverage))
 
 (defn remember-loaded-revn
-  "Notes the revision `file` was loaded at: the loaded data holds every
-  change up to it."
-  [state {:keys [id revn]}]
-  (cond-> state
-    (int? revn)
-    (assoc-in [:persistence :loaded-revn id] revn)))
+  "Starts coverage for this loaded instance of the open file."
+  [state {:keys [id revn vern]}]
+  (if (and (= id (:current-file-id state)) (int? revn))
+    (assoc-in state [:persistence :coverage]
+              {:opening (uuid/next) :file-id id :vern vern :revn revn})
+    state))
 
-(defn- applied-revn
-  "The revision up to which this tab holds the changes of other sessions
-  to `file-id`: the highest one received, or the one the file was loaded
-  at."
+(defn get-workspace-coverage
   [state file-id]
-  (max (dm/get-in state [:persistence :remote-revn file-id] -1)
-       (dm/get-in state [:persistence :loaded-revn file-id] 0)))
+  (let [coverage (dm/get-in state [:persistence :coverage])]
+    (when (= file-id (:current-file-id state) (:file-id coverage))
+      coverage)))
+
+(defn- cover-revision
+  "Covers a consecutive revision, consuming any consecutive own rows."
+  [coverage revn]
+  (loop [revn revn, own (:own coverage)]
+    (if (contains? own (inc revn))
+      (recur (inc revn) (disj own (inc revn)))
+      (assoc coverage :revn revn :own own))))
 
 (defn revision-gap?
-  "True when `revn`, the revision of a change received for `file-id`, is
-  more than one past every revision this tab knows, its own saves
-  included: the changes in between were never received. Never true for a
-  file whose loaded revision is unknown."
+  "True if a notification skips a revision not yet covered."
   [state file-id revn]
-  (and (some? (dm/get-in state [:persistence :loaded-revn file-id]))
-       (> revn (inc (max (applied-revn state file-id)
-                         (dm/get-in state [:persistence :stored-revn file-id] -1))))))
+  (when-let [covered (:revn (get-workspace-coverage state file-id))]
+    (> revn (inc covered))))
 
-(defn caught-up?
-  "True when the change stored at `revn` for `file-id` was already applied
-  by a catch-up read, so its notification must not apply it again."
-  [state file-id revn]
-  (contains? (dm/get-in state [:persistence :caught-up file-id]) revn))
+(defn- coverage-changed
+  [state]
+  (let [coverage (dm/get-in state [:persistence :coverage])
+        id       (peek (dm/get-in state [:persistence :queue]))
+        commit   (dm/get-in state [:persistence :index id])
+        awaiting (::awaiting commit)]
+    (if (and awaiting (not (::acknowledged commit))
+             (or (not= (:opening awaiting) (:opening coverage))
+                 (:failed coverage)
+                 (>= (:revn coverage) (:minimum awaiting))))
+      (rx/of (commit-persisted commit))
+      (rx/empty))))
 
-(defn- apply-caught-up
-  "Applies the `rows` of a catch-up read for `file-id` that this tab still
-  lacks, as remote changes in revision order. Its own rows are already in
-  the local data."
-  [file-id rows]
-  (let [missing (volatile! nil)]
-    (ptk/reify ::apply-caught-up
+(defn- cover-own-row
+  [file-id opening revn]
+  (ptk/reify ::cover-own-row
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [coverage (get-workspace-coverage state file-id)]
+        (cond-> state
+          (and (= opening (:opening coverage))
+               (= revn (inc (:revn coverage))))
+          (update-in [:persistence :coverage] cover-revision revn))))
+
+    ptk/WatchEvent
+    (watch [_ state _]
+      (coverage-changed state))))
+
+(defn- apply-catch-up-row
+  [file-id opening {:keys [revn changes session-id]}]
+  (ptk/reify ::apply-catch-up-row
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [coverage (get-workspace-coverage state file-id)]
+        (if (and (= opening (:opening coverage))
+                 (= revn (inc (:revn coverage))))
+          (rx/of (if (and session-id (= session-id (:session-id state)))
+                   (cover-own-row file-id opening revn)
+                   (dch/commit {:file-id file-id
+                                :file-revn revn
+                                :file-vern (:vern coverage)
+                                :opening opening
+                                :save-undo? false
+                                :source :remote
+                                :redo-changes (vec changes)
+                                :undo-changes []})))
+          (rx/empty))))))
+
+(declare catch-up)
+
+(defn- reload-opening
+  [file-id opening]
+  (ptk/reify ::reload-opening
+    ptk/WatchEvent
+    (watch [_ state _]
+      (if (= opening (:opening (get-workspace-coverage state file-id)))
+        (rx/of (ptk/event ::dw/reload-current-file))
+        (rx/empty)))))
+
+(defn- finish-catch-up
+  [file-id opening {:keys [revn reload]}]
+  (let [follow-up (volatile! nil)]
+    (ptk/reify ::finish-catch-up
       ptk/UpdateEvent
       (update [_ state]
-        (let [applied (applied-revn state file-id)
-              rows    (into []
-                            (filter #(and (> (:revn %) applied)
-                                          (not= (:session-id state) (:session-id %))))
-                            rows)]
-          (vreset! missing rows)
-          (update-in state [:persistence :caught-up file-id]
-                     (fnil into #{}) (map :revn) rows)))
+        (let [{:keys [request] covered :revn :as coverage} (get-workspace-coverage state file-id)]
+          (if (and (= opening (:opening coverage)) request)
+            (let [{:keys [started-minimum minimum recheck]} request
+                  failed (or reload (not (int? revn)) (< covered (max revn started-minimum)))]
+              (vreset! follow-up (cond
+                                   failed {:action :reload}
+                                   (> minimum covered) {:action :read :minimum minimum}
+                                   recheck {:action :read}))
+              (-> state
+                  (update-in [:persistence :coverage] dissoc :request)
+                  (assoc-in [:persistence :coverage :failed] failed)))
+            state)))
 
       ptk/WatchEvent
       (watch [_ state _]
-        (let [vern (:vern (dsh/lookup-file state file-id))]
-          (->> (rx/from @missing)
-               (rx/map (fn [{:keys [revn changes]}]
-                         (dch/commit {:file-id file-id
-                                      :file-revn revn
-                                      :file-vern vern
-                                      :save-undo? false
-                                      :source :remote
-                                      :redo-changes (vec changes)
-                                      :undo-changes []})))))))))
+        (case (:action @follow-up)
+          :reload (rx/concat (coverage-changed state)
+                             (rx/of (reload-opening file-id opening)))
+          :read   (rx/of (catch-up file-id (:minimum @follow-up) opening))
+          (rx/empty))))))
 
-(defn- catch-up-s
-  "Reads the changes of `file-id` above the revision this tab holds and
-  applies them. When the backend cannot serve them, or the read fails,
-  reloads the file instead. Emits `then`, if given, after the changes and
-  before the reload."
-  [state file-id then]
-  (->> (rp/cmd! :get-file-changes {:file-id file-id
-                                   :since (applied-revn state file-id)})
+(defn- read-catch-up
+  [file-id {:keys [opening revn]}]
+  (->> (rx/defer #(rp/cmd! :get-file-changes {:file-id file-id :since revn}))
+       (rx/take 1)
+       (rx/if-empty {:reload true})
        (rx/catch (fn [cause]
                    (log/wrn :hint "catch-up read failed"
                             :file-id (dm/str file-id)
                             :cause cause)
                    (rx/of {:reload true})))
-       (rx/take 1)
-       (rx/mapcat (fn [{:keys [reload changes]}]
+       (rx/mapcat (fn [{:keys [reload changes] :as answer}]
                     (rx/concat
                      (if reload
                        (rx/empty)
-                       (rx/of (apply-caught-up file-id changes)))
-                     (if then (rx/of then) (rx/empty))
-                     (if (and reload (= file-id (:current-file-id state)))
-                       (rx/of (ptk/event ::dw/reload-current-file))
-                       (rx/empty)))))))
-
-(declare catch-up)
-
-(defn- catch-up-done
-  "Ends the catch-up read of `file-id`, and starts another when one was
-  asked for while it ran."
-  [file-id]
-  (let [again? (volatile! false)]
-    (ptk/reify ::catch-up-done
-      ptk/UpdateEvent
-      (update [_ state]
-        (vreset! again? (= :again (dm/get-in state [:persistence :catching-up file-id])))
-        (d/dissoc-in state [:persistence :catching-up file-id]))
-
-      ptk/WatchEvent
-      (watch [_ _ _]
-        (if @again?
-          (rx/of (catch-up file-id))
-          (rx/empty))))))
+                       (->> (rx/from (or changes []))
+                            (rx/map #(apply-catch-up-row file-id opening %))))
+                     (rx/of (finish-catch-up file-id opening answer)))))))
 
 (defn catch-up
-  "Brings `file-id` up to the server's revision after this tab missed
-  changes of other sessions, as after a reconnect. One read at a time per
-  file: a request made while one runs makes it run once more."
-  [file-id]
-  (let [start? (volatile! false)]
-    (ptk/reify ::catch-up
-      ptk/UpdateEvent
-      (update [_ state]
-        (let [running (dm/get-in state [:persistence :catching-up file-id])]
-          (vreset! start? (nil? running))
-          (assoc-in state [:persistence :catching-up file-id]
-                    (if running :again :running))))
+  "Requests one read for the open file. A reconnect needs a fresh read;
+  a revision demand can be satisfied by a read already in flight."
+  ([file-id] (catch-up file-id nil nil))
+  ([file-id minimum] (catch-up file-id minimum nil))
+  ([file-id minimum opening]
+   (let [start (volatile! nil)]
+     (ptk/reify ::catch-up
+       ptk/UpdateEvent
+       (update [_ state]
+         (let [{:keys [revn request failed] :as coverage} (get-workspace-coverage state file-id)]
+           (cond
+             (or (nil? coverage) failed
+                 (and opening (not= opening (:opening coverage)))
+                 (and (some? minimum) (<= minimum revn)))
+             state
 
-      ptk/WatchEvent
-      (watch [_ state _]
-        (if @start?
-          (rx/concat
-           (catch-up-s state file-id nil)
-           (rx/of (catch-up-done file-id)))
-          (rx/empty))))))
+             request
+             (if (nil? minimum)
+               (assoc-in state [:persistence :coverage :request :recheck] true)
+               (update-in state [:persistence :coverage :request :minimum] max minimum))
+
+             :else
+             (let [minimum (or minimum revn)]
+               (vreset! start coverage)
+               (assoc-in state [:persistence :coverage :request]
+                         {:started-minimum minimum :minimum minimum})))))
+
+       ptk/WatchEvent
+       (watch [_ _ _]
+         (if @start
+           (read-catch-up file-id @start)
+           (rx/empty)))))))
 
 (defn- settle-saved-commit
-  "Acknowledges the saved `commit` once this tab received every change the
-  server stored before it (from `lagged`, the save answer's rows), such as
-  the repair of a damaged file. Until then its commits stay pending, so a
-  late change is applied under them, in the server's order. A change that
-  does not arrive in time is read through the catch-up read, still under
-  the commit. A `reload` answer, or a catch-up that cannot serve the
-  changes, reloads the file."
-  [commit {:keys [lagged reload]}]
-  (let [needed (volatile! nil)]
+  "Keeps a confirmed save pending until it is covered, so missing changes
+  can be applied under it. The timeout requests coverage, not a resend."
+  [commit {:keys [lagged reload]} sent-opening]
+  (let [waiting (volatile! nil)]
     (ptk/reify ::settle-saved-commit
       ptk/UpdateEvent
       (update [_ state]
         (let [file-id    (:file-id commit)
               session-id (:session-id state)
-              seen       (dm/get-in state [:persistence :remote-revn file-id] -1)
-              own        (when (= session-id (:session-id (last lagged)))
-                           (:revn (last lagged)))
-              revn       (when (and (not reload)
-                                    (= file-id (:current-file-id state))
-                                    (not (stale-commit? state commit)))
-                           (last-unseen-revn lagged session-id seen))]
-          (vreset! needed revn)
-          (cond-> state
-            (some? own)
-            (update-in [:persistence :stored-revn file-id] (fnil max own) own)
-
-            (some? revn)
-            (d/update-in-when [:persistence :index (:id commit)] assoc ::awaiting revn))))
+              coverage   (get-workspace-coverage state file-id)
+              row        (last lagged)
+              own        (when (and session-id (= session-id (:session-id row)))
+                           (:revn row))]
+          (if (and own coverage (not (:failed coverage)) (not reload)
+                   (not (stale-commit? state commit)) (> own (:revn coverage)))
+            (let [coverage (-> coverage
+                               (update :own (fnil conj #{}) own)
+                               (cover-revision (:revn coverage)))
+                  awaiting {:opening (:opening coverage) :minimum own}
+                  state    (assoc-in state [:persistence :coverage] coverage)]
+              (if (and (> own (:revn coverage))
+                       (dm/get-in state [:persistence :index (:id commit)]))
+                (do
+                  (vreset! waiting awaiting)
+                  (d/update-in-when state [:persistence :index (:id commit)] assoc ::awaiting awaiting))
+                state))
+            state)))
 
       ptk/WatchEvent
       (watch [_ state stream]
         (let [file-id (:file-id commit)]
           (cond
-            (and reload (= file-id (:current-file-id state)))
-            (rx/of (commit-persisted commit)
-                   (ptk/event ::dw/reload-current-file))
+            (and reload sent-opening (not (stale-commit? state commit)))
+            (rx/concat (rx/of (commit-persisted commit))
+                       (rx/of (reload-opening file-id sent-opening)))
 
-            (some? @needed)
-            (let [revn      @needed
-                  arrived-s (->> stream
-                                 (rx/filter (ptk/type? ::record-remote-changes))
-                                 (rx/map deref)
-                                 (rx/filter #(and (= file-id (:file-id %))
-                                                  (>= (:revn %) revn)))
-                                 (rx/map (constantly ::arrived)))
-                  left-s    (->> stream
-                                 (rx/filter (ptk/type? ::dw/finalize-workspace))
-                                 (rx/map (constantly ::left)))
-                  timeout-s (->> (rx/timer unseen-changes-timeout-ms)
-                                 (rx/map (constantly ::timeout)))]
-              (->> (rx/merge arrived-s left-s timeout-s)
+            @waiting
+            (let [{:keys [opening minimum]} @waiting
+                  settled-s (->> stream
+                                 (rx/filter (ptk/type? ::commit-persisted))
+                                 (rx/filter #(= (:id commit) (:id @%))))]
+              (->> (rx/timer unseen-changes-timeout-ms)
                    (rx/take 1)
-                   (rx/mapcat (fn [outcome]
-                                (if (= ::timeout outcome)
-                                  (rx/of (ptk/reify ::catch-up-under-commit
-                                           ptk/WatchEvent
-                                           (watch [_ state _]
-                                             (catch-up-s state file-id (commit-persisted commit)))))
-                                  (rx/of (commit-persisted commit)))))))
+                   (rx/map (fn [_] (catch-up file-id minimum opening)))
+                   (rx/take-until settled-s)))
 
             :else
             (rx/of (commit-persisted commit))))))))
@@ -1076,7 +1095,7 @@
 
 (defn- send-queued-commit
   "Sends one queued commit and maps its outcome to persistence events."
-  [request-id session-id {:keys [id file-id file-revn file-vern features] :as commit}]
+  [request-id session-id opening {:keys [id file-id file-revn file-vern features] :as commit}]
   (let [sent-at (inst-ms (ct/now))
         params  (-> {:id file-id
                      :revn (max file-revn (get @revn-data file-id 0))
@@ -1108,7 +1127,7 @@
                          (if (some? rejected)
                            (rx/of (rollback-rejected commit rejected))
                            (rx/empty))
-                         (rx/of (settle-saved-commit commit answer)))
+                         (rx/of (settle-saved-commit commit answer opening)))
                         (rx/throw (ex-info "The save response has no valid revision"
                                            {:type :persistence
                                             :code :invalid-save-response
@@ -1160,7 +1179,9 @@
               ;; Made on a version a restore replaced: never sent
               :stale             (rx/of (commit-persisted commit))
               :permission-denied (fail :save-permission-denied "Edit permission was lost before changes could be saved")
-              :ready             (send-queued-commit request-id (:session-id state) commit))))))))
+              :ready             (send-queued-commit request-id (:session-id state)
+                                                     (:opening (get-workspace-coverage state (:file-id commit)))
+                                                     commit))))))))
 
 
 (defn- run-persistence-task
@@ -1540,6 +1561,17 @@
               (rx/take-until stoper-s))
 
          (->> stream
+              (rx/filter #(or (ptk/type? ::dw/initialize-workspace %)
+                              (ptk/type? ::dw/finalize-workspace %)
+                              (ptk/type? ::dw/bundle-fetched %)))
+              (rx/map (fn [_]
+                        (ptk/reify ::settle-workspace-coverage
+                          ptk/WatchEvent
+                          (watch [_ state _]
+                            (coverage-changed state)))))
+              (rx/take-until stoper-s))
+
+         (->> stream
               (rx/filter #(or (ptk/type? ::dc/change-team-role %)
                               (ptk/type? ::dw/workspace-initialized %)))
               (rx/map #(recover-persistence (ptk/type? ::dw/workspace-initialized %)))
@@ -1607,13 +1639,12 @@
               (rx/finalize (fn []
                              (log/debug :hint "finalize persistence: changes watcher"))))
 
-         ;; Here we track all incoming remote commits for maintain
-         ;; updated the local state with the file revn
+         ;; A received commit is not necessarily applied. Only advance
+         ;; after the data update succeeded.
          (->> stream
-              (rx/filter dch/commit?)
+              (rx/filter (ptk/type? ::dch/remote-applied))
               (rx/map deref)
-              (rx/filter #(= :remote (:source %)))
-              (rx/mapcat (fn [{:keys [file-id file-revn redo-changes]}]
-                           (rx/of (record-remote-changes file-id file-revn redo-changes)
-                                  (update-file-revn file-id file-revn))))
+              (rx/mapcat (fn [{:keys [file-id file-revn] :as commit}]
+                           (rx/of (update-file-revn file-id file-revn)
+                                  (record-remote-changes commit))))
               (rx/take-until stoper-s)))))))

@@ -28,10 +28,12 @@
    [app.main.data.render-wasm :as drw]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.notifications :as dwn]
    [app.main.errors :as errors]
    [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.store :as st]
+   [app.main.worker :as mw]
    [app.util.i18n :as i18n]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
@@ -1351,7 +1353,10 @@
   (ptk/emit! store
              (thp/open-file file-id page-id
                             (thp/add-shape (thp/file-data page-id shape-id "S") page-id child))
-             #(assoc % :session-id session-id)))
+             #(-> %
+                  (assoc :session-id session-id)
+                  (assoc-in [:files file-id :vern] 0)
+                  (dps/remember-loaded-revn {:id file-id :revn 0 :vern 0}))))
 
 ;; Scenario: the user adds a child to a page with old damage. The server
 ;; repairs the page first, storing a repair that sets the root's children
@@ -1410,7 +1415,15 @@
          (await (async/wait-for #(and (= :saved (get-in @store [:persistence :status]))
                                       (empty? (get-in @store [:persistence :queue])))
                                 "the save lands at once"))
-         (t/is (= [shape-id (:id child)] (root-children store file-id page-id))))))))
+         (t/is (= [shape-id (:id child)] (root-children store file-id page-id)))
+         (let [peer (uuid/next)]
+           (ptk/emit! store (dwn/handle-file-change
+                             {:type :file-change :file-id file-id :profile-id peer
+                              :session-id peer :revn 3 :vern 0
+                              :changes [(thp/rename page-id shape-id "Peer")]}))
+           (await (async/wait-for #(= "Peer" (thp/shape-name store file-id page-id shape-id))
+                                  "the revision after the own row applies without catch-up"))
+           (t/is (= 1 (count @requests)))))))))
 
 (defn- with-reload-count
   "Runs `f` with a counter of the file reloads it causes. Evaluates to a
@@ -1430,7 +1443,7 @@
   the wait for it time out, and answers the catch-up read that follows
   with `catch-up-answer`, a function of the rows the server stored. Calls
   `check` with the context. Evaluates to a promise."
-  [catch-up-answer check]
+  [catch-up-answer check & [reconnect]]
   (with-reload-count
     (fn [reloads]
       (with-persistence
@@ -1457,13 +1470,19 @@
                  (rx/push! response {:revn 0 :lagged (mapv #(select-keys % [:revn :session-id]) rows)})
                  (await (async/wait-for #(get-in @store [:persistence :index (:id @commit) ::dps/awaiting])
                                         "the saved commit waits for the repair"))
+                 (when reconnect
+                   (ptk/emit! store (dps/catch-up file-id))
+                   (await (async/wait-for #(= 2 (count @requests)) "the reconnect read is sent")))
                  (rx/push! timeout-s :tick)
-                 (await (async/wait-for #(= 2 (count @requests)) "the catch-up read is sent"))
+                 (await (async/settle))
+                 (t/is (= 2 (count @requests)) "the timeout uses the same coordinator")
                  (t/is (= [:get-file-changes {:file-id file-id :since 0}] (second @requests)))
                  (t/is (seq (get-in @store [:persistence :queue]))
                        "the saved commit stays pending during the read")
-                 (rx/push! response (catch-up-answer rows))
+                 (when catch-up-answer
+                   (rx/push! response (catch-up-answer rows)))
                  (await (check {:store store :reloads reloads :file-id file-id
+                                :response response :requests requests :rows rows
                                 :page-id page-id :shape-id shape-id :child child})))))))))))
 
 ;; Scenario: the save answer lists a repair whose message never reaches the
@@ -1473,13 +1492,65 @@
   (await
    (unseen-repair-then
     (fn [rows] {:revn 2 :changes rows})
-    (^:async fn [{:keys [store reloads file-id page-id shape-id child]}]
+    (^:async fn [{:keys [store reloads file-id page-id shape-id child requests]}]
       (await (async/wait-for #(and (= :saved (get-in @store [:persistence :status]))
                                    (empty? (get-in @store [:persistence :queue])))
                              "the saved commit is acknowledged"))
       (t/is (= [shape-id (:id child)] (root-children store file-id page-id))
             "the repair goes under the new child")
-      (t/is (zero? @reloads))))))
+      (t/is (zero? @reloads))
+      (t/is (= 2 (count @requests)) "a read that covers the save needs no follow-up"))
+    true)))
+
+(t/deftest ^:async a-reconnect-read-from-before-the-save-can-follow-up-once
+  (await
+   (unseen-repair-then
+    (constantly {:revn 0 :changes []})
+    (^:async fn [{:keys [store reloads file-id requests response rows]}]
+      (await (async/wait-for #(= 3 (count @requests)) "one follow-up read is sent"))
+      (t/is (= [:get-file-changes {:file-id file-id :since 0}] (last @requests)))
+      (t/is (seq (get-in @store [:persistence :queue])))
+      (rx/push! response {:revn 2 :changes rows})
+      (await (async/wait-for #(empty? (get-in @store [:persistence :queue]))
+                             "coverage releases the save"))
+      (t/is (= 3 (count @requests)))
+      (t/is (zero? @reloads)))
+    true)))
+
+(t/deftest ^:async a-read-that-cannot-cover-a-known-minimum-does-not-loop
+  (await
+   (unseen-repair-then
+    (constantly {:revn 0 :changes []})
+    (^:async fn [{:keys [store reloads requests]}]
+      (await (async/wait-for #(= 1 @reloads) "the file reloads"))
+      (t/is (empty? (get-in @store [:persistence :queue])))
+      (t/is (= 2 (count @requests)) "the save is not retried")))))
+
+(t/deftest ^:async closing-during-a-read-releases-a-confirmed-save
+  (await
+   (unseen-repair-then
+    nil
+    (^:async fn [{:keys [store reloads file-id response requests]}]
+      (ptk/emit! store (dw/finalize-workspace nil file-id))
+      (await (async/wait-for #(empty? (get-in @store [:persistence :queue]))
+                             "leaving releases the save"))
+      (rx/push! response {:reload true})
+      (await (async/settle))
+      (t/is (zero? @reloads) "the old read cannot reload the closed workspace")
+      (t/is (= 1 (count (filter #(= :update-file (first %)) @requests)))
+            "the save is not resent")))))
+
+(t/deftest ^:async a-catch-up-transport-error-acknowledges-before-reloading
+  (await
+   (unseen-repair-then
+    nil
+    (^:async fn [{:keys [store reloads file-id response requests]}]
+      (rx/error! response (ex-info "The catch-up request failed" {:type :network}))
+      (await (async/wait-for #(= 1 @reloads) "the file reloads"))
+      (t/is (empty? (get-in @store [:persistence :queue])))
+      (t/is (zero? (:revn (dps/get-workspace-coverage @store file-id)))
+            "failure does not advance coverage")
+      (t/is (= 2 (count @requests)) "the save is not resent")))))
 
 ;; Scenario: the catch-up read cannot serve the repair, as for a row older
 ;; than its window. Proves: the saved commit is acknowledged and the file
@@ -1501,7 +1572,9 @@
      (fn [reloads]
        (with-persistence
          (^:async fn [{:keys [file-id response requests store]}]
-           (ptk/emit! store (local-commit file-id) ::dps/force-persist)
+           (ptk/emit! store
+                      #(dps/remember-loaded-revn % {:id file-id :revn 0})
+                      (local-commit file-id) ::dps/force-persist)
            (await (async/wait-for #(= 1 (count @requests)) "the edit is sent"))
            (rx/push! response {:revn 0 :lagged [] :reload true})
            (await (async/wait-for #(= 1 @reloads) "the file reloads"))
@@ -1526,23 +1599,154 @@
                          (dps/remember-loaded-revn {:id file-id :revn 4})))
          (t/is (dps/revision-gap? @store file-id 6) "a message two past the loaded revision")
          (t/is (not (dps/revision-gap? @store file-id 5)))
-         (ptk/emit! store (dps/catch-up file-id) (dps/catch-up file-id))
+         (ptk/emit! store (dps/catch-up file-id) (dps/catch-up file-id) (dps/catch-up file-id))
          (await (async/wait-for #(= 1 (count @requests)) "one read is sent"))
          (t/is (= [:get-file-changes {:file-id file-id :since 4}] (first @requests)))
-         (rx/push! response {:revn 7
+         (rx/push! response {:revn 8
                              :changes [{:revn 5 :session-id other
                                         :changes [(thp/rename page-id shape-id "A")]}
                                        {:revn 6 :session-id session-id
                                         :changes [(thp/rename page-id shape-id "own")]}
-                                       {:revn 7 :session-id other
+                                       {:revn 7 :session-id session-id
+                                        :changes [(thp/rename page-id shape-id "own again")]}
+                                       {:revn 8 :session-id other
                                         :changes [(thp/rename page-id shape-id "B")]}]})
          (await (async/wait-for #(= "B" (thp/shape-name store file-id page-id shape-id))
                                 "the other session's rows are applied"))
-         (t/is (dps/caught-up? @store file-id 7))
-         (t/is (not (dps/caught-up? @store file-id 6)) "its own row is not applied")
+         (t/is (= 8 (:revn (dps/get-workspace-coverage @store file-id))))
+         (t/is (= 2 (get-in @store [:persistence :remote-seq])) "its own rows are not applied")
          (await (async/wait-for #(= 2 (count @requests))
                                 "the read asked for while one ran runs once more"))
-         (t/is (= [:get-file-changes {:file-id file-id :since 7}] (second @requests))))))))
+         (t/is (= [:get-file-changes {:file-id file-id :since 8}] (second @requests)))
+         (rx/push! response {:revn 8 :changes []})
+         (await (async/settle))
+         (t/is (= 2 (count @requests)) "later reconnects coalesce"))))))
+
+(t/deftest ^:async a-saved-revision-does-not-cover-an-earlier-remote-change
+  (await
+   (with-persistence
+     (^:async fn [{:keys [file-id response requests store]}]
+       (let [session-id (uuid/next)
+             peer       (uuid/next)
+             page-id    (uuid/next)
+             shape-id   (uuid/next)
+             commit     (thp/attr-commit file-id page-id shape-id :name "S" "Local")
+             row6       (lagged-row file-id 6 peer
+                                    [(thp/set-attr page-id shape-id :hidden true)])
+             row7       (lagged-row file-id 7 session-id (:redo-changes @commit))
+             row8       (lagged-row file-id 8 peer
+                                    [(thp/rename page-id shape-id "Peer")])]
+         (ptk/emit! store
+                    (thp/open-file file-id page-id (thp/file-data page-id shape-id "S"))
+                    #(-> %
+                         (assoc :session-id session-id)
+                         (assoc-in [:files file-id :vern] 0)
+                         (dps/remember-loaded-revn {:id file-id :revn 5 :vern 0}))
+                    commit ::dps/force-persist)
+         (await (async/wait-for #(= 1 (count @requests)) "the edit is sent"))
+         (rx/push! response {:revn 6 :lagged [row6 row7]})
+         (await (async/wait-for #(get-in @store [:persistence :index (:id @commit) ::dps/awaiting])
+                                "the saved edit waits for revision 6"))
+         (ptk/emit! store (dwn/handle-file-change
+                           (assoc row8 :type :file-change :profile-id peer :vern 0)))
+         (await (async/settle))
+         (t/is (= [:get-file-changes {:file-id file-id :since 5}] (second @requests)))
+         (t/is (seq (get-in @store [:persistence :queue])) "revision 8 cannot close the gap")
+         (rx/push! response {:revn 8 :changes [row6 row7 row8]})
+         (await (async/wait-for #(empty? (get-in @store [:persistence :queue]))
+                                "the saved edit is acknowledged"))
+         (t/is (true? (thp/shape-attr store file-id page-id shape-id :hidden)))
+         (t/is (= "Peer" (thp/shape-name store file-id page-id shape-id))))))))
+
+(t/deftest ^:async reopening-the-same-file-ignores-the-previous-read
+  (await
+   (with-persistence
+     (^:async fn [{:keys [file-id requests store]}]
+       (let [old-read (rx/subject)
+             new-read (rx/subject)
+             page-id  (uuid/next)
+             shape-id (uuid/next)]
+         (await
+          (mock/with-mocks*
+            {rp/cmd! (mock/stub (fn [cmd params]
+                                  (if (= :get-file-changes cmd)
+                                    (do
+                                      (swap! requests conj [cmd params])
+                                      (rx/observe-on :async
+                                                     (if (= 1 (count @requests)) old-read new-read)))
+                                    (rx/empty))))}
+            (ptk/emit! store
+                       (thp/open-file file-id page-id (thp/file-data page-id shape-id "Old"))
+                       #(dps/remember-loaded-revn % {:id file-id :revn 5 :vern 0})
+                       (dps/catch-up file-id))
+            (await (async/wait-for #(= 1 (count @requests)) "the first read starts"))
+            (ptk/emit! store
+                       (dw/finalize-workspace nil file-id)
+                       (thp/open-file file-id page-id (thp/file-data page-id shape-id "Reopened"))
+                       #(-> %
+                            (assoc :current-file-id file-id)
+                            (dps/remember-loaded-revn {:id file-id :revn 5 :vern 1}))
+                       (dps/catch-up file-id))
+            (await (async/wait-for #(= 2 (count @requests)) "the new opening starts its own read"))
+            (rx/push! old-read {:revn 6 :changes [{:revn 6 :session-id (uuid/next)
+                                                   :changes [(thp/rename page-id shape-id "Stale")]}]})
+            (await (async/settle))
+            (t/is (= "Reopened" (thp/shape-name store file-id page-id shape-id)))
+            (ptk/emit! store (dps/catch-up file-id 6))
+            (await (async/settle))
+            (t/is (= 2 (count @requests)) "the old response did not clear the new read")
+            (rx/push! new-read {:revn 6 :changes [{:revn 6 :session-id (uuid/next)
+                                                   :changes [(thp/rename page-id shape-id "Current")]}]})
+            (await (async/wait-for #(= "Current" (thp/shape-name store file-id page-id shape-id))
+                                   "the current response is applied")))))))))
+
+(t/deftest ^:async a-websocket-change-during-a-read-is-not-applied-again
+  (await
+   (with-persistence
+     (^:async fn [{:keys [file-id requests response store]}]
+       (let [page-id  (uuid/next)
+             shape-id (uuid/next)
+             peer     (uuid/next)
+             row      (lagged-row file-id 6 peer [(thp/rename page-id shape-id "Peer")])
+             msg      (assoc row :type :file-change :profile-id peer :vern 0)]
+         (ptk/emit! store
+                    (thp/open-file file-id page-id (thp/file-data page-id shape-id "S"))
+                    #(dps/remember-loaded-revn % {:id file-id :revn 5 :vern 0})
+                    (dps/catch-up file-id))
+         (await (async/wait-for #(= 1 (count @requests)) "the reconnect read starts"))
+         (ptk/emit! store (dwn/handle-file-change msg))
+         (await (async/wait-for #(= "Peer" (thp/shape-name store file-id page-id shape-id))
+                                "the WebSocket applies the change"))
+         (rx/push! response {:revn 6 :changes [row]})
+         (await (async/settle))
+         (t/is (= 1 (get-in @store [:persistence :remote-seq])) "only the applied change is recorded")
+         (ptk/emit! store (dps/catch-up file-id))
+         (await (async/wait-for #(= 2 (count @requests)) "a later reconnect starts from coverage"))
+         (t/is (= [:get-file-changes {:file-id file-id :since 6}] (last @requests))))))))
+
+(t/deftest ^:async a-remote-commit-that-cannot-apply-does-not-cover-its-revision
+  (let [file-id  (uuid/next)
+        page-id  (uuid/next)
+        shape-id (uuid/next)
+        state    (-> {:current-file-id file-id
+                      :files {file-id {:revn 5 :vern 0}}}
+                     ((thp/open-file file-id page-id (thp/file-data page-id shape-id "S")))
+                     ;; A malformed stored object makes an otherwise valid
+                     ;; rename fail when the commit updates the file data.
+                     (assoc-in [:files file-id :data :pages-index page-id :objects shape-id] 1)
+                     (dps/remember-loaded-revn {:id file-id :revn 5 :vern 0}))
+        failures (atom [])
+        store    (ptk/store {:state state :on-error #(swap! failures conj %)})]
+    (try
+      (await
+       (mock/with-mocks*
+         {mw/ask! (mock/stub (fn [_] (rx/empty)))}
+         (ptk/emit! store (dps/initialize-persistence)
+                    (thp/remote-commit file-id 6 [(thp/rename page-id shape-id "Peer")]))
+         (await (async/wait-for #(seq @failures) "applying the remote change fails"))
+         (t/is (= 5 (:revn (dps/get-workspace-coverage @store file-id))))
+         (t/is (nil? (get-in @store [:persistence :remote-seq])))))
+      (finally (rx/dispose! store)))))
 
 ;; Commit boundaries.
 

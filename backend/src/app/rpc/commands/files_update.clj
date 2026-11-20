@@ -81,8 +81,13 @@
   [:map {:title "update-file-result"}
    ;; The revision the file had before this update
    [:revn {:min 0} ::sm/int]
-   ;; The revisions stored after the incoming one, this save's last, as
-   ;; long as they number at most `:lagged-row-cap`
+   ;; The revision written by this save. Absent if nothing was saved.
+   [:saved-revn {:optional true :min 0} ::sm/int]
+   ;; The newest other-session revision after the client's revision.
+   ;; Absent if none was found, nothing was saved, or reload is required.
+   [:latest-remote-revn {:optional true :min 0} ::sm/int]
+   ;; Legacy compatibility; remove in 2.21. Revisions after the incoming
+   ;; one, this save's last, up to `:lagged-row-cap`.
    [:lagged
     [:vector
      [:map
@@ -406,7 +411,8 @@
           (send-repair-notifications cfg params file repair))
         (send-notifications! cfg params file))
 
-      (with-meta (cond-> (-> (get-lagged-changes conn params)
+      (with-meta (cond-> (-> (get-lagged-changes conn params
+                                                 (when saved? (:revn file)))
                              (assoc :revn revn))
                    (some? rejected)
                    (assoc :rejected rejected))
@@ -834,9 +840,9 @@
             (-> repaired
                 (assoc :revn (+ (:revn original) 2))
                 (assoc ::changes changes)
-                (assoc ::repair {:changes repair-changes
-                                 :errors  pre-errors
-                                 :revn    (inc (:revn original))
+                (assoc ::repair {:changes  repair-changes
+                                 :errors   pre-errors
+                                 :revn     (inc (:revn original))
                                  :original (dissoc original ::snapshot)})))))
       (catch Throwable inner
         (if (identical? inner cause)
@@ -1010,12 +1016,19 @@
   `revn`, in the order they were stored, the save's own last. More than
   `:lagged-row-cap` of them answer a reload instead: a client so far
   behind reloads the file rather than wait for every change it missed."
-  [conn {:keys [id revn]}]
-  (let [cap  (cf/get :lagged-row-cap)
-        rows (db/exec! conn [sql:lagged-changes id revn (inc cap)])]
-    (if (> (count rows) cap)
-      {:lagged [] :reload true}
-      {:lagged rows})))
+  [conn {:keys [id revn session-id]} saved-revn]
+  (let [cap         (cf/get :lagged-row-cap)
+        rows        (db/exec! conn [sql:lagged-changes id revn (inc cap)])
+        reload      (> (count rows) cap)
+        remote-revn (when (and (some? saved-revn) (not reload))
+                      (some (fn [row]
+                              (when (not= session-id (:session-id row))
+                                (:revn row)))
+                            (rseq rows)))]
+    (cond-> {:lagged (if reload [] rows)}
+      reload (assoc :reload true)
+      (some? saved-revn) (assoc :saved-revn saved-revn)
+      (some? remote-revn) (assoc :latest-remote-revn remote-revn))))
 
 ;; --- COMMAND QUERY: get-file-changes
 

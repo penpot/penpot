@@ -395,6 +395,7 @@
     (t/is (= [(:commit-id commit1)] (-> out :result :rejected :commit-ids)))
     (t/is (= :referential-integrity (-> out :result :rejected :error :code)))
     (t/is (= 0 (:attempts rejected)) "no retry")
+    (t/is (= {} (select-keys (:result out) [:saved-revn :latest-remote-revn])))
     (t/is (= 1 (:revn (th/db-get :file {:id (:file-id ctx)}))))))
 
 (defn- rename-rect

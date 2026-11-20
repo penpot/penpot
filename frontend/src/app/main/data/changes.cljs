@@ -103,7 +103,7 @@
           (wasm.api/request-render "sync-wasm-structural-changes"))))))
 
 (defn- apply-changes-localy
-  [{:keys [file-id redo-changes ignore-wasm?] :as commit} pending]
+  [{:keys [file-id redo-changes ignore-wasm? source] :as commit} pending]
   (ptk/reify ::apply-changes-localy
     ptk/UpdateEvent
     (update [_ state]
@@ -150,16 +150,76 @@
     (watch [_ state _]
       ;; `:add-obj` / `:mov-objects` are not tracked via `*shape-changes*`.
       ;; Emit only for structural commits, after file data is in state.
-      (when (and (not ignore-wasm?)
-                 (features/active-feature? state "render-wasm/v1")
-                 (redo-changes-need-wasm-object-sync? redo-changes))
-        (rx/of (sync-wasm-structural-changes {:redo-changes redo-changes}))))))
+      (rx/concat
+       (if (and (not ignore-wasm?)
+                (features/active-feature? state "render-wasm/v1")
+                (redo-changes-need-wasm-object-sync? redo-changes))
+         (rx/of (sync-wasm-structural-changes {:redo-changes redo-changes}))
+         (rx/empty))
+       (if (= source :remote)
+         (rx/of (ptk/data-event ::remote-applied commit))
+         (rx/empty))))))
+
+(defn- outside-component?
+  [objects id]
+  (loop [id id, seen #{}]
+    (let [shape (get objects id)]
+      (and (some? shape)
+           (not (or (:component-id shape)
+                    (:component-file shape)
+                    (:component-root shape)
+                    (:main-instance shape)
+                    (:shape-ref shape)
+                    (:variant-id shape)
+                    (:is-variant-container shape)
+                    (:touched shape)
+                    (:remote-synced shape)))
+           (or (= id uuid/zero)
+               (and (not (contains? seen id))
+                    (recur (:parent-id shape) (conj seen id))))))))
+
+(defn- name-set?
+  [{:keys [type attr val]}]
+  (and (= type :set) (= attr :name) (string? val)))
+
+(defn- ordinary-rename?
+  [data {:keys [type id page-id component-id operations]} undo?]
+  (when (and (= type :mod-obj) (uuid? page-id) (uuid? id) (nil? component-id))
+    (let [objects (dm/get-in data [:pages-index page-id :objects])
+          shape   (get objects id)]
+      (and (not= id uuid/zero)
+           (contains? cts/shape-types (:type shape))
+           (not (#{:group :frame :bool} (:type shape)))
+           (empty? (:shapes shape))
+           (some name-set? operations)
+           (every? (fn [op]
+                     (or (name-set? op)
+                         ;; update-shapes appends this to undo even for
+                         ;; ordinary shapes where it has nothing to clear.
+                         (and undo? (= :set-touched (:type op)) (nil? (:touched op)))))
+                   operations)
+           (outside-component? objects id)))))
+
+(defn- independent-renames?
+  "Only plain renames on disjoint pages commute with pending undo and redo."
+  [data remote pending]
+  (and (seq remote)
+       (every? #(ordinary-rename? data % false) remote)
+       (let [remote-pages (into #{} xf:map-page-id remote)]
+         (every? (fn [{:keys [redo-changes undo-changes]}]
+                   (and (every? #(and (not (contains? remote-pages (:page-id %)))
+                                      (ordinary-rename? data % false))
+                                redo-changes)
+                        (every? #(and (not (contains? remote-pages (:page-id %)))
+                                      (ordinary-rename? data % true))
+                                undo-changes)))
+                 pending))))
 
 (defn commit
   "Create a commit event instance"
   [{:keys [commit-id redo-changes undo-changes origin save-undo? features
            file-id file-revn file-vern undo-group tags stack-undo? source ignore-wasm?
-           selected-before translation? skip-component-sync? undo-index]}]
+           selected-before translation? skip-component-sync? undo-index opening]}]
 
   (assert (cpc/check-changes redo-changes)
           "expect valid vector of changes for redo-changes")
@@ -178,6 +238,7 @@
                    :file-id file-id
                    :file-revn file-revn
                    :file-vern file-vern
+                   :opening opening
                    :changes redo-changes
                    :redo-changes redo-changes
                    :undo-changes undo-changes
@@ -199,7 +260,11 @@
       ptk/WatchEvent
       (watch [_ state _]
         (let [pending (when-not local?
-                        (not-empty (pcm/pending-commits (:persistence state) file-id)))]
+                        (not-empty (pcm/pending-commits (:persistence state) file-id)))
+              pending (when (and pending
+                                 (not (independent-renames? (dsh/lookup-file-data state file-id)
+                                                            redo-changes pending)))
+                        pending)]
           (rx/concat
            (rx/of (apply-changes-localy commit pending))
            (if pending

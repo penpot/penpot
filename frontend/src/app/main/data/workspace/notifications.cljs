@@ -278,6 +278,24 @@
 (def ^:private check-file-change-params!
   (sm/check-fn schema:handle-file-change))
 
+(defn- notify-workspace-repair
+  [file-id opening revn]
+  (let [notify (volatile! false)]
+    (ptk/reify ::notify-workspace-repair
+      ptk/UpdateEvent
+      (update [_ state]
+        (let [{:keys [repaired] :as coverage} (dps/get-workspace-coverage state file-id)]
+          (if (and (= opening (:opening coverage)) (not (contains? repaired revn)))
+            (do
+              (vreset! notify true)
+              (update-in state [:persistence :coverage :repaired] (fnil conj #{}) revn))
+            state)))
+      ptk/WatchEvent
+      (watch [_ _ _]
+        (if @notify
+          (rx/of (dps/notify-repaired))
+          (rx/empty))))))
+
 (defn handle-file-change
   [{:keys [file-id changes revn vern] :as msg}]
 
@@ -291,31 +309,29 @@
 
     ptk/WatchEvent
     (watch [_ state _]
-      ;; The commit event is responsible to apply the data localy
-      ;; and update the persistence internal state with the updated
-      ;; file-revn
-      (cond
-        ;; A catch-up read applied it before its message arrived
-        (dps/caught-up? state file-id revn)
-        (rx/empty)
-
-        ;; The changes before it never arrived: the catch-up read applies
-        ;; them, and this one after them, in the server's order
-        (dps/revision-gap? state file-id revn)
-        (rx/of (dps/catch-up file-id))
-
-        :else
-        (rx/concat
-         (rx/of (dch/commit {:file-id file-id
-                             :file-revn revn
-                             :file-vern vern
-                             :save-undo? false
-                             :source :remote
-                             :redo-changes (vec changes)
-                             :undo-changes []}))
-         (if (:repaired msg)
-           (rx/of (dps/notify-repaired))
-           (rx/empty)))))))
+      (let [{:keys [opening] :as coverage} (dps/get-workspace-coverage state file-id)
+            ;; Catch-up rows have no repair marker. The message can still
+            ;; report the repair without applying the change.
+            repair-s (if (:repaired msg)
+                       (rx/of (if opening
+                                (notify-workspace-repair file-id opening revn)
+                                (dps/notify-repaired)))
+                       (rx/empty))]
+        (cond
+          (and coverage (not= vern (:vern coverage))) (rx/empty)
+          (and coverage (<= revn (:revn coverage)))   repair-s
+          (dps/revision-gap? state file-id revn)      (rx/concat repair-s (rx/of (dps/catch-up file-id revn opening)))
+          :else
+          (rx/concat
+           (rx/of (dch/commit {:file-id file-id
+                               :file-revn revn
+                               :file-vern vern
+                               :opening opening
+                               :save-undo? false
+                               :source :remote
+                               :redo-changes (vec changes)
+                               :undo-changes []}))
+           repair-s))))))
 
 (defn handle-file-deleted
   [{:keys [file-id] :as msg}]
