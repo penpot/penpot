@@ -33,6 +33,7 @@
    [app.main.ui.components.link-button :as lb]
    [app.main.ui.components.search-bar :refer [search-bar*]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
+   [app.main.ui.components.truncated-text :refer [truncated-text*]]
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
@@ -575,7 +576,7 @@
                   :key (dm/str id)
                   :data-testid "library-item"}
             [:div {:class (stl/css :item-content)}
-             [:div {:class (stl/css :item-name)} name]
+             [:> truncated-text* {:as "div" :class (stl/css :item-name) :text name}]
              [:ul {:class (stl/css :item-contents-legacy)}
               (let [summary (get-library-summary data)]
                 [:*
@@ -620,7 +621,7 @@
                   :key (dm/str id)
                   :data-testid "library-item"}
             [:div {:class (stl/css :item-content)}
-             [:div {:class (stl/css :item-name)} name]
+             [:> truncated-text* {:as "div" :class (stl/css :item-name) :text name}]
              [:ul {:class (stl/css :item-contents-legacy)}
               (let [summary (-> (:library-summary library)
                                 (adapt-backend-summary))]
@@ -737,7 +738,7 @@
                   :key (dm/str id)
                   :data-testid "library-item"}
             [:div {:class (stl/css :item-content)}
-             [:div {:class (stl/css :item-name)} name]
+             [:> truncated-text* {:as "div" :class (stl/css :item-name) :text name}]
              [:ul {:class (stl/css :item-contents)}
               (let [summary (-> (:library-summary library)
                                 (adapt-backend-summary))]
@@ -955,7 +956,7 @@
                     :key (dm/str id)
                     :data-testid "library-item"}
               [:div {:class (stl/css :item-content)}
-               [:div {:class (stl/css :item-name)} name]
+               [:> truncated-text* {:as "div" :class (stl/css :item-name) :text name}]
                [:ul {:class (stl/css :item-contents)}
                 (let [summary (get-library-summary data)]
                   [:> library-description* {:summary summary :hint-name parent-name}])]]
@@ -1117,7 +1118,7 @@
             [:div {:class (stl/css :section-list-item)
                    :key (dm/str id)}
              [:div {:class (stl/css :item-content)}
-              [:div {:class (stl/css :item-name)} name]
+              [:> truncated-text* {:as "div" :class (stl/css :item-name) :text name}]
               [:ul {:class (stl/css :item-contents)}
                (describe-library
                 (count components)
