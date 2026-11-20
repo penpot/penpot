@@ -550,7 +550,7 @@
       (or (= slot-main slot-inst)
           (= (:id shape-main) slot-inst)))))
 
-(defn- find-next-related-swap-shape-id
+(defn find-next-related-swap-shape-id
   "Go up from the chain of references shapes that will eventually lead to the shape
    with swap-slot-id as id. Returns the next shape on the chain"
   [parent swap-slot-id libraries]
@@ -1283,9 +1283,52 @@
          container container]
     (if (= (:id current) target-ref)
       chain
-      (if-let [ref (find-ref-shape nil container libraries current :with-context? true)]
+      (if-let [ref (find-ref-shape nil container libraries current
+                                   :include-deleted? true
+                                   :with-context? true)]
         (recur (conj chain ref) ref (:container (meta ref)))
         chain))))
+
+(defn get-swap-level
+  "Returns the level (0 is the shape itself) of the first shape in the ref
+   chain of `shape` that has been swapped there, looking at most
+   `max-levels` levels up. Returns `max-levels` if none is found."
+  [container libraries shape max-levels]
+  (loop [level     0
+         current   shape
+         container container]
+    (cond
+      (>= level max-levels)
+      max-levels
+
+      (some? (ctk/get-swap-slot current))
+      level
+
+      :else
+      (if-let [ref (find-ref-shape nil container libraries current
+                                   :include-deleted? true
+                                   :with-context? true)]
+        (recur (inc level) ref (:container (meta ref)))
+        max-levels))))
+
+(defn find-outer-swap
+  "Returns [level slot] for the first shape in the ref chain of `shape`,
+   excluding itself, that has been swapped there (level 1 is the ref shape).
+   Returns nil if the chain ends, or reaches a shape under `base-id`
+   first, so swaps made inside `base-id` are not returned."
+  [container libraries shape base-id]
+  (loop [level     1
+         current   shape
+         container container]
+    (when-let [ref (find-ref-shape nil container libraries current
+                                   :include-deleted? true
+                                   :with-context? true)]
+      (let [ref-container (:container (meta ref))]
+        (when-not (->> (cfh/get-parents-with-self (:objects ref-container) (:id ref))
+                       (some #(= base-id (:id %))))
+          (if-let [slot (ctk/get-swap-slot ref)]
+            [level slot]
+            (recur (inc level) ref ref-container)))))))
 
 (defn get-touched-from-ref-chain-until-target-ref
   "Returns a set with the :touched of all the items on the shape

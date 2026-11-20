@@ -110,6 +110,32 @@
       [[] {}]
       shapes))))
 
+(defn- move-to-root-first
+  "Adds, before all the `changes` of a switch, a move of `shape` to the root,
+   so it is not deleted with the original copy (its undo, run last, puts it
+   back once the original copy is restored)."
+  [changes page shape]
+  (-> (pcb/empty-changes)
+      (pcb/with-page page)
+      (pcb/with-objects (:objects page))
+      (pcb/change-parent uuid/zero [shape] 0 {:allow-altering-copies true})
+      (pcb/concat-changes changes)
+      ;; Keep the other keys of the switch changes, as :origin or :undo-group
+      (merge (dissoc changes :redo-changes :undo-changes))))
+
+(defn- drop-swapped-item
+  "As part of the keep-touched process on a switch, delete a child on the
+   original copy that was swapped (orig-swapped-child) and has no related
+   shape on the new copy."
+  [changes orig-swapped-child ldata page]
+  (let [changes (move-to-root-first changes page orig-swapped-child)]
+    ;; These objects are the page ones with the child moved to the root, not
+    ;; the ones after the switch. Enough to delete the child.
+    (-> (cls/generate-delete-shapes changes ldata page (pcb/get-objects changes)
+                                    (d/ordered-set (:id orig-swapped-child))
+                                    {:allow-altering-copies true})
+        second)))
+
 (defn- keep-swapped-item
   "As part of the keep-touched process on a switch, given a child on the original
    copy that was swapped (orig-swapped-child), and its related shape on the new copy
@@ -120,15 +146,7 @@
    orig-swapped-child follows its parent through its constraints and, if the
    user didn't move it, takes the place of related-shape-in-new."
   [changes related-shape-in-new orig-swapped-child ldata page swap-ref-id]
-  (let [;; Before to the swap, temporary move the previous
-        ;; shape to the root panel to avoid problems when
-        ;; the previous parent is deleted.
-        before-changes (-> (pcb/empty-changes)
-                           (pcb/with-page page)
-                           (pcb/with-objects (:objects page))
-                           (pcb/change-parent uuid/zero [orig-swapped-child] 0 {:allow-altering-copies true}))
-
-        objects         (pcb/get-objects changes)
+  (let [objects         (pcb/get-objects changes)
         page-objects    (:objects page)
         prev-swap-slot  (ctk/get-swap-slot orig-swapped-child)
         current-parent  (get objects (:parent-id related-shape-in-new))
@@ -140,7 +158,7 @@
                           #(gpt/subtract (grc/rect->point (:selrect related-shape-in-new))
                                          (grc/rect->point (:selrect %))))]
 
-    (-> (pcb/concat-changes before-changes changes)
+    (-> (move-to-root-first changes page orig-swapped-child)
 
         ;; Move the previous shape to the new parent
         (pcb/change-parent (:parent-id related-shape-in-new) [orig-swapped-child] pos {:allow-altering-copies true})
@@ -167,8 +185,9 @@
         second)))
 
 (defn- child-of-swapped?
-  "Check if any ancestor of a shape (between base-parent-id and shape) was swapped"
-  [shape objects base-parent-id]
+  "Check if any ancestor of a shape (between base-parent-id and shape) was swapped,
+   in the copy itself or in an outer main (`outer-swaps`, by head id)"
+  [shape objects base-parent-id outer-swaps]
   (let [ancestors (->> (ctn/get-parent-heads objects shape)
                        ;; Ignore ancestors ahead of base-parent
                        (drop-while #(not= base-parent-id (:id %)))
@@ -177,7 +196,55 @@
         ;; Ignore first and last (base-parent and shape)
         ancestors (when (and ancestors (<= 3 num-ancestors))
                     (subvec (vec ancestors) 1 (dec num-ancestors)))]
-    (some ctk/get-swap-slot ancestors)))
+    (some #(or (ctk/get-swap-slot %) (contains? outer-swaps (:id %))) ancestors)))
+
+(defn- get-advanced-refs
+  "Map from id to the new :shape-ref and :touched of `shape` and its children,
+   advanced by `level-delta` levels in the ref chain. A nested head swapped in
+   one of the levels dropped advances only up to there. The swap slots of the
+   chain are removed only for the head, as it gets its own slot. A shape whose
+   chain cannot be resolved (e.g. a missing library) is left out."
+  [container libraries head-id level-delta shape]
+  (let [level-delta (if (ctk/instance-head? shape)
+                      (ctf/get-swap-level container libraries shape level-delta)
+                      level-delta)]
+    (if (pos? level-delta)
+      (let [new-shape-ref (ctf/advance-shape-ref nil container libraries shape level-delta
+                                                 :include-deleted? true)
+            refs          (if (some? new-shape-ref)
+                            {(:id shape)
+                             {:shape-ref new-shape-ref
+                              :touched   (ctf/get-touched-from-ref-chain-until-target-ref
+                                          container libraries shape new-shape-ref
+                                          :remove-slots? (= (:id shape) head-id))}}
+                            {})]
+        (reduce #(merge %1 (get-advanced-refs container libraries head-id level-delta
+                                              (get (:objects container) %2)))
+                refs
+                (:shapes shape)))
+      {})))
+
+(defn- repoint-outer-swapped
+  "A head swapped in an outer main (`orig-head`, `level` levels up its ref chain)
+   has been moved into the new copy, in the place of `related-shape-in-new`.
+   Make it and its children point to the swapped component instead of the
+   outer main, and give the head the slot of `related-shape-in-new`."
+  [changes page libraries orig-head level related-shape-in-new]
+  (let [refs (get-advanced-refs (ctn/make-container page :page) libraries
+                                (:id orig-head) level orig-head)]
+    ;; The working objects of `changes` lost the head when the original copy
+    ;; was deleted, so take the shapes from the page
+    (->> (-> (pcb/empty-changes)
+             (pcb/with-page page)
+             (pcb/with-objects (:objects page))
+             (pcb/update-shapes (keys refs)
+                                (fn [shape]
+                                  (let [{:keys [shape-ref touched]} (get refs (:id shape))]
+                                    (cond-> (assoc shape :shape-ref shape-ref :touched touched)
+                                      (= (:id shape) (:id orig-head))
+                                      (ctk/set-swap-slot (:shape-ref related-shape-in-new)))))
+                                {:ignore-touched true}))
+         (pcb/concat-changes changes))))
 
 (defn- find-shape-ref-child-of
   "Get the shape referenced by the shape-ref of the near main of the shape,
@@ -185,6 +252,7 @@
    It will return the shape or nil if it doesn't found any"
   [container libraries shape parent-id]
   (let [ref-shape             (ctf/find-ref-shape nil container libraries shape
+                                                  :include-deleted? true
                                                   :with-context? true)
 
         ref-shape-container   (when ref-shape (:container (meta ref-shape)))
@@ -217,18 +285,37 @@
         container          (ctn/make-container page :page)
         page-objects       (:objects page)
 
-        ;; Get the touched children of the original-shape
+        ;; The original-shape is in a copy. For the relation rules, we need the referenced
+        ;; shape on the main component
+        orig-base-ref-shape (ctf/find-remote-shape container libraries original-shape {:with-context? true})
+        orig-ref-objects    (:objects (:container (meta orig-base-ref-shape)))
+
+        ;; Heads swapped in an outer main (when the original-shape is nested
+        ;; in another copy), with no swap of their own, by id: [level slot]
+        outer-swaps        (->> original-shapes
+                                (filter #(and (ctk/instance-head? %)
+                                              (not= (:id %) (:id original-shape))
+                                              (nil? (ctk/get-swap-slot %))))
+                                (keep (fn [shape]
+                                        (when-let [outer-swap (ctf/find-outer-swap container libraries shape
+                                                                                   (:id orig-base-ref-shape))]
+                                          [(:id shape) outer-swap])))
+                                (into {}))
+
+        ;; Get the touched children of the original-shape, and the ones
+        ;; swapped in an outer main.
         ;; Ignore children of swapped items, because
         ;; they will be moved without change when
         ;; managing their swapped ancestor
         orig-touched       (->> original-shapes
                                 ;; Add to each shape also the touched of its ref chain
                                 (map #(add-touched-from-ref-chain container libraries %))
-                                (filter (comp seq :touched))
+                                (filter #(or (seq (:touched %)) (contains? outer-swaps (:id %))))
                                 (remove
                                  #(child-of-swapped? %
                                                      page-objects
-                                                     (:id original-shape))))
+                                                     (:id original-shape)
+                                                     outer-swaps)))
 
         ;; Adds a :shape-path attribute to the children of the new-shape,
         ;; that contains the type of its ancestors and its name
@@ -238,11 +325,6 @@
                             (:id new-shape))
         ;; Creates a map to quickly find a child of the new-shape by its shape-path
         new-shapes-map     (into {} (map (juxt :shape-path identity)) new-shapes-w-path)
-
-        ;; The original-shape is in a copy. For the relation rules, we need the referenced
-        ;; shape on the main component
-        orig-base-ref-shape (ctf/find-remote-shape container libraries original-shape {:with-context? true})
-        orig-ref-objects    (:objects (:container (meta orig-base-ref-shape)))
 
         ;; Adds a :shape-path attribute to the children of the orig-ref-shape,
         ;; that contains the type of its ancestors and its name
@@ -259,7 +341,8 @@
         (reduce
          (fn [[changes parent-of-swapped] orig-child-touched]
            (let [;; If the orig-child-touched was swapped, get its swap-slot
-                 swap-slot      (ctk/get-swap-slot orig-child-touched)
+                 [level outer-slot] (get outer-swaps (:id orig-child-touched))
+                 swap-slot      (or (ctk/get-swap-slot orig-child-touched) outer-slot)
 
                  ;; orig-child-touched is in a copy. Get the referenced shape on the main component
                  ;; If there is a swap slot, we will get the referenced shape in another way
@@ -267,8 +350,14 @@
                                   (find-shape-ref-child-of container libraries orig-child-touched (:id orig-base-ref-shape)))
 
                  orig-ref-id    (if swap-slot
-                                  ;; If there is a swap slot, find the referenced shape id
-                                  (ctf/find-ref-id-for-swapped orig-child-touched container libraries)
+                                  ;; If there is a swap slot, find the referenced shape id,
+                                  ;; looking from the match of its parent on the main component
+                                  (let [parent      (get page-objects (:parent-id orig-child-touched))
+                                        parent-head (ctn/get-head-shape page-objects parent)
+                                        parent-ref  (find-shape-ref-child-of container libraries parent-head
+                                                                             (:id orig-base-ref-shape))]
+                                    (when parent-ref
+                                      (ctf/find-next-related-swap-shape-id parent-ref swap-slot libraries)))
                                   ;; If there is not a swap slot, get the id from the orig-ref-shape
                                   (:id orig-ref-shape))
 
@@ -284,16 +373,30 @@
                                       parent-of-swapped)
                  ;; If there is a related shape, keep its data
                  changes
-                 (if related-shape-in-new
+                 (cond
+                   (and swap-slot
+                        (nil? related-shape-in-new)
+                        (not= (:id orig-child-touched) (:id original-shape)))
+                   ;; The swapped child has no place on the new copy
+                   (drop-swapped-item changes orig-child-touched ldata page)
+
+                   related-shape-in-new
                    (if swap-slot
                      ;; If the orig-child-touched was swapped, keep it
-                     (keep-swapped-item changes related-shape-in-new orig-child-touched
-                                        ldata page orig-ref-id)
+                     (cond-> (keep-swapped-item changes related-shape-in-new orig-child-touched
+                                                ldata page orig-ref-id)
+                       ;; If it was swapped in an outer main, point it to the swapped component
+                       (some? outer-slot)
+                       (repoint-outer-swapped page libraries
+                                              (get page-objects (:id orig-child-touched))
+                                              level related-shape-in-new))
                      ;; If the orig-child-touched wasn't swapped, copy
                      ;; the touched attributes into it
                      (cll/update-attrs-on-switch
                       changes related-shape-in-new orig-child-touched
                       new-shape original-shape orig-ref-shape container))
+
+                   :else
                    changes)]
              [changes parents-of-swapped]))
          [changes []]

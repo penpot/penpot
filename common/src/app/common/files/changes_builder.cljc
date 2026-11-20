@@ -523,7 +523,10 @@
 
          mk-undo-change
          (fn [undo-changes shape]
-           (let [prev-sibling (cfh/get-prev-sibling objects (:id shape))]
+           ;; Use the shape as it is in the objects, as the sibling lookup
+           ;; does: the given map may predate earlier moves in these changes
+           (let [shape        (get objects (:id shape) shape)
+                 prev-sibling (cfh/get-prev-sibling objects (:id shape))]
              (conj undo-changes
                    (cond-> {:type :mov-objects
                             :page-id (::page-id (meta changes))

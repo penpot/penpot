@@ -408,10 +408,18 @@
   [changes file container libraries shape-id]
   (log/trace :msg "  -> advance-nesting-level")
   (let [detached-ids (atom #{})
-        children  (cfh/get-children-with-self (:objects container) shape-id)  ;; TODO: this function should be refactored to be a recursive tree traversal.
-        skip-near (fn [changes shape]                                         ;;       this way we could shake the tree more easily when detaching shapes
-                    (shape-log :trace (:id shape) container                   ;;       and perhaps even allow to recover nested instances that have been
-                               :msg "     * advancing" :shape-id (:id shape)) ;;       swapped and so we can access the main instance again.
+        ;; Nested heads swapped in this copy, and their descendants, already
+        ;; point to the swapped-in main, so they must not be advanced
+        children  (let [objects       (:objects container)
+                        swapped-head? #(let [shape (get objects %)]
+                                         (and (ctk/instance-head? shape)
+                                              (some? (ctk/get-swap-slot shape))))]
+                    (->> (cfh/get-children-ids objects shape-id {:ignore-children-fn swapped-head?})
+                         (cons shape-id)
+                         (map (d/getf objects))))
+        skip-near (fn [changes shape]
+                    (shape-log :trace (:id shape) container
+                               :msg "     * advancing" :shape-id (:id shape))
                     (if (contains? @detached-ids (:id shape))
                       (do (log/trace :msg "       (detached)")
                           changes)
@@ -2987,11 +2995,16 @@
   [changes objects shape file page libraries id-new-component
    index target-cell keep-props-values ignore-swapped?]
   (let [;; When we keep the touched properties, we can't delete the
-        ;; swapped children (we will keep them too)
+        ;; swapped children (we will keep them too). That includes the
+        ;; children swapped in an outer main, above the main of the shape
         ignore-swapped-fn
         (if ignore-swapped?
-          #(-> (get objects %)
-               (ctk/get-swap-slot))
+          (let [container (ctn/make-container page :page)
+                base-id   (:id (ctf/find-remote-shape container libraries shape))]
+            #(let [child (get objects %)]
+               (or (some? (ctk/get-swap-slot child))
+                   (and (ctk/instance-head? child)
+                        (some? (ctf/find-outer-swap container libraries child base-id))))))
           (constantly false))
 
         ;; In the cases where the swapped shape was the first element of the masked group it would make the group to loose the
