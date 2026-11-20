@@ -50,8 +50,25 @@ $assets-button-width: deprecated.$s-28;
     }
   }
 
-  &:hover {
+  &:hover,
+  &:focus-within {
     background-color: var(--assets-item-background-color-hover);
+
+    .element-set-actions {
+      --actions-opacity: 1;
+    }
+  }
+}
+
+.element-set-actions {
+  display: flex;
+  // Hidden with opacity, not visibility, so the button stays in the tab order
+  // and keyboard focus can reveal it through :focus-within
+  opacity: var(--actions-opacity, 0);
+
+  // Touch devices have no hover, so keep the options button visible there
+  @media (hover: none) {
+    --actions-opacity: 1;
   }
 }
 
