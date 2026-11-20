@@ -116,6 +116,63 @@ test("Escape closes History opened from the main menu", async ({ page }) => {
   await expect(saveVersionButton(page)).toHaveCount(0);
 });
 
+test("Escape closes the History filter before the panel", async ({ page }) => {
+  await page.keyboard.press("ControlOrMeta+Alt+h");
+  await openHistoryAssertion(page);
+  await page.getByText("All versions").click();
+  const option = page.getByText("My versions");
+  await expect(option).toBeVisible();
+
+  await page.keyboard.press("Escape");
+  await expect(option).toHaveCount(0);
+  await openHistoryAssertion(page);
+
+  await page.keyboard.press("Escape");
+  await expect(saveVersionButton(page)).toHaveCount(0);
+});
+
+test("Escape closes the version menu before the History panel", async ({
+  page,
+}) => {
+  const workspacePage = new WorkspacePage(page);
+  await workspacePage.mockRPC(
+    "get-file-snapshots?file-id=*",
+    "workspace/versions-snapshot-3.json",
+  );
+  await page.keyboard.press("ControlOrMeta+Alt+h");
+  await openHistoryAssertion(page);
+  await page.getByRole("button", { name: "Open version menu" }).click();
+  const restoreItem = page.getByRole("button", { name: "Restore" });
+  await expect(restoreItem).toBeVisible();
+
+  await page.keyboard.press("Escape");
+  await expect(restoreItem).toHaveCount(0);
+  await openHistoryAssertion(page);
+
+  await page.keyboard.press("Escape");
+  await expect(saveVersionButton(page)).toHaveCount(0);
+});
+
+test("Escape cancels a version rename and keeps History open", async ({
+  page,
+}) => {
+  const workspacePage = new WorkspacePage(page);
+  await workspacePage.mockRPC(
+    "get-file-snapshots?file-id=*",
+    "workspace/versions-snapshot-3.json",
+  );
+  await page.keyboard.press("ControlOrMeta+Alt+h");
+  await openHistoryAssertion(page);
+  await page.getByRole("button", { name: "Open version menu" }).click();
+  await page.getByRole("button", { name: "Rename" }).click();
+  const nameInput = page.getByRole("textbox");
+  await expect(nameInput).toBeFocused();
+
+  await page.keyboard.press("Escape");
+  await expect(nameInput).toHaveCount(0);
+  await openHistoryAssertion(page);
+});
+
 test("Escape finishes a path drawn with the shortcuts panel open", async ({
   page,
 }) => {

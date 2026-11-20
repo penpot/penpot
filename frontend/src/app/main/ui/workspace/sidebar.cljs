@@ -44,6 +44,7 @@
    [app.main.ui.workspace.tokens.sidebar :refer [tokens-sidebar-tab*]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
+   [okulary.core :as l]
    [rumext.v2 :as mf]))
 
 ;; --- Left Sidebar (Component)
@@ -238,6 +239,21 @@
   []
   (st/emit! (dw/remove-layout-flag :document-history)))
 
+(def ^:private history-nested-open-ref
+  "True while a menu or a version rename in the History tab is open."
+  (l/derived (fn [state]
+               (let [versions (get state :workspace-versions)]
+                 (or (some? (get versions :menu))
+                     (some? (get versions :editing)))))
+             st/state))
+
+(defn- on-history-panel-ref
+  "Focus the panel when it opens, so Escape reaches it whether it was
+  opened from the header, the shortcut or the main menu."
+  [node]
+  (when (some? node)
+    (dom/focus! node)))
+
 (mf/defc history-content*
   {::mf/private true
    ::mf/memo true}
@@ -247,6 +263,22 @@
 
         selected
         (deref selected*)
+
+        nested-open
+        (mf/deref history-nested-open-ref)
+
+        ;; The open menu closes itself on the keyup of this same Escape,
+        ;; and the rename box cancels the rename on its own keydown, so
+        ;; the panel only has to stay open. `nested-open` comes from the
+        ;; last render: the rename box has already cleared the editing
+        ;; state when this runs.
+        dismiss-nested
+        (mf/use-fn
+         (mf/deps nested-open)
+         (fn [] nested-open))
+
+        on-key-down
+        (hooks/use-escape-to-close on-close-document-history dismiss-nested)
 
         on-change-tab
         (mf/use-fn
@@ -267,21 +299,25 @@
                              :on-click on-close-document-history
                              :icon i/close}]))]
 
-    [:> tab-switcher* {:tabs tabs
-                       :selected selected
-                       :on-change on-change-tab
-                       :class (stl/css :left-sidebar-tabs)
-                       :action-button-position "end"
-                       :action-button button}
+    [:div {:class (stl/css :history-content)
+           :ref on-history-panel-ref
+           :tab-index -1
+           :on-key-down on-key-down}
+     [:> tab-switcher* {:tabs tabs
+                        :selected selected
+                        :on-change on-change-tab
+                        :class (stl/css :left-sidebar-tabs)
+                        :action-button-position "end"
+                        :action-button button}
 
-     (case selected
-       "history"
-       [:article {:class (stl/css :history-tab)}
-        [:> versions-toolbox* {}]]
+      (case selected
+        "history"
+        [:article {:class (stl/css :history-tab)}
+         [:> versions-toolbox* {}]]
 
-       "actions"
-       [:article {:class (stl/css :versions-tab)}
-        [:> history-toolbox*]])]))
+        "actions"
+        [:article {:class (stl/css :versions-tab)}
+         [:> history-toolbox*]])]]))
 
 (mf/defc right-sidebar*
   [{:keys [layout section file-id page-id drawing-tool active-tokens] :as props}]

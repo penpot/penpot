@@ -128,6 +128,15 @@
   [id]
   (st/emit! (dwv/unlock-version id)))
 
+(defn- use-menu-tracking
+  "Record the menu `id` as the open menu of the panel while `open` is
+  true, so the panel leaves the next Escape to it."
+  [id open]
+  (mf/with-effect [id open]
+    (when ^boolean open
+      (st/emit! (dwv/open-menu id))
+      #(st/emit! (dwv/close-menu id)))))
+
 (mf/defc version-entry*
   {::mf/private true}
   [{:keys [entry current-profile on-preview on-restore on-delete on-rename on-lock on-unlock on-edit on-cancel-edit is-editing]}]
@@ -204,6 +213,8 @@
              (kbd/esc? event)
              (when (fn? on-cancel-edit)
                (on-cancel-edit (:id entry) event)))))]
+
+    (use-menu-tracking (:id entry) @show-menu?)
 
     [:li {:class (stl/css :version-entry-wrap)}
      [:> milestone* {:label (:label entry)
@@ -300,6 +311,8 @@
              (swap! open-menu* assoc
                     :snapshot (:id snapshot)
                     :offset offset))))]
+
+    (use-menu-tracking (:snapshot @open-menu*) (some? @open-menu*))
 
     [:li {:ref entry-ref :class (stl/css :version-entry-wrap)}
      [:> milestone-group*
@@ -400,6 +413,13 @@
              :else
              (st/emit! (dwv/update-versions-state {:filter filter-value})))))
 
+        on-filter-open-change
+        (mf/use-fn
+         (fn [open]
+           (st/emit! (if ^boolean open
+                       (dwv/open-menu :filter)
+                       (dwv/close-menu :filter)))))
+
         options
         (mf/with-memo [users profile]
           (let [current-profile-id (get profile :id)]
@@ -419,7 +439,8 @@
       {:default-value :all
        :aria-label (tr "workspace.versions.filter.label")
        :options options
-       :on-change on-change-filter}]
+       :on-change on-change-filter
+       :on-open-change on-filter-open-change}]
 
      (cond
        (= status :loading)
