@@ -236,7 +236,7 @@
       (apply-changes-local)))
 
 (defn add-page
-  [changes id page]
+  [changes {:keys [id] :as page}]
   (-> changes
       (update :redo-changes conj {:type :add-page :id id :page page})
       (update :undo-changes conj {:type :del-page :id id})

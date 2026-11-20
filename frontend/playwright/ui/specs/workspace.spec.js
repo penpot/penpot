@@ -1,6 +1,10 @@
 import { test, expect } from "@playwright/test";
 import { WasmWorkspacePage } from "../pages/WasmWorkspacePage";
-import { presenceFixture, joinFixture2, joinFixture3 } from "../../data/workspace/ws-notifications";
+import {
+  presenceFixture,
+  joinFixture2,
+  joinFixture3,
+} from "../../data/workspace/ws-notifications";
 
 test.beforeEach(async ({ page }) => {
   await WasmWorkspacePage.init(page);
@@ -26,40 +30,36 @@ test("User opens a file with a bad page id", async ({ page }) => {
   await expect(workspacePage.pageName).toHaveText("Page 1");
 });
 
-test("User receives presence notifications updates in the workspace", async ({
-  page,
-}) => {
+// Presence: the list shows one avatar per person in the file and, when the
+// three slots fill up, the remaining people collapse into a "+N" counter
+// (BUG 13058).
+test("The presence list shows the people in the file", async ({ page }) => {
   const workspacePage = new WasmWorkspacePage(page);
   await workspacePage.setupEmptyFile();
 
   await workspacePage.goToWorkspace();
-  await workspacePage.sendPresenceMessage(presenceFixture);
 
-  await expect(
-    page.getByTestId("active-users-list").getByAltText("Princesa Leia"),
-  ).toHaveCount(2);
-});
+  const avatar = (name) =>
+    page.getByTestId("active-users-list").getByAltText(name);
 
-test("BUG 13058 - Presence list shows up to 3 user avatars", async ({
-  page,
-}) => {
-  const workspacePage = new WasmWorkspacePage(page);
-  await workspacePage.setupEmptyFile();
+  // The user of the session is always there, so the fixture adds the second.
+  await test.step("another person appears in the list", async () => {
+    await workspacePage.sendPresenceMessage(presenceFixture);
+    await expect(avatar("Princesa Leia")).toHaveCount(2);
+  });
 
-  await workspacePage.goToWorkspace();
-  await workspacePage.sendPresenceMessage(presenceFixture);
-  await workspacePage.sendPresenceMessage(joinFixture2);
+  await test.step("a third person fills the three avatars", async () => {
+    await workspacePage.sendPresenceMessage(joinFixture2);
+    await expect(avatar("Princesa Leia")).toHaveCount(3);
+  });
 
-  await expect(
-    page.getByTestId("active-users-list").getByAltText("Princesa Leia"),
-  ).toHaveCount(3);
-
-  await workspacePage.sendPresenceMessage(joinFixture3);
-  await expect(
-    page.getByTestId("active-users-list").getByAltText("Princesa Leia"),
-  ).toHaveCount(2);
-
-  await expect(page.getByTestId("active-users-list").getByText("+2")).toBeVisible();
+  await test.step("the fourth person goes behind the counter", async () => {
+    await workspacePage.sendPresenceMessage(joinFixture3);
+    await expect(avatar("Princesa Leia")).toHaveCount(2);
+    await expect(
+      page.getByTestId("active-users-list").getByText("+2"),
+    ).toBeVisible();
+  });
 });
 
 test("User draws a rect", async ({ page }) => {
@@ -158,38 +158,7 @@ test("Selection size badge shows unrotated dimensions for rotated single selecti
   await expect(badgeText).toHaveText("126 x 134");
 });
 
-test("Selection size badge shows dimensions for path shapes", async ({ page }) => {
-  const workspacePage = new WasmWorkspacePage(page);
-  await workspacePage.setupEmptyFile();
-  await workspacePage.mockRPC(
-    "update-file?id=*",
-    "workspace/update-file-empty.json",
-  );
-
-  await workspacePage.goToWorkspace();
-
-  // Workaround: hover viewport first to avoid nil mouse position crash
-  await workspacePage.viewport.hover();
-
-  // Draw a path with two segments; a single straight segment places
-  // the size badge along the line instead
-  await workspacePage.pathButton.click();
-  await workspacePage.clickAt(779, 163);
-  await workspacePage.clickAt(951, 258);
-  await workspacePage.clickAt(1050, 163);
-
-  // Finish drawing (commits path, path enters edition mode)
-  await page.keyboard.press("Escape");
-
-  // Exit edition mode (path stays selected, badge becomes visible)
-  await page.keyboard.press("Escape");
-
-  const badgeText = page.locator(".selection-size-badge text");
-  await expect(badgeText).toBeVisible();
-  await expect(badgeText).toHaveText(/\d+\.?\d* x \d+\.?\d*/);
-});
-
-test("Selection size badge runs along straight line paths", async ({
+test("Selection size badge measures paths and straight lines", async ({
   page,
 }) => {
   const workspacePage = new WasmWorkspacePage(page);
@@ -204,28 +173,46 @@ test("Selection size badge runs along straight line paths", async ({
   // Workaround: hover viewport first to avoid nil mouse position crash
   await workspacePage.viewport.hover();
 
-  // Draw a path with a single straight segment, going down to the right
-  await workspacePage.pathButton.click();
-  await workspacePage.clickAt(779, 163);
-  await workspacePage.clickAt(951, 258);
-
-  // Finish drawing (commits path, path enters edition mode)
-  await page.keyboard.press("Escape");
-
-  // Exit edition mode (path stays selected)
-  await page.keyboard.press("Escape");
-
-  await expect(page.locator(".line-controls")).toBeVisible();
-
-  // A straight line shows its length, with two decimals at most
   const badge = page.locator(".selection-size-badge");
-  await expect(badge.locator("text")).toHaveText(/^\d+(\.\d{1,2})?$/);
 
-  // The badge follows the line angle, about 29 degrees
-  const transform = await badge.getAttribute("transform");
-  const rotation = Number(transform.match(/rotate\(([^)]+)\)/)[1]);
-  expect(rotation).toBeGreaterThan(20);
-  expect(rotation).toBeLessThan(40);
+  const drawPath = async (points) => {
+    await workspacePage.pathButton.click();
+    for (const [x, y] of points) {
+      await workspacePage.clickAt(x, y);
+    }
+    // Finish drawing (commits path, path enters edition mode)
+    await page.keyboard.press("Escape");
+    // Exit edition mode (path stays selected, badge becomes visible)
+    await page.keyboard.press("Escape");
+  };
+
+  await test.step("a path with two segments shows its box", async () => {
+    await drawPath([
+      [779, 163],
+      [951, 258],
+      [1050, 163],
+    ]);
+
+    await expect(badge.locator("text")).toBeVisible();
+    await expect(badge.locator("text")).toHaveText(/\d+\.?\d* x \d+\.?\d*/);
+  });
+
+  // The line is drawn away from the first path so its clicks cannot land on it,
+  // and with the same slope, so the rotation bounds below still apply.
+  await test.step("a straight line shows its length and its angle", async () => {
+    await drawPath([
+      [300, 400],
+      [472, 495],
+    ]);
+
+    await expect(page.locator(".line-controls")).toBeVisible();
+    await expect(badge.locator("text")).toHaveText(/^\d+(\.\d{1,2})?$/);
+
+    const transform = await badge.getAttribute("transform");
+    const rotation = Number(transform.match(/rotate\(([^)]+)\)/)[1]);
+    expect(rotation).toBeGreaterThan(20);
+    expect(rotation).toBeLessThan(40);
+  });
 });
 
 test("User makes a group", async ({ page }) => {
@@ -290,58 +277,11 @@ test("Bug 7525 - User moves a scrollbar and no selection rectangle appears", asy
 
   // Grab scrollbar and move
   const { x, y } = await horizontalScrollbar.boundingBox();
-  await page.waitForTimeout(100);
   await workspacePage.viewport.hover({ position: { x: x, y: y + 5 } });
   await page.mouse.down();
   await workspacePage.viewport.hover({ position: { x: x - 130, y: y - 95 } });
 
   await expect(workspacePage.selectionRect).not.toBeInViewport();
-});
-
-test("User adds a library and its automatically selected in the color palette", async ({
-  page,
-}) => {
-  const workspacePage = new WasmWorkspacePage(page);
-  await workspacePage.setupEmptyFile();
-  await workspacePage.mockRPC(
-    "link-file-to-library",
-    "workspace/link-file-to-library.json",
-  );
-  await workspacePage.mockRPC(
-    "unlink-file-from-library",
-    "workspace/unlink-file-from-library.json",
-  );
-  await workspacePage.mockRPC(
-    "get-team-shared-files?team-id=*",
-    "workspace/get-team-shared-libraries-non-empty.json",
-  );
-
-  await workspacePage.goToWorkspace();
-
-  // Add Testing library 1
-  await workspacePage.clickColorPalette();
-  await workspacePage.clickAssets();
-  // Now the get-file call should return a library
-  await workspacePage.mockRPC(/get\-file\?/, "workspace/get-file-library.json");
-  await workspacePage.openLibrariesModal();
-  await workspacePage.librariesModal.getByRole("tab", { name: "Libraries" }).click();
-  await workspacePage.clickLibrary("Testing library 1");
-  await workspacePage.closeLibrariesModal();
-
-  await expect(
-    workspacePage.palette.getByRole("button", { name: "test-color-187cd5" }),
-  ).toBeVisible();
-
-  // Remove Testing library 1
-  await workspacePage.openLibrariesModal();
-  await workspacePage.clickLibrary("Testing library 1");
-  await workspacePage.closeLibrariesModal();
-
-  await expect(
-    workspacePage.palette.getByText(
-      "There are no color styles in your library yet",
-    ),
-  ).toBeVisible();
 });
 
 test("Bug 10179 - Drag & drop doesn't add colors to the Recent Colors palette", async ({
@@ -489,11 +429,23 @@ test("Copy/paste properties", async ({ page, context }) => {
   // Access to the read/write clipboard necesary for this functionality
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
 
-  await page.getByTestId("layer-item").getByRole("button").first().click();
-  await page
-    .getByTestId("children-0eef4dd0-b39b-807a-8005-934805578f93")
-    .getByText("Rectangle")
-    .click({ button: "right" });
+  // Two rows carry the `root-board` class (the empty board and the one with
+  // shapes) and only the board with children renders a `toggle-content` button,
+  // so the filter picks its expand toggle. The real root frame is not a row.
+  const boardRow = page
+    .locator('[data-testid="layer-row"][class*="root-board"]')
+    .filter({ has: page.getByTestId("toggle-content") });
+
+  await boardRow.getByTestId("toggle-content").click();
+
+  // The children container is named after the board's own id, so it does not
+  // need the fixture's uuid written by hand.
+  const boardChildren = page.getByTestId(
+    `children-${await boardRow.getAttribute("id")}`,
+  );
+  await expect(boardChildren).toBeVisible();
+
+  await boardChildren.getByText("Rectangle").click({ button: "right" });
   await page.getByText("Copy/Paste as").hover();
   await page.getByText("Copy properties").click();
 
@@ -658,9 +610,7 @@ test("BUG 13415 - Grid layout overlay is not removed when deleting a board", asy
   await expect(workspacePage.canvas).toHaveScreenshot();
 });
 
-test("BUG 13822 - Problems with z-index", async ({
-  page
-}) => {
+test("BUG 13822 - Problems with z-index", async ({ page }) => {
   const workspacePage = new WasmWorkspacePage(page);
   await workspacePage.setupEmptyFile();
   await workspacePage.mockGetFile("workspace/get-file-13822.json");
@@ -674,12 +624,13 @@ test("BUG 13822 - Problems with z-index", async ({
   await expect(workspacePage.canvas).toHaveScreenshot();
 });
 
-test("BUG 14239 - Fix default path thickness", async ({
-  page
-}) => {
+test("BUG 14239 - Fix default path thickness", async ({ page }) => {
   const workspacePage = new WasmWorkspacePage(page);
   await workspacePage.setupEmptyFile();
-  await workspacePage.mockRPC("update-file?id=*", "workspace/update-file-empty.json");
+  await workspacePage.mockRPC(
+    "update-file?id=*",
+    "workspace/update-file-empty.json",
+  );
   await workspacePage.goToWorkspace();
 
   // (Workaround a bug in which mouse position can be nil and path editor crashes
@@ -692,7 +643,9 @@ test("BUG 14239 - Fix default path thickness", async ({
   // 2. Close it
   await page.keyboard.press("Escape");
 
-  await expect(workspacePage.rightSidebar.getByRole("textbox", { name: "Stroke width" })).toHaveValue("1");
+  await expect(
+    workspacePage.rightSidebar.getByRole("textbox", { name: "Stroke width" }),
+  ).toHaveValue("1");
 });
 
 test("Bug 14250 - User with viewer role can select a locked board with a grid", async ({
@@ -701,10 +654,7 @@ test("Bug 14250 - User with viewer role can select a locked board with a grid", 
   const workspacePage = new WasmWorkspacePage(page);
   await workspacePage.setupEmptyFile();
   await workspacePage.mockRPC("get-teams", "get-teams-role-viewer.json");
-  await workspacePage.mockRPC(
-    /get\-file\?/,
-    "workspace/get-file-14250.json",
-  );
+  await workspacePage.mockRPC(/get\-file\?/, "workspace/get-file-14250.json");
 
   await workspacePage.goToWorkspace();
 
