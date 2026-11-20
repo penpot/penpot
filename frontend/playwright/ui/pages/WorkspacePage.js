@@ -599,10 +599,18 @@ export class WorkspacePage extends BaseWebSocketPage {
     return this.layerRows(name).first();
   }
 
-  async selectLayer(name, clickOptions = {}) {
-    const row = this.layerRow(name);
+  // Selecting acts on the selection as it is at that moment: click once and
+  // assert the state instead of retrying, which would hide a lost click.
+  // Plain selections only: a plain layer-row click replaces the selection, so
+  // the assertion means exactly this row is selected. Additive selections
+  // (mod/shift) keep their own click options and assertions.
+  async selectRow(row, clickOptions = {}) {
     await row.click(clickOptions);
     await expect(row).toHaveAttribute("aria-checked", "true");
+  }
+
+  async selectLayer(name, clickOptions = {}) {
+    await this.selectRow(this.layerRow(name), clickOptions);
   }
 
   async getSelectedShapeName() {

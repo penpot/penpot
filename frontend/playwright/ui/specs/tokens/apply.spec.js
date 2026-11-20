@@ -614,7 +614,8 @@ test.describe("Tokens: Apply token", () => {
     // next step; `unfoldTokenType` only clicks when the section is collapsed.
     const selectShape = async (index) => {
       await page.getByRole("tab", { name: "Layers" }).click();
-      await workspacePage.layers.getByTestId("layer-row").nth(index).click();
+      const row = workspacePage.layers.getByTestId("layer-row").nth(index);
+      await workspacePage.selectRow(row);
       await page.getByRole("tab", { name: "Tokens" }).click();
       await unfoldTokenType(tokensSidebar, "dimensions");
     };

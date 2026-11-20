@@ -74,7 +74,7 @@ Integration tests fake backend behavior by intercepting network/websocket traffi
 
 Locator priority should follow user-facing semantics: `getByRole`, `getByLabel`, `getByPlaceholder`, `getByText`, then semantic alternatives such as alt/title, with `getByTestId` as the last resort. Name tests from the user's perspective and prefer positive, single-purpose assertions.
 
-Layer rows are the exception: a selected row's hide and lock button titles join its accessible name, so role-plus-name matching breaks on selected rows. Use `WorkspacePage.layerRow`, which anchors on the `layer-row` test id's text, and `selectLayer`, which waits for `aria-checked`.
+Layer rows are the exception: a selected row's hide and lock button titles join its accessible name, so role-plus-name matching breaks on selected rows. Use `WorkspacePage.layerRow`/`layerRows` (anchored text on the `layer-row` test id) and `selectRow`/`selectLayer`, which click once and wait for `aria-checked`.
 
 ## CI (E2E)
 

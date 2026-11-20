@@ -113,13 +113,6 @@ const findVariantNoWait = (workspacePage, index) => {
   };
 };
 
-// Selecting acts on the selection as it is at that moment, so click once and
-// assert the state. A retry would hide a lost click instead of reporting it.
-const selectRow = async (row) => {
-  await row.click();
-  await expect(row).toHaveAttribute("aria-checked", "true");
-};
-
 // A container keeps its children rows in the tree only while it is expanded, and
 // clicking the toggle of an already expanded container collapses it: a duplicate
 // or a paste can inherit the expanded state, so check it before clicking.
@@ -162,7 +155,7 @@ test("User creates a variant", async ({ page }) => {
   await validateVariant(variant);
 
   // Extra validators
-  await selectRow(variant.container);
+  await workspacePage.selectRow(variant.container);
 
   const variants = await workspacePage.layers
     .getByTestId("layer-row")
@@ -185,7 +178,7 @@ test("User duplicates a variant container", async ({ page }) => {
   const variant = await findVariant(workspacePage, 0);
 
   // Select the variant container; Ctrl+D duplicates whatever is selected.
-  await selectRow(variant.container);
+  await workspacePage.selectRow(variant.container);
 
   //Duplicate the variant container
   await workspacePage.page.keyboard.press("ControlOrMeta+d");
@@ -226,7 +219,7 @@ test("User copy paste a variant container", async ({ page }) => {
   // Copy the variant container itself. `clickLeafLayer` matches the text as a
   // substring and clicks the first match, and this tree also holds the shapes
   // named Rectangle inside the variants, so it can select the wrong one.
-  await selectRow(variant.container);
+  await workspacePage.selectRow(variant.container);
   await workspacePage.copy("keyboard");
 
   // Deselect and place the pointer without clicking: a click here could select a
@@ -257,7 +250,7 @@ test("User cut paste a variant container", async ({ page }) => {
   const variant = await findVariant(workspacePage, 0);
 
   // Select the variant container; Ctrl+X cuts whatever is selected.
-  await selectRow(variant.container);
+  await workspacePage.selectRow(variant.container);
 
   //Cut the variant container
   await workspacePage.cut("keyboard");
@@ -329,7 +322,7 @@ test("User copy paste a variant", async ({ page }) => {
   const variant = await findVariant(workspacePage, 0);
 
   // Select the variant1
-  await selectRow(variant.variant1);
+  await workspacePage.selectRow(variant.variant1);
 
   // Copy the variant
   await workspacePage.copy("keyboard");
@@ -355,7 +348,7 @@ test("User cut paste a variant outside the container", async ({ page }) => {
   const variant = await findVariant(workspacePage, 0);
 
   // Select the variant1
-  await selectRow(variant.variant1);
+  await workspacePage.selectRow(variant.variant1);
 
   //Cut the variant
   await workspacePage.cut("keyboard");
@@ -410,7 +403,7 @@ test("User cut paste a component inside a variant", async ({ page }) => {
   await workspacePage.cut("keyboard");
 
   //Paste the component inside the variant
-  await selectRow(variant.container);
+  await workspacePage.selectRow(variant.container);
   await workspacePage.paste("keyboard");
 
   const variant3 = await workspacePage.layers
@@ -470,7 +463,7 @@ test("User takes a component with a path into a variant", async ({ page }) => {
 
     await createNamedComponent();
     await workspacePage.cut("keyboard");
-    await selectRow(variant.container);
+    await workspacePage.selectRow(variant.container);
     await workspacePage.paste("keyboard");
 
     await expect(variantNamed("button, hover")).toHaveCount(before + 1);
