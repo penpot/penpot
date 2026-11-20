@@ -18,6 +18,12 @@ const isIntegratedRemoteMcp = !!mcp;
  */
 const management = typeof penpotMgmt === "undefined" ? null : penpotMgmt;
 
+/**
+ * the console of the plugin context, kept for task errors reported after the plugin is closed,
+ * when the runtime has removed the `console` global
+ */
+const pluginConsole = console;
+
 let uiInitialized = false;
 
 /**
@@ -119,7 +125,7 @@ penpot.ui.onMessage<
     } else if (typeof message === "object" && message.task && message.id) {
         // Handle plugin tasks submitted by the MCP server
         handlePluginTaskRequest(message).catch((error) => {
-            console.error("Error in handlePluginTaskRequest:", error);
+            pluginConsole.error("Error in handlePluginTaskRequest:", error);
         });
     }
 });
@@ -157,6 +163,15 @@ function sendWorkspaceContext(): void {
 management?.on("workspacechange", sendWorkspaceContext);
 
 /**
+ * Whether the plugin runtime has closed this plugin.
+ * Closing removes the plugin globals, which then read as undefined, but a task that was already
+ * running goes on and fails at its next use of them.
+ */
+function isPluginClosed(): boolean {
+    return typeof penpot === "undefined";
+}
+
+/**
  * Handles plugin task requests received from the MCP server via WebSocket.
  *
  * @param request - The task request containing ID, task type and parameters
@@ -182,6 +197,10 @@ async function handlePluginTaskRequest(request: { id: string; task: string; para
 
             console.log("Task handled successfully:", task);
         } catch (error) {
+            if (isPluginClosed()) {
+                // no way to answer: the MCP server fails the task when the plugin connection closes
+                return;
+            }
             console.error("Error handling task:", error);
             task.sendError(`Error handling task: ${formatTaskError(error)}`);
         }
