@@ -21,15 +21,22 @@ test("The viewer header keeps its hit area and its zoom menu", async ({
     pageId: singleBoardPageId,
   });
 
-  await test.step("the logo link area does not navigate", async () => {
-    const viewerUrl = page.url();
-
+  await test.step("the logo hit area ends at the logo", async () => {
     const logoLink = page.getByTestId("penpot-logo-link");
     await expect(logoLink).toBeVisible();
 
+    // Navigating is a potok side effect that lands after the click, so a URL
+    // assertion could still match the old URL. Probe the point under the logo
+    // instead: a hit area that leaks there would navigate.
     const { x, y } = await logoLink.boundingBox();
-    await page.mouse.click(x, y + 100);
-    await expect(page).toHaveURL(viewerUrl);
+    const hitsLogo = await page.evaluate(
+      ([px, py]) =>
+        !!document
+          .elementFromPoint(px, py)
+          ?.closest('[data-testid="penpot-logo-link"]'),
+      [x, y + 100],
+    );
+    expect(hitsLogo).toBe(false);
   });
 
   await test.step("zoom to fit updates the URL", async () => {

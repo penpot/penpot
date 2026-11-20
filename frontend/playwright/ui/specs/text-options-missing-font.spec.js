@@ -144,7 +144,7 @@ test("Ineligible selections hide the button", async ({ page }) => {
   await test.step("several selected texts hide it", async () => {
     await workspace.selectLayer("Text with no typography");
     await workspace.selectLayer("Text with no typography two", {
-      modifiers: ["Shift"],
+      modifiers: ["ControlOrMeta"],
     });
 
     await expect(
@@ -153,6 +153,14 @@ test("Ineligible selections hide the button", async ({ page }) => {
     await expect(
       workspace.layerRow("Text with no typography two"),
     ).toHaveAttribute("aria-checked", "true");
+    // With either of these in the selection, `applied-token-name` would be
+    // `:multiple` and the button would be hidden for that reason.
+    await expect(
+      workspace.layerRow("Text with typography token two"),
+    ).toHaveAttribute("aria-checked", "false");
+    await expect(
+      workspace.layerRow("Text with typography asset two"),
+    ).toHaveAttribute("aria-checked", "false");
     await expect(typographyButtonAnyState(workspace)).toHaveCount(0);
   });
 });
