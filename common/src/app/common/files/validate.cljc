@@ -1037,7 +1037,7 @@
     :add-media :mod-media :del-media
     :add-component :mod-component :del-component :restore-component :purge-component
     :add-typography :mod-typography :del-typography
-    :set-tokens-lib :set-token :set-token-set :set-token-theme :set-tokens-status
+    :set-tokens-lib :set-token :set-token-set :set-token-theme :set-tokens-status :set-own-tokens-status
     :rename-token-set-group :move-token-set :move-token-set-group
     :set-base-font-size :set-tokens-source})
 
