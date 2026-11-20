@@ -589,17 +589,28 @@ export class WorkspacePage extends BaseWebSocketPage {
   // append text to the same node. Matching by accessible name is not an
   // option: a selected row shows its hide and lock buttons, whose titles
   // join the name.
-  layerRow(name) {
+  layerRows(name) {
     return this.layers
       .getByTestId("layer-row")
-      .filter({ hasText: new RegExp(`^${escapeRegExp(name)}$`, "i") })
-      .first();
+      .filter({ hasText: new RegExp(`^${escapeRegExp(name)}$`, "i") });
+  }
+
+  layerRow(name) {
+    return this.layerRows(name).first();
+  }
+
+  // Selecting acts on the selection as it is at that moment: click once and
+  // assert the state instead of retrying, which would hide a lost click.
+  // Plain selections only: a plain layer-row click replaces the selection, so
+  // the assertion means exactly this row is selected. Additive selections
+  // (mod/shift) keep their own click options and assertions.
+  async selectRow(row, clickOptions = {}) {
+    await row.click(clickOptions);
+    await expect(row).toHaveAttribute("aria-checked", "true");
   }
 
   async selectLayer(name, clickOptions = {}) {
-    const row = this.layerRow(name);
-    await row.click(clickOptions);
-    await expect(row).toHaveAttribute("aria-checked", "true");
+    await this.selectRow(this.layerRow(name), clickOptions);
   }
 
   async getSelectedShapeName() {

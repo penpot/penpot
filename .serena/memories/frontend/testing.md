@@ -65,6 +65,8 @@ New frontend test namespaces must be required/listed in `frontend_tests/runner.c
 
 Do not add, modify, or run Playwright integration tests under `frontend/playwright` unless explicitly asked. When explicitly asked, run the whole suite with a worker count sized to the machine: `pnpm run test:e2e --workers=N` from `frontend/`, about one worker per two hardware threads, because each keeps two or three busy and holds about 2 GB of browser memory. The config's default of one worker leaves it slow; four take a 16-thread host from 48 minutes to 35 and fit a 64 GB machine beside a watching devenv, while a 32 GB machine takes two, or four with a slim devenv. `--grep "pattern"` narrows the run. Ensure dependencies are installed through `./scripts/setup` if the environment is not prepared.
 
+The suite runs against the release bundle in `frontend/resources/public`, not against the sources: the app under test is that build. Rebuild it with `./scripts/build` from `frontend/` (the CI build-bundle step) whenever the product source state changes — a branch switch that brings different CLJS/CLJC, SCSS, assets or packages, or any product edit. Spec-only edits need no rebuild: Playwright reads `frontend/playwright` at run time. A stale bundle is still served by the config's `webServer` (`scripts/e2e-server.js`) and makes the app fail at boot; that failure says nothing about the specs.
+
 Integration tests fake backend behavior by intercepting network/websocket traffic, so every RPC or websocket the page needs must be mocked. Use existing Page Object Models:
 - `BasePage.mockRPC` intercepts RPC calls and already prefixes `/api/rpc/command/`; pass command names such as `get-profile`, not full URLs.
 - Workspace or other websocket-using pages should extend/use `BaseWebSocketPage`, initialize websocket mocks before each test, and mock `/ws/notifications` with the provided helpers.
@@ -72,7 +74,7 @@ Integration tests fake backend behavior by intercepting network/websocket traffi
 
 Locator priority should follow user-facing semantics: `getByRole`, `getByLabel`, `getByPlaceholder`, `getByText`, then semantic alternatives such as alt/title, with `getByTestId` as the last resort. Name tests from the user's perspective and prefer positive, single-purpose assertions.
 
-Layer rows are the exception: a selected row's hide and lock button titles join its accessible name, so role-plus-name matching breaks on selected rows. Use `WorkspacePage.layerRow`, which anchors on the `layer-row` test id's text, and `selectLayer`, which waits for `aria-checked`.
+Layer rows are the exception: a selected row's hide and lock button titles join its accessible name, so role-plus-name matching breaks on selected rows. Use `WorkspacePage.layerRow`/`layerRows` (anchored text on the `layer-row` test id) and `selectRow`/`selectLayer`, which click once and wait for `aria-checked`.
 
 ## CI (E2E)
 
