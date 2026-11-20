@@ -64,6 +64,14 @@ export abstract class AbstractPluginTask<TParams = any, TResult extends PluginTa
     }
 
     /**
+     * Whether the task's outcome is already decided, e.g. because its request was cancelled,
+     * in which case the task must not be sent to the plugin.
+     */
+    get isSettled(): boolean {
+        return false;
+    }
+
+    /**
      * Settles the task successfully with the given result.
      *
      * Called by the response-correlation machinery when the plugin reports success
@@ -114,6 +122,11 @@ export class PluginTask<
     private rejectResult?: (error: Error) => void;
 
     /**
+     * Whether the result promise has been resolved or rejected.
+     */
+    private settled = false;
+
+    /**
      * Creates a new locally-awaited plugin task.
      *
      * @param task - The name of the task to execute
@@ -139,10 +152,15 @@ export class PluginTask<
         return this.result;
     }
 
+    get isSettled(): boolean {
+        return this.settled;
+    }
+
     resolveWithResult(result: TResult): void {
         if (!this.resolveResult) {
             throw new Error("Result promise not initialized");
         }
+        this.settled = true;
         this.resolveResult(result);
     }
 
@@ -150,6 +168,7 @@ export class PluginTask<
         if (!this.rejectResult) {
             throw new Error("Result promise not initialized");
         }
+        this.settled = true;
         this.rejectResult(error);
     }
 }

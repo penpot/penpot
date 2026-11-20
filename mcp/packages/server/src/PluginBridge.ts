@@ -38,6 +38,51 @@ export const HEARTBEAT_REQUEST_INTERVAL_MS = 10_000;
  */
 export const HEARTBEAT_STALE_THRESHOLD_MS = 30000;
 
+/**
+ * Limits of the queue in which tasks wait for the task a Penpot session is running.
+ */
+export interface TaskQueueLimits {
+    /** maximum number of tasks waiting per session, not counting the running task. */
+    maxQueuedTasks: number;
+    /** time, in seconds, a task may wait before it fails without being sent. */
+    queueTimeoutSecs: number;
+}
+
+export const DEFAULT_TASK_QUEUE_LIMITS: TaskQueueLimits = { maxQueuedTasks: 30, queueTimeoutSecs: 120 };
+
+/**
+ * Reads the task queue limits from `PENPOT_MCP_MAX_QUEUED_TASKS` and `PENPOT_MCP_QUEUE_TIMEOUT_S`.
+ *
+ * @param env - the environment variables
+ * @throws Error if a variable is set to a value that is not a valid limit
+ */
+export function readTaskQueueLimits(env: Record<string, string | undefined>): TaskQueueLimits {
+    const read = (name: string, fallback: number, min: number): number => {
+        const raw = env[name]?.trim();
+        if (!raw) {
+            return fallback;
+        }
+        const value = Number(raw);
+        if (!/^\d+$/.test(raw) || !Number.isSafeInteger(value) || value < min) {
+            throw new Error(`${name} must be an integer of at least ${min}; got ${JSON.stringify(raw)}`);
+        }
+        return value;
+    };
+    return {
+        maxQueuedTasks: read("PENPOT_MCP_MAX_QUEUED_TASKS", DEFAULT_TASK_QUEUE_LIMITS.maxQueuedTasks, 0),
+        queueTimeoutSecs: read("PENPOT_MCP_QUEUE_TIMEOUT_S", DEFAULT_TASK_QUEUE_LIMITS.queueTimeoutSecs, 1),
+    };
+}
+
+/**
+ * A task waiting for the running task of its session to finish.
+ */
+interface QueuedTask {
+    readonly task: AbstractPluginTask;
+    /** the timer failing the task when it waits too long. */
+    readonly timeout: NodeJS.Timeout;
+}
+
 const connectionInitSchema = z.object({
     type: z.literal("initialize"),
     session: penpotSessionSchema,
@@ -77,6 +122,8 @@ export function assertPluginResponsive(
  */
 export class PluginBridge implements TaskDispatchHost {
     public static readonly MULTIUSER_CONNECTION_ERROR_MESSAGE = `No Penpot instance connected for user token. Please ensure that Penpot is connected and that the MCP client connection is using the correct token.`;
+    public static readonly CANCELLED_BEFORE_SENDING_MESSAGE =
+        "The MCP request was cancelled before the task was sent to Penpot; the task did not run.";
 
     private readonly logger = createLogger("PluginBridge");
     private readonly wsServer: WebSocketServer;
@@ -87,7 +134,16 @@ export class PluginBridge implements TaskDispatchHost {
     private readonly pendingTasks: Map<string, AbstractPluginTask<any, any>> = new Map();
     private readonly taskTimeouts: Map<string, NodeJS.Timeout> = new Map();
     private readonly taskConnections: Map<string, PenpotConnection> = new Map();
+    /**
+     * The ID of the task each local connection's plugin is running.
+     *
+     * A task stays here after it timed out, since the plugin may still be running it, until the plugin
+     * answers or the connection closes.
+     */
+    private readonly runningTasks: Map<PenpotConnection, string> = new Map();
+    private readonly queuedTasks: Map<PenpotConnection, QueuedTask[]> = new Map();
     private readonly dispatcher: TaskDispatcher;
+    private closing = false;
 
     /**
      * Collector of the rollbacks that task responses report, per tool execution.
@@ -105,12 +161,14 @@ export class PluginBridge implements TaskDispatchHost {
      *   instance) via Redis, rather than dispatched directly over a local socket.
      * @param taskTimeoutSecs - Timeout, in seconds, for plugin task execution
      *   (defaults to {@link DEFAULT_TASK_TIMEOUT_SECS})
+     * @param queueLimits - Limits of the queue in which tasks wait for the running task of their session
      */
     constructor(
         public readonly mcpServer: PenpotMcpServer,
         private port: number,
         private readonly taskTimeoutSecs: number,
-        private readonly redisBridge?: RedisBridge
+        private readonly redisBridge?: RedisBridge,
+        private readonly queueLimits: TaskQueueLimits = DEFAULT_TASK_QUEUE_LIMITS
     ) {
         this.dispatcher = redisBridge
             ? new MultiInstanceTaskDispatcher(this, redisBridge)
@@ -305,6 +363,11 @@ export class PluginBridge implements TaskDispatchHost {
         this.connectionsBySocket.delete(ws);
         const connections = this.getUserConnections(connection.userToken)!;
         connections.remove(connection);
+        this.rejectQueuedTasks(
+            connection,
+            new Error("The plugin connection closed before the task was sent; the task did not run.")
+        );
+        this.runningTasks.delete(connection);
         // a task sent over the closed socket can no longer be answered, since responses only count
         // from the connection the task went to
         for (const [taskId, taskConnection] of [...this.taskConnections]) {
@@ -326,7 +389,8 @@ export class PluginBridge implements TaskDispatchHost {
      * Finds the pending task by ID and resolves or rejects its promise
      * based on the execution result. A response that comes after its task
      * timed out has no task to report its rollbacks to, so they go back to
-     * the plugin, which sends them with its next response.
+     * the plugin, which sends them with its next response. Either way, a response
+     * to the task the connection's plugin is running lets the next queued task start.
      *
      * @param response - The plugin task response containing ID and result
      * @param connection - The responding local connection, or undefined for Redis responses
@@ -336,6 +400,7 @@ export class PluginBridge implements TaskDispatchHost {
         if (!task) {
             this.logger.info(`Received response for unknown task ID: ${response.id}`);
             this.returnRollbacks(connection, response.rollbacks);
+            this.finishRunningTask(connection, response.id);
             return;
         }
 
@@ -364,6 +429,86 @@ export class PluginBridge implements TaskDispatchHost {
         }
 
         this.logger.info(`Task ${response.id} completed: success=${response.success}`);
+        this.finishRunningTask(connection, response.id);
+    }
+
+    /**
+     * Starts the next queued task of a connection whose plugin answered the task it was running.
+     *
+     * @param connection - The responding local connection, or undefined for Redis responses
+     * @param taskId - The ID of the answered task
+     */
+    private finishRunningTask(connection: PenpotConnection | undefined, taskId: string): void {
+        if (!connection || this.runningTasks.get(connection) !== taskId) {
+            return;
+        }
+        this.runningTasks.delete(connection);
+        this.startNextQueuedTask(connection);
+    }
+
+    /**
+     * Sends the next queued task of an idle connection, failing those that can no longer be sent.
+     *
+     * @param connection - The local connection whose plugin is no longer running a task
+     */
+    private startNextQueuedTask(connection: PenpotConnection): void {
+        const queue = this.queuedTasks.get(connection);
+        while (!this.closing && queue && queue.length > 0 && !this.runningTasks.has(connection)) {
+            const { task, timeout } = queue.shift()!;
+            clearTimeout(timeout);
+            if (task.isSettled) {
+                continue;
+            }
+            try {
+                this.assertCanSend(connection);
+                this.startLocalTask(task, connection);
+            } catch (error) {
+                task.rejectWithError(error instanceof Error ? error : new Error(String(error)));
+            }
+        }
+        if (queue?.length === 0) {
+            this.queuedTasks.delete(connection);
+        }
+    }
+
+    /**
+     * Fails all tasks waiting for the running task of a connection.
+     *
+     * @param connection - The local connection whose queue to clear
+     * @param error - The error with which to reject the waiting tasks
+     */
+    private rejectQueuedTasks(connection: PenpotConnection, error: Error): void {
+        const queue = this.queuedTasks.get(connection);
+        if (!queue) {
+            return;
+        }
+        this.queuedTasks.delete(connection);
+        for (const { task, timeout } of queue) {
+            clearTimeout(timeout);
+            task.rejectWithError(error);
+        }
+        this.logger.info("Rejected %d queued task(s): %s", queue.length, error.message);
+    }
+
+    /**
+     * Removes a task from the queue it is waiting in.
+     *
+     * @param task - The task to remove
+     * @returns Whether the task was waiting in a queue
+     */
+    private removeQueuedTask(task: AbstractPluginTask): boolean {
+        for (const [connection, queue] of this.queuedTasks) {
+            const index = queue.findIndex((queued) => queued.task === task);
+            if (index !== -1) {
+                clearTimeout(queue[index].timeout);
+                queue.splice(index, 1);
+                if (queue.length === 0) {
+                    this.queuedTasks.delete(connection);
+                }
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -444,8 +589,22 @@ export class PluginBridge implements TaskDispatchHost {
             }
             userToken = sessionContext.userToken;
         }
+        const signal = this.mcpServer.getSessionContext()?.signal;
+        if (signal?.aborted) {
+            throw new Error(PluginBridge.CANCELLED_BEFORE_SENDING_MESSAGE);
+        }
         // attach the result handler before dispatch can reject the task
         const resultPromise = task.getResultPromise();
+        // code that already reached the plugin cannot be stopped, so cancelling only affects a task not yet sent
+        const cancel = () => {
+            if (task.isSettled) {
+                return;
+            }
+            if (this.removeQueuedTask(task) || !this.pendingTasks.has(task.id)) {
+                task.rejectWithError(new Error(PluginBridge.CANCELLED_BEFORE_SENDING_MESSAGE));
+            }
+        };
+        signal?.addEventListener("abort", cancel, { once: true });
         void this.dispatcher.dispatch(task, userToken, sessionId).catch((error) => {
             task.rejectWithError(error instanceof Error ? error : new Error(String(error)));
         });
@@ -458,6 +617,8 @@ export class PluginBridge implements TaskDispatchHost {
                 this.rollbackNotices.record(error.rollbacks);
             }
             throw error;
+        } finally {
+            signal?.removeEventListener("abort", cancel);
         }
     }
 
@@ -479,6 +640,9 @@ export class PluginBridge implements TaskDispatchHost {
      * @param sessionId - The target Penpot session
      */
     public sendRemoteTask(task: AbstractPluginTask, userToken: string, sessionId: string): void {
+        if (task.isSettled) {
+            return;
+        }
         const redisBridge = this.redisBridge!;
         this.logger.debug("Dispatching task %s via Redis", task.id);
 
@@ -501,42 +665,111 @@ export class PluginBridge implements TaskDispatchHost {
                 this.rejectPendingTask(task.id, error instanceof Error ? error : new Error(String(error)));
             });
 
-        // on timeout, release the response-channel subscription, since no response
-        // will arrive to trigger its self-unsubscribe.
-        this.startTaskTimeout(task, () => void redisBridge.unsubscribeFromResponse(task.id));
+        // the instance holding the plugin connection may queue the task before running it, so
+        // the timeout covers the queue wait as well; on timeout, release the response-channel
+        // subscription, since no response will arrive to trigger its self-unsubscribe.
+        this.startTaskTimeout(
+            task,
+            this.queueLimits.queueTimeoutSecs + this.taskTimeoutSecs,
+            () => void redisBridge.unsubscribeFromResponse(task.id)
+        );
     }
 
-    /** Sends a task directly to a ready local connection, with execution tracking. */
+    /**
+     * Sends a task to a ready local connection, or queues it while the connection's plugin runs another task.
+     *
+     * Each session runs one task at a time, so that the code and save of one task cannot interleave with
+     * those of another; tasks for different sessions run in parallel. A queued task fails without being
+     * sent when the queue is full, when it waits longer than the queue timeout, or when the connection closes.
+     *
+     * @param task - The task to send
+     * @param connection - The local connection of the target session
+     * @throws Error if the task cannot be sent or queued
+     */
     public sendLocalTask(task: AbstractPluginTask, connection: PenpotConnection): void {
-        const target = connection;
-        if (!target.ready || target.socket.readyState !== 1) {
-            // WebSocket is not open
-            throw new Error(`Plugin instance is disconnected. Task could not be sent.`);
+        if (task.isSettled) {
+            return;
+        }
+        this.assertCanSend(connection);
+        if (!this.runningTasks.has(connection)) {
+            this.startLocalTask(task, connection);
+            return;
         }
 
-        // the socket can be open while browser-throttled plugin JS cannot run tasks
-        assertPluginResponsive(target, Date.now());
-
-        // register the task for result correlation, then send over the socket
-        this.pendingTasks.set(task.id, task);
-        this.taskConnections.set(task.id, target);
-        target.socket.send(JSON.stringify(task.toRequest()));
-        this.startTaskTimeout(task);
+        const queue = this.queuedTasks.get(connection) ?? [];
+        const { maxQueuedTasks, queueTimeoutSecs } = this.queueLimits;
+        const session = JSON.stringify(connection.session.sessionId);
+        if (queue.length >= maxQueuedTasks) {
+            throw new Error(
+                `Penpot session ${session} is busy with an earlier task and ${queue.length} more waiting ` +
+                    `(at most ${maxQueuedTasks} may wait). The task was not sent; retry later.`
+            );
+        }
+        const timeout = setTimeout(() => {
+            if (this.removeQueuedTask(task)) {
+                task.rejectWithError(
+                    new Error(
+                        `Penpot session ${session} was still running an earlier task after ${queueTimeoutSecs} ` +
+                            `seconds. The task was not sent; retry later.`
+                    )
+                );
+            }
+        }, queueTimeoutSecs * 1000);
+        queue.push({ task, timeout });
+        this.queuedTasks.set(connection, queue);
+        this.logger.info(`Queued task ${task.id} behind the running task of its session (${queue.length} waiting)`);
     }
 
-    /** Arms the shared execution timeout for a locally or remotely dispatched task. */
-    private startTaskTimeout(task: AbstractPluginTask<any, any>, onTimeout?: () => void): void {
+    /**
+     * Throws if a task cannot be sent over the given connection.
+     *
+     * @param connection - The local connection of the target session
+     */
+    private assertCanSend(connection: PenpotConnection): void {
+        if (this.closing) {
+            throw new Error("Plugin bridge is shutting down; the task was not sent.");
+        }
+        if (!connection.ready || connection.socket.readyState !== WebSocket.OPEN) {
+            throw new Error(`Plugin instance is disconnected. Task could not be sent.`);
+        }
+        // the socket can be open while browser-throttled plugin JS cannot run tasks
+        assertPluginResponsive(connection, Date.now());
+    }
+
+    /** Sends a task over a connection whose plugin is not running a task, with execution tracking. */
+    private startLocalTask(task: AbstractPluginTask, connection: PenpotConnection): void {
+        // register the task for result correlation, then send over the socket
+        this.pendingTasks.set(task.id, task);
+        this.taskConnections.set(task.id, connection);
+        this.runningTasks.set(connection, task.id);
+        connection.socket.send(JSON.stringify(task.toRequest()));
+        this.startTaskTimeout(task, this.taskTimeoutSecs);
+    }
+
+    /**
+     * Arms the timeout for a locally or remotely dispatched task.
+     *
+     * A timed-out local task keeps its session busy until the plugin answers, since it may still be running.
+     *
+     * @param task - The dispatched task
+     * @param timeoutSecs - The time, in seconds, to wait for the response
+     * @param onTimeout - Called when the task times out
+     */
+    private startTaskTimeout(task: AbstractPluginTask<any, any>, timeoutSecs: number, onTimeout?: () => void): void {
         // Set up a timeout to reject the task if no response is received
         const timeoutHandle = setTimeout(() => {
             if (
                 this.rejectPendingTask(
                     task.id,
-                    new Error(`Task ${task.id} timed out after ${this.taskTimeoutSecs} seconds`)
+                    new Error(
+                        `Task ${task.id} timed out after ${timeoutSecs} seconds; ` +
+                            `it may still be running in Penpot, so its outcome is unknown`
+                    )
                 )
             ) {
                 onTimeout?.();
             }
-        }, this.taskTimeoutSecs * 1000);
+        }, timeoutSecs * 1000);
 
         this.taskTimeouts.set(task.id, timeoutHandle);
         this.logger.info(`Sent task ${task.id}`);
@@ -547,12 +780,16 @@ export class PluginBridge implements TaskDispatchHost {
      * Also releases task tracking and dispatch subscriptions.
      */
     public async close(): Promise<void> {
+        this.closing = true;
+        for (const connection of [...this.queuedTasks.keys()]) {
+            this.rejectQueuedTasks(connection, new Error("Plugin bridge is shutting down; the task was not sent."));
+        }
+        for (const taskId of this.pendingTasks.keys()) {
+            this.rejectPendingTask(taskId, new Error("Plugin bridge is shutting down; task outcome may be unknown"));
+        }
         for (const socket of this.wsServer.clients) {
             this.removeConnection(socket);
             socket.terminate();
-        }
-        for (const taskId of this.pendingTasks.keys()) {
-            this.rejectPendingTask(taskId, new Error("MCP server is shutting down."));
         }
         await this.dispatcher.close();
         return new Promise((resolve) => {
