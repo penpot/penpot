@@ -22,6 +22,7 @@
    [app.loggers.audit.consumers :as consumer]
    [app.loggers.audit.consumers.admin-console :as consumer.admin-console]
    [app.loggers.audit.consumers.nexus :as consumer.nexus]
+   [app.loggers.audit.consumers.telemetry :as consumer.telemetry]
    [app.loggers.audit.gc :as gc]
    [app.main :as main]
    [app.metrics :as mtx]
@@ -29,6 +30,7 @@
    [app.rpc :as-alias rpc]
    [app.rpc.commands.audit :as cmd-audit]
    [app.setup :as-alias setup]
+   [app.worker :as-alias wrk]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
    [cuerdas.core :as str]
@@ -50,12 +52,13 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- seed-cursors
-  "Both cursors exist at (0, 0) before every test: the database reset
+  "Every cursor exists at (0, 0) before every test: the database reset
   deletes them, so seeding keeps the starting state deterministic, lets
   the GC delete without waiting for a first pass, and leaves the
   'no cursor' case to the tests that create it on purpose."
   [next]
-  (doseq [consumer-id [consumer/nexus
+  (doseq [consumer-id [consumer/telemetry
+                       consumer/nexus
                        consumer/admin-console]]
     (th/db-exec! ["INSERT INTO audit_log_consumer_cursor (consumer, xid, seq)
                    VALUES (?::smallint, '0'::xid8, 0)"
@@ -106,25 +109,62 @@
             ::setup/shared-keys {:admin-console "ac-key" :nexus "nexus-key"}
             ::http/client       (:app.http.client/client th/*system*)
             ::mtx/metrics       metrics}
-     uri (assoc ::consumer.nexus/uri uri))))
+     uri (assoc ::consumer.nexus/uri (u/uri uri)))))
 
 (defn- run-nexus
   ([] (run-nexus {}))
   ([params]
-   (consumer.nexus/run-pass
-    (nexus-cfg (:uri params)))))
+   (consumer/run-pass
+    (nexus-cfg (:uri params))
+    consumer.nexus/consumer)))
 
 (defn- admin-console-cfg
   [metrics]
   {::db/pool           (:app.db/pool th/*system*)
    :app.nitrate/client (:app.nitrate/client th/*system*)
-   ::consumer.admin-console/uri-host "admin-console.example"
+   ::consumer.admin-console/host "admin-console.example"
    ::mtx/metrics       metrics})
 
 (defn- run-admin-console
   []
-  (consumer.admin-console/run-pass
-   (admin-console-cfg (:app.metrics/metrics th/*system*))))
+  (consumer/run-pass
+   (admin-console-cfg (:app.metrics/metrics th/*system*))
+   consumer.admin-console/consumer))
+
+(def ^:private telemetry-uri "http://telemetry.example/")
+
+(defn- telemetry-cfg
+  ([uri] (telemetry-cfg uri (:app.metrics/metrics th/*system*)))
+  ([uri metrics]
+   (cond-> {::db/pool     (:app.db/pool th/*system*)
+            ::http/client (:app.http.client/client th/*system*)
+            ::setup/props {:instance-id (uuid/next)}
+            ::mtx/metrics metrics}
+     uri (assoc ::consumer.telemetry/uri (u/uri uri)))))
+
+(defn- run-telemetry
+  ([] (run-telemetry {}))
+  ([params]
+   (consumer/run-pass
+    (telemetry-cfg (:uri params))
+    consumer.telemetry/consumer)))
+
+(defn- insert-shadow-row
+  "Insert one anonymized copy, the row the telemetry consumer sends, at an
+  explicit `created-at` so the retention tests can age it."
+  ([profile-id name] (insert-shadow-row profile-id name (ct/now)))
+  ([profile-id name created-at]
+   (th/db-insert! :audit-log
+                  {:id         (uuid/next)
+                   :name       name
+                   :type       "action"
+                   :source     "telemetry:backend"
+                   :profile-id profile-id
+                   :ip-addr    (db/inet "0.0.0.0")
+                   :props      (db/tjson {})
+                   :context    (db/tjson {})
+                   :tracked-at created-at
+                   :created-at created-at})))
 
 (defn- run-gc
   []
@@ -232,6 +272,34 @@
           (t/is (= names (mapv :name events))))
         (t/is (= 0 (unread-count consumer/nexus)))))))
 
+(t/deftest consumer-nexus-skips-the-telemetry-shadows
+  ;; The anonymized copy belongs to the telemetry consumer: Nexus must not
+  ;; archive the same event twice, so the shadow counts as skipped and the
+  ;; cursor passes over it.
+  (let [prof (th/create-profile* 5 {:is-active true})]
+    (with-redefs [cf/flags #{:nexus}]
+      (with-mocks [http-mock {:target 'app.http.client/req :return {:status 204}}]
+        (insert-audit-row (:id prof) "create-project")
+        (insert-shadow-row (:id prof) "create-project")
+        (run-nexus {:uri archive-uri})
+        (let [events (-> @http-mock :call-args second :body transit/decode :events)]
+          (t/is (= ["create-project"] (mapv :name events)))
+          (t/is (= ["backend"] (mapv :source events))))
+        ;; The cursor passed both rows: the shadow was skipped, not sent.
+        (t/is (= 0 (unread-count consumer/nexus)))
+        (t/is (= 2 (count (th/db-exec! ["SELECT * FROM audit_log"]))))))))
+
+(t/deftest consumer-nexus-does-not-post-a-chunk-with-only-shadows
+  (let [prof (th/create-profile* 6 {:is-active true})]
+    (with-redefs [cf/flags #{:nexus}]
+      (with-mocks [http-mock {:target 'app.http.client/req :return {:status 204}}]
+        (insert-shadow-row (:id prof) "create-project")
+        (insert-shadow-row (:id prof) "navigate")
+        (run-nexus {:uri archive-uri})
+        (t/is (not (:called? @http-mock)))
+        (t/is (= 0 (unread-count consumer/nexus)))
+        (t/is (= 2 (count (th/db-exec! ["SELECT * FROM audit_log"]))))))))
+
 (t/deftest consumer-nexus-default-uri-appends-api-audit
   (let [prof (th/create-profile* 3 {:is-active true})
         uris (atom [])]
@@ -242,7 +310,8 @@
                                         (swap! uris conj (str (:uri params)))
                                         {:status 204})}]
         (insert-audit-row (:id prof) "create-project")
-        (run-nexus {})
+        (consumer/run-pass ((:prepare consumer.nexus/consumer) (nexus-cfg nil))
+                           consumer.nexus/consumer)
         (t/is (= ["http://nexus.example/api/audit"] @uris))))))
 
 (t/deftest consumer-nexus-component-requires-uri-when-flag-set
@@ -369,7 +438,7 @@
           (let [team-id (uuid/next)
                 row     (insert-audit-row (:id prof) "create-project"
                                           {:team-id team-id})]
-            (consumer.admin-console/run-pass consumer-cfg)
+            (consumer/run-pass consumer-cfg consumer.admin-console/consumer)
             (t/is (= 1 (count @admin-console-bodies)))
             (let [body  (json/decode (first @admin-console-bodies) :key-fn json/read-kebab-key)
                   event (first (:events body))]
@@ -402,7 +471,7 @@
         (with-mocks [http-mock {:target 'app.http.client/req
                                 :return {:status 200 :body "{}"}}]
           (insert-audit-row (:id prof) "create-project")
-          (consumer.admin-console/run-pass consumer-cfg)
+          (consumer/run-pass consumer-cfg consumer.admin-console/consumer)
           (t/is (= 1 (:call-count @http-mock)))
           (t/is (= 0 (unread-count consumer/admin-console))))))))
 
@@ -595,6 +664,126 @@
           (t/is (= (:name team) (:team-name props))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; TELEMETRY: THE ANONYMIZED COPIES
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(t/deftest consumer-telemetry-sends-only-the-anonymized-copies
+  (let [prof (th/create-profile* 70 {:is-active true})]
+    (with-redefs [cf/flags #{:telemetry}]
+      (with-mocks [http-mock {:target 'app.http.client/req :return {:status 200}}]
+        (insert-audit-row (:id prof) "create-project")
+        (insert-shadow-row (:id prof) "create-project")
+        (insert-shadow-row (:id prof) "navigate")
+        (t/is (= 3 (unread-count consumer/telemetry)))
+        (run-telemetry {:uri telemetry-uri})
+        (t/is (= 1 (:call-count @http-mock)))
+        (let [body (json/decode (-> @http-mock :call-args second :body)
+                                :key-fn json/read-kebab-key)]
+          (t/is (= "telemetry-events" (name (:type body))))
+          (t/is (= (:full cf/version) (:version body)))
+          (t/is (some? (:instance-id body)))
+          (t/is (= ["create-project" "navigate"] (mapv :name (:events body))))
+          (t/is (= #{"telemetry:backend"} (into #{} (map :source) (:events body)))))
+        ;; The cursor passed the full row too: it was skipped, not sent.
+        (t/is (= 0 (unread-count consumer/telemetry)))
+        (t/is (= 1 (count (th/db-exec! ["SELECT * FROM audit_log
+                                           WHERE source NOT LIKE 'telemetry:%'"]))))))))
+
+(t/deftest consumer-telemetry-payload-keeps-the-shape-of-the-legacy-cron
+  (let [prof (th/create-profile* 71 {:is-active true})]
+    (with-redefs [cf/flags #{:telemetry}]
+      (with-mocks [http-mock {:target 'app.http.client/req :return {:status 200}}]
+        (insert-shadow-row (:id prof) "navigate")
+        (run-telemetry {:uri telemetry-uri})
+        (let [body   (json/decode (-> @http-mock :call-args second :body)
+                                  :key-fn json/read-kebab-key)
+              event  (first (:events body))]
+          (t/is (= #{:name :type :source :tracked-at :profile-id :props :context}
+                   (set (keys event))))
+          (t/is (string? (:tracked-at event)))
+          (t/is (= {} (:props event)))
+          (t/is (= {} (:context event)))
+          (t/is (not (contains? event :id)))
+          (t/is (not (contains? event :created-at)))
+          (t/is (not (contains? event :ip-addr))))))))
+
+(t/deftest consumer-telemetry-refused-chunk-keeps-the-cursor
+  (let [prof (th/create-profile* 72 {:is-active true})]
+    (with-redefs [cf/flags #{:telemetry}]
+      (with-mocks [http-mock {:target 'app.http.client/req :return {:status 500}}]
+        (insert-shadow-row (:id prof) "create-project")
+        (let [data (ex-data (try
+                              (run-telemetry {:uri telemetry-uri})
+                              (catch Throwable cause
+                                cause)))]
+          (t/is (= :consumer-chunk-refused (:code data)))
+          (t/is (= 1 (:events data))))
+        (t/is (= 1 (unread-count consumer/telemetry)))
+        (t/is (= 1 (count (th/db-exec! ["SELECT * FROM audit_log"]))))))))
+
+(t/deftest consumer-telemetry-pass-with-its-flag-off-sends-nothing
+  (with-redefs [cf/flags #{}]
+    (with-mocks [http-mock {:target 'app.http.client/req :return {:status 200}}]
+      (insert-shadow-row uuid/zero "create-project")
+      (t/is (= :app.loggers.audit.consumers/disabled
+               (consumer/run-pass (telemetry-cfg telemetry-uri)
+                                  consumer.telemetry/consumer)))
+      (t/is (not (:called? @http-mock))))))
+
+(t/deftest consumer-telemetry-chunks-by-its-own-size
+  ;; The catalog declares 10000 rows per chunk for telemetry. Shrinking the
+  ;; shared var (as the nexus test does) must not shrink it: the whole chunk
+  ;; travels in one request.
+  (let [prof  (th/create-profile* 73 {:is-active true})
+        names (mapv #(str "telemetry-" %) (range 1 6))]
+    (with-redefs [cf/flags #{:telemetry}
+                  consumer/chunk-size 3]
+      (with-mocks [http-mock {:target 'app.http.client/req :return {:status 200}}]
+        (doseq [name names]
+          (insert-shadow-row (:id prof) name))
+        (run-telemetry {:uri telemetry-uri})
+        (t/is (= 1 (:call-count @http-mock)))
+        (let [body (json/decode (-> @http-mock :call-args second :body)
+                                :key-fn json/read-kebab-key)]
+          (t/is (= names (mapv :name (:events body)))))))))
+
+(t/deftest consumer-telemetry-component-requires-uri-when-flag-set
+  (with-redefs [cf/flags #{:telemetry}
+                cf/config (dissoc cf/config :telemetry-uri)]
+    (let [data (ex-data (try
+                          (ig/init-key :app.loggers.audit.consumers.telemetry/consumer
+                                       (telemetry-cfg nil))
+                          (catch Throwable cause
+                            cause)))]
+      (t/is (= :task-not-configured (:code data))))))
+
+(t/deftest consumer-telemetry-component-does-not-start-with-the-flag-off
+  (with-redefs [cf/flags #{}]
+    (t/is (nil? (ig/init-key :app.loggers.audit.consumers.telemetry/consumer
+                             (telemetry-cfg telemetry-uri))))))
+
+(t/deftest consumer-loop-uses-the-pause-of-the-consumer
+  ;; Each consumer declares its cadence: telemetry keeps the three hours of
+  ;; the legacy cron, the others keep the five seconds of the framework. The
+  ;; test wraps the real pause (never replaces it) so halting still has to
+  ;; interrupt the thread for real.
+  (let [real-sleep px/sleep]
+    (doseq [[definition expected] [[consumer.telemetry/consumer 10800000]
+                                   [consumer.nexus/consumer 5000]]]
+      (let [entered (promise)
+            paused  (atom nil)]
+        (with-redefs [px/sleep (fn [ms]
+                                 (reset! paused ms)
+                                 (deliver entered true)
+                                 (real-sleep ms))
+                      consumer/run-pass (fn [_cfg _consumer] nil)]
+          (let [thread (consumer/start-loop {} definition)]
+            (t/is (true? (deref entered 5000 false)))
+            (consumer/halt thread)
+            (t/is (not (.isAlive ^Thread thread)))
+            (t/is (= expected @paused))))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; THE SNAPSHOT CUT: A ROW OF AN OPEN TRANSACTION IS NEVER SKIPPED
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -755,8 +944,9 @@
 (defn- run-nexus-on
   "Run one nexus pass merging `overrides` over the test cfg."
   [overrides]
-  (consumer.nexus/run-pass
-   (merge (nexus-cfg archive-uri) overrides)))
+  (consumer/run-pass
+   (merge (nexus-cfg archive-uri) overrides)
+   consumer.nexus/consumer))
 
 (t/deftest consumer-pass-needs-one-connection
   ;; The frontier, every chunk transaction and the lag gauge run on the
@@ -828,18 +1018,6 @@
         (t/is (false? (:called? @http-mock)))
         (t/is (nil? (cursor-of consumer/nexus)))))))
 
-(t/deftest drain-consumer-rejects-an-unknown-id
-  ;; The flag lookup answers false for an id outside the registry, so the
-  ;; unknown-consumer raise must happen first: a typo must fail, not silently
-  ;; disable the pass.
-  (let [data (try
-               (consumer/drain-consumer (nexus-cfg nil) 999 (fn [_ _] nil))
-               nil
-               (catch clojure.lang.ExceptionInfo e (ex-data e)))]
-    (t/is (= :internal (:type data)))
-    (t/is (= :unknown-audit-consumer (:code data)))
-    (t/is (= 999 (:consumer data)))))
-
 (t/deftest admin-console-pass-with-its-flag-off-sends-nothing
   ;; `nitrate/call` returns nil when `:admin-console` is off, so without the
   ;; gate the pass would count the nil as success and advance the cursor
@@ -881,12 +1059,10 @@
 
 (t/deftest consumer-loop-runs-passes-until-interrupted
   (let [passes (atom 0)]
-    (with-redefs-fn {#'consumer/sleep-ms 10}
-      (fn []
-        (let [thread (consumer/start-loop
-                      {}
-                      consumer/nexus
-                      (fn [_] (swap! passes inc)))]
+    (with-redefs [consumer/sleep-ms 10
+                  consumer/run-pass (fn [_cfg _consumer] (swap! passes inc))]
+      (do
+        (let [thread (consumer/start-loop {} consumer.nexus/consumer)]
           (try
             (loop [i 0]
               (when (and (< @passes 3) (< i 300))
@@ -900,14 +1076,12 @@
 
 (t/deftest consumer-loop-survives-a-failing-pass
   (let [passes (atom 0)]
-    (with-redefs-fn {#'consumer/sleep-ms 10}
-      (fn []
-        (let [thread (consumer/start-loop
-                      {}
-                      consumer/nexus
-                      (fn [_]
-                        (swap! passes inc)
-                        (throw (ex-info "boom" {}))))]
+    (with-redefs [consumer/sleep-ms 10
+                  consumer/run-pass (fn [_cfg _consumer]
+                                      (swap! passes inc)
+                                      (throw (ex-info "boom" {})))]
+      (do
+        (let [thread (consumer/start-loop {} consumer.nexus/consumer)]
           (try
             (loop [i 0]
               (when (and (< @passes 3) (< i 300))
@@ -921,21 +1095,22 @@
 
 (t/deftest consumer-component-starts-a-loop-that-halt-stops
   ;; The component is the only door to the loop: it starts a pass, keeps
-  ;; running it and `halt-component` stops the thread. The pass is a fake
+  ;; running it and `halt` stops the thread. The pass is a fake
   ;; on purpose: a real drain here would keep the shared database busy in
   ;; the background while the rest of the namespace runs, which is what
   ;; made this suite alternate. The drain itself is covered by the
   ;; `run-pass` tests.
   (let [passes (atom 0)
         cfg    {::db/pool (:app.db/pool th/*system*)}]
-    (with-redefs [cf/flags          #{:nexus}
-                  consumer/sleep-ms 10]
-      (let [thread (consumer/init-component cfg consumer/nexus identity
-                                            (fn [_] (swap! passes inc)))]
+    (with-redefs [cf/flags            #{:nexus}
+                  consumer/sleep-ms   10
+                  consumer/run-pass   (fn [_cfg _consumer] (swap! passes inc))]
+      (let [thread (consumer/init cfg
+                                  (assoc consumer.nexus/consumer :prepare identity))]
         (try
           (t/is (th/wait-for #(<= 3 @passes)))
           (finally
-            (consumer/halt-component thread)))
+            (consumer/halt thread)))
         (t/is (false? (.isAlive ^Thread thread)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -959,14 +1134,16 @@
   "Run one nexus pass with an isolated metrics registry, so assertions
   read exact values instead of the shared test-system registry."
   [metrics params]
-  (consumer.nexus/run-pass
-   (nexus-cfg (:uri params) metrics)))
+  (consumer/run-pass
+   (nexus-cfg (:uri params) metrics)
+   consumer.nexus/consumer))
 
 (defn- invoke-admin-console
   "Run one admin-console pass with an isolated metrics registry."
   [metrics]
-  (consumer.admin-console/run-pass
-   (admin-console-cfg metrics)))
+  (consumer/run-pass
+   (admin-console-cfg metrics)
+   consumer.admin-console/consumer))
 
 (defn- invoke-both
   "Invoke both consumer handlers sharing one isolated metrics
@@ -1014,7 +1191,7 @@
                                          :body ""}}]
           (insert-audit-row (:id prof) "create-project")
           (let [err (try
-                      (consumer.admin-console/run-pass consumer-cfg)
+                      (consumer/run-pass consumer-cfg consumer.admin-console/consumer)
                       nil
                       (catch clojure.lang.ExceptionInfo e e))]
             (t/is (= :admin-console-send-failed (:code (ex-data err))))
@@ -1054,7 +1231,7 @@
     (insert-audit-row (:id prof) "create-file")
     ;; The cursor is still at zero: two confirmed events behind.
     (with-open [conn (db/open th/*system*)]
-      (#'consumer/record-lag conn metrics {:id consumer/nexus}))
+      (#'consumer/record-lag conn metrics consumer.nexus/consumer))
     (t/is (= 2.0 (gauge-value metrics :audit-consumer-lag ["nexus"])))))
 
 (t/deftest consumer-pass-counter-records-ok-and-busy
@@ -1210,7 +1387,7 @@
       (insert-rows-in-one-transaction conn "lote-" 10001)
       (db/exec! conn ["COMMIT"]))
     (with-open [conn (db/open th/*system*)]
-      (#'consumer/record-lag conn metrics {:id consumer/nexus}))
+      (#'consumer/record-lag conn metrics consumer.nexus/consumer))
     (t/is (= 10000.0 (gauge-value metrics :audit-consumer-lag ["nexus"])))))
 
 (t/deftest consumer-nexus-transport-failure-records-failed
@@ -1312,35 +1489,94 @@
         (t/is (= 0 (run-gc)))
         (t/is (= 1 (count (th/db-exec! ["SELECT * FROM audit_log"]))))))))
 
-(t/deftest gc-keeps-the-telemetry-shadows
+(t/deftest gc-deletes-the-shadow-what-the-telemetry-consumer-passed
   (let [prof (th/create-profile* 62 {:is-active true})]
-    (with-redefs [cf/flags #{:nexus :admin-console}]
-      (with-mocks [http-mock  {:target 'app.http.client/req :return {:status 204}}
-                   admin-mock {:target 'app.nitrate/call :return nil}]
+    (with-redefs [cf/flags #{:telemetry}]
+      (with-mocks [http-mock {:target 'app.http.client/req :return {:status 200}}]
+        (insert-shadow-row (:id prof) "create-project")
+        (run-telemetry {:uri telemetry-uri})
+        ;; The telemetry path deletes the copy: the count is the rows
+        ;; removed by cursor, both paths together.
+        (t/is (= 1 (run-gc)))
+        (t/is (= 0 (count (th/db-exec! ["SELECT * FROM audit_log"]))))))))
+
+(t/deftest gc-keeps-the-shadow-past-the-telemetry-cursor
+  (let [prof (th/create-profile* 62 {:is-active true})]
+    ;; The telemetry cursor stays at (0, 0): the copy is after it.
+    (with-redefs [cf/flags #{:telemetry}]
+      (insert-shadow-row (:id prof) "create-project")
+      (t/is (= 0 (run-gc)))
+      (t/is (= 1 (count (th/db-exec! ["SELECT * FROM audit_log"])))))))
+
+(t/deftest gc-telemetry-lag-does-not-hold-the-full-rows
+  ;; A telemetry pass every three hours must not retain the events Nexus and
+  ;; the admin console already archived: each path has its own position.
+  (let [prof (th/create-profile* 62 {:is-active true})]
+    (with-redefs [cf/flags #{:nexus}]
+      (with-mocks [http-mock {:target 'app.http.client/req :return {:status 204}}]
+        (th/db-exec! ["DELETE FROM audit_log_consumer_cursor
+                        WHERE consumer = ?::smallint" consumer/admin-console])
         (insert-audit-row (:id prof) "create-project")
-        (insert-audit-row (:id prof) "create-project" {} "telemetry:backend")
         (run-nexus {:uri archive-uri})
-        (run-admin-console)
-        ;; The telemetry task owns the shadows: the GC leaves them.
+        (insert-shadow-row (:id prof) "navigate")
         (t/is (= 1 (run-gc)))
         (let [rows (th/db-exec! ["SELECT source FROM audit_log"])]
           (t/is (= ["telemetry:backend"] (mapv :source rows))))))))
+
+(t/deftest gc-retention-deletes-the-expired-shadow-without-a-cursor
+  ;; The retention window is the guarantee, not the cursors: with no cursor
+  ;; at all (nothing has ever run) an eight-day-old copy is still deleted.
+  ;; The run counts it with the rest of the rows it removed.
+  (th/db-exec! ["DELETE FROM audit_log_consumer_cursor"])
+  (insert-shadow-row uuid/zero "create-project"
+                     (ct/minus (ct/now) (ct/duration {:days 8})))
+  (t/is (= 1 (run-gc)))
+  (t/is (= 0 (count (th/db-exec! ["SELECT * FROM audit_log"])))))
+
+(t/deftest gc-retention-keeps-the-young-shadow
+  (th/db-exec! ["DELETE FROM audit_log_consumer_cursor"])
+  (insert-shadow-row uuid/zero "create-project")
+  (t/is (= 0 (run-gc)))
+  (t/is (= 1 (count (th/db-exec! ["SELECT * FROM audit_log"])))))
+
+(t/deftest gc-retention-runs-with-telemetry-off
+  ;; The flag only decides who ships; retention is about age, so a copy left
+  ;; behind by an earlier deployment is deleted with telemetry off.
+  (with-redefs [cf/flags #{:nexus}]
+    (insert-shadow-row uuid/zero "create-project"
+                       (ct/minus (ct/now) (ct/duration {:days 8})))
+    (run-gc)
+    (t/is (= 0 (count (th/db-exec! ["SELECT * FROM audit_log"]))))))
+
+(t/deftest gc-retention-does-not-delete-the-full-rows
+  ;; The window applies to the anonymized copies only: an old full row waits
+  ;; for its consumers, however old it is.
+  (th/db-exec! ["DELETE FROM audit_log_consumer_cursor"])
+  (insert-audit-row uuid/zero "create-project")
+  (th/db-exec! ["UPDATE audit_log SET created_at = now() - interval '30 days'"])
+  (t/is (= 0 (run-gc)))
+  (t/is (= 1 (count (th/db-exec! ["SELECT * FROM audit_log"])))))
 
 (t/deftest gc-records-the-discarded-metric
   (let [prof    (th/create-profile* 63 {:is-active true})
         metrics (make-consumer-metrics)
         job-def (ig/init-key :app.loggers.audit.gc/job-def
-                             {::db/pool     (:app.db/pool th/*system*)
-                              ::mtx/metrics metrics})]
+                             {::db/pool      (:app.db/pool th/*system*)
+                              ::wrk/executor (:app.worker/executor th/*system*)
+                              ::mtx/metrics  metrics})]
     (with-redefs [cf/flags #{:nexus :admin-console}]
       (with-mocks [http-mock  {:target 'app.http.client/req :return {:status 204}}
                    admin-mock {:target 'app.nitrate/call :return nil}]
         (insert-audit-row (:id prof) "create-project")
         (insert-audit-row (:id prof) "create-file")
+        ;; An expired copy: the retention window removes it and the run
+        ;; counts it too.
+        (insert-shadow-row (:id prof) "navigate"
+                           (ct/minus (ct/now) (ct/duration {:days 8})))
         (run-nexus {:uri archive-uri})
         (run-admin-console)
-        (t/is (= 2 ((::jobs/handler job-def) nil {})))
-        (t/is (= 2.0 (counter-value metrics :audit-consumer-discarded ["gc"])))))))
+        (t/is (= 3 ((::jobs/handler job-def) nil {})))
+        (t/is (= 3.0 (counter-value metrics :audit-consumer-discarded ["gc"])))))))
 
 (t/deftest gc-deletes-in-batches
   (let [prof (th/create-profile* 64 {:is-active true})]
@@ -1351,27 +1587,81 @@
           (insert-audit-row (:id prof) (str "event-" i)))
         (run-nexus {:uri archive-uri})
         (run-admin-console)
-        (with-redefs-fn {#'gc/batch-size 2}
-          (fn []
-            (t/is (= 5 (run-gc)))))
+        (with-bindings {#'gc/batch-size 2}
+          (t/is (= 5 (run-gc))))
         (t/is (= 0 (count (th/db-exec! ["SELECT * FROM audit_log"]))))))))
 
-(t/deftest init-component-registers-the-cursor-when-enabled
+(t/deftest init-registers-the-cursor-when-enabled
   ;; The GC waits for the cursor table, so an enabled consumer must have
   ;; its (0, 0) row before its first pass. A disabled consumer leaves no
   ;; row behind. `start-loop` is replaced so the test leaves no live
   ;; thread behind; the loop itself has its own test.
   (th/db-exec! ["DELETE FROM audit_log_consumer_cursor"])
   (with-redefs [cf/flags            #{:nexus}
-                consumer/start-loop (fn [_cfg _id _run-pass] nil)]
-    (consumer/init-component
+                consumer/start-loop (fn [_cfg _consumer] nil)]
+    (consumer/init
      {::db/pool     (:app.db/pool th/*system*)
       ::mtx/metrics (:app.metrics/metrics th/*system*)}
-     consumer/nexus
-     identity
-     (fn [_cfg] nil))
+     (assoc consumer.nexus/consumer :prepare identity))
     (t/is (= 0 (:seq (cursor-of consumer/nexus))))
     (t/is (nil? (cursor-of consumer/admin-console)))))
+
+(t/deftest init-prepares-the-transport-uri
+  ;; `prepare` is the single resolution point. The loop and every batch use
+  ;; the normalized URI stored in their cfg.
+  (doseq [[definition cfg config-key base-uri expected-uri uri-key]
+          [[consumer.nexus/consumer
+            (nexus-cfg nil)
+            :nexus-uri
+            "http://nexus.example"
+            "http://nexus.example/api/audit"
+            ::consumer.nexus/uri]
+           [consumer.telemetry/consumer
+            (telemetry-cfg nil)
+            :telemetry-uri
+            telemetry-uri
+            telemetry-uri
+            ::consumer.telemetry/uri]]]
+    (let [started (atom nil)]
+      (with-redefs [cf/flags           #{(:flag definition)}
+                    cf/config          (assoc cf/config config-key (u/uri base-uri))
+                    consumer/start-loop (fn [cfg _consumer]
+                                          (reset! started cfg))]
+        (consumer/init (assoc cfg uri-key (u/uri "http://stale.example")) definition)
+        (t/is (= (u/uri expected-uri) (get @started uri-key)))))))
+
+(t/deftest gc-stops-at-its-time-budget
+  ;; A pass has a wall-clock budget: a stream that keeps feeding rows cannot
+  ;; hold the job alive forever, and whatever is left waits for the next run.
+  (let [prof (th/create-profile* 68 {:is-active true})]
+    (with-redefs [cf/flags #{:nexus}]
+      (with-mocks [http-mock {:target 'app.http.client/req :return {:status 204}}]
+        (th/db-exec! ["DELETE FROM audit_log_consumer_cursor
+                        WHERE consumer = ?::smallint" consumer/admin-console])
+        (dotimes [i 3]
+          (insert-audit-row (:id prof) (str "event-" i)))
+        (run-nexus {:uri archive-uri})
+        (with-bindings {#'gc/run-budget (ct/duration {:seconds 0})}
+          (t/is (= 0 (run-gc))))
+        (t/is (= 3 (count (th/db-exec! ["SELECT * FROM audit_log"]))))
+        ;; The next run has the budget again and drains what was left.
+        (t/is (= 3 (run-gc)))
+        (t/is (= 0 (count (th/db-exec! ["SELECT * FROM audit_log"]))))))))
+
+(t/deftest gc-a-failing-path-does-not-stop-the-others
+  ;; Each path is self-sufficient: a failure logs its path and answers 0, and
+  ;; the others still delete and are counted.
+  (let [prof (th/create-profile* 69 {:is-active true})]
+    ;; One expired copy: the retention path removes it. One fresh copy: its
+    ;; cursor has not passed it, so it stays.
+    (insert-shadow-row (:id prof) "navigate"
+                       (ct/minus (ct/now) (ct/duration {:days 8})))
+    (insert-shadow-row (:id prof) "create-project")
+    (t/is (= 1 (with-redefs-fn {#'gc/delete-full-rows
+                                (fn [_] (throw (ex-info "boom" {})))}
+                 #(run-gc))))
+    (let [rows (th/db-exec! ["SELECT source FROM audit_log"])]
+      (t/is (= ["telemetry:backend"] (mapv :source rows))))))
 
 (t/deftest gc-waits-for-a-consumer-that-has-not-drained-yet
   ;; A consumer that has just started registers its cursor at (0, 0)
@@ -1405,15 +1695,14 @@
     (th/db-exec! ["UPDATE audit_log_consumer_cursor
                       SET xid = ?::xid8, seq = 3 WHERE consumer = ?::smallint"
                   (str high) consumer/admin-console])
-    (let [cursor (@#'gc/get-oldest-cursor {::db/pool th/*pool*})]
+    (let [cursor (@#'gc/get-oldest-full-cursor {::db/pool th/*pool*})]
       (t/is (= (str low) (:xid-text cursor)))
       (t/is (= 7 (:seq cursor))))))
 
 (t/deftest gc-re-reads-the-cursor-between-batches
   ;; A consumer registered between two batches must be seen by the next
-  ;; batch: `delete-one-batch` re-reads the oldest cursor under the
-  ;; registry lock, so it does not delete rows the new consumer has not
-  ;; read.
+  ;; batch: `delete-batch` re-reads the position on every batch, so it does
+  ;; not delete rows the new consumer has not read.
   (let [prof (th/create-profile* 66 {:is-active true})
         cfg  {::db/pool     (:app.db/pool th/*system*)
               ::mtx/metrics (:app.metrics/metrics th/*system*)}]
@@ -1426,15 +1715,33 @@
         (th/db-exec! ["DELETE FROM audit_log_consumer_cursor
                         WHERE consumer = ?::smallint"
                       consumer/admin-console])
-        (with-redefs-fn {#'gc/batch-size 1}
-          (fn []
-            (t/is (= {:deleted 1 :found? true}
-                     (@#'gc/delete-one-batch cfg)))
-            ;; A new consumer registers at (0, 0) between the batches.
-            (consumer/ensure-cursor cfg consumer/admin-console)
-            (t/is (= {:deleted 0 :found? true}
-                     (@#'gc/delete-one-batch cfg)))
-            (t/is (= 3 (count (th/db-exec! ["SELECT * FROM audit_log"]))))))))))
+        (with-bindings {#'gc/batch-size 1}
+          (t/is (= 1 (@#'gc/delete-batch cfg
+                                         @#'gc/get-oldest-full-cursor
+                                         @#'gc/sql:delete-full-batch)))
+          ;; A new consumer registers at (0, 0) between the batches.
+          (consumer/ensure-cursor cfg consumer/admin-console)
+          (t/is (= 0 (@#'gc/delete-batch cfg
+                                         @#'gc/get-oldest-full-cursor
+                                         @#'gc/sql:delete-full-batch)))
+          (t/is (= 3 (count (th/db-exec! ["SELECT * FROM audit_log"])))))))))
+
+(t/deftest gc-bounds-the-telemetry-shadow-batch
+  ;; A delete must not expand past its limit while joining the selected ids
+  ;; back to the table.
+  (let [prof (th/create-profile* 67 {:is-active true})
+        cfg  {::db/pool     (:app.db/pool th/*system*)
+              ::mtx/metrics (:app.metrics/metrics th/*system*)}]
+    (with-redefs [cf/flags #{:telemetry}]
+      (with-mocks [http-mock {:target 'app.http.client/req :return {:status 200}}]
+        (dotimes [i 4]
+          (insert-shadow-row (:id prof) (str "event-" i)))
+        (run-telemetry {:uri telemetry-uri})
+        (with-bindings {#'gc/batch-size 1}
+          (t/is (= 1 (@#'gc/delete-batch cfg
+                                         @#'gc/get-telemetry-cursor
+                                         @#'gc/sql:delete-shadow-batch)))
+          (t/is (= 3 (count (th/db-exec! ["SELECT * FROM audit_log"])))))))))
 
 (t/deftest gc-does-not-delete-past-an-unread-cursor
   ;; Two enabled consumers across a decimal boundary: the GC deletes up to

@@ -154,6 +154,13 @@
     ORDER BY 2 DESC")
 
 (defn- get-action-counters
+  "The event counters of the legacy report: an aggregate of the telemetry
+  shadows that are still in the buffer when the report runs. The number
+  already depended on the flags (the whole day when no full-row consumer
+  persisted, only since the previous run otherwise); now the consumer ships
+  the shadows and the GC deletes them, so it reflects what the buffer still
+  holds. The per-event data reaches Nexus as `telemetry-events` from the
+  consumer; this report does not carry it."
   [conn]
   (let [counters (->> (db/exec! conn [sql:get-counters])
                       (d/index-by (comp keyword :name) :count))
@@ -211,99 +218,6 @@
     (make-legacy-request cfg data)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; AUDIT-EVENT BATCH (TELEMETRY MODE)
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; Telemetry events older than this are purged by the GC step so the
-;; buffer stays bounded.
-(def ^:private batch-size 10000)
-
-(def ^:private sql:aged-telemetry
-  "source LIKE 'telemetry:%' AND created_at < now() - interval '7 days'")
-
-(def ^:private sql:gc-events
-  (str "DELETE FROM audit_log WHERE " sql:aged-telemetry))
-
-(defn- gc-events
-  "Delete telemetry-mode events older than `telemetry-retention-days`
-  so that the buffer stays bounded. The telemetry shadows are outside
-  the consumer GC on purpose: this task owns them."
-  [{:keys [::db/conn]}]
-  (let [result (db/exec-one! conn [sql:gc-events])]
-    (when (pos? (:next.jdbc/update-count result))
-      (l/warn :hint "purged stale telemetry events"
-              :count (:next.jdbc/update-count result)))))
-
-(def ^:private sql:fetch-telemetry-events
-  "SELECT id, name, type, source, tracked_at, profile_id, props, context
-     FROM audit_log
-    WHERE source LIKE 'telemetry:%'
-    ORDER BY created_at ASC
-    LIMIT ?")
-
-(defn- row->event
-  [{:keys [name type source tracked-at profile-id props context]}]
-  (d/without-nils
-   {:name       name
-    :type       type
-    :source     source
-    :tracked-at tracked-at
-    :profile-id profile-id
-    :props      (or (some-> props db/decode-transit-pgobject) {})
-    :context    (or (some-> context db/decode-transit-pgobject) {})}))
-
-(defn send-event-batch
-  "Send a single batch of events to the telemetry endpoint. Returns
-  true on success. The events are sent as a plain vector of event
-  maps; the JSON encoder handles UUID and temporal types natively and
-  the receiver coerces them back to proper types."
-  [{:keys [::setup/props] :as cfg} batch]
-  (let [payload {:type :telemetry-events
-                 :version (:full cf/version)
-                 :instance-id (:instance-id props)
-                 :events (vec batch)}
-        request {:method  :post
-                 :uri     (cf/get :telemetry-uri)
-                 :headers {"content-type" "application/json"}
-                 :body    (json/encode-str payload)}
-        resp    (http/req cfg request {:skip-ssrf-check? true})]
-    (if (<= (:status resp) 206)
-      true
-      (do
-        (l/warn :hint "telemetry event batch send failed"
-                :status (:status resp)
-                :body   (:body resp))
-        false))))
-
-(defn- delete-sent-events
-  "Delete rows by their ids after a successful send. The telemetry
-  shadows are outside the consumer GC, so this task is their only
-  deleter: it can remove a row a consumer has not read yet (the cursor
-  simply skips over the missing position)."
-  [conn ids]
-  (let [arr (db/create-array conn "uuid" ids)]
-    (db/exec-one! conn ["DELETE FROM audit_log WHERE id = ANY(?)" arr])))
-
-(defn- collect-and-send-audit-events
-  "Collect anonymous telemetry-mode audit events and ship them to the
-  telemetry endpoint in a loop. Each iteration fetches one page of
-  `batch-size` rows, encodes and sends them, then deletes the rows on
-   success. The loop stops as soon as a send returns false, leaving
-   remaining rows intact for the next run."
-  [{:keys [::db/conn] :as cfg}]
-  (loop [counter 1]
-    (when-let [rows (-> (db/exec! conn [sql:fetch-telemetry-events batch-size])
-                        (not-empty))]
-      (let [events (mapv row->event rows)
-            ids    (mapv :id rows)]
-        (l/dbg :hint "shipping telemetry event batch"
-               :total (count events)
-               :batch counter)
-        (when (send-event-batch cfg events)
-          (delete-sent-events conn ids)
-          (recur (inc counter)))))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TASK ENTRY POINT
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -347,7 +261,6 @@
 
     (if enabled?
       (when send?
-        (db/run! cfg gc-events)
         ;; Randomize start time to avoid thundering herd when multiple
         ;; instances restart at the same time.
         (px/sleep (rand-int 10000))
@@ -357,16 +270,7 @@
             (send-legacy-data cfg stats @subs))
           (catch Exception cause
             (l/wrn :hint "unable to send legacy report"
-                   :cause cause)))
-
-        ;; Ship any anonymous audit-log events accumulated in
-        ;; telemetry mode (only when the buffer has no consumer).
-        (when-not cf/audit-persist?
-          (try
-            (db/run! cfg collect-and-send-audit-events)
-            (catch Exception cause
-              (l/wrn :hint "unable to send events"
-                     :cause cause)))))
+                   :cause cause))))
 
       ;; If we have telemetry disabled, but there are users that are
       ;; explicitly checked the newsletter subscription on the

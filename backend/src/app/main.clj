@@ -33,6 +33,7 @@
    ;; the config keys).
    [app.loggers.audit.consumers.admin-console]
    [app.loggers.audit.consumers.nexus]
+   [app.loggers.audit.consumers.telemetry]
    [app.loggers.audit.gc]
    [app.loggers.webhooks :as-alias webhooks]
    [app.metrics :as mtx]
@@ -370,7 +371,7 @@
 
    :audit-consumer-discarded
    {::mdef/name "penpot_audit_consumer_discarded_total"
-    ::mdef/help "Audit log entries discarded without being archived, by reason."
+    ::mdef/help "Audit log entries removed from the buffer by the GC, by reason."
     ::mdef/labels ["reason"]
     ::mdef/type :counter}
 
@@ -758,8 +759,9 @@
     ::mtx/metrics (ig/ref ::mtx/metrics)}
 
    :app.loggers.audit.gc/job-def
-   {::db/pool     (ig/ref ::db/pool)
-    ::mtx/metrics (ig/ref ::mtx/metrics)}
+   {::db/pool      (ig/ref ::db/pool)
+    ::wrk/executor (ig/ref ::wrk/executor)
+    ::mtx/metrics  (ig/ref ::mtx/metrics)}
 
    ::email/blacklist
    {}
@@ -950,6 +952,12 @@
    :app.loggers.audit.consumers.admin-console/consumer
    {::db/pool            (ig/ref ::db/pool)
     :app.nitrate/client  (ig/ref :app.nitrate/client)
+    ::mtx/metrics        (ig/ref ::mtx/metrics)}
+
+   :app.loggers.audit.consumers.telemetry/consumer
+   {::db/pool            (ig/ref ::db/pool)
+    ::http.client/client (ig/ref ::http.client/client)
+    ::setup/props        (ig/ref ::setup/props)
     ::mtx/metrics        (ig/ref ::mtx/metrics)}})
 
 

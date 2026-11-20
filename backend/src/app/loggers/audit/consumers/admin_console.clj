@@ -228,12 +228,7 @@
                           rows)
         total    (count rows)
         skipped  (- total (count events))
-        uri-host (::uri-host cfg)]
-    (l/dbg :hint "consumer events chunk ready"
-           :consumer "admin-console"
-           :uri-host uri-host
-           :total total
-           :skipped skipped)
+        host     (::host cfg)]
     (if (empty? events)
       {:processed 0 :skipped skipped}
       ;; Enrich first, outside the try: a local DB/decode failure is
@@ -245,14 +240,14 @@
           (nitrate/call cfg :ingest-audit-log {:events enriched})
           (l/dbg :hint "consumer events chunk ingested"
                  :consumer "admin-console"
-                 :uri-host uri-host
+                 :host host
                  :processed n
                  :skipped skipped)
           {:processed n :skipped skipped}
           (catch Throwable cause
             (l/dbg :hint "consumer events chunk failed"
                    :consumer "admin-console"
-                   :uri-host uri-host
+                   :host host
                    :events n
                    :code :admin-console-send-failed)
             (throw (ex/raise :type :internal
@@ -271,15 +266,6 @@
                        :consumer "admin-console"
                        :events (count decoded))]
     (send-events cfg decoded)))
-
-(defn run-pass
-  "One pass of the admin-console consumer: drain the stream from its cursor
-  up to the frontier of the pass. The loop of `::consumer` calls it once
-  per pass; direct callers (REPL, tests) get the same behavior."
-  [cfg]
-  (consumers/drain-consumer cfg
-                            consumers/admin-console
-                            process-chunk))
 
 (defmethod ig/assert-key ::consumer
   [_ cfg]
@@ -300,19 +286,24 @@
       (ex/raise :type :internal
                 :code :task-not-configured
                 :hint "admin-console consumer not configured, missing :admin-console-uri"))
-    (let [uri-host (u/get-domain uri)]
+    (let [host (u/get-domain uri)]
       (l/dbg :hint "audit log consumer initialized"
              :consumer "admin-console"
-             :uri-host uri-host)
-      (assoc cfg ::uri-host uri-host))))
+             :host host)
+      (assoc cfg ::host host))))
+
+(def consumer
+  "The allowlisted full rows travel to the admin console."
+  {:id      consumers/admin-console
+   :flag    :admin-console
+   :label   "admin-console"
+   :prepare prepare
+   :process process-chunk})
 
 (defmethod ig/init-key ::consumer
   [_ cfg]
-  (consumers/init-component cfg
-                            consumers/admin-console
-                            prepare
-                            run-pass))
+  (consumers/init cfg consumer))
 
 (defmethod ig/halt-key! ::consumer
   [_ thread]
-  (consumers/halt-component thread))
+  (consumers/halt thread))

@@ -333,8 +333,8 @@
     (when cf/telemetry-enabled?
       ;; NOTE: when both persistence and telemetry are enabled, events are stored
       ;; twice: once with full details (above) and once stripped of props and
-      ;; ip-addr, tagged with source="telemetry" so the telemetry task can
-      ;; collect and ship them.  The profile-id is preserved (UUIDs are already
+      ;; ip-addr, tagged with source="telemetry:*" so the telemetry consumer
+      ;; (id 0) can send them.  The profile-id is preserved (UUIDs are already
       ;; anonymous random identifiers).  Only a safe subset of context fields
       ;; is kept: initiator, version, client-version and client-user-agent.
       ;; Timestamps are truncated to day precision to avoid leaking exact event
