@@ -929,6 +929,67 @@
         (set! (.-value token) (.-value token))
         (t/is (= shadow (:value @captured)))))))
 
+(t/deftest token-setters-validate-the-candidate-resolution
+  ;; The candidate resolves against the library without the token's
+  ;; current name, so references to it can't validate it.
+  (let [set-id    (cthi/new-id! :token-set)
+        size-id   (cthi/new-id! :size-token)
+        double-id (cthi/new-id! :double-token)
+        file      (-> (cthf/sample-file :file1 :page-label :page1)
+                      (ctht/add-tokens-lib)
+                      (ctht/update-tokens-lib
+                       #(-> %
+                            (ctob/add-set (ctob/make-token-set :id set-id :name "core"))
+                            (ctob/add-token set-id (ctob/make-token :id size-id :name "size" :type :sizing :value "4"))
+                            (ctob/add-token set-id (ctob/make-token :id double-id :name "double" :type :sizing :value "{size} * 2")))))
+        store     (ths/setup-store file)
+        _         (set! st/state store)
+        _         (set! st/stream (ptk/input-stream store))
+        file-id   (:id file)
+        updates   (atom [])
+        invalid   (atom [])]
+    (with-redefs [r/check-permission (constantly true)
+                  u/check-editable-tokens (constantly nil)
+                  u/not-valid (fn [_ code value] (swap! invalid conj [code value]))
+                  dwtl/update-token (mock/stub (fn [_ _ attrs] (swap! updates conj attrs) {:attrs attrs}))
+                  st/emit! mock/noop]
+      (let [size   (ptok/token-proxy "plugin-id" file-id set-id size-id)
+            double (ptok/token-proxy "plugin-id" file-id set-id double-id)]
+        (set! (.-value double) "{size} * 3")
+        (set! (.-value double) "{missing} * 2")
+        (set! (.-value double) "{double} * 2")
+        (set! (.-name size) "space")
+        (t/is (= [{:value "{size} * 3"} {:name "space"}] @updates))
+        (t/is (= [[:value "{missing} * 2"] [:value "{double} * 2"]] @invalid))))))
+
+(t/deftest token-name-setter-accepts-a-name-below-the-old-name
+  ;; The candidate resolves without the token's current name: with the
+  ;; old `size` left in, `size.small` would be a token below another
+  ;; token, a name collision.
+  (let [set-id  (cthi/new-id! :token-set)
+        size-id (cthi/new-id! :size-token)
+        file    (-> (cthf/sample-file :file1 :page-label :page1)
+                    (ctht/add-tokens-lib)
+                    (ctht/update-tokens-lib
+                     #(-> %
+                          (ctob/add-set (ctob/make-token-set :id set-id :name "core"))
+                          (ctob/add-token set-id (ctob/make-token :id size-id :name "size" :type :sizing :value "4")))))
+        store   (ths/setup-store file)
+        _       (set! st/state store)
+        _       (set! st/stream (ptk/input-stream store))
+        file-id (:id file)
+        updates (atom [])
+        invalid (atom [])]
+    (with-redefs [r/check-permission (constantly true)
+                  u/check-editable-tokens (constantly nil)
+                  u/not-valid (fn [_ code value] (swap! invalid conj [code value]))
+                  dwtl/update-token (mock/stub (fn [_ _ attrs] (swap! updates conj attrs) {:attrs attrs}))
+                  st/emit! mock/noop]
+      (let [size (ptok/token-proxy "plugin-id" file-id set-id size-id)]
+        (set! (.-name size) "size.small")
+        (t/is (= [{:name "size.small"}] @updates))
+        (t/is (= [] @invalid))))))
+
 (t/deftest typography-token-resolved-value-is-plugin-array-shape
   (let [token (ctob/make-token
                {:name "type.body"
@@ -940,7 +1001,7 @@
                         :letter-spacing "1"
                         :text-case "uppercase"
                         :text-decoration "underline"}})
-        result (get-resolved-value token {(:name token) token})
+        result (get-resolved-value token [[nil {(:name token) token}]])
         entry  (aget result 0)]
     (t/is (array? result))
     (t/is (= ["Inter" "Arial"] (vec (aget entry "fontFamilies"))))
@@ -960,7 +1021,7 @@
                          :spread "4px"
                          :color "#000000"
                          :inset false}]})
-        result (get-resolved-value token {(:name token) token})
+        result (get-resolved-value token [[nil {(:name token) token}]])
         entry  (aget result 0)]
     (t/is (array? result))
     (t/is (= 1 (aget entry "offsetX")))
@@ -973,7 +1034,7 @@
                {:name "font.primary"
                 :type :font-family
                 :value ["Inter" "Arial"]})
-        result (get-resolved-value token {(:name token) token})]
+        result (get-resolved-value token [[nil {(:name token) token}]])]
     (t/is (array? result))
     (t/is (= ["Inter" "Arial"] (vec result)))))
 
@@ -984,7 +1045,7 @@
                {:name "font.body"
                 :type :font-family
                 :value ["Hanken Grotesk" "IBM Plex Mono"]})
-        result (get-resolved-value token {(:name token) token})]
+        result (get-resolved-value token [[nil {(:name token) token}]])]
     (t/is (array? result))
     (t/is (= ["Hanken Grotesk" "IBM Plex Mono"] (vec result)))))
 
@@ -994,7 +1055,7 @@
                 :type :typography
                 :value {:font-family ["Hanken Grotesk" "Arial"]
                         :font-size "16px"}})
-        result (get-resolved-value token {(:name token) token})
+        result (get-resolved-value token [[nil {(:name token) token}]])
         entry  (aget result 0)]
     (t/is (= ["Hanken Grotesk" "Arial"] (vec (aget entry "fontFamilies"))))))
 
@@ -1007,7 +1068,7 @@
                   {:name "font.display"
                    :type :font-family
                    :value families})
-        result   (get-resolved-value token {(:name token) token})]
+        result   (get-resolved-value token [[nil {(:name token) token}]])]
     (t/is (= families (vec result)))))
 
 (t/deftest font-family-token-resolved-value-mixes-references-and-names
@@ -1019,8 +1080,8 @@
                 {:name "font.stack"
                  :type :font-family
                  :value ["{font.base}" "Rock 3D"]})
-        result (get-resolved-value token {(:name base)  base
-                                          (:name token) token})]
+        result (get-resolved-value token [[nil {(:name base)  base
+                                                (:name token) token}]])]
     (t/is (= ["Red Hat Text" "Rock 3D"] (vec result)))))
 
 (t/deftest font-family-token-resolved-value-keeps-quoted-names
@@ -1028,7 +1089,7 @@
                 {:name "font.quoted"
                  :type :font-family
                  :value ["\"Red Hat Mono\"" "'Black Ops One'"]})
-        result (get-resolved-value token {(:name token) token})]
+        result (get-resolved-value token [[nil {(:name token) token}]])]
     (t/is (= ["Red Hat Mono" "Black Ops One"] (vec result)))))
 
 (t/deftest typography-token-resolved-value-keeps-names-with-expression-words
@@ -1037,7 +1098,7 @@
                  :type :typography
                  :value {:font-family ["Red Hat Display" "Press Start 2P"]
                          :font-size "16px"}})
-        result (get-resolved-value token {(:name token) token})
+        result (get-resolved-value token [[nil {(:name token) token}]])
         entry  (aget result 0)]
     (t/is (= ["Red Hat Display" "Press Start 2P"]
              (vec (aget entry "fontFamilies"))))))
