@@ -170,10 +170,14 @@
 
 (defn update-variant-container-properties
   "Apply `f` to the property vectors of the members of `container`, in
-   `:shapes` order, and write each result with `update-variant-properties`.
-   `f` takes and returns a vector of property vectors."
+   layers-panel order (top first, the reverse of `:shapes`), and write each
+   result with `update-variant-properties`. `f` takes and returns a vector
+   of property vectors."
   [data objects container f]
-  (let [components (mapv :component (qualifying-variant-members data objects container))
+  (let [components (->> (qualifying-variant-members data objects container)
+                        (map :component)
+                        (reverse)
+                        (vec))
         props-seq  (f (mapv #(vec (or (:variant-properties %) [])) components))]
     (reduce (fn [data [component props]]
               (update-variant-properties data component (constantly props)))
