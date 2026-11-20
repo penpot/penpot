@@ -1,6 +1,10 @@
 import { test, expect } from "@playwright/test";
 import { WasmWorkspacePage } from "../pages/WasmWorkspacePage";
-import { presenceFixture, joinFixture2, joinFixture3 } from "../../data/workspace/ws-notifications";
+import {
+  presenceFixture,
+  joinFixture2,
+  joinFixture3,
+} from "../../data/workspace/ws-notifications";
 
 test.beforeEach(async ({ page }) => {
   await WasmWorkspacePage.init(page);
@@ -59,7 +63,9 @@ test("BUG 13058 - Presence list shows up to 3 user avatars", async ({
     page.getByTestId("active-users-list").getByAltText("Princesa Leia"),
   ).toHaveCount(2);
 
-  await expect(page.getByTestId("active-users-list").getByText("+2")).toBeVisible();
+  await expect(
+    page.getByTestId("active-users-list").getByText("+2"),
+  ).toBeVisible();
 });
 
 test("User draws a rect", async ({ page }) => {
@@ -158,7 +164,9 @@ test("Selection size badge shows unrotated dimensions for rotated single selecti
   await expect(badgeText).toHaveText("126 x 134");
 });
 
-test("Selection size badge shows dimensions for path shapes", async ({ page }) => {
+test("Selection size badge shows dimensions for path shapes", async ({
+  page,
+}) => {
   const workspacePage = new WasmWorkspacePage(page);
   await workspacePage.setupEmptyFile();
   await workspacePage.mockRPC(
@@ -324,7 +332,9 @@ test("User adds a library and its automatically selected in the color palette", 
   // Now the get-file call should return a library
   await workspacePage.mockRPC(/get\-file\?/, "workspace/get-file-library.json");
   await workspacePage.openLibrariesModal();
-  await workspacePage.librariesModal.getByRole("tab", { name: "Libraries" }).click();
+  await workspacePage.librariesModal
+    .getByRole("tab", { name: "Libraries" })
+    .click();
   await workspacePage.clickLibrary("Testing library 1");
   await workspacePage.closeLibrariesModal();
 
@@ -440,8 +450,12 @@ test("Bug 9066 - Problem with grid layout", async ({ page }) => {
   await page.getByTitle("C", { exact: true }).click();
 
   await expect(
-    page.getByTestId("children-6ad3e6b9-c5a0-80cf-8005-283bbe378bcb"),
-  ).toHaveText(["CBCDEF"]);
+    workspacePage.layers
+      .locator("[id='6ad3e6b9-c5a0-80cf-8005-283bbe378bcb']")
+      .locator(
+        "xpath=following::div[@data-testid='layer-row'][position() <= 6]",
+      ),
+  ).toHaveText(["C", "B", "C", "D", "E", "F"]);
 });
 
 test("User have toolbar", async ({ page }) => {
@@ -491,8 +505,10 @@ test("Copy/paste properties", async ({ page, context }) => {
 
   await page.getByTestId("layer-item").getByRole("button").first().click();
   await page
-    .getByTestId("children-0eef4dd0-b39b-807a-8005-934805578f93")
-    .getByText("Rectangle")
+    .locator("[id='0eef4dd0-b39b-807a-8005-934805578f93']")
+    .locator("xpath=following::div[@data-testid='layer-row']")
+    .filter({ hasText: "Rectangle" })
+    .first()
     .click({ button: "right" });
   await page.getByText("Copy/Paste as").hover();
   await page.getByText("Copy properties").click();
@@ -658,9 +674,7 @@ test("BUG 13415 - Grid layout overlay is not removed when deleting a board", asy
   await expect(workspacePage.canvas).toHaveScreenshot();
 });
 
-test("BUG 13822 - Problems with z-index", async ({
-  page
-}) => {
+test("BUG 13822 - Problems with z-index", async ({ page }) => {
   const workspacePage = new WasmWorkspacePage(page);
   await workspacePage.setupEmptyFile();
   await workspacePage.mockGetFile("workspace/get-file-13822.json");
@@ -674,12 +688,13 @@ test("BUG 13822 - Problems with z-index", async ({
   await expect(workspacePage.canvas).toHaveScreenshot();
 });
 
-test("BUG 14239 - Fix default path thickness", async ({
-  page
-}) => {
+test("BUG 14239 - Fix default path thickness", async ({ page }) => {
   const workspacePage = new WasmWorkspacePage(page);
   await workspacePage.setupEmptyFile();
-  await workspacePage.mockRPC("update-file?id=*", "workspace/update-file-empty.json");
+  await workspacePage.mockRPC(
+    "update-file?id=*",
+    "workspace/update-file-empty.json",
+  );
   await workspacePage.goToWorkspace();
 
   // (Workaround a bug in which mouse position can be nil and path editor crashes
@@ -692,7 +707,9 @@ test("BUG 14239 - Fix default path thickness", async ({
   // 2. Close it
   await page.keyboard.press("Escape");
 
-  await expect(workspacePage.rightSidebar.getByRole("textbox", { name: "Stroke width" })).toHaveValue("1");
+  await expect(
+    workspacePage.rightSidebar.getByRole("textbox", { name: "Stroke width" }),
+  ).toHaveValue("1");
 });
 
 test("Bug 14250 - User with viewer role can select a locked board with a grid", async ({
@@ -701,10 +718,7 @@ test("Bug 14250 - User with viewer role can select a locked board with a grid", 
   const workspacePage = new WasmWorkspacePage(page);
   await workspacePage.setupEmptyFile();
   await workspacePage.mockRPC("get-teams", "get-teams-role-viewer.json");
-  await workspacePage.mockRPC(
-    /get\-file\?/,
-    "workspace/get-file-14250.json",
-  );
+  await workspacePage.mockRPC(/get\-file\?/, "workspace/get-file-14250.json");
 
   await workspacePage.goToWorkspace();
 

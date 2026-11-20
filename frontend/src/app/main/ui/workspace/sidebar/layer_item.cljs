@@ -10,7 +10,6 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
-   [app.common.math :as mth]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
@@ -29,7 +28,6 @@
    [app.util.keyboard :as kbd]
    [app.util.shape-icon :as usi]
    [app.util.timers :as ts]
-   [beicon.v2.core :as rx]
    [clojure.set :as set]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
@@ -38,7 +36,40 @@
 (defonce ^:private sidebar-hover-queue (atom {:enter #{} :leave #{}}))
 (defonce ^:private sidebar-hover-pending? (atom false))
 
-(def ^:const default-chunk-size 50)
+(def ^:private ref:highlighted-shapes
+  (l/derived (fn [local]
+               (-> local
+                   (get :highlighted)
+                   (not-empty)))
+             refs/workspace-local))
+
+(def ref:shape-for-rename
+  (l/derived (l/key :shape-for-rename) refs/workspace-local))
+
+;; Holds an atom with the objects shown in a layers tree. Rows subscribe
+;; to their own shape through it, so a change in the objects map only
+;; re-renders the rows whose shape changed.
+(def layer-objects-ctx
+  (mf/create-context nil))
+
+(def sidebar-selected-id
+  "Id of the last layer row clicked, so the tree does not scroll to the
+  row the user just clicked."
+  (volatile! nil))
+
+(defn use-objects-ref
+  [objects]
+  (let [objects-ref  (mf/with-memo [] (atom objects))
+        notified-ref (mf/use-ref objects)]
+    ;; Rows mounting in this render read the atom before they subscribe to
+    ;; it, so it must hold the new objects now; a change notified before
+    ;; they subscribe would be lost. Mounted rows are notified on commit.
+    (set! (.-state objects-ref) objects)
+    (mf/with-layout-effect [objects]
+      (let [prev (mf/ref-val notified-ref)]
+        (mf/set-ref-val! notified-ref objects)
+        (-notify-watches objects-ref prev objects)))
+    objects-ref))
 
 (defn- schedule-sidebar-hover-flush []
   (when (compare-and-set! sidebar-hover-pending? false true)
@@ -60,10 +91,10 @@
            (apply st/emit! (map dw/highlight-shape enter))))))))
 
 (mf/defc layer-item-inner*
-  [{:keys [item depth parent-size name-ref children ref style rename-id
+  [{:keys [item depth parent-size children ref style rename-id
            ;; Flags
            is-read-only is-highlighted is-selected is-component-tree
-           is-filtered is-expanded dnd-over dnd-over-top dnd-over-bot hide-toggle
+           is-filtered is-expanded is-parent-selected dnd-over dnd-over-top dnd-over-bot hide-toggle
            ;; Callbacks
            on-select-shape on-context-menu on-pointer-enter on-pointer-leave on-zoom-to-selected
            on-toggle-collapse on-enable-drag on-disable-drag on-toggle-visibility on-toggle-blocking
@@ -85,9 +116,11 @@
         variant-error         (when is-variant? (:variant-error item))
 
         component-id          (get item :component-id)
-        data                  (mf/deref refs/workspace-data)
-        variant-properties    (-> (ctkl/get-component data component-id)
-                                  (get :variant-properties))
+        variant-props-ref     (mf/with-memo [component-id]
+                                (l/derived #(-> (ctkl/get-component % component-id)
+                                                (get :variant-properties))
+                                           refs/workspace-data))
+        variant-properties    (mf/deref variant-props-ref)
 
         icon-shape            (usi/get-shape-icon item)]
 
@@ -105,6 +138,7 @@
                     :component (ctk/instance-head? item)
                     :masked (:masked-group item)
                     :selected is-selected
+                    :parent-selected is-parent-selected
                     :type-frame (cfh/frame-shape? item)
                     :type-bool (cfh/bool-shape? item)
                     :type-comp (or is-component-tree is-variant-container?)
@@ -156,8 +190,7 @@
              [:div {:class (stl/css :absolute)}])
            [:> icon* {:icon-id icon-shape :size "s" :data-testid (str "icon-" icon-shape)}]]])
 
-       [:> layer-name* {:ref name-ref
-                        :rename-id rename-id
+       [:> layer-name* {:rename-id rename-id
                         :shape-id id
                         :shape-name name
                         :is-shape-touched touched?
@@ -206,63 +239,47 @@
 
      children]))
 
-(mf/defc layer-item*
-  {::mf/wrap [mf/memo]}
-  [{:keys [index item selected objects rename-id
-           is-sortable is-filtered depth is-component-child
-           highlighted style render-children parent-size]
-    :or {render-children true}}]
+(mf/defc layer-item-row*
+  {::mf/private true}
+  [{:keys [index item objects-ref is-sortable is-filtered depth
+           is-component-child has-copy-parent style parent-size]}]
   (let [id                (get item :id)
         blocked?          (get item :blocked)
         hidden?           (get item :hidden)
 
-        shapes            (get item :shapes)
-        shapes            (mf/with-memo [shapes objects]
-                            (loop [counter 0
-                                   shapes  (seq shapes)
-                                   result  (list)]
-
-                              (if-let [id (first shapes)]
-                                (if-let [obj (get objects id)]
-                                  (do
-                                    ;; NOTE: this is a bit hacky, but reduces substantially
-                                    ;; the allocation; If we use enumeration, we allocate
-                                    ;; new sequence and add one iteration on each render,
-                                    ;; independently if objects are changed or not. If we
-                                    ;; store counter on metadata, we still need to create a
-                                    ;; new allocation for each shape; with this method we
-                                    ;; bypass this by mutating a private property on the
-                                    ;; object removing extra allocation and extra iteration
-                                    ;; on every request.
-                                    (unchecked-set obj "__$__counter" counter)
-                                    (recur (inc counter)
-                                           (rest shapes)
-                                           (conj result obj)))
-                                  (recur (inc counter)
-                                         (rest shapes)
-                                         result))
-
-                                (-> result vec not-empty))))
-
         drag-disabled*    (mf/use-state false)
         drag-disabled?    (deref drag-disabled*)
 
-        scroll-middle-ref (mf/use-ref true)
         expanded-iref     (mf/with-memo [id]
                             (l/derived #(dm/get-in % [:expanded id]) refs/workspace-local))
         is-expanded       (mf/deref expanded-iref)
 
-        is-selected       (contains? selected id)
-        is-highlighted    (contains? highlighted id)
+        selected-iref     (mf/with-memo [id]
+                            (refs/make-selected-ref id))
+        is-selected       (mf/deref selected-iref)
+
+        highlighted-iref  (mf/with-memo [id]
+                            (l/derived #(contains? % id) ref:highlighted-shapes))
+        is-highlighted    (mf/deref highlighted-iref)
+
+        rename-iref       (mf/with-memo [id]
+                            (l/derived #(when (= % id) %) ref:shape-for-rename))
+        rename-id         (mf/deref rename-iref)
+
+        parent-selected-iref
+        (mf/with-memo [id objects-ref]
+          (l/derived (fn [selected]
+                       (boolean
+                        (and (d/not-empty? selected)
+                             (some #(contains? selected %)
+                                   (cfh/get-parent-ids @objects-ref id)))))
+                     refs/selected-shapes))
+        is-parent-selected (mf/deref parent-selected-iref)
 
         container?        (or (cfh/frame-shape? item)
                               (cfh/group-shape? item))
 
         is-read-only      (mf/use-ctx ctx/workspace-read-only?)
-        root-board?       (and (cfh/frame-shape? item)
-                               (= uuid/zero (:parent-id item)))
-
-        name-node-ref     (mf/use-ref)
 
         depth             (+ depth 1)
 
@@ -273,16 +290,9 @@
         enable-drag       (mf/use-fn #(reset! drag-disabled* false))
         disable-drag      (mf/use-fn #(reset! drag-disabled* true))
 
-        ;; Lazy loading of child elements via IntersectionObserver
-        children-count*   (mf/use-state 0)
-        children-count    (deref children-count*)
-
-        lazy-ref          (mf/use-ref nil)
-        observer-ref      (mf/use-ref nil)
-
         toggle-collapse
         (mf/use-fn
-         (mf/deps is-expanded id objects)
+         (mf/deps is-expanded id objects-ref)
          (fn [event]
            (dom/stop-propagation event)
            (cond
@@ -292,7 +302,7 @@
 
              ;; Alt+click while collapsed expands the entire subtree rooted at this id
              (and (not is-expanded) (kbd/alt? event))
-             (st/emit! (dwc/expand-subtree id objects))
+             (st/emit! (dwc/expand-subtree id @objects-ref))
 
              :else
              (st/emit! (dwc/toggle-collapse id)))))
@@ -318,21 +328,18 @@
 
         select-shape
         (mf/use-fn
-         (mf/deps id is-filtered objects)
+         (mf/deps id is-filtered objects-ref)
          (fn [event]
            (dom/prevent-default event)
-           (mf/set-ref-val! scroll-middle-ref false)
+           (vreset! sidebar-selected-id id)
            (cond
              (kbd/shift? event)
              (if is-filtered
-               (st/emit! (dw/shift-select-shapes id objects))
+               (st/emit! (dw/shift-select-shapes id @objects-ref))
                (st/emit! (dw/shift-select-shapes id)))
 
              (kbd/mod? event)
              (st/emit! (dw/select-shape id true))
-
-             (> (count selected) 1)
-             (st/emit! (dw/select-shape id))
 
              :else
              (st/emit! (dw/select-shape id)))))
@@ -371,16 +378,17 @@
 
         on-drag
         (mf/use-fn
-         (mf/deps id selected)
          (fn [{:keys [id]}]
-           (when (not (contains? selected id))
+           (when (not (contains? @refs/selected-shapes id))
              (st/emit! (dw/select-shape id)))))
 
         on-drop
         (mf/use-fn
-         (mf/deps id objects is-expanded selected)
+         (mf/deps id objects-ref is-expanded)
          (fn [side _data]
-           (let [single? (= (count selected) 1)
+           (let [objects @objects-ref
+                 selected @refs/selected-shapes
+                 single? (= (count selected) 1)
                  same?   (and single? (= (first selected) id))]
              (when-not same?
                (let [files (deref refs/files)
@@ -442,13 +450,14 @@
          ;; We don't want to change the structure of component copies
          :draggable? (and ^boolean is-sortable
                           ^boolean (not is-read-only)
-                          ^boolean (not (ctn/has-any-copy-parent? objects item))))
+                          ^boolean (not has-copy-parent)))
 
         on-tab-press
         (mf/use-fn
-         (mf/deps id objects)
+         (mf/deps id objects-ref)
          (fn [event]
-           (let [shift?    (kbd/shift? event)
+           (let [objects   @objects-ref
+                 shift?    (kbd/shift? event)
                  shape     (get objects id)
                  parent    (get objects (:parent-id shape))
                  siblings  (:shapes parent)
@@ -462,94 +471,11 @@
                  (when (some? target-id)
                    (st/emit! (dw/start-rename-shape target-id))))))))]
 
-    (mf/with-effect [is-selected selected]
-      (let [single? (= (count selected) 1)
-            node              (mf/ref-val name-node-ref)
-            scroll-node       (dom/get-parent-with-data node "scroll-container")
-            parent-node       (dom/get-parent-at node 2)
-            first-child-node  (dom/get-first-child parent-node)
-            scroll-to-middle? (mf/ref-val scroll-middle-ref)
-
-            subid
-            (when (and ^boolean single?
-                       ^boolean is-selected
-                       ^boolean scroll-to-middle?)
-              (ts/schedule
-               100
-               #(when (and node scroll-node)
-                  (let [scroll-distance-ratio (dom/get-scroll-distance-ratio node scroll-node)
-                        scroll-behavior (if (> scroll-distance-ratio 1) "instant" "smooth")]
-                    (dom/scroll-into-view-if-needed! first-child-node #js {:block "center" :behavior scroll-behavior :inline "start"})
-                    (mf/set-ref-val! scroll-middle-ref true)))))]
-
-        #(when (some? subid)
-           (rx/dispose! subid))))
-
-    ;; Setup scroll-driven lazy loading when expanded
-    ;; and ensures selected children are loaded immediately
-    (mf/with-effect [is-expanded shapes selected]
-      (let [total (count shapes)]
-        (if ^boolean is-expanded
-          (let [;; Children are rendered in reverse order, so index 0 in render = last in shapes-vec
-                ;; Find if any selected id is a direct child and get its render index
-                selected-child-render-idx
-                (when (> total default-chunk-size)
-                  (some (fn [sel-id]
-                          (d/index-of-pred shapes #(= (get % :id) sel-id)))
-                        selected))
-
-                ;; Load at least enough to include the selected child plus extra
-                ;; for context (so it can be centered in the scroll view)
-                min-count
-                (if selected-child-render-idx
-                  (+ selected-child-render-idx default-chunk-size)
-                  default-chunk-size)
-
-                current-count
-                @children-count*
-
-                new-count
-                (mth/min total (mth/max current-count default-chunk-size min-count))]
-
-            (reset! children-count* new-count))
-
-          (reset! children-count* 0))))
-
-    ;; Re-observe sentinel whenever children-count changes (sentinel moves)
-    ;; and (shapes item) to reconnect observer after shape changes
-    (mf/with-effect [children-count is-expanded shapes]
-      (let [total       (count shapes)
-            name-node   (mf/ref-val name-node-ref)
-            scroll-node (dom/get-parent-with-data name-node "scroll-container")
-            lazy-node   (mf/ref-val lazy-ref)]
-
-        ;; Setup new observer if there are more children to load
-        (when (and ^boolean is-expanded
-                   ^boolean (< children-count total)
-                   ^boolean scroll-node
-                   ^boolean lazy-node)
-          (let [cb (fn [entries]
-                     (when (and (pos? (alength entries))
-                                (.-isIntersecting ^js (aget entries 0)))
-                       ;; Load next chunk when sentinel intersects
-                       (let [next-count (mth/min total (+ children-count default-chunk-size))]
-                         (reset! children-count* next-count))))
-                observer (js/IntersectionObserver. cb #js {:root scroll-node})]
-            (.observe observer lazy-node)
-            (mf/set-ref-val! observer-ref observer)))
-
-        ;; Disconnect on deps change or unmount; this effect owns the observer
-        (fn []
-          (when-let [obs (mf/ref-val observer-ref)]
-            (.disconnect obs)
-            (mf/set-ref-val! observer-ref nil)))))
-
     [:> layer-item-inner*
      {:ref dref
       :item item
       :depth depth
       :parent-size parent-size
-      :name-ref name-node-ref
       :rename-id rename-id
       :is-read-only is-read-only
       :is-highlighted is-highlighted
@@ -557,6 +483,7 @@
       :is-component-tree is-component-tree
       :is-filtered is-filtered
       :is-expanded is-expanded
+      :is-parent-selected is-parent-selected
       :dnd-over (= (:over dprops) :center)
       :dnd-over-top (= (:over dprops) :top)
       :dnd-over-bot (= (:over dprops) :bot)
@@ -571,30 +498,14 @@
       :on-toggle-visibility toggle-visibility
       :on-toggle-blocking toggle-blocking
       :on-tab-press on-tab-press
-      :style style}
+      :style style}]))
 
-     (when (and ^boolean render-children
-                ^boolean shapes
-                ^boolean is-expanded)
-       [:div {:class (stl/css-case
-                      :element-children true
-                      :parent-selected is-selected
-                      :sticky-children root-board?)
-              :data-testid (dm/str "children-" id)}
-        (for [item (take children-count shapes)]
-          [:> layer-item*
-           {:item item
-            :rename-id rename-id
-            :highlighted highlighted
-            :selected selected
-            :index (unchecked-get item "__$__counter")
-            :objects objects
-            :key (dm/str (get item :id))
-            :is-sortable is-sortable
-            :depth depth
-            :parent-size parent-size
-            :is-component-child is-component-tree}])
-
-        (when (< children-count (count shapes))
-          [:div {:ref lazy-ref
-                 :class (stl/css :lazy-load-sentinel)}])])]))
+(mf/defc layer-item*
+  {::mf/wrap [mf/memo]}
+  [{:keys [id] :as props}]
+  (let [objects-ref (mf/use-ctx layer-objects-ctx)
+        item-ref    (mf/with-memo [id objects-ref]
+                      (l/derived #(get % id) objects-ref))
+        item        (mf/deref item-ref)]
+    (when (some? item)
+      [:> layer-item-row* (mf/spread-props props {:item item :objects-ref objects-ref})])))
