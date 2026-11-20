@@ -5,9 +5,12 @@
 (ns frontend-tests.data.team-test
   (:require
    [app.common.uuid :as uuid]
+   [app.main.data.modal :as modal]
    [app.main.data.team :as dtm]
    [app.main.repo :as rp]
+   [app.main.router :as rt]
    [app.main.ui.dashboard.team :as dtui]
+   [app.util.session-state :as ss]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.async :as async]
@@ -26,6 +29,87 @@
           (await (async/observe (ptk/watch (dtm/fetch-invitations) state nil)
                                 :on-next #(swap! emitted conj %))))
         (.then (fn [_] {:team-id team-id :events @emitted})))))
+
+(t/deftest ^:async check-and-create-team-redirects-to-sso-and-remembers-the-action
+  (let [team-id         "00000000-0000-4000-8000-000000000001"
+        organization-id "00000000-0000-4000-8000-000000000002"
+        profile-id      "00000000-0000-4000-8000-000000000003"
+        route-token     "?screen=dashboard-recent&team-id=current-team"
+        callback-query  "screen=dashboard-recent&team-id=current-team&pending-action-id=pending-id"
+        team            {:id team-id
+                         :organization {:id organization-id
+                                        :name "Product"
+                                        :owner-id profile-id}}
+        requests        (atom [])
+        saved-actions   (atom [])
+        emitted         (atom [])]
+    (await
+     (mock/with-mocks*
+       {rp/cmd! (mock/stub
+                 (fn [command params]
+                   (swap! requests conj [command params])
+                   (case command
+                     :get-teams (rx/of [team])
+                     :check-nitrate-sso
+                     (rx/of {:authorized false
+                             :redirect-uri "https://sso.example.test/login"}))))
+        rt/get-current-token (mock/stub (constantly route-token))
+        uuid/next (mock/stub (constantly "pending-id"))
+        ss/save-pending-action! (mock/stub (fn [& args]
+                                             (swap! saved-actions conj args)))
+        rt/nav-raw (fn [& args] {:nav-raw args})
+        modal/show (mock/stub (fn [& args] {:modal-show args}))}
+       (await (async/observe
+               (ptk/watch (dtm/check-and-create-team team-id)
+                          {:profile {:id profile-id}}
+                          nil)
+               :on-next #(swap! emitted conj %)))))
+
+    (t/is (= [[:get-teams nil]
+              [:check-nitrate-sso {:team-id team-id :query-string callback-query}]]
+             @requests))
+    (t/is (= [["pending-id" {:type :create-team-in-organization
+                             :team-id team-id}]]
+             @saved-actions))
+    (t/is (= {:nav-raw [:uri "https://sso.example.test/login"]}
+             (last @emitted)))
+    (t/is (not-any? #(contains? % :modal-show) @emitted))))
+
+(t/deftest ^:async check-and-create-team-shows-form-after-sso-is-authorized
+  (let [team-id         "00000000-0000-4000-8000-000000000001"
+        organization-id "00000000-0000-4000-8000-000000000002"
+        profile-id      "00000000-0000-4000-8000-000000000003"
+        route-token     "?screen=dashboard-recent&team-id=current-team"
+        callback-query  "screen=dashboard-recent&team-id=current-team&pending-action-id=pending-id"
+        team            {:id team-id
+                         :organization {:id organization-id
+                                        :name "Product"
+                                        :owner-id profile-id}}
+        requests        (atom [])
+        emitted         (atom [])]
+    (await
+     (mock/with-mocks*
+       {rp/cmd! (mock/stub
+                 (fn [command params]
+                   (swap! requests conj [command params])
+                   (case command
+                     :get-teams (rx/of [team])
+                     :check-nitrate-sso (rx/of {:authorized true}))))
+        rt/get-current-token (mock/stub (constantly route-token))
+        uuid/next (mock/stub (constantly "pending-id"))
+        modal/show (mock/stub (fn [& args] {:modal-show args}))}
+       (await (async/observe
+               (ptk/watch (dtm/check-and-create-team team-id)
+                          {:profile {:id profile-id}}
+                          nil)
+               :on-next #(swap! emitted conj %)))))
+
+    (t/is (= [:check-nitrate-sso {:team-id team-id :query-string callback-query}]
+             (last @requests)))
+    (t/is (= {:modal-show [:team-form {:organization-id organization-id
+                                       :organization-name "Product"}]}
+             (last @emitted)))
+    (t/is (= 2 (count @emitted)))))
 
 (t/deftest ^:async fetch-invitations-clears-the-list-on-permission-error
   ;; The pending invitations are an admin only list: a member that cannot
@@ -75,7 +159,16 @@
 (t/deftest owner-invitation-link-is-copyable-only-by-the-team-owner
   ;; An admin cannot create nor promote an owner invitation, so the backend
   ;; does not mint its token for them: the action is not offered either.
-  (t/is (true? (dtui/invitation-link-copyable? true :owner)))
-  (t/is (false? (dtui/invitation-link-copyable? false :owner)))
-  (t/is (true? (dtui/invitation-link-copyable? false :editor)))
-  (t/is (true? (dtui/invitation-link-copyable? false :viewer))))
+  (t/is (true? (dtui/invitation-link-copyable? true true :owner)))
+  (t/is (false? (dtui/invitation-link-copyable? true false :owner)))
+  (t/is (true? (dtui/invitation-link-copyable? true false :editor)))
+  (t/is (true? (dtui/invitation-link-copyable? true false :viewer))))
+
+(t/deftest invitation-link-is-not-copyable-without-the-invite-policy
+  ;; The link invites as much as sending the invitation does, so a profile
+  ;; that the organization invite policy leaves out cannot copy it, not even
+  ;; the team owner.
+  (t/is (false? (dtui/invitation-link-copyable? false true :owner)))
+  (t/is (false? (dtui/invitation-link-copyable? false true :editor)))
+  (t/is (false? (dtui/invitation-link-copyable? false false :editor)))
+  (t/is (false? (dtui/invitation-link-copyable? false false :viewer))))

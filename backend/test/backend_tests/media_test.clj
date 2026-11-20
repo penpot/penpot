@@ -12,7 +12,10 @@
    [backend-tests.helpers :as th]
    [clojure.test :as t]
    [cuerdas.core :as str]
-   [datoteka.fs :as fs]))
+   [datoteka.fs :as fs]
+   [datoteka.io :as io])
+  (:import
+   java.nio.ByteBuffer))
 
 (t/use-fixtures :once th/state-init)
 
@@ -554,3 +557,23 @@
                                         :height 200})]
       (t/is (= :webp (:format thumb)))
       (t/is (= "image/webp" (:mtype thumb))))))
+
+(defn- sfnt-num-glyphs
+  "Returns numGlyphs from the maxp table of the sfnt font in `data`."
+  [^bytes data]
+  (let [buf        (ByteBuffer/wrap data)
+        num-tables (.getShort buf 4)]
+    (some (fn [i]
+            (let [rec (+ 12 (* i 16))]
+              (when (= "maxp" (String. data rec 4 "ISO-8859-1"))
+                (.getShort buf (+ (.getInt buf (+ rec 8)) 4)))))
+          (range num-tables))))
+
+(t/deftest generate-fonts-cid-keyed-otf
+  (t/testing "otf->ttf keeps the glyphs of every CID sub-font"
+    ;; font-cid.otf has 5 glyphs split across two CID sub-fonts
+    (let [data   (io/read* (io/resource "backend_tests/test_files/font-cid.otf"))
+          result (media/run th/*system* {:cmd :generate-fonts
+                                         :input {"font/otf" data}})
+          ttf    (io/read* (get result "font/ttf"))]
+      (t/is (<= 5 (sfnt-num-glyphs ttf))))))

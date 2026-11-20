@@ -6,10 +6,14 @@
 
 (ns frontend-tests.ui.file-restored-modal-test
   (:require
+   ["react-dom/server" :as rds]
    [app.common.time :as ct]
+   [app.main.data.modal :as modal]
    [app.main.ui.workspace.file-restored-modal :as frm]
    [app.util.i18n :as i18n]
-   [cljs.test :as t :include-macros true]))
+   [cljs.test :as t :include-macros true]
+   [cuerdas.core :as str]
+   [rumext.v2 :as mf]))
 
 (defn- message
   "The translation key and arguments of the restore message."
@@ -32,3 +36,17 @@
              (message "Ada" nil nil)))
     (t/is (= ["workspace.file-restored.message-anonymous"]
              (message nil nil nil)))))
+
+(defn- render-modal
+  "Markup of the registered `:file-restored` modal for the `props` map,
+  rendered the way the modal wrapper does it (`mf/element` with the map)."
+  [props]
+  (with-redefs [i18n/tr (fn ([key] key) ([key & args] (str/join "|" (into [key] args))))]
+    (rds/renderToStaticMarkup
+     (mf/element (get @modal/components :file-restored) props))))
+
+(t/deftest the-modal-shows-the-date-of-an-unnamed-version
+  (let [created-at (ct/now)
+        markup     (render-modal {:fullname "Ada" :date created-at :unsaved false})]
+    (t/is (str/includes? markup (str "workspace.file-restored.message-date|Ada|"
+                                     (ct/format-inst created-at "PPp"))))))

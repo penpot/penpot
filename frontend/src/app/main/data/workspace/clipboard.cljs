@@ -160,10 +160,8 @@
             (let [page-id (:current-page-id state)
                   data    (dsh/lookup-file-data state)
                   objects (-> (dsh/get-page data page-id)
-                              (get :objects))
-
-                  components (cfv/find-variant-components data objects (:id shape))]
-              (into {} (map (juxt :id :variant-properties) components))))
+                              (get :objects))]
+              (cfv/collect-variant-properties data objects shape)))
 
 
           ;; Collects all the items together and split images into a
@@ -179,7 +177,8 @@
               (some? images)
               (update :images into images)
 
-              (ctk/is-variant-container? item)
+              (or (ctk/is-variant-container? item)
+                  (ctk/is-variant-main? item))
               (update :variant-properties merge (collect-variants state item))))
 
           (maybe-translate [shape objects parent-frame-id]
@@ -1193,11 +1192,23 @@
         (rx/of (dwm/upload-media-workspace params))))))
 
 (defn copy-link-to-clipboard
+  "Copy a link to the clipboard. When one or more boards are part of the
+  current selection, the link deep-links to those boards through their
+  ids (`board-id` route param), which are stable across renames and
+  reordering. Otherwise it falls back to the current location."
   []
   (ptk/reify ::copy-link-to-clipboard
     ptk/WatchEvent
-    (watch [_ _ _]
-      (clipboard/to-clipboard (rt/get-current-href)))))
+    (watch [_ state _]
+      (let [board-ids (dws/selected-board-ids (dsh/lookup-page-objects state)
+                                              (dsh/lookup-selected state))
+            link      (or (when (some? board-ids)
+                            (rt/resolve-uri (:router state)
+                                            (rt/lookup-name state)
+                                            (-> (rt/get-params state)
+                                                (assoc :board-id (mapv str board-ids)))))
+                          (rt/get-current-href))]
+        (clipboard/to-clipboard link)))))
 
 (defn copy-id-to-clipboard
   [id]

@@ -128,6 +128,14 @@
    :name name
    :suffix suffix})
 
+(defn local-export-filename
+  "A single export's `:name` already carries the suffix (added by the UI)."
+  [kind entry export-name]
+  (case kind
+    :pdf-frames (str (or export-name "export") ".pdf")
+    :single     (wasm.exports/sanitize-filename (dissoc entry :suffix) #{})
+    (str (or export-name "export") ".zip")))
+
 (defn- run-local-export
   [{:keys [job-id kind exports objects background] export-name :name}]
   (let [exports (mapv export-entry exports)]
@@ -162,14 +170,7 @@
 
                            :else
                            (let [entry    (first exports)
-                                 filename (case kind
-                                            :pdf-frames
-                                            (str (or export-name "export") ".pdf")
-
-                                            :single
-                                            (wasm.exports/sanitize-filename entry #{})
-
-                                            (str (or export-name "export") ".zip"))
+                                 filename (local-export-filename kind entry export-name)
                                  mtype    (case kind
                                             :pdf-frames "application/pdf"
                                             :single     (export-mtype (:type entry))

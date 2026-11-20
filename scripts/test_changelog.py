@@ -131,8 +131,13 @@ class IssueExcludedTests(unittest.TestCase):
         self.assertTrue(ch.issue_excluded(self.issue(state="OPEN")))
         self.assertTrue(ch.issue_excluded(self.issue(issue_type="Task")))
         self.assertTrue(ch.issue_excluded(self.issue(project_status="Rejected")))
-        self.assertTrue(ch.issue_excluded(self.issue(labels=["release blocker"])))
         self.assertTrue(ch.issue_excluded(self.issue(labels=["no changelog"])))
+
+    def test_keeps_a_release_blocker_issue(self):
+        # `release blocker` marks work that blocks the release; it is not a
+        # changelog exclusion. Bugs go through dev-only-bugs, anything else is
+        # a human call in the pre-flight.
+        self.assertFalse(ch.issue_excluded(self.issue(labels=["release blocker"])))
 
 
 class RenderBoomEntryTests(unittest.TestCase):
@@ -655,6 +660,77 @@ class CmdSecurityTests(unittest.TestCase):
         self.assertIn("GHSA-J4VC-CMF6-JHR7", err)
         self.assertIn("#8", err)
         self.assertIn("will not be listed", err)
+
+
+def bug(number, body="", parent=None, labels=()):
+    return {
+        "number": number,
+        "title": f"Bug {number}",
+        "state": "CLOSED",
+        "issue_type": "Bug",
+        "labels": list(labels),
+        "body": body,
+        "parent": parent,
+    }
+
+
+class OnlyUnreleasedEnvsTests(unittest.TestCase):
+    def check(self, text):
+        return ch.only_unreleased_envs(text, "2.19.0")
+
+    def test_dev_environments(self):
+        for text in ["HOURLY", "https://hourly.penpot.dev/", "PRE & hourly",
+                     "staging (current)", "develop (2.19.0 unreleased)",
+                     "2.19.0-RC1 (develop)", "2.19.0"]:
+            with self.subTest(text=text):
+                self.assertTrue(self.check(text))
+
+    def test_production_hints(self):
+        for text in ["PRO", "pre/pro/hourly", "develop / staging / main",
+                     "2.18.0-RC5", "2.18.1, 2.19.0-RC1", "self-hosted: 2.17.2",
+                     "design.penpot.app and self-host"]:
+            with self.subTest(text=text):
+                self.assertFalse(self.check(text))
+
+    def test_no_signal(self):
+        for text in ["", "_No response_", "-", "development build"]:
+            with self.subTest(text=text):
+                self.assertFalse(self.check(text))
+
+    def test_released_patch_of_the_same_minor_is_production(self):
+        # 2.19.0/2.19.1 are released versions, not this milestone (2.19.2):
+        # any version other than the milestone itself keeps the bug in.
+        for text in ["2.19.0 and later", "2.19.1", "2.19.0-RC1", "since 2.16"]:
+            with self.subTest(text=text):
+                self.assertFalse(ch.only_unreleased_envs(text, "2.19.2"))
+
+    def test_milestone_version_itself_is_unreleased(self):
+        for text in ["2.19.2", "2.19.2-RC1 (develop)"]:
+            with self.subTest(text=text):
+                self.assertTrue(ch.only_unreleased_envs(text, "2.19.2"))
+
+
+class FindDevOnlyBugsTests(unittest.TestCase):
+    def test_splits_auto_and_suggested(self):
+        issues = [
+            bug(1, parent={"number": 10, "issue_type": "Feature", "milestone": "2.19.0"}),
+            bug(2, parent={"number": 11, "issue_type": "Enhancement", "milestone": "2.19.0"}),
+            bug(3, parent={"number": 12, "issue_type": "EPIC", "milestone": "2.19.0"}),
+            bug(4, parent={"number": 13, "issue_type": "Feature", "milestone": "2.18.0"}),
+            bug(5, body="### Affected versions\n\nhourly\n"),
+            bug(6, body="### Affected versions\n\n2.18.2\n"),
+            bug(7, parent={"number": 10, "issue_type": "Feature", "milestone": "2.19.0"},
+                labels=["no changelog"]),
+            {**bug(8, parent={"number": 10, "issue_type": "Feature", "milestone": "2.19.0"}),
+             "issue_type": "Enhancement"},
+            bug(9, body="### Affected versions\n\n2.18.2\n", labels=["regression"]),
+            bug(10, parent={"number": 10, "issue_type": "Feature", "milestone": "2.19.0"},
+                labels=["release blocker"]),
+            bug(11, body="### Affected versions\n\nhourly\n", labels=["release blocker"]),
+        ]
+        auto, suggested = ch.find_dev_only_bugs("2.19.0", issues)
+        self.assertEqual([e["issue"] for e in auto], [1, 2, 10])
+        self.assertEqual([e["issue"] for e in suggested], [3, 5, 9, 11])
 
 
 if __name__ == "__main__":

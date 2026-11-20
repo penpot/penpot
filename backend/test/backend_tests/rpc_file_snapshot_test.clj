@@ -88,6 +88,19 @@
           (t/is (= 0 (:revn row)))
           (t/is (= (:id profile) (:profile-id row))))))
 
+    (t/testing "update snapshot with file-id"
+      (let [params {::th/type :update-file-snapshot
+                    ::rpc/profile-id (:id profile)
+                    :file-id (:id file)
+                    :id @snapshot-id
+                    :label "label1-updated"}
+            out    (th/command! params)]
+        ;; (th/print-result! out)
+        (t/is (nil? (:error out)))
+        (t/is (true? (:result out)))
+        (t/is (= "label1-updated"
+                 (:label (th/db-get :file-change {:id @snapshot-id}))))))
+
     (t/testing "restore snapshot"
       (let [params {::th/type :restore-file-snapshot
                     ::rpc/profile-id (:id profile)
@@ -102,9 +115,10 @@
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))
         (t/is (nil? (:result out)))
-        ;; Peers learn who restored which version
+        ;; Peers learn who restored which version, named by the label the
+        ;; snapshot has now (the previous block renamed it)
         (t/is (= (:id profile) (:profile-id sent)))
-        (t/is (= "label1" (:label sent)))
+        (t/is (= "label1-updated" (:label sent)))
         (t/is (ct/inst? (:created-at sent))))
 
       (let [[row1 row2 :as rows]
@@ -277,10 +291,11 @@
                                nil {:data (:data preview)}))]
       (t/is (= preview-data live)))))
 
-(t/deftest user-snapshot-of-file-needing-migration-is-materialized
-  ;; A file with pending migrations cannot share fragments: the
-  ;; migration path realizes the data, so the stored snapshot holds
-  ;; plain maps. This pins the shape so it cannot drift silently.
+(t/deftest user-snapshot-of-file-needing-migration-shares-fragments
+  ;; A file with pending migrations is migrated on read before the snapshot
+  ;; is taken. The read keeps the pointers of the pages the migration does
+  ;; not change, so the snapshot shares those fragments with the live file
+  ;; like any other snapshot instead of storing a materialized copy.
   (let [profile (th/create-profile* 1)
         file    (th/create-file* 1 {:profile-id (:id profile)
                                     :project-id (:default-project-id profile)
@@ -295,7 +310,11 @@
           snap-id (:id (:result out))
           snap    (fsnap/get-snapshot th/*system* file-id snap-id)]
       (t/is (uuid? snap-id))
-      (t/is (empty? (fdata/get-used-pointer-ids (:data snap))))
+      (let [snap-pointers (fdata/get-used-pointer-ids (:data snap))
+            live-pointers (fdata/get-used-pointer-ids
+                           (:data (bfc/get-file th/*system* file-id)))]
+        (t/is (seq snap-pointers))
+        (t/is (every? live-pointers snap-pointers)))
       ;; ...while preview keeps working on the migrated content.
       (let [preview (th/command! {::th/type :get-file-snapshot
                                   ::rpc/profile-id (:id profile)
@@ -388,29 +407,69 @@
         (t/is (nil? (:error out)))
         (t/is (true? (:result out)))))))
 
+(t/deftest snapshot-creation-reads-the-file-row-for-update
+  ;; The read inherits the caller's lock, and the migration-on-read path may
+  ;; re-read the same row with FOR UPDATE. A shared lock would be an upgrade,
+  ;; and two concurrent readers can deadlock there. The read of the command
+  ;; takes the exclusive lock.
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+        [out sqls] (th/read-recording-sql
+                    #(th/command! {::th/type :create-file-snapshot
+                                   ::rpc/profile-id (:id profile)
+                                   :file-id (:id file)
+                                   :label "pinned"}))]
+    (t/is (nil? (:error out)))
+    (t/is (uuid? (get-in out [:result :id])))
+    (t/is (= [(str bfc/sql:get-file " FOR UPDATE of f")]
+             sqls))))
+
+(t/deftest restore-backup-reads-the-file-row-for-update
+  ;; The backup read is the same reader as the snapshot creation, so it also
+  ;; takes the exclusive lock: the migration-on-read re-read cannot upgrade a
+  ;; shared one and deadlock with a concurrent reader.
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+        snap-id (:id (:result (th/command! {::th/type :create-file-snapshot
+                                            ::rpc/profile-id (:id profile)
+                                            :file-id (:id file)
+                                            :label "v1"})))
+        [out sqls] (th/read-recording-sql
+                    #(th/command! {::th/type :restore-file-snapshot
+                                   ::rpc/profile-id (:id profile)
+                                   :file-id (:id file)
+                                   :id snap-id}))]
+    (t/is (nil? (:error out)))
+    (t/is (some #(= (str bfc/sql:get-file " FOR UPDATE of f") %) sqls))
+    (t/is (not-any? #(str/includes? % "FOR SHARE") sqls))))
+
 (t/deftest snapshot-creation-serializes-with-file-gc
   ;; A user snapshot shares fragment rows with the live file, so its
   ;; creation must serialize with a concurrent :file-gc pass (which
   ;; takes FOR UPDATE + SKIP LOCKED on the file row): creation holds
-  ;; FOR SHARE, the GC skips locked files instead of racing it.
+  ;; FOR UPDATE, the GC skips locked files instead of racing it.
   (let [profile (th/create-profile* 1)
         file    (th/create-file* 1 {:profile-id (:id profile)
                                     :project-id (:default-project-id profile)
                                     :is-shared false})
         file-id (:id file)]
 
-    (t/testing "gc skips a file locked for share"
+    (t/testing "gc skips a file locked for update"
       (db/tx-run! th/*system*
                   (fn [cfg]
-                    ;; Hold FOR SHARE to commit, like create-file-snapshot does.
-                    (bfc/get-file cfg file-id :lock-for-share? true)
+                    ;; Hold FOR UPDATE to commit, like create-file-snapshot does.
+                    (bfc/get-file cfg file-id :lock-for-update? true)
                     ;; The GC uses SKIP LOCKED on a different connection, so it
                     ;; must skip instead of blocking or marking.
                     (t/is (not (th/run-task! :file-gc {:file-id file-id}))))))
 
     (t/testing "creation cannot slip between gc scan and mark"
       ;; Deterministic interleaving: pause the GC right after its
-      ;; snapshot scan, then create a snapshot. With the FOR SHARE lock
+      ;; snapshot scan, then create a snapshot. With the FOR UPDATE lock
       ;; the creation waits at the read and sees post-GC fragment ids;
       ;; without it, it reads pre-GC ids and pins a fragment the pass
       ;; is about to mark.
@@ -437,7 +496,7 @@
             (t/is (= true (deref scan-started 10000 ::timeout)))
             (let [created (future (do-create))]
               ;; The creation must not reach the insert while the GC
-              ;; pass holds the file row: with FOR SHARE it waits at the
+              ;; pass holds the file row: with FOR UPDATE it waits at the
               ;; read instead of snapshotting pre-GC fragment ids.
               (t/is (= ::timeout (deref reached-insert 10000 ::timeout)))
               (deliver release-scan true)
@@ -473,7 +532,7 @@
 (t/deftest restore-backup-serializes-with-file-gc
   ;; The backup snapshot taken by restore shares fragment rows with
   ;; the live file, so its creation must serialize with a concurrent
-  ;; :file-gc pass, like ::create-file-snapshot does: with FOR SHARE
+  ;; :file-gc pass, like ::create-file-snapshot does: with FOR UPDATE
   ;; held by the GC pass, the restore waits at the locked read instead
   ;; of snapshotting pre-GC fragment ids that the pass is about to
   ;; mark as deleted.
@@ -748,3 +807,231 @@
       (let [stored (fsnap/get-snapshot th/*system* file-id snap-id)]
         (t/is (nil? (:migrations stored)))
         (t/is (= 60 (:version stored)))))))
+(t/deftest snapshots-require-file-id
+  ;; Since version 2.20 the snapshot commands require the `file-id`
+  ;; parameter, so partition pruning can always be applied on the
+  ;; `file_change` table.
+  (let [profile (th/create-profile* 1 {:is-active true})
+        team-id (:default-team-id profile)
+        proj-id (:default-project-id profile)
+
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id proj-id
+                                    :is-shared false})
+
+        snapshot
+        (let [params {::th/type :create-file-snapshot
+                      ::rpc/profile-id (:id profile)
+                      :file-id (:id file)
+                      :label "label1"}
+              out    (th/command! params)]
+          ;; (th/print-result! out)
+
+          (t/is (nil? (:error out)))
+          (:result out))]
+
+    (doseq [type [:update-file-snapshot :lock-file-snapshot
+                  :unlock-file-snapshot :delete-file-snapshot]]
+      (let [params (merge {::th/type type
+                           ::rpc/profile-id (:id profile)
+                           :id (:id snapshot)}
+                          (when (= type :update-file-snapshot)
+                            {:label "label2"}))
+            out    (th/command! params)]
+
+        (t/testing (str (name type) " without file-id")
+          (t/is (th/ex-of-code? (:error out) :params-validation)))))))
+
+(t/deftest snapshots-reject-a-file-id-that-does-not-match
+  ;; The snapshot commands filter by `file_id` so that, once `file_change` is
+  ;; hash-partitioned by it, the lookup prunes to a single partition. Sending
+  ;; a `file-id` of another file must not find nor touch the snapshot.
+  (let [profile  (th/create-profile* 1 {:is-active true})
+        file-a   (th/create-file* 1 {:profile-id (:id profile)
+                                     :project-id (:default-project-id profile)
+                                     :is-shared false})
+        file-b   (th/create-file* 2 {:profile-id (:id profile)
+                                     :project-id (:default-project-id profile)
+                                     :is-shared false})
+
+        snapshot (-> (th/command! {::th/type :create-file-snapshot
+                                   ::rpc/profile-id (:id profile)
+                                   :file-id (:id file-a)
+                                   :label "label1"})
+                     :result)]
+
+    (doseq [type [:update-file-snapshot :lock-file-snapshot
+                  :unlock-file-snapshot :delete-file-snapshot]]
+      (let [params (merge {::th/type type
+                           ::rpc/profile-id (:id profile)
+                           :file-id (:id file-b)
+                           :id (:id snapshot)}
+                          (when (= type :update-file-snapshot)
+                            {:label "label2"}))
+            out    (th/command! params)]
+
+        (t/testing (name type)
+          (t/is (th/ex-info? (:error out)))
+          (t/is (= :not-found (:type (ex-data (:error out)))))
+          (t/is (= :snapshot-not-found (:code (ex-data (:error out)))))
+          (t/is (= "label1"
+                   (:label (th/db-get :file-change {:id (:id snapshot)}
+                                      {::db/remove-deleted false})))
+                "the snapshot of file-a stays intact"))))))
+
+(t/deftest file-change-mutations-maintain-updated-at
+  ;; `updated_at` is the per-row watermark used by the online partitioning
+  ;; copy of `file_change` (hash partitioning by file_id): every mutation
+  ;; must bump it, otherwise the copy misses the row. Lock, unlock and the
+  ;; soft-delete used to leave it stale.
+  (let [profile  (th/create-profile* 1 {:is-active true})
+        file     (th/create-file* 1 {:profile-id (:id profile)
+                                     :project-id (:default-project-id profile)
+                                     :is-shared false})
+
+        snapshot
+        (let [params {::th/type :create-file-snapshot
+                      ::rpc/profile-id (:id profile)
+                      :file-id (:id file)
+                      :label "label1"}
+              out    (th/command! params)]
+          ;; (th/print-result! out)
+
+          (t/is (nil? (:error out)))
+          (:result out))
+
+        stale-at #inst "2020-01-01T00:00:00.000Z"]
+
+    (doseq [type [:lock-file-snapshot :unlock-file-snapshot
+                  :update-file-snapshot :delete-file-snapshot]]
+      (t/testing (name type)
+        ;; make the row look old, so the mutation has to bump it
+        (th/db-update! :file-change {:updated-at stale-at}
+                       {:id (:id snapshot)}
+                       {::db/remove-deleted false})
+
+        (let [params (cond-> {::th/type type
+                              ::rpc/profile-id (:id profile)
+                              :file-id (:id file)
+                              :id (:id snapshot)}
+                       (= :update-file-snapshot type)
+                       (assoc :label "renamed"))
+              out    (th/command! params)
+              row    (th/db-get :file-change {:id (:id snapshot)}
+                                {::db/remove-deleted false})]
+
+          (t/is (nil? (:error out)))
+          (t/is (true? (:result out)))
+          (t/is (pos? (- (inst-ms (:updated-at row)) (inst-ms stale-at)))
+                "updated_at must be bumped by the mutation")
+          (t/is (<= (inst-ms (:updated-at row)) (inst-ms (ct/now)))
+                "updated_at must not be in the future")
+          (t/is (<= (- (inst-ms (ct/now)) (inst-ms (:updated-at row))) 60000)
+                "updated_at must be the moment of the mutation")
+          (when (= type :delete-file-snapshot)
+            (t/is (< (inst-ms (:updated-at row)) (inst-ms (:deleted-at row)))
+                  "the soft delete must not stamp updated_at with the future deleted_at")))))
+
+    (t/testing "the deleted snapshot is marked as deleted"
+      (t/is (some? (:deleted-at (th/db-get :file-change {:id (:id snapshot)}
+                                           {::db/remove-deleted false})))))
+
+    ;; process the delete-object job enqueued by the snapshot delete
+    (th/run-pending-jobs)))
+
+(t/deftest unknown-snapshot-is-reported-as-not-found
+  ;; The error points at the id that was not found: the snapshots are looked
+  ;; up by id, not by label. Both commands that resolve a snapshot report it
+  ;; the same way.
+  (let [profile (th/create-profile* 1 {:is-active true})
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+
+        params  {::rpc/profile-id (:id profile)
+                 :file-id (:id file)
+                 :id (uuid/random)}]
+
+    (doseq [type [:restore-file-snapshot :get-file-snapshot]]
+      (t/testing (name type)
+        (let [out (th/command! (assoc params ::th/type type))]
+
+          (t/is (th/ex-of-code? (:error out) :snapshot-not-found))
+          (t/is (= "unable to find snapshot with the provided id"
+                   (:hint (ex-data (:error out))))))))))
+
+(t/deftest revision-and-snapshot-carry-different-content
+  ;; A revision is the delta of a save: it carries the changes and nothing
+  ;; else. A snapshot is the state of the file at a point: it carries the
+  ;; features and the migrations.
+  (let [profile (th/create-profile* 1 {:is-active true})
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+        page-id (uuid/random)]
+
+    (update-file!
+     :file-id (:id file)
+     :profile-id (:id profile)
+     :revn 0
+     :changes
+     [{:type :add-page
+       :name "test"
+       :id page-id}])
+
+    (t/testing "the revision carries the changes and not the features"
+      (let [rows     (th/db-query :file-change {:file-id (:id file)})
+            revision (first (filter #(nil? (:label %)) rows))]
+
+        (t/is (some? revision))
+        (t/is (some? (:changes revision)))
+        (t/is (nil? (:features revision)))))
+
+    (t/testing "the snapshot carries the migrations and the features"
+      (let [out (th/command! {::th/type :create-file-snapshot
+                              ::rpc/profile-id (:id profile)
+                              :file-id (:id file)
+                              :label "label1"})]
+
+        (t/is (nil? (:error out)))
+
+        (let [snapshot (th/db-get :file-change {:id (get-in out [:result :id])})]
+          (t/is (= "label1" (:label snapshot)))
+          (t/is (some? (:migrations snapshot)))
+          (t/is (some? (:features snapshot))))))))
+
+(t/deftest file-change-rows-have-a-kind
+  ;; The kind tells the two kinds of rows of `file_change` apart: a snapshot
+  ;; (1) and a revision (2). The values are the contract with the database.
+  (let [profile (th/create-profile* 1 {:is-active true})
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+        page-id (uuid/random)]
+
+    (update-file!
+     :file-id (:id file)
+     :profile-id (:id profile)
+     :revn 0
+     :changes
+     [{:type :add-page
+       :name "test"
+       :id page-id}])
+
+    (t/testing "the revision is a revision"
+      (let [rows     (th/db-query :file-change {:file-id (:id file)})
+            revision (first (filter #(nil? (:label %)) rows))]
+
+        (t/is (some? revision))
+        (t/is (= 2 (:kind revision)))))
+
+    (t/testing "the snapshot is a snapshot"
+      (let [out (th/command! {::th/type :create-file-snapshot
+                              ::rpc/profile-id (:id profile)
+                              :file-id (:id file)
+                              :label "label1"})]
+
+        (t/is (nil? (:error out)))
+
+        (let [snapshot (th/db-get :file-change {:id (get-in out [:result :id])})]
+          (t/is (= 1 (:kind snapshot))))))))

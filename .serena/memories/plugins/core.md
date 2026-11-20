@@ -6,7 +6,12 @@
 
 - `libs/plugin-types`: TypeScript declarations for the public Penpot Plugin API. Type-only package; runtime behavior is implemented elsewhere.
 - `libs/plugins-runtime`: runtime that loads plugins and exposes/generated API behavior to plugin code.
-- `libs/plugins-styles`: reusable styling package for plugins.
+- `libs/plugins-styles`: reusable styling package for plugins. Keep its root
+  `styles.css`: it imports `src/lib/styles.css` and mirrors the bundled file
+  `tools/scripts/build-css.mjs` publishes. When a consumer depends on the same
+  version as this package, pnpm links the source tree instead of the published
+  package, and the documented `@penpot/plugin-styles/styles.css` import must
+  still resolve.
 - `apps/*-plugin`: sample/development plugins. `apps/e2e`: plugin e2e tests.
 
 ## Dev Workflow
@@ -18,6 +23,7 @@
 
 ## Sandbox and global cleanup
 
+- `src/index.ts` calls `bootstrapSES()` (in `src/lib/bootstrap.ts`) at module load. If `repairIntrinsics` throws (e.g. SES 2.2+ rejects a `Temporal` wrapped by a browser extension), the error is caught, `getPluginsRuntimeError()` exposes it, and `initPluginsRuntime` installs no `ɵ*` globals: the frontend app still boots, plugins and MCP are unavailable in that environment. On failure, `Function.prototype.toString` has already been replaced but no intrinsics are hardened and no compartment/sandbox is created — never run plugins on that path.
 - The runtime uses SES compartments. Public API return values are passed through `ses.safeReturn` before crossing back to plugin code.
 - Plugin `fetch` is sanitized: credentials are omitted and Authorization is blanked. The exposed response only includes ok/status/statusText/url/text/json.
 - Timer callbacks are wrapped to mark plugin-originated errors, and timeout/interval IDs are tracked so plugin close can clear them.

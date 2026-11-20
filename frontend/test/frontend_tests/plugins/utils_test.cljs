@@ -289,3 +289,9 @@
         message (plugins.utils/error-messages (sm/explain schema {:value ""}))]
     (t/is (= "Field value is invalid: Empty input" message))))
 
+(t/deftest test-reject-not-valid-rejects-an-error
+  ;; Plugins read `.message` off the rejection, so it must be an Error.
+  (let [rejected (atom nil)]
+    (plugins.utils/reject-not-valid #(reset! rejected %) :someMethod "bad")
+    (t/is (instance? js/Error @rejected))
+    (t/is (str/includes? (.-message @rejected) "Code: :someMethod"))))

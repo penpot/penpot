@@ -55,13 +55,12 @@ pnpm run build:app:assets;
 
 sed -i "s/\.\/render.js/.\/render.js?version=$VERSION_TAG/g" resources/public/js/worker/main*.js
 
-rsync -avr resources/public/ target/dist/
+rsync -ar resources/public/ target/dist/
 
 
 # Include all plugins on the bundle
-rsync -avr ../plugins/dist/apps/ target/dist/plugins/;
+rsync -ar ../plugins/dist/apps/ target/dist/plugins/;
 
 # Include the MCP plugin on the bundle
 mkdir -p target/dist/plugins/mcp;
-rsync -avr ../mcp/packages/plugin/dist/ target/dist/plugins/mcp/;
-
+rsync -ar ../mcp/packages/plugin/dist/ target/dist/plugins/mcp/;

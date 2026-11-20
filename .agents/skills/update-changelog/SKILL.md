@@ -31,14 +31,17 @@ memory; it does not repeat it.
    layout, entry rules, the `## Breaking change note` comment contract, the
    advisory (`:lock:`) contract, pre-flight checks, anomaly types, and pitfalls.
 2. `mem:scripts/changelog` — `boom`, `security`, `check-merged`, `cross-ref`,
-   `report`.
+   `dev-only-bugs`, `report`.
 3. `mem:scripts/gh` — `issues`, `issue`, `comments`, `prs`, `advisories`.
 
 ## Commands
 
 ```bash
-python3 scripts/gh.py issues "<VERSION>" --exclude "release blocker,no changelog"
+python3 scripts/gh.py issues "<VERSION>" --exclude "no changelog"
+python3 scripts/gh.py issues "<VERSION>" --label "release blocker" --exclude "no changelog"  # closed non-bug residue to review by hand
 python3 scripts/gh.py advisories --patched-version "<VERSION>"
+python3 scripts/changelog.py dev-only-bugs "<VERSION>"            # list bugs that never reached production
+python3 scripts/changelog.py dev-only-bugs "<VERSION>" --apply    # label the sure ones `no changelog`
 python3 scripts/changelog.py check-merged <PR numbers...>
 python3 scripts/changelog.py boom "<VERSION>"            # print the :boom: section
 python3 scripts/changelog.py boom "<VERSION>" --write    # replace it in CHANGES.md
@@ -54,4 +57,5 @@ python3 scripts/changelog.py report "<VERSION>"
 - Only closed, non-excluded milestone issues are included; the issue is the changelog unit and the PR is inline.
 - `:boom:` and `:rocket:` are label-generated and `:lock:` is advisory-generated: never hand-edit them; edit the label, the `## Breaking change note` comment or the advisory and re-run the command.
 - Verify PR merge status before writing; only merged PRs are referenced.
+- Bugs that never reached production stay out: `dev-only-bugs --apply` labels the sure ones; candidates are the user's call, never label them yourself.
 - Fill `patched_versions` in the advisories before running `security`; unpublished advisories are valid.

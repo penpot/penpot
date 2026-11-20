@@ -8,6 +8,7 @@
   "RPC for plugins runtime."
   (:require
    ["@penpot/plugins-runtime" :as runtime]
+   [app.main.data.event :as ev]
    [app.main.errors :as errors]
    [app.main.features :as features]
    [app.main.store :as st]
@@ -20,14 +21,26 @@
    [app.plugins.register :as preg]
    [app.plugins.ruler-guides :as rg]
    [app.plugins.shape :as shape]
+   [app.util.globals :as ug]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
+
+(defn- runtime-available?
+  []
+  (fn? (unchecked-get ug/global "ɵloadPlugin")))
 
 (defn init-plugins-runtime
   []
   (runtime/initPluginsRuntime (fn [plugin-id] (api/create-context plugin-id)))
-  ;; Signal that runtime is ready
-  (preg/signal-runtime-ready))
+  ;; Signal even when the runtime failed to start: MCP initialization waits
+  ;; for this promise and would otherwise hang forever.
+  (preg/signal-runtime-ready)
+  (runtime-available?))
+
+(defn- runtime-unavailable-event
+  []
+  (ev/event {::ev/name "plugins-runtime-unavailable"
+             :message (some-> (runtime/getPluginsRuntimeError) .-message)}))
 
 (defn initialize
   []
@@ -41,8 +54,10 @@
            (rx/observe-on :async)
            (rx/filter #(features/active-feature? @st/state "plugins/runtime"))
            (rx/take 1)
-           (rx/tap init-plugins-runtime)
-           (rx/ignore)))))
+           (rx/map (fn [_]
+                     (when-not (init-plugins-runtime)
+                       (runtime-unavailable-event))))
+           (rx/filter some?)))))
 
 ;; Prevent circular dependency
 (set! flex/shape-proxy? shape/shape-proxy?)

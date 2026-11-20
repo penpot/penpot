@@ -12,8 +12,8 @@ Frontend: CLJS SPA; React/Rumext; Potok; RxJS; okulary refs; SCSS modules; share
 - `app.render_wasm.*`: frontend bridge to Rust/WASM renderer.
 - `app.util.*`: DOM, HTTP, i18n, keyboard, codegen, and general frontend utilities.
 - `frontend/packages/*` and `frontend/text-editor`: JS/TS workspace packages consumed by the app.
-- Nitrate subscription/organization UI and flows live under `app.main.data.nitrate` and `app.main.ui.nitrate*`; backend/API behavior is covered by backend memories, and shared permission rules are in `common/src/app/common/types/nitrate_permissions.cljc`.
-- `app.config` external bridges (`external-feature-flag`, `external-session-id`, `external-context-info`, `external-notify-register-success`, `initialize-external-context-info`) delegate to `globalThis` hooks injected by the SaaS host. Never delete `external-feature-flag`, even with zero call sites: it is the seam for future A/B tests.
+- Nitrate subscription/organization UI and flows live under `app.main.data.nitrate` and `app.main.ui.nitrate*`; backend/API behavior is covered by backend memories, and shared organization permission rules (`allowed?`, `can-send-invitations?`) are in `common/src/app/common/types/organization.cljc`.
+- `app.config` external bridges (`external-feature-flag`, `external-session-id`, `external-context-info`, `external-notify-register-success`, `initialize-external-context-info`, `add-event-callback` / `get-event-callbacks` via `penpotEventCallbacks` + `penpotAddEventCallback`) delegate to `globalThis` hooks injected by the SaaS host. Never delete `external-feature-flag`, even with zero call sites: it is the seam for future A/B tests. Frontend audit events are forwarded to named host callbacks from `app.main.data.event` after `make-event` (vendor-agnostic; no analytics SDK in Penpot). `resources/js/event-callbacks.js` is copied to `public/js/` and loaded in `index.mustache` **before** `config.js` so hosts can call `penpotAddEventCallback` at config parse time.
 
 
 ## Lint and Format

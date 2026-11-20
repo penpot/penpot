@@ -68,6 +68,7 @@ opencode.json
 /frontend/playwright-report/
 /frontend/playwright/ui/visual-specs/
 /frontend/text-editor/src/wasm/
+/frontend/coverage/
 /frontend/dist/
 /frontend/npm-debug.log
 /frontend/out/
@@ -121,7 +122,7 @@ opencode.json
 /.opencode/reports
 /.opencode/prompts
 /.ci-logs
-/tmp/
+/tmp
 /.codex/
 /scripts/__pycache__/
 /tools/__pycache__

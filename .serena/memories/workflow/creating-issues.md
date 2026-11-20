@@ -123,6 +123,8 @@ gh issue create \
 
 Output: `https://github.com/penpot/penpot/issues/<NUMBER>`
 
+**Shortcut:** `python3 scripts/gh.py create-issue --type <type> --title "..." --body-file /tmp/issue-body.md` does the creation and the Issue Type assignment in one command (see `mem:scripts/gh`). Title derivation, body templates and verification in this memory still apply.
+
 ## Setting the Issue Type
 
 `gh issue create` can't set Issue Type directly. Use GraphQL after creation.

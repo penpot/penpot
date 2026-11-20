@@ -673,15 +673,32 @@
               {}
               attrs)))
 
+(defn- drop-non-scalar-values
+  "Removes the entries whose value is not a string, a number or a
+  boolean: the stored schema admits nothing else."
+  [attrs]
+  (reduce-kv (fn [res k v]
+               (if (or (string? v) (number? v) (boolean? v))
+                 res
+                 (dissoc res k)))
+             attrs
+             attrs))
+
 (defn attrs->kebab-props
   "Like `attrs->props` (same whitelist, trim and `:style` parsing) but
   with kebab-case keys, the stored convention for `:svg-attrs` and
-  `:svg-defs` node attrs. Kebab is a fixed point: running it twice
-  returns the same map."
+  `:svg-defs` node attrs. Values that are not scalars, at the top level
+  or inside `:style`, are dropped: files written by old versions hold
+  maps there, which no renderer can use and the closed schema rejects.
+  Kebab is a fixed point: running it twice returns the same map."
   [attrs]
-  (-> attrs
-      (attrs->props)
-      (d/kebab-keys)))
+  (let [props (attrs->props attrs)
+        style (some-> (:style props) (drop-non-scalar-values) (not-empty))]
+    (-> props
+        (dissoc :style)
+        (drop-non-scalar-values)
+        (cond-> (some? style) (assoc :style style))
+        (d/kebab-keys))))
 
 (defn- normalize-node-tree
   "Walks a svg node tree applying `attrs-fn` to every `:attrs` map. Tags

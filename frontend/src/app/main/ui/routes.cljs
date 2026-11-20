@@ -164,7 +164,7 @@
   active. If so, calls :check-nitrate-sso and either proceeds with navigation
   or redirects to the SSO provider URL. Successful checks are cached for five
   minutes per profile and team; redirect results are never cached."
-  [match send-event-info? url]
+  [match send-event-info? query-string]
   (let [route-name      (name (get-in match [:data :name]))
         relevant?       (and (contains? cf/flags :admin-console)
                              (or (str/starts-with? route-name "dashboard")
@@ -188,7 +188,7 @@
       (navigate)
 
       :else
-      (->> (rp/cmd! :check-nitrate-sso {:team-id team-id :url url})
+      (->> (rp/cmd! :check-nitrate-sso {:team-id team-id :query-string query-string})
            (rx/subs!
             (fn [{:keys [authorized redirect-uri]}]
               (if authorized
@@ -206,7 +206,7 @@
   and deliberately do NOT proceed with normal navigation: emitting
   `rt/navigated` would clear the exception that was just assigned.
   Otherwise, delegate to `check-sso-and-navigate`."
-  [match send-event-info? url]
+  [match send-event-info? query-string]
   (let [route-name        (name (get-in match [:data :name]))
         sso-error?        (some? (get-in match [:query-params :sso-error]))
         organization-id   (some-> (get-in match [:query-params :organization-id]) uuid/parse*)
@@ -223,7 +223,7 @@
                                       :team-id team-id
                                       :is-workspace is-workspace?
                                       :is-dashboard is-dashboard?}))
-      (check-sso-and-navigate match send-event-info? url))))
+      (check-sso-and-navigate match send-event-info? query-string))))
 
 (declare on-query-navigate)
 
@@ -260,9 +260,7 @@
 
 (defn- on-query-navigate
   [router token send-event-info?]
-  (let [token-query  (if (str/starts-with? (or token "") "?")
-                       (subs token 1)
-                       (or token ""))
+  (let [token-query  (rt/token->query-string token)
         query-params (u/query-string->map token-query)
         ;; Without a `screen` the token targets the app root; its params
         ;; (e.g. `template`) are forwarded to the dashboard or kept for
@@ -270,7 +268,7 @@
         root?        (nil? (rt/get-query-param query-params :screen))
         match        (rt/match router token)]
     (if (some? match)
-      (handle-sso-error-and-navigate match send-event-info? (rt/get-current-href))
+      (handle-sso-error-and-navigate match send-event-info? (rt/get-current-query-string))
 
       ;; We just recheck with an additional profile request; this
       ;; avoids some race conditions that causes unexpected redirects

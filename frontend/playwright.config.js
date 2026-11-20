@@ -48,6 +48,9 @@ export default defineConfig({
 
     locale: "en-US",
 
+    /* Profiles without a theme follow the system one; run the UI in dark */
+    colorScheme: "dark",
+
     permissions: ["clipboard-write", "clipboard-read"],
   },
 
@@ -73,9 +76,7 @@ export default defineConfig({
     },
     {
       name: "ds",
-      // Accounts without a theme follow the system one; keep the visual
-      // specs on the dark theme so their screenshots stay comparable.
-      use: { ...devices["Desktop Chrome"], colorScheme: "dark" },
+      use: { ...devices["Desktop Chrome"] },
       testDir: "./playwright/ui/visual-specs",
       expect: {
         timeout: expectTimeout,

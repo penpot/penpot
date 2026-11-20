@@ -123,7 +123,8 @@
 
 (defn- get-resolved-file
   [cfg file-id]
-  (bfc/get-file cfg file-id :migrate? false :decode? false))
+  (-> (bfc/get-file cfg file-id :migrate? false :decode? false)
+      (bfc/file->response)))
 
 (defn prepare-download
   [file filename]
@@ -372,7 +373,6 @@
                                          :profile-id profile-id
                                          :project-id project-id)
               cfg        (assoc cfg
-                                ::bfc/overwrite false
                                 ::bfc/profile-id profile-id
                                 ::bfc/project-id project-id
                                 ::bfc/team-id (:id team)

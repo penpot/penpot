@@ -11,11 +11,12 @@ Subcommands:
   prs         Fetch details for one or more PRs (by number or milestone)
   advisories  List or inspect GitHub security advisories
   link-issue  Explicitly link a GitHub issue to a pull request
+  create-issue  Create an issue and set its Issue Type in one command
 
 Usage:
   python3 scripts/gh.py issues <milestone-title>            (default: state=closed)
   python3 scripts/gh.py issues "2.16.0" --state all
-  python3 scripts/gh.py issues "2.16.0" --exclude "release blocker,no changelog"
+  python3 scripts/gh.py issues "2.16.0" --exclude "no changelog"
   python3 scripts/gh.py issues "2.16.0" --label "bug"       (include only issues with label)
   python3 scripts/gh.py issues "2.16.0" --label "bug,regression" --exclude "no changelog"
   python3 scripts/gh.py issues "2.16.0" --compare CHANGES.md
@@ -34,6 +35,8 @@ Usage:
   python3 scripts/gh.py advisories --patched-version 2.19.1 (filter by patched version)
   python3 scripts/gh.py advisories GHSA-xvj6-fh9w-gjw7     (single advisory detail)
   python3 scripts/gh.py link-issue 11235 11243
+  python3 scripts/gh.py create-issue --type task \
+      --title "Expand backend email tests" --body-file /tmp/issue-body.md
 
 Prerequisites:
   - gh CLI authenticated (gh auth status)
@@ -130,6 +133,126 @@ def run_gh_rest(path: str) -> Any:
         return json.loads(run_gh_command(["gh", "api", path]))
     except GhCommandFailed as err:
         fail_gh(err.stderr)
+
+
+# ─────────────────────────────────────────────
+#  Subcommand: create-issue
+# ─────────────────────────────────────────────
+
+# Issue Type node IDs in penpot/penpot. ``gh issue create`` cannot set the
+# Issue Type, so it is assigned with a follow-up GraphQL mutation.
+ISSUE_TYPE_IDS = {
+    "bug": "IT_kwDOAcyBPM4AX5Nb",
+    "enhancement": "IT_kwDOAcyBPM4B_IQN",
+    "feature": "IT_kwDOAcyBPM4AX5Nf",
+    "task": "IT_kwDOAcyBPM4AX5NY",
+    "question": "IT_kwDOAcyBPM4B_IQj",
+    "docs": "IT_kwDOAcyBPM4B_IQz",
+    "epic": "IT_kwDOAcyBPM4CEMzF",
+}
+
+ISSUE_URL_RE = re.compile(r"/issues/(\d+)")
+
+GQL_ISSUE_NODE_ID_QUERY = """\
+query($owner: String!, $repo: String!, $issueNumber: Int!) {
+  repository(owner: $owner, name: $repo) {
+    issue(number: $issueNumber) { id }
+  }
+}
+"""
+
+GQL_UPDATE_ISSUE_TYPE = """\
+mutation($issueId: ID!, $issueTypeId: ID!) {
+  updateIssue(input: {id: $issueId, issueTypeId: $issueTypeId}) {
+    issue { number issueType { name } }
+  }
+}
+"""
+
+
+def create_issue(
+    title: str,
+    body_file: str,
+    issue_type: str,
+    labels: str | None = None,
+    project: str = "Main",
+) -> dict:
+    """Create an issue and assign its Issue Type in one sequence of calls.
+
+    ``gh issue create`` returns the issue URL, so the number is parsed from
+    it. The Issue Type is then set through GraphQL: a failure at that point
+    leaves the issue in place and reports its number and URL for a manual fix.
+    """
+    issue_type = issue_type.lower()
+    type_id = ISSUE_TYPE_IDS.get(issue_type)
+    if not type_id:
+        raise ValueError(f"unknown issue type: {issue_type}")
+    if not title.strip():
+        raise ValueError("issue title must not be empty")
+
+    cmd = [
+        "gh", "issue", "create",
+        "--repo", REPO,
+        "--title", title,
+        "--project", project,
+        "--body-file", body_file,
+    ]
+    if labels:
+        cmd += ["--label", labels]
+    stdout = run_gh_command(cmd)
+    url = stdout.strip().splitlines()[-1].strip()
+    match = ISSUE_URL_RE.search(url)
+    if not match:
+        raise RuntimeError(
+            f"could not read issue number from gh output: {url!r};"
+            " check whether the issue was created"
+        )
+    number = int(match.group(1))
+
+    node_data = run_gh_graphql(
+        GQL_ISSUE_NODE_ID_QUERY,
+        {"owner": OWNER, "repo": REPO_NAME, "issueNumber": number},
+    )
+    issue = (node_data.get("repository") or {}).get("issue") or {}
+    if not issue.get("id"):
+        raise RuntimeError(
+            f"issue #{number} was created ({url}) but was not found in {REPO};"
+            f" set the {issue_type} type manually"
+        )
+
+    mutation_data = run_gh_graphql(
+        GQL_UPDATE_ISSUE_TYPE,
+        {"issueId": issue["id"], "issueTypeId": type_id},
+    )
+    updated = (mutation_data.get("updateIssue") or {}).get("issue") or {}
+    type_name = (updated.get("issueType") or {}).get("name")
+    if str(type_name).lower() != issue_type.lower():
+        raise RuntimeError(
+            f"issue #{number} was created ({url}) but its type is"
+            f" {type_name!r} instead of {issue_type!r}; set it manually"
+        )
+
+    return {
+        "number": number,
+        "url": url,
+        "title": title,
+        "issue_type": issue_type,
+    }
+
+
+def cmd_create_issue(args: argparse.Namespace) -> None:
+    """Handle the ``create-issue`` subcommand."""
+    print(f"Creating issue of type {args.type}...", file=sys.stderr)
+    try:
+        result = create_issue(
+            args.title, args.body_file, args.type, labels=args.label
+        )
+    except (ValueError, RuntimeError, GhCommandFailed) as error:
+        print(f"ERROR: {error}", file=sys.stderr)
+        sys.exit(1)
+
+    print(f"Created issue #{result['number']}: {result['url']}", file=sys.stderr)
+    print(json.dumps(result, indent=2))
 
 
 # ─────────────────────────────────────────────
@@ -752,8 +875,10 @@ GQL_ISSUE_BY_NUMBER_QUERY_ITEM = """\
       number
       title
       state
+      body
       milestone {{ title }}
       issueType {{ name }}
+      parent {{ number issueType {{ name }} milestone {{ title }} }}
       labels(first: 20) {{ nodes {{ name }} }}
       assignees(first: 10) {{ nodes {{ login }} }}
       closedByPullRequestsReferences(first: 5) {{ nodes {{ number }} }}
@@ -775,12 +900,19 @@ def issue_node_to_dict(node: dict) -> dict:
     """Convert a GraphQL issue node to the shared issue dict shape."""
     issue_type = node.get("issueType")
     ms = node.get("milestone")
+    parent = node.get("parent")
     return {
         "number": node["number"],
         "title": node["title"],
         "state": node["state"],
+        "body": node.get("body"),
         "milestone": ms["title"] if ms else None,
         "issue_type": issue_type["name"] if issue_type else None,
+        "parent": {
+            "number": parent["number"],
+            "issue_type": (parent.get("issueType") or {}).get("name"),
+            "milestone": (parent.get("milestone") or {}).get("title"),
+        } if parent else None,
         "labels": [lbl["name"] for lbl in node["labels"]["nodes"]],
         "assignees": node_assignees(node),
         "closing_prs": [pr["number"] for pr in node["closedByPullRequestsReferences"]["nodes"]],
@@ -1083,7 +1215,7 @@ def main() -> None:
     )
     p_issues.add_argument(
         "--exclude", "--exclude-labels",
-        help="Comma-separated labels to exclude, e.g. 'release blocker,no changelog'"
+        help="Comma-separated labels to exclude, e.g. 'no changelog'"
     )
     p_issues.add_argument(
         "--label", "--labels",
@@ -1136,6 +1268,26 @@ def main() -> None:
     p_link.add_argument("issue_number", type=int, help="Issue number")
     p_link.add_argument("pr_number", type=int, help="Pull request number")
     p_link.set_defaults(func=cmd_link_issue)
+
+    # --- create-issue ---
+    p_create = sub.add_parser(
+        "create-issue",
+        help="Create an issue and set its Issue Type in one command",
+    )
+    p_create.add_argument(
+        "--type", required=True, type=str.lower,
+        choices=sorted(ISSUE_TYPE_IDS),
+        help="Issue Type, e.g. 'task' or 'bug' (case-insensitive)",
+    )
+    p_create.add_argument("--title", required=True, help="Issue title")
+    p_create.add_argument(
+        "--body-file", required=True,
+        help="Path to the file holding the Markdown body",
+    )
+    p_create.add_argument(
+        "--label", help="Comma-separated labels to add, e.g. 'breaking change'"
+    )
+    p_create.set_defaults(func=cmd_create_issue)
 
     # --- issue (by-number lookup) ---
     p_issue = sub.add_parser(

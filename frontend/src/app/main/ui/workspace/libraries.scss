@@ -308,6 +308,19 @@
   gap: var(--sp-xs);
 }
 
+.library-name-highlight {
+  color: var(--color-foreground-primary);
+}
+
+.library-locked {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: $sz-32;
+  block-size: $sz-32;
+  color: var(--color-foreground-secondary);
+}
+
 .element-count-legacy {
   white-space: nowrap;
 
@@ -331,8 +344,9 @@
   display: block;
 }
 
-.connected-to-values-legacy {
+.connected-to-values {
   color: var(--color-foreground-primary);
+  overflow-wrap: anywhere;
 }
 
 .hint-line {

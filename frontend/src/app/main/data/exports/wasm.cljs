@@ -55,7 +55,7 @@
       :pdf (wasm.api/render-shape-pdf object-id)
       :svg (wasm.api/render-shape-svg object-id scale)
       (if (= :client (wasm.api/export-target object-id scale type))
-        (wasm.api/render-shape-pixels object-id scale type)
+        (wasm.api/render-shape-pixels object-id scale type true)
         (wasm.api/render-shape-raster object-id scale type)))))
 
 (defn export-image-uri

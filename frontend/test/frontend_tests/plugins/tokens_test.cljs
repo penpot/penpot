@@ -154,8 +154,8 @@
      (mock/with-mocks* {st/state store st/stream (ptk/input-stream store)}
        (t/is (= (str (:id file)) (.. context -tokensSource -id)))
        (set! (.-tokensSource context) source-proxy)
-       (await (async/wait-for #(= (:id source) (get-in @store [:files (:id file) :data :tokens-source]))
-                              "library token source"))
+       (await (async/wait-for-store store #(= (:id source) (get-in @store [:files (:id file) :data :tokens-source]))
+                                    "library token source"))
        (t/is (= (str (:id source)) (.. context -tokensSource -id)))
        (t/is (= (datafy (ctht/get-tokens-status source))
                 (datafy (get-in @store [:files (:id file) :data :tokens-status]))))
@@ -175,8 +175,8 @@
     (await
      (mock/with-mocks* {st/state store st/stream (ptk/input-stream store)}
        (set! (.-tokensSource context) (.-local context))
-       (await (async/wait-for #(nil? (get-in @store [:files (:id file) :data :tokens-source]))
-                              "local token source"))
+       (await (async/wait-for-store store #(nil? (get-in @store [:files (:id file) :data :tokens-source]))
+                                    "local token source"))
        (let [^js catalog (.. context -local -tokens)]
          (t/is (= (str (:id file)) (.. context -tokensSource -id)))
          (t/is (true? (.-isEditableTokens catalog)))
@@ -194,16 +194,16 @@
      (mock/with-mocks* {st/state store st/stream (ptk/input-stream store)}
        (st/emit! (tohs/watch-undo-stack))
        (set! (.-tokensSource context) source-proxy)
-       (await (async/wait-for #(seq (get-in @store [:workspace-undo :items]))
-                              "token source undo entry"))
+       (await (async/wait-for-store store #(seq (get-in @store [:workspace-undo :items]))
+                                    "token source undo entry"))
        (st/emit! dwu/undo)
-       (await (async/wait-for #(nil? (get-in @store [:files (:id file) :data :tokens-source]))
-                              "undo token source"))
+       (await (async/wait-for-store store #(nil? (get-in @store [:files (:id file) :data :tokens-source]))
+                                    "undo token source"))
        (t/is (= (datafy (ctht/get-tokens-status file))
                 (datafy (get-in @store [:files (:id file) :data :tokens-status]))))
        (st/emit! dwu/redo)
-       (await (async/wait-for #(= (:id source) (get-in @store [:files (:id file) :data :tokens-source]))
-                              "redo token source"))
+       (await (async/wait-for-store store #(= (:id source) (get-in @store [:files (:id file) :data :tokens-source]))
+                                    "redo token source"))
        (t/is (= (datafy (ctht/get-tokens-status source))
                 (datafy (get-in @store [:files (:id file) :data :tokens-status]))))))))
 
@@ -379,13 +379,13 @@
              ^js theme   (aget (.-themes catalog) 0)]
          (st/emit! (tohs/watch-undo-stack))
          (.toggleActive theme)
-         (await (async/wait-for #(seq (get-in @store [:workspace-undo :items]))
-                                "theme toggle undo entry"))
+         (await (async/wait-for-store store #(seq (get-in @store [:workspace-undo :items]))
+                                      "theme toggle undo entry"))
          (t/is (false? (.-active theme)))
          (st/emit! dwu/undo)
-         (await (async/wait-for #(= (datafy status)
-                                    (datafy (get-in @store [:files (:id file) :data :tokens-status])))
-                                "undo external theme toggle"))
+         (await (async/wait-for-store store #(= (datafy status)
+                                                (datafy (get-in @store [:files (:id file) :data :tokens-status])))
+                                      "undo external theme toggle"))
          (t/is (tokens-unchanged? store source)))))))
 
 (t/deftest ^:async external-token-source-allows-applying-tokens-to-shapes
@@ -413,10 +413,10 @@
          (.applyToSelected token #js ["fill"])
          (doseq [label [:rect1 :rect2 :rect3]]
            (let [shape-path [:files (:id file) :data :pages-index page-id :objects (cthi/id label)]]
-             (await (async/wait-for #(= "color.primary" (get-in @store (conj shape-path :applied-tokens :fill)))
-                                    (str "apply external token to " label)))
-             (await (async/wait-for #(= "#ff0000" (get-in @store (conj shape-path :fills 0 :fill-color)))
-                                    (str "resolve external token on " label)))))
+             (await (async/wait-for-store store #(= "color.primary" (get-in @store (conj shape-path :applied-tokens :fill)))
+                                          (str "apply external token to " label)))
+             (await (async/wait-for-store store #(= "#ff0000" (get-in @store (conj shape-path :fills 0 :fill-color)))
+                                          (str "resolve external token on " label)))))
          (t/is (= (ctht/get-tokens-lib file) (get-in @store [:files (:id file) :data :tokens-lib])))
          (t/is (= (datafy (ctht/get-tokens-status file))
                   (datafy (get-in @store [:files (:id file) :data :tokens-status]))))
@@ -728,9 +728,9 @@
     ;; token and resolves to a uniform width, which the strokes setter accepts.
     (t/testing "the uniform strokeWidth alias is still accepted"
       (.applyToken ellipse token #js ["strokeWidth"])
-      (await (async/wait-for
-              #(= "width.sm" (get-in @store (conj path :stroke-width-top)))
-              "uniform stroke width token applied"))
+      (await (async/wait-for-store store
+                                   #(= "width.sm" (get-in @store (conj path :stroke-width-top)))
+                                   "uniform stroke width token applied"))
       (t/is (= "width.sm" (get-in @store (conj path :stroke-width-top)))))))
 
 (t/deftest token-attr?-rejects-unknown-input
@@ -897,6 +897,99 @@
         (t/is (= token-id (:token-id @captured)))
         (t/is (= ["Inter" "Arial"] (get-in @captured [:attrs :value])))))))
 
+(t/deftest shadow-token-value-round-trips
+  (let [set-id   (cthi/new-id! :token-set)
+        token-id (cthi/new-id! :shadow-token)
+        shadow   [{:offset-x "1" :offset-y "2" :blur "4" :spread "0" :color "#000000" :inset false}]
+        file     (-> (cthf/sample-file :file1 :page-label :page1)
+                     (ctht/add-tokens-lib)
+                     (ctht/update-tokens-lib
+                      #(-> %
+                           (ctob/add-set
+                            (ctob/make-token-set :id set-id
+                                                 :name "shadows"))
+                           (ctob/add-token
+                            set-id
+                            (ctob/make-token :id token-id
+                                             :name "shadow.card"
+                                             :type :shadow
+                                             :value shadow)))))
+        store    (ths/setup-store file)
+        _        (set! st/state store)
+        _        (set! st/stream (ptk/input-stream store))
+        file-id  (:id file)
+        captured (atom nil)]
+    (with-redefs [r/check-permission (constantly true)
+                  u/check-editable-tokens (constantly nil)
+                  dwtl/update-token (mock/stub (fn [_ _ attrs]
+                                                 (reset! captured attrs)
+                                                 :update-token))
+                  st/emit! mock/noop]
+      (let [token (ptok/token-proxy "plugin-id" file-id set-id token-id)]
+        (set! (.-value token) (.-value token))
+        (t/is (= shadow (:value @captured)))))))
+
+(t/deftest token-setters-validate-the-candidate-resolution
+  ;; The candidate resolves against the library without the token's
+  ;; current name, so references to it can't validate it.
+  (let [set-id    (cthi/new-id! :token-set)
+        size-id   (cthi/new-id! :size-token)
+        double-id (cthi/new-id! :double-token)
+        file      (-> (cthf/sample-file :file1 :page-label :page1)
+                      (ctht/add-tokens-lib)
+                      (ctht/update-tokens-lib
+                       #(-> %
+                            (ctob/add-set (ctob/make-token-set :id set-id :name "core"))
+                            (ctob/add-token set-id (ctob/make-token :id size-id :name "size" :type :sizing :value "4"))
+                            (ctob/add-token set-id (ctob/make-token :id double-id :name "double" :type :sizing :value "{size} * 2")))))
+        store     (ths/setup-store file)
+        _         (set! st/state store)
+        _         (set! st/stream (ptk/input-stream store))
+        file-id   (:id file)
+        updates   (atom [])
+        invalid   (atom [])]
+    (with-redefs [r/check-permission (constantly true)
+                  u/check-editable-tokens (constantly nil)
+                  u/not-valid (fn [_ code value] (swap! invalid conj [code value]))
+                  dwtl/update-token (mock/stub (fn [_ _ attrs] (swap! updates conj attrs) {:attrs attrs}))
+                  st/emit! mock/noop]
+      (let [size   (ptok/token-proxy "plugin-id" file-id set-id size-id)
+            double (ptok/token-proxy "plugin-id" file-id set-id double-id)]
+        (set! (.-value double) "{size} * 3")
+        (set! (.-value double) "{missing} * 2")
+        (set! (.-value double) "{double} * 2")
+        (set! (.-name size) "space")
+        (t/is (= [{:value "{size} * 3"} {:name "space"}] @updates))
+        (t/is (= [[:value "{missing} * 2"] [:value "{double} * 2"]] @invalid))))))
+
+(t/deftest token-name-setter-accepts-a-name-below-the-old-name
+  ;; The candidate resolves without the token's current name: with the
+  ;; old `size` left in, `size.small` would be a token below another
+  ;; token, a name collision.
+  (let [set-id  (cthi/new-id! :token-set)
+        size-id (cthi/new-id! :size-token)
+        file    (-> (cthf/sample-file :file1 :page-label :page1)
+                    (ctht/add-tokens-lib)
+                    (ctht/update-tokens-lib
+                     #(-> %
+                          (ctob/add-set (ctob/make-token-set :id set-id :name "core"))
+                          (ctob/add-token set-id (ctob/make-token :id size-id :name "size" :type :sizing :value "4")))))
+        store   (ths/setup-store file)
+        _       (set! st/state store)
+        _       (set! st/stream (ptk/input-stream store))
+        file-id (:id file)
+        updates (atom [])
+        invalid (atom [])]
+    (with-redefs [r/check-permission (constantly true)
+                  u/check-editable-tokens (constantly nil)
+                  u/not-valid (fn [_ code value] (swap! invalid conj [code value]))
+                  dwtl/update-token (mock/stub (fn [_ _ attrs] (swap! updates conj attrs) {:attrs attrs}))
+                  st/emit! mock/noop]
+      (let [size (ptok/token-proxy "plugin-id" file-id set-id size-id)]
+        (set! (.-name size) "size.small")
+        (t/is (= [{:name "size.small"}] @updates))
+        (t/is (= [] @invalid))))))
+
 (t/deftest typography-token-resolved-value-is-plugin-array-shape
   (let [token (ctob/make-token
                {:name "type.body"
@@ -908,7 +1001,7 @@
                         :letter-spacing "1"
                         :text-case "uppercase"
                         :text-decoration "underline"}})
-        result (get-resolved-value token {(:name token) token})
+        result (get-resolved-value token [[nil {(:name token) token}]])
         entry  (aget result 0)]
     (t/is (array? result))
     (t/is (= ["Inter" "Arial"] (vec (aget entry "fontFamilies"))))
@@ -928,7 +1021,7 @@
                          :spread "4px"
                          :color "#000000"
                          :inset false}]})
-        result (get-resolved-value token {(:name token) token})
+        result (get-resolved-value token [[nil {(:name token) token}]])
         entry  (aget result 0)]
     (t/is (array? result))
     (t/is (= 1 (aget entry "offsetX")))
@@ -941,7 +1034,7 @@
                {:name "font.primary"
                 :type :font-family
                 :value ["Inter" "Arial"]})
-        result (get-resolved-value token {(:name token) token})]
+        result (get-resolved-value token [[nil {(:name token) token}]])]
     (t/is (array? result))
     (t/is (= ["Inter" "Arial"] (vec result)))))
 
@@ -952,7 +1045,7 @@
                {:name "font.body"
                 :type :font-family
                 :value ["Hanken Grotesk" "IBM Plex Mono"]})
-        result (get-resolved-value token {(:name token) token})]
+        result (get-resolved-value token [[nil {(:name token) token}]])]
     (t/is (array? result))
     (t/is (= ["Hanken Grotesk" "IBM Plex Mono"] (vec result)))))
 
@@ -962,7 +1055,7 @@
                 :type :typography
                 :value {:font-family ["Hanken Grotesk" "Arial"]
                         :font-size "16px"}})
-        result (get-resolved-value token {(:name token) token})
+        result (get-resolved-value token [[nil {(:name token) token}]])
         entry  (aget result 0)]
     (t/is (= ["Hanken Grotesk" "Arial"] (vec (aget entry "fontFamilies"))))))
 
@@ -975,7 +1068,7 @@
                   {:name "font.display"
                    :type :font-family
                    :value families})
-        result   (get-resolved-value token {(:name token) token})]
+        result   (get-resolved-value token [[nil {(:name token) token}]])]
     (t/is (= families (vec result)))))
 
 (t/deftest font-family-token-resolved-value-mixes-references-and-names
@@ -987,8 +1080,8 @@
                 {:name "font.stack"
                  :type :font-family
                  :value ["{font.base}" "Rock 3D"]})
-        result (get-resolved-value token {(:name base)  base
-                                          (:name token) token})]
+        result (get-resolved-value token [[nil {(:name base)  base
+                                                (:name token) token}]])]
     (t/is (= ["Red Hat Text" "Rock 3D"] (vec result)))))
 
 (t/deftest font-family-token-resolved-value-keeps-quoted-names
@@ -996,7 +1089,7 @@
                 {:name "font.quoted"
                  :type :font-family
                  :value ["\"Red Hat Mono\"" "'Black Ops One'"]})
-        result (get-resolved-value token {(:name token) token})]
+        result (get-resolved-value token [[nil {(:name token) token}]])]
     (t/is (= ["Red Hat Mono" "Black Ops One"] (vec result)))))
 
 (t/deftest typography-token-resolved-value-keeps-names-with-expression-words
@@ -1005,7 +1098,7 @@
                  :type :typography
                  :value {:font-family ["Red Hat Display" "Press Start 2P"]
                          :font-size "16px"}})
-        result (get-resolved-value token {(:name token) token})
+        result (get-resolved-value token [[nil {(:name token) token}]])
         entry  (aget result 0)]
     (t/is (= ["Red Hat Display" "Press Start 2P"]
              (vec (aget entry "fontFamilies"))))))
