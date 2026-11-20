@@ -199,11 +199,10 @@
                                                    (assoc :is-indirect is-indirect))))
                                      (rx/mapcat resolve-file)
                                      (rx/map library-resolved)
-                                     ;; A broken library must not break the whole file
-                                     (rx/catch (fn [cause]
-                                                 (if (dwl/broken-library-error? cause)
-                                                   (rx/of (dwl/library-load-failed file-id library cause))
-                                                   (rx/throw cause))))))))
+                                     ;; A library the backend can not load stays
+                                     ;; connected with no assets: it must not
+                                     ;; break the file that uses it.
+                                     (rx/catch (dwl/on-library-load-error file-id library))))))
                         (->> (rx/from libraries)
                              (rx/map :id)
                              (rx/mapcat (fn [file-id]
