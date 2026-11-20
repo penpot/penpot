@@ -104,26 +104,35 @@
   (loop [items (seq shapes)
          frame-ids #{}
          text-ids []
+         other-text-ids []
          tokens {}]
     (if-let [[shape-id {:keys [applied-tokens] :as shape}] (first items)]
       (let [applied-tokens
             (-> (invert-collect-key-vals applied-tokens resolved-tokens shape)
                 (shape-ids-by-values shape-id)
                 (split-attribute-groups))
+            text? (cfh/text-shape? shape)]
 
-            parent-frame-id
-            (cfh/get-shape-id-root-frame objects shape-id)]
+        (if (empty? applied-tokens)
+          (recur (rest items)
+                 frame-ids
+                 text-ids
+                 (cond-> other-text-ids text? (conj shape-id))
+                 tokens)
+          (let [parent-frame-id (cfh/get-shape-id-root-frame objects shape-id)]
+            (recur (rest items)
+                   (cond-> frame-ids
+                     (some? parent-frame-id) (conj parent-frame-id))
+                   (cond-> text-ids text? (conj shape-id))
+                   other-text-ids
+                   (deep-merge tokens applied-tokens)))))
 
-        (recur (rest items)
-               (if parent-frame-id
-                 (conj frame-ids parent-frame-id)
-                 frame-ids)
-               (if (cfh/text-shape? shape)
-                 (conj text-ids shape-id)
-                 text-ids)
-               (deep-merge tokens applied-tokens)))
-
-      [tokens frame-ids text-ids])))
+      ;; Texts without tokens can still be resized by a token on an ancestor
+      [tokens
+       frame-ids
+       (into text-ids
+             (filter #(contains? frame-ids (cfh/get-shape-id-root-frame objects %)))
+             other-text-ids)])))
 
 (defn- actionize-shapes-update-info [page-id shapes-update-info]
   (mapcat (fn [[attrs update-infos]]
