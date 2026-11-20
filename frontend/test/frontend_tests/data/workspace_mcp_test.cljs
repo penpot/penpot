@@ -46,6 +46,29 @@
              (rx/dispose! subscription)
              (rx/end! stream))))))))
 
+(t/deftest ^:async test-initialize-ignores-reloaded-profile
+  (let [stream   (rx/subject)
+        events   (atom [])
+        id       (uuid/next)
+        ;; equal id in a distinct instance, as a decode after the uuid cache is cleared
+        reloaded (uuid/uuid (str id))]
+    (t/is (not (identical? id reloaded)))
+    (await
+     (mock/with-mocks*
+       {cf/flags #{:mcp}
+        preg/wait-for-runtime (fn [] (js/Promise.resolve true))}
+       (let [subscription (rx/subs! #(swap! events conj (ptk/type %))
+                                    (ptk/watch (mcp/initialize) {} stream))]
+         (try
+           (rx/push! stream (du/set-profile {:id id}))
+           (await (a/wait-for #(= 1 (count @events))))
+           (rx/push! stream (du/set-profile {:id reloaded}))
+           (await (a/settle))
+           (t/is (= [:app.main.data.workspace.mcp/init] @events))
+           (finally
+             (rx/dispose! subscription)
+             (rx/end! stream))))))))
+
 (t/deftest test-update-mcp-status
   (t/testing "enables MCP in profile props and mcp state"
     (let [state  {:profile {:props {:mcp-enabled false}} :mcp {}}
