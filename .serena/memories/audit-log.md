@@ -1,367 +1,134 @@
 # Audit Log and event processing
 
-Complete guide to the Penpot event system: what gets recorded, where each piece lives, and how events travel from the moment they happen until they are archived. Start with the overview (sections 1-3); the deeper technical detail comes later (section 8 on). If you only want the idea, the first three sections are enough.
+The audit log records what Penpot observed: who made a request, what they asked to do, and when it happened. It also carries browser events for usage analytics and crash reporting. Those events are useful, but a browser can close or lose its connection before sending them. Do not use their absence as proof that something did not happen.
 
-> Note about this memory: unlike other Serena memories (dense notes written for LLM agents, see `mem:memory-maintenance`), this document is also written for human developers who need full context. That is why it uses plain language and examples. It replaces the old `mem:backend/audit-log`, which is now just a redirect stub.
+## 1. Sources and trust
 
-## 1. What it is (2-minute overview)
+| Channel | Who sets the actor | What the event tells you |
+|---|---|---|
+| Penpot backend RPC | The server uses the caller, an explicit command override, or `uuid/zero` when no actor is known. | The server ran the command. Check the event's outcome before treating it as a change of state. |
+| Public `push-audit-events` | Penpot uses the session, never an actor supplied in the event. | The Penpot or admin-console browser reported an action. Delivery is best-effort. |
+| Management `push-audit-events` | The authenticated admin-console service supplies the actor. | A trusted service reported an action. Authentication identifies the service, not whether its business action and the event committed together. |
 
-The *audit log* answers "who did what, when, and from where". Every important user action becomes an **event**: a small object with a name, a type, who did it, from which IP, plus action data (`props`) and metadata (`context`).
+The management channel uses `POST /api/management/methods/push-audit-events` with `x-shared-key: "admin-console <key>"` and events carrying `{name, profileId, props?, context?}` in JSON. It uses server request time, not the public endpoint's client timestamp. The public channel uses `POST /api/main/methods/push-audit-events` with a user session and events carrying `{name, type, timestamp, props, context?}`. Both browsers use the same public RPC. The Nitrate senders live in the private Nitrate repo; these are the contracts Penpot receives.
 
-The system has:
-
-- **Three producers** (they create events): the Penpot backend (RPC layer), the Penpot frontend (browser app), and the Nitrate admin-console, which sends both server-side and client-side events.
-- **One central buffer**: the Postgres `audit_log` table in Penpot. It is temporary: it holds events for minutes/hours until they are archived, then they are deleted.
-- **Consumers** (they read events): webhooks, error reporters, telemetry, the external archives in Nexus and in the admin console.
-- **Two long-term archives**: **Nexus**, a separate service that stores events for the long term, and the **admin console** (Nitrate), which ingests its own allowlisted events through a second archive job (see section 12).
-
-```
-Penpot frontend ─ POST push-audit-events (public) ─────────▶┐
-Nitrate admin-console (browser) ─ POST push-audit-events ──▶│
-Nitrate admin-console (server) ─ POST push-audit-events  ──▶│ ─▶ audit_log table (buffer) ──┬─ nexus consumer ───▶ Nexus
-Penpot backend (RPC wrap-audit) ─ submit ───────────────────┘         │                      ├─ admin-console ───▶ admin console
-                                                                      │                      └─ gc ───────────▶ delete drained rows
-                                                                      │   ├──▶ webhooks
-                                                                      │   ├──▶ error reporters
-                                                                      └──▶ telemetry (shadow rows)
-```
-
-The Penpot backend is the **center**: it checks, completes, and stores every event, no matter where it comes from. Nobody writes to the database directly; everything goes through the backend.
-
-This document is the reference for all flows. One thing to keep in mind while reading: the Nitrate admin-console (both its server and its browser UI) is a **private** application, not a public client. Its events describe private SaaS management actions (organizations, subscriptions, SSO), and its server channel uses a trusted shared key instead of a user session.
-
-## 2. The three kinds of events
-
-Not all events are worth the same. This is the most important distinction in this document:
-
-| Aspect | Backend events | Penpot frontend events | Nitrate admin-console events |
-|---|---|---|---|
-| What they describe | Real actions run on the server (create file, login, invite to team...) | Things that happen in the Penpot browser app (navigate, edit, JS errors, performance) | Organization and subscription actions in the admin-console (create/rename/delete organization, members, SSO settings, checkout, onboarding) |
-| Trust level | **High**: created inside the same request that runs the action | **Best-effort**: some loss is expected (tab closed, offline, full buffer); they show **usage**, they are not strict proof | **Mixed**: server-side events are high trust (like backend); browser events are best-effort (like frontend) |
-| Who sets `profile-id` | The server, from the logged-in session (never trusts the client) | The server too: it ignores what the client says and uses the session | Server channel: the trusted admin-console server sends it explicitly. Browser channel: the Penpot server uses the session |
-| Who sets the time | Server time (`created-at`); the source of truth | Client proposes `tracked-at`, but the server fixes it if it is in the future or more than 1h late | Same rule: server stamps `created-at`; client `tracked-at` is corrected |
-| Used for | Audit, webhooks, compliance, abuse checks | Product analytics, usage counters, crash reports | Organization audit trail (admin-console e2e spec), subscription metrics |
-
-Rule of thumb: if you need to know for sure "did this user do X?", look at `source = backend`. If you want to know "how do people use the app?", also look at `source = frontend`.
-
-## 3. The `audit_log` table: a buffer, not a store
-
-The Penpot `audit_log` table **is not the final destination**. It is a waiting tray: events sit here until every active consumer (Nexus, admin console) confirms them, and whoever finishes last deletes the row.
-
-Main columns (migration `backend/src/app/migrations/sql/0054-add-audit-log-table.sql` and later ones):
-
-- `id` uuid PK (`gen_random_uuid()` today; the PK used to be `(created_at, profile_id)`).
-- `name` / `type` text NOT NULL (for example `name = "create-file"`, `type = "action"`).
-- `created_at` timestamptz NOT NULL default `now()`: **server time**, the source of truth.
-- `tracked_at` timestamptz default `now()`: what the client claimed; fixed on ingest.
-- `profile_id` uuid NOT NULL: who did it.
-- `source` text, NOT NULL (from `0159`, which backfills what is left to `backend`): `backend` / `frontend` for full rows, `telemetry:backend` / `telemetry:frontend` for anonymized copies (see section 10).
-- `ip_addr` inet: real IP (or `0.0.0.0` on telemetry rows).
-- `props` / `context` jsonb holding transit-encoded maps: action data and metadata (versions, browser, request-id...).
-- `seq` bigint (`bigserial`): the insertion order, from a sequence (no WAL cost).
-- `xid` xid8: the transaction that wrote the row (`pg_current_xact_id()` as the column default). Together with `seq` it is the position a consumer reads from; `xid8` is 64 bits and does not wrap (the row `xmin` does).
-- The legacy `archived_at` and the indexes that served the old archiver stay until a later cleanup; the new code ignores them. The drain reads no pending queue: each consumer keeps its position in `audit_log_consumer_cursor` (migration `0159-consumer-generalization`, consumer `1` = Nexus, `2` = admin console; ids are never reused, and `3` is reserved for the team-storage consumer that ships in a follow-up). The pending queue never shipped: this release does not create `audit_log_pending`; the migration drops the table if a pre-release database has it. The producer only inserts the row; it does not know the consumers. A consumer with no row registers its cursor at `(0, 0)` when its component starts (`ensure-cursor`), before its first pass, so the first deploy **replays** the buffer (the legacy archiver and its GC are stopped and the already-archived rows are deleted before deploying), instead of skipping the unarchived backlog; enabling a consumer later starts from whatever the buffer holds; with no consumer at all nothing is written, so there is no backlog to replay. `ensure-cursor` starts the cursor below any real position; the cut is applied per chunk when reading, so the first pass drains the buffer that exists and never steps over a row whose transaction was still open.
-
-Position and cut: a consumer reads rows with `(xid, seq) > cursor` and `xid <= pg_snapshot_xmin(pg_current_snapshot())` (the oldest transaction still in flight), in `(xid, seq)` order. The cut is exact: a row of an open transaction is invisible until it commits, and the cursor never steps over it (a `seq`-only cursor lost those rows). A transaction that inserts many rows keeps them together: `seq` orders them inside the same `xid`. The cursor points at the last row the consumer processed, so the GC deletes `<= cursor`. The cut is conservative beyond `audit_log`: `pg_snapshot_xmin` is the oldest transaction of the whole database, so any long write transaction (a binfile import runs in one for up to 30 minutes) pauses every consumer and the GC until it commits, and a slow destination pauses them the same way because the chunk sends inside its transaction and the `FOR UPDATE` on the cursor row assigns an xid; nothing is lost or skipped, and `penpot_audit_consumer_lag_events` shows it.
-
-Indexes:
-
-- unique `audit_log (xid, seq)` (`audit_log__xid__seq__idx`, migration `0159-consumer-generalization`): serves the range and the order of the position scan (both predicates are `Index Cond`; the chunk also projects columns, so it is not an Index Only Scan).
-- `audit_log_consumer_cursor` PK `(consumer)`: one row per consumer, locked `FOR UPDATE` during the chunk.
-- `(source, created_at)` (`audit_log__source__created_at__idx`): narrows the telemetry scan by source; telemetry then sorts by `created_at`. The `(created_at, id)` index belonged to the pending queue and never shipped, so this release does not build it (the same path 2.18 had).
-- The legacy `archived_at` and the indexes that served it (`audit_log__created_at__idx`, `audit_log__archived_at__idx`, `audit_log_id_archived_at_idx`) stay: `0159` does not drop them. They are dead after the rollout and a later release removes them; the column/index drops are catalog operations, not a rewrite.
-
-Life of a row: `INSERT` (one row, no queue) → each consumer's pass reads its own 128-row chunks from its cursor up to the frontier it took at its start, sends them and advances the cursor in the same transaction (a refusal rolls both back) → the GC job (`:audit-log-gc`) deletes the rows up to and including the oldest cursor in `audit_log_consumer_cursor`, in batches, skipping telemetry shadows (the telemetry task owns them: it deletes them after sending and purges them after 7 days). A consumer that is off keeps its cursor row and holds the GC at that position; when enabled again it rejoins from its position. To stop waiting for it, its cursor row must be deleted (retirement; no procedure ships yet). A consumer registers its cursor at `(0, 0)` when its component starts (`ensure-cursor`), before its first pass, below any real position, so the first deploy replays the unarchived backlog and enabling a consumer later starts from whatever the buffer holds; with no consumer at all nothing is written, so there is no backlog to replay. The GC treats a missing row as position 0 and deletes nothing for that run; with no cursor at all it deletes nothing (the `:audit-log-gc` flag is the switch).
-
-## 4. Anatomy of an event
-
-Every event ends up with this shape (schema `schema:event` in `backend/src/app/loggers/audit.clj`):
-
-- `name`: what happened (`"create-file"`, `"navigate"`, `"create-organization"`...). For backend, it defaults to the RPC command name (prefixed with `<module>-` outside `main`).
-- `type`: category (`"action"`, `"identify"`, `"trigger"`). Most are `"action"`.
-- `profile-id`: **who** did it (uuid). See the invariant in section 5.
-- `ip-addr`: request IP (or `"0.0.0.0"` on telemetry).
-- `props`: action data (team/project/file ids, visited route...). **Never secrets** (see `clean-props`).
-- `context`: metadata about how/when it was captured (backend/frontend version, user-agent, locale, browser, `request-id`, `initiator`, `event-origin`...). See section 8 for the full field guide, including `initiator` (which app started it: `"app"` means Penpot itself).
-- `source`: `backend`, `frontend`, `telemetry:backend`, `telemetry:frontend`. Nitrate admin-console server events land as `backend`; its browser events land as `frontend` (see section 7).
-- `tracked-at` / `created-at`: claimed time and server time.
-- Memory-only (never stored): `::webhooks/event?`, `::webhooks/batch-key`, `::webhooks/batch-timeout` for the webhook fan-out.
-
-Backend `create-file` example (simplified):
+`source` distinguishes channels: management events are `backend`, browser events are `frontend`, and telemetry copies use `telemetry:backend` or `telemetry:frontend`. It is not an outcome. For example, `update-file` can record a rejected save without a change to the file.
 
 ```clojure
+;; Selected fields: profile-id names the actor, props.id names the new file.
 {:name "create-file" :type "action" :source "backend"
- :profile-id #uuid "…" :ip-addr "203.0.113.7"
- :props {:project-id #uuid "…" :name "My design"}
- :context {:version "2.x" :initiator "app" :request-id "…"
-           :client-version "2.x" :client-user-agent "Mozilla/…"}
- :created-at #inst "…" :tracked-at #inst "…"}
+ :profile-id actor-id
+ :props {:id file-id :project-id project-id :team-id team-id}
+ :context {:initiator "app" :request-id request-id}}
 ```
 
-Frontend `navigate` example:
-
-```clojure
-{:name "navigate" :type "action" :source "frontend"
- :profile-id #uuid "…" :ip-addr "203.0.113.7"
- :props {:route "dashboard" :team-id #uuid "…"}
- :context {:version "2.x" :locale "en" :browser "Chrome" :os "Linux"
-           :event-origin "dashboard" :session-id "…" :session #inst "…"}
- :created-at #inst "…" :tracked-at #inst "…"}
-```
-
-## 5. Backend events: the happy path
-
-Most backend events need **no manual code**. The `wrap-audit` wrapper in `backend/src/app/rpc.clj` runs after every RPC command when `:webhooks`, the boot-computed persistence value, or `:telemetry` is on (unless the command sets `::audit/skip`). It builds the event with `prepare-rpc-event` and passes it to `audit/submit`.
-
-Each command can customize through result metadata (`rph/with-meta`):
-
-- `::audit/replace-props`: replaces props fully (auth commands use `profile->props` so a register event carries the profile, not the password).
-- `::audit/props`: merges extras over the request params.
-- `::audit/context`, `::audit/profile-id`, `::audit/name`, `::audit/type`: override the defaults.
-- `clean-props` always strips nils, namespaced keys, and `:session-id/:password/:old-password/:token/:client-secret` as a last line of defense. **Never put secrets in props.**
-
-Critical `profile-id` INVARIANT: the event belongs to **whoever made the request**. It resolves as `::audit/profile-id` metadata → `::rpc/profile-id` → `uuid/zero`. It is **never** taken from the response: some results carry someone else's `:profile-id` (for example `get-error-report` returns the report with its content merged; `verify-token` on an invitation returns the inviter), and using it would blame the wrong person. Commands with `::rpc/auth false` (`login-*`, `register-profile`, `create-demo-profile`, `verify-token`, `prepare-register-profile`) have no caller to fall back on, so they **must** set `::audit/profile-id` in the metadata or the event lands on `uuid/zero`.
-
-The `::audit/profile-id` override goes through `coerce-profile-id`: a string is parsed, anything that cannot become a uuid is dropped (with a warning) and the event falls back to the caller. Do not pass the value raw: `schema:event` needs a uuid and `submit*` **propagates** the validation error, and `wrap-audit` runs after the command's transaction commits (moving it inside is project P8 in `TODO.md`), so a non-uuid override would fail the response over an already committed action instead of only losing the row. Hand-built events with `event-from-rpc-params` + `submit` (clone template, accept team invitation, `management/nitrate` push-audit-events) do **not** go through that coercion: they must already carry a uuid.
-
-### Team id and entity ids (projection data)
-
-The event stream is meant to let a consumer (Nexus) rebuild what it needs **without joining production tables**, so events carry the ids a projection keys on:
-
-- **Team id enrichment.** After `clean-props`, `prepare-rpc-event` calls `enrich-team-id`: when props have no `:team-id` but carry a `:project-id` or `:file-id`, it resolves the team with a local query and adds `:team-id`. It never resolves from `:id` (read commands put the entity id there, and that would add a query to every read), and it skips read events entirely (`get-*` names plus `has-file-libraries`: their events carry no consumer state). Commands that already loaded the team add `:team-id` themselves in `::audit/props` (`delete-file`, comments, media upload, `delete/update-webhook`, `clone-template`, ...), so the resolver does not run.
-- **Membership.** `add-profile-to-team!` emits `add-team-member` (props `:team-id`, `:member-id`, `:role`, `:is-owner`, `:is-admin`, `:can-edit`) whenever it actually inserts a row, only when full rows are persisted, inside the caller's transaction. It covers the flows that add a member with no event of their own (`create-team` owner, invitee added directly when `:email-verification` is off, approved join-request, duplicated team). With `on-conflict-do-nothing?` a conflict returns nil and emits nothing, so an existing membership is reported once. The event belongs to the actor: the two flows where the owner adds somebody else (`create-invitation`, `add-member-to-team`) pass `:actor-id` through a separate `event-opts` arg (never in `params`, which is inserted as-is); everywhere else actor and member coincide. `:role` is derived in the emitter from the flags (inverse of `permissions-for-role`: owner > admin > editor > viewer) because the table has no role column; request context travels in `event-opts` as `:rpc-params`.
-- **Created entity ids.** `create-project` and `create-file` add the new row's `:id` (and `:project-id`/`:team-id`) to `::audit/props`, so a projection can key it.
-- **Change ids.** `update-file` carries the id of the change row (xlog) it created in `:file-change-id`: the event says that a file was saved, but what changed lives in that row. A consumer that needs it must read it with `::db/remove-deleted false` (the row is born with its `deleted_at` in the future). A save writes two change rows (the change itself, without a label, and the snapshot of the previous state, with one) and the event points at the change one. A save that ends fully rejected (`:rejected` and no kept prefix) writes no row and the prop is absent: an id that resolves to nothing cannot be told apart from one the GC already purged, so do not expect it always. The event also carries `:outcome`: `saved` (every change written), `partial` (the accepted prefix written and the rest reported in the response, `:file-change-id` present) or `rejected` (nothing written, `:file-change-id` absent, `:modified-at` set to the row's persisted value instead of the request time). A consumer must look at `:outcome` before treating `update-file` as a state change.
-- **Bulk operations.** `clone-template`, `import-binfile` and `duplicate-project` create entities through internal calls that emit nothing on their own; they emit a `create-file` (and `create-project`) per entity (only when full rows are persisted). The import paths go through `audit/submit-file-created-event`, which reads the light columns (`id`, `name`, `project-id`, timestamps, `revn`) back from the row — the file must really exist, a phantom id emits nothing. `duplicate-project` already holds the rows and uses `audit/submit-create-event` directly. Both binfile versions return the same shape from `import-files!` (`{:file-ids [...]}`).
-- **Deletes.** `delete-team` still returns nil but carries the deleted row (`:id`, `:name`, `:created-at`, `:modified-at`, `:deleted-at`) in `::audit/props`, like `delete-project`. `delete-profile` carries `:id`, `:email`, `:fullname`, `:created-at`, `:modified-at` and `:deleted-at` (without this its props are empty: every param is namespaced and `clean-props` drops them). `create-team` adds `:created-at` and `:modified-at`. `delete-team-member` needs nothing: the delete is physical and the params already carry `:team-id`/`:member-id`.
-- **Moves.** `move-files` and `move-project` carry `:source-team-id` and `:dest-team-id`. A `move-files` that mixes files from more than one source team is refused (`:cant-move-from-multiple-teams`), so the single origin in the props is always correct.
-- **Hard deletes.** `objects-gc` emits one `hard-delete-objects` event per purged chunk, carrying only that chunk's entity key (`:team-ids`, `:project-ids` or `:file-ids`; one chunk transaction purges a single entity, so one event can never span sections), with context `{:triggered-by "objects-gc"}`, only when full rows are persisted. No extra team-id resolution: the event carries the key of the purge, nothing else. No other GC path emits (profiles, fonts, thumbnails); those purges stay silent. `file-gc` is the exception: it emits `file-gc` (`action`, `triggered-by: cron-task`) with the cleaned `:file-id` and its `:team-id`, so a consumer can key on it without joining production tables.
-- **SREPL deletes.** `delete-profile!` carries the subject id in props (it used to emit nothing usable); the event profile stays zero because SREPL has no actor. `delete-team!` props already carried the id, and `delete-file!` adds its `:team-id` so a consumer can key on it. All travel as actions with a `triggered-by: srepl` context.
-- **SREPL restores.** `restore-profile!` carries the full row (with id) in props with a zero event profile, plus `:team-ids` with the teams its cascade took (only those: a team the owner deleted earlier stays deleted); `restore-team!` carries its `:team-id` and `restore-project!` its id. The consumer resolves the subject from props by a uniform rule, with no SREPL special case.
-- **Cascades.** The `:delete-object` worker task emits one `delete-object-with-cascade` event per execution, type `action`, with `:object`/`:id`/`:deleted-at`, flat `:team-ids` resolved at emission plus the affected ids nested under `:cascade` (`:team-ids`, `:project-ids`, `:file-ids`), in the same transaction. The handler submits unconditionally (`submit` fans out per flag, so no persistence re-check); the `audit_log` row itself is still only written when full rows are persisted. Direct calls (objects-gc) and snapshot cascades stay silent on purpose.
-- **Ownership.** `create-team-with-invitations` carries the new team `:id` like `create-team`; `update-team-member-role` names the demoted member in `:prev-owner-id` on owner transfers.
-
-Entry points:
-
-- `submit`: the normal one (fills defaults, validates, runs inside `tx-run!`). A failure **propagates** (a lost event is a stale consumer, and hiding it made that invisible), and what it costs depends on where the caller runs: `wrap-audit` runs **after** the command's transaction commits, so a failure there cannot undo the action and the client gets an error over already committed work (moving the event inside the transaction is project P8 in `TODO.md`); a `submit` made inside the command's own transaction (the membership emitter, the `:delete-object` handler) throws through it and rolls the action back with the event.
-- `insert`: low level, for CLI helpers and the webhook subsystem; direct write, no webhook/telemetry fan-out, silent unless full rows are persisted.
-- Boot emits `trigger/instance-start` from `setup/props` so every restart stays visible.
-
-Cases already covered by tests, do not break: `accept-organization-invitation` tells its two flows apart **with props, not with origin**: `:organization-member-add-source` is `"direct-organization-invitation"` or `"team-invitation"`, and `:belongs-to-team-on-add` repeats it as a boolean. Do not add a third prop. The `context` `:event-origin` belongs to the browser (`make-data-event` sets it and it is on the frontend allowlist; `safe-backend-context-keys` has no `:event-origin`, so a backend event has nowhere to put one).
-
-## 6. Penpot frontend events: what is collected, with what guarantees
-
-The browser **never writes to the table**; it POSTs transit batches to `push-audit-events` (`backend/src/app/rpc/commands/audit.clj`), which stamps server `id`, session `profile-id`, request IP, server `created-at`, and server-side `:initiator` (from the `x-client` header, see section 8; anything the client sends as `initiator` is overwritten), and distrusts the client clock (future or >1h-late `tracked-at` is reset, the original kept in `context.original-tracked-at`). Without persistence, `:telemetry` or `:error-reporting`, or on a read-only pool, the endpoint is a no-op. With `:error-reporting` alone the batch is accepted only to feed the reporters: no full row and no telemetry shadow is written.
-
-Valid types (`schema:frontend-event`): `"action"`, `"identify"`, `"trigger"`. Names must match `#"[\d\w-]{1,50}"` (max 250). `props` is a free map with no schema: **tests are the only guard of the contract** (see section 13).
-
-What they are for: usage metrics (navigation, editing), workspace file stats, Nitrate membership changes, crash reports (`unhandled-exception` / `exception-page`). **Not proof for audit**: collection is best-effort and includes `PerformanceObserver` noise (`performance-*`, `user-input`, `long-task`). So backend tests must never assert exact frontend event counts.
-
-How the browser collects (`frontend/src/app/main/data/event.cljs`), most to least important:
-
-1. **On-demand start**: `initialize` asks the backend with `get-environment-data` (old `get-enabled-flags` is deprecated) and only starts on the derived `:audit-log` wire signal or `:telemetry` (see section 13). On RPC failure it still starts in telemetry mode (the backend will reject if needed).
-2. **Potok translation**: `make-proto-event` (events with the `Event` protocol) and `make-data-event` (data-events with `::name`) turn the action into `{type, name, props, context}`. `simplify-props` flattens complex values (maps → `:placeholder/map`, and so on) and drops namespaced keys and nils. Context gains `:event-origin`, `:event-namespace`, `:event-symbol`.
-3. **Capped buffer**: queue of max 1024 events (`append-to-buffer` drops beyond that); every 2s debounce (or on logout, or `::force-persist`) a chunk of max 100 is taken, filtered to the current profile, and sent fire-and-forget to `api/main/methods/push-audit-events` as transit. On confirm, the chunk leaves the buffer (`::chunk-persisted`).
-4. **Performance noise**: `PerformanceObserver` (`event`/`longtask`) plus blocking measurement with `scheduler.postTask` create `trigger` events (`performance-blocking-event`, `user-input`, `long-task`) with 1s debounce and 1s threshold. Info only, not audit.
-5. **`skip-audit?`**: UI flag (for example resuming a pending dashboard action after Nitrate SSO, or moving a team into an organization) so one user gesture is not counted twice.
-
-## 7. Nitrate admin-console events: the third producer
-
-The admin-console is the third producer. It sends organization and subscription events through **two channels** that look the same once stored, but have different trust levels. All the sending code (server and browser helpers) lives in the private Nitrate repo: it is not Penpot code and no file paths are cited here. What this section documents is only the Penpot-visible side: endpoints, payloads, and which event names arrive.
-
-### 7a. Server-side channel (high trust, like backend events)
-
-Code: the admin-console server has a helper that POSTs to the Penpot **management** API:
-
-```
-POST api/management/methods/push-audit-events
-headers: x-shared-key: "admin-console <key>", Cookie: <user cookies>
-body: {events: [{name, props, profileId, context?}]}
-```
-
-Auth happens at the HTTP layer (`backend/src/app/http/middleware.clj` `wrap-shared-key-auth`): the `x-shared-key` header carries `"<key-id> <secret>"` (`admin-console` here), checked in constant time against the configured keys; the key-id lands in the event context as `:initiator`. The call goes server-to-server (ky client, internal URI, user cookies forwarded).
-
-Who uses it:
-
-- Organization management (best-effort wrapper): `create-organization`, `rename-organization`, `delete-organization`, member add/remove, and more. It optionally passes the UI origin in the context.
-- Subscriptions: `create-subscription`, renewals, cancellations, and more, including deployment lookup (saas/selfhost).
-
-Failure policy: every send is best-effort. A failure never rolls back the business action; it is only recorded for debugging.
-
-Backend side (`backend/src/app/rpc/management/nitrate.clj` `::push-audit-events`): `::audit/skip`, `::rpc/auth false` (trust comes from the shared key, not from a user session; only the `admin-console` key id is allowed). It builds context with `audit/prepare-context-from-request` + `request-id`, takes the given `profile-id` as-is (no coercion here, must already be a uuid), sets `tracked-at = request-at`, defaults `type` to `"action"`, and calls `audit/submit` (which defaults `source` to `"backend"`). So these rows land as **`source = backend`**: they are audited like backend events because a trusted service set the author.
-
-### 7b. Browser channel (best-effort, like frontend events)
-
-Code: the admin-console browser has a helper that POSTs to the Penpot **public** API:
-
-```
-POST api/main/methods/push-audit-events
-credentials: include, keepalive: true
-headers: x-client: "penpot-admin-console/<version>"
-body: {events: [{name, type: "action", timestamp, props, context: {eventOrigin?}}]}
-```
-
-Dozens of helpers cover the admin-console UI: `create-organization`, `delete-organization-member`, `create-subscription` / `create-trial-subscription`, `open-subscription-modal`, `start-nitrate-checkout`, `open-current-subscription`, SSO settings flows (`open/apply/success/fail/discard-organization-sso-changes`, activate/deactivate modals), `change-organization-advanced-permission`, `onboarding-step` / `onboarding-finish`, `close-subscription-modal`. These helpers live in the private Nitrate repo: they are not Penpot code, you will not find them in this repository. Only the event names above (what arrives at Penpot) are listed here on purpose.
-
-These rows land as **`source = frontend`** with the session `profile-id`: same guarantees as Penpot frontend events (best-effort, usage analytics). Every browser helper sends an `eventOrigin` in the context: plain `"admin-console"`, with a suffix only when the same event is emitted from two places in the app (for example the SSO discard event distinguishes the config form from the unsaved-changes modal).
-
-The Nitrate repo also has a shared, generic push client for the management endpoint (not tied to the admin-console server): any other Nitrate-side service that needs to record something in the Penpot audit log can reuse it instead of writing its own HTTP call. Same endpoint, same payload shape as the server channel above.
-
-## 8. How the frontend helps the backend audit: HTTP headers
-
-Besides explicit events, **every RPC request from the frontend carries headers** so the backend can fill its own event `context`. This is how the backend learns "which browser/version/screen" made the request:
-
-- `x-frontend-version` and `x-client: penpot-frontend/<version>`: added by `default-headers` in `frontend/src/app/util/http.cljs` to **all** fetch requests (unless `omit-default-headers`). The admin-console browser channel sends `penpot-admin-console/<version>` instead (`x-frontend-version` is ignored on the event-ingest path, only `x-client` matters there).
-- `user-agent`: set by the browser alone; the backend trims it to 500 chars (`get-client-user-agent`).
-- `x-external-session-id`: external SaaS session via `cf/external-session-id`; added by `repo.cljs` (`send!`, special `cmd!`, `multipart-upload`, export...) and also stored by `persist-events` in the frontend event context. The backend checks it (max 256, ignores `"null"`/empty).
-- `x-session-id`: `cf/session-id` (tab session), only in the main `send!`.
-- `x-event-origin`: UI origin (`::ev/origin` from param metadata, for example `"dashboard"`, `"workspace"`); sent by `send!` and the OIDC/export/upload `cmd!`. The backend trims it to 200 chars and stores it as `:client-event-origin` (different from the `:event-origin` the frontend puts in its own context!).
-
-On the backend, `prepare-context-from-request` (`backend/src/app/loggers/audit.clj`) joins everything into the event context: `:external-session-id`, `:initiator` (`auth-key-id` or `"app"`), `:access-token-id/type`, `:client-event-origin`, `:client-user-agent`, `:client-version`, `:version` (backend), plus `:request-id`. Only `safe-backend-context-keys` (`:version`, `:initiator`, `:client-version`, `:client-user-agent`) survive in the telemetry shadow copy; the rest (`:client-event-origin`, `:external-session-id`, `:access-token-id/type`, `:request-id`...) is stored fully in the normal row and sent to Nexus, but dropped from telemetry.
+`props` describes the action; `context` describes how Penpot captured it. `created-at` is server time. In public ingest, `tracked-at` comes from the browser: Penpot replaces future timestamps and timestamps over an hour old with server time, keeping the original in `:original-tracked-at` before any telemetry filtering.
 
 ### Context field guide: `initiator`
 
-`initiator` labels the application that started a request. The server sets it on both channels, but only the shared-key channel authenticates the sending application:
+For backend RPCs, `:initiator` is the shared-key id authenticated by HTTP middleware, or `"app"` for ordinary requests. For public ingest, Penpot overwrites the supplied value based on `x-client`: the admin-console product (including the legacy `penpot-nitrate` alias) maps to `"admin-console"`; Penpot and unknown products map to `"app"`. A caller controls that header. Use the label for analytics, not authorization or proof of which app sent the event. The session still sets the actor.
 
-- **Backend channel** (RPC + management API): it comes from the shared-key auth layer (`wrap-shared-key-auth` in `backend/src/app/http/middleware.clj`): when a trusted service calls the management API with `x-shared-key: "<key-id> <secret>"`, the key-id (lowercased) is stored on the request as `::http/auth-key-id`, and `prepare-context-from-request` copies it into `:initiator`. When there is no shared key (a normal user RPC), it falls back to `"app"`, which means Penpot itself.
-- **Frontend channel** (`push-audit-events`): `get-client-initiator` maps the `x-client` header product to an initiator: `penpot-frontend` → `"app"`, `penpot-admin-console` → `"admin-console"`, legacy `penpot-nitrate` (old admin-console releases, remove once redeployed) → `"admin-console"`, missing or unknown → `"app"`. It overwrites any `initiator` in the event context, but the caller controls the header. Any authenticated caller can claim `"admin-console"` by sending that product in `x-client`. Use this label for usage analytics; it does not prove which application sent the event or grant permissions. The session still determines `profile-id`.
+Do not confuse `:client-event-origin` (the `x-event-origin` header on an RPC request) with `:event-origin` (context on a browser event). The former can help explain which UI triggered a backend action. The latter should not carry a backend business distinction.
 
-Values you will see:
+## 2. Emitting events
 
-- `"app"`: normal Penpot traffic (browser → public RPC or event ingest, or backend internal work). This is the vast majority.
-- `"admin-console"`: the authenticated Nitrate admin-console on management API calls (section 7a), or a caller claiming that product on browser events (section 7b, via the `x-client` mapping).
-- `"nexus"`, `"exporter"`, `"media-processor"`: other first-party services using their own shared keys (key ids come from `::setup/shared-keys` in `backend/src/app/setup.clj`, derived from the instance secret unless overridden).
+### Backend events
 
-Why it matters: it supports per-application usage counts, with the trust level described above. It survives into telemetry on both channels (one of the four backend keys, and on the frontend allowlist too), so per-initiator counts stay available even on anonymized rows.
+The RPC wrapper emits after a command returns when full-row persistence, telemetry or webhooks is enabled. Use `::audit/skip` for a command that should not emit. Use result metadata to add `::audit/props`, replace request props with `::audit/replace-props`, or set an explicit name, type or context. **Never put secrets in props or context.** `clean-props` drops some known sensitive keys on the RPC path; it is not a general privacy filter for every producer.
 
-More metadata the Penpot frontend adds inside each event (not as headers): `collect-context` with `ua-parser` (browser, engine, OS, device, screen, CPU arch), `locale` (updated on language change), `:session` / `:session-id` / `:external-session-id`, and SaaS host extras (`add-external-context-info`).
+Attribute the event to the **actor**, not an arbitrary `:profile-id` in the response. An invitation response can carry the inviter's id even though the invitee made the request. Use `::audit/profile-id` when the command has established the actor and the normal caller id is absent or not the right one. The RPC wrapper normalizes valid UUID strings and drops invalid overrides before falling back to the caller or zero. Hand-built events do not go through that normalization: pass a UUID to `audit/submit`. Reserve zero for cases without a known actor, such as SREPL actions.
 
-## 9. Consumers I: webhooks
+`audit/submit` propagates failures. `wrap-audit` runs **after** the command's transaction, if it has one: an audit failure can fail the response even though the business mutation is already committed. An explicit `submit` inside the caller's transaction can roll back the mutation with the event. Low-level `audit/insert` only writes a full row when persistence is on; it does not fan out to webhooks or telemetry.
 
-Webhooks let an external URL get notified when something happens in a team (for example "a file was created"). The flow has three steps:
+### Events used to rebuild state
 
-1. **Match.** Some audit events are marked as webhook-relevant when they are created. For each of those, Penpot looks up the active webhooks of the affected team: it reads the team straight from the event, or finds it through the project or the file in the event. Each matching webhook gets its own delivery job. If several quick events belong together, they are grouped into one delivery (the grouping rule travels with the event itself).
-2. **Deliver.** Penpot POSTs the event to the webhook URL in the format that webhook asked for: JSON (with camelCase keys), transit, or form-encoded. Every attempt is written to a delivery log with the request, the response, and the error if any, so failures can be inspected later.
-3. **Protect.** Each webhook counts its consecutive failures. After 3 in a row, Penpot switches the webhook off automatically, so a dead URL stops receiving traffic until someone fixes it. A successful delivery resets the counter to zero.
+Put the ids a projection needs in the event so the receiver does not have to join production tables. A create event needs the new entity's id. Supply `:team-id` when the command already has it; for writes the wrapper can resolve it from a project or file id, not a bare `:id`. Reads do not need that lookup. For a bulk operation whose internal calls do not emit, submit one create event per entity when full rows are persisted. Use `audit/submit-create-event` when you have the row or `audit/submit-file-created-event` when you have only a file id; the latter checks that the file exists.
 
-One guarantee: sending webhooks never changes the audit event itself. If delivery fails, only the webhook (and its delivery log) is affected; the audit row stays untouched and still gets archived normally.
+- `add-team-member` reports an actual membership insert, not a conflict that made no change. The emitter submits in the caller's transaction when full rows are persisted. Keep the actor separate from `:member-id` when someone adds another person.
+- `update-file` reports `"saved"`, `"partial"` or `"rejected"`. Only the first two write a change row and carry `:file-change-id`. The id points to the change, not the previous-state snapshot. Read it with `::db/remove-deleted false` because it is born with a future deletion date; even then, GC may already have removed it.
+- For moves, preserve source and destination team ids. For cascades and hard deletes, report the affected ids at emission rather than expecting a projection to reconstruct them later from deleted rows. The `:delete-object` handler emits its cascade event in the same transaction; direct and snapshot cascades do not emit that event.
+- `accept-organization-invitation` distinguishes direct and team invitations with `:organization-member-add-source` and `:belongs-to-team-on-add`. Keep that distinction in props; do not add another origin field.
 
-Every match also writes a `webhook` / `trigger` row to `audit_log` (even with zero matches): its props are `{:name <origin event name>, :event-id <origin row id>, :total-affected <matched webhook count>}`. `process-event` assigns the origin row id up-front so the trigger can reference it; the telemetry shadow row always gets its own id (reusing it would collide on the PK).
+### Browser events
 
-## 10. Consumers II: error reporters
+The browser collector starts on either `:audit-log` or `:telemetry` from `get-environment-data`. If discovery fails it starts anyway; the backend still decides whether to accept events. The collector buffers a bounded number of events and sends batches for the current profile. It can lose events on shutdown, overflow or failure. HTTP success does not prove a write: if storage fails, the endpoint logs the error and still returns normally. If it does write both the full and shadow rows, they commit together.
 
-Both `app.loggers.database` and `app.loggers.mattermost` listen to backend `:error` logs **and** frontend crash events (found by the `::audit/event` marker), through a sliding-buffer channel so a flood cannot stall the app. The database one stores them in `server-error-report` (source 3 = backend log, 4 = audit-log origin, 5 = rate-limit); the Mattermost one forwards a short note to `:error-report-webhook` when set.
+Use a data-event or the `Event` protocol for a new event. Use kebab-case names (the public schema caps names at 50 characters) and reuse existing prop names. Do not add a browser copy of an action the backend already reports unless the browser observes something distinct. Honor `skip-audit?` when the UI resumes the same gesture. Performance events are usage data, not audit evidence.
 
-Both reporters only start when the `:error-reporting` flag is on (off by default). The database reporter starts on the flag alone; the Mattermost reporter needs the flag **plus** its webhook URL configured. Without the flag, nothing is stored and `emit` calls from `push-audit-events` are silent no-ops. Each reporter also keeps a runtime on/off switch for emergencies via REPL.
+## 3. Destinations and privacy
 
-Result: crash reports only exist if the frontend collector runs and `push-audit-events` accepts `unhandled-exception`/`exception-page`. Turning off the whole pipeline also blinds frontend error reporting.
-
-## 11. Consumers III: telemetry (shadow rows)
-
-Telemetry reuses the same table with **anonymized shadow rows** (`source LIKE 'telemetry:%'`): day-truncated times, `0.0.0.0` IPs, props reduced to uuid/boolean/number values plus a few allowed fields (`source`, `lang`, `auth-backend`, `activation`, derived `email-domain` — never raw emails), and a minimal context allowlist. Full + shadow rows can exist together per event when both flags are on; that duplication is on purpose.
-
-Filters (`filter-telemetry-props` / `filter-telemetry-context`): by default only uuid/boolean/number with a simple key; exceptions: login/register/update-profile and frontend `identify` keep `lang`/`auth-backend`/`source`/`activation`/`email-domain`; `organization-sso-auth-failed` keeps `failure-reason` if it is a known one; `instance-start` passes whole; frontend `navigate` keeps `[:route :file-id :team-id :page-id]`. Subscription actions have event-specific contracts: backend and frontend `create-subscription` / `create-trial-subscription` preserve the default uuid/boolean/number props plus `type`, `deployment`, `quantity` and `subscription-mode`; backend `update-subscription` preserves only `type`, `deployment`, `previous-status`, `status`, `previous-cancel-at-period-end`, `cancel-at-period-end`, `previous-cancel-at`, `cancel-at` and `changed-fields`; backend `subscription-summary` preserves only `type`, `deployment`, `instance-id`, `snapshot-date`, the per-status `*-count` values, `total-count`, `sync-succeeded`, `sync-failed` and `snapshot-complete`. These subscription exceptions apply only to action events. Other free text drops from telemetry but **stays in the full row and in Nexus**. In `register-profile`, `activation` is a prop (it is what reaches PostHog). `action` exists only in the `context` of the full `register-profile-retry` rows; `filter-telemetry-context` drops it from the anonymised copy, which keeps only `:version`, `:initiator`, `:client-version` and `:client-user-agent`.
-
-Shipping (`backend/src/app/tasks/telemetry.clj`): the cron sends shadows to `:telemetry-uri` as JSON in 10k batches and **deletes** them on success; it purges leftovers older than 7 days. It also sends a legacy report (counters, teams, email domains...). On official hosts nothing is collected or sent (`telemetry-excluded?` covers `penpot.app`/`penpot.dev`).
-
-### Where telemetry events go: `telemetry.penpot.app` is Nexus
-
-The default `:telemetry-uri` (`https://telemetry.penpot.app/`) points at the **Nexus telemetry endpoint**, so telemetry is a second road into Nexus, separate from the archive cron. The payload is plain JSON:
-
-```
-POST https://telemetry.penpot.app/
-{type: "telemetry-events", version, instance-id, events: [...]}
+```text
+RPC / management / public ingest
+  ├─ full rows ────┐                       ┌─ Nexus archive
+  ├─ shadow rows ──┴─ audit_log buffer ─────┼─ admin-console archive
+  │                                        └─ telemetry endpoint
+  ├─ webhook jobs (marked producer events)
+  └─ error reporters (crash events from public ingest; also receive backend logs)
 ```
 
-Nexus dispatches on `:type`: `"telemetry-events"` batches are coerced and inserted into its own `audit_log`; anything else (old flat payloads, `"telemetry-legacy-report"`) is upserted into `telemetry_report` per instance + day. Three details matter:
+### Full rows and archive consumers
 
-- **Anonymization happens in Penpot, before sending.** By the time events leave, times are day-truncated, IPs are already `0.0.0.0`, props/context are filtered (see above), and emails are gone (only derived `email-domain` survives). Nexus additionally forces the outcome: it prefixes any non-`telemetry:` source, sets `received-at = tracked-at` (already truncated), pins IP to `0.0.0.0`, and stamps the sending `instance-id` into every event context.
-- **No personal data is expected.** Profile ids are random UUIDs with no PII, so the telemetry consumer needs no login guard; grouping is by `instance`, not by person (see posthog-telemetry below).
-- **The endpoint always answers 200.** Failures are swallowed and only counted (`nexus_telemetry_errors_total`), so a bad batch never breaks the sending instance; successes are counted (`nexus_telemetry_events_total`, `nexus_telemetry_reports_total`). A body the parser cannot read never reaches the handler: it answers 400 and counts in `nexus_http_malformed_requests_total`. Old instances may send a fressian+zstd base64 blob instead of a plain vector; Nexus decodes both (50 MiB cap against decompression bombs).
+Nexus receives full events, not telemetry shadows. Penpot sends Transit with the instance's `public-uri` as `origin` and a Nexus shared key. In the Nexus archive contract, Penpot's `created-at` becomes `received-at`; Nexus has its own `created-at` and `tracked-at` stays the origin time. The default telemetry endpoint also points to Nexus, but it is a separate ingest path with a reduced payload.
 
-## 12. The cursor consumers: Nexus and the admin console
+The admin-console archive is **Penpot → Nitrate**, distinct from either Nitrate producer channel. Its consumer selects an allowlist of full events and enriches them with names or emails needed by the destination. The producer does not know that allowlist. Nonmatching rows still advance the cursor.
 
-### How it works today
+### Webhooks and error reporters
 
-Each consumer is a **loop in its own thread**, not a job (nexus on flag `:nexus`, admin console on `:admin-console`; `:audit-log-gc` stays a cron job on flag `:audit-log-gc`). The pass first takes the consumer's session advisory lock (`pg_try_advisory_lock(730000, consumer id)`, the two-key form on a pooled connection held until the pass ends: a lock space of its own, so it can never collide with the one-key lock `update-file` takes from the file id), so one backend drains that consumer at a time once every instance runs this version (a rolling deploy still has the old job-based instance, which does not know the tick; the two versions do not serialize each other, see below). The pass runs entirely on that connection (frontier, chunk transactions and lag gauge), so the pool must admit at least one connection per enabled consumer; a pass that finds it taken answers `::consumer/busy` (`:app.loggers.audit.consumers/busy`) and the loop sleeps `sleep-ms` (5 s) without touching the data. A pass whose consumer flag is off answers `::consumer/disabled` before borrowing a connection: the loop is gated at boot, but a direct caller (REPL, helper) must not send or advance a cursor for a disabled consumer, and that pass records no metric. Holding the lock it reads the **frontier** of the pass (`xid <= pg_snapshot_xmin(pg_current_snapshot())`, ordered `xid DESC, seq DESC`, first row) and drains chunks only up to it, so the pass always ends and every chunk but the last is 128 rows; a row committed while the pass runs waits for the next one. The position is the pair `(xid, seq)` stored in `audit_log_consumer_cursor`; each chunk locks that row `FOR UPDATE` (`SET LOCAL lock_timeout = '30s'`), reads 128 rows with `(xid, seq) > cursor AND (xid, seq) <= frontier AND xid <= pg_snapshot_xmin(pg_current_snapshot())` in `(xid, seq)` order, sends them, and advances the cursor in the same transaction. The row lock only serializes passes of the same consumer (the cursor row takes part in no FK); no `audit_log` row is locked, so the transports never wait for each other. On the first deploy each consumer has no cursor and registers it at `(0, 0)` at boot (`ensure-cursor`, before its first pass; after stopping the legacy archiver and its GC and deleting the rows it had already archived), so the backlog is replayed instead of dropped. Batches arrive at Nexus in insertion order (it numbers by arrival for order-sensitive consumers). Nexus receives transit `{:events [...]}` with `x-shared-key: "nexus <key>"` (`:nexus-shared-key`, or derived from the instance secret) and `origin` = public-uri; flag on but no URI raises `:task-not-configured`. The admin console receives only its allowlisted event names (enriched with team names, props emails, and optional top-level `:profile-email` / `:profile-name` from the actor `:profile-id`), excluding telemetry shadows; the rows outside its filter count as `skipped` and the cursor passes over them (a selective consumer that finds nothing advances to the end of the chunk, so it never blocks the GC). A chunk whose destination refuses it (Nexus non-204 raises `:consumer-chunk-refused`) or throws (transport failure, admin-console error) rolls back the cursor advance and stays for the next pass: the pass aborts with the chunks it already committed, and the loop logs the failure and retries after its pause. Committed chunks stay sent. The send fns return counts or throw carrying the attempted count as `:events`; `drain-consumer` records the `failed` metric from it, outside every chunk transaction (a local DB failure carries no `:events` and stays uncounted — it is not a destination failure). No `warn` before the throw: the loop reports the aborted pass. Each consumer has its own cursor, so a fallen Nexus never starves the admin console (nor vice versa).
+Webhooks use jobs, not a cursor over the audit buffer. A marked event schedules matching and delivery for the affected team's webhooks. When debounce is configured, a burst delivers the **last payload**, not a list of the events. Delivery failure changes webhook status and its delivery log, not the origin audit row. The audit `webhook` trigger records the match count, including zero, only if full-row persistence is on. Its `:event-id` comes from the producer event, so it can refer back to the full row when that row exists. A telemetry copy has its own id.
 
-The legacy archiver (the one this release replaces) sent **one POST** for the whole chunk and advanced only on 204, so a single oversized event wedged the whole queue: a crash report whose message embeds a whole payload (a serialized file, for example) can push the request past the proxy body limit and the rejection blocks every later event until it is pruned by hand. Frontend crash reports are therefore size-bounded at the source (`mem:frontend/routing-app-shell-subtleties`): `app.common.exceptions/get-hint` and the CLJS `format-throwable` clamp exception messages (`max-message-length`).
+With `:error-reporting` on, public ingest forwards `unhandled-exception` and `exception-page` to the reporters even if neither kind of audit row is stored. The database reporter runs on that flag alone; Mattermost also needs its webhook URL. Reporters also receive backend error logs. The browser collector still has to run for browser crashes to reach them. Bound crash reports at the source: a message that embeds a serialized file can exceed the receiver's body limit and prevent later rows in the chunk from advancing. See `mem:frontend/routing-app-shell-subtleties` for frontend report limits and classification.
 
-On the other side, Nexus checks `origin` against its allowlist (403 if not allowed), coerces the events, and inserts them into its own `audit_log` (partitioned by `received_at`, with an incrementing sequence number and `source`). Watch the rename: Penpot's `created-at` is stored as **`received-at`** in Nexus; Nexus's `created-at` is when it was created there. `tracked-at` keeps the origin time. Telemetry batches arriving at `telemetry.penpot.app` land in the same table through the telemetry endpoint above.
+### Telemetry shadows
 
-Concurrent passes are safe: the tick lock makes a second backend skip its pass instead of overlapping, and the events are sent in cursor order, like an event log. During a rolling deploy the old archiver and GC are stopped (flags `:audit-log-archive` off, `:audit-log-gc` off) while the web instances keep writing; the new consumers start at boot and replay the unarchived buffer. The old and the new version do not serialize their reads (the old version does not know the cursor table, and the new one takes no lock the old one respects because it only reads rows), but with the old GC off no row is deleted under the new cursors, and the archived rows are deleted before the replay. The new GC stays off (`:audit-log-gc`) until every instance runs the new version (see the migration NOTE). No consumer waits for another one, because each has its own cursor. The GC reads the cursors without locking them and deletes only up to the oldest cursor in the table, inclusive (`FOR UPDATE SKIP LOCKED` in its batch select), so it never waits for a consumer and a consumer never sees a row deleted under its cursor; a consumer registers at boot, so its row exists before its first pass, and with no cursor at all the GC deletes nothing. A disabled consumer keeps its cursor and holds the GC at that position. With no cursor at all the GC deletes nothing: the `:audit-log-gc` flag is the deployment switch, and the old drain-everything branch was removed. **Nobody writes full rows when no consumer is on**: persistence follows the consumer flags, so the buffer stays empty and enabling a consumer later starts from an empty buffer. The operator must set the consumer flags on every instance, web and worker, because each process computes its own value at boot. The buffer itself has no tenant column: it is one log per database, with the cursor rows and the tick lock shared by every instance, so any worker instance drains any consumer. Adding a tenant would touch the producer, the cursor key, the GC, the telemetry task and the webhooks, and there is no historical value to backfill; it is a plan of its own, not part of this change. The drain does not touch `audit_log_pending`: released versions never created it, and the migration drops the table on a pre-release database so a leftover pending row cannot block the new GC with its foreign key. Its path has no FK check.
+Telemetry writes a separate, reduced copy, even when full-row persistence is also on. It truncates times to the day, sets the stored IP to `0.0.0.0`, and filters props and context before storage. The telemetry POST omits row id, `created-at` and IP; it keeps `profile-id`, a stable UUID that can link events. Treat the copy as reduced data, not as proof of anonymity.
 
-Observability (the transports in `backend/src/app/loggers/audit/consumers/{nexus,admin_console}.clj`, the shared drain in `backend/src/app/loggers/audit/consumers.clj`, the GC in `backend/src/app/loggers/audit/gc.clj`, definitions in `backend/src/app/main.clj:default-metrics`): one `dbg` summary per pass (`:consumer` label, processed/skipped/chunks, `:elapsed` as `"1.5s"` via `ct/format-duration`, frozen in a strict binding first because log props evaluate lazily in the logger thread), one `dbg` per admin-console ingest call (`ready` with totals, `processed`/`failed` with counts), plus `dbg` when there is nothing to read or the component did not start (flag off). No `warn` before a throw: the loop logs the aborted pass and keeps going (refusal details travel in the error data). Metrics, all recorded with bounded labels only: `penpot_audit_consumer_events_total{ destination = nexus|admin-console, outcome = processed|failed|skipped }` (all consumers report the successful rows as `processed`; `skipped` = filtered by the admin-console allowlist or a telemetry shadow) and `penpot_audit_consumer_discarded_total{ reason = gc }` (rows the GC removed once every enabled consumer had passed them). `penpot_audit_consumer_lag_events{ destination }` is a gauge with the confirmed events after a consumer's cursor, capped at 10000 (past that it reads 10000, so a long backlog is not an O(backlog) count on every pass): it rises when the stream falls behind (a slow destination, or the burst after a big transaction commits). While a transaction is open its rows are invisible to everybody, so they cannot be counted as lag. Timing needs no custom histogram and no longer comes from the jobs substrate: a pass has no job row. `penpot_audit_consumer_passes_total{ destination, outcome }` counts them with `ok` (drained or empty), `busy` (another instance holds the tick) and `failed` (the pass threw; a local DB failure appears only here and in the error log), so a `busy` rate is normal with several instances but a sustained busy with `ok` at zero on every instance means a retained tick; a disabled pass (flag off, direct caller) records nothing. The signal is that counter plus the lag gauge. The bulk frontend ingest counts `penpot_audit_ingest_events_total{ kind = full|shadow, outcome = inserted|failed }` (both faces share one transaction, so a failure drops the batch on both). Archive success counts are recorded by `drain-consumer` on the drain totals: a chunk that returns normally committed its transaction (a rollback always throws instead), so they cannot inflate, and a pass that aborts on chunk N still records the `processed`/`skipped` of chunks 1..N-1 (the totals live in a volatile updated after each commit). Logs never carry event data (`props`, `context`, `profile-id`, `ip-addr`, `team-name`, emails): only counts, statuses and the uri host.
+For example, auth events can keep a derived `email-domain`, not the raw email; a full archive row may still contain the email. Context drops request and session identifiers but keeps an allowlisted `:initiator` for counts by application. Event-specific filters allow some values the default filter would drop. Check `filter-telemetry-props` and `filter-telemetry-context` with their tests before changing a field that leaves the instance.
 
-### How Nexus consumes the data (and forwards to PostHog)
+The telemetry consumer scans the same stream, skips full rows, and ships shadows independently of the full archives. It uses a three-hour pause and larger chunks to avoid flooding the endpoint with small requests. The legacy `:telemetry` job still sends the aggregate report and newsletter data; it does not drain these rows. Its event counters see only the shadows still in the buffer, not a complete day's activity.
 
-Stored rows are not the end: a consumer pipeline reads them back in sequence order and processes them. Each consumer remembers its place (sequence number), fetches the next chunk, runs its handler, then saves the new position. Three consumers run in order:
+## 4. How the buffer drains
 
-1. **`local`**: keeps a mirror of user profiles. It listens to profile events (`register-profile`, `update-profile`, `login-with-*`, `delete-profile`, ...) and upserts email, name, props, and delete markers. It runs first because the next consumer needs profile data.
-2. **`posthog`** (runs after `local`): forwards our own SaaS archived events to PostHog. It sends an allowlist of backend track events (teams, members, projects, files, comments, Nitrate/SSO, ...) plus frontend events minus a noise exclusion list, grouped by **team**, with person identify data from the local profile mirror and snake_case props. Both paths include the `initiator` property when the stored context has one, so PostHog can split Penpot vs admin-console traffic.
-3. **`posthog-telemetry`**: forwards events with `source = telemetry:frontend|telemetry:backend` to a separate PostHog project. Because these rows are already anonymous (no IPs, truncated times, filtered props), grouping is by **instance** (the self-hosted server, from `context.instance-id`), with one `$groupidentify` event per instance per chunk so PostHog learns per-instance properties (version, URI, flags). Each consumer has its own PostHog credentials.
+`audit_log` is a buffer, not the archive. Producers insert rows without knowing the destinations. Each consumer keeps its own position in `audit_log_consumer_cursor`. Worker instances run consumers in background threads, not jobs. A session advisory lock allows only one pass per consumer per database. The pass holds a pool connection and fixes its upper bound (the *frontier*) at the start, so it ends even while new events arrive.
 
-So the full journey is: Penpot buffer → Nexus `audit_log` (via either archive cron or the telemetry endpoint) → consumers → PostHog (SaaS events grouped by team, telemetry grouped by instance) plus local analytics views and materialized KPIs.
+### Ordering and retry
 
-### Admin console: the second consumer
+The cursor orders rows by `(xid, seq)`: transaction id first, then sequence within the transaction. A snapshot cut based on `pg_snapshot_xmin` keeps the reader from moving past an earlier open transaction. For example, A inserts a row and stays open. B inserts and commits while A is open; then A inserts a second row and commits. A sequence-only cursor could read B and skip A's first, still invisible row. With the cut, the drain waits and can then deliver both A rows before B. This is neither global insertion order nor commit order.
 
-Penpot → admin-console archiving lives in its own consumer (id `2`, flag `:admin-console`, a loop in a thread): it reads from its own cursor and ingests the allowlisted events through `nitrate/call :ingest-audit-log`, enriched as described above. The allowlist lives in the consumer now (`backend/src/app/loggers/audit/consumers/admin_console.clj`): the producer does not queue for anybody, so rows outside it are normally `skipped`. What also exists (do not confuse with archiving):
+The cut is conservative across the database. An unrelated long write transaction or a slow send inside a cursor transaction can delay what other passes can read, even though they do not lock one another's cursors. The GC can still delete up to positions already confirmed.
 
-- **Nitrate → Penpot**: `POST /api/management/methods/push-audit-events` (`backend/src/app/rpc/management/nitrate.clj`) lets the trusted Nitrate backend inject events into the Penpot audit log (no RPC auth, `::audit/skip`, request context + `submit`; only the `admin-console` shared-key id can call it). Section 7a is the main user.
-- **Admin-console browser → collector**: usage events from the admin-console UI traveling through the normal public `push-audit-events` (section 7b).
-- **Penpot frontend Nitrate bits**: membership/subscription events (`frontend/src/app/main/data/nitrate.cljs`, `nitrate-audit/*`) through the same public endpoint.
+Each chunk sends and advances its cursor in one local transaction. A refusal aborts that chunk and leaves its cursor in place; earlier committed chunks stay done. An external send cannot roll back with the local transaction: if the destination accepts it and the cursor commit fails, the next pass can send it again. Consumers must handle repeats. A filtered chunk advances even if it sends nothing.
 
-## 13. Flags and config
+### Registration, deletion and replay
 
-Flags (`common/src/app/common/flags.cljc`, varia; enabled with `PENPOT_FLAGS=enable-<name>`):
+The component registers its cursor at `(0, 0)` after configuration succeeds and before its loop starts, so a new consumer replays what remains in the buffer. Consumer ids are stable and never reused: `0` telemetry, `1` Nexus, `2` admin console. A disabled consumer keeps its position until retired. Turning off both full-row consumers stops new full rows; it does not empty the buffer or stop telemetry shadows.
 
-| Flag | What it does |
+Only the GC deletes. For full rows it deletes through the oldest registered cursor other than `0`; for shadows it deletes through cursor `0`. A missing cursor leaves its cursor-based path idle. A separate seven-day retention path deletes shadows by age regardless of cursors. It can delete unsent shadows; an older shadow can still ship if the consumer reads it before GC removes it.
+
+The GC reads cursors again for each batch but does not serialize deletion with registration. A new consumer can miss up to one batch **per concurrent GC execution that read the previous cursor state**. There is no database-wide one-batch limit: cron job exclusivity is scoped by tenant, while the buffer and cursors are shared by the database. For a complete replay of what remains, pause the GC and wait for queued and running GC jobs to finish before registering. Follow `operations/2.20.0-consumer-generalization.md` for the rollout and replay procedure.
+
+### What to watch
+
+- `penpot_audit_consumer_lag_events` counts visible rows after a consumer's cursor, capped at 10,000. It includes rows that the consumer will filter; it is not a count of undelivered requests.
+- Pass outcomes distinguish a failed pass from `busy` (another instance holds the lock). Some `busy` is normal with several workers; sustained `busy` with no successful passes warrants checking the lock holder. `skipped` rows were filtered by the destination, not lost.
+- `penpot_audit_consumer_discarded_total{reason="gc"}` counts all committed deletions. The `purged stale telemetry events` warning counts **age-based deletions**, not confirmed missed deliveries.
+
+## 5. Configuration, changes and tests
+
+| Setting | Effect |
 |---|---|
-| `:audit-log-gc` | Runs the buffer GC; the old 2.18 GC and the new one share it. Keep it off while the old and new versions coexist and turn it on after the rollout. With no consumer enabled the GC deletes nothing |
-| `:nexus` | Send flag of the Nexus consumer; it appends the ingest path to `:nexus-uri`, and the component raises `:task-not-configured` at boot when the flag is on and no URI is configured |
-| `:admin-console` | Send flag of the admin-console consumer; also the module flag for the admin-console integration |
-| `:audit-log-logger` | Structured `app.audit` log per event |
-| `:error-reporting` | Starts the error reporters (off by default); database reporter on flag alone, Mattermost on flag plus webhook URL; also opens `push-audit-events` for crash batches without any other sink |
-| `:telemetry` | Stores shadow rows and turns on shipping (auto with `:telemetry-enabled`) |
+| `:nexus`, `:admin-console` | Start the corresponding archive consumers and enable full-row persistence. Set the intended flags consistently on web and worker instances: each computes persistence at boot. Nexus needs `:nexus-uri`. |
+| `:telemetry` | Collect and ship shadow rows to `:telemetry-uri`, separately from full-row persistence. |
+| `:error-reporting` | Start error reporters and enable public ingest for crash reports without requiring stored audit rows. |
+| `:audit-log-gc` | Schedule the GC, on by default. Use `disable-audit-log-gc` during a mixed-version rollout and follow the runbook before restoring it. |
+| `:audit-log-logger` | Log backend audit events, including event data. This is not the archive or a substitute for persistence. |
 
-`:audit-log` is **not a flag any more**. `app.config` computes
-`cf/audit-persist?` once at boot from the consumer flags (`:nexus` or
-`:admin-console`): when neither is on, no full rows are written anywhere, and
-telemetry shadows are the only rows the producer inserts. The other event-path
-sinks get the same treatment: `cf/webhooks-enabled?`, `cf/telemetry-enabled?`
-and `cf/error-reporting-enabled?` are computed at boot from their flags and
-read by `wrap-audit`, `process-event`, the frontend ingest and the telemetry
-task. Component startup (`ig/init-key` of the reporters) still reads the flags
-directly; it is not a per-event path. All write sites read `cf/audit-persist?`:
-`process-event`, `submit-create-event`, `insert`, the frontend ingest,
-`wrap-audit`, and the membership/GC emitters. `get-environment-data`
-still puts `:audit-log` on the wire as a derived signal (persistence,
-`:telemetry`, or `:error-reporting`), so `event.cljs` and the RPC schema do not
-change. Telemetry keeps shipping shadows and reports on its own flag; with
-persistence off the telemetry task also runs its legacy collection mode. The
-`webhook`/`trigger` row from `webhooks.clj` disappears when no consumer is on,
-but the webhook deliveries themselves still work.
+`:audit-log` is not a configurable flag. As a wire signal it means full-row persistence **or** error reporting. `:telemetry` is a separate wire signal. Public ingest skips processing on a read-only pool or when none of those destinations is enabled.
 
-Config (`backend/src/app/config.clj`): `:nexus-uri`, `:telemetry-uri` (default `https://telemetry.penpot.app/`), `:nexus-shared-key` / instance secret, `:public-uri` (sent as `origin` to Nexus).
+To add a consumer, give it a non-reused id and a transport definition for the shared `run-pass` loop. Configure its `:process`, optional `:prepare` and worker component; do not add producer-specific fan-out or seed its cursor in a migration. For contract tests, drive the real pass with prepared cfg; see `mem:backend/testing` for the test system and stubs. When changing an emitter, assert actor, props and exact emission counts for the specific backend action. Checking only the first matching event misses duplicates. Do not assert exact global counts from best-effort browser collection.
 
-## 14. Practical guide: add or change events
+### Where to look
 
-- **New backend command that must (or must not) emit**: `wrap-audit` does it alone; to exclude it set `::audit/skip`. To customize props/name/type use result metadata. Add a test mocking `app.loggers.audit/submit` (nil; `helpers.clj` stubs it globally) and assert `:call-args-list` — see `backend_tests/rpc-audit-test.clj` (full-row, telemetry-only, dual, no-op without flags, `insert`, `prepare-rpc-event`) and `rpc-team-test/accept-organization-invitation-audit-event` (three cases, exact props; counts matter: asserting with `first` passes even when a command emits the same name twice).
-- **New Penpot frontend event**: create the data-event or implement `Event`/`PerformanceEvent` in `app.main.data.event`, with `::name`/`::type`/`::origin`. Honor `skip-audit?` if the action can resume. Remember: with no props schema, **your asserts are the contract**.
-- **New admin-console event**: server action → add the backend-log call next to the mutation, best-effort so it never breaks the action; browser action → add a new event helper plus its test.
-- **Command that creates an entity or already knows its team**: put the new row's `:id` in `::audit/props` (`create-project`/`create-file`) and set `:team-id` when the team is loaded, so the consumer never has to join production tables. For entities created inside an internal call (`clone-template`, `import-binfile`, `duplicate-project`), emit one event per entity: `audit/submit-file-created-event` when only the id is known (it reads the row back), `audit/submit-create-event` when the row is already in hand.
-- **New audit-log consumer**: add its id to `app.loggers.audit.consumers` (never reuse one), do not seed its cursor in the migration: `ensure-cursor` creates it at the beginning of the buffer on the first pass, so the consumer replays what the buffer holds, add a `::consumer` component (the thread that runs its passes, gated by its flag) and a namespace with its `process-chunk`. The producer does not change. It must be idempotent: the drain is at-least-once, so the same event can reach it twice.
-- **Never** put secrets in `props`; `clean-props` is a last defense, not an excuse.
-- **Do not duplicate events**: if the backend already emits an event for an action, do not add a frontend (or admin-console browser) event for the same action — the backend one wins because it is reliable. A second event for the same action is only acceptable with a strong reason (for example the backend cannot see it at all), and then it must be clearly justified.
-- **Follow the naming policy**: use kebab-case names (`"create-organization"`, not `"createOrganization"`), and before inventing prop keys, look at similar existing events and reuse their key names (`organization-id`, `team-id`, `file-id`, `event-origin`...). Same concept, same key spelling — that is what keeps the data queryable later.
-
-## 15. Code map
-
-- Backend producer: `backend/src/app/loggers/audit.clj` (`submit`, `submit*`, `insert`, `prepare-rpc-event`, `enrich-team-id`, `submit-create-event`, `event-from-rpc-params`, telemetry filters), `backend/src/app/rpc.clj` (`wrap-audit`), `backend/src/app/rpc/commands/audit.clj` (`push-audit-events`, `get-environment-data`, deprecated `get-enabled-flags`), `backend/src/app/rpc/management/nitrate.clj` (`push-audit-events` Nitrate→Penpot), `backend/src/app/http/middleware.clj` + `backend/src/app/http/management.clj` (shared-key auth).
-- Membership emitter: `backend/src/app/rpc/commands/teams.clj` (`add-profile-to-team!` → `add-team-member`).
-- Penpot frontend producer: `frontend/src/app/main/data/event.cljs` (collector, buffer, send), `frontend/src/app/main/repo.cljs` + `frontend/src/app/util/http.cljs` (headers), `frontend/src/app/main/data/nitrate.cljs` (Nitrate membership events).
-- Admin-console producer (private repo, no paths cited here): server-side organization/subscription events through the management `push-audit-events`, browser-side UI events through the public `push-audit-events`.
-- Consumers: `backend/src/app/loggers/webhooks.clj`, `backend/src/app/loggers/database.clj`, `backend/src/app/loggers/mattermost.clj`, `backend/src/app/tasks/telemetry.clj`.
-- Archive (two cursor consumers + GC): `backend/src/app/loggers/audit/consumers.clj` (the shared mechanics: consumer ids and catalog, the tick lock and loop, the cursor lock/read/advance and the frontier, the lag gauge and the metrics) plus one namespace per transport: `consumers/nexus.clj` (the shared keys/HTTP client component) and `consumers/admin_console.clj` (with the enrichment and its allowlist); each transport declares its loop as `::consumer`, so the wiring in `backend/src/app/main.clj` (the `worker-config`) points at `:app.loggers.audit.consumers.{nexus,admin-console}/consumer`, and only worker instances start them. The GC lives in `backend/src/app/loggers/audit/gc.clj` (`:audit-log-gc`, `::job-def`, still a cron job). The producer only inserts (`append-audit-entry` in `backend/src/app/loggers/audit.clj`, `insert-rows!` in `backend/src/app/rpc/commands/audit.clj`): no queue, no allowlist. The schema ships in one migration, `0159-consumer-generalization` (the runner applies every pending step in one transaction, so the whole feature is a single step): the `seq`/`xid` columns, the unique `(xid, seq)` index and the cursor table, empty on purpose: each consumer registers its row at `(0, 0)` at boot through `ensure-cursor`, before its first pass, and the job exclusivity/dedupe columns and indexes. The pending queue never shipped: the migration does not create `audit_log_pending` and drops the table if a pre-release database has it. The out-of-band runbook lives in `operations/2.20.0-consumer-generalization.md` (the migration comment points to it): it registers the steps first (step 0, `INSERT INTO migrations`, so no deploy lands while the runner could still take the locks, and the steps below become the only path that applies the schema), then stops the legacy archiver and its GC, deletes the archived rows, keeps the legacy mark and its indexes for a later cleanup, pre-applies `0154-add-job-table` (2.19 has no `job` table) and the additive `0159` schema with the `setval(count + 1000000)` reserve, the `CONCURRENTLY` indexes, the `CHECK NOT VALID` dance and a gate that also checks the job tables, its eight indexes, the trigger and the two flags (`indisvalid` included); the web writes never stop because the old producer names neither `seq` nor `xid`, so the database fills them, and the new GC is turned on only after the rollout. Both steps are registered in step 0, so the runner never applies them: everything they create must be applied by hand, and the gate is what proves it before the deploy. The two consumers start a thread gated by their flag; the GC keeps its 5-min cron entry.
-- Nexus (private repo, no paths cited here): archive ingest, ordered consumers (local profile mirror, PostHog SaaS events, PostHog telemetry), telemetry endpoint, analytics views.
-- Tests: `backend_tests/rpc-audit-test.clj`, `rpc-team-test/accept-organization-invitation-audit-event`.
+- Producer and telemetry filtering: `backend/src/app/loggers/audit.clj`; RPC wrapper: `backend/src/app/rpc.clj`.
+- Public ingest and discovery: `backend/src/app/rpc/commands/audit.clj`; browser collector: `frontend/src/app/main/data/event.cljs`; trusted ingest: `backend/src/app/rpc/management/nitrate.clj`.
+- Shared drain, transports and GC: `backend/src/app/loggers/audit/`; rollout: `operations/2.20.0-consumer-generalization.md`.
+- Contract examples in `backend/test/backend_tests/`: `rpc_audit_test.clj` for emitters and ingest, `loggers_audit_consumers_test.clj` for cursor ordering, retry and GC, and `rpc_team_test.clj` for invitation attribution.

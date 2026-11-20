@@ -38,6 +38,7 @@
    [common-tests.files.tokens-test]
    [common-tests.files.validate-test]
    [common-tests.files.variant-test]
+   [common-tests.flags-test]
    [common-tests.geom-align-test]
    [common-tests.geom-bounds-layout-nil-test]
    [common-tests.geom-bounds-map-test]
@@ -160,6 +161,7 @@
    'common-tests.files.tokens-test
    'common-tests.files.validate-test
    'common-tests.files.variant-test
+   'common-tests.flags-test
    'common-tests.geom-align-test
    'common-tests.geom-bounds-layout-nil-test
    'common-tests.geom-bounds-map-test

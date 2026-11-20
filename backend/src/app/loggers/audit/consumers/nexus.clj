@@ -7,10 +7,12 @@
 (ns app.loggers.audit.consumers.nexus
   "The Nexus transport of the audit log consumer.
 
-  It reads the whole stream from the Nexus cursor (the oldest events
-  first) and POSTs them to Nexus in batches. A batch Nexus refuses rolls
-  back and stays for the next pass: the cursor does not advance, the pass
-  aborts and the loop retries after its pause.
+  It reads the full rows of the stream from the Nexus cursor (the oldest
+  events first) and POSTs them to Nexus in batches. The telemetry shadows
+  are not its business: they count as skipped and the cursor passes over
+  them, because the anonymized copy belongs to the telemetry consumer. A
+  batch Nexus refuses rolls back and stays for the next pass: the cursor
+  does not advance, the pass aborts and the loop retries after its pause.
 
   The component starts the consumer loop at boot when its flag is on. The
   mechanics (the tick mutex, the cursor, the frontier of the pass, the GC)
@@ -23,6 +25,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.http.client :as http]
+   [app.loggers.audit :as audit]
    [app.loggers.audit.consumers :as consumers]
    [app.metrics :as mtx]
    [app.setup :as-alias setup]
@@ -39,15 +42,13 @@
     (apply cf/join-uri base segments)))
 
 (defn- resolve-uri
-  "The Nexus endpoint of this consumer: the override on the cfg, or the one
-  built from `:nexus-uri`. Raises when neither is available, at boot and on
-  every pass, so a consumer without a destination fails loudly instead of
-  skipping silently. Failing the boot is deliberate: a worker that starts
-  with its archive destination silently disabled is worse than one that
-  refuses to start."
-  [cfg]
-  (or (some-> (::uri cfg) u/uri)
-      (generate-uri "api/audit")
+  "The Nexus endpoint of this consumer, built from `:nexus-uri`. Raises at
+  boot when it is not available, so a consumer without a destination fails
+  loudly instead of skipping silently.
+  Failing the boot is deliberate: a worker that starts with its archive
+  destination silently disabled is worse than one that refuses to start."
+  []
+  (or (some-> (generate-uri "api/audit") u/uri)
       (ex/raise :type :internal
                 :code :task-not-configured
                 :hint "consumer task not configured, missing uri")))
@@ -65,8 +66,9 @@
   transport failure or non-204 refusal, carrying the attempted count
   as :events in the error data so the caller records the failure.
   No metrics or logs here: the loop reports the aborted pass."
-  [{:keys [::uri] :as cfg} events]
-  (let [n      (count events)
+  [cfg events]
+  (let [uri    (::uri cfg)
+        n      (count events)
         skey   (-> cfg ::setup/shared-keys :nexus)
         body   (t/encode {:events events})
         params {:uri uri
@@ -94,30 +96,29 @@
                        :events n)))))
 
 (defn- process-chunk
-  "Send one chunk of the stream to Nexus. Returns {:processed n}; throws
-  on refusal, so the chunk rolls back and the cursor stays where it was.
-  No metrics here: a normal return means the transaction committed, so
-  the caller records the success."
+  "Send one chunk of the stream to Nexus. The telemetry shadows count as
+  skipped: the full row already carries the event, and the anonymized copy
+  belongs to the telemetry consumer (sending it here would archive the same
+  event twice). Returns {:processed n :skipped n}; throws on refusal, so the
+  chunk rolls back and the cursor stays where it was. No metrics here: a
+  normal return means the transaction committed, so the caller records the
+  success."
   [cfg rows]
-  (let [events (mapv (comp consumers/row->event consumers/decode-row) rows)
-        ;; send-events returns the count or throws: a refusal
-        ;; aborts the pass, the rows stay for the next one.
-        n      (send-events cfg events)]
+  (let [decoded (mapv consumers/decode-row rows)
+        events  (into []
+                      (comp (remove (comp audit/telemetry-shadow-source? :source))
+                            (map consumers/row->event))
+                      decoded)
+        skipped (- (count decoded) (count events))
+        n       (if (seq events)
+                  (send-events cfg events)
+                  0)]
 
-    (l/trc :hint "consumer events chunk"
-           :consumer "nexus"
-           :events n)
+    (when (pos? n)
+      (l/trc :hint "events chunk sent"
+             :events n))
 
-    {:processed n :skipped 0}))
-
-(defn run-pass
-  "One pass of the Nexus consumer: drain the stream from its cursor up to
-  the frontier of the pass. The loop of `::consumer` calls it once per
-  pass; direct callers (REPL, tests) get the same behavior."
-  [cfg]
-  (consumers/drain-consumer (assoc cfg ::uri (resolve-uri cfg))
-                            consumers/nexus
-                            process-chunk))
+    {:processed n :skipped skipped}))
 
 (defmethod ig/assert-key ::consumer
   [_ cfg]
@@ -130,19 +131,24 @@
   says where the consumer sends. An incomplete configuration raises here
   (see `resolve-uri`) and the worker does not start: intended."
   [cfg]
-  (let [uri (resolve-uri cfg)]
+  (let [uri (resolve-uri)]
     (l/dbg :hint "audit log consumer initialized"
            :consumer "nexus"
-           :uri-host (u/get-domain uri))
+           :host (u/get-domain uri))
     (assoc cfg ::uri uri)))
+
+(def consumer
+  "The full rows travel to Nexus."
+  {:id      consumers/nexus
+   :flag    :nexus
+   :label   "nexus"
+   :prepare prepare
+   :process process-chunk})
 
 (defmethod ig/init-key ::consumer
   [_ cfg]
-  (consumers/init-component cfg
-                            consumers/nexus
-                            prepare
-                            run-pass))
+  (consumers/init cfg consumer))
 
 (defmethod ig/halt-key! ::consumer
   [_ thread]
-  (consumers/halt-component thread))
+  (consumers/halt thread))

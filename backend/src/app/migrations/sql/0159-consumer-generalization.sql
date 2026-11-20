@@ -16,8 +16,9 @@
 -- The legacy mark (`archived_at`) and the indexes that served it stay in
 -- place on purpose: the old archiver may still be running during the
 -- rollout, and a later release removes them. This migration does not build
--- the `(created_at, id)` index either; the consumers order by `(xid, seq)`
--- and telemetry keeps its `(source, created_at)` index plus a sort.
+-- the `(created_at, id)` index either; the consumers order by `(xid, seq)`,
+-- so nothing reads by `(source, created_at)` any more and that index waits
+-- for a later cleanup.
 --
 -- The migration is idempotent: every statement is IF NOT EXISTS / IF
 -- EXISTS, so it is safe to re-run. Applying it out of band does not make
@@ -102,8 +103,9 @@ ALTER TABLE audit_log
 -- `source` is nullable since 0064 (its backfill only covered the rows of
 -- that moment). The producer has written it ever since, but the GC excludes
 -- telemetry shadows with `source NOT LIKE 'telemetry:%'`, and with a NULL
--- source that predicate is unknown: neither the GC nor the telemetry task
--- would ever delete such a row. Fill what is left and close the column.
+-- source that predicate is unknown: neither the cursor paths nor the
+-- retention window would ever delete such a row. Fill what is left and close
+-- the column.
 UPDATE audit_log SET source = 'backend' WHERE source IS NULL;
 
 ALTER TABLE audit_log

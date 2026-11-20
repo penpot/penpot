@@ -17,7 +17,6 @@
    [app.worker.cron :as wcron]
    [app.worker.dispatcher :as wdisp]
    [app.worker.runner :as wrkr]
-   [backend-tests.helpers :as th]
    [clojure.test :as t]
    [integrant.core :as ig]))
 
@@ -55,24 +54,23 @@
 (t/deftest every-worker-consumer-component-is-known-to-the-test-system
   ;; The test system drops the consumer loops by key, so a new one must be
   ;; added there too or it drains audit_log in the background. Deriving the
-  ;; list from the config (every worker key named `/consumer`) makes a
-  ;; third consumer fail here, not as a flaky test elsewhere.
+  ;; list from the config (every worker key named `/consumer`) makes a new
+  ;; consumer fail here, not as a flaky test elsewhere.
   (let [keys (->> (keys main/worker-config)
                   (filter #(and (keyword? %) (= "consumer" (name %))))
                   (into #{}))]
     (t/is (= #{:app.loggers.audit.consumers.nexus/consumer
-               :app.loggers.audit.consumers.admin-console/consumer}
+               :app.loggers.audit.consumers.admin-console/consumer
+               :app.loggers.audit.consumers.telemetry/consumer}
              keys)
           (str "update this set and helpers/init-system's dissoc: " keys))))
 
 (t/deftest audit-log-gc-cron-is-gated-by-its-own-flag
-  (t/testing "the GC entry is present only with :audit-log-gc"
-    (with-redefs [cf/flags #{:audit-log-gc}]
-      (t/is (some #(= :audit-log-gc (:job %)) (main/worker-cron-entries))))
-    (th/with-audit-config #{}
-      (t/is (not (some #(= :audit-log-gc (:job %))
-                       (main/worker-cron-entries)))))
-    (with-redefs [cf/flags #{}]
+  (t/testing "default configuration schedules the GC"
+    (binding [cf/flags (#'cf/parse-flags {})]
+      (t/is (some #(= :audit-log-gc (:job %)) (main/worker-cron-entries)))))
+  (t/testing "an explicit disable suppresses the GC even with telemetry enabled"
+    (binding [cf/flags (#'cf/parse-flags {:flags [:enable-telemetry :disable-audit-log-gc]})]
       (t/is (not (some #(= :audit-log-gc (:job %))
                        (main/worker-cron-entries)))))))
 
@@ -94,7 +92,7 @@
       (t/is (contains? cfg ::db/pool)))))
 
 (t/deftest the-audit-consumers-are-wired
-  ;; Each consumer is a loop in a thread: the test system drops the two
+  ;; Each consumer is a loop in a thread: the test system drops the three
   ;; components by name, so a rename that leaves `helpers.clj` behind would
   ;; start real loops in the background. The components live in the worker
   ;; config only (a web instance does not drain the audit log) and their
@@ -103,7 +101,10 @@
                      [::db/pool :app.http.client/client
                       :app.setup/shared-keys ::mtx/metrics]]
                     [:app.loggers.audit.consumers.admin-console/consumer
-                     [::db/pool :app.nitrate/client ::mtx/metrics]]]]
+                     [::db/pool :app.nitrate/client ::mtx/metrics]]
+                    [:app.loggers.audit.consumers.telemetry/consumer
+                     [::db/pool :app.http.client/client
+                      :app.setup/props ::mtx/metrics]]]]
     (t/testing (str k)
       (let [cfg (get main/worker-config k)]
         (t/is (some? cfg))
