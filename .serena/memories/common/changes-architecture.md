@@ -24,6 +24,7 @@ Each transaction carries `:redo-changes` and inverse `:undo-changes`. The undo s
 `common/src/app/common/files/changes_builder.cljc` (usually alias `pcb`) is the fluent builder. Start from `(pcb/empty-changes <it> <page-id>)` or `(pcb/empty-changes nil <page-id>)` for tests.
 
 High-value builder operations:
+- `pcb/add-page changes page`: derives the ID from the whole page. The redo change still carries both `:id` and `:page`; the undo deletes that same ID. `pcb/add-empty-page` takes an ID and name instead.
 - `pcb/with-page-id`, `pcb/with-objects`, `pcb/with-library-data`: set context for following operations.
 - `pcb/update-shapes ids update-fn`: emits `:mod-obj` with diff-derived `:set` ops. Options include `{:with-objects? true}`, `{:ignore-touched true}`, and `{:attrs #{...}}`.
 - `pcb/add-objects`, `pcb/change-parent`, `pcb/remove-objects`, `pcb/resize-parents`: shape/tree edits.

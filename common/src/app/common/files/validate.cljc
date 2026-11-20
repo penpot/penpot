@@ -936,7 +936,7 @@
          page-ids #{}
          component-ids #{}]
     (if-let [change (first changes)]
-      (let [{:keys [type page-id component-id id]} change
+      (let [{:keys [type page-id component-id id page]} change
             page-ids
             (case type
               ;; Shape-level ops are scoped to either a page or a component
@@ -944,8 +944,13 @@
               (cond-> page-ids
                 page-id (conj page-id))
 
-              ;; A new or modified page needs a full page sweep
-              (:add-page :mod-page)
+              ;; A new or modified page needs a full page sweep. An
+              ;; `:add-page` that carries the page whole stores it under
+              ;; the id inside `:page`, whatever the top level says.
+              :add-page
+              (conj page-ids (or (:id page) id))
+
+              :mod-page
               (conj page-ids id)
 
               ;; restore-component resurrects a deleted component (touches the
@@ -1052,7 +1057,7 @@
               (cond-> page-ids (some? page-id) (conj page-id))
 
               :add-page
-              (conj page-ids (or id (:id page)))
+              (conj page-ids (or (:id page) id))
 
               :mod-page
               (conj page-ids id)
