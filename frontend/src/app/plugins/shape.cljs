@@ -1654,6 +1654,11 @@
                  (not (sm/validate ctse/schema:export value))
                  (u/not-valid plugin-id :export value)
 
+                 ;; The root's selrect is 0.01x0.01, so rendering it yields a
+                 ;; 1x1 empty image. Reject with a clear error instead.
+                 (= id uuid/zero)
+                 (u/not-valid plugin-id :export "Cannot export the page root; export a specific shape instead")
+
                  (not (r/check-permission plugin-id "content:read"))
                  (u/not-valid plugin-id :export "Plugin doesn't have 'content:read' permission")
 
