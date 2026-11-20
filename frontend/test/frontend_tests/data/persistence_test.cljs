@@ -1412,49 +1412,137 @@
                                 "the save lands at once"))
          (t/is (= [shape-id (:id child)] (root-children store file-id page-id))))))))
 
-;; Scenario: the save answer lists a repair whose message never reaches the
-;; tab. Proves: the wait is bounded; the saved commit is acknowledged and
-;; the file reloads to get the server's data.
-(t/deftest ^:async a-change-that-never-arrives-reloads-the-file
-  (let [reloads   (atom 0)
-        timeout-s (rx/subject)
-        original  (get-method ptk/resolve ::dw/reload-current-file)]
+(defn- with-reload-count
+  "Runs `f` with a counter of the file reloads it causes. Evaluates to a
+  promise."
+  [f]
+  (let [reloads  (atom 0)
+        original (get-method ptk/resolve ::dw/reload-current-file)]
     (-add-method ptk/resolve ::dw/reload-current-file
                  (fn [_ _]
                    (swap! reloads inc)
                    (ptk/data-event ::reloaded {})))
-    (try
-      (await
+    (-> (f reloads)
+        (.finally #(-add-method ptk/resolve ::dw/reload-current-file original)))))
+
+(defn- unseen-repair-then
+  "Saves a new child whose answer lists a repair that never arrives, lets
+  the wait for it time out, and answers the catch-up read that follows
+  with `catch-up-answer`, a function of the rows the server stored. Calls
+  `check` with the context. Evaluates to a promise."
+  [catch-up-answer check]
+  (with-reload-count
+    (fn [reloads]
+      (with-persistence
+        (^:async fn [{:keys [file-id response requests store]}]
+          (let [timeout-s (rx/subject)]
+            (await
+             (mock/with-mocks*
+               {rx/timer (mock/stub (fn [ms]
+                                      (if (= ms @#'dps/unseen-changes-timeout-ms)
+                                        timeout-s
+                                        (rx/subject))))}
+               (let [session-id (uuid/next)
+                     page-id    (uuid/next)
+                     shape-id   (uuid/next)
+                     child      (cts/setup-shape {:id (uuid/next) :type :rect :name "Rectangle"
+                                                  :parent-id uuid/zero :frame-id uuid/zero})
+                     commit     (add-child-commit file-id page-id child)
+                     rows       [(lagged-row file-id 1 repair-session-id
+                                             [(set-root-children page-id [shape-id])])
+                                 (lagged-row file-id 2 session-id (:redo-changes @commit))]]
+                 (open-with-new-child store file-id session-id page-id shape-id child)
+                 (ptk/emit! store commit ::dps/force-persist)
+                 (await (async/wait-for #(= 1 (count @requests)) "the new child is sent"))
+                 (rx/push! response {:revn 0 :lagged (mapv #(select-keys % [:revn :session-id]) rows)})
+                 (await (async/wait-for #(get-in @store [:persistence :index (:id @commit) ::dps/awaiting])
+                                        "the saved commit waits for the repair"))
+                 (rx/push! timeout-s :tick)
+                 (await (async/wait-for #(= 2 (count @requests)) "the catch-up read is sent"))
+                 (t/is (= [:get-file-changes {:file-id file-id :since 0}] (second @requests)))
+                 (t/is (seq (get-in @store [:persistence :queue]))
+                       "the saved commit stays pending during the read")
+                 (rx/push! response (catch-up-answer rows))
+                 (await (check {:store store :reloads reloads :file-id file-id
+                                :page-id page-id :shape-id shape-id :child child})))))))))))
+
+;; Scenario: the save answer lists a repair whose message never reaches the
+;; tab, and the catch-up read serves it. Proves: the repair goes under the
+;; saved commit, as on the server, and the file does not reload.
+(t/deftest ^:async a-change-that-never-arrives-is-read-under-the-saved-commit
+  (await
+   (unseen-repair-then
+    (fn [rows] {:revn 2 :changes rows})
+    (^:async fn [{:keys [store reloads file-id page-id shape-id child]}]
+      (await (async/wait-for #(and (= :saved (get-in @store [:persistence :status]))
+                                   (empty? (get-in @store [:persistence :queue])))
+                             "the saved commit is acknowledged"))
+      (t/is (= [shape-id (:id child)] (root-children store file-id page-id))
+            "the repair goes under the new child")
+      (t/is (zero? @reloads))))))
+
+;; Scenario: the catch-up read cannot serve the repair, as for a row older
+;; than its window. Proves: the saved commit is acknowledged and the file
+;; reloads to get the server's data.
+(t/deftest ^:async a-change-the-catch-up-cannot-serve-reloads-the-file
+  (await
+   (unseen-repair-then
+    (fn [_] {:revn 2 :reload true})
+    (^:async fn [{:keys [store reloads]}]
+      (await (async/wait-for #(= 1 @reloads) "the file reloads"))
+      (t/is (empty? (get-in @store [:persistence :queue]))
+            "the saved commit is acknowledged")))))
+
+;; Scenario: the save answer says the tab is too far behind to list what
+;; it missed. Proves: the save is acknowledged and the file reloads.
+(t/deftest ^:async a-save-answer-past-the-row-cap-reloads-the-file
+  (await
+   (with-reload-count
+     (fn [reloads]
        (with-persistence
          (^:async fn [{:keys [file-id response requests store]}]
-           (await
-            (mock/with-mocks*
-              {rx/timer (mock/stub (fn [ms]
-                                     (if (= ms @#'dps/unseen-changes-timeout-ms)
-                                       timeout-s
-                                       (rx/subject))))}
-              (let [session-id (uuid/next)
-                    page-id    (uuid/next)
-                    shape-id   (uuid/next)
-                    child      (cts/setup-shape {:id (uuid/next) :type :rect :name "Rectangle"
-                                                 :parent-id uuid/zero :frame-id uuid/zero})
-                    commit     (add-child-commit file-id page-id child)]
-                (open-with-new-child store file-id session-id page-id shape-id child)
-                (ptk/emit! store commit ::dps/force-persist)
-                (await (async/wait-for #(= 1 (count @requests)) "the new child is sent"))
-                (rx/push! response {:revn 0
-                                    :lagged [(lagged-row file-id 1 repair-session-id
-                                                         [(set-root-children page-id [shape-id])])
-                                             (lagged-row file-id 2 session-id (:redo-changes @commit))]})
-                (await (async/wait-for #(get-in @store [:persistence :index (:id @commit) ::dps/awaiting])
-                                       "the saved commit waits for the repair"))
-                (t/is (zero? @reloads))
-                (rx/push! timeout-s :tick)
-                (await (async/wait-for #(= 1 @reloads) "the file reloads"))
-                (t/is (empty? (get-in @store [:persistence :queue]))
-                      "the saved commit is acknowledged")))))))
-      (finally
-        (-add-method ptk/resolve ::dw/reload-current-file original)))))
+           (ptk/emit! store (local-commit file-id) ::dps/force-persist)
+           (await (async/wait-for #(= 1 (count @requests)) "the edit is sent"))
+           (rx/push! response {:revn 0 :lagged [] :reload true})
+           (await (async/wait-for #(= 1 @reloads) "the file reloads"))
+           (t/is (empty? (get-in @store [:persistence :queue])))))))))
+
+;; Scenario: after a reconnect the tab reads what other sessions stored
+;; since the revision it was loaded at. Proves: their rows are applied in
+;; order, its own row is not applied again, and a late message for a row
+;; the read applied is recognized.
+(t/deftest ^:async a-catch-up-applies-what-other-sessions-stored
+  (await
+   (with-persistence
+     (^:async fn [{:keys [file-id response requests store]}]
+       (let [session-id (uuid/next)
+             page-id    (uuid/next)
+             shape-id   (uuid/next)
+             other      (uuid/next)]
+         (ptk/emit! store
+                    (thp/open-file file-id page-id (thp/file-data page-id shape-id "S"))
+                    #(-> %
+                         (assoc :session-id session-id)
+                         (dps/remember-loaded-revn {:id file-id :revn 4})))
+         (t/is (dps/revision-gap? @store file-id 6) "a message two past the loaded revision")
+         (t/is (not (dps/revision-gap? @store file-id 5)))
+         (ptk/emit! store (dps/catch-up file-id) (dps/catch-up file-id))
+         (await (async/wait-for #(= 1 (count @requests)) "one read is sent"))
+         (t/is (= [:get-file-changes {:file-id file-id :since 4}] (first @requests)))
+         (rx/push! response {:revn 7
+                             :changes [{:revn 5 :session-id other
+                                        :changes [(thp/rename page-id shape-id "A")]}
+                                       {:revn 6 :session-id session-id
+                                        :changes [(thp/rename page-id shape-id "own")]}
+                                       {:revn 7 :session-id other
+                                        :changes [(thp/rename page-id shape-id "B")]}]})
+         (await (async/wait-for #(= "B" (thp/shape-name store file-id page-id shape-id))
+                                "the other session's rows are applied"))
+         (t/is (dps/caught-up? @store file-id 7))
+         (t/is (not (dps/caught-up? @store file-id 6)) "its own row is not applied")
+         (await (async/wait-for #(= 2 (count @requests))
+                                "the read asked for while one ran runs once more"))
+         (t/is (= [:get-file-changes {:file-id file-id :since 7}] (second @requests))))))))
 
 ;; Commit boundaries.
 

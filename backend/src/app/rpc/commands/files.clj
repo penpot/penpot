@@ -196,8 +196,7 @@
                                :project-id project-id
                                :file-id id)
 
-          file (-> (bfc/get-file cfg id
-                                 :project-id project-id)
+          file (-> (bfc/get-file cfg id)
                    (assoc :permissions perms)
                    (check-version!))]
 
