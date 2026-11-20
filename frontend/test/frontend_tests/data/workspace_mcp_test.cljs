@@ -32,14 +32,14 @@
                                     (ptk/watch (mcp/initialize) {} stream))]
          (try
            (rx/push! stream (du/set-profile profile))
-           (await (a/wait-for #(= 1 (count @events))))
+           (await (a/wait-for #(= 1 (count @events)) "init event after login"))
            (rx/push! stream (du/set-profile profile))
            (rx/push! stream (ptk/data-event :app.main.data.workspace/finalize-workspace))
            (await (a/settle))
            (t/is (= [:app.main.data.workspace.mcp/init] @events))
            (rx/push! stream (ptk/data-event :app.main.data.auth/logged-out))
            (rx/push! stream (du/set-profile profile))
-           (await (a/wait-for #(= 2 (count @events))))
+           (await (a/wait-for #(= 2 (count @events)) "init event after re-login"))
            (t/is (= [:app.main.data.workspace.mcp/init
                      :app.main.data.workspace.mcp/init] @events))
            (finally
@@ -255,19 +255,19 @@
           extension (atom nil)
           calls     (atom 0)
           closed    (atom 0)]
-      (with-redefs [dp/start-plugin! (fn [_ extensions]
+      (with-redefs [dp/start-plugin! (fn [_ ^js extensions]
                                        (reset! extension (.-mcp extensions)))
                     dp/close-plugin! (fn [_] (swap! closed inc))]
         (ptk/effect (#'mcp/init-mcp-plugin {:token "test-token"}) nil stream)
-        (.on @extension "connect" #(swap! calls inc))
+        (.on ^js @extension "connect" #(swap! calls inc))
         (rx/push! stream (ptk/data-event :app.main.data.workspace.mcp/connect))
         (t/is (= 1 @calls))
         (rx/push! stream (ptk/data-event :app.main.data.workspace/finalize-workspace))
         (t/is (zero? @closed))
         (rx/push! stream (ptk/data-event stop-event))
         (t/is (= 1 @closed))
-        (t/is (false? (.isConnectionRequested @extension)))
-        (.on @extension "connect" #(swap! calls inc))
+        (t/is (false? (.isConnectionRequested ^js @extension)))
+        (.on ^js @extension "connect" #(swap! calls inc))
         (rx/push! stream (ptk/data-event :app.main.data.workspace.mcp/connect))
         (t/is (= 1 @calls))
         (rx/end! stream)))))
