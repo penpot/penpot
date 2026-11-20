@@ -181,6 +181,13 @@
       AND (deleted_at IS NULL)
       AND status = 'valid'")
 
+(def ^:private sql:get-storage-objects
+  "SELECT *
+     FROM storage_object
+    WHERE id = ANY(?)
+      AND (deleted_at IS NULL)
+      AND status = 'valid'")
+
 (defn- get-database-object
   [conn id]
   (some-> (db/exec-one! conn [sql:get-storage-object id])
@@ -228,6 +235,24 @@
   (assert (valid-storage? storage))
   (let [ds (db/get-connectable storage)]
     (get-database-object ds id)))
+
+(defn get-objects
+  "Return the storage objects that exist for `ids`, keyed by id, with one
+  query. An id without a valid row is omitted; the caller decides what a
+  missing object means."
+  [storage ids]
+  (assert (valid-storage? storage))
+  (let [ids  (seq ids)
+        ds   (db/get-connectable storage)
+        run  (fn [conn]
+               (let [ids  (db/create-array conn "uuid" (vec ids))
+                     rows (db/exec! conn [sql:get-storage-objects ids])]
+                 (into {} (map (juxt :id row->storage-object)) rows)))]
+    (cond
+      (nil? ids)          {}
+      (db/connection? ds) (run ds)
+      :else               (with-open [conn (db/open ds)]
+                            (run conn)))))
 
 (defn put-object!
   "Creates a new object with the provided content."

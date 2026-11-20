@@ -331,6 +331,8 @@ desc: Interactive browser-based inspector for .penpot (v3) files. Upload a file 
 
 <p class="main-paragraph">Upload a <code class="language-text">.penpot</code> file to explore its contents. The inspector runs entirely in your browser — your file is never uploaded to a server.</p>
 
+<p>The inspector reads packages in the verbose layout (manifest version <code class="language-text">1</code>): one JSON entry per shape and one per object of every family. A package exported with a compact layout (manifest versions <code class="language-text">2</code> and <code class="language-text">3</code>) keeps its pages and families in a header plus JSONL chunks, which the inspector does not read, so it shows no shapes and no assets for them. Import the package into Penpot to look at its content: in version <code class="language-text">3</code> the chunks are compressed frames (<code class="language-text">.json.zstd</code>), so reading them by hand means decompressing them first.</p>
+
 <div class="inspector-wrap">
   <label class="inspector-drop" id="drop-zone">
     <input type="file" id="file-input" accept=".penpot,.zip" />

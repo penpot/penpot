@@ -42,6 +42,21 @@
                  "application/pdf"
                  "application/zip"])))
 
+(def compressed-mtypes
+  "Content types whose payload is already compressed, so a zip entry of one
+  gains nothing from deflate: the stored raster formats and the woff fonts.
+  SVG (xml) and ttf/otf are not here on purpose: deflate shrinks them."
+  #{"image/png"
+    "image/jpeg"
+    "image/gif"
+    "image/webp"
+    "font/woff"
+    "font/woff2"})
+
+(defn compressed-mtype?
+  [mtype]
+  (contains? compressed-mtypes mtype))
+
 (defn format->extension
   [format]
   (case format

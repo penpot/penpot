@@ -63,9 +63,10 @@
 (defn- run-export!
   "Run an export through the adapter, as the job handler does: the
   frozen cfg in, the progress out as job events."
-  [cfg context file-ids export-type output]
+  [cfg context file-ids export-type output & {:keys [variant]}]
   (let [cfg (bfc/export-cfg cfg {:file-ids    file-ids
                                  :export-type export-type
+                                 :variant     variant
                                  :output      output})]
     (bfj/check-active cfg context)
     (bfj/run cfg context v3/export-files!)))
@@ -167,6 +168,23 @@
             (t/is (= {:current 1 :total 1} (get-in event [:counters :files])))))
         (t/testing "and nothing else: the event is the stage and the counters"
           (t/is (every? #(<= (count (keys %)) 2) events)))))))
+
+(t/deftest the-variant-of-the-params-chooses-the-layout
+  (let [profile (th/create-profile* 1)
+        file-id (first (:file-ids (import-fixture! profile)))
+        job-id  (th/create-job* :export-binfile {:profile-id (:id profile)})
+        context (job-context job-id)]
+
+    (t/testing "a compact export embeds the shapes and marks version 2"
+      (let [output (tmp/tempfile* :suffix ".penpot")]
+        (run-export! (job-cfg) context #{file-id} :detach-libraries output
+                     :variant :compact)
+        (t/is (= 2 (:version (v3/get-manifest th/*system* output))))))
+
+    (t/testing "and an export that does not say the variant stays normal"
+      (let [output (tmp/tempfile* :suffix ".penpot")]
+        (run-export! (job-cfg) context #{file-id} :detach-libraries output)
+        (t/is (= 1 (:version (v3/get-manifest th/*system* output))))))))
 
 (t/deftest import-through-the-adapter-imports-the-package
   (let [profile  (th/create-profile* 1)
@@ -407,6 +425,19 @@
             file-id (uuid/next)]
         (t/is (true? ((::jobs/validator def)
                       {:file-ids #{file-id} :export-type :detach-libraries})))
+        (t/testing "the variant is optional and only takes a known layout"
+          (t/is (true? ((::jobs/validator def)
+                        {:file-ids #{file-id} :export-type :detach-libraries
+                         :variant :verbose})))
+          (t/is (true? ((::jobs/validator def)
+                        {:file-ids #{file-id} :export-type :detach-libraries
+                         :variant :compact})))
+          (t/is (false? ((::jobs/validator def)
+                         {:file-ids #{file-id} :export-type :detach-libraries
+                          :variant :normal})))
+          (t/is (false? ((::jobs/validator def)
+                         {:file-ids #{file-id} :export-type :detach-libraries
+                          :variant :other}))))
         (t/testing "a job id never travels in params"
           (t/is (false? ((::jobs/validator def)
                          {:file-ids #{file-id} :export-type :detach-libraries

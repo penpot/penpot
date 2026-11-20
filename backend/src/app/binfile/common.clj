@@ -1215,13 +1215,27 @@
     (true? embed-assets)      :merge-libraries
     :else                     :detach-libraries))
 
+(def schema:variant
+  "Layout of an exported package. `:verbose` writes one JSON entry per
+  shape and is the default; `:compact` packs every shape of a page in
+  chunked entries written as json; `:compact-<codec>` (today
+  `:compact-zstd`) writes the same chunks as frames of that codec. The
+  compact layouts also pack the components, colors, typographies, media
+  descriptors, thumbnails and storage objects into one entry per family.
+  The importer reads every layout and detects the codec of each entry by
+  its `.json.<codec>` suffix, so the choice only affects what is
+  written."
+  [::sm/one-of #{:verbose :compact :compact-zstd}])
+
 (defn export-cfg
   "The domain cfg of an export: the frozen set of files, how their
-  libraries are handled, and where the package is written."
-  [cfg {:keys [file-ids export-type output]}]
+  libraries are handled, the layout of the package and where it is
+  written. `:variant` defaults to `:verbose`."
+  [cfg {:keys [file-ids export-type output variant]}]
   (-> cfg
       (assoc ::file-ids file-ids)
       (assoc ::export-type export-type)
+      (assoc ::variant (or variant :verbose))
       (assoc ::output output)))
 
 (defn import-cfg

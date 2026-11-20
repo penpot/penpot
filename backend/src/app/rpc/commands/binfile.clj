@@ -43,7 +43,8 @@
    [:file-id ::sm/uuid]
    [:type {:optional true} [::sm/one-of #{:include-libraries :merge-libraries :detach-libraries :link-later}]]
    [:include-libraries {:optional true} ::sm/boolean]
-   [:embed-assets {:optional true} ::sm/boolean]])
+   [:embed-assets {:optional true} ::sm/boolean]
+   [:variant {:optional true} bfc/schema:variant]])
 
 (defn- export-binfile
   [{:keys [::sto/storage] :as cfg} {:keys [file-id] :as params}]
@@ -52,6 +53,7 @@
     (try
       (-> (bfc/export-cfg cfg {:file-ids    #{file-id}
                                :export-type (bfc/resolve-export-type params)
+                               :variant     (:variant params)
                                :output      output})
           (bf.v3/export-files!))
 
@@ -74,7 +76,8 @@
   "Export a penpot file in a binary format."
   {::doc/added "1.15"
    ::doc/changes [["2.12" "Remove version parameter, only one version is supported"]
-                  ["2.19" "Deprecated `include-libraries` and `embed-assets` params"]]
+                  ["2.19" "Deprecated `include-libraries` and `embed-assets` params"]
+                  ["2.21" "Add optional `variant` param to choose the layout of the package"]]
    ::webhooks/event? true
    ::sm/params schema:export-binfile}
   [cfg {:keys [::rpc/profile-id file-id] :as params}]

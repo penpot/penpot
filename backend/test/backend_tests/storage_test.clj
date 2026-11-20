@@ -1516,3 +1516,30 @@
         (t/is (some? (:deleted-at (th/db-get :storage-object
                                              {:id (:id object)}
                                              {::db/remove-deleted false}))))))))
+
+(t/deftest get-objects-answers-the-found-ids
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        one     (sto/put-object! storage {::sto/content (sto/content "one")
+                                          :content-type "text/plain"
+                                          :bucket "file-media-object"})
+        two     (sto/put-object! storage {::sto/content (sto/content "two")
+                                          :content-type "text/plain"
+                                          :bucket "file-media-object"})
+        missing (uuid/next)
+        result  (sto/get-objects storage [(:id one) (:id two) missing])]
+
+    (t/is (= #{(:id one) (:id two)} (set (keys result)))
+          "the found objects come back keyed by id, and the missing one is omitted")
+    (t/is (= (:size one) (:size (get result (:id one)))))
+    (t/is (= {} (sto/get-objects storage []))
+          "an empty set runs no query")))
+
+(t/deftest get-objects-leaves-a-deleted-object-out
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        object  (sto/put-object! storage {::sto/content (sto/content "gone")
+                                          :content-type "text/plain"
+                                          :bucket "file-media-object"})]
+    (th/db-delete! :storage-object {:id (:id object)})
+    (t/is (= {} (sto/get-objects storage [(:id object)])))))

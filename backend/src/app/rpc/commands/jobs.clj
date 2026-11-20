@@ -133,16 +133,20 @@
   "Create a durable job that exports a set of files as a `.penpot`
    package.
 
-   Its params are `:file-ids`, the set of files to export, and
-   `:export-type`, how the libraries of those files are handled: what
-   the job-def declares, and nothing more. There is no default for the
-   type, because a caller that does not say it would get a package that
-   is not the one it asked for.
+   Its params are exactly what the job-def declares: `:file-ids`, the
+   set of files to export; `:export-type`, how the libraries of those
+   files are handled; and optionally `:variant`, the layout of the
+   package (`:verbose` by default, `:compact` packs the shapes of each
+   page and the per-object families into chunked json entries,
+   `:compact-zstd` does the same with zstd frames). There is no default
+   for the type, because a caller that does not say it would get a
+   package that is not the one it asked for.
 
    The job is created, not run: the caller follows it by its id. The
    read permission of every file is checked here so a refusal arrives
    synchronously, and the handler checks it again before reading."
   {::doc/added "2.20"
+   ::doc/changes [["2.21" "Add optional `variant` param to choose the layout of the package"]]
    ::webhooks/event? true
    ::sm/params schema:create-export-binfile-job
    ::sm/result schema:job-summary}

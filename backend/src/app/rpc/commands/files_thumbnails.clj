@@ -107,16 +107,18 @@
 
 (defn- get-thumbnail-frame
   "Find the frame marked to be used as thumbnail, loading pages lazily.
-  The returned frame has the :page-id assoc'ed."
+  Returns a [frame page-id] pair instead of stamping the page-id onto
+  the frame itself."
   [data]
   (d/seek some?
           (for [page (-> data :pages-index vals)
-                :let [page (cond-> page (pmap/pointer-map? page) deref)]]
-            (some-> (d/seek #(and (cfh/frame-shape? %)
-                                  (or (:use-for-thumbnail %)
-                                      (:use-for-thumbnail? %))) ; NOTE: backward comp (remove on v1.21)
-                            (get-thumbnail-frame-candidates (:objects page)))
-                    (assoc :page-id (:id page))))))
+                :let [page  (cond-> page (pmap/pointer-map? page) deref)
+                      frame (d/seek #(and (cfh/frame-shape? %)
+                                          (or (:use-for-thumbnail %)
+                                              (:use-for-thumbnail? %))) ; NOTE: backward comp (remove on v1.21)
+                                    (get-thumbnail-frame-candidates (:objects page)))]
+                :when frame]
+            [frame (:id page)])))
 
 (defn get-file-data-for-thumbnail
   [{:keys [::db/conn] :as cfg} {:keys [data id] :as file} strip-frames-with-thumbnails]
@@ -168,9 +170,9 @@
                 objects)))]
 
     (fdata/with-pointers cfg id
-      (let [frame     (get-thumbnail-frame data)
+      (let [[frame page-id] (get-thumbnail-frame data)
             frame-id  (:id frame)
-            page-id   (or (:page-id frame)
+            page-id   (or page-id
                           (-> data :pages first))
 
             page      (dm/get-in data [:pages-index page-id])
@@ -284,11 +286,29 @@
 
 (def ^:private
   schema:create-file-object-thumbnail
-  [:map {:title "create-file-object-thumbnail"}
-   [:file-id ::sm/uuid]
-   [:object-id [:string {:max 250}]]
-   [:media media.v/schema:upload]
-   [:tag {:optional true} [:string {:max 50}]]])
+  ;; The export reads the object id as `file/page/frame/tag`, so a row whose id
+  ;; is anything else is stored and then skipped in silence: the id must have
+  ;; that shape, carry this file as the first segment and a usable tag. The tag
+  ;; also ends up as one segment of the thumbnail key
+  ;; (`tag/page-id/frame-id`) of the package, so it cannot carry the separator.
+  [:and
+   [:map {:title "create-file-object-thumbnail"}
+    [:file-id ::sm/uuid]
+    [:object-id [:and
+                 [:string {:max 250}]
+                 [:fn {:error/message "the object id is not file/page/frame/tag"}
+                  (fn [object-id]
+                    (some? (thc/parse-object-id-strict object-id)))]]]
+    [:media media.v/schema:upload]
+    [:tag {:optional true}
+     [:and [:string {:max 50 :min 1}]
+      [:re #"^[^/]+$"]]]]
+   [:fn {:error/message "the tag must match the last segment of the object id"}
+    (fn [{:keys [object-id tag]}]
+      (= (or tag "frame") (:tag (thc/parse-object-id-strict object-id))))]
+   [:fn {:error/message "the object id must belong to the file"}
+    (fn [{:keys [file-id object-id]}]
+      (= file-id (:file-id (thc/parse-object-id-strict object-id))))]])
 
 (sv/defmethod ::create-file-object-thumbnail
   {::doc/added "1.19"

@@ -113,6 +113,11 @@ produce deployable artifacts.
 - Exports `PENPOT_FLAGS` with `enable-backend-asserts` appended to any
   existing value, so backend test runs compile in and exercise
   precondition asserts; see `mem:backend/testing`.
+- Every module lints through its own `package.json` script and every workflow calls that script, so command, `--config-dir ../.clj-kondo` and severity cannot drift between local and CI: `--fail-level warning` is explicit (it is clj-kondo's default) so the intent is readable, and a warning fails both `pnpm run lint:clj` and the workflow.
+- Lint scope is deliberate: backend (over `../common/src src`) and common lint only `src/`, because `backend/test/` (400 warnings) and `common/test/` (123) are not lint-clean; exporter adds `test/` and frontend adds `performance/` and `test/performance_tests/render_wasm/` because those are clean. Fix those suites before "aligning" the scopes.
+- Never drop `--config-dir ../.clj-kondo` from the frontend script: a stray `frontend/.clj-kondo/` makes clj-kondo stop there instead of the root config and reports 5093 bogus errors over `frontend/src` and `common/src`.
+- `tests-backend.yml` runs `pnpm --config.verify-deps-before-run=false run lint:clj`: the job has no `pnpm install` step, and with a lockfile and no `node_modules` plain `pnpm run` installs the whole workspace before the script.
+- An accepted warning is configured, not tolerated: set that linter to `:off`/`:info` in `.clj-kondo/config.edn`, as ~10 linters already are.
 - Test and build tasks are long-running (backend: `clojure -M:dev:test`;
   frontend build: ~2 min warm); use a generous timeout when calling it from
   an agent shell.
