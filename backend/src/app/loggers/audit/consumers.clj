@@ -157,7 +157,8 @@
   between two batches is seen by the next one. A cursor registered while a
   batch is between its read and its delete is not seen by that batch: the
   rows it deletes are lost for a consumer that starts at that exact moment
-  (at most one batch, accepted). Two instances registering the same
+  (at most one batch per concurrent GC run that read the previous cursor).
+  Two instances registering the same
   consumer are safe: `ON CONFLICT DO NOTHING` keeps the existing row."
   [cfg consumer]
   (db/tx-run! cfg (fn [cfg] (db/exec-one! cfg [sql:ensure-cursor consumer]))))

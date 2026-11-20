@@ -257,8 +257,7 @@
 
   Retention is the explicit exception: copies older than seven days are
   deleted even if no cursor passed them. They still count as removed by the
-  GC, and that path logs its own warning because each one is a copy that was
-  never sent.
+  GC. The warning counts rows deleted by age, whether sent or not.
 
   Returns the total number of rows deleted. Each committed batch contributes
   to the `discarded` metric with reason `gc` before its heartbeat."

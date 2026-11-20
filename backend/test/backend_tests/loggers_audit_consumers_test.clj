@@ -169,30 +169,6 @@
   []
   (th/run-task! :audit-log-gc {}))
 
-(t/deftest telemetry-sends-old-shadows-still-in-the-buffer
-  (with-redefs [cf/flags #{:telemetry}]
-    (with-mocks [http-mock {:target 'app.http.client/req :return {:status 200}}]
-      (insert-audit-row uuid/zero "full")
-      (insert-shadow-row uuid/zero "old"
-                         (ct/minus (ct/now) (ct/duration {:days 8})))
-      (insert-shadow-row uuid/zero "recent")
-      (insert-audit-row uuid/zero "last-full")
-      (let [process (:process consumer.telemetry/consumer)
-            chunks  (atom [])]
-        (consumer/run-pass
-         (telemetry-cfg telemetry-uri)
-         (assoc consumer.telemetry/consumer
-                :process (fn [cfg rows]
-                           (swap! chunks into rows)
-                           (process cfg rows))))
-        (let [body (json/decode (-> @http-mock :call-args second :body)
-                                :key-fn json/read-kebab-key)
-              full (remove #(= "telemetry:backend" (:source %)) @chunks)]
-          (t/is (= ["old" "recent"] (mapv :name (:events body))))
-          (t/is (= ["full" "last-full"] (mapv :name full)))
-          (t/is (every? #(and (nil? (:props %)) (nil? (:context %))) full))
-          (t/is (= 0 (unread-count consumer/telemetry))))))))
-
 (t/deftest telemetry-only-gc-cleans-shadows-and-keeps-pending-full-rows
   (th/db-exec! ["DELETE FROM audit_log_consumer_cursor"])
   (with-redefs [cf/flags #{:telemetry}]
@@ -1194,6 +1170,33 @@
         instance  (::mdef/instance collector)
         child     (.labels ^Counter instance (into-array String labels))]
     (.get ^Counter$Child child)))
+
+(t/deftest telemetry-sends-old-shadows-still-in-the-buffer
+  (with-redefs [cf/flags #{:telemetry}]
+    (with-mocks [http-mock {:target 'app.http.client/req :return {:status 200}}]
+      (insert-audit-row uuid/zero "full")
+      (insert-shadow-row uuid/zero "old"
+                         (ct/minus (ct/now) (ct/duration {:days 8})))
+      (insert-shadow-row uuid/zero "recent")
+      (insert-audit-row uuid/zero "last-full")
+      (let [metrics (make-consumer-metrics)
+            process (:process consumer.telemetry/consumer)
+            chunks  (atom [])]
+        (consumer/run-pass
+         (telemetry-cfg telemetry-uri metrics)
+         (assoc consumer.telemetry/consumer
+                :process (fn [cfg rows]
+                           (swap! chunks into rows)
+                           (process cfg rows))))
+        (let [body (json/decode (-> @http-mock :call-args second :body)
+                                :key-fn json/read-kebab-key)
+              full (remove #(= "telemetry:backend" (:source %)) @chunks)]
+          (t/is (= ["old" "recent"] (mapv :name (:events body))))
+          (t/is (= ["full" "last-full"] (mapv :name full)))
+          (t/is (every? #(and (nil? (:props %)) (nil? (:context %))) full))
+          (t/is (= 0 (unread-count consumer/telemetry)))
+          (t/is (= 2.0 (counter-value metrics :audit-consumer-events ["telemetry" "processed"])))
+          (t/is (= 2.0 (counter-value metrics :audit-consumer-events ["telemetry" "skipped"]))))))))
 
 (defn- gauge-value
   [metrics id labels]
