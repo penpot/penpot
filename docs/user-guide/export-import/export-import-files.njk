@@ -54,10 +54,10 @@ desc: Learn how to import and export files in Penpot, the free, open-source desi
   <li><strong>Upload</strong>: the files are sent to Penpot, with a progress bar.</li>
   <li><strong>Import</strong>: Penpot rebuilds the pages, components and assets in your project. Large files can take several minutes.</li>
 </ol>
-<p>If you cancel an import, nothing from it is added to your project.</p>
+<p>If you cancel an import, files that are still importing are not added. Files that already finished stay in your project.</p>
 
 <h3 id="import-link-libraries">Link libraries on import</h3>
-<p>Files exported with <strong>Link matching libraries on import</strong> are linked to the shared libraries of the destination team that have the same names. When there is exactly one match and you can edit it, Penpot links it automatically. When several libraries match, the dialog asks you to select the correct one for each. When there is no match, the file is imported without the link.</p>
+<p>Files exported with <strong>Link matching libraries on import</strong> are linked to the shared libraries of the destination team that have the same names. When there is exactly one match and you can edit it, Penpot links it automatically. When several libraries match, or the only match is one you can't edit, the dialog asks you to select the library for each file. When there is no match, the file is imported without the link.</p>
 
 <h2 id="penpot-formats">Penpot file format</h2>
 <p>Penpot exports to a unique format that streamlines the import and export of files and assets by being more efficient and interoperable.</p>

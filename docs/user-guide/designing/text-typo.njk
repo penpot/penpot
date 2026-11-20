@@ -28,8 +28,8 @@ desc: Penpot's guide on custom fonts! Upload, manage, and use custom fonts in Pe
 <p>With WebGL rendering enabled, text you copy in Penpot keeps its formatting when you paste it, in the same file or in another one: fonts, sizes, styles, decorations and fills. Paste it into a text you are editing, or onto the canvas to create a new text layer. If the destination can't use part of the formatting, Penpot replaces it:</p>
 <ul>
   <li>Custom fonts from another team change to the default font.</li>
-  <li>Image fills from another file change to the default fill.</li>
-  <li>Typographies from a library the destination file doesn't use are removed.</li>
+  <li>Image fills from another file are removed. If the text had no other fill, it gets the default fill.</li>
+  <li>Typographies from a library the destination file doesn't use are detached: the text keeps its style but is no longer linked to the typography.</li>
 </ul>
 <p>Text copied from other apps or web pages keeps its text and paragraphs, and takes the style of the place where you paste it.</p>
 <figure>
