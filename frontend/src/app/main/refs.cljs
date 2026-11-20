@@ -338,6 +338,9 @@
 (def persistence-lock
   (l/derived :persistence-lock workspace-global))
 
+(def workspace-preview-id
+  (l/derived :preview-id workspace-global))
+
 (def workspace-paddings-selected
   (l/derived :paddings-selected workspace-global))
 
