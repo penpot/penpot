@@ -357,6 +357,20 @@
         (t/is (= [plugin-id :export "Plugin doesn't have 'content:read' permission"]
                  (first @errors)))))))
 
+(t/deftest export-root-reports-clear-error
+  ;; Regression: `penpot.root.export()` used the root's 0.01x0.01 selrect and
+  ;; produced a 1x1 empty image. The API must report a clear error instead of
+  ;; silently returning an empty export.
+  (let [plugin-id "test-plugin"
+        file-id   (uuid/next)
+        page-id   (uuid/next)
+        errors    (atom [])]
+    (with-redefs [u/not-valid (mock/stub (fn [pid prop msg] (swap! errors conj [pid prop msg])))]
+      (let [proxy (shape/shape-proxy plugin-id file-id page-id uuid/zero)]
+        (.export proxy #js {:type "png" :scale 1})
+        (t/is (= [[plugin-id :export "Cannot export the page root; export a specific shape instead"]]
+                 @errors))))))
+
 (t/deftest apply-token-checks-permission
   (let [plugin-id "test-plugin"
         file-id   (uuid/next)
