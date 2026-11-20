@@ -12,6 +12,7 @@
    [app.common.files.changes :as cpc]
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
+   [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.transit :as t]
    [app.common.types.shape-tree :as ctt]
@@ -23,6 +24,7 @@
    [app.main.data.event :as ev]
    [app.main.data.fonts :as df]
    [app.main.data.helpers :as dsh]
+   [app.main.data.websocket :as dws]
    [app.main.features :as features]
    [app.main.features.pointer-map :as fpmap]
    [app.main.repo :as rp]
@@ -52,6 +54,7 @@
 (declare bundle-fetched)
 (declare zoom-to-fill)
 (declare zoom-to-fit)
+(declare watch-file-changes)
 
 (def ^:private
   schema:initialize
@@ -86,6 +89,10 @@
              ;; Only fetch threads for logged-in users
              (when (some? (:profile state))
                (fetch-comment-threads params))
+             ;; Keep the viewer in sync with the edits done on the file
+             ;; (only for logged-in users, the websocket requires it).
+             (when (some? (:profile state))
+               (watch-file-changes params))
              (when (:share-id params)
                (rx/of (ev/event {::ev/name "shared-prototipe-visited"})))))
     ptk/EffectEvent
@@ -107,7 +114,7 @@
   (ptk/reify ::finalize
     ptk/UpdateEvent
     (update [_ state]
-      (dissoc state :viewer))
+      (dissoc state :viewer :viewer-sync-frame-id :viewer-missed-revn))
     ptk/EffectEvent
     (effect [_ _ _]
       (cf/set-current-share-id! nil))))
@@ -128,8 +135,48 @@
   [file-id share-id entry]
   (fpmap/resolve-pointer file-id share-id entry))
 
+(defn- fetch-bundle-data
+  "Fetch the view-only bundle of the file and resolve all the lazy
+  pointers. Returns an observable that emits the complete bundle."
+  [{:keys [file-id share-id]}]
+  (let [;; NOTE: in viewer we don't have access to the team when
+        ;; user is not logged-in, so we can't know which features
+        ;; are active from team, so in this case it is necesary
+        ;; report the whole set of supported features instead of
+        ;; the enabled ones.
+        features cfeat/supported-features
+        params'  (cond-> {:file-id file-id :features features}
+                   (uuid? share-id)
+                   (assoc :share-id share-id))
+
+        resolve  (partial resolve-viewer-fragment file-id share-id)]
+
+    (->> (rp/cmd! :get-view-only-bundle params')
+         (rx/mapcat
+          (fn [bundle]
+            (->> (rx/from (-> bundle :file :data :pages-index seq))
+                 (rx/merge-map
+                  (fn [[_ page :as kp]]
+                    (if (t/pointer? page)
+                      (resolve kp)
+                      (rx/of kp))))
+                 (rx/reduce conj {})
+                 (rx/map (fn [pages-index]
+                           (update-in bundle [:file :data] assoc :pages-index pages-index))))))
+         (rx/mapcat
+          (fn [bundle]
+            (->> (rx/from (-> bundle :file :data seq))
+                 (rx/merge-map
+                  (fn [[_ object :as kp]]
+                    (if (t/pointer? object)
+                      (resolve kp)
+                      (rx/of kp))))
+                 (rx/reduce conj {})
+                 (rx/map (fn [data]
+                           (update bundle :file assoc :data data)))))))))
+
 (defn- fetch-bundle
-  [{:keys [file-id share-id] :as params}]
+  [params]
 
   (dm/assert!
    "expected valid params"
@@ -138,50 +185,43 @@
   (ptk/reify ::fetch-bundle
     ptk/WatchEvent
     (watch [_ _ _]
-      (let [;; NOTE: in viewer we don't have access to the team when
-            ;; user is not logged-in, so we can't know which features
-            ;; are active from team, so in this case it is necesary
-            ;; report the whole set of supported features instead of
-            ;; the enabled ones.
-            features cfeat/supported-features
-            params'  (cond-> {:file-id file-id :features features}
-                       (uuid? share-id)
-                       (assoc :share-id share-id))
-
-            resolve  (partial resolve-viewer-fragment file-id share-id)]
-
-        (->> (rp/cmd! :get-view-only-bundle params')
-             (rx/mapcat
-              (fn [bundle]
-                (->> (rx/from (-> bundle :file :data :pages-index seq))
-                     (rx/merge-map
-                      (fn [[_ page :as kp]]
-                        (if (t/pointer? page)
-                          (resolve kp)
-                          (rx/of kp))))
-                     (rx/reduce conj {})
-                     (rx/map (fn [pages-index]
-                               (update-in bundle [:file :data] assoc :pages-index pages-index))))))
-             (rx/mapcat
-              (fn [bundle]
-                (->> (rx/from (-> bundle :file :data seq))
-                     (rx/merge-map
-                      (fn [[_ object :as kp]]
-                        (if (t/pointer? object)
-                          (resolve kp)
-                          (rx/of kp))))
-                     (rx/reduce conj {})
-                     (rx/map (fn [data]
-                               (update bundle :file assoc :data data))))))
-             (rx/mapcat
-              (fn [{:keys [fonts team] :as bundle}]
-                (rx/of (df/fonts-fetched fonts)
-                       (features/initialize (:features team))
-                       (bundle-fetched (merge bundle params))))))))))
+      (->> (fetch-bundle-data params)
+           (rx/mapcat
+            (fn [{:keys [fonts team] :as bundle}]
+              (rx/of (df/fonts-fetched fonts)
+                     (features/initialize (:features team))
+                     (bundle-fetched (merge bundle params)))))))))
 
 (declare go-to-frame)
 (declare go-to-frame-by-index)
 (declare go-to-frame-auto)
+
+;; --- Viewer pages
+
+(defn- build-viewer-page
+  [data]
+  (assoc data
+         :frames (ctt/get-viewer-frames (:objects data))
+         :all-frames (ctt/get-viewer-frames (:objects data) {:all-frames? true})))
+
+(defn- build-viewer-pages
+  "Build the viewer pages index (page data plus the precalculated
+  frames). When `prev-file` and `prev-pages` are provided, the pages
+  that did not change between both file versions are reused instead of
+  being calculated again."
+  ([file]
+   (build-viewer-pages file nil nil))
+  ([file prev-file prev-pages]
+   (let [index      (dm/get-in file [:data :pages-index])
+         prev-index (dm/get-in prev-file [:data :pages-index])]
+     (->> (dm/get-in file [:data :pages])
+          (map (fn [page-id]
+                 (let [data (get index page-id)]
+                   [page-id (if (and (contains? prev-pages page-id)
+                                     (identical? data (get prev-index page-id)))
+                              (get prev-pages page-id)
+                              (build-viewer-page data))])))
+          (into {})))))
 
 ;; Applies to the viewer the changes passed as parameters
 ;; will not save the data but just modify the data localy
@@ -190,21 +230,12 @@
   (ptk/reify ::apply-changes-viewer
     ptk/UpdateEvent
     (update [_ state]
-      (let [file (-> (dm/get-in state [:viewer :file])
-                     (update :data cpc/process-changes changes false))
-
-            pages
-            (->> (dm/get-in file [:data :pages])
-                 (map (fn [page-id]
-                        (let [data (get-in file [:data :pages-index page-id])]
-                          [page-id (assoc data
-                                          :frames (ctt/get-viewer-frames (:objects data))
-                                          :all-frames (ctt/get-viewer-frames (:objects data) {:all-frames? true}))])))
-                 (into {}))]
-
+      (let [prev-file  (dm/get-in state [:viewer :file])
+            prev-pages (dm/get-in state [:viewer :pages])
+            file       (update prev-file :data cpc/process-changes changes false)]
         (-> state
             (assoc-in [:viewer :file] file)
-            (assoc-in [:viewer :pages] pages))))))
+            (assoc-in [:viewer :pages] (build-viewer-pages file prev-file prev-pages)))))))
 
 (defn- generate-update-position-data-changes
   [shapes page-id]
@@ -272,13 +303,7 @@
 
 (defn bundle-fetched
   [{:keys [project file team share-links libraries users permissions thumbnails] :as bundle}]
-  (let [pages (->> (dm/get-in file [:data :pages])
-                   (map (fn [page-id]
-                          (let [data (get-in file [:data :pages-index page-id])]
-                            [page-id (assoc data
-                                            :frames (ctt/get-viewer-frames (:objects data))
-                                            :all-frames (ctt/get-viewer-frames (:objects data) {:all-frames? true}))])))
-                   (into {}))]
+  (let [pages (build-viewer-pages file)]
 
     (ptk/reify ::bundle-fetched
       ptk/UpdateEvent
@@ -327,6 +352,272 @@
                 (some? frame-id) (go-to-frame frame-id)
                 (some? index) (go-to-frame-by-index index)
                 :else (go-to-frame-auto))))))))))
+
+;; --- Live updates
+;;
+;; While the viewer is open, the file is kept in sync with the edits done
+;; in the workspace. The viewer subscribes to the file websocket topic and
+;; applies the `file-change` messages locally. The `revn` of the viewer
+;; file is tracked: if a message is missed (a gap in the revisions, the
+;; socket reconnected, the file was restored...) the bundle is fetched
+;; again silently, without altering the navigation state (current board,
+;; zoom, fullscreen...).
+;;
+;; NOTE: the websocket only lets subscribe to files the user can read as
+;; a team member, so this does not apply to anonymous share-links.
+
+(def ^:private refresh-requested
+  (ptk/reify ::refresh-requested))
+
+(defn- current-page-id
+  [state]
+  (let [params (rt/get-params state)]
+    (or (some-> (:page-id params) uuid/parse)
+        (-> (dm/get-in state [:viewer :file :data :pages]) first))))
+
+(defn- current-frame-id
+  [state]
+  (let [params  (rt/get-params state)
+        index   (or (some-> (rt/get-query-param params :index) parse-long) 0)
+        frames  (dm/get-in state [:viewer :pages (current-page-id state) :frames])]
+    (:id (get frames index))))
+
+(defn- newer-file?
+  "Check if `file` is a newer version of the file loaded in the viewer."
+  [state file]
+  (let [prev (dm/get-in state [:viewer :file])]
+    (and (some? prev)
+         (= (:id file) (:id prev))
+         (or (not= (:vern file) (:vern prev))
+             (> (:revn file 0) (:revn prev 0))))))
+
+(defn- assoc-viewer-file
+  [state file]
+  (let [prev-file  (dm/get-in state [:viewer :file])
+        prev-pages (dm/get-in state [:viewer :pages])]
+    (-> state
+        ;; Remember the board we are looking at, to keep showing it even
+        ;; if its position changes. Keep the oldest one if several updates
+        ;; arrive before `after-file-updated` is processed.
+        (update :viewer-sync-frame-id #(or % (current-frame-id state)))
+        (assoc-in [:viewer :file] file)
+        (assoc-in [:viewer :pages] (build-viewer-pages file prev-file prev-pages))
+        (assoc-in [:files (:id file)] file))))
+
+(def ^:private after-file-updated
+  (ptk/reify ::after-file-updated
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [params    (rt/get-params state)
+            file-id   (dm/get-in state [:viewer :file :id])
+            page-id   (current-page-id state)
+            frames    (dm/get-in state [:viewer :pages page-id :frames])
+            index     (or (some-> (rt/get-query-param params :index) parse-long) 0)
+            frame-id  (:viewer-sync-frame-id state)
+            zoom-type (dm/get-in state [:viewer-local :zoom-type])
+
+            ;; The current board is tracked by id: when boards are added
+            ;; or removed before it, keep showing the same one. If it was
+            ;; removed, stay as close as possible to the previous position.
+            new-index (when (seq frames)
+                        (or (when (some? frame-id)
+                              (d/index-of-pred frames #(= (:id %) frame-id)))
+                            (min index (dec (count frames)))))
+            moved?    (and (some? new-index) (not= new-index index))]
+
+        (rx/concat
+         (rx/of #(dissoc % :viewer-sync-frame-id))
+
+         (cond
+           ;; The zoom is recalculated when the index changes
+           moved?
+           (rx/of (rt/nav :viewer (assoc params :index new-index) {::rt/replace true}))
+
+           ;; The board size may have changed
+           (and (seq frames) (= :fit zoom-type))
+           (rx/of zoom-to-fit)
+
+           (and (seq frames) (= :fill zoom-type))
+           (rx/of zoom-to-fill)
+
+           :else
+           (rx/empty))
+
+         (rx/of (update-page-position-data file-id (some-> (:page-id params) uuid/parse))))))))
+
+(defn- file-updated
+  [file]
+  (ptk/reify ::file-updated
+    ptk/UpdateEvent
+    (update [_ state]
+      (if (newer-file? state file)
+        (assoc-viewer-file state file)
+        state))
+
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of after-file-updated))))
+
+(defn- bundle-refreshed
+  [{:keys [file libraries thumbnails]}]
+  (ptk/reify ::bundle-refreshed
+    ptk/UpdateEvent
+    (update [_ state]
+      (if (newer-file? state file)
+        (let [libraries (d/index-by :id libraries)]
+          (-> state
+              (assoc-viewer-file file)
+              (assoc-in [:viewer :libraries] libraries)
+              (assoc-in [:viewer :thumbnails] thumbnails)
+              (update :files merge libraries)))
+        state))
+
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of after-file-updated))))
+
+(defn- filter-page-changes
+  "Remove the changes related to pages the viewer does not have (the
+  viewer bundle may not contain all the pages of the file)."
+  [file changes]
+  (let [known (volatile! (into #{} (keys (dm/get-in file [:data :pages-index]))))]
+    (filterv (fn [{:keys [type id page page-id]}]
+               (when (= type :add-page)
+                 (vswap! known conj (or id (:id page))))
+               (or (nil? page-id) (contains? @known page-id)))
+             changes)))
+
+(defn- handle-file-change
+  [{:keys [file-id revn vern changes]}]
+  (ptk/reify ::handle-file-change
+    ptk/UpdateEvent
+    (update [_ state]
+      ;; The bundle is still loading: it may have been built before this
+      ;; change was saved. Remember the newest revn seen to compare it
+      ;; with the bundle once it arrives (see `check-missed-changes`).
+      (if (and (nil? (dm/get-in state [:viewer :file])) (int? revn))
+        (update state :viewer-missed-revn (fnil max 0) revn)
+        state))
+
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [file (dm/get-in state [:viewer :file])]
+        (when (and (= file-id (:id file))
+                   (int? revn))
+          (let [file-revn (:revn file)]
+            (cond
+              ;; Already applied (or older than the loaded bundle)
+              (and (int? file-revn) (<= revn file-revn))
+              (rx/empty)
+
+              ;; We missed something: other version of the file or a gap
+              ;; in the revisions, fetch the file again.
+              (or (not (int? file-revn))
+                  (not= vern (:vern file))
+                  (> revn (inc file-revn)))
+              (rx/of refresh-requested)
+
+              :else
+              (let [file' (try
+                            (-> file
+                                (update :data cpc/process-changes
+                                        (filter-page-changes file changes) false)
+                                (assoc :revn revn))
+                            (catch :default cause
+                              (l/warn :hint "unable to apply file changes on viewer"
+                                      :cause cause)
+                              nil))]
+                (if (some? file')
+                  (rx/of (file-updated file'))
+                  (rx/of refresh-requested))))))))))
+
+(def ^:private check-missed-changes
+  ;; Run after the bundle loads: the changes saved while it was loading
+  ;; were dropped, so fetch the file again if one is newer than it.
+  (ptk/reify ::check-missed-changes
+    ptk/UpdateEvent
+    (update [_ state]
+      (dissoc state :viewer-missed-revn))
+
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [missed (:viewer-missed-revn state)
+            revn   (dm/get-in state [:viewer :file :revn])]
+        (when (and (int? missed) (int? revn) (> missed revn))
+          (rx/of refresh-requested))))))
+
+(defn- handle-file-restored
+  [{:keys [file-id vern]}]
+  (ptk/reify ::handle-file-restored
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [file (dm/get-in state [:viewer :file])]
+        (when (and (= file-id (:id file))
+                   (not= vern (:vern file)))
+          (rx/of refresh-requested))))))
+
+(def ^:private socket-reopened
+  ;; The messages sent while the socket was closed are lost.
+  (ptk/reify ::socket-reopened
+    ptk/WatchEvent
+    (watch [_ state _]
+      (when (some? (dm/get-in state [:viewer :file]))
+        (rx/of refresh-requested)))))
+
+(defn- process-message
+  [{:keys [type] :as message}]
+  (case type
+    :file-change   (handle-file-change message)
+    :file-restored (handle-file-restored message)
+    nil))
+
+(defn- watch-file-changes
+  [{:keys [file-id share-id]}]
+  (ptk/reify ::watch-file-changes
+    ptk/WatchEvent
+    (watch [_ _ stream]
+      (let [stopper   (rx/filter (ptk/type? ::finalize) stream)
+            subscribe {:type :subscribe-file :file-id file-id}
+            unsubscribe {:type :unsubscribe-file :file-id file-id}
+
+            refetch
+            (fn [_]
+              (->> (fetch-bundle-data {:file-id file-id :share-id share-id})
+                   (rx/map bundle-refreshed)
+                   (rx/catch (fn [cause]
+                               (l/warn :hint "unable to refresh viewer bundle"
+                                       :cause cause)
+                               (rx/empty)))))]
+
+        (rx/concat
+         (->> (rx/merge
+               (rx/of (dws/send subscribe))
+
+               ;; On reconnect, subscribe again and resync
+               (->> stream
+                    (rx/filter (ptk/type? ::dws/opened))
+                    (rx/mapcat (fn [_]
+                                 (rx/of (dws/send subscribe)
+                                        socket-reopened))))
+
+               (->> stream
+                    (rx/filter (ptk/type? ::bundle-fetched))
+                    (rx/map (constantly check-missed-changes)))
+
+               (->> stream
+                    (rx/filter (ptk/type? ::dws/message))
+                    (rx/map deref)
+                    (rx/filter #(= file-id (:topic %)))
+                    (rx/map process-message)
+                    (rx/filter some?))
+
+               ;; Coalesce bursts and drop obsolete in-flight requests
+               (->> stream
+                    (rx/filter (ptk/type? ::refresh-requested))
+                    (rx/debounce 300)
+                    (rx/switch-map refetch)))
+              (rx/take-until stopper))
+         (rx/of (dws/send unsubscribe)))))))
 
 (defn fetch-comment-threads
   [{:keys [file-id page-id share-id] :as params}]
