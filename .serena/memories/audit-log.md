@@ -72,6 +72,8 @@ Nexus receives full events, not telemetry shadows. Penpot sends Transit with the
 
 The admin-console archive is **Penpot → Nitrate**, distinct from either Nitrate producer channel. Its consumer selects an allowlist of full events and enriches them with names or emails needed by the destination. The producer does not know that allowlist. Nonmatching rows still advance the cursor.
 
+The actor's top-level `:profile-name` / `:profile-email` come from the row, not from the current profile. `audit/with-actor-snapshots` stamps the nullable `profile_name` / `profile_email` columns (migration `0160`) at write time, on backend `process-event` and the bulk public ingest, for every full row whose `profile_id` is a real profile; zero-actor rows and telemetry shadows get null. The columns hold the raw value, an empty name included: non-null means "has a snapshot", so the consumer never replaces it, and drops empty values only at send time. Only rows without a snapshot (null columns, such as rows written before `0160`) fall back to the actor's current profile. `process-event` and `insert` (the SREPL path, which takes no snapshot) drop any `:profile-name` / `:profile-email` a caller puts on the event, so only the snapshot writes these columns. Nexus never receives them: `consumers/row->event` keeps only the event keys.
+
 ### Webhooks and error reporters
 
 Webhooks use jobs, not a cursor over the audit buffer. A marked event schedules matching and delivery for the affected team's webhooks. When debounce is configured, a burst delivers the **last payload**, not a list of the events. Delivery failure changes webhook status and its delivery log, not the origin audit row. The audit `webhook` trigger records the match count, including zero, only if full-row persistence is on. Its `:event-id` comes from the producer event, so it can refer back to the full row when that row exists. A telemetry copy has its own id.
@@ -128,7 +130,7 @@ To add a consumer, give it a non-reused id and a transport definition for the sh
 
 ### Where to look
 
-- Producer and telemetry filtering: `backend/src/app/loggers/audit.clj`; RPC wrapper: `backend/src/app/rpc.clj`.
+- Producer, actor snapshots (`with-actor-snapshots`) and telemetry filtering: `backend/src/app/loggers/audit.clj`; RPC wrapper: `backend/src/app/rpc.clj`.
 - Public ingest and discovery: `backend/src/app/rpc/commands/audit.clj`; browser collector: `frontend/src/app/main/data/event.cljs`; trusted ingest: `backend/src/app/rpc/management/nitrate.clj`.
 - Shared drain, transports and GC: `backend/src/app/loggers/audit/`; rollout: `operations/2.20.0-consumer-generalization.md`.
 - Contract examples in `backend/test/backend_tests/`: `rpc_audit_test.clj` for emitters and ingest, `loggers_audit_consumers_test.clj` for cursor ordering, retry and GC, and `rpc_team_test.clj` for invitation attribution.

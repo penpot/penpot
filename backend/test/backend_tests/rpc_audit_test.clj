@@ -347,6 +347,119 @@
           (t/is (= day-now (:created-at row2)))
           (t/is (= day-now (:tracked-at row2))))))))
 
+(defn- backend-event
+  [profile-id name]
+  {:id (uuid/next)
+   :type "action"
+   :name name
+   :profile-id profile-id
+   :props {}
+   :context {}
+   :tracked-at (ct/now)
+   :created-at (ct/now)
+   :source "backend"})
+
+(t/deftest backend-process-event-snapshots-the-actor
+  ;; The full row keeps the actor's name and email as of the event; the
+  ;; telemetry shadow never gets them. The profile is created before
+  ;; enabling :admin-console: team bootstrap calls the real nitrate
+  ;; client, unconfigured in tests.
+  (let [prof (th/create-profile* 1 {:is-active true})]
+    (th/with-audit-config #{:telemetry :admin-console}
+      (audit/submit* th/*system* (backend-event (:id prof) "create-project"))
+      (let [[full shadow] (th/db-exec! ["select * from audit_log order by source"])]
+        (t/is (= "backend" (:source full)))
+        (t/is (= (:fullname prof) (:profile-name full)))
+        (t/is (= (:email prof) (:profile-email full)))
+        (t/is (= "telemetry:backend" (:source shadow)))
+        (t/is (nil? (:profile-name shadow)))
+        (t/is (nil? (:profile-email shadow)))))))
+
+(t/deftest backend-process-event-snapshots-every-persisted-row
+  ;; The producer knows nothing about the consumers: any event gets the
+  ;; snapshot whichever consumer is on, except when there is no real
+  ;; actor to take it from.
+  (let [prof (th/create-profile* 1 {:is-active true})]
+    (th/with-audit-config #{:nexus}
+      (audit/submit* th/*system* (backend-event (:id prof) "test-cmd"))
+      (audit/submit* th/*system* (backend-event uuid/zero "test-cmd")))
+    (let [by-actor (->> (th/db-exec! ["select * from audit_log"])
+                        (into {} (map (juxt :profile-id identity))))]
+      (t/is (= 2 (count by-actor)))
+      (t/is (= (:fullname prof) (get-in by-actor [(:id prof) :profile-name])))
+      (t/is (= (:email prof) (get-in by-actor [(:id prof) :profile-email])))
+      (t/is (nil? (get-in by-actor [uuid/zero :profile-name])))
+      (t/is (nil? (get-in by-actor [uuid/zero :profile-email]))))))
+
+(t/deftest backend-process-event-ignores-caller-actor-fields
+  ;; Only the snapshot writes the actor columns: values a caller puts
+  ;; on the event never reach a row, telemetry shadow included.
+  (let [prof  (th/create-profile* 1 {:is-active true})
+        event (-> (backend-event (:id prof) "test-cmd")
+                  (assoc :profile-name "Caller Name"
+                         :profile-email "caller@example.com"))
+        zero  (-> (backend-event uuid/zero "test-cmd")
+                  (assoc :profile-name "Caller Name"
+                         :profile-email "caller@example.com"))]
+    (th/with-audit-config #{:telemetry :admin-console}
+      (audit/submit* th/*system* event)
+      (audit/submit* th/*system* zero))
+    (let [rows   (th/db-exec! ["select * from audit_log"])
+          full   (filter #(and (= "backend" (:source %))
+                               (= (:id prof) (:profile-id %)))
+                         rows)
+          others (remove (set full) rows)]
+      (t/is (= 4 (count rows)))
+      (t/is (= [(:fullname prof)] (map :profile-name full)))
+      (t/is (= [(:email prof)] (map :profile-email full)))
+      (t/is (every? (comp nil? :profile-name) others))
+      (t/is (every? (comp nil? :profile-email) others)))))
+
+(t/deftest insert-ignores-caller-actor-fields
+  ;; `audit/insert` skips `process-event`, so it must drop the actor
+  ;; columns itself: caller values never reach the row.
+  (let [prof (th/create-profile* 1 {:is-active true})]
+    (th/with-audit-config #{:admin-console}
+      (audit/insert th/*system* {:name "create-project"
+                                 :type "action"
+                                 :profile-id (:id prof)
+                                 :profile-name "Caller Name"
+                                 :profile-email "caller@example.com"}))
+    (let [[row :as rows] (th/db-exec! ["select * from audit_log"])]
+      (t/is (= 1 (count rows)))
+      (t/is (nil? (:profile-name row)))
+      (t/is (nil? (:profile-email row))))))
+
+(t/deftest push-events-snapshots-the-actor
+  ;; Frontend full rows keep the actor as of the event; their telemetry
+  ;; shadows never get it.
+  (let [prof (th/create-profile* 1 {:is-active true})]
+    (th/with-audit-config #{:admin-console :telemetry}
+      (let [params (-> {::th/type :push-audit-events
+                        ::rpc/profile-id (:id prof)
+                        :events [{:name "auditlog-exported"
+                                  :props {:organization-id (str (uuid/next))}
+                                  :context {}
+                                  :timestamp (ct/now)
+                                  :type "action"}
+                                 {:name "navigate"
+                                  :props {:route "dashboard"}
+                                  :context {}
+                                  :timestamp (ct/now)
+                                  :type "action"}]}
+                       (with-meta {:app.http/request http-request}))
+            out    (th/command! params)]
+        (t/is (nil? (:error out)))
+        (let [rows    (th/db-exec! ["select * from audit_log"])
+              full    (filter #(= "frontend" (:source %)) rows)
+              shadows (remove #(= "frontend" (:source %)) rows)]
+          (t/is (= 2 (count full)))
+          (t/is (= 2 (count shadows)))
+          (t/is (every? #(= (:fullname prof) (:profile-name %)) full))
+          (t/is (every? #(= (:email prof) (:profile-email %)) full))
+          (t/is (every? (comp nil? :profile-name) shadows))
+          (t/is (every? (comp nil? :profile-email) shadows)))))))
+
 (t/deftest backend-process-event-forwards-id-to-webhook-task
   ;; The `webhook/trigger` row links back to its origin event through
   ;; props `:event-id`, so `process-event` must forward the stored row

@@ -139,6 +139,8 @@
     :name
     :type
     :profile-id
+    :profile-name
+    :profile-email
     :ip-addr
     :props
     :context
@@ -282,6 +284,47 @@
      :client-version client-version
      :version (:full cf/version)}))
 
+(defn- snapshot-actor-id
+  "The actor id of an event when it names a real profile: nil for a
+  missing, zero or non-uuid :profile-id."
+  [event]
+  (when-let [id (uuid/coerce (:profile-id event))]
+    (when-not (uuid/zero? id)
+      id)))
+
+(defn- get-actor-profiles
+  "Batch-load the email and fullname of the given profile ids, keyed by
+  id (soft-deleted profiles included)."
+  [{:keys [::db/conn]} ids]
+  (let [arr  (db/create-array conn "uuid" ids)
+        rows (db/exec! conn ["SELECT id, email, fullname FROM profile WHERE id = ANY(?)" arr])]
+    (into {} (map (juxt :id identity) rows))))
+
+(defn with-actor-snapshots
+  "Stamp each event with the actor's :profile-name / :profile-email as
+  they are now, when the full row is written. A consumer that shows
+  the user (the admin console) must show them as they were when the
+  event happened: resolving the profile when the row is archived,
+  minutes later, picked up any rename or email change made in between.
+  One query for the whole batch; the producer stays unaware of which
+  consumer reads the values.
+
+  Values are stored as they are, an empty name included: a non-null
+  value marks a row that has a snapshot, so a consumer never replaces
+  it with the current profile. Consumers drop empty values when they
+  send the event."
+  [cfg events]
+  (if-let [ids (not-empty (into #{} (keep snapshot-actor-id) events))]
+    (let [profiles (db/run! cfg get-actor-profiles ids)]
+      (mapv (fn [event]
+              (if-let [profile (some->> (snapshot-actor-id event) (get profiles))]
+                (assoc event
+                       :profile-email (:email profile)
+                       :profile-name (:fullname profile))
+                event))
+            events))
+    events))
+
 (defn- append-audit-entry
   [cfg params]
   (let [params (-> params
@@ -316,7 +359,12 @@
   ;; webhook trigger row links back to its origin event through props
   ;; `:event-id`, which used to land nil because the id was generated
   ;; inside `append-audit-entry` without reaching the worker params.
-  (let [event (assoc event :id (or (:id event) (uuid/next)))]
+  ;; The actor snapshot columns belong to `with-actor-snapshots` alone:
+  ;; drop whatever a caller passes so no other row (the telemetry
+  ;; shadow) or the webhook payload can carry them.
+  (let [event (-> event
+                  (assoc :id (or (:id event) (uuid/next)))
+                  (dissoc :profile-name :profile-email))]
     (when (contains? cf/flags :audit-log-logger)
       (l/log! ::l/logger "app.audit"
               ::l/level :info
@@ -328,7 +376,9 @@
               :context (json/encode (:context event) :key-fn json/write-camel-key)))
 
     (when cf/audit-persist?
-      (append-audit-entry cfg event))
+      ;; Only the full row carries the actor snapshot: the telemetry
+      ;; shadow and the webhook below keep using `event` as is.
+      (append-audit-entry cfg (first (with-actor-snapshots cfg [event]))))
 
     (when cf/telemetry-enabled?
       ;; NOTE: when both persistence and telemetry are enabled, events are stored
@@ -714,6 +764,10 @@
                     (update :props d/nilv {})
                     (update :context d/nilv {})
                     (update :source d/nilv "backend")
+                    ;; The actor snapshot columns belong to
+                    ;; `with-actor-snapshots` alone, which this path
+                    ;; skips with the rest of `process-event`.
+                    (dissoc :profile-name :profile-email)
                     (select-keys event-keys)
                     (check-event))]
       (db/tx-run! cfg append-audit-entry event))))
