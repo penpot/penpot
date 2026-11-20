@@ -38,9 +38,6 @@
 (def ^:dynamic *current* #{})
 (def ^:dynamic *new* nil)
 
-(def ^:dynamic *wrap-with-objects-map-fn* identity)
-(def ^:dynamic *wrap-with-pointer-map-fn* identity)
-
 ;; A set of supported features
 (def supported-features
   #{"fdata/objects-map"

@@ -186,7 +186,7 @@
 (defn- get-file
   "A specialized version of get-file for comments module."
   [cfg file-id page-id]
-  (feat.fdata/with-pointers cfg file-id
+  (feat.fdata/with-pointers cfg
     (let [file (bfc/get-file cfg file-id)
           data (get file :data)]
       (-> file

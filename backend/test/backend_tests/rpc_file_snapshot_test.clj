@@ -694,6 +694,12 @@
         (t/is (contains? tokens :stroke-width-top))
         (t/is (contains? tokens :stroke-width-bottom)))
 
+      ;; The migration branch materializes the pointers only: the objects
+      ;; keep the `ObjectsMap` structure, like in an already-migrated
+      ;; snapshot.
+      (t/is (omap/objects-map?
+             (get-in out [:result :data :pages-index page-id :objects])))
+
       ;; The preview declared the migrated set in the payload.
       (t/is (contains? (set (get-in out [:result :migrations]))
                        "0031-migrate-stroke-width-token-attr")))
@@ -710,10 +716,10 @@
                (get-in stored [:data :pages-index page-id
                                :objects shape-id :applied-tokens]))))))
 
-(t/deftest snapshot-preview-realizes-objects-for-clients-without-the-feature
-  ;; `:features` works like in `get-file`: a client that does not
-  ;; declare `fdata/objects-map` receives plain objects instead of the
-  ;; storage structure of the fragment.
+(t/deftest snapshot-preview-keeps-objects-map-for-any-client
+  ;; `fdata/objects-map` is not negotiated: the preview materializes the
+  ;; pointers but the pages keep the `ObjectsMap` structure, whatever the
+  ;; client declares. Converting it here would rewrite the page map.
   (let [profile  (th/create-profile* 1)
         file     (th/create-file* 1 {:profile-id (:id profile)
                                      :project-id (:default-project-id profile)
@@ -741,22 +747,16 @@
                                                 ::rpc/profile-id (:id profile)
                                                 :file-id file-id
                                                 :label "v1"})))
-        preview     (fn [features]
-                      (th/command! {::th/type :get-file-snapshot
-                                    ::rpc/profile-id (:id profile)
-                                    :file-id file-id
-                                    :id snapshot-id
-                                    :features features}))
-        with-feature    (preview cfeat/supported-features)
-        without-feature (preview (disj cfeat/supported-features
-                                       "fdata/objects-map"))]
+        without-feature (th/command! {::th/type :get-file-snapshot
+                                      ::rpc/profile-id (:id profile)
+                                      :file-id file-id
+                                      :id snapshot-id
+                                      :features (disj cfeat/supported-features
+                                                      "fdata/objects-map")})]
 
-    (t/is (nil? (:error with-feature)))
     (t/is (nil? (:error without-feature)))
     (t/is (omap/objects-map?
-           (get-in with-feature [:result :data :pages-index page-id :objects])))
-    (t/is (not (omap/objects-map?
-                (get-in without-feature [:result :data :pages-index page-id :objects]))))))
+           (get-in without-feature [:result :data :pages-index page-id :objects])))))
 
 (t/deftest snapshot-preview-migrates-legacy-snapshots-without-migrations
   ;; Snapshots written before the `migrations` column existed (SQL

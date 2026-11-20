@@ -289,7 +289,15 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn load-pointer
-  "A database loader pointer helper"
+  "Load the content of a fragment row.
+
+  Reads rows that a previous `file-gc` pass marked as deleted on purpose:
+  the mark is a hypothesis about liveness that maintenance operations
+  refute (a delete, an `absorb-library` or a snapshot restore may still
+  need a pointer that is marked but not purged yet; only `objects-gc`
+  removes the row). The public contract is the opposite one: the
+  `get-file-fragment` RPC serves unmarked rows only, by design. Do not
+  align the two."
   [cfg file-id id]
   ;; Keep the include-marked behavior explicit: `db/get*` only filters
   ;; rows by `deleted_at` when that column is selected, and a fragment a
@@ -332,11 +340,12 @@
                       :data content})))))
 
 (defmacro with-pointers
-  "Bind the fragment loader for `file-id` around `body`. All pointer
-  derefs must happen inside the body; a pointer derefed outside of it
-  raises because there is no loader bound."
-  [cfg file-id & body]
-  `(binding [pmap/*load-fn* (partial load-pointer ~cfg ~file-id)]
+  "Bind the fragment loader around `body`. All pointer derefs must happen
+  inside the body; a pointer derefed outside of it raises because there is
+  no loader bound. The loader resolves each pointer with the file id its
+  metadata carries, so it is not scoped to one file."
+  [cfg & body]
+  `(binding [pmap/*load-fn* (partial load-pointer ~cfg)]
      ~@body))
 
 (defmacro with-tracked
@@ -358,11 +367,11 @@
      ~@body))
 
 (defmacro with-tracked-pointers
-  "Bind a fresh tracked set plus the fragment loader for `file-id`
-  around `body`. For write paths that create or modify pointers."
-  [cfg file-id & body]
+  "Bind a fresh tracked set plus the fragment loader around `body`. For
+  write paths that create or modify pointers."
+  [cfg & body]
   `(binding [pmap/*tracked* (pmap/create-tracked)
-             pmap/*load-fn* (partial load-pointer ~cfg ~file-id)]
+             pmap/*load-fn* (partial load-pointer ~cfg)]
      ~@body))
 
 (defn process-pointers
@@ -379,14 +388,11 @@
 
 (defn realize-pointers
   "Process a file and remove all instances of pointers realizing them to
-  plain data. Accepts a file map (arity 1) or raw file data with its
-  file id (arity 2): a snapshot map carries the snapshot id, so always
-  pass the live file id explicitly."
-  ([cfg {:keys [id] :as file}]
-   (update file :data #(realize-pointers cfg id %)))
-  ([cfg file-id data]
-   (with-pointers cfg file-id
-     (process-pointers data deref))))
+  plain data. Every pointer resolves its own fragment with the file id in
+  its metadata, so no file id is needed here and a snapshot map resolves
+  exactly like the live file."
+  [cfg {:keys [data] :as file}]
+  (assoc file :data (with-pointers cfg (process-pointers data deref))))
 
 (defn get-used-pointer-ids
   "Given a file data map, return all pointer ids used in the data.
@@ -400,14 +406,19 @@
                        (map pmap/get-id)))))
 
 (defn enable-pointer-map
-  "Enable the fdata/pointer-map feature on the file."
+  "Enable the fdata/pointer-map feature on the file.
+
+  Every pointer created here carries the file id in its metadata, which
+  is what lets the loader resolve a fragment without knowing which file
+  it is working on."
   [file & _opts]
-  (-> file
-      (update :data (fn [fdata]
-                      (-> fdata
-                          (update :pages-index d/update-vals pmap/wrap)
-                          (d/update-when :components pmap/wrap))))
-      (update :features conj "fdata/pointer-map")))
+  (binding [pmap/*metadata* (assoc pmap/*metadata* :file-id (:id file))]
+    (-> file
+        (update :data (fn [fdata]
+                        (-> fdata
+                            (update :pages-index d/update-vals pmap/wrap)
+                            (d/update-when :components pmap/wrap))))
+        (update :features conj "fdata/pointer-map"))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; GENERAL PURPOSE HELPERS

@@ -14,6 +14,7 @@
    [app.common.files.validate :as cfv]
    [app.common.time :as ct]
    [app.db :as db]
+   [app.features.fdata :as fdata]
    [app.features.file-snapshots :as fsnap]
    [app.system :as sys]))
 
@@ -162,10 +163,13 @@
         libs  (when with-libraries?
                 (bfc/get-resolved-file-libraries system file))
 
-        file' (when file
-                (if with-libraries?
-                  (update-fn file libs opts)
-                  (update-fn file opts)))]
+        ;; The libraries stay lazy, so the loader must be bound while the
+        ;; transformation walks them.
+        file' (fdata/with-pointers system
+                (when file
+                  (if with-libraries?
+                    (update-fn file libs opts)
+                    (update-fn file opts))))]
 
     (when (and (some? file')
                (or (fmg/migrated? file)

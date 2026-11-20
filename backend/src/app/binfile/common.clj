@@ -241,8 +241,8 @@
   persists again touches the current object. Without `persist-after-migration?`
   the realized map is returned, which is what a read-only context can do.
   `get-file*` realizes the result when the caller asks for it."
-  [cfg {:keys [id] :as file} {:keys [persist-after-migration?]}]
-  (fdata/with-tracked-pointers cfg id
+  [cfg file {:keys [persist-after-migration?]}]
+  (fdata/with-tracked-pointers cfg
     (let [libs                (delay (get-resolved-file-libraries cfg file))
           ;; Capture the pointer layout before realizing: the migration
           ;; runs on plain data, and unchanged positions must keep their
@@ -776,9 +776,9 @@
                               (if-let [library (get-file cfg library-id :include-deleted? true)]
                                 ;; The library is read without `:realize?`, so its
                                 ;; `:components` may be a pointer map. Bind the
-                                ;; library's own loader: the absorb walks the
-                                ;; components and would raise without one.
-                                (cond-> (fdata/with-pointers cfg library-id
+                                ;; fragment loader: the absorb walks the components
+                                ;; and would raise without one.
+                                (cond-> (fdata/with-pointers cfg
                                           (ctf/absorb-assets data (:data library)))
                                   (= library-id (cfo/get-tokens-source data))
                                   (cfo/absorb-tokens-lib (:data library)))
@@ -813,46 +813,55 @@
 
 (defn process-file
   [cfg {:keys [id] :as file}]
-  (let [libs (delay (get-resolved-file-libraries cfg file))]
-    (-> file
-        (update :data (fn [fdata]
-                        (-> fdata
-                            (assoc :id id)
-                            (dissoc :recent-colors))))
-        (update :data (fn [fdata]
-                        (-> fdata
-                            (update :pages-index relink-shapes)
-                            (update :components relink-shapes)
-                            (update :media relink-media)
-                            (update :colors relink-colors)
-                            (d/without-nils))))
-        (fmg/migrate-file libs)
+  ;; The libraries are lazy now; a migration that walks them needs a
+  ;; fragment loader bound, and the pointers resolve with their own file id.
+  (fdata/with-pointers cfg
+    (let [libs (delay (get-resolved-file-libraries cfg file))]
+      (-> file
+          (update :data (fn [fdata]
+                          (-> fdata
+                              (assoc :id id)
+                              (dissoc :recent-colors))))
+          (update :data (fn [fdata]
+                          (-> fdata
+                              (update :pages-index relink-shapes)
+                              (update :components relink-shapes)
+                              (update :media relink-media)
+                              (update :colors relink-colors)
+                              (d/without-nils))))
+          (fmg/migrate-file libs)
 
-        ;; NOTE: this is necessary because when we just creating a new
-        ;; file from imported artifact or cloned file there are no
-        ;; migrations registered on the database, so we need to persist
-        ;; all of them, not only the applied
-        (vary-meta dissoc ::fmg/migrated))))
+          ;; NOTE: this is necessary because when we just creating a new
+          ;; file from imported artifact or cloned file there are no
+          ;; migrations registered on the database, so we need to persist
+          ;; all of them, not only the applied
+          (vary-meta dissoc ::fmg/migrated)))))
 
 (defn- encode-file
   [cfg {:keys [id features] :as file}]
-  (let [file (if (and (contains? features "fdata/objects-map")
-                      (:data file))
-               (fdata/enable-objects-map file)
-               file)
+  ;; One tracked set for both steps. Wrapping objects can produce a pointer
+  ;; (a loaded page whose fragment holds plain objects, i.e. a fragment
+  ;; written before the feature was enabled) and it must be persisted in the
+  ;; same pass that wraps the pages, not rely on `enable-pointer-map`
+  ;; tracking it afterwards.
+  (binding [pmap/*tracked* (pmap/create-tracked :inherit true)]
+    (let [file (if (and (contains? features "fdata/objects-map")
+                        (:data file))
+                 (fdata/enable-objects-map file)
+                 file)
 
-        file (if (and (contains? features "fdata/pointer-map")
-                      (:data file))
+          file (if (and (contains? features "fdata/pointer-map")
+                        (:data file))
+                 (fdata/enable-pointer-map file)
+                 file)]
 
-               (binding [pmap/*tracked* (pmap/create-tracked :inherit true)]
-                 (let [file (fdata/enable-pointer-map file)]
-                   (fdata/persist-pointers! cfg id)
-                   file))
-               file)]
+      (when (and (contains? features "fdata/pointer-map")
+                 (:data file))
+        (fdata/persist-pointers! cfg id))
 
-    (-> file
-        (d/update-when :features into-array)
-        (d/update-when :data blob/encode))))
+      (-> file
+          (d/update-when :features into-array)
+          (d/update-when :data blob/encode)))))
 
 (defn- file->params
   [file]
@@ -1056,19 +1065,17 @@
   all this libraries at the same time on processing file validation
   or file migration.
 
-  This still requires at least one library at time to be loaded while
-  access to it is performed, but it improves considerable not having
-  the need of loading all the libraries at the same time."
+  A library is read lazy: its pages stay as pointers until something
+  walks them. The pointer carries the file id of its own fragments in
+  the metadata, so it resolves itself; the consumer must have a
+  fragment loader bound (`fdata/with-pointers`) while it walks the
+  data."
   [{:keys [::db/conn] :as cfg} {:keys [id] :as file}]
   (let [library-ids (->> (get-file-libraries conn (:id file))
                          (map :id)
                          (cons (:id file)))
-        ;; Fragment rows are file-local and callers bind the loader of
-        ;; the file they work on, so each library realizes its pointers
-        ;; here, with its own id, before anything walks its data.
         load-fn     (fn [library-id]
-                      (->> (get-file cfg library-id :migrate? false)
-                           (fdata/realize-pointers cfg)))]
+                      (get-file cfg library-id :migrate? false))]
     (weak/loadable-weak-value-map library-ids load-fn {id file})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
