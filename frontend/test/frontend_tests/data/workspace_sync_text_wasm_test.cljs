@@ -198,7 +198,8 @@
                   (conj (dwu/append-undo {:undo-changes undo
                                           :redo-changes redo
                                           :undo-group edit-group
-                                          :tags #{}}
+                                          :tags #{}
+                                          :translation false}
                                          false))
 
                   :always
