@@ -571,6 +571,21 @@
       (let [attrs (or attrs (d/concat-set (keys object) (keys new-obj)))]
         (filter (partial changed? object new-obj) attrs)))))
 
+(defn- changed-keys
+  "Keys of `new` whose value is not the same object as in `old`, and keys of
+  `old` that `new` lacks: the attributes that may have changed."
+  [old new]
+  (let [changed (reduce-kv (fn [acc k v]
+                             (if (identical? v (get old k ::none))
+                               acc
+                               (conj acc k)))
+                           []
+                           new)]
+    (reduce-kv (fn [acc k _]
+                 (if (contains? new k) acc (conj acc k)))
+               changed
+               old)))
+
 (defn update-shapes
   "Calculate the changes and undos to be done when a function is applied to a
   single object"
@@ -629,13 +644,15 @@
          (fn [shape operations]
            (cttv/update-after-operations
             shape
-            (reduce (fn [shape {:keys [type attr val values]}]
-                      (cond
-                        (= type :set-token-values) (cttv/set-values shape values)
-                        (nil? val) (dissoc shape attr)
-                        :else (assoc shape attr val)))
-                    shape
-                    operations)
+            (if (every? #(= :set (:type %)) operations)
+              (cts/set-attrs shape (map (juxt :attr :val) operations))
+              (reduce (fn [shape {:keys [type attr val values]}]
+                        (cond
+                          (= type :set-token-values) (cttv/set-values shape values)
+                          (nil? val) (dissoc shape attr)
+                          :else (assoc shape attr val)))
+                      shape
+                      operations))
             operations))
 
          update-shape
@@ -644,7 +661,7 @@
                  new-obj (if with-objects? (update-fn old-obj objects) (update-fn old-obj))]
              (if (= old-obj new-obj)
                [changes local-objects]
-               (let [[rops uops] (-> (or attrs (d/concat-set (keys old-obj) (keys new-obj)))
+               (let [[rops uops] (-> (or attrs (changed-keys old-obj new-obj))
                                      (generate-operations old-obj new-obj))
 
                      uops        (cond-> uops

@@ -80,7 +80,10 @@
            (contains? changed :grow-type))))
 
 (defn- get-reflow-changes
-  [state objects changed-objects ids {:keys [attrs] :as props}]
+  "[shape changed-shape changed-attrs] of the shapes `ids` that change a
+  reflow attribute. The changed attributes come from `changed-by-id` when
+  given, or from comparing each shape with its changed one."
+  [state objects changed-objects ids {:keys [attrs] :as props} changed-by-id]
   ;; Reuse built objects so update functions only run once.
   (let [reflow-attr? (partial reflow-attr? state)]
     (when (reflow-candidate? reflow-attr? props)
@@ -89,12 +92,26 @@
              (map (d/getf objects))
              (keep (fn [shape]
                      (let [changed-shape (get changed-objects (:id shape))
-                           changed       (pcb/changed-attrs
-                                          shape objects (constantly changed-shape)
-                                          {:attrs attrs})]
+                           changed       (if changed-by-id
+                                           (get changed-by-id (:id shape))
+                                           (pcb/changed-attrs
+                                            shape objects (constantly changed-shape)
+                                            {:attrs attrs}))]
                        (when (some reflow-attr? changed)
                          [shape changed-shape changed])))))
             ids))))
+
+(defn- changed-attrs-by-id
+  "Attributes that the `:set` operations of `changes` write, by shape id."
+  [changes]
+  (reduce (fn [acc {:keys [type id operations]}]
+            (if (= :mod-obj type)
+              (assoc acc id (into (get acc id #{})
+                                  (keep #(when (= :set (:type %)) (:attr %)))
+                                  operations))
+              acc))
+          {}
+          (:redo-changes changes)))
 
 (defn- get-layout-reflow-ids
   [reflow-changes]
@@ -124,7 +141,17 @@
   Both sets come from one comparison pass, so `update-fn` and the attribute
   diff only run once per shape."
   [state page-id objects changed-objects ids props]
-  (let [reflow-changes (get-reflow-changes state objects changed-objects ids props)]
+  (let [reflow-changes (get-reflow-changes state objects changed-objects ids props nil)]
+    {:layout-ids (get-layout-reflow-ids reflow-changes)
+     :text-ids   (get-text-reflow-ids state page-id reflow-changes)}))
+
+(defn reflow-ids-of-changes
+  "`reflow-ids` of the shapes `ids` that `changes` update, with the changed
+  attributes read from its operations: the builder already compared the
+  shapes to write them."
+  [state page-id objects changes ids props]
+  (let [reflow-changes (get-reflow-changes state objects (pcb/lookup-objects changes) ids props
+                                           (changed-attrs-by-id changes))]
     {:layout-ids (get-layout-reflow-ids reflow-changes)
      :text-ids   (get-text-reflow-ids state page-id reflow-changes)}))
 

@@ -46,6 +46,24 @@
 ;; Marker protocol
 (defprotocol IShape)
 
+(defprotocol IShapeAttrs
+  (-set-attrs [shape attrs]
+    "`shape` with `attrs`, pairs of attribute and value, set in one step."))
+
+(defn set-attrs
+  "`shape` with `attrs`, a seq of [attribute value] pairs, set in order; a
+  nil value removes the attribute. Shapes that implement `IShapeAttrs` do it
+  in one step."
+  [shape attrs]
+  (if #?(:cljs (implements? IShapeAttrs shape) :clj false)
+    (-set-attrs shape attrs)
+    (reduce (fn [shape [attr val]]
+              (if (nil? val)
+                (dissoc shape attr)
+                (assoc shape attr val)))
+            shape
+            attrs)))
+
 (cr/defrecord Shape [id name type x y width height rotation selrect points
                      transform transform-inverse parent-id frame-id flip-x flip-y]
   IShape)

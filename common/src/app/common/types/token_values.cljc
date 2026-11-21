@@ -174,6 +174,16 @@
           #{}
           operations))
 
+(defn- derived-sets?
+  "True when `operations` are all derived `:set` operations of other
+  attributes than `:token-values`: they write nothing that may not match the
+  tokens."
+  [operations]
+  (every? #(and (= :set (:type %))
+                (:derived %)
+                (not= :token-values (:attr %)))
+          operations))
+
 (defn update-after-operations
   "Keep `:token-values` of `new`, the shape `old` after `operations`, in line
   with what they changed:
@@ -191,9 +201,17 @@
     (cond-> new
       (and (assigned? new) (empty? (:applied-tokens new)))
       (dissoc :token-values))
-    (let [covered (covered-attrs operations)]
-      (if (= covered ::all)
+    (let [derived? (derived-sets? operations)
+          covered  (if derived? #{} (covered-attrs operations))]
+      (cond
+        (= covered ::all)
         new
+
+        ;; Nothing written that may not match the tokens: nothing is stale
+        derived?
+        (update new :token-values #(apply dissoc % (orphan-attrs new)))
+
+        :else
         (let [new-tokens (:applied-tokens new)
               written    (written-attrs old new operations)
               stale      (-> #{}

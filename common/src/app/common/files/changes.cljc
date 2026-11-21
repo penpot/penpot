@@ -699,11 +699,23 @@
       (d/update-in-when data [:pages-index page-id] update-container)
       (d/update-in-when data [:components component-id] update-container))))
 
+(defn- untouching-sets?
+  "True when `operations` are all `:set` operations that ignore touched and
+  don't change the type of the shape."
+  [operations]
+  (every? #(and (= :set (:type %))
+                (:ignore-touched %)
+                (not= :type (:attr %)))
+          operations))
+
 (defn- process-shape-operations
-  "`shape` with the operations of `change` applied."
+  "`shape` with the operations of `change` applied. The `:set` operations
+  that ignore touched are applied in one step."
   [shape {:keys [page-id operations] :as change}]
   (let [shape    (cttv/update-after-operations shape
-                                               (reduce process-operation shape operations)
+                                               (if (untouching-sets? operations)
+                                                 (ctn/set-shape-attrs-ignoring-touched shape operations)
+                                                 (reduce process-operation shape operations))
                                                operations)
         touched? (-> shape meta ::ctn/touched)]
     ;; NOTE: processing operation functions can assign

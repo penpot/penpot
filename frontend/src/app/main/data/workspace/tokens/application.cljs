@@ -195,8 +195,8 @@
           ;; The renderer measures again only the texts it resizes
           text-ids
           (when current?
-            (seq (cond->> (:text-ids (wrfs/reflow-ids state page-id objects (pcb/lookup-objects changes)
-                                                      (changed-shape-ids changes) nil))
+            (seq (cond->> (:text-ids (wrfs/reflow-ids-of-changes state page-id objects changes
+                                                                 (changed-shape-ids changes) nil))
                    wasm? (filter (set resize-ids)))))
 
           save-undo? (:save-undo? changes true)

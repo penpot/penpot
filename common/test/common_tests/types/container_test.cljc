@@ -330,3 +330,28 @@
     (t/testing "shape outside any copy head goes inside one"
       (t/is (= 0 (ctc/get-nesting-level-delta objects plain frame))))))
 
+
+;; ---------------------------------------------------------------------------
+;; set-shape-attrs-ignoring-touched
+;; ---------------------------------------------------------------------------
+
+(defn- set-one-by-one
+  [shape operations]
+  (reduce (fn [shape {:keys [attr val ignore-geometry]}]
+            (ctc/set-shape-attr shape attr val :ignore-touched true :ignore-geometry ignore-geometry))
+          shape
+          operations))
+
+(t/deftest set-shape-attrs-ignoring-touched-is-set-shape-attr-for-each
+  (let [shape (make-shape (uuid/next))
+        cases [[{:attr :x :val 50} {:attr :name :val "Moved"}]
+               [{:attr :name :val "Renamed"} {:attr :x :val 50 :ignore-geometry true}]
+               [{:attr :name :val "Same"} {:attr :name :val "Renamed twice"}]
+               [{:attr :x :val 0.2}]
+               [{:attr :opacity :val 0.5} {:attr :hidden :val nil}]]]
+    (doseq [operations cases]
+      (let [expected (set-one-by-one shape operations)
+            actual   (ctc/set-shape-attrs-ignoring-touched shape operations)]
+        (t/is (= expected actual) (str operations))
+        (t/is (= (::ctc/touched (meta expected)) (::ctc/touched (meta actual)))
+              (str "the touched mark of " operations))))))

@@ -272,11 +272,8 @@
                    (pcb/set-translation? translation?)
                    (pcb/set-skip-component-sync? skip-component-sync?))
 
-               changed-objects
-               (pcb/lookup-objects changes)
-
                {:keys [layout-ids text-ids]}
-               (wrfs/reflow-ids state page-id objects changed-objects ids props)
+               (wrfs/reflow-ids-of-changes state page-id objects changes ids props)
 
                changes
                (add-undo-group changes state)]

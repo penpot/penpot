@@ -100,6 +100,11 @@
       (let [rect (ths/get-shape (update-shapes file [:rect1] #(assoc % :r1 30) :derived? true) :rect1)]
         (t/is (empty? (tht/stale-attrs rect)))))
 
+    (t/testing "a derived write still drops the values of tokens no longer applied"
+      (let [file (ths/update-shape file :rect1 :token-values {:r1 12 :opacity 0.5 :r2 4})
+            rect (ths/get-shape (update-shapes file [:rect1] #(assoc % :x 30) :derived? true) :rect1)]
+        (t/is (= {:r1 12 :opacity 0.5} (:token-values rect)))))
+
     (t/testing "a write that sets the value too keeps it"
       (let [rect (ths/get-shape (update-shapes file [:rect1] #(-> (assoc % :r1 30)
                                                                   (cttv/set-values {:r1 30})))

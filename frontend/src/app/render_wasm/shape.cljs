@@ -23,6 +23,7 @@
 (declare ^:private impl-assoc)
 (declare ^:private impl-conj)
 (declare ^:private impl-dissoc)
+(declare ^:private impl-set-attrs)
 
 (defn shape-in-current-page?
   "Check if a shape is in the current page by looking up the current page objects"
@@ -44,6 +45,10 @@
 
   ;; Marker protocol
   shape/IShape
+
+  shape/IShapeAttrs
+  (-set-attrs [coll attrs]
+    (impl-set-attrs coll attrs))
 
   c/IWithMeta
   (-with-meta [_ meta]
@@ -429,6 +434,56 @@
         (ShapeProxy. (.-id ^ShapeProxy self)
                      (.-type ^ShapeProxy self)
                      delegate')))))
+
+(defn- array-key-index
+  "Index of the keyword `k` in `arr`, the keys and values of an array map, or
+  -1."
+  [arr k]
+  (let [len (alength arr)]
+    (loop [i 0]
+      (cond
+        (>= i len)                       -1
+        (keyword-identical? k (aget arr i)) i
+        :else                            (recur (+ i 2))))))
+
+(defn- impl-set-attrs
+  "`self` with `attrs`, pairs of attribute and value, set with one copy of its
+  array map delegate. `:id`, `:type`, nil values (removals) and other
+  delegates go through `impl-assoc` and `impl-dissoc`."
+  [self attrs]
+  (loop [shape self
+         arr   nil
+         attrs (seq attrs)]
+    (let [flush (fn []
+                  (if arr
+                    (ShapeProxy. (.-id ^ShapeProxy shape)
+                                 (.-type ^ShapeProxy shape)
+                                 (PersistentArrayMap. (meta (.-delegate ^ShapeProxy shape))
+                                                      (/ (alength arr) 2)
+                                                      arr
+                                                      nil))
+                    shape))]
+      (if-let [[k v] (first attrs)]
+        (if (or (nil? v)
+                (= k :id)
+                (= k :type)
+                (not (keyword? k))
+                (not (instance? PersistentArrayMap (.-delegate ^ShapeProxy shape))))
+          (let [shape (flush)]
+            (recur (if (nil? v) (impl-dissoc shape k) (impl-assoc shape k v))
+                   nil
+                   (next attrs)))
+          (let [src (or arr (.-arr ^PersistentArrayMap (.-delegate ^ShapeProxy shape)))
+                idx (array-key-index src k)]
+            (track-change! shape k)
+            (if (and (>= idx 0) (identical? v (aget src (inc idx))))
+              (recur shape arr (next attrs))
+              (let [arr (or arr (aclone src))]
+                (if (neg? idx)
+                  (.push arr k v)
+                  (aset arr (inc idx) v))
+                (recur shape arr (next attrs))))))
+        (flush)))))
 
 (defn- impl-conj
   [self entry]

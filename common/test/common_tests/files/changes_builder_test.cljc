@@ -117,3 +117,20 @@
 
     (t/is (= 40 (:x (updated true))))
     (t/is (= (updated false) (updated true)))))
+
+(t/deftest update-shapes-without-attrs-writes-what-changed
+  (let [id      (uuid/next)
+        objects {uuid/zero (make-shape uuid/zero :frame nil [id] 0 0 100)
+                 id        (assoc (make-shape id :rect uuid/zero [] 0 0 10)
+                                  :opacity 0.5 :blocked true)}
+        changes (-> (pcb/empty-changes nil (uuid/next))
+                    (pcb/with-objects objects)
+                    (pcb/update-shapes [id] #(-> %
+                                                 (assoc :opacity 0.7 :name "same")
+                                                 (assoc :name (:name %))
+                                                 (dissoc :blocked))))
+        ops     (-> changes :redo-changes first :operations)]
+    (t/is (= #{[:opacity 0.7] [:blocked nil]}
+             (into #{} (map (juxt :attr :val)) ops))
+          "the changed and the removed attributes, not the unchanged ones")))
+
