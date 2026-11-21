@@ -25,6 +25,7 @@
    ["undici" :as http]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
+   [app.common.files.helpers :as cfh]
    [app.common.fonts :as cfnt]
    ;; Required for side effects: these register the transit read handlers and
    ;; deftype impls the `get-page` response is decoded into.
@@ -32,6 +33,8 @@
    [app.common.geom.point]
    [app.common.geom.rect]
    [app.common.logging :as l]
+   [app.common.logic.tokens-propagation :as cltp]
+   [app.common.logic.tokens-resolution :as ctr]
    [app.common.transit :as t]
    [app.common.types.fills.impl]
    [app.common.types.objects-map]
@@ -129,13 +132,12 @@
 
 ;; --- shape bundle fetch (backend RPC)
 
-(defn- fetch-objects
-  "Fetches the exported roots and their children from the backend via the
-  `get-page` RPC (`:object-id`, as the browser render path does), using the
-  same auth the exporter uses elsewhere (management key + bearer)."
-  [{:keys [file-id page-id share-id token objects]}]
+(defn- fetch-page
+  "Fetches the page of the export from the backend via the `get-page` RPC,
+  only the roots `root-ids` and their children when given, using the same
+  auth the exporter uses elsewhere (management key + bearer)."
+  [{:keys [file-id page-id share-id token]} root-ids]
   (let [headers (rpc-headers token)
-        root-ids (into #{} (map :id) objects)
         body    (t/encode-str (cond-> {:file-id file-id
                                        :page-id page-id}
                                 (seq root-ids) (assoc :object-id root-ids)
@@ -159,8 +161,46 @@
                                     (p/rejected (ex-info "get-page failed"
                                                          {:status (.-status resp)
                                                           :body resp-body}))))))))
-         (p/fmap t/decode-str)
-         (p/fmap :objects))))
+         (p/fmap t/decode-str))))
+
+(def ^:private token-fonts
+  "Fonts to find the fonts of the font tokens: the builtin and google ones."
+  (delay (into {} (map (juxt :id identity)) (concat cfnt/local-fonts cfnt/catalog))))
+
+(defn- keep-objects
+  "`objects` with only the shapes `root-ids` and their children."
+  [objects root-ids]
+  (into {}
+        (comp (mapcat #(cfh/get-children-with-self objects %))
+              (filter some?)
+              (map (juxt :id identity)))
+        root-ids))
+
+(defn- fetch-objects
+  "Fetches the exported roots and their children, with the shapes set to the
+  current values of their tokens. An out of date page comes whole, since a
+  shape depends on the layouts around it: the boards that hold the roots are
+  set and then the page is reduced to the roots. The backend decides it with
+  the values saved in the file; when the current ones differ, the whole page
+  is fetched to set it."
+  [{:keys [objects] :as params}]
+  (let [root-ids (into #{} (map :id) objects)]
+    (->> (fetch-page params root-ids)
+         (p/mcat
+          (fn [page]
+            (->> (ctr/resolve-for-reader (:tokens page)
+                                         (:tokens-resolved page)
+                                         (not (contains? cf/flags :tokenscript)))
+                 (p/mcat
+                  (fn [resolved]
+                    (let [refetch? (and (seq root-ids)
+                                        (not (:tokens-out-of-date page))
+                                        (ctr/differs-from-saved? page resolved))]
+                      (->> (if refetch? (fetch-page params nil) (p/resolved page))
+                           (p/fmap (fn [page]
+                                     (cond-> (cltp/correct-objects page resolved @token-fonts :ids root-ids)
+                                       (and (or refetch? (:tokens-out-of-date page)) (seq root-ids))
+                                       (keep-objects root-ids))))))))))))))
 
 ;; --- font resolution
 ;;

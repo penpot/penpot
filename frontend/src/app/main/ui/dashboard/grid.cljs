@@ -68,7 +68,9 @@
   (->> (mw/ask! {:cmd :thumbnails/generate-for-file-wasm
                  :revn revn
                  :file-id file-id
-                 :width wasm-thumbnail-width})
+                 :width wasm-thumbnail-width
+                 :custom-fonts (fonts/custom-fonts)
+                 :tokenscript (contains? cf/flags :tokenscript)})
        (rx/map :blob)))
 
 (defn- render-thumbnail-with-svg
@@ -77,7 +79,9 @@
   (->> (mw/ask! {:cmd :thumbnails/generate-for-file
                  :revn revn
                  :file-id file-id
-                 :width thumbnail-width})
+                 :width thumbnail-width
+                 :custom-fonts (fonts/custom-fonts)
+                 :tokenscript (contains? cf/flags :tokenscript)})
        (rx/mapcat
         (fn [{:keys [fonts] :as result}]
           (->> (fonts/render-font-styles fonts)

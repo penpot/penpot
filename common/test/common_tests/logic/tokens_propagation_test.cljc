@@ -7,6 +7,7 @@
 (ns common-tests.logic.tokens-propagation-test
   (:require
    [app.common.files.changes-builder :as pcb]
+   [app.common.files.tokens :as cfo]
    [app.common.logic.tokens-propagation :as cltp]
    [app.common.math :as mth]
    [app.common.test-helpers.compositions :as tho]
@@ -307,6 +308,14 @@
              (get-in (thf/apply-changes file' changes2) [:data :tokens-resolved])))
     (t/testing "undo"
       (t/is (nil? (get-in (thf/apply-undo-changes file' changes) [:data :tokens-resolved]))))))
+
+(t/deftest resolved-values-of-some-pages
+  (let [file (-> (thf/sample-file :file1)
+                 (tho/add-rect :rect1)
+                 (apply-tokens :rect1 {:r1 "radius"})
+                 (assoc-in [:data :tokens-resolved] {"radius" 4 "unused" 1}))
+        page (thf/current-page file)]
+    (t/is (= {"radius" 4} (cfo/get-pages-resolved (:data file) [page])))))
 
 (t/deftest readers-correct-out-of-date-shapes
   (let [file     (-> (thf/sample-file :file1)

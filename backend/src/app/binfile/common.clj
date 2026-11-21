@@ -781,6 +781,18 @@
         (cfo/detach-tokens-source data))
       data)))
 
+(defn get-tokens-source-lib
+  "The tokens lib of the tokens source of the file of `data`: its own, or the
+  one of the library it takes the tokens from. Nil when that library no
+  longer exists."
+  [cfg data]
+  (let [source-id (cfo/get-tokens-source data)]
+    (if (or (nil? source-id) (= source-id (:id data)))
+      (cfo/get-tokens-lib data)
+      (some-> (get-file cfg source-id :read-only? true :throw-if-not-exists? false)
+              :data
+              cfo/get-tokens-lib))))
+
 (defn embed-assets
   [cfg data file-id]
   (let [library-ids (get-libraries cfg [file-id])

@@ -57,14 +57,29 @@ const config = {
   plugins: [fixReactVirtualized, rebuildNotify, watchExtraDirPlugin],
 };
 
+// The libraries of the token resolution for the web worker, which loads
+// them with `importScripts`
+const workerConfig = {
+  entryPoints: ["scripts/worker/token-libs.js"],
+  bundle: true,
+  format: "iife",
+  // A worker has no `window`, so the libraries look at `process`
+  banner: {
+    js: 'var global = globalThis;\nvar process = globalThis.process || { env: {}, platform: "browser", cwd: function () { return "/"; } };',
+  },
+  outfile: "resources/public/js/worker/token-libs.js",
+  plugins: [rebuildNotify],
+};
+
 async function watch() {
   let ctx = await esbuild.context(config);
-  return ctx.watch();
+  let workerCtx = await esbuild.context(workerConfig);
+  return Promise.all([ctx.watch(), workerCtx.watch()]);
 }
 
 if (process.argv.includes("--watch")) {
   await watch();
 } else {
-  const localConfig = { ...config, minify: true };
-  await esbuild.build(localConfig);
+  await esbuild.build({ ...config, minify: true });
+  await esbuild.build({ ...workerConfig, minify: true });
 }

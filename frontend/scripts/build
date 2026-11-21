@@ -54,6 +54,7 @@ pnpm run build:app:libs;
 pnpm run build:app:assets;
 
 sed -i "s/\.\/render.js/.\/render.js?version=$VERSION_TAG/g" resources/public/js/worker/main*.js
+sed -i "s/\.\/token-libs.js/.\/token-libs.js?version=$VERSION_TAG/g" resources/public/js/worker/main*.js
 
 rsync -ar resources/public/ target/dist/
 

@@ -633,24 +633,41 @@
 
 ;; --- Component: Viewer
 
+(defn- page-pending?
+  "True when the route asks for the page `page-id`, or the first one, the
+  file of the viewer `data` has it, and the viewer shows another one: it is
+  about to show it (`dv/show-page`)."
+  [{:keys [file] :as data} page-id]
+  (and (contains? (dm/get-in file [:data :pages-index])
+                  (or page-id (first (dm/get-in file [:data :pages]))))
+       (not= page-id (:page-id data))))
+
 (mf/defc viewer*
   [{:keys [file-id share-id page-id] :as props}]
-  (mf/with-effect [file-id page-id share-id]
-    (let [params {:file-id file-id
-                  :page-id page-id
-                  :share-id share-id}]
-      (st/emit! (dv/initialize params))
-      (fn []
-        (st/emit! (dv/finalize params)))))
+  (let [data     (mf/deref refs/viewer-data)
+        pending? (and (some? data) (page-pending? data page-id))]
 
-  (if-let [data (mf/deref refs/viewer-data)]
-    (let [props (obj/merge props #js {:data data :key (dm/str file-id)})]
-      [:*
-       [:> modal-container*]
-       [:> viewer-content* props]])
+    ;; The file is fetched once, with every page
+    (mf/with-effect [file-id share-id]
+      (let [params {:file-id file-id
+                    :page-id page-id
+                    :share-id share-id}]
+        (st/emit! (dv/initialize params))
+        (fn []
+          (st/emit! (dv/finalize params)))))
 
-    [:> loader*  {:title (tr "labels.loading")
-                  :overlay true}]))
+    (mf/with-effect [pending? page-id share-id]
+      (when pending?
+        (st/emit! (dv/show-page {:page-id page-id :share-id share-id}))))
+
+    (if (and (some? data) (not pending?))
+      (let [props (obj/merge props #js {:data data :key (dm/str file-id)})]
+        [:*
+         [:> modal-container*]
+         [:> viewer-content* props]])
+
+      [:> loader*  {:title (tr "labels.loading")
+                    :overlay true}])))
 
 
 (mf/defc viewer-page*

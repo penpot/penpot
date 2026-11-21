@@ -8,6 +8,7 @@
   (:require
    [app.binfile.common :as bfc]
    [app.common.types.shape :as cts]
+   [app.common.types.tokens-lib :as ctob]
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.features.fdata :as fdata]
@@ -15,6 +16,7 @@
    [app.rpc.commands.viewer :as viewer]
    [app.util.pointer-map :as pmap]
    [backend-tests.helpers :as th]
+   [clojure.datafy :refer [datafy]]
    [clojure.string :as str]
    [clojure.test :as t]
    [datoteka.fs :as fs]))
@@ -915,6 +917,163 @@
                  (set (keys (get-in by-id [(:id lib2) :data :components])))))
         (t/is (= [] (get-in by-id [(:id lib2) :data :pages])))))))
 
+(t/deftest pages-carry-the-values-of-their-tokens
+  (let [prof     (th/create-profile* 1 {:is-active true})
+        file     (th/create-file* 1 {:profile-id (:id prof)
+                                     :project-id (:default-project-id prof)})
+        page-id  (get-in file [:data :pages 0])
+        frame-id (uuid/next)
+        rect-id  (uuid/next)
+        other-id (uuid/next)]
+    (update-file! :profile-id (:id prof)
+                  :file-id (:id file)
+                  :changes [{:type :add-obj
+                             :page-id page-id
+                             :id frame-id
+                             :parent-id uuid/zero
+                             :frame-id uuid/zero
+                             :obj (cts/setup-shape {:id frame-id :name "frame" :type :frame})}
+                            {:type :add-obj
+                             :page-id page-id
+                             :id rect-id
+                             :parent-id frame-id
+                             :frame-id frame-id
+                             :obj (-> (cts/setup-shape {:id rect-id :name "rect" :type :rect})
+                                      (assoc :applied-tokens {:r1 "radius"}
+                                             :token-values {:r1 4}))}
+                            {:type :add-obj
+                             :page-id page-id
+                             :id other-id
+                             :parent-id uuid/zero
+                             :frame-id uuid/zero
+                             :obj (cts/setup-shape {:id other-id :name "other" :type :frame})}
+                            {:type :set-tokens-resolved
+                             :values {"radius" 12 "unused" 1}}])
+
+    (t/testing "get-page tells the values of its tokens, and whether it is out of date"
+      (let [{:keys [result error]} (th/command! {::th/type :get-page
+                                                 ::rpc/profile-id (:id prof)
+                                                 :file-id (:id file)
+                                                 :page-id page-id
+                                                 :object-id frame-id})]
+        (t/is (nil? error))
+        (t/is (= {"radius" 12} (:tokens-resolved result)))
+        (t/is (true? (:tokens-out-of-date result)))
+        (t/is (contains? (:objects result) uuid/zero)
+              "an out of date page comes whole, to set it before keeping the object")))
+
+    (t/testing "get-page checks only the boards that hold the objects"
+      (let [{:keys [result error]} (th/command! {::th/type :get-page
+                                                 ::rpc/profile-id (:id prof)
+                                                 :file-id (:id file)
+                                                 :page-id page-id
+                                                 :object-id other-id})]
+        (t/is (nil? error))
+        (t/is (nil? (:tokens-out-of-date result)))
+        (t/is (= #{other-id} (set (keys (:objects result)))))))
+
+    (t/testing "the view only bundle carries the values of the tokens of its pages"
+      (let [{:keys [result error]} (th/command! {::th/type :get-view-only-bundle
+                                                 ::rpc/profile-id (:id prof)
+                                                 :file-id (:id file)})]
+        (t/is (nil? error))
+        (t/is (= {"radius" 12} (:tokens-resolved result)))))))
+
+(defn- token-changes
+  "Changes that add the active set `set-id` with `tokens`, a map of token
+  name to `[type value]`."
+  [set-id tokens]
+  (concat
+   [{:type :set-token-set
+     :id set-id
+     :attrs (datafy (ctob/make-token-set :id set-id :name "base"))}]
+   (for [[token-name [type value]] tokens]
+     (let [token (ctob/make-token :id (uuid/next) :name token-name :type type :value value)]
+       {:type :set-token
+        :set-id set-id
+        :token-id (:id token)
+        :attrs (datafy token)}))
+   [{:type :set-tokens-status :theme-ids #{} :set-ids #{set-id}}]))
+
+(defn- rect-change
+  [page-id rect-id applied-tokens]
+  {:type :add-obj
+   :page-id page-id
+   :id rect-id
+   :parent-id uuid/zero
+   :frame-id uuid/zero
+   :obj (-> (cts/setup-shape {:id rect-id :name "rect" :type :rect})
+            (assoc :applied-tokens applied-tokens))})
+
+(def ^:private tokens
+  {"radius"  [:border-radius "{base}"]
+   "base"    [:border-radius "12"]
+   "shadow"  [:shadow [{:offset-x "{base}" :offset-y "2" :blur "4" :spread "0" :color "{brand}" :inset false}]]
+   "brand"   [:color "#ff0000"]
+   "unused"  [:border-radius "{base}"]})
+
+(t/deftest pages-carry-the-tokens-they-use
+  (let [prof    (th/create-profile* 1 {:is-active true})
+        file    (th/create-file* 1 {:profile-id (:id prof)
+                                    :project-id (:default-project-id prof)})
+        page-id (get-in file [:data :pages 0])
+        set-id  (uuid/next)]
+    (update-file! :profile-id (:id prof)
+                  :file-id (:id file)
+                  :changes (concat (token-changes set-id tokens)
+                                   [(rect-change page-id (uuid/next) {:r1 "radius" :shadow "shadow"})]))
+
+    (t/testing "the view only bundle carries the tokens its pages apply and the ones they reference"
+      (let [{:keys [result error]} (th/command! {::th/type :get-view-only-bundle
+                                                 ::rpc/profile-id (:id prof)
+                                                 :file-id (:id file)})]
+        (t/is (nil? error))
+        (t/is (= #{"radius" "base" "shadow" "brand"} (set (keys (:tokens result)))))
+        (t/is (= {:name "radius" :type :border-radius :value "{base}"}
+                 (get-in result [:tokens "radius"])))))
+
+    (t/testing "get-page carries them too"
+      (let [{:keys [result error]} (th/command! {::th/type :get-page
+                                                 ::rpc/profile-id (:id prof)
+                                                 :file-id (:id file)
+                                                 :page-id page-id})]
+        (t/is (nil? error))
+        (t/is (= #{"radius" "base" "shadow" "brand"} (set (keys (:tokens result)))))))
+
+    (t/testing "the data of the thumbnail carries them too"
+      (let [{:keys [result error]} (th/command! {::th/type :get-file-data-for-thumbnail
+                                                 ::rpc/profile-id (:id prof)
+                                                 :file-id (:id file)})]
+        (t/is (nil? error))
+        (t/is (= #{"radius" "base" "shadow" "brand"} (set (keys (get-in result [:page :tokens])))))))))
+
+(t/deftest pages-carry-the-tokens-of-their-tokens-source
+  (let [prof     (th/create-profile* 1 {:is-active true})
+        library  (th/create-file* 1 {:profile-id (:id prof)
+                                     :project-id (:default-project-id prof)
+                                     :is-shared true})
+        file     (th/create-file* 2 {:profile-id (:id prof)
+                                     :project-id (:default-project-id prof)})
+        page-id  (get-in file [:data :pages 0])
+        set-id   (uuid/next)]
+    (update-file! :profile-id (:id prof)
+                  :file-id (:id library)
+                  :changes (token-changes set-id {"radius" [:border-radius "{base}"]
+                                                  "base"   [:border-radius "12"]}))
+    (th/link-file-to-library* {:file-id (:id file) :library-id (:id library)})
+    (update-file! :profile-id (:id prof)
+                  :file-id (:id file)
+                  :changes [{:type :set-tokens-source :file-id (:id file) :library-id (:id library)}
+                            {:type :set-tokens-status :theme-ids #{} :set-ids #{set-id}}
+                            (rect-change page-id (uuid/next) {:r1 "radius"})])
+
+    (let [{:keys [result error]} (th/command! {::th/type :get-view-only-bundle
+                                               ::rpc/profile-id (:id prof)
+                                               :file-id (:id file)})]
+      (t/is (nil? error))
+      (t/is (= {"radius" {:name "radius" :type :border-radius :value "{base}"}
+                "base"   {:name "base" :type :border-radius :value "12"}}
+               (:tokens result))))))
 (t/deftest view-only-bundle-does-not-expose-the-storage-pointer
   ;; Both the file and its libraries are moved to cold storage, so their file
   ;; maps carry the internal pointer unless the response strips it.

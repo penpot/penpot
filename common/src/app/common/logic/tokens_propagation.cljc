@@ -819,3 +819,17 @@
     (if (empty? (:redo-changes changes))
       (:objects page)
       (pcb/lookup-objects changes))))
+
+(defn reader-objects
+  "The objects of `page`, fetched by a reader, set to `resolved-tokens` where
+  they may change the shapes `ids`. A page that came whole (`whole?`, or
+  out of date) is reduced to `ids` and their children."
+  [page resolved-tokens fonts ids whole?]
+  (cond-> (correct-objects page resolved-tokens fonts :ids ids)
+    (and (seq ids) (or whole? (:tokens-out-of-date page)))
+    (as-> objects
+          (into {}
+                (comp (mapcat #(cfh/get-children-with-self objects %))
+                      (filter some?)
+                      (map (juxt :id identity)))
+                ids))))

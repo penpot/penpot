@@ -1313,7 +1313,8 @@
                                         (:styles))]
              (t/is (some? (:applied-tokens text-1')))
              (t/is (= (:font-family (:applied-tokens text-1')) (:name token-target')))
-             (t/is (= (:font-family style-text-blocks) (:font-id txt/default-text-attrs)))
+             (t/is (= "Arial" (:font-family style-text-blocks))
+                   "a family written as a string is applied like a list of one")
              (t/testing "WASM text mocks were exercised"
                (t/is (pos? (thw/call-count :set-shape-text-content)))
                (t/is (pos? (thw/call-count :get-text-dimensions))))))

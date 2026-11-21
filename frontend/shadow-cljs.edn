@@ -103,12 +103,17 @@
    {:main
     {:entries [app.worker]
      :web-worker true
-     :prepend-js "importScripts('./render.js');"
+     :prepend-js "importScripts('./render.js'); importScripts('./token-libs.js');"
      :depends-on #{}}}
 
    :js-options
    {:entry-keys ["module" "browser" "main"]
-    :export-conditions ["module" "import", "browser" "require" "default"]}
+    :export-conditions ["module" "import", "browser" "require" "default"]
+    ;; Bundled apart by esbuild (`scripts/build-libs.js`): Closure can't
+    ;; compile them
+    :resolve {"style-dictionary" {:target :global :global "penpotStyleDictionary"}
+              "@tokens-studio/sd-transforms" {:target :global :global "penpotSdTransforms"}
+              "tinycolor2" {:target :global :global "penpotTinycolor"}}}
 
    :compiler-options
    {:output-feature-set :es2020

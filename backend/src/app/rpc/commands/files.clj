@@ -16,6 +16,7 @@
    [app.common.files.stats :as cfs]
    [app.common.files.tokens :as cfo]
    [app.common.logging :as l]
+   [app.common.logic.tokens-propagation :as cltp]
    [app.common.schema :as sm]
    [app.common.schema.desc-js-like :as-alias smdj]
    [app.common.time :as ct]
@@ -499,9 +500,31 @@
                 :code :object-not-found
                 :hint "object not found"))
 
-    (cond-> (prune-thumbnails page)
-      (some? object-id)
-      (prune-objects object-id))))
+    (let [;; The page's tokens and saved values, for readers to set stale shapes
+          tokens     (cfo/get-pages-tokens (:data file)
+                                           (bfc/get-tokens-source-lib cfg (:data file))
+                                           [page])
+          resolved   (cfo/get-pages-resolved (:data file) [page])
+          object-ids (cond (uuid? object-id) [object-id]
+                           (some? object-id) (vec object-id))
+          out-of-date (and (some? resolved)
+                           (cltp/page-out-of-date? page
+                                                   (cltp/values->resolved-tokens resolved)
+                                                   :ids object-ids))]
+      (cond-> (prune-thumbnails page)
+        ;; An out of date page goes whole: the readers set it and then
+        ;; keep the objects
+        (and (some? object-id) (not out-of-date))
+        (prune-objects object-id)
+
+        (some? tokens)
+        (assoc :tokens tokens)
+
+        (some? resolved)
+        (assoc :tokens-resolved resolved)
+
+        out-of-date
+        (assoc :tokens-out-of-date true)))))
 
 (def schema:get-page
   [:map {:title "get-page"}
