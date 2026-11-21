@@ -562,7 +562,8 @@
                                             ;; the transition so the next full frame (the one
                                             ;; that actually shows this page) removes the blur.
                                             (wasm.api/arm-page-transition-end!)
-                                            (st/emit! (dw/update-page-position-data))))
+                                            (st/emit! (dw/page-shapes-loaded page-id)
+                                                      (dw/update-page-position-data))))
             (reset! initialized? true))
 
           (when (and (some? vern) (not= vern (mf/ref-val last-vern-ref)))

@@ -530,7 +530,11 @@
     (watch [_ state _]
       (when (seq (:redo-changes changes))
         (let [undo-group (d/nilv (:undo-group changes) (uuid/next))]
-          (rx/of (dch/commit-changes (assoc changes :undo-group undo-group))
+          (rx/of (dch/commit-changes (-> changes
+                                         (assoc :undo-group undo-group)
+                                         ;; The propagation that follows sets the
+                                         ;; current page, not its check after commits
+                                         (update :tags (fnil conj #{}) :token-propagation)))
                  (propagate-workspace-tokens {:previous-tokens (dwta/active-tokens state)
                                               :undo-group      undo-group})))))))
 

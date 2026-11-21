@@ -146,7 +146,9 @@
    [frontend-tests.tokens.context-menu-test]
    [frontend-tests.tokens.copy-paste-props-test]
    [frontend-tests.tokens.export-modal-test]
+   [frontend-tests.tokens.correction-test]
    [frontend-tests.tokens.import-export-test]
+   [frontend-tests.tokens.leader-test]
    [frontend-tests.tokens.logic.token-actions-test]
    [frontend-tests.tokens.logic.token-data-test]
    [frontend-tests.tokens.logic.token-dimension-application-test]
@@ -154,6 +156,9 @@
    [frontend-tests.tokens.logic.tokens-source-test]
    [frontend-tests.tokens.logic.tokens-status-test]
    [frontend-tests.tokens.lookup-test]
+   [frontend-tests.tokens.progress-test]
+   [frontend-tests.tokens.propagation-test]
+   [frontend-tests.tokens.readers-test]
    [frontend-tests.tokens.referenced-token-value-test]
    [frontend-tests.tokens.shadow-form-test]
    [frontend-tests.tokens.style-dictionary-test]
@@ -396,6 +401,11 @@
    'frontend-tests.tokens.copy-paste-props-test
    'frontend-tests.tokens.context-menu-test
    'frontend-tests.tokens.export-modal-test
+   'frontend-tests.tokens.correction-test
+   'frontend-tests.tokens.readers-test
+   'frontend-tests.tokens.propagation-test
+   'frontend-tests.tokens.progress-test
+   'frontend-tests.tokens.leader-test
    'frontend-tests.tokens.import-export-test
    'frontend-tests.tokens.lookup-test
    'frontend-tests.tokens.logic.token-actions-test

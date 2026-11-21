@@ -50,6 +50,8 @@
    [app.main.data.workspace.thumbnails :as dwt]
    [app.main.data.workspace.thumbnails-wasm :as dwt.wasm]
    [app.main.data.workspace.tokens.application :as dwta]
+   [app.main.data.workspace.tokens.correction :as dwtc]
+   [app.main.data.workspace.tokens.leader :as leader]
    [app.main.data.workspace.tokens.propagation :as dwtp]
    [app.main.data.workspace.transforms :as dwtr]
    [app.main.data.workspace.undo :as dwu]
@@ -781,7 +783,9 @@
             (fn [page-id ids]
               (rx/merge
                (->> stream
-                    (rx/filter (ptk/type? ::dwpg/initialize-page))
+                    ;; Once the page holds the values of its tokens
+                    (rx/filter (ptk/type? ::dwtc/tokens-ready))
+                    (rx/filter #(= page-id (:page-id (deref %))))
                     (rx/take 1)
                     (rx/observe-on :async)
                     (rx/mapcat (fn [_] (select-and-zoom ids))))
@@ -841,7 +845,7 @@
                               ch/process-changes changes)))
 
       ptk/WatchEvent
-      (watch [_ _ stream]
+      (watch [_ state stream]
         (let [stopper-s (rx/filter (ptk/type? ::ext-library-changed) stream)]
           (->>
            (rx/merge
@@ -849,7 +853,15 @@
                  (rx/delay 5000)
                  (rx/map fetch-library-thumbnails))
             (when (ch/tokens-lib-changed? changes)
-              (rx/of (dwtp/propagate-workspace-tokens {:previous-tokens @previous-tokens*})))
+              (if (dwta/lazy?)
+                ;; The current page is set by the session chosen for it,
+                ;; and the thumbnails cleared by the one chosen for the file
+                (rx/concat
+                 (rx/of (dwtc/check-page {:ids #{} :remote? true}))
+                 (when (leader/file-leader? (:workspace-presence state) (:session-id state))
+                   (rx/of (dwtp/propagate-workspace-tokens {:previous-tokens @previous-tokens*
+                                                            :thumbnails-only? true}))))
+                (rx/of (dwtp/propagate-workspace-tokens {:previous-tokens @previous-tokens*}))))
             (when (ch/notifiable-token-change-occured? changes)
               (rx/of (ntf/info (tr "workspace.tokens.notifications.source-sets-or-themes-updated")))))
 
@@ -1874,13 +1886,16 @@
                      (rx/map #(update-component-thumbnails (into #{} %))))
 
                 ;; Components changed by a token propagation are marked as
-                ;; modified once, when the propagation finishes.
+                ;; modified once, when the propagation finishes, or when the
+                ;; page check is done with a page.
                 (->> component-events-s
                      (rx/filter (ptk/type? ::propagated-component-changed))
                      (rx/map deref)
                      (rx/buffer-until
                       (->> stream
-                           (rx/filter (ptk/type? ::dwtp/propagation-finished))
+                           (rx/filter #(contains? #{::dwtp/propagation-finished
+                                                    ::dwtc/tokens-ready}
+                                                  (ptk/type %)))
                            (rx/delay propagation-tail-ms)))
                      (rx/filter seq)
                      (rx/mapcat (fn [changed]

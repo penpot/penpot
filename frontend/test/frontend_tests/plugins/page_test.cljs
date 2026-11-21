@@ -11,6 +11,7 @@
    [app.common.test-helpers.shapes :as cths]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.pages :as dwpg]
+   [app.main.data.workspace.tokens.correction :as dwtc]
    [app.main.store :as st]
    [app.plugins.api :as api]
    [app.plugins.page :as page]
@@ -77,11 +78,13 @@
       (t/is (= plugin-id (obj/get sb2 "$plugin"))))))
 
 (defn- mock-page-initialized
-  "Simulates the two effects of initialize-page* without routing:
-  updates current-page-id in state, then emits the public ::dwpg/initialized event."
+  "Simulates the effects of opening a page without routing: updates
+  current-page-id in state, then emits the public ::dwpg/initialized event
+  and the ::dwtc/tokens-ready that follows it."
   [store page-id]
   (ptk/emit! store #(assoc % :current-page-id page-id))
-  (ptk/emit! store (ptk/data-event ::dwpg/initialized page-id)))
+  (ptk/emit! store (ptk/data-event ::dwpg/initialized page-id))
+  (ptk/emit! store (dwtc/tokens-ready page-id)))
 
 (t/deftest test-open-page-returns-promise
   (let [^js context (:context (setup))

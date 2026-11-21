@@ -20,6 +20,7 @@
    [app.main.data.workspace.pages :as dwpg]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.thumbnails-wasm :as dwt.wasm]
+   [app.main.data.workspace.tokens.correction :as dwtc]
    [app.main.data.workspace.tokens.propagation :as dwtp]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -207,6 +208,9 @@
 
 (t/deftest ^:async a-propagation-in-the-background-marks-the-component-once
   (await (marks-the-component-once (ptk/data-event ::dwtp/propagation-finished nil))))
+
+(t/deftest ^:async the-page-check-marks-the-component-once
+  (await (marks-the-component-once (ptk/data-event ::dwtc/tokens-ready {}))))
 
 ;; Scenario: a rollback reverts the opacity of the main's child. A rollback
 ;; is not a commit, so the change watch sees no component change.

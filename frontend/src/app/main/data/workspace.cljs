@@ -65,6 +65,7 @@
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.texts :as dwtxt]
    [app.main.data.workspace.thumbnails :as dwth]
+   [app.main.data.workspace.tokens.correction :as dwtc]
    [app.main.data.workspace.tokens.progress :as dwtpr]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
@@ -216,6 +217,11 @@
               (rx/of (ptk/data-event ::all-libraries-resolved {:file-id file-id})))
              (rx/take-until stopper-s))))))
 
+
+(defn page-shapes-loaded
+  "Event emitted when the renderer holds the shapes of `page-id`."
+  [page-id]
+  (ptk/data-event ::page-shapes-loaded {:page-id page-id}))
 
 (defn update-page-position-data
   ([]
@@ -482,6 +488,7 @@
                        (rx/of (dpj/initialize-project (:project-id file))
                               (dwn/initialize team-id file-id)
                               (dwsl/initialize-shape-layout)
+                              (dwtc/initialize file-id)
                               (dwtpr/initialize)
                               (dwtxt/initialize-text-reflow)
                               (fetch-libraries file-id features)
@@ -649,6 +656,7 @@
         (rx/of (dwn/finalize file-id)
                (dpj/finalize-project project-id)
                (dwsl/finalize-shape-layout)
+               (dwtc/finalize)
                (dwtpr/finalize)
                (dwtxt/finalize-text-reflow)
                (dwcl/stop-picker)
