@@ -3681,6 +3681,36 @@
                                           :revn 0})]
         (t/is (= :not-found (th/ex-type error)))))))
 
+(t/deftest clients-without-token-values-cant-save
+  (let [prof     (th/create-profile* 1 {:is-active true})
+        file     (th/create-file* 1 {:profile-id (:id prof)
+                                     :project-id (:default-project-id prof)})
+        page-id  (get-in file [:data :pages 0])
+        save     (fn [features revn]
+                   (let [id (uuid/next)]
+                     (th/command! {::th/type :update-file
+                                   ::rpc/profile-id (:id prof)
+                                   :id (:id file)
+                                   :session-id (uuid/next)
+                                   :revn revn
+                                   :vern 0
+                                   :features features
+                                   :changes [{:type :add-obj
+                                              :page-id page-id
+                                              :id id
+                                              :parent-id uuid/zero
+                                              :frame-id uuid/zero
+                                              :obj (cts/setup-shape {:id id :name "rect" :type :rect})}]})))
+        current  (cfeat/get-enabled-features cf/flags)]
+
+    (t/testing "a client that records token values saves"
+      (t/is (contains? current "token-values/v1"))
+      (t/is (nil? (:error (save current 0)))))
+
+    (t/testing "a client from before the token values is refused"
+      (let [{:keys [error]} (save (disj current "token-values/v1") 1)]
+        (t/is (th/ex-info? error))
+        (t/is (= :feature-not-supported (th/ex-code error)))))))
 (t/deftest get-team-shared-files-does-not-expose-the-storage-pointer
   (let [profile (th/create-profile* 1 {:is-active true})
         file    (th/create-file* 1 {:profile-id (:id profile)

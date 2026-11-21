@@ -369,6 +369,34 @@
     (t/is (every? #(= % "14") original-font-sizes))
     (t/is (every? #(= % "32") updated-font-sizes))))
 
+(t/deftest test-transform-nodes
+  (let [content  (update-in content-base [:children 0 :children 0 :children]
+                            #(conj % (assoc line :text " again")))
+        visited  (atom [])
+        result   (cttx/transform-nodes
+                  (fn [node]
+                    (swap! visited conj (or (:type node) (:text node)))
+                    (cond-> node
+                      (cttx/is-text-node? node) (assoc :font-size "20")))
+                  content)
+        texts    (cttx/node-seq cttx/is-text-node? result)]
+
+    (t/testing "transforms every text node"
+      (t/is (= ["20" "20"] (map :font-size texts)))
+      (t/is (= ["hello world" " again"] (map :text texts))))
+
+    (t/testing "visits children before their parent"
+      (t/is (= ["hello world" " again" "paragraph" "paragraph-set" "root"] @visited)))
+
+    (t/testing "keeps the nodes that do not match"
+      (let [untouched (cttx/transform-nodes cttx/is-paragraph-node? identity content)]
+        (t/is (identical? (get-in content [:children 0 :children 0 :children 0])
+                          (get-in untouched [:children 0 :children 0 :children 0])))))
+
+    (t/testing "accepts a vector of nodes"
+      (t/is (= ["20"]
+               (->> (cttx/transform-nodes #(assoc % :font-size "20") [line])
+                    (map :font-size)))))))
 (t/deftest test-list-paragraph
   (t/is (true? (cttx/list-paragraph? {:type "paragraph" :list-style-type "disc"})))
   (t/is (false? (cttx/list-paragraph? {:type "paragraph" :list-style-type "none"})))

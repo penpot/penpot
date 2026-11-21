@@ -58,7 +58,8 @@
     "text-editor-wasm/v1"
     "text-editor-wasm/v1-html-paste"
     "render-wasm/v1"
-    "variants/v1"})
+    "variants/v1"
+    "token-values/v1"})
 
 ;; A set of features enabled by default
 (def default-features
@@ -70,7 +71,8 @@
     "plugins/runtime"
     "design-tokens/v1"
     "tokens/numeric-input"
-    "variants/v1"})
+    "variants/v1"
+    "token-values/v1"})
 
 ;; A set of features which only affects on frontend and can be enabled
 ;; and disabled freely by the user any time. This features does not
@@ -108,7 +110,8 @@
         "fdata/shape-data-type"
         "fdata/path-data"
         "tokens/numeric-input"
-        "variants/v1"}
+        "variants/v1"
+        "token-values/v1"}
       (into frontend-only-features)
       (into backend-only-features)))
 

@@ -21,6 +21,7 @@
    [app.common.types.file :as ctf]
    [app.common.types.pages-list :as ctpl]
    [app.common.types.shape :as cts]
+   [app.common.types.token-values :as cttv]
    [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]))
 
@@ -634,6 +635,18 @@
           (update shape :touched ctk/set-touched-group :content-group))]
 
     (log/debug :hint "repairing shape :invalid-text-touched" :id (:id shape) :name (:name shape) :page-id page-id)
+    (-> (pcb/empty-changes nil page-id)
+        (pcb/with-file-data file-data)
+        (pcb/update-shapes [(:id shape)] repair-shape))))
+
+(defmethod repair-error :token-values-mismatch
+  [_ {:keys [shape page-id] :as error} file-data _]
+  (let [repair-shape
+        (fn [shape]
+          (log/debug :hint "  -> remove the values without a token")
+          (update shape :token-values #(apply dissoc % (cttv/orphan-attrs shape))))]
+
+    (log/debug :hint "repairing shape :token-values-mismatch" :id (:id shape) :name (:name shape) :page-id page-id)
     (-> (pcb/empty-changes nil page-id)
         (pcb/with-file-data file-data)
         (pcb/update-shapes [(:id shape)] repair-shape))))

@@ -155,6 +155,12 @@
     :token-import-from-library
     :token-typography-row
     :token-lib-sync
+    ;; A change of the tokens only sets the current page and the main
+    ;; components; the other pages are set when they are opened or read
+    :lazy-token-propagation
+    ;; With `lazy-token-propagation`, sets the other pages in the background
+    ;; right after a change of the tokens
+    :lazy-token-propagation-drain
 
     ;; Only for developtment.
     :transit-readable-response
@@ -251,6 +257,7 @@
    :enable-token-combobox
    :enable-custom-shortcuts
    :enable-token-lib-sync
+   :enable-lazy-token-propagation-drain
    :enable-admin-console])
 
 (defn parse

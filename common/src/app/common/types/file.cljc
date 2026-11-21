@@ -91,7 +91,13 @@
    [:tokens-source {:optional true} ::sm/uuid]                ;; The tokens-lib may be in this file or in an external library
    [:tokens-lib {:optional true} ctob/schema:tokens-lib]
    [:tokens-status {:optional true} ctos/schema:tokens-status]
-   [:own-tokens-status {:optional true} ctos/schema:tokens-status]])  ;; Kept aside while the tokens source is an external library
+   [:own-tokens-status {:optional true} ctos/schema:tokens-status]  ;; Kept aside while the tokens source is an external library
+   ;; The resolved values of the active tokens, saved by the editors so
+   ;; the readers can set the shapes without resolving them
+   [:tokens-resolved {:optional true}
+    [:map-of {:gen/max 2}
+     [:string {:gen/elements ["color.primary" "radius"]}]
+     [:any {:gen/elements [1 "#ff0000"]}]]]])
 
 (def schema:file-metadata
   [:map {:title "Metadata"}

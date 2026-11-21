@@ -11,8 +11,10 @@
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
    [app.common.files.shapes-helpers :as cfsh]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.logic.variant-properties :as clvp]
+   [app.common.math :as mth]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.pages-list :as ctpl]
@@ -25,6 +27,14 @@
    [clojure.set :as set]))
 
 (def text-typography-style-attrs (set ctt/text-typography-attrs))
+
+(defn- relative-position
+  "Position of `shape` on `axis` (`:x` or `:y`) relative to its parent board,
+  the one the position tokens give."
+  [objects shape axis]
+  (let [bbox  (-> shape :points grc/points->rect)
+        frame (cfh/get-parent-frame objects shape)]
+    (- (get bbox axis) (get frame axis 0))))
 
 (defn- generate-unapply-tokens
   "When updating attributes that have a token applied, we must unapply it, because the value
@@ -62,7 +72,12 @@
                                    (not (zero? changed-item-index))
                                    (= (first (get shape attr))
                                       (first (get (get new-objects shape-id) attr)))))
-                token-attrs (when-not later-item?
+                ;; Position tokens are relative to the parent board
+                same-place? (and (contains? #{:x :y} attr)
+                                 (when-let [new-shape (get new-objects shape-id)]
+                                   (mth/close? (relative-position objects shape attr)
+                                               (relative-position new-objects new-shape attr))))
+                token-attrs (when-not (or later-item? same-place?)
                               (if (and (cfh/text-shape? shape) (= attr :content))
                                 (text-changed-attrs shape)
                                 (cto/shape-attr->token-attrs attr changed-sub-attr)))]
@@ -85,13 +100,14 @@
     (reduce check-shape changes mod-obj-changes)))
 
 (defn generate-update-shapes
-  [changes ids update-fn objects {:keys [attrs changed-sub-attr changed-item-index ignore-tree ignore-touched with-objects? translation? skip-grid-reassignment?]}]
+  [changes ids update-fn objects {:keys [attrs changed-sub-attr changed-item-index ignore-tree ignore-touched with-objects? translation? skip-grid-reassignment? derived?]}]
   (let [changes   (reduce
                    (fn [changes id]
                      (let [opts {:attrs attrs
                                  :ignore-geometry? (get ignore-tree id)
                                  :ignore-touched ignore-touched
-                                 :with-objects? with-objects?}]
+                                 :with-objects? with-objects?
+                                 :derived? derived?}]
                        (pcb/update-shapes changes [id] update-fn (d/without-nils opts))))
                    (cond-> changes
                      (some? objects) (pcb/with-objects objects))

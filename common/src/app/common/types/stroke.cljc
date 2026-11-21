@@ -65,3 +65,69 @@
          (side-width stroke :stroke-width-left))
     :simple
     :multiple))
+
+(def ^:private stroke-style-attrs
+  [:stroke-style
+   :stroke-alignment
+   :stroke-width
+   :stroke-dash
+   :stroke-gap
+   :stroke-width-top
+   :stroke-width-right
+   :stroke-width-bottom
+   :stroke-width-left
+   :stroke-cap-start
+   :stroke-cap-end
+   :hidden])
+
+(defn build-stroke-style-attrs
+  "The style attributes of `stroke`, with the defaults of a new stroke for
+  the missing ones."
+  [stroke]
+  (let [attrs (select-keys stroke stroke-style-attrs)]
+    (cond-> attrs
+      (not (contains? attrs :stroke-width))
+      (assoc :stroke-width 1)
+
+      (not (contains? attrs :stroke-style))
+      (assoc :stroke-style :solid)
+
+      (not (contains? attrs :stroke-alignment))
+      (assoc :stroke-alignment :inner)
+
+      :always
+      (d/without-nils))))
+
+(defn update-shape-stroke-color
+  "Given a shape, update color attributes on the stroke on the specified
+  `position`; if no stroke is found a new empty stroke is created."
+  [shape position color]
+  (update shape :strokes
+          (fn [strokes]
+            (let [stroke (if (nil? strokes)
+                           (build-stroke-style-attrs nil)
+                           (build-stroke-style-attrs (get strokes position)))
+                  stroke (cond-> (build-stroke-style-attrs stroke)
+                           (contains? color :color)
+                           (assoc :stroke-color (:color color))
+
+                           (contains? color :ref-id)
+                           (assoc :stroke-color-ref-id (:ref-id color))
+
+                           (contains? color :ref-file)
+                           (assoc :stroke-color-ref-file (:ref-file color))
+
+                           (contains? color :gradient)
+                           (assoc :stroke-color-gradient (:gradient color))
+
+                           (contains? color :opacity)
+                           (assoc :stroke-opacity (:opacity color))
+
+                           (contains? color :image)
+                           (assoc :stroke-image (:image color))
+
+                           :always
+                           (d/without-nils))]
+              (if (nil? strokes)
+                [stroke]
+                (assoc strokes position stroke))))))

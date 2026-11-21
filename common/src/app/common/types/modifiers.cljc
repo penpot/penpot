@@ -770,6 +770,47 @@
 
 ;; --- Applying modifiers to shapes
 
+(def transform-attrs
+  "Shape attributes that applying modifiers can change."
+  #{:selrect
+    :points
+    :x
+    :y
+    :r1
+    :r2
+    :r3
+    :r4
+    :shadow
+    :blur
+    :background-blur
+    :strokes
+    :width
+    :height
+    :content
+    :transform
+    :transform-inverse
+    :rotation
+    :flip-x
+    :flip-y
+    :grow-type
+    :position-data
+    :layout-gap
+    :layout-padding
+    :layout-item-h-sizing
+    :layout-item-max-h
+    :layout-item-max-w
+    :layout-item-min-h
+    :layout-item-min-w
+    :layout-item-v-sizing
+    :layout-padding-type
+    :layout-item-margin
+    :layout-item-margin-type
+    :layout-grid-cells
+    :layout-grid-columns
+    :layout-grid-rows
+    :fills
+    :fill-image})
+
 (defn- move-vector
   "Vector that `modifiers` move a shape by, or nil when they do more than
   move it."
@@ -799,3 +840,62 @@
     (into #{}
           (filter #(rigid-bool? objects % vector-of gpt/close?))
           (keys object-modifiers))))
+
+(defn next-grow-type
+  "Grow type of a text with `current-grow-type` after scaling it by
+  `scalev`."
+  [current-grow-type scalev]
+  (cond
+    (= current-grow-type :fixed)
+    :fixed
+
+    (and (not (mth/close? (:y scalev) 1.0))
+         (or (= current-grow-type :auto-width)
+             (= current-grow-type :auto-height)))
+    :fixed
+
+    (and (not (mth/close? (:x scalev) 1.0))
+         (= current-grow-type :auto-width))
+    :auto-height
+
+    :else
+    current-grow-type))
+
+(defn- with-grow-type
+  "Add to `modifiers` of a text `shape` the grow type that follows its
+  resize to `width` and `height`."
+  [modifiers shape width height]
+  (if (cfh/text-shape? shape)
+    (let [{sr-width :width sr-height :height} (:selrect shape)
+          scalev (gpt/point (/ width sr-width) (/ height sr-height))
+          current-grow-type (dm/get-prop shape :grow-type)
+          new-grow-type (next-grow-type current-grow-type scalev)]
+      (cond-> modifiers
+        (not= new-grow-type current-grow-type)
+        (change-property :grow-type new-grow-type)))
+    modifiers))
+
+(defn size-modifiers
+  "Modifiers that resize `shape` to `size`, a map with its new `:width`,
+  its new `:height` or both. With both and the proportion locked the
+  height wins, as when changing the width and then the height."
+  [{:keys [proportion proportion-lock selrect] :as shape} {:keys [width height]}]
+  (let [{sr-width :width sr-height :height} selrect]
+    (cond
+      (and (some? width) (some? height))
+      (let [;; Avoid having shapes with zero size
+            height (if (< (mth/abs height) 0.01) 0.01 height)
+            width  (cond
+                     proportion-lock          (* height proportion)
+                     (< (mth/abs width) 0.01) 0.01
+                     :else                    width)]
+        (-> (change-size shape width height)
+            (with-grow-type shape width height)))
+
+      (some? width)
+      (-> (change-dimensions-modifiers shape :width width)
+          (with-grow-type shape width sr-height))
+
+      :else
+      (-> (change-dimensions-modifiers shape :height height)
+          (with-grow-type shape sr-width height)))))

@@ -22,6 +22,7 @@
    [app.common.types.path :as path]
    [app.common.types.shape :as cts]
    [app.common.types.shape.layout :as ctl]
+   [app.common.types.token-values :as cttv]
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.tokens-status :as ctos]
    [app.common.uuid :as uuid]
@@ -576,8 +577,9 @@
   ([changes ids update-fn]
    (update-shapes changes ids update-fn nil))
 
-  ([changes ids update-fn {:keys [attrs ignore-geometry? ignore-touched with-objects?]
-                           :or {ignore-geometry? false ignore-touched false with-objects? false}}]
+  ([changes ids update-fn {:keys [attrs ignore-geometry? ignore-touched with-objects? derived?]
+                           :or {ignore-geometry? false ignore-touched false with-objects? false
+                                derived? false}}]
    (assert-container-id! changes)
    (assert-objects! changes)
    (let [page-id      (::page-id (meta changes))
@@ -592,30 +594,56 @@
              (if-let [attr (first attrs)]
                (let [old-val (get old attr)
                      new-val (get new attr)
-                     changed? (not= old-val new-val)
+                     changed? (not= old-val new-val)]
+                 (cond
+                   (not changed?)
+                   (recur rops uops (rest attrs))
 
-                     rops
-                     (cond-> rops
-                       changed?
-                       (conj  {:type :set :attr attr :val new-val
-                               :ignore-geometry ignore-geometry?
-                               :ignore-touched ignore-touched}))
+                   ;; The token values are set one by one, so concurrent
+                   ;; changes of different attributes don't overwrite them
+                   (= attr :token-values)
+                   (recur (conj rops {:type :set-token-values
+                                      :values (cttv/values-diff old-val new-val)})
+                          (conj uops {:type :set-token-values
+                                      :values (cttv/values-diff new-val old-val)})
+                          (rest attrs))
 
-                     uops
-                     (cond-> uops
-                       changed?
-                       (conj  {:type :set :attr attr :val old-val
-                               :ignore-touched true}))]
-
-                 (recur rops uops (rest attrs)))
+                   :else
+                   (recur (conj rops (cond-> {:type :set :attr attr :val new-val
+                                              :ignore-geometry ignore-geometry?
+                                              :ignore-touched ignore-touched}
+                                       derived? (assoc :derived true)))
+                          (conj uops (cond-> {:type :set :attr attr :val old-val
+                                              :ignore-touched true}
+                                       derived? (assoc :derived true)))
+                          (rest attrs))))
                [rops uops])))
 
+         ;; Apply :set operations without touched flags to the objects directly
+         direct? #?(:clj false
+                    :cljs (and ignore-touched
+                               (= (::applied-changes-count (meta changes))
+                                  (count (:redo-changes changes)))))
+
+         apply-operations
+         (fn [shape operations]
+           (cttv/update-after-operations
+            shape
+            (reduce (fn [shape {:keys [type attr val values]}]
+                      (cond
+                        (= type :set-token-values) (cttv/set-values shape values)
+                        (nil? val) (dissoc shape attr)
+                        :else (assoc shape attr val)))
+                    shape
+                    operations)
+            operations))
+
          update-shape
-         (fn [changes id]
+         (fn [[changes local-objects] id]
            (let [old-obj (get objects id)
                  new-obj (if with-objects? (update-fn old-obj objects) (update-fn old-obj))]
              (if (= old-obj new-obj)
-               changes
+               [changes local-objects]
                (let [[rops uops] (-> (or attrs (d/concat-set (keys old-obj) (keys new-obj)))
                                      (generate-operations old-obj new-obj))
 
@@ -630,15 +658,25 @@
                                    (some? component-id)
                                    (assoc :component-id component-id))]
 
-                 (cond-> changes
-                   (seq rops)
-                   (update :redo-changes conj (assoc change :operations rops))
+                 [(cond-> changes
+                    (seq rops)
+                    (update :redo-changes conj (assoc change :operations rops))
 
-                   (seq uops)
-                   (update :undo-changes conj (assoc change :operations (vec uops))))))))]
+                    (seq uops)
+                    (update :undo-changes conj (assoc change :operations (vec uops))))
 
-     (-> (reduce update-shape changes ids)
-         (apply-changes-local)))))
+                  (cond-> local-objects
+                    (and direct? (seq rops))
+                    (assoc id (apply-operations old-obj rops)))]))))
+
+         [changes local-objects] (reduce update-shape [changes objects] ids)]
+
+     (if direct?
+       (vary-meta changes
+                  #(-> %
+                       (assoc-in [::file-data :pages-index uuid/zero :objects] local-objects)
+                       (assoc ::applied-changes-count (count (:redo-changes changes)))))
+       (apply-changes-local changes)))))
 
 (defn- add-remove-objects-changes
   [changes page-id objects ids {:keys [ignore-touched allow-altering-copies]
@@ -752,8 +790,8 @@
             (if equal?
               operations
               (-> operations
-                  (update :rops conj {:type :set :attr attr :val new-val :ignore-touched true})
-                  (update :uops conj {:type :set :attr attr :val old-val :ignore-touched true})))))
+                  (update :rops conj {:type :set :attr attr :val new-val :ignore-touched true :derived true})
+                  (update :uops conj {:type :set :attr attr :val old-val :ignore-touched true :derived true})))))
 
         resize-parent
         (fn [[changes objects] parent]
@@ -1180,6 +1218,17 @@
                                   :before-path prev-before-path
                                   :before-group prev-before-group?})
       (apply-changes-local)))
+
+(defn set-tokens-resolved
+  "Save in the file `resolved`, the resolved values of its active tokens by
+  name, where they differ from `previous`."
+  [changes previous resolved]
+  (let [redo (cttv/values-diff previous resolved)
+        undo (cttv/values-diff resolved previous)]
+    (cond-> changes
+      (seq redo)
+      (-> (update :redo-changes conj {:type :set-tokens-resolved :values redo})
+          (update :undo-changes conj {:type :set-tokens-resolved :values undo})))))
 
 (defn set-base-font-size
   [changes new-base-font-size]

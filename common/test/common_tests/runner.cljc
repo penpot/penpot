@@ -93,6 +93,8 @@
    [common-tests.logic.text-touched-test]
    [common-tests.logic.token-apply-test]
    [common-tests.logic.token-test]
+   [common-tests.logic.token-values-test]
+   [common-tests.logic.tokens-propagation-test]
    [common-tests.logic.variants-paste-test]
    [common-tests.logic.variants-reparent-test]
    [common-tests.logic.variants-switch-test]
@@ -222,6 +224,8 @@
    'common-tests.logic.text-touched-test
    'common-tests.logic.token-apply-test
    'common-tests.logic.token-test
+   'common-tests.logic.token-values-test
+   'common-tests.logic.tokens-propagation-test
    'common-tests.logic.variants-paste-test
    'common-tests.logic.variants-reparent-test
    'common-tests.logic.variants-switch-test

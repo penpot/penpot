@@ -13,7 +13,6 @@
     [app.common.types.color :as clr]
     [app.common.types.fills :as types.fills]
     [clojure.set :as set]
-    [clojure.walk :as walk]
     [cuerdas.core :as str]))
 
 ;; -- Attrs
@@ -198,6 +197,25 @@
       (select-keys typography-fields)
       (assoc :name "Source Sans Pro Regular")))
 
+(defn migrate-node
+  "Move the colors of a text `node` in the old format into its `:fills`,
+  giving the default text fills to a node without color."
+  [node]
+  (let [color-attrs (not-empty (select-keys node types.fills/fill-attrs))]
+    (cond-> node
+      (nil? (:fills node))
+      (assoc :fills (types.fills/create))
+
+      ;; Migrate old colors and remove the old fromat
+      color-attrs
+      (-> (dissoc :fill-color :fill-opacity :fill-color-ref-id :fill-color-ref-file :fill-color-gradient)
+          (update :fills types.fills/update conj color-attrs))
+
+      ;; We don't have the fills attribute. It's an old text without color
+      ;; so need to be black
+      (and (nil? (:fills node)) (empty? color-attrs))
+      (assoc :fills (get-default-text-fills)))))
+
 (defn node-seq
   ([root] (node-seq identity root))
   ([match? root]
@@ -237,15 +255,28 @@
       ^boolean (is-root-node? node)))
 
 (defn transform-nodes
+  "Apply `transform` to the nodes under `root` that match `pred`, children
+  before their parent. Nodes are only searched through `:children`."
   ([transform root]
    (transform-nodes identity transform root))
   ([pred transform root]
-   (walk/postwalk
-    (fn [item]
-      (if (and (is-node? item) (pred item))
-        (transform item)
-        item))
-    root)))
+   (letfn [(walk-items [items]
+             (cond
+               (vector? items) (mapv walk-item items)
+               (list? items)   (apply list (map walk-item items))
+               (seq? items)    (doall (map walk-item items))
+               :else           items))
+
+           (walk-item [item]
+             (if (sequential? item)
+               (walk-items item)
+               (let [item (if (and (map? item) (some? (:children item)))
+                            (update item :children walk-items)
+                            item)]
+                 (if (and (is-node? item) (pred item))
+                   (transform item)
+                   item))))]
+     (walk-item root))))
 
 (defn update-text-content
   [shape pred-fn update-fn attrs]

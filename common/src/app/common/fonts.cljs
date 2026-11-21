@@ -16,7 +16,7 @@
   host must fetch or upload for text to render belongs here, not in host code."
   (:require-macros [app.common.fonts :refer [preload-gfonts]])
   (:require
-   [app.common.data :as d]
+   [app.common.types.typography :as cty]
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]))
 
@@ -79,41 +79,7 @@
 
 ;; --- variant resolution
 
-(defn closest-variant
-  [variants target-weight target-style]
-  (when-let [target-weight (d/parse-integer target-weight)]
-    (let [result
-          (reduce
-           (fn [closest-match variant]
-             (let [weight (d/parse-integer (:weight variant))
-                   distance (abs (- target-weight weight))
-                   matches-style? (= target-style (:style variant))
-                   current {:variant variant
-                            :weight weight
-                            :distance distance}]
-               (cond
-                 ;; Exact match found
-                 (and (zero? distance)
-                      (if target-style matches-style? true))
-                 (reduced current)
-
-                 (nil? closest-match) current
-
-                 ;; Update best match if this variant is closer or equal distance but higher weight
-                 (or (< distance (:distance closest-match))
-                     (and (= distance (:distance closest-match))
-                          (> weight (:weight closest-match))))
-                 current
-
-                 ;; Same weight as the `closest-match` but the style matches `target-style`
-                 (and (= weight (:weight closest-match)) matches-style?)
-                 current
-
-                 :else
-                 closest-match)))
-           nil
-           variants)]
-      (:variant result))))
+(def closest-variant cty/closest-variant)
 
 (defn resolve-ttf-url
   [font-uuid weight style]

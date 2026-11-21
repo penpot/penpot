@@ -678,29 +678,30 @@
              (not equal?)
              (not (and ignore-geometry is-geometry?)))
 
-        content-diff-type
-        (when (and (= type :text) (= attr :content))
-          (cttx/get-diff-type (:content shape) val))
-
-        token-groups
-        (if (= attr :applied-tokens)
-          (get-token-groups shape val)
-          #{})
-
+        ;; Touched groups only apply to copies, and comparing text
+        ;; contents is costly, so they are computed only when needed.
         groups
-        (cond-> token-groups
-          (and group (not equal?))
-          (set/union #{group} content-diff-type))]
+        (when (and in-copy?
+                   (not ignore?)
+                   (not (and ignore-geometry is-geometry?)))
+          (let [content-diff-type
+                (when (and (= type :text) (= attr :content))
+                  (cttx/get-diff-type (:content shape) val))
+
+                token-groups
+                (if (= attr :applied-tokens)
+                  (get-token-groups shape val)
+                  #{})]
+            (cond-> token-groups
+              (and group (not equal?))
+              (set/union #{group} content-diff-type))))]
 
     (cond-> shape
       ;; Depending on the origin of the attribute change, we need or not to
       ;; set the "touched" flag for the group the attribute belongs to.
       ;; In some cases we need to ignore touched only if the attribute is
       ;; geometric (position, width or transformation).
-      (and in-copy?
-           (not-empty groups)
-           (not ignore?)
-           (not (and ignore-geometry is-geometry?)))
+      (not-empty groups)
       (-> (update :touched (fn [touched]
                              (reduce #(ctk/set-touched-group %1 %2)
                                      touched

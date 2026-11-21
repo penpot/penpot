@@ -524,7 +524,10 @@
       (t/is (not (schema-error? file [{:type :mod-obj :page-id (thi/id :page1) :id uuid/zero :operations []}]))))
 
     (t/testing "a file level change does not check the invalid page"
-      (t/is (not (schema-error? file [{:type :del-color :id (uuid/next)}]))))))
+      (t/is (not (schema-error? file [{:type :del-color :id (uuid/next)}]))))
+
+    (t/testing "the resolved token values of the file do not check the invalid page"
+      (t/is (not (schema-error? file [{:type :set-tokens-resolved :values {"color.main" "#ff0000"}}]))))))
 
 (t/deftest validate-file-schema-affected!-checks-the-rest-of-the-file
   (let [color-id (uuid/next)
