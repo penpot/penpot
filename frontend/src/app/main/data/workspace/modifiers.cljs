@@ -183,55 +183,50 @@
          (mth/close? (:height selrect) (:height transformed-selrect))
          orientation-unchanged?)))
 
+(defn- ids-with-children
+  "`ids` and all their descendants, each one visited once, also when `ids`
+  hold shapes and their descendants."
+  [objects ids]
+  (loop [pending (vec ids)
+         found   (transient #{})]
+    (if-let [id (peek pending)]
+      (let [pending (pop pending)]
+        (if (contains? found id)
+          (recur pending found)
+          (recur (into pending (dm/get-in objects [id :shapes]))
+                 (conj! found id))))
+      (persistent! found))))
+
+(defn- ignore-tree
+  "Map of the ids of the shapes in component copies among `ids` and their
+  descendants to the `check-delta` of each one against its component root.
+  `transform` gives a shape as it is after the change."
+  [objects ids transform]
+  (let [transformed (volatile! {})
+        transform*  (fn [shape]
+                      (let [id (dm/get-prop shape :id)]
+                        (or (get @transformed id)
+                            (let [shape' (transform shape)]
+                              (vswap! transformed assoc id shape')
+                              shape'))))]
+    (reduce (fn [ignore-tree id]
+              (let [shape (get objects id)
+                    root  (when (ctk/in-component-copy? shape)
+                            (if (:component-root shape)
+                              shape
+                              (ctn/get-component-shape objects shape {:allow-main? true})))]
+                (if (some? root)
+                  (assoc ignore-tree id (check-delta shape root (transform* shape) (transform* root)))
+                  ignore-tree)))
+            nil
+            (ids-with-children objects ids))))
+
 (defn calculate-ignore-tree
   "Retrieves a map with the flag `ignore-geometry?` given a tree of modifiers"
   [modif-tree objects]
-
-  (letfn [(get-ignore-tree
-            ([ignore-tree shape]
-             (let [shape-id (dm/get-prop shape :id)
-                   transformed-shape (gsh/transform-shape shape (dm/get-in modif-tree [shape-id :modifiers]))
-
-                   root
-                   (if (:component-root shape)
-                     shape
-                     (ctn/get-component-shape objects shape {:allow-main? true}))
-
-                   transformed-root
-                   (if (:component-root shape)
-                     transformed-shape
-                     (gsh/transform-shape root (dm/get-in modif-tree [(:id root) :modifiers])))]
-
-               (get-ignore-tree ignore-tree shape transformed-shape root transformed-root)))
-
-            ([ignore-tree shape root transformed-root]
-             (let [shape-id (dm/get-prop shape :id)
-                   transformed-shape (gsh/transform-shape shape (dm/get-in modif-tree [shape-id :modifiers]))]
-               (get-ignore-tree ignore-tree shape transformed-shape root transformed-root)))
-
-            ([ignore-tree shape transformed-shape root transformed-root]
-             (let [shape-id (dm/get-prop shape :id)
-
-                   ignore-tree
-                   (cond-> ignore-tree
-                     (and (some? root) (ctk/in-component-copy? shape))
-                     (assoc
-                      shape-id
-                      (check-delta shape root transformed-shape transformed-root)))
-
-                   set-child
-                   (fn [ignore-tree child]
-                     (get-ignore-tree ignore-tree child root transformed-root))]
-
-               (->> (:shapes shape)
-                    (map (d/getf objects))
-                    (reduce set-child ignore-tree)))))]
-
-    ;; we check twice because we want only to search parents of components but once the
-    ;; tree is traversed we only want to process the objects in components
-    (->> (keys modif-tree)
-         (map #(get objects %))
-         (reduce get-ignore-tree nil))))
+  (ignore-tree objects
+               (keys modif-tree)
+               #(gsh/transform-shape % (dm/get-in modif-tree [(dm/get-prop % :id) :modifiers]))))
 
 (defn- cached-transform
   [transforms]
@@ -837,6 +832,21 @@
           (recur pending modif-tree))
         modif-tree))))
 
+(defn- rigid-bool-ids
+  "Ids of the booleans above `ids`, or among them, that `transforms` move
+  with the same matrix as each of their descendants, so their content is
+  their old content moved. A resize is left out: it doesn't scale the radii
+  of the shapes inside."
+  [objects transforms ids]
+  (into #{}
+        (comp (mapcat (partial cfh/get-parents-with-self objects))
+              (filter cfh/bool-shape?)
+              (map :id)
+              (distinct)
+              (filter #(and (some-> (get transforms %) gmt/move?)
+                            (ctm/rigid-bool? objects % transforms gmt/close?))))
+        ids))
+
 #_:clj-kondo/ignore
 (defn apply-wasm-modifiers
   [modif-tree & {:keys [ignore-constraints ignore-snap-pixel snap-ignore-axis undo-transation?
@@ -913,8 +923,10 @@
                 transform-shape
                 (cached-transform transforms)
 
+                ;; Only decides which shapes get touched flags
                 ignore-tree
-                (calculate-ignore-tree-wasm transforms objects transform-shape)
+                (when-not (:ignore-touched params)
+                  (calculate-ignore-tree-wasm transforms objects transform-shape))
 
                 options
                 (-> params
@@ -949,6 +961,10 @@
                       (transform-shape)
                       (ctm/apply-structure-modifiers (dm/get-in modif-tree [(dm/get-prop shape :id) :modifiers]))))
 
+                ;; Their content moves with them, so it needs no new calculation
+                moved-bool-ids
+                (rigid-bool-ids objects transforms ids)
+
                 undo-id (js/Symbol)]
 
             (rx/concat
@@ -959,7 +975,9 @@
               (clear-local-transform)
               (ptk/event ::dwg/move-frame-guides {:ids ids :transforms transforms})
               (ptk/event ::dwcm/move-frame-comment-threads transforms)
-              (dwsh/update-shapes ids update-shape options))
+              ;; The booleans above the shapes are calculated again, with their
+              ;; children updated, when their parents are resized (`:reg-objects?`)
+              (dwsh/update-shapes ids update-shape (assoc options :moved-bool-ids moved-bool-ids)))
 
              (if undo-transation?
                (rx/of (dwu/commit-undo-transaction undo-id))
@@ -1021,28 +1039,44 @@
 
         (assoc state :workspace-modifiers modif-tree)))))
 
+(defn- pinned-frame-ids
+  "Ids of the current page's frames with guides or comment threads that
+  are in `ids` or inside one of them."
+  [state objects ids]
+  (let [page (dsh/lookup-page state)
+        ids  (set ids)]
+    (into []
+          (comp (keep :frame-id)
+                (distinct)
+                (filter (fn [frame-id]
+                          (some #(contains? ids %)
+                                (cfh/get-parent-ids-seq-with-self objects frame-id)))))
+          (concat (vals (:guides page))
+                  (vals (:comment-thread-positions page))))))
+
 (defn apply-modifiers*
   "A lower-level version of apply-modifiers, that expects receive ready
   to use objects, object-modifiers and text-modifiers."
   [objects object-modifiers text-modifiers options]
   (ptk/reify ::apply-modifiers*
     ptk/WatchEvent
-    (watch [_ _ _]
+    (watch [_ state _]
       (let [ids
             (into [] xf:without-uuid-zero (keys object-modifiers))
 
-            ids-with-children
-            (into ids
-                  (mapcat (partial cfh/get-children-ids objects))
-                  ids)
+            frame-ids
+            (pinned-frame-ids state objects ids)
 
+            ;; Only decides which shapes get touched flags
             ignore-tree
-            (calculate-ignore-tree object-modifiers objects)
+            (when-not (:ignore-touched options)
+              (calculate-ignore-tree object-modifiers objects))
 
             options
             (-> options
                 (assoc :reg-objects? true)
                 (assoc :ignore-tree ignore-tree)
+                (assoc :moved-bool-ids (ctm/moved-bool-ids objects object-modifiers))
                 ;; Attributes that can change in the transform. This
                 ;; way we don't have to check all the attributes
                 (assoc :attrs transform-attrs))
@@ -1060,9 +1094,12 @@
                     (cond-> (d/not-empty? pos-data)
                       (assoc-position-data pos-data shape)))))]
 
-        (rx/of (ptk/event ::dwg/move-frame-guides {:ids ids-with-children :modifiers object-modifiers})
-               (ptk/event ::dwcm/move-frame-comment-threads ids-with-children)
-               (dwsh/update-shapes ids update-shape options))))))
+        (rx/concat
+         (if (seq frame-ids)
+           (rx/of (ptk/event ::dwg/move-frame-guides {:ids frame-ids :modifiers object-modifiers})
+                  (ptk/event ::dwcm/move-frame-comment-threads frame-ids))
+           (rx/empty))
+         (rx/of (dwsh/update-shapes ids update-shape options)))))))
 
 (defn apply-modifiers
   ([]

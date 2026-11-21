@@ -90,7 +90,21 @@
       (t/is (= obj1 obj2))
       (t/is (= (hash obj1) (hash obj2)))
       (t/is (= (get obj1 :a) (get obj2 :a)))
-      (t/is (= (get obj1 :b) (get obj2 :b))))))
+      (t/is (= (get obj1 :b) (get obj2 :b)))))
+
+  (t/testing "get-encoded"
+    (let [obj (-> (omap/create)
+                  (assoc :a {:foo 1})
+                  (assoc :b {:bar 2})
+                  (omap/wrap)
+                  (omap/create))]
+      (t/is (= {:foo 1} (transit/decode-str (omap/get-encoded obj :a))))
+      (t/is (nil? (omap/get-encoded obj :c)))
+      (get obj :a)
+      ;; Once decoded only the decoded object remains
+      (t/is (nil? (omap/get-encoded obj :a)))
+      (t/is (string? (omap/get-encoded obj :b)))
+      (t/is (nil? (omap/get-encoded (assoc obj :b {:bar 3}) :b))))))
 
 (t/deftest creation-and-duplication
   (smt/check!

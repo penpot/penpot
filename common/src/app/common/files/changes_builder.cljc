@@ -703,14 +703,31 @@
        (apply-changes-local))))
 
 ;; FIXME: PERFORMANCE
+(defn- ids-with-parents
+  "`ids` and all their parents, each one once. The walk up from an id stops
+  at the first parent already found."
+  [objects ids]
+  (persistent!
+   (reduce (fn [found id]
+             (loop [found found id id]
+               (if (or (nil? id) (contains? found id))
+                 found
+                 (let [parent-id (cfh/get-parent-id objects id)]
+                   (recur (conj! found id)
+                          (when (not= parent-id id) parent-id))))))
+           (transient #{})
+           ids)))
+
 (defn- add-resize-parents-changes
-  [changes page-id objects ids]
-  (let [xform   (comp
-                 (mapcat #(cons % (cfh/get-parent-ids objects %)))
-                 (map (d/getf objects))
-                 (filter #(contains? #{:group :bool} (:type %)))
-                 (distinct))
-        all-parents (sequence xform ids)
+  [changes page-id objects ids moved-bool-ids]
+  (let [;; Deepest first, so each parent is resized after the parents inside it
+        all-parents (->> (ids-with-parents objects ids)
+                         (keep (fn [id]
+                                 (let [shape (get objects id)]
+                                   (when (contains? #{:group :bool} (:type shape))
+                                     [(count (cfh/get-parent-ids objects id)) shape]))))
+                         (sort-by first >)
+                         (map second))
 
         generate-operation
         (fn [operations attr old new]
@@ -745,6 +762,10 @@
                                  (empty? children) ;; a parent with no children will be deleted,
                                  nil               ;; so it does not need resize
 
+                                 ;; Its content already moved with its children
+                                 (contains? moved-bool-ids (:id parent))
+                                 nil
+
                                  (cfh/bool-shape? parent)
                                  (path/update-bool-shape parent objects)
 
@@ -777,14 +798,20 @@
     (first (reduce resize-parent [changes objects] all-parents))))
 
 (defn resize-parents
-  [changes ids]
-  (assert-page-id! changes)
-  (assert-objects! changes)
-  (-> changes
-      (add-resize-parents-changes (::page-id (meta changes))
-                                  (lookup-objects changes)
-                                  ids)
-      (apply-changes-local)))
+  "Resize the groups and booleans that hold `ids` to their children. The
+  booleans in `moved-bool-ids` moved together with all their children, so
+  their content is kept as it is."
+  ([changes ids]
+   (resize-parents changes ids nil))
+  ([changes ids moved-bool-ids]
+   (assert-page-id! changes)
+   (assert-objects! changes)
+   (-> changes
+       (add-resize-parents-changes (::page-id (meta changes))
+                                   (lookup-objects changes)
+                                   ids
+                                   (or moved-bool-ids #{}))
+       (apply-changes-local))))
 
 ;; Library changes
 

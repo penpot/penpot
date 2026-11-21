@@ -35,7 +35,10 @@
 (defprotocol IObjectsMap
   (^:no-doc compact [this])
   (^:no-doc get-data [this] "retrieve internal data")
-  (^:no-doc -hash-for-key [this key] "retrieve a hash for a key"))
+  (^:no-doc -hash-for-key [this key] "retrieve a hash for a key")
+  (get-encoded [this key]
+    "The encoded form of the object under `key` while it has not been
+    decoded yet, nil otherwise."))
 
 #?(:cljs
    (deftype ObjectsMapEntry [key omap]
@@ -157,10 +160,14 @@
          (ObjectsMapEntry. (key entry) omap)))))
 
 #?(:cljs
+   ;; `decoded` is a js/Map from id to the pair of an encoded object and
+   ;; its decoded value, shared by all the maps derived from one another,
+   ;; so an object is decoded once for all of them
    (deftype ObjectsMap [metadata cache
                         ^:mutable data
                         ^:mutable modified
-                        ^:mutable hash]
+                        ^:mutable hash
+                        decoded]
      Object
      (toString [this]
        (pr-str* this))
@@ -204,6 +211,12 @@
          (c/-hash (c/-lookup cache key))
          (c/-hash (c/-lookup this key))))
 
+     (get-encoded [_ key]
+       (when-not (c/-contains-key? cache key)
+         (let [value (c/-lookup data key)]
+           (when (string? value)
+             value))))
+
      c/IWithMeta
      (-with-meta [this new-meta]
        (if (identical? new-meta metadata)
@@ -212,7 +225,8 @@
                       cache
                       data
                       modified
-                      hash)))
+                      hash
+                      decoded)))
 
      c/IMeta
      (-meta [_] metadata)
@@ -220,7 +234,7 @@
      c/ICloneable
      (-clone [this]
        (compact this)
-       (ObjectsMap. metadata {} data false nil))
+       (ObjectsMap. metadata {} data false nil decoded))
 
      c/IIterable
      (-iterator [this]
@@ -273,8 +287,13 @@
      (-lookup [this k]
        (or (c/-lookup cache k)
            (if (c/-contains-key? data k)
-             (let [v (c/-lookup data k)
-                   v (t/decode-str v)]
+             (let [encoded (c/-lookup data k)
+                   entry   (.get decoded k)
+                   v       (if (and (some? entry) (identical? (aget entry 0) encoded))
+                             (aget entry 1)
+                             (let [v (t/decode-str encoded)]
+                               (.set decoded k #js [encoded v])
+                               v))]
                (set! (.-cache this) (c/-assoc cache k v))
                v)
              (do
@@ -292,7 +311,8 @@
                     (c/-assoc cache k v)
                     (c/-assoc data k nil)
                     true
-                    nil))
+                    nil
+                    decoded))
 
      (-contains-key? [_ k]
        (c/-contains-key? data k))
@@ -308,7 +328,8 @@
                     (c/-dissoc cache k)
                     (c/-dissoc data k)
                     true
-                    nil))
+                    nil
+                    decoded))
 
      c/IKVReduce
      (-kv-reduce [this f init]
@@ -370,6 +391,12 @@
        (if (contains? cache key)
          (c/hash (get cache key))
          (c/hash (get this key))))
+
+     (get-encoded [_ key]
+       (when-not (contains? cache key)
+         (let [value (get data key)]
+           (when (string? value)
+             value))))
 
      json/JSONWriter
      (-write [this writter options]
@@ -476,10 +503,8 @@
 
 (defn from-data
   [data]
-  (ObjectsMap. {} {}
-               data
-               false
-               nil))
+  #?(:cljs (ObjectsMap. {} {} data false nil (js/Map.))
+     :clj  (ObjectsMap. {} {} data false nil)))
 
 (defn objects-map?
   [o]
@@ -495,6 +520,24 @@
      :else
      (throw #?(:clj (UnsupportedOperationException. "invalid arguments")
                :cljs (js/Error. "invalid arguments"))))))
+
+(defn assoc-all
+  "`objects` with every shape of `shapes`, a map of id to shape, assoc'ed.
+  An objects map is built with transients, in one go."
+  [objects shapes]
+  #?(:cljs
+     (if (instance? ObjectsMap objects)
+       (ObjectsMap. (.-metadata ^ObjectsMap objects)
+                    (persistent! (reduce-kv assoc! (transient (.-cache ^ObjectsMap objects)) shapes))
+                    (persistent! (reduce-kv (fn [data id _] (assoc! data id nil))
+                                            (transient (.-data ^ObjectsMap objects))
+                                            shapes))
+                    true
+                    nil
+                    (.-decoded ^ObjectsMap objects))
+       (into objects shapes))
+     :clj
+     (into objects shapes)))
 
 (defn wrap
   [objects]

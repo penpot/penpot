@@ -374,8 +374,20 @@
 
 (defn- increase-order
   [operations last-order]
-  (->> operations
-       (mapv #(update % :order + last-order))))
+  (if (or (zero? last-order) (c/empty? operations))
+    operations
+    (reduce (fn [result op] (conj result (update op :order + last-order)))
+            []
+            operations)))
+
+(defn- concat-structure
+  "`operations` followed by `other`, as a vector. Built with `conj`, which
+  is cheaper than a transient for the few operations a shape holds."
+  [operations other]
+  (cond
+    (c/empty? other)      (if (vector? operations) operations (vec operations))
+    (c/empty? operations) (if (vector? other) other (vec other))
+    :else                 (reduce conj (vec operations) other)))
 
 (defn add-modifiers
   [modifiers new-modifiers]
@@ -401,8 +413,8 @@
         (assoc  :last-order       (+ last-order new-last-order))
         (update :geometry-child   #(concat-geometry % new-geom-child merge-child?))
         (update :geometry-parent  #(concat-geometry % new-geom-parent merge-parent?))
-        (update :structure-parent #(d/concat-vec [] % (dm/get-prop new-modifiers :structure-parent)))
-        (update :structure-child  #(d/concat-vec [] % (dm/get-prop new-modifiers :structure-child))))))
+        (update :structure-parent concat-structure (dm/get-prop new-modifiers :structure-parent))
+        (update :structure-child  concat-structure (dm/get-prop new-modifiers :structure-child)))))
 
 
 ;; These are convenience methods to create single operation modifiers without the builder
@@ -755,3 +767,35 @@
   (as-> shape $
     (reduce apply-modifier $ (dm/get-prop modifiers :structure-parent))
     (reduce apply-modifier $ (dm/get-prop modifiers :structure-child))))
+
+;; --- Applying modifiers to shapes
+
+(defn- move-vector
+  "Vector that `modifiers` move a shape by, or nil when they do more than
+  move it."
+  [modifiers]
+  (when (and (some? modifiers) (only-move? modifiers))
+    (reduce (fn [vector op] (gpt/add vector (:vector op)))
+            (gpt/point 0 0)
+            (concat (:geometry-parent modifiers) (:geometry-child modifiers)))))
+
+(defn rigid-bool?
+  "True when `id` is a boolean of `objects` that moves as all its
+  descendants: `motion-of` gives the motion of a shape, nil when it has
+  none, and `same?` compares two motions. Its content is then its old
+  content moved, with no new calculation."
+  [objects id motion-of same?]
+  (boolean
+   (when (cfh/bool-shape? (get objects id))
+     (when-let [motion (motion-of id)]
+       (every? #(some-> (motion-of %) (same? motion))
+               (cfh/get-children-ids objects id))))))
+
+(defn moved-bool-ids
+  "Ids of the booleans in `object-modifiers` that only move, by the same
+  vector as all their descendants (`rigid-bool?`)."
+  [objects object-modifiers]
+  (let [vector-of #(move-vector (dm/get-in object-modifiers [% :modifiers]))]
+    (into #{}
+          (filter #(rigid-bool? objects % vector-of gpt/close?))
+          (keys object-modifiers))))

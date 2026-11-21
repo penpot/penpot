@@ -76,27 +76,53 @@
                 (conj root)))))]
     (reduce find-root #{} ids)))
 
+(defn- push-children
+  "`stack` with the children of `shape` on top, so they are taken in the
+  order of `get-children-seq`."
+  [stack shape]
+  (let [ids (:shapes shape)]
+    (if (and (ctl/flex-layout? shape) (ctl/reverse? shape))
+      (into stack ids)
+      (into stack (if (vector? ids) (rseq ids) (reverse ids))))))
+
+(defn- walk-subtrees
+  "Add to the transient vector `result` the shapes of the subtrees of the
+  ids in `stack`, a list taken from its head, depth first and in the order
+  of `get-children-seq`. Stops after adding `stop-id`."
+  [objects result stack stop-id]
+  (loop [stack  stack
+         result result]
+    (if (seq stack)
+      (let [id     (first stack)
+            shape  (get objects id)
+            result (conj! result shape)]
+        (if (= id stop-id)
+          result
+          (recur (push-children (rest stack) shape) result)))
+      result)))
+
 (defn resolve-tree
   "Given the ids that have changed search for layout roots to recalculate"
   [ids objects]
   (dm/assert! (or (nil? ids) (set? ids)))
 
   (let [child-seq
-        (->> (search-common-roots ids objects)
-             (mapcat #(get-children-seq % objects)))]
+        (persistent!
+         (walk-subtrees objects
+                        (transient [])
+                        (into () (reverse (search-common-roots ids objects)))
+                        nil))]
 
     (if (contains? ids uuid/zero)
       (cons (get objects uuid/zero) child-seq)
       child-seq)))
 
 (defn resolve-subtree
-  "Resolves the subtree but only partially from-to the parameters"
+  "Resolves the subtree but only partially from-to the parameters: the
+  shapes under `from-id` up to `to-id`, followed by the shapes under
+  `to-id`."
   [from-id to-id objects]
-  (concat
-   (->> (get-children-seq from-id objects)
-        (d/take-until #(= (:id %) to-id)))
-
-   ;; Add the children of `to-id` to the subtree. Rest is to remove the
-   ;; to-id element that is already on the previous sequence
-   (->> (get-children-seq to-id objects)
-        rest)))
+  (as-> (transient []) result
+    (walk-subtrees objects result (list from-id) to-id)
+    (walk-subtrees objects result (push-children () (get objects to-id)) nil)
+    (persistent! result)))
