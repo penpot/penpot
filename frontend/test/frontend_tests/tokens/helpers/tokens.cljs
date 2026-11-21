@@ -8,7 +8,9 @@
   (:require
    [app.common.files.tokens :as cfo]
    [app.common.test-helpers.ids-map :as thi]
-   [app.common.types.tokens-lib :as ctob]))
+   [app.common.test-helpers.tokens :as ctht]
+   [app.common.types.tokens-lib :as ctob]
+   [app.common.types.tokens-status :as ctos]))
 
 (defn get-token [file name]
   (let [data (get-in file [:data])
@@ -31,3 +33,30 @@
 
 (defn get-tokens-lib [file]
   (get-in file [:data :tokens-lib]))
+
+(defn sample-file-with-tokens
+  "Sample file whose theme `:theme`, active with its set `:set`, holds
+  `tokens`, attributes of `ctob/make-token` where `:label` names the id.
+  `params` go to `ctht/sample-file-with-tokens`."
+  [tokens & {:as params}]
+  (ctht/sample-file-with-tokens
+   (assoc params
+          :lib-fn (fn [lib]
+                    (reduce (fn [lib {:keys [label] :as attrs}]
+                              (ctob/add-token lib (thi/id :set)
+                                              (ctob/make-token
+                                               (cond-> (dissoc attrs :label)
+                                                 (some? label) (assoc :id (thi/new-id! label))))))
+                            (-> lib
+                                (ctob/add-set (ctob/make-token-set :id (thi/new-id! :set) :name "set"))
+                                (ctob/add-theme (ctob/make-token-theme :id (thi/new-id! :theme)
+                                                                       :name "theme"
+                                                                       :sets #{"set"})))
+                            tokens))
+          :status-fn #(ctos/set-tokens-status % #{(thi/id :theme)} #{(thi/id :set)}))))
+
+(defn radius-file
+  "Sample file with the active token `radius`, a border radius of 50 with
+  the id `:radius`."
+  []
+  (sample-file-with-tokens [{:label :radius :name "radius" :type :border-radius :value 50}]))

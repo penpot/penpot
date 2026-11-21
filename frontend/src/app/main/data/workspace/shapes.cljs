@@ -47,11 +47,17 @@
     (cond-> changes add-undo-group? (assoc :undo-group undo-group))))
 
 (defn update-shapes-buffer-start
-  []
-  (ptk/reify ::update-shapes-buffer-start
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc state ::update-shapes-buffer true))))
+  "Start accumulating `update-shapes` into one commit per page. `tags`
+  are added to those commits."
+  ([]
+   (update-shapes-buffer-start nil))
+  ([{:keys [tags]}]
+   (ptk/reify ::update-shapes-buffer-start
+     ptk/UpdateEvent
+     (update [_ state]
+       (assoc state
+              ::update-shapes-buffer true
+              ::update-shapes-buffer-tags tags)))))
 
 (defn update-shapes-buffer-stop
   []
@@ -82,10 +88,16 @@
                  (keep (fn [[page-id ids]]
                          (get-buffered-text-reflow-event state page-id ids))))
 
+            tags
+            (get state ::update-shapes-buffer-tags)
+
             commits
             (->> (get state ::update-shapes-buffer-changes)
                  (vals)
-                 (map dch/commit-changes))]
+                 (map (fn [changes]
+                        (dch/commit-changes
+                         (cond-> changes
+                           (seq tags) (update :tags (fnil into #{}) tags))))))]
         ;; Open bridges before commits start rendering.
         (rx/concat (rx/from text-reflow-events)
                    (rx/from commits))))))
@@ -110,7 +122,7 @@
   ([ids update-fn
     {:keys [reg-objects? save-undo? stack-undo? attrs ignore-tree page-id
             ignore-touched undo-group with-objects? changed-sub-attr changed-item-index
-            translation? skip-grid-reassignment? skip-component-sync? moved-bool-ids resize-ids]
+            translation? skip-grid-reassignment? skip-component-sync? moved-bool-ids derived? resize-ids]
      :or {reg-objects? false
           save-undo? true
           stack-undo? false
@@ -152,7 +164,8 @@
                           :ignore-tree ignore-tree
                           :ignore-touched ignore-touched
                           :with-objects? with-objects?
-                          :skip-grid-reassignment? skip-grid-reassignment?})
+                          :skip-grid-reassignment? skip-grid-reassignment?
+                          :derived? derived?})
                         (cond-> reg-objects? (pcb/resize-parents (or resize-ids ids) moved-bool-ids))
                         (pcb/set-translation? translation?)
                         (pcb/set-skip-component-sync? skip-component-sync?))))]
@@ -181,7 +194,8 @@
               (rx/of #(dissoc %
                               ::update-shapes-buffer-changes
                               ::update-shapes-buffer-text-candidates
-                              ::update-shapes-buffer-event))))
+                              ::update-shapes-buffer-event
+                              ::update-shapes-buffer-tags))))
            (rx/empty)))))))
 
 (defn- any-group-like?
@@ -211,7 +225,7 @@
     {:as props
      :keys [reg-objects? save-undo? stack-undo? attrs ignore-tree page-id
             ignore-touched undo-group with-objects? changed-sub-attr changed-item-index translation?
-            skip-grid-reassignment? skip-component-sync? moved-bool-ids resize-ids]
+            skip-grid-reassignment? skip-component-sync? moved-bool-ids derived? resize-ids]
      :or {reg-objects? false
           save-undo? true
           stack-undo? false
@@ -251,7 +265,8 @@
                                                 :ignore-touched ignore-touched
                                                 :with-objects? with-objects?
                                                 :translation? translation?
-                                                :skip-grid-reassignment? skip-grid-reassignment?})
+                                                :skip-grid-reassignment? skip-grid-reassignment?
+                                                :derived? derived?})
                    (cond-> undo-group
                      (pcb/set-undo-group undo-group))
                    (pcb/set-translation? translation?)

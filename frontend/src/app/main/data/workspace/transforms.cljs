@@ -266,7 +266,7 @@
                   ;; Calculate new grow-type for text layers
                   new-grow-type
                   (when (cfh/text-shape? shape)
-                    (dwm/next-grow-type (dm/get-prop shape :grow-type) scalev))
+                    (ctm/next-grow-type (dm/get-prop shape :grow-type) scalev))
 
                   ;; When the horizontal/vertical scale a flex children with auto/fill
                   ;; we change it too fixed
@@ -549,23 +549,8 @@
              objects
              (dwsh/lookup-changed-objects state page-id)
 
-             get-modifier
-             (fn [shape]
-               (let [modifiers (ctm/change-dimensions-modifiers shape attr value)]
-                 ;; For text shapes, also update grow-type based on the resize
-                 (if (cfh/text-shape? shape)
-                   (let [{sr-width :width sr-height :height} (:selrect shape)
-                         new-width (if (= attr :width) value sr-width)
-                         new-height (if (= attr :height) value sr-height)
-                         scalev (gpt/point (/ new-width sr-width) (/ new-height sr-height))
-                         current-grow-type (dm/get-prop shape :grow-type)
-                         new-grow-type (dwm/next-grow-type current-grow-type scalev)]
-                     (cond-> modifiers
-                       (not= new-grow-type current-grow-type)
-                       (ctm/change-property :grow-type new-grow-type)))
-                   modifiers)))
-
-             modif-tree (dwm/build-modif-tree ids objects get-modifier)]
+             modif-tree
+             (dwm/build-modif-tree ids objects #(ctm/size-modifiers % {attr value}))]
 
          (if (and (features/active-feature? state "render-wasm/v1") (not no-wasm?))
            (rx/of (dwm/apply-wasm-modifiers modif-tree (assoc options :ignore-snap-pixel true)))
@@ -1674,7 +1659,7 @@
                 (fn [shape]
                   (let [grow-type     (get shape :grow-type)
                         new-grow-type (when (cfh/text-shape? shape)
-                                        (dwm/next-grow-type grow-type scalev))]
+                                        (ctm/next-grow-type grow-type scalev))]
                     (cond-> (ctm/resize-modifiers scalev origin)
                       :always
                       (ctm/scale-content factor)

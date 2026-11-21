@@ -11,8 +11,10 @@
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.tokens-status :as ctos]
+   [app.config :as cf]
    [app.main.data.style-dictionary :as sd]
    [app.main.data.tokenscript :as ts]
+   [app.main.data.workspace.tokens.application :as dwta]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]))
 
@@ -433,3 +435,17 @@
             (fn [cause]
               (t/is (nil? cause))
               (done)))))))
+
+(t/deftest rem-values-take-the-base-font-size
+  (t/async
+    done
+    (let [flags  cf/flags
+          tokens (tokens-map {:name "size" :type :font-size :value "1.5rem"})]
+      (set! cf/flags (conj flags :tokenscript))
+      (->> (rx/zip (dwta/resolve-sets [[(cthi/id :core-set) tokens]] 16)
+                   (dwta/resolve-sets [[(cthi/id :core-set) tokens]] 20))
+           (rx/subs! (fn [[default base-20]]
+                       (set! cf/flags flags)
+                       (t/is (= 24 (get-in default ["size" :resolved-value])) "1rem = 16px by default")
+                       (t/is (= 30 (get-in base-20 ["size" :resolved-value])) "1rem = the base font size")
+                       (done)))))))

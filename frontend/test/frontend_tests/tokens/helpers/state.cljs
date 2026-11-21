@@ -11,6 +11,7 @@
    [app.main.data.changes :as dch]
    [app.main.data.helpers :as dsh]
    [app.main.data.style-dictionary :as sd]
+   [app.main.data.workspace.tokens.propagation :as dwtp]
    [app.main.data.workspace.undo :as dwu]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
@@ -28,18 +29,29 @@
       (rx/empty))))
 
 (defn end+
+  "Emits `end` once the running token propagations have finished and the
+  active tokens are resolved."
   []
   (ptk/reify ::end+
     ptk/WatchEvent
-    (watch [_ state _]
-      (let [data (dsh/lookup-file-data state)
+    (watch [_ state stream]
+      (let [data          (dsh/lookup-file-data state)
             tokens-status (cfo/get-tokens-status data)
-            tokens-lib    (cfo/get-tokens-lib data)]
-        (if (and tokens-status tokens-lib)
-          (->> (cfo/get-tokens-in-active-sets tokens-status tokens-lib)
-               (sd/resolve-tokens)
-               (rx/mapcat #(rx/of (end))))
-          (rx/of (end)))))))
+            tokens-lib    (cfo/get-tokens-lib data)
+            running       (dwtp/running-propagations state)]
+        (rx/concat
+         (if (seq running)
+           (->> stream
+                (rx/filter (ptk/type? ::dwtp/propagation-finished))
+                (rx/filter #(contains? running (deref %)))
+                (rx/take (count running))
+                (rx/ignore))
+           (rx/empty))
+         (if (and tokens-status tokens-lib)
+           (->> (cfo/get-tokens-in-active-sets tokens-status tokens-lib)
+                (sd/resolve-tokens)
+                (rx/mapcat #(rx/of (end))))
+           (rx/of (end))))))))
 
 (defn stop-on
   "Helper function to be used with async version of run-store.
@@ -52,6 +64,24 @@
          (rx/filter #(ptk/type? event-type %))
          ;; Safeguard timeout
          (rx/timeout 200 (rx/of :the/end)))))
+
+(defn stop-on-propagations-done
+  "Stopper of `run-store` once the last of the token propagations queued
+  in `store` finishes."
+  [store]
+  (fn [stream]
+    (->> stream
+         (rx/filter (ptk/type? ::dwtp/propagation-finished))
+         ;; Checked once the event has updated the queue
+         (rx/delay 0)
+         (rx/filter #(empty? (dwtp/running-propagations @store))))))
+
+(defn stop-on-undo-commit
+  "Stops after the first `commit-undo-transaction`, the last event of a
+  tokens propagation. Use it when the propagation resolves tokens more
+  than once and outlasts `end+`."
+  [stream]
+  (rx/filter (ptk/type? ::dwu/commit-undo-transaction) stream))
 
 (def stop-on-send-update-indices
   "Stops on `send-update-indices` function being called, which should be the last function of an event chain."
@@ -114,3 +144,40 @@
    (run-store store done events completed-cb stop-on-send-update-indices))
   ([store done events completed-cb stop-on]
    (run-store store done events completed-cb stop-on)))
+
+(def ^:private run-timeout-ms
+  "Longest run of `run-store*` before it fails."
+  10000)
+
+(defn run-store*
+  "Promise version of `run-store`: emits `events` and `end+` on `store` and
+  resolves with its state once `stopper`, a function of the input stream,
+  emits (or right after the events without it). Rejects when the stream
+  fails or the stopper doesn't emit within `run-timeout-ms`."
+  ([store events]
+   (run-store* store events nil))
+  ([store events stopper]
+   (js/Promise.
+    (fn [resolve reject]
+      (let [stream    (ptk/input-stream store)
+            stopper-s (if (fn? stopper)
+                        (stopper stream)
+                        (rx/filter #(= :the/end %) stream))]
+        (->> stream
+             (rx/take-until stopper-s)
+             (rx/ignore)
+             (rx/timeout run-timeout-ms)
+             (rx/subs! (fn [_])
+                       reject
+                       #(resolve @store)))
+        (doseq [event (concat events [(end+)])]
+          (ptk/emit! store event))
+        (ptk/emit! store :the/end))))))
+
+(defn watch-commits
+  "Atom with the commits that go through `store`, in order."
+  [store]
+  (let [commits (atom [])]
+    (rx/subs! #(swap! commits conj (deref %))
+              (rx/filter dch/commit? (ptk/input-stream store)))
+    commits))

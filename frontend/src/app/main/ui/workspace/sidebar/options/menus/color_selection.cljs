@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.sidebar.options.menus.color-selection
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.colors :as cc]
    [app.common.data :as d]
    [app.common.types.library :as ctl]
    [app.main.data.workspace.colors :as dwc]
@@ -221,7 +222,7 @@
          (fn [_ token old-color]
            (let [prev-colors (mf/ref-val prev-colors-ref)
                  resolved-value (:resolved-value token)
-                 new-color (dwta/value->color resolved-value)
+                 new-color (cc/parse-css-color resolved-value)
                  color (-> new-color
                            (dissoc :name :path)
                            (d/without-nils))

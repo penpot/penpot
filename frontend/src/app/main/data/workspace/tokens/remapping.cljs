@@ -10,12 +10,13 @@
    [app.common.files.changes-builder :as pcb]
    [app.common.files.tokens :as cft]
    [app.common.logging :as log]
-   [app.common.types.container :refer [shapes-seq]]
+   [app.common.types.container :as ctn :refer [shapes-seq]]
    [app.common.types.file :refer [object-containers-seq]]
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.changes :as dch]
    [app.main.data.helpers :as dh]
+   [app.main.data.workspace.tokens.lookup :as lookup]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
@@ -60,6 +61,15 @@
          :source-token-id (:id token)
          :referenced-token-name referenced-token-name}))))
 
+(defn- shapes-using
+  "Shapes of `container` that may apply `token-name`. The shapes of a page
+  come from its token lookup, without decoding the others."
+  [container token-name]
+  (let [objects (:objects container)]
+    (if (ctn/page? container)
+      (keep #(get objects %) (get (lookup/token-shape-ids objects) token-name))
+      (shapes-seq container))))
+
 (defn scan-workspace-token-references
   "Scan entire workspace for all token references to a specific token"
   [file-data old-token-name]
@@ -68,7 +78,7 @@
 
         ;; Scan all shapes for applied token references to the specific token
         matching-applied (mapcat (fn [container]
-                                   (let [shapes (shapes-seq container)]
+                                   (let [shapes (shapes-using container old-token-name)]
                                      (mapcat #(scan-shape-applied-tokens % old-token-name container) shapes)))
                                  containers)
 
@@ -120,24 +130,20 @@
                  ;; attributes (e.g. a stroke-width token on a single side).
                  attributes-by-shape (update-vals (group-by :shape-id refs)
                                                   #(into #{} (map :attribute) %))
-                 ;; Find the correct token to apply (new or alias)
-                 token               (or (some #(when (= (:name (:token %)) new-token-name) %) tokens-with-sets)
-                                         (some #(when (= (:name (:token %)) old-token-name) %) tokens-with-sets))]
-             (if token
-               ;; Create a new independent changes so we can call `with-file-data` after `with-container`
-               ;; otherwise it causes probelms looking up for objects
-               (let [container-changes
-                     (-> (pcb/empty-changes)
-                         (pcb/with-container container)
-                         (pcb/with-file-data file-data)
-                         (pcb/update-shapes (keys attributes-by-shape)
-                                            (fn [shape]
-                                              (let [attributes (get attributes-by-shape (:id shape))]
-                                                (update shape :applied-tokens
-                                                        #(merge % (cft/attributes-map attributes (:token token))))))
-                                            {:ignore-touched true}))]
-                 (pcb/concat-changes changes container-changes))
-               changes)))
+                 ;; The shapes take the new name, maybe not committed yet, and keep their values
+                 ;; Create a new independent changes so we can call `with-file-data` after `with-container`
+                 ;; otherwise it causes probelms looking up for objects
+                 container-changes
+                 (-> (pcb/empty-changes)
+                     (pcb/with-container container)
+                     (pcb/with-file-data file-data)
+                     (pcb/update-shapes (keys attributes-by-shape)
+                                        (fn [shape]
+                                          (let [attributes (get attributes-by-shape (:id shape))]
+                                            (update shape :applied-tokens
+                                                    #(merge % (cft/attributes-map attributes {:name new-token-name})))))
+                                        {:ignore-touched true}))]
+             (pcb/concat-changes changes container-changes)))
          (-> (pcb/empty-changes)
              (pcb/with-library-data file-data))
          refs-by-container)

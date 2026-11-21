@@ -8,10 +8,10 @@
   "Page options menu entries."
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.colors :as cc]
    [app.common.data :as d]
    [app.common.types.color :as clr]
    [app.main.data.workspace :as dw]
-   [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.undo :as dwu]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -52,7 +52,7 @@
         on-token-change
         (mf/use-fn
          (fn [_event token]
-           (when-let [color (dwta/value->color (:resolved-value token))]
+           (when-let [color (cc/parse-css-color (:resolved-value token))]
              (st/emit! (dw/apply-canvas-color-token (:color color) (:name token))))))
 
         on-detach-token

@@ -410,8 +410,7 @@
              (st/emit!
               (dwta/apply-token {:shape-ids         ids
                                  :attributes        #{:typography}
-                                 :token             token
-                                 :on-update-shape   dwta/update-typography})))))
+                                 :token             token})))))
         label
         (mf/with-memo [type]
           (case type

@@ -50,9 +50,9 @@
       (with-bool-content :icon)))
 
 (defn- resize
-  "Run a resize of `label` to `width` without touched flags, counting the
-  boolean calculations, and call `check-fn` with the resulting file and the
-  count."
+  "Run a resize of `label` to `width` as token propagation does, counting
+  the boolean calculations, and call `check-fn` with the resulting file
+  and the count."
   [file label width done check-fn]
   (let [store  (ths/setup-store file)
         count* (atom 0)

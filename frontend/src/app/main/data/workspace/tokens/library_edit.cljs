@@ -322,7 +322,7 @@
           (let [changes (-> (pcb/empty-changes it)
                             (pcb/with-library-data data)
                             (clo/generate-update-token-theme token-theme))]
-            (rx/of (dch/commit-changes changes))))))))
+            (rx/of (dwtp/commit-token-changes changes))))))))
 
 (defn set-token-theme-active
   [id active?]
@@ -338,8 +338,7 @@
                               (pcb/with-library-data data)
                               (clo/generate-set-theme-status tokens-status tokens-lib id active?))]
 
-        (rx/of (dch/commit-changes changes)
-               (dwtp/propagate-workspace-tokens))))))
+        (rx/of (dwtp/commit-token-changes changes))))))
 
 (defn toggle-token-theme-active
   [id]
@@ -354,8 +353,7 @@
                               (pcb/with-library-data data)
                               (clo/generate-toggle-theme tokens-status tokens-lib id))]
         (rx/of
-         (dch/commit-changes changes)
-         (dwtp/propagate-workspace-tokens))))))
+         (dwtp/commit-token-changes changes))))))
 
 (defn delete-token-theme
   [id]
@@ -369,8 +367,7 @@
                         (pcb/with-library-data data)
                         (pcb/set-token-theme id nil))]
         (rx/of
-         (dch/commit-changes changes)
-         (dwtp/propagate-workspace-tokens))))))
+         (dwtp/commit-token-changes changes))))))
 
 (defn create-token-set
   [token-set]
@@ -399,7 +396,7 @@
                         (pcb/with-library-data data)
                         (pcb/rename-token-set (ctob/get-id token-set) new-name))]
         (rx/of (set-selected-token-set-id (ctob/get-id token-set))
-               (dch/commit-changes changes))))))
+               (dwtp/commit-token-changes changes))))))
 
 (defn rename-token-set-group
   [set-group-path set-group-fname]
@@ -410,7 +407,7 @@
       (let [changes (-> (pcb/empty-changes it)
                         (pcb/rename-token-set-group set-group-path set-group-fname))]
         (rx/of
-         (dch/commit-changes changes))))))
+         (dwtp/commit-token-changes changes))))))
 
 (defn duplicate-token-set
   ([id]
@@ -447,8 +444,7 @@
                               (pcb/with-library-data data)
                               (clo/generate-set-enabled-token-set tokens-status tokens-lib id enabled?))]
 
-        (rx/of (dch/commit-changes changes)
-               (dwtp/propagate-workspace-tokens))))))
+        (rx/of (dwtp/commit-token-changes changes))))))
 
 (defn toggle-token-set
   [id]
@@ -464,8 +460,7 @@
                               (clo/generate-toggle-token-set tokens-status tokens-lib id))]
 
         (rx/of
-         (dch/commit-changes changes)
-         (dwtp/propagate-workspace-tokens))))))
+         (dwtp/commit-token-changes changes))))))
 
 (defn toggle-token-set-group
   [group-path]
@@ -480,8 +475,7 @@
                               (clo/generate-toggle-token-set-group tokens-status tokens-lib group-path))]
 
         (rx/of
-         (dch/commit-changes changes)
-         (dwtp/propagate-workspace-tokens))))))
+         (dwtp/commit-token-changes changes))))))
 
 (defn import-tokens-lib
   [lib]
@@ -495,9 +489,8 @@
                         (pcb/with-library-data data)
                         (pcb/set-tokens-lib lib)
                         (pcb/set-tokens-status status))]
-        (rx/of (dch/commit-changes changes)
-               (unfold-token-types lib)
-               (dwtp/propagate-workspace-tokens))))))
+        (rx/of (dwtp/commit-token-changes changes)
+               (unfold-token-types lib))))))
 
 (defn set-tokens-source
   [library-id]
@@ -510,8 +503,7 @@
                         (pcb/with-library-data data)
                         (clo/generate-set-tokens-source library)
                         (pcb/set-tokens-source library-id))]
-        (rx/of (dch/commit-changes changes)
-               (dwtp/propagate-workspace-tokens))))))
+        (rx/of (dwtp/commit-token-changes changes))))))
 
 (defn delete-token-set
   [id]
@@ -523,8 +515,7 @@
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
                         (pcb/set-token-set id nil))]
-        (rx/of (dch/commit-changes changes)
-               (dwtp/propagate-workspace-tokens))))))
+        (rx/of (dwtp/commit-token-changes changes))))))
 
 (defn delete-token-set-group
   [path]
@@ -536,8 +527,7 @@
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
                         (clo/generate-delete-token-set-group (dsh/lookup-tokens-lib state) path))]
-        (rx/of (dch/commit-changes changes)
-               (dwtp/propagate-workspace-tokens))))))
+        (rx/of (dwtp/commit-token-changes changes))))))
 
 (defn drop-error
   [{:keys [error to-path]}]
@@ -566,8 +556,7 @@
       (try
         (when-let [changes (clo/generate-move-token-set-group (pcb/empty-changes it) (dsh/lookup-tokens-lib state) drop-opts)]
           (rx/of
-           (dch/commit-changes changes)
-           (dwtp/propagate-workspace-tokens)))
+           (dwtp/commit-token-changes changes)))
         (catch :default e
           (rx/of
            (drop-error (ex-data e))))))))
@@ -584,8 +573,7 @@
         (let [tokens-lib (dsh/lookup-tokens-lib state)
               changes    (-> (pcb/empty-changes it)
                              (clo/generate-move-token-set tokens-lib params))]
-          (rx/of (dch/commit-changes changes)
-                 (dwtp/propagate-workspace-tokens)))
+          (rx/of (dwtp/commit-token-changes changes)))
         (catch :default cause
           (rx/of (drop-error (ex-data cause))))))))
 
@@ -622,7 +610,7 @@
                                      hidden-theme)
                 (pcb/set-tokens-status token-status))]
 
-        (rx/of (dch/commit-changes changes)
+        (rx/of (dwtp/commit-token-changes changes)
                (set-selected-token-set-id (ctob/get-id token-set)))))))
 
 (defn create-token
@@ -643,7 +631,7 @@
                                           (:id token)
                                           token))]
 
-           (rx/of (dch/commit-changes changes)
+           (rx/of (dwtp/commit-token-changes changes)
                   (ev/event (-> {::ev/name "create-token" :type token-type}
                                 (merge (meta it))))))
 
@@ -678,7 +666,7 @@
                                 (pcb/with-library-data data))
                             token-ids)]
         (rx/of
-         (dch/commit-changes changes)
+         (dwtp/commit-token-changes changes)
          (ptk/data-event ::ev/event {::ev/name "bulk-create-tokens" :type type}))))))
 
 (defn update-token
@@ -707,7 +695,7 @@
                                               id
                                               token'))]
              (toggle-token-path (str (name token-type) "." (:name token)))
-             (rx/of (dch/commit-changes changes)
+             (rx/of (dwtp/commit-token-changes changes)
                     (ev/event (-> {::ev/name "edit-token" :type token-type}
                                   (merge (meta it))))))))))))
 
@@ -739,7 +727,7 @@
             changes (cond-> changes (some? undo-group) (assoc :undo-group undo-group))]
         (toggle-token-path (str (name type) "." old-path))
         (toggle-token-path (str (name type) "." new-path))
-        (rx/of (dch/commit-changes changes)
+        (rx/of (dwtp/commit-token-changes changes)
                (ptk/data-event ::ev/event {::ev/name "bulk-update-tokens" :type type}))))))
 
 (defn delete-token
@@ -762,7 +750,7 @@
                 changes (-> (pcb/empty-changes it)
                             (pcb/with-library-data data)
                             (pcb/set-token set-id token-id nil))]
-            (rx/of (dch/commit-changes changes)
+            (rx/of (dwtp/commit-token-changes changes)
                    (ev/event (-> {::ev/name "delete-token" :type token-type}
                                  (merge (meta it)))))))))))
 
@@ -780,7 +768,7 @@
                             (-> (pcb/empty-changes it)
                                 (pcb/with-library-data data))
                             token-ids)]
-        (rx/of (dch/commit-changes changes)
+        (rx/of (dwtp/commit-token-changes changes)
                (ev/event {::ev/name "delete-token-node"}))))))
 
 (defn duplicate-token

@@ -720,22 +720,7 @@
                   updated-shape))]
           (rx/of (dwsh/update-shapes shape-ids merge-shape)))))))
 
-(defn migrate-node
-  [node]
-  (let [color-attrs (not-empty (select-keys node types.fills/fill-attrs))]
-    (cond-> node
-      (nil? (:fills node))
-      (assoc :fills (types.fills/create))
-
-      ;; Migrate old colors and remove the old fromat
-      color-attrs
-      (-> (dissoc :fill-color :fill-opacity :fill-color-ref-id :fill-color-ref-file :fill-color-gradient)
-          (update :fills types.fills/update conj color-attrs))
-
-      ;; We don't have the fills attribute. It's an old text without color
-      ;; so need to be black
-      (and (nil? (:fills node)) (empty? color-attrs))
-      (assoc :fills (txt/get-default-text-fills)))))
+(def migrate-node txt/migrate-node)
 
 (defn migrate-content
   [content]
@@ -771,9 +756,7 @@
 
                update-content
                (fn [content]
-                 (->> content
-                      (migrate-content)
-                      (txt/transform-nodes update-node? update-node-fn)))
+                 (txt/transform-nodes update-node? (comp update-node-fn migrate-node) content))
 
                update-shape
                (fn [shape]
@@ -1070,7 +1053,8 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/of (dwm/apply-modifiers {:stack-undo? true})))))
+      ;; The size of the text follows from its content
+      (rx/of (dwm/apply-modifiers {:stack-undo? true :derived? true})))))
 
 (defn commit-position-data
   []

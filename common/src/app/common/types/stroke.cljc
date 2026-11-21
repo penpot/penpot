@@ -81,10 +81,13 @@
    :hidden])
 
 (defn build-stroke-style-attrs
-  "The style attributes of `stroke`, with the defaults of a new stroke for
-  the missing ones."
+  "The style attributes of `stroke`, with defaults for the missing ones.
+  An existing stroke with no `:stroke-alignment` (e.g. imported from SVG)
+  keeps its effective `:center` alignment; a nil stroke means no stroke
+  exists at that position and takes the `:inner` default."
   [stroke]
-  (let [attrs (select-keys stroke stroke-style-attrs)]
+  (let [existing-stroke? (some? stroke)
+        attrs            (select-keys stroke stroke-style-attrs)]
     (cond-> attrs
       (not (contains? attrs :stroke-width))
       (assoc :stroke-width 1)
@@ -93,7 +96,7 @@
       (assoc :stroke-style :solid)
 
       (not (contains? attrs :stroke-alignment))
-      (assoc :stroke-alignment :inner)
+      (assoc :stroke-alignment (if existing-stroke? :center :inner))
 
       :always
       (d/without-nils))))

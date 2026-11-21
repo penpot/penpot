@@ -33,6 +33,10 @@
 
 ;; Value conversion -----------------------------------------------------------
 
+(def ^:dynamic *base-font-size*
+  "Pixels of one rem."
+  16)
+
 (defn- color->hex-string
   "Hex string of a color symbol (`#rrggbbaa` when it has alpha)."
   [color]
@@ -43,7 +47,7 @@
   attributes and the token forms:
 
     - colors: hex strings (alpha as `#rrggbbaa`)
-    - `rem` values: pixels (16px root font size), `%` values: fractions
+    - `rem` values: pixels (`*base-font-size*` per rem), `%` values: fractions
     - other numbers with unit: the number
     - structured tokens (typography, shadows): maps with keyword keys and
       vectors
@@ -63,7 +67,7 @@
       (sym/color? v) (color->hex-string v)
       (sym/number-with-unit? v) (let [n (sym/value v)]
                                   (case (:unit v)
-                                    "rem" (* n 16)
+                                    "rem" (* n *base-font-size*)
                                     "%" (/ n 100)
                                     n))
       (sym/symbol? v) (sym/value v)
@@ -327,6 +331,7 @@
                  (tsc/build sets {:token-reader read-token :token-writer write-token}))]
     (l/dbg :hint "tokenscript/resolve-sets" :elapsed (tpoint) :changed (count (:changed result)))
     {:sets sets
+     :base-font-size *base-font-size*
      :state (:state result)
      :output (:output result)}))
 
@@ -336,7 +341,9 @@
 ;; few resolutions are kept with their interpreter state: sets that are the
 ;; same objects as an entry's return its output, others are resolved from
 ;; the most recent entry, which re-resolves only what changed. The entries
-;; are values, so a preview resolved from an entry leaves it as it is.
+;; are values, so a preview resolved from an entry leaves it as it is. The
+;; rem values of an entry are in its `*base-font-size*`, so only entries
+;; with the current one are used.
 (def ^:private cache-size 8)
 
 (defonce ^:private cache (volatile! []))
@@ -349,9 +356,14 @@
       (and (= (count a) (count b))
            (every? true? (map (fn [[ka ta] [kb tb]] (and (= ka kb) (identical? ta tb))) a b)))))
 
+(defn- current-entries
+  "Cached entries resolved with the current `*base-font-size*`."
+  []
+  (filter #(= *base-font-size* (:base-font-size %)) @cache))
+
 (defn- cached-entry
   [sets]
-  (some #(when (same-sets? (:sets %) sets) %) @cache))
+  (some #(when (same-sets? (:sets %) sets) %) (current-entries)))
 
 (defn- remember
   "Puts `entry` first, dropping the oldest beyond `cache-size`."
@@ -368,7 +380,7 @@
   the most recent one sharing a set id. Nil when none does: resolving
   from an unrelated state costs more than building from scratch."
   [sets]
-  (let [entries @cache
+  (let [entries (current-entries)
         ids (mapv first sets)
         id-set (set ids)]
     (or (some #(when (= ids (mapv first (:sets %))) %) entries)
@@ -411,6 +423,7 @@
   [sets draft]
   (let [sets  (conj (vec sets) [::draft {(:name draft) draft}])
         prev  @draft-cache
+        prev  (when (= *base-font-size* (:base-font-size prev)) prev)
         entry (cond
                 (and prev (same-sets? (:sets prev) sets))
                 prev

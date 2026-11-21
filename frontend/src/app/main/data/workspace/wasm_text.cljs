@@ -60,6 +60,12 @@
                     (:height selrect)
                     (:height dimension))})))))
 
+(defn content-fonts-ready?
+  "True when the renderer has loaded the fonts of the text `content`."
+  [content]
+  (every? #(wasm.fonts/font-ready? (wasm.fonts/make-font-data %))
+          (wasm.fonts/get-content-fonts content)))
+
 (defn resize-wasm-text-modifiers
   ([shape]
    (resize-wasm-text-modifiers shape (:content shape)))
@@ -93,7 +99,7 @@
        (let [objects (dsh/lookup-page-objects state)
              shape   (get objects id)
              ;; Auto-grow size is derived from content; never mark geometry overrides.
-             apply-opts (assoc (or opts {}) :ignore-touched true)
+             apply-opts (assoc (or opts {}) :ignore-touched true :derived? true)
              resize-stream
              (if (and (some? shape)
                       (cfh/text-shape? shape)
@@ -141,7 +147,7 @@
             extend-tx? (some? undo-id)
             ;; Auto-grow size is derived; hardcode here (debounce caller opts
             ;; whitelist does not forward :ignore-touched).
-            apply-opts (cond-> {:ignore-touched true}
+            apply-opts (cond-> {:ignore-touched true :derived? true}
                          (some? undo-group) (assoc :undo-group undo-group)
                          extend-tx? (assoc :undo-transation? false)
                          skip-component-sync? (assoc :skip-component-sync? true)
@@ -217,15 +223,7 @@
      (watch [_ state _]
        (let [page-id (:current-page-id state)
              objects (dsh/lookup-page-objects state page-id)
-             content (dm/get-in objects [id :content])
-             fonts   (wasm.fonts/get-content-fonts content)
-
-             fonts-ready?
-             (->> fonts
-                  (every?
-                   (fn [font]
-                     (let [font-data (wasm.fonts/make-font-data font)]
-                       (wasm.fonts/font-ready? font-data)))))
+             fonts-ready? (content-fonts-ready? (dm/get-in objects [id :content]))
 
              resize-wasm-stream
              (if fonts-ready?

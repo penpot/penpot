@@ -20,6 +20,7 @@
    [app.main.data.persistence.commits :as pcm]
    [app.main.data.persistence.lock :as plk]
    [app.main.data.workspace :as-alias dw]
+   [app.main.data.workspace.tokens.lookup :as tlookup]
    [app.main.features :as features]
    [app.main.worker :as mw]
    [app.render-wasm.api :as wasm.api]
@@ -126,10 +127,17 @@
 
             apply-changes
             (fn [fdata]
-              (let [fdata (cpc/process-changes fdata undo-changes false)
-                    fdata (cpc/process-changes fdata redo-changes false)
-                    pids (into #{} xf:map-page-id redo-changes)]
-                (reduce #(ctst/update-object-indices %1 %2) fdata pids)))]
+              (let [fdata' (cpc/process-changes fdata undo-changes false)
+                    fdata' (cpc/process-changes fdata' redo-changes false)
+                    pids   (into #{} xf:map-page-id redo-changes)
+                    fdata' (reduce #(ctst/update-object-indices %1 %2) fdata' pids)]
+                ;; The token lookup of each page follows its changes
+                (doseq [pid pids]
+                  (tlookup/advance pid
+                                   (dm/get-in fdata [:pages-index pid :objects])
+                                   (dm/get-in fdata' [:pages-index pid :objects])
+                                   (concat undo-changes redo-changes)))
+                fdata'))]
 
         (if (and (not ignore-wasm?) (features/active-feature? state "render-wasm/v1"))
           ;; Update the wasm model
@@ -170,7 +178,6 @@
 
   (let [commit-id (or commit-id (uuid/next))
         source    (d/nilv source :local)
-        local?    (= source :local)
         ;; The component sync emits a `reg-objects` per touched shape, so a
         ;; component swap or a wide group edit fills the batch with hundreds of
         ;; them for a handful of groups. Fusing per container keeps the batch
@@ -207,7 +214,8 @@
 
       ptk/WatchEvent
       (watch [_ state _]
-        (let [pending (when-not local?
+        ;; Remote commits go before the local ones still to be saved
+        (let [pending (when (= source :remote)
                         (not-empty (pcm/pending-commits (:persistence state) file-id)))]
           (rx/concat
            (rx/of (apply-changes-localy commit pending))

@@ -19,7 +19,6 @@
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.errors :as wte]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
-   [app.main.data.workspace.tokens.propagation :as dwtp]
    [app.main.data.workspace.tokens.remapping :as remap]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -216,7 +215,6 @@
                                 :value (:value valid-token)
                                 :description description})
             (remap/remap-tokens old-name new-name)
-            (dwtp/propagate-workspace-tokens)
             (modal/hide!))))
 
         on-rename-token
@@ -277,7 +275,6 @@
                                                     :value (:value valid-token)
                                                     :description description}))
                               (dwtl/open-token-type (:type token))
-                              (dwtp/propagate-workspace-tokens)
                               (when is-create
                                 (scroll-token-type-section-on-create (:id new-token)))
                               (modal/hide!)))))))

@@ -65,6 +65,7 @@
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.texts :as dwtxt]
    [app.main.data.workspace.thumbnails :as dwth]
+   [app.main.data.workspace.tokens.progress :as dwtpr]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.variants :as dwva]
@@ -481,6 +482,7 @@
                        (rx/of (dpj/initialize-project (:project-id file))
                               (dwn/initialize team-id file-id)
                               (dwsl/initialize-shape-layout)
+                              (dwtpr/initialize)
                               (dwtxt/initialize-text-reflow)
                               (fetch-libraries file-id features)
                               (-> (workspace-initialized file-id)
@@ -647,6 +649,7 @@
         (rx/of (dwn/finalize file-id)
                (dpj/finalize-project project-id)
                (dwsl/finalize-shape-layout)
+               (dwtpr/finalize)
                (dwtxt/finalize-text-reflow)
                (dwcl/stop-picker)
                (dwc/set-workspace-visited)

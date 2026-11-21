@@ -40,6 +40,7 @@
    [app.main.ui.workspace.tokens.import.modal]
    [app.main.ui.workspace.tokens.management.forms.modals]
    [app.main.ui.workspace.tokens.management.forms.rename-node-modal]
+   [app.main.ui.workspace.tokens.progress :refer [token-progress*]]
    [app.main.ui.workspace.tokens.remapping-modal]
    [app.main.ui.workspace.tokens.settings]
    [app.main.ui.workspace.tokens.themes.create-modal]
@@ -280,6 +281,7 @@
                             :touch-action "none"
                             :position "relative"}}
           [:> context-menu*]
+          [:> token-progress*]
           (when (and file-loaded? page-id)
             [:> workspace-inner*
              {:page-id page-id

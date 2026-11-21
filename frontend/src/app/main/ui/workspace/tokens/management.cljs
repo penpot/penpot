@@ -12,7 +12,6 @@
    [app.main.data.modal :as modal]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
-   [app.main.data.workspace.tokens.propagation :as dwtp]
    [app.main.data.workspace.tokens.remapping :as remap]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -63,11 +62,11 @@
           (when selected-token-set-id
             (some-> tokens-lib (ctob/get-set selected-token-set-id))))
 
-        token-set-active?
-        (mf/use-fn
-         (mf/deps tokens-status)
-         (fn [id]
-           (ctos/set-active? tokens-status id)))]
+        ;; Hidden while the selected set or the status is not in the file yet
+        inactive?
+        (and (some? selected-token-set)
+             (some? tokens-status)
+             (not (ctos/set-active? tokens-status selected-token-set-id)))]
 
     [:div {:class (stl/css :sets-header-container)}
      [:> text* {:as "span"
@@ -75,13 +74,8 @@
                 :class (stl/css :sets-header)
                 :data-testid "active-token-set-title"}
       (tr "workspace.tokens.tokens-section-title" (ctob/get-name selected-token-set))]
-     (when (and (some? selected-token-set-id)
-                (not (token-set-active? selected-token-set-id)))
+     (when inactive?
        [:div {:class (stl/css :sets-header-status) :title (tr "workspace.tokens.inactive-set-description")}
-        ;; NOTE: when no set in tokens-lib, the selected-token-set-id
-        ;; will be `nil`, so for properly hide the inactive message we
-        ;; check that at least `selected-token-set-id` has a value
-
         [:*
          [:> icon* {:class (stl/css :sets-header-status-icon) :icon-id i/eye-off}]
          [:> text* {:as "span" :typography "body-small" :class (stl/css :sets-header-status-text)}
@@ -228,7 +222,6 @@
              (st/emit!
               (dwtl/bulk-update-tokens selected-token-set-id tokens-in-path-ids type old-path new-node-path :undo-group undo-group)
               (remap/bulk-remap-tokens tokens-in-path new-tokens :undo-group undo-group)
-              (dwtp/propagate-workspace-tokens)
               (modal/hide)))))
 
         on-remap-node-warning

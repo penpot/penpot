@@ -9747,6 +9747,10 @@ msgstr ""
 msgid "workspace.tokens.unsupported-token-data-section"
 msgstr "'%s' is not supported (%s):"
 
+#: src/app/main/ui/workspace/tokens/progress.cljs:36
+msgid "workspace.tokens.updating-values"
+msgstr "Updating token values"
+
 #: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:316, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:270
 msgid "workspace.tokens.use-reference"
 msgstr "Use a reference"

@@ -89,6 +89,11 @@
 
 (install-pending-subscription!)
 
+(defn pending-count
+  "Number of ids with work in flight now."
+  []
+  (count (.getValue ^js pending-shapes)))
+
 (defn task
   "Creates an opaque task token without opening it."
   [kind ids]
