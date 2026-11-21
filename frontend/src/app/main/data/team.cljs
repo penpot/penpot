@@ -276,11 +276,22 @@
               (rx/map (partial members-fetched team-id))
               (rx/catch (fn [cause]
                           (let [{:keys [type]} (ex-data cause)]
-                            (if (= :not-found type)
+                            (cond
+                              (= :not-found type)
                               (do
                                 (log/warn :hint "fetch-members: team not found, skipping"
                                           :team-id (str team-id))
                                 (rx/empty))
+
+                              ;; The members stay as they were while the
+                              ;; backend can't be reached
+                              (rp/retryable-error? cause)
+                              (do
+                                (log/warn :hint "fetch-members: backend not reachable, skipping"
+                                          :team-id (str team-id))
+                                (rx/empty))
+
+                              :else
                               (rx/throw cause)))))))))))
 
 (defn- invitations-fetched

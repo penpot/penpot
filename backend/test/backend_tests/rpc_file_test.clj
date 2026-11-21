@@ -3632,6 +3632,55 @@
     (t/is (= [] (get-in (bfc/get-file th/*system* (:id file) :realize? true) root))
           "the repaired data is stored")))
 
+(t/deftest get-file-changes-returns-the-changes-after-a-revn
+  (let [prof    (th/create-profile* 1 {:is-active true})
+        file    (th/create-file* 1 {:profile-id (:id prof)
+                                    :project-id (:default-project-id prof)})
+        page-id (get-in file [:data :pages 0])
+        session (uuid/next)
+        add     (fn [revn]
+                  (let [id (uuid/next)]
+                    (th/update-file* {:file-id (:id file)
+                                      :profile-id (:id prof)
+                                      :session-id session
+                                      :revn revn
+                                      :changes [{:type :add-obj
+                                                 :page-id page-id
+                                                 :id id
+                                                 :parent-id uuid/zero
+                                                 :frame-id uuid/zero
+                                                 :obj (cts/setup-shape {:id id :name "rect" :type :rect})}]})
+                    id))
+        first-id  (add 0)
+        second-id (add 1)
+        changes   (fn [revn]
+                    (th/command! {::th/type :get-file-changes
+                                  ::rpc/profile-id (:id prof)
+                                  :file-id (:id file)
+                                  :revn revn}))]
+
+    (t/testing "every change after the revn, in order"
+      (let [{:keys [result error]} (changes 0)]
+        (t/is (nil? error))
+        (t/is (true? (:complete result)))
+        (t/is (= 2 (:revn result)))
+        (t/is (= [1 2] (mapv :revn (:changes result))))
+        (t/is (= [first-id second-id] (mapv #(-> % :changes first :id) (:changes result))))
+        (t/is (every? #(= session (:session-id %)) (:changes result)))))
+
+    (t/testing "nothing when the session is up to date"
+      (let [{:keys [result]} (changes 2)]
+        (t/is (true? (:complete result)))
+        (t/is (empty? (:changes result)))))
+
+    (t/testing "only for those who can read the file"
+      (let [other (th/create-profile* 2 {:is-active true})
+            {:keys [error]} (th/command! {::th/type :get-file-changes
+                                          ::rpc/profile-id (:id other)
+                                          :file-id (:id file)
+                                          :revn 0})]
+        (t/is (= :not-found (th/ex-type error)))))))
+
 (t/deftest get-team-shared-files-does-not-expose-the-storage-pointer
   (let [profile (th/create-profile* 1 {:is-active true})
         file    (th/create-file* 1 {:profile-id (:id profile)

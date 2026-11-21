@@ -198,7 +198,12 @@
                 (when redirect-uri
                   (st/emit! (rt/nav-raw :uri (str redirect-uri))))))
             (fn [cause]
-              (errors/on-error cause)))))))
+              ;; A team authorized before in this session stays reachable
+              ;; while the backend can't be reached
+              (if (and (some? authorized-at)
+                       (rp/retryable-error? cause))
+                (navigate)
+                (errors/on-error cause))))))))
 
 (defn- handle-sso-error-and-navigate
   "Check if the current route has an SSO error marker. If so, assign an

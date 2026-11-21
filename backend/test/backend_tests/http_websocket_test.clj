@@ -159,6 +159,54 @@
                ((get-method ws/handle-message :pointer-update)
                 cfg empty-wsp msg)))))))
 
+(t/deftest presence-update-publishes-the-page
+  (let [profile   (th/create-profile* 1 {:is-active true})
+        file      (th/create-file* 1 {:profile-id (:id profile)
+                                      :project-id (:default-project-id profile)})
+        file-id   (:id file)
+        page-id   (uuid/next)
+        state     (atom {::ws/file-subscription {:file-id file-id
+                                                 :channel (sp/chan :buf (sp/dropping-buffer 64))
+                                                 :topic file-id
+                                                 :can-edit true}})
+        output-ch (sp/chan :buf (sp/dropping-buffer 64))
+        wsp       (make-wsp (:id profile) state output-ch)
+        published (atom [])]
+
+    (with-redefs [mbus/pub! (fn [_ & {:keys [message]}] (swap! published conj message))]
+      (t/testing "keeps the page and tells the other sessions"
+        ((get-method ws/handle-message :presence-update)
+         th/*system* wsp {:type :presence-update :file-id file-id :page-id page-id})
+        (t/is (= page-id (-> @state ::ws/file-subscription :page-id)))
+        (t/is (= [{:type :presence
+                   :file-id file-id
+                   :session-id (::ws/session-id wsp)
+                   :profile-id (:id profile)
+                   :can-edit true
+                   :page-id page-id}]
+                 @published)))
+
+      (t/testing "ignores other files"
+        (reset! published [])
+        ((get-method ws/handle-message :presence-update)
+         th/*system* wsp {:type :presence-update :file-id (uuid/next) :page-id page-id})
+        (t/is (empty? @published))))))
+
+(t/deftest subscribe-file-knows-whether-the-session-can-edit
+  (let [profile1  (th/create-profile* 1 {:is-active true})
+        file      (th/create-file* 1 {:profile-id (:id profile1)
+                                      :project-id (:default-project-id profile1)})
+        state     (atom {})
+        output-ch (sp/chan :buf (sp/dropping-buffer 64))
+        wsp       (make-wsp (:id profile1) state output-ch)
+        published (atom [])]
+    (with-redefs [mbus/pub! (fn [_ & {:keys [message]}] (swap! published conj message))
+                  mbus/sub! (fn [& _] nil)]
+      ((get-method ws/handle-message :subscribe-file)
+       th/*system* wsp {:file-id (:id file)}))
+    (some-> @state ::ws/file-subscription :channel sp/close!)
+    (t/is (true? (-> @state ::ws/file-subscription :can-edit)))
+    (t/is (true? (:can-edit (first @published))))))
 ;; --- SUBSCRIPTION REVOCATION
 ;;
 ;; GHSA-m53j-2766-6jqw: a websocket subscription checks read permission

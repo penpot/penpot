@@ -1043,6 +1043,22 @@
        (t/is (empty? (get-in @store [:persistence :queue]))))
      (fn [_ _] (rx/of {:revn 1})))))
 
+;; Scenario: an edit is saved at once (force-persist right after it) and the
+;; save lands before the pending status would be shown. Proves: the status
+;; stays saved, with nothing left to save.
+(t/deftest ^:async an-edit-saved-at-once-stays-saved
+  (await
+   (with-persistence
+     (^:async fn [{:keys [file-id store]}]
+       (ptk/emit! store (local-commit file-id) ::dps/force-persist)
+       (await (async/wait-for #(and (= :saved (get-in @store [:persistence :status]))
+                                    (empty? (get-in @store [:persistence :queue])))
+                              "the save lands"))
+       ;; past the pause after which an edit shows as pending
+       (await (js/Promise. (fn [resolve] (js/setTimeout resolve 300))))
+       (t/is (= :saved (get-in @store [:persistence :status]))))
+     (fn [_ _] (rx/of {:revn 1})))))
+
 ;; Leave-page guard tests.
 
 ;; Scenario: an edit is buffered, then sent, then saved. The leave-page

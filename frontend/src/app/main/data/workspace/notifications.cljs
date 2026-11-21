@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.changes :as cpc]
+   [app.common.logging :as log]
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
@@ -24,7 +25,9 @@
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.layout :as dwly]
    [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.pages :as-alias dwpg]
    [app.main.data.workspace.texts :as dwt]
+   [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.util.globals :refer [global]]
    [app.util.mouse :as mse]
@@ -45,6 +48,9 @@
 (declare handle-library-change)
 (declare handle-pointer-send)
 (declare handle-export-update)
+(declare send-presence-update)
+(declare mark-resync)
+(declare resync-file)
 
 (defn- resubscribed?
   "True when `event` is a new subscription to `file-id`, which a reload of
@@ -102,8 +108,32 @@
                              ;; On reconnect, send again the subscription messages
                              (->> stream
                                   (rx/filter (ptk/type? ::dws/opened))
-                                  (rx/mapcat #(->> (rx/from initmsg)
-                                                   (rx/map dws/send))))
+                                  (rx/mapcat #(rx/concat
+                                               (->> (rx/from initmsg)
+                                                    (rx/map dws/send))
+                                               (rx/of (send-presence-update)))))
+
+                             ;; The other sessions learn the page this one opens
+                             (->> stream
+                                  (rx/filter (ptk/type? ::dwpg/initialized))
+                                  (rx/map (fn [_] (send-presence-update))))
+
+                             ;; The changes of the file sent while the
+                             ;; connection was lost or the tab was frozen
+                             (let [resyncs (->> (rx/merge
+                                                 (rx/filter (ptk/type? ::dws/opened) stream)
+                                                 (if (exists? js/document)
+                                                   (rx/merge
+                                                    (rx/from-event js/document "resume")
+                                                    (->> (rx/from-event js/document "visibilitychange")
+                                                         (rx/filter #(= "visible" (.-visibilityState js/document)))))
+                                                   (rx/empty)))
+                                                (rx/share))]
+                               (rx/merge
+                                (rx/map (fn [_] (mark-resync file-id)) resyncs)
+                                (->> resyncs
+                                     (rx/debounce 500)
+                                     (rx/map (fn [_] (resync-file file-id))))))
 
                              ;; Emit presence event for current user;
                              ;; this is because websocket server don't
@@ -190,6 +220,17 @@
                      :position point}]
         (rx/of (dws/send message))))))
 
+(defn send-presence-update
+  "Tell the other sessions of the file the page of this one."
+  []
+  (ptk/reify ::send-presence-update
+    ptk/WatchEvent
+    (watch [_ state _]
+      (when-let [file-id (:current-file-id state)]
+        (rx/of (dws/send {:type :presence-update
+                          :file-id file-id
+                          :page-id (:current-page-id state)}))))))
+
 ;; --- Finalize Websocket
 
 (defn finalize
@@ -211,7 +252,7 @@
     })
 
 (defn handle-presence
-  [{:keys [type session-id profile-id version] :as message}]
+  [{:keys [type session-id profile-id version page-id can-edit] :as message}]
   (letfn [(get-next-color [presence]
             (let [xfm   (comp (map second)
                               (map :color)
@@ -232,6 +273,8 @@
                 (assoc :profile-id profile-id)
                 (assoc :updated-at (ct/now))
                 (assoc :version version)
+                (cond-> (some? page-id) (assoc :page-id page-id))
+                (cond-> (boolean? can-edit) (assoc :can-edit can-edit))
                 (update :color update-color presence)
                 (assoc :text-color "#000000")))
 
@@ -264,6 +307,11 @@
                           :updated-at (ct/now)
                           :page-id page-id))))))
 
+(def ^:private max-applied-revns
+  "Revisions of the changes applied that are kept, to skip the ones that
+  come again; past it the older half is dropped."
+  512)
+
 (def ^:private
   schema:handle-file-change
   [:map {:title "handle-file-change"}
@@ -286,27 +334,119 @@
    "expected valid parameters"
    (check-file-change-params! msg))
 
-  (ptk/reify ::handle-file-change
-    IDeref
-    (-deref [_] {:changes changes})
+  (let [applied? (volatile! false)]
+    (ptk/reify ::handle-file-change
+      IDeref
+      (-deref [_] {:changes changes :session-id (:session-id msg)})
 
+      ptk/UpdateEvent
+      (update [_ state]
+        ;; A change can come twice: notified and fetched again after a
+        ;; lost connection
+        (vreset! applied? (contains? (get-in state [::applied-revns file-id]) revn))
+        (update-in state [::applied-revns file-id]
+                   (fn [revns]
+                     (let [revns (conj (or revns (sorted-set)) revn)]
+                       (if (> (count revns) max-applied-revns)
+                         (into (sorted-set) (drop (quot max-applied-revns 2)) revns)
+                         revns)))))
+
+      ptk/WatchEvent
+      (watch [_ _ _]
+        ;; The commit event is responsible to apply the data localy
+        ;; and update the persistence internal state with the updated
+        ;; file-revn
+        (if @applied?
+          (rx/empty)
+          (rx/concat
+           (rx/of (dch/commit {:file-id file-id
+                               :file-revn revn
+                               :file-vern vern
+                               :save-undo? false
+                               :source :remote
+                               :redo-changes (vec changes)
+                               :undo-changes []}))
+           (if (:repaired msg)
+             (rx/of (dps/notify-repaired))
+             (rx/empty))))))))
+
+(defn- previewing?
+  "True while the workspace shows an earlier version of the file."
+  [state]
+  (some? (dm/get-in state [:workspace-global :preview-id])))
+
+(defn- mark-resync
+  "Keep the revision of `file-id` when the connection opens or the tab comes
+  back: the changes after it are the ones to fetch, even when the changes
+  notified from then on arrive before the fetch."
+  [file-id]
+  (ptk/reify ::mark-resync
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [revn (:revn (dsh/lookup-file state file-id))]
+        (cond-> state
+          (and (some? revn) (not (previewing? state)))
+          (update-in [::resync-revn file-id] #(if (some? %) (min % revn) revn)))))))
+
+(defn- apply-missed-changes
+  "Apply the changes of other sessions in `rows`, fetched after a lost
+  connection, that are not applied yet. When one of them is older than a
+  change already applied it would go after a newer one, so the file is
+  loaded again instead."
+  [file-id vern rows]
+  (ptk/reify ::apply-missed-changes
     ptk/WatchEvent
-    (watch [_ _ _]
-      ;; The commit event is responsible to apply the data localy
-      ;; and update the persistence internal state with the updated
-      ;; file-revn
+    (watch [_ state _]
+      (let [session-id (:session-id state)
+            applied    (dm/get-in state [::applied-revns file-id])
+            newest     (some-> applied rseq first)
+            missed     (into []
+                             (remove #(or (= session-id (:session-id %))
+                                          (contains? applied (:revn %))))
+                             rows)]
+        (if (and (some? newest) (some #(< (:revn %) newest) missed))
+          (rx/of (ptk/event ::dw/reload-current-file))
+          (->> (rx/from missed)
+               (rx/map (fn [{:keys [revn changes] :as row}]
+                         (handle-file-change {:type :file-change
+                                              :file-id file-id
+                                              :profile-id (or (:profile-id row) uuid/zero)
+                                              :session-id (:session-id row)
+                                              :revn revn
+                                              :vern vern
+                                              :changes changes})))))))))
 
-      (rx/concat
-       (rx/of (dch/commit {:file-id file-id
-                           :file-revn revn
-                           :file-vern vern
-                           :save-undo? false
-                           :source :remote
-                           :redo-changes (vec changes)
-                           :undo-changes []}))
-       (if (:repaired msg)
-         (rx/of (dps/notify-repaired))
-         (rx/empty))))))
+(defn- resync-file
+  "Apply the changes of other sessions saved in the file after the revision
+  kept by `mark-resync`, or else the last one this session has: the ones
+  notified while the connection was lost or the tab was frozen. When they
+  can't all be fetched, or not in order, the file is loaded again. Nothing
+  is fetched while an earlier version is shown."
+  [file-id]
+  (let [revn* (volatile! nil)]
+    (ptk/reify ::resync-file
+      ptk/UpdateEvent
+      (update [_ state]
+        (vreset! revn* (or (dm/get-in state [::resync-revn file-id])
+                           (:revn (dsh/lookup-file state file-id))))
+        (update state ::resync-revn dissoc file-id))
+
+      ptk/WatchEvent
+      (watch [_ state _]
+        (let [revn @revn*]
+          (when (and (some? revn) (not (previewing? state)))
+            (->> (rp/cmd! :get-file-changes {:file-id file-id :revn revn})
+                 (rx/map
+                  (fn [{:keys [complete changes vern]}]
+                    (if complete
+                      ;; Checked with the changes applied while fetching
+                      (apply-missed-changes file-id vern changes)
+                      (ptk/event ::dw/reload-current-file))))
+                 (rx/catch (fn [cause]
+                             (log/wrn :hint "unable to fetch the missed changes of the file"
+                                      :file-id (dm/str file-id)
+                                      :cause cause)
+                             (rx/empty))))))))))
 
 (defn handle-file-deleted
   [{:keys [file-id] :as msg}]
