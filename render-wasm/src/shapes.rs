@@ -1292,8 +1292,10 @@ impl Shape {
         self.cap_bounds_margin() > 0.0
     }
 
-    pub fn mask_id(&self) -> Option<&Uuid> {
-        self.children.first()
+    pub fn mask_id(&self) -> Option<Uuid> {
+        self.is_masked_group()
+            .then(|| self.children.first().copied())
+            .flatten()
     }
 
     pub fn children_count(&self) -> usize {
@@ -2652,7 +2654,7 @@ mod tests {
         let content_b = Uuid::new_v4();
         group.children = vec![mask_id, content_a, content_b];
 
-        assert_eq!(group.mask_id(), Some(&mask_id));
+        assert_eq!(group.mask_id(), Some(mask_id));
 
         let content: Vec<Uuid> = group.children_ids_iter(false).copied().collect();
         assert_eq!(content.len(), 2);

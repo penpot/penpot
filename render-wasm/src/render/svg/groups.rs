@@ -1,5 +1,5 @@
 use crate::error::Result;
-use crate::shapes::{Shadow, Shape, Type};
+use crate::shapes::{Shadow, Shape};
 use crate::state::ShapesPoolRef;
 use crate::uuid::Uuid;
 
@@ -75,12 +75,7 @@ fn render_group_content(
     tree: ShapesPoolRef,
     scale: f32,
 ) -> Result<()> {
-    let masked = matches!(element.shape_type, Type::Group(g) if g.masked);
-    if !masked {
-        return render_group_content_children(builder, shared, element, tree, scale);
-    }
-
-    let Some(mask_id) = element.mask_id().copied() else {
+    let Some(mask_id) = element.mask_id() else {
         return render_group_content_children(builder, shared, element, tree, scale);
     };
 

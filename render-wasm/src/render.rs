@@ -2238,8 +2238,8 @@ impl RenderState {
                 }
             }
             pending.extend(shape.children_ids_iter(false).copied());
-            if shape.is_masked_group() {
-                pending.extend(shape.mask_id().copied());
+            if let Some(mask_id) = shape.mask_id() {
+                pending.push(mask_id);
             }
         }
         reach
@@ -3137,7 +3137,7 @@ impl RenderState {
                         mask: false,
                         flattened: false,
                     });
-                    if let Some(&mask_id) = element.mask_id() {
+                    if let Some(mask_id) = element.mask_id() {
                         self.pending_nodes.push(NodeRenderState {
                             id: mask_id,
                             visited_children: false,
@@ -3434,7 +3434,7 @@ impl RenderState {
         clip_bounds: Option<ClipStack>,
         pass: SilhouettePass,
     ) -> Result<()> {
-        let Some(mask_shape) = shape.mask_id().and_then(|id| pass.tree.get(id)) else {
+        let Some(mask_shape) = shape.mask_id().and_then(|id| pass.tree.get(&id)) else {
             return Ok(());
         };
 
