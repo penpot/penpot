@@ -42,8 +42,13 @@
   (-> (thf/sample-file :file1)
       (thv/add-variant :variant1 :component1 :root1 :component2 :root2)))
 
+(defn- prop-named
+  [props name]
+  (some #(when (= name (:name %)) %) props))
+
 (t/deftest migration-0038-strips-forbidden-characters
-  ;; root2 is the first child of :shapes, so its names lead the set.
+  ;; root1 is the last child of :shapes (top of the layers panel), so its
+  ;; names lead the set.
   (let [file   (-> (variant-file)
                    (thk/update-component :component2 {:variant-properties [{:name "Size=Big"
                                                                             :value "a=b,"
@@ -58,13 +63,11 @@
         copy'  (ths/get-shape file' :copy2)
         data'  (ctf/file-data file')]
 
-    (t/is (= "SizeBig" (-> comp2' :variant-properties first :name)))
-    (t/is (= "ab" (-> comp2' :variant-properties first :value)))
-    (t/is (true? (-> comp2' :variant-properties first :hidden)))
+    (t/is (= ["Property 1" "SizeBig"] (mapv :name (:variant-properties comp2'))))
+    (t/is (= "ab" (:value (prop-named (:variant-properties comp2') "SizeBig"))))
+    (t/is (true? (:hidden (prop-named (:variant-properties comp2') "SizeBig"))))
     (t/is (= "ab" (:variant-name root2')))
-    (t/is (= "Value1" (->> (:variant-properties comp1')
-                           (some #(when (= "Property 1" (:name %)) %))
-                           :value)))
+    (t/is (= "Value1" (:value (prop-named (:variant-properties comp1') "Property 1"))))
     (t/is (= copy copy') "copies are left untouched")
     (t/is (= data' (cfm/migrate-data data' migration-id)))))
 
@@ -84,6 +87,25 @@
     (t/is (= props (:variant-properties comp')))
     (t/is (= "active, crítica" (:variant-name root')))
     (t/is (= (ctv/properties-to-name props) (:variant-name root')))
+    (t/is (= data' (cfm/migrate-data data' migration-id)))))
+
+(t/deftest migration-0038-keeps-the-top-variant-on-a-clash
+  ;; root1 is the last child of :shapes, so it is the top variant in the
+  ;; layers panel and the primary one: it keeps its values.
+  (let [props [{:name "Size" :value "Big"}]
+        file  (-> (variant-file)
+                  (thk/update-component :component1 {:variant-properties props})
+                  (thk/update-component :component2 {:variant-properties props})
+                  (ths/update-shape :root1 :variant-name "Big")
+                  (ths/update-shape :root2 :variant-name "Big"))
+        file' (migrate-text file)
+        data' (ctf/file-data file')]
+
+    (t/is (= props (:variant-properties (thk/get-component file' :component1))))
+    (t/is (= "Big" (:variant-name (ths/get-shape file' :root1))))
+    (t/is (= [{:name "Size" :value "Big (1)"}]
+             (:variant-properties (thk/get-component file' :component2))))
+    (t/is (= "Big (1)" (:variant-name (ths/get-shape file' :root2))))
     (t/is (= data' (cfm/migrate-data data' migration-id)))))
 
 (t/deftest migration-0038-does-not-take-names-from-a-detached-component
@@ -133,5 +155,5 @@
         file' (cfm/migrate-file file {})]
 
     (t/is (contains? (:migrations file') migration-id))
-    (t/is (= "SizeBig" (-> (thk/get-component file' :component2) :variant-properties first :name)))
+    (t/is (some? (prop-named (:variant-properties (thk/get-component file' :component2)) "SizeBig")))
     (t/is (some? (ctf/check-file-data (:data file'))))))

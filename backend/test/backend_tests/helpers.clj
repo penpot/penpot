@@ -63,6 +63,23 @@
 (def ^:dynamic *system* nil)
 (def ^:dynamic *pool* nil)
 
+(defmacro with-audit-config
+  "Rebind the flags and the values derived from them at boot. An optional
+  binding vector rebinds other vars in the same scope."
+  [flags & body]
+  (let [extra (if (and (seq body) (vector? (first body)))
+                (first body)
+                [])
+        body  (if (seq extra) (rest body) body)]
+    `(let [flags# ~flags]
+       (with-redefs [cf/flags flags#
+                     cf/audit-persist? (cf/persist-audit-events? flags#)
+                     cf/webhooks-enabled? (contains? flags# :webhooks)
+                     cf/telemetry-enabled? (contains? flags# :telemetry)
+                     cf/error-reporting-enabled? (contains? flags# :error-reporting)
+                     ~@extra]
+         ~@body))))
+
 ;; Fallback values used when no PENPOT_TEST_* env vars are set (e.g. CI sets
 ;; them explicitly, see .github/workflows/tests-backend.yml). Inside the
 ;; devenv each wsN container receives per-instance values via
@@ -94,8 +111,12 @@
   ([next]
    (init-config nil next))
   ([extra-flags next]
-   (let [flags (into default-flags extra-flags)]
-     (with-redefs [app.config/flags (flags/parse flags/default flags)
+   (let [flags (flags/parse flags/default (into default-flags extra-flags))]
+     (with-redefs [app.config/flags flags
+                   app.config/audit-persist? (cf/persist-audit-events? flags)
+                   app.config/webhooks-enabled? (contains? flags :webhooks)
+                   app.config/telemetry-enabled? (contains? flags :telemetry)
+                   app.config/error-reporting-enabled? (contains? flags :error-reporting)
                    app.config/config config
                    app.loggers.audit/submit (constantly nil)
                    app.auth/derive-password identity
@@ -153,7 +174,10 @@
                            :app.loggers.database/reporter
                            :app.loggers.metrics/reporter
                            :app.worker/cron
-                           :app.worker/dispatcher)
+                           :app.worker/dispatcher
+                           :app.loggers.audit.consumers.nexus/consumer
+                           :app.loggers.audit.consumers.admin-console/consumer
+                           :app.loggers.audit.consumers.telemetry/consumer)
                    (remove-job-runners))
         _      (ig/load-namespaces system)
         system (-> (ig/expand system) (ig/init))]
@@ -657,6 +681,18 @@
                                      (assoc ::jobs/params (:params row))
                                      (assoc ::jobs/context (jobs/make-context row))
                                      (assoc ::jobs/job-id (:id row)))))))))
+
+(defn wait-for
+  "Poll `pred` until it holds, up to `timeout` ms (5 s by default). Answers
+  true when it held, false on timeout."
+  ([pred] (wait-for pred 5000))
+  ([pred timeout]
+   (let [deadline (+ (System/currentTimeMillis) timeout)]
+     (loop []
+       (cond
+         (pred) true
+         (< (System/currentTimeMillis) deadline) (do (Thread/sleep 10) (recur))
+         :else false)))))
 
 (defn metrics-stub
   "A metrics instance with no collectors, where every `run!` is a no-op."

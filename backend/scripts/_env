@@ -30,6 +30,7 @@ export PENPOT_MEDIA_PROCESSING_SERVICE_URI=http://localhost:6065
 
 export PENPOT_FLAGS="\
        $PENPOT_FLAGS \
+       disable-admin-console \
        enable-login-with-password \
        enable-login-with-ldap \
        disable-login-with-oidc \
@@ -41,7 +42,6 @@ export PENPOT_FLAGS="\
        enable-backend-asserts \
        disable-feature-fdata-pointer-map \
        enable-feature-fdata-objects-map \
-       enable-audit-log \
        enable-transit-readable-response \
        disable-remote-media-processing \
        enable-demo-users \

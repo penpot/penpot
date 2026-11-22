@@ -37,12 +37,15 @@
    [frontend-tests.data.team-test]
    [frontend-tests.data.uploads-test]
    [frontend-tests.data.viewer-test]
+   [frontend-tests.data.workspace-board-link-test]
    [frontend-tests.data.workspace-colors-test]
    [frontend-tests.data.workspace-comments-test]
    [frontend-tests.data.workspace-context-menu-test]
    [frontend-tests.data.workspace-focus-test]
+   [frontend-tests.data.workspace-heal-undo-test]
    [frontend-tests.data.workspace-interactions-test]
    [frontend-tests.data.workspace-layout-other-page-test]
+   [frontend-tests.data.workspace-libraries-link-test]
    [frontend-tests.data.workspace-libraries-load-test]
    [frontend-tests.data.workspace-libraries-sync-test]
    [frontend-tests.data.workspace-mcp-test]
@@ -52,6 +55,7 @@
    [frontend-tests.data.workspace-path-edition-test]
    [frontend-tests.data.workspace-reflow-test]
    [frontend-tests.data.workspace-shortcuts-test]
+   [frontend-tests.data.workspace-sync-text-wasm-test]
    [frontend-tests.data.workspace-texts-test]
    [frontend-tests.data.workspace-thumbnails-test]
    [frontend-tests.data.workspace-thumbnails-wasm-test]
@@ -125,6 +129,7 @@
    [frontend-tests.render-wasm.process-objects-test]
    [frontend-tests.render-wasm.serialization-test]
    [frontend-tests.render-wasm.shape-proxy-test]
+   [frontend-tests.render-wasm.stale-text-selrects-test]
    [frontend-tests.render-wasm.text-editor-apply-styles-test]
    [frontend-tests.render-wasm.text-editor-caret-color-test]
    [frontend-tests.render-wasm.text-editor-content-range-test]
@@ -189,6 +194,7 @@
    [frontend-tests.ui.sortable-auto-scroll-test]
    [frontend-tests.ui.static-test]
    [frontend-tests.ui.stroke-menu-test]
+   [frontend-tests.ui.subscription-dashboard-test]
    [frontend-tests.ui.subscription-test]
    [frontend-tests.ui.team-container-test]
    [frontend-tests.ui.text-attrs-multiple-test]
@@ -197,6 +203,7 @@
    [frontend-tests.ui.workspace-libraries-test]
    [frontend-tests.util-clipboard-test]
    [frontend-tests.util-http-test]
+   [frontend-tests.util-i18n-test]
    [frontend-tests.util-object-test]
    [frontend-tests.util-queue-test]
    [frontend-tests.util-range-tree-test]
@@ -267,12 +274,15 @@
    'frontend-tests.data.team-test
    'frontend-tests.data.uploads-test
    'frontend-tests.data.viewer-test
+   'frontend-tests.data.workspace-board-link-test
    'frontend-tests.data.workspace-colors-test
    'frontend-tests.data.workspace-comments-test
    'frontend-tests.data.workspace-context-menu-test
    'frontend-tests.data.workspace-focus-test
+   'frontend-tests.data.workspace-heal-undo-test
    'frontend-tests.data.workspace-interactions-test
    'frontend-tests.data.workspace-layout-other-page-test
+   'frontend-tests.data.workspace-libraries-link-test
    'frontend-tests.data.workspace-libraries-load-test
    'frontend-tests.data.workspace-libraries-sync-test
    'frontend-tests.data.workspace-mcp-test
@@ -282,6 +292,7 @@
    'frontend-tests.data.workspace-path-edition-test
    'frontend-tests.data.workspace-reflow-test
    'frontend-tests.data.workspace-shortcuts-test
+   'frontend-tests.data.workspace-sync-text-wasm-test
    'frontend-tests.data.workspace-texts-test
    'frontend-tests.data.workspace-thumbnails-test
    'frontend-tests.data.workspace-thumbnails-wasm-test
@@ -354,6 +365,7 @@
    'frontend-tests.render-wasm.process-objects-test
    'frontend-tests.render-wasm.serialization-test
    'frontend-tests.render-wasm.shape-proxy-test
+   'frontend-tests.render-wasm.stale-text-selrects-test
    'frontend-tests.render-wasm.text-editor-apply-styles-test
    'frontend-tests.render-wasm.text-editor-caret-color-test
    'frontend-tests.render-wasm.text-editor-content-range-test
@@ -420,6 +432,7 @@
    'frontend-tests.ui.sortable-auto-scroll-test
    'frontend-tests.ui.static-test
    'frontend-tests.ui.stroke-menu-test
+   'frontend-tests.ui.subscription-dashboard-test
    'frontend-tests.ui.subscription-test
    'frontend-tests.ui.team-container-test
    'frontend-tests.ui.text-attrs-multiple-test
@@ -428,6 +441,7 @@
    'frontend-tests.ui.workspace-libraries-test
    'frontend-tests.util-clipboard-test
    'frontend-tests.util-http-test
+   'frontend-tests.util-i18n-test
    'frontend-tests.util-object-test
    'frontend-tests.util-queue-test
    'frontend-tests.util-range-tree-test

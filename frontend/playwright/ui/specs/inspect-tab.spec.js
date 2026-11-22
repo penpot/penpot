@@ -27,10 +27,9 @@ const setupFile = async (workspacePage) => {
 };
 
 const shapeToLayerName = {
-  flex: "shape - layout - flex",
-  flexElement: "shape - layout - flex - element",
-  grid: "shape - layout - grid",
-  gridElement: "shape - layout - grid - element",
+  flex: "Shape - layout - flex",
+  flexElement: "Shape - layout - flex - element",
+  grid: "Shape - layout - grid",
   shadow: "shape - shadow - single",
   shadowMultiple: "shape - shadow - multiple",
   shadowComposite: "shape - shadow - composite",
@@ -46,7 +45,6 @@ const shapeToLayerName = {
     gradient: "shape - fill - single - gradient",
     image: "shape - fill - single - image",
     multiple: "shape - fill - multiple",
-    style: "shape - fill - style",
     token: "shape - fill - token",
   },
   stroke: {
@@ -54,7 +52,6 @@ const shapeToLayerName = {
     gradient: "shape - stroke - single - gradient",
     image: "shape - stroke - single - image",
     multiple: "shape - stroke - multiple",
-    style: "shape - stroke - style",
     token: "shape - stroke - token",
   },
   text: {
@@ -104,32 +101,66 @@ const getPanelByTitle = async (workspacePage, title) => {
 };
 
 /**
+ * Waits for a style panel to render and checks how many property rows it
+ * shows. Polling keeps the count honest while the panel fills.
+ * @param {object} panel - The style panel locator
+ * @param {number} minimum - The minimum number of property rows
+ */
+const expectPanelRows = async (panel, minimum) => {
+  await expect(panel).toBeVisible();
+  await expect
+    .poll(() => panel.getByTestId("property-row").count())
+    .toBeGreaterThanOrEqual(minimum);
+};
+
+/**
+ * Expands a layer row when it is collapsed. The layer tree keeps its state
+ * across selections, so clicking an already expanded toggle would collapse
+ * the children the next selection needs.
+ * @param {WasmWorkspacePage} workspacePage - The workspace page instance
+ * @param {string} layerName - The name of the layer whose children to show
+ */
+const expandLayer = async (workspacePage, layerName) => {
+  const toggle = workspacePage
+    .layerRow(layerName)
+    .getByTestId("toggle-content");
+
+  await expect(toggle).toBeVisible();
+
+  if ((await toggle.getAttribute("aria-expanded")) !== "true") {
+    await toggle.click();
+    await expect(toggle).toHaveAttribute("aria-expanded", "true");
+  }
+};
+
+/**
  * Selects a layer in the layers panel
  * @param {WasmWorkspacePage} workspacePage - The workspace page instance
  * @param {string} layerName - The name of the layer to select
  * @param {string} parentLayerName - The name of the parent layer to expand (optional)
  */
 const selectLayer = async (workspacePage, layerName, parentLayerName) => {
-  await workspacePage.clickToggableLayer("Board");
+  await expandLayer(workspacePage, "Board");
   if (parentLayerName) {
-    await workspacePage.clickToggableLayer(parentLayerName);
+    await expandLayer(workspacePage, parentLayerName);
   }
-  await workspacePage.clickLeafLayer(layerName);
-  await workspacePage.page.waitForTimeout(500);
+
+  await workspacePage.selectLayer(layerName);
 };
 
 /**
- * Opens the Inspect tab
+ * Opens the Inspect tab and waits for its panels to render
  * @param {WasmWorkspacePage} workspacePage - The workspace page instance
  */
-
 const openInspectTab = async (workspacePage) => {
   const inspectButton = workspacePage.page.getByRole("tab", {
     name: "Inspect",
   });
   await inspectButton.waitFor();
   await inspectButton.click();
-  await workspacePage.page.waitForTimeout(500);
+
+  const sidebar = workspacePage.page.getByTestId("right-sidebar");
+  await expect(sidebar.getByRole("article").first()).toBeVisible();
 };
 
 /**
@@ -148,644 +179,429 @@ const selectColorSpace = async (workspacePage, colorSpace) => {
   await colorSpaceOption.click();
 };
 
-test.describe("Inspect tab - Styles", () => {
-  test.skip("Open Inspect tab", async ({ page }) => {
-    const workspacePage = new WasmWorkspacePage(page);
-    await setupFile(workspacePage);
+test("Layout and size", async ({ page }) => {
+  const workspacePage = new WasmWorkspacePage(page);
+  await setupFile(workspacePage);
 
+  await test.step("Flex container", async () => {
     await selectLayer(workspacePage, shapeToLayerName.flex);
     await openInspectTab(workspacePage);
 
-    const switcherLabel = workspacePage.page.getByText("Layer info", {
-      exact: true,
-    });
-    await expect(switcherLabel).toBeVisible();
-    await expect(switcherLabel).toHaveText("Layer info");
-  });
-  test.describe("Inspect tab - Flex", () => {
-    test("Shape Layout Flex ", async ({ page }) => {
-      const workspacePage = new WasmWorkspacePage(page);
-      await setupFile(workspacePage);
+    await expect(page.getByText("Layer info", { exact: true })).toBeVisible();
 
-      await selectLayer(workspacePage, shapeToLayerName.flex);
-      await openInspectTab(workspacePage);
-
-      const panel = await getPanelByTitle(workspacePage, "Layout");
-      await expect(panel).toBeVisible();
-
-      const propertyRow = panel.getByTestId("property-row");
-      const propertyRowCount = await propertyRow.count();
-
-      expect(propertyRowCount).toBeGreaterThanOrEqual(1);
-    });
-
-    test("Shape Layout Flex Element", async ({ page }) => {
-      const workspacePage = new WasmWorkspacePage(page);
-      await setupFile(workspacePage);
-
-      await selectLayer(
-        workspacePage,
-        shapeToLayerName.flexElement,
-        shapeToLayerName.flex,
-      );
-      await openInspectTab(workspacePage);
-
-      const panel = await getPanelByTitle(workspacePage, "Flex Element");
-      await expect(panel).toBeVisible();
-
-      const propertyRow = panel.getByTestId("property-row");
-      const propertyRowCount = await propertyRow.count();
-
-      expect(propertyRowCount).toBeGreaterThanOrEqual(1);
-    });
+    const panel = await getPanelByTitle(workspacePage, "Layout");
+    await expectPanelRows(panel, 1);
   });
 
-  test("Shape Layout Grid", async ({ page }) => {
-    const workspacePage = new WasmWorkspacePage(page);
-    await setupFile(workspacePage);
+  await test.step("Flex element", async () => {
+    await selectLayer(
+      workspacePage,
+      shapeToLayerName.flexElement,
+      shapeToLayerName.flex,
+    );
 
+    const panel = await getPanelByTitle(workspacePage, "Flex Element");
+    await expectPanelRows(panel, 1);
+  });
+
+  await test.step("Grid", async () => {
     await selectLayer(workspacePage, shapeToLayerName.grid);
+
+    const panel = await getPanelByTitle(workspacePage, "Layout");
+    await expectPanelRows(panel, 1);
+  });
+
+  await test.step("Border radius - individual", async () => {
+    await selectLayer(
+      workspacePage,
+      shapeToLayerName.borderRadius.individual,
+      shapeToLayerName.borderRadius.main,
+    );
+
+    const panel = await getPanelByTitle(workspacePage, "Size and position");
+    await expectPanelRows(panel, 2);
+
+    const propertyRow = panel.getByTestId("property-row");
+    await expect(
+      propertyRow.filter({ hasText: "Border start start radius" }),
+    ).toBeVisible();
+    await expect(
+      propertyRow.filter({ hasText: "Border end end radius" }),
+    ).toBeVisible();
+  });
+
+  await test.step("Border radius - multiple", async () => {
+    await selectLayer(
+      workspacePage,
+      shapeToLayerName.borderRadius.multiple,
+      shapeToLayerName.borderRadius.main,
+    );
+
+    const panel = await getPanelByTitle(workspacePage, "Size and position");
+    await expectPanelRows(panel, 4);
+
+    const propertyRow = panel.getByTestId("property-row");
+    await expect(
+      propertyRow.filter({ hasText: "Border start start radius" }),
+    ).toBeVisible();
+    await expect(
+      propertyRow.filter({ hasText: "Border start end radius" }),
+    ).toBeVisible();
+    await expect(
+      propertyRow.filter({ hasText: "Border end end radius" }),
+    ).toBeVisible();
+    await expect(
+      propertyRow.filter({ hasText: "Border end start radius" }),
+    ).toBeVisible();
+  });
+
+  await test.step("Border radius - token", async () => {
+    await selectLayer(
+      workspacePage,
+      shapeToLayerName.borderRadius.token,
+      shapeToLayerName.borderRadius.main,
+    );
+
+    const panel = await getPanelByTitle(workspacePage, "Size and position");
+    await expectPanelRows(panel, 4);
+
+    const propertyRow = panel.getByTestId("property-row");
+
+    const borderStartEndRadius = propertyRow.filter({
+      hasText: "Border start end radius",
+    });
+    await expect(borderStartEndRadius).toBeVisible();
+    await expect(borderStartEndRadius).toContainText("radius-md");
+
+    const borderEndStartRadius = propertyRow.filter({
+      hasText: "Border end start radius",
+    });
+    await expect(borderEndStartRadius).toBeVisible();
+    await expect(borderEndStartRadius).toContainText("radius-md");
+  });
+});
+
+test("Shadow and blur", async ({ page }) => {
+  const workspacePage = new WasmWorkspacePage(page);
+  await setupFile(workspacePage);
+
+  await test.step("Single shadow", async () => {
+    await selectLayer(workspacePage, shapeToLayerName.shadow);
+    await openInspectTab(workspacePage);
+
+    const panel = await getPanelByTitle(workspacePage, "Shadow");
+    await expectPanelRows(panel, 2);
+  });
+
+  await test.step("Multiple shadows", async () => {
+    await selectLayer(workspacePage, shapeToLayerName.shadowMultiple);
+
+    const panel = await getPanelByTitle(workspacePage, "Shadow");
+    await expectPanelRows(panel, 4);
+  });
+
+  await test.step("Blur", async () => {
+    await selectLayer(workspacePage, shapeToLayerName.blur);
+
+    const panel = await getPanelByTitle(workspacePage, "Blur");
+    await expectPanelRows(panel, 1);
+  });
+});
+
+// The two blur cases below mutate the selected shape with controls that
+// live in the Design tab, so they keep a page load of their own.
+
+test("Shape - Blur on not svg compatible shape", async ({ page }) => {
+  const workspacePage = new WasmWorkspacePage(page);
+  await setupFile(workspacePage);
+
+  await selectLayer(workspacePage, shapeToLayerName.blur);
+
+  await workspacePage.page.getByTestId("add-stroke").click();
+  await workspacePage.page.getByTestId("stroke.alignment").click();
+  await workspacePage.page.getByRole("option", { name: "Center" }).click();
+
+  await openInspectTab(workspacePage);
+
+  const panel = await getPanelByTitle(workspacePage, "Blur");
+  await expectPanelRows(panel, 1);
+});
+
+test("Shape - Background Blur on not svg compatible shape", async ({
+  page,
+}) => {
+  const workspacePage = new WasmWorkspacePage(page);
+  await setupFile(workspacePage);
+
+  await selectLayer(workspacePage, shapeToLayerName.blur);
+
+  await workspacePage.page
+    .getByRole("combobox", { name: "Blur type select" })
+    .click();
+  await workspacePage.page
+    .getByRole("option", { name: "Background blur" })
+    .click();
+  await workspacePage.page.getByTestId("add-stroke").click();
+  await workspacePage.page.getByTestId("stroke.alignment").click();
+  await workspacePage.page.getByRole("option", { name: "Center" }).click();
+
+  await openInspectTab(workspacePage);
+
+  const panel = await getPanelByTitle(workspacePage, "Blur");
+  await expectPanelRows(panel, 1);
+});
+
+// FIXME: flaky/random (depends on trace ?)
+test.skip("Shape Shadow - Composite shadow", async ({ page }) => {
+  const workspacePage = new WasmWorkspacePage(page);
+  await setupFile(workspacePage);
+
+  await selectLayer(workspacePage, shapeToLayerName.shadowComposite);
+  await openInspectTab(workspacePage);
+
+  const panel = await getPanelByTitle(workspacePage, "Shadow");
+  await expect(panel).toBeVisible();
+
+  const propertyRow = panel.getByTestId("property-row");
+  await expect.poll(() => propertyRow.count()).toBeGreaterThanOrEqual(3);
+
+  const compositeShadowRow = propertyRow.first();
+  await compositeShadowRow.waitFor();
+
+  await expect(compositeShadowRow).toBeVisible();
+
+  const compositeShadowTerm = compositeShadowRow.locator("dt");
+
+  const compositeShadowDefinition = compositeShadowRow.locator("dd");
+
+  await expect(compositeShadowTerm).toHaveText("Shadow", { exact: true });
+  await expect(compositeShadowDefinition).toContainText("shadowToken");
+});
+
+test("Fill", async ({ page }) => {
+  const workspacePage = new WasmWorkspacePage(page);
+  await setupFile(workspacePage);
+
+  await test.step("Solid", async () => {
+    await selectLayer(workspacePage, shapeToLayerName.fill.solid);
+    await openInspectTab(workspacePage);
+
+    const panel = await getPanelByTitle(workspacePage, "Fill");
+    await expectPanelRows(panel, 1);
+  });
+
+  await test.step("Gradient", async () => {
+    await selectLayer(workspacePage, shapeToLayerName.fill.gradient);
+
+    const panel = await getPanelByTitle(workspacePage, "Fill");
+    await expectPanelRows(panel, 1);
+  });
+
+  await test.step("Image", async () => {
+    await selectLayer(workspacePage, shapeToLayerName.fill.image);
+
+    const panel = await getPanelByTitle(workspacePage, "Fill");
+    await expectPanelRows(panel, 1);
+
+    await expect(
+      panel.getByRole("img", { name: "Preview of the shape's fill" }),
+    ).toBeVisible();
+  });
+
+  await test.step("Multiple", async () => {
+    await selectLayer(workspacePage, shapeToLayerName.fill.multiple);
+
+    const panel = await getPanelByTitle(workspacePage, "Fill");
+    await expectPanelRows(panel, 3);
+
+    await expect(
+      panel.getByRole("img", { name: "Preview of the shape's fill" }),
+    ).toBeVisible();
+  });
+
+  await test.step("Token", async () => {
+    await selectLayer(workspacePage, shapeToLayerName.fill.token);
+
+    const panel = await getPanelByTitle(workspacePage, "Fill");
+    await expectPanelRows(panel, 1);
+
+    const backgroundRow = panel
+      .getByTestId("property-row")
+      .filter({ hasText: "Background" });
+    await expect(backgroundRow).toContainText("primary");
+    await expect(backgroundRow).toBeVisible();
+  });
+});
+
+test("Copy and colour space", async ({ page }) => {
+  const workspacePage = new WasmWorkspacePage(page);
+  await setupFile(workspacePage);
+
+  await test.step("Copy one property", async () => {
+    await selectLayer(workspacePage, shapeToLayerName.flex);
     await openInspectTab(workspacePage);
 
     const panel = await getPanelByTitle(workspacePage, "Layout");
-    await expect(panel).toBeVisible();
+    await expectPanelRows(panel, 1);
 
-    const propertyRow = panel.getByTestId("property-row");
-    const propertyRowCount = await propertyRow.count();
+    await copyPropertyFromPropertyRow(panel, "Display");
 
-    expect(propertyRowCount).toBeGreaterThanOrEqual(1);
+    const shorthand = await page.evaluate(() => navigator.clipboard.readText());
+    expect(shorthand).toBe("display: flex;");
   });
 
-  test.describe("Inspect tab - Shadow", () => {
-    test("Shape Shadow - Single shadow", async ({ page }) => {
-      const workspacePage = new WasmWorkspacePage(page);
-      await setupFile(workspacePage);
+  await test.step("Copy the shorthand", async () => {
+    await selectLayer(workspacePage, shapeToLayerName.shadow);
 
-      await selectLayer(workspacePage, shapeToLayerName.shadow);
-      await openInspectTab(workspacePage);
+    const panel = await getPanelByTitle(workspacePage, "Shadow");
+    await expectPanelRows(panel, 2);
 
-      const panel = await getPanelByTitle(workspacePage, "Shadow");
-      await expect(panel).toBeVisible();
+    await copyShorthand(panel);
 
-      const propertyRow = panel.getByTestId("property-row");
-      const propertyRowCount = await propertyRow.count();
-
-      expect(propertyRowCount).toBeGreaterThanOrEqual(2);
-    });
-
-    test("Shape Shadow - Multiple shadow", async ({ page }) => {
-      const workspacePage = new WasmWorkspacePage(page);
-      await setupFile(workspacePage);
-
-      await selectLayer(workspacePage, shapeToLayerName.shadowMultiple);
-      await openInspectTab(workspacePage);
-
-      const panel = await getPanelByTitle(workspacePage, "Shadow");
-      await expect(panel).toBeVisible();
-
-      const propertyRow = panel.getByTestId("property-row");
-      const propertyRowCount = await propertyRow.count();
-
-      expect(propertyRowCount).toBeGreaterThanOrEqual(4);
-    });
-
-    // FIXME: flaky/random (depends on trace ?)
-    test.skip("Shape Shadow - Composite shadow", async ({ page }) => {
-      const workspacePage = new WasmWorkspacePage(page);
-      await setupFile(workspacePage);
-
-      await selectLayer(workspacePage, shapeToLayerName.shadowComposite);
-      await openInspectTab(workspacePage);
-
-      const panel = await getPanelByTitle(workspacePage, "Shadow");
-      await expect(panel).toBeVisible();
-
-      const propertyRow = panel.getByTestId("property-row");
-      const propertyRowCount = await propertyRow.count();
-
-      expect(propertyRowCount).toBeGreaterThanOrEqual(3);
-
-      const compositeShadowRow = propertyRow.first();
-      await compositeShadowRow.waitFor();
-
-      await expect(compositeShadowRow).toBeVisible();
-
-      const compositeShadowTerm = compositeShadowRow.locator("dt");
-
-      const compositeShadowDefinition = compositeShadowRow.locator("dd");
-
-      expect(compositeShadowTerm).toHaveText("Shadow", { exact: true });
-      expect(compositeShadowDefinition).toContainText("shadowToken");
-    });
+    const shorthand = await page.evaluate(() => navigator.clipboard.readText());
+    expect(shorthand).toBe("box-shadow: 4px 4px 4px 0px #00000033;");
   });
 
-  test("Shape - Blur", async ({ page }) => {
-    const workspacePage = new WasmWorkspacePage(page);
-    await setupFile(workspacePage);
+  // The colour space is a view setting for the sidebar, so the step that
+  // changes it runs last.
+  await test.step("Colour space changes the value and the copy", async () => {
+    await selectLayer(workspacePage, shapeToLayerName.fill.solid);
 
-    await selectLayer(workspacePage, shapeToLayerName.blur);
+    const panel = await getPanelByTitle(workspacePage, "Fill");
+    await expectPanelRows(panel, 1);
 
+    const backgroundRow = panel
+      .getByTestId("property-row")
+      .filter({ hasText: "Background" });
+    await expect(backgroundRow).toContainText("#0438d5 100%");
+
+    await copyPropertyFromPropertyRow(panel, "Background");
+    const backgroundHEX = await page.evaluate(() =>
+      navigator.clipboard.readText(),
+    );
+    expect(backgroundHEX).toContain("background: #0438d5FF;");
+
+    await selectColorSpace(workspacePage, "rgba");
+
+    await expect(backgroundRow).toContainText("4, 56, 213, 1");
+
+    await copyPropertyFromPropertyRow(panel, "Background");
+    const backgroundRGBA = await page.evaluate(() =>
+      navigator.clipboard.readText(),
+    );
+    expect(backgroundRGBA).toContain("background: rgba(4, 56, 213, 1);");
+  });
+});
+
+test("Stroke", async ({ page }) => {
+  const workspacePage = new WasmWorkspacePage(page);
+  await setupFile(workspacePage);
+
+  await test.step("Solid", async () => {
+    await selectLayer(workspacePage, shapeToLayerName.stroke.solid);
     await openInspectTab(workspacePage);
 
-    const panel = await getPanelByTitle(workspacePage, "Blur");
-    await expect(panel).toBeVisible();
-
-    const propertyRow = panel.getByTestId("property-row");
-    const propertyRowCount = await propertyRow.count();
-
-    expect(propertyRowCount).toBeGreaterThanOrEqual(1);
+    const panel = await getPanelByTitle(workspacePage, "Stroke");
+    await expectPanelRows(panel, 1);
   });
 
-  test("Shape - Blur on not svg compatible shape", async ({ page }) => {
-    const workspacePage = new WasmWorkspacePage(page);
-    await setupFile(workspacePage);
+  await test.step("Gradient", async () => {
+    await selectLayer(workspacePage, shapeToLayerName.stroke.gradient);
 
-    await selectLayer(workspacePage, shapeToLayerName.blur);
+    const panel = await getPanelByTitle(workspacePage, "Stroke");
+    await expectPanelRows(panel, 1);
+  });
 
-    await workspacePage.page.getByTestId("add-stroke").click();
-    await workspacePage.page.getByTestId("stroke.alignment").click();
-    await workspacePage.page.getByRole("option", { name: "Center" }).click();
+  await test.step("Image", async () => {
+    await selectLayer(workspacePage, shapeToLayerName.stroke.image);
 
+    const panel = await getPanelByTitle(workspacePage, "Stroke");
+    await expectPanelRows(panel, 1);
+
+    await expect(
+      panel.getByRole("img", { name: "Preview of the shape's fill" }),
+    ).toBeVisible();
+  });
+
+  await test.step("Multiple", async () => {
+    await selectLayer(workspacePage, shapeToLayerName.stroke.multiple);
+
+    const panel = await getPanelByTitle(workspacePage, "Stroke");
+    await expectPanelRows(panel, 3);
+
+    await expect(
+      panel.getByRole("img", { name: "Preview of the shape's fill" }),
+    ).toBeVisible();
+  });
+
+  await test.step("Token", async () => {
+    await selectLayer(workspacePage, shapeToLayerName.stroke.token);
+
+    const panel = await getPanelByTitle(workspacePage, "Stroke");
+    await expectPanelRows(panel, 1);
+
+    const borderColorRow = panel
+      .getByTestId("property-row")
+      .filter({ hasText: "Border color" });
+    await expect(borderColorRow).toContainText("primary");
+    await expect(borderColorRow).toBeVisible();
+  });
+});
+
+test("Typography", async ({ page }) => {
+  const workspacePage = new WasmWorkspacePage(page);
+  await setupFile(workspacePage);
+
+  await test.step("Simple text", async () => {
+    await selectLayer(workspacePage, shapeToLayerName.text.simple);
     await openInspectTab(workspacePage);
 
-    const panel = await getPanelByTitle(workspacePage, "Blur");
-    await expect(panel).toBeVisible();
+    const panel = await getPanelByTitle(workspacePage, "Text");
+    await expectPanelRows(panel, 1);
+    await expect(panel.getByRole("presentation")).toBeVisible();
+  });
+
+  await test.step("Tokens", async () => {
+    await selectLayer(workspacePage, shapeToLayerName.text.token);
+
+    const panel = await getPanelByTitle(workspacePage, "Text");
+    await expectPanelRows(panel, 1);
 
     const propertyRow = panel.getByTestId("property-row");
-    const propertyRowCount = await propertyRow.count();
 
-    expect(propertyRowCount).toBeGreaterThanOrEqual(1);
+    const fontFamilyToken = propertyRow.filter({
+      hasText: "Font family",
+    });
+    await expect(fontFamilyToken).toBeVisible();
+    await expect(fontFamilyToken).toContainText("font.sans");
+
+    const fontSizeToken = propertyRow.filter({
+      hasText: "Font size",
+    });
+    await expect(fontSizeToken).toBeVisible();
+    await expect(fontSizeToken).toContainText("medium");
+
+    const fontWeightToken = propertyRow.filter({
+      hasText: "Font weight",
+    });
+    await expect(fontWeightToken).toBeVisible();
+    await expect(fontWeightToken).toContainText("bold");
+
+    await expect(panel.getByRole("presentation")).toBeVisible();
   });
 
-  test("Shape - Background Blur on not svg compatible shape", async ({
-    page,
-  }) => {
-    const workspacePage = new WasmWorkspacePage(page);
-    await setupFile(workspacePage);
-
-    await selectLayer(workspacePage, shapeToLayerName.blur);
-
-    await workspacePage.page.getByRole('combobox', { name: 'Blur type select' }).click();
-    await workspacePage.page.getByRole('option', { name: 'Background blur' }).click();
-    await workspacePage.page.getByTestId("add-stroke").click();
-    await workspacePage.page.getByTestId("stroke.alignment").click();
-    await workspacePage.page.getByRole("option", { name: "Center" }).click();
-
-    await openInspectTab(workspacePage);
-
-    const panel = await getPanelByTitle(workspacePage, "Blur");
-    await expect(panel).toBeVisible();
-
-    const propertyRow = panel.getByTestId("property-row");
-    const propertyRowCount = await propertyRow.count();
-
-    expect(propertyRowCount).toBeGreaterThanOrEqual(1);
-  });
-
-  test.describe("Inspect tab - Border radius", () => {
-    test("Shape - Border radius - individual", async ({ page }) => {
-      const workspacePage = new WasmWorkspacePage(page);
-      await setupFile(workspacePage);
-
-      await selectLayer(
-        workspacePage,
-        shapeToLayerName.borderRadius.individual,
-        shapeToLayerName.borderRadius.main,
-      );
-      await openInspectTab(workspacePage);
-
-      const panel = await getPanelByTitle(workspacePage, "Size and position");
-      await expect(panel).toBeVisible();
-
-      const propertyRow = panel.getByTestId("property-row");
-      const propertyRowCount = await propertyRow.count();
-
-      expect(propertyRowCount).toBeGreaterThanOrEqual(2);
-
-      const borderStartStartRadius = propertyRow.filter({
-        hasText: "Border start start radius",
-      });
-      await expect(borderStartStartRadius).toBeVisible();
-
-      const borderEndEndRadius = propertyRow.filter({
-        hasText: "Border end end radius",
-      });
-      await expect(borderEndEndRadius).toBeVisible();
-    });
-
-    test("Shape - Border radius - multiple", async ({ page }) => {
-      const workspacePage = new WasmWorkspacePage(page);
-      await setupFile(workspacePage);
-
-      await selectLayer(
-        workspacePage,
-        shapeToLayerName.borderRadius.multiple,
-        shapeToLayerName.borderRadius.main,
-      );
-      await openInspectTab(workspacePage);
-
-      const panel = await getPanelByTitle(workspacePage, "Size and position");
-      await expect(panel).toBeVisible();
-
-      const propertyRow = panel.getByTestId("property-row");
-      const propertyRowCount = await propertyRow.count();
-
-      expect(propertyRowCount).toBeGreaterThanOrEqual(4);
-
-      const borderStartStartRadius = propertyRow.filter({
-        hasText: "Border start start radius",
-      });
-      await expect(borderStartStartRadius).toBeVisible();
-
-      const borderStartEndRadius = propertyRow.filter({
-        hasText: "Border start end radius",
-      });
-      await expect(borderStartEndRadius).toBeVisible();
-
-      const borderEndEndRadius = propertyRow.filter({
-        hasText: "Border end end radius",
-      });
-      await expect(borderEndEndRadius).toBeVisible();
-
-      const borderEndStartRadius = propertyRow.filter({
-        hasText: "Border end start radius",
-      });
-      await expect(borderEndStartRadius).toBeVisible();
-    });
-
-    test("Shape - Border radius - token", async ({ page }) => {
-      const workspacePage = new WasmWorkspacePage(page);
-      await setupFile(workspacePage);
-
-      await selectLayer(
-        workspacePage,
-        shapeToLayerName.borderRadius.token,
-        shapeToLayerName.borderRadius.main,
-      );
-      await openInspectTab(workspacePage);
-
-      const panel = await getPanelByTitle(workspacePage, "Size and position");
-      await expect(panel).toBeVisible();
-
-      const propertyRow = panel.getByTestId("property-row");
-      const propertyRowCount = await propertyRow.count();
-
-      expect(propertyRowCount).toBeGreaterThanOrEqual(4);
-
-      const borderStartEndRadius = propertyRow.filter({
-        hasText: "Border start end radius",
-      });
-      await expect(borderStartEndRadius).toBeVisible();
-      expect(borderStartEndRadius).toContainText("radius");
-
-      const borderEndStartRadius = propertyRow.filter({
-        hasText: "Border end start radius",
-      });
-      expect(borderEndStartRadius).toContainText("radius");
-      await expect(borderEndStartRadius).toBeVisible();
-    });
-  });
-
-  test.describe("Inspect tab - Fill", () => {
-    test("Shape - Fill - Solid", async ({ page }) => {
-      const workspacePage = new WasmWorkspacePage(page);
-      await setupFile(workspacePage);
-
-      await selectLayer(workspacePage, shapeToLayerName.fill.solid);
-      await openInspectTab(workspacePage);
-      const panel = await getPanelByTitle(workspacePage, "Fill");
-      await expect(panel).toBeVisible();
-
-      const propertyRow = panel.getByTestId("property-row");
-      const propertyRowCount = await propertyRow.count();
-
-      expect(propertyRowCount).toBeGreaterThanOrEqual(1);
-    });
-
-    test("Change color space and ensure fill and shorthand changes", async ({
-      page,
-    }) => {
-      const workspacePage = new WasmWorkspacePage(page);
-      await setupFile(workspacePage);
-
-      await selectLayer(workspacePage, shapeToLayerName.fill.solid);
-      await openInspectTab(workspacePage);
-      const panel = await getPanelByTitle(workspacePage, "Fill");
-      await expect(panel).toBeVisible();
-
-      const propertyRow = panel.getByTestId("property-row");
-      const backgroundRow = propertyRow.filter({
-        hasText: "Background",
-      });
-      await expect(backgroundRow).toBeVisible();
-
-      // Ensure initial value and copied value are in HEX format
-      expect(backgroundRow).toContainText("#0438d5 100%");
-
-      await copyPropertyFromPropertyRow(panel, "Background");
-
-      const backgroundHEX = await page.evaluate(() =>
-        navigator.clipboard.readText(),
-      );
-      expect(backgroundHEX).toContain("background: #0438d5FF;");
-
-      // Change color space to RGBA
-      await selectColorSpace(workspacePage, "rgba");
-
-      // Ensure new value and copied value are in RGBA format
-      expect(backgroundRow).toContainText("4, 56, 213, 1");
-
-      await copyPropertyFromPropertyRow(panel, "Background");
-      const backgroundRGBA = await page.evaluate(() =>
-        navigator.clipboard.readText(),
-      );
-      expect(backgroundRGBA).toContain("background: rgba(4, 56, 213, 1);");
-    });
-
-    test("Shape - Fill - Gradient", async ({ page }) => {
-      const workspacePage = new WasmWorkspacePage(page);
-      await setupFile(workspacePage);
-
-      await selectLayer(workspacePage, shapeToLayerName.fill.gradient);
-      await openInspectTab(workspacePage);
-      const panel = await getPanelByTitle(workspacePage, "Fill");
-      await expect(panel).toBeVisible();
-
-      const propertyRow = panel.getByTestId("property-row");
-      const propertyRowCount = await propertyRow.count();
-
-      expect(propertyRowCount).toBeGreaterThanOrEqual(1);
-    });
-
-    test("Shape - Fill - Image", async ({ page }) => {
-      const workspacePage = new WasmWorkspacePage(page);
-      await setupFile(workspacePage);
-
-      await selectLayer(workspacePage, shapeToLayerName.fill.image);
-      await openInspectTab(workspacePage);
-      const panel = await getPanelByTitle(workspacePage, "Fill");
-      await expect(panel).toBeVisible();
-
-      const propertyRow = panel.getByTestId("property-row");
-      const propertyRowCount = await propertyRow.count();
-
-      expect(propertyRowCount).toBeGreaterThanOrEqual(1);
-
-      const imagePreview = panel.getByRole("img", {
-        name: "Preview of the shape's fill",
-      });
-      await expect(imagePreview).toBeVisible();
-    });
-
-    test("Shape - Fill - Multiple", async ({ page }) => {
-      const workspacePage = new WasmWorkspacePage(page);
-      await setupFile(workspacePage);
-
-      await selectLayer(workspacePage, shapeToLayerName.fill.multiple);
-      await openInspectTab(workspacePage);
-      const panel = await getPanelByTitle(workspacePage, "Fill");
-      await expect(panel).toBeVisible();
-
-      const propertyRow = panel.getByTestId("property-row");
-      const propertyRowCount = await propertyRow.count();
-
-      expect(propertyRowCount).toBeGreaterThanOrEqual(3);
-
-      const imagePreview = panel.getByRole("img", {
-        name: "Preview of the shape's fill",
-      });
-      await expect(imagePreview).toBeVisible();
-    });
-
-    test("Shape - Fill - Token", async ({ page }) => {
-      const workspacePage = new WasmWorkspacePage(page);
-      await setupFile(workspacePage);
-
-      await selectLayer(workspacePage, shapeToLayerName.fill.token);
-      await openInspectTab(workspacePage);
-      const panel = await getPanelByTitle(workspacePage, "Fill");
-      await expect(panel).toBeVisible();
-
-      const propertyRow = panel.getByTestId("property-row");
-      const propertyRowCount = await propertyRow.count();
-
-      expect(propertyRowCount).toBeGreaterThanOrEqual(1);
-
-      const fillToken = propertyRow.filter({
-        hasText: "Background",
-      });
-      expect(fillToken).toContainText("primary");
-      await expect(fillToken).toBeVisible();
-    });
-  });
-
-  test.describe("Inspect tab - Stroke", () => {
-    test("Shape - Stroke - Solid", async ({ page }) => {
-      const workspacePage = new WasmWorkspacePage(page);
-      await setupFile(workspacePage);
-
-      await selectLayer(workspacePage, shapeToLayerName.stroke.solid);
-      await openInspectTab(workspacePage);
-      const panel = await getPanelByTitle(workspacePage, "Stroke");
-      await expect(panel).toBeVisible();
-
-      const propertyRow = panel.getByTestId("property-row");
-      const propertyRowCount = await propertyRow.count();
-
-      expect(propertyRowCount).toBeGreaterThanOrEqual(1);
-    });
-
-    test("Shape - Stroke - Gradient", async ({ page }) => {
-      const workspacePage = new WasmWorkspacePage(page);
-      await setupFile(workspacePage);
-
-      await selectLayer(workspacePage, shapeToLayerName.stroke.gradient);
-      await openInspectTab(workspacePage);
-      const panel = await getPanelByTitle(workspacePage, "Stroke");
-      await expect(panel).toBeVisible();
-
-      const propertyRow = panel.getByTestId("property-row");
-      const propertyRowCount = await propertyRow.count();
-
-      expect(propertyRowCount).toBeGreaterThanOrEqual(1);
-    });
-
-    test("Shape - Stroke - Image", async ({ page }) => {
-      const workspacePage = new WasmWorkspacePage(page);
-      await setupFile(workspacePage);
-
-      await selectLayer(workspacePage, shapeToLayerName.stroke.image);
-      await openInspectTab(workspacePage);
-      const panel = await getPanelByTitle(workspacePage, "Stroke");
-      await expect(panel).toBeVisible();
-
-      const propertyRow = panel.getByTestId("property-row");
-      const propertyRowCount = await propertyRow.count();
-
-      expect(propertyRowCount).toBeGreaterThanOrEqual(1);
-
-      const imagePreview = panel.getByRole("img", {
-        name: "Preview of the shape's fill",
-      });
-      await expect(imagePreview).toBeVisible();
-    });
-
-    test("Shape - Stroke - Multiple", async ({ page }) => {
-      const workspacePage = new WasmWorkspacePage(page);
-      await setupFile(workspacePage);
-
-      await selectLayer(workspacePage, shapeToLayerName.stroke.multiple);
-      await openInspectTab(workspacePage);
-      const panel = await getPanelByTitle(workspacePage, "Stroke");
-      await expect(panel).toBeVisible();
-
-      const propertyRow = panel.getByTestId("property-row");
-      const propertyRowCount = await propertyRow.count();
-
-      expect(propertyRowCount).toBeGreaterThanOrEqual(3);
-
-      const imagePreview = panel.getByRole("img", {
-        name: "Preview of the shape's fill",
-      });
-      await expect(imagePreview).toBeVisible();
-    });
-
-    test("Shape - Stroke - Token", async ({ page }) => {
-      const workspacePage = new WasmWorkspacePage(page);
-      await setupFile(workspacePage);
-
-      await selectLayer(workspacePage, shapeToLayerName.stroke.token);
-      await openInspectTab(workspacePage);
-      const panel = await getPanelByTitle(workspacePage, "Stroke");
-      await expect(panel).toBeVisible();
-
-      const propertyRow = panel.getByTestId("property-row");
-      const propertyRowCount = await propertyRow.count();
-
-      expect(propertyRowCount).toBeGreaterThanOrEqual(1);
-
-      const fillToken = propertyRow.filter({
-        hasText: "Border color",
-      });
-      expect(fillToken).toContainText("primary");
-      await expect(fillToken).toBeVisible();
-    });
-  });
-
-  test.describe("Inspect tab - Typography", () => {
-    test("Text - simple", async ({ page }) => {
-      const workspacePage = new WasmWorkspacePage(page);
-      await setupFile(workspacePage);
-
-      await selectLayer(workspacePage, shapeToLayerName.text.simple);
-      await openInspectTab(workspacePage);
-      const panel = await getPanelByTitle(workspacePage, "Text");
-      await expect(panel).toBeVisible();
-
-      const propertyRow = panel.getByTestId("property-row");
-      const propertyRowCount = await propertyRow.count();
-
-      expect(propertyRowCount).toBeGreaterThanOrEqual(1);
-
-      const textPreview = panel.getByRole("presentation");
-      await expect(textPreview).toBeVisible();
-    });
-
-    test("Text - token", async ({ page }) => {
-      const workspacePage = new WasmWorkspacePage(page);
-      await setupFile(workspacePage);
-
-      await selectLayer(workspacePage, shapeToLayerName.text.token);
-      await openInspectTab(workspacePage);
-      const panel = await getPanelByTitle(workspacePage, "Text");
-      await expect(panel).toBeVisible();
-
-      const propertyRow = panel.getByTestId("property-row");
-      const propertyRowCount = await propertyRow.count();
-
-      expect(propertyRowCount).toBeGreaterThanOrEqual(1);
-
-      // Test with multiple tokens
-      const fontFamilyToken = propertyRow.filter({
-        hasText: "Font family",
-      });
-      await expect(fontFamilyToken).toBeVisible();
-      expect(fontFamilyToken).toContainText("font.sans");
-
-      const fontSizeToken = propertyRow.filter({
-        hasText: "Font size",
-      });
-      await expect(fontSizeToken).toBeVisible();
-      expect(fontSizeToken).toContainText("medium");
-
-      const fontWeightToken = propertyRow.filter({
-        hasText: "Font weight",
-      });
-      await expect(fontWeightToken).toBeVisible();
-      expect(fontWeightToken).toContainText("bold");
-
-      const textPreview = panel.getByRole("presentation");
-      await expect(textPreview).toBeVisible();
-    });
-    test("Text - composite token", async ({ page }) => {
-      const workspacePage = new WasmWorkspacePage(page);
-      await setupFile(workspacePage);
-
-      await selectLayer(workspacePage, shapeToLayerName.text.compositeToken);
-      await openInspectTab(workspacePage);
-      const panel = await getPanelByTitle(workspacePage, "Text");
-      await expect(panel).toBeVisible();
-
-      const propertyRow = panel.getByTestId("property-row");
-      const propertyRowCount = await propertyRow.count();
-
-      expect(propertyRowCount).toBeGreaterThanOrEqual(1);
-
-      const compositeTypographyRow = propertyRow.filter({
-        hasText: "Typography",
-      });
-      await expect(compositeTypographyRow).toBeVisible();
-      expect(compositeTypographyRow).toContainText("body");
-
-      const textPreview = panel.getByRole("presentation");
-      await expect(textPreview).toBeVisible();
-    });
-  });
-
-  test.describe("Copy properties", () => {
-    test("Copy single property", async ({ page }) => {
-      const workspacePage = new WasmWorkspacePage(page);
-      await setupFile(workspacePage);
-
-      await selectLayer(workspacePage, shapeToLayerName.flex);
-      await openInspectTab(workspacePage);
-
-      const panel = await getPanelByTitle(workspacePage, "Layout");
-      await expect(panel).toBeVisible();
-
-      await copyPropertyFromPropertyRow(panel, "Display");
-
-      const shorthand = await page.evaluate(() =>
-        navigator.clipboard.readText(),
-      );
-      expect(shorthand).toBe("display: flex;");
-    });
-    test("Copy shorthand - multiple properties", async ({ page }) => {
-      const workspacePage = new WasmWorkspacePage(page);
-      await setupFile(workspacePage);
-
-      await selectLayer(workspacePage, shapeToLayerName.shadow);
-      await openInspectTab(workspacePage);
-
-      const panel = await getPanelByTitle(workspacePage, "Shadow");
-      await expect(panel).toBeVisible();
-
-      await copyShorthand(panel);
-
-      const shorthand = await page.evaluate(() =>
-        navigator.clipboard.readText(),
-      );
-      expect(shorthand).toBe("box-shadow: 4px 4px 4px 0px #00000033;");
-    });
+  await test.step("Composite token", async () => {
+    await selectLayer(workspacePage, shapeToLayerName.text.compositeToken);
+
+    const panel = await getPanelByTitle(workspacePage, "Text");
+    await expectPanelRows(panel, 1);
+
+    const compositeTypographyRow = panel
+      .getByTestId("property-row")
+      .filter({ hasText: "Typography" });
+    await expect(compositeTypographyRow).toBeVisible();
+    await expect(compositeTypographyRow).toContainText("body");
+
+    await expect(panel.getByRole("presentation")).toBeVisible();
   });
 });

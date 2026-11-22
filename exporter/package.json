@@ -18,15 +18,15 @@
     "generic-pool": "^3.9.0",
     "inflation": "^2.1.0",
     "ioredis": "^6.0.0",
-    "playwright": "1.63.0",
+    "playwright": "1.65.1",
     "raw-body": "^4.0.0",
     "source-map-support": "^0.5.21",
-    "undici": "^8.12.3",
+    "undici": "^8.12.4",
     "xml-js": "^1.6.11",
     "xregexp": "^5.1.3"
   },
   "devDependencies": {
-    "ws": "^8.22.0"
+    "ws": "^8.23.0"
   },
   "scripts": {
     "clear:shadow-cache": "rm -rf .shadow-cljs && rm -rf target",

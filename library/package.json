@@ -34,9 +34,9 @@
     "watch": "pnpm run clear:shadow-cache && clojure -M:dev:shadow-cljs watch library"
   },
   "devDependencies": {
-    "@types/node": "^26.6.4",
+    "@types/node": "^26.6.6",
     "@zip.js/zip.js": "2.8.34",
-    "concurrently": "^10.0.5",
+    "concurrently": "^10.0.7",
     "date-fns": "^4.4.0",
     "nodemon": "^3.1.14",
     "source-map-support": "^0.5.21"

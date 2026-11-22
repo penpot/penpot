@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.changes :as cpc]
+   [app.common.files.changes-merge :as mch]
    [app.common.logging :as log]
    [app.common.time :as ct]
    [app.common.types.shape :as cts]
@@ -170,6 +171,14 @@
   (let [commit-id (or commit-id (uuid/next))
         source    (d/nilv source :local)
         local?    (= source :local)
+        ;; The component sync emits a `reg-objects` per touched shape, so a
+        ;; component swap or a wide group edit fills the batch with hundreds of
+        ;; them for a handful of groups. Fusing per container keeps the batch
+        ;; equivalent and much smaller. It runs here so every commit is already
+        ;; fused on its way to the store, the undo stack and the save queue,
+        ;; redo and undo alike.
+        redo-changes (mch/merge-reg-objects redo-changes)
+        undo-changes (mch/merge-reg-objects undo-changes)
         commit    {:id commit-id
                    :created-at (ct/now)
                    :source source
@@ -267,6 +276,19 @@
   [state file-id]
   (:vern (dsh/lookup-file state file-id)))
 
+(defn- get-stacked-undo-group
+  "The undo group of the history entry that a `stack-undo?` commit is
+   added to: the entry at the current undo index, unless an open undo
+   transaction already holds changes (then the commit joins the
+   transaction instead). Mirrors `app.main.data.workspace.undo/append-undo`."
+  [state]
+  (let [{:keys [items index transaction]} (:workspace-undo state)]
+    (when (and (empty? (:undo-changes transaction))
+               (empty? (:redo-changes transaction))
+               (some? index)
+               (>= index 0))
+      (dm/get-in items [index :undo-group]))))
+
 (defn commit-changes
   "Schedules a list of changes to execute now, and add the corresponding undo changes to
    the undo stack.
@@ -275,8 +297,10 @@
    - save-undo?: if set to false, do not add undo changes.
    - undo-group: if some consecutive changes (or even transactions) share the same
                  undo-group, they will be undone or redone in a single step. Without
-                 it, a commit made while an undo transaction is open joins the
-                 transaction's group, and any other gets a new one.
+                 it, a `stack-undo?` commit that records undo takes the group of
+                 the history entry it is added to, a commit made while an undo
+                 transaction is open joins the transaction's group, and any
+                 other gets a new one.
    - ignore-save-lock: commit even while the save-failure lock holds. Only for
                  commits that are not user edits: the undo of rolled-back
                  commits and data derived from commits already made.
@@ -310,9 +334,19 @@
             (log/trace :hint "commit-changes" :redo-changes redo-changes)
             (let [selected   (dm/get-in state [:workspace-local :selected])
                   tx         (dm/get-in state [:workspace-undo :transaction])
-                  ;; Inside an undo transaction, the group of its history entry
-                  ;; (taken from its first commit), or the one it was opened with
-                  undo-group (or undo-group (:undo-group tx) (:commit-group tx) (uuid/next))]
+                  ;; A stacked commit that records undo belongs to the action
+                  ;; of the entry it is added to, and so do the commits it
+                  ;; starts, so one undo reverts them all. A commit that
+                  ;; records no undo joins no entry, so it keeps a group of
+                  ;; its own. Inside an undo transaction, the group of its
+                  ;; history entry (taken from its first commit), or the one
+                  ;; it was opened with
+                  undo-group (or undo-group
+                                 (when (and stack-undo? save-undo? (seq undo-changes))
+                                   (get-stacked-undo-group state))
+                                 (:undo-group tx)
+                                 (:commit-group tx)
+                                 (uuid/next))]
               (rx/of (-> params
                          (assoc :undo-group undo-group)
                          (assoc :features features)

@@ -37,7 +37,8 @@
                                                  dropdown-menu-item*]]
    [app.main.ui.context :as ctx]
    [app.main.ui.dashboard.subscription :refer [get-subscription-type
-                                               main-menu-power-up*]]
+                                               main-menu-power-up*
+                                               show-main-menu-power-up?]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
    [app.main.ui.hooks.resize :as r]
@@ -671,7 +672,7 @@
         (mf/use-fn
          (mf/deps frames)
          (fn [_]
-           (st/emit! (de/show-workspace-export-frames-dialog frames))))
+           (st/emit! (de/show-workspace-export-frames-dialog (reverse frames)))))
 
         on-export-frames-key-down
         (mf/use-fn
@@ -1126,9 +1127,7 @@
        [:> icon* {:icon-id i/arrow-right
                   :class (stl/css :item-arrow)}]]
 
-      (when (or (and (contains? cf/flags :subscriptions)
-                     (not= "enterprise" subscription-type))
-                (contains? cf/flags :admin-console))
+      (when (show-main-menu-power-up? cf/flags subscription-type)
         [:> main-menu-power-up* {:close-sub-menu close-sub-menu}])]
 
      (case selected-sub-menu

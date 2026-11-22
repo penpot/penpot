@@ -166,8 +166,8 @@
        (let [context      (management/create-context plugin-id)
              [team*]      (await (.listTeams context))
              [project*]   (await (.listProjects context))
-             team-project (first (await (.listProjects team*)))
-             [file*]      (await (.listFiles project*))]
+             team-project (first (await (.listProjects ^js team*)))
+             [file*]      (await (.listFiles ^js project*))]
          (t/is (= {"id" (str team-id) "name" "Team" "isDefault" true}
                   (props team* ["id" "name" "isDefault"])))
          (t/is (= {"id" (str project-id) "teamId" (str team-id) "name" "Drafts"
@@ -512,7 +512,7 @@
                                            ::sse/restore-deleted-team-files #js {:type "end" :data #{file-id}}))
                                   (rx/observe-on :async))))}
        (let [[project*] (await (.listDeletedProjects (management/create-context r/mcp-plugin-id)))
-             [file*]    (await (.listDeletedFiles project*))]
+             [file*]    (await (.listDeletedFiles ^js project*))]
          (t/is (= (str project-id) (obj/get project* "id")))
          (t/is (= (str file-id) (obj/get file* "id")))
          (t/is (nil? (await (.restore project*))))

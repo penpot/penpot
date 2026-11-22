@@ -213,6 +213,7 @@
        [:> button* {:variant "primary"
                     :type "button"
                     :class (stl/css :add-font-button)
+                    :data-testid "add-custom-font"
                     :on-click on-click}
         (tr "labels.add-custom-font")
         [:& file-uploader {:input-id "font-upload"

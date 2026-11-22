@@ -101,13 +101,14 @@
 ;; Never call this directly but through the data-event `:layout/update`
 ;; Otherwise a lot of cycle dependencies could be generated
 (defn- update-layout-positions
-  [{:keys [page-id ids undo-group reflow-tasks]}]
+  [{:keys [page-id ids undo-group reflow-tasks save-undo? skip-component-sync?]}]
   (ptk/reify ::update-layout-positions
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [page-id (or page-id (:current-page-id state))
-            objects (dsh/lookup-page-objects state page-id)
-            ids (->> ids (remove uuid/zero?) (filter #(contains? objects %)))
+      (let [page-id    (or page-id (:current-page-id state))
+            objects    (dsh/lookup-page-objects state page-id)
+            ids        (->> ids (remove uuid/zero?) (filter #(contains? objects %)))
+            save-undo? (not (false? save-undo?))
 
             update-positions-stream
             (if (d/not-empty? ids)
@@ -116,11 +117,15 @@
                          (= page-id (:current-page-id state)))
                   (rx/of (dwm/apply-wasm-modifiers modif-tree
                                                    :stack-undo? true
+                                                   :save-undo? save-undo?
+                                                   :skip-component-sync? skip-component-sync?
                                                    :undo-group undo-group
                                                    :ignore-touched true))
                   (rx/of (dwm/apply-modifiers {:page-id page-id
                                                :modifiers modif-tree
                                                :stack-undo? true
+                                               :save-undo? save-undo?
+                                               :skip-component-sync? skip-component-sync?
                                                :ignore-touched true
                                                :undo-group undo-group}))))
               (rx/empty))
@@ -169,11 +174,20 @@
              (rx/filter #(d/not-empty? %))
              (rx/mapcat
               (fn [updates]
-                (->> (group-by :page-id updates)
-                     (map (fn [[page-id updates]]
+                ;; Updates flagged `:save-undo? false` and
+                ;; `:skip-component-sync?` (automatic text size heals) are
+                ;; laid out apart, so their reflow records no undo and does
+                ;; not change components.
+                (->> (group-by (juxt :page-id
+                                     #(not (false? (:save-undo? %)))
+                                     #(boolean (:skip-component-sync? %)))
+                               updates)
+                     (map (fn [[[page-id save-undo? skip-component-sync?] updates]]
                             (let [ids (into #{} (mapcat :ids) updates)]
                               (update-layout-positions {:page-id page-id
                                                         :ids ids
+                                                        :save-undo? save-undo?
+                                                        :skip-component-sync? skip-component-sync?
                                                         :reflow-tasks (mapv ::reflow-task updates)})))))))
              (rx/take-until stopper)
              ;; On workspace teardown clear everything still pending.

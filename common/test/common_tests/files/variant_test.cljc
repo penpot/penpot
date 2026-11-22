@@ -91,8 +91,9 @@
 
     (t/is (= "big" (get-in data' [:components deleted-id :objects main-id :variant-name])))))
 
-(t/deftest test-sanitize-variant-container-cleans-members-in-board-order
-  ;; :shapes of the board is [m02 m01], so c02 keeps its value.
+(t/deftest test-sanitize-variant-container-cleans-members-in-layers-panel-order
+  ;; :shapes of the board is [m02 m01], so m01 is the top variant in the
+  ;; layers panel and c01 keeps its value.
   (let [props     [{:name "Property 1" :value "a=b"}]
         file      (-> (variant-file)
                       (thc/update-component :c01 {:variant-properties props})
@@ -103,10 +104,10 @@
         file'     (assoc file :data data')]
 
     (t/is (= [{:name "Property 1" :value "ab"}]
-             (:variant-properties (thc/get-component file' :c02))))
-    (t/is (= [{:name "Property 1" :value "ab (1)"}]
              (:variant-properties (thc/get-component file' :c01))))
-    (t/is (= "ab (1)" (:variant-name (ths/get-shape file' :m01))))))
+    (t/is (= [{:name "Property 1" :value "ab (1)"}]
+             (:variant-properties (thc/get-component file' :c02))))
+    (t/is (= "ab (1)" (:variant-name (ths/get-shape file' :m02))))))
 
 (t/deftest test-sanitize-variant-component
   (let [file      (-> (variant-file)

@@ -50,6 +50,21 @@
       (not (contains? #{"enterprise" "nitrate"}
                       (get-subscription-type (:subscription team))))))
 
+(defn show-manage-subscription-link?
+  "Only the owner of a plan other than professional manages the subscription
+  from the team settings; a professional plan has its own upgrade path."
+  [is-owner subscription]
+  (and (boolean is-owner)
+       (not= "professional" (get-subscription-type subscription))))
+
+(defn show-main-menu-power-up?
+  "The workspace menu offers the plan upsell on every plan but enterprise;
+  the admin console keeps it as the way into the subscription settings."
+  [flags subscription-type]
+  (or (and (contains? flags :subscriptions)
+           (not= "enterprise" subscription-type))
+      (contains? flags :admin-console)))
+
 (mf/defc cta-power-up*
   [{:keys [top-title top-description bottom-description bottom-button bottom-button-href has-dropdown is-highlighted]}]
   (let [show-data* (mf/use-state false)
@@ -362,7 +377,7 @@
                         (tr "subscription.settings.unlimited"))
 
           "enterprise" (tr "subscription.settings.enterprise"))]
-       (when (and is-owner (not= subscription-type "professional"))
+       (when (show-manage-subscription-link? is-owner subscription)
          [:button {:class (stl/css :manage-subscription-link)
                    :on-click go-to-manage-subscription
                    :data-testid "manage-subscription-link"}

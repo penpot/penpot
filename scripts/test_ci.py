@@ -129,6 +129,23 @@ class MediaProcessorModuleTests(unittest.TestCase):
         )
 
 
+class ModuleCommandTests(unittest.TestCase):
+    def test_exporter_test_sets_the_default_secret_key(self):
+        code, out = run_ci("--test", "--dry-run", "exporter")
+
+        self.assertEqual(code, 0, out)
+        self.assertIn(
+            "PENPOT_SECRET_KEY=test-secret-key pnpm run test:quiet",
+            out,
+        )
+
+    def test_library_format_check_uses_its_declared_script(self):
+        code, out = run_ci("--fmt", "--dry-run", "library")
+
+        self.assertEqual(code, 0, out)
+        self.assertIn("pnpm run check-fmt", out)
+
+
 class HelpTests(unittest.TestCase):
     def help_options(self, out):
         """Option tokens from the OPTIONS section, e.g. '--build'."""

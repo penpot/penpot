@@ -10,6 +10,7 @@ repository via GraphQL and REST APIs through the authenticated `gh` CLI.
 - Fetching PR details by number or by milestone.
 - Comparing milestone issues against CHANGES.md to find missing entries.
 - Explicitly linking a GitHub issue to a pull request.
+- Creating an issue with its Issue Type set in a single command.
 - Listing or inspecting GitHub Security Advisories (GHSA).
 - Fetching issue comments (the `## Breaking change note` markdown for the changelog).
 
@@ -103,6 +104,25 @@ python3 scripts/gh.py link-issue <ISSUE_NUMBER> <PR_NUMBER>
 ```
 
 The command resolves both node IDs and calls `addCloseIssueReferences`. It trusts the successful mutation instead of re-querying, because GitHub does not reliably report mutation-created links through `closedByPullRequestsReferences(userLinkedOnly: true)`. It is safe to rerun and works for merged PRs. It does not guarantee the issue stays open: adding `Closes #N` to the body of an already-merged PR closed the issue immediately when tried (#12896 / PR #12067, 2026-11-09). JSON goes to stdout; progress and errors go to stderr; a missing issue/PR or a failed mutation exits non-zero.
+
+### `create-issue`
+
+Create an issue and set its Issue Type in one command. `gh issue create` cannot set the type, so the script runs `gh issue create` (always with `--project Main` by default) and then two GraphQL calls: one to get the issue's node ID and one `updateIssue` mutation to set the type. The issue number is parsed from the URL returned by `gh issue create`.
+
+```bash
+python3 scripts/gh.py create-issue \
+  --type task \
+  --title "Expand backend email tests" \
+  --body-file /tmp/issue-body.md
+
+# Optional label (comma-separated); no --milestone (set it later if needed)
+python3 scripts/gh.py create-issue --type bug --title "..." \
+  --body-file /tmp/issue-body.md --label "breaking change"
+```
+
+`--type` is a name from the Issue Type table in `mem:workflow/creating-issues` (`bug`, `enhancement`, `feature`, `task`, `question`, `docs`, `epic`); it is case-insensitive and the ID mapping lives in `ISSUE_TYPE_IDS` in `scripts/gh.py`. The command prints JSON with `number`, `url`, `title` and `issue_type` to stdout, and progress to stderr. If the type assignment fails after creation, the issue is left in place and the error reports its number and URL so it can be fixed by hand. This shortcut does not replace the workflow in `mem:workflow/creating-issues`: title derivation, body templates and verification still follow that memory.
+
+**Output**: JSON object on stdout; progress and errors on stderr. A bad type, a `gh` failure, or a type that was not applied exits non-zero.
 
 ### `advisories`
 

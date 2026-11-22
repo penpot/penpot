@@ -36,6 +36,149 @@ def load_gh():
 gh = load_gh()
 
 
+class CreateIssueTests(unittest.TestCase):
+    def setUp(self):
+        self.url = "https://github.com/penpot/penpot/issues/13202"
+        self.create_response = self.url + "\n"
+        self.node_response = {"repository": {"issue": {"id": "issue-node-id"}}}
+        self.mutation_response = {
+            "updateIssue": {
+                "issue": {"number": 13202, "issueType": {"name": "Task"}}
+            }
+        }
+
+    @patch.object(gh, "run_gh_graphql")
+    @patch.object(gh, "run_gh_command")
+    def test_create_issue_sets_type_and_returns_result(self, run_command, run_graphql):
+        run_command.return_value = self.create_response
+        run_graphql.side_effect = [self.node_response, self.mutation_response]
+
+        result = gh.create_issue("A title", "/tmp/body.md", "task")
+
+        self.assertEqual(
+            result,
+            {
+                "number": 13202,
+                "url": self.url,
+                "title": "A title",
+                "issue_type": "task",
+            },
+        )
+        self.assertEqual(
+            run_command.call_args.args[0],
+            [
+                "gh", "issue", "create",
+                "--repo", "penpot/penpot",
+                "--title", "A title",
+                "--project", "Main",
+                "--body-file", "/tmp/body.md",
+            ],
+        )
+        self.assertEqual(run_graphql.call_count, 2)
+        self.assertEqual(
+            run_graphql.call_args_list[1].args[1],
+            {
+                "issueId": "issue-node-id",
+                "issueTypeId": "IT_kwDOAcyBPM4AX5NY",
+            },
+        )
+
+    @patch.object(gh, "run_gh_graphql")
+    @patch.object(gh, "run_gh_command")
+    def test_create_issue_passes_labels(self, run_command, run_graphql):
+        run_command.return_value = self.create_response
+        run_graphql.side_effect = [
+            self.node_response,
+            {"updateIssue": {"issue": {"number": 13202, "issueType": {"name": "Bug"}}}},
+        ]
+
+        gh.create_issue("T", "/tmp/body.md", "bug", labels="breaking change")
+
+        self.assertIn("breaking change", run_command.call_args.args[0])
+        self.assertIn(
+            "IT_kwDOAcyBPM4AX5Nb",
+            run_graphql.call_args_list[1].args[1].values(),
+        )
+
+    @patch.object(gh, "run_gh_graphql")
+    @patch.object(gh, "run_gh_command")
+    def test_create_issue_accepts_mixed_case_type(self, run_command, run_graphql):
+        run_command.return_value = self.create_response
+        run_graphql.side_effect = [self.node_response, self.mutation_response]
+
+        result = gh.create_issue("T", "/tmp/body.md", "Task")
+
+        self.assertEqual(result["issue_type"], "task")
+        self.assertEqual(
+            run_graphql.call_args_list[1].args[1]["issueTypeId"],
+            "IT_kwDOAcyBPM4AX5NY",
+        )
+
+    @patch.object(gh, "run_gh_command")
+    def test_create_issue_rejects_unknown_type(self, run_command):
+        with self.assertRaisesRegex(ValueError, "unknown issue type"):
+            gh.create_issue("T", "/tmp/body.md", "nope")
+        run_command.assert_not_called()
+
+    @patch.object(gh, "run_gh_command", return_value="created")
+    def test_create_issue_fails_when_url_has_no_number(self, _run_command):
+        with self.assertRaisesRegex(RuntimeError, "could not read issue number"):
+            gh.create_issue("T", "/tmp/body.md", "task")
+
+    @patch.object(gh, "run_gh_graphql")
+    @patch.object(gh, "run_gh_command")
+    def test_create_issue_reports_when_type_was_not_set(self, run_command, run_graphql):
+        run_command.return_value = self.create_response
+        run_graphql.side_effect = [
+            self.node_response,
+            {"updateIssue": {"issue": {"number": 13202, "issueType": None}}},
+        ]
+
+        with self.assertRaisesRegex(RuntimeError, "set it manually"):
+            gh.create_issue("T", "/tmp/body.md", "task")
+
+    @patch.object(gh, "run_gh_command", side_effect=gh.GhCommandFailed("boom"))
+    def test_create_issue_propagates_gh_failure(self, _run_command):
+        with self.assertRaises(gh.GhCommandFailed):
+            gh.create_issue("T", "/tmp/body.md", "task")
+
+    @patch.object(gh, "create_issue")
+    def test_cmd_create_issue_outputs_result(self, create_issue):
+        expected = {
+            "number": 13202,
+            "url": self.url,
+            "title": "T",
+            "issue_type": "task",
+        }
+        create_issue.return_value = expected
+        args = types.SimpleNamespace(
+            type="task", title="T", body_file="/tmp/body.md", label=None
+        )
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+
+        with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+            gh.cmd_create_issue(args)
+
+        self.assertEqual(json.loads(stdout.getvalue()), expected)
+        self.assertIn("Created issue #13202", stderr.getvalue())
+        create_issue.assert_called_once_with("T", "/tmp/body.md", "task", labels=None)
+
+    @patch.object(gh, "create_issue", side_effect=gh.GhCommandFailed("boom"))
+    def test_cmd_create_issue_exits_on_error(self, _create_issue):
+        args = types.SimpleNamespace(
+            type="task", title="T", body_file="/tmp/body.md", label=None
+        )
+        stderr = io.StringIO()
+
+        with contextlib.redirect_stderr(stderr):
+            with self.assertRaises(SystemExit) as error:
+                gh.cmd_create_issue(args)
+
+        self.assertEqual(error.exception.code, 1)
+        self.assertIn("boom", stderr.getvalue())
+
+
 class LinkIssueTests(unittest.TestCase):
     def setUp(self):
         self.target_response = {
