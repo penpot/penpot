@@ -260,7 +260,7 @@
         last-vern-ref     (mf/use-ref nil)
 
         ;; WASM grid overlay was visible last run (`hover-grid?` true). Used so `clear-grid`
-        ;; (expensive: `_hide_grid` + full `request-render`) runs only when hiding the overlay.
+        ;; runs only when hiding the overlay.
         prev-hover-grid-shown?-ref (mf/use-ref false)
 
         ;; STATE REFS

@@ -2669,6 +2669,7 @@
            (p/rejected cause))))))
 
 (defn show-grid
+  "Show the grid overlay for `id`. The WASM call re-presents the last frame."
   [id]
   (when (initialized?)
     (let [buffer (uuid/get-u32 id)]
@@ -2676,8 +2677,7 @@
               (aget buffer 0)
               (aget buffer 1)
               (aget buffer 2)
-              (aget buffer 3)))
-    (request-render "show-grid")))
+              (aget buffer 3)))))
 
 (defn set-rulers-visible!
   [visible?]
@@ -2716,10 +2716,10 @@
             (sr-clr/hex->u32argb accent-hex 1))))
 
 (defn clear-grid
+  "Hide the hover grid overlay. The WASM call re-presents the last frame."
   []
   (when (initialized?)
-    (h/call wasm/internal-module "_hide_grid")
-    (request-render "clear-grid")))
+    (h/call wasm/internal-module "_hide_grid")))
 
 ;; Ruler guides ----------------------------------------------------------------
 
