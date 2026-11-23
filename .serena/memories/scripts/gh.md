@@ -151,6 +151,8 @@ python3 scripts/gh.py advisories GHSA-xvj6-fh9w-gjw7
 
 `--patched-version` filters the raw advisories before formatting: the match is an exact token of `vulnerabilities[*].patched_versions` (split on `,`/`;`), so `2.19.1` never matches `2.19.10`. Every state is included (`triage`, `draft`, `published`, `closed`, `withdrawn`). The raw `vulnerabilities` stay internal to the filter: the list output keeps the summary schema.
 
+The repository security-advisories endpoint uses cursor pagination (`before`/`after`), not numeric `page` pagination. Observed failure: `page=1` and `page=2` both returned the same 100 advisories, so a length-based loop never ended. `fetch_advisories` must use `gh api --paginate --slurp` so the GitHub CLI follows the response `Link` headers and returns page arrays for flattening. Do not hand-increment `page`.
+
 **Output**: JSON to stdout; progress to stderr.
 
 ## Key principles

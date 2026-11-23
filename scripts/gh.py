@@ -1075,21 +1075,23 @@ def cmd_comments(args: argparse.Namespace) -> None:
 
 
 def fetch_advisories() -> list[dict]:
-    """Fetch all security advisories for the repository via REST API."""
-    all_advisories: list[dict] = []
-    page = 1
-
-    while True:
-        advisories = run_gh_rest(
-            f"repos/{REPO}/security-advisories?per_page=100&page={page}"
+    """Fetch all security advisories using GitHub's cursor-based pagination."""
+    try:
+        pages = json.loads(
+            run_gh_command(
+                [
+                    "gh",
+                    "api",
+                    "--paginate",
+                    "--slurp",
+                    f"repos/{REPO}/security-advisories?per_page=100",
+                ]
+            )
         )
-        all_advisories.extend(advisories)
+    except GhCommandFailed as err:
+        fail_gh(err.stderr)
 
-        if len(advisories) < 100:
-            break
-        page += 1
-
-    return all_advisories
+    return [advisory for page in pages for advisory in page]
 
 
 def fetch_advisory(ghsa_id: str) -> dict:

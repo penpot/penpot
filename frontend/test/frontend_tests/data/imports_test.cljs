@@ -325,16 +325,24 @@
         calls      (atom [])
         rows       (atom {})
         seen       (atom [])
+        uploaded   (atom [])
+        fetched    (atom [])
         session-id (uuid/next)
         resolution {:done [{:id (str (uuid/next)) :name "Published"}]}
-        one        (entry :name "First")
-        other      (entry :name "Second")]
+        blob       (js/Blob. #js ["package"])
+        one        (assoc (entry :name "First") :blob blob)
+        other      (assoc (entry :name "Second") :blob blob)]
 
     (await
      (mock/with-mocks*
        {st/state (atom {:ws-conn ws-stream})
-        http/send! (slurp-stub ::blob)
-        uploads/upload-blob-chunked (upload-stub session-id)
+        http/send! (mock/stub
+                    (fn [request]
+                      (swap! fetched conj request)
+                      (rx/of {:body ::blob})))
+        uploads/upload-blob-chunked (fn [body & _]
+                                      (swap! uploaded conj body)
+                                      (rx/of {:session-id session-id}))
         rp/cmd! (fake-server calls rows (fn [job-id] (job job-id "running")))
         ws/get-rcv-stream (ws-stub ws-stream)}
 
@@ -344,6 +352,8 @@
              job-id (:job-id (first @calls))]
 
          (t/testing "the package is uploaded and imported as one job"
+           (t/is (= [blob] @uploaded))
+           (t/is (empty? @fetched))
            (t/is (= :create-import-binfile-job (:cmd (first @calls))))
            (t/is (= {:project-id project-id :name "First" :version 3}
                     (:params (:params (first @calls)))))
