@@ -599,7 +599,10 @@
     :fn (mg/resource "app/migrations/sql/0816-mod-file-task-add-created-thread.sql")}
 
    {:name "0817-file-family-and-branch-review"
-    :fn (mg/resource "app/migrations/sql/0817-file-family-and-branch-review.sql")}])
+    :fn (mg/resource "app/migrations/sql/0817-file-family-and-branch-review.sql")}
+
+   {:name "0818-mod-comment-thread-add-lost-layer"
+    :fn (mg/resource "app/migrations/sql/0818-mod-comment-thread-add-lost-layer.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]

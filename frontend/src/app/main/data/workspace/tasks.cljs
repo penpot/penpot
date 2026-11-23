@@ -73,15 +73,17 @@
   (some? (:lost-shape-name task)))
 
 (defn restorable?
-  "The deleted layer of a task can be put back: the last deletion among
-  the `events` of the task kept the layer, which the server skips for a
-  very large one."
+  "The deleted layer of a task can be put back: the last move of the
+  layer among the `events` of the task is a deletion that kept the
+  layer, which the server skips for a very large one. A task the merge
+  of a branch landed elsewhere (a later `relinked` event) is lost
+  without a layer to restore."
   [events]
-  (-> (filter #(= "layer-deleted" (:type %)) events)
-      (last)
-      (get-in [:payload :objects])
-      (seq)
-      (some?)))
+  (let [last-move (->> events
+                       (filter #(contains? #{"layer-deleted" "layer-restored" "relinked"} (:type %)))
+                       (last))]
+    (and (= "layer-deleted" (:type last-move))
+         (some? (seq (get-in last-move [:payload :objects]))))))
 
 (defn history?
   "The task came with a merged branch and is already closed: it is part

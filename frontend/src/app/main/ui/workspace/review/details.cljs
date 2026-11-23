@@ -653,7 +653,8 @@
          [:> pr-state-badge* {:pr pr}]
          [:> text* {:as "span" :typography t/body-small :class (stl/css :muted)}
           (tr "workspace.review.text-and-detail"
-              (tr "workspace.review.route" (:branch-name pr) (tr "workspace.branches.main"))
+              (tr "workspace.review.route" (:branch-name pr)
+                  (rvc/route-target pr (tr "workspace.branches.main")))
               (tr "workspace.review.details.opened-by"
                   (ct/format-inst (:created-at pr) :localized-date)
                   (or (:fullname author) (tr "workspace.review.unknown-name"))))]])}]

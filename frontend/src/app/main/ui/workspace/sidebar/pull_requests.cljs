@@ -38,6 +38,7 @@
    [app.main.ui.ds.product.avatar :refer [avatar*]]
    [app.main.ui.ds.tooltip :refer [tooltip*]]
    [app.main.ui.workspace.compare.common :as cc]
+   [app.main.ui.workspace.review.common :as rvc]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
@@ -443,10 +444,11 @@
          [:> text* {:as "span"
                     :typography t/body-small
                     :class (stl/css :dialog-subtitle)}
-          ;; the route reads branch → target BRANCH (reviews always merge
-          ;; into main); the target file name would be redundant here,
-          ;; inside the file itself
-          (tr "workspace.review.route" (:branch-name pr) (tr "workspace.branches.main"))]
+          ;; the route reads branch → target: "Main" for the root of the
+          ;; family, whose file name would be redundant inside the file
+          ;; itself, and the target's name for a branch of a branch
+          (tr "workspace.review.route" (:branch-name pr)
+              (rvc/route-target pr (tr "workspace.branches.main")))]
          (when (and open? (:outdated pr))
            [:span {:class (stl/css :pr-badge :badge-outdated)}
             (tr "workspace.pull-requests.badge.outdated")])
@@ -566,8 +568,12 @@
           (tr "workspace.compare.bar.comparing")]
          [:span {:class (stl/css :pr-banner-name)}
           (if (:incoming comparison)
-            (tr "workspace.review.route" (tr "workspace.branches.main") (:branch-name pr))
-            (tr "workspace.review.route" (:branch-name pr) (tr "workspace.branches.main")))]])]
+            (tr "workspace.review.route"
+                (rvc/route-target pr (tr "workspace.branches.main"))
+                (:branch-name pr))
+            (tr "workspace.review.route"
+                (:branch-name pr)
+                (rvc/route-target pr (tr "workspace.branches.main"))))]])]
 
      (when (some? progress)
        [:*

@@ -494,9 +494,17 @@
   (sm/lazy-validator schema:branches-per-file))
 
 (def ^:private sql:get-branches-per-file
+  ;; The limit holds for the family of the file the branch is cut from: a
+  ;; branch of a branch (`:branch-stacking`) counts against the same
+  ;; limit as its parent, so a family never holds more live branches than
+  ;; the quote allows. An edge belongs to the family of its source file.
+  ;; An archived branch counts, because its designer still has it and can
+  ;; restore it. A merged branch does not: its work is in its target and
+  ;; the merge deleted it.
   "SELECT count(*) AS total
      FROM file_branch AS fb
-    WHERE fb.source_file_id = ?
+     JOIN file AS sf ON (sf.id = fb.source_file_id)
+    WHERE sf.family_id = (SELECT f.family_id FROM file AS f WHERE f.id = ?)
       AND fb.deleted_at IS NULL
       AND fb.status <> 'merged'")
 

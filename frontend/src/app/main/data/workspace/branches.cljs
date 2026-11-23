@@ -85,8 +85,8 @@
       (assoc state :workspace-branch-count (assoc count-state :file-id file-id)))))
 
 (defn fetch-branch-count
-  "Load how many branches the open file has, archived ones included and
-  counted from main when the file is itself a branch. The header reads it
+  "Load how many live branches the family of the open file has, archived
+  ones included: the count the branch quota checks. The header reads it
   to decide whether to show its branch row, so it loads with the file; it
   compares nothing, unlike the listing, which loads only when a user opens
   the switcher or the all-branches dialog. A count belonging to ANOTHER
@@ -118,9 +118,10 @@
 (defn fetch-branches
   "Load the branch listing of the open file. A failure leaves the listing
   in `:error`, never in an empty list, so it cannot read as a file with no
-  branches. A successful listing also refreshes the branch count, since it
-  covers the same branches, so the header follows a delete or a
-  materialize made from the listing."
+  branches. A successful listing also reloads the branch count, so the
+  header follows a delete or a materialize made from the listing. The
+  count is reloaded rather than taken from the listing, which holds only
+  the branches of one source while the count covers the family."
   []
   (ptk/reify ::fetch-branches
     ptk/WatchEvent
@@ -135,7 +136,7 @@
                             (rp/cmd! :get-file-branches {:file-id root :include-archived true}))))
              (rx/mapcat (fn [data]
                           (rx/of (update-branches-state {:status :loaded :data data})
-                                 (set-branch-count file-id {:count (count data)}))))
+                                 (fetch-branch-count))))
              (rx/catch (fn [_]
                          (rx/of (update-branches-state {:status :error})))))))))
 
@@ -207,6 +208,11 @@
       (:branch-not-found :branch-merged :branch-not-open)
       (ntf/warn (tr "workspace.branches.limits.refuse-stale"))
 
+      ;; the branch to cut from, merge into, or update from is archived
+      ;; or gone (`:branch-stacking`)
+      :source-branch-not-open
+      (ntf/warn (tr "workspace.branches.limits.refuse-source-not-open"))
+
       :invalid-branch-name
       (ntf/warn (tr "workspace.branches.limits.refuse-name"))
 
@@ -232,9 +238,12 @@
       (assoc state :dashboard-branches bs))))
 
 (defn load-file-branches
-  "Load the open branches of `file-id` into `:dashboard-branches` (used by
-  the dashboard branches popover). The previous list is cleared first so a
-  popover opened on another file never shows stale entries."
+  "Load the open and archived branches of `file-id` into
+  `:dashboard-branches` (used by the dashboard branches popover). These
+  are the file's direct branches: the badge counts the whole family, so
+  the two agree only while branches of branches are off. The previous
+  list is cleared first so a popover opened on another file never shows
+  stale entries."
   [file-id]
   (ptk/reify ::load-file-branches
     ptk/UpdateEvent
@@ -243,7 +252,7 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (->> (rp/cmd! :get-file-branches {:file-id file-id})
+      (->> (rp/cmd! :get-file-branches {:file-id file-id :include-archived true})
            (rx/map set-dashboard-branches)
            (rx/catch (fn [_] (rx/of (set-dashboard-branches []))))))))
 

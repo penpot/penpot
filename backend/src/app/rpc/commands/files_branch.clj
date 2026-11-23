@@ -585,6 +585,32 @@
     (bfc/update-file-row! cfg file)
     nil))
 
+;; --- Helpers: a branch as the source of another (`:branch-stacking`)
+
+(def ^:private sql:get-source-edge
+  "SELECT f.is_branch, fb.status, fb.deleted_at
+     FROM file AS f
+     LEFT JOIN file_branch AS fb ON (fb.branch_file_id = f.id)
+    WHERE f.id = ?")
+
+(defn- check-source-open
+  "Refuse to use the file `file-id` as the source of a branch edge (cut a
+  branch from it, merge into it, update from it) when the file is itself a
+  branch whose own edge is not open: an archived branch is set aside, and
+  a merged or deleted one is gone. A root file, and a file detached from
+  its branch, pass. A caller that writes into `file-id` or pins it runs
+  the check under the lock of `file-id`, the lock an archive takes, so
+  the archive cannot commit between the check and the write."
+  [conn file-id]
+  (let [{:keys [is-branch status deleted-at]} (db/exec-one! conn [sql:get-source-edge file-id])]
+    (when (and is-branch
+               (or (not= "open" status) (some? deleted-at)))
+      (ex/raise :type :validation
+                :code :source-branch-not-open
+                :hint "the source of this operation is a branch that is not open"
+                :file-id file-id
+                :status status))))
+
 ;; --- COMMAND: create-file-branch
 
 (defn- check-branch-name!
@@ -612,7 +638,7 @@
   reviews, threads, and tasks of every file in it.
 
   A branch of a branch is refused unless the `:branch-stacking` flag is
-  on."
+  on, and then only while the branch it is cut from is open."
   {::doc/added "2.16"
    ::webhooks/event? true
    ::sm/params schema:create-file-branch
@@ -642,12 +668,24 @@
                   ;; (same advisory lock) so the base snapshot and the
                   ;; branch's initial state (the empty op log over that
                   ;; base) are taken from the SAME state of main.
-                  (db/xact-lock! conn file-id)
+                  ;;
+                  ;; The family id is locked too: the quota counts the
+                  ;; whole family, and two creators cutting from two files
+                  ;; of it (main and a child of main) would otherwise take
+                  ;; two different locks and both pass the quota for the
+                  ;; last slot. Sorted, as `merge-file-branch` takes its
+                  ;; two, to avoid deadlocks. The family id is the root
+                  ;; file id, so branching the root takes one lock.
+                  (run! (partial db/xact-lock! conn)
+                        (sort (distinct [file-id (:family-id file-row)])))
+
+                  ;; an archived branch is no source for a new one
+                  (check-source-open conn file-id)
 
                   ;; The quota check runs INSIDE the transaction and
-                  ;; AFTER the lock: two creators racing for the last
-                  ;; branch slot serialize on the lock, and the loser's
-                  ;; count must see the winner's committed row.
+                  ;; AFTER the locks: two creators racing for the last
+                  ;; branch slot serialize on the family lock, and the
+                  ;; loser's count must see the winner's committed row.
                   ;; `quotes/check!` reads through `::db/conn`, so it
                   ;; counts on this transaction's connection.
                   (-> cfg
@@ -1247,6 +1285,9 @@
                                (ex/raise :type :validation
                                          :code :branch-not-open
                                          :branch-id branch-id))
+                 ;; a merge into a branch needs that branch open: an
+                 ;; archived target is set aside (`:branch-stacking`)
+                 _           (check-source-open conn main-id)
                  [main-stored main-file] (read-main-for-write cfg main-id :merge)
                  _           (check-oplog-depth-limit! (bfc/get-branch-oplog-depth cfg branch-file-id)
                                                        branch-file-id
@@ -1600,6 +1641,9 @@
                                (ex/raise :type :validation
                                          :code :branch-not-open
                                          :branch-id branch-id))
+                 ;; an archived source is set aside, so nothing flows
+                 ;; from it either (`:branch-stacking`)
+                 _           (check-source-open conn main-id)
                  [main-stored main-file] (read-main-for-write cfg main-id :update-from-source)
                  _           (when (and (some? expected-source-revn)
                                         (not= expected-source-revn (:revn main-file)))
@@ -2106,25 +2150,27 @@
    [:file-id ::sm/uuid]])
 
 (def ^:private sql:get-file-branch-count
+  ;; the same count as the `branches-per-file` quote
+  ;; (`quotes.clj::sql:get-branches-per-file`), so the number a user sees
+  ;; is the number the limit is checked against
   "SELECT count(*) AS count
      FROM file_branch AS fb
-    WHERE fb.deleted_at IS NULL
-      AND fb.status != 'merged'
-      AND fb.source_file_id = coalesce((SELECT b.source_file_id
-                                          FROM file_branch AS b
-                                         WHERE b.branch_file_id = ?
-                                           AND b.deleted_at IS NULL),
-                                        ?)")
+     JOIN file AS sf ON (sf.id = fb.source_file_id)
+    WHERE sf.family_id = (SELECT f.family_id FROM file AS f WHERE f.id = ?)
+      AND fb.deleted_at IS NULL
+      AND fb.status != 'merged'")
 
 (sv/defmethod ::get-file-branch-count
-  "How many branches the file has, archived ones included, as the
-  listing with `:include-archived` returns them. When the file is
-  itself a branch, the branches of its source (main) are counted.
+  "How many live branches the family of the file has, archived ones
+  included and merged ones left out: the count the `branches-per-file`
+  quote checks. A branch of a branch (`:branch-stacking`) counts in the
+  family of its root, so a file and every branch in its family answer the
+  same number.
 
   The workspace header asks this on every file open to decide whether to
-  show its branch row, so it compares nothing and takes no climit: it is
-  the dashboard's `branches_count` subquery, one indexed count. Returns a
-  zero count when branching is disabled, so it is safe on every open."
+  show its branch row, so it compares nothing and takes no climit: one
+  indexed count. Returns a zero count when branching is disabled, so it
+  is safe on every open."
   {::doc/added "2.16"
    ::sm/params schema:get-file-branch-count}
   [cfg {:keys [::rpc/profile-id file-id]}]
@@ -2132,7 +2178,7 @@
     (db/run! cfg
              (fn [{:keys [::db/conn] :as cfg}]
                (files/check-read-permissions! cfg profile-id file-id)
-               (-> (db/exec-one! conn [sql:get-file-branch-count file-id file-id])
+               (-> (db/exec-one! conn [sql:get-file-branch-count file-id])
                    (select-keys [:count]))))
     {:count 0}))
 

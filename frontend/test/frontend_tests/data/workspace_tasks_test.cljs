@@ -57,6 +57,19 @@
   (t/is (dwtk/history? {:status "verified" :merge-id (uuid/next)}))
   (t/is (not (dwtk/history? {:status "open" :merge-id (uuid/next)}))))
 
+(t/deftest a-layer-the-merge-landed-elsewhere-is-not-restorable
+  ;; The merge of a branch lands a task whose layer did not reach the
+  ;; target on another layer with a `relinked` event, and the task stays
+  ;; lost: an older deletion that kept the layer offers no restore.
+  (let [deleted {:type "layer-deleted"
+                 :payload {:shape-id button-id
+                           :objects [{:id button-id :type :rect}]}}]
+    (t/is (dwtk/restorable? [{:type "created"} deleted]))
+    (t/is (not (dwtk/restorable? [deleted
+                                  {:type "merged" :payload {}}
+                                  {:type "relinked" :payload {:shape-id board-id}}])))
+    (t/is (not (dwtk/restorable? [(assoc-in deleted [:payload :objects] nil)])))))
+
 (t/deftest tasks-for-counts-the-open-work-of-a-person
   (let [me (uuid/next)]
     (t/is (= 1 (count (dwtk/tasks-for [{:status "open" :assignee-id me}

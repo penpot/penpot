@@ -73,7 +73,7 @@
                 src  (first (filter #(= (:id %) (:id file)) rows))]
             (t/is (contains? ids (:id file)))
             (t/is (not (contains? ids @branch-file-id)))
-            ;; the source file card reports its open branch count
+            ;; the source file card reports the live branches of its family
             (t/is (= 1 (:branches-count src))))))
 
       (t/testing "list branches"
@@ -1280,7 +1280,112 @@
                                          :name name})))
         child   (create (:id file) "child")
         grand   (create (:branch-file-id child) "grandchild")]
-    {:proj-id proj-id :file file :branches [child grand]}))
+    {:profile profile :proj-id proj-id :file file :branches [child grand]}))
+
+(defn- archive-branch*
+  [profile branch archived]
+  (th/command! {::th/type :archive-file-branch
+                ::rpc/profile-id (:id profile)
+                :branch-id (:id branch)
+                :archived archived}))
+
+(t/deftest the-branch-quota-counts-the-whole-family
+  ;; Counted by direct source, the chain below holds one branch per
+  ;; source, so a third branch from main passed a quota of two.
+  (with-redefs [cf/flags (stacking-flags)
+                cf/get   (th/config-get-mock {:quotes-branches-per-file 2})]
+    (let [{:keys [profile proj-id file branches]} (branch-chain*)
+          [child grand] branches
+          create   (fn [source-id name]
+                     (th/command! {::th/type :create-file-branch
+                                   ::rpc/profile-id (:id profile)
+                                   :file-id source-id
+                                   :name name}))
+          count-of (fn [file-id]
+                     (-> (th/command! {::th/type :get-file-branch-count
+                                       ::rpc/profile-id (:id profile)
+                                       :file-id file-id})
+                         :result :count))]
+
+      (t/testing "the chain fills the family's two slots"
+        (doseq [source-id [(:id file) (:branch-file-id child) (:branch-file-id grand)]]
+          (let [data (-> (create source-id "one-too-many") :error ex-data)]
+            (t/is (= :restriction (:type data)))
+            (t/is (= :max-quote-reached (:code data))))))
+
+      (t/testing "every file of the family shows the count the quota checks"
+        (doseq [file-id [(:id file) (:branch-file-id child) (:branch-file-id grand)]]
+          (t/is (= 2 (count-of file-id))))
+        (let [rows (:result (th/command! {::th/type :get-project-files
+                                          ::rpc/profile-id (:id profile)
+                                          :project-id proj-id}))
+              src  (first (filter #(= (:id %) (:id file)) rows))]
+          (t/is (= 2 (:branches-count src)))))
+
+      (t/testing "an archived branch still counts, a deleted one frees its slot"
+        (t/is (nil? (:error (archive-branch* profile grand true))))
+        (t/is (= 2 (count-of (:id file))))
+        (t/is (nil? (:error (th/command! {::th/type :delete-file-branch
+                                          ::rpc/profile-id (:id profile)
+                                          :branch-id (:id grand)}))))
+        (t/is (= 1 (count-of (:id file))))
+        (t/is (nil? (:error (create (:branch-file-id child) "fits"))))))))
+
+(t/deftest merge-into-an-archived-branch-is-refused
+  ;; The merge checked only the merged branch: an archived parent took
+  ;; its child's changes.
+  (with-redefs [cf/flags (stacking-flags)]
+    (let [{:keys [profile branches]} (branch-chain*)
+          [child grand] branches
+          _           (apply-change* profile (:branch-file-id grand) (color-change (uuid/random)))
+          merge-grand (fn []
+                        (th/command! {::th/type :merge-file-branch
+                                      ::rpc/profile-id (:id profile)
+                                      :branch-id (:id grand)}))]
+      (t/is (nil? (:error (archive-branch* profile child true))))
+
+      (let [data (-> (merge-grand) :error ex-data)]
+        (t/is (= :validation (:type data)))
+        (t/is (= :source-branch-not-open (:code data))))
+      (t/is (= "open" (:status (th/db-get :file-branch {:id (:id grand)}))))
+
+      (t/testing "the merge goes through once the parent is restored"
+        (t/is (nil? (:error (archive-branch* profile child false))))
+        (let [out (merge-grand)]
+          (t/is (nil? (:error out)))
+          (t/is (= :merged (-> out :result :status))))))))
+
+(t/deftest an-archived-branch-is-no-source
+  ;; Creation checked only the stacking flag and the update checked only
+  ;; the child, so both ran against an archived parent.
+  (with-redefs [cf/flags (stacking-flags)]
+    (let [{:keys [profile branches]} (branch-chain*)
+          [child grand] branches
+          _ (apply-change* profile (:branch-file-id child) (color-change (uuid/random)))
+          _ (t/is (nil? (:error (archive-branch* profile child true))))]
+
+      (t/testing "no branch is cut from it"
+        (let [data (-> (th/command! {::th/type :create-file-branch
+                                     ::rpc/profile-id (:id profile)
+                                     :file-id (:branch-file-id child)
+                                     :name "from-archived"})
+                       :error ex-data)]
+          (t/is (= :validation (:type data)))
+          (t/is (= :source-branch-not-open (:code data)))))
+
+      (t/testing "its child does not update from it"
+        (let [data (-> (th/command! {::th/type :update-file-branch-from-source
+                                     ::rpc/profile-id (:id profile)
+                                     :branch-id (:id grand)})
+                       :error ex-data)]
+          (t/is (= :validation (:type data)))
+          (t/is (= :source-branch-not-open (:code data)))))
+
+      (t/testing "a restored branch is a source again"
+        (t/is (nil? (:error (archive-branch* profile child false))))
+        (t/is (nil? (:error (th/command! {::th/type :update-file-branch-from-source
+                                          ::rpc/profile-id (:id profile)
+                                          :branch-id (:id grand)}))))))))
 
 (defn- branch-files-deleted?
   [branches]

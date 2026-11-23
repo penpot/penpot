@@ -7252,6 +7252,12 @@ msgstr ""
 "panel to see where it is now."
 
 #: src/app/main/data/workspace/branches.cljs
+msgid "workspace.branches.limits.refuse-source-not-open"
+msgstr ""
+"The branch to branch from, merge into, or update from is archived or gone. "
+"Restore it first."
+
+#: src/app/main/data/workspace/branches.cljs
 msgid "workspace.branches.limits.refuse-name"
 msgstr "A branch name can't be empty."
 

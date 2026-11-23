@@ -180,8 +180,11 @@
               :comment-url comment-url})))))))
 
 (defn- decode-row
+  "Decode a thread or comment row for the client. The landing columns of
+  a thread are what a later move of a thread left behind by a merge
+  reads (`files-task/move-branch-review-thread`), not for the client."
   [{:keys [participants position mentions area anchor-type] :as row}]
-  (cond-> row
+  (cond-> (dissoc row :landing-ancestors :landing-area)
     (db/pgpoint? position) (assoc :position (db/decode-pgpoint position))
     (db/pgobject? participants) (assoc :participants (db/decode-transit-pgobject participants))
     (db/pgobject? area) (assoc :area (db/decode-transit-pgobject area))
