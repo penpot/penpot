@@ -407,6 +407,18 @@
                                    :changed-item-index index)]
                 (dwsh/update-shapes ids #(update-shape-stroke-color % index color) options)))))))
 
+(defn update-shape-stroke-attrs
+  "Update the style attributes of the stroke on the specified `position`.
+  When the shape has no stroke there, a default one is created: a stroke
+  built from style attributes alone would have no color, which is not a
+  valid stroke."
+  [shape position attrs]
+  (let [stroke (or (get-in shape [:strokes position]) cts/default-stroke)]
+    (-> shape
+        (update :strokes #(or % []))
+        (assoc-in [:strokes position]
+                  (merge stroke (build-stroke-style-attrs stroke) attrs)))))
+
 (defn change-stroke-attrs
   ([ids attrs index] (change-stroke-attrs ids attrs index nil))
   ([ids attrs index options]
@@ -419,16 +431,7 @@
                                      :changed-item-index index)]
          (rx/of (dwsh/update-shapes
                  ids
-                 (fn [shape]
-                   (let [stroke      (get-in shape [:strokes index])
-                         style-attrs (build-stroke-style-attrs stroke)
-                         attrs       (merge stroke style-attrs attrs)]
-                     (cond-> shape
-                       (not (contains? shape :strokes))
-                       (assoc :strokes [])
-
-                       :always
-                       (assoc-in [:strokes index] attrs))))
+                 #(update-shape-stroke-attrs % index attrs)
                  options)))))))
 
 ;; --- Stroke side width
