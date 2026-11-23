@@ -593,7 +593,10 @@
     :fn (mg/resource "app/migrations/sql/0814-mod-file-task-give-thread.sql")}
 
    {:name "0815-add-file-branch-change-review-table"
-    :fn (mg/resource "app/migrations/sql/0815-add-file-branch-change-review-table.sql")}])
+    :fn (mg/resource "app/migrations/sql/0815-add-file-branch-change-review-table.sql")}
+
+   {:name "0816-mod-file-branch-merge-table-add-kind"
+    :fn (mg/resource "app/migrations/sql/0816-mod-file-branch-merge-table-add-kind.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]

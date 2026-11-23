@@ -291,6 +291,31 @@
           (t/is (= 3 (:comment-thread-seqn (th/db-get :file {:id (:id file)}
                                                       {::db/remove-deleted false})))))))))
 
+(t/deftest apply-keeps-the-tasks-on-the-branch
+  (with-redefs [cf/flags (task-flags)
+                eml/send-template (fn [_ _] nil)]
+    (let [{:keys [author page-id rect-id file branch branch-file-id]} (setup-review)
+          task (:result (create-task* author {:file-id branch-file-id
+                                              :page-id page-id
+                                              :shape-id rect-id}))]
+      (update-file* author branch-file-id
+                    [{:type :mod-obj :page-id page-id :id rect-id
+                      :operations [{:type :set :attr :name :val "Pay"}]}])
+
+      (let [out (th/command! {::th/type :apply-file-branch
+                              ::rpc/profile-id (:id author)
+                              :branch-id (:id branch)})]
+        (t/is (nil? (:error out)))
+        (t/is (= :applied (-> out :result :status))))
+
+      ;; the branch is alive, so its work stays where it is
+      (let [row (th/db-get :file-task {:id (:id task)})]
+        (t/is (= branch-file-id (:file-id row)))
+        (t/is (nil? (:merge-id row))))
+      (t/is (empty? (:result (th/command! {::th/type :get-file-tasks
+                                           ::rpc/profile-id (:id author)
+                                           :file-id (:id file)})))))))
+
 (t/deftest each-message-of-a-thread-may-be-a-task
   (with-redefs [cf/flags (task-flags)]
     (let [{:keys [author page-id branch-file-id]} (setup-review)

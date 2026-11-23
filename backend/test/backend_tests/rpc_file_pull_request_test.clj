@@ -526,6 +526,41 @@
           (let [[row] (th/db-query :file-pull-request {:id (:id pr)})]
             (t/is (= "closed" (:status row)))))))))
 
+(t/deftest applying-the-branch-completes-the-pull-request
+  (with-redefs [cf/flags (pr-flags)]
+    (let [author (th/create-profile* 1 {:is-active true})
+          file   (th/create-file* 1 {:profile-id (:id author)
+                                     :project-id (:default-project-id author)})
+          branch (create-branch* author file "apply-me")
+          _      (add-color* author (:branch-file-id branch) "Brand")
+          pr     (:result (create-pr* author (:id branch) {}))
+          out    (th/command! {::th/type :apply-file-branch
+                               ::rpc/profile-id (:id author)
+                               :branch-id (:id branch)})]
+      (t/is (nil? (:error out)))
+      (t/is (= :applied (-> out :result :status)))
+
+      (t/testing "the review ends as merged and its snapshot is released"
+        (let [[row] (th/db-query :file-pull-request {:id (:id pr)})
+              snap  (th/db-get :file-change {:id (:review-snapshot-id row)}
+                               {::db/remove-deleted false})]
+          (t/is (= "merged" (:status row)))
+          (t/is (some? (:closed-at row)))
+          (t/is (ct/is-before? (:deleted-at snap) (ct/in-future {:days 365})))))
+
+      (t/testing "the record of the apply names the review"
+        (let [merges (:result (th/command! {::th/type :get-file-branch-merges
+                                            ::rpc/profile-id (:id author)
+                                            :file-id (:id file)}))]
+          (t/is (= [(:id pr)] (mapv :pull-request-id merges)))
+          (t/is (= ["apply"] (mapv :kind merges)))))
+
+      (t/testing "the branch stays open for a new review"
+        (add-color* author (:branch-file-id branch) "Accent")
+        (let [out (create-pr* author (:id branch) {:title "second round"})]
+          (t/is (nil? (:error out)))
+          (t/is (= "open" (-> out :result :status))))))))
+
 (t/deftest create-serializes-against-a-concurrent-merge
   ;; the create must re-read the branch under the advisory lock: a merge
   ;; that wins the race closes the branch while the create waits for the

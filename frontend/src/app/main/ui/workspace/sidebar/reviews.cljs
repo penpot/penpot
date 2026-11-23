@@ -143,8 +143,11 @@
         (or (:fullname author) (tr "workspace.branches.reviews.unknown-author"))]
        [:> entry-date* {:date (:created-at merge)}]]
       [:div {:class (stl/css :entry-meta)}
+       ;; an apply brought the changes in and kept the branch open
        [:span {:class (stl/css :entry-meta-text)}
-        (tr "workspace.branches.reviews.merged")]
+        (if (= "apply" (:kind merge))
+          (tr "workspace.branches.reviews.applied")
+          (tr "workspace.branches.reviews.merged"))]
        [:> route* {:branch-name (:branch-name merge)}]]
       ;; the merge accepted a design review: name it, it may be gone by now
       (when-let [title (:pull-request-title merge)]

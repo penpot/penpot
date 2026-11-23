@@ -645,12 +645,18 @@
   A merge or an update that returns conflicts takes the user to resolve
   them. The command can run with main open (from the list of branches),
   so the conflicts wait in the store while the branch file opens: once
-  its context loads, the mode starts there."
+  its context loads, the mode starts there.
+
+  An apply that keeps the branch open leaves the mode: the changes it
+  showed are in main now, and the branch stays the open file."
   [stopper]
   (ptk/reify ::watch-events
     ptk/WatchEvent
     (watch [_ _ stream]
       (->> (rx/merge
+            (->> stream
+                 (rx/filter (ptk/type? ::dwb/branch-applied))
+                 (rx/map (fn [_] (exit))))
             (->> stream
                  (rx/filter (ptk/type? ::dwb/fetch-branch-diff))
                  (rx/map (fn [_] (fetch-other-changes))))
