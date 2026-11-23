@@ -12,6 +12,8 @@
    [app.main.data.profile :as dp]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
+   [app.main.ui.ds.foundations.typography :as t]
+   [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
@@ -49,9 +51,18 @@
                   :on-submit on-submit
                   :form form}
       [:div {:class (stl/css :form-container)}
-       [:h2 (tr "dashboard.settings.notifications.title")]
-       [:h3 (tr "dashboard.settings.notifications.dashboard.title")]
-       [:h4 (tr "dashboard.settings.notifications.dashboard-comments.title")]
+       [:> heading* {:level 2
+                     :typography t/title-large
+                     :class (stl/css :page-title)}
+        (tr "dashboard.settings.notifications.title")]
+       [:> heading* {:level 3
+                     :typography t/headline-small
+                     :class (stl/css :section-title)}
+        (tr "dashboard.settings.notifications.dashboard.title")]
+       [:> heading* {:level 4
+                     :typography t/headline-small
+                     :class (stl/css :group-title)}
+        (tr "dashboard.settings.notifications.dashboard-comments.title")]
        [:div {:class (stl/css :fields-row)}
         [:& fm/radio-buttons
          {:options [{:label (tr "dashboard.settings.notifications.dashboard-comments.all") :value "all"}
@@ -60,8 +71,14 @@
           :name :dashboard-comments
           :class (stl/css :radio-btns)}]]
 
-       [:h3 (tr "dashboard.settings.notifications.email.title")]
-       [:h4 (tr "dashboard.settings.notifications.email-comments.title")]
+       [:> heading* {:level 3
+                     :typography t/headline-small
+                     :class (stl/css :section-title)}
+        (tr "dashboard.settings.notifications.email.title")]
+       [:> heading* {:level 4
+                     :typography t/headline-small
+                     :class (stl/css :group-title)}
+        (tr "dashboard.settings.notifications.email-comments.title")]
        [:div {:class (stl/css :fields-row)}
         [:& fm/radio-buttons
          {:options [{:label (tr "dashboard.settings.notifications.email-comments.all") :value "all"}
@@ -70,7 +87,10 @@
           :name :email-comments
           :class (stl/css :radio-btns)}]]
 
-       [:h4 (tr "dashboard.settings.notifications.email-invites.title")]
+       [:> heading* {:level 4
+                     :typography t/headline-small
+                     :class (stl/css :group-title)}
+        (tr "dashboard.settings.notifications.email-invites.title")]
        [:div {:class (stl/css :fields-row)}
         [:& fm/radio-buttons
          {:options [{:label (tr "dashboard.settings.notifications.email-invites.all") :value "all"}

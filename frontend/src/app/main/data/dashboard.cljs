@@ -27,7 +27,9 @@
    [app.main.data.team :as dtm]
    [app.main.data.websocket :as dws]
    [app.main.repo :as rp]
+   [app.main.router :as rt]
    [app.main.store :as st]
+   [app.util.clipboard :as clipboard]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.sse :as sse]
    [beicon.v2.core :as rx]
@@ -359,6 +361,26 @@
             params  (select-keys project [:id :is-pinned :team-id])]
         (->> (rp/cmd! :update-project-pin params)
              (rx/ignore))))))
+
+;; --- EVENT: copy-link
+
+(defn copy-link
+  "Copy the absolute URL of the route `id` with `params` to the
+  clipboard and confirm it with a toast."
+  [id params]
+  (ptk/reify ::copy-link
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [url (rt/resolve-uri (:router state) id params)]
+        (->> (rx/from (clipboard/to-clipboard url))
+             (rx/map (fn [_]
+                       (ntf/success (tr "dashboard.success-copy-link"))))
+             (rx/catch (fn [cause]
+                         (let [message (clipboard/error-message cause)]
+                           (when-not message
+                             (log/error :hint "unable to copy link" :cause cause))
+                           (rx/of (ntf/error (or message (tr "errors.generic"))
+                                             {:timeout ntf/default-timeout}))))))))))
 
 ;; --- EVENT: rename-project
 

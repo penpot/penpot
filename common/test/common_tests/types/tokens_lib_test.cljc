@@ -12,6 +12,7 @@
    #?(:clj [clojure.datafy :refer [datafy]])
    [app.common.data :as d]
    [app.common.files.tokens :as cfo]
+   [app.common.path-names :as cpn]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.time :as ct]
    [app.common.transit :as tr]
@@ -2120,6 +2121,69 @@
   (t/is (true? (ctob/token-name-path-exists? "border-radius.sm.x" {"border-radius" {:name "sm"}})))
   (t/is (false? (ctob/token-name-path-exists? "other" {"border-radius" {:name "sm"}})))
   (t/is (false? (ctob/token-name-path-exists? "dark.border-radius.md" {"dark" {"border-radius" {"sm" {:name "sm"}}}}))))
+
+(t/deftest normalize-set-name
+  (t/testing "spaces around the group separators and empty groups are dropped"
+    (t/is (= "set" (ctob/normalize-set-name "set")))
+    (t/is (= "group/set" (ctob/normalize-set-name " group /  set ")))
+    (t/is (= "group/set" (ctob/normalize-set-name "group//set/")))
+    (t/is (= "" (ctob/normalize-set-name " / "))))
+
+  (t/testing "a name relative to another set keeps that set's groups"
+    (t/is (= "group/sub/new" (ctob/normalize-set-name "new" "group/sub/old")))
+    (t/is (= "group/extra/new" (ctob/normalize-set-name " extra / new " "group/old")))
+    (t/is (= "new" (ctob/normalize-set-name "new" "old")))))
+
+(defn- token-tree
+  [& names]
+  (cpn/build-tree-root (map #(ctob/make-token :name % :type :color :value "#000000") names)
+                       ctob/token-separator))
+
+(defn- find-node
+  [nodes path]
+  (some #(if (= path (:path %)) % (find-node (:children %) path)) nodes))
+
+(t/deftest rename-path
+  (let [tree      (token-tree "color.brand.primary" "color.brand.secondary" "color.neutral")
+        color     (find-node tree "color")
+        brand     (find-node tree "color.brand")
+        primary   (find-node tree "color.brand.primary")
+        token     (ctob/make-token :name "color.brand.primary" :type :color :value "#000000")]
+
+    (t/testing "renaming a group changes only its own segment of the path"
+      (t/is (= "palette" (ctob/rename-path color "palette")))
+      (t/is (= "color.accent" (ctob/rename-path brand "accent"))))
+
+    (t/testing "a token inside a renamed group moves along with it"
+      (t/is (= "palette.brand.primary" (ctob/rename-path color token "palette")))
+      (t/is (= "color.accent.primary" (ctob/rename-path brand token "accent"))))
+
+    (t/testing "renaming a token changes its last segment"
+      (t/is (= "color.brand.main" (ctob/rename-path primary "main")))
+      (t/is (= "color.brand.main" (ctob/rename-path primary token "main"))))))
+
+(t/deftest update-tokens-group
+  (let [color-token   #(ctob/make-token :name % :type :color :value "#000000")
+        active-tokens (d/ordered-map
+                       "color.brand.primary" (color-token "color.brand.primary")
+                       "color.brand.secondary" (color-token "color.brand.secondary")
+                       "color.neutral.gray" (color-token "color.neutral.gray")
+                       "spacing.sm" (ctob/make-token :name "spacing.sm" :type :spacing :value "4"))]
+
+    (t/testing "tokens of the renamed group get the new group name"
+      (let [result (ctob/update-tokens-group active-tokens "color.brand" "brand" "accent")]
+        (t/is (= ["color.accent.primary" "color.accent.secondary" "color.neutral.gray" "spacing.sm"]
+                 (map first result)))
+        (t/is (= (map first result) (map (comp :name second) result)))))
+
+    (t/testing "tokens without the group's name in their path stay as they are"
+      (let [result (into {} (ctob/update-tokens-group active-tokens "color.brand" "brand" "accent"))]
+        (t/is (= (get active-tokens "color.neutral.gray") (get result "color.neutral.gray")))
+        (t/is (= (get active-tokens "spacing.sm") (get result "spacing.sm")))))
+
+    (t/testing "renaming a top level group renames it in the tokens that have its name"
+      (t/is (= ["palette.brand.primary" "palette.brand.secondary" "palette.neutral.gray" "spacing.sm"]
+               (map first (ctob/update-tokens-group active-tokens "color" "color" "palette")))))))
 
 #?(:clj
    (t/deftest token-set-encode-decode-roundtrip-with-invalid-set-name

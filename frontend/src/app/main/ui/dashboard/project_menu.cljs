@@ -36,6 +36,7 @@
   (assert (fn? on-edit) "missing `on-edit` prop")
 
   (let [is-default?      (:is-default project)
+        is-pinned?       (:is-pinned project)
 
         current-team-id  (mf/use-ctx ctx/current-team-id)
         teams            (mf/deref refs/teams)
@@ -56,6 +57,11 @@
         toggle-pin
         (fn []
           (st/emit! (dd/toggle-project-pin project)))
+
+        on-copy-link
+        (fn []
+          (st/emit! (dd/copy-link :dashboard-files {:team-id (:team-id project)
+                                                    :project-id (:id project)})))
 
         on-move-success
         (fn [team-id]
@@ -93,9 +99,13 @@
        [:> menu-item* {:id "project-duplicate" :on-action on-duplicate}
         (tr "dashboard.duplicate")])
 
+     ;; Same id in both branches, as file-menu's shared toggle: the label
+     ;; flips with :is-pinned, the item does not.
      (when-not is-default?
        [:> menu-item* {:id "project-pin" :on-action toggle-pin}
-        (tr "dashboard.pin-unpin")])
+        (if is-pinned?
+          (tr "dashboard.unpin")
+          (tr "dashboard.pin"))])
 
      (when (and (seq other-teams) (not is-default?))
        [:> sub-menu* {:id "project-move-to" :trigger (tr "dashboard.move-to") :variant "drilldown"}
@@ -105,9 +115,14 @@
                           :on-action (on-move (:id team))}
            (:name team)])])
 
+     [:> menu-item* {:id "project-copy-link" :on-action on-copy-link}
+      (tr "dashboard.copy-link")]
+
      (when (some? on-import-click)
-       [:> menu-item* {:id "file-import" :on-action on-import-click}
-        (tr "dashboard.import")])
+       [:*
+        [:> menu-separator*]
+        [:> menu-item* {:id "file-import" :on-action on-import-click}
+         (tr "dashboard.import")]])
 
      (when-not is-default?
        [:*

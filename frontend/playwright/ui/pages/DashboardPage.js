@@ -236,6 +236,12 @@ export class DashboardPage extends BaseWebSocketPage {
     );
   }
 
+  // The clipboard text parsed as a URL, as left by a "Copy link" action.
+  async copiedLink() {
+    const text = await this.page.evaluate(() => navigator.clipboard.readText());
+    return new URL(text);
+  }
+
   async goToDashboard() {
     await this.page.goto(
       `/?screen=dashboard-recent&team-id=${DashboardPage.anyTeamId}`,

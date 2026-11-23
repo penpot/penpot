@@ -531,6 +531,10 @@ in plain words — the agents pick the right skill from what you say.
 
 Create a folder here with a `SKILL.md` inside. The file needs `name` and
 `description` in its frontmatter, and a clear "When to use" section so
-agents know when to reach for it. Keep one job per skill, and keep the
+agents know when to reach for it. Use the description to route requests
+and the body to tell the agent what to do. Link to the relevant memory for
+the full rules or command reference instead of copying it into the skill.
+Keep short reminders where they prevent an agent from skipping a required
+read or check. Keep one job per skill, and keep the
 two families apart: flows are named with a verb first; reference skills
 end in `-criteria`.

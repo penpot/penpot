@@ -33,14 +33,17 @@
           (st/emit! (modal/show
                      {:type :import
                       :project-id project-id
-                      :files [file]
+                      :entries [file]
                       :on-finish-import on-finish-import})))
         on-click
         (fn []
           (reset! downloading? true)
           (->> (http/send! {:method :get :uri link :response-type :blob :mode :no-cors})
                (rx/subs! (fn [{:keys [body] :as response}]
-                           (open-import-modal {:name name :uri (wapi/create-uri body)}))
+                           (open-import-modal {:name name
+                                               :uri  (wapi/create-uri body)
+                                               :blob body
+                                               :size (.-size body)}))
                          (fn [error]
                            (reset! downloading? false)
                            (js/console.error "error" error))

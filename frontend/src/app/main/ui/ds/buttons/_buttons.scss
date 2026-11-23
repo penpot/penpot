@@ -70,6 +70,11 @@
   --button-focus-inner-ring-color: var(--color-background-secondary);
   --button-focus-outer-ring-color: var(--color-accent-primary);
 
+  // The light theme muted background is too pale for a light label.
+  :global(.light) & {
+    --button-disabled-fg-color: var(--color-accent-tertiary);
+  }
+
   &:active,
   &[aria-pressed="true"] {
     box-shadow: inset 0 0 #{px2rem(10)} #{px2rem(2)} rgb(0 0 0 / 0.2);

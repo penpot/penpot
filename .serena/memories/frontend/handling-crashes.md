@@ -12,7 +12,7 @@ Check crash state:
 (some? (:exception @app.main.store/state))
 ```
 
-It returns `true` when the Internal Error page is showing and `false` on a healthy workspace or after a successful reload.
+It returns `true` for the store exception page. A React error boundary can show an error without setting this flag; see `mem:frontend/error-reporting`.
 
 ## Read the runtime cause
 
@@ -33,6 +33,6 @@ For backend validation errors (`:type :validation`), `:details` is usually the m
 
 ## Recover and continue testing
 
-Simplest path when `cljs_repl` is still live (usually true after a crash): reload via repl with `(.reload js/location)` — see `mem:frontend/cljs-repl`. Alternatively via Playwright: find the workspace tab (URL contains `/#/workspace`, title ends `- Penpot`), select it if not current, then `playwright:browser_navigate` to that same URL. Either way, confirm recovery with `(some? (:exception @app.main.store/state))` returning `false`.
+If `cljs_repl` still works, reload with `(.reload js/location)`; see `mem:frontend/cljs-repl`. Otherwise select the workspace tab by its current URL (`screen=workspace` in the query) and reload that URL. Confirm that the workspace renders again and `(some? (:exception @app.main.store/state))` returns `false`; the store check alone does not detect a React render boundary.
 
-For backend-rejected changes, such as validation errors on `update-file`, changes are not persisted. Reload restores the pre-crash state, so it is safe to retry after fixing the cause.
+Reload reads the saved version, not unsaved local edits. An earlier commit in a partially rejected save can already be durable; see `mem:frontend/workspace-state-persistence-subtleties` before retrying a sequence of edits.

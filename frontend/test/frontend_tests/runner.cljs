@@ -145,6 +145,7 @@
    [frontend-tests.tokens.import-export-test]
    [frontend-tests.tokens.logic.token-actions-test]
    [frontend-tests.tokens.logic.token-data-test]
+   [frontend-tests.tokens.logic.token-dimension-application-test]
    [frontend-tests.tokens.logic.token-remapping-test]
    [frontend-tests.tokens.logic.tokens-source-test]
    [frontend-tests.tokens.logic.tokens-status-test]
@@ -153,16 +154,20 @@
    [frontend-tests.tokens.style-dictionary-test]
    [frontend-tests.tokens.theme-create-modal-test]
    [frontend-tests.tokens.token-application-test]
+   [frontend-tests.tokens.token-color-test]
    [frontend-tests.tokens.token-errors-test]
+   [frontend-tests.tokens.token-format-test]
    [frontend-tests.tokens.token-group-test]
    [frontend-tests.tokens.token-parsing-test]
    [frontend-tests.tokens.token-path-test]
    [frontend-tests.tokens.token-pill-test]
    [frontend-tests.tokens.token-tree-test]
+   [frontend-tests.tokens.token-warnings-test]
    [frontend-tests.tokens.tokenscript-test]
    [frontend-tests.tokens.typography-form-test]
    [frontend-tests.tokens.workspace-tokens-remap-test]
    [frontend-tests.ui.check-updates-test]
+   [frontend-tests.ui.color-selection-test]
    [frontend-tests.ui.color-token-position-test]
    [frontend-tests.ui.colorpicker-token-set-order-test]
    [frontend-tests.ui.comment-input-ime-test]
@@ -381,24 +386,29 @@
    'frontend-tests.tokens.import-export-test
    'frontend-tests.tokens.logic.token-actions-test
    'frontend-tests.tokens.logic.token-data-test
+   'frontend-tests.tokens.logic.token-dimension-application-test
    'frontend-tests.tokens.logic.token-remapping-test
    'frontend-tests.tokens.referenced-token-value-test
    'frontend-tests.tokens.shadow-form-test
    'frontend-tests.tokens.style-dictionary-test
    'frontend-tests.tokens.theme-create-modal-test
    'frontend-tests.tokens.token-application-test
+   'frontend-tests.tokens.token-color-test
    'frontend-tests.tokens.token-errors-test
+   'frontend-tests.tokens.token-format-test
    'frontend-tests.tokens.token-group-test
    'frontend-tests.tokens.token-parsing-test
    'frontend-tests.tokens.token-path-test
    'frontend-tests.tokens.token-pill-test
    'frontend-tests.tokens.token-tree-test
+   'frontend-tests.tokens.token-warnings-test
    'frontend-tests.tokens.tokenscript-test
    'frontend-tests.tokens.typography-form-test
    'frontend-tests.tokens.logic.tokens-source-test
    'frontend-tests.tokens.logic.tokens-status-test
    'frontend-tests.tokens.workspace-tokens-remap-test
    'frontend-tests.ui.check-updates-test
+   'frontend-tests.ui.color-selection-test
    'frontend-tests.ui.color-token-position-test
    'frontend-tests.ui.colorpicker-token-set-order-test
    'frontend-tests.ui.comment-input-ime-test

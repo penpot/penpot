@@ -302,8 +302,9 @@
                         :disable-gradient disable-gradient
                         :disable-opacity disable-opacity
                         :disable-image disable-image
-                        ;; on-change second parameter means if the source is the color-picker
-                        :on-change #(on-change % index)
+                        ;; The third argument flags changes coming from the color picker, so
+                        ;; callers can tell them apart from direct edits of the color inputs.
+                        :on-change #(on-change % index true)
                         :on-token-change on-token-change
                         :on-close (fn [value opacity id file-id]
                                     (when on-close
