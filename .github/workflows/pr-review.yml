@@ -1,0 +1,147 @@
+name: PR review
+
+# Route maintainer requests before starting a paid CLI in the official dev image.
+# This workflow posts Claude and Copilot reviews to GitHub. OpenCode has its own GitHub
+# agent and thread workaround in review-opencode.yml. See README.md for examples.
+on:
+  # Conversation commands require this event. The router checks write access via
+  # the API before any provider secret is used; external PR code is never checked out.
+  issue_comment: # zizmor: ignore[dangerous-triggers]
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  pull_request_review:
+    types: [submitted]
+
+permissions: {}
+
+jobs:
+  request:
+    if: >-
+      (github.event.issue.pull_request || github.event.pull_request) &&
+      (github.event.comment.user.type || github.event.review.user.type) == 'User' &&
+      contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'),
+        github.event.comment.author_association || github.event.review.author_association) &&
+      (startsWith(github.event.comment.body || github.event.review.body, '/claude') ||
+       startsWith(github.event.comment.body || github.event.review.body, '/copilot') ||
+       contains(github.event.comment.body || github.event.review.body, '/oc'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      provider: ${{ steps.parse.outputs.provider }}
+      model: ${{ steps.parse.outputs.model }}
+      effort: ${{ steps.parse.outputs.effort }}
+      pr: ${{ steps.parse.outputs.pr }}
+      head: ${{ steps.parse.outputs.head }}
+      checkout: ${{ steps.parse.outputs.checkout }}
+      mention: ${{ steps.parse.outputs.mention }}
+      native: ${{ steps.parse.outputs.native }}
+    steps:
+      - name: Check out review scripts
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.base.sha || github.sha }}
+          sparse-checkout: .github/scripts/pr-review
+          persist-credentials: false
+
+      - name: Check write access and resolve the review request
+        id: parse
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEFAULT_CLAUDE_MODEL: ${{ vars.CLAUDE_MODEL || 'sonnet-5.5' }}
+          DEFAULT_CLAUDE_EFFORT: ${{ vars.CLAUDE_EFFORT || 'default' }}
+          DEFAULT_COPILOT_MODEL: ${{ vars.COPILOT_MODEL || 'claude-sonnet-5.5' }}
+          DEFAULT_COPILOT_EFFORT: ${{ vars.COPILOT_EFFORT || 'default' }}
+          DEFAULT_GO_MODEL: ${{ vars.OPENCODE_MODEL || 'kimi-k3' }}
+          DEFAULT_GO_EFFORT: ${{ vars.OPENCODE_EFFORT || 'default' }}
+        run: bash .github/scripts/pr-review/parse-request.sh
+
+  opencode:
+    needs: request
+    if: needs.request.outputs.provider == 'opencode'
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    uses: ./.github/workflows/review-opencode.yml
+    with:
+      pr: ${{ needs.request.outputs.pr }}
+      head: ${{ needs.request.outputs.head }}
+      checkout: ${{ needs.request.outputs.checkout }}
+      model: ${{ needs.request.outputs.model }}
+      effort: ${{ needs.request.outputs.effort }}
+      mention: ${{ needs.request.outputs.mention }}
+      native: ${{ needs.request.outputs.native == 'true' }}
+    secrets:
+      OPENCODE_GO_API_KEY: ${{ secrets.OPENCODE_GO_API_KEY }}
+
+  review:
+    name: ${{ needs.request.outputs.provider }} / ${{ needs.request.outputs.model }} / ${{ needs.request.outputs.effort }}
+    needs: request
+    if: needs.request.outputs.provider == 'claude' || needs.request.outputs.provider == 'copilot'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pull-requests: write
+    container:
+      image: penpotapp/devenv:latest@sha256:47f60262ec3a3098347eddb7308cf17fe7b4ab53e85cb911693843881b7b3013
+    defaults:
+      run:
+        shell: bash
+        working-directory: project
+    env:
+      PROVIDER: ${{ needs.request.outputs.provider }}
+      MODEL: ${{ needs.request.outputs.model }}
+      EFFORT: ${{ needs.request.outputs.effort }}
+      PR: ${{ needs.request.outputs.pr }}
+      HEAD_SHA: ${{ needs.request.outputs.head }}
+      CHECKOUT_SHA: ${{ needs.request.outputs.checkout }}
+    steps:
+      # Load the scripts from the base revision, even when reviewing an older PR head.
+      - name: Check out review scripts
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.base.sha || github.sha }}
+          path: ci
+          sparse-checkout: .github/scripts/pr-review
+          persist-credentials: false
+
+      - name: Check out the project to review
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.request.outputs.checkout }}
+          path: project
+          persist-credentials: false
+
+      - name: Collect the diff and review discussion
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash ../ci/.github/scripts/pr-review/prepare-context.sh
+
+      - name: Configure Serena MCP and install Playwright CLI
+        run: bash ../ci/.github/scripts/pr-review/setup-review-tools.sh
+
+      # Run Claude Code directly so both CLIs use the same head, chosen effort,
+      # and deterministic inline publisher. Only the publishing step posts the answer.
+      - name: Claude Code
+        if: env.PROVIDER == 'claude'
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+        run: bash ../ci/.github/scripts/pr-review/run-claude.sh
+
+      # /copilot selects the CLI; GitHub reserves @copilot for its coding agent.
+      # Give the CLI the CI MCP config and publish its answer with the job token.
+      - name: Copilot CLI
+        if: env.PROVIDER == 'copilot'
+        env:
+          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
+        run: bash ../ci/.github/scripts/pr-review/run-copilot.sh
+
+      - name: Post review or reply to the original thread
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash ../ci/.github/scripts/pr-review/post-review.sh
