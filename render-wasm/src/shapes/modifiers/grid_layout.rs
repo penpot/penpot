@@ -341,7 +341,10 @@ fn set_fr_value(
     for t in tracks.iter() {
         if t.track_type == GridTrackType::Flex {
             tot_frs += t.value;
-            cur_fr_value = f32::max(t.size / t.value, cur_fr_value);
+            // A 0fr track takes no free space, so it sets no minimum
+            if t.value > 0.0 {
+                cur_fr_value = f32::max(t.size / t.value, cur_fr_value);
+            }
         } else {
             tot_size_nofr += t.size;
         }
@@ -932,4 +935,52 @@ pub fn reflow_grid_layout(
     }
 
     Ok(result)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn flex_track(value: f32, size: f32) -> TrackData {
+        TrackData {
+            track_type: GridTrackType::Flex,
+            value,
+            size,
+            max_size: MAX_SIZE,
+            anchor_start: Point::default(),
+            anchor_end: Point::default(),
+        }
+    }
+
+    fn layout_data() -> LayoutData {
+        LayoutData {
+            align_items: AlignItems::Start,
+            align_content: AlignContent::Start,
+            justify_items: JustifyItems::Start,
+            justify_content: JustifyContent::Start,
+            padding_top: 0.0,
+            padding_right: 0.0,
+            padding_bottom: 0.0,
+            padding_left: 0.0,
+            row_gap: 0.0,
+            column_gap: 0.0,
+        }
+    }
+
+    // A 0fr track in a board that hugs its content gave an infinite fr
+    // unit, then NaN track sizes and NaN positions for every child (#12463).
+    #[test]
+    fn auto_layout_with_zero_fr_track_keeps_finite_sizes() {
+        let mut tracks = vec![
+            flex_track(1.0, 24.0),
+            flex_track(0.0, 24.0),
+            flex_track(1.0, 24.0),
+        ];
+
+        set_fr_value(true, &layout_data(), &mut tracks, MIN_SIZE, true);
+
+        assert!(tracks.iter().all(|t| t.size.is_finite()));
+        assert_eq!(tracks[0].size, 24.0);
+        assert_eq!(tracks[1].size, 24.0);
+    }
 }

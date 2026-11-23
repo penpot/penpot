@@ -433,3 +433,27 @@
 (t/deftest grid-calculate-params-clamps-overflowing-child-padding
   (let [params (grid-params-for-children {:x -10 :y -5 :width 150 :height 150})]
     (t/is (= {:p1 0 :p2 0 :p3 0 :p4 0} (:layout-padding params)))))
+
+;; ---------------------------------------------------------------------------
+;; FR tracks with value 0 in a board that hugs its content
+;; ---------------------------------------------------------------------------
+;;
+;; With auto width, the fr unit comes from `min-fr-value`, which divided the
+;; size of each flex track by its value. A `0fr` track gave an infinite fr,
+;; then a NaN track size and NaN positions for every child, so the backend
+;; rejected the save (#12463).
+
+(t/deftest min-fr-value-ignores-zero-value-flex-tracks
+  (let [tracks [{:type :flex :value 0.0 :size 24.0}
+                {:type :flex :value 1.0 :size 10.0}]]
+    (t/is (mth/close? 10.0 (gld/min-fr-value tracks)))))
+
+(t/deftest grid-auto-width-with-zero-fr-column-keeps-finite-tracks
+  (let [frame  (make-grid-frame :layout-grid-columns [{:type :flex :value 1.0}
+                                                      {:type :flex :value 0.0}
+                                                      {:type :flex :value 1.0}]
+                                :layout-item-h-sizing :auto)
+        result (gld/calc-layout-data frame (bounds-for frame) [] {} {})]
+    (doseq [{:keys [size start-p]} (:column-tracks result)]
+      (t/is (mth/finite? size))
+      (t/is (mth/finite? (:x start-p))))))
