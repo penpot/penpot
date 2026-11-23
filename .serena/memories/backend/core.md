@@ -8,6 +8,7 @@ JVM Clojure backend. Start in `app.main` for Integrant wiring, `app.rpc.commands
 - Job definitions, submission and lifecycle transaction boundaries, dispatch/recovery, user-facing jobs, and metrics: `mem:backend/jobs`.
 - File import/export format compatibility, jobs, permissions and cancellation: `mem:backend/binfile`.
 - Storage bucket rules, object lifecycle, deduplication, access and GC: `mem:backend/storage`.
+- File-data blob references, offload and partition-aware lookups: `mem:backend/file-data-storage`.
 - Graph projection parity, debug sessions, access and native resource ownership: `mem:backend/graph-experiment`.
 - Session lifetime, token `:exp` and session GC: `mem:backend/session-expiration`.
 - Auth, product permissions, teams, projects, invitations, comments and webhooks: `mem:backend/auth-permissions-product-domains`.
