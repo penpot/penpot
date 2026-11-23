@@ -209,6 +209,8 @@ A key object for navigating the currently active Penpot file is the `penpot` obj
   * `penpot.location` gives the Penpot instance URL (`baseUrl`), the link to what the user is viewing (`href`, e.g. the open file and page)
     and the query params of that link (`params`, e.g. `params["file-id"]`). Use `href` when you need a link to the open file;
     never guess the instance domain or build the link by hand.
+  * `penpot.currentFile.features` lists the features active for the open file (e.g. `"components/v2"`, `"render-wasm/v1"`);
+    it is null on any other `File` object.
 Members of `penpot` (e.g. `penpot.currentFile` and `penpot.root`) will be null no Penpot file is currently opened.
 You can use `penpotMgmt` to navigate to a file if needed (see below).
 
@@ -236,6 +238,8 @@ CRITICAL: The `penpotUtils` object provides essential utilities - USE THESE INST
     General-purpose utility for analyzing/validating descendants
     Calls evaluator on each descendant; collects non-null/undefined results
     Powerful pattern: evaluator can return corrector functions or diagnostic data
+  * isWasmRenderer(): boolean
+    Returns true iff the new render engine (WebGL) draws the open file; false means the SVG engine.
   * Further functions for specific tasks (described in the sections below)
 
 General pointers for working with Penpot designs:
