@@ -1,184 +1,37 @@
 # Updating the changelog
 
-> Note about this memory: unlike other Serena memories (dense notes written for LLM agents, see `mem:memory-maintenance`), this document is also written for human release managers who need full context. That is why it uses plain language and examples. It is the canonical home of the changelog flow; the `update-changelog` skill is only an entry point that routes here.
+Use this runbook to prepare a release or audit a version. Only update `CHANGES.md` when authorized under `AGENTS.md`. GitHub is the source for release entries; generate the breaking and security sections, not hand-written substitutes. See `mem:scripts/changelog` for command behavior and `mem:scripts/gh` for GitHub lookups.
 
-`CHANGES.md` (repository root) is the release notes file. Every entry comes from GitHub: a milestone issue, its merged PR, or a security advisory whose `patched_versions` include the version. It is never written from scratch by hand; the only manual parts are the wording of a description when the title is not enough and the advisory summaries (polished on GitHub, the source of the generated security entries).
+## Sources and eligibility
 
-The commands live in `scripts/gh.py` (GitHub queries) and `scripts/changelog.py` (changelog checks). Their flags and internals are documented in `mem:scripts/gh` and `mem:scripts/changelog`.
+- The milestone supplies the closed issues. Exclude `Task`, project status `Rejected`, and issues labelled `no changelog`. `release blocker` alone is not an exclusion. An issue without a milestone is not a changelog candidate. The issue is the release unit; a PR with `no issue required` does not supply an entry of its own.
+- Issue Type gives the regular section: `Feature` → `:tada:`, `Enhancement` → `:sparkles:`, `Bug` → `:bug:`. Don't infer classification from title emoji or labels such as `bug`.
+- `breaking change` puts the issue only in `:boom:`, not its regular section. `release highlight` adds a `:rocket:` entry for an eligible labelled issue; do not select highlights on your own. Security advisories supply `:lock:` independently of issue entries, so the same fix can also have a regular bug entry.
+- Use only merged PRs. If a closing PR was closed unmerged, look for the merged replacement. Ignore references that plainly close an unrelated issue. If no PR is available, link the issue alone; if a PR has no matching closed milestone issue, don't manufacture an entry for the PR.
 
-## 1. When to run it
+## Entry rules
 
-- Before a release, to fill the section of the version being released.
-- When new issues are added to an existing milestone.
-- When asked to audit or refresh `CHANGES.md`.
+- Add the newest version first; omit empty sections. From 2.20.0, the order is `:boom:`, `:rocket:`, `:lock:`, `:tada:`, `:sparkles:`, `:bug:`. Preserve the older bug-first, combined feature/enhancement layout in existing 2.19.x lines and their patches. Keep one blank line between sections and no manual wrapping within entries.
+- Regular bullets describe user-facing behavior in the imperative, based on the issue title, then link the issue and append merged fix PR links inline. For `community contribution` on the issue or PR, credit the PR author before the issue link, not the issue author.
+- `:rocket:` is label-driven and has no generator. Copy the applicable entry's wording and links into the highlight; it must carry both issue and PR references. Omit the section when no issue is eligible. The in-app update dialog uses this section.
+- `:boom:` uses the issue label and the newest `## Breaking change note` comment, not the issue body. See `mem:workflow/creating-issues` for authoring. If the generator warns about a missing note or multiple notes, fix the source before regenerating. An unclosed issue will not be generated even if a provisional block is already present.
+- `:lock:` uses exact matches in advisory `patched_versions`, including unpublished advisories. A merged milestone PR labelled `pr pt` and naming the advisory can supply a PR reference; an advisory without a PR is valid. If a `pr pt` PR refers to an advisory with no matching patch version, fix the advisory. Durable wording belongs in its summary; the generator adds `Fix` and regenerates the text.
 
-Editing `CHANGES.md` happens only on explicit request or as part of the release process; see `mem:critical-info`.
-
-## 2. Sources of truth
-
-| Question | Source |
-|---|---|
-| Which issues belong to the version? | GitHub milestone |
-| Which security fixes? | Advisories whose `patched_versions` include the version |
-| Which section? | Issue Type |
-| Is it a breaking change? | `breaking change` label |
-| Is it a highlight? | `release highlight` label |
-
-- **Issue Type decides the section**: `Feature` → `:tada:`, `Enhancement` → `:sparkles:`, `Bug` → `:bug:`, `Task` is excluded (internal chores). Labels `bug`/`enhancement` and title emoji prefixes are often wrong or missing; do not use them.
-- **Security fixes come from advisories**: an advisory whose `patched_versions` include the version becomes a `:lock:` entry (section 7). `triage`, `draft` and `published` are all valid states; the advisory may still be unpublished when the changelog is written. A security fix may also carry a regular bug issue; both entries are legal and independent (the issue lives in `:bug:` as any other bug).
-- **Two labels override the Issue Type**: `breaking change` → an entry only under `:boom:`, never in its regular section; `release highlight` → an extra entry under `:rocket:` on top of its regular entry.
-- **Only closed issues**. An open issue in the milestone is not generated, even if someone added a provisional entry by hand before the merge.
-- **Excluded issues**: `no changelog`, `Task` issue type, `Rejected` project status. `release blocker` is not a changelog filter.
-- **Bugs that never reached production** stay out: a bug found and fixed while building a feature of the same, unreleased version never affected users. The flow finds these bugs and labels the sure cases `no changelog` (section 8, Review).
-- **Excluded PRs**: a PR with `no issue required` does not bring an entry of its own.
-- **An issue with no milestone** belongs to another (probably private) project: it is neither changelog candidate nor anomaly.
-
-## 3. Layout of `CHANGES.md`
-
-The newest version goes at the top, right after the `# CHANGELOG` header. Inside a version, the section order is fixed:
-
-```markdown
-# CHANGELOG
-
-## 2.20.0 (Unreleased)
-
-### :boom: Breaking changes & Deprecations
-
-#### <Breaking change title>
-
-<content>
-
-[#ISSUE](https://github.com/penpot/penpot/issues/ISSUE) (PR: [#PR](https://github.com/penpot/penpot/pull/PR))
-
-### :rocket: Epics and highlights
-
-- Add configurable keyboard shortcuts [#9924](https://github.com/penpot/penpot/issues/9924) (PR: [#10237](https://github.com/penpot/penpot/pull/10237))
-
-### :lock: Security fixes
-
-- Fix <user-facing description of the vulnerability> (<advisory URL>) (PR: [#PR](https://github.com/penpot/penpot/pull/PR))
-
-### :tada: Features
-
-- Add <user-facing description of the feature> [#ISSUE](https://github.com/penpot/penpot/issues/ISSUE) (PR: [#PR](https://github.com/penpot/penpot/pull/PR))
-
-### :sparkles: Enhancements
-
-- Improve <user-facing description of the existing behaviour> [#ISSUE](https://github.com/penpot/penpot/issues/ISSUE) (PR: [#PR](https://github.com/penpot/penpot/pull/PR))
-
-### :bug: Bugs
-
-- Fix <user-facing description of the bug> [#ISSUE](https://github.com/penpot/penpot/issues/ISSUE) (PR: [#PR](https://github.com/penpot/penpot/pull/PR))
-```
-
-- `:boom:` first, then `:rocket:`, `:lock:`, `:tada:`, `:sparkles:`, `:bug:`. Features come before enhancements so they stand out to readers deciding whether to update.
-- **This layout applies from 2.20.0.** Versions up to 2.19.x use the old one: `:bug: Bugs fixed` before `:sparkles: New features & Enhancements`, which mixes features and enhancements. Keep the old layout in those sections, including new 2.19.x patches, so a minor line reads the same. The in-app update dialog only reads `:rocket:`, so the change does not affect it.
-- Other headings exist in old versions (`:heart:` community contributions); do not add them to new versions.
-- Include a section only when it has entries. `boom --write` removes an empty `:boom:` subsection and does not insert one when there are no breaking changes. `:lock:` is omitted (and removed on `--write`) when the version has no security advisories.
-- One blank line between the last entry of a section and the next heading.
-- No manual line wrapping: one line per bullet or paragraph, however long.
-
-## 4. Regular entries (`:tada:`, `:sparkles:`, `:bug:`)
-
-The entry shape is:
-
-```markdown
-- <description> (by @github_username) [#ISSUE](https://github.com/penpot/penpot/issues/ISSUE) (PR: [#PR](https://github.com/penpot/penpot/pull/PR), [#PR2](https://github.com/penpot/penpot/pull/PR2))
-```
-
-- **Description**: derived from the issue title, not the PR title. Strip emoji prefixes (`:bug:`, `:sparkles:`, `:tada:`) and write the user-facing behaviour in imperative mood. Examples: `Plugin API token methods fail with schema validation error` → `Fix Plugin API token methods failing with schema validation error`; `Custom uploaded font family names are not sanitized` → `Sanitize font family names on custom uploaded fonts`.
-- **Issue is the primary link**: the issue is the changelog unit, the PR is the implementation. Multiple fix PRs go comma-separated inline.
-- **Community attribution**: when the issue or its PR carries `community contribution`, add `(by @username)` before the issue link. Use the PR author, not the issue author.
-- **Closed issue with no PR** in the milestone: link the issue only, no PR reference.
-- **PR with no linked issue**: link a matching closed issue in the milestone when one exists; otherwise skip it, because the issue is the changelog unit.
-- **False-positive PR links**: a PR may claim to close an unrelated issue (ancient PR, cross-project reference). If the titles are clearly unrelated or the PR predates the issue by years, treat it as a data glitch and ignore it.
-
-## 5. `:boom:`: breaking changes and deprecations
-
-Each breaking change is a `####` block, not a bullet. The title is the issue title without its emoji prefix; the content comes from a comment on the issue; the references go on their own line at the end.
-
-The **issue** must carry:
-
-1. The `breaking change` label.
-2. A comment whose first line is `## Breaking change note`. Everything after that marker line is the changelog content: paragraphs, bullet lists, code blocks, tables, headings (they are demoted to `#####` on write), and so on. The marker itself is case-insensitive and accepts `#`, `##` or `###`; use `##`.
-
-Example comment:
-
-```markdown
-## Breaking change note
-
-The Admin Console is now enabled by default and the `enable-admin-console` flag is no longer needed.
-
-Self-hosted instances must deploy the `penpot-admin-console` service and set `PENPOT_ADMIN_CONSOLE_URI` in frontend and backend (check the [upgrade guide](https://help.penpot.app/technical-guide/getting-started/docker/#upgrade-to-2.19)).
-```
-
-Generated block:
-
-```markdown
-#### Enable the Admin Console by default
-
-The Admin Console is now enabled by default and the `enable-admin-console` flag is no longer needed.
-
-Self-hosted instances must deploy the `penpot-admin-console` service and set `PENPOT_ADMIN_CONSOLE_URI` in frontend and backend (check the [upgrade guide](https://help.penpot.app/technical-guide/getting-started/docker/#upgrade-to-2.19)).
-
-[#12807](https://github.com/penpot/penpot/issues/12807) (PR: [#12475](https://github.com/penpot/penpot/pull/12475))
-```
-
-Rules for the note:
-
-- **Write it for admins**: what changes, what they must do, and what breaks if they do nothing. Do not paste the full runbook; explain the implications and link the runbook or docs.
-- **Link a long-lived branch**, `staging` or `main`, never a feature branch (`issue-1234`). The link may 404 until the PR merges; that is expected.
-- **Do not add issue or PR links**: the generator appends them.
-- **One note per issue**. If several comments carry the marker, the generator uses the last one and warns.
-- **No note**: the generator warns on stderr and emits only the heading and references; fix the issue, not `CHANGES.md`.
-- **`####`, not `###`**: `###` is the level of the changelog sections. An entry at `###` would render as a sibling section and the scripts that read and rewrite `:boom:` would cut the section there. The note author never writes the `####`: the generator adds it.
-- **Only merged closing PRs** are referenced; unmerged or superseded PRs are skipped.
-- **Never hand-edit the section**. Generate it with `boom` (section 8). The note lives on GitHub; edit it there.
-
-## 6. `:rocket:`: epics and highlights
-
-- Lists exactly the milestone issues with the `release highlight` label, and nothing else. Product decides highlights by labelling issues; a regeneration cannot undo that choice.
-- Every entry copies the text and references of the issue's regular entry and MUST carry both an issue link and a PR reference.
-- If no issue is labelled, leave the section out; do not pick highlights yourself.
-- No command generates `:rocket:` today. Build it from the eligible labelled issues in the snapshot, using their regular entries, and verify it with `report`. Change the label on GitHub to change which issues appear; do not pick highlights in the changelog.
-
-## 7. `:lock:`: security fixes
-
-Generated from the advisories that declare the version in `patched_versions`; never written by hand.
-
-- **Source and filter**: `python3 scripts/gh.py advisories --patched-version <VERSION>` keeps the advisories whose `vulnerabilities[*].patched_versions` contain the version as an exact token (so `2.19.1` never matches `2.19.10`). Any state is valid — `triage`, `draft`, `published` — because the advisory may still be unpublished when the changelog is written.
-- **Fill the advisories first**: `patched_versions` must be filled before generating the changelog. The release process publishes the advisories with (or after) the release; the changelog does not wait for publication.
-- **PR reference**: a merged PR in the milestone labelled `pr pt` whose body contains the GHSA id contributes its number inline; several PRs go comma-separated. An advisory with no PR is legal: the entry links only the advisory.
-- **Missing `patched_versions`**: when a `pr pt` PR references an advisory that declares no matching `patched_versions`, `security` prints a warning on stderr and leaves it out. Fix the advisory, not `CHANGES.md`.
-- **Entry format**: `- Fix <description> (<advisory URL>) (PR: [#PR](...))`. The description is `Fix` plus the advisory summary, with the first word decapitalized unless it starts with an acronym (`SVG`, `CVE-...`).
-- **Wording**: the flow may polish the description. Re-running `security --write` rewrites it from the summary, so the durable place for wording is the advisory summary on GitHub; keep it a problem statement, because the generator adds `Fix`.
-- **Empty version**: no matching advisories → the subsection is not inserted (and is removed by `--write`).
-- **Never hand-edit the section**: generate it with `security` (section 8).
-
-## 8. Flow
+## Flow
 
 ### Collect
 
-- Confirm the version if unclear. Use an authenticated `gh` CLI and a private temporary file: the snapshot can contain unpublished advisories and PR text.
-
-```bash
-snapshot=$(mktemp)
-python3 scripts/changelog.py collect "<VERSION>" > "$snapshot"
-```
-
-- Use the same snapshot throughout. Collect again if GitHub data changes or if the final report needs to resolve a new reference absent from the snapshot.
+Confirm the release version. Save `python3 scripts/changelog.py collect "<VERSION>"` output in a private temporary file (`$snapshot`); it can contain unpublished advisories and PR text. Reuse it through review and verification. Collect again if GitHub changes, or if new references now need to be resolved.
 
 ### Review
 
-- Use `eligible_issues` to select entries, `comparison` to reconcile the current text (section 9), and `prs` and `related_prs` to verify links. Reference only `MERGED` PRs. If a closing PR was closed unmerged, look for its replacement; use `check-merged` for PRs looked up outside the snapshot.
-- Review `dev_only_bugs`. A bug with a `Feature` or `Enhancement` parent in the same milestone is a sure case (`auto`). An epic parent in the same milestone, a `regression` label, or an unreleased-only environment is only a hint (`suggested`). Show candidates to the user, who labels the ones they confirm.
-- Use the snapshot to find eligible non-bug issues labelled `release blocker`. Show them to the user for review: internal work gets `no changelog`, and the rest keeps its entry. `release blocker` alone excludes nothing.
-- **Separate GitHub write, only if there are sure cases:** `python3 scripts/changelog.py dev-only-bugs "<VERSION>" --snapshot "$snapshot" --apply` adds `no changelog` to `auto` issues and prints each successful edit to stdout. If a later edit fails, earlier edits still stand. Collect again after applying labels before proceeding.
+- Reconcile the current version before adding entries. Remove duplicates already listed in an earlier version (earlier wins for backports), stale milestone entries, deleted or transferred issues, and issues now open or excluded. Move retyped issues to the proper section, or remove them if now `Task`. Fix stale PR references, but don't silently drop cross-milestone discrepancies; use **Anomaly report** below. Reconcile the labels for breaking changes and highlights, then add eligible missing issues.
+- Review `dev_only_bugs`: `auto` is a Bug under a Feature or Enhancement of the same milestone. An epic parent, `regression` label or unreleased-only environment is a clue, not proof. Show candidates to the user for confirmation; `--apply` must never apply to candidates. Also review eligible non-bug `release blocker` entries with the user: only confirmed internal work should receive `no changelog`.
+- Keep review read-only with respect to GitHub. A separate authorized `dev-only-bugs "<VERSION>" --snapshot "$snapshot" --apply` labels only the `auto` set. A partial failure does not undo earlier edits: inspect the printed successes and refresh the snapshot before continuing.
 
 ### Write
 
-- Update only on explicit request or during a release. Categorize and draft entries using sections 2–4. Build `:rocket:` from `release highlight` as described in section 6.
-- Use the generators for `:boom:` and `:lock:` (sections 5 and 7). Omit `--write` to preview; use it only after the version header exists.
+- When authorized, reconcile and draft regular and highlight entries. Preview generated sections first by omitting `--write`. The version header must exist before replacing the generated sections.
 
 ```bash
 python3 scripts/changelog.py boom "<VERSION>" --snapshot "$snapshot" --write
@@ -187,55 +40,16 @@ python3 scripts/changelog.py security "<VERSION>" --snapshot "$snapshot" --write
 
 ### Verify
 
-- `cross-ref` shows missing merged PRs and warns about closed, unmerged PRs. `report` checks the updated changelog and overwrites `CHANGES-ISSUES.md` (section 10).
+- Use `check-merged` for PRs verified outside the snapshot. Run `cross-ref` to find missing merged PRs and warnings for closed-unmerged PRs. `report` verifies the edited version and **overwrites a local report** (default `CHANGES-ISSUES.md`); it does not modify GitHub or `CHANGES.md`.
 
 ```bash
 python3 scripts/changelog.py cross-ref "<VERSION>" --snapshot "$snapshot"
 python3 scripts/changelog.py report "<VERSION>" --snapshot "$snapshot"
 ```
 
-## 9. Pre-flight: reconcile before writing
+## Anomaly report
 
-Start from a fresh `collect` snapshot. Refresh it if GitHub changes during review (labels, notes, advisories, or PRs). Fix these in `CHANGES.md` before adding the new section:
-
-1. **Duplicate across versions** → remove it from the current section; the earlier version wins for backports.
-2. **Stale milestone assignment** (the issue moved out of this milestone) → remove the entry.
-3. **Newly applied exclusion label** (`no changelog`) → remove the entry.
-4. **Issue no longer closed, deleted, or now `Rejected`** → remove the entry.
-5. **Unmerged or moved PR reference** → fix the reference or remove the entry. A PR merged in a different milestone is an anomaly (section 10); do not remove it silently.
-6. **Issue Type changed** → to `Task`: remove the entry; to another type: move the entry to that type's section.
-7. **Breaking change out of sync** (a `breaking change` issue outside `:boom:`, or a `:boom:` entry without the label) → regenerate the section; a labelled issue has no regular entry.
-8. **Highlight out of sync** (`:rocket:` entry without the label, or a labelled issue missing) → remove it or add it.
-9. **Missing valid issues** (closed, non-excluded, referenced nowhere) → add them to their section.
-
-## 10. Anomaly report
-
-`report` classifies problems it cannot decide alone. The total counts A, B, E, F and G; C and D are warnings.
-
-- **A — issue in this milestone, referenced PR in another milestone (or none).** The claim "this issue is fixed by this PR in this milestone" is inconsistent. Fix the milestone on the issue or the PR, or remove the entry.
-- **B — PR in this milestone whose closing issue is in another milestone.** Same fix. An issue with no milestone is not an anomaly (another, probably private, project).
-- **E — `:boom:` entry whose issue lacks the `breaking change` label.** The entry stays in the changelog: either label the issue or move the entry to its regular section.
-- **F — `:rocket:` out of sync with the `release highlight` label.** A rule violation: `:rocket:` must list exactly the labelled issues. Fix the label or re-run the flow.
-- **G — `breaking change` issue missing from `:boom:`.** A rule violation: `:boom:` must list exactly the labelled issues. Regenerate the section or relabel.
-- **C — released X.Y.0 version without a `:rocket:` section** (gap; patches never carry highlights).
-- **D — `:rocket:` entry without issue AND PR references** (gap).
-
-**Bugs that may never have reached production** are warnings too (section 8, Review): sure cases still unlabelled and candidates for the user to confirm. They never count toward the total.
-
-Anything else is a rule violation, not a report item: fix it in the pre-flight and re-run.
-
-## 11. Pitfalls
-
-- **Open issues with provisional entries**: a PR author may add the entry before the merge. `boom` will not generate it until the issue closes; keep the hand-written block identical to what the generator would produce.
-- **Labels, not emoji**: title prefixes are cosmetic and often missing; the section comes from Issue Type and the two labels.
-- **Taiga references**: old entries link to Taiga. Resolve them to the GitHub issue via the description text or the PRs that mention the Taiga URL, then link issue and PR.
-- **Long-lived links only**: runbooks and docs referenced from a note must point to `staging` or `main`, never to a feature branch that will be deleted.
-- **Generated sections**: use `boom` and `security` for `:boom:` and `:lock:`. Change the label, note or advisory on GitHub rather than patching their output. For `:rocket:`, follow the label-driven workflow in section 6.
-- **Deleted or transferred issues**: an issue referenced in the changelog that returns 410/404 (deleted or moved out of the repo) must lose its entry in the pre-flight. Its security fixes, if any, stay in `:lock:` through the advisory.
-
-## 12. Where the code is
-
-- `scripts/gh.py`: `issues`, `issue`, `comments`, `prs`, `link-issue`, `advisories` (with `--patched-version`). Details: `mem:scripts/gh`.
-- `scripts/changelog.py`: `collect`, `check-merged`, `boom`, `security`, `cross-ref`, `dev-only-bugs`, `report`. Details: `mem:scripts/changelog`.
-- Tests: `scripts/test_gh.py`, `scripts/test_changelog.py`.
-- The note contract for issue authors: `mem:workflow/creating-issues`, section **Breaking changes**.
+- Resolve issue/PR milestone mismatches by checking both sides. A known closing issue in another milestone is a mismatch; a closing issue with no milestone is not the same case. Do not silently remove a mismatched PR link to make the report pass.
+- A breaking entry without the label needs a source correction or classification as a regular entry; a missing breaking entry needs regeneration or label correction. Highlight entries must match the eligible labels; resolve the underlying decision instead of silently selecting different highlights.
+- Treat missing major/minor highlights and highlights lacking issue or PR references as warnings, not the same as counted mismatches. A patch release should not require a highlights section. Treat unconfirmed dev-only bug candidates as warnings as well; see `scripts/changelog.py` for the report codes.
+- A deleted or transferred issue can lose its normal entry while a related advisory stays in `:lock:`. For historical Taiga references, resolve the actual GitHub issue from its text or fix PR; matching bare numbers are not enough.
