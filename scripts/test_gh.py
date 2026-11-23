@@ -191,6 +191,18 @@ class AdvisoriesTests(unittest.TestCase):
             gh.advisory_fixed_in_version(self.advisory(" 2.19.1 "), "2.19.1")
         )
 
+    @patch.object(gh, "run_gh_command")
+    def test_fetch_advisories_uses_cursor_pagination(self, run_gh_command):
+        first_page = [{"ghsa_id": "GHSA-first"}]
+        second_page = [{"ghsa_id": "GHSA-second"}]
+        run_gh_command.return_value = json.dumps([first_page, second_page])
+
+        self.assertEqual(gh.fetch_advisories(), first_page + second_page)
+
+        command = run_gh_command.call_args.args[0]
+        self.assertIn("--paginate", command)
+        self.assertIn("--slurp", command)
+
     @patch.object(gh, "fetch_advisories")
     def test_cmd_advisories_filters_by_patched_version(self, fetch_advisories):
         matching = self.advisory("2.19.1", "GHSA-j4vc-cmf6-jhr7")

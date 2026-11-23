@@ -126,13 +126,13 @@ class IssueExcludedTests(unittest.TestCase):
     def test_keeps_a_valid_closed_issue(self):
         self.assertFalse(ch.issue_excluded(self.issue()))
 
-    def test_excludes_open_task_rejected_and_labelled(self):
+    def test_excludes_open_task_rejected_and_no_changelog(self):
         self.assertTrue(ch.issue_excluded(None))
         self.assertTrue(ch.issue_excluded(self.issue(state="OPEN")))
         self.assertTrue(ch.issue_excluded(self.issue(issue_type="Task")))
         self.assertTrue(ch.issue_excluded(self.issue(project_status="Rejected")))
-        self.assertTrue(ch.issue_excluded(self.issue(labels=["release blocker"])))
         self.assertTrue(ch.issue_excluded(self.issue(labels=["no changelog"])))
+        self.assertFalse(ch.issue_excluded(self.issue(labels=["release blocker"])))
 
 
 class RenderBoomEntryTests(unittest.TestCase):
@@ -180,10 +180,18 @@ class ReplaceBoomSectionTests(unittest.TestCase):
         once = ch.replace_boom_section(CHANGES, "2.19.0", [entry])
         self.assertEqual(once, ch.replace_boom_section(once, "2.19.0", [entry]))
 
-    def test_empty_section_keeps_the_heading(self):
+    def test_empty_section_removes_the_heading(self):
         updated = ch.replace_boom_section(CHANGES, "2.19.0", [])
-        self.assertIn(
-            "### :boom: Breaking changes & Deprecations\n\n### :rocket:", updated
+        self.assertNotIn("### :boom: Breaking changes & Deprecations", updated)
+        self.assertIn("### :rocket:", updated)
+
+    def test_empty_entries_do_not_insert_the_subsection(self):
+        without = CHANGES.replace(
+            "### :boom: Breaking changes & Deprecations\n\n- Old entry.\n\n", ""
+        )
+        self.assertEqual(
+            without,
+            ch.replace_boom_section(without, "2.19.0", []),
         )
 
     def test_inserts_the_subsection_when_missing(self):
@@ -719,9 +727,11 @@ class FindDevOnlyBugsTests(unittest.TestCase):
             {**bug(8, parent={"number": 10, "issue_type": "Feature", "milestone": "2.19.0"}),
              "issue_type": "Enhancement"},
             bug(9, body="### Affected versions\n\n2.18.2\n", labels=["regression"]),
+            bug(10, parent={"number": 10, "issue_type": "Feature", "milestone": "2.19.0"},
+                labels=["release blocker"]),
         ]
         auto, suggested = ch.find_dev_only_bugs("2.19.0", issues)
-        self.assertEqual([e["issue"] for e in auto], [1, 2])
+        self.assertEqual([e["issue"] for e in auto], [1, 2, 10])
         self.assertEqual([e["issue"] for e in suggested], [3, 5, 9])
 
 

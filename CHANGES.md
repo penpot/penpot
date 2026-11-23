@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2.19.3
+
+### :bug: Bugs fixed
+
+- Fix app startup failure on Chromium browsers with Tampermonkey user scripts enabled [#12924](https://github.com/penpot/penpot/issues/12924) (PR: [#13085](https://github.com/penpot/penpot/pull/13085))
+- Size frontend nginx workers from the container CPU limit to prevent OOM kills on large nodes [#13103](https://github.com/penpot/penpot/issues/13103) (PR: [#13110](https://github.com/penpot/penpot/pull/13110))
+
 ## 2.19.2
 
 ### :bug: Bugs fixed

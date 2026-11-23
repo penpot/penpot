@@ -15,7 +15,7 @@ Subcommands:
 Usage:
   python3 scripts/gh.py issues <milestone-title>            (default: state=closed)
   python3 scripts/gh.py issues "2.16.0" --state all
-  python3 scripts/gh.py issues "2.16.0" --exclude "release blocker,no changelog"
+  python3 scripts/gh.py issues "2.16.0" --exclude "no changelog"
   python3 scripts/gh.py issues "2.16.0" --label "bug"       (include only issues with label)
   python3 scripts/gh.py issues "2.16.0" --label "bug,regression" --exclude "no changelog"
   python3 scripts/gh.py issues "2.16.0" --compare CHANGES.md
@@ -952,21 +952,23 @@ def cmd_comments(args: argparse.Namespace) -> None:
 
 
 def fetch_advisories() -> list[dict]:
-    """Fetch all security advisories for the repository via REST API."""
-    all_advisories: list[dict] = []
-    page = 1
-
-    while True:
-        advisories = run_gh_rest(
-            f"repos/{REPO}/security-advisories?per_page=100&page={page}"
+    """Fetch all security advisories using GitHub's cursor-based pagination."""
+    try:
+        pages = json.loads(
+            run_gh_command(
+                [
+                    "gh",
+                    "api",
+                    "--paginate",
+                    "--slurp",
+                    f"repos/{REPO}/security-advisories?per_page=100",
+                ]
+            )
         )
-        all_advisories.extend(advisories)
+    except GhCommandFailed as err:
+        fail_gh(err.stderr)
 
-        if len(advisories) < 100:
-            break
-        page += 1
-
-    return all_advisories
+    return [advisory for page in pages for advisory in page]
 
 
 def fetch_advisory(ghsa_id: str) -> dict:
@@ -1092,7 +1094,7 @@ def main() -> None:
     )
     p_issues.add_argument(
         "--exclude", "--exclude-labels",
-        help="Comma-separated labels to exclude, e.g. 'release blocker,no changelog'"
+        help="Comma-separated labels to exclude, e.g. 'no changelog'"
     )
     p_issues.add_argument(
         "--label", "--labels",

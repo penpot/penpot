@@ -28,9 +28,9 @@ Editing `CHANGES.md` happens only on explicit request or as part of the release 
 - **Security fixes come from advisories**: an advisory whose `patched_versions` include the version becomes a `:lock:` entry (section 7). `triage`, `draft` and `published` are all valid states; the advisory may still be unpublished when the changelog is written. A security fix may also carry a regular bug issue; both entries are legal and independent (the issue lives in `:bug:` as any other bug).
 - **Two labels override the Issue Type**: `breaking change` → an entry only under `:boom:`, never in its regular section; `release highlight` → an extra entry under `:rocket:` on top of its regular entry.
 - **Only closed issues**. An open issue in the milestone is not generated, even if someone added a provisional entry by hand before the merge.
-- **Excluded issues**: `no changelog`, `release blocker`, `Task` issue type, `Rejected` project status.
+- **Excluded issues**: `no changelog`, `Task` issue type, `Rejected` project status. `release blocker` is not a changelog filter.
 - **Bugs that never reached production** stay out: a bug found and fixed while building a feature of the same, unreleased version never affected users. The team rarely labels them, so the flow finds them with `dev-only-bugs` and labels them `no changelog` (section 8, step 3).
-- **Excluded PRs**: a PR with `release blocker` or `no issue required` does not bring an entry of its own.
+- **Excluded PRs**: a PR with `no issue required` does not bring an entry of its own.
 - **An issue with no milestone** belongs to another (probably private) project: it is neither changelog candidate nor anomaly.
 
 ## 3. Layout of `CHANGES.md`
@@ -74,7 +74,7 @@ The newest version goes at the top, right after the `# CHANGELOG` header. Inside
 - `:boom:` first, then `:rocket:`, `:lock:`, `:tada:`, `:sparkles:`, `:bug:`. Features come before enhancements so they stand out to readers deciding whether to update.
 - **This layout applies from 2.20.0.** Versions up to 2.19.x use the old one: `:bug: Bugs fixed` before `:sparkles: New features & Enhancements`, which mixes features and enhancements. Keep the old layout in those sections, including new 2.19.x patches, so a minor line reads the same. The in-app update dialog only reads `:rocket:`, so the change does not affect it.
 - Other headings exist in old versions (`:heart:` community contributions); do not add them to new versions.
-- Include a section only when it has entries. Historical versions may have an empty `:boom:` or `:rocket:` heading; `boom --write` keeps the `:boom:` heading even when there are no entries. `:lock:` is omitted (and removed on `--write`) when the version has no security advisories.
+- Include a section only when it has entries. `boom --write` removes an empty `:boom:` subsection and does not insert one when there are no breaking changes. `:lock:` is omitted (and removed on `--write`) when the version has no security advisories.
 - One blank line between the last entry of a section and the next heading.
 - No manual line wrapping: one line per bullet or paragraph, however long.
 
@@ -158,7 +158,7 @@ Generated from the advisories that declare the version in `patched_versions`; ne
 ## 8. Flow
 
 1. **Confirm the version** (a semver string such as `2.19.0`) with the user when it is not obvious.
-2. **Fetch the milestone issues**: `python3 scripts/gh.py issues "<VERSION>" --exclude "release blocker,no changelog"` (closed by default; add `--state all` only to inspect open issues). `gh.py` already drops `Task` and `Rejected`; pass `--include-tasks` / `--include-rejected` only to inspect them. To find what is missing from an existing section, add `--compare CHANGES.md`.
+2. **Fetch the milestone issues**: `python3 scripts/gh.py issues "<VERSION>" --exclude "no changelog"` (closed by default; add `--state all` only to inspect open issues). `gh.py` already drops `Task` and `Rejected`; pass `--include-tasks` / `--include-rejected` only to inspect them. To find what is missing from an existing section, add `--compare CHANGES.md`.
 3. **Keep out bugs that never reached production**: `python3 scripts/changelog.py dev-only-bugs "<VERSION>"` lists them; add `--apply` to label the sure ones `no changelog` on GitHub, then re-fetch step 2. The label puts the decision on the issue, so it survives a regeneration.
    - **Sure**: a bug whose parent issue is a `Feature` or `Enhancement` of the same milestone. `--apply` labels these.
    - **Candidates**: a bug whose parent is an epic of the same milestone, that carries the `regression` label, or whose "Affected versions" / "Environment" field names only hourly, develop, staging, PRE or the milestone version itself. `regression` also marks regressions users hit in production, and the field says where the bug was seen, not since when it exists, so never label these yourself: show them to the user, who labels the ones they confirm. The anomaly report lists them too (section 10).
@@ -178,7 +178,7 @@ Re-fetch the milestone (do not trust cached data) and fix these in `CHANGES.md` 
 
 1. **Duplicate across versions** → remove it from the current section; the earlier version wins for backports.
 2. **Stale milestone assignment** (the issue moved out of this milestone) → remove the entry.
-3. **Newly applied exclusion labels** (`no changelog`, `release blocker`) → remove the entry.
+3. **Newly applied exclusion label** (`no changelog`) → remove the entry.
 4. **Issue no longer closed, deleted, or now `Rejected`** → remove the entry.
 5. **Unmerged or moved PR reference** → fix the reference or remove the entry. A PR merged in a different milestone is an anomaly (section 10); do not remove it silently.
 6. **Issue Type changed** → to `Task`: remove the entry; to another type: move the entry to that type's section.

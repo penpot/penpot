@@ -45,7 +45,7 @@ GH_PY = Path(__file__).resolve().parent / "gh.py"
 BOOM_HEADING = "### :boom: Breaking changes & Deprecations"
 SECURITY_HEADING = "### :lock: Security fixes"
 BREAKING_LABEL = "breaking change"
-EXCLUDED_LABELS = {"release blocker", "no changelog"}
+EXCLUDED_LABELS = {"no changelog"}
 
 # PR label carried by the security fixes that reference their advisory in the
 # PR body, and the GHSA id pattern used to find that reference.
@@ -290,8 +290,9 @@ def entry_list_body(entries: list[str]) -> str:
 def replace_boom_section(content: str, milestone: str, entries: list[str]) -> str:
     """Return ``content`` with its ``:boom:`` subsection replaced.
 
-    The subsection is inserted right after the version header when missing,
-    which keeps ``:boom:`` as the first section.
+    The subsection is inserted right after the version header when needed,
+    which keeps ``:boom:`` as the first section. Empty subsections are removed
+    and are not inserted.
     """
     bounds = version_section_bounds(content, milestone)
     if bounds is None:
@@ -299,6 +300,13 @@ def replace_boom_section(content: str, milestone: str, entries: list[str]) -> st
     start, end = bounds
     section = content[start:end]
     heading = re.search(rf"(?m)^{re.escape(BOOM_HEADING)}[ \t]*$", section)
+    if not entries:
+        if heading is None:
+            return content
+        body_start = start + heading.end()
+        next_heading = re.search(r"(?m)^### ", content[body_start:end])
+        body_end = body_start + next_heading.start() if next_heading else end
+        return content[: start + heading.start()] + content[body_end:]
     if heading:
         body_start = start + heading.end()
         next_heading = re.search(r"(?m)^### ", content[body_start:end])
@@ -674,7 +682,7 @@ def find_dev_only_bugs(milestone: str, issues: list[dict]) -> tuple[list[dict], 
     for issue in issues:
         if issue.get("issue_type") != "Bug" or issue.get("state") != "CLOSED":
             continue
-        if {"no changelog", "release blocker"} & set(issue.get("labels", [])):
+        if "no changelog" in issue.get("labels", []):
             continue
         parent = issue.get("parent") or {}
         entry = {"issue": issue["number"], "issue_title": issue.get("title", "")}

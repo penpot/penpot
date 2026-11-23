@@ -40,7 +40,7 @@ python3 scripts/gh.py issues "2.16.0" --label "bug"
 python3 scripts/gh.py issues "2.16.0" --label "bug,regression"
 
 # Exclude by label
-python3 scripts/gh.py issues "2.16.0" --exclude "release blocker,no changelog"
+python3 scripts/gh.py issues "2.16.0" --exclude "no changelog"
 
 # Show only issues NOT yet in CHANGES.md
 python3 scripts/gh.py issues "2.16.0" --compare CHANGES.md
@@ -130,6 +130,8 @@ python3 scripts/gh.py advisories GHSA-xvj6-fh9w-gjw7
 **Detail output** (single advisory) adds: description, vulnerabilities (package, version ranges), credits, timestamps.
 
 `--patched-version` filters the raw advisories before formatting: the match is an exact token of `vulnerabilities[*].patched_versions` (split on `,`/`;`), so `2.19.1` never matches `2.19.10`. Every state is included (`triage`, `draft`, `published`, `closed`, `withdrawn`). The raw `vulnerabilities` stay internal to the filter: the list output keeps the summary schema.
+
+The repository security-advisories endpoint uses cursor pagination (`before`/`after`), not numeric `page` pagination. Observed failure: `page=1` and `page=2` both returned the same 100 advisories, so a length-based loop never ended. `fetch_advisories` must use `gh api --paginate --slurp` so the GitHub CLI follows the response `Link` headers and returns page arrays for flattening. Do not hand-increment `page`.
 
 **Output**: JSON to stdout; progress to stderr.
 
