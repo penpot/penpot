@@ -121,8 +121,8 @@
  ;; warning (`climit.clj::wrap`). The write-side global queues
  ;; follow the anchor's ratio of five waiters to three permits, rounded
  ;; up. The per-profile entry of one permit and a queue of two keeps a
- ;; single designer to one operation at a time. The two read-side
- ;; entries are generous by design, with the ratio of
+ ;; single designer to one operation at a time. The read-side entries
+ ;; are generous by design, with the ratio of
  ;; `:update-file/global` (fifty waiters to twenty permits), so a panel
  ;; open waits for its turn instead of being refused: six
  ;; three-document comparisons hold eighteen realized documents, fewer
@@ -205,4 +205,60 @@
  ;; bounded wait sits on the global entry here rather than on a
  ;; per-profile entry. Provisional.
  :update-branch-review-revision/global
- {:permits 3 :queue 4 :timeout 60000}}
+ {:permits 3 :queue 4 :timeout 60000}
+
+ ;; The review sandbox decodes the pinned snapshot and serves it whole:
+ ;; one realized document and one whole-file payload in memory, the
+ ;; anchor's shape with no snapshot write behind it. Three at once is the
+ ;; anchor's count, and eight waiters give the reviewers of one review
+ ;; room to open their sandboxes together. Provisional.
+ :get-branch-review-bundle/global
+ {:permits 3 :queue 8 :timeout 60000}
+
+ ;; The activity decodes one blob per row of the review, folds the rows
+ ;; as they stream, and serves the folded history. No document is
+ ;; realized, but the work grows with the number of saves rather than
+ ;; with the size of the file, so it sits between the anchor's three and
+ ;; the listing's six, with the read-side ratio for its waiters.
+ ;; Provisional.
+ :get-branch-review-activity/global
+ {:permits 4 :queue 10 :timeout 60000}
+
+ ;; Moving a thread left behind realizes the target document, then moves
+ ;; the thread, its tasks and their events: the one document
+ ;; `create-branch-review` realizes, so it takes the anchor's numbers,
+ ;; and the per-profile entry keeps one designer to one move at a time.
+ ;; Provisional.
+ :move-branch-review-thread/global
+ {:permits 3 :queue 5 :timeout 60000}
+
+ :move-branch-review-thread/by-profile
+ {:permits 1 :queue 2 :timeout 60000}
+
+ ;; Marking the layers of deleted tasks carries their subtrees in,
+ ;; validates up to `max-restore-objects` shapes per layer
+ ;; (`files_task.clj::restore-objects`), and writes them into the event
+ ;; of every task of the layer, so one call can write a document-sized
+ ;; payload. The anchor's numbers bound those copies in flight, and the
+ ;; per-profile entry keeps one designer's bulk deletions from piling
+ ;; up. Provisional.
+ :mark-tasks-layer-deleted/global
+ {:permits 3 :queue 5 :timeout 60000}
+
+ :mark-tasks-layer-deleted/by-profile
+ {:permits 1 :queue 2 :timeout 60000}
+
+ ;; A file open asks for the branch of the file, and a cold miss on a
+ ;; diverged branch runs the compare dialog's own three-document
+ ;; comparison, so the open path shares the compare's numbers instead of
+ ;; opening a way around them. The shared summary cache answers a warm
+ ;; open without realizing anything. Provisional.
+ :get-file-branch-info/global
+ {:permits 6 :queue 15 :timeout 60000}
+
+ ;; A cold review listing realizes the target once and compares each
+ ;; uncached diverged review against it, the branches listing's shape
+ ;; with main shared across rows, so it takes the listing's numbers.
+ ;; Provisional.
+ :get-file-branch-reviews/global
+ {:permits 6 :queue 15 :timeout 60000}}

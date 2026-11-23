@@ -2067,9 +2067,15 @@
   open branch whose revn deltas are not both zero runs the three-way diff
   (`branch-diff-counts!`), which loads main, the branch and its base.
   Returns nil when branching is disabled, so it is safe to call on every
-  file open."
+  file open.
+
+  The command declares the compare dialog's limit: a warm open answers
+  from the summary cache without realizing anything, while a cold one on
+  a diverged branch runs the same three-document comparison as
+  `get-file-branch-diff`."
   {::doc/added "2.16"
-   ::sm/params schema:get-file-branch-info}
+   ::sm/params schema:get-file-branch-info
+   ::climit/id [[:get-file-branch-info/global]]}
   [cfg {:keys [::rpc/profile-id file-id]}]
   (when (contains? cf/flags :branching)
     (db/run! cfg

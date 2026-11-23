@@ -43,6 +43,7 @@
    [app.loggers.webhooks :as-alias webhooks]
    [app.msgbus :as mbus]
    [app.rpc :as-alias rpc]
+   [app.rpc.climit :as-alias climit]
    [app.rpc.commands.comments :as comments]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.profile :as profile]
@@ -731,7 +732,9 @@
   the deleted layer, so it can be restored later, when the layer is small
   and valid enough (`restore-objects`). Returns the tasks it moved."
   {::doc/added "2.16"
-   ::sm/params schema:mark-tasks-layer-deleted}
+   ::sm/params schema:mark-tasks-layer-deleted
+   ::climit/id [[:mark-tasks-layer-deleted/by-profile ::rpc/profile-id]
+                [:mark-tasks-layer-deleted/global]]}
   [cfg {:keys [::rpc/profile-id ::rpc/session-id file-id layers]}]
   (check-tasks-enabled)
   (files/check-read-permissions! cfg profile-id file-id)
@@ -871,6 +874,81 @@
                                  total))))
               (update-vals by-tasks #(merge empty %))
               (db/exec! conn [sql:get-review-comment-counts ids])))))
+
+;; --- COMMAND QUERY: get-file-branch-counts
+;;
+;; The delete confirmation of a branch says how many threads and tasks go
+;; with it. `get-review-counts` answers per review, which leaves out what
+;; was written on the branch outside any review, so these count by the
+;; branch file, where the deletion lands: the file row goes, and the
+;; threads and tasks that named it lose their file with it.
+
+(def ^:private sql:get-branch-file-id
+  "SELECT fb.branch_file_id
+     FROM file_branch AS fb
+    WHERE fb.id = ?
+      AND fb.deleted_at IS NULL")
+
+(def ^:private sql:get-thread-count
+  "SELECT count(*) AS total
+     FROM comment_thread
+    WHERE file_id = ?")
+
+(def ^:private sql:get-task-counts
+  "SELECT status, count(*) AS total
+     FROM file_task
+    WHERE file_id = ?
+      AND deleted_at IS NULL
+    GROUP BY status")
+
+(defn- branch-counts
+  "The live threads and tasks written on the branch file `file-id`:
+  `{:threads n :open-tasks n :closed-tasks n}`, tasks split as
+  `closed-statuses` splits them."
+  [conn file-id]
+  (let [threads (-> (db/exec-one! conn [sql:get-thread-count file-id]) :total)]
+    (reduce (fn [counts {:keys [status total]}]
+              (let [k (if (contains? closed-statuses status) :closed-tasks :open-tasks)]
+                (update counts k + total)))
+            {:threads threads :open-tasks 0 :closed-tasks 0}
+            (db/exec! conn [sql:get-task-counts file-id]))))
+
+(def ^:private schema:get-file-branch-counts
+  [:map {:title "get-file-branch-counts"}
+   [:branch-id ::sm/uuid]])
+
+(sv/defmethod ::get-file-branch-counts
+  "What deleting the branch takes with it, for the confirmation the client
+  shows before it deletes: how many live threads and tasks were written
+  on the branch file, tasks split into open and closed, where closed
+  means verified or dropped as won't do, as the merge reads a task. A
+  thread has no deleted marker (a deleted thread is gone) and a
+  logically deleted task is not counted. The dialog asks just before the
+  delete, so the numbers are the ones the deletion lands on. Needs read
+  rights on the branch file, and takes no climit: two indexed counts,
+  nothing realized."
+  {::doc/added "2.16"
+   ::sm/params schema:get-file-branch-counts}
+  [cfg {:keys [::rpc/profile-id branch-id]}]
+  (check-tasks-enabled)
+  (db/run! cfg
+           (fn [{:keys [::db/conn] :as cfg}]
+             (let [row           (db/exec-one! conn [sql:get-branch-file-id branch-id])
+                   branch-file-id (:branch-file-id row)]
+               (when (nil? row)
+                 (ex/raise :type :not-found
+                           :code :branch-not-found
+                           :hint "unable to find branch with the provided id"
+                           :branch-id branch-id))
+               ;; a kept branch whose file the GC took away carries no
+               ;; threads or tasks any more, and cannot be deleted either
+               (when (nil? branch-file-id)
+                 (ex/raise :type :not-found
+                           :code :object-not-found
+                           :hint "the branch has no file left to count"
+                           :branch-id branch-id))
+               (files/check-read-permissions! cfg profile-id branch-file-id)
+               (branch-counts conn branch-file-id)))))
 
 ;; --- Merge: move the threads and tasks of a branch into its target
 ;;
@@ -1131,7 +1209,9 @@
   and a thread already on the target."
   {::doc/added "2.16"
    ::webhooks/event? true
-   ::sm/params schema:move-branch-review-thread}
+   ::sm/params schema:move-branch-review-thread
+   ::climit/id [[:move-branch-review-thread/by-profile ::rpc/profile-id]
+                [:move-branch-review-thread/global]]}
   [cfg {:keys [::rpc/profile-id ::rpc/session-id thread-id]}]
   (check-tasks-enabled)
   (let [{:keys [target-id source-file-id]}

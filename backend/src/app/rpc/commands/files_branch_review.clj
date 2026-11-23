@@ -484,9 +484,14 @@
   Those counts come from the branch summary cache that the branches
   listing fills, keyed on the same tuple: a repeated listing with no
   intervening save performs no comparison work and realizes no file, and
-  ten open reviews on one branch pay for one computation."
+  ten open reviews on one branch pay for one computation.
+
+  The listing declares the branches listing's limit, because a cold one
+  holds the same documents: the target realized once and reused across
+  rows, and each diverged review compared against it."
   {::doc/added "2.16"
-   ::sm/params schema:get-file-branch-reviews}
+   ::sm/params schema:get-file-branch-reviews
+   ::climit/id [[:get-file-branch-reviews/global]]}
   [cfg {:keys [::rpc/profile-id file-id include-closed]}]
   (check-branch-reviews-enabled!)
   (db/run! cfg
@@ -649,7 +654,8 @@
   and `:last-save` the newest save. Every row of the review is read, so
   the oldest change still counts in what a layer ends up as."
   {::doc/added "2.16"
-   ::sm/params schema:get-branch-review-activity}
+   ::sm/params schema:get-branch-review-activity
+   ::climit/id [[:get-branch-review-activity/global]]}
   [cfg {:keys [::rpc/profile-id id]}]
   (check-branch-reviews-enabled!)
   (db/tx-run! (assoc cfg ::db/read-only true)
@@ -675,6 +681,7 @@
   {::doc/added "2.16"
    ::sm/params schema:get-branch-review-bundle
    ::sm/result files/schema:file-with-permissions
+   ::climit/id [[:get-branch-review-bundle/global]]
    ::db/transaction true}
   [cfg {:keys [::rpc/profile-id id]}]
   (check-branch-reviews-enabled!)

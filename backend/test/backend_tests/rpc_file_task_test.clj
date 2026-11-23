@@ -1213,3 +1213,43 @@
                            {:id (:id author)})
             (let [task (new-task)]
               (t/is (= [] (move reviewer task "done"))))))))))
+
+;; --- Counts of what a branch deletion takes with it
+
+(defn- branch-counts*
+  [profile branch-id]
+  (th/command! {::th/type :get-file-branch-counts
+                ::rpc/profile-id (:id profile)
+                :branch-id branch-id}))
+
+(t/deftest branch-counts-say-what-a-delete-takes-with-it
+  (with-redefs [cf/flags (task-flags)
+                eml/send-template (fn [_ _] nil)]
+    (let [{:keys [author reviewer branch quiet closed]} (setup-review-threads)]
+
+      (t/testing "threads and tasks are counted by the branch file"
+        (let [out (branch-counts* author (:id branch))]
+          (t/is (nil? (:error out)))
+          ;; `mixed` holds the open task and the closed one, the closed
+          ;; task outside it got a thread of its own, and `quiet` and
+          ;; `loose` are the threads with no task
+          (t/is (= {:threads 4 :open-tasks 1 :closed-tasks 2} (:result out)))))
+
+      (t/testing "a deleted thread and a deleted task are not counted"
+        (t/is (nil? (:error (th/command! {::th/type :delete-comment-thread
+                                          ::rpc/profile-id (:id reviewer)
+                                          :id (:id quiet)}))))
+        (t/is (nil? (:error (th/command! {::th/type :delete-task
+                                          ::rpc/profile-id (:id author)
+                                          :id (:id closed)}))))
+        (t/is (= {:threads 3 :open-tasks 1 :closed-tasks 1}
+                 (:result (branch-counts* author (:id branch))))))
+
+      (t/testing "a profile that cannot read the branch file is refused"
+        (let [stranger (th/create-profile* 3 {:is-active true})]
+          (t/is (= :not-found (-> (branch-counts* stranger (:id branch))
+                                  :error ex-data :type)))))
+
+      (t/testing "a branch that does not exist is not found"
+        (t/is (= :branch-not-found (-> (branch-counts* author (uuid/random))
+                                       :error ex-data :code)))))))
