@@ -546,6 +546,13 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; QUOTE: PULL-REQUESTS-PER-TEAM
+;;
+;; The quote id and its `:quotes-pull-requests-per-team` config key predate
+;; the branch-review vocabulary and stay as they are, so a deployment knob
+;; does not move under an operator. What it counts is open branch reviews,
+;; resolved through the family root: a review belongs to the family of the
+;; file its target lives on, and the family id IS that root file's id, so
+;; one join answers the team without walking the branch chain.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:private schema:pull-requests-per-team
@@ -558,12 +565,12 @@
 
 (def ^:private sql:get-pull-requests-per-team
   "SELECT count(*) AS total
-     FROM file_pull_request AS fpr
-     JOIN file AS f ON (f.id = fpr.target_file_id)
+     FROM file_branch_review AS r
+     JOIN file AS f ON (f.id = r.family_id)
      JOIN project AS p ON (p.id = f.project_id)
     WHERE p.team_id = ?
-      AND fpr.deleted_at IS NULL
-      AND fpr.status = 'open'
+      AND r.deleted_at IS NULL
+      AND r.status = 'open'
       AND f.deleted_at IS NULL
       AND p.deleted_at IS NULL")
 

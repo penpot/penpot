@@ -115,20 +115,20 @@
         (:description pr)])]))
 
 (defn- verdict-label
-  [{:keys [state stale]}]
+  [{:keys [verdict stale]}]
   (cond
-    stale                         (tr "workspace.pull-requests.review-state.stale")
-    (= "approved" state)          (tr "workspace.pull-requests.review-state.approved")
-    (= "changes-requested" state) (tr "workspace.pull-requests.review-state.changes-requested")
-    :else                         (tr "workspace.pull-requests.review-state.pending")))
+    stale                           (tr "workspace.pull-requests.review-state.stale")
+    (= "approved" verdict)          (tr "workspace.pull-requests.review-state.approved")
+    (= "changes-requested" verdict) (tr "workspace.pull-requests.review-state.changes-requested")
+    :else                           (tr "workspace.pull-requests.review-state.pending")))
 
 (defn- verdict-tone
-  [{:keys [state stale]}]
+  [{:keys [verdict stale]}]
   (cond
-    stale                         "neutral"
-    (= "approved" state)          "success"
-    (= "changes-requested" state) "warning"
-    :else                         "neutral"))
+    stale                           "neutral"
+    (= "approved" verdict)          "success"
+    (= "changes-requested" verdict) "warning"
+    :else                           "neutral"))
 
 (mf/defc reviewers-block*
   "The reviewers of the review and their verdicts; its author and the
@@ -229,7 +229,7 @@
           (tr "workspace.review.details.last-change-by"
               (ct/timeago (:created-at last-save))
               (rvc/profile-name profiles (:profile-id last-save)))
-          (ct/timeago (:review-updated-at pr)))]]]
+          (ct/timeago (:pinned-at pr)))]]]
 
      (when (and (pos? missing) (= "open" (:status pr)))
        [:> context-notification* {:level :warning :appearance :ghost}

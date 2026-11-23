@@ -331,16 +331,19 @@
                    :reprocess-changes-ms (get timings :reprocess-changes-ms)))
           (throw cause))))))
 
-;; --- Design review activity
+;; --- Branch review activity
 
 (def ^:private sql:get-open-review-of-branch-file
-  "SELECT id FROM file_pull_request
-    WHERE source_file_id = ?
-      AND status = 'open'
-      AND deleted_at IS NULL")
+  "SELECT r.id
+     FROM file_branch_review AS r
+     JOIN file_branch AS b ON (b.id = r.file_branch_id)
+    WHERE b.branch_file_id = ?
+      AND r.status = 'open'
+      AND r.deleted_at IS NULL")
 
 (defn- get-open-review-id
-  "The open design review of a branch file, if it has one."
+  "The open branch review of a branch file, if it has one. Resolved
+  through the branch edge: the review no longer stores its two sides."
   [conn file-id]
   (:id (db/exec-one! conn [sql:get-open-review-of-branch-file file-id])))
 
@@ -358,14 +361,14 @@
       result)))
 
 (defn- record-review-activity
-  "Record the activity of a save of a branch under design review: who
-  saved, the revn the save produced and what it did to each layer. A save
-  that changed no layer records nothing."
+  "Record the activity of a save of a branch under review: who saved, the
+  revn the save produced and what it did to each layer. A save that
+  changed no layer records nothing."
   [conn review-id profile-id {:keys [revn]} entries timestamp]
   (when (seq entries)
-    (db/insert! conn :file-pull-request-activity
+    (db/insert! conn :file-branch-review-activity
                 {:id (uuid/next)
-                 :pull-request-id review-id
+                 :review-id review-id
                  :profile-id profile-id
                  :revn revn
                  :entries (blob/encode entries)
@@ -401,8 +404,8 @@
           revn
           (get file :revn)
 
-          ;; A save of a branch under design review records what it did
-          ;; to each layer, for the activity of the review.
+          ;; A save of a branch under review records what it did to each
+          ;; layer, for the activity of the review.
           review-id
           (when (:is-branch file)
             (get-open-review-id conn (:id file)))

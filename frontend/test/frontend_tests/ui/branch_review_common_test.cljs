@@ -23,18 +23,18 @@
    :status :conflict
    :reason :modify-modify
    :base   {:rx 8 :width 320 :opacity 1}
-   :main   {:rx 12 :width 320 :opacity 0.5}
+   :source {:rx 12 :width 320 :opacity 0.5}
    :branch {:rx 4 :width 360 :opacity 1}
-   :changed-attrs {:rx      {:main 12 :branch 4}
-                   :width   {:main 320 :branch 360}
-                   :opacity {:main 0.5 :branch 1}}})
+   :changed-attrs {:rx      {:source 12 :branch 4}
+                   :width   {:source 320 :branch 360}
+                   :opacity {:source 0.5 :branch 1}}})
 
 (defn- sources
   [conflict]
-  (into {} (map (juxt :attr :source)) (brc/conflict-attr-rows conflict)))
+  (into {} (map (juxt :attr :origin)) (brc/conflict-attr-rows conflict)))
 
 (t/deftest only-properties-both-sides-moved-conflict
-  (t/is (= {:rx :conflict :width :branch :opacity :main} (sources card))))
+  (t/is (= {:rx :conflict :width :branch :opacity :source} (sources card))))
 
 (t/deftest without-a-base-every-property-conflicts
   (t/is (= #{:conflict} (set (vals (sources (assoc card :base nil :reason :add-add))))))
@@ -42,27 +42,27 @@
 
 (t/deftest independent-edits-come-filled-in
   (let [res (brc/prefill-resolution card)]
-    (t/is (= {:width :branch :opacity :main} res))
+    (t/is (= {:width :branch :opacity :source} res))
     (t/is (not (bm/conflict-resolved? card res))
           "the conflicting radius still waits for a choice")))
 
 (t/deftest choosing-the-conflicting-property-resolves-the-conflict
   (let [res (brc/choose-attr card nil :rx :branch)]
-    (t/is (= {:rx :branch :width :branch :opacity :main} res))
+    (t/is (= {:rx :branch :width :branch :opacity :source} res))
     (t/is (bm/conflict-resolved? card res))
-    (t/is (= [{:attr :rx :side :main :value 12}]
+    (t/is (= [{:attr :rx :side :source :value 12}]
              (brc/dropped-values card res))
           "keeping the branch radius drops main's, and nothing else")))
 
 (t/deftest a-conflict-without-conflicting-properties-comes-out-resolved
   (let [conflict (-> card
-                     (assoc-in [:main :rx] 8)
+                     (assoc-in [:source :rx] 8)
                      (update :changed-attrs dissoc :rx))]
     (t/is (bm/conflict-resolved? conflict (brc/prefill-resolution conflict)))))
 
 (t/deftest bulk-choice-keeps-independent-edits
-  (t/is (= {:rx :main :width :branch :opacity :main} (brc/choose-side card :main)))
-  (t/is (= :branch (brc/choose-side (assoc card :changed-attrs {} :main nil) :branch))
+  (t/is (= {:rx :source :width :branch :opacity :source} (brc/choose-side card :source)))
+  (t/is (= :branch (brc/choose-side (assoc card :changed-attrs {} :source nil) :branch))
         "an entity that cannot be split takes the whole side"))
 
 (t/deftest paragraphs-say-which-edits-a-side-keeps-and-drops
@@ -75,10 +75,10 @@
         note   {:kind :shape
                 :status :conflict
                 :base   {:content (text "One" "Two" "Three")}
-                :main   {:content (text "One step" "Two" "Three")}
+                :source {:content (text "One step" "Two" "Three")}
                 :branch {:content (text "One" "Two" "Three more")}
                 :changed-attrs {:content {}}}]
-    (t/is (= [:kept nil :dropped] (mapv :status (brc/paragraph-rows note :main))))
+    (t/is (= [:kept nil :dropped] (mapv :status (brc/paragraph-rows note :source))))
     (t/is (= [:dropped nil :kept] (mapv :status (brc/paragraph-rows note :branch))))))
 
 ;; --- What a new or deleted entry is, where it lands, what it affects
@@ -205,7 +205,7 @@
 
 (t/deftest a-board-with-a-layout-resizes-with-the-layer
   (let [items [(gone icon-id)
-               (edit button-id {:width {:main 163 :branch 131}})]
+               (edit button-id {:width {:source 163 :branch 131}})]
         fx    (brc/shape-effects (gone icon-id) items proto-objects [] false)]
     (t/is (= [{:id button-id :name "Button" :layout :flex :from [163 48] :to [131 48]}]
              (:layouts fx)))
@@ -214,20 +214,20 @@
 
 (t/deftest an-update-reads-the-sides-the-other-way-round
   (let [items [(gone icon-id)
-               (edit button-id {:width {:main 131 :branch 163}})]
+               (edit button-id {:width {:source 131 :branch 163}})]
         fx    (brc/shape-effects (gone icon-id) items proto-objects [] true)]
     (t/is (= [[163 48] [131 48]] ((juxt :from :to) (first (:layouts fx)))))))
 
 (t/deftest a-fixed-board-moves-its-other-layers
   (let [items [(gone icon-id)
-               (edit label-id {:x {:main 40 :branch 20}})]
+               (edit label-id {:x {:source 40 :branch 20}})]
         fx    (brc/shape-effects (gone icon-id) items proto-objects [] false)]
     (t/is (= [{:id button-id :name "Button" :layout :flex :moved 1}] (:layouts fx)))))
 
 (t/deftest prototype-links-into-a-deleted-board-go-with-it
   (let [link  {:event-type :click :action-type :navigate :destination screen-id}
         items [(gone screen-id)
-               (assoc (edit cta-id {:interactions {:main [link] :branch []}}) :label "CTA")
+               (assoc (edit cta-id {:interactions {:source [link] :branch []}}) :label "CTA")
                {:kind :page-flow :status :deleted :id :f1 :page-id page-id :label "f1"
                 :flow {:id :f1 :name "Onboarding" :starting-frame screen-id}}
                {:kind :page-flow :status :deleted :id :f2 :page-id page-id :label "f2"
@@ -240,7 +240,7 @@
 (t/deftest an-added-layer-breaks-no-links
   (let [link  {:event-type :click :action-type :navigate :destination screen-id}
         added (assoc (gone screen-id) :status :added)
-        items [added (edit cta-id {:interactions {:main [] :branch [link]}})]
+        items [added (edit cta-id {:interactions {:source [] :branch [link]}})]
         fx    (brc/shape-effects added items proto-objects [] false)]
     (t/is (= [] (:interactions fx)))))
 
@@ -257,7 +257,7 @@
    :key (str "color//" color-id)})
 
 (def ^:private clash
-  (assoc (change :clash :conflict) :changed-attrs {:rx {:main 1 :branch 2}}))
+  (assoc (change :clash :conflict) :changed-attrs {:rx {:source 1 :branch 2}}))
 
 (def ^:private diff
   {:changes [(change :title :modified)
@@ -353,7 +353,7 @@
 (t/deftest conflicts-wait-until-every-property-has-a-choice
   (let [other (assoc card :id :other)
         card  (assoc card :id :card)
-        res   {:card (brc/choose-side card :main)}
+        res   {:card (brc/choose-side card :source)}
         {:keys [pending decided rows]} (brc/conflict-model [card other] res)]
     (t/is (= [:other] (map :id pending)))
     (t/is (= [:card] (map :id decided)))
@@ -361,18 +361,18 @@
 
 (t/deftest only-conflicts-without-a-choice-get-prefilled
   (let [card (assoc card :id :card)
-        seed (brc/prefill-resolutions [card (assoc card :id :chosen)] {:chosen :main})]
-    (t/is (= {:card {:width :branch :opacity :main}} seed))))
+        seed (brc/prefill-resolutions [card (assoc card :id :chosen)] {:chosen :source})]
+    (t/is (= {:card {:width :branch :opacity :source}} seed))))
 
 (t/deftest the-property-in-turn-is-the-first-without-a-choice
   (let [both (assoc card
                     :base {:rx 8 :width 320 :opacity 1 :fills :a}
-                    :main (assoc (:main card) :fills :b)
+                    :source (assoc (:source card) :fills :b)
                     :branch (assoc (:branch card) :fills :c)
-                    :changed-attrs (assoc (:changed-attrs card) :fills {:main :b :branch :c}))
+                    :changed-attrs (assoc (:changed-attrs card) :fills {:source :b :branch :c}))
         [first-attr second-attr] (brc/conflicting-attrs (brc/conflict-attr-rows both))]
     (t/is (= first-attr (brc/pending-attr both nil nil)))
     (t/is (= second-attr (brc/pending-attr both nil second-attr)) "the one the user took")
-    (t/is (= second-attr (brc/pending-attr both {first-attr :main} nil)))
-    (t/is (nil? (brc/pending-attr (assoc card :main nil) nil nil))
+    (t/is (= second-attr (brc/pending-attr both {first-attr :source} nil)))
+    (t/is (nil? (brc/pending-attr (assoc card :source nil) nil nil))
           "a conflict that does not split by property has none")))

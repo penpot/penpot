@@ -30,7 +30,7 @@
      :hovered-from where the pointer is: its row (`:list`) or its layer
                 (`:canvas`)
      :attr      the property in turn while resolving a conflict
-     :preview   the side (`:main`, `:branch`) of that property the canvas
+     :preview   the side (`:source`, `:branch`) of that property the canvas
                 tries out while the pointer is on its option
      :peek      true while the canvas shows main in place of the branch
      :filter    :all | :layers | :library | :left-out
@@ -117,7 +117,7 @@
     (let [shape (or (get objects (:id item))
                     (:shape item)
                     (:branch item)
-                    (:main item))
+                    (:source item))
           {:keys [x y width height]} (or (:selrect shape) shape)]
       (when (and (number? x) (number? y) (number? width) (number? height))
         {:x x :y y :width width :height height}))))
@@ -232,10 +232,10 @@
 ;; --- What the mode shows
 
 (defn set-direction
-  "Show the changes of the branch (`:branch->main`) or the ones main has
-  and the branch lacks (`:main->branch`)."
+  "Show the changes of the branch (`:branch->source`) or the ones the
+  source has and the branch lacks (`:source->branch`)."
   [direction]
-  (assert (contains? #{:branch->main :main->branch} direction) "expected a direction")
+  (assert (contains? #{:branch->source :source->branch} direction) "expected a direction")
   (ptk/reify ::set-direction
     ptk/UpdateEvent
     (update [_ state]
@@ -519,9 +519,9 @@
             diff-st   (:workspace-branch-diff state)
             branch    (get-in state [:workspace-compare :branch])
             direction (case (:mode attempt)
-                        :update :main->branch
-                        :merge  :branch->main
-                        (:direction diff-st :branch->main))]
+                        :update :source->branch
+                        :merge  :branch->source
+                        (:direction diff-st :branch->source))]
         (cond
           ;; the conflicts belong to a branch that is not the open file
           (and (nil? branch) (uuid? (get-in attempt [:branch :branch-file-id])))
@@ -579,7 +579,7 @@
             excluded  (if (some? attempt)
                         (:excluded attempt)
                         (dwb/diff-excluded diff-st))]
-        (if (= :main->branch (:direction diff-st))
+        (if (= :source->branch (:direction diff-st))
           (rx/of (dwb/update-branch-from-main branch {:resolutions res
                                                       :excluded excluded}))
           (rx/of (dwb/merge-branch branch {:resolutions res
@@ -623,11 +623,11 @@
     (watch [_ state stream]
       (let [branch-id (get-in state [:workspace-compare :branch :id])
             diff-st   (:workspace-branch-diff state)
-            direction (if (= :main->branch (:direction diff-st))
-                        :branch->main
-                        :main->branch)]
+            direction (if (= :source->branch (:direction diff-st))
+                        :branch->source
+                        :source->branch)]
         (if (and (some? branch-id) (= branch-id (:branch-id diff-st)))
-          (->> (rp/cmd! :get-branch-diff {:branch-id branch-id :direction direction})
+          (->> (rp/cmd! :get-file-branch-diff {:branch-id branch-id :direction direction})
                (rx/map set-other-changes)
                (rx/catch (fn [_] (rx/empty)))
                (rx/take-until

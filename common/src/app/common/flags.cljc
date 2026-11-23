@@ -206,10 +206,16 @@
     :export-link-later
 
     ;; Enables file branching: isolated file copies ("branches") that
-    ;; can be merged back to their source file, including pull requests
+    ;; can be merged back to their source file, including design reviews
     ;; (review requests over a pinned snapshot of a branch). Disabled by
     ;; default.
-    :branching})
+    :branching
+
+    ;; Lets a branch be cut from another branch. A merge into the parent
+    ;; then lands in the parent's op log, and a merged parent hands its
+    ;; open children to its own target. Requires `:branching`. Disabled
+    ;; by default.
+    :branch-stacking})
 
 (def all-flags
   (set/union email login varia))

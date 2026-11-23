@@ -12,6 +12,7 @@
    [app.common.time :as ct]
    [app.db :as db]
    [app.db.sql :as-alias sql]
+   [app.features.file-snapshots :as fsnap]
    [app.jobs :as jobs]
    [app.loggers.audit :as audit]
    [app.rpc.commands.files :as files]
@@ -63,10 +64,72 @@
               {:id id :file-id file-id :type "snapshot"}
               {::db/return-keys false}))
 
+;; --- Branching: what a deleted file takes with it
+;;
+;; A file's row is the unit of storage and permission, so the objects GC
+;; deletes it; its design reviews, threads, and tasks belong to the file
+;; family and outlive it, except those of a branch no merge accepted.
+
+(def ^:private sql:get-branch-edges
+  "SELECT fb.id AS edge_id,
+          fb.base_snapshot_id,
+          fb.source_file_id,
+          EXISTS (SELECT 1
+                    FROM file_branch_merge AS fbm
+                   WHERE fbm.file_branch_id = fb.id) AS merged
+     FROM file_branch AS fb
+    WHERE fb.branch_file_id = ?")
+
+(def ^:private sql:delete-unmerged-branch-reviews
+  "DELETE FROM file_branch_review AS r
+    WHERE r.file_branch_id = ?
+      AND NOT EXISTS (SELECT 1
+                        FROM file_branch_merge AS fbm
+                       WHERE fbm.review_id = r.id)
+    RETURNING r.pinned_snapshot_id")
+
+(defn- delete-unmerged-branch
+  "Delete what belonged to a branch that no merge accepted, before its
+  file row goes: the threads written on it (their messages and read marks
+  cascade), the tasks still on it, its reviews with their verdicts and
+  activity, the merge base it was derived from, and the branch edge.
+
+  A merged branch keeps all of it. Its merge moved only the threads that
+  hold an open task or that were written outside a review; a thread it
+  leaves behind stays on the branch file, and the purge only nulls its
+  `file_id`. Its edge and the review the merge names stay as the record
+  of the merge, read long after the file is gone, and its merge base was
+  released when it merged. Must run in the caller transaction."
+  [{:keys [::db/conn] :as cfg}
+   {:keys [file-id edge-id source-file-id base-snapshot-id deleted-at]}]
+  ;; a task names its thread with a `SET NULL` key, so the threads go
+  ;; first and the tasks are still found by their file afterwards
+  (db/delete! conn :comment-thread {:file-id file-id} {::db/return-keys false})
+  (db/delete! conn :file-task {:file-id file-id} {::db/return-keys false})
+  (doseq [{:keys [pinned-snapshot-id]} (db/exec! conn [sql:delete-unmerged-branch-reviews edge-id])]
+    ;; the pinned revision is a change row of the branch file, held for
+    ;; years while the review lives; it dies with the review, or it would
+    ;; keep the file row from being collected
+    (when (some? pinned-snapshot-id)
+      (fsnap/delete! cfg
+                     :id pinned-snapshot-id
+                     :file-id file-id
+                     :deleted-at deleted-at)))
+  ;; the merge base is a change row of the source, pinned while the
+  ;; branch is open; it dies with the branch, or the source file row
+  ;; could not be collected either
+  (when (some? base-snapshot-id)
+    (fsnap/delete! cfg
+                   :id base-snapshot-id
+                   :file-id source-file-id
+                   :deleted-at deleted-at))
+  (db/delete! conn :file-branch {:id edge-id} {::db/return-keys false}))
+
 (def ^:private sql:get-file-branches
   "SELECT id, branch_file_id
      FROM file_branch
     WHERE source_file_id = ?
+      AND branch_file_id IS NOT NULL
       AND deleted_at IS NULL")
 
 (defmethod delete-object :file
@@ -86,29 +149,28 @@
                 {:branch-file-id id}
                 {::db/return-keys false})
 
-    ;; Pull requests: when the deleted file is a branch copy, any open
-    ;; pull request over it can no longer be reviewed — close it (the
-    ;; row is kept: pull request history outlives its branch, and the
-    ;; review snapshot rows live in this file's file_change/file_data,
-    ;; which this same cascade marks deleted below). When the deleted
-    ;; file is a pull request TARGET, cascade the logical deletion: with
-    ;; main gone the pull request is unreachable forever.
-    (db/update! conn :file-pull-request
-                {:status "closed"
-                 :closed-at (ct/now)
-                 :updated-at (ct/now)}
-                {:source-file-id id :status "open"}
-                {::db/return-keys false})
-    (db/update! conn :file-pull-request
-                {:deleted-at deleted-at}
-                {:target-file-id id}
-                {::db/return-keys false})
+    ;; ... and settle what the branch owned. A branch no merge accepted
+    ;; takes its threads, tasks, reviews, and the edge itself with it; a
+    ;; merged branch keeps them, and the edge outlives the file, so the
+    ;; compare marks of either branch are deleted here: the cascade from
+    ;; the edge only reaches the marks of a branch whose edge goes.
+    (doseq [{:keys [edge-id merged] :as edge} (db/exec! conn [sql:get-branch-edges id])]
+      (db/delete! conn :file-branch-change-mark
+                  {:file-branch-id edge-id}
+                  {::db/return-keys false})
+      (when-not merged
+        (delete-unmerged-branch cfg (assoc edge
+                                           :file-id id
+                                           :deleted-at deleted-at))))
 
     ;; ... and when it is the SOURCE of branches, cascade the logical
     ;; deletion to them: branch files are hidden from every listing, so
     ;; once the source is gone nothing else could ever reach (or GC)
-    ;; them. A branch cannot be a source itself, so this recurses at
-    ;; most one level.
+    ;; them. Branches stack under `:branch-stacking`, so a branch file
+    ;; can be a source too: this follows the chain of edges to its end
+    ;; and a grandchild branch is deleted with the file its chain starts
+    ;; from. A parent that merged re-parented its children, so they are
+    ;; not in this branch list and survive it.
     (doseq [branch (db/exec! conn [sql:get-file-branches id])]
       (db/update! conn :file-branch
                   {:deleted-at deleted-at}

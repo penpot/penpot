@@ -21,7 +21,7 @@
 (def ^:private safe-library-envelope-keys
   "Top-level keys a trimmed library may expose next to `:data`. Anything
    else is design content leaking through the envelope (see F3)."
-  #{:backend :comment-thread-seqn :created-at :features :has-media-trimmed
+  #{:backend :created-at :features :has-media-trimmed
     :id :is-indirect :is-shared :migrations :modified-at :name :project-id
     :revn :synced-at :team-id :vern :version})
 

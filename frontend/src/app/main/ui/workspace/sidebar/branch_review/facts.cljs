@@ -182,9 +182,9 @@
                      open-objs
                      (brs/side-objects open-objs
                                        (filterv #(= (:page-id item) (:page-id %)) items)
-                                       (if (= open-side :main) :branch :main)
+                                       (if (= open-side :source) :branch :source)
                                        open-side
-                                       (if incoming :main :branch))))
+                                       (if incoming :source :branch))))
         shape    (get objects (:id item))
         page     (get-in data [:pages-index (:page-id item) :name])
         deleted? (= :deleted (:status item))
@@ -259,8 +259,8 @@
       (not own?)
       (conj (tr "workspace.branches.review.copies.follows-all"))
 
-      (seq (:main keeps))
-      (conj (tr "workspace.branches.review.copies.keeps-main" (lower-list (:main keeps))))
+      (seq (:source keeps))
+      (conj (tr "workspace.branches.review.copies.keeps-main" (lower-list (:source keeps))))
 
       (seq (:branch keeps))
       (conj (tr "workspace.branches.review.copies.keeps-branch" (lower-list (:branch keeps))))
@@ -355,7 +355,7 @@
                        [label
                         (mf/html
                          [:span {:class (stl/css :settled-value)}
-                          [:> tag* {:tone (if (= side :main) "purple" "accent")}
+                          [:> tag* {:tone (if (= side :source) "purple" "accent")}
                            (brc/side-label side)]
                           [:span (brc/reason-label reason)]])])
                      rows)}]

@@ -565,14 +565,14 @@
   [:map
    [:name ::sm/text]
    [:source-user ::sm/text]
-   [:pull-request-title ::sm/text]
-   [:pull-request-route ::sm/text]
+   [:review-title ::sm/text]
+   [:review-route ::sm/text]
    ;; plain :string on purpose: the description is optional and may be empty
-   [:pull-request-description [:string {:max 4000}]]
-   [:pull-request-url ::sm/text]])
+   [:review-description [:string {:max 4000}]]
+   [:review-url ::sm/text]])
 
 (def review-request
-  "Email sent to the requested reviewers of a pull request."
+  "Email sent to the requested reviewers of a branch review."
   (template-factory
    :id ::review-request
    :schema schema:review-request))
@@ -590,7 +590,7 @@
    :id ::task-assigned
    :schema schema:task-assigned))
 
-(def ^:private schema:tasks-moved
+(def ^:private schema:tasks-merged
   [:map
    [:name ::sm/text]
    [:source-user ::sm/text]
@@ -599,12 +599,12 @@
    [:task-titles ::sm/text]
    [:file-url ::sm/text]])
 
-(def tasks-moved
+(def tasks-merged
   "Email sent to the assignees of the open tasks of a branch when the
-  merge of the branch moves them into main."
+  merge of the branch moves them into its target."
   (template-factory
-   :id ::tasks-moved
-   :schema schema:tasks-moved))
+   :id ::tasks-merged
+   :schema schema:tasks-merged))
 
 (def ^:private schema:task-done
   [:map
@@ -717,7 +717,7 @@
    "task-assigned"                       (template-entry task-assigned schema:task-assigned)
    "task-done"                           (template-entry task-done schema:task-done)
    "task-reopened"                       (template-entry task-reopened schema:task-reopened)
-   "tasks-moved"                         (template-entry tasks-moved schema:tasks-moved)})
+   "tasks-merged"                        (template-entry tasks-merged schema:tasks-merged)})
 
 (defn render-template
   "Render the templated email `template-id` from its JSON-decoded data,

@@ -147,7 +147,7 @@
         (tr "workspace.branches.reviews.merged")]
        [:> route* {:branch-name (:branch-name merge)}]]
       ;; the merge accepted a design review: name it, it may be gone by now
-      (when-let [title (:pull-request-title merge)]
+      (when-let [title (:review-title merge)]
         [:div {:class (stl/css :entry-review)}
          [:> i/icon* {:icon-id i/git-pull-request-arrow :size "s"}]
          [:span {:class (stl/css :entry-review-title)}
@@ -306,7 +306,7 @@
         (mf/with-memo [all-merges filter-v profiles]
           (filterv #(matches? filter-v [(:branch-name %)
                                         (:comment %)
-                                        (:pull-request-title %)
+                                        (:review-title %)
                                         (get-in profiles [(:merged-by %) :fullname])])
                    all-merges))
 

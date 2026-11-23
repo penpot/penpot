@@ -213,7 +213,7 @@
   [{:keys [task data profiles is-selected show-review on-open]}]
   (let [objects  (page-objects data (:page-id task))
         assignee (get profiles (:assignee-id task))
-        review?  (some? (:pull-request-id task))
+        review?  (some? (:review-id task))
 
         on-click
         (mf/use-fn
@@ -296,7 +296,7 @@
                          (tr "workspace.tasks.event.relinked" actor (:shape-name payload)))
       "layer-deleted"  (tr "workspace.tasks.event.layer-deleted" actor (:shape-name payload))
       "layer-restored" (tr "workspace.tasks.event.layer-restored" actor (:shape-name payload))
-      "moved-to-main"  (tr "workspace.tasks.event.moved-to-main" (:branch-name payload))
+      "merged"         (tr "workspace.tasks.event.moved-to-main" (:branch-name payload))
       "deleted"        (tr "workspace.tasks.event.deleted" actor)
       nil)))
 
@@ -305,7 +305,7 @@
   (case type
     "layer-deleted" i/triangle-alert
     "status"        (if (= "done" (:to payload)) i/tick i/view-as-list)
-    "moved-to-main" i/git-merge
+    "merged"        i/git-merge
     "deleted"       i/delete
     i/view-as-list))
 
@@ -395,7 +395,7 @@
         (mf/use-fn
          (mf/deps task file-id)
          (fn [_]
-           (st/emit! (dwpr/open-pull-request {:id (:pull-request-id task)
+           (st/emit! (dwpr/open-pull-request {:id (:review-id task)
                                               :source-file-id file-id}))))]
 
     [:div {:class (stl/css :task-state)}
@@ -412,7 +412,7 @@
         [:> text* {:as "span" :typography t/body-small :class (stl/css :task-state-text)}
          assignee]
         [:> assignee-menu* {:task task :label assignee}])
-      (when (and (some? (:pull-request-id task))
+      (when (and (some? (:review-id task))
                  (= "open" (:review-status task))
                  (nil? preview))
         [:div {:class (stl/css :task-state-origin)}
@@ -675,9 +675,9 @@
   "The tasks of the branch workspace list: those of each design review
   first (the open review first), then the others."
   [tasks]
-  (let [[review other] ((juxt filter remove) (comp some? :pull-request-id) tasks)]
+  (let [[review other] ((juxt filter remove) (comp some? :review-id) tasks)]
     (concat
-     (->> (group-by :pull-request-id review)
+     (->> (group-by :review-id review)
           (sort-by (fn [[_ items]] (if (= "open" (:review-status (first items))) 0 1)))
           (map (fn [[id items]] {:id id :title (:review-title (first items)) :tasks items})))
      (when (seq other)

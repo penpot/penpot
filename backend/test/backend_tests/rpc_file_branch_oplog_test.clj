@@ -140,7 +140,7 @@
                      {:type :add-color
                       :color {:id branch-color :name "Branch" :color "#ff0000" :opacity 1}})
 
-      (let [out (th/command! {::th/type :update-branch-from-main
+      (let [out (th/command! {::th/type :update-file-branch-from-source
                               ::rpc/profile-id (:id profile)
                               :branch-id branch-id})]
         (t/is (nil? (:error out)))
@@ -169,7 +169,7 @@
       (t/testing "the merge base moved to main's revn"
         (let [[row] (th/db-query :file-branch {:id branch-id})
               mf    (th/db-get :file {:id (:id file)})]
-          (t/is (= (:revn mf) (:base-revn row))))))))
+          (t/is (= (:revn mf) (:base-source-revn row))))))))
 
 (defn- add-color* [profile file-id]
   (apply-change* profile file-id
@@ -186,7 +186,7 @@
         create  (create-branch* profile (:id file) name)]
     (th/command! {::th/type :archive-file-branch
                   ::rpc/profile-id (:id profile)
-                  :id (:id create)})
+                  :branch-id (:id create)})
     [profile create]))
 
 (t/deftest an-archived-branch-refuses-saves
@@ -204,7 +204,7 @@
           branch-file-id   (:branch-file-id create)]
       (th/command! {::th/type :archive-file-branch
                     ::rpc/profile-id (:id profile)
-                    :id (:id create)
+                    :branch-id (:id create)
                     :archived false})
       (let [out (add-color* profile branch-file-id)]
         (t/is (nil? (:error out)))
@@ -214,9 +214,9 @@
   (with-redefs [cf/flags (conj cf/flags :branching)]
     (let [[profile create] (archived-branch* "oplog-materialized")
           branch-file-id   (:branch-file-id create)
-          out              (th/command! {::th/type :materialize-file-branch
+          out              (th/command! {::th/type :detach-file-branch
                                          ::rpc/profile-id (:id profile)
-                                         :branch-file-id branch-file-id})]
+                                         :branch-id (:id create)})]
       (t/is (nil? (:error out)))
       (t/is (nil? (:error (add-color* profile branch-file-id)))))))
 
@@ -272,7 +272,7 @@
                           :page-id page-id
                           :id shape-id
                           :operations [{:type :set :attr :fills :val (fills main-id "#00ff00")}]})
-          (let [out (th/command! {::th/type :update-branch-from-main
+          (let [out (th/command! {::th/type :update-file-branch-from-source
                                   ::rpc/profile-id (:id profile)
                                   :branch-id branch-id})]
             (t/is (nil? (:error out)))
@@ -298,7 +298,7 @@
                           :page-id page-id
                           :id shape-id
                           :operations [{:type :set :attr :fills :val (fills branch-file-id "#ffffff")}]})
-          (let [out (th/command! {::th/type :update-branch-from-main
+          (let [out (th/command! {::th/type :update-file-branch-from-source
                                   ::rpc/profile-id (:id profile)
                                   :branch-id branch-id})]
             (t/is (= :conflicts (-> out :result :status)))
@@ -306,10 +306,10 @@
             (t/is (= shape-id (-> out :result :conflicts first :id)))))
 
         (t/testing "taking main keeps the branch writeable"
-          (let [out (th/command! {::th/type :update-branch-from-main
+          (let [out (th/command! {::th/type :update-file-branch-from-source
                                   ::rpc/profile-id (:id profile)
                                   :branch-id branch-id
-                                  :resolutions {shape-id :main}})]
+                                  :resolutions {shape-id :source}})]
             (t/is (nil? (:error out)))
             (t/is (= :updated (-> out :result :status))))
           (let [out (th/command! {::th/type :get-file
@@ -321,22 +321,22 @@
 (t/deftest update-resolutions-are-document-keyed
   ;; A resolution names a DOCUMENT, not the role the merge engine happened to
   ;; hand it. `branch_merge.cljc::compute-merge` reports every conflict with
-  ;; main's value under `:main` and the branch's under `:branch` in both
+  ;; main's value under `:source` and the branch's under `:branch` in both
   ;; directions, and the command applies each resolution in those same terms
-  ;; (`files_branch.clj::update-branch-from-main` inverts it before
+  ;; (`files_branch.clj::update-file-branch-from-source` inverts it before
   ;; `branch_merge.cljc::compute-changes`, which runs with main as the source
   ;; and the branch as the target). This test pins that contract at the
-  ;; command boundary: `:main` brings main's value into the
+  ;; command boundary: `:source` brings main's value into the
   ;; branch, `:branch` keeps the branch's value, and a per-attribute map
   ;; obeys the same vocabulary for the attribute it names.
   ;;
   ;; Each fixture also gives main one non-conflicting change, and it has to:
   ;; a resolution that keeps the branch's own side leaves the engine nothing
   ;; to apply for that entity, and an update with an empty change set takes
-  ;; the command's no-op path (`files_branch.clj::update-branch-from-main`
+  ;; the command's no-op path (`files_branch.clj::update-file-branch-from-source`
   ;; discards the branch's op log there and moves the merge base to main).
   ;; Without a main-side change, every resolution would leave the branch
-  ;; carrying main's value, so the two `:main` cases below could pass while
+  ;; carrying main's value, so the two `:source` cases below could pass while
   ;; the resolution was ignored. Main's extra change keeps the write path
   ;; exercised, and every case below fails if the mapping is inverted.
   (with-redefs [cf/flags (conj cf/flags :branching)]
@@ -400,14 +400,14 @@
                                 [:result :data :pages-index page-id :objects shape-id
                                  :fills 0 :fill-color]))
           update!     (fn [{:keys [branch-id]} resolutions]
-                        (th/command! {::th/type :update-branch-from-main
+                        (th/command! {::th/type :update-file-branch-from-source
                                       ::rpc/profile-id (:id profile)
                                       :branch-id branch-id
                                       :resolutions resolutions}))]
 
-      (t/testing "a whole-entity :main resolution applies main's value"
+      (t/testing "a whole-entity :source resolution applies main's value"
         (let [fx  (fixture 1 "res-doc-main")
-              out (update! fx {(:shape-id fx) :main})]
+              out (update! fx {(:shape-id fx) :source})]
           (t/is (nil? (:error out)))
           (t/is (= :updated (-> out :result :status)))
           (t/is (= main-fill (fill-of fx)))))
@@ -419,16 +419,16 @@
           (t/is (= :updated (-> out :result :status)))
           (t/is (= branch-fill (fill-of fx)))))
 
-      (t/testing "a per-attribute :main resolution applies main's value to that attribute"
+      (t/testing "a per-attribute :source resolution applies main's value to that attribute"
         (let [fx  (fixture 3 "res-doc-attr")
-              out (update! fx {(:shape-id fx) {:fills :main}})]
+              out (update! fx {(:shape-id fx) {:fills :source}})]
           (t/is (nil? (:error out)))
           (t/is (= :updated (-> out :result :status)))
           (t/is (= main-fill (fill-of fx))))))))
 
 ;; A branch stores no data payload, so its op log IS its work: an update
 ;; from main that discards that log without having folded the work into
-;; the new base destroys it. `files_branch.clj::update-branch-from-main`
+;; the new base destroys it. `files_branch.clj::update-file-branch-from-source`
 ;; has a cheap path for a branch that is already in sync with main, and
 ;; the three tests below pin both directions of it. Two of them reproduce
 ;; an observed loss, and the third pins the case the cheap path is for.
@@ -485,7 +485,7 @@
                         :operations [{:type :set :attr :fills :val (fills branch-fill)}]})
         (t/is (= branch-fill (read-fill)))
 
-        (let [out (th/command! {::th/type :update-branch-from-main
+        (let [out (th/command! {::th/type :update-file-branch-from-source
                                 ::rpc/profile-id (:id profile)
                                 :branch-id branch-id})]
           (t/is (nil? (:error out)))
@@ -550,7 +550,7 @@
                         :id shape-id
                         :operations [{:type :set :attr :fills :val (fills main-fill)}]})
 
-        (let [out (th/command! {::th/type :update-branch-from-main
+        (let [out (th/command! {::th/type :update-file-branch-from-source
                                 ::rpc/profile-id (:id profile)
                                 :branch-id branch-id
                                 :resolutions {shape-id :branch}})]
@@ -568,7 +568,7 @@
   ;; `branch_merge.cljc::compute-changes` reports main's own changes as the
   ;; set the update must apply, and the command then takes the squash
   ;; below. Removing this test lets the cheap path
-  ;; (`files_branch.clj::update-branch-from-main`) be widened or dropped
+  ;; (`files_branch.clj::update-file-branch-from-source`) be widened or dropped
   ;; until every such update pays for a branch snapshot, a branch revision,
   ;; and a rewrite of an empty log.
   (with-redefs [cf/flags (conj cf/flags :branching)]
@@ -626,9 +626,9 @@
 
         (t/testing "the branch is behind main before the update"
           (t/is (pos? (- (:revn (th/db-get :file {:id main-id}))
-                         (:base-revn base-before)))))
+                         (:base-source-revn base-before)))))
 
-        (let [out (th/command! {::th/type :update-branch-from-main
+        (let [out (th/command! {::th/type :update-file-branch-from-source
                                 ::rpc/profile-id (:id profile)
                                 :branch-id branch-id})]
           (t/is (nil? (:error out)))
@@ -640,7 +640,7 @@
         (t/testing "the merge base moved to main's current revision"
           (let [base-after (th/db-get :file-branch {:id branch-id})
                 main-file  (th/db-get :file {:id main-id})]
-            (t/is (= (:revn main-file) (:base-revn base-after)))
+            (t/is (= (:revn main-file) (:base-source-revn base-after)))
             (t/is (not= (:base-snapshot-id base-before) (:base-snapshot-id base-after)))))
 
         (t/testing "the branch was not rewritten to catch up"
@@ -706,7 +706,7 @@
             (t/is (= (:id profile2) (:created-by (first rows))))))))))
 
 (t/deftest create-refuses-a-blank-branch-name
-  ;; `::update-file-branch` refuses a blank name; creation used to
+  ;; `::update-file-branch-info` refuses a blank name; creation used to
   ;; accept one, leaving behind a branch the rename would reject.
   (with-redefs [cf/flags (conj cf/flags :branching)]
     (let [profile (th/create-profile* 1 {:is-active true})
@@ -757,11 +757,11 @@
           (t/is (contains? (-> out :result :data :colors) color-id))))
 
       (t/testing "materialize is what creates the payload row"
-        (let [out (th/command! {::th/type :materialize-file-branch
+        (let [out (th/command! {::th/type :detach-file-branch
                                 ::rpc/profile-id (:id profile)
-                                :branch-file-id branch-file-id})]
+                                :branch-id (:id create)})]
           (t/is (nil? (:error out)))
-          (t/is (= :materialized (-> out :result :status))))
+          (t/is (= :detached (-> out :result :status))))
         (t/is (some? (th/db-get :file-data {:file-id branch-file-id :type "main"})))))))
 
 ;;; --- Data versions across an upgrade
@@ -868,7 +868,7 @@
 
         (with-redefs [fmg/available-migrations upgraded]
           (t/testing "the compare reports the rename as a clean change"
-            (let [out (th/command! {::th/type :get-branch-diff
+            (let [out (th/command! {::th/type :get-file-branch-diff
                                     ::rpc/profile-id (:id profile)
                                     :branch-id (:id create)})]
               (t/is (nil? (:error out)))
@@ -920,11 +920,11 @@
                         :color {:id (uuid/random) :name "M" :path "Brand/M" :color "#333333" :opacity 1}})
 
         (read-file profile branch-file-id)
-        (t/is (= :updated (-> (th/command! {::th/type :update-branch-from-main
+        (t/is (= :updated (-> (th/command! {::th/type :update-file-branch-from-source
                                             ::rpc/profile-id (:id profile)
                                             :branch-id (:id create)})
                               :result :status)))
-        (t/is (nil? (:error (th/command! {::th/type :get-branch-diff
+        (t/is (nil? (:error (th/command! {::th/type :get-file-branch-diff
                                           ::rpc/profile-id (:id profile)
                                           :branch-id (:id create)}))))
         (let [out (th/command! {::th/type :merge-file-branch
@@ -965,7 +965,7 @@
                          {:type :add-color
                           :color {:id c2 :name "Two" :path "Brand / Two" :color "#222222" :opacity 1}})
 
-          (let [out (th/command! {::th/type :update-branch-from-main
+          (let [out (th/command! {::th/type :update-file-branch-from-source
                                   ::rpc/profile-id (:id profile)
                                   :branch-id (:id create)})]
             (t/is (nil? (:error out)))
@@ -980,8 +980,8 @@
                        (select-keys (get colors c2) [:name :path]))))))))))
 
 (t/deftest update-from-main-conflict-sides-name-the-documents
-  ;; `update-branch-from-main` reports its conflicts in document terms:
-  ;; `:main` carries main's value and `:branch` the branch's, whatever the
+  ;; `update-file-branch-from-source` reports its conflicts in document terms:
+  ;; `:source` carries main's value and `:branch` the branch's, whatever the
   ;; direction the engine ran in. Resolving the conflict to `:branch` then
   ;; keeps the branch's value end to end.
   (with-redefs [cf/flags (conj cf/flags :branching)]
@@ -1042,19 +1042,19 @@
                                 :color "#336699" :opacity 1}})
 
         (t/testing "the conflict names the two documents"
-          (let [out (th/command! {::th/type :update-branch-from-main
+          (let [out (th/command! {::th/type :update-file-branch-from-source
                                   ::rpc/profile-id (:id profile)
                                   :branch-id branch-id})
                 c   (first (-> out :result :conflicts))]
             (t/is (= :conflicts (-> out :result :status)))
             (t/is (= shape-id (:id c)))
-            (t/is (= main-fill (get-in c [:main :fills 0 :fill-color])))
+            (t/is (= main-fill (get-in c [:source :fills 0 :fill-color])))
             (t/is (= branch-fill (get-in c [:branch :fills 0 :fill-color])))
-            (t/is (= {:main (fills main-fill) :branch (fills branch-fill)}
+            (t/is (= {:source (fills main-fill) :branch (fills branch-fill)}
                      (get-in c [:changed-attrs :fills])))))
 
         (t/testing "resolved to :branch, the branch keeps its own value"
-          (let [out (th/command! {::th/type :update-branch-from-main
+          (let [out (th/command! {::th/type :update-file-branch-from-source
                                   ::rpc/profile-id (:id profile)
                                   :branch-id branch-id
                                   :resolutions {shape-id :branch}})]
@@ -1226,7 +1226,7 @@
 
           diff!
           (fn []
-            (-> (th/command! {::th/type :get-branch-diff
+            (-> (th/command! {::th/type :get-file-branch-diff
                               ::rpc/profile-id (:id profile)
                               :branch-id branch-id})
                 :result
@@ -1254,7 +1254,7 @@
   ;; The update applies main's media to the branch in the branch's id
   ;; space ({main-media-id -> branch-media-id}) and the squash row
   ;; records that map as applied, so a later comparison rebuilds the
-  ;; branch->main pairs from the record instead of the heuristic.
+  ;; branch->source pairs from the record instead of the heuristic.
   (with-redefs [cf/flags (conj cf/flags :branching)]
     (let [profile (th/create-profile* 1 {:is-active true})
           proj-id (:default-project-id profile)
@@ -1301,7 +1301,7 @@
                                          {:type :add-color
                                           :color {:id (uuid/random) :name "C1"
                                                   :color "#112233" :opacity 1}}))))
-      (t/is (= :updated (-> (th/command! {::th/type :update-branch-from-main
+      (t/is (= :updated (-> (th/command! {::th/type :update-file-branch-from-source
                                           ::rpc/profile-id (:id profile)
                                           :branch-id branch-id})
                             :result :status)))
@@ -1325,7 +1325,7 @@
 
           diff!
           (fn []
-            (-> (th/command! {::th/type :get-branch-diff
+            (-> (th/command! {::th/type :get-file-branch-diff
                               ::rpc/profile-id (:id profile)
                               :branch-id branch-id})
                 :result

@@ -184,7 +184,7 @@
 
 (defn- update-branch
   [{:keys [profile branch-id]} & {:as params}]
-  (th/command! (merge {::th/type :update-branch-from-main
+  (th/command! (merge {::th/type :update-file-branch-from-source
                        ::rpc/profile-id (:id profile)
                        :branch-id branch-id}
                       params)))
@@ -253,7 +253,7 @@
 
 (t/deftest merge-of-a-component-both-sides-edited-conflicts-on-the-component-only
   (with-redefs [cf/flags (conj cf/flags :branching)]
-    (doseq [[side color] [[:branch "#00ff00"] [:main "#0000ff"]]]
+    (doseq [[side color] [[:branch "#00ff00"] [:source "#0000ff"]]]
       (t/testing (str "resolved to " side)
         (let [{:keys [profile main-id page-id mi-id copy-id] :as ctx} (setup (if (= :branch side) 1 2))]
           (both-edit-component ctx)
@@ -277,7 +277,7 @@
 
 (t/deftest update-of-a-component-both-sides-edited-conflicts-on-the-component-only
   (with-redefs [cf/flags (conj cf/flags :branching)]
-    (doseq [[side color] [[:branch "#00ff00"] [:main "#0000ff"]]]
+    (doseq [[side color] [[:branch "#00ff00"] [:source "#0000ff"]]]
       (t/testing (str "resolved to " side)
         (let [{:keys [profile branch-file-id page-id mi-id copy-id] :as ctx} (setup (if (= :branch side) 1 2))]
           (both-edit-component ctx)
@@ -305,14 +305,14 @@
   (with-redefs [cf/flags (conj cf/flags :branching)]
     (let [{:keys [profile branch-id comp-id mi-id copy-id] :as ctx} (setup 1)]
       (both-edit-component ctx)
-      (let [out   (th/command! {::th/type :get-branch-diff
+      (let [out   (th/command! {::th/type :get-file-branch-diff
                                 ::rpc/profile-id (:id profile)
                                 :branch-id branch-id})
             diff  (:result out)
             entry (first (filter #(= copy-id (:id %)) (:changes diff)))]
         (t/is (nil? (:error out)))
         (t/is (= :settled (:status entry)))
-        (t/is (= {:side :main :reason :follows-component} (get-in entry [:settled :attrs :fills])))
+        (t/is (= {:side :source :reason :follows-component} (get-in entry [:settled :attrs :fills])))
         (t/is (= [[mi-id 1]] (mapv (juxt :id :copies-affected) (:conflicts diff))))
         (t/is (= [[comp-id mi-id #{copy-id}]]
                  (mapv (juxt :component-id :main-id #(into #{} (map :id) (:copies %)))
@@ -457,8 +457,8 @@
 
 (t/deftest a-token-both-sides-applied-to-the-component-conflicts-on-it-only
   (with-redefs [cf/flags (conj cf/flags :branching)]
-    (doseq [[n dir side token] [[1 :merge :branch "green"] [2 :merge :main "blue"]
-                                [3 :update :branch "green"] [4 :update :main "blue"]]]
+    (doseq [[n dir side token] [[1 :merge :branch "green"] [2 :merge :source "blue"]
+                                [3 :update :branch "green"] [4 :update :source "blue"]]]
       (t/testing (str dir " resolved to " side)
         (let [{:keys [profile main-id branch-file-id page-id mi-id copy-id] :as ctx} (setup n)]
           (save profile branch-file-id (tokenize-component page-id mi-id copy-id "green"))

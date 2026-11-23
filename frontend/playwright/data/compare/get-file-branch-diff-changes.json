@@ -7,7 +7,7 @@
       "~:key": "color//c7ce0794-0992-8105-8004-38f2804439a1",
       "~:label": "Brand",
       "~:changed-attrs": {
-        "~:color": { "~:main": "#000000", "~:branch": "#ff0000" }
+        "~:color": { "~:source": "#000000", "~:branch": "#ff0000" }
       }
     },
     {
@@ -27,8 +27,8 @@
   },
   "~:meta": {
     "~:base-at": "~m1713536343369",
-    "~:main-at": "~m1713873823633",
+    "~:source-at": "~m1713873823633",
     "~:branch-at": "~m1713873823633",
-    "~:main-revn": 11
+    "~:source-revn": 11
   }
 }

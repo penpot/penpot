@@ -115,7 +115,7 @@
           (t/is (some #(= "system" (:created-by %)) rows))))
 
       (t/testing "diff right after creation has no conflicts"
-        (let [out   (th/command! {::th/type :get-branch-diff
+        (let [out   (th/command! {::th/type :get-file-branch-diff
                                   ::rpc/profile-id (:id profile)
                                   :branch-id @branch-meta-id})
               stats (-> out :result :stats)
@@ -125,7 +125,7 @@
           ;; base == main == branch at fork -> nothing to merge, no conflicts
           (t/is (= 0 (:conflicts stats)))
           ;; the resolution UI gets the "when" of each side
-          (t/is (some? (:main-at meta)))
+          (t/is (some? (:source-at meta)))
           (t/is (some? (:branch-at meta)))
           (t/is (some? (:base-at meta)))))
 
@@ -289,17 +289,17 @@
                                 :changes [{:type :add-color :color color}]})]
           (t/is (nil? (:error out)))))
 
-      (t/testing "compare in the :main->branch direction shows main's incoming change"
-        (let [diff (:result (th/command! {::th/type :get-branch-diff
+      (t/testing "compare in the :source->branch direction shows main's incoming change"
+        (let [diff (:result (th/command! {::th/type :get-file-branch-diff
                                           ::rpc/profile-id (:id profile)
                                           :branch-id branch-id
-                                          :direction :main->branch}))
+                                          :direction :source->branch}))
               added (filterv #(= :added (:status %)) (:changes diff))]
           (t/is (= 1 (-> diff :stats :added)))
           (t/is (= color-id (-> added first :id)))))
 
       (t/testing "update the branch from main"
-        (let [out (th/command! {::th/type :update-branch-from-main
+        (let [out (th/command! {::th/type :update-file-branch-from-source
                                 ::rpc/profile-id (:id profile)
                                 :branch-id branch-id})]
           (t/is (nil? (:error out)))
@@ -314,7 +314,7 @@
         ;; merge base repositioned to the current state of main
         (let [[row] (th/db-query :file-branch {:id branch-id})
               mf    (th/db-get :file {:id (:id file)})]
-          (t/is (= (:revn mf) (:base-revn row))))))))
+          (t/is (= (:revn mf) (:base-source-revn row))))))))
 
 (t/deftest merge-applies-page-add
   (with-redefs [cf/flags (conj cf/flags :branching)]
@@ -531,9 +531,9 @@
           branch-file-id (:branch-file-id create)]
 
       (t/testing "rename"
-        (let [out (th/command! {::th/type :update-file-branch
+        (let [out (th/command! {::th/type :update-file-branch-info
                                 ::rpc/profile-id (:id profile)
-                                :id branch-id
+                                :branch-id branch-id
                                 :name "renamed"})]
           (t/is (nil? (:error out))))
         (let [[row] (th/db-query :file-branch {:id branch-id})]
@@ -542,7 +542,7 @@
       (t/testing "archive hides it from the default list"
         (let [out (th/command! {::th/type :archive-file-branch
                                 ::rpc/profile-id (:id profile)
-                                :id branch-id})]
+                                :branch-id branch-id})]
           (t/is (nil? (:error out)))
           (t/is (= "archived" (-> out :result :status))))
         (let [out (th/command! {::th/type :get-file-branches
@@ -558,7 +558,7 @@
       (t/testing "delete marks branch and branch file deleted"
         (let [out (th/command! {::th/type :delete-file-branch
                                 ::rpc/profile-id (:id profile)
-                                :id branch-id})]
+                                :branch-id branch-id})]
           (t/is (nil? (:error out)))
           (t/is (= :deleted (-> out :result :status))))
         (let [[row]  (th/db-query :file-branch {:id branch-id})
@@ -601,16 +601,16 @@
         (apply-change branch-file-id {:type :mod-color :color {:id cid :name "Brand" :color "#0000ff" :opacity 1}})
 
         (t/testing "update without resolutions reports conflicts"
-          (let [out (th/command! {::th/type :update-branch-from-main
+          (let [out (th/command! {::th/type :update-file-branch-from-source
                                   ::rpc/profile-id (:id profile)
                                   :branch-id branch-id})]
             (t/is (= :conflicts (-> out :result :status)))))
 
         (t/testing "resolving to main brings main's value into the branch"
-          (let [out (th/command! {::th/type :update-branch-from-main
+          (let [out (th/command! {::th/type :update-file-branch-from-source
                                   ::rpc/profile-id (:id profile)
                                   :branch-id branch-id
-                                  :resolutions {cid :main}})]
+                                  :resolutions {cid :source}})]
             (t/is (nil? (:error out)))
             (t/is (= :updated (-> out :result :status))))
           (let [out   (th/command! {::th/type :get-file
@@ -651,10 +651,10 @@
             deleted  (create! "deleted")]
         (th/command! {::th/type :archive-file-branch
                       ::rpc/profile-id (:id profile)
-                      :id (:id archived)})
+                      :branch-id (:id archived)})
         (th/command! {::th/type :delete-file-branch
                       ::rpc/profile-id (:id profile)
-                      :id (:id deleted)})
+                      :branch-id (:id deleted)})
 
         (t/testing "archived branches count, deleted ones do not"
           (t/is (= {:count 2} (:result (count-of (:id profile) (:id file))))))
@@ -842,7 +842,7 @@
           (t/is (every? #(= (:id file) (:file-id %)) merges))
           (t/is (= [nil "Ships the new header"] (mapv :comment merges))
                 "the comment is trimmed, and a blank one is no comment")
-          (t/is (every? (comp nil? :pull-request-id) merges))))
+          (t/is (every? (comp nil? :review-id) merges))))
 
       (t/testing "a merged branch leaves the branch listing"
         (let [out (th/command! {::th/type :get-file-branches
@@ -894,12 +894,12 @@
         (t/is (some? (:error out))))
 
       ;; but profile2 CAN update the branch from main (edits the branch)
-      (let [out (th/command! {::th/type :update-branch-from-main
+      (let [out (th/command! {::th/type :update-file-branch-from-source
                               ::rpc/profile-id (:id profile2)
                               :branch-id branch-id})]
         (t/is (nil? (:error out)))))))
 
-(t/deftest merge-refuses-stale-expected-main-revn
+(t/deftest merge-refuses-stale-expected-source-revn
   (with-redefs [cf/flags (conj cf/flags :branching)]
     (let [profile (th/create-profile* 1 {:is-active true})
           proj-id (:default-project-id profile)
@@ -914,7 +914,7 @@
       (let [out (th/command! {::th/type :merge-file-branch
                               ::rpc/profile-id (:id profile)
                               :branch-id branch-id
-                              :expected-main-revn 9999})
+                              :expected-source-revn 9999})
             error (:error out)]
         (t/is (some? error))
         (t/is (= :file-modified (-> error ex-data :code)))))))
@@ -977,7 +977,7 @@
                                   :id (:id file)})]
             (t/is (= "#0000ff" (get-in out [:result :data :colors cid :color])))))))))
 
-(t/deftest update-refuses-stale-expected-main-revn
+(t/deftest update-refuses-stale-expected-source-revn
   (with-redefs [cf/flags (conj cf/flags :branching)]
     (let [profile (th/create-profile* 1 {:is-active true})
           proj-id (:default-project-id profile)
@@ -996,10 +996,10 @@
                      {:type :add-color :color {:id cid :name "M" :color "#00ff00" :opacity 1}})
 
       (t/testing "a stale token is refused and the branch is unchanged"
-        (let [out   (th/command! {::th/type :update-branch-from-main
+        (let [out   (th/command! {::th/type :update-file-branch-from-source
                                   ::rpc/profile-id (:id profile)
                                   :branch-id branch-id
-                                  :expected-main-revn 9999})
+                                  :expected-source-revn 9999})
               error (:error out)]
           (t/is (some? error))
           (t/is (= :file-modified (-> error ex-data :code))))
@@ -1011,10 +1011,10 @@
 
       (t/testing "the current token lets the update through"
         (let [mf  (th/db-get :file {:id (:id file)})
-              out (th/command! {::th/type :update-branch-from-main
+              out (th/command! {::th/type :update-file-branch-from-source
                                 ::rpc/profile-id (:id profile)
                                 :branch-id branch-id
-                                :expected-main-revn (:revn mf)})]
+                                :expected-source-revn (:revn mf)})]
           (t/is (nil? (:error out)))
           (t/is (= :updated (-> out :result :status))))
         (let [out (th/command! {::th/type :get-file
@@ -1025,7 +1025,7 @@
 (t/deftest conflict-responses-carry-the-main-revn
   ;; A `:conflicts` response is what a resolving client works from, so it
   ;; names the revision of main its conflicts were computed against. The
-  ;; client sends that revision back as `expected-main-revn` with its
+  ;; client sends that revision back as `expected-source-revn` with its
   ;; resolutions, and a main that moved meanwhile is refused.
   (with-redefs [cf/flags (conj cf/flags :branching)]
     (let [profile   (th/create-profile* 1 {:is-active true})
@@ -1056,12 +1056,12 @@
 
         (t/testing "an update that stops on conflicts names main's revision"
           (let [revn (main-revn)
-                out  (th/command! {::th/type :update-branch-from-main
+                out  (th/command! {::th/type :update-file-branch-from-source
                                    ::rpc/profile-id (:id profile)
                                    :branch-id branch-id})]
             (t/is (nil? (:error out)))
             (t/is (= :conflicts (-> out :result :status)))
-            (t/is (= revn (-> out :result :main-revn)))))
+            (t/is (= revn (-> out :result :source-revn)))))
 
         (t/testing "a merge that stops on conflicts names main's revision"
           (let [revn (main-revn)
@@ -1070,14 +1070,14 @@
                                    :branch-id branch-id})]
             (t/is (nil? (:error out)))
             (t/is (= :conflicts (-> out :result :status)))
-            (t/is (= revn (-> out :result :main-revn)))
+            (t/is (= revn (-> out :result :source-revn)))
 
             (t/testing "and the merge accepts that revision back with resolutions"
               (let [retry (th/command! {::th/type :merge-file-branch
                                         ::rpc/profile-id (:id profile)
                                         :branch-id branch-id
                                         :resolutions {cid :branch}
-                                        :expected-main-revn (-> out :result :main-revn)})]
+                                        :expected-source-revn (-> out :result :source-revn)})]
                 (t/is (nil? (:error retry)))
                 (t/is (= :merged (-> retry :result :status)))))))))))
 
@@ -1107,7 +1107,7 @@
         (apply-change* profile (:id file)
                        {:type :add-color :color {:id id :name nm :color "#00ff00" :opacity 1}}))
 
-      (let [out (th/command! {::th/type :update-branch-from-main
+      (let [out (th/command! {::th/type :update-file-branch-from-source
                               ::rpc/profile-id (:id profile)
                               :branch-id branch-id})]
         (t/is (nil? (:error out)))
@@ -1140,6 +1140,166 @@
         (t/is (some? error))
         (t/is (= :cannot-branch-a-branch (-> error ex-data :code)))))))
 
+;;; --- Stacked branches (`:branch-stacking`)
+
+(defn- stacking-flags
+  []
+  (conj cf/flags :branching :branch-stacking))
+
+(defn- color-change
+  [id]
+  {:type :add-color
+   :color {:id id :name (str "c-" id) :color "#112233" :opacity 1}})
+
+(defn- colors-of
+  [profile file-id]
+  (-> (th/command! {::th/type :get-file
+                    ::rpc/profile-id (:id profile)
+                    :id file-id})
+      :result :data :colors keys set))
+
+(t/deftest branch-of-a-branch-with-the-stacking-flag
+  (with-redefs [cf/flags (stacking-flags)]
+    (let [profile (th/create-profile* 1 {:is-active true})
+          file    (th/create-file* 1 {:profile-id (:id profile)
+                                      :project-id (:default-project-id profile)})
+          parent  (:result (th/command! {::th/type :create-file-branch
+                                         ::rpc/profile-id (:id profile)
+                                         :file-id (:id file)
+                                         :name "parent"}))
+          out     (th/command! {::th/type :create-file-branch
+                                ::rpc/profile-id (:id profile)
+                                :file-id (:branch-file-id parent)
+                                :name "child"})
+          child   (:result out)]
+      (t/is (nil? (:error out)))
+      (t/is (= (:branch-file-id parent)
+               (:source-file-id (th/db-get :file-branch {:id (:id child)}))))
+      (t/testing "the whole chain is one family"
+        (let [family (:family-id (th/db-get :file {:id (:id file)}))]
+          (t/is (= family (:family-id (th/db-get :file {:id (:branch-file-id parent)}))))
+          (t/is (= family (:family-id (th/db-get :file {:id (:branch-file-id child)})))))))))
+
+(t/deftest child-merges-into-its-parent-branch
+  (with-redefs [cf/flags (stacking-flags)]
+    (let [profile  (th/create-profile* 1 {:is-active true})
+          file     (th/create-file* 1 {:profile-id (:id profile)
+                                       :project-id (:default-project-id profile)})
+          parent   (:result (th/command! {::th/type :create-file-branch
+                                          ::rpc/profile-id (:id profile)
+                                          :file-id (:id file)
+                                          :name "parent"}))
+          child    (:result (th/command! {::th/type :create-file-branch
+                                          ::rpc/profile-id (:id profile)
+                                          :file-id (:branch-file-id parent)
+                                          :name "child"}))
+          color-id (uuid/random)]
+      (t/is (nil? (:error (apply-change* profile (:branch-file-id child) (color-change color-id)))))
+
+      (let [out (th/command! {::th/type :merge-file-branch
+                              ::rpc/profile-id (:id profile)
+                              :branch-id (:id child)})]
+        (t/is (nil? (:error out)))
+        (t/is (= :merged (-> out :result :status))))
+
+      (t/testing "the parent branch takes the change in its op log, main does not"
+        (t/is (contains? (colors-of profile (:branch-file-id parent)) color-id))
+        (t/is (seq (th/db-query :file-branch-change {:branch-id (:id parent)})))
+        (t/is (empty? (th/db-query :file-data {:file-id (:branch-file-id parent) :type "main"})))
+        (t/is (not (contains? (colors-of profile (:id file)) color-id))))
+
+      (t/testing "the merge is recorded on the parent"
+        (let [[row] (th/db-query :file-branch-merge {:file-id (:branch-file-id parent)})]
+          (t/is (= "child" (:branch-name row)))))
+
+      (t/testing "merging the parent then brings the change into main"
+        (t/is (nil? (:error (th/command! {::th/type :merge-file-branch
+                                          ::rpc/profile-id (:id profile)
+                                          :branch-id (:id parent)}))))
+        (t/is (contains? (colors-of profile (:id file)) color-id))))))
+
+(t/deftest merging-a-parent-hands-its-open-child-to-the-target
+  (with-redefs [cf/flags (stacking-flags)]
+    (let [profile   (th/create-profile* 1 {:is-active true})
+          file      (th/create-file* 1 {:profile-id (:id profile)
+                                        :project-id (:default-project-id profile)})
+          parent    (:result (th/command! {::th/type :create-file-branch
+                                           ::rpc/profile-id (:id profile)
+                                           :file-id (:id file)
+                                           :name "parent"}))
+          parent-color (uuid/random)
+          _         (apply-change* profile (:branch-file-id parent) (color-change parent-color))
+          child     (:result (th/command! {::th/type :create-file-branch
+                                           ::rpc/profile-id (:id profile)
+                                           :file-id (:branch-file-id parent)
+                                           :name "child"}))
+          child-color (uuid/random)
+          _         (apply-change* profile (:branch-file-id child) (color-change child-color))
+          base-id   (:base-snapshot-id (th/db-get :file-branch {:id (:id child)}))]
+
+      (t/is (nil? (:error (th/command! {::th/type :merge-file-branch
+                                        ::rpc/profile-id (:id profile)
+                                        :branch-id (:id parent)}))))
+
+      (t/testing "the child now branches from main, its base with it"
+        (let [row (th/db-get :file-branch {:id (:id child)})]
+          (t/is (= "open" (:status row)))
+          (t/is (= (:id file) (:source-file-id row)))
+          (t/is (= 0 (:base-source-revn row)))
+          (t/is (= (:id file) (:file-id (th/db-get :file-change {:id base-id}
+                                                   {::db/remove-deleted false}))))))
+
+      (t/testing "the child still derives its state and compares against main"
+        (let [colors (colors-of profile (:branch-file-id child))]
+          (t/is (contains? colors parent-color))
+          (t/is (contains? colors child-color)))
+        (let [out (th/command! {::th/type :get-file-branch-diff
+                                ::rpc/profile-id (:id profile)
+                                :branch-id (:id child)})]
+          (t/is (nil? (:error out)))))
+
+      (t/testing "the child merges into main"
+        (t/is (nil? (:error (th/command! {::th/type :merge-file-branch
+                                          ::rpc/profile-id (:id profile)
+                                          :branch-id (:id child)}))))
+        (let [colors (colors-of profile (:id file))]
+          (t/is (contains? colors parent-color))
+          (t/is (contains? colors child-color)))))))
+
+(defn- branch-chain*
+  "A file, a branch of it and a branch of that branch."
+  []
+  (let [profile (th/create-profile* 1 {:is-active true})
+        proj-id (:default-project-id profile)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id proj-id})
+        create  (fn [source-id name]
+                  (:result (th/command! {::th/type :create-file-branch
+                                         ::rpc/profile-id (:id profile)
+                                         :file-id source-id
+                                         :name name})))
+        child   (create (:id file) "child")
+        grand   (create (:branch-file-id child) "grandchild")]
+    {:proj-id proj-id :file file :branches [child grand]}))
+
+(defn- branch-files-deleted?
+  [branches]
+  (every? #(some? (:deleted-at (th/db-get :file {:id (:branch-file-id %)}
+                                          {::db/remove-deleted false})))
+          branches))
+
+(t/deftest deleting-a-project-reaches-a-grandchild
+  (with-redefs [cf/flags (stacking-flags)]
+    (let [{:keys [proj-id branches]} (branch-chain*)]
+      (th/run-task! :delete-object {:object :project :id proj-id :deleted-at (ct/in-future {:days 7})})
+      (t/is (branch-files-deleted? branches)))))
+
+(t/deftest deleting-a-root-file-reaches-a-grandchild
+  (with-redefs [cf/flags (stacking-flags)]
+    (let [{:keys [file branches]} (branch-chain*)]
+      (th/run-task! :delete-object {:object :file :id (:id file) :deleted-at (ct/in-future {:days 7})})
+      (t/is (branch-files-deleted? branches)))))
+
 (t/deftest deleting-source-cascades-to-branches
   (with-redefs [cf/flags (conj cf/flags :branching)]
     (let [profile (th/create-profile* 1 {:is-active true})
@@ -1159,7 +1319,9 @@
 
       (let [[row] (th/db-query :file-branch {:id branch-id})
             bf    (th/db-get :file {:id branch-file-id} {::db/remove-deleted false})]
-        (t/is (some? (:deleted-at row)))
+        ;; the branch file is marked, and the edge of a branch no merge
+        ;; accepted is deleted with it
+        (t/is (nil? row))
         (t/is (some? (:deleted-at bf)))))))
 
 (t/deftest merge-copies-branch-media-into-main
@@ -1333,7 +1495,7 @@
 
       (t/is (nil? (:error out)))
 
-      (let [out (th/command! {::th/type :update-branch-from-main
+      (let [out (th/command! {::th/type :update-file-branch-from-source
                               ::rpc/profile-id (:id profile)
                               :branch-id branch-id})]
         (t/is (nil? (:error out)))
@@ -1486,11 +1648,11 @@
                                           :id branch-file-id}))]
 
         (t/testing "materialize persists the derived state and drops the branch"
-          (let [out (th/command! {::th/type :materialize-file-branch
+          (let [out (th/command! {::th/type :detach-file-branch
                                   ::rpc/profile-id (:id profile)
-                                  :branch-file-id branch-file-id})]
+                                  :branch-id branch-id})]
             (t/is (nil? (:error out)))
-            (t/is (= :materialized (-> out :result :status)))
+            (t/is (= :detached (-> out :result :status)))
             (t/is (true? (-> out :result :changed))))
 
           (let [row (th/db-get :file {:id branch-file-id})]
@@ -1531,11 +1693,11 @@
             (t/is (empty? errors))))
 
         (t/testing "materializing again is a no-op"
-          (let [out (th/command! {::th/type :materialize-file-branch
+          (let [out (th/command! {::th/type :detach-file-branch
                                   ::rpc/profile-id (:id profile)
-                                  :branch-file-id branch-file-id})]
+                                  :branch-id branch-id})]
             (t/is (nil? (:error out)))
-            (t/is (= :materialized (-> out :result :status)))
+            (t/is (= :detached (-> out :result :status)))
             (t/is (false? (-> out :result :changed)))))))))
 
 (defn- with-pruning-checked
@@ -1608,7 +1770,7 @@
         (let [result (volatile! nil)
               pruned (with-pruning-checked
                        (fn []
-                         (vreset! result (th/command! {::th/type :get-branch-diff
+                         (vreset! result (th/command! {::th/type :get-file-branch-diff
                                                        ::rpc/profile-id (:id profile)
                                                        :branch-id branch-id}))))]
           (t/is (nil? (:error @result)))
@@ -1660,7 +1822,7 @@
         (let [result (volatile! nil)
               pruned (with-pruning-checked
                        (fn []
-                         (vreset! result (th/command! {::th/type :get-branch-diff
+                         (vreset! result (th/command! {::th/type :get-file-branch-diff
                                                        ::rpc/profile-id (:id profile)
                                                        :branch-id branch-id}))))]
           (t/is (nil? (:error @result)))
@@ -1687,7 +1849,7 @@
             (t/is (= :branching-shape-limit-exceeded (:code data)))
             (t/is (= 0 (:limit data)))
             (t/is (pos? (:actual data)))
-            (t/is (str/includes? (:hint data) "materialise"))
+            (t/is (str/includes? (:hint data) "detach"))
             (t/is (empty? (th/db-query :file-branch {:source-file-id (:id file)}))))))
 
       (t/testing "the page gate refuses branch creation and names the limit"
@@ -1720,7 +1882,7 @@
                                            :features cfeat/supported-features
                                            :changes [{:type :add-page :id (uuid/random) :name "one"}]})]
           (with-redefs [cf/get (th/config-get-mock {:branching-max-oplog-changes 0})]
-            (let [out  (th/command! {::th/type :get-branch-diff
+            (let [out  (th/command! {::th/type :get-file-branch-diff
                                      ::rpc/profile-id (:id profile)
                                      :branch-id branch-id})
                   data (ex-data (:error out))]
@@ -1729,7 +1891,7 @@
               (t/is (= :branching-oplog-limit-exceeded (:code data)))
               (t/is (= 0 (:limit data)))
               (t/is (= 1 (:actual data)))
-              (t/is (str/includes? (:hint data) "materialise")))))))))
+              (t/is (str/includes? (:hint data) "detach")))))))))
 
 (t/deftest oplog-depth-gate-refuses-a-compare-before-the-derive
   ;; The derive replays the whole op log, so it is the cost the depth gate
@@ -1754,7 +1916,7 @@
                      (with-redefs [bfc/branch-file-data (fn [& args]
                                                           (swap! derives inc)
                                                           (apply derive args))]
-                       (th/command! {::th/type :get-branch-diff
+                       (th/command! {::th/type :get-file-branch-diff
                                      ::rpc/profile-id (:id profile)
                                      :branch-id branch-id})))]
 
@@ -1776,7 +1938,7 @@
             (t/is (= :compare (:operation data)))
             (t/is (= 1 (:actual data)))
             (t/is (zero? @derives) "the refused compare derived the branch first")
-            (t/is (str/includes? (:hint data) "materialise"))
+            (t/is (str/includes? (:hint data) "detach"))
             (t/is (not (str/includes? (:hint data) "merge")))))))))
 
 (t/deftest oplog-depth-gate-counts-the-changes-a-row-holds
@@ -1812,7 +1974,7 @@
                                          (fn [& args]
                                            (swap! derives inc)
                                            (apply derive! args))]
-                             (th/command! {::th/type :get-branch-diff
+                             (th/command! {::th/type :get-file-branch-diff
                                            ::rpc/profile-id (:id profile)
                                            :branch-id branch-id})))]
 
@@ -1846,7 +2008,7 @@
 
       (t/testing "an update from main stamps the squash it writes"
         (apply-change* profile (:id file) {:type :add-page :id (uuid/random) :name "on-main"})
-        (let [out (th/command! {::th/type :update-branch-from-main
+        (let [out (th/command! {::th/type :update-file-branch-from-source
                                 ::rpc/profile-id (:id profile)
                                 :branch-id branch-id})]
           (t/is (nil? (:error out)))
@@ -1938,13 +2100,13 @@
                                     ::rpc/profile-id (:id profile)
                                     :file-id (:id file)
                                     :name "audited-exit"})
-              out     (th/command! {::th/type :materialize-file-branch
+              out     (th/command! {::th/type :detach-file-branch
                                     ::rpc/profile-id (:id profile)
-                                    :branch-file-id (-> created :result :branch-file-id)})
+                                    :branch-id (-> created :result :id)})
               props   (-> out :result meta :app.loggers.audit/props)]
           (t/is (nil? (:error out)))
-          (t/is (= "materialize" (:branch-operation props)))
-          (t/is (= "materialized" (:branch-outcome props)))
+          (t/is (= "detach" (:branch-operation props)))
+          (t/is (= "detached" (:branch-outcome props)))
           (t/is (int? (:branch-duration-ms props))))))))
 
 (t/deftest delete-serializes-against-a-concurrent-merge
@@ -1981,7 +2143,7 @@
                         (orig-lock conn id))]
           (let [out (th/command! {::th/type :delete-file-branch
                                   ::rpc/profile-id (:id profile)
-                                  :id branch-id})]
+                                  :branch-id branch-id})]
             (t/is (= :branch-not-found (-> out :error ex-data :code)))
             (t/is (= :merged (-> @merged :result :status)))
             ;; the merge's deletion is the only one: the row still says
@@ -2013,7 +2175,7 @@
         (t/is (= :merged (-> out :result :status))))
       (let [out (th/command! {::th/type :delete-file-branch
                               ::rpc/profile-id (:id profile)
-                              :id branch-id})]
+                              :branch-id branch-id})]
         (t/is (= :branch-not-found (-> out :error ex-data :code))))
       (let [[row] (th/db-query :file-branch {:id branch-id})]
         (t/is (= "merged" (:status row)))
@@ -2036,9 +2198,9 @@
           branch-id      (:id create)
           branch-file-id (:branch-file-id create)]
 
-      (let [out (th/command! {::th/type :update-file-branch
+      (let [out (th/command! {::th/type :update-file-branch-info
                               ::rpc/profile-id (:id profile)
-                              :id branch-id
+                              :branch-id branch-id
                               :name "new-name"})]
         (t/is (nil? (:error out))))
 
@@ -2059,9 +2221,9 @@
           branch-id (:id create)]
 
       (t/testing "a rename carries its operation, outcome and duration"
-        (let [out   (th/command! {::th/type :update-file-branch
+        (let [out   (th/command! {::th/type :update-file-branch-info
                                   ::rpc/profile-id (:id profile)
-                                  :id branch-id
+                                  :branch-id branch-id
                                   :name "audited-rename"})
               props (-> out :result meta :app.loggers.audit/props)]
           (t/is (nil? (:error out)))
@@ -2072,7 +2234,7 @@
       (t/testing "archiving reports archive-branch, restoring restore-branch"
         (let [out   (th/command! {::th/type :archive-file-branch
                                   ::rpc/profile-id (:id profile)
-                                  :id branch-id})
+                                  :branch-id branch-id})
               props (-> out :result meta :app.loggers.audit/props)]
           (t/is (nil? (:error out)))
           (t/is (= "archive-branch" (:branch-operation props)))
@@ -2080,7 +2242,7 @@
           (t/is (int? (:branch-duration-ms props))))
         (let [out   (th/command! {::th/type :archive-file-branch
                                   ::rpc/profile-id (:id profile)
-                                  :id branch-id
+                                  :branch-id branch-id
                                   :archived false})
               props (-> out :result meta :app.loggers.audit/props)]
           (t/is (nil? (:error out)))
@@ -2091,7 +2253,7 @@
       (t/testing "a delete reports delete-branch and its outcome"
         (let [out   (th/command! {::th/type :delete-file-branch
                                   ::rpc/profile-id (:id profile)
-                                  :id branch-id})
+                                  :branch-id branch-id})
               props (-> out :result meta :app.loggers.audit/props)]
           (t/is (nil? (:error out)))
           (t/is (= "delete-branch" (:branch-operation props)))
@@ -2117,7 +2279,7 @@
                       :color {:id (uuid/random) :name "M" :color "#00ff00" :opacity 1}})
 
       ;; ...and the update repositions the merge base to a new snapshot
-      (let [out (th/command! {::th/type :update-branch-from-main
+      (let [out (th/command! {::th/type :update-file-branch-from-source
                               ::rpc/profile-id (:id profile)
                               :branch-id branch-id})]
         (t/is (nil? (:error out)))
@@ -2125,7 +2287,7 @@
 
       (let [brow (first (th/db-query :file-branch {:id branch-id}))
             base (first (th/db-query :file-change {:id (:base-snapshot-id brow)}))
-            meta (:meta (:result (th/command! {::th/type :get-branch-diff
+            meta (:meta (:result (th/command! {::th/type :get-file-branch-diff
                                                ::rpc/profile-id (:id profile)
                                                :branch-id branch-id})))]
         ;; `:base-at` is when the CURRENT base snapshot row was created...
@@ -2222,7 +2384,7 @@
         (let [[base] (th/db-query :file-branch {:id branch-id})]
           (with-redefs [cfv/validate-file unfixable
                         cfr/repair-file no-repair]
-            (let [out  (th/command! {::th/type :update-branch-from-main
+            (let [out  (th/command! {::th/type :update-file-branch-from-source
                                      ::rpc/profile-id (:id profile)
                                      :branch-id branch-id})
                   data (ex-data (:error out))]
@@ -2240,16 +2402,16 @@
 
           (let [[row] (th/db-query :file-branch {:id branch-id})]
             (t/is (= "open" (:status row)))
-            (t/is (= (:base-revn base) (:base-revn row))))))
+            (t/is (= (:base-source-revn base) (:base-source-revn row))))))
 
       (t/testing "materialize never refuses: the exit door lets the user out"
         (with-redefs [cfv/validate-file unfixable
                       cfr/repair-file no-repair]
-          (let [out (th/command! {::th/type :materialize-file-branch
+          (let [out (th/command! {::th/type :detach-file-branch
                                   ::rpc/profile-id (:id profile)
-                                  :branch-file-id branch-file-id})]
+                                  :branch-id branch-id})]
             (t/is (nil? (:error out)))
-            (t/is (= :materialized (-> out :result :status)))
+            (t/is (= :detached (-> out :result :status)))
             (t/is (true? (-> out :result :changed)))))
 
         (let [row (th/db-get :file {:id branch-file-id})]
@@ -2293,7 +2455,7 @@
 
         (with-redefs [cfv/validate-file (validate-once)
                       cfr/repair-file (repair! "repaired-update")]
-          (let [out (th/command! {::th/type :update-branch-from-main
+          (let [out (th/command! {::th/type :update-file-branch-from-source
                                   ::rpc/profile-id (:id profile)
                                   :branch-id branch-id})]
             (t/is (nil? (:error out)))
@@ -2374,7 +2536,7 @@
         ;; the cache now describes the pre-update branch
         (t/is (= 0 (-> (summary b2-fid) :colors :count)))
 
-        (let [out (th/command! {::th/type :update-branch-from-main
+        (let [out (th/command! {::th/type :update-file-branch-from-source
                                 ::rpc/profile-id (:id profile)
                                 :branch-id b2-id})]
           (t/is (nil? (:error out)))
@@ -2393,11 +2555,11 @@
                                                   :name "R"
                                                   :color "#778899"
                                                   :opacity 1}}])]
-          (let [out (th/command! {::th/type :materialize-file-branch
+          (let [out (th/command! {::th/type :detach-file-branch
                                   ::rpc/profile-id (:id profile)
-                                  :branch-file-id b2-fid})]
+                                  :branch-id b2-id})]
             (t/is (nil? (:error out)))
-            (t/is (= :materialized (-> out :result :status)))))
+            (t/is (= :detached (-> out :result :status)))))
 
         (t/is (= 2 (-> (summary b2-fid) :colors :count)))))))
 
@@ -2412,7 +2574,7 @@
 ;; outer one holds any lock.
 ;;
 ;; The RPC concurrency limiter caps `:merge-file-branch/global` and
-;; `:update-branch-from-main/global` at one permit each, and would
+;; `:update-file-branch-from-source/global` at one permit each, and would
 ;; serialize two same-kind commands completely (the nested one could
 ;; never run inside the outer one's transaction), hiding the lock-level
 ;; race these tests target; the interleaved tests run with the bulkhead
@@ -2505,7 +2667,7 @@
                         ;; from main repositions the merge base and
                         ;; releases the pin the branch carried so far
                         (when (compare-and-set! raced? false true)
-                          (t/is (nil? (:error (th/command! {::th/type :update-branch-from-main
+                          (t/is (nil? (:error (th/command! {::th/type :update-file-branch-from-source
                                                             ::rpc/profile-id (:id profile)
                                                             :branch-id branch-id}))))
                           (reset! superseded
@@ -2555,7 +2717,7 @@
                         ;; the second one takes any lock: it repositions
                         ;; the merge base and releases the old pin
                         (when (compare-and-set! raced? false true)
-                          (t/is (nil? (:error (th/command! {::th/type :update-branch-from-main
+                          (t/is (nil? (:error (th/command! {::th/type :update-file-branch-from-source
                                                             ::rpc/profile-id (:id profile)
                                                             :branch-id branch-id}))))
                           (let [brow (first (th/db-query :file-branch {:id branch-id}))]
@@ -2563,7 +2725,7 @@
                             (reset! superseded
                                     (:deleted-at (first (th/db-query :file-change {:id old-base}))))))
                         (orig-lock conn id))]
-          (let [out (th/command! {::th/type :update-branch-from-main
+          (let [out (th/command! {::th/type :update-file-branch-from-source
                                   ::rpc/profile-id (:id profile)
                                   :branch-id branch-id})]
             (t/is (= :updated (-> out :result :status)))))
@@ -2606,7 +2768,7 @@
                                         :branch (first (th/db-query :file-branch {:id branch-id}))}))]
         (let [out (th/command! {::th/type :delete-file-branch
                                 ::rpc/profile-id (:id profile)
-                                :id branch-id})]
+                                :branch-id branch-id})]
           (t/is (nil? (:error out)))
           (t/is (= :deleted (-> out :result :status)))))
       (let [[{:keys [message branch]}] @seen]
@@ -2634,12 +2796,12 @@
       (with-redefs [mbus/pub!
                     (fn [_ & {:keys [message]}]
                       (swap! seen conj {:message message
-                                        :main-revn (:revn (first (th/db-query :file {:id (:id file)})))}))]
+                                        :source-revn (:revn (first (th/db-query :file {:id (:id file)})))}))]
         ;; a refused merge publishes nothing
         (let [out (th/command! {::th/type :merge-file-branch
                                 ::rpc/profile-id (:id profile)
                                 :branch-id branch-id
-                                :expected-main-revn 9999})]
+                                :expected-source-revn 9999})]
           (t/is (= :file-modified (-> out :error ex-data :code)))
           (t/is (empty? @seen)))
         ;; the merge deletes the branch: its file's clients hear of the
@@ -2649,12 +2811,12 @@
                                 :branch-id branch-id})]
           (t/is (= :merged (-> out :result :status))))
         (let [by-type (into {} (map (juxt (comp :type :message) identity)) @seen)
-              {:keys [message main-revn]} (get by-type :file-merged)]
+              {:keys [message source-revn]} (get by-type :file-merged)]
           (t/is (= 2 (count @seen)))
           (t/is (= #{:file-deleted :file-merged} (set (keys by-type))))
           (t/is (= branch-file-id (get-in by-type [:file-deleted :message :file-id])))
           ;; the merge was already committed when the message left
-          (t/is (= (:revn message) main-revn)))))))
+          (t/is (= (:revn message) source-revn)))))))
 
 (t/deftest update-notifies-only-after-the-commit
   (with-redefs [cf/flags (conj cf/flags :branching)]
@@ -2677,7 +2839,7 @@
                       (swap! seen conj {:topic topic
                                         :message message
                                         :branch-revn (:revn (first (th/db-query :file {:id branch-file-id})))}))]
-        (let [out (th/command! {::th/type :update-branch-from-main
+        (let [out (th/command! {::th/type :update-file-branch-from-source
                                 ::rpc/profile-id (:id profile)
                                 :branch-id branch-id})]
           (t/is (= :updated (-> out :result :status))))
@@ -2688,11 +2850,10 @@
           ;; the update was already committed when the message left
           (t/is (= (:revn message) branch-revn)))))))
 
-(t/deftest materialize-takes-the-branch-file-id
-  ;; `:branch-file-id` names the branch FILE — the id `::create-file-branch`
-  ;; returns under that same key — while the sibling commands take the
-  ;; `file_branch` row id. The old generic `:file-id` name is refused by
-  ;; the schema.
+(t/deftest detach-takes-the-branch-row-id
+  ;; `:branch-id` names the `file_branch` row, as in every other branch
+  ;; command; the branch FILE id under the old `:branch-file-id` name is
+  ;; refused by the schema.
   (with-redefs [cf/flags (conj cf/flags :branching)]
     (let [profile        (th/create-profile* 1 {:is-active true})
           proj-id        (:default-project-id profile)
@@ -2702,25 +2863,25 @@
           create         (:result (th/command! {::th/type :create-file-branch
                                                 ::rpc/profile-id (:id profile)
                                                 :file-id (:id file)
-                                                :name "to-materialize"}))
+                                                :name "to-detach"}))
           branch-file-id (:branch-file-id create)]
 
-      (t/testing "the old :file-id param is refused by the schema"
-        (let [{:keys [error]} (th/command! {::th/type :materialize-file-branch
+      (t/testing "the old :branch-file-id param is refused by the schema"
+        (let [{:keys [error]} (th/command! {::th/type :detach-file-branch
                                             ::rpc/profile-id (:id profile)
-                                            :file-id branch-file-id})]
+                                            :branch-file-id branch-file-id})]
           (t/is (some? error))
           (t/is (th/ex-of-type? error :validation))
           (t/is (th/ex-of-code? error :params-validation)))
         ;; refused before the handler runs, so the branch is untouched
         (t/is (true? (:is-branch (th/db-get :file {:id branch-file-id})))))
 
-      (t/testing "materialize runs on :branch-file-id"
-        (let [{:keys [error result]} (th/command! {::th/type :materialize-file-branch
+      (t/testing "detach runs on :branch-id"
+        (let [{:keys [error result]} (th/command! {::th/type :detach-file-branch
                                                    ::rpc/profile-id (:id profile)
-                                                   :branch-file-id branch-file-id})]
+                                                   :branch-id (:id create)})]
           (t/is (nil? error))
-          (t/is (= :materialized (:status result)))
+          (t/is (= :detached (:status result)))
           (t/is (true? (:changed result))))))))
 
 ;;; --- A comparison that cannot be made is never "in sync"
@@ -2893,7 +3054,7 @@
                                          {:type :add-color
                                           :color {:id (uuid/random) :name "C1"
                                                   :color "#112233" :opacity 1}}))))
-      (let [out (th/command! {::th/type :update-branch-from-main
+      (let [out (th/command! {::th/type :update-file-branch-from-source
                               ::rpc/profile-id (:id profile)
                               :branch-id branch-id})]
         (t/is (= :updated (-> out :result :status))))
@@ -2909,7 +3070,7 @@
       (t/testing "deleting it on main deletes the branch's copy"
         (t/is (nil? (:error (apply-change* profile (:id file)
                                            {:type :del-media :id (:id fmo)}))))
-        (let [out (th/command! {::th/type :update-branch-from-main
+        (let [out (th/command! {::th/type :update-file-branch-from-source
                                 ::rpc/profile-id (:id profile)
                                 :branch-id branch-id})]
           (t/is (= :updated (-> out :result :status))))
@@ -2945,7 +3106,7 @@
                                                :color {:id (uuid/random) :name "C"
                                                        :color "#112233" :opacity 1}}))
           update! (fn [branch-id]
-                    (th/command! {::th/type :update-branch-from-main
+                    (th/command! {::th/type :update-file-branch-from-source
                                   ::rpc/profile-id (:id profile)
                                   :branch-id branch-id}))]
 
@@ -3051,7 +3212,7 @@
                       (spit path content)
                       (.setLastModified path mtime))
           compare!  (fn []
-                      (let [out (th/command! {::th/type :get-branch-diff
+                      (let [out (th/command! {::th/type :get-file-branch-diff
                                               ::rpc/profile-id (:id profile)
                                               :branch-id branch-id})]
                         (t/is (nil? (:error out)))))]
@@ -3164,7 +3325,7 @@
         (let [main-id (uuid/random)]
           (apply-change* profile (:id file)
                          {:type :add-color :color {:id main-id :name "Main" :color "#00ff00" :opacity 1}})
-          (let [out   (th/command! {::th/type :update-branch-from-main
+          (let [out   (th/command! {::th/type :update-file-branch-from-source
                                     ::rpc/profile-id (:id profile)
                                     :branch-id branch-id
                                     :excluded #{(bm/change-key {:kind :color :id main-id})}})
@@ -3201,7 +3362,7 @@
                      {:type :add-color :color {:id own :name "Own" :color "#333333" :opacity 1}})
 
       (t/testing "the update takes main's selected change and keeps the excluded one out"
-        (let [out (th/command! {::th/type :update-branch-from-main
+        (let [out (th/command! {::th/type :update-file-branch-from-source
                                 ::rpc/profile-id (:id profile)
                                 :branch-id branch-id
                                 :excluded #{(bm/change-key {:kind :color :id main-1})}})]
@@ -3221,7 +3382,7 @@
         ;; the base moved to main, and main still holds the excluded work
         (let [[row] (th/db-query :file-branch {:id branch-id})
               mf    (th/db-get :file {:id (:id file)})]
-          (t/is (= (:revn mf) (:base-revn row))))
+          (t/is (= (:revn mf) (:base-source-revn row))))
         (let [out (th/command! {::th/type :get-file
                                 ::rpc/profile-id (:id profile)
                                 :id (:id file)})]
@@ -3230,7 +3391,7 @@
       (t/testing "the excluded main work is a branch-side delta over the new base"
         ;; the branch does not carry it and the base does, so the squashed
         ;; net records the difference as a change of the branch's own
-        (let [diff (:result (th/command! {::th/type :get-branch-diff
+        (let [diff (:result (th/command! {::th/type :get-file-branch-diff
                                           ::rpc/profile-id (:id profile)
                                           :branch-id branch-id}))]
           (t/is (some #(and (= :color (:kind %))
@@ -3256,7 +3417,7 @@
                                           :file-id (:id file)
                                           :name "review-marks"}))
           mark     (fn [profile direction change-key fingerprint reviewed]
-                     (th/command! {::th/type :set-branch-change-review
+                     (th/command! {::th/type :set-branch-change-mark
                                    ::rpc/profile-id (:id profile)
                                    :branch-id (:id branch)
                                    :direction direction
@@ -3264,7 +3425,7 @@
                                    :fingerprint fingerprint
                                    :reviewed reviewed}))
           marks    (fn [profile direction]
-                     (let [out (th/command! {::th/type :get-branch-change-reviews
+                     (let [out (th/command! {::th/type :get-branch-change-marks
                                              ::rpc/profile-id (:id profile)
                                              :branch-id (:id branch)
                                              :direction direction})]
@@ -3272,49 +3433,49 @@
                        (into {} (map (juxt :change-key :fingerprint)) (:result out))))]
 
       (t/testing "a mark is read back with its fingerprint"
-        (t/is (nil? (:error (mark owner :branch->main "shape/p/1" "a1" true))))
-        (t/is (nil? (:error (mark owner :branch->main "shape/p/2" "b1" true))))
-        (t/is (= {"shape/p/1" "a1" "shape/p/2" "b1"} (marks owner :branch->main))))
+        (t/is (nil? (:error (mark owner :branch->source "shape/p/1" "a1" true))))
+        (t/is (nil? (:error (mark owner :branch->source "shape/p/2" "b1" true))))
+        (t/is (= {"shape/p/1" "a1" "shape/p/2" "b1"} (marks owner :branch->source))))
 
       (t/testing "marking again keeps one mark, with the newest fingerprint"
-        (t/is (nil? (:error (mark owner :branch->main "shape/p/1" "a2" true))))
-        (t/is (= {"shape/p/1" "a2" "shape/p/2" "b1"} (marks owner :branch->main))))
+        (t/is (nil? (:error (mark owner :branch->source "shape/p/1" "a2" true))))
+        (t/is (= {"shape/p/1" "a2" "shape/p/2" "b1"} (marks owner :branch->source))))
 
       (t/testing "each direction has its own marks"
-        (t/is (= {} (marks owner :main->branch)))
-        (t/is (nil? (:error (mark owner :main->branch "shape/p/1" "m1" true))))
-        (t/is (= {"shape/p/1" "m1"} (marks owner :main->branch)))
-        (t/is (= "a2" (get (marks owner :branch->main) "shape/p/1"))))
+        (t/is (= {} (marks owner :source->branch)))
+        (t/is (nil? (:error (mark owner :source->branch "shape/p/1" "m1" true))))
+        (t/is (= {"shape/p/1" "m1"} (marks owner :source->branch)))
+        (t/is (= "a2" (get (marks owner :branch->source) "shape/p/1"))))
 
       (t/testing "the marks of a profile are not anybody else's"
-        (t/is (= {} (marks mate :branch->main)))
-        (t/is (nil? (:error (mark mate :branch->main "shape/p/2" "theirs" true))))
-        (t/is (= {"shape/p/2" "theirs"} (marks mate :branch->main)))
-        (t/is (= "b1" (get (marks owner :branch->main) "shape/p/2"))))
+        (t/is (= {} (marks mate :branch->source)))
+        (t/is (nil? (:error (mark mate :branch->source "shape/p/2" "theirs" true))))
+        (t/is (= {"shape/p/2" "theirs"} (marks mate :branch->source)))
+        (t/is (= "b1" (get (marks owner :branch->source) "shape/p/2"))))
 
       (t/testing "clearing a mark removes that one alone"
-        (t/is (nil? (:error (mark owner :branch->main "shape/p/1" "a2" false))))
-        (t/is (= {"shape/p/2" "b1"} (marks owner :branch->main)))
-        (t/is (= {"shape/p/1" "m1"} (marks owner :main->branch)))
-        (t/is (= {"shape/p/2" "theirs"} (marks mate :branch->main))))
+        (t/is (nil? (:error (mark owner :branch->source "shape/p/1" "a2" false))))
+        (t/is (= {"shape/p/2" "b1"} (marks owner :branch->source)))
+        (t/is (= {"shape/p/1" "m1"} (marks owner :source->branch)))
+        (t/is (= {"shape/p/2" "theirs"} (marks mate :branch->source))))
 
       (t/testing "a profile that cannot read the file neither marks nor reads"
-        (let [out (mark stranger :branch->main "shape/p/1" "x" true)]
+        (let [out (mark stranger :branch->source "shape/p/1" "x" true)]
           (t/is (th/ex-info? (:error out)))
           (t/is (= :not-found (th/ex-type (:error out)))))
-        (let [out (th/command! {::th/type :get-branch-change-reviews
+        (let [out (th/command! {::th/type :get-branch-change-marks
                                 ::rpc/profile-id (:id stranger)
                                 :branch-id (:id branch)
-                                :direction :branch->main})]
+                                :direction :branch->source})]
           (t/is (= :not-found (th/ex-type (:error out)))))
-        (t/is (= {"shape/p/2" "b1"} (marks owner :branch->main))
+        (t/is (= {"shape/p/2" "b1"} (marks owner :branch->source))
               "the refused mark was not written"))
 
       (t/testing "a branch that does not exist is not found"
-        (let [out (th/command! {::th/type :get-branch-change-reviews
+        (let [out (th/command! {::th/type :get-branch-change-marks
                                 ::rpc/profile-id (:id owner)
                                 :branch-id (uuid/next)
-                                :direction :branch->main})]
+                                :direction :branch->source})]
           (t/is (= :not-found (th/ex-type (:error out))))
           (t/is (= :branch-not-found (th/ex-code (:error out)))))))))
 
@@ -3340,7 +3501,7 @@
 
       (t/testing "the update from main"
         (let [session-id (uuid/random)
-              out        (th/command! {::th/type :update-branch-from-main
+              out        (th/command! {::th/type :update-file-branch-from-source
                                        ::rpc/profile-id (:id profile)
                                        ::rpc/session-id session-id
                                        :branch-id branch-id})]

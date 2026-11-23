@@ -44,7 +44,7 @@
     (let [res (bm/compute-merge (file-data 0 {})
                                 (file-data 5 {})
                                 (file-data 0 nil-ref)
-                                :main->branch)]
+                                :source->branch)]
       (is (zero? (count (:conflicts res))) "a nil-versus-absent reference is not a branch edit")
       (is (= 1 (count (:changes res))) "main's move still travels as a change")
       (is (= :modified (:status (first (:changes res)))))))
@@ -53,7 +53,7 @@
     (let [res (bm/compute-merge (file-data 0 nil-ref)
                                 (file-data 5 nil-ref)
                                 (file-data 0 {})
-                                :main->branch)]
+                                :source->branch)]
       (is (zero? (count (:conflicts res))))
       (is (= 1 (count (:changes res)))))))
 
@@ -62,7 +62,7 @@
     (let [res (bm/compute-merge (file-data 0 {})
                                 (file-data 5 {})
                                 (file-data -5 {})
-                                :main->branch)]
+                                :source->branch)]
       (is (= 1 (count (:conflicts res))))
       (is (= :modify-modify (:reason (first (:conflicts res)))))))
 
@@ -70,6 +70,6 @@
     (let [res (bm/compute-merge (file-data 0 {})
                                 (file-data 5 {})
                                 (file-data 0 {})
-                                :main->branch)]
+                                :source->branch)]
       (is (zero? (count (:conflicts res))))
       (is (= 1 (count (:changes res)))))))

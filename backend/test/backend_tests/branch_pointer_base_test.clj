@@ -185,10 +185,10 @@
       (t/is (true? (th/run-task! :file-gc {:file-id file-id})))
       (t/is (every? (live-fragment-ids file-id) pinned))
 
-      (let [diff (:result (th/command! {::th/type :get-branch-diff
+      (let [diff (:result (th/command! {::th/type :get-file-branch-diff
                                         ::rpc/profile-id profile-id
                                         :branch-id (:id branch)
-                                        :direction :main->branch}))]
+                                        :direction :source->branch}))]
         (t/is (= 1 (-> diff :stats :added)))))))
 
 (t/deftest update-from-main-pins-main-pointers
@@ -197,7 +197,7 @@
           branch  (create-branch! profile-id file-id "update")
           page-id (first (:pages (realized-data file-id)))]
       (update-file! profile-id file-id [(add-rect page-id)])
-      (let [out (th/command! {::th/type :update-branch-from-main
+      (let [out (th/command! {::th/type :update-file-branch-from-source
                               ::rpc/profile-id profile-id
                               :branch-id (:id branch)})]
         (t/is (nil? (:error out)))
@@ -273,11 +273,11 @@
       (update-file! profile-id bfid [(rename-shape page-a shape "branch") (add-rect page-a)])
       (update-file! profile-id file-id [(rename-shape page-a shape "main") (add-rect page-b)])
 
-      (doseq [dir [:branch->main :main->branch]]
+      (doseq [dir [:branch->source :source->branch]]
         (let [loads (atom 0)
               load  fdata/load-pointer
               out   (with-redefs [fdata/load-pointer (fn [& args] (swap! loads inc) (apply load args))]
-                      (th/command! {::th/type :get-branch-diff
+                      (th/command! {::th/type :get-file-branch-diff
                                     ::rpc/profile-id profile-id
                                     :branch-id (:id branch)
                                     :direction dir}))
@@ -300,11 +300,11 @@
           _      (update-file! profile-id file-id [{:type :add-page :id page-b :name "B"}])
           branch (create-branch! profile-id file-id "reorder")]
       (update-file! profile-id file-id [{:type :mov-page :id page-b :index 0}])
-      (let [out   (th/command! {::th/type :get-branch-diff
+      (let [out   (th/command! {::th/type :get-file-branch-diff
                                 ::rpc/profile-id profile-id
                                 :branch-id (:id branch)
-                                :direction :main->branch})
-            eager (eager-compare file-id (:branch-file-id branch) :main->branch)]
+                                :direction :source->branch})
+            eager (eager-compare file-id (:branch-file-id branch) :source->branch)]
         (t/is (nil? (:error out)))
         (t/is (seq (:changes eager)))
         (t/is (= (:changes eager) (:changes (:result out))))))))

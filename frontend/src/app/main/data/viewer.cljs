@@ -154,7 +154,7 @@
                        ;; the pinned review snapshot instead of the live
                        ;; branch state
                        (uuid? pr-id)
-                       (assoc :pr-id pr-id))
+                       (assoc :review-id pr-id))
 
             resolve  (partial resolve-viewer-fragment file-id share-id)]
 

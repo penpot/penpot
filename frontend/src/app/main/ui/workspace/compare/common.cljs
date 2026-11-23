@@ -47,7 +47,7 @@
 
         {:keys [branch phase selected]} mode
         {:keys [status diff resolutions]} diff-st
-        incoming? (= :main->branch (:direction diff-st))
+        incoming? (= :source->branch (:direction diff-st))
         excluded  (dwb/diff-excluded diff-st)
         reviewed  (or (:reviewed diff-st) #{})
         active    (:filter mode)
@@ -94,10 +94,10 @@
   branch changed and has what main itself changed."
   [objects page-id items other incoming]
   (let [on-page (fn [items] (filterv #(= page-id (:page-id %)) items))
-        [own others] (if incoming [:main :branch] [:branch :main])]
+        [own others] (if incoming [:source :branch] [:branch :source])]
     (-> objects
-        (brs/side-objects (on-page items) :main :branch own)
-        (brs/side-objects (on-page other) :main :branch others))))
+        (brs/side-objects (on-page items) :source :branch own)
+        (brs/side-objects (on-page other) :source :branch others))))
 
 (defn main-extent
   "The rect that holds every layer of `main` (`main-objects`), nil for an
@@ -147,7 +147,7 @@
                                                      (brc/selectable-item? %)
                                                      (not (contains? excluded (:key %))))
                                                (:items model))
-                                      :main :branch :main))
+                                      :source :branch :source))
         result
         (cond
           (:hidden mode)

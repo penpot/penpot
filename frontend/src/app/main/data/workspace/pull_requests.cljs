@@ -57,7 +57,7 @@
     (watch [_ state _]
       (when (enabled?)
         (when-let [file-id (:current-file-id state)]
-          (->> (rp/cmd! :get-file-pull-requests {:file-id file-id :include-closed true})
+          (->> (rp/cmd! :get-file-branch-reviews {:file-id file-id :include-closed true})
                (rx/map #(update-pull-requests-state {:status :loaded :data %}))
                (rx/catch (fn [_]
                            (rx/of (update-pull-requests-state {:status :loaded :data []}))))))))))
@@ -93,7 +93,7 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (when (and (enabled?) (some? team-id))
-        (->> (rp/cmd! :get-profile-pending-reviews {:team-id team-id})
+        (->> (rp/cmd! :get-profile-review-requests {:team-id team-id})
              (rx/map set-pending-reviews)
              (rx/catch (fn [_] (rx/of (set-pending-reviews [])))))))))
 
@@ -127,7 +127,7 @@
            (rx/of ::dwp/force-persist (ev/event {::ev/name "create-pull-request"}))
            (rx/of (ev/event {::ev/name "create-pull-request"})))
          (->> wait
-              (rx/mapcat #(rp/cmd! :create-pull-request
+              (rx/mapcat #(rp/cmd! :create-branch-review
                                    {:branch-id branch-id
                                     :title title
                                     :description description
@@ -138,7 +138,7 @@
                         (fetch-pull-requests))))
               (rx/catch
                (fn [cause]
-                 (if (= :pull-request-already-exists (:code (ex-data cause)))
+                 (if (= :branch-review-already-exists (:code (ex-data cause)))
                    (rx/of (ntf/warn (tr "workspace.pull-requests.create.already-exists")))
                    (rx/of (ntf/error (tr "workspace.pull-requests.create.error"))))))))))))
 
@@ -150,7 +150,7 @@
   (ptk/reify ::update-pull-request
     ptk/WatchEvent
     (watch [_ _ _]
-      (->> (rp/cmd! :update-pull-request
+      (->> (rp/cmd! :update-branch-review-info
                     (cond-> {:id id}
                       (some? title)       (assoc :title title)
                       (some? description) (assoc :description description)
@@ -176,7 +176,7 @@
            (rx/of ::dwp/force-persist (ev/event {::ev/name "update-pull-request-snapshot"}))
            (rx/of (ev/event {::ev/name "update-pull-request-snapshot"})))
          (->> wait
-              (rx/mapcat #(rp/cmd! :update-pull-request-snapshot {:id id}))
+              (rx/mapcat #(rp/cmd! :update-branch-review-revision {:id id}))
               (rx/mapcat
                (fn [{:keys [updated]}]
                  (rx/of (if updated
@@ -189,19 +189,21 @@
                  (rx/of (ntf/error (tr "workspace.pull-requests.lifecycle.error")))))))))))
 
 (defn submit-review
-  "Submit (or retract, with \"pending\") a verdict on a pull request. Only
+  "Submit a verdict on a pull request, or retract it with `nil`. Only
   assigned reviewers may submit (enforced server-side)."
   [id verdict comment]
   (assert (uuid? id) "expected valid uuid for `id`")
-  (assert (contains? #{"approved" "changes-requested" "pending"} verdict)
+  (assert (or (nil? verdict)
+              (contains? #{"approved" "changes-requested"} verdict))
           "expected a valid verdict")
   (ptk/reify ::submit-review
     ptk/WatchEvent
     (watch [_ _ _]
       (rx/concat
        (rx/of (ev/event {::ev/name "submit-pull-request-review"}))
-       (->> (rp/cmd! :submit-pull-request-review
-                     (cond-> {:id id :state verdict}
+       (->> (rp/cmd! :submit-branch-review-verdict
+                     (cond-> {:id id}
+                       (some? verdict) (assoc :verdict verdict)
                        (some? comment) (assoc :comment comment)))
             (rx/mapcat
              (fn [_]
@@ -225,7 +227,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [inside? (= id (get-in state [:workspace-pr-preview :pr-id]))]
-        (->> (rp/cmd! :close-pull-request {:id id})
+        (->> (rp/cmd! :close-branch-review {:id id})
              (rx/mapcat
               (fn [_]
                 (rx/concat
@@ -244,7 +246,7 @@
   (ptk/reify ::reopen-pull-request
     ptk/WatchEvent
     (watch [_ _ _]
-      (->> (rp/cmd! :reopen-pull-request {:id id})
+      (->> (rp/cmd! :reopen-branch-review {:id id})
            (rx/mapcat (fn [_] (rx/of (ntf/success (tr "workspace.pull-requests.lifecycle.reopened"))
                                      (fetch-pull-requests))))
            (rx/catch
@@ -253,7 +255,7 @@
                 :branch-not-open
                 (rx/of (ntf/warn (tr "workspace.pull-requests.lifecycle.branch-gone")))
 
-                :pull-request-already-exists
+                :branch-review-already-exists
                 (rx/of (ntf/warn (tr "workspace.pull-requests.create.already-exists")))
 
                 (rx/of (ntf/error (tr "workspace.pull-requests.lifecycle.error"))))))))))
@@ -299,7 +301,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (when (= id (get-in state [:workspace-pr-preview :pr-id]))
-        (->> (rp/cmd! :get-pull-request {:id id})
+        (->> (rp/cmd! :get-branch-review {:id id})
              (rx/mapcat
               (fn [info]
                 (if (not= "open" (:status info))
@@ -344,7 +346,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [file-id (:current-file-id state)]
-        (->> (rp/cmd! :get-pull-request {:id pr-id})
+        (->> (rp/cmd! :get-branch-review {:id pr-id})
              (rx/mapcat
               (fn [info]
                 (cond

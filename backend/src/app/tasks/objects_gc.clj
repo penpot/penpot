@@ -135,17 +135,18 @@
                                       {:fetch-size 5}))))))
 
 ;; A save of a branch under review records one activity row, and the table
-;; grows for the life of the review. The rows of one person's sitting (the
-;; same review and profile, no gap longer than `ra/default-session-gap-ms`)
-;; fold into one row once the sitting is finished: its entries concatenate
-;; in order, its last revn and timestamp stay. The reading side replays
-;; entries in order, so the fold leaves `net-entries` unchanged.
+;; grows for the life of the review, which is the life of its file family.
+;; The rows of one person's sitting (the same review and profile, no gap
+;; longer than `ra/default-session-gap-ms`) fold into one row once the
+;; sitting is finished: its entries concatenate in order, its last revn
+;; and timestamp stay. The reading side replays entries in order, so the
+;; fold leaves `net-entries` unchanged.
 
 (def ^:private sql:get-review-activity-groups
-  "SELECT pull_request_id, profile_id
-     FROM file_pull_request_activity
+  "SELECT review_id, profile_id
+     FROM file_branch_review_activity
     WHERE created_at <= ?
-    GROUP BY pull_request_id, profile_id
+    GROUP BY review_id, profile_id
     ORDER BY max(created_at) ASC")
 
 ;; The profile comparison treats two nulls as equal, so the rows of a
@@ -157,8 +158,8 @@
 ;; the other transaction instead, so the sitting is read whole.
 (def ^:private sql:lock-review-activity
   "SELECT id, revn, entries, created_at
-     FROM file_pull_request_activity
-    WHERE pull_request_id = ?
+     FROM file_branch_review_activity
+    WHERE review_id = ?
       AND profile_id IS NOT DISTINCT FROM ?::uuid
       AND created_at <= ?
     ORDER BY created_at ASC, id ASC
@@ -166,8 +167,8 @@
 
 (def ^:private sql:get-next-review-activity
   "SELECT created_at
-     FROM file_pull_request_activity
-    WHERE pull_request_id = ?
+     FROM file_branch_review_activity
+    WHERE review_id = ?
       AND profile_id IS NOT DISTINCT FROM ?::uuid
       AND created_at > ?
     ORDER BY created_at ASC, id ASC
@@ -202,11 +203,11 @@
 
 (defn- fold-review-activity-pair
   "Folds every finished sitting of one review and profile into one row."
-  [conn [pull-request-id profile-id] cutoff gap-ms]
+  [conn [review-id profile-id] cutoff gap-ms]
   (let [rows     (db/exec! conn [sql:lock-review-activity
-                                 pull-request-id profile-id cutoff])
+                                 review-id profile-id cutoff])
         next-row (db/exec-one! conn [sql:get-next-review-activity
-                                     pull-request-id profile-id cutoff])
+                                     review-id profile-id cutoff])
         sittings (-> (split-sittings rows gap-ms)
                      (drop-unfinished next-row gap-ms))]
     (reduce (fn [total sitting]
@@ -216,12 +217,12 @@
                       entries  (into []
                                      (mapcat (comp blob/decode :entries))
                                      sitting)]
-                  (db/update! conn :file-pull-request-activity
+                  (db/update! conn :file-branch-review-activity
                               {:entries (blob/encode entries)}
                               {:id (:id last-row)}
                               {::db/return-keys false})
                   (doseq [row (butlast sitting)]
-                    (db/delete! conn :file-pull-request-activity
+                    (db/delete! conn :file-branch-review-activity
                                 {:id (:id row)}
                                 {::db/return-keys false}))
                   (+ total (dec (count sitting))))))
@@ -258,7 +259,7 @@
                     (+ total deleted))))]
     (db/tx-run! (assoc cfg ::db/read-only true)
                 (fn [{:keys [::db/conn ::cutoff]}]
-                  (transduce (comp (map (juxt :pull-request-id :profile-id))
+                  (transduce (comp (map (juxt :review-id :profile-id))
                                    (partition-all chunk-size))
                              rf 0
                              (db/plan conn [sql:get-review-activity-groups cutoff]

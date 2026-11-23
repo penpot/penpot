@@ -161,7 +161,7 @@
         ;; valid either way; the branch diff is what shows that the
         ;; repair travels with the branch
         (t/testing "the branch diff carries the repaired shape"
-          (let [diff (:result (th/command! {::th/type :get-branch-diff
+          (let [diff (:result (th/command! {::th/type :get-file-branch-diff
                                             ::rpc/profile-id (:id profile)
                                             :branch-id branch-id}))]
             (t/is (some #(= shape-a (:id %)) (:changes diff)))))

@@ -48,11 +48,11 @@
 (defn- display-state
   "The single most relevant label for a pull request: its stored status
   for finished ones, the aggregate review verdict for open ones."
-  [{:keys [status review-state]}]
+  [{:keys [status overall-verdict]}]
   (case status
     "merged" :merged
     "closed" :closed
-    (case review-state
+    (case overall-verdict
       "changes-requested" :changes-requested
       "approved"          :approved
       "in-review"         :in-review
@@ -84,7 +84,7 @@
   "[current-approvals total-reviewers] of a pull request; stale verdicts
   do not count."
   [{:keys [reviews]}]
-  [(count (filter #(and (= "approved" (:state %)) (not (:stale %))) reviews))
+  [(count (filter #(and (= "approved" (:verdict %)) (not (:stale %))) reviews))
    (count reviews)])
 
 (defn- pr->branch
@@ -471,7 +471,7 @@
         [:div {:class (stl/css :pr-info-item)}
          [:span {:class (stl/css :field-label)} (tr "workspace.pull-requests.info.updated-at")]
          [:div {:class (stl/css :pr-info-value)}
-          [:span (ct/format-inst (:review-updated-at pr) :localized-date-time)]]]
+          [:span (ct/format-inst (:pinned-at pr) :localized-date-time)]]]
 
         [:div {:class (stl/css :pr-info-item)}
          [:span {:class (stl/css :field-label)} (tr "workspace.pull-requests.info.approvals")]
@@ -491,19 +491,19 @@
                 [:span {:class (stl/css :reviewer-name)}
                  (get reviewer :fullname "—")]
                 [:span {:class (stl/css-case :reviewer-state true
-                                             :reviewer-approved (and (= "approved" (:state review))
+                                             :reviewer-approved (and (= "approved" (:verdict review))
                                                                      (not (:stale review)))
-                                             :reviewer-changes (and (= "changes-requested" (:state review))
+                                             :reviewer-changes (and (= "changes-requested" (:verdict review))
                                                                     (not (:stale review)))
                                              :reviewer-stale (:stale review))}
                  (cond
                    (:stale review)
                    (tr "workspace.pull-requests.review-state.stale")
 
-                   (= "approved" (:state review))
+                   (= "approved" (:verdict review))
                    (tr "workspace.pull-requests.review-state.approved")
 
-                   (= "changes-requested" (:state review))
+                   (= "changes-requested" (:verdict review))
                    (tr "workspace.pull-requests.review-state.changes-requested")
 
                    :else
@@ -628,7 +628,7 @@
         outdated?  (boolean (:outdated pr))
 
         tasks      (mf/with-memo [tasks* pr]
-                     (filterv #(= (:id pr) (:pull-request-id %)) (vals tasks*)))
+                     (filterv #(= (:id pr) (:review-id %)) (vals tasks*)))
         closed     (count (filter #(contains? #{"verified" "wont-do"} (:status %)) tasks))
         total      (count tasks)
 

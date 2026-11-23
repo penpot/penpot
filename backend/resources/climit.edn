@@ -4,7 +4,7 @@
 ;; Optional: timeout in milliseconds, omitted means the thread waits for a
 ;; permit forever, and a saturated limiter parks it for good. Values below:
 ;; 60s for operations that can be slow (file updates, images, fonts, thumbnails,
-;; snapshots, imports, branches, pull requests) and 30s for the rest.
+;; snapshots, imports, branches, branch reviews) and 30s for the rest.
 ;; Note: a queue bounds how many waiters pile up, a timeout bounds how long one
 ;; waiter waits. Every entry sets a timeout and a queue: a command takes the
 ;; limits it declares before the root ones, so the queue of a limit is where
@@ -99,20 +99,20 @@
  ;;  * `create-file-branch` realizes main once and writes one snapshot
  ;;    (`backend/src/app/rpc/commands/files_branch.clj::create-file-branch`),
  ;;    which is the anchor's shape and the anchor's cost.
- ;;  * `merge-file-branch` and `update-branch-from-main` hold three
+ ;;  * `merge-file-branch` and `update-file-branch-from-source` hold three
  ;;    realized documents at once: main, the derived branch, and the base
  ;;    snapshot (`files_branch.clj::merge-file-branch`,
- ;;    `files_branch.clj::update-branch-from-main`). Both also write a
+ ;;    `files_branch.clj::update-file-branch-from-source`). Both also write a
  ;;    snapshot and a whole file payload, and the update computes a
  ;;    second diff for the squash, so they earn the tightest count.
- ;;  * `materialize-file-branch` realizes the branch and the libraries it
+ ;;  * `detach-file-branch` realizes the branch and the libraries it
  ;;    validates against, then writes the whole payload
- ;;    (`files_branch.clj::materialize-file-branch`), so it sits between
+ ;;    (`files_branch.clj::detach-file-branch`), so it sits between
  ;;    the anchor and the merge pair.
- ;;  * `create-pull-request` and `update-pull-request-snapshot` realize the
- ;;    branch once and write one review snapshot
- ;;    (`files_pull_request.clj::create-pull-request`,
- ;;    `files_pull_request.clj::update-pull-request-snapshot`), which is
+ ;;  * `create-branch-review` and `update-branch-review-revision` realize
+ ;;    the branch once and write one review snapshot
+ ;;    (`files_branch_review.clj::create-branch-review`,
+ ;;    `files_branch_review.clj::update-branch-review-revision`), which is
  ;;    the anchor's shape again.
  ;;
  ;; The numbers here are example defaults, not measurements. Every entry
@@ -157,20 +157,20 @@
  ;; An update from main holds the same three documents and pays for a
  ;; snapshot write and a squash diff on top, so it takes the merge's
  ;; count. Provisional.
- :update-branch-from-main/global
+ :update-file-branch-from-source/global
  {:permits 1 :queue 2 :timeout 60000}
 
- :update-branch-from-main/by-profile
+ :update-file-branch-from-source/by-profile
  {:permits 1 :queue 2 :timeout 60000}
 
- ;; Materialize realizes one document plus its libraries and writes the
+ ;; Detach realizes one document plus its libraries and writes the
  ;; payload, which is cheaper than a merge and dearer than the anchor,
  ;; so it admits two where the merge admits one and the anchor admits
  ;; three. Provisional.
- :materialize-file-branch/global
+ :detach-file-branch/global
  {:permits 2 :queue 4 :timeout 60000}
 
- :materialize-file-branch/by-profile
+ :detach-file-branch/by-profile
  {:permits 1 :queue 2 :timeout 60000}
 
  ;; A cold listing realizes main once and derives every uncached branch,
@@ -188,21 +188,21 @@
  ;; The compare dialog's query holds main, the derived branch, and the
  ;; base at once, the same three documents the listing holds, so it takes
  ;; the same count. Provisional.
- :get-branch-diff/global
+ :get-file-branch-diff/global
  {:permits 6 :queue 15 :timeout 60000}
 
- ;; Creating a pull request realizes the branch and pins one review
+ ;; Creating a branch review realizes the branch and pins one review
  ;; snapshot, the anchor's shape. Provisional.
- :create-pull-request/global
+ :create-branch-review/global
  {:permits 3 :queue 5 :timeout 60000}
 
- :create-pull-request/by-profile
+ :create-branch-review/by-profile
  {:permits 1 :queue 2 :timeout 60000}
 
  ;; Publishing the branch state also realizes the branch and pins one
  ;; snapshot. The command declares a single instance-wide queue
- ;; (`files_pull_request.clj::update-pull-request-snapshot`), so the
+ ;; (`files_branch_review.clj::update-branch-review-revision`), so the
  ;; bounded wait sits on the global entry here rather than on a
  ;; per-profile entry. Provisional.
- :update-pull-request-snapshot/global
+ :update-branch-review-revision/global
  {:permits 3 :queue 4 :timeout 60000}}

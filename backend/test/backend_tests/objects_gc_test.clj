@@ -165,32 +165,35 @@
                                                   {::db/remove-deleted false})))))))
 
 (defn- create-review!
-  "An open review of a branch of `file`: the branch and pull request rows
-  the review activity points at."
+  "An open review of a branch of `file`: the branch file, the branch edge
+  the review hangs from, and the review row its activity points at. The
+  branch joins the family of its source, as `create-file-branch` does."
   [profile file]
-  (let [branch (th/create-file* 2 {:profile-id (:id profile)
+  (let [family (:family-id (th/db-get :file {:id (:id file)}))
+        branch (th/create-file* 2 {:profile-id (:id profile)
                                    :project-id (:default-project-id profile)})
-        _      (th/db-update! :file {:is-branch true} {:id (:id branch)})
+        _      (th/db-update! :file {:is-branch true
+                                     :family-id family}
+                              {:id (:id branch)})
         br     (th/db-insert! :file-branch
                               {:id (uuid/next)
                                :branch-file-id (:id branch)
                                :source-file-id (:id file)
-                               :base-revn 0
+                               :base-source-revn 0
                                :created-by (:id profile)
                                :name "feature-checkout"})]
-    (th/db-insert! :file-pull-request
+    (th/db-insert! :file-branch-review
                    {:id (uuid/next)
                     :file-branch-id (:id br)
-                    :source-file-id (:id branch)
-                    :target-file-id (:id file)
+                    :family-id family
                     :title "Checkout redesign"
                     :created-by (:id profile)})))
 
 (defn- insert-activity!
   [profile review revn entries created-at]
-  (th/db-insert! :file-pull-request-activity
+  (th/db-insert! :file-branch-review-activity
                  {:id (uuid/next)
-                  :pull-request-id (:id review)
+                  :review-id (:id review)
                   :profile-id (:id profile)
                   :revn revn
                   :entries (blob/encode entries)
@@ -227,8 +230,8 @@
     (t/is (pos? (:processed result)))
 
     (let [rows (sort-by :created-at
-                        (th/db-query :file-pull-request-activity
-                                     {:pull-request-id (:id review)}))]
+                        (th/db-query :file-branch-review-activity
+                                     {:review-id (:id review)}))]
       (t/testing "the sitting folds into its last row and the open one stays"
         (t/is (= 2 (count rows)))
         (t/is (= [(:id row3) (:id row4)] (mapv :id rows))))

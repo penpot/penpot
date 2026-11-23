@@ -58,15 +58,15 @@
      (mock/with-mocks* {rp/cmd! (cmd-stub calls)}
        (let [store (on-branch)]
          (ptk/emit! store (dwcp/enter branch))
-         (await (async/wait-for #(some? (last-call calls :get-branch-diff))
+         (await (async/wait-for #(some? (last-call calls :get-file-branch-diff))
                                 "the diff is asked for"))
          (t/is (dwcp/comparing? @store))
          (t/is (= {:id (:id branch) :name "feature-login" :branch-file-id branch-file-id}
                   (get-in @store [:workspace-compare :branch]))
                "the mode keeps what names the branch, not its counts")
          (t/is (= :compare (get-in @store [:workspace-compare :phase])))
-         (t/is (= {:branch-id (:id branch) :direction :branch->main}
-                  (last-call calls :get-branch-diff)))
+         (t/is (= {:branch-id (:id branch) :direction :branch->source}
+                  (last-call calls :get-file-branch-diff)))
          (rx/dispose! store))))))
 
 (t/deftest ^:async the-mode-does-not-open-with-main-open
@@ -107,8 +107,8 @@
          (ptk/emit! store (dwcp/enter branch))
          (ptk/emit! store (dwcp/set-filter :library))
          (ptk/emit! store (dwcp/select "color//a/1" {:travel false}))
-         (ptk/emit! store (dwcp/set-direction :main->branch))
-         (await (async/wait-for #(= :main->branch (:direction (last-call calls :get-branch-diff)))
+         (ptk/emit! store (dwcp/set-direction :source->branch))
+         (await (async/wait-for #(= :source->branch (:direction (last-call calls :get-file-branch-diff)))
                                 "the other direction is asked for"))
          (t/is (= {:selected nil :filter :all :phase :compare}
                   (select-keys (:workspace-compare @store) [:selected :filter :phase])))
@@ -120,8 +120,8 @@
         clash   {:kind :shape :status :conflict :id (uuid/next)}
         answers (mock/stub (fn [cmd params]
                              (swap! calls conj [cmd params])
-                             (if (and (= :get-branch-diff cmd)
-                                      (= :main->branch (:direction params)))
+                             (if (and (= :get-file-branch-diff cmd)
+                                      (= :source->branch (:direction params)))
                                (rx/of {:changes [change] :conflicts [clash]})
                                (rx/subject))))]
     (await
@@ -132,15 +132,15 @@
          (ptk/emit! store (dwcp/enter branch))
          (await (async/wait-for #(some? (get-in @store [:workspace-compare :other-changes]))
                                 "the other direction answers"))
-         (t/is (= [:branch->main :main->branch]
+         (t/is (= [:branch->source :source->branch]
                   (->> @calls
-                       (filter #(= :get-branch-diff (first %)))
+                       (filter #(= :get-file-branch-diff (first %)))
                        (mapv (comp :direction second))))
                "the diff listed, then its other direction")
          (t/is (= [change] (get-in @store [:workspace-compare :other-changes])))
          (t/is (= [clash] (get-in @store [:workspace-compare :other-conflicts]))
                "with its conflicts, which its tab counts")
-         (ptk/emit! store (dwcp/set-direction :main->branch))
+         (ptk/emit! store (dwcp/set-direction :source->branch))
          (t/is (nil? (get-in @store [:workspace-compare :other-changes]))
                "the ones of the direction left do not stay")
          (t/is (nil? (get-in @store [:workspace-compare :other-conflicts])))
@@ -160,8 +160,8 @@
     (ptk/emit! store (dwcp/set-view :highlight))
     (t/is (false? (get-in @store [:workspace-compare :hidden]))
           "picking a view shows the changes again")
-    (ptk/emit! store (dwcp/set-count :main->branch 4))
-    (t/is (= {:main->branch 4} (get-in @store [:workspace-compare :counts])))
+    (ptk/emit! store (dwcp/set-count :source->branch 4))
+    (t/is (= {:source->branch 4} (get-in @store [:workspace-compare :counts])))
     (rx/dispose! store)))
 
 (t/deftest choosing-the-change-chosen-lets-it-go
@@ -285,7 +285,7 @@
          (ptk/emit! store (dwcp/set-side-mode :aligned))
          (ptk/emit! store (dwcp/exit))
          (ptk/emit! store (dwcp/enter branch))
-         (await (async/wait-for #(some? (last-call calls :get-branch-diff))
+         (await (async/wait-for #(some? (last-call calls :get-file-branch-diff))
                                 "the diff is asked for"))
          (t/is (= :aligned (side-mode store)) "the one picked last")
          (rx/dispose! store))))
@@ -301,7 +301,7 @@
      (mock/with-mocks* {rp/cmd! (cmd-stub calls)}
        (let [store (on-branch)]
          (ptk/emit! store (dwcp/enter branch))
-         (await (async/wait-for #(some? (last-call calls :get-branch-diff))
+         (await (async/wait-for #(some? (last-call calls :get-file-branch-diff))
                                 "the diff is asked for"))
          (t/is (= :linked (side-mode store)))
          (rx/dispose! store))))
@@ -320,7 +320,7 @@
                                                           :mode :merge
                                                           :conflicts [{:id (uuid/next)}]}))
          (ptk/emit! store (dwcp/start-resolve))
-         (await (async/wait-for #(some? (last-call calls :get-branch-diff))
+         (await (async/wait-for #(some? (last-call calls :get-file-branch-diff))
                                 "the diff is asked for"))
          (t/is (= :aligned (side-mode store)))
          (rx/dispose! store))))
@@ -440,7 +440,7 @@
     (ptk/emit! store (dwcp/toggle-hidden))
     (ptk/emit! store (dwcp/set-filter :library))
     (ptk/emit! store (dwcp/toggle-group "library"))
-    (ptk/emit! store (dwcp/set-count :main->branch 4))
+    (ptk/emit! store (dwcp/set-count :source->branch 4))
     (t/is (not (dwcp/comparing? @store)) "none of them creates the mode")
     (rx/dispose! store)))
 
@@ -506,11 +506,11 @@
                                                           :mode :update
                                                           :conflicts [{:id (uuid/next)}]}))
          (ptk/emit! store (dwcp/start-resolve))
-         (await (async/wait-for #(some? (last-call calls :get-branch-diff))
+         (await (async/wait-for #(some? (last-call calls :get-file-branch-diff))
                                 "the diff is asked for"))
          (t/is (= :resolve (get-in @store [:workspace-compare :phase])))
          (t/is (= (:id branch) (get-in @store [:workspace-compare :branch :id])))
-         (t/is (= :main->branch (:direction (last-call calls :get-branch-diff)))
+         (t/is (= :source->branch (:direction (last-call calls :get-file-branch-diff)))
                "an update resolves main's changes")
          (rx/dispose! store))))))
 
@@ -534,14 +534,14 @@
         store (make-store {:current-file-id branch-file-id
                            :workspace-compare {:branch branch :phase :resolve :selected "x"}
                            :workspace-branch-diff {:branch-id (:id branch)
-                                                   :resolutions {conflict-id :main}}
+                                                   :resolutions {conflict-id :source}}
                            :workspace-branch-conflicts {:branch-id (:id branch)
                                                         :conflicts [{:id conflict-id}]}})]
     (ptk/emit! store (dwcp/back-to-compare))
     (t/is (= {:phase :compare :selected nil}
              (select-keys (:workspace-compare @store) [:phase :selected])))
     (t/is (nil? (:workspace-branch-conflicts @store)))
-    (t/is (= {conflict-id :main} (get-in @store [:workspace-branch-diff :resolutions])))
+    (t/is (= {conflict-id :source} (get-in @store [:workspace-branch-diff :resolutions])))
     (rx/dispose! store)))
 
 (defn- resolving
@@ -554,8 +554,8 @@
                :workspace-branch-diff
                (merge {:branch-id (:id branch)
                        :status :loaded
-                       :diff {:conflicts [{:id conflict-id}] :meta {:main-revn 9}}
-                       :resolutions {conflict-id :branch (uuid/next) :main}}
+                       :diff {:conflicts [{:id conflict-id}] :meta {:source-revn 9}}
+                       :resolutions {conflict-id :branch (uuid/next) :source}}
                       diff-st)
                :workspace-branch-conflicts attempt}))
 
@@ -565,12 +565,12 @@
     (await
      (mock/with-mocks* {rp/cmd! (cmd-stub calls)}
        (let [store (resolving conflict-id
-                              {:direction :branch->main
-                               :excluded {:branch->main #{"from-the-comparison"}}}
+                              {:direction :branch->source
+                               :excluded {:branch->source #{"from-the-comparison"}}}
                               {:branch-id (:id branch)
                                :mode :merge
                                :conflicts [{:id conflict-id}]
-                               :main-revn 7
+                               :source-revn 7
                                :excluded #{"from-the-attempt"}
                                :comment "Ships the header"})]
          (ptk/emit! store (dwcp/apply-resolutions))
@@ -580,7 +580,7 @@
                    :resolutions {conflict-id :branch}
                    :excluded #{"from-the-attempt"}
                    :comment "Ships the header"
-                   :expected-main-revn 9}
+                   :expected-source-revn 9}
                   (last-call calls :merge-file-branch))
                "only the choices of its conflicts travel, with its selection and comment")
          (rx/dispose! store))))))
@@ -591,17 +591,17 @@
     (await
      (mock/with-mocks* {rp/cmd! (cmd-stub calls)}
        (let [store (resolving conflict-id
-                              {:direction :main->branch
-                               :excluded {:main->branch #{"left-out"}
-                                          :branch->main #{"other-direction"}}}
+                              {:direction :source->branch
+                               :excluded {:source->branch #{"left-out"}
+                                          :branch->source #{"other-direction"}}}
                               nil)]
          (ptk/emit! store (dwcp/apply-resolutions))
-         (await (async/wait-for #(some? (last-call calls :update-branch-from-main))
+         (await (async/wait-for #(some? (last-call calls :update-file-branch-from-source))
                                 "the update is asked for"))
          (t/is (= {:branch-id (:id branch)
                    :resolutions {conflict-id :branch}
                    :excluded #{"left-out"}
-                   :expected-main-revn 9}
-                  (last-call calls :update-branch-from-main)))
+                   :expected-source-revn 9}
+                  (last-call calls :update-file-branch-from-source)))
          (t/is (nil? (last-call calls :merge-file-branch)))
          (rx/dispose! store))))))

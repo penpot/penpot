@@ -11,6 +11,10 @@ CREATE INDEX file_task__comment_id__idx
 
 -- Until now a task came from a whole thread, with the title of its first
 -- message.
+--
+-- The update has no `AND t.comment_id IS NULL` guard: it runs once, when
+-- the column is new and empty. A squash that replays this step after
+-- tasks hold messages must add the guard, or it rewrites their messages.
 UPDATE file_task AS t
    SET comment_id = (SELECT c.id
                        FROM comment AS c

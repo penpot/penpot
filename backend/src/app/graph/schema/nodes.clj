@@ -49,7 +49,6 @@
    :extra  [:map
             [:options {:optional true} [:maybe :map]]
             [:backend {:optional true} [:maybe :string]]
-            [:comment-thread-seqn {:optional true} [:maybe :int]]
             [:ignore-sync-until {:optional true} [:maybe ::ct/inst]]]})
 
 (def ^:private page-projection
