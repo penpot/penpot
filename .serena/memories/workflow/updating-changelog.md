@@ -29,7 +29,7 @@ Editing `CHANGES.md` happens only on explicit request or as part of the release 
 - **Two labels override the Issue Type**: `breaking change` → an entry only under `:boom:`, never in its regular section; `release highlight` → an extra entry under `:rocket:` on top of its regular entry.
 - **Only closed issues**. An open issue in the milestone is not generated, even if someone added a provisional entry by hand before the merge.
 - **Excluded issues**: `no changelog`, `Task` issue type, `Rejected` project status. `release blocker` is not a changelog filter.
-- **Bugs that never reached production** stay out: a bug found and fixed while building a feature of the same, unreleased version never affected users. The team rarely labels them, so the flow finds them with `dev-only-bugs` and labels them `no changelog` (section 8, step 3).
+- **Bugs that never reached production** stay out: a bug found and fixed while building a feature of the same, unreleased version never affected users. The flow finds these bugs and labels the sure cases `no changelog` (section 8, Review).
 - **Excluded PRs**: a PR with `no issue required` does not bring an entry of its own.
 - **An issue with no milestone** belongs to another (probably private) project: it is neither changelog candidate nor anomaly.
 
@@ -140,7 +140,7 @@ Rules for the note:
 - Lists exactly the milestone issues with the `release highlight` label, and nothing else. Product decides highlights by labelling issues; a regeneration cannot undo that choice.
 - Every entry copies the text and references of the issue's regular entry and MUST carry both an issue link and a PR reference.
 - If no issue is labelled, leave the section out; do not pick highlights yourself.
-- Never edit `:rocket:` by hand: add or remove the label and regenerate.
+- No command generates `:rocket:` today. Build it from the eligible labelled issues in the snapshot, using their regular entries, and verify it with `report`. Change the label on GitHub to change which issues appear; do not pick highlights in the changelog.
 
 ## 7. `:lock:`: security fixes
 
@@ -157,20 +157,41 @@ Generated from the advisories that declare the version in `patched_versions`; ne
 
 ## 8. Flow
 
-1. **Confirm the version** (a semver string such as `2.19.0`) with the user when it is not obvious.
-2. **Collect the release inputs**: `python3 scripts/changelog.py collect "<VERSION>" > "$snapshot"`. Use a private temporary file because the JSON can contain unpublished advisories and PR text. It contains the milestone issues and PRs, batched related records, generated-section inputs, dev-only bug candidates and a comparison with the current changelog. Use `eligible_issues` for changelog candidates and `comparison` for pre-flight. Collection does not write to the changelog or GitHub.
-3. **Keep out bugs that never reached production**: review `dev_only_bugs` in the snapshot. If `auto` has entries, run `python3 scripts/changelog.py dev-only-bugs "<VERSION>" --snapshot "$snapshot" --apply` to label the sure ones `no changelog` on GitHub, then repeat step 2. The label puts the decision on the issue, so it survives a regeneration.
-   - **Sure**: a bug whose parent issue is a `Feature` or `Enhancement` of the same milestone. `--apply` labels these.
-   - **Candidates**: a bug whose parent is an epic of the same milestone, that carries the `regression` label, or whose "Affected versions" / "Environment" field names only hourly, develop, staging, PRE or the milestone version itself. `regression` also marks regressions users hit in production, and the field says where the bug was seen, not since when it exists, so never label these yourself: show them to the user, who labels the ones they confirm. The anomaly report lists them too (section 10).
-4. **Resolve PR links** using `prs` and `related_prs` in the snapshot. Look up a PR separately only if you discover a candidate not already in the snapshot.
-5. **Categorize** by Issue Type and the two labels (section 2), and **build the descriptions** (section 4).
-6. **Verify PR merge status** before writing: only include PRs with state `MERGED` in the snapshot or verified by `check-merged` if looked up separately. If a closing PR was closed unmerged, look for the PR that superseded it.
-7. **Reconcile the existing text** (section 9).
-8. **Generate `:boom:`**: `python3 scripts/changelog.py boom "<VERSION>" --snapshot "$snapshot"` prints the section; add `--write` to update just that subsection in `CHANGES.md`. If there are no entries, `--write` removes the subsection or leaves it absent.
-9. **Generate `:rocket:`** from the `release highlight` label (section 6).
-10. **Generate `:lock:`**: `python3 scripts/changelog.py security "<VERSION>" --snapshot "$snapshot"` prints the section; add `--write` to replace it in `CHANGES.md`. The contract lives in section 7.
-11. **Cross-check PRs**: `python3 scripts/changelog.py cross-ref "<VERSION>" --snapshot "$snapshot"`. It compares the snapshot against the updated changelog, lists missing merged PRs and warns about closed (unmerged) PRs. PRs linked from `:lock:` count as referenced; an advisory with no PR is invisible here by design.
-12. **Generate the anomaly report**: `python3 scripts/changelog.py report "<VERSION>" --snapshot "$snapshot"`. It reads the updated changelog and overwrites `CHANGES-ISSUES.md` (section 10). If you need the report to resolve a new reference not known to the snapshot, collect again first.
+### Collect
+
+- Confirm the version if unclear. Use an authenticated `gh` CLI and a private temporary file: the snapshot can contain unpublished advisories and PR text.
+
+```bash
+snapshot=$(mktemp)
+python3 scripts/changelog.py collect "<VERSION>" > "$snapshot"
+```
+
+- Use the same snapshot throughout. Collect again if GitHub data changes or if the final report needs to resolve a new reference absent from the snapshot.
+
+### Review
+
+- Use `eligible_issues` to select entries, `comparison` to reconcile the current text (section 9), and `prs` and `related_prs` to verify links. Reference only `MERGED` PRs. If a closing PR was closed unmerged, look for its replacement; use `check-merged` for PRs looked up outside the snapshot.
+- Review `dev_only_bugs`. A bug with a `Feature` or `Enhancement` parent in the same milestone is a sure case (`auto`). An epic parent in the same milestone, a `regression` label, or an unreleased-only environment is only a hint (`suggested`). Show candidates to the user, who labels the ones they confirm.
+- **Separate GitHub write, only if there are sure cases:** `python3 scripts/changelog.py dev-only-bugs "<VERSION>" --snapshot "$snapshot" --apply` adds `no changelog` to `auto` issues and prints each successful edit to stdout. If a later edit fails, earlier edits still stand. Collect again after applying labels before proceeding.
+
+### Write
+
+- Update only on explicit request or during a release. Categorize and draft entries using sections 2–4. Build `:rocket:` from `release highlight` as described in section 6.
+- Use the generators for `:boom:` and `:lock:` (sections 5 and 7). Omit `--write` to preview; use it only after the version header exists.
+
+```bash
+python3 scripts/changelog.py boom "<VERSION>" --snapshot "$snapshot" --write
+python3 scripts/changelog.py security "<VERSION>" --snapshot "$snapshot" --write
+```
+
+### Verify
+
+- `cross-ref` shows missing merged PRs and warns about closed, unmerged PRs. `report` checks the updated changelog and overwrites `CHANGES-ISSUES.md` (section 10).
+
+```bash
+python3 scripts/changelog.py cross-ref "<VERSION>" --snapshot "$snapshot"
+python3 scripts/changelog.py report "<VERSION>" --snapshot "$snapshot"
+```
 
 ## 9. Pre-flight: reconcile before writing
 
@@ -198,7 +219,7 @@ Start from a fresh `collect` snapshot. Refresh it if GitHub changes during revie
 - **C — released X.Y.0 version without a `:rocket:` section** (gap; patches never carry highlights).
 - **D — `:rocket:` entry without issue AND PR references** (gap).
 
-**Bugs that may never have reached production** are warnings too (section 8, step 3): sub-issues of a milestone feature still unlabelled (run `dev-only-bugs --apply`) and candidates for the user to confirm. They never count toward the total.
+**Bugs that may never have reached production** are warnings too (section 8, Review): sure cases still unlabelled and candidates for the user to confirm. They never count toward the total.
 
 Anything else is a rule violation, not a report item: fix it in the pre-flight and re-run.
 
@@ -208,7 +229,7 @@ Anything else is a rule violation, not a report item: fix it in the pre-flight a
 - **Labels, not emoji**: title prefixes are cosmetic and often missing; the section comes from Issue Type and the two labels.
 - **Taiga references**: old entries link to Taiga. Resolve them to the GitHub issue via the description text or the PRs that mention the Taiga URL, then link issue and PR.
 - **Long-lived links only**: runbooks and docs referenced from a note must point to `staging` or `main`, never to a feature branch that will be deleted.
-- **Generated sections**: `:boom:`, `:rocket:` and `:lock:` are generated. Never patch them by hand; edit the label, the note comment or the advisory and re-run.
+- **Generated sections**: use `boom` and `security` for `:boom:` and `:lock:`. Change the label, note or advisory on GitHub rather than patching their output. For `:rocket:`, follow the label-driven workflow in section 6.
 - **Deleted or transferred issues**: an issue referenced in the changelog that returns 410/404 (deleted or moved out of the repo) must lose its entry in the pre-flight. Its security fixes, if any, stay in `:lock:` through the advisory.
 
 ## 12. Where the code is

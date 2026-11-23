@@ -765,10 +765,30 @@ def cmd_dev_only_bugs(args: argparse.Namespace) -> None:
 
     if args.apply:
         for e in auto:
-            subprocess.run(
-                ["gh", "issue", "edit", str(e["issue"]), "--repo", REPO,
-                 "--add-label", "no changelog"],
-                check=True, capture_output=True,
+            url = issue_url(e["issue"])
+            try:
+                subprocess.run(
+                    [
+                        "gh",
+                        "issue",
+                        "edit",
+                        str(e["issue"]),
+                        "--repo",
+                        REPO,
+                        "--add-label",
+                        "no changelog",
+                    ],
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                )
+            except subprocess.CalledProcessError as err:
+                detail = (err.stderr or "").strip()
+                detail = detail or f"gh exited with status {err.returncode}"
+                sys.exit(f"ERROR: could not apply `no changelog` to {url}: {detail}")
+            print(
+                f"Applied `no changelog`: {url} ({e['reason']})",
+                flush=True,
             )
         print(f"Labelled {len(auto)} issues `no changelog`", file=sys.stderr)
 

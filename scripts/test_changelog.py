@@ -844,5 +844,45 @@ class FindDevOnlyBugsTests(unittest.TestCase):
         self.assertEqual([e["issue"] for e in suggested], [3, 5, 9])
 
 
+class DevOnlyBugsApplyTests(unittest.TestCase):
+    def test_reports_only_successful_edits_if_a_later_edit_fails(self):
+        snapshot = {
+            "dev_only_bugs": {
+                "auto": [
+                    {
+                        "issue": 1,
+                        "issue_title": "First bug",
+                        "reason": "Same milestone",
+                    },
+                    {
+                        "issue": 2,
+                        "issue_title": "Second bug",
+                        "reason": "Same milestone",
+                    },
+                ],
+                "suggested": [],
+            }
+        }
+        args = argparse.Namespace(milestone="2.19.0", apply=True)
+        out = io.StringIO()
+        with (
+            patch.object(ch, "load_snapshot", return_value=snapshot),
+            patch.object(
+                ch.subprocess,
+                "run",
+                side_effect=[None, ch.subprocess.CalledProcessError(1, "gh")],
+            ),
+            contextlib.redirect_stdout(out),
+            self.assertRaisesRegex(SystemExit, r"could not apply .*issues/2"),
+        ):
+            ch.cmd_dev_only_bugs(args)
+
+        self.assertIn(
+            "Applied `no changelog`: https://github.com/penpot/penpot/issues/1",
+            out.getvalue(),
+        )
+        self.assertNotIn("https://github.com/penpot/penpot/issues/2", out.getvalue())
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
