@@ -318,7 +318,7 @@
                                objects))
 
             changes (-> (pcb/empty-changes it)
-                        (pcb/add-page new-page-id page)
+                        (pcb/add-page page)
                         (pcb/with-page page)
                         (pcb/with-objects objects)
                         ;; Create new components for each duplicated variant main

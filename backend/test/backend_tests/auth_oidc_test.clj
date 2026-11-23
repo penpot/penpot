@@ -821,7 +821,8 @@
         (binding [cf/config {:public-uri "https://penpot.example.com"}]
           (with-redefs [app.nitrate/call                  (constantly {:active true})
                         app.auth.oidc/prepare-organization-sso-provider (constantly {:type "oidc"})
-                        app.auth.oidc/get-info            (constantly {})]
+                        app.auth.oidc/get-info            (constantly {})
+                        app.loggers.audit/submit          (constantly nil)]
             (let [result (#'oidc/callback-handler cfg request)]
               (t/is (= "https://penpot.example.com/" (redirect-location result))))))))
 
@@ -838,7 +839,8 @@
                         app.auth.oidc/prepare-organization-sso-provider (constantly {:type "oidc"})
                         app.auth.oidc/get-info            (fn [& _]
                                                             (ex/raise :type :internal
-                                                                      :code :unable-to-retrieve-user-info))]
+                                                                      :code :unable-to-retrieve-user-info))
+                        app.loggers.audit/submit          (constantly nil)]
             (let [result (#'oidc/callback-handler cfg request)
                   loc    (redirect-location result)]
               (t/is (not (.contains loc "evil.example")))

@@ -372,7 +372,8 @@
                              (ptk/type? ::auth/logged-out %)))
              (rx/map #(when (ptk/type? ::du/set-profile %)
                         (:id (deref %))))
-             (rx/pipe (rxo/distinct-contiguous))
+             ;; by value: a reloaded profile can carry its id in a new uuid instance
+             (rx/pipe (rxo/distinct-contiguous =))
              (rx/switch-map
               (fn [profile-id]
                 (if profile-id

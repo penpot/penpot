@@ -276,6 +276,12 @@
                     (:style font-data)
                     emoji?))))
 
+(defn font-failed?
+  "Returns true when the face behind `font-key` failed to load, so WASM lays
+  it out with a fallback."
+  [font-key]
+  (contains? @failed-font-data-keys font-key))
+
 (defn font-ready?
   "Returns true when WASM can lay out with the requested face or its fallback."
   [font-data]

@@ -84,17 +84,28 @@
       (and (some? new-shape-ref) (not= new-shape-ref (:shape-ref shape)))
       (update (:id shape) assoc :shape-ref new-shape-ref :touched new-touched))))
 
+(defn- advance-subtree
+  "Advance the shape and its children. A head swapped in one of the levels
+   being dropped already points to the new component main from that level,
+   so it and its children advance only up to there."
+  [file libraries page head-id level-delta objects shape]
+  (let [level-delta (if (ctk/instance-head? shape)
+                      (ctf/get-swap-level (ctn/make-container page :page)
+                                          libraries shape level-delta)
+                      level-delta)]
+    (if (pos? level-delta)
+      (reduce #(advance-subtree file libraries page head-id level-delta %1
+                                (get %1 %2))
+              (advance-shape file libraries page level-delta head-id objects shape)
+              (:shapes shape))
+      objects)))
+
 (defn- advance-copy
   [file libraries page objects shape]
   (if (and (ctk/instance-head? shape) (not (ctk/main-instance? shape)))
-    (let [level-delta (if (nil? (ctk/get-swap-slot shape))
-                        (ctn/get-nesting-level-delta (:objects page) shape uuid/zero)
-                        0)]
-      (if (pos? level-delta)
-        (reduce (partial advance-shape file libraries page level-delta (:id shape))
-                objects
-                (cfh/get-children-with-self objects (:id shape)))
-        objects))
+    (advance-subtree file libraries page (:id shape)
+                     (ctn/get-nesting-level-delta (:objects page) shape uuid/zero)
+                     objects shape)
     objects))
 
 (defn advance-copies
@@ -1192,11 +1203,23 @@
         (rx/of (dwm/upload-media-workspace params))))))
 
 (defn copy-link-to-clipboard
+  "Copy a link to the clipboard. When one or more boards are part of the
+  current selection, the link deep-links to those boards through their
+  ids (`board-id` route param), which are stable across renames and
+  reordering. Otherwise it falls back to the current location."
   []
   (ptk/reify ::copy-link-to-clipboard
     ptk/WatchEvent
-    (watch [_ _ _]
-      (clipboard/to-clipboard (rt/get-current-href)))))
+    (watch [_ state _]
+      (let [board-ids (dws/selected-board-ids (dsh/lookup-page-objects state)
+                                              (dsh/lookup-selected state))
+            link      (or (when (some? board-ids)
+                            (rt/resolve-uri (:router state)
+                                            (rt/lookup-name state)
+                                            (-> (rt/get-params state)
+                                                (assoc :board-id (mapv str board-ids)))))
+                          (rt/get-current-href))]
+        (clipboard/to-clipboard link)))))
 
 (defn copy-id-to-clipboard
   [id]

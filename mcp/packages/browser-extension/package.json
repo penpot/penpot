@@ -13,7 +13,7 @@
   },
   "devDependencies": {
     "@penpot/mcp-common": "workspace:../common",
-    "@types/chrome": "^0.3.6",
+    "@types/chrome": "^0.3.7",
     "esbuild": "^0.28.2",
     "tsx": "^4.23.15",
     "typescript": "^6.0.3"

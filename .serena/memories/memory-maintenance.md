@@ -21,7 +21,7 @@
 Dense agent notes, not prose docs. Prefer invariants, terse bullets.
 Avoid obvious context, rationale, and examples unless they prevent likely mistakes.
 Keep guidance durable and generalizable, not task-local.
-No manual line wrapping: one line per bullet or paragraph, however long. Memories render adapting to the viewport; hard-wrapped lines degrade rendering and diffs.
+**No manual line wrapping**, in new and edited memories alike: one line per bullet or paragraph, however long. Memories render adapting to the viewport; hard-wrapped lines degrade rendering and diffs. When you touch a memory that is hard-wrapped, unwrap the whole file in the same change (join each paragraph and each bullet's continuation lines with a single space), so the wrapping does not survive merely because nobody rewrote the file.
 
 ## Add/update threshold
 

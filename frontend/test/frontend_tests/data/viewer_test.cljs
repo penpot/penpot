@@ -11,6 +11,7 @@
    [app.main.router :as rt]
    [beicon.v2.core :as rx]
    [cljs.test :as t]
+   [frontend-tests.helpers.async :as async]
    [potok.v2.core :as ptk]))
 
 (def ^:private page-id
@@ -70,12 +71,12 @@
       (t/is (= (get-in result [:viewer-local :zoom-type]) :fill))
       (t/is (number? (get-in result [:viewer-local :zoom]))))))
 
-(defn- watch-events
-  "Collect the events an event's watch emits synchronously."
+(defn ^:async watch-events
+  "Collect the events a watch emits, waiting for its stream to terminate."
   [event state]
   (let [out (atom [])]
-    (some-> (ptk/watch event state nil)
-            (rx/subscribe #(swap! out conj %)))
+    (await (async/observe (or (ptk/watch event state nil) (rx/empty))
+                          :on-next #(swap! out conj %)))
     @out))
 
 (defn- zoom-state
@@ -88,19 +89,19 @@
                    (some? zoom-type)
                    (assoc :zoom-type zoom-type))})
 
-(t/deftest update-zoom-querystring-does-not-navigate-when-url-already-matches
+(t/deftest ^:async update-zoom-querystring-does-not-navigate-when-url-already-matches
   (t/testing "zoom type already described by the query string"
-    (t/is (empty? (watch-events dv/update-zoom-querystring
-                                (zoom-state "fit" :fit)))))
+    (t/is (empty? (await (watch-events dv/update-zoom-querystring
+                                       (zoom-state "fit" :fit))))))
 
   (t/testing "no zoom type and no zoom query param"
-    (t/is (empty? (watch-events dv/update-zoom-querystring
-                                (zoom-state nil nil))))))
+    (t/is (empty? (await (watch-events dv/update-zoom-querystring
+                                       (zoom-state nil nil)))))))
 
-(t/deftest update-zoom-querystring-navigates-when-zoom-changes
+(t/deftest ^:async update-zoom-querystring-navigates-when-zoom-changes
   (t/testing "zoom type differs from the query string"
-    (let [events (watch-events dv/update-zoom-querystring
-                               (zoom-state "fit" :fill))
+    (let [events (await (watch-events dv/update-zoom-querystring
+                                      (zoom-state "fit" :fill)))
           {:keys [id params options]} (some-> (first events) deref)]
       (t/is (= 1 (count events)))
       (t/is (= :viewer id))
@@ -108,8 +109,8 @@
       (t/is (true? (::rt/replace options)))))
 
   (t/testing "zoom query param absent, other params preserved"
-    (let [events (watch-events dv/update-zoom-querystring
-                               (zoom-state nil :fit))
+    (let [events (await (watch-events dv/update-zoom-querystring
+                                      (zoom-state nil :fit)))
           {:keys [params]} (some-> (first events) deref)]
       (t/is (= 1 (count events)))
       (t/is (= :fit (:zoom params)))
@@ -117,13 +118,13 @@
       (t/is (= "0" (:index params)))))
 
   (t/testing "zoom type cleared drops the query param"
-    (let [events (watch-events dv/update-zoom-querystring
-                               (zoom-state "fit" nil))
+    (let [events (await (watch-events dv/update-zoom-querystring
+                                      (zoom-state "fit" nil)))
           {:keys [params]} (some-> (first events) deref)]
       (t/is (= 1 (count events)))
       (t/is (not (contains? params :zoom))))))
 
-(t/deftest bundle-fetched-with-zoom-fill-url-does-not-navigate
+(t/deftest ^:async bundle-fetched-with-zoom-fill-url-does-not-navigate
   ;; Regression test for the React "maximum update depth exceeded"
   ;; error (2.18.0-RC5): loading the viewer with a URL that already
   ;; contains `zoom=fill` re-entered the cycle zoom-to-fill →
@@ -138,18 +139,18 @@
                   (-> state
                       (assoc-in [:route :params :query] query)
                       (assoc-in [:route :query-params] query))))]
-    (let [events (watch-events (dv/bundle-fetched
-                                {:file {:id page-id
-                                        :data {:pages [page-id]
-                                               :pages-index {page-id {:objects {}}}}}
-                                 :project {}
-                                 :team {:features []}
-                                 :share-links []
-                                 :libraries []
-                                 :users []
-                                 :permissions {}
-                                 :thumbnails {}})
-                               state)
+    (let [events (await (watch-events (dv/bundle-fetched
+                                       {:file {:id page-id
+                                               :data {:pages [page-id]
+                                                      :pages-index {page-id {:objects {}}}}}
+                                        :project {}
+                                        :team {:features []}
+                                        :share-links []
+                                        :libraries []
+                                        :users []
+                                        :permissions {}
+                                        :thumbnails {}})
+                                      state))
           ;; `update-page-position-data` and `go-to-frame-auto` are part
           ;; of the normal init sequence; the navigation events are the
           ;; ones that can restart the zoom cycle.
@@ -174,21 +175,21 @@
   (let [query {:file-id (str (uuid/custom 2 2)) :section "interactions" :index "0"}]
     {:route {:params {:query query} :query-params query}}))
 
-(t/deftest initialize-without-page-id-fetches-the-bundle
+(t/deftest ^:async initialize-without-page-id-fetches-the-bundle
   ;; The viewer route passes `:page-id nil` when the URL has none; the
   ;; params check used to reject it before any fetch.
-  (let [events (watch-events (dv/initialize {:file-id (uuid/custom 2 2)
-                                             :page-id nil
-                                             :share-id nil})
-                             {})]
+  (let [events (await (watch-events (dv/initialize {:file-id (uuid/custom 2 2)
+                                                    :page-id nil
+                                                    :share-id nil})
+                                    {}))]
     (t/is (= [::dv/fetch-bundle] (map ptk/type (remove nil? events))))))
 
-(t/deftest bundle-fetched-without-page-id-names-the-first-page
+(t/deftest ^:async bundle-fetched-without-page-id-names-the-first-page
   (t/testing "the route is replaced by one naming the first page"
     (let [first-page (uuid/custom 3 1)
-          events (watch-events (dv/bundle-fetched
-                                (minimal-bundle [first-page (uuid/custom 3 2)]))
-                               (route-without-page-id))
+          events     (await (watch-events (dv/bundle-fetched
+                                           (minimal-bundle [first-page (uuid/custom 3 2)]))
+                                          (route-without-page-id)))
           {:keys [id params options]} (some-> (first events) deref)]
       (t/is (= 1 (count events)))
       (t/is (= :viewer id))
@@ -197,7 +198,39 @@
       (t/is (true? (::rt/replace options)))))
 
   (t/testing "a file without pages keeps the route"
-    (let [events (watch-events (dv/bundle-fetched (minimal-bundle []))
-                               (route-without-page-id))
+    (let [events      (await (watch-events (dv/bundle-fetched (minimal-bundle []))
+                                           (route-without-page-id)))
           navigations (filter #(= :app.main.router/navigate (ptk/type %)) events)]
       (t/is (empty? navigations)))))
+
+;; --- Frame navigation ------------------------------------------------------
+;; The viewer arrows emit `close-thread` and a navigation to the next or
+;; previous index, and nothing at the ends of the sequence.
+
+(t/deftest ^:async select-next-frame-navigates-to-the-next-frame
+  (let [events (await (watch-events dv/select-next-frame
+                                    (base-state {:frames [{} {} {}] :index 1})))
+        {:keys [id params]} (some-> (second events) deref)]
+    (t/is (= 2 (count events)))
+    (t/is (= :app.main.data.comments/close-comment-thread (ptk/type (first events))))
+    (t/is (= :viewer id))
+    (t/is (= 2 (:index params)))
+    (t/is (= (str page-id) (:page-id params)))))
+
+(t/deftest ^:async select-next-frame-stays-on-the-last-frame
+  (t/is (empty? (await (watch-events dv/select-next-frame
+                                     (base-state {:frames [{} {} {}] :index 2}))))))
+
+(t/deftest ^:async select-prev-frame-navigates-to-the-previous-frame
+  (let [events (await (watch-events dv/select-prev-frame
+                                    (base-state {:frames [{} {} {}] :index 1})))
+        {:keys [id params]} (some-> (second events) deref)]
+    (t/is (= 2 (count events)))
+    (t/is (= :app.main.data.comments/close-comment-thread (ptk/type (first events))))
+    (t/is (= :viewer id))
+    (t/is (= 0 (:index params)))
+    (t/is (= (str page-id) (:page-id params)))))
+
+(t/deftest ^:async select-prev-frame-stays-on-the-first-frame
+  (t/is (empty? (await (watch-events dv/select-prev-frame
+                                     (base-state {:frames [{} {} {}] :index 0}))))))

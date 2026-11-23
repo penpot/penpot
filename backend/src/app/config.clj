@@ -396,7 +396,18 @@
                       ;; When telemetry-enabled config is true, add :telemetry flag
                       (true? (c/get config :telemetry-enabled))
                       (conj :enable-telemetry))]
-    (flags/parse flags/default extra-flags (:flags config))))
+    ;; :audit-log is no longer configurable: persistence follows the
+    ;; consumer flags, so a stale enable-audit-log in the environment is
+    ;; dropped instead of lingering in the set as a misleading no-op.
+    (-> (flags/parse flags/default extra-flags (:flags config))
+        (disj :audit-log))))
+
+(defn persist-audit-events?
+  "True when at least one audit-log consumer is enabled. The result is
+  computed once at boot into `audit-persist?`; event paths read that value
+  instead of checking the flags on every event."
+  [flags]
+  (boolean (some #{:nexus :admin-console} flags)))
 
 (defn read-env
   [prefix]
@@ -453,6 +464,10 @@
 
 (defonce ^:dynamic config (read-config :default default))
 (defonce ^:dynamic flags (parse-flags config))
+(defonce ^:dynamic audit-persist? (persist-audit-events? flags))
+(defonce ^:dynamic webhooks-enabled? (contains? flags :webhooks))
+(defonce ^:dynamic telemetry-enabled? (contains? flags :telemetry))
+(defonce ^:dynamic error-reporting-enabled? (contains? flags :error-reporting))
 
 (defn validate!
   "Validate the currently loaded configuration data."

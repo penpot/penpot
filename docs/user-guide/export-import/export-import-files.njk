@@ -23,7 +23,8 @@ desc: Learn how to import and export files in Penpot, the free, open-source desi
 </p>
 
 <h4>Export multiple files</h4>
-<p>Select multiple files to export them at the same time. An overlay will show you the progress of the different exports.</p>
+<p>Select multiple files to export them at the same time. The export dialog lists each file with its own progress and, once it is ready, its size. Each file downloads as soon as it's ready.</p>
+<p>Use <strong>Cancel export</strong> to stop the files that are still exporting. Files that already downloaded are kept.</p>
 <figure>
   <video title="Export multiple files" muted="" playsinline="" controls="" width="auto" poster="/img/import-export/export-multiple.webp" height="auto">
     <source src="/img/import-export/export-multiple.mp4" type="video/mp4">
@@ -33,9 +34,10 @@ desc: Learn how to import and export files in Penpot, the free, open-source desi
 <h4>Exporting files linked to Shared libraries</h4>
 <p>Exported files linked to shared libraries provide different ways to export their assets. Choose the one that suits you better.</p>
 <ul>
-  <li><strong>Export shared libraries</strong>: Files with shared libraries will be included in the export, maintaining their linkage.</li>
-  <li><strong>Include shared library assets in file libraries</strong>: Files will be exported with all external assets merged into the file library.</li>
-  <li><strong>Treat shared library assets as basic layers</strong>: Shared libraries will not be included in the export and no assets will be added to the library.</li>
+  <li><strong>Export file + libraries</strong>: Files with linked libraries will be included in the export, maintaining their linkage.</li>
+  <li><strong>Embed library assets in the file</strong>: Files will be exported with all library assets merged into the file library.</li>
+  <li><strong>Treat assets as basic objects</strong>: Libraries will not be included in the export and no assets will be added to the file library.</li>
+  <li><strong>Link matching libraries on import</strong>: Libraries are not included in the export. When the file is imported, Penpot links it to the shared libraries of the destination team that have the same names.</li>
 </ul>
 <figure><img src="/img/import-export/export-libraries.webp" alt="Export penpot file" /></figure>
 
@@ -44,8 +46,18 @@ desc: Learn how to import and export files in Penpot, the free, open-source desi
 
 <p>The import option is at the projects menu. Press “Import files” and then select one or more .penpot files to import. You can import a .zip file as well.</p>
 <figure><img src="/img/import-export/import-menu.webp" alt="Import penpot file" /></figure>
-<p>Right before importing the files to your project, you’ll still have the opportunity to review the items to be imported, have the information about the ones that can not be imported and also the chance to discard files.</p>
+<p>Right before importing the files to your project, you’ll still have the opportunity to review the items to be imported, have the information about the ones that can not be imported and also the chance to discard files. Each file shows its size.</p>
 <figure><img src="/img/import-export/import-selection.webp" alt="Import penpot file" /></figure>
+<p>The import goes through three steps, shown at the top of the dialog:</p>
+<ol>
+  <li><strong>Check</strong>: Penpot makes sure each file can be imported.</li>
+  <li><strong>Upload</strong>: the files are sent to Penpot, with a progress bar.</li>
+  <li><strong>Import</strong>: Penpot rebuilds the pages, components and assets in your project. Large files can take several minutes.</li>
+</ol>
+<p>If you cancel an import, files that are still importing are not added. Files that already finished stay in your project.</p>
+
+<h3 id="import-link-libraries">Link libraries on import</h3>
+<p>Files exported with <strong>Link matching libraries on import</strong> are linked to the shared libraries of the destination team that have the same names. When there is exactly one match and you can edit it, Penpot links it automatically. When several libraries match, or the only match is one you can't edit, the dialog asks you to select the library for each file. When there is no match, the file is imported without the link.</p>
 
 <h2 id="penpot-formats">Penpot file format</h2>
 <p>Penpot exports to a unique format that streamlines the import and export of files and assets by being more efficient and interoperable.</p>

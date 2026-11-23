@@ -2135,7 +2135,7 @@
 
 (t/deftest push-audit-events-stores-backend-source
   (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
-    (binding [cf/flags #{:audit-log}]
+    (th/with-audit-config #{:nexus}
       (let [prof (th/create-profile* 1 {:is-active true})
             params {::th/type :push-audit-events
                     :events [{:name "test-action"
@@ -2160,7 +2160,7 @@
 
 (t/deftest push-audit-events-type-defaults-to-action
   (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
-    (binding [cf/flags #{:audit-log}]
+    (th/with-audit-config #{:nexus}
       (let [prof   (th/create-profile* 1 {:is-active true})
             params {::th/type :push-audit-events
                     :events [{:name "no-type-event"
@@ -2178,7 +2178,7 @@
 
 (t/deftest push-audit-events-multiple-events
   (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
-    (binding [cf/flags #{:audit-log}]
+    (th/with-audit-config #{:nexus}
       (let [prof   (th/create-profile* 1 {:is-active true})
             params {::th/type :push-audit-events
                     :events [{:name "event-a"
@@ -2201,7 +2201,7 @@
 
 (t/deftest push-audit-events-merges-context
   (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
-    (binding [cf/flags #{:audit-log}]
+    (th/with-audit-config #{:nexus}
       (let [prof   (th/create-profile* 1 {:is-active true})
             params {::th/type :push-audit-events
                     :events [{:name "context-test"
@@ -2227,7 +2227,7 @@
   ;; keyword; the stored initiator must be a plain string, and a
   ;; caller-supplied initiator must never survive (server context wins).
   (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
-    (binding [cf/flags #{:audit-log}]
+    (th/with-audit-config #{:nexus}
       (let [prof   (th/create-profile* 1 {:is-active true})
             params {::th/type :push-audit-events
                     :events [{:name "context-test"

@@ -11,26 +11,26 @@ test.beforeEach(async ({ page }) => {
   await login.initWithLoggedOutUser();
 });
 
-test("Legacy auth hash URL redirects to query-string format", async ({
-  page,
-}) => {
+test("Legacy hash URLs translate or fall through", async ({ page }) => {
   const loginPage = new LoginPage(page);
 
-  await page.goto("/#/auth/login");
+  await test.step("a known hash translates to the query string", async () => {
+    await page.goto("/#/auth/login");
 
-  await expect(page).toHaveURL(/screen=auth-login/);
-  expect(new URL(page.url()).hash).toBe("");
-  await expect(loginPage.initialHeading).toBeVisible();
-});
+    await expect(page).toHaveURL(/screen=auth-login/);
+    expect(new URL(page.url()).hash).toBe("");
+    await expect(loginPage.initialHeading).toBeVisible();
+  });
 
-test("Unknown legacy hash falls through to the query flow", async ({
-  page,
-}) => {
-  const loginPage = new LoginPage(page);
-  // The unknown-route fallback rechecks profile AND teams.
-  await loginPage.mockRPC("get-teams", "logged-in-user/get-teams-default.json");
+  await test.step("an unknown hash falls through to the query flow", async () => {
+    // The unknown-route fallback rechecks profile AND teams.
+    await loginPage.mockRPC(
+      "get-teams",
+      "logged-in-user/get-teams-default.json",
+    );
 
-  await page.goto("/?template=foo#/nope");
+    await page.goto("/?template=foo#/nope");
 
-  await expect(loginPage.initialHeading).toBeVisible();
+    await expect(loginPage.initialHeading).toBeVisible();
+  });
 });

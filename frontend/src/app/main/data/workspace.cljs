@@ -529,12 +529,15 @@
                (rx/of (dwcm/watch-comment-thread-position-changes stoper-s))
 
                ;; Resize auto-grow text shapes whose selrect does not match
-               ;; the WASM text layout once their fonts finish loading.
+               ;; the WASM text layout (on page load or once their fonts
+               ;; finish loading). These automatic heals record no undo
+               ;; step, so Ctrl+Z reverts the user's own last edit.
                (->> stream
                     (rx/filter (ptk/type? :app.render-wasm.api/stale-text-selrects))
                     (rx/map deref)
                     (rx/map (fn [{:keys [ids]}]
-                              (dwwt/resize-wasm-text-all ids {:skip-component-sync? true}))))
+                              (dwwt/resize-wasm-text-all ids {:skip-component-sync? true
+                                                              :save-undo? false}))))
 
                (let [local-commits-s
                      (->> stream
