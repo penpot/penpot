@@ -13,10 +13,9 @@
 
   `:workspace-review-local` keeps the tool in use, the tab and filters of
   the review panel and the change shown on the canvas;
-  `:workspace-review-activity` the activity of the review, one row per
-  save of the branch since the review opened."
+  `:workspace-review-activity` the activity of the review, folded by the
+  backend from the saves of the branch since the review opened."
   (:require
-   [app.common.files.review-activity :as ra]
    [app.common.geom.point :as gpt]
    [app.common.uuid :as uuid]
    [app.main.data.comments :as dcmt]
@@ -196,16 +195,20 @@
 ;; --- Activity
 
 (defn- activity-fetched
-  [pr-id rows]
+  "Store the activity as the backend folds it: `:entries` what each layer
+  ends up as, `:sessions` the sittings of saves the dialog lists,
+  `:people` how many people saved and `:last-save` the newest save."
+  [pr-id result]
   (ptk/reify ::activity-fetched
     ptk/UpdateEvent
     (update [_ state]
       (assoc state :workspace-review-activity
              {:pr-id pr-id
               :status :loaded
-              :rows rows
-              :entries (ra/net-entries rows)
-              :sessions (ra/sessions rows)}))))
+              :entries (:entries result)
+              :sessions (:sessions result)
+              :people (:people result)
+              :last-save (:last-save result)}))))
 
 (defn fetch-activity
   "Load what the saves of the branch did since the review `pr-id` opened."

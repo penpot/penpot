@@ -1221,63 +1221,79 @@ msgstr "Penpot Light"
 msgid "dashboard.select-ui-theme.system"
 msgstr "System theme"
 
-#: src/app/main/ui/settings/notifications.cljs:57
+#: src/app/main/ui/settings/notifications.cljs:59
 msgid "dashboard.settings.notifications.dashboard-comments.all"
 msgstr "All comments, mentions and replies"
 
-#: src/app/main/ui/settings/notifications.cljs:59
+#: src/app/main/ui/settings/notifications.cljs:61
 msgid "dashboard.settings.notifications.dashboard-comments.none"
 msgstr "None"
 
-#: src/app/main/ui/settings/notifications.cljs:58
+#: src/app/main/ui/settings/notifications.cljs:60
 msgid "dashboard.settings.notifications.dashboard-comments.partial"
 msgstr "Only mentions and replies"
 
-#: src/app/main/ui/settings/notifications.cljs:54
+#: src/app/main/ui/settings/notifications.cljs:56
 msgid "dashboard.settings.notifications.dashboard-comments.title"
 msgstr "File comments"
 
-#: src/app/main/ui/settings/notifications.cljs:53
+#: src/app/main/ui/settings/notifications.cljs:55
 msgid "dashboard.settings.notifications.dashboard.title"
 msgstr "Dashboard Notifications"
 
-#: src/app/main/ui/settings/notifications.cljs:67
+#: src/app/main/ui/settings/notifications.cljs:69
 msgid "dashboard.settings.notifications.email-comments.all"
 msgstr "All comments, mentions and replies"
 
-#: src/app/main/ui/settings/notifications.cljs:69
+#: src/app/main/ui/settings/notifications.cljs:71
 msgid "dashboard.settings.notifications.email-comments.none"
 msgstr "None"
 
-#: src/app/main/ui/settings/notifications.cljs:68
+#: src/app/main/ui/settings/notifications.cljs:70
 msgid "dashboard.settings.notifications.email-comments.partial"
 msgstr "Only mentions and replies"
 
-#: src/app/main/ui/settings/notifications.cljs:64
+#: src/app/main/ui/settings/notifications.cljs:66
 msgid "dashboard.settings.notifications.email-comments.title"
 msgstr "File comments"
 
-#: src/app/main/ui/settings/notifications.cljs:76
+#: src/app/main/ui/settings/notifications.cljs:87
 msgid "dashboard.settings.notifications.email-invites.all"
 msgstr "All types of invites and requests"
 
-#: src/app/main/ui/settings/notifications.cljs:79
+#: src/app/main/ui/settings/notifications.cljs:90
 msgid "dashboard.settings.notifications.email-invites.none"
 msgstr "None"
 
-#: src/app/main/ui/settings/notifications.cljs:73
+#: src/app/main/ui/settings/notifications.cljs:84
 msgid "dashboard.settings.notifications.email-invites.title"
 msgstr "Invites and requests"
 
-#: src/app/main/ui/settings/notifications.cljs:63
+#: src/app/main/ui/settings/notifications.cljs:78
+msgid "dashboard.settings.notifications.email-tasks.all"
+msgstr "All tasks"
+
+#: src/app/main/ui/settings/notifications.cljs:80
+msgid "dashboard.settings.notifications.email-tasks.none"
+msgstr "None"
+
+#: src/app/main/ui/settings/notifications.cljs:79
+msgid "dashboard.settings.notifications.email-tasks.partial"
+msgstr "Only tasks I created or that are assigned to me"
+
+#: src/app/main/ui/settings/notifications.cljs:75
+msgid "dashboard.settings.notifications.email-tasks.title"
+msgstr "Tasks"
+
+#: src/app/main/ui/settings/notifications.cljs:65
 msgid "dashboard.settings.notifications.email.title"
 msgstr "Email Notifications"
 
-#: src/app/main/ui/settings/notifications.cljs:84
+#: src/app/main/ui/settings/notifications.cljs:95
 msgid "dashboard.settings.notifications.submit"
 msgstr "Update settings"
 
-#: src/app/main/ui/settings/notifications.cljs:52
+#: src/app/main/ui/settings/notifications.cljs:54
 msgid "dashboard.settings.notifications.title"
 msgstr "Notifications"
 
@@ -12317,6 +12333,10 @@ msgstr "The task could not be changed. Try again."
 msgid "workspace.tasks.error.comment-has-task"
 msgstr "This comment is a task already."
 
+#: src/app/main/data/workspace/tasks.cljs
+msgid "workspace.tasks.error.layer-deleted"
+msgstr "The tasks of the deleted layers could not be updated. Reload the file to see them."
+
 #: src/app/main/ui/workspace/review/tasks.cljs
 msgid "workspace.tasks.event.assigned"
 msgstr "%s assigned it to %s"
@@ -12324,6 +12344,10 @@ msgstr "%s assigned it to %s"
 #: src/app/main/ui/workspace/review/tasks.cljs
 msgid "workspace.tasks.event.assigned-to-you"
 msgstr "%s made this a task for you"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.event.deleted"
+msgstr "%s deleted the task"
 
 #: src/app/main/ui/workspace/review/tasks.cljs
 msgid "workspace.tasks.event.done"
@@ -12344,6 +12368,10 @@ msgstr "Moved to main with the merge of %s"
 #: src/app/main/ui/workspace/review/tasks.cljs
 msgid "workspace.tasks.event.relinked"
 msgstr "%s linked it to %s"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.event.relinked-area"
+msgstr "%s placed it on the canvas, where its layer was"
 
 #: src/app/main/ui/workspace/review/tasks.cljs
 msgid "workspace.tasks.event.renamed"

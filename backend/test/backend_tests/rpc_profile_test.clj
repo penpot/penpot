@@ -1918,6 +1918,33 @@
         (t/is (th/ex-of-code? (:error out) :props-too-large))))))
 
 
+(t/deftest update-profile-notifications-roundtrips-email-tasks
+  (let [profile (th/create-profile* 1)
+        stored  (fn []
+                  (-> (th/db-get :profile {:id (:id profile)})
+                      (profile/decode-row)
+                      (get-in [:props :notifications])))]
+
+    (t/testing "the task email choice is stored"
+      (let [out (th/command! {::th/type :update-profile-notifications
+                              ::rpc/profile-id (:id profile)
+                              :dashboard-comments :all
+                              :email-comments :partial
+                              :email-invites :all
+                              :email-tasks :none})]
+        (t/is (nil? (:error out)))
+        (t/is (= :none (:email-tasks (stored))))))
+
+    (t/testing "a client that predates the key keeps the stored choice"
+      (let [out (th/command! {::th/type :update-profile-notifications
+                              ::rpc/profile-id (:id profile)
+                              :dashboard-comments :all
+                              :email-comments :none
+                              :email-invites :all})]
+        (t/is (nil? (:error out)))
+        (t/is (= :none (:email-tasks (stored))))
+        (t/is (= :none (:email-comments (stored))))))))
+
 (t/deftest prepare-register-profile-password-too-short
   (let [data {::th/type :prepare-register-profile
               :email "user@example.com"

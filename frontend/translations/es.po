@@ -1241,63 +1241,79 @@ msgstr "Penpot Light"
 msgid "dashboard.select-ui-theme.system"
 msgstr "Sistema"
 
-#: src/app/main/ui/settings/notifications.cljs:57
+#: src/app/main/ui/settings/notifications.cljs:59
 msgid "dashboard.settings.notifications.dashboard-comments.all"
 msgstr "Todos los comentarios, menciones y respuestas"
 
-#: src/app/main/ui/settings/notifications.cljs:59
+#: src/app/main/ui/settings/notifications.cljs:61
 msgid "dashboard.settings.notifications.dashboard-comments.none"
 msgstr "Ninguna"
 
-#: src/app/main/ui/settings/notifications.cljs:58
+#: src/app/main/ui/settings/notifications.cljs:60
 msgid "dashboard.settings.notifications.dashboard-comments.partial"
 msgstr "Sólo menciones y respuestas"
 
-#: src/app/main/ui/settings/notifications.cljs:54
+#: src/app/main/ui/settings/notifications.cljs:56
 msgid "dashboard.settings.notifications.dashboard-comments.title"
 msgstr "Comentarios de ficheros"
 
-#: src/app/main/ui/settings/notifications.cljs:53
+#: src/app/main/ui/settings/notifications.cljs:55
 msgid "dashboard.settings.notifications.dashboard.title"
 msgstr "Notificaciones en el panel"
 
-#: src/app/main/ui/settings/notifications.cljs:67
+#: src/app/main/ui/settings/notifications.cljs:69
 msgid "dashboard.settings.notifications.email-comments.all"
 msgstr "Todos los comentarios, menciones y respuestas"
 
-#: src/app/main/ui/settings/notifications.cljs:69
+#: src/app/main/ui/settings/notifications.cljs:71
 msgid "dashboard.settings.notifications.email-comments.none"
 msgstr "Ninguna"
 
-#: src/app/main/ui/settings/notifications.cljs:68
+#: src/app/main/ui/settings/notifications.cljs:70
 msgid "dashboard.settings.notifications.email-comments.partial"
 msgstr "Sólo menciones y respuestas"
 
-#: src/app/main/ui/settings/notifications.cljs:64
+#: src/app/main/ui/settings/notifications.cljs:66
 msgid "dashboard.settings.notifications.email-comments.title"
 msgstr "Comentarios de ficheros"
 
-#: src/app/main/ui/settings/notifications.cljs:76
+#: src/app/main/ui/settings/notifications.cljs:87
 msgid "dashboard.settings.notifications.email-invites.all"
 msgstr "Todas las invitaciones y solicitudes"
 
-#: src/app/main/ui/settings/notifications.cljs:79
+#: src/app/main/ui/settings/notifications.cljs:90
 msgid "dashboard.settings.notifications.email-invites.none"
 msgstr "Ninguna"
 
-#: src/app/main/ui/settings/notifications.cljs:73
+#: src/app/main/ui/settings/notifications.cljs:84
 msgid "dashboard.settings.notifications.email-invites.title"
 msgstr "Invitaciones y solicitudes"
 
-#: src/app/main/ui/settings/notifications.cljs:63
+#: src/app/main/ui/settings/notifications.cljs:78
+msgid "dashboard.settings.notifications.email-tasks.all"
+msgstr "Todas las tareas"
+
+#: src/app/main/ui/settings/notifications.cljs:80
+msgid "dashboard.settings.notifications.email-tasks.none"
+msgstr "Ninguna"
+
+#: src/app/main/ui/settings/notifications.cljs:79
+msgid "dashboard.settings.notifications.email-tasks.partial"
+msgstr "Sólo las tareas que he creado o que tengo asignadas"
+
+#: src/app/main/ui/settings/notifications.cljs:75
+msgid "dashboard.settings.notifications.email-tasks.title"
+msgstr "Tareas"
+
+#: src/app/main/ui/settings/notifications.cljs:65
 msgid "dashboard.settings.notifications.email.title"
 msgstr "Notificaciones de correo electrónico"
 
-#: src/app/main/ui/settings/notifications.cljs:84
+#: src/app/main/ui/settings/notifications.cljs:95
 msgid "dashboard.settings.notifications.submit"
 msgstr "Actualizar configuración"
 
-#: src/app/main/ui/settings/notifications.cljs:52
+#: src/app/main/ui/settings/notifications.cljs:54
 msgid "dashboard.settings.notifications.title"
 msgstr "Notificaciones"
 
@@ -12471,6 +12487,10 @@ msgstr "No se pudo cambiar la tarea. Inténtalo de nuevo."
 msgid "workspace.tasks.error.comment-has-task"
 msgstr "Este comentario ya es una tarea."
 
+#: src/app/main/data/workspace/tasks.cljs
+msgid "workspace.tasks.error.layer-deleted"
+msgstr "No se pudieron actualizar las tareas de las capas borradas. Recarga el archivo para verlas."
+
 #: src/app/main/ui/workspace/review/tasks.cljs
 msgid "workspace.tasks.event.assigned"
 msgstr "%s se la asignó a %s"
@@ -12478,6 +12498,10 @@ msgstr "%s se la asignó a %s"
 #: src/app/main/ui/workspace/review/tasks.cljs
 msgid "workspace.tasks.event.assigned-to-you"
 msgstr "%s hizo de esto una tarea para ti"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.event.deleted"
+msgstr "%s borró la tarea"
 
 #: src/app/main/ui/workspace/review/tasks.cljs
 msgid "workspace.tasks.event.done"
@@ -12498,6 +12522,10 @@ msgstr "Pasó a main con la fusión de %s"
 #: src/app/main/ui/workspace/review/tasks.cljs
 msgid "workspace.tasks.event.relinked"
 msgstr "%s la enlazó a %s"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.event.relinked-area"
+msgstr "%s la colocó en el lienzo, donde estaba su capa"
 
 #: src/app/main/ui/workspace/review/tasks.cljs
 msgid "workspace.tasks.event.renamed"

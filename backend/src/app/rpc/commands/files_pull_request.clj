@@ -21,6 +21,7 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.features :as-alias cfeat]
+   [app.common.files.review-activity :as ra]
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.uri :as uri]
@@ -524,34 +525,101 @@
   [:map {:title "get-pull-request-activity"}
    [:id ::sm/uuid]])
 
-(def ^:private max-activity-rows
-  "The newest saves the activity of a review reads. A review that runs
-  for months keeps its history; the list shows the recent part of it."
-  2000)
+(def ^:private activity-fetch-size
+  "Rows the server-side cursor of the activity holds at once."
+  500)
 
 (def ^:private sql:get-pull-request-activity
-  "SELECT a.id, a.profile_id, a.revn, a.entries, a.created_at
+  "SELECT a.id, a.profile_id, a.entries, a.created_at
      FROM file_pull_request_activity AS a
     WHERE a.pull_request_id = ?
-    ORDER BY a.created_at DESC
-    LIMIT ?")
+    ORDER BY a.created_at ASC, a.id ASC")
+
+(defn- starts-sitting?
+  "Whether `row` is too late to join the sitting of the row before it,
+  so the rows read so far hold whole sittings."
+  [prev row]
+  (and (some? prev)
+       (> (- (inst-ms (:created-at row))
+             (inst-ms (:created-at prev)))
+          ra/default-session-gap-ms)))
+
+(def ^:private empty-activity
+  {:sittings [] :buffer [] :people #{} :last-save nil})
+
+(defn- fold-sitting
+  "Fold the sitting in course into the sittings read so far, oldest
+  first."
+  [{:keys [buffer sittings] :as acc}]
+  (if (empty? buffer)
+    acc
+    (-> acc
+        (assoc :sittings (into sittings (reverse (ra/sessions buffer))))
+        (assoc :buffer []))))
+
+(defn- add-activity-row
+  "Fold one activity row, read oldest first, into the sittings, the
+  people who saved and the newest save."
+  ([acc] acc)
+  ([acc row]
+   (-> (if (starts-sitting? (:last-save acc) row)
+         (fold-sitting acc)
+         acc)
+       (update :buffer conj row)
+       (assoc :last-save (select-keys row [:created-at :profile-id]))
+       (update :people conj (:profile-id row)))))
+
+(defn- sitting-rows
+  "The net entries of `sittings` as activity rows, the shape
+  `net-entries` reads. A sitting is the fold of its own rows, so folding
+  the sittings folds every row of the review: the fold sorts the rows by
+  the moment of the change each one carries. Each wrapped row keeps that
+  moment and the person who made the change, which is what the fold
+  reports as `:profile-id` and `:changed-at`."
+  [sittings]
+  (into []
+        (mapcat (fn [{:keys [profile-id entries]}]
+                  (map (fn [{:keys [changed-at] :as entry}]
+                         {:profile-id profile-id
+                          :created-at changed-at
+                          :entries [entry]})
+                       entries)))
+        sittings))
+
+(defn- get-activity
+  "The activity of a review, folded from every row of it: what each
+  layer ends up as, the sittings of saves, how many people saved and
+  the newest save. Rows are read oldest first and folded one sitting at
+  a time, so a long history is never held in memory at once."
+  [conn pr-id]
+  (let [acc      (transduce (map (fn [row] (update row :entries blob/decode)))
+                            add-activity-row
+                            empty-activity
+                            (db/plan conn [sql:get-pull-request-activity pr-id]
+                                     {:fetch-size activity-fetch-size}))
+        folded   (fold-sitting acc)
+        sittings (vec (reverse (:sittings folded)))]
+    {:entries   (ra/net-entries (sitting-rows sittings))
+     :sessions  sittings
+     :people    (count (disj (:people folded) nil))
+     :last-save (:last-save folded)}))
 
 (sv/defmethod ::get-pull-request-activity
   "What the saves of the branch did to its layers since the design review
-  opened: one row per save, newest first, each with who saved and its
-  entries (`app.common.files.review-activity/entries`). The client folds
-  them into the activity list."
+  opened, folded on the server: `:entries` what each layer ends up as
+  (`app.common.files.review-activity/net-entries`), `:sessions` the
+  sittings of saves the activity lists, `:people` how many people saved
+  and `:last-save` the newest save. Every row of the review is read, so
+  the oldest change still counts in what a layer ends up as."
   {::doc/added "2.16"
    ::sm/params schema:get-pull-request-activity}
   [cfg {:keys [::rpc/profile-id id]}]
   (check-pull-requests-enabled!)
-  (db/run! cfg
-           (fn [{:keys [::db/conn] :as cfg}]
-             (let [pr (get-pull-request* conn id)]
-               (files/check-read-permissions! cfg profile-id (:target-file-id pr))
-               (into []
-                     (map (fn [row] (update row :entries blob/decode)))
-                     (db/exec! conn [sql:get-pull-request-activity id max-activity-rows]))))))
+  (db/tx-run! (assoc cfg ::db/read-only true)
+              (fn [{:keys [::db/conn] :as cfg}]
+                (let [pr (get-pull-request* conn id)]
+                  (files/check-read-permissions! cfg profile-id (:target-file-id pr))
+                  (get-activity conn id)))))
 
 ;; --- COMMAND QUERY: get-pull-request-bundle
 

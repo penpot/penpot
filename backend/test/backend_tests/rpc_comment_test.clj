@@ -9,7 +9,9 @@
    [app.common.geom.point :as gpt]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as db]
+   [app.email :as eml]
    [app.http :as http]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.comments :as comments]
@@ -1084,3 +1086,98 @@
         result  ((deref #'comments/get-file) th/*system* (:id file) page-id)]
 
     (t/is (not (contains? result :storage-object-id)))))
+
+(t/deftest thread-created-for-a-task-sends-no-comment-notification
+  ;; A task created on the canvas makes its thread with
+  ;; `::comments/skip-subscriber-emails`: the task email is the only one the
+  ;; creation sends, while the people the message mentions are still told.
+  (let [owner     (th/create-profile* 1 {:is-active true})
+        member    (th/create-profile* 2 {:is-active true})
+        mentioned (th/create-profile* 3 {:is-active true})
+        team      (th/create-team* 1 {:profile-id (:id owner)})
+        project   (th/create-project* 1 {:team-id (:id team)
+                                         :profile-id (:id owner)})
+        file      (th/create-file* 1 {:profile-id (:id owner)
+                                      :project-id (:id project)})
+        page-id   (get-in file [:data :pages 0])
+        sent      (atom [])]
+
+    (th/create-team-role* {:team-id (:id team)
+                           :profile-id (:id member)
+                           :role :editor})
+    (th/create-team-role* {:team-id (:id team)
+                           :profile-id (:id mentioned)
+                           :role :editor})
+    (th/db-update! :profile
+                   {:props (db/tjson {:notifications {:dashboard-comments :all
+                                                      :email-comments :all
+                                                      :email-invites :all}})}
+                   {:id (:id member)})
+
+    (let [create-thread! (fn [params]
+                           (comments/create-comment-thread
+                            th/*system*
+                            (merge {::rpc/profile-id (:id owner)
+                                    ::rpc/request-at (ct/now)
+                                    :file-id (:id file)
+                                    :page-id page-id
+                                    :position (gpt/point 0)
+                                    :frame-id uuid/zero}
+                                   params)))]
+
+      (with-redefs [eml/send-template (fn [_ params]
+                                        (swap! sent conj (::eml/template params))
+                                        nil)]
+        (t/testing "the flag silences the subscribers and keeps the mentions"
+          (create-thread! {::comments/skip-subscriber-emails true
+                           :content (str "for you @[Profile 3](" (:id mentioned) ")")
+                           :mentions #{(:id mentioned)}})
+          (t/is (= ["comment-mention"] @sent)))
+
+        (t/testing "without the flag the subscriber is told"
+          (reset! sent [])
+          (create-thread! {:content "hello again"})
+          (t/is (= ["comment-notification"] @sent)))))))
+
+(t/deftest deleting-a-thread-records-a-deleted-event-for-its-tasks
+  ;; The tasks of a thread live in its messages and go with it: each one
+  ;; records who removed it, as the delete of a single task does.
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [profile (th/create-profile* 1 {:is-active true})
+          team    (th/create-team* 1 {:profile-id (:id profile)})
+          project (th/create-project* 1 {:team-id (:id team)
+                                         :profile-id (:id profile)})
+          file    (th/create-file* 1 {:profile-id (:id profile)
+                                      :project-id (:id project)})
+          page-id (get-in file [:data :pages 0])
+
+          thread  (:result (th/command! {::th/type :create-comment-thread
+                                         ::rpc/profile-id (:id profile)
+                                         :file-id (:id file)
+                                         :page-id page-id
+                                         :position (gpt/point 0)
+                                         :content "A thread with a task"
+                                         :frame-id uuid/zero}))
+
+          task    (:result (th/command! {::th/type :create-task
+                                         ::rpc/profile-id (:id profile)
+                                         :file-id (:id file)
+                                         :page-id page-id
+                                         :frame-id uuid/zero
+                                         :position (gpt/point 0)
+                                         :title "Pay button"
+                                         :thread-id (:id thread)
+                                         :comment-id (:comment-id thread)}))]
+
+      (t/is (uuid? (:id task)))
+
+      (t/is (th/success? (th/command! {::th/type :delete-comment-thread
+                                       ::rpc/profile-id (:id profile)
+                                       :id (:id thread)})))
+
+      (let [deleted (->> (th/db-query :file-task-event {:task-id (:id task)})
+                         (filter #(= "deleted" (:type %))))]
+        (t/is (= 1 (count deleted)))
+        (t/is (= (:id profile) (:profile-id (first deleted))))
+        (t/is (= {:title "Pay button"}
+                 (db/decode-transit-pgobject (:payload (first deleted)))))))))

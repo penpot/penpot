@@ -131,6 +131,14 @@
         open?   (deref open*)
         status  (:status task)
         options (use-assignee-options)
+        team    (mf/deref refs/team)
+        profile (mf/deref refs/profile)
+
+        ;; Its author, and the owner or an admin of its team, may delete a
+        ;; task; anybody who can read the file may still move it to won't do.
+        can-delete?
+        (or (= (:created-by task) (:id profile))
+            (boolean (get-in team [:permissions :is-admin])))
 
         on-toggle
         (mf/use-fn
@@ -194,8 +202,9 @@
       (when-not (dwtk/closed? task)
         [:> menu-item* {:id "relink"}
          (tr "workspace.tasks.actions.relink")])
-      [:> menu-item* {:id "delete"}
-       (tr "workspace.tasks.actions.delete")]]]))
+      (when can-delete?
+        [:> menu-item* {:id "delete"}
+         (tr "workspace.tasks.actions.delete")])]]))
 
 ;; --- List of tasks
 
@@ -282,10 +291,13 @@
                          "wont-do"  (tr "workspace.tasks.event.wont-do" actor)
                          (tr "workspace.tasks.event.status" actor))
       "renamed"        (tr "workspace.tasks.event.renamed" actor)
-      "relinked"       (tr "workspace.tasks.event.relinked" actor (:shape-name payload))
+      "relinked"       (if (some? (:area payload))
+                         (tr "workspace.tasks.event.relinked-area" actor)
+                         (tr "workspace.tasks.event.relinked" actor (:shape-name payload)))
       "layer-deleted"  (tr "workspace.tasks.event.layer-deleted" actor (:shape-name payload))
       "layer-restored" (tr "workspace.tasks.event.layer-restored" actor (:shape-name payload))
       "moved-to-main"  (tr "workspace.tasks.event.moved-to-main" (:branch-name payload))
+      "deleted"        (tr "workspace.tasks.event.deleted" actor)
       nil)))
 
 (defn- event-icon
@@ -294,6 +306,7 @@
     "layer-deleted" i/triangle-alert
     "status"        (if (= "done" (:to payload)) i/tick i/view-as-list)
     "moved-to-main" i/git-merge
+    "deleted"       i/delete
     i/view-as-list))
 
 (mf/defc task-event*
@@ -418,6 +431,7 @@
   {::mf/private true}
   [{:keys [task]}]
   (let [profiles  (mf/deref refs/profiles)
+        events    (get (mf/deref refs/task-events) (:id task))
         data      (mf/deref refs/workspace-data)
         preview   (mf/deref refs/pull-request-preview)
         objects   (page-objects data (:page-id task))
@@ -457,7 +471,7 @@
         (tr "workspace.tasks.lost.message" (rvc/board-name objects (:frame-id task)))]
        [:div {:class (stl/css :task-next-step-actions)}
         ;; restoring and relinking edit the branch: not inside a review
-        (when (nil? preview)
+        (when (and (nil? preview) (dwtk/restorable? events))
           [:> button* {:variant "ghost" :icon i/history :on-click on-restore}
            (tr "workspace.tasks.actions.restore-layer")])
         (when (nil? preview)

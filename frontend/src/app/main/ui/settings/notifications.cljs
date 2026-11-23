@@ -19,7 +19,8 @@
 (def default-notification-settings
   {:dashboard-comments :all
    :email-comments :partial
-   :email-invites :all})
+   :email-invites :all
+   :email-tasks :partial})
 
 (defn- on-submit
   [form _event]
@@ -30,7 +31,8 @@
   [:map {:title "NotificationsForm"}
    [:dashboard-comments [::sm/one-of #{:all :partial :none}]]
    [:email-comments [::sm/one-of #{:all :partial :none}]]
-   [:email-invites [::sm/one-of #{:all :partial :none}]]])
+   [:email-invites [::sm/one-of #{:all :partial :none}]]
+   [:email-tasks [::sm/one-of #{:all :partial :none}]]])
 
 (mf/defc notifications-page*
   [{:keys [profile]}]
@@ -68,6 +70,15 @@
                     {:label (tr "dashboard.settings.notifications.email-comments.partial") :value "partial"}
                     {:label (tr "dashboard.settings.notifications.email-comments.none") :value "none"}]
           :name :email-comments
+          :class (stl/css :radio-btns)}]]
+
+       [:h4 (tr "dashboard.settings.notifications.email-tasks.title")]
+       [:div {:class (stl/css :fields-row)}
+        [:& fm/radio-buttons
+         {:options [{:label (tr "dashboard.settings.notifications.email-tasks.all") :value "all"}
+                    {:label (tr "dashboard.settings.notifications.email-tasks.partial") :value "partial"}
+                    {:label (tr "dashboard.settings.notifications.email-tasks.none") :value "none"}]
+          :name :email-tasks
           :class (stl/css :radio-btns)}]]
 
        [:h4 (tr "dashboard.settings.notifications.email-invites.title")]

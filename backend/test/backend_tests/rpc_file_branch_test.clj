@@ -17,6 +17,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.features.file-changes :as fchanges]
    [app.msgbus :as mbus]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files-branch :as fbranch]
@@ -3316,3 +3317,44 @@
                                 :direction :branch->main})]
           (t/is (= :not-found (th/ex-type (:error out))))
           (t/is (= :branch-not-found (th/ex-code (:error out)))))))))
+
+(t/deftest merge-and-update-from-main-record-revision-rows
+  ;; the revision rows the merge and the update from main write carry
+  ;; their kind, as the save path's do: a kind-filtered read sees them
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [profile        (th/create-profile* 1 {:is-active true})
+          file           (th/create-file* 1 {:profile-id (:id profile)
+                                             :project-id (:default-project-id profile)})
+          create         (:result (th/command! {::th/type :create-file-branch
+                                                ::rpc/profile-id (:id profile)
+                                                :file-id (:id file)
+                                                :name "kinds"}))
+          branch-id      (:id create)
+          branch-file-id (:branch-file-id create)
+          kinds-of       (fn [file-id session-id]
+                           (mapv :kind (th/db-exec! ["SELECT kind FROM file_change
+                                                       WHERE file_id = ? AND session_id = ?"
+                                                     file-id session-id])))]
+      (apply-change* profile (:id file)
+                     {:type :add-color :color {:id (uuid/random) :name "Main" :color "#00ff00" :opacity 1}})
+
+      (t/testing "the update from main"
+        (let [session-id (uuid/random)
+              out        (th/command! {::th/type :update-branch-from-main
+                                       ::rpc/profile-id (:id profile)
+                                       ::rpc/session-id session-id
+                                       :branch-id branch-id})]
+          (t/is (nil? (:error out)))
+          (t/is (= [fchanges/revision-kind] (kinds-of branch-file-id session-id)))))
+
+      (t/testing "the merge"
+        (apply-change* profile branch-file-id
+                       {:type :add-color :color {:id (uuid/random) :name "Branch" :color "#0000ff" :opacity 1}})
+        (let [session-id (uuid/random)
+              out        (th/command! {::th/type :merge-file-branch
+                                       ::rpc/profile-id (:id profile)
+                                       ::rpc/session-id session-id
+                                       :branch-id branch-id})]
+          (t/is (nil? (:error out)))
+          (t/is (= :merged (-> out :result :status)))
+          (t/is (= [fchanges/revision-kind] (kinds-of (:id file) session-id))))))))

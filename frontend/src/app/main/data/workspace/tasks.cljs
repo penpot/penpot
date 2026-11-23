@@ -24,6 +24,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
+   [app.common.logging :as log]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -70,6 +71,17 @@
   "The layer of the task was deleted."
   [task]
   (some? (:lost-shape-name task)))
+
+(defn restorable?
+  "The deleted layer of a task can be put back: the last deletion among
+  the `events` of the task kept the layer, which the server skips for a
+  very large one."
+  [events]
+  (-> (filter #(= "layer-deleted" (:type %)) events)
+      (last)
+      (get-in [:payload :objects])
+      (seq)
+      (some?)))
 
 (defn history?
   "The task came with a merged branch and is already closed: it is part
@@ -180,15 +192,42 @@
            (rx/of (fetch-task-events open-id))
            (rx/empty)))))))
 
+(defn- patch-tasks
+  "Put the rows `tasks` of a change into the tasks `data`; a task of
+  `task-ids` without a row was deleted."
+  [data task-ids tasks]
+  (let [rows (d/index-by :id tasks)]
+    (reduce (fn [data id]
+              (if-let [row (get rows id)]
+                (assoc data id row)
+                (dissoc data id)))
+            data
+            task-ids)))
+
 (defn handle-tasks-change
-  "Another session changed the tasks of the open file."
-  [{:keys [file-id]}]
-  (ptk/reify ::handle-tasks-change
-    ptk/WatchEvent
-    (watch [_ state _]
-      (if (= file-id (:current-file-id state))
-        (rx/of (refresh))
-        (rx/empty)))))
+  "The tasks `task-ids` of a file changed. The message carries their rows
+  (`tasks`), which patch the list of the open file; the session that
+  made the change (`session-id`) holds them already and skips it. The
+  events of the open task are fetched again when it changed."
+  [{:keys [file-id session-id task-ids tasks]}]
+  (letfn [(applies? [state]
+            (and (= file-id (:current-file-id state))
+                 (not= session-id (:session-id state))))]
+    (ptk/reify ::handle-tasks-change
+      ptk/UpdateEvent
+      (update [_ state]
+        (if (applies? state)
+          (d/update-in-when state [:workspace-tasks :data] patch-tasks task-ids tasks)
+          state))
+
+      ptk/WatchEvent
+      (watch [_ state _]
+        (let [open-id (get-in state [:workspace-tasks-local :open])]
+          (if (and (applies? state)
+                   (some? open-id)
+                   (some #(= open-id %) task-ids))
+            (rx/of (fetch-task-events open-id))
+            (rx/empty)))))))
 
 ;; --- Opening a task
 
@@ -532,7 +571,11 @@
                   (fn [moved]
                     (rx/of (refresh)
                            (layer-deleted-dialog moved message))))
-                 (rx/catch (fn [_] (rx/empty))))))))))
+                 (rx/catch (fn [cause]
+                             (log/error :hint "unable to mark the tasks of deleted layers as lost"
+                                        :file-id (str file-id)
+                                        :cause cause)
+                             (rx/of (ntf/error (tr "workspace.tasks.error.layer-deleted"))))))))))))
 
 (defn- layer-deleted-dialog
   "The dialog that follows the deletion of layers with open tasks: undo
