@@ -374,6 +374,18 @@
                (ptk/data-event :layout/update {:ids ids})
                (dwu/commit-undo-transaction undo-id))))))
 
+(defn update-shape-layout
+  "Patch the layout attributes of `shape` with `changes`. A padding change
+  starts from the four sides at 0 when the shape has no padding yet, so
+  setting one side never saves a padding without the other three."
+  [shape changes]
+  (cond-> shape
+    (contains? changes :layout-padding)
+    (update :layout-padding #(merge {:p1 0 :p2 0 :p3 0 :p4 0} %))
+
+    :always
+    (d/patch-object changes)))
+
 (defn update-layout
   ([ids changes] (update-layout ids changes nil))
   ([ids changes options]
@@ -385,7 +397,7 @@
                                keys
                                set)]
          (rx/of (dwu/start-undo-transaction undo-id)
-                (dwsh/update-shapes ids (d/patch-object changes)
+                (dwsh/update-shapes ids #(update-shape-layout % changes)
                                     (cond-> options
                                       (seq padding-attrs)
                                       (assoc :changed-sub-attr padding-attrs)))
