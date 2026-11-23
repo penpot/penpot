@@ -34,6 +34,8 @@ Some legacy code violates this layering; do not copy those violations into new c
 
 ## Focused memory routing
 
+- URL construction on either runtime: `mem:common/uri` for relative-path resolution and preserving a deployment subpath.
+
 Model, schema, and persistence shape:
 - File/page/shape/component attr changes, import/export surfaces, inspector/codegen, and cross-module checklist: `mem:common/data-model-change-checklist`.
 - Token data structures, token import/export, active theme/set semantics, and schema/coercion behavior: `mem:common/tokens-schema-subtleties`.
