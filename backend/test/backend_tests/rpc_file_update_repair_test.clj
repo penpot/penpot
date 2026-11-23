@@ -309,13 +309,15 @@
             broken (break-frame ctx)
             calls  (atom 0)
             before (repair-count :unrepaired)
-            out    (with-redefs [cfr/repair-file (fn [_ _ _]
-                                                   (swap! calls inc)
-                                                   [])]
+            out    (with-redefs [cfr/repair-error (fn [_ _ _ _]
+                                                    (swap! calls inc)
+                                                    {:redo-changes []})]
                      (update-file (:id profile) file-id (:revn broken)
                                   [(set-attr page-id shape-b :name "renamed")]))]
         (t/is (not (th/success? out)))
         (t/is (= :referential-integrity (:code (ex-data (:error out)))))
+        ;; `calls` counts repairs, one per error; `break-frame` yields a
+        ;; single error, so one call means one pass.
         (t/is (= 1 @calls))
         (t/is (= 1.0 (- (repair-count :unrepaired) before)))))))
 

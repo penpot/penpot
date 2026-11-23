@@ -168,6 +168,101 @@
 
       (t/is (= "Value2, ValueB" (:variant-name root2'))))))
 
+(t/deftest repair-two-errors-on-one-variant-component-in-one-pass
+  (t/testing "the properties fix and the variant id fix of the same component both survive one repair pass"
+    (let [file    (-> (thf/sample-file :file1 :page-label :page1)
+                      (thv/add-variant :variant1 :component1 :root1 :component2 :root2)
+                      ;; The first child of the container is root2, so component2 sets the
+                      ;; property names. Component1 has an extra property and a variant id
+                      ;; that does not point to the container.
+                      (thc/update-component :component1 {:variant-id (uuid/next)
+                                                         :variant-properties [{:name "Property 1" :value "Value1"}
+                                                                              {:name "Extra" :value "x"}]})
+                      (ths/update-shape :root1 :variant-name "Value1, x"))
+
+          errors  (cfv/validate-file file {})
+          changes (cfr/repair-file file {} errors)
+          file'   (thf/apply-changes file {:redo-changes changes} :validate? false)
+          errors' (cfv/validate-file file' {})
+
+          comp1'  (thc/get-component file' :component1)]
+
+      (t/is (= [:invalid-variant-properties :variant-component-bad-id] (mapv :code errors)))
+
+      (t/is (nil? errors'))
+      (t/is (= (thi/id :variant1) (:variant-id comp1')))
+      (t/is (= [{:name "Property 1" :value "Value1"}] (:variant-properties comp1'))))))
+
+(t/deftest repair-two-errors-on-one-component-in-any-order
+  (let [stray-id (uuid/next)
+        file     (-> (thf/sample-file :file1 :page-label :page1)
+                     (thv/add-variant :variant1 :component1 :root1 :component2 :root2)
+                     (thc/update-component :component1 {:variant-id (uuid/next)
+                                                        :objects {stray-id {:id stray-id :type :rect :name "Stray"}}}))
+        errors   (cfv/validate-file file {})]
+
+    (t/is (= [:variant-component-bad-id :non-deleted-component-cannot-have-objects]
+             (mapv :code errors)))
+
+    ;; Both repairs rewrite the whole component: whichever runs last must
+    ;; keep the fix of the other one.
+    (doseq [errors [errors (reverse errors)]]
+      (t/testing (str "both fixes survive with the errors in order " (mapv :code errors))
+        (let [changes (cfr/repair-file file {} errors)
+              file'   (thf/apply-changes file {:redo-changes changes} :validate? false)
+              comp1'  (thc/get-component file' :component1)]
+          (t/is (nil? (cfv/validate-file file' {})))
+          (t/is (not (contains? comp1' :objects)))
+          (t/is (= (thi/id :variant1) (:variant-id comp1'))))))))
+
+(t/deftest repair-errors-on-shapes-removed-by-an-earlier-repair
+  (t/testing "repairs on shapes that an earlier repair of the same pass removed change nothing"
+    (let [file    (-> (thf/sample-file :file1 :page-label :page1)
+                      (thv/add-variant :variant1 :component1 :root1 :component2 :root2)
+                      ;; A variant that is not a main: its repair removes it with its children
+                      (ths/add-sample-shape :stray :type :frame :parent-label :variant1
+                                            :variant-id (thi/id :variant1) :variant-name "Value3")
+                      (ths/add-sample-shape :inner :parent-label :stray)
+                      (ths/update-shape :inner :frame-id (uuid/next)))
+
+          errors  (cfv/validate-file file {})
+          removed #{(thi/id :stray) (thi/id :inner)}
+          later   (->> errors
+                       (drop-while #(not= :variant-not-main (:code %)))
+                       (rest))
+
+          changes (cfr/repair-file file {} errors)
+          file'   (thf/apply-changes file {:redo-changes changes} :validate? false)
+          errors' (cfv/validate-file file' {})]
+
+      (t/is (some #(= :frame-not-found (:code %)) later))
+      (t/is (every? #(contains? removed (:shape-id %)) later))
+
+      (t/is (nil? errors'))
+      (t/is (nil? (ths/get-shape file' :stray)))
+      (t/is (nil? (ths/get-shape file' :inner)))
+      (t/is (not-any? removed (:shapes (ths/get-shape file' :variant1))))))
+
+  ;; Guards against a crash, not a lost fix: without the removed-shape check
+  ;; in the :ref-shape-not-found repair, its lookups throw on the removed
+  ;; root1. Removing the variant's main here is the behaviour #13257 tracks;
+  ;; revisit this fixture when that issue changes it.
+  (t/testing ":ref-shape-not-found on a shape that an earlier repair of the same pass removed"
+    (let [file   (-> (thf/sample-file :file1 :page-label :page1)
+                     (thv/add-variant :variant1 :component1 :root1 :component2 :root2)
+                     (ths/update-shape :root1 :main-instance nil))
+          errors (cfv/validate-file file {})
+          result (cfr/repair-file-until-valid
+                  file {}
+                  (fn [file _] (cfv/validate-file file {})))]
+
+      (t/is (= [[:variant-not-main (thi/id :root1)]
+                [:invalid-main-instance (thi/id :root1)]
+                [:ref-shape-not-found (thi/id :root1)]]
+               (mapv (juxt :code :shape-id) errors)))
+      (t/is (= 1 (:iterations result)))
+      (t/is (nil? (:errors result))))))
+
 (t/deftest repair-variant-not-main
   (t/testing "detect and repair a non-main-instance shape inside a variant container"
     (let [file       (-> (thf/sample-file :file1 :page-label :page1)
@@ -379,6 +474,15 @@
       (t/is (= uuid/zero (:parent-id shape2')))
       (t/is (= #{(thi/id :shape1) (thi/id :shape2)} (set (:shapes root')))))))
 
+(defn- stub-repair-error
+  "Stand-in for `cfr/repair-error` that returns `(f)` as the redo changes.
+  Multi-arity on purpose: the JS build calls the multimethod through its
+  `cljs$core$IFn$_invoke$arity$4` property, which a single-arity fn lacks."
+  [f]
+  (fn
+    ([_ _ _ _] {:redo-changes (f)})
+    ([_ _ _ _ & _] {:redo-changes (f)})))
+
 (defn- broken-frame-file
   []
   (-> (thf/sample-file :file1 :page-label :page1)
@@ -436,7 +540,7 @@
   (t/testing "an empty repair batch stops after one iteration"
     (let [file   (broken-frame-file)
           errors (cfv/validate-file file {})]
-      (with-redefs [cfr/repair-file (fn [_ _ _] [])]
+      (with-redefs [cfr/repair-error (stub-repair-error (constantly []))]
         (let [result (cfr/repair-file-until-valid
                       file {}
                       (fn [file _] (cfv/validate-file file {})))]
@@ -445,8 +549,8 @@
           (t/is (= (mapv :code errors) (mapv :code (:errors result)))))))))
 
 (t/deftest repair-file-until-valid-repairs-several-errors-on-one-shape
-  (t/testing "three missing children of one frame are all removed although
-              every pass reports the same [code shape-id]"
+  (t/testing "three missing children of one frame are all removed in one pass,
+              although the three errors write the same :shapes attribute"
     (let [file    (-> (thf/sample-file :file1 :page-label :page1)
                       (ths/add-sample-shape :frame1 :type :frame)
                       (ths/update-shape :frame1 :shapes [(uuid/next) (uuid/next) (uuid/next)]))
@@ -457,6 +561,7 @@
           frame1' (ths/get-shape (:file result) :frame1 :page-label :page1)]
       (t/is (= [:child-not-found :child-not-found :child-not-found] (mapv :code errors)))
       (t/is (= #{(thi/id :frame1)} (into #{} (map :shape-id) errors)))
+      (t/is (= 1 (:iterations result)))
       (t/is (nil? (:errors result)))
       (t/is (nil? (cfv/validate-file (:file result) {})))
       (t/is (= [] (:shapes frame1'))))))
@@ -467,12 +572,13 @@
           shape-id (thi/id :shape1)
           page-id  (thi/id :page1)
           cur-name (:name (ths/get-shape file :shape1 :page-label :page1))]
-      (with-redefs [cfr/repair-file
-                    (fn [_ _ _]
-                      [{:type :mod-obj
-                        :id shape-id
-                        :page-id page-id
-                        :operations [{:type :set :attr :name :val cur-name}]}])]
+      (with-redefs [cfr/repair-error
+                    (stub-repair-error
+                     (fn []
+                       [{:type :mod-obj
+                         :id shape-id
+                         :page-id page-id
+                         :operations [{:type :set :attr :name :val cur-name}]}]))]
         (let [result (cfr/repair-file-until-valid
                       file {}
                       (fn [_ _] [{:code :frame-not-found :shape-id shape-id}])
@@ -491,14 +597,15 @@
                     :shape-id shape-id
                     :hint "stuck"
                     :args {:x 1}}]
-      (with-redefs [cfr/repair-file
-                    (fn [_ _ _]
-                      [{:type :mod-obj
-                        :id shape-id
-                        :page-id page-id
-                        :operations [{:type :set
-                                      :attr :name
-                                      :val (str "pass-" (swap! pass inc))}]}])]
+      (with-redefs [cfr/repair-error
+                    (stub-repair-error
+                     (fn []
+                       [{:type :mod-obj
+                         :id shape-id
+                         :page-id page-id
+                         :operations [{:type :set
+                                       :attr :name
+                                       :val (str "pass-" (swap! pass inc))}]}]))]
         (let [result (cfr/repair-file-until-valid
                       file {}
                       (fn [_ _] [sticky])
@@ -513,14 +620,15 @@
           pass   (atom 0)
           shape-id (thi/id :shape1)
           page-id  (thi/id :page1)]
-      (with-redefs [cfr/repair-file
-                    (fn [_ _ _]
-                      [{:type :mod-obj
-                        :id shape-id
-                        :page-id page-id
-                        :operations [{:type :set
-                                      :attr :name
-                                      :val (str "pass-" (swap! pass inc))}]}])]
+      (with-redefs [cfr/repair-error
+                    (stub-repair-error
+                     (fn []
+                       [{:type :mod-obj
+                         :id shape-id
+                         :page-id page-id
+                         :operations [{:type :set
+                                       :attr :name
+                                       :val (str "pass-" (swap! pass inc))}]}]))]
         (let [result (cfr/repair-file-until-valid
                       file {}
                       (fn [_ _]
