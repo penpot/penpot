@@ -12,7 +12,8 @@
    [app.common.render-wasm.helpers :as h]
    [app.common.render-wasm.serializers :as sr]
    [app.common.render-wasm.text-content :as tc]
-   [app.common.render-wasm.wasm :as wasm]))
+   [app.common.render-wasm.wasm :as wasm]
+   [app.common.types.text.cjk-layout :as cjk]))
 
 (defn set-shape-text!
   "Serializes a text shape's content into the current WASM shape. Mirrors the
@@ -20,9 +21,11 @@
   paragraph -> layout.
   Byte writing and font resolution are the shared
   `text-content/write-shape-text!` defaults; the exporter has no fonts DB, so
-  it injects no variant normalization."
+  it injects no variant normalization. Like the workspace, it lays out the
+  active content (`cjk/active-content`): only the CJK attrs of the text
+  language."
   [content]
-  (when content
+  (when-let [content (some-> content cjk/active-content)]
     (h/call wasm/internal-module "_clear_shape_text")
     (h/call wasm/internal-module "_set_shape_vertical_align"
             (sr/translate-vertical-align (get content :vertical-align)))

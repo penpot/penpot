@@ -413,7 +413,7 @@ pub fn paint_layout(
 
 /// Paint every glyph and decoration with one `paint` (stroke / shadow
 /// silhouette passes).
-fn paint_glyphs(
+pub fn paint_glyphs(
     canvas: &Canvas,
     layout: &VerticalLayout,
     bounds: &Rect,
@@ -577,11 +577,11 @@ pub fn paint_grid(canvas: &Canvas, layout: &VerticalLayout, bounds: &Rect, align
     }
 }
 
-/// Paint the vertical glyph shadows. The shadow paint carries the
-/// blur/offset image filter, so glyphs draw through it with no offscreen
-/// layer (a `save_layer` with the filter can exceed GPU limits on tall
-/// columns).
-pub fn paint_drop_shadow(
+/// Paint a drop or inner shadow of the vertical glyphs. The shadow paint
+/// carries the shadow image filter, so glyphs draw through it with no
+/// offscreen layer (a `save_layer` with the filter can exceed GPU limits on
+/// tall columns).
+pub fn paint_shadow(
     canvas: &Canvas,
     layout: &VerticalLayout,
     bounds: &Rect,
@@ -593,6 +593,34 @@ pub fn paint_drop_shadow(
     paint.set_color(skia::Color::BLACK);
     paint.set_anti_alias(true);
     paint_glyphs(canvas, layout, bounds, vertical_align, &paint, output);
+}
+
+/// Paint a container's drop shadow over the vertical glyphs: the glyph fill
+/// plus the outside reach of every center and outer stroke, through one
+/// shadow paint.
+pub fn paint_shadow_silhouette(
+    canvas: &Canvas,
+    layout: &VerticalLayout,
+    bounds: &Rect,
+    vertical_align: VerticalAlign,
+    shadow_paint: &Paint,
+    strokes: &[&Stroke],
+    output: GlyphOutput,
+) {
+    paint_shadow(canvas, layout, bounds, vertical_align, shadow_paint, output);
+    for stroke in strokes {
+        let width = match stroke.kind {
+            StrokeKind::Inner => continue,
+            StrokeKind::Center => stroke.width,
+            StrokeKind::Outer => stroke.width * 2.0,
+        };
+        let mut paint = shadow_paint.clone();
+        paint.set_color(skia::Color::BLACK);
+        paint.set_anti_alias(true);
+        paint.set_style(skia::PaintStyle::Stroke);
+        paint.set_stroke_width(width);
+        paint_glyphs(canvas, layout, bounds, vertical_align, &paint, output);
+    }
 }
 
 /// Paint a stroke on the vertical glyphs. Center strokes draw directly;
@@ -994,6 +1022,43 @@ mod tests {
     }
 
     #[test]
+    fn shadow_silhouette_widens_with_center_and_outer_strokes_only() {
+        let content = make_content_with_spans(&["く"], 400.0);
+        let layout = layout_with(&provider(VMTX_TEST_FONT), &content);
+        let bounds = content.bounds();
+        let inked = |strokes: &[&Stroke]| {
+            let mut surface = skia::surfaces::raster_n32_premul((256, 512)).unwrap();
+            paint_shadow_silhouette(
+                surface.canvas(),
+                &layout,
+                &bounds,
+                VerticalAlign::Top,
+                &Paint::default(),
+                strokes,
+                GlyphOutput::Text,
+            );
+            inked_pixels(&mut surface, skia::Rect::from_wh(256.0, 512.0))
+        };
+        let inner = Stroke::new_inner_stroke(4.0, StrokeStyle::Solid, None, None, None, None);
+        let center = Stroke::new_center_stroke(4.0, StrokeStyle::Solid, None, None, None, None);
+        let outer = Stroke::new_outer_stroke(4.0, StrokeStyle::Solid, None, None, None, None);
+
+        let fill = inked(&[]);
+        assert!(fill > 0, "the glyph fill is painted");
+        assert_eq!(
+            inked(&[&inner]),
+            fill,
+            "an inner stroke stays inside the glyph"
+        );
+        let centered = inked(&[&center]);
+        assert!(centered > fill, "a center stroke reaches outside the glyph");
+        assert!(
+            inked(&[&outer]) > centered,
+            "an outer stroke reaches its full width out"
+        );
+    }
+
+    #[test]
     fn paint_passes_do_not_panic() {
         let content = decorated_content("あいAB。", TextDecoration::LINE_THROUGH);
         let layout = layout_content(&content, 1000.0);
@@ -1015,7 +1080,7 @@ mod tests {
             VerticalAlign::Top,
             GlyphOutput::Text,
         );
-        paint_drop_shadow(
+        paint_shadow(
             canvas,
             &layout,
             &bounds,
@@ -1034,7 +1099,7 @@ mod tests {
             None,
             None,
         ));
-        paint_drop_shadow(
+        paint_shadow(
             canvas,
             &layout,
             &bounds,

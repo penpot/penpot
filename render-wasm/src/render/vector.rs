@@ -84,7 +84,7 @@ impl<'a> VectorRenderer<'a> {
         let output = crate::render::svg::vertical_glyph_output();
 
         for shadow in &shape.drop_shadow_paints() {
-            text_vertical::paint_drop_shadow(
+            text_vertical::paint_shadow(
                 self.canvas,
                 &layout,
                 &bounds,
@@ -93,7 +93,22 @@ impl<'a> VectorRenderer<'a> {
                 output,
             );
         }
-        text::paint_vertical_fill(self.canvas, shape, &layout, &bounds, blur_filter, output);
+        // Inside a container's drop-shadow pass the glyphs paint opaque.
+        let silhouette = self.silhouette.map(|_| {
+            let mut paint = Paint::default();
+            paint.set_color(skia::Color::BLACK);
+            paint.set_anti_alias(true);
+            paint
+        });
+        text::paint_vertical_fill(
+            self.canvas,
+            shape,
+            &layout,
+            &bounds,
+            blur_filter,
+            silhouette.as_ref(),
+            output,
+        );
         let selrect = shape.selrect();
         for stroke in shape.visible_strokes().rev() {
             text_vertical::paint_stroke(

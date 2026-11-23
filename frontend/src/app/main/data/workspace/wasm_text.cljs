@@ -61,23 +61,27 @@
                        (wasm.api/get-text-dimensions))]
        (resolve-text-size selrect grow-type content dimension)))))
 
+(defn text-resize-modifiers
+  "Modifiers that resize `shape` with `content` to `new-size`, keeping the
+  point `text.geom/resize-origin` sets."
+  [{:keys [selrect] :as shape} content new-size]
+  (let [width-scale  (/ (:width new-size) (:width selrect))
+        height-scale (/ (:height new-size) (:height selrect))
+        resize-v     (gpt/point width-scale height-scale)
+        origin       (text.geom/resize-origin (assoc shape :content content))]
+    (ctm/resize-modifiers
+     resize-v
+     origin
+     (:transform shape (gmt/matrix))
+     (:transform-inverse shape (gmt/matrix)))))
+
 (defn resize-wasm-text-modifiers
   ([shape]
    (resize-wasm-text-modifiers shape (:content shape)))
 
-  ([{:keys [id selrect] :as shape} content]
+  ([{:keys [id] :as shape} content]
    (when-let [new-size (get-wasm-text-new-size shape content)]
-     (let [width-scale  (/ (:width new-size) (:width selrect))
-           height-scale (/ (:height new-size) (:height selrect))
-           resize-v     (gpt/point width-scale height-scale)
-           origin       (text.geom/resize-origin (assoc shape :content content))]
-       {id
-        {:modifiers
-         (ctm/resize-modifiers
-          resize-v
-          origin
-          (:transform shape (gmt/matrix))
-          (:transform-inverse shape (gmt/matrix)))}}))))
+     {id {:modifiers (text-resize-modifiers shape content new-size)}})))
 
 (defn resize-wasm-text
   "Resize a single text shape (auto-width/auto-height) by id.

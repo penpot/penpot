@@ -24,18 +24,46 @@ use text_vertical::GlyphOutput;
 /// one layout. Rebinds the content to the selrect: stored text bounds
 /// describe the measured content and can be taller than a fixed shape, whose
 /// height is the column-wrap budget.
+///
+/// With `parent_shadows` (a container's drop-shadow pass) only the shadows
+/// of the text silhouette are painted.
+#[allow(clippy::too_many_arguments)]
 pub fn render_vertical_text(
     state: &mut RenderState,
     shape: &Shape,
     text_content: &TextContent,
     fills_surface_id: SurfaceId,
     strokes_surface_id: SurfaceId,
+    innershadows_surface_id: SurfaceId,
+    text_drop_shadows_surface_id: SurfaceId,
+    parent_shadows: Option<&[Paint]>,
     skip_effects: bool,
 ) -> Result<()> {
     let blur_filter = (!skip_effects).then(|| shape.image_filter(1.0)).flatten();
     let bounds = shape.selrect();
     let vertical_align = shape.vertical_align();
     let layout = text_content.vertical_layout(&bounds);
+
+    if let Some(parent_shadows) = parent_shadows {
+        if !state.should_skip_drop_shadows() {
+            let strokes: Vec<&Stroke> = shape.visible_strokes().collect();
+            let canvas = state
+                .surfaces
+                .canvas_and_mark_dirty(text_drop_shadows_surface_id);
+            for shadow in parent_shadows {
+                text_vertical::paint_shadow_silhouette(
+                    canvas,
+                    &layout,
+                    &bounds,
+                    vertical_align,
+                    shadow,
+                    &strokes,
+                    GlyphOutput::Text,
+                );
+            }
+        }
+        return Ok(());
+    }
 
     let skip_shadows = skip_effects || state.should_skip_drop_shadows();
     if !skip_shadows {
@@ -46,7 +74,7 @@ pub fn render_vertical_text(
         if !drop_shadows.is_empty() {
             let canvas = state.surfaces.canvas_and_mark_dirty(fills_surface_id);
             for shadow in &drop_shadows {
-                text_vertical::paint_drop_shadow(
+                text_vertical::paint_shadow(
                     canvas,
                     &layout,
                     &bounds,
@@ -71,6 +99,7 @@ pub fn render_vertical_text(
                 &layout,
                 &bounds,
                 blur_filter.as_ref(),
+                None,
                 GlyphOutput::Text,
             )
         },
@@ -91,6 +120,25 @@ pub fn render_vertical_text(
                 blur_filter.as_ref(),
                 GlyphOutput::Text,
             );
+        }
+    }
+
+    if !skip_effects {
+        let inner_shadows = shape.inner_shadow_paints();
+        if !inner_shadows.is_empty() {
+            let canvas = state
+                .surfaces
+                .canvas_and_mark_dirty(innershadows_surface_id);
+            for shadow in &inner_shadows {
+                text_vertical::paint_shadow(
+                    canvas,
+                    &layout,
+                    &bounds,
+                    vertical_align,
+                    shadow,
+                    GlyphOutput::Text,
+                );
+            }
         }
     }
 
@@ -418,6 +466,7 @@ pub fn paint_vertical_fill(
     layout: &text_vertical::VerticalLayout,
     bounds: &Rect,
     blur: Option<&ImageFilter>,
+    single_paint: Option<&Paint>,
     output: GlyphOutput,
 ) {
     if let Some(blur_filter) = blur {
@@ -429,7 +478,17 @@ pub fn paint_vertical_fill(
                 .paint(&blur_paint),
         );
     }
-    text_vertical::paint_layout(canvas, layout, bounds, shape.vertical_align(), output);
+    match single_paint {
+        Some(paint) => text_vertical::paint_glyphs(
+            canvas,
+            layout,
+            bounds,
+            shape.vertical_align(),
+            paint,
+            output,
+        ),
+        None => text_vertical::paint_layout(canvas, layout, bounds, shape.vertical_align(), output),
+    }
     if blur.is_some() {
         canvas.restore();
     }

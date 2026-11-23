@@ -1775,6 +1775,9 @@ impl RenderState {
                             text_content,
                             fills_surface_id,
                             strokes_surface_id,
+                            innershadows_surface_id,
+                            text_drop_shadows_surface_id,
+                            parent_shadows.as_deref(),
                             skip_effects,
                         )?;
                     } else {

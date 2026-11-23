@@ -42,7 +42,7 @@ pub(crate) mod test_support;
 pub(crate) use layout::CellKind;
 pub use layout::{block_axis_offset, layout_for_rect, VerticalLayout};
 pub use paint::{
-    paint_drop_shadow, paint_grid, paint_layout, paint_stroke, paint_text_vertical,
-    paint_text_vertical_with, vertical_text_paths, GlyphOutput,
+    paint_glyphs, paint_grid, paint_layout, paint_shadow, paint_shadow_silhouette, paint_stroke,
+    paint_text_vertical, paint_text_vertical_with, vertical_text_paths, GlyphOutput,
 };
 pub use positions::{caret_from_point, caret_rect, intersects, position_data, range_rects};

@@ -30,27 +30,25 @@
                  (live-axis (:height dimension) (:height selrect)))})))
 
 (defn- block-anchor
+  "Share of the width a vertical text grows by to its left: its right edge
+  stays for top alignment, its center for center, its left edge for bottom."
   [content]
-  (if (wm/vertical-text-content? content)
-    (case (:vertical-align content) "center" 0.5 "bottom" 0 1)
-    (case (:vertical-align content) "center" 0.5 "bottom" 1 0)))
+  (case (:vertical-align content) "center" 0.5 "bottom" 0 1))
 
 (defn resize-origin
-  "Keep the text's block alignment anchored when its measured size changes."
+  "Point that stays put when a text's measured size changes. Vertical text
+  keeps the block-axis edge its alignment sets; horizontal text keeps its
+  top-left corner, as the WASM renderer does."
   [{:keys [points content]}]
-  (gpt/lerp (nth points 0)
-            (nth points (if (wm/vertical-text-content? content) 1 3))
-            (block-anchor content)))
+  (if (wm/vertical-text-content? content)
+    (gpt/lerp (nth points 0) (nth points 1) (block-anchor content))
+    (nth points 0)))
 
 (defn live-rect
   "Bounds of live editor content, before its geometry is committed."
   [selrect grow-type content dimension]
   (if-let [{:keys [width height]} (resolve-size selrect grow-type content dimension)]
-    (let [vertical? (wm/vertical-text-content? content)
-          anchor    (block-anchor content)]
-      (assoc selrect
-             :x (+ (:x selrect) (if vertical? (* anchor (- (:width selrect) width)) 0))
-             :y (+ (:y selrect) (if vertical? 0 (* anchor (- (:height selrect) height))))
-             :width width
-             :height height))
+    (cond-> (assoc selrect :width width :height height)
+      (wm/vertical-text-content? content)
+      (update :x + (* (block-anchor content) (- (:width selrect) width))))
     selrect))

@@ -142,18 +142,23 @@
     (t/is (= 50 (:y shape)))
     (t/is (= [4 17] [(:width shape) (:height shape)]))))
 
-(t/deftest horizontal-auto-grow-keeps-the-block-anchor
-  (doseq [[align expected-y] [["top" 20] ["center" -60] ["bottom" -140]]]
-    (let [shape (cts/setup-shape
-                 {:type :text :x 10 :y 20 :width 100 :height 200
-                  :grow-type :auto-height
-                  :content (assoc (writing-mode-content "horizontal-tb") :vertical-align align)})
+(t/deftest horizontal-auto-grow-keeps-the-top-left-corner
+  (doseq [align ["top" "center" "bottom"]]
+    (let [content (assoc (writing-mode-content "horizontal-tb") :vertical-align align)
+          shape   (cts/setup-shape
+                   {:type :text :x 10 :y 20 :width 100 :height 200
+                    :grow-type :auto-height
+                    :content content})
           resized (with-redefs [dwwt/get-wasm-text-new-size
                                 (fn ([_] {:width 100 :height 360})
                                   ([_ _] {:width 100 :height 360}))]
                     (let [modifiers (dwwt/resize-wasm-text-modifiers shape)]
                       (gsh/transform-shape shape (get-in modifiers [(:id shape) :modifiers]))))]
-      (t/is (= expected-y (:y resized)) align))))
+      (t/is (= [10 20 360] [(:x resized) (:y resized) (:height resized)]) align)
+      (t/is (= {:x 10 :y 20 :width 100 :height 360}
+               (text.geom/live-rect {:x 10 :y 20 :width 100 :height 200} :auto-height
+                                    content {:width 100 :height 360}))
+            align))))
 
 (t/deftest vertical-grow-type-resize-axes-are-remapped
   (t/is (= :auto-height
