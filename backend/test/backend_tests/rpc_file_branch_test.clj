@@ -840,6 +840,7 @@
           (t/is (= ["second" "first"] (mapv :branch-name merges)))
           (t/is (every? #(= (:id profile) (:merged-by %)) merges))
           (t/is (every? #(= (:id file) (:file-id %)) merges))
+          (t/is (every? #(= "merge" (:kind %)) merges))
           (t/is (= [nil "Ships the new header"] (mapv :comment merges))
                 "the comment is trimmed, and a blank one is no comment")
           (t/is (every? (comp nil? :review-id) merges))))
@@ -3624,3 +3625,305 @@
           (t/is (nil? (:error out)))
           (t/is (= :merged (-> out :result :status)))
           (t/is (= [fchanges/revision-kind] (kinds-of (:id file) session-id))))))))
+
+;;; --- Apply a branch to the source and keep it open
+
+(defn- apply-branch*
+  [profile branch-id & {:as params}]
+  (th/command! (merge {::th/type :apply-file-branch
+                       ::rpc/profile-id (:id profile)
+                       :branch-id branch-id}
+                      params)))
+
+(defn- add-color-change
+  [id name]
+  {:type :add-color :color {:id id :name name :color "#123456" :opacity 1}})
+
+(defn- oplog-rows
+  [branch-id]
+  (th/db-query :file-branch-change {:branch-id branch-id}))
+
+(defn- branch-row-of
+  [profile file-id branch-id]
+  (->> (th/command! {::th/type :get-file-branches
+                     ::rpc/profile-id (:id profile)
+                     :file-id file-id})
+       :result
+       (filter #(= branch-id (:id %)))
+       (first)))
+
+(defn- setup-branch*
+  [name]
+  (let [profile (th/create-profile* 1 {:is-active true})
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)})
+        branch  (:result (th/command! {::th/type :create-file-branch
+                                       ::rpc/profile-id (:id profile)
+                                       :file-id (:id file)
+                                       :name name}))]
+    {:profile profile :file file :branch branch}))
+
+(t/deftest apply-keeps-the-branch-open
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [{:keys [profile file branch]} (setup-branch* "keep-me")
+          branch-id      (:id branch)
+          branch-file-id (:branch-file-id branch)
+          first-id       (uuid/random)
+          second-id      (uuid/random)
+          old-base       (:base-snapshot-id (th/db-get :file-branch {:id branch-id}))]
+
+      (t/is (nil? (:error (apply-change* profile branch-file-id (add-color-change first-id "First")))))
+      (let [branch-revn (:revn (th/db-get :file {:id branch-file-id}))
+            out         (apply-branch* profile branch-id)]
+        (t/is (nil? (:error out)))
+        (t/is (= :applied (-> out :result :status)))
+
+        (t/testing "the source gets the change"
+          (t/is (contains? (colors-of profile (:id file)) first-id))
+          (t/is (= (:revn (th/db-get :file {:id (:id file)})) (-> out :result :revn))))
+
+        (t/testing "the branch stays open on top of the new source"
+          (let [row (th/db-get :file-branch {:id branch-id})
+                bf  (th/db-get :file {:id branch-file-id})]
+            (t/is (= "open" (:status row)))
+            (t/is (nil? (:deleted-at row)))
+            (t/is (nil? (:deleted-at bf)))
+            (t/is (not= old-base (:base-snapshot-id row)))
+            (t/is (= (:revn (th/db-get :file {:id (:id file)})) (:base-source-revn row)))
+            ;; nothing the source got had to be replayed on the branch, so its
+            ;; open clients keep their revn
+            (t/is (= branch-revn (:revn bf)))
+            (t/is (= branch-revn (-> out :result :branch-revn)))))
+
+        (t/testing "the branch reads the same document over an empty op log"
+          (t/is (empty? (oplog-rows branch-id)))
+          (t/is (contains? (colors-of profile branch-file-id) first-id)))
+
+        (t/testing "the branch is in sync with the source"
+          (let [row (branch-row-of profile (:id file) branch-id)]
+            (t/is (= 0 (:ahead row)))
+            (t/is (= 0 (:behind row)))
+            (t/is (= 0 (:conflicts row)))))
+
+        (t/testing "the superseded base is released and the source has a safety snapshot"
+          (let [base (th/db-get :file-change {:id old-base} {::db/remove-deleted false})]
+            (t/is (ct/is-before? (:deleted-at base) (ct/in-future {:days 365}))))
+          (t/is (some #(some-> (:label %) (str/starts-with? "pre-apply/"))
+                      (th/db-query :file-change {:file-id (:id file)})))))
+
+      (t/testing "the branch keeps working: a later edit applies again"
+        (t/is (nil? (:error (apply-change* profile branch-file-id (add-color-change second-id "Second")))))
+        (t/is (= 1 (:ahead (branch-row-of profile (:id file) branch-id))))
+        (let [out (apply-branch* profile branch-id)]
+          (t/is (nil? (:error out)))
+          (t/is (= :applied (-> out :result :status))))
+        (t/is (= #{first-id second-id}
+                 (into #{} (filter #{first-id second-id}) (colors-of profile (:id file))))))
+
+      (t/testing "and can still be merged"
+        (let [third-id (uuid/random)]
+          (apply-change* profile branch-file-id (add-color-change third-id "Third"))
+          (let [out (th/command! {::th/type :merge-file-branch
+                                  ::rpc/profile-id (:id profile)
+                                  :branch-id branch-id})]
+            (t/is (nil? (:error out)))
+            (t/is (= :merged (-> out :result :status))))
+          (t/is (contains? (colors-of profile (:id file)) third-id)))))))
+
+(t/deftest apply-refuses-a-branch-behind-main
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [{:keys [profile file branch]} (setup-branch* "behind")
+          branch-id      (:id branch)
+          branch-file-id (:branch-file-id branch)
+          source-color     (uuid/random)
+          branch-color   (uuid/random)]
+      (apply-change* profile (:id file) (add-color-change source-color "Main"))
+      (apply-change* profile branch-file-id (add-color-change branch-color "Branch"))
+
+      (let [source-revn (:revn (th/db-get :file {:id (:id file)}))
+            out       (apply-branch* profile branch-id)]
+        (t/is (= :validation (th/ex-type (:error out))))
+        (t/is (= :branch-behind-main (th/ex-code (:error out))))
+        (t/is (= source-revn (:revn (th/db-get :file {:id (:id file)}))))
+        (t/is (not (contains? (colors-of profile (:id file)) branch-color))))
+
+      (t/testing "once updated from the source, the apply goes through"
+        (t/is (= :updated (-> (th/command! {::th/type :update-file-branch-from-source
+                                            ::rpc/profile-id (:id profile)
+                                            :branch-id branch-id})
+                              :result :status)))
+        (let [out (apply-branch* profile branch-id)]
+          (t/is (nil? (:error out)))
+          (t/is (= :applied (-> out :result :status))))
+        (t/is (contains? (colors-of profile (:id file)) branch-color))
+        (t/is (empty? (oplog-rows branch-id)))))))
+
+(t/deftest apply-refusals-write-nothing
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [{:keys [profile file branch]} (setup-branch* "refusals")
+          viewer   (th/create-profile* 2 {:is-active true})
+          branch-id      (:id branch)
+          branch-file-id (:branch-file-id branch)
+          color-id (uuid/random)]
+      (apply-change* profile branch-file-id (add-color-change color-id "Only"))
+
+      (t/testing "a stale expected source revn"
+        (let [out (apply-branch* profile branch-id :expected-source-revn 9999)]
+          (t/is (= :conflict (th/ex-type (:error out))))
+          (t/is (= :file-modified (th/ex-code (:error out))))))
+
+      (t/testing "every change left out"
+        (let [out (apply-branch* profile branch-id
+                                 :excluded #{(bm/change-key {:kind :color :id color-id})})]
+          (t/is (= :nothing-to-merge (th/ex-code (:error out))))))
+
+      (t/testing "a profile that cannot edit the source"
+        (th/create-team-role* {:team-id (:default-team-id profile)
+                               :profile-id (:id viewer)
+                               :role :viewer})
+        (th/create-file-role* {:file-id branch-file-id
+                               :profile-id (:id viewer)
+                               :role :editor})
+        (t/is (some? (:error (apply-branch* viewer branch-id)))))
+
+      (t/testing "an archived branch"
+        (th/command! {::th/type :archive-file-branch
+                      ::rpc/profile-id (:id profile)
+                      :branch-id branch-id})
+        (t/is (= :branch-not-open (th/ex-code (:error (apply-branch* profile branch-id))))))
+
+      (t/testing "an unknown branch"
+        (t/is (= :branch-not-found (th/ex-code (:error (apply-branch* profile (uuid/next)))))))
+
+      (t/is (not (contains? (colors-of profile (:id file)) color-id)))
+      (t/is (empty? (th/db-query :file-branch-merge {:file-id (:id file)}))))))
+
+(t/deftest apply-with-exclusion-keeps-the-left-out-change-on-the-branch
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [{:keys [profile file branch]} (setup-branch* "selective-apply")
+          branch-id      (:id branch)
+          branch-file-id (:branch-file-id branch)
+          keep-id (uuid/random)
+          drop-id (uuid/random)]
+      (apply-change* profile branch-file-id (add-color-change keep-id "Keep"))
+      (apply-change* profile branch-file-id (add-color-change drop-id "Later"))
+
+      (let [out (apply-branch* profile branch-id
+                               :excluded #{(bm/change-key {:kind :color :id drop-id})})]
+        (t/is (nil? (:error out)))
+        (t/is (= :applied (-> out :result :status))))
+
+      (t/testing "the source gets the selected change only"
+        (let [colors (colors-of profile (:id file))]
+          (t/is (contains? colors keep-id))
+          (t/is (not (contains? colors drop-id)))))
+
+      (t/testing "the branch keeps the change left out as its own work"
+        (let [colors (colors-of profile branch-file-id)]
+          (t/is (contains? colors keep-id))
+          (t/is (contains? colors drop-id)))
+        (t/is (= 1 (count (oplog-rows branch-id))))
+        (let [row (branch-row-of profile (:id file) branch-id)]
+          (t/is (= 1 (:ahead row)))
+          (t/is (= 0 (:behind row)))))
+
+      (t/testing "a later apply takes it"
+        (t/is (= :applied (-> (apply-branch* profile branch-id) :result :status)))
+        (t/is (contains? (colors-of profile (:id file)) drop-id))
+        (t/is (empty? (oplog-rows branch-id)))))))
+
+(t/deftest apply-copies-branch-media-into-the-source
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [{:keys [profile file branch]} (setup-branch* "apply-media")
+          branch-id      (:id branch)
+          branch-file-id (:branch-file-id branch)
+          storage (-> (:app.storage/storage th/*system*)
+                      (assoc :app.storage/backend :fs))
+          sobj    (sto/put-object! storage {::sto/content (sto/content "branch-image")
+                                            :bucket :file-media-object
+                                            :content-type "image/png"})
+          fmo     (th/create-file-media-object* {:file-id branch-file-id
+                                                 :name "new.png"
+                                                 :media-id (:id sobj)})
+          source-rows (fn []
+                      (->> (th/db-query :file-media-object {:file-id (:id file)})
+                           (filterv #(= (:id sobj) (:media-id %)))))]
+      (t/is (nil? (:error (apply-change* profile branch-file-id
+                                         {:type :add-media
+                                          :object {:id (:id fmo) :name "new.png"
+                                                   :media-id (:id sobj)
+                                                   :width 100 :height 100 :mtype "image/png"}}))))
+
+      (t/is (= :applied (-> (apply-branch* profile branch-id) :result :status)))
+
+      (t/testing "the source references a row it owns"
+        (let [media (-> (th/command! {::th/type :get-file
+                                      ::rpc/profile-id (:id profile)
+                                      :id (:id file)})
+                        :result :data :media)
+              added (->> (vals media) (filter #(= "new.png" (:name %))) first)]
+          (t/is (some? added))
+          (t/is (not= (:id fmo) (:id added)))
+          (t/is (= (:id file) (:file-id (th/db-get :file-media-object {:id (:id added)}))))))
+
+      (t/testing "the branch still shows its own row and is in sync"
+        (let [media (-> (th/command! {::th/type :get-file
+                                      ::rpc/profile-id (:id profile)
+                                      :id branch-file-id})
+                        :result :data :media)]
+          (t/is (contains? media (:id fmo))))
+        (let [row (branch-row-of profile (:id file) branch-id)]
+          (t/is (= 0 (:ahead row)))
+          (t/is (= 0 (:behind row)))))
+
+      (t/testing "a second apply copies nothing again"
+        (apply-change* profile branch-file-id (add-color-change (uuid/random) "After"))
+        (t/is (= :applied (-> (apply-branch* profile branch-id) :result :status)))
+        (t/is (= 1 (count (source-rows))))))))
+
+(t/deftest apply-records-itself-in-the-merges-of-the-source
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [{:keys [profile file branch]} (setup-branch* "recorded")]
+      (apply-change* profile (:branch-file-id branch) (add-color-change (uuid/random) "C"))
+      (t/is (= :applied (-> (apply-branch* profile (:id branch) :comment "  First drop  ")
+                            :result :status)))
+      (let [merges (:result (th/command! {::th/type :get-file-branch-merges
+                                          ::rpc/profile-id (:id profile)
+                                          :file-id (:id file)}))]
+        (t/is (= ["apply"] (mapv :kind merges)))
+        (t/is (= ["recorded"] (mapv :branch-name merges)))
+        (t/is (= ["First drop"] (mapv :comment merges)))))))
+
+(t/deftest apply-notifies-only-after-the-commit
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [{:keys [profile file branch]} (setup-branch* "notify-apply")
+          seen (atom [])]
+      (apply-change* profile (:branch-file-id branch) (add-color-change (uuid/random) "C"))
+      (with-redefs [mbus/pub!
+                    (fn [_ & {:keys [topic message]}]
+                      (swap! seen conj {:topic topic
+                                        :message message
+                                        :source-revn (:revn (th/db-get :file {:id (:id file)}))}))]
+        (t/is (= :file-modified (-> (apply-branch* profile (:id branch) :expected-source-revn 9999)
+                                    :error ex-data :code)))
+        (t/is (empty? @seen))
+
+        (t/is (= :applied (-> (apply-branch* profile (:id branch)) :result :status)))
+        ;; the source's clients reload; the branch did not move, so its clients
+        ;; hear nothing
+        (let [[{:keys [topic message source-revn]} :as all] @seen]
+          (t/is (= 1 (count all)))
+          (t/is (= (:id file) topic))
+          (t/is (= :file-merged (:type message)))
+          (t/is (= (:revn message) source-revn)))))))
+
+(t/deftest apply-serializes-against-a-concurrent-delete
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [{:keys [profile branch]} (setup-branch* "gone")]
+      (apply-change* profile (:branch-file-id branch) (add-color-change (uuid/random) "C"))
+      (t/is (nil? (:error (th/command! {::th/type :delete-file-branch
+                                        ::rpc/profile-id (:id profile)
+                                        :branch-id (:id branch)}))))
+      (let [out (apply-branch* profile (:id branch))]
+        (t/is (some? (:error out)))
+        (t/is (contains? #{:branch-not-found :branch-not-open} (th/ex-code (:error out))))))))

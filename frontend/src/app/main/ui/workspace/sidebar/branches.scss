@@ -208,6 +208,13 @@
   color: var(--color-foreground-secondary);
 }
 
+// why a field cannot be used now, under it
+.field-hint {
+  @include use-typography("body-small");
+
+  color: var(--color-foreground-primary);
+}
+
 // the DS text area (`textarea*`) keeps the height these fields had
 .field-textarea {
   min-block-size: $sz-64;

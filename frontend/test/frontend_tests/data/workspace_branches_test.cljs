@@ -14,6 +14,7 @@
    [app.main.data.workspace.branch-reviews :as dwbr]
    [app.main.data.workspace.branches :as dwb]
    [app.main.repo :as rp]
+   [app.util.dom :as dom]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.async :as async]
@@ -620,3 +621,119 @@
                                     "the failure lands"))
              (t/is (nil? (get-in @store [:workspace-branch-merges :data])))
              (rx/dispose! store)))))
+
+;;; --- Apply a branch to main and keep it open
+
+(def ^:private applied-branch-id (uuid/next))
+(def ^:private applied-branch-file-id (uuid/next))
+(def ^:private applied-main-id (uuid/next))
+
+(def ^:private applied-branch
+  {:id applied-branch-id
+   :branch-file-id applied-branch-file-id
+   :name "feature-login"})
+
+(defn- on-the-applied-branch
+  "The open file is the branch at `revn`."
+  [revn]
+  {:current-file-id applied-branch-file-id
+   :files {applied-branch-file-id {:id applied-branch-file-id :revn revn}}
+   :workspace-branch-context {:file-id applied-branch-file-id
+                              :loaded? true
+                              :info {:id applied-branch-id :behind 0 :ahead 1}}})
+
+(defn- reload-stub
+  "Fake `dom/reload-current-window` that counts the reloads into
+  `reloads`. Multi-arity like the original, which callers invoke through
+  its arity directly."
+  [reloads]
+  (fn
+    ([] (swap! reloads inc))
+    ([_] (swap! reloads inc))))
+
+(defn- apply-stub
+  "Fake `rp/cmd!` for an apply answered with `answer`. Every call is
+  recorded into `calls`."
+  [calls answer]
+  (mock/stub (fn [cmd params]
+               (swap! calls conj [cmd params])
+               (case cmd
+                 :apply-file-branch    answer
+                 :get-file-branch-info (rx/of {:id applied-branch-id :ahead 0 :behind 0})
+                 (rx/empty)))))
+
+(t/deftest ^:async the-apply-sends-the-selection-the-comment-and-the-diff-revn
+  (let [calls    (atom [])
+        excluded #{"color//aaaaaaaa/1"}]
+    (await (mock/with-mocks*
+             {rp/cmd! (apply-stub calls (rx/empty))}
+             (let [store (make-store-with
+                          {:workspace-branch-diff {:branch-id applied-branch-id
+                                                   :diff {:meta {:source-revn 5}}}})]
+               (ptk/emit! store (dwb/apply-branch-to-main applied-branch
+                                                          {:excluded excluded
+                                                           :comment "  First drop  "}))
+               (await (async/wait-for #(seq @calls) "the apply is asked"))
+               (t/is (= [[:apply-file-branch {:branch-id applied-branch-id
+                                              :excluded excluded
+                                              :comment "First drop"
+                                              :expected-source-revn 5}]]
+                        @calls))
+               (rx/dispose! store))))))
+
+(t/deftest ^:async an-apply-that-left-the-branch-as-it-was-keeps-the-user-on-it
+  (let [calls   (atom [])
+        reloads (atom 0)]
+    (await (mock/with-mocks*
+             {rp/cmd! (apply-stub calls (rx/of {:status :applied
+                                                :source-file-id applied-main-id
+                                                :branch-revn 3}))
+              dom/reload-current-window (reload-stub reloads)}
+             (let [store (make-store-with (on-the-applied-branch 3))]
+               (ptk/emit! store (dwb/apply-branch-to-main applied-branch))
+               (await (async/wait-for #(some (comp #{:get-file-branch-info} first) @calls)
+                                      "the branch context is asked again"))
+               (await (async/wait-for #(= 0 (get-in @store [:workspace-branch-context :info :ahead]))
+                                      "the fresh counts land"))
+               (t/is (= 0 @reloads) "the branch did not move, so it is not reloaded")
+               (rx/dispose! store))))))
+
+(t/deftest ^:async an-apply-that-moved-the-branch-reloads-it
+  (let [calls   (atom [])
+        reloads (atom 0)]
+    (await (mock/with-mocks*
+             {rp/cmd! (apply-stub calls (rx/of {:status :applied
+                                                :source-file-id applied-main-id
+                                                :branch-revn 4}))
+              dom/reload-current-window (reload-stub reloads)}
+             (let [store (make-store-with (on-the-applied-branch 3))]
+               (ptk/emit! store (dwb/apply-branch-to-main applied-branch))
+               (await (async/wait-for #(pos? @reloads) "the branch reloads"))
+               (t/is (= 1 @reloads))
+               (rx/dispose! store))))))
+
+(t/deftest ^:async an-apply-with-main-open-reloads-main
+  (let [calls   (atom [])
+        reloads (atom 0)]
+    (await (mock/with-mocks*
+             {rp/cmd! (apply-stub calls (rx/of {:status :applied
+                                                :source-file-id applied-main-id
+                                                :branch-revn 3}))
+              dom/reload-current-window (reload-stub reloads)}
+             (let [store (make-store-with {:current-file-id applied-main-id
+                                           :files {applied-main-id {:id applied-main-id :revn 9}}})]
+               (ptk/emit! store (dwb/apply-branch-to-main applied-branch))
+               (await (async/wait-for #(pos? @reloads) "main reloads"))
+               (t/is (= 1 @reloads))
+               (rx/dispose! store))))))
+
+(t/deftest ^:async an-apply-of-a-branch-behind-main-says-so
+  (let [calls (atom [])]
+    (await (mock/with-mocks*
+             {rp/cmd! (apply-stub calls (rx/throw (ex-info "behind" {:type :validation
+                                                                     :code :branch-behind-main})))}
+             (let [store (make-store-with (on-the-applied-branch 3))]
+               (ptk/emit! store (dwb/apply-branch-to-main applied-branch))
+               (await (async/wait-for #(some? (:notification @store)) "a notification shows"))
+               (t/is (= :warning (get-in @store [:notification :level])))
+               (rx/dispose! store))))))

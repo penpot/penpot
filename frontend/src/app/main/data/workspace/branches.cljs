@@ -12,9 +12,11 @@
    [app.config :as cf]
    [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
+   [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
    [app.main.data.persistence :as dwp]
+   [app.main.data.workspace.branch-reviews :as dwbr]
    [app.main.repo :as rp]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
@@ -223,6 +225,10 @@
 
       :invalid-branch-name
       (ntf/warn (tr "workspace.branches.limits.refuse-name"))
+
+      ;; an apply needs the branch up to date with main
+      :branch-behind-main
+      (ntf/warn (tr "workspace.branches.apply.behind"))
 
       ;; the same refusal as the `:unsupported` merge status, raised while
       ;; squashing an update, so it reads the same to a user
@@ -894,3 +900,93 @@
                            (fetch-branch-diff branch-id))
                     (rx/of (refusal-notification cause (tr "workspace.branches.merge.error")))))))))))))
 
+
+(defn branch-applied
+  "The marker of a branch applied to main that stays open. The compare
+  mode leaves on it (`app.main.data.workspace.compare/watch-events`): the
+  changes it showed are in main now."
+  [branch-id]
+  (ptk/data-event ::branch-applied {:branch-id branch-id}))
+
+(defn- show-apply-result
+  "After applying a branch to main, show the file the user is on as it
+  now stands. Main got the changes, so it reloads when it is the open
+  file. The branch reloads only when the apply had to change it
+  (`branch-revn` moved past the revn it holds); otherwise it stays as it
+  is, and only what describes it is refreshed: its context, the compare
+  mode and a review the apply completed."
+  [{:keys [source-file-id branch-file-id branch-id branch-revn]}]
+  (ptk/reify ::show-apply-result
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [file-id (:current-file-id state)
+            revn    (:revn (dsh/lookup-file state file-id))]
+        (cond
+          (= file-id source-file-id)
+          (rx/of (reload-file-window))
+
+          (and (= file-id branch-file-id)
+               (some? branch-revn)
+               (not= branch-revn revn))
+          (rx/of (reload-file-window))
+
+          :else
+          (rx/concat
+           (rx/of (branch-applied branch-id)
+                  (fetch-branch-context))
+           (if (get-in state [:workspace-pr-preview :pr-id])
+             (rx/of (dwbr/exit-branch-review-preview))
+             (rx/empty))))))))
+
+(defn apply-branch-to-main
+  "Apply `branch` (a branch row/context map with at least `:id`) to main
+  and keep the branch open: main gets its changes, and the branch sits on
+  top of the new main with only what was left out as its own work.
+
+  The branch must be up to date with main (the server refuses with
+  `:branch-behind-main` otherwise), so there are no conflicts to resolve
+  and no resolutions to send.
+
+  Options:
+   - `:comment` — what the user says about the apply, kept with its
+     record and shown in the reviews dialog.
+   - `:excluded` — the per-change selection (change keys,
+     `app.common.files.branch-merge/change-key`) naming the changes the
+     user deselected, which stay on the branch.
+
+  When the current diff in state belongs to this branch, its source revn
+  is sent as `expected-source-revn`, as a merge does; a refusal for a
+  stale diff re-fetches it."
+  ([branch] (apply-branch-to-main branch nil))
+  ([branch {:keys [comment excluded]}]
+   (assert (uuid? (:id branch)) "expected a branch row with a valid `:id`")
+   (ptk/reify ::apply-branch-to-main
+     ptk/WatchEvent
+     (watch [_ state _]
+       (let [branch-id   (:id branch)
+             diff-st     (:workspace-branch-diff state)
+             source-revn (when (= branch-id (:branch-id diff-st))
+                           (get-in diff-st [:diff :meta :source-revn]))]
+         (rx/concat
+          (rx/of (ev/event {::ev/name "apply-branch-to-main"}))
+          (->> (rp/cmd! :apply-file-branch
+                        (cond-> {:branch-id branch-id}
+                          (seq excluded)             (assoc :excluded excluded)
+                          (not (str/blank? comment)) (assoc :comment (str/trim comment))
+                          (some? source-revn)        (assoc :expected-source-revn source-revn)))
+               (rx/mapcat
+                (fn [{:keys [status source-file-id branch-revn]}]
+                  (case status
+                    :applied     (rx/of (ntf/success (tr "workspace.branches.apply.success"))
+                                        (show-apply-result {:source-file-id source-file-id
+                                                            :branch-file-id (:branch-file-id branch)
+                                                            :branch-id branch-id
+                                                            :branch-revn branch-revn}))
+                    :unsupported (rx/of (ntf/warn (tr "workspace.branches.merge.unsupported")))
+                    (rx/of (ntf/error (tr "workspace.branches.apply.error"))))))
+               (rx/catch
+                (fn [cause]
+                  (if (= :file-modified (:code (ex-data cause)))
+                    (rx/of (ntf/warn (tr "workspace.branches.merge.main-moved"))
+                           (fetch-branch-diff branch-id))
+                    (rx/of (refusal-notification cause (tr "workspace.branches.apply.error")))))))))))))

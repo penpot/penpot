@@ -6691,6 +6691,64 @@ msgstr "Text Transform"
 msgid "workspace.assets.ungroup"
 msgstr "Ungroup"
 
+#: src/app/main/data/workspace/branches.cljs
+msgid "workspace.branches.apply.behind"
+msgstr ""
+"Main has changes this branch is missing. Update the branch from main, then "
+"apply it."
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.apply.behind-hint"
+msgstr "Update this branch from main before you apply its changes."
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.apply.comment-label"
+msgstr "Apply comment"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.apply.confirm-accept"
+msgstr "Apply to main"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.apply.confirm-message"
+msgstr ""
+"Apply the changes of %s to %s? The branch stays open, so you can keep "
+"working on it."
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.apply.confirm-title"
+msgstr "Apply to main"
+
+#: src/app/main/data/workspace/branches.cljs
+msgid "workspace.branches.apply.error"
+msgstr "Could not apply the branch"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.apply.keep-info"
+msgstr "After you apply the changes, this branch stays open and in sync with main."
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.apply.left-out-kept"
+msgid_plural "workspace.branches.apply.left-out-kept"
+msgstr[0] "The change you left out stays on this branch."
+msgstr[1] "The %s changes you left out stay on this branch."
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.apply.mode-apply"
+msgstr "Apply and keep the branch"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.apply.mode-label"
+msgstr "What happens to the branch"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.apply.mode-merge"
+msgstr "Merge and delete the branch"
+
+#: src/app/main/data/workspace/branches.cljs
+msgid "workspace.branches.apply.success"
+msgstr "Changes applied to main. The branch stays open."
+
 msgid "workspace.branches.archive.message"
 msgstr ""
 "Archive branch \"%s\"? It becomes read-only and leaves the active list. You "
@@ -7401,6 +7459,10 @@ msgstr ""
 
 msgid "workspace.branches.restore.title"
 msgstr "Restore branch"
+
+#: src/app/main/ui/workspace/sidebar/reviews.cljs
+msgid "workspace.branches.reviews.applied"
+msgstr "Applied"
 
 msgid "workspace.branches.reviews.design.empty"
 msgstr "No branch reviews yet"

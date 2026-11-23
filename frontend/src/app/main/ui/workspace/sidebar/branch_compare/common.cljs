@@ -29,10 +29,11 @@
 ;; --- Merge / update confirmations
 
 (defn confirm-merge!
-  "Open the merge dialog for `branch` (merge into main is irreversible and
-  deletes the branch; the dialog asks for a comment for the merge's
-  record). `excluded` is the per-change selection of the comparison, if
-  any."
+  "Open the merge dialog for `branch`. The dialog asks what happens to
+  the branch: a merge into main is irreversible and deletes it, an apply
+  keeps it open on top of the new main. It also asks for a comment for
+  the record. `excluded` is the per-change selection of the comparison,
+  if any."
   ([branch] (confirm-merge! branch nil))
   ([branch excluded]
    (modal/show! :merge-branch {:branch branch :excluded excluded})))

@@ -99,6 +99,25 @@
                "the selection is dropped")
          (rx/dispose! store))))))
 
+(t/deftest ^:async an-applied-branch-leaves-the-mode
+  (let [calls (atom [])]
+    (await
+     (mock/with-mocks* {rp/cmd! (cmd-stub calls)}
+       (let [store   (on-branch)
+             stopper (rx/subject)]
+         (ptk/emit! store (dwcp/watch-events stopper))
+         (ptk/emit! store (dwcp/enter branch))
+         (ptk/emit! store (dwb/toggle-diff-excluded #{"color//a/1"}))
+         (t/is (dwcp/comparing? @store))
+         (ptk/emit! store (dwb/branch-applied (:id branch)))
+         (await (async/wait-for-store store
+                                      #(not (dwcp/comparing? @store))
+                                      "the mode is left"))
+         (t/is (= #{} (dwb/diff-excluded (:workspace-branch-diff @store)))
+               "the selection the apply sent is dropped")
+         (rx/push! stopper nil)
+         (rx/dispose! store))))))
+
 (t/deftest ^:async the-direction-refetches-and-starts-the-list-over
   (let [calls (atom [])]
     (await

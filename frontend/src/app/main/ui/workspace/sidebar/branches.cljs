@@ -26,6 +26,7 @@
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.checkbox :refer [checkbox*]]
    [app.main.ui.ds.controls.input :refer [input*]]
+   [app.main.ui.ds.controls.radio-buttons :refer [radio-buttons*]]
    [app.main.ui.ds.controls.textarea :refer [textarea*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.layout.menu :refer [menu* menu-item* menu-separator*]]
@@ -265,21 +266,64 @@
 
 ;; --- Merge confirmation dialog (modal)
 
+(mf/defc integration-mode*
+  "What the integration does with the branch: a merge deletes it, an
+  apply keeps it open on top of the new main. An apply needs the branch
+  up to date with main, so its option is disabled, and the hint says
+  why, while main has changes the branch lacks."
+  {::mf/private true}
+  [{:keys [mode apply-blocked on-change]}]
+  [:div {:class (stl/css :field)}
+   [:span {:id "merge-branch-mode-label"
+           :class (stl/css :field-label)}
+    (tr "workspace.branches.apply.mode-label")]
+   [:> radio-buttons* {:name "merge-branch-mode"
+                       :aria-labelledby "merge-branch-mode-label"
+                       :extended true
+                       :selected mode
+                       :on-change on-change
+                       :options [{:id "merge-branch-mode-merge"
+                                  :label (tr "workspace.branches.apply.mode-merge")
+                                  :value "merge"}
+                                 {:id "merge-branch-mode-apply"
+                                  :label (tr "workspace.branches.apply.mode-apply")
+                                  :value "apply"
+                                  :disabled apply-blocked}]}]
+   (when apply-blocked
+     [:span {:class (stl/css :field-hint)}
+      (tr "workspace.branches.apply.behind-hint")])])
+
 (mf/defc merge-branch-dialog*
+  "Bring the changes of a branch into main. The user picks what happens
+  to the branch (`integration-mode*`): merge it, which deletes it, or
+  apply it, which keeps it open."
   {::mf/register modal/components
    ::mf/register-as :merge-branch}
   [{:keys [branch excluded]}]
   (let [comment*  (mf/use-state "")
         comment   (deref comment*)
 
-        ;; the open tasks of the branch move to main as they are; their
-        ;; assignees may be told
+        ;; the counts of the open branch are the freshest the client has:
+        ;; the banner refreshes them on every save and focus
+        context   (mf/deref branch-context)
+        counts    (if (= (:id branch) (:id context)) context branch)
+        apply-blocked (or (pos? (or (:behind counts) 0))
+                          (pos? (or (:conflicts counts) 0)))
+
+        mode*     (mf/use-state "merge")
+        apply?    (and (= "apply" (deref mode*)) (not apply-blocked))
+        on-mode   (mf/use-fn #(reset! mode* %))
+
+        ;; the open tasks of the branch move to main as they are on a
+        ;; merge; their assignees may be told. An apply leaves them on the
+        ;; branch, which stays open
         tasks*     (mf/use-state nil)
         notify*    (mf/use-state true)
         notify?    (deref notify*)
         open-tasks (->> (deref tasks*)
                         (remove dwtk/closed?)
                         (vec))
+        show-tasks (and (not apply?) (seq open-tasks))
         on-notify  (mf/use-fn #(swap! notify* not))
 
         ;; what goes in and what stays out, when the comparison of this
@@ -300,10 +344,12 @@
         ;; whole sentence stays in a single translation and the (user
         ;; controlled) branch name is rendered as escaped text, not HTML.
         message-parts
-        (let [sep "\uE000"
-              msg (tr "workspace.branches.merge.confirm-message"
-                      (str sep "\"" (:name branch) "\"" sep)
-                      (str sep (tr "workspace.branches.main") sep))]
+        (let [sep  ""
+              name (str sep "\"" (:name branch) "\"" sep)
+              main (str sep (tr "workspace.branches.main") sep)
+              msg  (if apply?
+                     (tr "workspace.branches.apply.confirm-message" name main)
+                     (tr "workspace.branches.merge.confirm-message" name main))]
           (str/split msg sep))
 
         on-comment-change
@@ -314,11 +360,14 @@
 
         on-submit
         (mf/use-fn
-         (mf/deps branch comment excluded notify? open-tasks)
+         (mf/deps branch comment excluded notify? open-tasks apply?)
          (fn [_]
-           (st/emit! (dwb/merge-branch branch {:comment comment
-                                               :excluded excluded
-                                               :notify-assignees (boolean (and notify? (seq open-tasks)))})
+           (st/emit! (if apply?
+                       (dwb/apply-branch-to-main branch {:comment comment
+                                                         :excluded excluded})
+                       (dwb/merge-branch branch {:comment comment
+                                                 :excluded excluded
+                                                 :notify-assignees (boolean (and notify? (seq open-tasks)))}))
                      (modal/hide))))]
 
     (mf/with-effect [branch]
@@ -330,7 +379,9 @@
 
     [:> modal* {:is-open true
                 :on-open-change (brui/on-dismiss on-close)}
-     [:> modal-header* {:title (tr "workspace.branches.merge.confirm-title")}]
+     [:> modal-header* {:title (if apply?
+                                 (tr "workspace.branches.apply.confirm-title")
+                                 (tr "workspace.branches.merge.confirm-title"))}]
 
      [:> modal-content* {:class (stl/css :dialog-content)}
       [:p {:class (stl/css :modal-message)}
@@ -338,6 +389,10 @@
          (if (odd? idx)
            [:span {:key idx :class (stl/css :modal-message-emphasis)} part]
            [:span {:key idx} part]))]
+
+      [:> integration-mode* {:mode (if apply? "apply" "merge")
+                             :apply-blocked apply-blocked
+                             :on-change on-mode}]
 
       (when (pos? (+ going-in left-out))
         [:ul {:class (stl/css :merge-summary)}
@@ -349,7 +404,9 @@
       [:div {:class (stl/css :field)}
        [:label {:class (stl/css :field-label)
                 :for "merge-branch-comment"}
-        (tr "workspace.branches.merge.comment-label")]
+        (if apply?
+          (tr "workspace.branches.apply.comment-label")
+          (tr "workspace.branches.merge.comment-label"))]
        [:> textarea* {:id "merge-branch-comment"
                       :class (stl/css :field-textarea)
                       :value comment
@@ -357,7 +414,7 @@
                       :on-change on-comment-change
                       :rows 3}]]
 
-      (when (seq open-tasks)
+      (when show-tasks
         [:div {:class (stl/css :merge-tasks)}
          [:> context-notification* {:level :warning :type :context}
           (tr "workspace.branches.merge.open-tasks" (i18n/c (count open-tasks)))]
@@ -372,10 +429,22 @@
                         :on-change on-notify
                         :label (tr "workspace.branches.merge.notify-assignees")}]])
 
-      (if (pos? left-out)
+      (cond
+        ;; the branch stays, and so does what was left out of main
+        (and apply? (pos? left-out))
+        [:> context-notification* {:level :info :type :context}
+         (tr "workspace.branches.apply.left-out-kept" (i18n/c left-out))]
+
+        apply?
+        [:> context-notification* {:level :info :type :context}
+         (tr "workspace.branches.apply.keep-info")]
+
         ;; deleting the branch takes the changes left out with it
+        (pos? left-out)
         [:> context-notification* {:level :warning :type :context}
          (tr "workspace.branches.merge.left-out-lost" (i18n/c left-out))]
+
+        :else
         [:> context-notification* {:level :info :type :context}
          (tr "workspace.branches.merge.delete-info")])]
 
@@ -383,11 +452,12 @@
       [:> button* {:variant "secondary" :on-click on-close}
        (tr "labels.cancel")]
       [:> button* {:variant "primary"
-                   :icon i/git-merge
+                   :icon (if apply? i/git-commit i/git-merge)
                    :on-click on-submit}
-       (if (seq open-tasks)
-         (tr "workspace.branches.merge.confirm-anyway")
-         (tr "workspace.branches.merge.confirm-accept"))]]]))
+       (cond
+         apply?           (tr "workspace.branches.apply.confirm-accept")
+         (seq open-tasks) (tr "workspace.branches.merge.confirm-anyway")
+         :else            (tr "workspace.branches.merge.confirm-accept"))]]]))
 
 ;; --- Confirmation for relevant branch actions (merge / update / materialize)
 

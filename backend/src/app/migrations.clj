@@ -605,7 +605,10 @@
     :fn (mg/resource "app/migrations/sql/0818-mod-comment-thread-add-lost-layer.sql")}
 
    {:name "0819-mod-file-branch-review-drop-pinned-revision"
-    :fn (mg/resource "app/migrations/sql/0819-mod-file-branch-review-drop-pinned-revision.sql")}])
+    :fn (mg/resource "app/migrations/sql/0819-mod-file-branch-review-drop-pinned-revision.sql")}
+
+   {:name "0820-mod-file-branch-merge-table-add-kind"
+    :fn (mg/resource "app/migrations/sql/0820-mod-file-branch-merge-table-add-kind.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]
