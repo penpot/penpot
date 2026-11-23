@@ -192,55 +192,6 @@
   text-overflow: ellipsis;
 }
 
-// --- Review dialog (verdict options)
-
-.verdict-options {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-s);
-}
-
-.verdict-option {
-  --verdict-option-bg-color: transparent;
-  --verdict-option-border-color: var(--color-background-quaternary);
-
-  display: flex;
-  align-items: center;
-  gap: var(--sp-m);
-  padding: var(--sp-m);
-  border: $b-1 solid var(--verdict-option-border-color);
-  border-radius: $br-8;
-  background: var(--verdict-option-bg-color);
-  cursor: pointer;
-  text-align: start;
-  color: var(--color-foreground-primary);
-
-  &:hover {
-    --verdict-option-bg-color: var(--color-background-tertiary);
-  }
-
-  &.is-selected {
-    --verdict-option-bg-color: var(--color-background-tertiary);
-    --verdict-option-border-color: var(--color-accent-primary);
-  }
-}
-
-.verdict-option-text {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-xxs);
-}
-
-.verdict-option-title {
-  @include use-typography("body-medium");
-}
-
-.verdict-option-hint {
-  @include use-typography("body-small");
-
-  color: var(--color-foreground-secondary);
-}
-
 // --- Details dialog
 
 // the pull request metadata (author / dates / approvals / reviewers)

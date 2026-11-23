@@ -184,16 +184,36 @@
   color: var(--color-accent-primary);
 }
 
-.merge-summary {
-  @include use-typography("body-small");
-
+// what goes into main and what is left out, one line each, with the
+// figure as the branch counts show it (`branch-status*`)
+.change-counts {
   display: flex;
   flex-direction: column;
   gap: var(--sp-xs);
-  margin: 0;
-  padding-inline-start: var(--sp-l);
+  margin-block-end: var(--sp-xs);
+}
+
+.change-count {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+}
+
+.change-count-text {
+  @include use-typography("body-small");
+
   color: var(--color-foreground-primary);
-  list-style: disc;
+}
+
+// a change left out goes nowhere, so its figure does not take the
+// accent of the changes that go in
+.change-count-left-out {
+  @include use-typography("code-font");
+
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xxs);
+  color: var(--color-foreground-secondary);
 }
 
 .field {
@@ -206,13 +226,6 @@
   @include use-typography("body-small");
 
   color: var(--color-foreground-secondary);
-}
-
-// why a field cannot be used now, under it
-.field-hint {
-  @include use-typography("body-small");
-
-  color: var(--color-foreground-primary);
 }
 
 // the DS text area (`textarea*`) keeps the height these fields had

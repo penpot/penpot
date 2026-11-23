@@ -6708,10 +6708,6 @@ msgid "workspace.branches.apply.error"
 msgstr "Could not apply the branch"
 
 #: src/app/main/ui/workspace/sidebar/branches.cljs
-msgid "workspace.branches.apply.keep-info"
-msgstr "After you apply the changes, this branch stays open and in sync with main."
-
-#: src/app/main/ui/workspace/sidebar/branches.cljs
 msgid "workspace.branches.apply.left-out-kept"
 msgid_plural "workspace.branches.apply.left-out-kept"
 msgstr[0] "The change you left out stays on this branch."
@@ -6722,12 +6718,20 @@ msgid "workspace.branches.apply.mode-apply"
 msgstr "Apply and keep the branch"
 
 #: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.apply.mode-apply-hint"
+msgstr "Main gets the changes and you keep working on this branch."
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
 msgid "workspace.branches.apply.mode-label"
 msgstr "What happens to the branch"
 
 #: src/app/main/ui/workspace/sidebar/branches.cljs
 msgid "workspace.branches.apply.mode-merge"
 msgstr "Merge and delete the branch"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.apply.mode-merge-hint"
+msgstr "Main gets the changes. The branch and its file are deleted."
 
 #: src/app/main/data/workspace/branches.cljs
 msgid "workspace.branches.apply.success"
@@ -7399,9 +7403,17 @@ msgstr ""
 msgid "workspace.branches.merge.confirm-title"
 msgstr "Merge into main"
 
-#: src/app/main/ui/workspace/sidebar/branches.cljs:378
-msgid "workspace.branches.merge.delete-info"
-msgstr "After merging, this branch and its file will be deleted to free up storage."
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.merge.count-in"
+msgid_plural "workspace.branches.merge.count-in"
+msgstr[0] "change goes into main"
+msgstr[1] "changes go into main"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.merge.count-out"
+msgid_plural "workspace.branches.merge.count-out"
+msgstr[0] "change is left out"
+msgstr[1] "changes are left out"
 
 #: src/app/main/data/workspace/branches.cljs:451, src/app/main/data/workspace/branches.cljs:459
 msgid "workspace.branches.merge.error"
@@ -11795,18 +11807,6 @@ msgstr "Main's %s:"
 #: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs
 msgid "workspace.branches.resolve.drops.branch-short"
 msgstr "The branch's %s:"
-
-#: src/app/main/ui/workspace/sidebar/branches.cljs
-msgid "workspace.branches.merge.summary-in"
-msgid_plural "workspace.branches.merge.summary-in"
-msgstr[0] "1 change goes into main."
-msgstr[1] "%s changes go into main."
-
-#: src/app/main/ui/workspace/sidebar/branches.cljs
-msgid "workspace.branches.merge.summary-out"
-msgid_plural "workspace.branches.merge.summary-out"
-msgstr[0] "1 change is left out."
-msgstr[1] "%s changes are left out."
 
 #: src/app/main/ui/workspace/sidebar/branches.cljs
 msgid "workspace.branches.merge.left-out-lost"

@@ -27,6 +27,7 @@
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.input :refer [input*]]
+   [app.main.ui.ds.controls.radio-cards :refer [radio-cards*]]
    [app.main.ui.ds.controls.textarea :refer [textarea*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.foundations.typography :as t]
@@ -304,10 +305,7 @@
         (mf/use-fn #(reset! comment* (dom/get-target-val %)))
 
         on-select-verdict
-        (mf/use-fn
-         (fn [event]
-           (reset! verdict* (-> (dom/get-current-target event)
-                                (dom/get-data "verdict")))))
+        (mf/use-fn (fn [value _] (reset! verdict* value)))
 
         on-close
         (mf/use-fn #(st/emit! (modal/hide)))
@@ -330,34 +328,20 @@
 
      [:> modal-content* {:class (stl/css :dialog-content)}
       ;; one of two, each with a hint the DS radio buttons have no room for
-      [:div {:class (stl/css :verdict-options)
-             :role "radiogroup"
-             :aria-label (tr "workspace.pull-requests.review.title")}
-       [:button {:class (stl/css-case :verdict-option true
-                                      :is-selected (= verdict "approved"))
-                 :role "radio"
-                 :aria-checked (= verdict "approved")
-                 :data-verdict "approved"
-                 :on-click on-select-verdict}
-        [:> i/icon* {:icon-id i/tick}]
-        [:div {:class (stl/css :verdict-option-text)}
-         [:span {:class (stl/css :verdict-option-title)}
-          (tr "workspace.pull-requests.review.approve")]
-         [:span {:class (stl/css :verdict-option-hint)}
-          (tr "workspace.pull-requests.review.approve-hint")]]]
-
-       [:button {:class (stl/css-case :verdict-option true
-                                      :is-selected (= verdict "changes-requested"))
-                 :role "radio"
-                 :aria-checked (= verdict "changes-requested")
-                 :data-verdict "changes-requested"
-                 :on-click on-select-verdict}
-        [:> i/icon* {:icon-id i/triangle-alert}]
-        [:div {:class (stl/css :verdict-option-text)}
-         [:span {:class (stl/css :verdict-option-title)}
-          (tr "workspace.pull-requests.review.request-changes")]
-         [:span {:class (stl/css :verdict-option-hint)}
-          (tr "workspace.pull-requests.review.request-changes-hint")]]]]
+      [:> radio-cards* {:name "pull-request-verdict"
+                        :aria-label (tr "workspace.pull-requests.review.title")
+                        :selected verdict
+                        :on-change on-select-verdict
+                        :options [{:id "pull-request-verdict-approved"
+                                   :value "approved"
+                                   :icon i/tick
+                                   :label (tr "workspace.pull-requests.review.approve")
+                                   :description (tr "workspace.pull-requests.review.approve-hint")}
+                                  {:id "pull-request-verdict-changes-requested"
+                                   :value "changes-requested"
+                                   :icon i/triangle-alert
+                                   :label (tr "workspace.pull-requests.review.request-changes")
+                                   :description (tr "workspace.pull-requests.review.request-changes-hint")}]}]
 
       [:div {:class (stl/css :field)}
        [:label {:class (stl/css :field-label) :for comment-id}
