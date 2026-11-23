@@ -196,7 +196,9 @@
              team-id    (some-> params :team-id uuid/parse*)
              file-id    (some-> params :file-id uuid/parse*)
              page-id    (some-> params :page-id uuid/parse*)
-             pr-id      (some-> params :pr-id uuid/parse*)
+             ;; review-request emails link with review-id; the app's own
+             ;; navigation still writes pr-id
+             pr-id      (some-> (or (:review-id params) (:pr-id params)) uuid/parse*)
              task-id    (some-> params :task-id uuid/parse*)
              layout     (some-> params :layout keyword)]
          [:> team-container* {:team-id team-id}
@@ -212,7 +214,7 @@
        (let [params   (get params :query)
              index    (some-> (rt/get-query-param params :index) parse-long)
              share-id (some-> (:share-id params) uuid/parse*)
-             pr-id    (some-> (:pr-id params) uuid/parse*)
+             pr-id    (some-> (or (:review-id params) (:pr-id params)) uuid/parse*)
              section  (or (some-> (:section params) keyword)
                           :interactions)
 
