@@ -82,3 +82,44 @@
                                    :current-color {:color "#ff0000" :opacity 1}}}
         event (dwc/update-colorpicker-color {} true)]
     (t/is (some? (ptk/watch event valid-state nil)))))
+
+
+(def ^:private gradient-colorpicker
+  {:type :linear-gradient
+   :editing-stop 0
+   :gradient {:type :linear :start-x 0.5 :start-y 0 :end-x 0.5 :end-y 1 :width 1}
+   :stops [{:color "#000000" :opacity 1 :offset 0}
+           {:color "#000000" :opacity 0 :offset 1}]
+   :current-color {:color "#000000" :opacity 1 :offset 0}})
+
+(t/deftest update-colorpicker-leaves-gradient-tab-on-plain-color
+  ;; Regression for https://github.com/penpot/penpot/issues/12463.
+  ;; Undoing a gradient with the colorpicker open sends a plain color.
+  ;; The colorpicker dropped the stops but stayed in gradient mode, so
+  ;; adding a stop built a gradient without coordinates or colors.
+  (let [state  {:colorpicker gradient-colorpicker}
+        event  (dwc/update-colorpicker {:color "#000000" :opacity 1})
+        result (:colorpicker (ptk/update event state))]
+    (t/is (= :color (:type result)))
+    (t/is (nil? (:stops result)))
+    (t/is (nil? (:gradient result)))))
+
+(t/deftest update-colorpicker-keeps-image-tab-on-image-color
+  (let [state  {:colorpicker gradient-colorpicker}
+        image  {:id uuid/zero :width 10 :height 10 :mtype "image/png"}
+        event  (dwc/update-colorpicker {:image image :opacity 1})
+        result (:colorpicker (ptk/update event state))]
+    (t/is (= :image (:type result)))))
+
+(t/deftest colorpicker-onchange-runner-skips-invalid-gradient
+  (let [calls  (atom [])
+        runner (#'dwc/colorpicker-onchange-runner #(swap! calls conj %))
+        empty-gradient {:colorpicker {:type :linear-gradient
+                                      :stops [{:offset 0.5}]}}]
+    (ptk/watch runner empty-gradient nil)
+    (t/is (empty? @calls))
+    (ptk/watch runner {:colorpicker gradient-colorpicker} nil)
+    (t/is (= 1 (count @calls)))
+    (t/is (= [{:color "#000000" :opacity 1 :offset 0}
+              {:color "#000000" :opacity 0 :offset 1}]
+             (get-in (first @calls) [:gradient :stops])))))
