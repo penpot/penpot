@@ -1,13 +1,15 @@
 use std::collections::HashMap;
 
-use super::filters;
+use super::{fills, filters};
 use super::{RenderState, SurfaceId};
 use crate::error::Result;
 use crate::get_resources;
 use crate::render::strokes;
 use crate::render::text;
 use crate::shapes::radius_to_sigma;
-use crate::shapes::{ParagraphBuilderGroup, Shadow, Shape, Stroke, StrokeKind, TextContent, Type};
+use crate::shapes::{
+    Fill, ParagraphBuilderGroup, Shadow, Shape, Stroke, StrokeKind, TextContent, Type,
+};
 use crate::uuid::Uuid;
 use skia_safe::{self as skia, canvas::SaveLayerRec, Paint, Path, Rect};
 
@@ -134,7 +136,12 @@ pub(crate) fn render_direct_frame_drop_shadow(
 ) -> Result<()> {
     let margin = state.surfaces.margins().width as f32;
     let sigma_device = radius_to_sigma(shadow.blur) * scale;
-    if sigma_device <= margin / 3.0 {
+    let dilate_device = if frame.has_only_image_fills() {
+        shadow.spread.max(0.0) * scale
+    } else {
+        0.0
+    };
+    if 3.0 * sigma_device + dilate_device <= margin {
         render_inline_frame_shadow(state, frame, shadow, scale)
     } else {
         render_cached_filter_frame_shadow(state, frame, shape_bounds, shadow, scale)
@@ -154,33 +161,63 @@ fn spread_inset(spread: f32) -> Option<f32> {
     Some(-spread).filter(|&s| s > 0.0)
 }
 
-fn blur_layer_paint(blur: f32, sigma_scale: f32) -> skia::Paint {
+/// Layer paint for a black shadow mask, blurred by `sigma`. An image mask
+/// keeps its alpha, so the paint tints it black and dilates it by `spread`:
+/// images have no outline to outset.
+pub(crate) fn shadow_mask_paint(sigma: f32, image_mask: bool, spread: f32) -> skia::Paint {
+    let dilate = if image_mask && spread > 0.0 {
+        skia::image_filters::dilate((spread, spread), None, None)
+    } else {
+        None
+    };
+    let filter = if sigma > 0.0 {
+        skia::image_filters::blur((sigma, sigma), None, dilate, None)
+    } else {
+        dilate
+    };
+
     let mut paint = skia::Paint::default();
-    if blur > 0.0 {
-        let sigma = radius_to_sigma(blur) * sigma_scale;
-        paint.set_image_filter(skia::image_filters::blur((sigma, sigma), None, None, None));
+    paint.set_image_filter(filter);
+    if image_mask {
+        paint.set_color_filter(skia::color_filters::blend(
+            skia::Color::BLACK,
+            skia::BlendMode::SrcIn,
+        ));
     }
     paint.set_blend_mode(skia::BlendMode::SrcOver);
     paint
 }
 
-fn draw_frame_shadow_rect(
-    surfaces: &mut super::Surfaces,
+fn frame_shadow_paint(frame: &Shape, shadow: &Shadow, sigma_scale: f32) -> skia::Paint {
+    let sigma = radius_to_sigma(shadow.blur) * sigma_scale;
+    shadow_mask_paint(sigma, frame.has_only_image_fills(), shadow.spread)
+}
+
+/// The frame's shadow mask: its rect, or its image alpha when every fill is
+/// an image (`shadow_mask_paint` tints and grows it).
+fn draw_frame_shadow_mask(
+    state: &mut RenderState,
     surface_id: SurfaceId,
     frame: &Shape,
     shadow: &Shadow,
     antialias: bool,
-) {
+) -> Result<()> {
+    if frame.has_only_image_fills() {
+        let image_fills: Vec<Fill> = frame.fills().map(Fill::with_full_opacity).collect();
+        return fills::render(state, frame, &image_fills, antialias, surface_id, None);
+    }
+
     let mut fill_paint = skia::Paint::default();
     fill_paint.set_color(skia::Color::BLACK);
     fill_paint.set_anti_alias(antialias);
-    surfaces.draw_rect_to(
+    state.surfaces.draw_rect_to(
         surface_id,
         frame,
         &fill_paint,
         spread_outset(shadow.spread),
         spread_inset(shadow.spread),
     );
+    Ok(())
 }
 
 fn shadow_filter_bounds(
@@ -270,7 +307,7 @@ fn render_inline_frame_shadow(
     scale: f32,
 ) -> Result<()> {
     let antialias = frame_shadow_antialias(state, frame, scale);
-    let layer_paint = blur_layer_paint(shadow.blur, 1.0);
+    let layer_paint = frame_shadow_paint(frame, shadow, 1.0);
     let draw_matrix = frame_shadow_draw_matrix(frame, shadow);
 
     {
@@ -281,13 +318,7 @@ fn render_inline_frame_shadow(
         drop_canvas.save_layer(&layer_rec);
     }
 
-    draw_frame_shadow_rect(
-        &mut state.surfaces,
-        SurfaceId::DropShadows,
-        frame,
-        shadow,
-        antialias,
-    );
+    draw_frame_shadow_mask(state, SurfaceId::DropShadows, frame, shadow, antialias)?;
 
     {
         let drop_canvas = state.surfaces.canvas(SurfaceId::DropShadows);
@@ -326,7 +357,7 @@ fn render_cached_filter_frame_shadow(
         filter_h,
         state.options.blur_downscale_threshold,
     );
-    let layer_paint = blur_layer_paint(shadow.blur, blur_downscale);
+    let layer_paint = frame_shadow_paint(frame, shadow, blur_downscale);
     let layer_rec = skia::canvas::SaveLayerRec::default().paint(&layer_paint);
 
     let shadow_draw_matrix = frame_shadow_draw_matrix(frame, shadow);
@@ -341,7 +372,7 @@ fn render_cached_filter_frame_shadow(
                 canvas.concat(&shadow_draw_matrix);
                 canvas.save_layer(&layer_rec);
             }
-            draw_frame_shadow_rect(&mut state.surfaces, temp_surface, frame, shadow, antialias);
+            draw_frame_shadow_mask(state, temp_surface, frame, shadow, antialias)?;
             {
                 let canvas = state.surfaces.canvas(temp_surface);
                 canvas.restore();

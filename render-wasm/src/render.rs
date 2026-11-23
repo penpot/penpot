@@ -3533,11 +3533,15 @@ impl RenderState {
         let world_offset = (mapped.x, mapped.y);
 
         // The opacity of fills and strokes shouldn't affect the shadow,
-        // so we paint everything black with the same opacity.
+        // so we paint everything black with the same opacity. Image fills stay
+        // so their alpha shapes the shadow; `shadow_mask_paint` tints them.
         let plain_shape_mut = plain_shape.to_mut();
-        plain_shape_mut.clear_fills();
-        if shape.has_fills() {
-            plain_shape_mut.add_fill(Fill::Solid(SolidColor(skia::Color::BLACK)));
+        let image_silhouette = shape.has_only_image_fills();
+        if image_silhouette {
+            let image_fills = shape.fills().map(Fill::with_full_opacity).collect();
+            plain_shape_mut.set_fills(image_fills);
+        } else if shape.has_fills() {
+            plain_shape_mut.set_fills(vec![Fill::Solid(SolidColor(skia::Color::BLACK))]);
         }
 
         // Reuse existing strokes and only override their fill color.
@@ -3554,7 +3558,13 @@ impl RenderState {
         // (which defers strokes to render_shape_exit for clipped frames).
         plain_shape_mut.clip_content = false;
 
-        let spread_outset = if shadow.spread > 0.0 && shape.spreads_through_strokes() {
+        // Image spread dilates the mask, which on a tile only sees its margin.
+        let image_spread = image_silhouette && shadow.spread > 0.0;
+        let dilate_fits_tile =
+            !image_spread || shadow.spread * scale <= self.surfaces.margins().width as f32;
+        let spread_outset = if image_spread {
+            None
+        } else if shadow.spread > 0.0 && shape.spreads_through_strokes() {
             plain_shape_mut.apply_shadow_spread(shadow.spread);
             None
         } else {
@@ -3574,10 +3584,25 @@ impl RenderState {
             return Ok(());
         }
 
+        let shadow_paint = shadows::shadow_mask_paint(
+            radius_to_sigma(shadow.blur),
+            image_silhouette,
+            shadow.spread,
+        );
+        let layer_rec = skia::canvas::SaveLayerRec::default().paint(&shadow_paint);
+
         // blur=0 at high zoom: draw directly on DropShadows with geometric spread (no filter).
-        if scale > 1.0 && shadow.blur <= 0.0 {
+        if scale > 1.0 && shadow.blur <= 0.0 && dilate_fits_tile {
             let drop_canvas = self.surfaces.canvas(SurfaceId::DropShadows);
-            drop_canvas.save();
+            if image_silhouette {
+                drop_canvas.save_layer(
+                    &skia::canvas::SaveLayerRec::default()
+                        .bounds(&bounds)
+                        .paint(&shadow_paint),
+                );
+            } else {
+                drop_canvas.save();
+            }
             //drop_canvas.scale((scale, scale));
             //drop_canvas.translate(translation);
 
@@ -3602,24 +3627,8 @@ impl RenderState {
             return Ok(());
         }
 
-        // Create filter with blur only (no offset, no spread - handled geometrically)
-        let blur_only_filter = if transformed_shadow.blur > 0.0 {
-            let sigma = radius_to_sigma(transformed_shadow.blur);
-            Some(skia::image_filters::blur((sigma, sigma), None, None, None))
-        } else {
-            None
-        };
-
-        let mut shadow_paint = skia::Paint::default();
-        if let Some(blur_filter) = blur_only_filter {
-            shadow_paint.set_image_filter(blur_filter);
-        }
-        shadow_paint.set_blend_mode(skia::BlendMode::SrcOver);
-
-        let layer_rec = skia::canvas::SaveLayerRec::default().paint(&shadow_paint);
-
         // Low zoom path: use blur filter but apply offset and spread geometrically
-        if use_low_zoom_path {
+        if use_low_zoom_path && dilate_fits_tile {
             let drop_canvas = self.surfaces.canvas(SurfaceId::DropShadows);
             drop_canvas.save_layer(&layer_rec);
             //drop_canvas.scale((scale, scale));

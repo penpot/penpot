@@ -1842,6 +1842,10 @@ impl Shape {
         !self.fills.is_empty()
     }
 
+    pub fn has_only_image_fills(&self) -> bool {
+        has_only_image_fills(&self.fills)
+    }
+
     /// Whether this fill-less leaf paints its group's fills (SVG inheritance,
     /// broken by `fill="none"`).
     pub fn inherits_fills(&self) -> bool {
@@ -2120,12 +2124,14 @@ impl Shape {
     /// (`render_direct_frame_drop_shadow`) instead of filter surfaces and
     /// descendant silhouettes.
     ///
-    /// Requires at least one fill; fill opacity/type does not matter because the fast
-    /// path shadows the frame geometry as a solid mask.
+    /// Requires at least one fill; fill opacity does not matter because the fast
+    /// path shadows the frame geometry as a solid mask, or the image alpha when
+    /// every fill is an image.
     ///
     /// The fast path draws fill geometry only. On the slow path, visible strokes also
     /// contribute to the shadow silhouette, so frames with outer/center strokes can
-    /// look slightly narrower here. We keep them eligible anyway for performance.
+    /// look slightly narrower here. Children over transparent image areas don't
+    /// cast here either. We keep them eligible anyway for performance.
     pub fn uses_direct_container_drop_shadow(&self, tree: ShapesPoolRef) -> bool {
         if !self.is_filled_frame() {
             return false;
@@ -2714,6 +2720,10 @@ mod tests {
             (
                 Fill::Solid(SolidColor(skia::Color::from_argb(128, 255, 255, 255))),
                 0.5,
+            ),
+            (
+                Fill::Image(ImageFill::new(Uuid::new_v4(), 255, 64, 64, true)),
+                1.0,
             ),
         ] {
             let (pool, frame_id) = frame_with_fill_and_child(fill, opacity);
