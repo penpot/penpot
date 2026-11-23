@@ -1,0 +1,5 @@
+# Integrant parameter schemas
+
+- In a Malli map schema, a bare component key refers to a registered schema of the same name. The owning namespace must register it before the map schema compiles. For a component without a registered type, declare the key and schema explicitly, as in `app.auth.oidc/schema:routes-params`. A present key with a `nil` value and a missing key are different: use `:maybe` for the former and `{:optional true}` for the latter.
+- A failure from `ig/assert-key` during system construction is not a test assertion. If the cause is hidden, compile the schema with `app.common.schema/schema` to distinguish an unresolved registry reference from invalid params. `sm/valid?` returns `false` for both; `sm/check`, as used by the worker components, propagates schema errors and explains invalid values.
+- Test schema compilation explicitly for components that tests do not start. See `backend-tests.worker-test` and `backend-tests.http-websocket-test`. Keep backend assertions enabled when verifying the boot path; see `mem:backend/testing`.
