@@ -43,6 +43,7 @@
    [app.main.ui.workspace.tokens.remapping-modal]
    [app.main.ui.workspace.tokens.settings]
    [app.main.ui.workspace.tokens.themes.create-modal]
+   [app.main.ui.workspace.version-controls :refer [version-controls*]]
    [app.main.ui.workspace.viewport :refer [viewport*]]
    [app.main.ui.workspace.webgl-unavailable-modal]
    [app.util.debug :as dbg]
@@ -222,7 +223,7 @@
         permissions      (:permissions team)
 
         read-only?       (mf/deref refs/workspace-read-only?)
-        read-only?       (or read-only? (not (:can-edit permissions)))
+        read-only?       (or read-only? (some? (:preview-id wglobal)) (not (:can-edit permissions)))
 
         design-tokens?   (features/use-feature "design-tokens/v1")
 
@@ -280,6 +281,7 @@
                             :touch-action "none"
                             :position "relative"}}
           [:> context-menu*]
+          [:> version-controls* {:file-id file-id}]
           (when (and file-loaded? page-id)
             [:> workspace-inner*
              {:page-id page-id

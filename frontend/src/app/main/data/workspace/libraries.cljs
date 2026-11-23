@@ -819,27 +819,18 @@
       (->> (rp/cmd! :get-file-object-thumbnails {:file-id library-id :tag "component"})
            (rx/map library-thumbnails-fetched)))))
 
-(defn ext-library-changed
-  [library-id modified-at revn changes]
-
-  (assert (uuid? library-id)
-          "expected valid uuid for library-id")
-
-  (assert (ch/check-changes changes)
-          "expected valid changes vector")
-
-  (ptk/reify ::ext-library-changed
-    ptk/UpdateEvent
-    (update [_ state]
-      (-> state
-          (update-in [:files library-id]
-                     assoc :modified-at modified-at :revn revn)
-          (d/update-in-when [:files library-id :data]
-                            ch/process-changes changes)))
-
+(defn library-change-effects
+  "Refreshes the effects of a library delta after the store has applied it."
+  [library-id changes notify-token-update?]
+  (ptk/reify ::library-change-effects
+    IDeref
+    (-deref [_] library-id)
     ptk/WatchEvent
     (watch [_ _ stream]
-      (let [stopper-s (rx/filter (ptk/type? ::ext-library-changed) stream)]
+      (let [stopper-s (rx/filter #(or (ptk/type? ::dw/finalize-workspace %)
+                                      (and (ptk/type? ::library-change-effects %)
+                                           (= library-id @%)))
+                                 stream)]
         (->>
          (rx/merge
           (->> (rx/of library-id)
@@ -847,7 +838,7 @@
                (rx/map fetch-library-thumbnails))
           (when (ch/tokens-lib-changed? changes)
             (rx/of (dwtp/propagate-workspace-tokens)))
-          (when (ch/notifiable-token-change-occured? changes)
+          (when (and notify-token-update? (ch/notifiable-token-change-occured? changes))
             (rx/of (ntf/info (tr "workspace.tokens.notifications.source-sets-or-themes-updated")))))
 
          (rx/take-until stopper-s))))))
@@ -1364,12 +1355,54 @@
 
 (defn- restore-library-synced-at
   "Puts back the sync date of `library-id` a rejected sync moved forward,
-  so its update notice can show again."
+   so its update notice can show again."
   [library-id synced-at]
   (ptk/reify ::restore-library-synced-at
     ptk/UpdateEvent
     (update [_ state]
       (d/update-in-when state [:files library-id] assoc :synced-at synced-at))))
+
+(defn- sync-save-events
+  [stream frontend-s {:keys [file-id library-id file-vern undo-group synced-at]}]
+  (let [stopper-s     (rx/filter #(or (ptk/type? ::dw/finalize-workspace %)
+                                      (ptk/type? ::dw/initialize-workspace %)
+                                      (and (ptk/type? ::dw/bundle-fetched %)
+                                           (= file-id (:file-id @%))
+                                           (not= file-vern (get-in @% [:file :vern]))))
+                                 stream)
+        same-file?    #(contains? (:file-ids @%) file-id)
+        same-group?   #(contains? (:undo-groups @%) undo-group)
+        rejected-s    (->> stream
+                           (rx/filter (ptk/type? ::dps/save-rejected))
+                           (rx/filter same-file?)
+                           (rx/filter same-group?))
+        rolled-back-s (->> stream
+                           (rx/filter (ptk/type? ::dps/rolled-back))
+                           (rx/filter same-file?))
+        restore       (if (= ::unchanged synced-at)
+                        (rx/empty)
+                        (rx/of (restore-library-synced-at library-id synced-at)))
+        saved-s       (->> (rx/concat (rx/ignore frontend-s) (rx/timer 3000))
+                           (rx/mapcat (fn [_] (dps/wait-persisted)))
+                           (rx/map (constantly ::saved))
+                           (rx/if-empty ::failed))]
+    (->> (rx/merge (rx/map (constantly ::rejected) rejected-s) saved-s)
+         (rx/take 1)
+         (rx/mapcat
+          (fn [outcome]
+            (if (= outcome ::saved)
+              (mark-library-synced file-id library-id)
+              ;; Restore the date now, but check for updates only when the
+              ;; rollback reaches the live file. Terminal releases keep the
+              ;; existing file-only match.
+              (rx/merge
+               (->> (cond->> rolled-back-s
+                      (= outcome ::rejected) (rx/filter same-group?))
+                    (rx/take 1)
+                    (rx/mapcat (fn [_] (dps/wait-persisted)))
+                    (rx/map (fn [_] (notify-sync-file))))
+               restore))))
+         (rx/take-until stopper-s))))
 
 (defn sync-file
   "Synchronize the given file from the given library. Walk through all
@@ -1462,49 +1495,20 @@
              (log/debug :msg "SYNC-FILE finished" :js/rchanges (log-changes
                                                                 (:redo-changes changes)
                                                                 ldata))
-             (rx/concat
-              ;; Keep the sync pending until its layout work starts.
-              (wrf/with-pending :sync-file pending-ids frontend-sync)
-
-              (when (not= file-id library-id)
-                (let [stopper-s     (rx/filter (ptk/type? ::dw/finalize-workspace) stream)
-                      rolled-back-s (->> stream
-                                         (rx/filter (ptk/type? ::dps/rolled-back))
-                                         (rx/filter #(contains? (:file-ids (deref %)) file-id)))
-                      restore       (if (= ::unchanged @synced-at)
-                                      (rx/empty)
-                                      (rx/of (restore-library-synced-at library-id @synced-at)))
-                      ;; Checked once the rollback has undone the sync locally
-                      notify        #(->> (dps/wait-persisted)
-                                          (rx/map (fn [_] (notify-sync-file))))]
-                  (->> (rx/merge
-                        ;; The server rejected the sync: its commits were undone
-                        (rx/map (constantly ::rolled-back) rolled-back-s)
-                        ;; The flush of the sync commits starts within 3 s; a save
-                        ;; that fails for good ends the wait with no value
-                        (->> (rx/timer 3000)
-                             (rx/mapcat (fn [_] (dps/wait-persisted)))
-                             (rx/map (constantly ::saved))
-                             (rx/if-empty ::failed)))
-                       (rx/take 1)
-                       (rx/take-until stopper-s)
-                       (rx/mapcat (fn [outcome]
-                                    (case outcome
-                                      ::saved
-                                      (mark-library-synced file-id library-id)
-
-                                      ;; Never saved: the update notice can show again
-                                      ;; once the release of the failed save undoes the sync
-                                      ::failed
-                                      (rx/concat
-                                       restore
-                                       (->> rolled-back-s
-                                            (rx/take 1)
-                                            (rx/take-until stopper-s)
-                                            (rx/mapcat (fn [_] (notify)))))
-
-                                      ::rolled-back
-                                      (rx/concat restore (notify))))))))))))))))
+             (cond->> (wrf/with-pending :sync-file pending-ids frontend-sync)
+               (not= file-id library-id)
+               ;; Subscribe to rejection before the sync emits any commits.
+               ;; Start the flush timer only after those events are emitted.
+               (rx/connect
+                (fn [frontend-s]
+                  (rx/merge
+                   (sync-save-events stream frontend-s
+                                     {:file-id file-id
+                                      :library-id library-id
+                                      :file-vern (:vern (dsh/lookup-file state file-id))
+                                      :undo-group undo-group
+                                      :synced-at @synced-at})
+                   frontend-s)))))))))))
 
 
 ;; FIXME: the data should be set on the backend for clock consistency

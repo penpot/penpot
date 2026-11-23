@@ -7,20 +7,26 @@
 (ns frontend-tests.data.persistence-rollback-test
   "Tests for the rollback of a save the server partly rejected
   (`app.main.data.persistence`): which commits are reverted, how peers'
-  changes survive, and how the UI state follows. The pure plan behind it
-  is tested in `frontend-tests.data.persistence-commits-test`."
+   changes survive, and how the UI state follows. See also
+   `frontend-tests.data.persistence-commits-test` for pure bookkeeping."
   (:require
    [app.common.geom.point :as gpt]
    [app.common.time :as ct]
    [app.common.types.shape :as cts]
+   [app.common.types.tokens-lib :as ctob]
+   [app.common.types.tokens-status :as ctos]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
    [app.main.data.modal :as-alias modal]
    [app.main.data.persistence :as dps]
    [app.main.data.persistence.commits :as pcm]
+   [app.main.data.persistence.order :as porder]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.comments :as dwcm]
+   [app.main.data.workspace.notifications :as dwn]
+   [app.main.data.workspace.tokens.propagation :as dwtp]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.data.workspace.versions :as dwv]
    [app.main.errors :as errors]
    [app.main.store :as st]
    [app.util.i18n :as i18n]
@@ -57,6 +63,209 @@
   "The redo of each commit in the `n`th save request."
   [requests n]
   (mapv :redo-changes (get-in @requests [n 1 :commits])))
+
+(t/deftest ^:async a-total-rejection-cannot-compensate-over-a-repair-not-applied-yet
+  (let [save (rx/subject)
+        read (rx/subject)]
+    (await
+     (thp/with-persistence
+       (^:async fn [{:keys [file-id session-id requests requests$ store failures]}]
+         (let [page-id  (uuid/next)
+               shape-id (uuid/next)
+               group    (uuid/next)
+               prefix   (grouped (thp/rename-commit file-id page-id shape-id "Original" "Saved") group)
+               rejected (grouped (thp/rename-commit file-id page-id shape-id "Saved" "Rejected") group)
+               row      (fn [revn sid changes]
+                          {:id (uuid/next) :file-id file-id :revn revn :session-id sid :changes changes})]
+           (ptk/emit! store (thp/open-file file-id page-id (thp/file-data page-id shape-id "Saved"))
+                      #(assoc-in % [:files file-id :vern] 0) prefix ::dps/force-persist)
+           (await (async/wait-for #(= 1 (count @requests)) "the prefix is sent" {:signal requests$}))
+           (ptk/emit! store (thp/open-file file-id page-id (thp/file-data page-id shape-id "Rejected"))
+                      rejected ::dps/force-persist)
+           (rx/push! save {:revn 0 :saved-revn 1 :lagged [(row 1 session-id (:redo-changes @prefix))]})
+           (await (async/wait-for #(= 2 (count @requests)) "the suffix is sent" {:signal requests$}))
+           (rx/push! save (assoc (thp/rejection (:id @rejected))
+                                 :revn 3
+                                 :lagged [(row 2 (uuid/next) [(thp/rename page-id shape-id "Peer edit")])
+                                          (row 3 (uuid/next) [(thp/rename page-id shape-id "Repaired")])]))
+           (await (async/wait-for #(seq @failures) "the rejection is reported"))
+           (ptk/emit! store ::dps/force-persist)
+           (await (async/wait-for #(= 3 (count @requests)) "the rejection needs a server read" {:signal requests$}))
+           (t/is (= [:update-file-v2 :update-file-v2 :get-file] (mapv first @requests)))
+           (t/is (= 1 (some-> @failures first ex-data :kept-saved)))
+           (when (= :get-file (first (peek @requests)))
+             (rx/push! read {:id file-id :vern 0 :revn 3
+                             :data (thp/file-data page-id shape-id "Repaired")})
+             (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
+                                          "the authoritative file settles the queue")))
+           (t/is (= "Repaired" (thp/shape-name store file-id page-id shape-id)))))
+       (fn [cmd _]
+         (->> (case cmd :update-file-v2 save :get-file read (rx/empty))
+              (rx/take 1)
+              (rx/observe-on :async)))))))
+
+(defn- queued
+  [& entries]
+  {:queue (into #queue [] (map :id) entries)
+   :index (into {} (map (juxt :id identity)) entries)})
+
+(t/deftest a-rejected-save-needs-every-predecessor-by-row-id
+  (let [row-2   (uuid/next)
+        row-3   (uuid/next)
+        lagged  [{:revn 3 :id row-3} {:revn 2 :id row-2}]
+        answer  {:revn 3 :lagged lagged}
+        base    (porder/rejected-base 1 answer)
+        message (fn [revn id] {:revn revn :revision-ids [id]})
+        loaded  (porder/loaded 0 1)
+        applied (fn [id]
+                  (-> loaded
+                      (porder/applied (message 2 id))
+                      (porder/applied (message 3 row-3))))]
+    (t/is (nil? (porder/rejected-base 1 (assoc answer :lagged (pop lagged)))))
+    (t/is (nil? (porder/rejected-base 1 (update answer :lagged conj {:revn 2 :id (uuid/next)}))))
+    (t/is (= :wait (porder/save-decision loaded base)))
+    (t/is (= :reconcile (porder/save-decision (applied (uuid/next)) base)))
+    (t/is (= :apply (porder/save-decision (applied row-2) base)))))
+
+(t/deftest confirmed-commits-are-not-pending-and-version-selection-is-exact
+  (let [confirmed (assoc (pcm/queue-entry [{:id :confirmed :file-id :file :file-vern 0}])
+                         :confirmed true)
+        current   (pcm/queue-entry [{:id :queued :file-id :file :file-vern 0}])
+        old       (pcm/queue-entry [{:id :old :file-id :file :file-vern 1}])
+        pstate    (assoc (queued confirmed current old)
+                         :buffer [{:id :buffered :file-id :file :file-vern 0}
+                                  {:id :unknown-version :file-id :file}
+                                  {:id :other-file :file-id :other :file-vern 0}])]
+    (t/is (= [:queued :old :buffered :unknown-version]
+             (mapv :id (pcm/pending-commits pstate :file))))
+    (t/is (= [:queued :buffered]
+             (mapv :id (pcm/pending-commits pstate :file 0))))
+    (t/is (= [:unknown-version]
+             (mapv :id (pcm/pending-commits pstate :file nil))))))
+
+(t/deftest uncertain-undo-marks-survive-queueing-and-discard
+  (let [edit            {:id :edit :file-id :library :file-vern 2 :undo-group :group}
+        later           {:id :later :file-id :library :file-vern 2 :undo-group :group}
+        old             {:id :old :file-id :library :file-vern 1 :undo-group :group}
+        linked          {:id :linked :file-id :file :file-vern 0 :undo-group :group}
+        saved           {:id :saved :file-id :library :file-vern 2 :undo-group :group}
+        head            (pcm/queue-entry [edit])
+        old-entry       (pcm/queue-entry [old])
+        pstate          (-> (queued head old-entry)
+                            (assoc :buffer [later linked] :saved [saved])
+                            (pcm/mark-undo-uncertain :library 2))
+        [later' linked'] (:buffer pstate)
+        flushed         (pcm/queue-entry [later'])
+        discarded       (-> (queued old-entry flushed)
+                            (assoc :buffer [linked'] :saved (:saved pstate))
+                            (pcm/keep-saved-commits
+                             (assoc (get-in pstate [:index :edit]) :confirmed true)))]
+    (t/is (= [:edit :later]
+             (into [] (comp (filter :undo-uncertain) (map :id))
+                   (pcm/pending-commits pstate :library))))
+    (t/is (not (:undo-uncertain linked')))
+    (t/is (true? (get-in flushed [:commits 0 :undo-uncertain])))
+    (t/is (= [:saved :edit] (mapv :id (:saved discarded))))
+    (t/is (every? :undo-uncertain (:saved discarded)))
+    (t/is (empty? (:saved (pcm/keep-saved-commits (queued (assoc flushed :confirmed true))
+                                                  (get-in pstate [:index :edit]))))
+          "a confirmed entry does not keep a group pending")))
+
+(t/deftest a-rollback-keeps-all-saved-commits-of-a-marked-group
+  (let [accepted {:id :accepted :file-id :file :file-vern 0 :undo-group :affected}
+        rejected {:id :rejected :file-id :file :file-vern 0 :undo-group :affected}
+        later    {:id :later :file-id :file :file-vern 0 :undo-group :unaffected}
+        marked   {:id :marked :file-id :library :file-vern 2 :undo-group :affected :undo-index 2}
+        safe     {:id :safe :file-id :other :file-vern 0 :undo-group :unaffected :undo-index 7}
+        head     (pcm/queue-entry [accepted rejected])
+        pstate   (-> (queued head)
+                     (assoc :buffer [later] :saved [marked safe])
+                     (pcm/mark-undo-uncertain :library 2))
+        plan     (pcm/rollback-plan pstate head {:commit-ids [:rejected]})
+        cleaned  (pcm/without-rolled-back pstate head plan)]
+    (t/is (= [:safe] (mapv :id (:compensate plan))))
+    (t/is (= [:marked :accepted] (mapv :id (:kept-saved plan))))
+    (t/is (= #{:file :library} (:reconcile plan)))
+    (t/is (= #{:affected :unaffected} (:groups plan)) "both groups leave the undo history")
+    (t/is (= 7 (:undo-index plan)) "a kept undo commit does not rewind the index")
+    (t/is (= {:reverted 3 :files 2 :kept-saved 2} (pcm/rollback-summary plan)))
+    (t/is (= #{:file :other} (:file-ids (pcm/rollback-targets plan))))
+    (t/is (empty? (:saved cleaned)) "neither saved outcome remains eligible for compensation")
+    (t/is (empty? (:buffer cleaned)))
+    (t/is (= [:accepted] (mapv :id (get-in cleaned [:index :accepted :commits])))
+          "the confirmed prefix stays in the head until discard")))
+
+(t/deftest a-file-awaiting-reconciliation-cannot-be-compensated-on-its-old-base
+  (let [rejected   {:id :rejected :file-id :file :file-vern 0 :undo-group :bad}
+        later      {:id :later :file-id :file :file-vern 0 :undo-group :later}
+        marked     {:id :marked :file-id :library :file-vern 0 :undo-group :bad :undo-uncertain true}
+        old-base   {:id :old-base :file-id :library :file-vern 0 :undo-group :later}
+        other-file {:id :other-file :file-id :other :file-vern 0 :undo-group :later}
+        head       (pcm/queue-entry [rejected])
+        pstate     (assoc (queued head) :buffer [later] :saved [marked old-base other-file])
+        plan       (pcm/rollback-plan pstate head {:commit-ids [:rejected]})]
+    (t/is (= #{:library} (:reconcile plan)))
+    (t/is (= [:marked :old-base] (mapv :id (:kept-saved plan))))
+    (t/is (= [:other-file] (mapv :id (:compensate plan))))))
+
+(t/deftest a-rollback-reads-undo-marks-added-while-the-save-is-in-flight
+  (let [kept   {:id :kept :file-id :file :file-vern 0 :undo-group :group :undo-index 2}
+        bad    {:id :bad :file-id :file :file-vern 0 :undo-group :group}
+        head   (pcm/queue-entry [kept bad])
+        pstate (pcm/mark-undo-uncertain (queued head) :file 0)
+        plan   (pcm/rollback-plan pstate head {:commit-ids [:bad]})]
+    (t/is (empty? (:compensate plan)))
+    (t/is (true? (get-in plan [:kept-saved 0 :undo-uncertain])))
+    (t/is (nil? (:undo-index plan)))
+    (t/is (= #{:file} (:reconcile plan)))))
+
+(t/deftest a-rollback-reconciles-instead-of-using-the-undo-of-a-kept-pending-commit
+  (let [before  {:id :before :file-id :library :file-vern 2 :undo-group :before}
+        linked  {:id :linked :file-id :library :file-vern 2 :undo-group :group}
+        bad     {:id :bad :file-id :file :file-vern 0 :undo-group :group}
+        head    (pcm/queue-entry [bad])
+        pstate  (-> (queued head (pcm/queue-entry [before]))
+                    (pcm/mark-undo-uncertain :library 2)
+                    (assoc :buffer [linked]))
+        plan    (pcm/rollback-plan pstate head {:commit-ids [:bad]})
+        cleaned (pcm/without-rolled-back pstate head plan)]
+    (t/is (= #{:library} (:reconcile plan)))
+    (t/is (= [:linked] (mapv :id (get-in plan [:files :library :reverted]))))
+    (t/is (= [:before] (mapv :id (pcm/pending-commits cleaned :library 2))))
+    (t/is (= {:reverted 2 :files 2} (pcm/rollback-summary plan)))))
+
+(t/deftest a-retry-rejection-does-not-authorize-compensation
+  (let [kept   {:id :kept :file-id :file :file-vern 0 :undo-group :group}
+        bad    {:id :bad :file-id :file :file-vern 0 :undo-group :group}
+        saved  {:id :saved :file-id :library :file-vern 0 :undo-group :group}
+        head   (pcm/queue-entry [kept bad])
+        pstate (assoc (queued head) :saved [saved])]
+    (doseq [[rejected kept-saved] [[[:bad] [:saved :kept]]
+                                   [[:kept :bad] [:saved]]]]
+      (let [plan (pcm/rollback-plan pstate head {:commit-ids rejected :uncertain true})]
+        (t/is (empty? (:compensate plan)))
+        (t/is (= kept-saved (mapv :id (:kept-saved plan))))
+        (t/is (= #{:file :library} (:reconcile plan)))))))
+
+(t/deftest reconciliation-only-drops-unsent-compensations-of-the-matching-file-version
+  (let [compensation (fn [id file-id vern]
+                       {:id id :file-id file-id :file-vern vern :compensation true})
+        attempted    (assoc (pcm/queue-entry [(compensation :attempted :file 0)]) :attempted true)
+        empty-entry  (pcm/queue-entry [(compensation :only-compensation :file 0)])
+        mixed-entry  (pcm/queue-entry [{:id :ordinary :file-id :file :file-vern 0}
+                                       (compensation :queued-compensation :file 0)])
+        other-entry  (pcm/queue-entry [(compensation :other-file :other 0)])
+        pstate       (assoc (queued attempted empty-entry mixed-entry other-entry)
+                            :buffer [(compensation :buffered-compensation :file 0)
+                                     {:id :buffered-edit :file-id :file :file-vern 0}
+                                     (compensation :other-version :file 1)])
+        trimmed      (pcm/without-unsent-compensations pstate :file 0 (complement :attempted))]
+    (t/is (= (:queue pstate) (:queue trimmed)) "the runner can still acknowledge the emptied entry")
+    (t/is (= [] (get-in trimmed [:index :only-compensation :commits])))
+    (t/is (= [:ordinary] (mapv :id (get-in trimmed [:index :ordinary :commits]))))
+    (t/is (= attempted (get-in trimmed [:index :attempted])) "the attempted request stays intact")
+    (t/is (= other-entry (get-in trimmed [:index :other-file])))
+    (t/is (= [:buffered-edit :other-version] (mapv :id (:buffer trimmed))))))
 
 ;; Scenario: the first save carries two commits; while it is in flight a
 ;; third one is queued, an edit of another file is queued too, and a fourth
@@ -379,6 +588,144 @@
          (rx/push! response {:revn 1})
          (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
                                       "the queue drains")))))))
+
+(t/deftest ^:async a-peer-repair-discards-an-unsent-compensation-before-it-can-overwrite-the-server
+  (let [save-answer (rx/subject)
+        read-answer (rx/subject)]
+    (await
+     (thp/with-persistence
+       (^:async fn [{:keys [file-id session-id requests requests$ store]}]
+         (let [page-id  (uuid/next)
+               shape-id (uuid/next)
+               group    (uuid/next)
+               kept     (grouped (thp/rename-commit file-id page-id shape-id "Original" "Saved") group)
+               rejected (grouped (thp/attr-commit file-id page-id shape-id :opacity 1 0.5) group)
+               saves    #(filter (comp #{:update-file-v2} first) @requests)
+               reads    #(into [] (comp (filter (comp #{:get-file} first)) (map second)) @requests)]
+           (ptk/emit! store (thp/open-file file-id page-id (thp/file-data page-id shape-id "Saved" :opacity 0.5))
+                      #(assoc-in % [:files file-id :vern] 0)
+                      kept rejected ::dps/force-persist)
+           (await (async/wait-for #(= 1 (count (saves))) "the two commits are sent" {:signal requests$}))
+           (rx/push! save-answer
+                     (assoc (thp/rejection (:id @rejected))
+                            :saved-revn 1
+                            :lagged [{:id (uuid/next) :file-id file-id
+                                      :revn 1 :session-id session-id :changes (:redo-changes @kept)}]))
+           (await (async/wait-for-store store
+                                        #(and (empty? (get-in @store [:persistence :queue]))
+                                              (seq (get-in @store [:persistence :buffer])))
+                                        "the save settles with its compensation still buffered"))
+           (t/is (= "Original" (thp/shape-name store file-id page-id shape-id)))
+           (t/is (= [(thp/rename page-id shape-id "Original")]
+                    (get-in @store [:persistence :buffer 0 :redo-changes]))
+                 "the locally applied compensation would overwrite the repair")
+           (t/is (= 1 (get-in @store [:files file-id :revn])) "the peer's base revision is established")
+
+           (ptk/emit! store
+                      (dwn/handle-file-change
+                       {:type :file-change :file-id file-id :vern 0
+                        :profile-id (uuid/next) :session-id (uuid/next)
+                        :repair-base-revn 1 :revn 3 :repaired true
+                        :revision-ids [(uuid/next) (uuid/next)]
+                        :changes [(thp/set-attr page-id shape-id :opacity 0.8)
+                                  (thp/rename page-id shape-id "Repaired")]}))
+           (await (async/wait-for #(seq (reads)) "the repair triggers a server read" {:signal requests$}))
+           (t/is (= [file-id] (mapv :id (reads))))
+           (rx/push! read-answer {:id file-id :vern 0 :revn 4
+                                  :data (thp/file-data page-id shape-id "Authoritative" :opacity 0.8)})
+           (await (async/wait-for-store store #(= "Authoritative" (thp/shape-name store file-id page-id shape-id))
+                                        "the GET's newer content replaces the locally compensated view"))
+           (await (async/wait-for-store store #(= :persistence-rejected-kept (get-in @store [:notification :tag]))
+                                        "the editor warns that the compensation was skipped"))
+           (t/is (= :warning (get-in @store [:notification :level])))
+
+           (ptk/emit! store ::dps/force-persist)
+           (await (async/settle))
+           (t/is (= 1 (count (saves))) "forcing a flush does not POST the discarded compensation")
+           (t/is (empty? (get-in @store [:persistence :buffer])))
+           (t/is (empty? (get-in @store [:persistence :queue])))
+           (t/is (= 4 (get-in @store [:files file-id :revn])))))
+       (fn [cmd _]
+         (->> (case cmd :update-file-v2 save-answer :get-file read-answer (rx/empty))
+              (rx/take 1)
+              (rx/observe-on :async)))))))
+
+(t/deftest ^:async a-fresh-bundle-discards-a-queued-compensation-before-a-covered-repair-arrives
+  (let [save-answer (rx/subject)]
+    (await
+     (thp/with-persistence
+       (^:async fn [{:keys [file-id session-id requests requests$ store]}]
+         (let [page-id  (uuid/next)
+               shape-id (uuid/next)
+               other-id (uuid/next)
+               group    (uuid/next)
+               kept     (grouped (thp/rename-commit file-id page-id shape-id "Original" "Saved") group)
+               rejected (grouped (thp/attr-commit file-id page-id shape-id :opacity 1 0.5) group)
+               other    (thp/local-commit other-id)
+               saves    #(into [] (comp (filter (comp #{:update-file-v2} first)) (map (comp :id second)))
+                               @requests)]
+           (ptk/emit! store (thp/open-file file-id page-id (thp/file-data page-id shape-id "Saved" :opacity 0.5))
+                      #(-> %
+                           (assoc-in [:files file-id :vern] 0)
+                           (assoc-in [:files other-id] {:id other-id :revn 0 :vern 0}))
+                      kept rejected ::dps/force-persist)
+           (await (async/wait-for #(= [file-id] (saves)) "the partial save is sent" {:signal requests$}))
+           (ptk/emit! store other ::dps/force-persist)
+           (await (async/wait-for-store store #(= 2 (count (get-in @store [:persistence :queue])))
+                                        "the other file is queued before the compensation"))
+           (rx/push! save-answer
+                     (assoc (thp/rejection (:id @rejected))
+                            :saved-revn 1
+                            :lagged [{:id (uuid/next) :file-id file-id
+                                      :revn 1 :session-id session-id :changes (:redo-changes @kept)}]))
+           (await (async/wait-for #(= [file-id other-id] (saves)) "the other file's POST is in flight"
+                                  {:signal requests$}))
+           (await (async/wait-for-store store #(seq (get-in @store [:persistence :buffer]))
+                                        "the compensation is buffered"))
+           (let [compensation (get-in @store [:persistence :buffer 0])
+                 entry-path   [:persistence :index (:id compensation)]]
+             (t/is (= [(thp/rename page-id shape-id "Original")] (:redo-changes compensation)))
+             (ptk/emit! store ::dps/force-persist)
+             (await (async/wait-for-store store #(get-in @store (conj entry-path :commits 0 :compensation))
+                                          "the compensation is queued behind the other file"))
+             (t/is (= [file-id other-id] (saves)) "the queued compensation has not been sent")
+
+             ;; The new bundle can arrive before any of the intervening deltas.
+             (ptk/emit! store (#'dw/bundle-fetched {:file-id file-id :thumbnails {}
+                                                    :file {:id file-id :vern 0 :revn 4
+                                                           :data (thp/file-data page-id shape-id "Authoritative")}}))
+             (await (async/wait-for-store store #(= :persistence-rejected-kept (get-in @store [:notification :tag]))
+                                          "the new file bundle covers the gap and drops the compensation"))
+             (t/is (= "Authoritative" (thp/shape-name store file-id page-id shape-id))
+                   "loading the file does not replay the queued compensation"))
+
+           (let [processed (async/observe
+                            (->> (ptk/input-stream store)
+                                 (rx/filter (ptk/type? ::dch/rebase-commits))
+                                 (rx/take 1)))]
+             (ptk/emit! store
+                        (dwn/handle-file-change
+                         {:type :file-change :file-id file-id :vern 0
+                          :profile-id (uuid/next) :session-id (uuid/next)
+                          :repair-base-revn 1 :revn 3 :repaired true
+                          :revision-ids [(uuid/next) (uuid/next)]
+                          :changes [(thp/set-attr page-id shape-id :opacity 0.8)
+                                    (thp/rename page-id shape-id "Repaired")]}))
+             (await processed))
+
+           (rx/push! save-answer {:revn 1})
+           (await (async/wait-for-store store #(and (= :saved (get-in @store [:persistence :status]))
+                                                    (empty? (get-in @store [:persistence :queue])))
+                                        "the queue drains after the other file's POST"))
+           (t/is (= "Authoritative" (thp/shape-name store file-id page-id shape-id))
+                 "the late repair does not replace the newer loaded data")
+           (t/is (= [file-id other-id] (saves)) "the runner never sends the discarded compensation")
+           (t/is (not-any? (comp #{:get-file} first) @requests)
+                 "the installed bundle already covers the late repair")))
+       (fn [cmd _]
+         (if (= cmd :update-file-v2)
+           (->> save-answer (rx/take 1) (rx/observe-on :async))
+           (rx/empty)))))))
 
 ;; Scenario: applying a token to five shapes makes three commits inside one
 ;; undo transaction, all sent in one save; the server keeps the first two
@@ -746,15 +1093,22 @@
 ;; server already holds the moved pin and #2 on R. Proves: pin #1 goes back
 ;; to its spot on screen and on the server, and #2, whose board is gone,
 ;; moves to the page root, as deleting the board does.
-(t/deftest ^:async a-rollback-puts-comment-pins-back-and-detaches-them-from-removed-boards
+(defn- ^:async check-comment-pin-rollback
+  [recovery]
   (let [answer   (rx/subject)
+        snapshot (rx/subject)
+        history  (rx/subject)
         respond  (fn [cmd _]
-                   (if (= :update-file-v2 cmd)
-                     (->> answer (rx/take 1) (rx/observe-on :async))
-                     (rx/of nil)))]
+                   (->> (case cmd
+                          :update-file-v2 answer
+                          :get-file snapshot
+                          :get-file-snapshot history
+                          (rx/of nil))
+                        (rx/take 1)
+                        (rx/observe-on :async)))]
     (await
      (thp/with-persistence
-       (^:async fn [{:keys [file-id requests store]}]
+       (^:async fn [{:keys [file-id requests requests$ store]}]
          (let [page-id  (uuid/next)
                shape-id (uuid/next)
                board-y  (cts/setup-shape {:id (uuid/next) :type :frame :name "Y"
@@ -778,38 +1132,197 @@
                                                    :frame-id (:id board-y) :position p0}]})
                                  group)
                draw     (add-shape-commit file-id page-id board-r)
+               original (-> (thp/file-data page-id shape-id "A")
+                            (thp/add-shape page-id board-y)
+                            (assoc-in [:pages-index page-id :comment-thread-positions]
+                                      {(:id thread-1) {:frame-id (:id board-y) :position p0}}))
                data     (-> (thp/file-data page-id shape-id "A")
                             (thp/add-shape page-id (assoc board-y :name "Y moved"))
                             (thp/add-shape page-id board-r)
                             (assoc-in [:pages-index page-id :comment-thread-positions]
                                       {(:id thread-1) {:frame-id (:id board-y) :position p1}
                                        (:id thread-2) {:frame-id (:id board-r) :position p2}}))
-               sent     (fn [cmd] (into [] (comp (filter #(= cmd (first %))) (map second)) @requests))]
+               sent     (fn [cmd] (into [] (comp (filter #(= cmd (first %))) (map second)) @requests))
+               preview? (contains? #{:preview :exit-first :new-opening :restored} recovery)
+               tokens   (when (= :preview recovery)
+                          (ctob/add-set (ctob/make-tokens-lib)
+                                        (ctob/make-token-set
+                                         :name "Recovered"
+                                         :tokens {"size" (ctob/make-token :name "size" :type :sizing :value "8")})))
+               propagated (atom [])]
+           (when tokens
+             (->> (ptk/input-stream store)
+                  (rx/filter (ptk/type? ::dwtp/propagate-workspace-tokens))
+                  (rx/subs! (fn [_]
+                              (swap! propagated conj (some-> (get-in @store [:files file-id :data :tokens-lib])
+                                                             ctob/get-set-names
+                                                             vec))))))
            ;; The local data and the rendered pins already hold the edits
            (ptk/emit! store
                       (thp/open-file file-id page-id data)
-                      #(assoc % :comment-threads {(:id thread-1) thread-1 (:id thread-2) thread-2})
+                      #(-> %
+                           (assoc :comment-threads {(:id thread-1) thread-1 (:id thread-2) thread-2})
+                           (assoc-in [:files file-id :vern] 0)
+                           (assoc :workspace-load-id (uuid/next)))
                       (dwcm/watch-comment-thread-position-changes (rx/subject)))
            (ptk/emit! store move pin draw ::dps/force-persist)
            (await (async/wait-for #(seq (sent :update-file-v2)) "the edits are sent"))
+           (when preview?
+             (ptk/emit! store (dwv/enter-preview (uuid/next)))
+             (await (async/wait-for #(seq (sent :get-file-snapshot)) "the preview is requested"
+                                    {:signal requests$}))
+             (rx/push! history {:id file-id :vern 0 :revn 0
+                                :data (thp/file-data page-id shape-id "Historical")})
+             (await (async/wait-for-store store #(= "Historical" (thp/shape-name store file-id page-id shape-id))
+                                          "the historical data is visible")))
+           (when (#{:read :retry :preview} recovery)
+             ;; An unsafe absolute inverse must be replaced by a fresh read.
+             (ptk/emit! store #(update % :persistence pcm/mark-undo-uncertain file-id 0)))
            (rx/push! answer (thp/rejection (:id @move)))
-           (await (async/wait-for #(seq (sent :update-comment-thread-frame))
-                                  "the rollback updates the comments"))
-           (t/is (nil? (thp/shape-attr store file-id page-id (:id board-r) :id)) "R is gone")
-           (t/is (= p0 (get-in @store [:comment-threads (:id thread-1) :position]))
-                 "pin #1 is back on screen")
-           (t/is (= [{:id (:id thread-1) :position p0 :frame-id (:id board-y)}]
-                    (sent :update-comment-thread-position))
-                 "and on the server")
-           (t/is (= uuid/zero (get-in @store [:comment-threads (:id thread-2) :frame-id]))
-                 "comment #2 leaves the removed board")
-           (t/is (= p2 (get-in @store [:comment-threads (:id thread-2) :position]))
-                 "and keeps its spot")
-           (t/is (= [{:id (:id thread-2) :frame-id uuid/zero}]
-                    (sent :update-comment-thread-frame)))
+           (when recovery
+             (await (async/wait-for #(seq (sent :get-file)) "the rollback awaits the file" {:signal requests$}))
+             (when (= :retry recovery)
+               (rx/push! snapshot nil)
+               (await (async/wait-for-store store #(= :persistence-reconciliation-failed
+                                                      (get-in @store [:notification :tag]))
+                                            "the failed read is retryable"))
+               (t/is (empty? (sent :update-comment-thread-position)))
+               (ptk/emit! store (#'dps/reconcile-file file-id {:retry true}))
+               (await (async/wait-for #(= 2 (count (sent :get-file))) "the retry awaits the file"
+                                      {:signal requests$})))
+             (await (async/settle))
+             (t/is (empty? (sent :update-comment-thread-position)))
+             (t/is (empty? (sent :update-comment-thread-frame)))
+             (when (= :exit-first recovery)
+               (ptk/emit! store (dwv/exit-preview))
+               (await (async/wait-for-store store #(nil? (get-in @store [:workspace-global :preview-id]))
+                                            "the live file is visible before the read")))
+             (when tokens
+               (ptk/emit! store (dwn/handle-file-change
+                                 {:type :file-change :file-id file-id :profile-id (uuid/next)
+                                  :session-id (uuid/next) :vern 0 :revn 1
+                                  :library-change true :changes []})))
+             (rx/push! snapshot {:id file-id :vern 0 :revn (if tokens 1 0)
+                                 :data (cond-> original
+                                         tokens (assoc :id file-id :tokens-lib tokens
+                                                       :tokens-status (ctos/make-tokens-status
+                                                                       :active-set-ids (into #{} (map ctob/get-id)
+                                                                                             (ctob/get-sets tokens)))))}))
+           (when (and preview? (not= :exit-first recovery))
+             (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
+                                          "the queue settles during the preview"))
+             (t/is (= "Historical" (thp/shape-name store file-id page-id shape-id)))
+             (t/is (= p0 (get-in @store [:workspace-versions :backup :data :pages-index page-id
+                                         :comment-thread-positions (:id thread-1) :position]))
+                   "the GET restores the live backup, not the historical data")
+             (t/is (empty? (sent :update-comment-thread-position)))
+             (t/is (empty? (sent :update-comment-thread-frame)))
+             (when tokens
+               (t/is (empty? @propagated) "the same read defers token propagation"))
+             (case recovery
+               :new-opening
+               (ptk/emit! store #(assoc % :workspace-load-id (uuid/next)) (dwv/exit-preview))
+
+               :restored
+               (ptk/emit! store (restore-version file-id (thp/file-data page-id shape-id "Restored"))
+                          (#'dwv/clear-preview-state)
+                          (dps/finish-preview-effects file-id))
+
+               (ptk/emit! store (dwv/exit-preview)))
+             (await (async/wait-for-store store #(nil? (get-in @store [:workspace-global :preview-id]))
+                                          "the preview ends")))
+           (if (#{:new-opening :restored} recovery)
+             (do
+               (await (async/settle))
+               (t/is (empty? (sent :update-comment-thread-position)))
+               (t/is (empty? (sent :update-comment-thread-frame))))
+             (do
+               (await (async/wait-for #(seq (sent :update-comment-thread-frame))
+                                      "the rollback updates the comments" {:signal requests$}))
+               (t/is (nil? (thp/shape-attr store file-id page-id (:id board-r) :id)) "R is gone")
+               (t/is (= p0 (get-in @store [:comment-threads (:id thread-1) :position]))
+                     "pin #1 is back on screen")
+               (t/is (= [{:id (:id thread-1) :position p0 :frame-id (:id board-y)}]
+                        (sent :update-comment-thread-position))
+                     "and on the server")
+               (t/is (= uuid/zero (get-in @store [:comment-threads (:id thread-2) :frame-id]))
+                     "comment #2 leaves the removed board")
+               (t/is (= p2 (get-in @store [:comment-threads (:id thread-2) :position]))
+                     "and keeps its spot")
+               (t/is (= [{:id (:id thread-2) :frame-id uuid/zero}]
+                        (sent :update-comment-thread-frame)))))
+           (when tokens
+             (await (async/settle))
+             (t/is (= [["Recovered"]] @propagated) "the live read restores the pins and propagates tokens once"))
            (rx/end! answer)))
        respond))))
 
+(t/deftest ^:async a-rollback-puts-comment-pins-back-and-detaches-them-from-removed-boards
+  (await (check-comment-pin-rollback nil)))
+
+(t/deftest ^:async a-rollback-waits-for-reconciliation-before-saving-comment-pins
+  (await (check-comment-pin-rollback :read)))
+
+(t/deftest ^:async a-rollback-retries-the-read-before-saving-comment-pins-once
+  (await (check-comment-pin-rollback :retry)))
+
+(t/deftest ^:async a-rollback-during-preview-saves-comment-pins-once-the-live-file-is-visible
+  (await (check-comment-pin-rollback :preview)))
+
+(t/deftest ^:async leaving-preview-before-the-read-does-not-duplicate-the-rollback-effects
+  (await (check-comment-pin-rollback :exit-first)))
+
+(t/deftest ^:async a-deferred-rollback-does-not-apply-to-another-opening
+  (await (check-comment-pin-rollback :new-opening)))
+
+(t/deftest ^:async a-deferred-rollback-does-not-apply-to-a-restored-version
+  (await (check-comment-pin-rollback :restored)))
+
+(t/deftest ^:async a-mixed-rollback-notifies-each-file-when-its-own-data-is-ready
+  (let [save (rx/subject)
+        read (rx/subject)]
+    (await
+     (thp/with-persistence
+       (^:async fn [{:keys [file-id requests requests$ store]}]
+         (let [library-id (uuid/next)
+               page-id    (uuid/next)
+               shape-id   (uuid/next)
+               asset-id   (uuid/next)
+               group      (uuid/next)
+               local      (grouped (thp/rename-commit file-id page-id shape-id "A" "B") group)
+               linked     (grouped (thp/rename-commit library-id page-id asset-id "X" "Y") group)
+               events     (atom [])
+               sub        (->> (ptk/input-stream store)
+                               (rx/filter (ptk/type? ::dps/rolled-back))
+                               (rx/subs! #(swap! events conj @%)))]
+           (try
+             (ptk/emit! store
+                        (thp/open-file-with-library file-id library-id page-id
+                                                    (thp/file-data page-id shape-id "B")
+                                                    (thp/file-data page-id asset-id "Y"))
+                        local linked ::dps/force-persist)
+             (await (async/wait-for #(= 1 (count @requests)) "the file save is sent" {:signal requests$}))
+             (ptk/emit! store #(update % :persistence pcm/mark-undo-uncertain file-id 0))
+             (rx/push! save (thp/rejection (:id @local)))
+             (await (async/wait-for #(= :get-file (first (peek @requests))) "the file waits for a read"
+                                    {:signal requests$}))
+             (await (async/wait-for-store store #(seq @events) "the linked library is rolled back locally"))
+             (t/is (= [#{library-id}] (mapv :file-ids @events)))
+             (t/is (= [#{asset-id}] (mapv :shape-ids @events)))
+             (t/is (= "X" (thp/shape-name store library-id page-id asset-id)))
+             (t/is (= "B" (thp/shape-name store file-id page-id shape-id)))
+             (rx/push! read {:id file-id :vern 0 :revn 0 :data (thp/file-data page-id shape-id "A")})
+             (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
+                                          "the store settles after both rollbacks"))
+             (t/is (= [#{library-id} #{file-id}] (mapv :file-ids @events)))
+             (t/is (= [#{asset-id} #{shape-id}] (mapv :shape-ids @events)))
+             (t/is (= "A" (thp/shape-name store file-id page-id shape-id)))
+             (finally
+               (rx/dispose! sub)))))
+       (fn [cmd _]
+         (->> (case cmd :update-file-v2 save :get-file read (rx/empty))
+              (rx/take 1)
+              (rx/observe-on :async)))))))
 
 (defn- rejection-notice
   "Saves a rename of the open file and answers it with `answer` applied to

@@ -1,0 +1,26 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS SUBSIDIARY SL
+
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+
+.version-controls {
+  // The global toast appears at the top. Keep the history actions at the
+  // opposite edge, outside the sidebar and without resizing the canvas.
+  position: absolute;
+  inset-block-end: var(--sp-l);
+  inset-inline: var(--sp-l);
+  max-inline-size: px2rem(640);
+  max-block-size: calc(50dvh - var(--sp-l));
+  margin-inline: auto;
+  z-index: var(--z-index-dropdown);
+  overflow: auto;
+  overflow-wrap: anywhere;
+
+  @media (max-width: $sz-480) {
+    grid-template-columns: 1fr;
+  }
+}

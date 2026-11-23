@@ -13,10 +13,15 @@
   (in-flight, stale token, online resume) prevent double-sends, and hung
   resends across governor windows still earn their own stall report."
   (:require
+   [app.common.files.changes :as cpc]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
+   [app.main.data.changes :as dch]
    [app.main.data.event :as ev]
    [app.main.data.persistence :as dps]
+   [app.main.data.persistence.order :as porder]
+   [app.main.data.workspace :as dw]
+   [app.main.data.workspace.notifications :as dwn]
    [app.main.errors :as errors]
    [app.main.repo :as rp]
    [app.main.router :as rt]
@@ -26,7 +31,7 @@
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.async :as async]
    [frontend-tests.helpers.mock :as mock]
-   [frontend-tests.helpers.persistence :refer [local-commit with-persistence]]
+   [frontend-tests.helpers.persistence :as thp :refer [local-commit with-persistence]]
    [potok.v2.core :as ptk]))
 
 (defn- instant-backoff
@@ -120,6 +125,355 @@
          (if (= 1 (swap! calls inc))
            (rx/throw (ex-info "offline" {:type :offline}))
            (rx/of {:revn 1})))))))
+
+(defn- file-reads
+  [requests]
+  (into [] (comp (filter #(= :get-file (first %))) (map second)) @requests))
+
+(t/deftest ^:async a-rejected-retry-releases-the-next-file-after-its-own-read
+  (let [first-answer (rx/subject)
+        retry-answer (rx/subject)
+        next-answer  (rx/subject)
+        first-read   (rx/subject)
+        next-read    (rx/subject)
+        backoff      (rx/subject)
+        posts        (atom 0)
+        reads        (atom 0)]
+    (await
+     (with-persistence
+       (^:async fn [{:keys [file-id requests requests$ store]}]
+         (await
+          (mock/with-mocks*
+            {rx/timer (mock/stub (fn [ms] (if (= 2000 ms) backoff (rx/subject))))}
+            (let [library (uuid/next)
+                  page    (uuid/next)
+                  shape   (uuid/next)
+                  asset   (uuid/next)
+                  bad     (thp/rename-commit file-id page shape "Original" "Edited")
+                  next    (thp/rename-commit library page asset "Saved" "Pending")
+                  saved   (thp/rename-commit library page asset "Original" "Saved")
+                  ids     #(into [] (comp (filter (comp #{:update-file-v2} first)) (map (comp :id second))) @requests)]
+              (ptk/emit! store (thp/open-file-with-library file-id library page
+                                                           (thp/file-data page shape "Edited")
+                                                           (thp/file-data page asset "Pending"))
+                         #(-> %
+                              (assoc-in [:files file-id :vern] 0)
+                              (assoc-in [:files library :vern] 0)
+                              (assoc-in [:persistence :saved] [(assoc @saved :undo-group (:undo-group @bad))]))
+                         bad next ::dps/force-persist)
+              (await (async/wait-for #(= [file-id] (ids)) "the original attempt is sent" {:signal requests$}))
+              (rx/error! first-answer (ex-info "SQL timeout" {:type :server-error :code :statement-timeout}))
+              (await (async/wait-for-store store #(= :retrying (get-in @store [:persistence :status]))
+                                           "the retry is scheduled"))
+              (rx/push! backoff :tick)
+              (await (async/wait-for #(= [file-id file-id] (ids)) "the retry is sent" {:signal requests$}))
+              (rx/push! retry-answer (assoc (thp/rejection (:id @bad)) :lagged []))
+              (await (async/wait-for #(= #{file-id library} (set (map :id (file-reads requests))))
+                                     "both GETs are pending" {:signal requests$}))
+              (let [read-for (zipmap (map :id (file-reads requests)) [first-read next-read])]
+                (rx/push! (get read-for file-id) {:id file-id :vern 0 :revn 0
+                                                  :data (thp/file-data page shape "Original")})
+                (await (async/wait-for-store store #(= (:id @next) (peek (get-in @store [:persistence :queue])))
+                                             "the library is now the head"))
+                (await (async/settle))
+                (t/is (= [file-id file-id] (ids)) "the library POST waits for its GET")
+                (rx/push! (get read-for library) {:id library :vern 0 :revn 0
+                                                  :data (thp/file-data page asset "Saved")}))
+              (await (async/wait-for #(= [file-id file-id library] (ids)) "the library save resumes"
+                                     {:signal requests$}))
+              (rx/push! next-answer {:revn 0 :saved-revn 1
+                                     :lagged [{:id (uuid/next) :file-id library :revn 1
+                                               :session-id (:session-id @store) :changes (:redo-changes @next)}]})
+              (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
+                                           "both entries settle"))
+              (t/is (= [file-id file-id library] (ids)))
+              (t/is (= "Pending" (thp/shape-name store library page asset)))))))
+       (fn [cmd _]
+         (->> (case cmd
+                :update-file-v2 (case (swap! posts inc) 1 first-answer 2 retry-answer 3 next-answer (rx/empty))
+                :get-file (if (= 1 (swap! reads inc)) first-read next-read)
+                (rx/empty))
+              (rx/take 1)
+              (rx/observe-on :async)))))))
+
+(t/deftest ^:async an-unrelated-read-does-not-end-the-heads-active-backoff
+  (let [first-answer (rx/subject)
+        retry-answer (rx/subject)
+        read-answer  (rx/subject)
+        backoff      (rx/subject)
+        posts        (atom 0)]
+    (await
+     (with-persistence
+       (^:async fn [{:keys [file-id requests requests$ store]}]
+         (await
+          (mock/with-mocks*
+            {rx/timer (mock/stub (fn [ms] (if (= 2000 ms) backoff (rx/subject))))}
+            (let [library (uuid/next)
+                  page    (uuid/next)
+                  data    (thp/file-data page (uuid/next) "Library")]
+              (ptk/emit! store #(assoc-in % [:files library] {:id library :vern 0 :revn 0 :data data})
+                         (local-commit file-id) ::dps/force-persist)
+              (await (async/wait-for #(= 1 (count (sent-commits requests))) "the head save is sent"
+                                     {:signal requests$}))
+              (rx/error! first-answer (ex-info "Connection lost" {:type :gateway-error}))
+              (await (async/wait-for-store store #(= :retrying (get-in @store [:persistence :status]))
+                                           "the head waits for backoff"))
+              (let [token (get-in @store [:persistence :retry-token])]
+                (ptk/emit! store (#'dps/reconcile-file library {:minimum 0}))
+                (await (async/wait-for #(= [library] (mapv :id (file-reads requests)))
+                                       "the library read starts" {:signal requests$}))
+                (rx/push! read-answer {:id library :vern 0 :revn 1 :data data})
+                (await (async/wait-for-store store #(= 1 (get-in @store [:files library :revn]))
+                                             "the read installs the library"))
+                (await (async/settle))
+                (t/is (= 1 @posts) "the read does not bypass backoff")
+                (t/is (= token (get-in @store [:persistence :retry-token]))))
+              (rx/push! backoff :tick)
+              (await (async/wait-for #(= 2 @posts) "the timer starts the retry"))
+              (rx/push! retry-answer {:revn 1})
+              (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
+                                           "the retry settles"))))))
+       (fn [cmd _]
+         (->> (case cmd
+                :update-file-v2 (if (= 1 (swap! posts inc)) first-answer retry-answer)
+                :get-file read-answer
+                (rx/empty))
+              (rx/take 1)
+              (rx/observe-on :async)))))))
+
+(defn- ^:async check-head-read-and-backoff
+  [first]
+  (let [first-answer (rx/subject)
+        retry-answer (rx/subject)
+        first-read   (rx/subject)
+        next-read    (rx/subject)
+        backoff      (rx/subject)
+        posts        (atom 0)
+        reads        (atom 0)
+        timers       (atom [])]
+    (await
+     (with-persistence
+       (^:async fn [{:keys [file-id requests requests$ store]}]
+         (await
+          (mock/with-mocks*
+            {rx/timer (mock/stub (fn [ms]
+                                   (swap! timers conj ms)
+                                   (if (= 2000 ms) backoff (rx/subject))))}
+            (let [page    (uuid/next)
+                  shape   (uuid/next)
+                  edit    (thp/rename-commit file-id page shape "Original" "Local")
+                  remote  {:type :file-change :file-id file-id :profile-id (uuid/next)
+                           :session-id (uuid/next) :vern 0 :revn 2
+                           :revision-ids [(uuid/next)] :changes [(thp/rename page shape "Peer")]}
+                  file    {:id file-id :vern 0 :revn 2 :data (thp/file-data page shape "Peer")}
+                  sent    #(count (sent-commits requests))]
+              (ptk/emit! store (thp/open-file file-id page (thp/file-data page shape "Local"))
+                         #(-> %
+                              (assoc-in [:files file-id :vern] 0)
+                              (assoc-in [:persistence :file-order file-id] (porder/loaded 0 0)))
+                         edit ::dps/force-persist)
+              (await (async/wait-for #(= 1 (sent)) "the first save is sent" {:signal requests$}))
+              (rx/error! first-answer (ex-info "Gateway timeout" {:type :gateway-error}))
+              (await (async/wait-for #(some #{2000} @timers) "the retry timer is armed"))
+              (ptk/emit! store (dwn/handle-file-change remote))
+              (await (async/wait-for #(= [file-id] (mapv :id (file-reads requests)))
+                                     "a revision gap starts a read of the head's file" {:signal requests$}))
+              (when (not= :read first)
+                (rx/push! backoff :tick)
+                (await (async/settle))
+                (t/is (= 1 (sent)) "the expired timer cannot send before the read"))
+              (when (= :failed-read first)
+                (do
+                  (rx/push! first-read nil)
+                  (await (async/wait-for-store store
+                                               #(false? (get-in @store [:persistence :reconciliations file-id :loading]))
+                                               "the failed read stays pending"))
+                  (t/is (= 1 (sent)))
+                  (ptk/emit! store (#'dps/reconcile-file file-id {:retry true}))
+                  (await (async/wait-for #(= 2 (count (file-reads requests)))
+                                         "the read is retried" {:signal requests$}))))
+              (if (= :replaced first)
+                (do
+                  (ptk/emit! store (#'dw/bundle-fetched
+                                    {:file-id file-id :thumbnails {}
+                                     :file (assoc file :vern 1 :data (thp/file-data page shape "Restored"))}))
+                  (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
+                                               "the restored version retires the old queue entry"))
+                  (rx/push! first-read file)
+                  (await (async/settle))
+                  (t/is (= 1 (sent)) "a read of the replaced version cannot send the retry")
+                  (t/is (= "Restored" (thp/shape-name store file-id page shape))))
+                (do
+                  (rx/push! (if (= :failed-read first) next-read first-read) file)
+                  (await (async/wait-for-store store #(= 2 (get-in @store [:files file-id :revn]))
+                                               "the read installs the live base"))
+                  (when (= :read first)
+                    (await (async/settle))
+                    (t/is (= 1 (sent)) "the completed read cannot bypass an active backoff")
+                    (rx/push! backoff :tick))
+                  (await (async/wait-for #(= 2 (sent)) "exactly one retry is sent" {:signal requests$}))
+                  (t/is (apply = (sent-commits requests)) "the retry preserves the commits and their IDs")
+                  (t/is (= [2000] @timers) "the read does not restart the backoff budget")
+                  (t/is (= 1 (get-in @store [:persistence :attempts])))
+                  (rx/push! retry-answer {:revn 2})
+                  (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
+                                               "the retry settles"))
+                  (t/is (= 2 (sent)))
+                  (t/is (= "Local" (thp/shape-name store file-id page shape)))))))))
+       (fn [cmd _]
+         (->> (case cmd
+                :update-file-v2 (if (= 1 (swap! posts inc)) first-answer retry-answer)
+                :get-file (if (= 1 (swap! reads inc)) first-read next-read)
+                (rx/empty))
+              (rx/take 1)
+              (rx/observe-on :async)))))))
+
+(t/deftest ^:async an-expired-retry-resumes-after-a-read-of-its-own-file
+  (await (check-head-read-and-backoff :timer)))
+
+(t/deftest ^:async a-read-of-the-head-does-not-bypass-an-active-backoff
+  (await (check-head-read-and-backoff :read)))
+
+(t/deftest ^:async a-failed-read-does-not-consume-the-expired-retry
+  (await (check-head-read-and-backoff :failed-read)))
+
+(t/deftest ^:async replacing-the-heads-version-retires-its-expired-retry
+  (await (check-head-read-and-backoff :replaced)))
+
+(defn- check-uncertain-retry
+  "Loses the first POST's answer, then delivers the retry's outcome and
+  the server snapshot independently. A late first write is held past
+  the GET instead of being included in that snapshot."
+  [outcome & [failure]]
+  (let [first-answer (rx/subject)
+        retry-answer (rx/subject)
+        read-answer  (rx/subject)
+        backoff      (rx/subject)
+        posts        (atom 0)]
+    (with-persistence
+      (^:async fn [{:keys [file-id session-id requests requests$ store failures]}]
+        (await
+         (mock/with-mocks*
+           {rx/timer (mock/stub (fn [ms] (if (= 2000 ms) backoff (rx/subject))))}
+           (let [page-id    (uuid/next)
+                 shape-id   (uuid/next)
+                 previous   (thp/rename-commit file-id page-id shape-id "Original" "Previously saved")
+                 first-edit (thp/rename-commit file-id page-id shape-id "Previously saved" "First edit")
+                 last-edit  (thp/rename-commit file-id page-id shape-id "First edit" "Second edit")
+                 group      (:undo-group @previous)
+                 grouped    #(ptk/data-event ::dch/commit (assoc @% :undo-group group))
+                 late?      (= outcome :late-first)
+                 server     (atom {:id file-id :vern 0 :revn 0
+                                   :data (thp/file-data page-id shape-id "Previously saved")})
+                 write-row  (fn [{:keys [changes]}]
+                              (swap! server #(-> %
+                                                 (update :revn inc)
+                                                 (update :data cpc/process-changes changes false))))
+                 row        (fn [revn changes]
+                              {:id (uuid/next) :file-id file-id :revn revn
+                               :session-id session-id :changes (vec changes)})
+                 already    (row 1 (concat (:redo-changes @first-edit) (:redo-changes @last-edit)))
+                 retried    (row (if late? 1 2)
+                                 (if (= outcome :partial)
+                                   (:redo-changes @first-edit)
+                                   (:changes already)))
+                 repair     (row 3 [(thp/rename page-id shape-id "Repaired")])
+                 answer     (case outcome
+                              :total (assoc (thp/rejection (:id @first-edit) (:id @last-edit))
+                                            :revn 1 :lagged [already])
+                              :partial (assoc (thp/rejection (:id @last-edit))
+                                              :revn 1 :saved-revn 2 :lagged [already retried])
+                              :repaired {:revn 1 :saved-revn 3 :lagged [already retried repair]
+                                         :repair (select-keys repair [:id :revn :changes])}
+                              :late-first {:revn 0 :saved-revn 1 :lagged [retried]}
+                              {:revn 1 :saved-revn 2 :lagged [already retried]})
+                 read-revn  (inc (or (:saved-revn answer) (:revn answer)))
+                 batch      (mapv (fn [edit]
+                                    (assoc (select-keys @edit [:redo-changes :undo-changes])
+                                           :commit-id (:id @edit)))
+                                  [first-edit last-edit])]
+             (ptk/emit! store (thp/open-file file-id page-id (thp/file-data page-id shape-id "Second edit"))
+                        #(-> %
+                             (assoc-in [:files file-id :vern] 0)
+                             (assoc-in [:persistence :saved] [@previous]))
+                        (grouped first-edit) (grouped last-edit) ::dps/force-persist)
+             (await (async/wait-for #(= 1 (count (sent-commits requests))) "the first POST is sent"
+                                    {:signal requests$}))
+             (when-not late? (write-row already))
+             (rx/error! first-answer (ex-info "The first save answer failed" (or failure {:type :gateway-error})))
+             (await (async/wait-for-store store #(= :retrying (get-in @store [:persistence :status]))
+                                          "the first result is uncertain"))
+             (when failure
+               (t/is (true? (get-in @store [:persistence :index (:id @first-edit) ::dps/uncertain]))
+                     "a SQL timeout can reach the client after the save committed"))
+             (rx/push! backoff :tick)
+             (await (async/wait-for #(= 2 (count (sent-commits requests))) "the retry POST is sent"
+                                    {:signal requests$}))
+             (t/is (= [batch batch] (sent-commits requests)) "retry keeps each ID, redo and undo")
+             (t/is (every? (comp :repair-in-response second)
+                           (filter #(= :update-file-v2 (first %)) @requests)))
+
+             (t/is (= (:revn answer) (:revn @server)) "the retry reports the base it read")
+             (when (:saved-revn answer) (write-row retried))
+             (when (:repair answer) (write-row repair))
+             ;; This later peer value must win over every visible save and repair.
+             (write-row {:changes [(thp/rename page-id shape-id "Peer edit")]})
+             (rx/push! retry-answer answer)
+             (await (async/wait-for #(seq (file-reads requests)) "the retry result triggers a GET"
+                                    {:signal requests$}))
+             (t/is (= [file-id] (mapv :id (file-reads requests))))
+             (t/is (seq (get-in @store [:persistence :queue])) "the head waits for the GET")
+             (t/is (= "Second edit" (thp/shape-name store file-id page-id shape-id))
+                   "no absolute undo changes the view before the GET")
+
+             (rx/push! read-answer @server)
+             (await (async/wait-for-store store #(and (= :saved (get-in @store [:persistence :status]))
+                                                      (empty? (get-in @store [:persistence :queue])))
+                                          "the reconciled snapshot settles the queue"))
+             (t/is (= "Peer edit" (thp/shape-name store file-id page-id shape-id)))
+             (t/is (= read-revn (get-in @store [:files file-id :revn])))
+             (when-let [kept ({:partial 2 :total 1} outcome)]
+               (t/is (= kept (some-> @failures first ex-data :kept-saved))
+                     "the rejection reports the saved changes that were not compensated"))
+
+             (when late?
+               (write-row already)
+               (t/is (= (inc read-revn) (:revn @server)) "the first POST can still write")
+               (t/is (= "Second edit" (get-in @server [:data :pages-index page-id :objects shape-id :name])))
+               (t/is (= "Peer edit" (thp/shape-name store file-id page-id shape-id))
+                     "the GET cannot install a write that had not happened yet"))
+             (t/is (empty? (get-in @store [:persistence :buffer])) "no compensation is buffered")
+             (ptk/emit! store ::dps/force-persist)
+             (await (async/settle))
+             (t/is (= [batch batch] (sent-commits requests)) "no compensation or other extra POST")
+             (t/is (= 1 (count (file-reads requests))) "no extra GET")))))
+      (fn [cmd _]
+        (let [answer (case cmd
+                       :update-file-v2 (case (swap! posts inc) 1 first-answer 2 retry-answer (rx/subject))
+                       :get-file read-answer
+                       (rx/of nil))]
+          (->> answer (rx/take 1) (rx/observe-on :async)))))))
+
+(t/deftest ^:async a-successful-retry-after-a-lost-answer-reconciles
+  (await (check-uncertain-retry :success)))
+
+(t/deftest ^:async a-repaired-retry-after-a-lost-answer-reconciles
+  (await (check-uncertain-retry :repaired)))
+
+(t/deftest ^:async a-partly-rejected-retry-reconciles-without-compensation
+  (await (check-uncertain-retry :partial)))
+
+(t/deftest ^:async a-wholly-rejected-retry-reconciles-without-compensation
+  (await (check-uncertain-retry :total)))
+
+(t/deftest ^:async a-wholly-rejected-retry-after-a-statement-timeout-reconciles
+  (await (check-uncertain-retry :total {:type :server-error :code :statement-timeout})))
+
+(t/deftest ^:async a-partly-rejected-retry-after-a-statement-timeout-reconciles
+  (await (check-uncertain-retry :partial {:type :server-error :code :statement-timeout})))
+
+(t/deftest ^:async reconciliation-cannot-see-a-first-attempt-that-commits-after-the-get
+  (await (check-uncertain-retry :late-first)))
 
 (defn- check-gateway-response-retries
   "Answers the first send with a proxy error page for `status`, built by the
@@ -539,6 +893,7 @@
         ticks    (rx/subject)
         response (rx/subject)
         requests (atom [])
+        requests$ (rx/subject)
         causes   (atom [])
         events   (atom [])
         file-id  (uuid/next)
@@ -552,7 +907,9 @@
        {ct/now                 (mock/stub #(ct/inst @clock))
         rx/interval            (mock/stub (fn [_] ticks))
         rp/cmd!                (mock/stub (fn [cmd params]
-                                            (swap! requests conj {:cmd cmd :params params})
+                                            (let [request {:cmd cmd :params params}]
+                                              (swap! requests conj request)
+                                              (rx/push! requests$ request))
                                             (->> response (rx/take 1) (rx/observe-on :async))))
         st/state               store
         errors/generate-report (fn [cause & _]
@@ -588,6 +945,7 @@
                  "each stall is a fresh emission, never a coalesced repeat"))
          (finally
            (rx/dispose! store)
+           (rx/end! requests$)
            (rx/end! ticks)
            (rx/end! response)))))))
 

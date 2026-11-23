@@ -60,6 +60,7 @@
    [frontend-tests.data.workspace-texts-test]
    [frontend-tests.data.workspace-thumbnails-test]
    [frontend-tests.data.workspace-thumbnails-wasm-test]
+   [frontend-tests.data.workspace-token-context-test]
    [frontend-tests.data.workspace-undo-test]
    [frontend-tests.data.workspace-undo-translation-test]
    [frontend-tests.data.workspace-variant-rename-test]
@@ -210,6 +211,7 @@
    [frontend-tests.ui.viewport-texts-html-test]
    [frontend-tests.ui.viewport-top-bar-test]
    [frontend-tests.ui.workspace-libraries-test]
+   [frontend-tests.ui.workspace-version-preview-test]
    [frontend-tests.util-clipboard-test]
    [frontend-tests.util-http-test]
    [frontend-tests.util-i18n-test]
@@ -306,6 +308,7 @@
    'frontend-tests.data.workspace-texts-test
    'frontend-tests.data.workspace-thumbnails-test
    'frontend-tests.data.workspace-thumbnails-wasm-test
+   'frontend-tests.data.workspace-token-context-test
    'frontend-tests.data.workspace-undo-test
    'frontend-tests.data.workspace-undo-translation-test
    'frontend-tests.data.workspace-variant-rename-test
@@ -457,6 +460,7 @@
    'frontend-tests.ui.viewport-texts-html-test
    'frontend-tests.ui.viewport-top-bar-test
    'frontend-tests.ui.workspace-libraries-test
+   'frontend-tests.ui.workspace-version-preview-test
    'frontend-tests.util-clipboard-test
    'frontend-tests.util-http-test
    'frontend-tests.util-i18n-test

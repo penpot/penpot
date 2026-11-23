@@ -9,8 +9,11 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
+   [app.common.files.changes :as cpc]
    [app.common.files.changes-merge :as mch]
+   [app.common.files.tokens :as cfo]
    [app.common.logging :as log]
+   [app.common.thumbnails :as thc]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
@@ -21,11 +24,14 @@
    [app.main.data.notifications :as ntf]
    [app.main.data.persistence.commits :as pcm]
    [app.main.data.persistence.lock :as plk]
+   [app.main.data.persistence.order :as porder]
    [app.main.data.workspace :as-alias dw]
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.path.state :as path.state]
    [app.main.data.workspace.undo :as dwu]
    [app.main.errors :as errors]
+   [app.main.features :as features]
+   [app.main.features.pointer-map :as fpmap]
    [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.store :as st]
@@ -39,6 +45,13 @@
 (declare ^:private slow-retry-cycle)
 (declare ^:private flush-buffer)
 (declare ^:private commit-persisted)
+(declare ^:private get-file-order)
+(declare ^:private settle-opt-in)
+(declare ^:private reconcile-file)
+(declare ^:private prune-removed-shapes)
+(declare rejected-tag)
+(declare repaired-rejected-tag)
+(declare ^:private notify-file-repairs)
 
 (log/set-level! :warn)
 
@@ -70,6 +83,8 @@
 ;; Wait for the changes stored before a saved commit, then reload the file.
 (def ^:private unseen-changes-timeout-ms 10000)
 
+(def ^:private kept-rejected-tag :persistence-rejected-kept)
+
 (def ^:private saving-stall-timeout-ms (* 5 60 1000))
 (def ^:private saving-check-interval-ms 30000)
 (def ^:private save-wait-timeout-ms (* 2 60 1000))
@@ -82,10 +97,11 @@
   `:pending`, `:saving`, the `:retrying` episode, or commits still in the
   buffer (the status turns `:saved` as soon as the queue empties) — keeps
   waiting."
-  [{:keys [status queue buffer]}]
+  [{:keys [status queue buffer reconciliations]}]
   (boolean
    (or (= status :error)
-       (and (empty? queue)
+       (and (empty? reconciliations)
+            (empty? queue)
             (empty? buffer)
             (or (nil? status) (= status :saved))))))
 
@@ -126,8 +142,9 @@
 
 (defn- files-queued?
   "True when the queue in `pstate` still holds changes of any of `file-ids`."
-  [{:keys [queue index]} file-ids]
-  (boolean (some #(contains? file-ids (get-in index [% :file-id])) queue)))
+  [{:keys [queue index reconciliations]} file-ids]
+  (boolean (or (some file-ids (keys reconciliations))
+               (some #(contains? file-ids (get-in index [% :file-id])) queue))))
 
 (defn unsaved-changes?
   "True when any of `file-ids` has changes the server does not have yet."
@@ -194,12 +211,12 @@
                     (dissoc :run-id :last-progress-at :stall-reported))))))))
 
 (def ^:private busy-server-codes
-  "Server error codes for a database timeout that rolled the save back."
+  "Database timeout codes shown as a busy server."
   #{:statement-timeout :idle-in-transaction-timeout})
 
 (defn- busy-server-error?
-  "True when the backend was too busy to apply the save: it refused it
-  (429) or a database timeout rolled it back. Resending it is safe."
+  "True when a failure should show the busy-server retry notice. A
+  timeout alone says nothing about whether the save committed."
   [{:keys [type cause-type code]}]
   (let [type (or cause-type type)]
     (or (= :rate-limit type)
@@ -301,17 +318,53 @@
                    (> (- now last-progress-at) saving-stall-timeout-ms))
           (rx/of (report-stalled-persistence now)))))))
 
-(defn- update-file-revn
-  [file-id revn]
-  (ptk/reify ::update-file-revn
-    ptk/UpdateEvent
-    (update [_ state]
-      (log/dbg :hint "update-file-revn" :file-id (dm/str file-id) :revn revn)
-      (dsh/update-file state file-id #(update % :revn max revn)))
+(defn- get-preview-file-id
+  [state]
+  (when (get-in state [:workspace-global :preview-id])
+    (:current-file-id state)))
 
-    ptk/EffectEvent
-    (effect [_ _ _]
-      (swap! revn-data update file-id (fnil max 0) revn))))
+(defn- previewing-file?
+  [state file-id]
+  (and (some? file-id) (= file-id (get-preview-file-id state))))
+
+(defn- get-live-file-path
+  [state file-id]
+  (if (previewing-file? state file-id)
+    [:workspace-versions :backup]
+    [:files file-id]))
+
+(defn- get-live-file
+  [state file-id]
+  (get-in state (get-live-file-path state file-id)))
+
+(defn- update-file-revn
+  ([file-id revn] (update-file-revn file-id revn nil))
+  ([file-id revn request]
+   (let [current? (fn [state]
+                    (or (nil? request)
+                        (and (= (:load-id request) (:workspace-load-id state))
+                             (= (:vern request) (:vern (get-file-order state file-id))))))]
+     (ptk/reify ::update-file-revn
+       ptk/UpdateEvent
+       (update [_ state]
+         (if (current? state)
+           (d/update-in-when state (get-live-file-path state file-id) update :revn max revn)
+           state))
+
+       ptk/EffectEvent
+       (effect [_ state _]
+         (when (current? state)
+           (swap! revn-data update file-id (fnil max 0) revn)))))))
+
+(defn- remember-remote-changes
+  [pstate file-id revn changes]
+  (let [number (inc (:remote-seq pstate 0))]
+    (cond-> (-> pstate
+                (assoc :remote-seq number)
+                (update-in [:remote-revn file-id] (fnil max revn) revn))
+      (seq (pcm/pending-commits pstate file-id))
+      (update-in [:remote-changes file-id] (fnil conj [])
+                 {:seq number :changes changes}))))
 
 (defn- record-remote-changes
   "Numbers a remote commit, keeps the highest revision received per file
@@ -324,15 +377,149 @@
 
     ptk/UpdateEvent
     (update [_ state]
-      (update state :persistence
-              (fn [pstate]
-                (let [number (inc (:remote-seq pstate 0))]
-                  (cond-> (-> pstate
-                              (assoc :remote-seq number)
-                              (update-in [:remote-revn file-id] (fnil max revn) revn))
-                    (seq (pcm/pending-commits pstate file-id))
-                    (update-in [:remote-changes file-id] (fnil conj [])
-                               {:seq number :changes changes}))))))))
+      (update state :persistence remember-remote-changes file-id revn changes))))
+
+(defn- get-file-order
+  [state file-id]
+  (let [{:keys [vern revn]} (get-live-file state file-id)
+        order (get-in state [:persistence :file-order file-id])]
+    (if (and order (= (or vern 0) (:vern order)))
+      (cond-> order
+        (> (or revn 0) (:latest order)) (assoc :latest revn :gap true))
+      (porder/loaded (or vern 0) (or revn 0)))))
+
+(defn prepare-file-load
+  "Before replaying local edits, drop unsent compensation unless the loaded
+  revision is already a proven base. Returns [state compensation-skipped]."
+  [state {:keys [id vern revn]}]
+  (if (and (some? vern) (some? revn)
+           (let [order (get-file-order state id)]
+             (not (and (= vern (:vern order))
+                       (porder/proven-base? order revn)))))
+    (let [pstate  (:persistence state)
+          trimmed (pcm/without-unsent-compensations pstate id vern (complement ::request-id))]
+      [(assoc state :persistence (pcm/mark-undo-uncertain trimmed id vern))
+       (not= pstate trimmed)])
+    [state false]))
+
+(defn notify-kept-compensations
+  []
+  (ptk/reify ::notify-kept-compensations
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [{:keys [links tag]} (:notification state)]
+        (rx/of
+         (ntf/show (cond-> {:content (tr "errors.save-rejected-kept-saved-changes")
+                            :type :toast
+                            :level :warning
+                            :timeout nil
+                            :tag kept-rejected-tag}
+                     (and (seq links) (contains? #{rejected-tag repaired-rejected-tag kept-rejected-tag} tag))
+                     (assoc :links links))))))))
+
+(defn file-base-loaded
+  "Starts the proof of revision order from a freshly read file, not the
+  greatest revision received over WebSocket."
+  [state {:keys [id vern revn]}]
+  (if (and (some? vern) (some? revn))
+    (let [request  (get-in state [:persistence :reconciliations id])
+          deferred (get-in state [:persistence :preview-effects id])
+          replaced? (and request (not= vern (:vern request)))]
+      (cond-> (-> state
+                  (assoc-in [:persistence :file-order id] (porder/loaded vern revn))
+                  (update :persistence d/update-in-when [:remote-revn] dissoc id))
+        replaced? (update-in [:persistence :reconciliations] dissoc id)
+        (and deferred (not= vern (:vern deferred)))
+        (update-in [:persistence :preview-effects] dissoc id)
+        (and replaced? (:entry-id request))
+        (d/update-in-when [:persistence :index (:entry-id request)] assoc ::acknowledged true)))
+    state))
+
+(defn- waiting-save
+  [state file-id]
+  (let [{:keys [queue index]} (:persistence state)
+        entry (get index (peek queue))]
+    (when (and (= file-id (:file-id entry)) (::save-result entry))
+      entry)))
+
+(defn- record-applied-message
+  [state {:keys [file-id revn vern repaired changes modified-at] :as message}]
+  (let [order (porder/applied (get-file-order state file-id) message)]
+    (-> state
+        (assoc-in [:persistence :file-order file-id] order)
+        (update :persistence remember-remote-changes file-id revn changes)
+        (cond-> repaired (update :persistence pcm/mark-undo-uncertain file-id vern))
+        (dsh/update-file file-id #(cond-> (assoc % :revn (:latest order))
+                                    modified-at (assoc :modified-at modified-at))))))
+
+(defn apply-remote-message
+  "Installs a file or library message, or reads a fresh base if that
+  message would make the loaded data go backwards."
+  [{:keys [file-id revn vern repaired repair-base-revn revision-ids library-change] :as message} library-effects]
+  (let [decision (volatile! :ignore)
+        library? (= :library-change (:type message))
+        repairs  (when (and repaired (not library?)) #{[revn (peek revision-ids)]})]
+    (dch/rebase-commits
+     file-id
+     {:prepare
+      (fn [state]
+        (let [order   (get-file-order state file-id)
+              vern    (:vern order)
+              message (assoc message :vern (get message :vern vern))
+              pending (pcm/pending-commits (:persistence state) file-id vern)
+              order-decision (porder/decision order message library?)
+              action  (cond
+                        (not= vern (:vern message)) :ignore
+                        (= :ignore order-decision) :ignore
+                        (get-in state [:persistence :reconciliations file-id]) :reconcile
+                        (and (= :apply order-decision)
+                             (or (previewing-file? state file-id)
+                                 (some :undo-uncertain pending)
+                                 (and (or repaired repair-base-revn)
+                                      (some :compensation pending))))
+                        :reconcile
+                        :else order-decision)]
+          (vreset! decision action)
+          (when (= :apply action)
+            {:undo pending
+             :remote (:changes message)
+             :redo pending
+             :separate-steps true
+             :on-applied #(record-applied-message % message)})))
+      :on-skipped
+      (fn [state]
+        (cond-> state
+          (= :reconcile @decision)
+          (d/update-in-when [:persistence :reconciliations file-id]
+                            #(cond-> (update % :minimum max revn)
+                               library-change (assoc :library-change true)))))
+      :after
+      (fn [state outcome]
+        (let [waiting (waiting-save state file-id)
+              scope   (when repairs {:file-id file-id :load-id (:workspace-load-id state) :vern vern})]
+          (cond
+            (or (= :failed outcome) (= :reconcile @decision))
+            (rx/of (reconcile-file file-id {:minimum revn :repairs repairs
+                                            :library-change library-change}))
+
+            (= :applied outcome)
+            (rx/concat
+             ;; Legacy saves still wait on this notification; the model and
+             ;; revision evidence have already been updated.
+             (rx/of (ptk/data-event ::record-remote-changes {:file-id file-id :revn revn}))
+             (if repairs
+               (rx/of (notify-file-repairs scope repairs false))
+               (rx/empty))
+             (if library-effects (library-effects) (rx/empty))
+             (if (and waiting (not (:confirmed waiting)))
+               (rx/of (settle-opt-in (:id waiting)))
+               (rx/empty)))
+
+            (and repairs (= :ignore @decision))
+            (rx/of (notify-file-repairs scope repairs true))
+
+            :else
+            (rx/empty))))})))
 
 (defn- stale-commit?
   "True when `commit` was made on another version of its file than the
@@ -340,7 +527,7 @@
   local data and the server refuses them. A file loaded with no version
   known is never stale."
   [state {:keys [file-id file-vern]}]
-  (let [vern (:vern (dsh/lookup-file state file-id))]
+  (let [vern (:vern (get-live-file state file-id))]
     (and (some? vern)
          (not= vern file-vern))))
 
@@ -359,22 +546,26 @@
                  nil
                  lagged))))
 
-(defn- settle-saved-commit
+(defn- settle-legacy-save
   "Acknowledges the saved `commit` once this tab received every change the
   server stored before it (from `lagged`, the save answer's rows), such as
   the repair of a damaged file. Until then its commits stay pending, so a
   late change is applied under them, in the server's order. A change that
   does not arrive in time reloads the file."
   [commit lagged]
-  (let [needed (volatile! nil)]
+  (let [needed (volatile! nil)
+        deferred (volatile! false)]
     (ptk/reify ::settle-saved-commit
       ptk/UpdateEvent
       (update [_ state]
         (let [file-id (:file-id commit)
+              confirmed (get-in state [:persistence :index (:id commit) :confirmed])
               seen    (dm/get-in state [:persistence :remote-revn file-id] -1)
-              revn    (when (and (= file-id (:current-file-id state))
+              revn    (when (and (not confirmed)
+                                 (= file-id (:current-file-id state))
                                  (not (stale-commit? state commit)))
                         (last-unseen-revn lagged (:session-id state) seen))]
+          (vreset! deferred confirmed)
           (vreset! needed revn)
           (cond-> state
             (some? revn)
@@ -403,7 +594,456 @@
                                (if (= ::timeout outcome)
                                  (rx/of (ptk/event ::dw/reload-current-file))
                                  (rx/empty)))))))
-          (rx/of (commit-persisted commit)))))))
+          (if @deferred
+            (rx/empty)
+            (rx/of (commit-persisted commit))))))))
+
+(defn- mark-confirmed
+  [state entry-id]
+  (if entry-id
+    (d/update-in-when state [:persistence :index entry-id]
+                      #(-> % (assoc :confirmed true) (dissoc ::save-result)))
+    state))
+
+(defn- protect-unsettled-undo
+  [state {:keys [file-id file-vern] :as entry}]
+  (if (::save-result entry)
+    (update state :persistence
+            #(-> %
+                 (pcm/mark-undo-uncertain file-id file-vern)
+                 (pcm/without-unsent-compensations file-id file-vern (complement ::request-id))))
+    state))
+
+(defn- get-reconciliation
+  [state file-id]
+  (get-in state [:persistence :reconciliations file-id]))
+
+(defn- retry-after-file-read
+  "Rechecks an expired backoff after installing the head's file, without
+  starting a new retry episode."
+  [{:keys [persistence]} file-id]
+  (let [{:keys [queue index status suspended retry-token retry-for retry-after-read]} persistence]
+    (when (and (= :retrying status)
+               (not suspended)
+               retry-token
+               (= retry-token retry-after-read)
+               (= retry-for (peek queue))
+               (= file-id (get-in index [retry-for :file-id]))
+               (not (contains? (:reconciliations persistence) file-id)))
+      (persist-commit retry-for {:token retry-token}))))
+
+(defn- reconciliation-current?
+  [state file-id {:keys [token load-id vern]}]
+  (and (= token (:token (get-reconciliation state file-id)))
+       (= load-id (:workspace-load-id state))
+       (= vern (:vern (get-file-order state file-id)))
+       (some? (:data (get-live-file state file-id)))))
+
+(defn- install-reconciled-file
+  [state {:keys [id vern revn] :as file}]
+  (let [previous (get-live-file state id)
+        pending  (pcm/pending-commits (:persistence state) id vern)
+        data     (reduce (fn [data {:keys [redo-changes]}]
+                           (cpc/process-changes data redo-changes false))
+                         (:data file)
+                         pending)]
+    (-> state
+        (assoc-in (get-live-file-path state id)
+                  (merge file (select-keys previous [:library-of :synced-at :is-indirect])
+                         {:data data}))
+        (file-base-loaded file)
+        (assoc-in [:persistence :file-order id] (porder/recovered (get-file-order state id) revn))
+        (update :persistence pcm/mark-undo-uncertain id vern)
+        (update :persistence d/update-in-when [:remote-changes] dissoc id)
+        (update-in [:persistence :reconciliations] dissoc id))))
+
+(defn- refresh-reconciliation-notice
+  []
+  (ptk/reify ::refresh-reconciliation-notice
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [failed (remove (comp :loading val) (get-in state [:persistence :reconciliations]))]
+        (if-let [[file-id] (first failed)]
+          (rx/of
+           (ntf/show {:content (tr "errors.save-reconciliation-failed")
+                      :type :toast
+                      :level :warning
+                      :timeout nil
+                      :tag :persistence-reconciliation-failed
+                      :links [{:label (tr "labels.retry")
+                               :callback #(st/emit! (reconcile-file file-id {:retry true}))}]}))
+          (rx/of (ntf/hide :tag :persistence-reconciliation-failed)))))))
+
+(defn- get-token-input
+  "The live consumer's active sets, read from its effective token source."
+  [state]
+  (let [workspace-data (:data (get-live-file state (:current-file-id state)))
+        source-id      (cfo/get-effective-tokens-source workspace-data)
+        source-data    (:data (get-live-file state source-id))]
+    (dsh/get-token-resolution-input (cfo/get-tokens-status workspace-data)
+                                    (cfo/get-tokens-lib source-data))))
+
+(defn- get-missing-thumbnail-ids
+  "The server data, not pending local edits, determines what can be deleted."
+  [state {:keys [id data]}]
+  (into #{}
+        (comp (filter #(thc/file-id? % id))
+              (filter (fn [object-id]
+                        (let [{:keys [page-id frame-id]} (thc/parse-object-id object-id)]
+                          (nil? (dm/get-in data [:pages-index page-id :objects frame-id]))))))
+        (keys (:thumbnails state))))
+
+(defn- defer-preview-effects
+  [state file-id {:keys [load-id vern rollback-targets library-change]} token-input]
+  (let [path [:persistence :preview-effects file-id]
+        old  (get-in state path)
+        old  (when (and (= load-id (:load-id old)) (= vern (:vern old))) old)]
+    (assoc-in state path {:load-id load-id :vern vern
+                          :token-input (if old (:token-input old) token-input)
+                          :library-change (or library-change (:library-change old))
+                          :rollback-targets (merge-with into (:rollback-targets old) rollback-targets)})))
+
+(defn finish-preview-effects
+  "Delivers deferred effects once the backed-up live file is visible again."
+  [file-id]
+  (let [effects (volatile! nil)]
+    (ptk/reify ::finish-preview-effects
+      ptk/UpdateEvent
+      (update [_ state]
+        (let [{:keys [load-id vern token-input] :as deferred}
+              (get-in state [:persistence :preview-effects file-id])
+              file (get-live-file state file-id)]
+          (if (and deferred (not (previewing-file? state file-id)))
+            (do
+              (when (and (= file-id (:current-file-id state))
+                         (= load-id (:workspace-load-id state))
+                         (= vern (:vern file))
+                         (some? (:data file)))
+                (vreset! effects
+                         (-> (dissoc deferred :token-input)
+                             (assoc :file-id file-id
+                                    :tokens-changed (not= token-input (get-token-input state))))))
+              (update-in state [:persistence :preview-effects] dissoc file-id))
+            state)))
+
+      ptk/WatchEvent
+      (watch [_ _ _]
+        (if-let [{:keys [rollback-targets] :as effects} @effects]
+          (rx/concat
+           (if rollback-targets
+             (rx/of (ptk/data-event ::rolled-back rollback-targets))
+             (rx/empty))
+           (rx/of (ptk/event ::dw/reconciled-library-effects (dissoc effects :rollback-targets))))
+          (rx/empty))))))
+
+(defn- reconciliation-result
+  [file-id request file]
+  (let [outcome (volatile! nil)]
+    (ptk/reify ::reconciliation-result
+      ptk/UpdateEvent
+      (update [_ state]
+        (if (reconciliation-current? state file-id request)
+          (let [{:keys [minimum vern] :as pending} (get-reconciliation state file-id)
+                minimum (max minimum (:latest (get-file-order state file-id)))]
+            (cond
+              (and (= file-id (:id file))
+                   (= vern (:vern file))
+                   (some? (:data file))
+                   (int? (:revn file))
+                   (>= (:revn file) minimum))
+              (try
+                (let [pstate    (:persistence state)
+                      trimmed   (pcm/without-unsent-compensations pstate file-id vern (complement ::request-id))
+                      installed (install-reconciled-file (assoc state :persistence trimmed) file)
+                      preview   (previewing-file? state file-id)
+                      consumer-id (:current-file-id state)
+                      consumer  (get-live-file state consumer-id)
+                      linked?   (and consumer-id (= consumer-id (:library-of (get-live-file state file-id))))
+                      consumer-preview (previewing-file? state consumer-id)
+                      context   {:file-id consumer-id :load-id (:load-id pending) :vern (:vern consumer)}
+                      relevant? (or (= file-id consumer-id)
+                                    (= file-id (cfo/get-effective-tokens-source (:data consumer))))
+                      token-input (when (or relevant? (and linked? consumer-preview))
+                                    (get-token-input state))]
+                  (vreset! outcome
+                           (assoc pending :installed true
+                                  :preview preview
+                                  :consumer-context context
+                                  :missing-thumbnail-ids (when (and (= file-id consumer-id) (not preview))
+                                                           (get-missing-thumbnail-ids state file))
+                                  :compensation-skipped (or (:compensation-skipped pending)
+                                                            (not= pstate trimmed))
+                                  :edited (when (= file-id (:current-file-id state))
+                                            (dsh/lookup-shape state (get-in state [:workspace-local :edition])))
+                                  :tokens-changed
+                                  (and relevant? (not consumer-preview)
+                                       (not= token-input (get-token-input installed)))))
+                  (cond
+                    preview (defer-preview-effects installed file-id pending token-input)
+                    (and linked? consumer-preview)
+                    (defer-preview-effects installed consumer-id (assoc context :library-change true) token-input)
+                    :else installed))
+                (catch :default cause
+                  (log/wrn :hint "unable to replay pending changes on reconciled file"
+                           :file-id (str file-id) :cause cause)
+                  (vreset! outcome pending)
+                  (assoc-in state [:persistence :reconciliations file-id :loading] false)))
+
+              :else
+              (do (vreset! outcome pending)
+                  (assoc-in state [:persistence :reconciliations file-id :loading] false))))
+          state))
+
+      ptk/WatchEvent
+      (watch [_ state _]
+        (if-let [{:keys [installed repairs entry-id load-id vern tokens-changed preview edited library-change
+                         consumer-context missing-thumbnail-ids compensation-skipped rollback-targets]} @outcome]
+          (if installed
+            (rx/concat
+             (if preview
+               (rx/empty)
+               (rx/of (ptk/event ::dw/reconciled-file {:file-id file-id :load-id load-id :vern vern
+                                                       :tokens-changed tokens-changed
+                                                       :consumer-context consumer-context
+                                                       :missing-thumbnail-ids missing-thumbnail-ids
+                                                       :library-change library-change})))
+             (if (and (not preview) (= file-id (:current-file-id state)))
+               (rx/of (prune-removed-shapes edited))
+               (rx/empty))
+             (if compensation-skipped
+               (rx/of (notify-kept-compensations))
+               (rx/empty))
+             (if (seq repairs)
+               (rx/of (notify-file-repairs {:file-id file-id :load-id load-id :vern vern} repairs false))
+               (rx/empty))
+             (if (and rollback-targets (not preview))
+               (rx/of (ptk/data-event ::rolled-back rollback-targets))
+               (rx/empty))
+             (cond
+               entry-id (rx/of (commit-persisted {:id entry-id :file-id file-id}))
+               (= :retrying (get-in state [:persistence :status]))
+               (if-let [retry (retry-after-file-read state file-id)]
+                 (rx/of retry)
+                 (rx/empty))
+               (or (seq (get-in state [:persistence :queue]))
+                   (= :saving (get-in state [:persistence :status])))
+               (rx/of (run-persistence-task))
+               :else (rx/empty))
+             (rx/of (refresh-reconciliation-notice)))
+            (rx/of (refresh-reconciliation-notice)))
+          (rx/empty))))))
+
+(defn- get-save-repair
+  [{:keys [repair media-relinked revn lagged]}]
+  (cond
+    repair [(:revn repair) (:id repair)]
+    media-relinked
+    ;; In the relink fallback, the repair row precedes the edit row.
+    (let [repair-revn (inc revn)]
+      [repair-revn (some #(when (= repair-revn (:revn %)) (:id %)) lagged)])))
+
+(defn- reconcile-file
+  "Reads the server state without resending a confirmed save. The read
+  stays scoped to its file, version, and workspace opening."
+  [file-id {:keys [minimum repairs entry-id retry rollback-targets library-change]}]
+  (let [started (volatile! nil)]
+    (ptk/reify ::reconcile-file
+      ptk/UpdateEvent
+      (update [_ state]
+        (let [{:keys [vern latest]} (get-file-order state file-id)
+              known    (get-reconciliation state file-id)
+              waiting  (waiting-save state file-id)
+              answer   (:answer (::save-result waiting))
+              repair   (get-save-repair answer)
+              entry-id (or entry-id (:entry-id known) (:id waiting))
+              loaded?  (some? (:data (get-live-file state file-id)))]
+          (if loaded?
+            (let [pstate    (:persistence state)
+                  trimmed   (pcm/without-unsent-compensations pstate file-id vern (complement ::request-id))
+                  start?    (or (nil? known) (and retry (not (:loading known))))
+                  request   (cond-> (assoc known
+                                           :entry-id entry-id
+                                           :minimum (max (or minimum 0) (or (:minimum known) 0)
+                                                         (or (:saved-revn answer) (:revn answer) 0) latest)
+                                           :repairs (cond-> (into (or (:repairs known) #{}) repairs)
+                                                      repair (conj repair))
+                                           :compensation-skipped (or (:compensation-skipped known)
+                                                                     (not= pstate trimmed)))
+                              rollback-targets (update :rollback-targets #(merge-with into % rollback-targets))
+                              library-change (assoc :library-change true)
+                              start? (assoc :token (uuid/next)
+                                            :load-id (:workspace-load-id state)
+                                            :vern vern
+                                            :loading true))]
+              (when start? (vreset! started request))
+              (-> state
+                  (assoc :persistence trimmed)
+                  (mark-confirmed entry-id)
+                  (update :persistence pcm/mark-undo-uncertain file-id vern)
+                  (assoc-in [:persistence :reconciliations file-id] request)))
+            (-> state
+                (protect-unsettled-undo (get-in state [:persistence :index entry-id]))
+                (mark-confirmed entry-id)))))
+
+      ptk/WatchEvent
+      (watch [_ state stream]
+        (if-let [request @started]
+          (let [features (features/get-enabled-features state (:current-team-id state))]
+            (->> (rx/defer #(rp/cmd! :get-file {:id file-id :features features}))
+                 (rx/mapcat fpmap/resolve-file)
+                 (rx/timeout unseen-changes-timeout-ms (rx/of nil))
+                 (rx/if-empty nil)
+                 (rx/take 1)
+                 (rx/catch (fn [_] (rx/of nil)))
+                 (rx/map #(reconciliation-result file-id request %))
+                 (rx/take-until (rx/filter #(or (ptk/type? ::dw/finalize-workspace %)
+                                                (ptk/type? ::dw/initialize-workspace %))
+                                           stream))))
+          (if (and entry-id (nil? (:data (get-live-file state file-id))))
+            (rx/of (commit-persisted {:id entry-id :file-id file-id}))
+            (rx/empty)))))))
+
+(defn- settle-opt-in
+  [entry-id]
+  (ptk/reify ::settle-opt-in
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [{:keys [file-id file-vern] :as entry} (get-in state [:persistence :index entry-id])
+            {:keys [answer sent-revn session-id base-proven load-id]} (::save-result entry)
+            {:keys [revn saved-revn repair media-relinked]} answer
+            revisions (when saved-revn (porder/save-revisions sent-revn session-id answer))
+            repairs   (when-let [row (get-save-repair answer)] #{row})
+            reconcile #(reconcile-file file-id {:minimum (or saved-revn revn)
+                                                :entry-id entry-id
+                                                :repairs repairs})]
+        (cond
+          (or (nil? answer) (:confirmed entry))
+          (rx/empty)
+
+          (or (stale-commit? state entry) (nil? (:data (get-live-file state file-id))))
+          (rx/of (commit-persisted entry true))
+
+          (or (not= load-id (:workspace-load-id state))
+              (get-reconciliation state file-id)
+              (previewing-file? state file-id)
+              media-relinked
+              (::uncertain entry)
+              (and saved-revn (not (and base-proven revisions))))
+          (rx/of (reconcile))
+
+          (nil? saved-revn)
+          (rx/of (commit-persisted entry))
+
+          :else
+          (let [decision (volatile! :ignore)]
+            (rx/of
+             (dch/rebase-commits
+              file-id
+              {:prepare
+               (fn [state]
+                 (let [live (get-in state [:persistence :index entry-id])]
+                   (when (and (not (:confirmed live))
+                              (= (::save-result live) (::save-result entry))
+                              (= load-id (:workspace-load-id state))
+                              (not (stale-commit? state entry)))
+                     (let [order  (get-file-order state file-id)
+                           action (if (or (previewing-file? state file-id)
+                                          (get-reconciliation state file-id))
+                                    :reconcile
+                                    (porder/save-decision order revisions))]
+                       (vreset! decision action)
+                       (when (= :apply action)
+                         (let [pending (when repair
+                                         (pcm/pending-commits
+                                          (:persistence (mark-confirmed state entry-id)) file-id file-vern))
+                               message (cond-> {:revn saved-revn
+                                                :revision-ids (:revision-ids revisions)}
+                                         repair (assoc :repair-base-revn revn))]
+                           (if (some #(or (:undo-uncertain %) (:compensation %)) pending)
+                             (do (vreset! decision :reconcile) nil)
+                             {:undo pending :remote (:changes repair) :redo pending
+                              :separate-steps true
+                              :on-applied
+                              (fn [state]
+                                (cond-> (-> state
+                                            (mark-confirmed entry-id)
+                                            (assoc-in [:persistence :file-order file-id]
+                                                      (porder/applied order message))
+                                            (dsh/update-file file-id #(assoc % :revn saved-revn)))
+                                  repair (update :persistence remember-remote-changes
+                                                 file-id saved-revn (:changes repair))
+                                  repair (update :persistence pcm/mark-undo-uncertain file-id file-vern)))})))))))
+               :after
+               (fn [state outcome]
+                 (cond
+                   (= :applied outcome)
+                   (rx/concat
+                    (if repairs
+                      (rx/of (notify-file-repairs {:file-id file-id :load-id load-id :vern file-vern}
+                                                  repairs false))
+                      (rx/empty))
+                    (rx/of (commit-persisted entry)))
+
+                   (or (= :failed outcome) (= :reconcile @decision))
+                   (rx/of (reconcile))
+
+                   :else (rx/empty)))}))))))))
+
+(defn- begin-opt-in-settlement
+  [{:keys [id file-id] :as entry} {:keys [answer] :as result}]
+  (ptk/reify ::begin-opt-in-settlement
+    ptk/UpdateEvent
+    (update [_ state]
+      (d/update-in-when state [:persistence :index id]
+                        #(cond-> % (not (:confirmed %)) (assoc ::save-result result))))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (if (and (get-in state [:persistence :index id])
+               (not (stale-commit? state entry)))
+        (rx/merge
+         (->> (rx/timer unseen-changes-timeout-ms)
+              (rx/take-until
+               (rx/filter #(or (and (ptk/type? ::commit-persisted %) (= id (:id @%)))
+                               (ptk/type? ::dw/finalize-workspace %)
+                               (ptk/type? ::dw/initialize-workspace %))
+                          stream))
+              (rx/mapcat
+               (fn [_]
+                 (rx/of
+                  (ptk/reify ::settlement-timeout
+                    ptk/WatchEvent
+                    (watch [_ state _]
+                      (when-let [entry (waiting-save state file-id)]
+                        (when (and (= id (:id entry)) (not (:confirmed entry)))
+                          (rx/of (reconcile-file file-id
+                                                 {:minimum (or (:saved-revn answer) (:revn answer))
+                                                  :entry-id id}))))))))))
+         (rx/of (settle-opt-in id)))
+        (rx/of (commit-persisted entry true))))))
+
+(defn- abandon-view-reconciliations
+  "An opening owns its reads, not its edits. Confirmed writes are not
+  replayed when the next opening reads the file from the server."
+  []
+  (let [settled (volatile! nil)]
+    (ptk/reify ::abandon-view-reconciliations
+      ptk/UpdateEvent
+      (update [_ state]
+        (let [{:keys [queue index]} (:persistence state)
+              entry (get index (peek queue))]
+          (when (or (::save-result entry) (:confirmed entry))
+            (vreset! settled entry))
+          (-> state
+              (protect-unsettled-undo @settled)
+              (mark-confirmed (:id @settled))
+              (update :persistence dissoc :file-order :reconciliations :preview-effects))))
+
+      ptk/WatchEvent
+      (watch [_ _ _]
+        (if-let [entry @settled]
+          (rx/of (commit-persisted entry))
+          (rx/empty))))))
 
 (defn- discard-commit
   [commit-id]
@@ -420,9 +1060,10 @@
                                        (pcm/keep-saved-commits (get-in pstate [:index commit-id]))
                                        (pcm/prune-remote-changes (get-in pstate [:index commit-id :file-id]))
                                        (assoc :last-progress-at (inst-ms (ct/now)))
+                                       (cond-> (= :retrying (:status pstate)) (assoc :status :saving))
                                        (dissoc :stall-reported :failing-since :recovering
                                                :slow-failures :attempts :retry-token
-                                               :retry-for)))))))
+                                               :retry-for :retry-after-read)))))))
 
 (defn- without-commits
   "`buffer` without `commits`."
@@ -437,7 +1078,10 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [number (get-in state [:persistence :remote-seq] 0)]
-        (update-in state [:persistence :buffer] (fnil conj []) (assoc commit :remote-seq number))))))
+        (update-in state [:persistence :buffer] (fnil conj [])
+                   (cond-> (assoc commit :remote-seq number)
+                     (contains? (:tags commit) ::compensation)
+                     (assoc :compensation true)))))))
 
 (defn- append-commit
   "Event used internally to append the current change to the
@@ -529,7 +1173,7 @@
                                            ::errors/handled? true))
                       (update :failing-since d/nilv (inst-ms (ct/now)))
                       (dissoc :run-id :last-progress-at :stall-reported
-                              :attempts :retry-token :retry-for)
+                              :attempts :retry-token :retry-for :retry-after-read)
                       (end-stopped-slow-cycle))))))
 
     ptk/WatchEvent
@@ -586,7 +1230,7 @@
                       (update :failing-since d/nilv (inst-ms (ct/now)))
                       (cond-> (>= elapsed-ms slow-failure-ms)
                         (update :slow-failures (fnil inc 0)))
-                      (dissoc :stall-reported))))))
+                      (dissoc :stall-reported :retry-after-read))))))
 
     ptk/WatchEvent
     (watch [_ state _]
@@ -617,16 +1261,32 @@
                   (rx/map (fn [_] (persist-commit commit-id {:token token})))))))))))
 
 (defn- commit-persisted
-  [commit]
-  (ptk/reify ::commit-persisted
-    IDeref
-    (-deref [_] commit)
+  ([commit] (commit-persisted commit false))
+  ([commit without-view?]
+   (ptk/reify ::commit-persisted
+     IDeref
+     (-deref [_] commit)
 
-    ptk/UpdateEvent
-    (update [_ state]
-      ;; Keep the acknowledgment even if the queue runner has stopped.
-      (d/update-in-when state [:persistence :index (:id commit)]
-                        assoc ::acknowledged true))))
+     ptk/UpdateEvent
+     (update [_ state]
+       ;; Keep the acknowledgment even if the queue runner has stopped.
+       (let [path [:persistence :index (:id commit)]]
+         (cond-> state
+           without-view? (protect-unsettled-undo (get-in state path))
+           :always (d/update-in-when path assoc ::acknowledged true)))))))
+
+(defn- settle-replaced-head
+  [file-id]
+  (ptk/reify ::settle-replaced-head
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [{:keys [queue index]} (:persistence state)
+            entry (get index (peek queue))]
+        (if (and (:confirmed entry) (::acknowledged entry))
+          (rx/of (commit-persisted entry))
+          (if-let [retry (retry-after-file-read state file-id)]
+            (rx/of retry)
+            (rx/empty)))))))
 
 (def rejected-tag
   "Tag of the notice that changes to the open file were rejected."
@@ -659,12 +1319,15 @@
       (let [{:keys [tag links]} (:notification state)]
         (rx/of
          (ntf/show
-          (if (contains? #{rejected-tag repaired-rejected-tag} tag)
-            (cond-> {:content (tr "workspace.notifications.file-repaired-changes-undone")
+          (if (contains? #{rejected-tag repaired-rejected-tag kept-rejected-tag} tag)
+            (cond-> {:content (if (= kept-rejected-tag tag)
+                                (str (tr "workspace.notifications.file-repaired") " "
+                                     (tr "errors.save-rejected-kept-saved-changes"))
+                                (tr "workspace.notifications.file-repaired-changes-undone"))
                      :type :toast
                      :level :warning
                      :timeout nil
-                     :tag repaired-rejected-tag}
+                     :tag (if (= kept-rejected-tag tag) tag repaired-rejected-tag)}
               (seq links)
               (assoc :links links))
             {:content (tr "workspace.notifications.file-repaired")
@@ -673,16 +1336,54 @@
              :timeout nil
              :tag file-repaired-tag})))))))
 
+(defn- notify-file-repairs
+  "Announces repairs independently of applying their changes."
+  [{:keys [file-id load-id vern]} repairs covered-only?]
+  (let [show? (volatile! false)]
+    (ptk/reify ::notify-file-repairs
+      ptk/UpdateEvent
+      (update [_ state]
+        (let [file  (get-live-file state file-id)
+              order (get-file-order state file-id)]
+          (if (and (= file-id (:current-file-id state))
+                   (= load-id (:workspace-load-id state))
+                   (= vern (:vern order))
+                   (some? (:data file)))
+            (let [unannounced (->> repairs
+                                   (remove #(porder/announced-repair? order %))
+                                   (filter #(or (not covered-only?)
+                                                (porder/recovered-repair? order %))))]
+              (if (seq unannounced)
+                (do (vreset! show? true)
+                    (assoc-in state [:persistence :file-order file-id]
+                              (porder/announce-repairs order unannounced)))
+                state))
+            state)))
+
+      ptk/WatchEvent
+      (watch [_ _ _]
+        (if @show?
+          (rx/of (notify-repaired))
+          (rx/empty))))))
+
 (defn- rejection-notice
   "Text, tag and timeout of the notice that the changes `rejected` in a
   save of `file-id` were undone. A file other than the open one is named;
   a repair notice of the open file still on screen is folded into it."
-  [state file-id {:keys [preexisting-damage]}]
+  [state file-id {:keys [preexisting-damage]} {:keys [kept-saved]}]
   (let [file-name (dm/get-in state [:files file-id :name])
         current?  (= file-id (:current-file-id state))
         repaired? (contains? #{file-repaired-tag repaired-rejected-tag}
                              (dm/get-in state [:notification :tag]))]
     (cond
+      (seq kept-saved)
+      {:hint    (if (and current? repaired?)
+                  (str (tr "workspace.notifications.file-repaired") " "
+                       (tr "errors.save-rejected-kept-saved-changes"))
+                  (tr "errors.save-rejected-kept-saved-changes"))
+       :tag     (if current? kept-rejected-tag other-file-rejected-tag)
+       :timeout nil}
+
       (and (not current?) (some? file-name))
       {:hint    (tr "errors.save-rejected-changes-undone-in-file" file-name)
        :tag     other-file-rejected-tag
@@ -764,6 +1465,7 @@
                                  :origin origin
                                  :file-id file-id
                                  :save-undo? false
+                                 :tags #{::compensation}
                                  ;; Its own group, never that of an open undo transaction
                                  :undo-group (uuid/next)
                                  ;; Rollbacks also run while saves fail
@@ -779,6 +1481,7 @@
                   :file-revn file-revn
                   :file-vern file-vern
                   :features features
+                  :compensation true
                   :remote-seq (dm/get-in state [:persistence :remote-seq] 0))]))))))
 
 (defn- reloaded-s
@@ -791,7 +1494,6 @@
     (->> stream
          (rx/filter loaded?)
          (rx/take 1)
-         (rx/ignore)
          (rx/take-until (rx/filter (ptk/type? ::dw/finalize-workspace) stream)))))
 
 (defn- notify-rolled-back
@@ -805,8 +1507,7 @@
            event  (ptk/data-event ::rolled-back targets)]
        (if (empty? failed)
          (rx/of event)
-         (rx/concat (reloaded-s stream (:current-file-id state) failed)
-                    (rx/of event)))))))
+         (rx/map (constantly event) (reloaded-s stream (:current-file-id state) failed)))))))
 
 (defn arm-rollback-failure
   "Arms a one-shot debug fault for a local rollback of the given pending
@@ -821,18 +1522,21 @@
   "Events that revert the local data as `plan` says: pending commits are
   undone, saved ones undone by a new commit, and their groups leave the
   undo history."
-  [origin state stream {:keys [files compensate groups undo-index]}]
+  [origin state stream {:keys [files compensate groups undo-index reconcile]}
+   {:keys [entry-id saved-file-id minimum]}]
   (let [{:keys [file-id commit-ids] :as fault} (::rollback-failure state)
         fail?   (and fault
                      (dsh/lookup-file-data state file-id)
                      (some #(contains? commit-ids (:id %))
                            (get-in files [file-id :reverted])))
+        immediate-files (apply dissoc files reconcile)
+        immediate-targets (pcm/rollback-targets {:files immediate-files :compensate compensate})
         rebases (mapv (fn [[fid plan]]
                         (dch/rebase-commits
                          fid (cond-> plan
                                (and fail? (= file-id fid))
                                (update-in [:undo 0 :undo-changes] conj {:type :debug-fail}))))
-                      files)]
+                      immediate-files)]
     (rx/concat
      (if fail?
        (rx/of #(cond-> % (= fault (::rollback-failure %)) (dissoc ::rollback-failure)))
@@ -840,20 +1544,38 @@
      (rx/from rebases)
      (rx/from (map (fn [[fid commits]] (compensate-commits origin state fid commits))
                    (group-by :file-id compensate)))
-     (rx/of (dwu/forget-undo-groups groups undo-index)
-            (prune-removed-shapes (get (dsh/lookup-page-objects state)
-                                       (dm/get-in state [:workspace-local :edition]))))
-     ;; Tells listeners (a library sync, plugins) which files, pages and
-     ;; shapes lost commits
-     (notify-rolled-back stream state rebases
-                         (pcm/rollback-targets {:files files :compensate compensate})))))
+     (rx/of (dwu/forget-undo-groups groups undo-index))
+     (if (get-preview-file-id state)
+       (rx/empty)
+       (rx/of (prune-removed-shapes (get (dsh/lookup-page-objects state)
+                                         (dm/get-in state [:workspace-local :edition])))))
+     (rx/from (map (fn [file-id]
+                     (let [targets (pcm/rollback-targets {:files (select-keys files [file-id])})]
+                       (reconcile-file file-id
+                                       (cond-> {:rollback-targets (when (seq (:file-ids targets)) targets)}
+                                         (= file-id saved-file-id)
+                                         (assoc :entry-id entry-id :minimum minimum)))))
+                   reconcile))
+     (if (seq (:file-ids immediate-targets))
+       (notify-rolled-back stream state rebases immediate-targets)
+       (rx/empty)))))
+
+(defn- rejection-base-proven?
+  [state file-id {:keys [answer base-proven sent-revn session-id]}]
+  (and base-proven
+       (nil? (get-reconciliation state file-id))
+       (let [revisions (if (:saved-revn answer)
+                         (porder/save-revisions sent-revn session-id answer)
+                         (porder/rejected-base sent-revn answer))]
+         (and revisions
+              (= :apply (porder/save-decision (get-file-order state file-id) revisions))))))
 
 (defn- rollback-rejected
   "Reverts the commits `rejected` in the save of `entry`, the later commits
   of its file and the rest of their undo groups. Pending commits are undone
   and dropped, saved ones undone by a new commit; the groups leave the undo
   history and the user gets a warning."
-  [{:keys [file-id] :as entry} rejected]
+  [{:keys [id file-id] :as entry} rejected {:keys [answer load-id] :as request}]
   (let [plan (volatile! nil)]
     (ptk/reify ::rollback-rejected
       ptk/UpdateEvent
@@ -862,21 +1584,34 @@
         ;; holds none of it, so there is nothing to revert
         (if (stale-commit? state entry)
           state
-          (let [plan' (pcm/rollback-plan (:persistence state) entry rejected)]
+          (let [rejected (cond-> rejected
+                           (or (not= load-id (:workspace-load-id state))
+                               (and (contains? answer :lagged)
+                                    (not (rejection-base-proven? state file-id request))))
+                           (assoc :uncertain true))
+                plan'    (pcm/rollback-plan (:persistence state) entry
+                                            (assoc rejected :preview-file-id (get-preview-file-id state)))]
             (vreset! plan plan')
             (update state :persistence pcm/without-rolled-back entry plan'))))
 
       ptk/WatchEvent
       (watch [it state stream]
-        (if-let [plan @plan]
-          (apply-rollback-plan it state stream plan)
+        (if-let [{:keys [files groups compensate kept-saved] :as plan} @plan]
+          (rx/concat
+           (rx/of (ptk/data-event ::save-rejected
+                                  {:undo-groups groups
+                                   :file-ids (into (set (keys files)) (map :file-id)
+                                                   (concat compensate kept-saved))}))
+           (apply-rollback-plan it state stream plan
+                                {:entry-id id :saved-file-id file-id
+                                 :minimum (or (:saved-revn answer) (:revn answer))}))
           (rx/empty)))
 
       ptk/EffectEvent
       (effect [_ state _]
         (when-let [plan @plan]
           (let [{:keys [error commit-ids]} rejected
-                {:keys [hint tag timeout]} (rejection-notice state file-id rejected)]
+                {:keys [hint tag timeout]} (rejection-notice state file-id rejected plan)]
             (errors/flash :cause (ex-info "The server rejected some changes"
                                           (merge error
                                                  {:file-id file-id
@@ -916,7 +1651,10 @@
       (::acknowledged commit)                              :acknowledged
       (contains? @active-requests (::request-id commit))   :in-flight
       ;; Saved, waiting for the changes stored before it
-      (::awaiting commit)                                  :in-flight
+      (or (::awaiting commit)
+          (::save-result commit)
+          (:confirmed commit))                            :in-flight
+      (get-reconciliation state (:file-id commit))        :waiting-for-read
       (or (empty? (:commits commit))
           (stale-commit? state commit))                    :stale
       (not (dm/get-in state [:permissions :can-edit]))     :permission-denied
@@ -938,6 +1676,16 @@
   reloaded file does not hold it and no resend can save it."
   [commit-id cause elapsed-ms]
   (ptk/reify ::save-attempt-failed
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [data (ex-data cause)]
+        (if (and (transient-error? data)
+                 ;; Admission rate limits run before the command. A SQL
+                 ;; timeout can instead come from audit after commit.
+                 (not= :rate-limit (or (:cause-type data) (:type data))))
+          (d/update-in-when state [:persistence :index commit-id] assoc ::uncertain true)
+          state)))
+
     ptk/WatchEvent
     (watch [_ state _]
       (let [commit (dm/get-in state [:persistence :index commit-id])]
@@ -953,14 +1701,19 @@
 
 (defn- send-queued-commit
   "Sends one queued commit and maps its outcome to persistence events."
-  [request-id session-id {:keys [id file-id file-revn file-vern features commits] :as commit}]
-  (let [sent-at (inst-ms (ct/now))
-        params  {:id file-id
-                 :revn (max file-revn (get @revn-data file-id 0))
-                 :vern file-vern
-                 :session-id session-id
-                 :features features
-                 :commits (save-commits commits)}]
+  [request-id {:keys [session-id workspace-load-id] :as state}
+   {:keys [id file-id file-revn file-vern features commits] :as commit}]
+  (let [sent-at     (inst-ms (ct/now))
+        sent-revn   (max file-revn (get @revn-data file-id 0)
+                         (:revn (get-live-file state file-id) 0))
+        base-proven (porder/proven-base? (get-file-order state file-id) sent-revn)
+        params      {:id file-id
+                     :revn sent-revn
+                     :vern file-vern
+                     :session-id session-id
+                     :features features
+                     :repair-in-response true
+                     :commits (save-commits commits)}]
     ;; UI read-only mode does not invalidate already queued edits.
     (->> (update-file-request request-id params)
          ;; Fails an unanswered request as a transient network error, so the
@@ -974,15 +1727,26 @@
          ;; A response that carries no revision, including one that never
          ;; arrived, is treated as a failed save rather than a saved file.
          (rx/if-empty nil)
-         (rx/mapcat (fn [{:keys [revn rejected lagged]}]
+         (rx/mapcat (fn [{:keys [revn saved-revn rejected lagged] :as answer}]
                       (if (and (int? revn) (<= 0 revn))
-                        (rx/concat
-                         (rx/of (update-file-revn file-id revn))
-                         ;; Reverts the rejected commits before the queue moves on
-                         (if (some? rejected)
-                           (rx/of (rollback-rejected commit rejected))
-                           (rx/empty))
-                         (rx/of (settle-saved-commit commit lagged)))
+                        (let [uncertain (::uncertain commit)
+                              opt-in?   (or (some? saved-revn) (and uncertain rejected))
+                              result    {:answer answer :session-id session-id :sent-revn sent-revn
+                                         :base-proven base-proven :load-id workspace-load-id}]
+                          (rx/concat
+                           (if (and (not opt-in?) (not (and rejected (contains? answer :lagged))))
+                             (rx/of (update-file-revn file-id revn {:vern file-vern
+                                                                    :load-id workspace-load-id}))
+                             (rx/empty))
+                           ;; Classify the earlier attempt before planning any
+                           ;; compensation for the rejected suffix.
+                           (if (some? rejected)
+                             (rx/of (rollback-rejected commit (assoc rejected :uncertain uncertain) result))
+                             (rx/empty))
+                           (rx/of
+                            (if opt-in?
+                              (begin-opt-in-settlement commit result)
+                              (settle-legacy-save commit lagged)))))
                         (rx/throw (ex-info "The save response has no valid revision"
                                            {:type :persistence
                                             :code :invalid-save-response
@@ -992,8 +1756,9 @@
 
 (defn- persist-commit
   "Sends the queued commit, stamping the attempt first. A commit whose
-  earlier request is no longer in flight is sent again: changes are
-  idempotent, so a save the backend already applied can be applied again.
+  earlier request is no longer in flight can be sent again, even when
+  the outcome of that request is uncertain. The IDs stay the same, but
+  the server does not use them to deduplicate requests.
   Carries an optional `:token`: retry timers pass the episode token, and a
   stale token (superseded episode) stays silent instead of sending or
   failing."
@@ -1002,13 +1767,19 @@
     (ptk/reify ::persist-commit
       ptk/UpdateEvent
       (update [_ state]
-        (let [token-ok? (or (nil? token)
-                            (= token (dm/get-in state [:persistence :retry-token])))]
-          (if (and token-ok?
-                   (= :ready (attempt-state state commit-id)))
-            ;; Stamp the attempt before any I/O, so a request in flight is
-            ;; never sent twice in parallel.
-            (assoc-in state [:persistence :index commit-id ::request-id] request-id)
+        (let [{:keys [retry-for retry-token]} (:persistence state)]
+          (if (or (nil? token) (= token retry-token))
+            (case (attempt-state state commit-id)
+              ;; Stamp the attempt before any I/O, so a request in flight is
+              ;; never sent twice in parallel.
+              :ready (-> state
+                         (assoc-in [:persistence :index commit-id ::request-id] request-id)
+                         (update :persistence dissoc :retry-after-read))
+              :waiting-for-read
+              (cond-> state
+                (and token (= commit-id retry-for))
+                (assoc-in [:persistence :retry-after-read] token))
+              state)
             state)))
 
       ptk/WatchEvent
@@ -1029,12 +1800,12 @@
               :halted            (rx/empty)
               :missing-commit    (fail :missing-commit "A queued save has no change data")
               :acknowledged      (rx/of (commit-persisted commit))
-              ;; The replacement runner listens for the original request's result.
-              :in-flight         (rx/empty)
+              ;; The original request or the file read owns the next step.
+              (:in-flight :waiting-for-read) (rx/empty)
               ;; Made on a version a restore replaced, or already emptied by it
               :stale             (rx/of (commit-persisted commit))
               :permission-denied (fail :save-permission-denied "Edit permission was lost before changes could be saved")
-              :ready             (send-queued-commit request-id (:session-id state) commit))))))))
+              :ready             (send-queued-commit request-id state commit))))))))
 
 
 (defn- run-persistence-task
@@ -1084,7 +1855,7 @@
        (update state :persistence
                (fn [pstate]
                  (-> pstate
-                     (dissoc :error :attempts :retry-token :retry-for)
+                     (dissoc :error :attempts :retry-token :retry-for :retry-after-read)
                      (assoc :run-id (uuid/next)
                             :status :saving
                             :recovering recovering)
@@ -1116,7 +1887,7 @@
       (update state :persistence
               #(-> %
                    (assoc :suspended true)
-                   (dissoc :retry-token))))))
+                   (dissoc :retry-token :retry-after-read))))))
 
 (defn- restore-retries
   "Lets failed saves be retried again once a file is opened."
@@ -1148,7 +1919,7 @@
               commit-id (get-in pstate [:error :commit-id])
               file-id   (get-in pstate [:index commit-id :file-id])
               plan'     (when (and revert? file-id)
-                          (pcm/release-plan pstate file-id))]
+                          (pcm/release-plan pstate file-id (get-preview-file-id state)))]
           (vreset! plan plan')
           (assoc state :persistence
                  (-> (if plan'
@@ -1161,7 +1932,7 @@
       ptk/WatchEvent
       (watch [it state stream]
         (if-let [plan @plan]
-          (apply-rollback-plan it state stream plan)
+          (apply-rollback-plan it state stream plan nil)
           (rx/empty))))))
 
 (defn- queue-needs-a-runner?
@@ -1205,6 +1976,7 @@
       []
       (-> []
           (into (comp (map #(get index %))
+                      (remove #(or (:confirmed %) (::acknowledged %)))
                       (filter of-file?)
                       (mapcat :commits)
                       (mapcat :redo-changes))
@@ -1420,6 +2192,17 @@
               (rx/take-until stoper-s))
 
          (->> stream
+              (rx/filter #(or (ptk/type? ::dw/finalize-workspace %)
+                              (ptk/type? ::dw/initialize-workspace %)))
+              (rx/map (fn [_] (abandon-view-reconciliations)))
+              (rx/take-until stoper-s))
+
+         (->> stream
+              (rx/filter (ptk/type? ::dw/bundle-fetched))
+              (rx/map (fn [event] (settle-replaced-head (:file-id @event))))
+              (rx/take-until stoper-s))
+
+         (->> stream
               (rx/filter #(or (ptk/type? ::dc/change-team-role %)
                               (ptk/type? ::dw/workspace-initialized %)))
               (rx/map #(recover-persistence (ptk/type? ::dw/workspace-initialized %)))
@@ -1456,6 +2239,8 @@
                                     (ptk/type? ::discard-commit %)
                                     (ptk/type? ::rollback-rejected %)
                                     (ptk/type? ::release-failed-file %)
+                                    (ptk/type? ::reconcile-file %)
+                                    (ptk/type? ::reconciliation-result %)
                                     (ptk/type? ::dw/bundle-fetched %)))))
               (rx/map (fn [_] (sync-unload-guard)))
               (rx/take-until stoper-s))

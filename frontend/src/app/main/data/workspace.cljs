@@ -11,6 +11,7 @@
    [app.common.data.macros :as dm]
    [app.common.files.changes :as cpc]
    [app.common.files.changes-builder :as pcb]
+   [app.common.files.focus :as cff]
    [app.common.files.helpers :as cfh]
    [app.common.files.variant :as cfv]
    [app.common.geom.align :as gal]
@@ -21,10 +22,13 @@
    [app.common.math :as mth]
    [app.common.path-names :as cpn]
    [app.common.render-wasm.wasm :as wasm-state]
+   [app.common.thumbnails :as thc]
    [app.common.transit :as t]
+   [app.common.types.color :as clr]
    [app.common.types.component :as ctc]
    [app.common.types.components-list :as ctkl]
    [app.common.types.shape :as cts]
+   [app.common.types.shape-tree :as ctst]
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]
@@ -65,6 +69,8 @@
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.texts :as dwtxt]
    [app.main.data.workspace.thumbnails :as dwth]
+   [app.main.data.workspace.thumbnails-wasm :as dwth.wasm]
+   [app.main.data.workspace.tokens.propagation :as dwtp]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.variants :as dwva]
@@ -77,6 +83,7 @@
    [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.router :as rt]
+   [app.main.worker :as mw]
    [app.render-wasm :as wasm]
    [app.render-wasm.api :as wasm.api]
    [app.util.dom :as dom]
@@ -340,18 +347,27 @@
 
 (defn- bundle-fetched
   [{:keys [file file-id thumbnails] :as bundle}]
-  (ptk/reify ::bundle-fetched
-    IDeref
-    (-deref [_] bundle)
+  (let [compensation-skipped (volatile! false)]
+    (ptk/reify ::bundle-fetched
+      IDeref
+      (-deref [_] bundle)
 
+      ptk/UpdateEvent
+      (update [_ state]
+        (let [[state skipped?] (dps/prepare-file-load state file)
+              restored         (restore-pending-changes state file)]
+          (vreset! compensation-skipped skipped?)
+          (-> state
+              (assoc :thumbnails (d/update-vals thumbnails (fn [uri] {:uri uri :rendered-at nil})))
+              (update :files assoc file-id restored)
+              (dps/forget-other-versions file)
+              (dps/file-base-loaded file))))
 
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [file (restore-pending-changes state file)]
-        (-> state
-            (assoc :thumbnails (d/update-vals thumbnails (fn [uri] {:uri uri :rendered-at nil})))
-            (update :files assoc file-id file)
-            (dps/forget-other-versions file))))))
+      ptk/WatchEvent
+      (watch [_ _ _]
+        (if @compensation-skipped
+          (rx/of (dps/notify-kept-compensations))
+          (rx/empty))))))
 
 (defn zoom-to-frame
   []
@@ -408,6 +424,31 @@
                  :file-id (dm/str file-id))
         (rx/of (fetch-bundle file-id features))))))
 
+(defn clear-version-preview
+  "Drops the historical session without replacing the displayed file."
+  [state]
+  (let [preview-id (dm/get-in state [:workspace-global :preview-id])
+        read-only  (dm/get-in state [:workspace-versions :preview :prior-read-only])
+        locked?    (dm/get-in state [:workspace-global :persistence-lock])
+        lost?      (dm/get-in state [:render-state :lost])
+        state      (-> state
+                       (d/update-in-when [:workspace-versions] dissoc :backup :preview :restore)
+                       (d/update-in-when [:workspace-global] dissoc :preview-id))]
+    (if preview-id
+      (cond
+        locked?
+        (assoc-in state [:workspace-global :persistence-lock :read-only?] (boolean read-only))
+
+        lost?
+        (assoc-in state [:render-state :pre-context-lost-read-only?] read-only)
+
+        (some? read-only)
+        (assoc-in state [:workspace-global :read-only?] read-only)
+
+        :else
+        (update state :workspace-global dissoc :read-only?))
+      state)))
+
 (defn initialize-workspace
   [team-id file-id]
   (assert (uuid? team-id) "expected valud uuid for `team-id`")
@@ -416,13 +457,21 @@
   (ptk/reify ::initialize-workspace
     ptk/UpdateEvent
     (update [_ state]
-      (-> state
-          (assoc :recent-colors (:recent-colors storage/user))
-          (assoc :recent-fonts (:recent-fonts storage/user))
-          (assoc :current-file-id file-id)
-          (assoc :workspace-presence {})
-          (update :workspace-global dissoc :default-font)
-          (update :comments-local dcmt/merge-persisted-filters)))
+      (let [backup (dm/get-in state [:workspace-versions :backup])
+            ;; A reload can skip finalize-workspace. Do not leave the
+            ;; historical data in :files as the new opening's live file.
+            state  (cond-> state
+                     (and backup (= (:id backup) (:current-file-id state)))
+                     (assoc-in [:files (:id backup)] backup))]
+        (-> state
+            (clear-version-preview)
+            (assoc :recent-colors (:recent-colors storage/user))
+            (assoc :recent-fonts (:recent-fonts storage/user))
+            (assoc :current-file-id file-id)
+            (assoc :workspace-load-id (uuid/next))
+            (assoc :workspace-presence {})
+            (update :workspace-global dissoc :default-font)
+            (update :comments-local dcmt/merge-persisted-filters))))
 
     ptk/WatchEvent
     (watch [_ state stream]
@@ -629,6 +678,7 @@
           (dissoc
            :current-file-id
            :workspace-editor-state
+           :workspace-load-id
            :workspace-wasm-editor-styles
            :workspace-media-objects
            :workspace-presence
@@ -664,6 +714,133 @@
 
 ;; Make this event callable through dynamic resolution
 (defmethod ptk/resolve ::reload-current-file [_ _] (reload-current-file))
+
+(defn- refresh-reconciled-viewport
+  [file-id page-id load-id]
+  (ptk/reify ::refresh-reconciled-viewport
+    ptk/EffectEvent
+    (effect [_ state _]
+      (when (and (= file-id (:current-file-id state))
+                 (= page-id (:current-page-id state))
+                 (= load-id (:workspace-load-id state))
+                 (not (dm/get-in state [:workspace-global :preview-id]))
+                 (wasm.api/initialized?))
+        (let [page           (dsh/lookup-page state file-id page-id)
+              {:keys [zoom vbox]} (:workspace-local state)]
+          (when (and page vbox)
+            (let [objects (:objects page)
+                  focus   (into (d/ordered-set)
+                                (filter #(contains? objects %))
+                                (:workspace-focus-selected state))]
+              (wasm.api/initialize-viewport
+               (cff/focus-objects objects focus)
+               (d/check-num zoom 1) vbox
+               :background (get page :background clr/canvas)
+               ;; A new local or remote edit must not be overwritten by a
+               ;; later chunk from this snapshot.
+               :force-sync true))))))))
+
+(defn- refresh-reconciled-thumbnails
+  [state file-id wasm? missing-thumbnail-ids]
+  (let [page-id (:current-page-id state)]
+    (->> (rx/from (keys (:thumbnails state)))
+         (rx/filter #(thc/file-id? % file-id))
+         (rx/map
+          (fn [object-id]
+            (let [{thumbnail-page-id :page-id :keys [frame-id tag]} (thc/parse-object-id object-id)
+                  shape (get (dsh/lookup-page-objects state file-id thumbnail-page-id) frame-id)]
+              (cond
+                (and (nil? shape) (contains? missing-thumbnail-ids object-id))
+                (dwth/clear-thumbnail file-id object-id)
+
+                (and shape wasm? (= tag "component") (ctc/main-instance? shape))
+                (dwth.wasm/render-thumbnail file-id thumbnail-page-id frame-id)
+
+                (and shape (not wasm?) (= page-id thumbnail-page-id))
+                (dwth/update-thumbnail file-id thumbnail-page-id frame-id tag "reconciled-file")))))
+         (rx/filter some?)
+         ;; Clear-thumbnail batches deletes by watching subsequent clears.
+         (rx/observe-on :async))))
+
+(defmethod ptk/resolve ::reconciled-library-effects
+  [_ {:keys [file-id library-change tokens-changed] :as params}]
+  (ptk/reify ::reconciled-library-effects
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [context                (select-keys params [:file-id :load-id :vern])
+            {:keys [is-shared]} (dsh/lookup-file state file-id)]
+        ;; The installed metadata is current, but a reconciled message may
+        ;; describe an earlier save while shared.
+        (if (dwtp/reconciliation-context-current? state context)
+          (rx/from
+           (cond-> []
+             (or library-change is-shared) (conj (dwl/notify-sync-file))
+             tokens-changed (conj (dwtp/propagate-workspace-tokens nil context))))
+          (rx/empty))))))
+
+(defmethod ptk/resolve ::reconciled-file
+  [_ {:keys [file-id tokens-changed consumer-context missing-thumbnail-ids] :as params}]
+  (ptk/reify ::reconciled-file
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [page-id (:current-page-id state)]
+        (if (and (= file-id (:current-file-id state))
+                 (some? page-id)
+                 (not (dm/get-in state [:workspace-global :preview-id])))
+          (dsh/update-page state file-id page-id #(update % :objects ctst/start-page-index))
+          state)))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [current-file-id (:current-file-id state)
+            page-id         (:current-page-id state)
+            file            (dsh/lookup-file state file-id)
+            stopper-s       (rx/filter #(or (ptk/type? ::finalize-workspace %)
+                                            (ptk/type? ::initialize-workspace %))
+                                       stream)]
+        (cond
+          (or (nil? current-file-id) (nil? (:data file)))
+          (rx/empty)
+
+          (= current-file-id file-id)
+          (if (dm/get-in state [:workspace-global :preview-id])
+            (rx/empty)
+            (let [page  (dsh/lookup-page state file-id page-id)
+                  wasm? (features/active-feature? state "render-wasm/v1")]
+              (->> (rx/merge
+                    (when page
+                      (->> (mw/ask! {:cmd :index/initialize :page page})
+                           (rx/ignore)))
+                    (when (and page wasm? (wasm.api/initialized?))
+                      (let [refresh (refresh-reconciled-viewport file-id page-id (:workspace-load-id state))]
+                        (if @wasm.api/shapes-loading?
+                          ;; Finish any bulk load of the old shapes before
+                          ;; replacing the pool with the live page.
+                          (->> (rx/from-event ug/document "penpot:wasm:set-objects")
+                               (rx/filter (fn [_] (not @wasm.api/shapes-loading?)))
+                               (rx/take 1)
+                               (rx/map (constantly refresh))
+                               (rx/take-until (rx/filter (ptk/type? ::dwpg/finalize-page) stream)))
+                          (rx/of refresh))))
+                    (refresh-reconciled-thumbnails state file-id wasm? missing-thumbnail-ids)
+                    (rx/of (ptk/event ::reconciled-library-effects params))
+                    (when (and page-id (nil? page))
+                      (when-let [next-page-id (first (get-in file [:data :pages]))]
+                        (rx/of (dcm/go-to-workspace :file-id file-id :page-id next-page-id ::rt/replace true)))))
+                   (rx/take-until stopper-s))))
+
+          (= current-file-id (:library-of file))
+          (->> (rx/merge
+                (when-not (dm/get-in state [:workspace-global :preview-id])
+                  (rx/of (dwl/notify-sync-file)))
+                (when (and tokens-changed consumer-context)
+                  (rx/of (dwtp/propagate-workspace-tokens nil consumer-context)))
+                (->> (ptk/watch (dwl/fetch-library-thumbnails file-id) state stream)
+                     (rx/catch rx/empty)))
+               (rx/take-until stopper-s))
+
+          :else
+          (rx/empty))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; WORKSPACE File Actions

@@ -23,11 +23,13 @@
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
    [app.main.data.event :as ev]
+   [app.main.data.notifications :as ntf]
    [app.main.data.persistence :as dps]
    [app.main.data.persistence.commits :as pcm]
    [app.main.data.render-wasm :as drw]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.notifications :as dwn]
    [app.main.errors :as errors]
    [app.main.refs :as refs]
    [app.main.repo :as rp]
@@ -535,6 +537,7 @@
          (await (async/wait-for #(= 1 (count @requests)) "the save is sent" {:signal requests$}))
          (t/is (= [[:update-file-v2
                     {:id file-id :session-id session-id :revn 0 :vern 0 :features #{}
+                     :repair-in-response true
                      :commits [{:commit-id (:id @commit)
                                 :redo-changes (:redo-changes @commit)
                                 :undo-changes []}]}]]
@@ -1403,6 +1406,67 @@
   [store file-id page-id]
   (thp/shape-attr store file-id page-id uuid/zero :shapes))
 
+(defn- file-message
+  [file-id peer row]
+  (-> row
+      (dissoc :id)
+      (assoc :type :file-change :file-id file-id :vern 0
+             :profile-id peer :session-id peer :revision-ids [(:id row)])))
+
+(defn- repair-answer
+  [file-id revn session-id commit repair prior]
+  (let [row (lagged-row file-id (+ 2 revn) session-id repair)]
+    {:revn revn
+     :saved-revn (+ 2 revn)
+     :repair (select-keys row [:id :revn :changes])
+     :lagged (into (vec prior) [(lagged-row file-id (inc revn) session-id (:redo-changes @commit))
+                                row])}))
+
+(t/deftest ^:async a-fallback-save-with-relinked-media-reads-the-final-image-id
+  (let [save (rx/subject)
+        read (rx/subject)]
+    (await
+     (with-persistence
+       (^:async fn [{:keys [file-id session-id requests requests$ store]}]
+         (let [page-id    (uuid/next)
+               shape-id   (uuid/next)
+               source-id  (uuid/next)
+               final-id   (uuid/next)
+               fills      (fn [id] [{:fill-image {:id id :width 10 :height 10 :mtype "image/png"}}])
+               data       #(assoc-in (thp/file-data page-id shape-id %1)
+                                     [:pages-index page-id :objects shape-id :fills] (fills %2))
+               edit       (thp/attr-commit file-id page-id shape-id :fills [] (fills source-id))
+               buffered   (thp/rename-commit file-id page-id shape-id "Original" "Buffered")
+               repair-row (lagged-row file-id 1 repair-session-id [(thp/set-attr page-id shape-id :opacity 0.7)])
+               repair-msg (assoc (file-message file-id repair-session-id repair-row) :repaired true)
+               saved-row  (lagged-row file-id 2 session-id [(thp/set-attr page-id shape-id :fills (fills final-id))])]
+           (ptk/emit! store (thp/open-file file-id page-id (data "Original" source-id))
+                      edit ::dps/force-persist)
+           (await (async/wait-for #(= 1 (count @requests)) "the edit is sent" {:signal requests$}))
+           (ptk/emit! store #(assoc-in % [:files file-id :data :pages-index page-id :objects shape-id :name] "Buffered")
+                      buffered)
+           (await (async/wait-for-store store #(seq (get-in @store [:persistence :buffer])) "the next edit is buffered"))
+           (rx/push! save {:revn 0 :saved-revn 2 :media-relinked true :lagged [repair-row saved-row]})
+           (await (async/wait-for #(= :get-file (first (peek @requests))) "the accepted edit needs a read"
+                                  {:signal requests$}))
+           (rx/push! read {:id file-id :vern 0 :revn 2
+                           :data (assoc-in (data "Original" final-id)
+                                           [:pages-index page-id :objects shape-id :opacity] 0.7)})
+           (await (async/wait-for-store store #(empty? (get-in @store [:persistence :queue]))
+                                        "the read settles the confirmed save"))
+           (t/is (= (fills final-id) (thp/shape-attr store file-id page-id shape-id :fills)))
+           (t/is (= "Buffered" (thp/shape-name store file-id page-id shape-id)))
+           (t/is (= dps/file-repaired-tag (get-in @store [:notification :tag]))
+                 "the HTTP fallback announces the repair")
+           (ptk/emit! store (ntf/hide :tag dps/file-repaired-tag) (dwn/handle-file-change repair-msg))
+           (await (async/settle))
+           (t/is (nil? (:notification @store)) "the later WebSocket row does not announce it again")
+           (t/is (= [:update-file-v2 :get-file] (mapv first @requests)))))
+       (fn [cmd _]
+         (->> (case cmd :update-file-v2 save :get-file read (rx/empty))
+              (rx/take 1)
+              (rx/observe-on :async)))))))
+
 (defn- open-with-new-child
   "Opens a page whose root holds `shape-id` and the new child `child`, as
   the local data does once the user adds it."
@@ -1411,6 +1475,318 @@
              (thp/open-file file-id page-id
                             (thp/add-shape (thp/file-data page-id shape-id "S") page-id child))
              #(assoc % :session-id session-id)))
+
+(t/deftest ^:async a-repair-in-the-save-answer-goes-after-the-save-and-before-buffered-edits
+  (await
+   (with-persistence
+     (^:async fn [{:keys [file-id session-id response requests requests$ store]}]
+       (let [page-id  (uuid/next)
+             shape-id (uuid/next)
+             local    (thp/rename-commit file-id page-id shape-id "Original" "Saved")
+             buffered (thp/rename-commit file-id page-id shape-id "Saved" "Buffered")
+             repair   [(thp/rename page-id shape-id "Repaired")
+                       (thp/set-attr page-id shape-id :opacity 0.7)]
+             row      (lagged-row file-id 2 session-id repair)]
+         (ptk/emit! store (thp/open-file file-id page-id (thp/file-data page-id shape-id "Saved"))
+                    local ::dps/force-persist)
+         (await (async/wait-for #(= 1 (count @requests)) "the edit is sent" {:signal requests$}))
+         (ptk/emit! store (thp/open-file file-id page-id (thp/file-data page-id shape-id "Buffered"))
+                    buffered)
+         (await (async/wait-for-store store #(seq (get-in @store [:persistence :buffer]))
+                                      "the second edit is still buffered"))
+         (rx/push! response {:revn 0
+                             :saved-revn 2
+                             :lagged [(lagged-row file-id 1 session-id (:redo-changes @local)) row]
+                             :repair (select-keys row [:id :revn :changes])})
+         (await (async/wait-for-store store #(empty? (get-in @store [:persistence :queue]))
+                                      "the repair needs no WebSocket echo"))
+         (t/is (= :update-file-v2 (ffirst @requests)))
+         (t/is (true? (get-in @requests [0 1 :repair-in-response])))
+         (t/is (= "Buffered" (thp/shape-name store file-id page-id shape-id)))
+         (t/is (= 0.7 (thp/shape-attr store file-id page-id shape-id :opacity))
+               "the repair changed the view without entering the save queue"))))))
+
+(t/deftest ^:async a-file-change-older-than-an-applied-aggregate-does-not-regress-the-view
+  (await
+   (with-persistence
+     (^:async fn [{:keys [file-id store]}]
+       (let [page-id  (uuid/next)
+             shape-id (uuid/next)
+             peer     (uuid/next)
+             edit-id  (uuid/next)
+             msg      {:type :file-change :file-id file-id :vern 0
+                       :profile-id (uuid/next) :session-id peer}]
+         (ptk/emit! store (thp/open-file file-id page-id (thp/file-data page-id shape-id "Original")))
+         (ptk/emit! store
+                    (dwn/handle-file-change
+                     (assoc msg :revn 2 :repair-base-revn 0 :repaired true
+                            :revision-ids [edit-id (uuid/next)]
+                            :changes [(thp/rename page-id shape-id "Repaired")])))
+         (await (async/wait-for-store store #(= "Repaired" (thp/shape-name store file-id page-id shape-id))
+                                      "the two revisions are applied as one"))
+         (ptk/emit! store
+                    (dwn/handle-file-change
+                     (assoc msg :revn 1 :revision-ids [edit-id]
+                            :changes [(thp/rename page-id shape-id "Old")])))
+         (await (async/settle))
+         (t/is (= "Repaired" (thp/shape-name store file-id page-id shape-id))))))))
+
+(t/deftest ^:async a-repair-waits-for-the-websocket-row-it-actually-depends-on
+  (await
+   (with-persistence
+     (^:async fn [{:keys [file-id session-id response requests requests$ store]}]
+       (let [page-id  (uuid/next)
+             shape-id (uuid/next)
+             peer     (uuid/next)
+             edit     (thp/rename-commit file-id page-id shape-id "Original" "Saving")
+             prior    (lagged-row file-id 1 peer [(thp/rename page-id shape-id "Peer")])]
+         (ptk/emit! store (thp/open-file file-id page-id (thp/file-data page-id shape-id "Saving"))
+                    edit ::dps/force-persist)
+         (await (async/wait-for #(= 1 (count @requests)) "the edit is sent" {:signal requests$}))
+         (rx/push! response (repair-answer file-id 1 session-id edit
+                                           [(thp/rename page-id shape-id "Repaired")] [prior]))
+         (await (async/wait-for-store store #(some? (get-in @store [:persistence :index (:id @edit) ::dps/save-result]))
+                                      "The answer is awaiting its predecessor"))
+         (t/is (= "Saving" (thp/shape-name store file-id page-id shape-id)))
+         (ptk/emit! store (dwn/handle-file-change (file-message file-id peer prior)))
+         (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
+                                      "The predecessor makes it safe to apply the repair"))
+         (t/is (= "Repaired" (thp/shape-name store file-id page-id shape-id)))
+         (t/is (= [:update-file-v2] (mapv first @requests))))))))
+
+(t/deftest ^:async an-opt-in-fallback-keeps-the-edit-over-the-websocket-repair
+  (await
+   (with-persistence
+     (^:async fn [{:keys [file-id session-id response requests requests$ store]}]
+       (let [page-id  (uuid/next)
+             shape-id (uuid/next)
+             child    (cts/setup-shape {:id (uuid/next) :type :rect :name "New"
+                                        :parent-id uuid/zero :frame-id uuid/zero})
+             edit     (add-child-commit file-id page-id child)
+             repair   (lagged-row file-id 1 repair-session-id [(set-root-children page-id [shape-id])])
+             saved    (lagged-row file-id 2 session-id (:redo-changes @edit))]
+         (open-with-new-child store file-id session-id page-id shape-id child)
+         (ptk/emit! store edit ::dps/force-persist)
+         (await (async/wait-for #(= 1 (count @requests)) "the edit is sent" {:signal requests$}))
+         ;; Invert created-at order: the proof must use revision and row identity.
+         (rx/push! response {:revn 0 :saved-revn 2 :lagged [saved repair]})
+         (await (async/wait-for-store store #(some? (get-in @store [:persistence :index (:id @edit) ::dps/save-result]))
+                                      "the fallback awaits the repair"))
+         (ptk/emit! store (dwn/handle-file-change (assoc (file-message file-id repair-session-id repair)
+                                                         :repaired true)))
+         (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
+                                      "the fallback is settled"))
+         (t/is (= [shape-id (:id child)] (root-children store file-id page-id)))
+         (t/is (= [:update-file-v2] (mapv first @requests))))))))
+
+(t/deftest ^:async the-same-revision-number-cannot-stand-in-for-the-required-row
+  (let [save (rx/subject)
+        read (rx/subject)]
+    (await
+     (with-persistence
+       (^:async fn [{:keys [file-id session-id requests requests$ store]}]
+         (let [page-id  (uuid/next)
+               shape-id (uuid/next)
+               peer     (uuid/next)
+               edit     (thp/rename-commit file-id page-id shape-id "Original" "Saving")
+               prior    (lagged-row file-id 1 peer [(thp/rename page-id shape-id "Peer")])
+               wrong    (assoc prior :id (uuid/next))]
+           (ptk/emit! store (thp/open-file file-id page-id (thp/file-data page-id shape-id "Saving"))
+                      edit ::dps/force-persist)
+           (await (async/wait-for #(= 1 (count @requests)) "the edit is sent" {:signal requests$}))
+           (ptk/emit! store (dwn/handle-file-change (file-message file-id peer wrong)))
+           (rx/push! save (repair-answer file-id 1 session-id edit
+                                         [(thp/rename page-id shape-id "Repaired")] [prior]))
+           (await (async/wait-for #(some (comp #{:get-file} first) @requests)
+                                  "the unrelated row cannot authorize the rebase" {:signal requests$}))
+           (t/is (= "Saving" (thp/shape-name store file-id page-id shape-id)))
+           (rx/push! read {:id file-id :vern 0 :revn 4
+                           :data (thp/file-data page-id shape-id "Newest")})
+           (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
+                                        "the server's view settles the save"))
+           (t/is (= "Newest" (thp/shape-name store file-id page-id shape-id)))
+           (t/is (= [:update-file-v2 :get-file] (mapv first @requests)))))
+       (fn [cmd _]
+         (->> (case cmd :update-file-v2 save :get-file read (rx/empty))
+              (rx/observe-on :async)))))))
+
+(t/deftest ^:async a-reconciliation-read-behind-a-newer-observed-change-is-not-installed
+  (let [read (rx/subject)]
+    (await
+     (with-persistence
+       (^:async fn [{:keys [file-id requests requests$ store]}]
+         (let [page-id  (uuid/next)
+               shape-id (uuid/next)
+               peer     (uuid/next)
+               row      #(file-message file-id peer (lagged-row file-id %1 peer
+                                                                [(thp/rename page-id shape-id %2)]))]
+           (ptk/emit! store (thp/open-file file-id page-id (thp/file-data page-id shape-id "Original"))
+                      (dwn/handle-file-change (row 3 "After repair")))
+           (await (async/wait-for #(= :get-file (ffirst @requests))
+                                  "the gap starts a read" {:signal requests$}))
+           (ptk/emit! store
+                      (dwn/handle-file-change
+                       (assoc (row 2 "Repair") :repair-base-revn 0 :repaired true
+                              :revision-ids [(uuid/next) (uuid/next)])))
+           (ptk/emit! store (dwn/handle-file-change (row 4 "Most recent")))
+           (await (async/wait-for-store store #(= 4 (get-in @store [:persistence :reconciliations file-id :minimum]))
+                                        "the read now needs to cover the newer revision"))
+           (rx/push! read {:id file-id :vern 0 :revn 3 :data (thp/file-data page-id shape-id "Too old")})
+           (await (async/wait-for-store store #(= :persistence-reconciliation-failed
+                                                  (get-in @store [:notification :tag]))
+                                        "the view is preserved when the read is too old"))
+           (t/is (= "Original" (thp/shape-name store file-id page-id shape-id)))
+           (t/is (not (dps/terminal-status? (:persistence @store))))
+           (t/is (= [:get-file] (mapv first @requests)))))
+       (fn [cmd _] (if (= cmd :get-file) (->> read (rx/observe-on :async)) (rx/empty)))))))
+
+(t/deftest ^:async reopening-with-the-same-vern-does-not-install-a-read-from-the-previous-opening
+  (let [answer (rx/subject)]
+    (await
+     (with-persistence
+       (^:async fn [{:keys [file-id requests requests$ store]}]
+         (let [page-id (uuid/next)
+               shape-id (uuid/next)
+               peer (uuid/next)
+               initial (assoc (file-message file-id peer
+                                            (lagged-row file-id 3 peer [(thp/rename page-id shape-id "Peer")]))
+                              :repair-base-revn 1 :revision-ids [(uuid/next) (uuid/next)])]
+           (ptk/emit! store (thp/open-file file-id page-id (thp/file-data page-id shape-id "Original"))
+                      #(assoc % :workspace-load-id (uuid/next))
+                      (dwn/handle-file-change initial))
+           (await (async/wait-for #(= :get-file (ffirst @requests))
+                                  "the gap launches a read" {:signal requests$}))
+           ;; Install the next opening without starting its unrelated shell requests.
+           (ptk/emit! store #(-> %
+                                 (assoc :workspace-load-id (uuid/next))
+                                 (assoc-in [:files file-id] {:id file-id :vern 0 :revn 2
+                                                             :data (thp/file-data page-id shape-id "Reopened")})))
+           (rx/push! answer {:id file-id :vern 0 :revn 3 :data (thp/file-data page-id shape-id "Old opening")})
+           (await (async/settle))
+           (t/is (= "Reopened" (thp/shape-name store file-id page-id shape-id)))))
+       (fn [cmd _] (if (= cmd :get-file) (->> answer (rx/observe-on :async)) (rx/empty)))))))
+
+(t/deftest ^:async rejecting-the-rest-of-a-repaired-group-keeps-the-saved-prefix
+  (let [save (rx/subject)
+        read (rx/subject)]
+    (await
+     (with-persistence
+       (^:async fn [{:keys [file-id session-id requests requests$ store failures]}]
+         (let [page-id  (uuid/next)
+               shape-id (uuid/next)
+               group    (uuid/next)
+               edit     (fn [from to]
+                          (let [data @(thp/rename-commit file-id page-id shape-id from to)]
+                            (ptk/data-event ::dch/commit (assoc data :undo-group group))))
+               prefix   (edit "Original" "Saved")
+               later    (edit "Saved" "Rejected")]
+           (ptk/emit! store (thp/open-file file-id page-id (thp/file-data page-id shape-id "Saved"))
+                      prefix ::dps/force-persist)
+           (await (async/wait-for #(= 1 (count @requests)) "the prefix is sent" {:signal requests$}))
+           (ptk/emit! store (thp/open-file file-id page-id (thp/file-data page-id shape-id "Rejected"))
+                      later ::dps/force-persist)
+           (rx/push! save (repair-answer file-id 0 session-id prefix
+                                         [(thp/rename page-id shape-id "Repaired")] []))
+           (await (async/wait-for #(= 2 (count @requests)) "the rest is sent" {:signal requests$}))
+           (t/is (= [(:id @prefix)] (mapv :id (get-in @store [:persistence :saved]))))
+           (rx/push! save {:revn 2 :lagged []
+                           :rejected {:commit-ids [(:id @later)] :failed-commit-id (:id @later)
+                                      :error {:type :validation :code :referential-integrity}}})
+           (await (async/wait-for #(some (comp #{:get-file} first) @requests)
+                                  "the rollback reads instead of undoing the saved prefix" {:signal requests$}))
+           (rx/push! read {:id file-id :vern 0 :revn 2 :data (thp/file-data page-id shape-id "Repaired")})
+           (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
+                                        "the failed suffix settles against the repaired file"))
+           (t/is (= "Repaired" (thp/shape-name store file-id page-id shape-id)))
+           (t/is (= 1 (:kept-saved (ex-data (first @failures)))))
+           (t/is (= [:update-file-v2 :update-file-v2 :get-file] (mapv first @requests)))))
+       (fn [cmd _]
+         (->> (case cmd :update-file-v2 save :get-file read (rx/empty))
+              (rx/observe-on :async)))))))
+
+(defn- ^:async leave-before-applying-a-repair
+  [already-answered?]
+  (await
+   (with-persistence
+     (^:async fn [{:keys [file-id session-id response requests requests$ store failures]}]
+       (let [page-id  (uuid/next)
+             shape-id (uuid/next)
+             group    (uuid/next)
+             edit     (fn [from to]
+                        (ptk/data-event ::dch/commit
+                                        (assoc @(thp/rename-commit file-id page-id shape-id from to)
+                                               :undo-group group)))
+             prefix   (edit "Original" "Saved")
+             later    (edit "Saved" "Rejected")
+             prior    (lagged-row file-id 1 (uuid/next) [])
+             answer   (repair-answer file-id 1 session-id prefix
+                                     [(thp/rename page-id shape-id "Repaired")] [prior])]
+         (ptk/emit! store (thp/open-file file-id page-id (thp/file-data page-id shape-id "Saved"))
+                    prefix ::dps/force-persist)
+         (await (async/wait-for #(= 1 (count @requests)) "the prefix is sent" {:signal requests$}))
+         (ptk/emit! store later ::dps/force-persist)
+         (when already-answered?
+           (rx/push! response answer)
+           (await (async/wait-for-store store
+                                        #(get-in @store [:persistence :index (:id @prefix) ::dps/save-result])
+                                        "the repair is waiting for a predecessor")))
+         (ptk/emit! store #(-> %
+                               (dissoc :current-file-id)
+                               (update-in [:files file-id] dissoc :data))
+                    (ptk/data-event ::dw/finalize-workspace))
+         (when-not already-answered?
+           (rx/push! response answer))
+         (await (async/wait-for #(= 2 (count @requests)) "the prefix settles on exit" {:signal requests$}))
+         (rx/push! response (assoc (thp/rejection (:id @later)) :revn 3))
+         (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
+                                      "the remaining rejected edit settles without compensation"))
+         (t/is (= 1 (:kept-saved (ex-data (first @failures)))))
+         (t/is (= [:update-file-v2 :update-file-v2] (mapv first @requests))))))))
+
+(t/deftest ^:async closing-while-a-repair-awaits-a-predecessor-protects-saved-undo
+  (await (leave-before-applying-a-repair true)))
+
+(t/deftest ^:async a-repair-answer-for-an-unloaded-file-protects-saved-undo
+  (await (leave-before-applying-a-repair false)))
+
+(t/deftest ^:async a-new-vern-releases-a-head-confirmed-during-the-restore
+  (let [save (rx/subject)
+        read (rx/subject)]
+    (await
+     (with-persistence
+       (^:async fn [{:keys [file-id session-id requests requests$ store]}]
+         (let [other-id (uuid/next)
+               page-id  (uuid/next)
+               shape-id (uuid/next)
+               edit     (thp/rename-commit file-id page-id shape-id "Original" "Saved")
+               next     (local-commit other-id)
+               restored (thp/file-data page-id shape-id "Restored")]
+           (ptk/emit! store (thp/open-file file-id page-id (thp/file-data page-id shape-id "Saved"))
+                      #(assoc % :workspace-load-id (uuid/next))
+                      edit next ::dps/force-persist)
+           (await (async/wait-for #(= 1 (count @requests)) "the original edit is sent" {:signal requests$}))
+           ;; The new opening has started, but still holds the old data until
+           ;; its file bundle arrives.
+           (ptk/emit! store #(assoc % :workspace-load-id (uuid/next)))
+           (rx/push! save (repair-answer file-id 0 session-id edit
+                                         [(thp/rename page-id shape-id "Repaired")] []))
+           (await (async/wait-for #(some (comp #{:get-file} first) @requests)
+                                  "the late save starts a read against the old vern" {:signal requests$}))
+           (ptk/emit! store (#'dw/bundle-fetched {:file-id file-id :thumbnails {}
+                                                  :file {:id file-id :revn 3 :vern 1 :data restored}}))
+           (await (async/wait-for #(= other-id (get-in @requests [2 1 :id]))
+                                  "the next file can save without waiting for the obsolete read"
+                                  {:signal requests$}))
+           (rx/push! read {:id file-id :vern 0 :revn 2 :data (thp/file-data page-id shape-id "Old version")})
+           (rx/push! save {:revn 1})
+           (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
+                                        "the queue drains after the restore"))
+           (t/is (= "Restored" (thp/shape-name store file-id page-id shape-id)))
+           (t/is (empty? (get-in @store [:persistence :reconciliations])))
+           (t/is (= [:update-file-v2 :get-file :update-file-v2] (mapv first @requests)))))
+       (fn [cmd _]
+         (->> (case cmd :update-file-v2 save :get-file read (rx/empty))
+              (rx/observe-on :async)))))))
 
 ;; Scenario: the user adds a child to a page with old damage. The server
 ;; repairs the page first, storing a repair that sets the root's children
@@ -1533,6 +1909,7 @@
          (await (async/wait-for #(= 1 (count @requests)) "both edits go in one save" {:signal requests$}))
          (t/is (= [[:update-file-v2
                     {:id file-id :session-id session-id :revn 0 :vern 0 :features #{}
+                     :repair-in-response true
                      :commits [{:commit-id (:id @commit1)
                                 :redo-changes [(rename "B") (rename "C")]
                                 :undo-changes [(rename "B") (rename "A")]}

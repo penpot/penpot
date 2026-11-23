@@ -12,7 +12,6 @@
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
-   [app.main.data.changes :as dch]
    [app.main.data.common :as dc]
    [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
@@ -274,13 +273,21 @@
    [:revn :int]
    [:vern :int]
    [:changes cpc/schema:changes]
+   [:library-change {:optional true} :boolean]
+   [:revision-ids {:optional true} [:vector ::sm/uuid]]
+   [:repair-base-revn {:optional true} :int]
    [:repaired {:optional true} :boolean]])
 
 (def ^:private check-file-change-params!
   (sm/check-fn schema:handle-file-change))
 
+(defn- library-effects
+  [file-id changes notify-token-update?]
+  (rx/of (dwl/library-change-effects file-id changes notify-token-update?)
+         (dwl/notify-sync-file)))
+
 (defn handle-file-change
-  [{:keys [file-id changes revn vern] :as msg}]
+  [{:keys [file-id changes library-change repaired] :as msg}]
 
   (dm/assert!
    "expected valid parameters"
@@ -291,22 +298,14 @@
     (-deref [_] {:changes changes})
 
     ptk/WatchEvent
-    (watch [_ _ _]
-      ;; The commit event is responsible to apply the data localy
-      ;; and update the persistence internal state with the updated
-      ;; file-revn
-
-      (rx/concat
-       (rx/of (dch/commit {:file-id file-id
-                           :file-revn revn
-                           :file-vern vern
-                           :save-undo? false
-                           :source :remote
-                           :redo-changes (vec changes)
-                           :undo-changes []}))
-       (if (:repaired msg)
-         (rx/of (dps/notify-repaired))
-         (rx/empty))))))
+    (watch [_ state _]
+      (if (= file-id (:current-file-id state))
+        (let [effects (when library-change
+                        ;; Keep the repair warning (and any rejection link)
+                        ;; instead of replacing it with a token info toast.
+                        #(library-effects file-id changes (not repaired)))]
+          (rx/of (dps/apply-remote-message msg effects)))
+        (rx/empty)))))
 
 (defn handle-file-deleted
   [{:keys [file-id] :as msg}]
@@ -376,19 +375,25 @@
    [:session-id ::sm/uuid]
    [:revn :int]
    [:modified-at ::ct/inst]
+   [:vern {:optional true} :int]
+   [:revision-ids {:optional true} [:vector ::sm/uuid]]
+   [:repair-base-revn {:optional true} :int]
+   [:repaired {:optional true} :boolean]
    [:changes cpc/schema:changes]])
 
 (def ^:private check-library-change-params
   (sm/check-fn schema:handle-library-change))
 
 (defn handle-library-change
-  [{:keys [file-id modified-at changes revn] :as msg}]
+  [{:keys [file-id changes] :as msg}]
   (assert (check-library-change-params msg)
           "expected valid arguments")
 
   (ptk/reify ::handle-library-change
     ptk/WatchEvent
     (watch [_ state _]
-      (when (contains? (:files state) file-id)
-        (rx/of (dwl/ext-library-changed file-id modified-at revn changes)
-               (dwl/notify-sync-file))))))
+      ;; The open file consumes only its complete file-topic delta. The
+      ;; team topic is filtered and may arrive before or after that delta.
+      (if (= file-id (:current-file-id state))
+        (rx/empty)
+        (rx/of (dps/apply-remote-message msg #(library-effects file-id changes true)))))))

@@ -11,6 +11,7 @@
 ## Save payloads
 
 - The editor saves through `update-file-v2`: `:commits` in edit order, one per commit with `:commit-id`, `:redo-changes` and `:undo-changes`. A revision payload holds only the accepted prefix: redo in edit order, undo newest commit first and in each commit's own order; `file_change.changes` still carries the accepted redo. The stored undo comes from the editor and does not restore the server's prior state under concurrent edits or a retry after a lost response, nor the editor's undo history on reload. The request schema is closed: legacy `:changes`, `:changes-with-metadata` and top-level `:undo-changes` are rejected. The deprecated `update-file` remains for old clients and stores empty undo; the current editor never falls back to it. See `mem:backend/file-data/save` for prefix selection.
+- The editor opts in with `:repair-in-response`. When the server proves edit-before-repair it stores consecutive edit and repair revisions: the edit keeps the editor's undo, the repair has none, and the automatic snapshot holds the data before both; the two redo lists in revision order reconstruct the stored file. Otherwise it keeps repair→edit and announces the repair over WebSocket; if that fallback relinks images, the edit redo carries the final refs while the undo stays the editor's. An automatic repair is never an editor undo entry.
 
 ## Application and schema validation
 

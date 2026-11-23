@@ -44,8 +44,7 @@
    [cuerdas.core :as str]))
 
 (declare ^:private get-lagged-changes)
-(declare ^:private send-notifications!)
-(declare ^:private send-repair-notifications)
+(declare ^:private send-notifications)
 (declare ^:private update-file)
 (declare ^:private update-file*)
 (declare ^:private process-changes-and-validate)
@@ -85,6 +84,7 @@
    [:vern {:min 0} ::sm/int]
    [:features {:optional true} ::cfeat/features]
    [:skip-validate {:optional true} ::sm/boolean]
+   [:repair-in-response {:optional true} ::sm/boolean]
    [:commits
     [:vector {:min 1}
      [:map {:closed true}
@@ -119,6 +119,18 @@
        [:code {:optional true} [:maybe :keyword]]
        [:hint {:optional true} [:maybe :string]]
        [:details {:optional true} [:vector :any]]]]]]])
+
+(def ^:private
+  schema:update-file-v2-result
+  (conj (assoc-in schema:update-file-result [1 :title] "update-file-v2-result")
+        ;; Opt-in only, and only when the request wrote a revision
+        [:saved-revn {:optional true :min 0} ::sm/int]
+        [:media-relinked {:optional true} ::sm/boolean]
+        [:repair {:optional true}
+         [:map
+          [:id ::sm/uuid]
+          [:revn {:min 0} ::sm/int]
+          [:changes [:vector cpc/schema:change]]]]))
 
 ;; --- HELPERS
 
@@ -201,7 +213,7 @@
         redo-changes (if (some? groups)
                        (into [] (mapcat :redo-changes) groups)
                        (vec changes))]
-    (assoc params
+    (assoc (dissoc params :repair-in-response)
            :redo-changes redo-changes
            ;; Saved commit by commit only when every group names its commit
            :commits (when (and (seq groups) (every? :commit-id groups))
@@ -351,7 +363,7 @@
    ::webhooks/batch-key (webhooks/key-fn ::rpc/profile-id :id)
 
    ::sm/params schema:update-file-v2
-   ::sm/result schema:update-file-result
+   ::sm/result schema:update-file-v2-result
    ::doc/module :files
    ::doc/added "2.21"
    ::db/transaction true}
@@ -403,6 +415,27 @@
                       :storage-object-id nil
                       :data (encode-revision redo-changes undo-changes)}))
 
+(defn- save-revisions
+  "Builds the rows in logical revision order. The edit owns its undo and
+  audit id. The repair owns only forward changes and uses the system session."
+  [file-change-id session-id revn redo-changes commits rejected repair]
+  (let [;; Rejection describes a suffix by commit position.
+        commits (cond-> commits
+                  rejected (subvec 0 (- (count commits) (count (:commit-ids rejected)))))
+        edit    {:id file-change-id
+                 :session-id session-id
+                 :redo-changes redo-changes
+                 :undo-changes (into [] (mapcat :undo-changes) (some-> commits rseq))}]
+    (if repair
+      (let [fix {:id (uuid/next)
+                 :session-id repair-session-id
+                 :redo-changes (:changes repair)
+                 :undo-changes []}]
+        (if (:after-edit repair)
+          [(assoc edit :revn (inc revn)) (assoc fix :revn (+ revn 2))]
+          [(assoc fix :revn (inc revn)) (assoc edit :revn (+ revn 2))]))
+      [(assoc edit :revn (inc revn))])))
+
 (defn- update-file*
   "Internal function, part of the update-file process, that encapsulates
   the changes application offload to a separated thread and emit all
@@ -413,7 +446,7 @@
   Only intended for internal use on this module."
   [{:keys [::db/conn ::timestamp] :as cfg}
    {:keys [profile-id file team features redo-changes commits session-id
-           skip-validate] :as params}]
+           repair-in-response skip-validate] :as params}]
 
   (fdata/with-tracked-pointers cfg (:id file)
 
@@ -429,15 +462,15 @@
           file
           (binding [cfeat/*current*  features
                     cfeat/*previous* (:features file)]
-            (update-file-data! cfg file
+            (update-file-data! (assoc cfg ::repair-in-response repair-in-response) file
                                process-changes-and-validate
                                redo-changes commits skip-validate))
 
           ;; Only the accepted changes are stored and broadcast
-          redo-changes (::redo-changes file)
-          rejected     (::rejected file)
-          params       (assoc params :redo-changes redo-changes)
-          file         (dissoc file ::redo-changes ::rejected)
+          redo-changes   (::redo-changes file)
+          rejected       (::rejected file)
+          media-relinked (::media-relinked file)
+          file           (dissoc file ::redo-changes ::rejected ::media-relinked)
 
           ;; A request whose first commit is rejected leaves the file as is
           saved?   (or (nil? rejected) (seq redo-changes))
@@ -455,17 +488,23 @@
           repair
           (::repair file)
 
-          snapshot-deleted-at
-          (ct/plus timestamp (ldel/get-deletion-delay team))
+          revisions
+          (when saved?
+            (save-revisions file-change-id session-id revn redo-changes commits rejected repair))
 
-          change-created-at
-          (cond-> timestamp
-            repair
-            (ct/plus (ct/duration {:millis 1})))]
+          response-repair
+          (when (:after-edit repair)
+            (let [{:keys [id revn redo-changes]} (peek revisions)]
+              {:id id :revn revn :changes redo-changes}))
+
+          snapshot-deleted-at
+          (ct/plus timestamp (ldel/get-deletion-delay team))]
 
       (if repair
         (let [snapshot-file (or snapshot
-                                (fdata/realize cfg (:original repair)))]
+                                (if (:after-edit repair)
+                                  (:original repair)
+                                  (fdata/realize cfg (:original repair))))]
           (fsnap/create! cfg snapshot-file
                          {:label (str "internal/repair/" revn)
                           :created-by "system"
@@ -482,19 +521,6 @@
 
       (when saved?
         (when repair
-          ;; The repair computes only the forward changes; its inverse is the
-          ;; internal snapshot, not a list of changes.
-          (insert-revision! cfg
-                            {:id (uuid/next)
-                             :session-id repair-session-id
-                             :profile-id profile-id
-                             :created-at timestamp
-                             :deleted-at deleted-at
-                             :file-id (:id file)
-                             :revn (:revn repair)
-                             :version (:version file)
-                             :redo-changes (:changes repair)
-                             :undo-changes []})
           (l/wrn :hint "file auto-repaired"
                  :file-id (str (:id file))
                  :error-codes (error-codes (:errors repair))
@@ -502,43 +528,52 @@
                  :change-count (count (:changes repair)))
           (record-repair-outcome cfg :repaired))
 
-        ;; Insert change (xlog) with deleted_at in a future data for
-        ;; make them automatically eleggible for GC once they expires
-        ;;
-        ;; The revision carries only the delta of the save: the features of the
-        ;; file are not repeated here (nobody reads them from a revision, and
-        ;; they are duplicated on every save). The payload with the forward
-        ;; changes and their inverse lives in `file_data` next to the row.
-        (let [;; The rejection describes a suffix, so keep the prefix by
-              ;; position. Undo it newest commit first, without changing
-              ;; the order within each commit.
-              accepted-commits (cond-> commits
-                                 rejected (subvec 0 (- (count commits)
-                                                       (count (:commit-ids rejected)))))
-              undo-changes     (into [] (mapcat :undo-changes) (some-> accepted-commits rseq))]
+        (doseq [[i row] (map-indexed vector revisions)]
           (insert-revision! cfg
-                            {:id file-change-id
-                             :session-id session-id
-                             :profile-id profile-id
-                             :created-at change-created-at
-                             :deleted-at deleted-at
-                             :file-id (:id file)
-                             :revn (:revn file)
-                             :version (:version file)
-                             :redo-changes redo-changes
-                             :undo-changes undo-changes}))
+                            (assoc row
+                                   :profile-id profile-id
+                                   ;; Preserve the order within this pair in the
+                                   ;; legacy timestamp-ordered lagged query.
+                                   :created-at (if (zero? i)
+                                                 timestamp
+                                                 (ct/plus timestamp (ct/duration {:millis i})))
+                                   :deleted-at deleted-at
+                                   :file-id (:id file)
+                                   :version (:version file))))
 
         (persist-file! cfg (dissoc file ::repair))
 
         (when (contains? cf/flags :redis-cache)
           (invalidate-caches! cfg file))
 
-        ;; Send asynchronous notifications
-        (when repair
-          (send-repair-notifications cfg params file repair))
-        (send-notifications! cfg params file))
+        ;; Peers must only see committed writes, even if audit or the
+        ;; response fails after the transaction has committed.
+        (db/after-commit
+         (fn []
+           (if response-repair
+             (send-notifications cfg params file
+                                 {:session-id session-id
+                                  :revn (:revn file)
+                                  :changes (into redo-changes (:changes response-repair))
+                                  :revision-ids (mapv :id revisions)
+                                  :repair-base-revn revn
+                                  :repaired true})
+             (doseq [{:keys [id session-id revn redo-changes]} revisions]
+               (send-notifications cfg params file
+                                   (cond-> {:session-id session-id :revn revn :changes redo-changes}
+                                     (not= file-change-id id) (assoc :repaired true)
+                                     repair-in-response (assoc :revision-ids [id]))))))))
 
       (with-meta (cond-> {:revn revn :lagged (get-lagged-changes conn params)}
+                   (and repair-in-response saved?)
+                   (assoc :saved-revn (:revn file))
+
+                   media-relinked
+                   (assoc :media-relinked true)
+
+                   response-repair
+                   (assoc :repair response-repair)
+
                    (some? rejected)
                    (assoc :rejected rejected))
         {::audit/replace-props
@@ -666,7 +701,7 @@
           need-migration?
           (fmg/migrate-file libs))]
 
-    (apply update-fn cfg file args)))
+    (apply update-fn (cond-> cfg need-migration? (assoc ::file-migrated true)) file args)))
 
 (defn- soft-validate-file-schema!
   [file changes]
@@ -761,17 +796,21 @@
       "stack-overflow" (throw (StackOverflowError. message))
       (ex/raise :type :validation :code :unknown-debug-fault :hint fault))))
 
-(defn- apply-changes
-  "Applies and validates `changes`. With the `debug-save-faults` flag, a
-  debug marker in them makes this fail with the error it names."
-  [cfg file libs changes skip-validate]
+(defn- apply-redo-changes
+  "Applies the edit. With the `debug-save-faults` flag, a debug marker
+  in the changes makes this fail with the error it names."
+  [cfg file changes]
   (when (contains? cf/flags :debug-save-faults)
     (some-> (get-debug-fault changes) (raise-debug-fault)))
-  (let [file (with-validation-timing cfg :process-changes-ms "process-changes"
-               (update file :data (fn [data]
-                                    (-> data
-                                        (cpc/process-changes changes)
-                                        (d/without-nils)))))]
+  (with-validation-timing cfg :process-changes-ms "process-changes"
+    (update file :data (fn [data]
+                         (-> data
+                             (cpc/process-changes changes)
+                             (d/without-nils))))))
+
+(defn- apply-changes
+  [cfg file libs changes skip-validate]
+  (let [file (apply-redo-changes cfg file changes)]
     (validate-file cfg file libs changes skip-validate)
     file))
 
@@ -790,8 +829,11 @@
           (or (instance? java.sql.SQLException cause)
               (instance? java.io.IOException cause)
               (instance? InterruptedException cause)
-              ;; A file fragment that cannot be loaded
-              (= :not-found (:type (ex-data cause)))))
+              ;; A file fragment that cannot be loaded, or an application
+              ;; interrupt (including exceptions that wrap these failures).
+              (contains? #{:not-found :interrupt} (:type (ex-data cause)))
+              (contains? #{:fragment-not-found :missing-storage-object}
+                         (:code (ex-data cause)))))
         (take-while some? (iterate ex-cause cause))))
 
 (defn- change-failure?
@@ -901,96 +943,167 @@
             (assoc (:file accepted (assoc file ::redo-changes []))
                    ::rejected (rejection rejected cause damaged))))))))
 
-(defn- fail-repair
-  [cfg file errors cause]
-  (l/wrn :hint "file auto-repair did not recover the file"
-         :file-id (str (:id file))
-         :error-codes (error-codes errors)
-         :error-count (count errors))
-  (record-repair-outcome cfg :unrepaired)
-  (throw cause))
+(defn- run-repair
+  [file libs changes errors]
+  (cfr/repair-file-until-valid
+   file libs
+   (fn [file applied]
+     (fdata/with-untracked
+       (val/validate-file-affected file libs (into applied changes))))
+   :initial-errors errors))
+
+(defn- repair-control
+  "The legacy R → U control. Only a change failure can rule it out."
+  [cfg original libs changes]
+  (try
+    (when-let [errors (fdata/with-untracked
+                        (val/validate-file-affected original libs changes))]
+      (let [result (with-validation-timing cfg :repair-ms "repair"
+                     (run-repair original libs changes errors))
+            fixes  (:changes result)]
+        (if-let [remaining (seq (:errors result))]
+          (do
+            (l/wrn :hint "file auto-repair did not recover the file"
+                   :file-id (str (:id original))
+                   :error-codes (error-codes remaining)
+                   :error-count (count remaining))
+            (record-repair-outcome cfg :unrepaired)
+            nil)
+          (do
+            ;; The control retains the same media refs as a legacy save.
+            (reset! cpc/*state* {})
+            (let [file (with-validation-timing cfg :reprocess-changes-ms "reprocess-changes"
+                         (update (:file result) :data
+                                 #(d/without-nils (cpc/process-changes % changes))))]
+              (fdata/with-untracked
+                (val/validate-file-affected! file libs (into fixes changes))
+                (when (contains? cf/flags :file-schema-validation)
+                  (with-validation-timing cfg :validate-schema-ms "validate-schema"
+                    (val/validate-file-schema! file))))
+              {:file file :changes fixes :errors errors})))))
+    (catch Throwable cause
+      (when-not (change-failure? cause)
+        (throw cause))
+      (l/wrn :hint "file auto-repair failed"
+             :file-id (str (:id original))
+             :cause cause)
+      (record-repair-outcome cfg :unrepaired)
+      nil)))
+
+(defn- error-occurrence
+  [{:keys [code shape] :as error}]
+  ;; Some validators put the broken reference in :args or the hint,
+  ;; others only in the shape. Unreported references (for example, the
+  ;; duplicate slot or the component's bad main-instance id) are ambiguous.
+  (when (contains? #{:frame-not-found :parent-not-found :child-not-found
+                     :child-not-in-parent :invalid-parent :component-not-found}
+                   code)
+    (assoc error :shape
+           (select-keys shape [:type :parent-id :frame-id :component-id :component-file
+                               :main-instance :component-root :shape-ref]))))
+
+(defn- known-damage?
+  [before after]
+  (let [before (frequencies (keep error-occurrence before))]
+    (and (seq after)
+         (every? (fn [[occurrence n]] (and occurrence (<= n (get before occurrence 0))))
+                 (frequencies (map error-occurrence after))))))
+
+(defn- same-entries?
+  [a b]
+  (or (identical? a b)
+      (and (= (count a) (count b))
+           (every? (fn [[id a-entry]]
+                     (when-let [entry (find b id)]
+                       (let [b-entry (val entry)]
+                         (or (identical? a-entry b-entry)
+                             (= (fdata/realize-entry a-entry)
+                                (fdata/realize-entry b-entry))))))
+                   a))))
+
+(defn- same-data?
+  "Compare values rather than PointerMap identities. Every replay starts
+  from the same base; its shared, untouched pages need not be loaded."
+  [a b]
+  (and (same-entries? (:pages-index a) (:pages-index b))
+       (same-entries? (dissoc a :pages-index) (dissoc b :pages-index))))
+
+(defn- repair-after-edit
+  [original edited libs changes errors control]
+  (try
+    (let [{:keys [file] fixes :changes remaining :errors} (run-repair edited libs changes errors)
+          data (:data file)]
+      (when (and (seq fixes)
+                 (empty? remaining)
+                 ;; Validity alone cannot show that the edit had its intended
+                 ;; effect on damaged data. Require the validated control's
+                 ;; result, which also establishes the full file schema.
+                 (same-data? data (-> control :file :data))
+                 ;; The repair iterates. The revision collapses those passes
+                 ;; to one call, and the peer event collapses the edit too.
+                 ;; Each boundary can change the second pass for :touched.
+                 (binding [pmap/*tracked* nil
+                           cpc/*state* nil]
+                   (and (same-data? data (cpc/process-changes (:data edited) fixes))
+                        (same-data? data (cpc/process-changes (:data original) (into changes fixes))))))
+        {:file file :changes fixes :errors (:errors control) :after-edit true}))
+    (catch Throwable cause
+      (when-not (change-failure? cause)
+        (throw cause))
+      nil)))
 
 (defn- repair-preexisting-damage
-  "Repair damage that was already in `original` on the pages/components
-  the client's `changes` touch, then re-apply those changes. Starts from
-  the `tracked` pointers and leaves the media refs of the changes in
-  `cpc/*state*`. Throws `cause` when the client's changes are at fault
-  or the repair cannot fix the file."
-  [cfg original libs changes tracked cause]
-  (let [libs (or libs {})]
-    (try
-      (let [pre-errors
-            (binding [pmap/*tracked* nil]
-              (val/validate-file-affected original libs changes))]
-
-        (when (empty? pre-errors)
-          (throw cause))
-
-        (reset! pmap/*tracked* tracked)
-
-        (let [result
-              (with-validation-timing cfg :repair-ms "repair"
-                (cfr/repair-file-until-valid
-                 original libs
-                 (fn [file applied]
-                   (binding [pmap/*tracked* nil]
-                     (val/validate-file-affected file libs (into applied changes))))
-                 :initial-errors pre-errors))
-
-              repair-changes (:changes result)]
-
-          (when (seq (:errors result))
-            (fail-repair cfg original (:errors result) cause))
-
-          (reset! cpc/*state* {})
-
-          (let [repaired (with-validation-timing cfg :reprocess-changes-ms "reprocess-changes"
-                           (update (:file result) :data
-                                   (fn [data]
-                                     (-> data
-                                         (cpc/process-changes changes)
-                                         (d/without-nils)))))
-                scope    (into repair-changes changes)]
-
-            (binding [pmap/*tracked* nil]
-              (val/validate-file-affected! repaired libs scope)
-
-              (when (contains? cf/flags :file-schema-validation)
-                (with-validation-timing cfg :validate-schema-ms "validate-schema"
-                  (val/validate-file-schema! repaired))))
-
-            (-> repaired
-                (assoc :revn (+ (:revn original) 2))
-                (assoc ::redo-changes changes)
-                (assoc ::repair {:changes repair-changes
-                                 :errors  pre-errors
-                                 :revn    (inc (:revn original))
-                                 :original (dissoc original ::snapshot)})))))
-      (catch Throwable inner
-        (if (identical? inner cause)
-          (throw cause)
-          (do
-            (l/wrn :hint "file auto-repair failed"
-                   :file-id (str (:id original))
-                   :cause inner)
-            (record-repair-outcome cfg :unrepaired)
-            (throw cause)))))))
+  [cfg original edited libs changes tracked cause]
+  (let [libs           (or libs {})
+        edited-tracked @pmap/*tracked*
+        edited-refs    @cpc/*state*
+        errors         (:details (ex-data cause))]
+    (reset! pmap/*tracked* tracked)
+    (reset! cpc/*state* {})
+    (when-let [control (repair-control cfg original libs changes)]
+      (let [control-tracked @pmap/*tracked*
+            control-refs    @cpc/*state*
+            candidate       (when (and (::repair-in-response cfg) edited
+                                       ;; The snapshot can precede a migration,
+                                       ;; which is not a revision delta.
+                                       (not (::file-migrated cfg))
+                                       ;; Relinking media can rewrite the persisted
+                                       ;; file after applying its deltas. Keep the
+                                       ;; legacy order when it may be needed.
+                                       (empty? (:media-refs control-refs))
+                                       (empty? (:media-refs edited-refs))
+                                       (or (known-damage? (:errors control) errors)
+                                           ;; A no-op cannot have introduced new
+                                           ;; damage, even when a validator omits
+                                           ;; the exact offending reference.
+                                           (same-data? (:data original) (:data edited))))
+                              (reset! pmap/*tracked* edited-tracked)
+                              (reset! cpc/*state* edited-refs)
+                              (let [candidate (repair-after-edit original edited libs changes errors control)]
+                                (when (empty? (:media-refs @cpc/*state*))
+                                  candidate)))
+            chosen          (or candidate control)]
+        (when-not candidate
+          (reset! pmap/*tracked* control-tracked)
+          (reset! cpc/*state* control-refs))
+        (-> (:file chosen)
+            (assoc :revn (+ (:revn original) 2))
+            (assoc ::redo-changes changes)
+            (assoc ::repair (assoc (dissoc chosen :file)
+                                   :original (dissoc original ::snapshot))))))))
 
 (defn- repair-or-reject
   "Handles the failure `cause` of applying all `changes` at once. Repairs
   damage `original` already had when `cause` is a referential integrity
   error. If that does not save every change and there are `commits`,
   keeps the longest prefix of them that validates."
-  [cfg original file libs changes commits skip-validate tracked cause]
+  [cfg original file edited libs changes commits skip-validate tracked cause]
   (let [repaired
-        (when (and (referential-integrity-error? cause)
+        (when (and (change-failure? cause)
+                   (referential-integrity-error? cause)
                    (contains? cf/flags :file-validation)
                    (not skip-validate))
-          (try
-            (repair-preexisting-damage cfg original libs changes tracked cause)
-            (catch Throwable inner
-              (when-not (identical? inner cause)
-                (throw inner)))))]
+          (repair-preexisting-damage cfg original edited libs changes tracked cause))]
     (cond
       (some? repaired)
       repaired
@@ -1010,6 +1123,40 @@
 
       :else
       (throw cause))))
+
+(defn- get-media-relink-changes
+  "Describe the file rewrite on just the page shapes visited by relinking."
+  [before after media-refs]
+  (letfn [(shape-change [[page-id id]]
+            (let [path     [:data :pages-index page-id :objects id]
+                  shape    (get-in before path)
+                  relinked (get-in after path)]
+              (when (not= shape relinked)
+                (let [ops (reduce-kv (fn [ops attr value]
+                                       (cond-> ops
+                                         (not= value (get shape attr))
+                                         (conj {:type :set :attr attr :val value :ignore-touched true})))
+                                     [] relinked)]
+                  ;; ignore-touched protects copy overrides but does not
+                  ;; suppress the second pass that marks a main modified.
+                  ;; A final no-op setter clears the flag for this change.
+                  {:type :mod-obj :page-id page-id :id id
+                   :operations (conj ops (peek ops))}))))]
+    (into [] (comp (filter :page-id)
+                   (map (juxt :page-id :shape-id))
+                   (distinct)
+                   (keep shape-change))
+          media-refs)))
+
+(defn- relink-media
+  [cfg file media-refs]
+  (let [relinked (bfc/update-media-references! cfg file media-refs)
+        repair   (::repair file)
+        changes  (when (and (::repair-in-response cfg) repair (not (:after-edit repair)))
+                   (get-media-relink-changes file relinked media-refs))]
+    (cond-> relinked
+      (seq changes) (-> (update ::redo-changes into changes)
+                        (assoc ::media-relinked true)))))
 
 (defn- process-changes-and-validate
   "Applies and validates all `changes` at once. If that fails, repairs
@@ -1055,15 +1202,23 @@
           ;; shared by every retry
           (when (and (next commits) schema-check?)
             (decode-objects file changes))
-          (try
-            (-> (apply-changes cfg file libs changes skip-validate)
-                (assoc ::redo-changes changes))
-            (catch Throwable cause
-              (repair-or-reject cfg original file libs changes commits
-                                skip-validate tracked cause))))]
+          (let [edited (try
+                         (apply-redo-changes cfg file changes)
+                         (catch Throwable cause cause))]
+            (if (instance? Throwable edited)
+              (repair-or-reject cfg original file nil libs changes commits
+                                skip-validate tracked edited)
+              (let [failure (try
+                              (validate-file cfg edited libs changes skip-validate)
+                              nil
+                              (catch Throwable cause cause))]
+                (if failure
+                  (repair-or-reject cfg original file edited libs changes commits
+                                    skip-validate tracked failure)
+                  (assoc edited ::redo-changes changes))))))]
 
     (if-let [media-refs (-> @state :media-refs not-empty)]
-      (bfc/update-media-references! cfg file media-refs)
+      (relink-media cfg file media-refs)
       file)))
 
 (defn- take-snapshot?
@@ -1094,56 +1249,27 @@
        (mapv (fn [row]
                (update row :changes blob/decode)))))
 
-(defn- send-repair-notifications
-  [cfg {:keys [team session-id] :as params} file repair]
-  (let [changes  (:changes repair)
-        lchanges (filter library-change? changes)
-        msgbus   (::mbus/msgbus cfg)]
+(defn- send-notifications
+  [cfg {:keys [team session-id profile-id repair-in-response]} file
+   {:keys [changes revn repaired repair-base-revn] :as event}]
+  (let [lchanges (when (:is-shared file)
+                   (seq (filter library-change? changes)))
+        msgbus   (::mbus/msgbus cfg)
+        common   {:profile-id profile-id :file-id (:id file) :revn revn}]
 
     (mbus/pub! msgbus
                :topic (:id file)
-               :message {:type :file-change
-                         :profile-id (:profile-id params)
-                         :file-id (:id file)
-                         :session-id repair-session-id
-                         :revn (:revn repair)
-                         :vern (:vern file)
-                         :changes changes
-                         :repaired true})
+               :message (cond-> (merge common event {:type :file-change :vern (:vern file)})
+                          lchanges (assoc :library-change true)))
 
-    (when (and (:is-shared file) (seq lchanges))
+    (when lchanges
       (mbus/pub! msgbus
                  :topic (:id team)
-                 :message {:type :library-change
-                           :profile-id (:profile-id params)
-                           :file-id (:id file)
-                           :session-id session-id
-                           :revn (:revn repair)
-                           :modified-at (ct/now)
-                           :changes lchanges}))))
-
-(defn- send-notifications!
-  [cfg {:keys [team redo-changes session-id] :as params} file]
-  (let [lchanges (filter library-change? redo-changes)
-        msgbus   (::mbus/msgbus cfg)]
-
-    (mbus/pub! msgbus
-               :topic (:id file)
-               :message {:type :file-change
-                         :profile-id (:profile-id params)
-                         :file-id (:id file)
-                         :session-id (:session-id params)
-                         :revn (:revn file)
-                         :vern (:vern file)
-                         :changes redo-changes})
-
-    (when (and (:is-shared file) (seq lchanges))
-      (mbus/pub! msgbus
-                 :topic (:id team)
-                 :message {:type :library-change
-                           :profile-id (:profile-id params)
-                           :file-id (:id file)
-                           :session-id session-id
-                           :revn (:revn file)
-                           :modified-at (ct/now)
-                           :changes lchanges}))))
+                 :message (cond-> (assoc common
+                                         :type :library-change
+                                         :session-id session-id
+                                         :modified-at (ct/now)
+                                         :changes lchanges)
+                            repair-in-response (assoc :vern (:vern file))
+                            (and repair-in-response repaired) (assoc :repaired true)
+                            (some? repair-base-revn) (assoc :repair-base-revn repair-base-revn))))))

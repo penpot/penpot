@@ -11,7 +11,9 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.event :as-alias ev]
+   [app.main.data.persistence :as dps]
    [app.main.repo :as repo]
+   [app.main.store :as st]
    [app.util.globals :as globals]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
@@ -19,7 +21,9 @@
    [debug :as dbg]
    [frontend-tests.helpers.async :as hva]
    [frontend-tests.helpers.http :as http]
-   [frontend-tests.helpers.mock :as mock]))
+   [frontend-tests.helpers.mock :as mock]
+   [frontend-tests.helpers.persistence :as thp]
+   [potok.v2.core :as ptk]))
 
 (defn- ^:async capture-request
   [command params]
@@ -78,7 +82,7 @@
                  (t/is (not (.has headers "x-penpot-origin")))))))))
 
 (defn- ^:async with-captured-requests
-  [run]
+  [run & [respond]]
   (await
    (mock/with-mocks*
      {cf/public-uri (u/uri "https://example.test/")}
@@ -93,7 +97,10 @@
                                 :method (.-method opts)
                                 :content-type (aget (.-headers opts) "content-type")
                                 :body (when (some? body) (transit/decode-str body))})
-                        (js/Promise.resolve (http/make-transit-response {:revn 4 :lagged []}))))
+                        (js/Promise.resolve
+                         (if respond
+                           (respond (count @requests))
+                           (http/make-transit-response {:revn 4 :lagged []})))))
            original (http/install-fetch-mock! fetch)]
        (try
          (await (run requests))
@@ -127,6 +134,44 @@
                     :content-type "application/transit+json"
                     :body params}]
                   @requests)))))))
+
+(t/deftest ^:async a-save-and-its-retry-post-the-same-opt-in-transit-body
+  (await
+   (with-captured-requests
+     (^:async fn [requests]
+       (let [{:keys [id revn session-id commits] :as params} (make-save-params)
+             edits    (mapv #(thp/local-commit id %) commits)
+             payload  (assoc params :repair-in-response true
+                             :commits (mapv (fn [commit edit] (assoc commit :commit-id (:id @edit)))
+                                            commits edits))
+             request  {:path "/api/main/methods/update-file-v2"
+                       :id (str id)
+                       :method "POST"
+                       :content-type "application/transit+json"
+                       :body payload}
+             store    (ptk/store {:state {:current-file-id id
+                                          :session-id session-id
+                                          :permissions {:can-edit true}
+                                          :files {id {:id id :revn revn :vern 0}}}
+                                  :on-error #(t/is false (str %))})]
+         (await
+          (mock/with-mocks*
+            {rx/timer         (mock/stub (fn [ms] (if (= 2000 ms) (rx/of :tick) (rx/subject))))
+             st/ongoing-tasks (atom #{})}
+            (try
+              (ptk/emit! store (dps/initialize-persistence))
+              (apply ptk/emit! store (conj edits ::dps/force-persist))
+              (await (hva/wait-for-store store #(and (= :saved (get-in @store [:persistence :status]))
+                                                     (= 2 (count @requests)))
+                                         "the opt-in save and its retry settle"))
+              (t/is (= [request request] @requests))
+              (finally
+                (rx/dispose! store)))))))
+     (fn [n]
+       (if (= 1 n)
+         (js/Response. "Gateway timeout" #js {:status 504 :headers #js {"content-type" "text/html"}})
+         ;; A response without the new keys still follows the legacy path.
+         (http/make-transit-response {:revn 4 :lagged []}))))))
 
 (t/deftest ^:async save-fault-marks-only-the-selected-redo-and-unhooks-after-use
   (await
