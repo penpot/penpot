@@ -192,20 +192,12 @@
         (mf/use-fn
          (mf/deps token-colors groups)
          (fn [token-name]
-           (let [prev-colors (mf/ref-val prev-colors-ref)
-                 token-color (some #(when (= (:token-name %) token-name) %) token-colors)
-
-                 [color-operations _] (resolve-color-operations
-                                       groups token-color prev-colors false)]
+           (let [token-color     (some #(when (= (:token-name %) token-name) %) token-colors)
+                 color-operations (get groups token-color)]
              (doseq [op color-operations]
                (let [attr (if (= (:prop op) :stroke)
-                            #{:stroke-color}
-                            #{:fill})
-                     color (-> token-color
-                               (dissoc :token-name :has-token-applied)
-                               (d/without-nils))]
-                 (mf/set-ref-val! prev-colors-ref
-                                  (conj prev-colors color))
+                             #{:stroke-color}
+                             #{:fill})]
                  (st/emit! (dwta/unapply-token {:token-name token-name
                                                 :attributes attr
                                                 :shape-ids [(:shape-id op)]})))))))
