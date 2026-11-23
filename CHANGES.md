@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2.19.4
+
+### :bug: Bugs fixed
+
+- Fix importing large `.penpot` files in Chrome [#13165](https://github.com/penpot/penpot/issues/13165) (PR: [#13183](https://github.com/penpot/penpot/pull/13183))
+
 ## 2.19.3
 
 ### :bug: Bugs fixed
