@@ -1,6 +1,6 @@
 # Production infrastructure
 
-- Start at `app.config` for backend service settings and `docker/images/` for deployment defaults. Object storage lifecycle and bucket rules: `mem:backend/storage`. Local service isolation: `mem:devenv/core`. Metrics and read-replica limits: `mem:prod-infra/grafana`.
+- Start at `app.config` for backend service settings and `docker/images/` for deployment defaults. Object storage lifecycle and bucket rules: `mem:backend/storage`. Local service isolation: `mem:devenv/core`.
 
 ## Worker topology and draining
 
