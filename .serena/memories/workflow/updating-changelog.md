@@ -158,23 +158,23 @@ Generated from the advisories that declare the version in `patched_versions`; ne
 ## 8. Flow
 
 1. **Confirm the version** (a semver string such as `2.19.0`) with the user when it is not obvious.
-2. **Fetch the milestone issues**: `python3 scripts/gh.py issues "<VERSION>" --exclude "no changelog"` (closed by default; add `--state all` only to inspect open issues). `gh.py` already drops `Task` and `Rejected`; pass `--include-tasks` / `--include-rejected` only to inspect them. To find what is missing from an existing section, add `--compare CHANGES.md`.
-3. **Keep out bugs that never reached production**: `python3 scripts/changelog.py dev-only-bugs "<VERSION>"` lists them; add `--apply` to label the sure ones `no changelog` on GitHub, then re-fetch step 2. The label puts the decision on the issue, so it survives a regeneration.
+2. **Collect the release inputs**: `python3 scripts/changelog.py collect "<VERSION>" > "$snapshot"`. Use a private temporary file because the JSON can contain unpublished advisories and PR text. It contains the milestone issues and PRs, batched related records, generated-section inputs, dev-only bug candidates and a comparison with the current changelog. Use `eligible_issues` for changelog candidates and `comparison` for pre-flight. Collection does not write to the changelog or GitHub.
+3. **Keep out bugs that never reached production**: review `dev_only_bugs` in the snapshot. If `auto` has entries, run `python3 scripts/changelog.py dev-only-bugs "<VERSION>" --snapshot "$snapshot" --apply` to label the sure ones `no changelog` on GitHub, then repeat step 2. The label puts the decision on the issue, so it survives a regeneration.
    - **Sure**: a bug whose parent issue is a `Feature` or `Enhancement` of the same milestone. `--apply` labels these.
    - **Candidates**: a bug whose parent is an epic of the same milestone, that carries the `regression` label, or whose "Affected versions" / "Environment" field names only hourly, develop, staging, PRE or the milestone version itself. `regression` also marks regressions users hit in production, and the field says where the bug was seen, not since when it exists, so never label these yourself: show them to the user, who labels the ones they confirm. The anomaly report lists them too (section 10).
-4. **Fetch PR details when needed**: `python3 scripts/gh.py prs <numbers...>` (also `--milestone`). Use it for the PR author, labels and merge state.
+4. **Resolve PR links** using `prs` and `related_prs` in the snapshot. Look up a PR separately only if you discover a candidate not already in the snapshot.
 5. **Categorize** by Issue Type and the two labels (section 2), and **build the descriptions** (section 4).
-6. **Verify PR merge status** before writing: `python3 scripts/changelog.py check-merged <PR numbers...>`. Only merged PRs go in the changelog; if a closing PR was closed unmerged, look for the PR that superseded it.
+6. **Verify PR merge status** before writing: only include PRs with state `MERGED` in the snapshot or verified by `check-merged` if looked up separately. If a closing PR was closed unmerged, look for the PR that superseded it.
 7. **Reconcile the existing text** (section 9).
-8. **Generate `:boom:`**: `python3 scripts/changelog.py boom "<VERSION>"` prints the section; add `--write` to replace it in `CHANGES.md`. The write replaces only that subsection, inserts it after the version header when missing, keeps the heading when there are no entries, and is idempotent.
+8. **Generate `:boom:`**: `python3 scripts/changelog.py boom "<VERSION>" --snapshot "$snapshot"` prints the section; add `--write` to update just that subsection in `CHANGES.md`. If there are no entries, `--write` removes the subsection or leaves it absent.
 9. **Generate `:rocket:`** from the `release highlight` label (section 6).
-10. **Generate `:lock:`**: `python3 scripts/changelog.py security "<VERSION>"` prints the section; add `--write` to replace it in `CHANGES.md`. The contract lives in section 7.
-11. **Cross-check PRs**: `python3 scripts/changelog.py cross-ref "<VERSION>"`. It lists merged milestone PRs missing from the section and warns about closed (unmerged) PRs. PRs linked from `:lock:` count as referenced; an advisory with no PR is invisible here by design.
-12. **Generate the anomaly report**: `python3 scripts/changelog.py report "<VERSION>"`. It overwrites `CHANGES-ISSUES.md` with the current state (section 10).
+10. **Generate `:lock:`**: `python3 scripts/changelog.py security "<VERSION>" --snapshot "$snapshot"` prints the section; add `--write` to replace it in `CHANGES.md`. The contract lives in section 7.
+11. **Cross-check PRs**: `python3 scripts/changelog.py cross-ref "<VERSION>" --snapshot "$snapshot"`. It compares the snapshot against the updated changelog, lists missing merged PRs and warns about closed (unmerged) PRs. PRs linked from `:lock:` count as referenced; an advisory with no PR is invisible here by design.
+12. **Generate the anomaly report**: `python3 scripts/changelog.py report "<VERSION>" --snapshot "$snapshot"`. It reads the updated changelog and overwrites `CHANGES-ISSUES.md` (section 10). If you need the report to resolve a new reference not known to the snapshot, collect again first.
 
 ## 9. Pre-flight: reconcile before writing
 
-Re-fetch the milestone (do not trust cached data) and fix these in `CHANGES.md` before adding the new section:
+Start from a fresh `collect` snapshot. Refresh it if GitHub changes during review (labels, notes, advisories, or PRs). Fix these in `CHANGES.md` before adding the new section:
 
 1. **Duplicate across versions** → remove it from the current section; the earlier version wins for backports.
 2. **Stale milestone assignment** (the issue moved out of this milestone) → remove the entry.
@@ -214,6 +214,6 @@ Anything else is a rule violation, not a report item: fix it in the pre-flight a
 ## 12. Where the code is
 
 - `scripts/gh.py`: `issues`, `issue`, `comments`, `prs`, `link-issue`, `advisories` (with `--patched-version`). Details: `mem:scripts/gh`.
-- `scripts/changelog.py`: `check-merged`, `boom`, `security`, `cross-ref`, `dev-only-bugs`, `report`. Details: `mem:scripts/changelog`.
+- `scripts/changelog.py`: `collect`, `check-merged`, `boom`, `security`, `cross-ref`, `dev-only-bugs`, `report`. Details: `mem:scripts/changelog`.
 - Tests: `scripts/test_gh.py`, `scripts/test_changelog.py`.
 - The note contract for issue authors: `mem:workflow/creating-issues`, section **Breaking changes**.

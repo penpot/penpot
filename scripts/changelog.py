@@ -6,6 +6,7 @@ Uses ``scripts/gh.py`` (via subprocess) and the local ``CHANGES.md`` so the
 flow memory (`mem:workflow/updating-changelog`) stays free of inline programs.
 
 Subcommands:
+  collect       Collect the release inputs and changelog comparison as JSON
   check-merged  Verify that every given PR is merged (warns otherwise)
   boom          Generate the :boom: section from `breaking change` issues
   security      Generate the :lock: section from advisories fixed in a version
@@ -14,6 +15,7 @@ Subcommands:
   report        Generate the anomaly report (CHANGES-ISSUES.md)
 
 Usage:
+  python3 scripts/changelog.py collect "2.19.0"
   python3 scripts/changelog.py check-merged 9179 9204 9311
   cat prs.txt | python3 scripts/changelog.py check-merged --stdin
   python3 scripts/changelog.py boom "2.19.0"
@@ -109,6 +111,19 @@ def fetch_milestone_prs(milestone: str, state: str) -> list[dict]:
     """Fetch all PRs in a milestone via ``gh.py prs --milestone``."""
     stdout = run_gh_py("prs", "--milestone", milestone, "--state", state)
     return json.loads(stdout)
+
+
+def load_snapshot(args: argparse.Namespace) -> dict | None:
+    path = getattr(args, "snapshot", None)
+    if path is None:
+        return None
+    try:
+        snapshot = json.loads(Path(path).read_text(encoding="utf-8"))
+        if snapshot["milestone"] != args.milestone:
+            raise ValueError(f"expected milestone {args.milestone}")
+    except (OSError, ValueError, KeyError, TypeError) as err:
+        sys.exit(f"ERROR: invalid changelog snapshot {path}: {err}")
+    return snapshot
 
 
 def extract_version_section(content: str, milestone: str) -> str:
@@ -351,24 +366,30 @@ def fetch_breaking_notes(issues: list[dict]) -> dict[int, str]:
     return notes
 
 
-def cmd_boom(args: argparse.Namespace) -> None:
-    """Generate the ``:boom:`` section from ``breaking change`` issues."""
-    all_issues = json.loads(run_gh_py("issues", args.milestone, "--state", "all"))
-    labelled = sorted(
+def breaking_issues(issues: list[dict]) -> list[dict]:
+    return sorted(
         (
             issue
-            for issue in all_issues
-            if BREAKING_LABEL in issue.get("labels", [])
-            and not issue_excluded(issue)
+            for issue in issues
+            if BREAKING_LABEL in issue.get("labels", []) and not issue_excluded(issue)
         ),
         key=lambda issue: issue["number"],
     )
 
-    notes: dict[int, str] = {}
-    prs: dict[int, dict] = {}
-    if labelled:
+
+def cmd_boom(args: argparse.Namespace) -> None:
+    """Generate the ``:boom:`` section from ``breaking change`` issues."""
+    snapshot = load_snapshot(args)
+    if snapshot is None:
+        labelled = breaking_issues(
+            json.loads(run_gh_py("issues", args.milestone, "--state", "all"))
+        )
         notes = fetch_breaking_notes(labelled)
         prs = fetch_prs_by_issue(labelled)
+    else:
+        labelled = breaking_issues(snapshot["issues"])
+        notes = {int(n): note for n, note in snapshot["breaking_notes"].items()}
+        prs = {pr["number"]: pr for pr in snapshot["prs"] + snapshot["related_prs"]}
 
     entries: list[str] = []
     for issue in labelled:
@@ -462,8 +483,12 @@ def fetch_security_advisories(milestone: str) -> list[dict]:
 
 def fetch_security_prs(milestone: str) -> dict[str, list[int]]:
     """Map each GHSA id to the merged ``pr pt`` PRs in a milestone referencing it."""
+    return security_prs_by_advisory(fetch_milestone_prs(milestone, "all"))
+
+
+def security_prs_by_advisory(prs: list[dict]) -> dict[str, list[int]]:
     by_ghsa: dict[str, list[int]] = {}
-    for pr in fetch_milestone_prs(milestone, "all"):
+    for pr in prs:
         if pr.get("state") != "MERGED":
             continue
         if SECURITY_PR_LABEL not in pr.get("labels", []):
@@ -541,8 +566,13 @@ def replace_security_section(
 def cmd_security(args: argparse.Namespace) -> None:
     """Generate the ``:lock:`` section from advisories fixed in the version."""
     milestone = args.milestone
-    advisories = fetch_security_advisories(milestone)
-    prs_by_ghsa = fetch_security_prs(milestone)
+    snapshot = load_snapshot(args)
+    if snapshot is None:
+        advisories = fetch_security_advisories(milestone)
+        prs_by_ghsa = fetch_security_prs(milestone)
+    else:
+        advisories = snapshot["advisories"]
+        prs_by_ghsa = snapshot["security_prs"]
 
     matched = {
         advisory["ghsa_id"].upper()
@@ -606,7 +636,12 @@ def cmd_cross_ref(args: argparse.Namespace) -> None:
         sys.exit(1)
 
     changelog_refs = collect_changelog_prs(section)
-    milestone_prs = fetch_milestone_prs(args.milestone, "all")
+    snapshot = load_snapshot(args)
+    milestone_prs = (
+        fetch_milestone_prs(args.milestone, "all")
+        if snapshot is None
+        else snapshot["prs"]
+    )
 
     merged = {pr["number"] for pr in milestone_prs if pr.get("state") == "MERGED"}
     closed = [pr for pr in milestone_prs if pr.get("state") == "CLOSED"]
@@ -712,7 +747,14 @@ def fetch_milestone_bugs(milestone: str) -> list[dict]:
 
 def cmd_dev_only_bugs(args: argparse.Namespace) -> None:
     """List bugs that never reached production; --apply labels the sure ones."""
-    auto, suggested = find_dev_only_bugs(args.milestone, fetch_milestone_bugs(args.milestone))
+    snapshot = load_snapshot(args)
+    if snapshot is None:
+        auto, suggested = find_dev_only_bugs(
+            args.milestone, fetch_milestone_bugs(args.milestone)
+        )
+    else:
+        auto = snapshot["dev_only_bugs"]["auto"]
+        suggested = snapshot["dev_only_bugs"]["suggested"]
 
     print(f"Label `no changelog` ({len(auto)}):")
     for e in auto:
@@ -729,6 +771,94 @@ def cmd_dev_only_bugs(args: argparse.Namespace) -> None:
                 check=True, capture_output=True,
             )
         print(f"Labelled {len(auto)} issues `no changelog`", file=sys.stderr)
+
+
+def cmd_collect(args: argparse.Namespace) -> None:
+    """Collect release inputs without changing the changelog or GitHub."""
+    milestone = args.milestone
+    content = Path(args.changes).read_text(encoding="utf-8")
+    section = extract_version_section(content, milestone)
+    issue_refs = collect_changelog_issues(section)
+    pr_refs = collect_changelog_prs(section)
+
+    issues = json.loads(
+        run_gh_py(
+            "issues",
+            milestone,
+            "--state",
+            "all",
+            "--include-tasks",
+            "--include-rejected",
+        )
+    )
+    prs = fetch_milestone_prs(milestone, "all")
+    eligible = {issue["number"] for issue in issues if not issue_excluded(issue)}
+    issue_numbers = {issue["number"] for issue in issues}
+    pr_numbers = {pr["number"] for pr in prs}
+    bugs = {
+        issue["number"]
+        for issue in issues
+        if issue["number"] in eligible and issue.get("issue_type") == "Bug"
+    }
+    related_issue_numbers = (
+        issue_refs | {n for pr in prs for n in pr.get("closing_issues", [])}
+    ) - issue_numbers
+    detail_numbers = sorted(bugs | related_issue_numbers)
+    details = (
+        json.loads(run_gh_py("issue", *map(str, detail_numbers)))
+        if detail_numbers
+        else []
+    )
+    related_pr_numbers = (
+        pr_refs | {n for issue in issues for n in closing_pr_numbers(issue)}
+    ) - pr_numbers
+    related_prs = (
+        fetch_prs_by_numbers(sorted(related_pr_numbers)) if related_pr_numbers else []
+    )
+    auto, suggested = find_dev_only_bugs(
+        milestone, [issue for issue in details if issue["number"] in bugs]
+    )
+    notes = fetch_breaking_notes(breaking_issues(issues))
+    advisories = fetch_security_advisories(milestone)
+
+    other_versions: dict[int, list[str]] = {}
+    for version_section in re.split(r"(?m)(?=^## \d+\.\d+\.\d+)", content):
+        header = re.match(r"^## (\d+\.\d+\.\d+)\b", version_section)
+        if header is None or header[1] == milestone:
+            continue
+        for number in sorted(
+            collect_changelog_issues(version_section) & (eligible | issue_refs)
+        ):
+            other_versions.setdefault(number, []).append(header[1])
+
+    snapshot = {
+        "milestone": milestone,
+        "issues": issues,
+        "eligible_issues": sorted(eligible),
+        "prs": prs,
+        "related_issues": [
+            issue for issue in details if issue["number"] in related_issue_numbers
+        ],
+        "related_prs": related_prs,
+        "breaking_notes": notes,
+        "advisories": advisories,
+        "security_prs": security_prs_by_advisory(prs),
+        "dev_only_bugs": {"auto": auto, "suggested": suggested},
+        "comparison": {
+            "section_exists": version_section_bounds(content, milestone) is not None,
+            "issue_refs": sorted(issue_refs),
+            "pr_refs": sorted(pr_refs),
+            "missing_issues": sorted(eligible - issue_refs - other_versions.keys()),
+            "ineligible_references": sorted(issue_refs - eligible),
+            "issues_in_other_versions": other_versions,
+            "unlisted_merged_prs": sorted(
+                pr["number"]
+                for pr in prs
+                if pr.get("state") == "MERGED" and pr["number"] not in pr_refs
+            ),
+        },
+    }
+    print(json.dumps(snapshot, indent=2))
 
 
 # ─────────────────────────────────────────────
@@ -770,10 +900,14 @@ def cmd_report(args: argparse.Namespace) -> None:
     """Generate the changelog anomaly report and write it to a file."""
     milestone = args.milestone
 
-    all_issues = json.loads(run_gh_py("issues", milestone, "--state", "all"))
+    snapshot = load_snapshot(args)
+    if snapshot is None:
+        all_issues = json.loads(run_gh_py("issues", milestone, "--state", "all"))
+        all_prs = fetch_milestone_prs(milestone, "all")
+    else:
+        all_issues = snapshot["issues"]
+        all_prs = snapshot["prs"]
     issue_by_num = {i["number"]: i for i in all_issues}
-
-    all_prs = fetch_milestone_prs(milestone, "all")
     pr_by_num = {p["number"]: p for p in all_prs}
 
     with open(args.changes) as f:
@@ -792,7 +926,10 @@ def cmd_report(args: argparse.Namespace) -> None:
     for issue in issue_by_num.values():
         unknown_prs.update(issue.get("closing_prs", []))
     unknown_prs -= set(pr_milestone_cache)
-    if unknown_prs:
+    if snapshot is not None:
+        for pr in snapshot["related_prs"]:
+            pr_milestone_cache[pr["number"]] = pr.get("milestone")
+    elif unknown_prs:
         print(
             f"Resolving milestones for {len(unknown_prs)} PRs outside {milestone}...",
             file=sys.stderr,
@@ -807,7 +944,12 @@ def cmd_report(args: argparse.Namespace) -> None:
     unknown_issues |= collect_changelog_issues(extract_subsection(section, r"### :rocket:"))
     unknown_issues -= set(issue_milestone_cache)
     external_issues: dict[int, dict] = {}
-    if unknown_issues:
+    if snapshot is not None:
+        for issue in snapshot["related_issues"]:
+            issue_milestone_cache[issue["number"]] = issue.get("milestone")
+            if "error" not in issue:
+                external_issues[issue["number"]] = issue
+    elif unknown_issues:
         print(
             f"Resolving milestones for {len(unknown_issues)} issues outside {milestone}...",
             file=sys.stderr,
@@ -989,7 +1131,13 @@ def cmd_report(args: argparse.Namespace) -> None:
                 anomalies_d.append({"version": ver, "line": line[:100]})
 
     # Bugs that may never have reached production: warnings, not anomalies.
-    dev_auto, dev_suggested = find_dev_only_bugs(milestone, fetch_milestone_bugs(milestone))
+    if snapshot is None:
+        dev_auto, dev_suggested = find_dev_only_bugs(
+            milestone, fetch_milestone_bugs(milestone)
+        )
+    else:
+        dev_auto = snapshot["dev_only_bugs"]["auto"]
+        dev_suggested = snapshot["dev_only_bugs"]["suggested"]
 
     def fmt_ms(ms: str | None) -> str:
         return ms if ms else "_none_"
@@ -1199,6 +1347,13 @@ def main() -> None:
     )
     sub = parser.add_subparsers(dest="command", required=True, title="subcommands")
 
+    p_collect = sub.add_parser("collect", help="Collect changelog inputs as JSON")
+    p_collect.add_argument("milestone", help="Milestone title (e.g. '2.19.0')")
+    p_collect.add_argument(
+        "--changes", default="CHANGES.md", help="Path to the changelog"
+    )
+    p_collect.set_defaults(func=cmd_collect)
+
     p_check = sub.add_parser(
         "check-merged", help="Verify that every given PR is merged"
     )
@@ -1257,6 +1412,11 @@ def main() -> None:
     p_report.add_argument("--output", default="CHANGES-ISSUES.md",
                           help="Report output path (default: CHANGES-ISSUES.md)")
     p_report.set_defaults(func=cmd_report)
+
+    for command in (p_boom, p_security, p_cross, p_dev, p_report):
+        command.add_argument(
+            "--snapshot", help="Use JSON from collect instead of GitHub"
+        )
 
     args = parser.parse_args()
     args.func(args)

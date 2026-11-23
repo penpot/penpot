@@ -335,6 +335,115 @@ class CmdBoomTests(unittest.TestCase):
         self.assertIn("Deploy the new service.", out)
 
 
+class CollectTests(unittest.TestCase):
+    def test_collect_batches_extra_details_and_reuses_them_for_local_checks(self):
+        issues = [
+            {
+                "number": 1,
+                "state": "CLOSED",
+                "issue_type": "Bug",
+                "title": "Change a default",
+                "labels": ["breaking change"],
+                "closing_prs": [10, 11],
+            },
+            {"number": 2, "state": "OPEN", "issue_type": "Task"},
+        ]
+        prs = [
+            {
+                "number": 10,
+                "title": "Change a default",
+                "state": "MERGED",
+                "closing_issues": [1, 3],
+            }
+        ]
+        responses = {
+            (
+                "issues",
+                "2.19.0",
+                "--state",
+                "all",
+                "--include-tasks",
+                "--include-rejected",
+            ): issues,
+            ("prs", "--milestone", "2.19.0", "--state", "all"): prs,
+            ("issue", "1", "3", "4"): [
+                {**issues[0], "body": "", "parent": None},
+                {"number": 3, "milestone": "2.18.0"},
+                {"number": 4, "error": "not_found"},
+            ],
+            ("prs", "11"): [{"number": 11, "state": "OPEN"}],
+            ("comments", "1"): [
+                {"issue": 1, "body": "## Breaking change note\n\nNote."}
+            ],
+            ("advisories", "--patched-version", "2.19.0"): [],
+        }
+        content = (
+            "## 2.19.0\n\n[#4](https://github.com/penpot/penpot/issues/4)\n\n"
+            "## 2.18.0\n\n[#1](https://github.com/penpot/penpot/issues/1)\n"
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            changes = pathlib.Path(tmp) / "CHANGES.md"
+            changes.write_text(content)
+            snapshot_path = pathlib.Path(tmp) / "snapshot.json"
+            args = argparse.Namespace(milestone="2.19.0", changes=str(changes))
+            out = io.StringIO()
+            with (
+                patch.object(
+                    ch, "run_gh_py", side_effect=lambda *a: json.dumps(responses[a])
+                ) as gh,
+                contextlib.redirect_stdout(out),
+            ):
+                ch.cmd_collect(args)
+            snapshot = json.loads(out.getvalue())
+            self.assertCountEqual([call.args for call in gh.call_args_list], responses)
+            self.assertEqual(changes.read_text(), content)
+            self.assertEqual(snapshot["eligible_issues"], [1])
+            self.assertEqual(snapshot["comparison"]["missing_issues"], [])
+            self.assertEqual(
+                snapshot["comparison"]["issues_in_other_versions"], {"1": ["2.18.0"]}
+            )
+            self.assertEqual(snapshot["comparison"]["ineligible_references"], [4])
+            self.assertEqual(snapshot["comparison"]["unlisted_merged_prs"], [10])
+
+            snapshot_path.write_text(out.getvalue())
+            changes.write_text(
+                content.replace(
+                    "## 2.19.0\n\n",
+                    "## 2.19.0\n\n[#10](https://github.com/penpot/penpot/pull/10)\n\n",
+                )
+            )
+            args.snapshot = str(snapshot_path)
+            args.write = False
+            args.output = str(pathlib.Path(tmp) / "report.md")
+            out = io.StringIO()
+            with (
+                patch.object(
+                    ch,
+                    "run_gh_py",
+                    side_effect=AssertionError("unexpected GitHub lookup"),
+                ),
+                contextlib.redirect_stdout(out),
+            ):
+                ch.cmd_boom(args)
+                ch.cmd_security(args)
+                ch.cmd_dev_only_bugs(argparse.Namespace(**vars(args), apply=False))
+                ch.cmd_cross_ref(args)
+                ch.cmd_report(args)
+            self.assertIn("Note.", out.getvalue())
+            self.assertIn("pull/10", out.getvalue())
+            self.assertNotIn("pull/11", out.getvalue())
+            self.assertIn("PRs in milestone but NOT in changelog: 0", out.getvalue())
+            self.assertTrue(pathlib.Path(args.output).is_file())
+
+    def test_snapshot_for_another_milestone_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            snapshot = pathlib.Path(tmp) / "snapshot.json"
+            snapshot.write_text('{"milestone": "2.18.0"}')
+            args = argparse.Namespace(milestone="2.19.0", snapshot=str(snapshot))
+            with self.assertRaisesRegex(SystemExit, "expected milestone 2.19.0"):
+                ch.load_snapshot(args)
+
+
 class ReportTests(unittest.TestCase):
     """Focused check of the `:boom:` sync anomaly (type G) in the report."""
 

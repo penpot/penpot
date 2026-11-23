@@ -30,25 +30,31 @@ memory; it does not repeat it.
 1. `mem:workflow/updating-changelog` — the canonical flow: sources of truth,
    layout, entry rules, the `## Breaking change note` comment contract, the
    advisory (`:lock:`) contract, pre-flight checks, anomaly types, and pitfalls.
-2. `mem:scripts/changelog` — `boom`, `security`, `check-merged`, `cross-ref`,
+2. `mem:scripts/changelog` — `collect`, `boom`, `security`, `check-merged`, `cross-ref`,
    `dev-only-bugs`, `report`.
 3. `mem:scripts/gh` — `issues`, `issue`, `comments`, `prs`, `advisories`.
 
 ## Commands
 
 ```bash
-python3 scripts/gh.py issues "<VERSION>" --exclude "release blocker,no changelog"
-python3 scripts/gh.py advisories --patched-version "<VERSION>"
-python3 scripts/changelog.py dev-only-bugs "<VERSION>"            # list bugs that never reached production
-python3 scripts/changelog.py dev-only-bugs "<VERSION>" --apply    # label the sure ones `no changelog`
-python3 scripts/changelog.py check-merged <PR numbers...>
-python3 scripts/changelog.py boom "<VERSION>"            # print the :boom: section
-python3 scripts/changelog.py boom "<VERSION>" --write    # replace it in CHANGES.md
-python3 scripts/changelog.py security "<VERSION>"        # print the :lock: section
-python3 scripts/changelog.py security "<VERSION>" --write # replace it in CHANGES.md
-python3 scripts/changelog.py cross-ref "<VERSION>"
-python3 scripts/changelog.py report "<VERSION>"
+snapshot=$(mktemp)
+python3 scripts/changelog.py collect "<VERSION>" > "$snapshot"
 ```
+
+Review the JSON before running any of these commands:
+
+```bash
+python3 scripts/changelog.py dev-only-bugs "<VERSION>" --snapshot "$snapshot" --apply
+python3 scripts/changelog.py boom "<VERSION>" --snapshot "$snapshot" --write
+python3 scripts/changelog.py security "<VERSION>" --snapshot "$snapshot" --write
+python3 scripts/changelog.py cross-ref "<VERSION>" --snapshot "$snapshot"
+python3 scripts/changelog.py report "<VERSION>" --snapshot "$snapshot"
+```
+
+Keep the snapshot private: it can contain unpublished advisories and PR text.
+Run `collect` first and use the JSON for review and
+merge-state checks. Run `collect` again after any GitHub change, including
+`dev-only-bugs --apply`. Use `--apply` only when there are sure cases.
 
 ## Hard Rules
 
