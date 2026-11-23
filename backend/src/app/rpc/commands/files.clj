@@ -296,10 +296,13 @@
           f.is_shared,
           ft.media_id AS thumbnail_id,
           p.team_id,
+          -- the live branches of the family, archived ones included:
+          -- the set the branches-per-file quote counts
           (select count(*) from file_branch as fb
-            where fb.source_file_id = f.id
+            join file as sf on (sf.id = fb.source_file_id)
+            where sf.family_id = f.family_id
               and fb.deleted_at is null
-              and fb.status = 'open') as branches_count
+              and fb.status <> 'merged') as branches_count
      from file as f
      inner join project as p on (p.id = f.project_id)
      left join file_thumbnail as ft on (ft.file_id = f.id
@@ -858,10 +861,12 @@
             f.name,
             f.is_shared,
             ft.media_id AS thumbnail_id,
+            -- the same count as sql:project-files
             (select count(*) from file_branch as fb
-              where fb.source_file_id = f.id
+              join file as sf on (sf.id = fb.source_file_id)
+              where sf.family_id = f.family_id
                 and fb.deleted_at is null
-                and fb.status = 'open') as branches_count,
+                and fb.status <> 'merged') as branches_count,
             row_number() over w as row_num,
             p.team_id
        from file as f

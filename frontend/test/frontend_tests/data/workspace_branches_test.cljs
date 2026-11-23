@@ -461,14 +461,15 @@
   (await (mock/with-mocks*
            {rp/cmd! (mock/stub (fn [cmd _]
                                  (case cmd
-                                   :get-file-branch-info (rx/of nil)
-                                   :get-file-branches    (rx/of [{:id (uuid/next) :status "open"}])
+                                   :get-file-branch-info  (rx/of nil)
+                                   :get-file-branches     (rx/of [{:id (uuid/next) :status "open"}])
+                                   :get-file-branch-count (rx/of {:count 1})
                                    (rx/empty))))}
            (let [store (make-store-with (assoc main-without-branches :workspace-branch-count
                                                {:file-id file-id :status :error}))]
              (ptk/emit! store (dwb/init-branches-state))
-             (await (async/wait-for #(= :loaded (get-in @store [:workspace-branches :status]))
-                                    "the listing lands"))
+             (await (async/wait-for #(some? (get-in @store [:workspace-branch-count :count]))
+                                    "the listing reloads the count"))
              (t/is (= {:file-id file-id :count 1} (:workspace-branch-count @store)))
              (t/is (false? (dwb/branch-count-failed? @store)))
              (rx/dispose! store)))))
@@ -477,13 +478,14 @@
   (await (mock/with-mocks*
            {rp/cmd! (mock/stub (fn [cmd _]
                                  (case cmd
-                                   :get-file-branch-info (rx/of nil)
-                                   :get-file-branches    (rx/of [])
+                                   :get-file-branch-info  (rx/of nil)
+                                   :get-file-branches     (rx/of [])
+                                   :get-file-branch-count (rx/of {:count 0})
                                    (rx/empty))))}
            (let [store (make-store-with main-with-branches)]
              (ptk/emit! store (dwb/fetch-branches))
-             (await (async/wait-for #(= :loaded (get-in @store [:workspace-branches :status]))
-                                    "the listing lands"))
+             (await (async/wait-for #(= 0 (get-in @store [:workspace-branch-count :count]))
+                                    "the listing reloads the count"))
              (t/is (= 0 (get-in @store [:workspace-branch-count :count]))
                    "deleting the last branch from the listing hides the switcher")
              (t/is (false? (dwb/has-branches? @store)))

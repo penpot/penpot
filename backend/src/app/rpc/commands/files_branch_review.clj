@@ -88,7 +88,8 @@
           fb.source_file_id AS target_file_id,
           bf.revn AS branch_revn,
           sf.revn AS source_revn,
-          sf.name AS target_name
+          sf.name AS target_name,
+          (sf.id = sf.family_id) AS target_is_main
      FROM file_branch_review AS r
      JOIN file_branch AS fb ON (fb.id = r.file_branch_id)
      LEFT JOIN file AS bf ON (bf.id = fb.branch_file_id)
@@ -463,7 +464,8 @@
           fb.source_file_id AS target_file_id,
           bf.revn AS branch_revn,
           sf.revn AS source_revn,
-          sf.name AS target_name
+          sf.name AS target_name,
+          (sf.id = sf.family_id) AS target_is_main
      FROM file_branch_review AS r
      JOIN file_branch AS fb ON (fb.id = r.file_branch_id)
      LEFT JOIN file AS bf ON (bf.id = fb.branch_file_id)
@@ -1071,7 +1073,8 @@
           fb.branch_file_id AS source_file_id,
           fb.source_file_id AS target_file_id,
           fb.name AS branch_name,
-          sf.name AS target_name
+          sf.name AS target_name,
+          (sf.id = sf.family_id) AS target_is_main
      FROM file_branch_reviewer AS v
      JOIN file_branch_review AS r ON (r.id = v.review_id)
      JOIN file_branch AS fb ON (fb.id = r.file_branch_id)

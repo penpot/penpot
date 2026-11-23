@@ -77,7 +77,10 @@
            [:> branch-row* {:label (:name b)
                             :data-branch (dm/str (:branch-file-id b))
                             :on-click on-open-branch}
-            [:> branch-status* {:ahead (:ahead b)
-                                :behind (:behind b)
-                                :conflicts (:conflicts b)
-                                :has-error (boolean (or (:diff-error b) (nil? (:ahead b))))}]]])]]]]))
+            ;; an archived branch has no live comparison to show
+            (if (= "archived" (:status b))
+              (tr "workspace.branches.archived")
+              [:> branch-status* {:ahead (:ahead b)
+                                  :behind (:behind b)
+                                  :conflicts (:conflicts b)
+                                  :has-error (boolean (or (:diff-error b) (nil? (:ahead b))))}])]])]]]]))

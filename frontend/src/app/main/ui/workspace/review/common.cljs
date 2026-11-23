@@ -20,6 +20,15 @@
   (or (get-in profiles [profile-id :fullname])
       (tr "workspace.review.unknown-name")))
 
+(defn route-target
+  "The name the route of the review `pr` gives the file it merges into:
+  `main-label` when that file is the root of its family (main), and the
+  file's own name when it is a branch (`:branch-stacking`). A row that
+  does not say keeps `main-label`, the wording of every review before
+  branches could stack."
+  [{:keys [target-is-main target-name]} main-label]
+  (if (false? target-is-main) target-name main-label))
+
 (defn status-tone
   "The tone a task in `status` is drawn in, the colour of its state."
   [status]

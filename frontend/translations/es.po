@@ -7358,6 +7358,12 @@ msgstr ""
 "ramas para ver su estado actual."
 
 #: src/app/main/data/workspace/branches.cljs
+msgid "workspace.branches.limits.refuse-source-not-open"
+msgstr ""
+"La rama desde la que quieres crear, en la que quieres fusionar o desde la que "
+"quieres actualizar está archivada o ya no existe. Restáurala primero."
+
+#: src/app/main/data/workspace/branches.cljs
 msgid "workspace.branches.limits.refuse-name"
 msgstr "El nombre de una rama no puede estar vacío."
 

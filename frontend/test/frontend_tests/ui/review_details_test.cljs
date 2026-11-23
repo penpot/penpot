@@ -45,6 +45,11 @@
   (t/is (= ["info" "success" "warning" "purple" "error"]
            (mapv rvc/status-tone dwrv/task-statuses))))
 
+(t/deftest the-route-names-a-branch-target-and-calls-the-root-main
+  (t/is (= "Parent" (rvc/route-target {:target-name "Parent" :target-is-main false} "Main")))
+  (t/is (= "Main" (rvc/route-target {:target-name "Design file" :target-is-main true} "Main")))
+  (t/is (= "Main" (rvc/route-target {:target-name "Design file"} "Main"))))
+
 (t/deftest the-activity-comes-folded-from-the-server
   (let [entry     {:id (uuid/random) :page-id (uuid/random) :kind :added}
         session   {:profile-id (uuid/random)

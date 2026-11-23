@@ -228,7 +228,8 @@
   {::mf/private true}
   [{:keys [pr]}]
   (let [[approvals total] (prui/current-approvals pr)
-        route (tr "workspace.review.route" (:branch-name pr) (tr "workspace.branches.main"))]
+        route (tr "workspace.review.route" (:branch-name pr)
+                  (rvc/route-target pr (tr "workspace.branches.main")))]
     [:div {:class (stl/css :review-header)}
      [:div {:class (stl/css :review-title-row)}
       [:> heading* {:level 2 :typography t/body-large :class (stl/css :review-title)}
