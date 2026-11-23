@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM dhi.io/node:24.22.3-debian13-dev@sha256:dee4bb11f4cb32ad31000287af8795f772ac801338a166a0e9fbbadd9674a2f8
+FROM dhi.io/node:24.22.3-debian13-dev@sha256:d1dc20bbf685bcd5d318043b705d98a89360e576fb46f9e5c14cbf6ed77f3481
 LABEL maintainer="Penpot <docker@penpot.app>"
 
 ENV LANG=en_US.UTF-8 \
