@@ -73,6 +73,9 @@
 
   (t/testing "circles, paths, booleans and svgs share the generic attributes"
     (let [attrs (cto/shape-type->attributes :circle false)]
+      (t/is (set/subset? cto/sizing-keys attrs))
+      (t/is (set/subset? cto/opacity-keys attrs))
+      (t/is (set/subset? cto/rotation-keys attrs))
       (t/is (set/subset? cto/stroke-width-keys attrs))
       (t/is (set/subset? cto/shadow-keys attrs))
       (t/is (empty? (set/intersection cto/border-radius-keys attrs)))

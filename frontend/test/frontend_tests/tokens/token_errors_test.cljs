@@ -9,14 +9,7 @@
    [app.main.data.workspace.tokens.errors :as wte]
    [app.util.i18n :as i18n :refer [tr]]
    [cljs.test :as t :include-macros true]
-   [clojure.string :as str]))
-
-;; The test run loads no translations, so `tr` returns the bare key and
-;; drops its arguments. Tests about the values in a message echo them with
-;; this stub. Both arities, like `tr`.
-(defn- tr-stub
-  ([key] key)
-  ([key & args] (str key "(" (str/join ", " args) ")")))
+   [frontend-tests.helpers.i18n :refer [tr-stub]]))
 
 ;; ---------------------------------------------------------------------------
 ;; resolve-error-message
@@ -40,8 +33,9 @@
 
 (t/deftest resolve-error-message-known-error
   (t/testing "a known error code shows its translated message"
-    (t/is (= (tr "errors.tokens.invalid-color" "#zzz")
-             (wte/resolve-error-message (wte/error-with-value :error.token/invalid-color "#zzz"))))))
+    (with-redefs [i18n/tr tr-stub]
+      (t/is (= (tr "errors.tokens.invalid-color" "#zzz")
+               (wte/resolve-error-message (wte/error-with-value :error.token/invalid-color "#zzz")))))))
 
 (t/deftest resolve-error-message-without-error
   (t/testing "without an error the message is the unknown error"
@@ -81,10 +75,11 @@
 
 (t/deftest humanize-errors
   (t/testing "known error codes show their translated message"
-    (t/is (= [(tr "errors.tokens.empty-input")
-              (tr "errors.tokens.invalid-color" "#zzz")]
-             (wte/humanize-errors [(wte/error-with-value :error.token/empty-input nil)
-                                   (wte/error-with-value :error.token/invalid-color "#zzz")]))))
+    (with-redefs [i18n/tr tr-stub]
+      (t/is (= [(tr "errors.tokens.empty-input")
+                (tr "errors.tokens.invalid-color" "#zzz")]
+               (wte/humanize-errors [(wte/error-with-value :error.token/empty-input nil)
+                                     (wte/error-with-value :error.token/invalid-color "#zzz")])))))
 
   (t/testing "incompatible units are listed in one message"
     (with-redefs [i18n/tr tr-stub]
