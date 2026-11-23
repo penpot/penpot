@@ -1,36 +1,7 @@
-# Exporter Architecture and Workflow
+# Exporter
 
-`exporter/`: CLJS/Node headless export service. Depends on `common/`; uses Playwright plus export JS/CLJS deps for SVG/PDF/assets.
-
-## Layout and commands
-
-- Source: `exporter/src/`; config: `deps.edn`, `shadow-cljs.edn`, `package.json`; runtime helpers/assets: `vendor/`, `scripts/`.
-- `exporter/resources/wasm/render-wasm.{js,wasm}` and `exporter/src/app/wasm/shared.js` are generated render-wasm build output, not source: they are gitignored. Never hand-edit or commit them; regenerate by rebuilding render-wasm.
-- From `exporter/`: setup `./scripts/setup`; watch `pnpm run watch` or `pnpm run watch:app`; production build `pnpm run build`; test bundle `pnpm run build:test`; tests `pnpm run test` or `pnpm run test:quiet`; lint `pnpm run lint:clj`; format check/fix `pnpm run check-fmt:clj` / `pnpm run fmt:clj`.
-- Because exporter consumes `common/`, shared file/shape/model changes may need exporter verification even when the immediate change is not under `exporter/`.
-- Cross-cutting testing principles and anti-patterns: `mem:testing`.
-- Exporter test conventions and CI: `mem:exporter/testing`.
-
-## HTTP and browser pool
-
-- POST body limit is about 60 MB. Exporter supports `application/transit+json`; request params merge query params and body params.
-- Map response bodies are Transit JSON and force HTTP 200; nil 200 bodies become 204.
-- Auth token comes from cookie `auth-token`, then uploads use Bearer auth plus the management shared key.
-- Each export job gets a fresh Playwright browser context. On success, the context closes and the browser returns to the pool; on error, the browser is destroyed instead of reused.
-- Borrow validates browser connection. Pool acquire timeout is about 10s; font loading timeout logs a warning and continues after about 15s.
-
-## Export batching and async behavior
-
-- `prepare-exports` groups entries by `[scale type]` and partitions groups into chunks of 50. Each partition uses file/page/share/name from its first item, so be careful if entries might cross those boundaries.
-- Single-export response is used only when multiple export is not forced and there is exactly one prepared export containing exactly one object.
-- Multi-object export can run async: when `wait` is false it returns a resource immediately and publishes progress/end/error to Redis by profile topic; when `wait` is true it waits for upload and returns the uploaded resource.
-- Frame export returns a resource immediately and publishes Redis updates; it does not follow the same `wait` option path.
-- ZIP entry names are sanitized and duplicates receive numeric suffixes.
-
-## Render details
-
-- Bitmap export differs for WASM vs non-WASM render paths: WASM forces Playwright `deviceScaleFactor` to 1 and passes scale through the render URL; non-WASM uses `deviceScaleFactor = scale`.
-- WebP is produced by taking a PNG screenshot and converting it with ImageMagick.
-- SVG export rasterizes text foreignObjects to PNG, converts through PPM/color masks/potrace, and reassembles SVG paths. It also replaces non-breaking spaces for SVG compatibility and drops empty defs/paths.
-- PDF export injects `@page` sizing through raw browser `evaluate` JavaScript; that code cannot rely on CLJS runtime helpers.
-- Temporary resources schedule local deletion, then uploads POST to `/api/management/methods/upload-tempfile` with `X-Shared-Key: exporter <management-key>` and Bearer auth.
+- `exporter/` is a CLJS/Node service for exporting Penpot content. Start at `app.handlers.export`, `app.handlers.export-shapes` and `app.jobs.scheduler` for admission and delivery. Browser and headless WASM rendering boundaries: `mem:exporter/rendering`.
+- HTTP session tokens come from the `auth-token` cookie; resource uploads use bearer auth and the exporter management shared key. Shape exports with `wait` false return a resource before upload and publish progress and outcome; `wait` true waits for upload. Frame export returns a resource and publishes progress separately. See `app.handlers.export` and `app.handlers.resources`.
+- The scheduler limits work per process, not across replicas. It skips jobs whose profile is at capacity and limits admitted headless jobs to the number of render workers; otherwise jobs would report running while waiting inside the pool. Cancelled queued jobs release their slot and tracked resources.
+- The exporter consumes `common/` and generated `render-wasm` artifacts. Never edit or commit the generated WASM or `shared.js`; rebuild the export target. See `mem:render-wasm/core`.
+- For test namespace registration and focused runs see `mem:exporter/testing`. For module lint, tests and formatting see `mem:scripts/ci`.

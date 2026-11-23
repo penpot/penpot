@@ -1,0 +1,6 @@
+# Export rendering
+
+- Start at `app.renderer` for selection: `is-wasm` chooses the headless WASM worker path, not a Playwright browser; otherwise the type selects a browser renderer. The browser bitmap renderer uses `deviceScaleFactor` for scale. The WASM path passes scale into the renderer itself.
+- `prepare-exports` groups by scale and type. Browser renders are split into partitions; a headless render receives the whole group. Each render takes its file, page, share and name from the first item, so do not mix incompatible sources within a group. ZIP names are sanitized and deduplicated.
+- Browser execution creates a fresh context, closes it on success and returns the browser to the pool. On failure the browser is destroyed rather than reused. Headless rendering leases one worker for the job and serializes its renders to share state and caches. Cancellation can terminate the worker while Skia is busy; do not let a later cancellation terminate a worker already returned to the pool.
+- Browser WebP output converts a PNG screenshot because Playwright cannot capture WebP directly. Browser SVG text uses a raster-to-path pipeline; PDF injects page sizing into browser JavaScript. See the corresponding `app.renderer` namespace before changing either path.
