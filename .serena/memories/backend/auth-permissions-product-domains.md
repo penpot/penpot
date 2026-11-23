@@ -19,7 +19,7 @@
 - Management RPC (`/api/management/methods/:name`) is shared-key only. The middleware authenticates `<id> <secret>`; the RPC wrapper `wrap-shared-key-authorization` authorizes the key id against the method's `::rpc/allowed-shared-keys` set. Absent metadata accepts any configured key; all current methods declare one (`exporter`/`media-processor` for `upload-tempfile`, `nexus` for file analysis, `exporter` for jobs, `admin-console` for Nitrate). A valid key outside the set answers 403 `:shared-key-not-allowed`; denied calls do not reach the audit wrapper.
 - Personal tokens need flag `:access-tokens`. MCP tokens need `:mcp` or `:access-tokens`, and only on routes whose `actoken/authz` gets `::actoken/allow-mcp true` (the RPC routes); elsewhere (e.g. assets) they are anonymous.
 - On RPC, an MCP token reaches only commands with `::rpc/token-type "mcp"` (`wrap-authentication` in `app.rpc`); every other command answers 403 `:token-auth-required`. A command with that metadata also rejects sessions and personal tokens. Currently only `send-mcp-feedback`. Blocking a profile invalidates sessions, not tokens, so such commands check `:is-blocked`/`:is-active` themselves.
-- HTTP/session parsing details such as cookie/header precedence, JWT session token versions, and SameSite behavior are in `mem:backend/subtleties`.
+- HTTP/session parsing details such as cookie/header precedence, JWT session token versions, and SameSite behavior are in `mem:backend/http-rpc`.
 
 ## Permission model
 
@@ -52,4 +52,4 @@
 - Enable LDAP login locally with frontend flag `enable-login-with-ldap`; the devenv includes a configured test LDAP service.
 - OIDC testing requires external provider app credentials plus matching backend/frontend config.
 - Backend domain tests usually live under `backend/test/backend_tests/rpc/commands/*_test.clj` or nearby backend test namespaces. Use focused `clojure -M:dev:test --focus ...` from `backend/` when possible.
-- For auth/session or HTTP behavior, combine backend tests with the HTTP/session notes in `mem:backend/subtleties` because RPC-level tests may not exercise cookie/header transforms.
+- For auth/session or HTTP behavior, combine backend tests with the HTTP/session notes in `mem:backend/http-rpc` because RPC-level tests may not exercise cookie/header transforms.

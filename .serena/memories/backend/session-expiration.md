@@ -38,4 +38,5 @@
 - Cookie `SameSite`/`secure` depend on `:cors`, `:strict-session-cookies`, `:secure-session-cookies`; `parse-flags` auto-adds `:disable-secure-session-cookies` for non-localhost HTTP `public-uri`.
 - Without `PENPOT_SECRET_KEY`, derived subsystem keys change on restart and all sessions/invitations are invalidated.
 - Read-only DB pool: sessions fall back to `inmemory-manager`, lost on restart, no GC.
-- HTTP middleware and cookie/header precedence details: `mem:backend/subtleties`.
+- HTTP middleware and cookie/header precedence details: `mem:backend/http-rpc`.
+- Session management falls back to an in-memory manager on a read-only DB pool; see `app.http.session`.

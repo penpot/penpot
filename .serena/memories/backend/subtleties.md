@@ -2,14 +2,7 @@
 
 ## RPC exposure and wrappers
 
-- RPC commands are discovered from vars created by `app.util.services/defmethod`; adding a command namespace is not enough unless `backend/src/app/rpc.clj` includes it in `resolve-methods`.
-- `GET`/`HEAD` RPC calls are only allowed for method names starting with `get-`. Other methods are method-not-allowed even if they are read-only internally.
-- RPC auth defaults to enabled. Public endpoints must set `::auth false` metadata explicitly.
-- The wrapper stack does auth before params validation, then auditing/rate/concurrency/metrics/retry/condition handling, with DB transaction handling inside that stack. `::db/transaction` metadata controls transaction wrapping.
-- Params with `::sm/params` are decoded/conformed through the JSON transformer and successful IObj results get `:encode/json` metadata. Legacy spec conforming only applies when no Malli params schema exists. Client params are stripped of qualified keys (`d/without-qualified`) before merging with the server auth context, so request bodies cannot override `::profile-id`, `::auth-type`, or `::token-perms`.
-- Params schemas are open by default, so undeclared client keys reach the handler unless the map is `:closed true`. Creation commands (`create-file`, `create-project`, `create-team`, `create-team-with-invitations`, `upload-file-media-object`, `create-file-media-object-from-url`, `assemble-file-media-object`) use closed schemas: a client-provided `:id` fails with `:params-validation`. Their internal creation functions still accept an optional explicit `:id` for imports, duplicates and deterministic test fixtures.
-- Nil RPC bodies become HTTP 204 unless explicit status metadata is present. Stream bodies default to `application/octet-stream` when no content type is set.
-- The upload schema (`media.v/schema:upload`) takes a `:path` from the caller, and a Transit body can tag any string as a `path`, so a command that reads such an upload reads a file the client named. `create-import-binfile-job` avoids that boundary by accepting only a chunked upload (`:upload-id`); the commands that still take a plain file (the legacy `import-binfile`, the media and font uploads) trust it, and the guard belongs where uploads are accepted, not in each command.
+- Command registration, validation and wrapper order: `mem:backend/http-rpc`.
 
 ## Concurrency limiter (CLIMIT)
 
@@ -26,17 +19,8 @@
 
 ## Config and HTTP/session middleware
 
-- `app.config/config` and `flags` are dynamic `defonce` vars populated from `PENPOT_*` env vars through the shared schema string transformer. Tests and tooling can bind them.
-- Duration config values are parsed as ISO-8601 with the `PT` prefix, so a day is written in hours (`:jobs-retention` and `:jobs-user-ttl` default to a week, and an operator writes `168h`): `7d` does not parse, and the value fails validation at boot instead of being silently ignored.
-- `app.main` wires `PENPOT_DATABASE_*` into `::db/pool`, and `app.db/create-datasource-config` forwards pgjdbc's own knobs as `dataSourceProperties`, which `Properties.getProperty` silently drops unless the value is a String (hence the `str`). A query parameter of the same name in `PENPOT_DATABASE_URI` (for example `?prepareThreshold=0`) wins over the property: pgjdbc ignores the Properties value when the URL carries it, so the URI is the place to look when a variable seems to do nothing. The prepared statement cache is three optional `PENPOT_DATABASE_PREPARED_STATEMENT_CACHE_*` keys: the threshold is the executions before a statement is server-prepared and accepts `-1` or non-negatives (`{:min -1}`; the driver clamps any other negative to `-1`, so rejecting it only turns a typo into a boot error), its `0` stops server-side prepared statements while the driver's client-side cache of parsed queries stays in use, `..._QUERIES` and `..._SIZE` reject negatives and `0` in either disables that cache, and the size is bytes rounded up to the whole MiB the driver accepts. Do not describe the threshold `0` as disabling the cache: it only stops the server-side prepares.
-- `parse-flags` automatically adds `:disable-secure-session-cookies` when `public-uri` is plain HTTP and not localhost. This changes cookie defaults without an explicit env flag.
-- The backend sets Clojure `*assert*` globally from the `:backend-asserts` feature flag. Assertion-dependent checks can therefore differ by runtime flags.
-- Request body parsing is mostly POST-oriented and supports Transit JSON plus plain JSON. Plain JSON request keys are kebab-decoded before being merged into `:params`. A body the parser cannot read is a client error, classified at the parse site and never by exception class (`clojure.data.json` signals its syntax errors with a bare `java.lang.Exception`): 400 `:validation`/`:malformed-json`, one `warn` line (`malformed request body`) carrying path, peer address and content-type instead of a stack trace, and `penpot_http_malformed_requests_total`. `RequestTooBigException` keeps its 413.
-- Response formatting negotiates with `Accept` or `_fmt=json`. Transit is the default for collection/boolean bodies; JSON encoding has special pointer-map handling.
-- Auth prefers the session cookie token before the `Authorization` header. Headers may be `Token` or `Bearer`. Only `kid=1`/`ver=1` tokens are decoded as session tokens; anything else is left unauthenticated (legacy v1 tokens were removed).
-- Shared-key auth requires `x-shared-key` as `<key-id> <key>` and stores the lowercased key id on the request. If no shared keys are configured it always rejects. Management methods declare the key ids they accept with `::rpc/allowed-shared-keys`; a valid key outside that set answers 403 `:shared-key-not-allowed`, and a method without the metadata accepts any configured key.
-- Session management uses DB storage unless the DB pool is read-only, then falls back to the in-memory manager. Sessions use only the v2 UUID model (`http_session_v2`); legacy string ids were removed.
-- Session cookies are renewed when `modified-at` is older than the 6h renewal interval. SameSite is `none` for CORS, otherwise strict/lax based on config. Session lifetime config and GC: `mem:backend/session-expiration`.
+- Environment values and PostgreSQL connection settings: `mem:backend/config`.
+- Request parsing, response negotiation and session auth: `mem:backend/http-rpc`.
 
 ## HTTP server self-metrics
 
