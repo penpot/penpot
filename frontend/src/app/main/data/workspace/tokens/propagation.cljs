@@ -71,7 +71,8 @@
 (defn- users-by-root
   "Map of each shape of `root-ids` to the ids of the shapes under it, or
   itself, that apply the `changed` tokens, found without decoding the
-  shapes that are still encoded."
+  shapes that are still encoded: on the main thread, unlike
+  `pv/page-stale-thumbnails` in the drain worker."
   [objects root-ids changed]
   (let [root-ids (set root-ids)
         found    (volatile! {})
@@ -115,24 +116,20 @@
 ;; Propagation -----------------------------------------------------------------
 
 (defn- propagate-page
-  "Events that set the out of date shapes of `page-id` to `resolved-tokens`,
-  in a single commit tagged with `tags`.
-  `:root-ids` limits it to those shapes and their descendants; otherwise
-  only the shapes that apply the `changed` tokens are checked, or all of
-  them when `changed` is nil. With `:thumbnails-only?` no shape is set: the
-  page is set when it is opened or read, and the thumbnails of its frames
-  `frame-ids` and main components `main-ids` that are left out of date are
-  cleared. With `:background?` the commit is not undoable. The commit only
-  follows tokens already committed, so it goes through while saves fail."
+  "Events that set the out of date shapes of a scope (`plan-scopes`) to
+  `resolved-tokens`, in one commit tagged with `tags`. With
+  `:thumbnails-only?` they clear the thumbnails it leaves out of date
+  instead. The commit only follows tokens already committed, so it goes
+  through while saves fail."
   [it state resolved-tokens changed
    {:keys [page-id root-ids save-resolved? thumbnails-only? main-ids frame-ids background?
            undo-group]
     scope-targets :targets} tags]
-  (let [file-id (get state :current-file-id)
-        page    (dsh/lookup-page state file-id page-id)
-        objects (:objects page)
-        other?  (not= page-id (get state :current-page-id))
-        saved   (:tokens-resolved (dsh/lookup-file-data state file-id))
+  (let [file-id  (get state :current-file-id)
+        page     (dsh/lookup-page state file-id page-id)
+        objects  (:objects page)
+        other?   (not= page-id (get state :current-page-id))
+        saved    (:tokens-resolved (dsh/lookup-file-data state file-id))
 
         targets
         (cond
@@ -317,10 +314,97 @@
   []
   (contains? cf/flags :lazy-token-propagation-drain))
 
+(defn- plan-scopes
+  "The scopes that set the `changed` tokens in `state` (see `run-scopes`),
+  each with the `:units` of work it weighs, and their total `:units`;
+  whether the pages after the first only clear their thumbnails in the
+  background (`:background?`) and whether the drain sets the other pages
+  (`:drain-pages?`)."
+  [state changed {:keys [page-id root-ids thumbnails-only? undo-group]}]
+  (let [lazy?        (dwta/lazy?)
+        drain-pages? (and lazy? (drain?) (nil? root-ids) (not thumbnails-only?))
+        scopes       (if (some? root-ids)
+                       [{:page-id page-id :root-ids root-ids}]
+                       (cond-> (vec (page-scopes state changed lazy? thumbnails-only?))
+                         drain-pages? (subvec 0 1)
+                         :always      (assoc-in [0 :save-resolved?] true)))
+        scopes       (cond->> scopes
+                       (some? undo-group) (mapv #(assoc % :undo-group undo-group)))
+        background?  (boolean (and (next scopes) (every? :thumbnails-only? (rest scopes))))
+        ;; The current page weighs as much as the other pages waited for
+        scopes       (into [(assoc (first scopes) :units (if background? 1 (max 1 (dec (count scopes)))))]
+                           (map #(if background? (assoc % :background? true :units 0) (assoc % :units 1)))
+                           (rest scopes))]
+    {:scopes       scopes
+     :units        (reduce + (map :units scopes))
+     :background?  background?
+     :drain-pages? drain-pages?}))
+
+(defn- resolve-changed
+  "Observable of `[resolved-tokens changed]`: the active tokens of `state`
+  resolved, and the ones that change, the tokens `token-names`, the ones
+  whose value differs from `previous-tokens` resolved with
+  `previous-base-font-size` (the current one when nil), or nil for any
+  token."
+  [state previous-tokens previous-base-font-size token-names]
+  (->> (dwta/resolve-sets (dwta/active-tokens state) (dwta/base-font-size state))
+       (rx/mapcat
+        (fn [resolved-tokens]
+          (cond
+            (some? token-names)
+            (rx/of [resolved-tokens (select-keys resolved-tokens token-names)])
+
+            (some? previous-tokens)
+            (->> (dwta/resolve-sets previous-tokens (d/nilv previous-base-font-size (dwta/base-font-size state)))
+                 (rx/map #(vector resolved-tokens (changed-tokens resolved-tokens %))))
+
+            :else
+            (rx/of [resolved-tokens nil]))))))
+
+(defn- propagate
+  "Events that set the shapes to `resolved-tokens`, for the `changed` tokens,
+  in one undo transaction: the current page first and then the other
+  pages, or the drain."
+  [state stream resolved-tokens changed {:keys [root-ids] :as opts}]
+  (let [{:keys [scopes units background? drain-pages?]} (plan-scopes state changed opts)
+        undo-id (js/Symbol)
+        tpoint  (ct/tpoint-ms)
+        ;; Covering every shape it updates the copies itself
+        tags    (when (nil? root-ids) #{:token-propagation})]
+    (l/inf :status "START" :hint "propagate-tokens"
+           :tokens (count resolved-tokens) :pages (count scopes))
+    (->> (rx/concat
+          (rx/of (dwtpr/add-work units)
+                 (dwu/start-undo-transaction undo-id :timeout false))
+          (run-scopes stream resolved-tokens changed (take 1 scopes) tags)
+          (if background?
+            (rx/of (dwu/commit-undo-transaction undo-id))
+            (rx/empty))
+          ;; The texts of the current page are laid out before the other
+          ;; pages are set; the change and the page are saved once the
+          ;; dialog closes
+          (if (or (next scopes) drain-pages?)
+            (rx/of ::dw/layout-texts
+                   (dwtpr/persist-when-closed))
+            (rx/empty))
+          (run-scopes stream resolved-tokens changed (rest scopes) tags)
+          (if background?
+            (rx/empty)
+            (rx/of (dwu/commit-undo-transaction undo-id)))
+          ;; The pages left out of date
+          (if drain-pages?
+            (let [current-page-id (:current-page-id state)]
+              (rx/of (drain/start resolved-tokens changed
+                                  (into [] (remove #(= % current-page-id))
+                                        (:pages (dsh/lookup-file-data state))))))
+            (rx/empty)))
+         (rx/finalize
+          #(l/inf :status "END" :hint "propagate-tokens" :elapsed (tpoint))))))
+
 (defn- run-propagation
   "The work of a propagation, from the state when the previous one has
   finished."
-  [run-id {:keys [page-id root-ids previous-tokens thumbnails-only? undo-group]}]
+  [run-id {:keys [previous-tokens previous-base-font-size token-names] :as opts}]
   (ptk/reify ::run-propagation
     ptk/WatchEvent
     (watch [_ state stream]
@@ -328,73 +412,14 @@
        ;; A failure still ends the run, so the next ones go on
        (->> (rx/defer
              (fn []
-               (let [tokens-tree (dwta/active-tokens state)
-
-                     propagate
-                     (fn [[resolved-tokens changed]]
-                       (if (and (some? changed) (empty? changed))
-                         ;; Nothing to set
-                         (rx/empty)
-                         (let [undo-id (js/Symbol)
-                               tpoint  (ct/tpoint-ms)
-                               ;; The drain sets the other pages and clears their thumbnails
-                               drain-pages? (and (dwta/lazy?) (drain?) (nil? root-ids) (not thumbnails-only?))
-                               scopes  (if (some? root-ids)
-                                         [{:page-id page-id :root-ids root-ids}]
-                                         (cond-> (vec (page-scopes state changed (dwta/lazy?) thumbnails-only?))
-                                           drain-pages? (subvec 0 1)
-                                           :always      (assoc-in [0 :save-resolved?] true)))
-                               scopes  (cond->> scopes
-                                         (some? undo-group) (mapv #(assoc % :undo-group undo-group)))
-                               ;; Thumbnails only, cleared while the user goes on working
-                               background? (and (next scopes) (every? :thumbnails-only? (rest scopes)))
-                               ;; The current page weighs as much as the other pages waited for
-                               scopes  (into [(assoc (first scopes) :units (if background? 1 (max 1 (dec (count scopes)))))]
-                                             (map #(if background? (assoc % :background? true :units 0) (assoc % :units 1)))
-                                             (rest scopes))
-                               units   (reduce + (map :units scopes))
-                               ;; Covering every shape it updates the copies itself
-                               tags    (when (nil? root-ids) #{:token-propagation})]
-                           (l/inf :status "START" :hint "propagate-tokens"
-                                  :tokens (count resolved-tokens) :pages (count scopes))
-                           (->> (rx/concat
-                                 (rx/of (dwtpr/add-work units)
-                                        (dwu/start-undo-transaction undo-id :timeout false))
-                                 (run-scopes stream resolved-tokens changed (take 1 scopes) tags)
-                                 (if background?
-                                   (rx/of (dwu/commit-undo-transaction undo-id))
-                                   (rx/empty))
-                                 ;; The texts of the current page are laid out before
-                                 ;; the other pages are set; the change and the page
-                                 ;; are saved once the dialog closes
-                                 (if (or (next scopes) drain-pages?)
-                                   (rx/of ::dw/layout-texts
-                                          (dwtpr/persist-when-closed))
-                                   (rx/empty))
-                                 (run-scopes stream resolved-tokens changed (rest scopes) tags)
-                                 (if background?
-                                   (rx/empty)
-                                   (rx/of (dwu/commit-undo-transaction undo-id)))
-                                 ;; The pages left out of date
-                                 (if drain-pages?
-                                   (let [current-page-id (:current-page-id state)]
-                                     (rx/of (drain/start resolved-tokens changed
-                                                         (into [] (remove #(= % current-page-id))
-                                                               (:pages (dsh/lookup-file-data state))))))
-                                   (rx/empty)))
-                                (rx/finalize
-                                 #(l/inf :status "END" :hint "propagate-tokens" :elapsed (tpoint)))))))]
-
-                 (if (some? tokens-tree)
-                   (->> (dwta/resolve-sets tokens-tree (dwta/base-font-size state))
-                        (rx/mapcat
-                         (fn [resolved-tokens]
-                           (if (some? previous-tokens)
-                             (->> (dwta/resolve-sets previous-tokens (dwta/base-font-size state))
-                                  (rx/map #(vector resolved-tokens (changed-tokens resolved-tokens %))))
-                             (rx/of [resolved-tokens nil]))))
-                        (rx/mapcat propagate))
-                   (rx/empty)))))
+               (if (some? (dwta/active-tokens state))
+                 (->> (resolve-changed state previous-tokens previous-base-font-size token-names)
+                      (rx/mapcat
+                       (fn [[resolved-tokens changed]]
+                         (if (and (some? changed) (empty? changed))
+                           (rx/empty)
+                           (propagate state stream resolved-tokens changed opts)))))
+                 (rx/empty))))
             (rx/catch #(rx/concat
                         (rx/of (propagation-finished run-id))
                         (rx/throw %))))
@@ -403,9 +428,9 @@
 (declare propagate-workspace-tokens)
 
 (defn commit-token-changes
-  "Commit `changes`, a change of the tokens, at once, and then set the
-  shapes to the new values; one undo step reverts both. While saves fail
-  the change is refused, and nothing follows it."
+  "Commit `changes`, a change of the tokens or of the base font size, at
+  once, and then set the shapes to the new values; one undo step reverts
+  both. While saves fail the change is refused, and nothing follows it."
   [changes]
   (ptk/reify ::commit-token-changes
     ptk/WatchEvent
@@ -418,8 +443,9 @@
                                          ;; The propagation that follows sets the
                                          ;; current page, not its check after commits
                                          (update :tags (fnil conj #{}) :token-propagation)))
-                 (propagate-workspace-tokens {:previous-tokens (dwta/active-tokens state)
-                                              :undo-group      undo-group})))))))
+                 (propagate-workspace-tokens {:previous-tokens         (dwta/active-tokens state)
+                                              :previous-base-font-size (dwta/base-font-size state)
+                                              :undo-group              undo-group})))))))
 
 (defn propagate-workspace-tokens
   "Set the shapes to the resolved values of the active tokens, where they
@@ -429,6 +455,9 @@
     commit each.
   - `:previous-tokens`, the active token sets before a change, limits it to the
     shapes that apply the tokens whose resolved value changed.
+  - `:previous-base-font-size`: the base font size `:previous-tokens`
+    resolve with, the current one by default.
+  - `:token-names` limits it to the shapes that apply those tokens.
   - `:undo-group`: the commits are undone with the other ones of that
     group.
   - `:thumbnails-only?`: set no shape, only clear the thumbnails left out

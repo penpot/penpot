@@ -14,9 +14,11 @@
    [app.common.types.file :refer [object-containers-seq]]
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
+   [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
    [app.main.data.helpers :as dh]
    [app.main.data.workspace.tokens.lookup :as lookup]
+   [app.main.data.workspace.tokens.propagation :as dwtp]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
@@ -165,10 +167,9 @@
       (some? undo-group)
       (assoc :undo-group undo-group))))
 
-(defn remap-tokens
-  "Main function to remap all token references when a token name changes"
-  [old-token-name new-token-name & {:keys [undo-group]}]
-  (ptk/reify ::remap-tokens
+(defn- commit-remap
+  [old-token-name new-token-name undo-group]
+  (ptk/reify ::commit-remap
     ptk/WatchEvent
     (watch [_ state _]
       (let [file-data     (dh/lookup-file-data state)
@@ -178,17 +179,35 @@
                   :new-name new-token-name)
         (rx/of (dch/commit-changes token-changes))))))
 
+(defn- remap-all
+  "Events that remap the references of each token of `renames`, pairs of old
+  and new name, then set the shapes that apply the new names to their
+  values, on every page. One undo step reverts it all."
+  [renames undo-group]
+  (let [undo-group (or undo-group (uuid/next))]
+    (rx/concat
+     (rx/from (map (fn [[old-name new-name]] (commit-remap old-name new-name undo-group)) renames))
+     (rx/of (dwtp/propagate-workspace-tokens {:token-names (into #{} (map second) renames)
+                                              :undo-group undo-group})))))
+
+(defn remap-tokens
+  "Main function to remap all token references when a token name changes"
+  [old-token-name new-token-name & {:keys [undo-group]}]
+  (ptk/reify ::remap-tokens
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (remap-all [[old-token-name new-token-name]] undo-group))))
+
 (defn bulk-remap-tokens
   "Helper function to remap a batch of tokens, used for node renaming"
   [tokens-in-path new-tokens & {:keys [undo-group]}]
   (ptk/reify ::bulk-remap-tokens
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/concat
-       (map (fn [old-token new-token]
-              (remap-tokens (:name old-token) (:name new-token) :undo-group undo-group))
-            tokens-in-path
-            new-tokens)))))
+      (remap-all (map (fn [old-token new-token] [(:name old-token) (:name new-token)])
+                      tokens-in-path
+                      new-tokens)
+                 undo-group))))
 
 (defn validate-token-remapping
   "Validate that a token remapping operation is safe to perform"

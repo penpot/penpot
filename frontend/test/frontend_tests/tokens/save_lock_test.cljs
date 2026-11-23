@@ -18,6 +18,7 @@
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
+   [frontend-tests.helpers.mock :as mock]
    [frontend-tests.helpers.pages :as thp]
    [frontend-tests.helpers.state :as ths]
    [frontend-tests.helpers.wasm :as thw]
@@ -41,7 +42,7 @@
   (t/async
     done
     (let [store   (lock-saves (ths/setup-store (tohp/setup-file)))
-          commits (tohp/watch-commits store)]
+          commits (tohs/watch-commits store)]
       (tohs/run-store
        store done [(dwtc/check-page {:opening? true})]
        (fn [state]
@@ -49,29 +50,25 @@
          (t/is (some #(= :local (:source %)) @commits) "saved when saves recover"))
        tohp/stop-on-ready))))
 
-(t/deftest a-token-change-is-refused-while-saves-fail
-  (t/async
-    done
-    (let [file    (tohp/setup-file)
-          store   (lock-saves (ths/setup-store file))
-          commits (tohp/watch-commits store)
-          token   (ctob/get-token (ctht/get-tokens-lib file) (cthi/id :set) (cthi/id :radius))]
-      (tohs/run-store
-       store done [(dwtl/update-token (cthi/id :set) (cthi/id :radius) (assoc token :value 70))]
-       (fn [state]
-         (let [file' (ths/get-file-from-state state)]
-           (t/is (= 50 (:value (ctob/get-token (ctht/get-tokens-lib file') (cthi/id :set) (cthi/id :radius))))
-                 "the token keeps its value")
-           (t/is (not= 70 (:r1 (cths/get-shape file' :stale))) "and so do the shapes")
-           (t/is (empty? (filter #(= :local (:source %)) @commits)))))
-       ;; Nothing commits, so it waits for anything that would follow
-       (fn [_] (rx/timer 1000))))))
+(t/deftest ^:async a-token-change-is-refused-while-saves-fail
+  (let [file    (tohp/setup-file)
+        store   (lock-saves (ths/setup-store file))
+        commits (tohs/watch-commits store)
+        token   (ctob/get-token (ctht/get-tokens-lib file) (cthi/id :set) (cthi/id :radius))
+        state   (await (tohs/run-store*
+                        store [(dwtl/update-token (cthi/id :set) (cthi/id :radius) (assoc token :value 70))]
+                        tohs/stop-on-send-update-indices))
+        file'   (ths/get-file-from-state state)]
+    (t/is (= 50 (:value (ctob/get-token (ctht/get-tokens-lib file') (cthi/id :set) (cthi/id :radius))))
+          "the token keeps its value")
+    (t/is (not= 70 (:r1 (cths/get-shape file' :stale))) "and so do the shapes")
+    (t/is (empty? (filter #(= :local (:source %)) @commits)))))
 
 (t/deftest update-shapes-commits-while-saves-fail-only-when-asked
   (t/async
     done
     (let [store   (lock-saves (ths/setup-store (tohp/setup-file)))
-          commits (tohp/watch-commits store)
+          commits (tohs/watch-commits store)
           id      (cthi/id :stale)]
       (tohs/run-store
        store done [(dwsh/update-shapes [id] #(assoc % :name "edited"))
@@ -80,31 +77,27 @@
          (t/is (= "derived" (:name (cths/get-shape (ths/get-file-from-state state) :stale))))
          (t/is (= 1 (count @commits)) "only the commit that ignores the lock"))))))
 
-(defn- refused-change-sets-no-page
-  "Checks that a token change refused while saves fail sets no page, with
-  the `flags` of the propagation."
-  [done flags]
-  (let [previous cf/flags
-        _        (set! cf/flags (into previous flags))
-        file     (tohp/setup-file-with-pages)
-        store    (lock-saves (ths/setup-store file))
-        commits  (tohp/watch-commits store)
-        drains   (atom 0)
-        token    (ctob/get-token (ctht/get-tokens-lib file) (cthi/id :set) (cthi/id :radius))]
+(defn- ^:async refused-change-sets-no-page
+  "Checks that a token change refused while saves fail sets no page."
+  []
+  (let [file    (tohp/setup-file-with-pages)
+        store   (lock-saves (ths/setup-store file))
+        commits (tohs/watch-commits store)
+        drains  (atom 0)
+        token   (ctob/get-token (ctht/get-tokens-lib file) (cthi/id :set) (cthi/id :radius))]
     (rx/subs! #(swap! drains inc)
               (rx/filter (ptk/type? :app.main.data.workspace.tokens.drain/start) (ptk/input-stream store)))
-    (tohs/run-store
-     store done [(dwtl/update-token (cthi/id :set) (cthi/id :radius) (assoc token :value 70))]
-     (fn [state]
-       (set! cf/flags previous)
-       (t/is (= 50 (:r1 (cths/get-shape (ths/get-file-from-state state) :other :page-label :page2)))
-             "the other page keeps its value")
-       (t/is (empty? @commits))
-       (t/is (zero? @drains) "no drain"))
-     (fn [_] (rx/timer 1000)))))
+    (let [state (await (tohs/run-store*
+                        store [(dwtl/update-token (cthi/id :set) (cthi/id :radius) (assoc token :value 70))]
+                        tohs/stop-on-send-update-indices))]
+      (t/is (= 50 (:r1 (cths/get-shape (ths/get-file-from-state state) :other :page-label :page2)))
+            "the other page keeps its value")
+      (t/is (empty? @commits))
+      (t/is (zero? @drains) "no drain"))))
 
-(t/deftest a-refused-token-change-sets-no-other-page
-  (t/async done (refused-change-sets-no-page done #{})))
+(t/deftest ^:async a-refused-token-change-sets-no-other-page
+  (await (refused-change-sets-no-page)))
 
-(t/deftest a-refused-lazy-token-change-drains-no-page
-  (t/async done (refused-change-sets-no-page done #{:lazy-token-propagation :lazy-token-propagation-drain})))
+(t/deftest ^:async a-refused-lazy-token-change-drains-no-page
+  (await (mock/with-mocks* {cf/flags (conj cf/flags :lazy-token-propagation :lazy-token-propagation-drain)}
+           (await (refused-change-sets-no-page)))))

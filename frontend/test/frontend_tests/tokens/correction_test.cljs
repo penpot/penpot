@@ -14,7 +14,6 @@
    [app.common.test-helpers.shapes :as cths]
    [app.common.test-helpers.tokens :as ctht]
    [app.common.types.tokens-lib :as ctob]
-   [app.common.types.tokens-status :as ctos]
    [app.config :as cf]
    [app.main.data.changes :as dch]
    [app.main.data.workspace :as dw]
@@ -30,11 +29,13 @@
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.async :as async]
+   [frontend-tests.helpers.mock :as mock]
    [frontend-tests.helpers.pages :as thp]
    [frontend-tests.helpers.state :as ths]
    [frontend-tests.helpers.wasm :as thw]
    [frontend-tests.tokens.helpers.propagation :as tohp]
    [frontend-tests.tokens.helpers.state :as tohs]
+   [frontend-tests.tokens.helpers.tokens :as toht]
    [potok.v2.core :as ptk]))
 
 (t/use-fixtures :each
@@ -43,21 +44,20 @@
              (thw/setup-wasm-mocks!))
    :after  thw/teardown-wasm-mocks!})
 
-(t/deftest a-page-without-tokens-is-ready-when-it-opens
-  (t/async
-    done
-    (let [store (ths/setup-store (cthf/sample-file :file))
-          ready (atom false)]
-      (rx/subs! #(reset! ready true)
-                (rx/filter (ptk/type? ::dwtc/tokens-ready) (ptk/input-stream store)))
-      (ptk/emit! store (dwtc/check-page {:opening? true}))
-      (js/setTimeout #(do (t/is @ready) (done)) 100))))
+(t/deftest ^:async a-page-without-tokens-is-ready-when-it-opens
+  (let [store (ths/setup-store (cthf/sample-file :file))
+        ready (atom false)]
+    (rx/subs! #(reset! ready true)
+              (rx/filter (ptk/type? ::dwtc/tokens-ready) (ptk/input-stream store)))
+    (ptk/emit! store (dwtc/check-page {:opening? true}))
+    (await (async/wait-for-store store #(deref ready) "the page is ready"))
+    (t/is @ready)))
 
 (t/deftest editors-set-the-page-when-it-opens
   (t/async
     done
     (let [store   (ths/setup-store (tohp/setup-file))
-          commits (tohp/watch-commits store)]
+          commits (tohs/watch-commits store)]
       (tohs/run-store
        store done [(dwtc/check-page {:opening? true})]
        (fn [state]
@@ -70,35 +70,29 @@
            (t/is (contains? (:tags commit) :token-propagation))))
        tohp/stop-on-ready))))
 
-(t/deftest a-long-correction-blocks-the-workspace-first
-  (t/async
-    done
-    (let [weight dwtpr/long-weight
-          _      (set! dwtpr/long-weight 1)
-          store  (ths/setup-store (tohp/setup-file))
-          events (atom [])]
-      (rx/subs! #(cond
-                   (ptk/type? ::dwtpr/show %)     (swap! events conj :show)
-                   (dch/commit? %)                (swap! events conj :commit)
-                   (ptk/type? ::dwtpr/add-work %)  (swap! events conj [:add (deref %)])
-                   (ptk/type? ::dwtpr/work-done %) (swap! events conj [:done (deref %)]))
-                (ptk/input-stream store))
-      (tohs/run-store
-       store done [(dwtc/check-page {:opening? true})]
-       (fn [state]
-         (set! dwtpr/long-weight weight)
+(t/deftest ^:async a-long-correction-blocks-the-workspace-first
+  (await
+   (mock/with-mocks* {dwtpr/long-weight 1}
+     (let [store  (ths/setup-store (tohp/setup-file))
+           events (atom [])]
+       (rx/subs! #(cond
+                    (ptk/type? ::dwtpr/show %)     (swap! events conj :show)
+                    (dch/commit? %)                (swap! events conj :commit)
+                    (ptk/type? ::dwtpr/add-work %)  (swap! events conj [:add (deref %)])
+                    (ptk/type? ::dwtpr/work-done %) (swap! events conj [:done (deref %)]))
+                 (ptk/input-stream store))
+       (let [state (await (tohs/run-store* store [(dwtc/check-page {:opening? true})] tohp/stop-on-ready))]
          (t/is (= 50 (:r1 (cths/get-shape (ths/get-file-from-state state) :stale))))
          (t/is (= [[:add 1] :show] (take 2 (remove #{:commit} @events)))
                "the dialog shows before the values are set")
-         (t/is (= [:done 1] (last @events))))
-       tohp/stop-on-ready))))
+         (t/is (= [:done 1] (last @events))))))))
 
 (t/deftest readers-set-the-values-in-memory
   (t/async
     done
     (let [store   (ths/setup-store (tohp/setup-file))
           _       (swap! store assoc :permissions {:can-edit false})
-          commits (tohp/watch-commits store)]
+          commits (tohs/watch-commits store)]
       (tohs/run-store
        store done [(dwtc/check-page {:opening? true})]
        (fn [state]
@@ -135,7 +129,7 @@
   (t/async
     done
     (let [store   (ths/setup-store (tohp/setup-file))
-          commits (tohp/watch-commits store)
+          commits (tohs/watch-commits store)
           stale   (cthi/id :stale)]
       (tohs/run-store
        store done [(dwtc/check-page {:ids [stale]})
@@ -167,7 +161,7 @@
     done
     (let [file    (tohp/setup-file)
           store   (ths/setup-store file)
-          commits (tohp/watch-commits store)
+          commits (tohs/watch-commits store)
           stale   (cthi/id :stale)]
       (tohs/run-store
        store done [(dwtc/initialize (:id file))
@@ -185,8 +179,8 @@
        (fn [stream]
          (->> stream
               (rx/filter (ptk/type? ::dwtc/tokens-ready))
-              (rx/take 1)
-              (rx/delay 300)))))))
+              (rx/take 2)
+              (rx/last)))))))
 
 (defn- with-two-editors
   "Store of `file` for this session and another editor on the current page;
@@ -213,7 +207,7 @@
   (t/async
     done
     (let [store   (with-two-editors (tohp/setup-file) false)
-          commits (tohp/watch-commits store)]
+          commits (tohs/watch-commits store)]
       (tohs/run-store
        store done [(dwtc/check-page {:remote? true})]
        (fn [_]
@@ -224,7 +218,7 @@
   (t/async
     done
     (let [store    (with-two-editors (tohp/setup-file) true)
-          commits  (tohp/watch-commits store)
+          commits  (tohs/watch-commits store)
           persists (watch-event store :app.main.data.persistence/force-persist)]
       (tohs/run-store
        store done [(dwtc/check-page {:remote? true})]
@@ -234,32 +228,29 @@
          (t/is (= 1 (count @persists)) "the others wait for these values"))
        tohp/stop-on-ready))))
 
-(t/deftest the-tokens-are-resolved-again-only-when-they-change
-  (t/async
-    done
-    (let [calls   (atom 0)
-          resolve dwta/resolve-sets
-          store   (ths/setup-store (tohp/setup-file))]
-      (set! dwta/resolve-sets
-            (fn [sets base-font-size] (swap! calls inc) (resolve sets base-font-size)))
-      (tohs/run-store
-       store done [(dwtc/check-page {:opening? true})
-                   ;; another check once the first one is done
-                   (ptk/reify ::check-again
-                     ptk/WatchEvent
-                     (watch [_ _ stream]
-                       (->> stream
-                            (rx/filter (ptk/type? ::dwtc/tokens-ready))
-                            (rx/take 1)
-                            (rx/map (fn [_] (dwtc/check-page {:opening? true}))))))]
-       (fn [_]
-         (set! dwta/resolve-sets resolve)
-         (t/is (= 1 @calls)))
-       (fn [stream]
-         (->> stream
-              (rx/filter (ptk/type? ::dwtc/tokens-ready))
-              (rx/take 2)
-              (rx/last)))))))
+(t/deftest ^:async the-tokens-are-resolved-again-only-when-they-change
+  (let [calls   (atom 0)
+        resolve dwta/resolve-sets]
+    (await
+     (mock/with-mocks*
+       {dwta/resolve-sets (fn [sets base-font-size] (swap! calls inc) (resolve sets base-font-size))}
+       (let [store (ths/setup-store (tohp/setup-file))]
+         (await (tohs/run-store*
+                 store [(dwtc/check-page {:opening? true})
+                        ;; another check once the first one is done
+                        (ptk/reify ::check-again
+                          ptk/WatchEvent
+                          (watch [_ _ stream]
+                            (->> stream
+                                 (rx/filter (ptk/type? ::dwtc/tokens-ready))
+                                 (rx/take 1)
+                                 (rx/map (fn [_] (dwtc/check-page {:opening? true}))))))]
+                 (fn [stream]
+                   (->> stream
+                        (rx/filter (ptk/type? ::dwtc/tokens-ready))
+                        (rx/take 2)
+                        (rx/last)))))
+         (t/is (= 1 @calls)))))))
 
 (t/deftest a-change-of-the-tokens-is-checked
   (t/async
@@ -290,7 +281,7 @@
           page-id (cthf/current-page-id file)
           store   (ths/setup-store file)
           _       (swap! store assoc :features #{"render-wasm/v1"})
-          commits (tohp/watch-commits store)
+          commits (tohs/watch-commits store)
           before  (atom nil)
           ;; the renderer loads the shapes of the page a while after it opens
           loaded  (ptk/reify ::loaded
@@ -311,119 +302,58 @@
               (rx/filter (ptk/type? ::dwtc/tokens-ready))
               (rx/take 1)))))))
 
-(t/deftest the-text-resize-of-a-correction-is-not-an-edit
-  (t/async
-    done
-    (let [calls   (atom [])
-          resize  dwwt/resize-wasm-text-all
-          file    (-> (ctht/sample-file-with-tokens
-                       :lib-fn #(-> %
-                                    (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :set) :name "set"))
-                                    (ctob/add-theme (ctob/make-token-theme :id (cthi/new-id! :theme)
-                                                                           :name "theme"
-                                                                           :sets #{"set"}))
-                                    (ctob/add-token (cthi/id :set)
-                                                    (ctob/make-token :id (cthi/new-id! :size)
-                                                                     :name "size"
-                                                                     :type :font-size
-                                                                     :value 20)))
-                       :status-fn #(ctos/set-tokens-status % #{(cthi/id :theme)} #{(cthi/id :set)}))
-                      (ctho/add-frame-with-text :frame :text "hello")
-                      ;; holds the value of a previous version of the token
-                      (ctht/apply-token-to-shape :text "size" [:font-size] [:font-size] "14")
-                      (cths/update-shape :text :token-values {:font-size 14}))
-          store   (ths/setup-store file)]
-      (set! dwwt/resize-wasm-text-all
-            (fn
-              ([ids] (ptk/data-event ::resized ids))
-              ([ids opts]
-               (swap! calls conj opts)
-               (ptk/data-event ::resized ids))))
-      (tohs/run-store
-       store done [(dwtc/check-page {:opening? true})]
-       (fn [_]
-         (set! dwwt/resize-wasm-text-all resize)
-         (t/is (= [{:skip-component-sync? true :save-undo? false :ignore-save-lock true}] @calls)
-               "the copies get their values from the tokens, nothing is undoable and it follows them while saves fail"))
-       tohp/stop-on-ready))))
+(defn- setup-text-file
+  "File with the token `size` (font size 20) applied to the text `text`."
+  []
+  (-> (toht/sample-file-with-tokens [{:label :size :name "size" :type :font-size :value 20}])
+      (ctho/add-frame-with-text :frame :text "hello")
+      ;; holds the value of a previous version of the token
+      (ctht/apply-token-to-shape :text "size" [:font-size] [:font-size] "14")
+      (cths/update-shape :text :token-values {:font-size 14})))
 
-(t/deftest the-texts-are-resized-in-the-pass-of-the-sizes
-  (t/async
-    done
-    (let [flags    cf/flags
-          resize   dwwt/resize-wasm-text-all
-          measure  dwwt/resize-wasm-text-modifiers
-          ready?   dwwt/content-fonts-ready?
-          apply    dwm/apply-wasm-modifiers
-          resized  (atom 0)
-          passes   (atom [])
-          file     (-> (ctht/sample-file-with-tokens
-                        :lib-fn #(-> %
-                                     (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :set) :name "set"))
-                                     (ctob/add-theme (ctob/make-token-theme :id (cthi/new-id! :theme)
-                                                                            :name "theme"
-                                                                            :sets #{"set"}))
-                                     (ctob/add-token (cthi/id :set)
-                                                     (ctob/make-token :id (cthi/new-id! :size)
-                                                                      :name "size"
-                                                                      :type :font-size
-                                                                      :value 20)))
-                        :status-fn #(ctos/set-tokens-status % #{(cthi/id :theme)} #{(cthi/id :set)}))
-                       (ctho/add-frame-with-text :frame :text "hello")
-                       ;; holds the value of a previous version of the token
-                       (ctht/apply-token-to-shape :text "size" [:font-size] [:font-size] "14")
-                       (cths/update-shape :text :token-values {:font-size 14}))
-          text-id  (cthi/id :text)
-          store    (ths/setup-store file)
-          restore  (fn []
-                     (set! cf/flags flags)
-                     (set! dwwt/resize-wasm-text-all resize)
-                     (set! dwwt/resize-wasm-text-modifiers measure)
-                     (set! dwwt/content-fonts-ready? ready?)
-                     (set! dwm/apply-wasm-modifiers apply))]
-      (set! cf/flags (conj flags :lazy-token-propagation))
-      (set! dwwt/resize-wasm-text-all
-            (fn
-              ([ids] (swap! resized inc) (ptk/data-event ::resized ids))
-              ([ids _] (swap! resized inc) (ptk/data-event ::resized ids))))
-      (set! dwwt/resize-wasm-text-modifiers
-            (fn
-              ([shape] {(:id shape) {:modifiers :measured}})
-              ([shape _] {(:id shape) {:modifiers :measured}})))
-      (set! dwwt/content-fonts-ready? (constantly true))
-      (set! dwm/apply-wasm-modifiers
-            (fn [tree & {:as opts}]
-              (swap! passes conj [tree (:save-undo? opts)])
-              (ptk/data-event ::geometry tree)))
-      (tohs/run-store
-       store done [(dwtc/check-page {:opening? true})]
-       (fn [_]
-         (restore)
+(t/deftest ^:async the-text-resize-of-a-correction-is-not-an-edit
+  (let [calls (atom [])]
+    (await
+     (mock/with-mocks*
+       {dwwt/resize-wasm-text-all (fn
+                                    ([ids] (ptk/data-event ::resized ids))
+                                    ([ids opts]
+                                     (swap! calls conj opts)
+                                     (ptk/data-event ::resized ids)))}
+       (let [store (ths/setup-store (setup-text-file))]
+         (await (tohs/run-store* store [(dwtc/check-page {:opening? true})] tohp/stop-on-ready))
+         (t/is (= [{:skip-component-sync? true :save-undo? false :ignore-save-lock true}] @calls)
+               "the copies get their values from the tokens, nothing is undoable and it follows them while saves fail"))))))
+
+(t/deftest ^:async the-texts-are-resized-in-the-pass-of-the-sizes
+  (let [resized (atom 0)
+        passes  (atom [])]
+    (await
+     (mock/with-mocks*
+       {cf/flags                          (conj cf/flags :lazy-token-propagation)
+        dwwt/resize-wasm-text-all         (fn
+                                            ([ids] (swap! resized inc) (ptk/data-event ::resized ids))
+                                            ([ids _] (swap! resized inc) (ptk/data-event ::resized ids)))
+        dwwt/resize-wasm-text-modifiers   (fn
+                                            ([shape] {(:id shape) {:modifiers :measured}})
+                                            ([shape _] {(:id shape) {:modifiers :measured}}))
+        dwwt/content-fonts-ready?         (constantly true)
+        dwm/apply-wasm-modifiers          (fn [tree & {:as opts}]
+                                            (swap! passes conj [tree (:save-undo? opts)])
+                                            (ptk/data-event ::geometry tree))}
+       (let [store   (ths/setup-store (setup-text-file))
+             text-id (cthi/id :text)]
+         (await (tohs/run-store* store [(dwtc/check-page {:opening? true})] tohp/stop-on-ready))
          (t/is (= 0 @resized) "no second pass")
          (t/is (= [[{text-id {:modifiers :measured}} false]] @passes)
-               "the text gets its measured size in a single pass, not undoable"))
-       tohp/stop-on-ready))))
+               "the text gets its measured size in a single pass, not undoable"))))))
 
 (t/deftest only-the-texts-the-renderer-resizes-wait-for-it
   (t/async
     done
-    (let [file    (-> (ctht/sample-file-with-tokens
-                       :lib-fn #(-> %
-                                    (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :set) :name "set"))
-                                    (ctob/add-theme (ctob/make-token-theme :id (cthi/new-id! :theme)
-                                                                           :name "theme"
-                                                                           :sets #{"set"}))
-                                    (ctob/add-token (cthi/id :set)
-                                                    (ctob/make-token :id (cthi/new-id! :color)
-                                                                     :name "color"
-                                                                     :type :color
-                                                                     :value "#ff0000"))
-                                    (ctob/add-token (cthi/id :set)
-                                                    (ctob/make-token :id (cthi/new-id! :size)
-                                                                     :name "size"
-                                                                     :type :font-size
-                                                                     :value 20)))
-                       :status-fn #(ctos/set-tokens-status % #{(cthi/id :theme)} #{(cthi/id :set)}))
+    (let [file    (-> (toht/sample-file-with-tokens
+                       [{:label :color :name "color" :type :color :value "#ff0000"}
+                        {:label :size :name "size" :type :font-size :value 20}])
                       ;; both hold the value of a previous version of their token
                       (ctho/add-frame-with-text :colored-frame :colored "hello")
                       (ctht/apply-token-to-shape :colored "color" [:fill] [] nil)
@@ -465,19 +395,8 @@
 (defn- sample-file-with-radius
   "File `label` whose active token `radius` is `value`."
   [label value & {:as params}]
-  (ctht/sample-file-with-tokens
-   (assoc params
-          :file-id label
-          :lib-fn #(-> %
-                       (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :set) :name "set"))
-                       (ctob/add-theme (ctob/make-token-theme :id (cthi/new-id! :theme)
-                                                              :name "theme"
-                                                              :sets #{"set"}))
-                       (ctob/add-token (cthi/id :set)
-                                       (ctob/make-token :name "radius"
-                                                        :type :border-radius
-                                                        :value value)))
-          :status-fn #(ctos/set-tokens-status % #{(cthi/id :theme)} #{(cthi/id :set)}))))
+  (toht/sample-file-with-tokens [{:name "radius" :type :border-radius :value value}]
+                                (assoc params :file-id label)))
 
 (defn- with-radius
   "Apply the token `radius` to the radius `r1` of `label`, set to `value`."
@@ -522,7 +441,7 @@
                        (cthc/instantiate-component :component1 :copy-root :library library)
                        (with-radius :copy-root 50))
           store    (ths/setup-store consumer {:libraries [library]})
-          commits  (tohp/watch-commits store)
+          commits  (tohs/watch-commits store)
           copy-id  (cthi/id :copy-root)]
       (run-correction
        store done consumer [(dwl/sync-file (:id consumer) (:id library))]
@@ -547,7 +466,7 @@
                       (cthc/instantiate-component :component1 :copy-root)
                       (with-radius :copy-root 50))
           store   (ths/setup-store file)
-          commits (tohp/watch-commits store)
+          commits (tohs/watch-commits store)
           copy-id (cthi/id :copy-root)]
       (run-correction
        store done file [(dwl/reset-component copy-id)]
@@ -560,53 +479,47 @@
 
 ;; --- Failures
 
-(t/deftest a-failed-correction-still-ends-its-work
-  (t/async
-    done
-    (let [commit dwta/commit-token-values
-          store  (ths/setup-store (tohp/setup-file))
-          events (atom [])]
-      (set! dwta/commit-token-values (fn [& _] (rx/throw (ex-info "failed" {}))))
-      (rx/subs! #(cond
-                   (ptk/type? ::dwtpr/add-work %)  (swap! events conj [:add (deref %)])
-                   (ptk/type? ::dwtpr/work-done %) (swap! events conj [:done (deref %)]))
-                (ptk/input-stream store))
-      (tohs/run-store
-       store done [(dwtc/check-page {:opening? true})]
-       (fn [state]
-         (set! dwta/commit-token-values commit)
+(t/deftest ^:async a-failed-correction-still-ends-its-work
+  (await
+   (mock/with-mocks* {dwta/commit-token-values (fn [& _] (rx/throw (ex-info "failed" {})))}
+     (let [store  (ths/setup-store (tohp/setup-file))
+           events (atom [])]
+       (rx/subs! #(cond
+                    (ptk/type? ::dwtpr/add-work %)  (swap! events conj [:add (deref %)])
+                    (ptk/type? ::dwtpr/work-done %) (swap! events conj [:done (deref %)]))
+                 (ptk/input-stream store))
+       (let [state (await (tohs/run-store* store [(dwtc/check-page {:opening? true})] tohp/stop-on-ready))]
          (t/is (= [[:add 1] [:done 1]] @events) "the dialog closes")
-         (t/is (empty? (::dwtc/guard state)) "the shapes are not taken as set"))
-       tohp/stop-on-ready))))
+         (t/is (empty? (::dwtc/guard state)) "the shapes are not taken as set"))))))
 
 ;; Scenario: with lazy changes, the token goes 50 -> 70 -> 80 -> 70 and the
 ;; second page is opened after each change, so this session sets it each
 ;; time. Proves: the value it set before is set again.
 (t/deftest ^:async a-value-set-before-is-set-again-after-a-change-of-the-tokens
-  (let [restore (tohp/without-drain)
-        file    (tohp/setup-file-with-pages)
-        store   (ths/setup-store file)
-        page1   (cthf/current-page-id file)
-        page2   (cthi/id :page2)
-        token   (ctob/get-token (ctht/get-tokens-lib file) (cthi/id :set) (cthi/id :radius))
-        radius  #(get-in @store [:files (:id file) :data :pages-index %2 :objects (cthi/id %1) :r1])]
-    (ptk/emit! store (dwtc/initialize (:id file)))
-    (doseq [value [70 80 70]]
-      (ptk/emit! store
-                 #(assoc % :current-page-id page1)
-                 (dwtl/update-token (cthi/id :set) (cthi/id :radius) (assoc token :value value)))
-      (await (async/wait-for-store store #(and (= value (radius :stale page1))
-                                               (empty? (::dwtp/running @store)))
-                                   "the current page is set"))
-      (ptk/emit! store
-                 #(assoc % :current-page-id page2)
-                 (dwtc/check-page {:opening? true}))
-      (await (async/wait-for-store store #(= value (radius :other page2))
-                                   (str "the second page is set to " value))))
-    (t/is (= 70 (radius :other page2)))
-    (ptk/emit! store (dwtc/finalize))
-    (restore)
-    (rx/dispose! store)))
+  (await
+   (mock/with-mocks* {cf/flags (tohp/lazy-flags-without-drain)}
+     (let [file   (tohp/setup-file-with-pages)
+           store  (ths/setup-store file)
+           page1  (cthf/current-page-id file)
+           page2  (cthi/id :page2)
+           token  (ctob/get-token (ctht/get-tokens-lib file) (cthi/id :set) (cthi/id :radius))
+           radius #(get-in @store [:files (:id file) :data :pages-index %2 :objects (cthi/id %1) :r1])]
+       (ptk/emit! store (dwtc/initialize (:id file)))
+       (doseq [value [70 80 70]]
+         (ptk/emit! store
+                    #(assoc % :current-page-id page1)
+                    (dwtl/update-token (cthi/id :set) (cthi/id :radius) (assoc token :value value)))
+         (await (async/wait-for-store store #(and (= value (radius :stale page1))
+                                                  (empty? (::dwtp/running @store)))
+                                      "the current page is set"))
+         (ptk/emit! store
+                    #(assoc % :current-page-id page2)
+                    (dwtc/check-page {:opening? true}))
+         (await (async/wait-for-store store #(= value (radius :other page2))
+                                      (str "the second page is set to " value))))
+       (t/is (= 70 (radius :other page2)))
+       (ptk/emit! store (dwtc/finalize))
+       (rx/dispose! store)))))
 
 ;; Scenario: the workspace is loaded again, which starts its watchers again
 ;; without a finalize, and then a shape is edited. Proves: the page is
@@ -628,7 +541,10 @@
                                     :save-undo? false})
                (dwtpr/add-work 1) (dwtpr/show) (dwtpr/work-done 1))
     (await (async/wait-for-store store #(some #{::dwtpr/hide} @events) "the dialog is hidden"))
-    (await (js/Promise. (fn [resolve] (js/setTimeout resolve (+ leader/settle-ms 600)))))
+    (await (async/wait-for-store store #(some #{::dwtc/check-page} @events) "the page is checked"))
+    ;; A second watcher would check the page and hide the dialog in the same settle
+    (await (js/Promise. (fn [resolve] (js/setTimeout resolve leader/settle-ms))))
+    (await (async/settle))
     (t/is (= 1 (count (filter #{::dwtc/check-page} @events))) "the page is checked once")
     (t/is (= 1 (count (filter #{::dwtpr/hide} @events))) "the dialog is hidden once")
     (ptk/emit! store (dwtc/finalize) (dwtpr/finalize))

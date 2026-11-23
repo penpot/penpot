@@ -20,14 +20,18 @@
    [app.config :as cf]
    [app.main.data.changes :as dch]
    [app.main.data.workspace.thumbnails :as dwt]
+   [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.correction :as dwtc]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.data.workspace.tokens.page-values :as pv]
    [app.main.data.workspace.tokens.progress :as dwtpr]
    [app.main.data.workspace.tokens.propagation :as dwtp]
+   [app.main.data.workspace.tokens.remapping :as remap]
+   [app.main.data.workspace.tokens.typography :as dwtt]
    [app.util.activity :as activity]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
+   [frontend-tests.helpers.mock :as mock]
    [frontend-tests.helpers.pages :as thp]
    [frontend-tests.helpers.state :as ths]
    [frontend-tests.helpers.wasm :as thw]
@@ -52,50 +56,81 @@
            (rx/take 1)
            (rx/mapcat #(rx/from events))))))
 
-(defn- with-lazy-flag
-  "Run `f` with the lazy token propagation flag on; it returns the restore
-  function to call when the test ends."
-  []
-  (let [flags cf/flags]
-    (set! cf/flags (conj flags :lazy-token-propagation))
-    #(set! cf/flags flags)))
+(t/deftest ^:async lazy-changes-set-only-the-current-page
+  (await
+   (mock/with-mocks* {cf/flags (tohp/lazy-flags-without-drain)}
+     (let [file  (tohp/setup-file-with-pages)
+           store (ths/setup-store file)
+           token (ctob/get-token (ctht/get-tokens-lib file) (cthi/id :set) (cthi/id :radius))
+           page2 #(cths/get-shape (ths/get-file-from-state %1) %2 :page-label :page2)
+           state (await (tohs/run-store*
+                         store [(dwtl/update-token (cthi/id :set) (cthi/id :radius) (assoc token :value 70))]
+                         tohs/stop-on-send-update-indices))]
+       (t/is (= 70 (:r1 (cths/get-shape (ths/get-file-from-state state) :stale))) "the current page")
+       (t/is (= 50 (:r1 (page2 state :other))) "the other pages wait")
+       (t/is (= 50 (:r1 (page2 state :main-root))) "their main components too")))))
 
-(t/deftest lazy-changes-set-only-the-current-page
+(t/deftest ^:async lazy-pages-are-set-when-opened
+  (await
+   (mock/with-mocks* {cf/flags (tohp/lazy-flags-without-drain)}
+     (let [file  (tohp/setup-file-with-pages)
+           store (ths/setup-store file)
+           token (ctob/get-token (ctht/get-tokens-lib file) (cthi/id :set) (cthi/id :radius))
+           page2 (cthi/id :page2)
+           state (await (tohs/run-store*
+                         store [(dwtl/update-token (cthi/id :set) (cthi/id :radius) (assoc token :value 70))
+                                (after-propagations #(assoc % :current-page-id page2)
+                                                    (dwtc/check-page {:opening? true}))]
+                         (fn [stream]
+                           (->> stream
+                                (rx/filter #(and (ptk/type? ::dwtc/tokens-ready %)
+                                                 (= page2 (:page-id (deref %)))))
+                                (rx/take 1)))))]
+       (t/is (= 70 (:r1 (cths/get-shape (ths/get-file-from-state state) :other :page-label :page2))))))))
+
+(t/deftest ^:async a-new-base-font-size-sets-every-page
+  (let [resolve dwta/resolve-sets]
+    (await
+     (mock/with-mocks*
+       ;; The radius is a rem value: 50 at 16 pixels the rem
+       {dwta/resolve-sets (fn [sets base-font-size]
+                            (->> (resolve sets base-font-size)
+                                 (rx/map (fn [tokens]
+                                           (update-vals tokens #(update % :resolved-value * (/ base-font-size 16)))))))}
+       (let [file    (assoc-in (tohp/setup-file-with-pages) [:data :options :base-font-size] "20px")
+             store   (ths/setup-store file)
+             commits (tohs/watch-commits store)
+             page2   #(cths/get-shape (ths/get-file-from-state %1) %2 :page-label :page2)
+             state   (await (tohs/run-store* store [(dwtt/set-base-font-size "32px")]
+                                             tohs/stop-on-send-update-indices))]
+         (t/is (= 100 (:r1 (cths/get-shape (ths/get-file-from-state state) :stale))) "the current page")
+         (t/is (= 100 (:r1 (page2 state :other))) "the other pages")
+         (t/is (= 100 (:r1 (page2 state :main-root))))
+         (t/is (= ["20px"] (into [] (comp (mapcat :undo-changes)
+                                          (filter #(= :set-base-font-size (:type %)))
+                                          (map :base-font-size))
+                                 @commits))
+               "undone to the size it had"))))))
+
+(t/deftest a-remap-sets-every-page-in-one-undo-step
   (t/async
     done
-    (let [restore (with-lazy-flag)
-          file    (tohp/setup-file-with-pages)
+    (let [;; The token was renamed and changed; the shapes still apply its old name
+          file    (ctht/update-tokens-lib (tohp/setup-file-with-pages)
+                                          #(ctob/update-token % (cthi/id :set) (cthi/id :radius)
+                                                              (fn [token] (assoc token :name "corner" :value 70))))
           store   (ths/setup-store file)
-          token   (ctob/get-token (ctht/get-tokens-lib file) (cthi/id :set) (cthi/id :radius))
+          commits (tohs/watch-commits store)
           page2   #(cths/get-shape (ths/get-file-from-state %1) %2 :page-label :page2)]
       (tohs/run-store-async
-       store done [(dwtl/update-token (cthi/id :set) (cthi/id :radius) (assoc token :value 70))]
+       store done [(remap/remap-tokens "radius" "corner")]
        (fn [state]
-         (restore)
+         (t/is (= "corner" (get-in (page2 state :other) [:applied-tokens :r1])))
          (t/is (= 70 (:r1 (cths/get-shape (ths/get-file-from-state state) :stale))) "the current page")
-         (t/is (= 50 (:r1 (page2 state :other))) "the other pages wait")
-         (t/is (= 50 (:r1 (page2 state :main-root))) "their main components too"))))))
-
-(t/deftest lazy-pages-are-set-when-opened
-  (t/async
-    done
-    (let [restore (with-lazy-flag)
-          file    (tohp/setup-file-with-pages)
-          store   (ths/setup-store file)
-          token   (ctob/get-token (ctht/get-tokens-lib file) (cthi/id :set) (cthi/id :radius))
-          page2   (cthi/id :page2)]
-      (tohs/run-store
-       store done [(dwtl/update-token (cthi/id :set) (cthi/id :radius) (assoc token :value 70))
-                   (after-propagations #(assoc % :current-page-id page2)
-                                       (dwtc/check-page {:opening? true}))]
-       (fn [state]
-         (restore)
-         (t/is (= 70 (:r1 (cths/get-shape (ths/get-file-from-state state) :other :page-label :page2)))))
-       (fn [stream]
-         (->> stream
-              (rx/filter #(and (ptk/type? ::dwtc/tokens-ready %)
-                               (= page2 (:page-id (deref %)))))
-              (rx/take 1)))))))
+         (t/is (= 70 (:r1 (page2 state :other))) "the other pages")
+         (t/is (= 70 (:r1 (page2 state :main-root))))
+         (t/is (= 1 (count (into #{} (keep #(when (:save-undo? % true) (:undo-group %))) @commits)))
+               "one undo step"))))))
 
 (defn- commit-target
   "What `commit` sets: the tokens alone, the page `page1` or another page."
@@ -106,93 +141,73 @@
       (contains? page-ids page1) :current-page
       :else :other-page)))
 
-(t/deftest the-change-is-saved-and-the-other-pages-are-not
-  (t/async
-    done
-    (let [flags   cf/flags
-          _       (set! cf/flags (-> flags
-                                     (conj :lazy-token-propagation)
-                                     (disj :lazy-token-propagation-drain)))
-          file    (tohp/setup-file-with-pages)
-          store   (ths/setup-store file)
-          token   (ctob/get-token (ctht/get-tokens-lib file) (cthi/id :set) (cthi/id :radius))
-          page1   (cthf/current-page-id file)
-          events  (atom [])]
-      (rx/subs! (fn [event]
-                  (cond
-                    (= :app.main.data.persistence/force-persist event)
-                    (swap! events conj :persist)
+(t/deftest ^:async the-change-is-saved-and-the-other-pages-are-not
+  (await
+   (mock/with-mocks* {cf/flags (tohp/lazy-flags-without-drain)}
+     (let [file   (tohp/setup-file-with-pages)
+           store  (ths/setup-store file)
+           token  (ctob/get-token (ctht/get-tokens-lib file) (cthi/id :set) (cthi/id :radius))
+           page1  (cthf/current-page-id file)
+           events (atom [])]
+       (rx/subs! (fn [event]
+                   (cond
+                     (= :app.main.data.persistence/force-persist event)
+                     (swap! events conj :persist)
 
-                    (dch/commit? event)
-                    (swap! events conj (commit-target page1 (deref event)))))
-                (ptk/input-stream store))
-      (tohs/run-store-async
-       store done [(dwtl/update-token (cthi/id :set) (cthi/id :radius) (assoc token :value 70))]
-       (fn [_]
-         (set! cf/flags flags)
-         (t/is (= [:tokens :current-page :persist] @events)))))))
+                     (dch/commit? event)
+                     (swap! events conj (commit-target page1 (deref event)))))
+                 (ptk/input-stream store))
+       (await (tohs/run-store*
+               store [(dwtl/update-token (cthi/id :set) (cthi/id :radius) (assoc token :value 70))]
+               tohs/stop-on-send-update-indices))
+       (t/is (= [:tokens :current-page :persist] @events))))))
 
-(t/deftest the-other-pages-go-in-the-background
-  (t/async
-    done
-    (let [flags   cf/flags
-          _       (set! cf/flags (-> flags
-                                     (conj :lazy-token-propagation)
-                                     (disj :lazy-token-propagation-drain)))
-          file    (tohp/setup-file-with-pages)
-          store   (ths/setup-store file)
-          token   (ctob/get-token (ctht/get-tokens-lib file) (cthi/id :set) (cthi/id :radius))
-          page1   (cthf/current-page-id file)
-          events  (atom [])]
-      (rx/subs! (fn [event]
-                  (cond
-                    (ptk/type? ::dwtpr/add-work event)
-                    (swap! events conj [:add-work (deref event)])
+(t/deftest ^:async the-other-pages-go-in-the-background
+  (await
+   (mock/with-mocks* {cf/flags (tohp/lazy-flags-without-drain)}
+     (let [file   (tohp/setup-file-with-pages)
+           store  (ths/setup-store file)
+           token  (ctob/get-token (ctht/get-tokens-lib file) (cthi/id :set) (cthi/id :radius))
+           page1  (cthf/current-page-id file)
+           events (atom [])]
+       (rx/subs! (fn [event]
+                   (cond
+                     (ptk/type? ::dwtpr/add-work event)
+                     (swap! events conj [:add-work (deref event)])
 
-                    (ptk/type? :app.main.data.workspace.undo/commit-undo-transaction event)
-                    (swap! events conj :undo-entry)
+                     (ptk/type? :app.main.data.workspace.undo/commit-undo-transaction event)
+                     (swap! events conj :undo-entry)
 
-                    (dch/commit? event)
-                    (let [commit (deref event)]
-                      (swap! events conj [(commit-target page1 commit)
-                                          (:save-undo? commit true)]))))
-                (ptk/input-stream store))
-      (tohs/run-store-async
-       store done [(dwtl/update-token (cthi/id :set) (cthi/id :radius) (assoc token :value 70))]
-       (fn [_]
-         (set! cf/flags flags)
-         (t/is (= [[:tokens true] [:add-work 1] [:current-page true] :undo-entry] @events)
-               "the undo entry closes with the current page, nothing waits for the other pages"))))))
+                     (dch/commit? event)
+                     (let [commit (deref event)]
+                       (swap! events conj [(commit-target page1 commit)
+                                           (:save-undo? commit true)]))))
+                 (ptk/input-stream store))
+       (await (tohs/run-store*
+               store [(dwtl/update-token (cthi/id :set) (cthi/id :radius) (assoc token :value 70))]
+               tohs/stop-on-send-update-indices))
+       (t/is (= [[:tokens true] [:add-work 1] [:current-page true] :undo-entry] @events)
+             "the undo entry closes with the current page, nothing waits for the other pages")))))
 
 (defn- component-thumbnail
   "Id of the component thumbnail of `label`, on the page `page-label`."
   [file page-label label]
   (thc/fmt-object-id (:id file) (cthi/id page-label) (cthi/id label) "component"))
 
-(t/deftest the-other-pages-wait-for-a-pause-of-the-user
-  (t/async
-    done
-    (let [restore (tohp/without-drain)
-          idle    activity/idle
-          pause   (rx/subject)
-          file    (tohp/setup-file-with-pages)
-          store   (ths/setup-store file)
-          token   (ctob/get-token (ctht/get-tokens-lib file) (cthi/id :set) (cthi/id :radius))
-          thumb   (component-thumbnail file :page2 :main-root)
-          kept?   #(contains? (:thumbnails %) thumb)
-          before  (atom nil)]
-      (swap! store assoc :thumbnails {thumb {:uri "main"}})
-      (set! activity/idle (fn ([_ _] pause) ([_ _ _] pause)))
-      (tohs/run-store
-       store done [(dwtl/update-token (cthi/id :set) (cthi/id :radius) (assoc token :value 70))]
-       (fn [state]
-         (restore)
-         (set! activity/idle idle)
-         (t/is (true? @before) "nothing is cleared while the user works")
-         (t/is (not (kept? state)) "the thumbnail goes after the pause"))
-       (fn [stream]
+(t/deftest ^:async the-other-pages-wait-for-a-pause-of-the-user
+  (let [pause (rx/subject)]
+    (await
+     (mock/with-mocks* {cf/flags      (tohp/lazy-flags-without-drain)
+                        activity/idle (fn ([_ _] pause) ([_ _ _] pause))}
+       (let [file   (tohp/setup-file-with-pages)
+             store  (ths/setup-store file)
+             token  (ctob/get-token (ctht/get-tokens-lib file) (cthi/id :set) (cthi/id :radius))
+             thumb  (component-thumbnail file :page2 :main-root)
+             kept?  #(contains? (:thumbnails %) thumb)
+             before (atom nil)]
+         (swap! store assoc :thumbnails {thumb {:uri "main"}})
          ;; The user makes a pause 50 ms after the current page is set
-         (->> stream
+         (->> (ptk/input-stream store)
               (rx/filter (ptk/type? :app.main.data.workspace.undo/commit-undo-transaction))
               (rx/take 1)
               (rx/delay 50)
@@ -200,60 +215,59 @@
                           (reset! before (kept? @store))
                           (rx/push! pause nil)
                           (rx/end! pause))))
-         (->> stream
-              (rx/filter #(and (ptk/type? ::dwt/clear-thumbnail %) (= thumb (deref %))))
-              (rx/take 1)
-              (rx/delay 10)))))))
+         (let [state (await (tohs/run-store*
+                             store [(dwtl/update-token (cthi/id :set) (cthi/id :radius) (assoc token :value 70))]
+                             (fn [stream]
+                               (rx/filter #(and (ptk/type? ::dwt/clear-thumbnail %) (= thumb (deref %)))
+                                          stream))))]
+           (t/is (true? @before) "nothing is cleared while the user works")
+           (t/is (not (kept? state)) "the thumbnail goes after the pause")))))))
 
-(t/deftest lazy-changes-clear-the-stale-main-thumbnails
-  (t/async
-    done
-    (let [restore (tohp/without-drain)
-          file    (let [file          (tohp/setup-file)
-                        first-page-id (cthf/current-page-id file)]
-                    (-> file
-                        (cthf/add-sample-page :page2)
-                        (ctho/add-simple-component :component1 :main-root :main-child)
-                        (ctht/apply-token-to-shape :main-root "radius" [:r1] [:r1] 50)
-                        (cths/update-shape :main-root :token-values {:r1 50})
-                        (ctho/add-simple-component :component2 :plain-root :plain-child)
-                        (vary-meta assoc :current-page-id first-page-id)))
-          store   (ths/setup-store file)
-          token   (ctob/get-token (ctht/get-tokens-lib file) (cthi/id :set) (cthi/id :radius))
-          main    (component-thumbnail file :page2 :main-root)
-          plain   (component-thumbnail file :page2 :plain-root)]
-      (swap! store assoc :thumbnails {main {:uri "main"} plain {:uri "plain"}})
-      (tohs/run-store-async
-       store done [(dwtl/update-token (cthi/id :set) (cthi/id :radius) (assoc token :value 70))]
-       (fn [state]
-         (restore)
+(t/deftest ^:async lazy-changes-clear-the-stale-main-thumbnails
+  (await
+   (mock/with-mocks* {cf/flags (tohp/lazy-flags-without-drain)}
+     (let [file  (let [file          (tohp/setup-file)
+                       first-page-id (cthf/current-page-id file)]
+                   (-> file
+                       (cthf/add-sample-page :page2)
+                       (ctho/add-simple-component :component1 :main-root :main-child)
+                       (ctht/apply-token-to-shape :main-root "radius" [:r1] [:r1] 50)
+                       (cths/update-shape :main-root :token-values {:r1 50})
+                       (ctho/add-simple-component :component2 :plain-root :plain-child)
+                       (vary-meta assoc :current-page-id first-page-id)))
+           store (ths/setup-store file)
+           token (ctob/get-token (ctht/get-tokens-lib file) (cthi/id :set) (cthi/id :radius))
+           main  (component-thumbnail file :page2 :main-root)
+           plain (component-thumbnail file :page2 :plain-root)]
+       (swap! store assoc :thumbnails {main {:uri "main"} plain {:uri "plain"}})
+       (let [state (await (tohs/run-store*
+                           store [(dwtl/update-token (cthi/id :set) (cthi/id :radius) (assoc token :value 70))]
+                           tohs/stop-on-send-update-indices))]
          (t/is (= 50 (:r1 (cths/get-shape (ths/get-file-from-state state) :main-root :page-label :page2)))
                "the main waits to be set")
          (t/is (not (contains? (:thumbnails state) main)) "its thumbnail goes")
          (t/is (contains? (:thumbnails state) plain) "a main without the token keeps it"))))))
 
-(t/deftest lazy-changes-clear-the-stale-frame-thumbnails
-  (t/async
-    done
-    (let [restore (tohp/without-drain)
-          file    (let [file          (tohp/setup-file)
-                        first-page-id (cthf/current-page-id file)]
-                    (-> file
-                        (cthf/add-sample-page :page2)
-                        (ctho/add-frame :other)
-                        (ctht/apply-token-to-shape :other "radius" [:r1] [:r1] 50)
-                        (cths/update-shape :other :token-values {:r1 50})
-                        (ctho/add-frame :plain)
-                        (vary-meta assoc :current-page-id first-page-id)))
-          store   (ths/setup-store file)
-          token   (ctob/get-token (ctht/get-tokens-lib file) (cthi/id :set) (cthi/id :radius))
-          thumb   #(thc/fmt-object-id (:id file) (cthi/id :page2) (cthi/id %) "frame")]
-      (swap! store assoc :thumbnails {(thumb :other) {:uri "other"}
-                                      (thumb :plain) {:uri "plain"}})
-      (tohs/run-store-async
-       store done [(dwtl/update-token (cthi/id :set) (cthi/id :radius) (assoc token :value 70))]
-       (fn [state]
-         (restore)
+(t/deftest ^:async lazy-changes-clear-the-stale-frame-thumbnails
+  (await
+   (mock/with-mocks* {cf/flags (tohp/lazy-flags-without-drain)}
+     (let [file  (let [file          (tohp/setup-file)
+                       first-page-id (cthf/current-page-id file)]
+                   (-> file
+                       (cthf/add-sample-page :page2)
+                       (ctho/add-frame :other)
+                       (ctht/apply-token-to-shape :other "radius" [:r1] [:r1] 50)
+                       (cths/update-shape :other :token-values {:r1 50})
+                       (ctho/add-frame :plain)
+                       (vary-meta assoc :current-page-id first-page-id)))
+           store (ths/setup-store file)
+           token (ctob/get-token (ctht/get-tokens-lib file) (cthi/id :set) (cthi/id :radius))
+           thumb #(thc/fmt-object-id (:id file) (cthi/id :page2) (cthi/id %) "frame")]
+       (swap! store assoc :thumbnails {(thumb :other) {:uri "other"}
+                                       (thumb :plain) {:uri "plain"}})
+       (let [state (await (tohs/run-store*
+                           store [(dwtl/update-token (cthi/id :set) (cthi/id :radius) (assoc token :value 70))]
+                           tohs/stop-on-send-update-indices))]
          (t/is (= 50 (:r1 (cths/get-shape (ths/get-file-from-state state) :other :page-label :page2)))
                "the frame waits to be set")
          (t/is (not (contains? (:thumbnails state) (thumb :other))) "its thumbnail goes")
@@ -270,50 +284,36 @@
     (t/is (= #{main} (pv/main-instance-ids objects [main])))
     (t/is (empty? (pv/main-instance-ids objects [other])) "no main holds it")))
 
-(defn- failed-propagation-ends-its-work
-  "Checks that a token change whose propagation fails, after `fail!` (that
-  returns how to undo it), reports the failure and ends its work."
-  [done fail!]
-  (let [flags   cf/flags
-        _       (set! cf/flags (disj flags :lazy-token-propagation))
-        restore (fail!)
-        file    (tohp/setup-file-with-pages)
-        errors  (atom 0)
-        store   (ths/setup-store file {:on-error (fn [_] (swap! errors inc))})
-        token   (ctob/get-token (ctht/get-tokens-lib file) (cthi/id :set) (cthi/id :radius))
-        events  (atom [])]
+(defn- ^:async failed-propagation-ends-its-work
+  "Checks that a token change whose propagation fails reports the failure
+  and ends its work."
+  []
+  (let [file   (tohp/setup-file-with-pages)
+        errors (atom 0)
+        store  (ths/setup-store file {:on-error (fn [_] (swap! errors inc))})
+        token  (ctob/get-token (ctht/get-tokens-lib file) (cthi/id :set) (cthi/id :radius))
+        events (atom [])]
     (rx/subs! #(cond
                  (ptk/type? ::dwtpr/add-work %)  (swap! events conj [:add (deref %)])
                  (ptk/type? ::dwtpr/work-done %) (swap! events conj [:done (deref %)]))
               (ptk/input-stream store))
-    (tohs/run-store
-     store done [(dwtl/update-token (cthi/id :set) (cthi/id :radius) (assoc token :value 70))]
-     (fn [_]
-       (set! cf/flags flags)
-       (restore)
-       (let [added (reduce + (keep #(when (= :add (first %)) (second %)) @events))
-             ended (reduce + (keep #(when (= :done (first %)) (second %)) @events))]
-         (t/is (pos? @errors) "the failure is reported")
-         (t/is (pos? added))
-         (t/is (= added ended) "the dialog closes")))
-     (tohs/stop-on ::dwtp/propagation-finished))))
+    (await (tohs/run-store*
+            store [(dwtl/update-token (cthi/id :set) (cthi/id :radius) (assoc token :value 70))]
+            (tohs/stop-on ::dwtp/propagation-finished)))
+    (let [added (reduce + (keep #(when (= :add (first %)) (second %)) @events))
+          ended (reduce + (keep #(when (= :done (first %)) (second %)) @events))]
+      (t/is (pos? @errors) "the failure is reported")
+      (t/is (pos? added))
+      (t/is (= added ended) "the dialog closes"))))
 
-(t/deftest a-failed-propagation-still-ends-its-work
-  (t/async
-    done
-    (failed-propagation-ends-its-work
-     done
-     (fn []
-       (let [propagation pv/page-propagation]
-         (set! pv/page-propagation (fn [& _] (throw (ex-info "failed" {}))))
-         #(set! pv/page-propagation propagation))))))
+(t/deftest ^:async a-failed-propagation-still-ends-its-work
+  (await
+   (mock/with-mocks* {cf/flags            (disj cf/flags :lazy-token-propagation)
+                      pv/page-propagation (fn [& _] (throw (ex-info "failed" {})))}
+     (await (failed-propagation-ends-its-work)))))
 
-(t/deftest a-failed-search-of-the-shapes-still-ends-its-work
-  (t/async
-    done
-    (failed-propagation-ends-its-work
-     done
-     (fn []
-       (let [targets cltp/out-of-date-targets]
-         (set! cltp/out-of-date-targets (fn [& _] (throw (ex-info "failed" {}))))
-         #(set! cltp/out-of-date-targets targets))))))
+(t/deftest ^:async a-failed-search-of-the-shapes-still-ends-its-work
+  (await
+   (mock/with-mocks* {cf/flags                  (disj cf/flags :lazy-token-propagation)
+                      cltp/out-of-date-targets (fn [& _] (throw (ex-info "failed" {})))}
+     (await (failed-propagation-ends-its-work)))))

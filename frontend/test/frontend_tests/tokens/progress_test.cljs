@@ -88,25 +88,21 @@
     (t/is (nil? (tick work*)) "done before the delay")
     (t/is (nil? @work*))))
 
-(t/deftest the-save-waits-for-the-dialog-to-close
-  (t/async
-    done
-    (let [stream  (rx/subject)
-          emitted (atom [])
-          watch   (fn [state]
-                    (rx/sub! (ptk/watch (dwtpr/persist-when-closed) state stream)
-                             #(swap! emitted conj %)))]
-      (watch {})
-      (t/is (= [::dps/force-persist] @emitted) "at once without the dialog")
-      (reset! emitted [])
-      (watch {::dwtpr/progress true})
-      (t/is (= [] @emitted) "not while the dialog shows")
-      (rx/push! stream (#'dwtpr/hide))
-      (t/is (= [] @emitted) "not before the closed dialog is painted")
-      (js/setTimeout (fn []
-                       (t/is (= [::dps/force-persist] @emitted) "once it is painted")
-                       (done))
-                     (+ dwtpr/paint-timeout-ms 100)))))
+(t/deftest ^:async the-save-waits-for-the-dialog-to-close
+  (let [stream  (rx/subject)
+        emitted (atom [])
+        watch   (fn [state]
+                  (rx/sub! (ptk/watch (dwtpr/persist-when-closed) state stream)
+                           #(swap! emitted conj %)))]
+    (watch {})
+    (t/is (= [::dps/force-persist] @emitted) "at once without the dialog")
+    (reset! emitted [])
+    (watch {::dwtpr/progress true})
+    (t/is (= [] @emitted) "not while the dialog shows")
+    (rx/push! stream (#'dwtpr/hide))
+    (t/is (= [] @emitted) "not before the closed dialog is painted")
+    (await (async/wait-for #(seq @emitted) "the save once the dialog is painted"))
+    (t/is (= [::dps/force-persist] @emitted) "once it is painted")))
 
 (t/deftest ^:async a-reload-closes-the-dialog-of-the-work-before
   (let [store (ths/setup-store (tohp/setup-file))]

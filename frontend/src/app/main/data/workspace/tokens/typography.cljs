@@ -7,12 +7,15 @@
 (ns app.main.data.workspace.tokens.typography
   (:require
    [app.common.files.changes-builder :as pcb]
-   [app.main.data.changes :as dch]
    [app.main.data.helpers :as dsh]
+   [app.main.data.workspace.tokens.propagation :as dwtp]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
-(defn set-base-font-size [base-font-size]
+(defn set-base-font-size
+  "Set the base font size of the file and the shapes that apply rem tokens
+  to their new values."
+  [base-font-size]
   (ptk/reify ::set-base-font-size
     ptk/WatchEvent
     (watch [it state _]
@@ -20,5 +23,4 @@
             changes   (-> (pcb/empty-changes it)
                           (pcb/with-file-data file-data)
                           (pcb/set-base-font-size base-font-size))]
-        (rx/of
-         (dch/commit-changes changes))))))
+        (rx/of (dwtp/commit-token-changes changes))))))
