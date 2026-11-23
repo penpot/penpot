@@ -61,8 +61,6 @@ This is a monorepo. Principles that apply to one module do *not* generally apply
 - Before automating or inspecting Penpot designs through the Plugin API, call the Penpot MCP `high_level_overview` tool.
 - connection between the JavaScript plugin API and the ClojureScript code: `mem:frontend/plugin-api-to-cljs-binding`.
 - executing ClojureScript code in the frontend: `mem:frontend/cljs-repl`.
-- handling Clojure compiler errors, runtime patching and debug helpers: `mem:frontend/handling-errors-and-debugging`.
+- Failed ClojureScript build or stale hot reload: `mem:frontend/compile-diagnostics`.
 
-## Detecting Crashes
-
-The Penpot frontend can crash silently from the JS API's perspective: `execute_code` calls return successfully, but 1-2s later the workspace becomes unusable (Internal Error page). The `execute_code` tool then stops working, but `cljs_repl` still works. Use it to detect a crash via `(some? (:exception @app.main.store/state))`. For details on handling crashes, read memory `mem:frontend/handling-crashes`.
+- Successful `execute_code` followed by Internal Error: `mem:frontend/handling-crashes` for delayed failures, store inspection and recovery.

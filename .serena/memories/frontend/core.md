@@ -1,64 +1,33 @@
-# Frontend Architecture and Workflow
+# Frontend
 
-Frontend: CLJS SPA; React/Rumext; Potok; RxJS; okulary refs; SCSS modules; shared `common/`; JS/TS workspace packages.
+Start at `app.main.ui` for Rumext components, `app.main.data` for Potok events, and `app.main.refs` for derived state. Shared model rules live in `mem:common/core`.
 
-## Stable namespace map
+## UI and integration
 
-- `app.main.ui.*`: Rumext/React UI components for workspace, dashboard, viewer, settings, auth, nitrate, etc.
-- `app.main.data.*`: Potok event handlers and side effects.
-- `app.main.refs`: reactive refs/lenses over store and derived workspace data.
-- `app.main.store`: Potok store and `emit!`.
-- `app.plugins.*` and `app.plugins`: CLJS implementation of Plugin JS API proxies.
-- `app.render_wasm.*`: frontend bridge to Rust/WASM renderer.
-- `app.util.*`: DOM, HTTP, i18n, keyboard, codegen, and general frontend utilities.
-- `frontend/packages/*` and `frontend/text-editor`: JS/TS workspace packages consumed by the app.
-- Nitrate subscription/organization UI and flows live under `app.main.data.nitrate` and `app.main.ui.nitrate*`; backend/API behavior is covered by backend memories, and shared organization permission rules (`allowed?`, `can-send-invitations?`) are in `common/src/app/common/types/organization.cljc`.
-- `app.config` external bridges (`external-feature-flag`, `external-session-id`, `external-context-info`, `external-notify-register-success`, `initialize-external-context-info`, `add-event-callback` / `get-event-callbacks` via `penpotEventCallbacks` + `penpotAddEventCallback`) delegate to `globalThis` hooks injected by the SaaS host. Never delete `external-feature-flag`, even with zero call sites: it is the seam for future A/B tests. Frontend audit events are forwarded to named host callbacks from `app.main.data.event` after `make-event` (vendor-agnostic; no analytics SDK in Penpot). `resources/js/event-callbacks.js` is copied to `public/js/` and loaded in `index.mustache` **before** `config.js` so hosts can call `penpotAddEventCallback` at config parse time.
+- CLJS components, Design System, SCSS modules, accessibility and render cost: `mem:frontend/ui-conventions-and-style-system`.
+- JS/TS packages, shared React UI, Storybook and text editor boundaries: `mem:frontend/ui-packages-text-editor-workflow`.
+- PO files and locale conventions: `mem:frontend/translations`.
+- JS Plugin API bindings and proxies: `mem:frontend/plugin-api-to-cljs-binding`. External SaaS hooks and script load order: `mem:frontend/host-integration`.
 
+## Workspace
 
-## Lint and Format
+- Store, refs, and interaction streams: `mem:frontend/workspace-store`.
+- Local and remote commits, rebase, and undo: `mem:frontend/workspace-commits`.
+- Save queue, rejected edits, retries, and recovery: `mem:frontend/workspace-state-persistence-subtleties`.
+- Modifier previews, transform commits, and WASM bridge: `mem:frontend/workspace-transform-subtleties`.
+- Token application and propagation: `mem:frontend/workspace-token-subtleties`; token model: `mem:common/tokens-schema-subtleties`.
 
-From `frontend/`:
+## App shell
 
-- CLJ/CLJS lint: `pnpm run lint:clj`.
-- JS lint currently no-ops via `pnpm run lint:js`.
-- SCSS lint: `pnpm run lint:scss`.
-- Format checks: `pnpm run check-fmt:clj`, `pnpm run check-fmt:js`, `pnpm run check-fmt:scss`.
-- Format fix: `pnpm run fmt`, or targeted `fmt:clj` / `fmt:js` / `fmt:scss`. After running `fmt:*`, `check-fmt:*` is redundant.
-- Translation formatting after i18n edits: `pnpm run translations`.
+- Router, history, SSO destinations and team context: `mem:frontend/routing-app-shell-subtleties`.
+- Authentication event sources and invitations: `mem:frontend/auth-events`.
+- Error boundary, transport errors and reports: `mem:frontend/error-reporting`.
+- WebSocket lifetime, membership revocation, and job progress: `mem:frontend/websocket-notifications`.
+- Dashboard and viewer behavior: `mem:frontend/dashboard-viewer-subtleties`.
 
-**Before linting:** if delimiter errors are suspected (after LLM edits, or
-lint/compiler reports syntax errors), run `scripts/paren-repair` on the
-affected files first. Delimiter errors produce misleading linter output.
-See `mem:scripts/paren-repair`.
+## Testing and diagnosis
 
-## Focused memory routing
-
-UI and packages:
-- App UI components, SCSS modules, style-system boundaries, accessibility, i18n, and render performance: `mem:frontend/ui-conventions-and-style-system`.
-- JS/TS packages, shared UI package, text editor, Storybook, and package builds: `mem:frontend/ui-packages-text-editor-workflow`.
-- PO translation workflow and per-locale conventions: `mem:frontend/translations`.
-
-Workspace behavior:
-- Workspace state, commits, persistence, undo, repo calls, and refs: `mem:frontend/workspace-state-persistence-subtleties`.
-- Workspace transforms, modifier previews, WASM modifier integration, and transform commits: `mem:frontend/workspace-transform-subtleties`.
-- Workspace token application/propagation: `mem:frontend/workspace-token-subtleties`; shared token data/schema: `mem:common/tokens-schema-subtleties`.
-
-App shell and product flows:
-- Routing, root app shell, websocket, and global errors: `mem:frontend/routing-app-shell-subtleties`.
-- Authentication events, the session origin vocabulary, and the invitation flow: `mem:frontend/auth-events`.
-- Dashboard and viewer flows: `mem:frontend/dashboard-viewer-subtleties`.
-- Plugin JS API runtime inside the frontend app: `mem:frontend/plugin-api-to-cljs-binding`.
-
-Diagnostics and validation:
-- Runtime inspection and navigation: `mem:frontend/cljs-repl`.
-- Source-edit compile/hot-reload diagnostics: `mem:frontend/compile-diagnostics`.
-- Runtime crash recovery: `mem:frontend/handling-crashes`.
-- Tests and live verification: `mem:frontend/testing`.
-- CI end-to-end workflow (build-once frontend bundle, check names): `mem:frontend/e2e-ci-workflow`.
-- Cross-cutting testing principles and anti-patterns: `mem:testing`.
-- Real pointer/keyboard gesture reproduction: `mem:frontend/playwright-gestures`.
-
-## Areas without focused memories
-
-These frontend areas currently have no dedicated Serena memory beyond this architecture entry and nearby source/tests: clipboard, drawing tools, boolean/path operations, interactions/prototyping, color/style asset management, grid-layout editing UI, comments UI, fonts UI, and many dashboard/settings subflows. Treat work there as less memory-covered and inspect source/tests more carefully.
+- Choose the frontend test suite: `mem:frontend/testing`. Run `./scripts/ci frontend` from the repo root for lint, unit tests and format; see `mem:scripts/ci`.
+- Failed compile, stale hot reload, or compiler warnings: `mem:frontend/compile-diagnostics`.
+- Inspect the live browser, navigate or observe events: `mem:frontend/cljs-repl`. For delayed Internal Error pages, see `mem:frontend/handling-crashes`.
+- Real pointer or keyboard input: `mem:frontend/playwright-gestures`.
