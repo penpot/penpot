@@ -26,7 +26,7 @@
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.checkbox :refer [checkbox*]]
    [app.main.ui.ds.controls.input :refer [input*]]
-   [app.main.ui.ds.controls.radio-buttons :refer [radio-buttons*]]
+   [app.main.ui.ds.controls.radio-cards :refer [radio-cards*]]
    [app.main.ui.ds.controls.textarea :refer [textarea*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.layout.menu :refer [menu* menu-item* menu-separator*]]
@@ -34,6 +34,7 @@
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
    [app.main.ui.ds.product.avatar :refer [avatar*]]
+   [app.main.ui.ds.product.branch-status :refer [branch-status*]]
    [app.main.ui.ds.product.empty-state :refer [empty-state*]]
    [app.main.ui.ds.tooltip :refer [tooltip*]]
    [app.main.ui.workspace.compare.common :as cc]
@@ -266,32 +267,51 @@
 
 ;; --- Merge confirmation dialog (modal)
 
+(mf/defc change-counts*
+  "How many changes go into main and how many are left out, with the
+  arrow and the figure the branch counts use everywhere else
+  (`branch-status*`)."
+  {::mf/private true}
+  [{:keys [going-in left-out]}]
+  [:div {:class (stl/css :change-counts)}
+   (when (pos? going-in)
+     [:div {:class (stl/css :change-count)}
+      [:> branch-status* {:ahead going-in}]
+      [:span {:class (stl/css :change-count-text)}
+       (tr "workspace.branches.merge.count-in" (i18n/c going-in))]])
+   (when (pos? left-out)
+     [:div {:class (stl/css :change-count)}
+      [:span {:class (stl/css :change-count-left-out)}
+       [:> i/icon* {:icon-id i/remove :size "s"}]
+       (dm/str left-out)]
+      [:span {:class (stl/css :change-count-text)}
+       (tr "workspace.branches.merge.count-out" (i18n/c left-out))]])])
+
 (mf/defc integration-mode*
   "What the integration does with the branch: a merge deletes it, an
-  apply keeps it open on top of the new main. An apply needs the branch
-  up to date with main, so its option is disabled, and the hint says
-  why, while main has changes the branch lacks."
+  apply keeps it open on top of the new main. Each option says in one
+  line what happens. An apply needs the branch up to date with main, so
+  its option is disabled, and its line says why, while main has changes
+  the branch lacks."
   {::mf/private true}
   [{:keys [mode apply-blocked on-change]}]
-  [:div {:class (stl/css :field)}
-   [:span {:id "merge-branch-mode-label"
-           :class (stl/css :field-label)}
-    (tr "workspace.branches.apply.mode-label")]
-   [:> radio-buttons* {:name "merge-branch-mode"
-                       :aria-labelledby "merge-branch-mode-label"
-                       :extended true
-                       :selected mode
-                       :on-change on-change
-                       :options [{:id "merge-branch-mode-merge"
-                                  :label (tr "workspace.branches.apply.mode-merge")
-                                  :value "merge"}
-                                 {:id "merge-branch-mode-apply"
-                                  :label (tr "workspace.branches.apply.mode-apply")
-                                  :value "apply"
-                                  :disabled apply-blocked}]}]
-   (when apply-blocked
-     [:span {:class (stl/css :field-hint)}
-      (tr "workspace.branches.apply.behind-hint")])])
+  [:> radio-cards* {:name "merge-branch-mode"
+                    :aria-labelledby "merge-branch-mode-label"
+                    :selected mode
+                    :on-change on-change
+                    :options [{:id "merge-branch-mode-merge"
+                               :value "merge"
+                               :icon i/git-merge
+                               :label (tr "workspace.branches.apply.mode-merge")
+                               :description (tr "workspace.branches.apply.mode-merge-hint")}
+                              {:id "merge-branch-mode-apply"
+                               :value "apply"
+                               :icon i/git-branch
+                               :label (tr "workspace.branches.apply.mode-apply")
+                               :description (if apply-blocked
+                                              (tr "workspace.branches.apply.behind-hint")
+                                              (tr "workspace.branches.apply.mode-apply-hint"))
+                               :disabled apply-blocked}]}])
 
 (mf/defc merge-branch-dialog*
   "Bring the changes of a branch into main. The user picks what happens
@@ -312,7 +332,7 @@
 
         mode*     (mf/use-state "merge")
         apply?    (and (= "apply" (deref mode*)) (not apply-blocked))
-        on-mode   (mf/use-fn #(reset! mode* %))
+        on-mode   (mf/use-fn (fn [value _] (reset! mode* value)))
 
         ;; the open tasks of the branch move to main as they are on a
         ;; merge; their assignees may be told. An apply leaves them on the
@@ -390,15 +410,16 @@
            [:span {:key idx :class (stl/css :modal-message-emphasis)} part]
            [:span {:key idx} part]))]
 
-      [:> integration-mode* {:mode (if apply? "apply" "merge")
-                             :apply-blocked apply-blocked
-                             :on-change on-mode}]
-
-      (when (pos? (+ going-in left-out))
-        [:ul {:class (stl/css :merge-summary)}
-         [:li (tr "workspace.branches.merge.summary-in" (i18n/c going-in))]
-         (when (pos? left-out)
-           [:li (tr "workspace.branches.merge.summary-out" (i18n/c left-out))])])
+      ;; what goes in, then what happens to the branch
+      [:div {:class (stl/css :field)}
+       [:span {:id "merge-branch-mode-label"
+               :class (stl/css :field-label)}
+        (tr "workspace.branches.apply.mode-label")]
+       (when (pos? (+ going-in left-out))
+         [:> change-counts* {:going-in going-in :left-out left-out}])
+       [:> integration-mode* {:mode (if apply? "apply" "merge")
+                              :apply-blocked apply-blocked
+                              :on-change on-mode}]]
 
       ;; kept with the record of the merge, in the reviews dialog
       [:div {:class (stl/css :field)}
@@ -429,24 +450,16 @@
                         :on-change on-notify
                         :label (tr "workspace.branches.merge.notify-assignees")}]])
 
-      (cond
-        ;; the branch stays, and so does what was left out of main
-        (and apply? (pos? left-out))
-        [:> context-notification* {:level :info :type :context}
-         (tr "workspace.branches.apply.left-out-kept" (i18n/c left-out))]
-
-        apply?
-        [:> context-notification* {:level :info :type :context}
-         (tr "workspace.branches.apply.keep-info")]
-
-        ;; deleting the branch takes the changes left out with it
-        (pos? left-out)
-        [:> context-notification* {:level :warning :type :context}
-         (tr "workspace.branches.merge.left-out-lost" (i18n/c left-out))]
-
-        :else
-        [:> context-notification* {:level :info :type :context}
-         (tr "workspace.branches.merge.delete-info")])]
+      ;; the line of each option says what happens to the branch; only
+      ;; what happens to the changes left out needs a word more
+      (when (pos? left-out)
+        (if apply?
+          ;; the branch stays, and so does what was left out of main
+          [:> context-notification* {:level :info :type :context}
+           (tr "workspace.branches.apply.left-out-kept" (i18n/c left-out))]
+          ;; deleting the branch takes the changes left out with it
+          [:> context-notification* {:level :warning :type :context}
+           (tr "workspace.branches.merge.left-out-lost" (i18n/c left-out))]))]
 
      [:> modal-footer* {}
       [:> button* {:variant "secondary" :on-click on-close}

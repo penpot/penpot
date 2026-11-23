@@ -6825,10 +6825,6 @@ msgid "workspace.branches.apply.error"
 msgstr "No se pudo aplicar la rama"
 
 #: src/app/main/ui/workspace/sidebar/branches.cljs
-msgid "workspace.branches.apply.keep-info"
-msgstr "Tras aplicar los cambios, esta rama sigue abierta y al día con main."
-
-#: src/app/main/ui/workspace/sidebar/branches.cljs
 msgid "workspace.branches.apply.left-out-kept"
 msgid_plural "workspace.branches.apply.left-out-kept"
 msgstr[0] "El cambio que dejaste fuera se queda en esta rama."
@@ -6839,12 +6835,20 @@ msgid "workspace.branches.apply.mode-apply"
 msgstr "Aplicar y mantener la rama"
 
 #: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.apply.mode-apply-hint"
+msgstr "Main recibe los cambios y sigues trabajando en esta rama."
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
 msgid "workspace.branches.apply.mode-label"
 msgstr "Qué pasa con la rama"
 
 #: src/app/main/ui/workspace/sidebar/branches.cljs
 msgid "workspace.branches.apply.mode-merge"
 msgstr "Fusionar y eliminar la rama"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.apply.mode-merge-hint"
+msgstr "Main recibe los cambios. La rama y su archivo se eliminan."
 
 #: src/app/main/data/workspace/branches.cljs
 msgid "workspace.branches.apply.success"
@@ -7527,10 +7531,17 @@ msgstr ""
 msgid "workspace.branches.merge.confirm-title"
 msgstr "Fusionar en main"
 
-#: src/app/main/ui/workspace/sidebar/branches.cljs:378
-msgid "workspace.branches.merge.delete-info"
-msgstr ""
-"Tras la fusión, esta rama y su archivo se eliminan para liberar espacio."
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.merge.count-in"
+msgid_plural "workspace.branches.merge.count-in"
+msgstr[0] "cambio va a main"
+msgstr[1] "cambios van a main"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.merge.count-out"
+msgid_plural "workspace.branches.merge.count-out"
+msgstr[0] "cambio se queda fuera"
+msgstr[1] "cambios se quedan fuera"
 
 #: src/app/main/data/workspace/branches.cljs:451, src/app/main/data/workspace/branches.cljs:459
 msgid "workspace.branches.merge.error"
@@ -8164,18 +8175,6 @@ msgstr "%s de main:"
 #: src/app/main/ui/workspace/sidebar/branch_compare/conflicts.cljs
 msgid "workspace.branches.resolve.drops.branch-short"
 msgstr "%s de la rama:"
-
-#: src/app/main/ui/workspace/sidebar/branches.cljs
-msgid "workspace.branches.merge.summary-in"
-msgid_plural "workspace.branches.merge.summary-in"
-msgstr[0] "1 cambio pasa a main."
-msgstr[1] "%s cambios pasan a main."
-
-#: src/app/main/ui/workspace/sidebar/branches.cljs
-msgid "workspace.branches.merge.summary-out"
-msgid_plural "workspace.branches.merge.summary-out"
-msgstr[0] "1 cambio se queda fuera."
-msgstr[1] "%s cambios se quedan fuera."
 
 #: src/app/main/ui/workspace/sidebar/branches.cljs
 msgid "workspace.branches.merge.left-out-lost"
