@@ -174,6 +174,11 @@
 
              (st/emit! (dwc/change-color-in-selected color-operations new-color (dissoc old-color :token-name :has-token-applied))))))
 
+        on-change-for-color
+        (fn [color]
+          (fn [new-color _index & [from-picker?]]
+            (on-change color new-color from-picker?)))
+
         on-open
         (mf/use-fn #(mf/set-ref-val! prev-colors-ref []))
 
@@ -246,7 +251,7 @@
                :index index
                :on-detach #(on-detach color %)
                :select-only select-only
-               :on-change #(on-change color %1 %3)
+               :on-change (on-change-for-color color)
                :on-token-change #(on-token-change %1 %2 color)
                :on-open on-open
                :origin :color-selection
@@ -264,7 +269,7 @@
              :color color
              :index index
              :select-only select-only
-             :on-change #(on-change color %1 %3)
+             :on-change (on-change-for-color color)
              :origin :color-selection
              :on-token-change #(on-token-change %1 %2 color)
              :on-open on-open
@@ -285,7 +290,7 @@
                  :color color
                  :index index
                  :select-only select-only
-                 :on-change #(on-change token-color %1 %3)
+                 :on-change (on-change-for-color token-color)
                  :origin :color-selection
                  :applied-token (:token-name token-color)
                  :on-detach-token on-detach-token
