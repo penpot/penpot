@@ -4,7 +4,8 @@ JVM Clojure backend. Start in `app.main` for Integrant wiring, `app.rpc.commands
 
 ## Focused memories
 
-- RPC wrapper order, DB transactions and advisory locks, config, HTTP middleware and metrics: `mem:backend/subtleties`.
+- RPC wrapper order, config, HTTP middleware and metrics: `mem:backend/subtleties`.
+- Transaction ownership, after-commit callbacks and advisory locks: `mem:backend/db-transactions`.
 - RPC concurrency limit declarations, acquisition order and queue diagnosis: `mem:backend/rpc-concurrency`.
 - Injected component schemas and startup assertion failures: `mem:backend/integrant-schemas`.
 - Read-time migrations, fragments and snapshots: `mem:backend/file-data/reads-and-versions`. Partial save and failure handling: `mem:backend/file-data/save`.

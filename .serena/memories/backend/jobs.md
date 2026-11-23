@@ -3,7 +3,7 @@
 ## Start in the code
 
 - Definitions and lifecycle: `app.jobs`, `app.main` (`::jobs/defs`). Dispatch, execution and cron: `app.worker.dispatcher`, `app.worker`, `app.worker.cron`. Retention and resources: `app.jobs.gc`, `app.jobs.storage`, `mem:backend/storage`.
-- User-facing RPCs: `app.rpc.commands.jobs`; file import/export: `mem:backend/binfile`. Deployment and queue topology: `mem:prod-infra/core`. DB transaction semantics: `mem:backend/subtleties`. Tests: `backend-tests.jobs-test`, `backend-tests.worker-test`, and the tests beside each job.
+- User-facing RPCs: `app.rpc.commands.jobs`; file import/export: `mem:backend/binfile`. Deployment and queue topology: `mem:prod-infra/core`. DB transaction ownership: `mem:backend/db-transactions`. Tests: `backend-tests.jobs-test`, `backend-tests.worker-test`, and the tests beside each job.
 
 ## Boundaries
 

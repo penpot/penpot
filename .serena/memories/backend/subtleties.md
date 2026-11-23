@@ -17,14 +17,7 @@
 
 ## DB helpers
 
-- Most `app.db` helpers accept a pool, connection, or map containing `::db/pool` / `::db/conn`; preserve that convention in shared code.
-- `db/tx-run!` uses `next.jdbc.transaction/*nested-tx* :ignore`: nested transaction calls reuse the outer transaction, not a savepoint. Use explicit savepoints when nested rollback semantics matter.
-- Whether a call is nested is decided by the CONNECTION, not by an ambient flag: `db/transact!` binds `*after-commit-conn*` around the body, and a transactable that is not identical to that connection is an independent unit of work that owns its own after-commit context. A `tx-run!` that passes a pool while a transaction is open therefore commits on its own and drains its own callbacks, instead of leaving them in a context that may roll back.
-- `after-commit` callbacks run on commit only. A transaction marked `::db/rollback` (used by `srepl` and `app.tasks/offload-file-data`) commits nothing, so it runs none of them.
-- `db/run!` opens/reuses one connection but does not create a transaction.
-- `db/own-transaction` returns a cfg that owns its next transaction: it drops `::db/conn` (so `tx-run!` opens its own) and `::db/read-only` (so a caller running read-only, like the storage scheduler streaming a plan cursor, cannot make the nested write read-only too). Lifecycle writes use it so a rollback of the surrounding work can undo neither the write nor its metric.
-- `db/tjson` is Transit JSON for jsonb storage; `db/json` is plain JSON. The old `task` props used Transit, but unified job params and results use JSON with job-def decoders; see `mem:backend/jobs`.
-- Advisory locks (`app.db`) come in two independent axes. **Scope**: the transaction ones (`xact-lock!`, `xact-try-lock!`) vanish with the transaction, and the session ones (`session-try-lock`, `session-unlock`, `session-unlock-all`) live until unlocked or the session ends — a pooled connection returned with one keeps it. **Form**: the one-key form takes a uuid or an int (uuids hashed with a zero-UUID seeded siphash) and the two-key form takes a `classid`/`objid` pair; PostgreSQL keys them by `objsubid` (1 vs 2), so the two spaces never conflict even with the same numbers. `update-file` and the setup take the one-key form; the audit consumers take the two-key one with `classid` `730000` and the consumer id as `objid`, which is why a consumer tick can never block a file update, and they clear whatever a borrowed connection carries before taking it.
+- Transaction ownership, callbacks and advisory locks: `mem:backend/db-transactions`.
 
 ## Workers and cron
 
@@ -57,7 +50,7 @@
 
 - `app.metrics/run!` is safe by default: a recording failure never throws (a metrics bug must not change the behavior of the measured operation). The first failure per metric id logs at `warn`, later ones at `debug`. The `instance` precondition is a plain assert (the backend enables `:backend-asserts`), and the collector lookup sits outside the recording guard, so a missing instance fails hard even when asserts are disabled. `::mtx/metrics` is required by the storage, s3-backend, db-pool and jobs APIs; jobs helpers never silently skip a missing metrics instance. The resolver is `app.metrics/instance` and it raises, unlike `run!`.
 - `app.msgbus` (`pub!`, `sub!`, `purge!`) keeps taking the **instance** on purpose: msgbus is what produces it, and `app.rpc.notifications` already shows the caller passing a cfg. `app.jobs` resolves `::mbus/msgbus` from the cfg internally, and `insert-event` keeps its explicit pre-insert check so a profile job never loses its notification.
-- `app.db/after-commit` is the boundary for SQL-backed metrics: callbacks are drained by the commit of the transaction that owns the connection they were registered on, and discarded when it rolls back. Because nesting follows the connection, that transaction is the outermost one only for a real nested call.
+- Register SQL-backed metrics via `app.db/after-commit` inside the writing transaction; see `mem:backend/db-transactions`.
 - `penpot_http_malformed_requests_total` (counter, no labels) counts requests whose body the parser could not read. `app.http.middleware/wrap-parse-request` emits it where it classifies the error, so the instance travels as a middleware argument (`[mw/parse-request (::mtx/metrics cfg)]`) and each service declares the definition with its own prefix (nexus: `nexus_http_malformed_requests_total`). The per-endpoint request counters of nexus do not count these requests: they sit inside the parse middleware, so the failure happens before them.
 
 ## Log-derived metrics
