@@ -40,7 +40,6 @@ This is a monorepo. Principles that apply to one module do *not* generally apply
 # Dev Scripts (scripts/)
 
 - `scripts/nrepl-eval.mjs` — Evaluate Clojure/ClojureScript code via nREPL. Supports `--backend` (port 6064) and `--frontend` (port 3447) aliases. See `mem:scripts/nrepl-eval`.
-- `scripts/paren-repair` — Fix mismatched delimiters in Clojure/CLJS and reformat with cljfmt. If edits break delimiters, repair them before lint and format checks. See `mem:scripts/paren-repair`.
 - `scripts/psql` — PostgreSQL client wrapper with devenv defaults. Companion: `scripts/db-schema` for DDL dumps. See `mem:scripts/psql`.
 - `scripts/gh.py` — GitHub operations helper: list milestone issues, fetch PR details, compare against CHANGES.md, create issues with their Issue Type in one command. Requires `gh` CLI. See `mem:scripts/gh`.
 - Before changing coverage summaries or PR comments, read `mem:scripts/coverage-reporting` for metrics, concurrent comment updates, and fork permissions.
