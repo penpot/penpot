@@ -27,13 +27,14 @@
 ALTER TABLE file_data
   ADD COLUMN IF NOT EXISTS storage_object_id uuid;
 
--- The CTE is MATERIALIZED so the uuid cast only sees rows that passed the
--- regex. A plain subquery can be inlined, and a corrupt value would reach the
--- cast and abort the migration.
+-- The cast is guarded as well as materialized: corrupt values cannot reach it
+-- even if PostgreSQL reorders expressions in the WHERE clause.
 WITH candidates AS MATERIALIZED (
   SELECT file_id,
          id,
-         (metadata->>'storage-ref-id')::uuid AS soid
+         CASE WHEN (metadata->>'storage-ref-id') ~*
+                   '^[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}$'
+              THEN (metadata->>'storage-ref-id')::uuid END AS soid
     FROM file_data
    WHERE backend = 'storage'
      AND storage_object_id IS NULL
@@ -47,6 +48,9 @@ UPDATE file_data AS fd
  WHERE fd.file_id = c.file_id
    AND fd.id = c.id
    AND EXISTS (SELECT 1 FROM storage_object AS so WHERE so.id = c.soid);
+
+-- The old key is removed from every row migrated by this statement. A rollback
+-- to the previous code after the backfill requires restoring the backup.
 
 -- The deletion check of the foreign key looks a row up by this column for
 -- every deleted object; without the index it scans all partitions.

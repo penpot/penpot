@@ -226,6 +226,127 @@
     (t/is (= (:shape-ref copy-nested-rectangle) (thi/id :nested-rectangle)))
     (t/is (nil? (ctk/get-swap-slot copy-nested-rectangle)))))
 
+(t/deftest test-dont-advance-under-swapped-nested-copy
+  (let [;; ==== Setup
+        ;; :copy-big-board [:name Big Board]                                 #--> :big-board
+        ;;     :copy-h-board-with-ellipse [:name Board with ellipse]         @--> :h-board-with-ellipse
+        ;;         :copy-board-with-rectangle [:name Board with rectangle, :swap-slot-label :nested-h-ellipse] @--> :board-with-rectangle
+        ;;             :copy-nested-h-rectangle [:name Rectangle]            @--> :nested-h-rectangle
+        ;;                 :copy-nested-rectangle [:name rectangle]          ---> :nested-rectangle
+        file (-> (setup-file)
+                 (thc/instantiate-component :c-big-board
+                                            :copy-big-board
+                                            :children-labels [:copy-h-board-with-ellipse
+                                                              :copy-nested-h-ellipse
+                                                              :copy-nested-ellipse])
+                 (thc/component-swap :copy-nested-h-ellipse
+                                     :c-board-with-rectangle
+                                     :copy-board-with-rectangle
+                                     :children-labels [:copy-nested-h-rectangle
+                                                       :copy-nested-rectangle]))
+
+        page (thf/current-page file)
+
+        ;; ==== Action
+        changes (cll/generate-detach-instance (-> (pcb/empty-changes nil)
+                                                  (pcb/with-page page)
+                                                  (pcb/with-objects (:objects page)))
+                                              page
+                                              {(:id file) file}
+                                              (thi/id :copy-big-board))
+        file'   (thf/apply-changes file changes)
+
+        ;; ==== Get
+        copy-h-board-with-ellipse (ths/get-shape file' :copy-h-board-with-ellipse)
+        copy-board-with-rectangle (ths/get-shape file' :copy-board-with-rectangle)
+        copy-nested-h-rectangle   (ths/get-shape file' :copy-nested-h-rectangle)
+        copy-nested-rectangle     (ths/get-shape file' :copy-nested-rectangle)]
+
+    ;; ==== Check
+
+    ;; The first level copy becomes a root copy and advances one level.
+    (t/is (ctk/instance-root? copy-h-board-with-ellipse))
+    (t/is (= (:shape-ref copy-h-board-with-ellipse) (thi/id :board-with-ellipse)))
+    (t/is (nil? (ctk/get-swap-slot copy-h-board-with-ellipse)))
+
+    ;; The nested copy swapped in the detached copy already points to the
+    ;; main of board-with-rectangle, so it and its children must not advance.
+    (t/is (= (:shape-ref copy-board-with-rectangle) (thi/id :board-with-rectangle)))
+    (t/is (= (ctk/get-swap-slot copy-board-with-rectangle) (thi/id :nested-h-ellipse)))
+
+    (t/is (= (:shape-ref copy-nested-h-rectangle) (thi/id :nested-h-rectangle)))
+    (t/is (= (:shape-ref copy-nested-rectangle) (thi/id :nested-rectangle)))))
+
+(t/deftest test-dont-advance-under-deep-swapped-nested-copy
+  (let [;; ==== Setup
+        ;; {:huge-board} [:name Huge Board]                                  # [Component :c-huge-board]
+        ;;     :big-board-in-huge [:name Big Board]                          @--> :big-board
+        ;;         :h-board-in-huge [:name Board with ellipse]               @--> :h-board-with-ellipse
+        ;;             :nested3-h-ellipse [:name Ellipse]                    @--> :nested2-h-ellipse
+        ;;                 :nested3-ellipse [:name Ellipse]                  ---> :nested2-ellipse
+        ;; :copy-huge-board [:name Huge Board]                               #--> :huge-board
+        ;;     :copy-big-board [:name Big Board]                             @--> :big-board-in-huge
+        ;;         :copy-h-board-with-ellipse [:name Board with ellipse]     @--> :h-board-in-huge
+        ;;             :copy-board-with-rectangle [:name Board with rectangle, :swap-slot-label :nested-h-ellipse] @--> :board-with-rectangle
+        ;;                 :copy-nested-h-rectangle [:name Rectangle]        @--> :nested-h-rectangle
+        ;;                     :copy-nested-rectangle [:name rectangle]      ---> :nested-rectangle
+        file (-> (setup-file)
+                 (tho/add-frame :huge-board :name "Huge Board")
+                 (thc/instantiate-component :c-big-board
+                                            :big-board-in-huge
+                                            :parent-label :huge-board
+                                            :children-labels [:h-board-in-huge
+                                                              :nested3-h-ellipse
+                                                              :nested3-ellipse])
+                 (thc/make-component :c-huge-board :huge-board)
+                 (thc/instantiate-component :c-huge-board
+                                            :copy-huge-board
+                                            :children-labels [:copy-big-board
+                                                              :copy-h-board-with-ellipse
+                                                              :copy-nested-h-ellipse
+                                                              :copy-nested-ellipse])
+                 (thc/component-swap :copy-nested-h-ellipse
+                                     :c-board-with-rectangle
+                                     :copy-board-with-rectangle
+                                     :children-labels [:copy-nested-h-rectangle
+                                                       :copy-nested-rectangle]))
+
+        page (thf/current-page file)
+
+        ;; ==== Action
+        changes (cll/generate-detach-instance (-> (pcb/empty-changes nil)
+                                                  (pcb/with-page page)
+                                                  (pcb/with-objects (:objects page)))
+                                              page
+                                              {(:id file) file}
+                                              (thi/id :copy-huge-board))
+        file'   (thf/apply-changes file changes)
+
+        ;; ==== Get
+        copy-big-board            (ths/get-shape file' :copy-big-board)
+        copy-h-board-with-ellipse (ths/get-shape file' :copy-h-board-with-ellipse)
+        copy-board-with-rectangle (ths/get-shape file' :copy-board-with-rectangle)
+        copy-nested-h-rectangle   (ths/get-shape file' :copy-nested-h-rectangle)
+        copy-nested-rectangle     (ths/get-shape file' :copy-nested-rectangle)]
+
+    ;; ==== Check
+
+    ;; The first level copy becomes a root copy and advances one level.
+    (t/is (ctk/instance-root? copy-big-board))
+    (t/is (= (:shape-ref copy-big-board) (thi/id :big-board)))
+    (t/is (nil? (ctk/get-swap-slot copy-big-board)))
+
+    ;; The non-swapped nested copy under it advances one level too.
+    (t/is (= (:shape-ref copy-h-board-with-ellipse) (thi/id :h-board-with-ellipse)))
+
+    ;; The nested copy swapped two levels down already points to the main
+    ;; of board-with-rectangle, so it and its children must not advance.
+    (t/is (= (:shape-ref copy-board-with-rectangle) (thi/id :board-with-rectangle)))
+    (t/is (= (ctk/get-swap-slot copy-board-with-rectangle) (thi/id :nested-h-ellipse)))
+
+    (t/is (= (:shape-ref copy-nested-h-rectangle) (thi/id :nested-h-rectangle)))
+    (t/is (= (:shape-ref copy-nested-rectangle) (thi/id :nested-rectangle)))))
+
 (t/deftest test-propagate-slot-when-swapped-main
   (let [;; ==== Setup
         file (-> (setup-file)

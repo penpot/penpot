@@ -40,7 +40,9 @@
    [frontend-tests.data.workspace-comments-test]
    [frontend-tests.data.workspace-context-menu-test]
    [frontend-tests.data.workspace-focus-test]
+   [frontend-tests.data.workspace-heal-undo-test]
    [frontend-tests.data.workspace-interactions-test]
+   [frontend-tests.data.workspace-layout-other-page-test]
    [frontend-tests.data.workspace-libraries-load-test]
    [frontend-tests.data.workspace-libraries-sync-test]
    [frontend-tests.data.workspace-mcp-test]
@@ -50,6 +52,7 @@
    [frontend-tests.data.workspace-path-edition-test]
    [frontend-tests.data.workspace-reflow-test]
    [frontend-tests.data.workspace-shortcuts-test]
+   [frontend-tests.data.workspace-sync-text-wasm-test]
    [frontend-tests.data.workspace-texts-test]
    [frontend-tests.data.workspace-thumbnails-test]
    [frontend-tests.data.workspace-undo-test]
@@ -97,6 +100,7 @@
    [frontend-tests.plugins.interactions-test]
    [frontend-tests.plugins.library-test]
    [frontend-tests.plugins.local-storage-test]
+   [frontend-tests.plugins.location-test]
    [frontend-tests.plugins.management-test]
    [frontend-tests.plugins.page-active-validation-test]
    [frontend-tests.plugins.page-test]
@@ -116,6 +120,7 @@
    [frontend-tests.render-wasm.process-objects-test]
    [frontend-tests.render-wasm.serialization-test]
    [frontend-tests.render-wasm.shape-proxy-test]
+   [frontend-tests.render-wasm.stale-text-selrects-test]
    [frontend-tests.render-wasm.text-editor-apply-styles-test]
    [frontend-tests.render-wasm.text-editor-caret-color-test]
    [frontend-tests.render-wasm.text-editor-content-range-test]
@@ -249,7 +254,9 @@
    'frontend-tests.data.workspace-comments-test
    'frontend-tests.data.workspace-context-menu-test
    'frontend-tests.data.workspace-focus-test
+   'frontend-tests.data.workspace-heal-undo-test
    'frontend-tests.data.workspace-interactions-test
+   'frontend-tests.data.workspace-layout-other-page-test
    'frontend-tests.data.workspace-libraries-load-test
    'frontend-tests.data.workspace-libraries-sync-test
    'frontend-tests.data.workspace-mcp-test
@@ -259,6 +266,7 @@
    'frontend-tests.data.workspace-path-edition-test
    'frontend-tests.data.workspace-reflow-test
    'frontend-tests.data.workspace-shortcuts-test
+   'frontend-tests.data.workspace-sync-text-wasm-test
    'frontend-tests.data.workspace-texts-test
    'frontend-tests.data.workspace-thumbnails-test
    'frontend-tests.data.workspace-undo-test
@@ -307,6 +315,7 @@
    'frontend-tests.plugins.interactions-test
    'frontend-tests.plugins.library-test
    'frontend-tests.plugins.local-storage-test
+   'frontend-tests.plugins.location-test
    'frontend-tests.plugins.page-active-validation-test
    'frontend-tests.plugins.page-test
    'frontend-tests.plugins.parser-test
@@ -324,6 +333,7 @@
    'frontend-tests.render-wasm.process-objects-test
    'frontend-tests.render-wasm.serialization-test
    'frontend-tests.render-wasm.shape-proxy-test
+   'frontend-tests.render-wasm.stale-text-selrects-test
    'frontend-tests.render-wasm.text-editor-apply-styles-test
    'frontend-tests.render-wasm.text-editor-caret-color-test
    'frontend-tests.render-wasm.text-editor-content-range-test

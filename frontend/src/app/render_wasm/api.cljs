@@ -14,6 +14,7 @@
    [app.common.files.focus :as cpf]
    [app.common.files.helpers :as cfh]
    [app.common.fonts :as cfnt]
+   [app.common.geom.shapes.text :as gsht]
    [app.common.logging :as log]
    [app.common.math :as mth]
    [app.common.render-wasm.api.props :as props]
@@ -1661,16 +1662,13 @@
   [text-ids]
   (run! f/force-update-text-layout text-ids))
 
-(defn- text-selrect-stale?
+(defn- text-size-stale?
   "Check if the WASM-measured dimensions of an auto-grow text shape differ
-   from its stored selrect (same 0.1px tolerance as the classic renderer)."
-  [{:keys [id selrect grow-type]}]
+   from its stored size by more than `tolerance` on an axis that grows and
+   does not fill its layout parent."
+  [{:keys [id] :as shape} tolerance]
   (when-let [{:keys [width height]} (get-text-dimensions id)]
-    (case grow-type
-      :auto-width  (or (not (mth/close? width (:width selrect) 0.1))
-                       (not (mth/close? height (:height selrect) 0.1)))
-      :auto-height (not (mth/close? height (:height selrect) 0.1))
-      false)))
+    (gsht/text-size-drifted? shape width height tolerance)))
 
 (defonce ^:private pending-stale-selrect-ids (atom #{}))
 (defonce ^:private stale-selrect-sync-token (atom 0))
@@ -1696,32 +1694,64 @@
     (listen-tiles-render-complete-once! flush-on-idle!)))
 
 (defn- sync-stale-text-selrects!
-  "Emit the ids of auto-grow text shapes whose selrect no longer matches the
-   measured layout, so the workspace resizes them (data-event instead of a
+  "Emit the ids of auto-grow text shapes whose stored size drifted from the
+   measured layout on an axis that grows and does not fill its layout
+   parent, so the workspace resizes them (data-event instead of a
    direct call to avoid a circular dependency; see the watcher in
-   `app.main.data.workspace/initialize-workspace`)."
-  [shapes]
-  (let [stale-ids (into []
-                        (comp (filter cfh/text-shape?)
-                              (filter (comp #{:auto-width :auto-height} :grow-type))
-                              (filter text-selrect-stale?)
-                              (map :id))
-                        shapes)]
-    (when (seq stale-ids)
-      (schedule-stale-selrect-sync! stale-ids))))
+   `app.main.data.workspace/initialize-workspace`). The default tolerance is
+   0.1px, as in the classic renderer."
+  ([shapes]
+   (sync-stale-text-selrects! shapes 0.1))
+  ([shapes tolerance]
+   (let [stale-ids (into []
+                         (comp (filter cfh/text-shape?)
+                               (filter (comp #{:auto-width :auto-height} :grow-type))
+                               (filter #(text-size-stale? % tolerance))
+                               (map :id))
+                         shapes)]
+     (when (seq stale-ids)
+       (schedule-stale-selrect-sync! stale-ids)))))
+
+(defn- shape-ids-for-failed-fonts
+  "Ids of the texts that use a face that failed to load. WASM lays them out
+   with a fallback font, so their measured size must not be saved: it would
+   be wrong and the heal records no undo step."
+  [{:keys [font-index]}]
+  (into #{}
+        (comp (filter f/font-failed?) (mapcat font-index))
+        (keys font-index)))
+
+(defn- sync-loaded-text-selrects
+  "Check the auto-grow texts just loaded into WASM, so a text whose stored
+   size came from elsewhere (e.g. a component sync while its page was closed)
+   is resized to its layout. Texts still waiting for a font are left to
+   `relayout-after-fonts!`, which checks them once the font arrives, with
+   its own 0.1px tolerance. Texts using a face that failed to load are
+   skipped: their layout comes from a fallback font and would save a wrong
+   size with no undo step. This check runs on every page load, so it uses
+   1px: the classic renderer stores whole-pixel sizes and WASM fractional
+   ones, and a finer tolerance would rewrite the same texts each time a page
+   opens."
+  [shapes text-font-state]
+  (let [skip-ids (into (or (shape-ids-for-pending-fonts text-font-state) #{})
+                       (shape-ids-for-failed-fonts text-font-state))]
+    (sync-stale-text-selrects! (into [] (remove (comp skip-ids :id)) shapes) 1)))
 
 (defn- relayout-after-fonts!
   "Relayout text shapes once their pending fonts have resolved. Font fetches
    are deduped per URL, so only shapes that use a not-yet-ready face at upload
    time need a forced relayout; then re-sync selrects that drifted for those
-   shapes only."
+   shapes only, leaving out the texts whose face failed to load."
   [shapes text-font-state]
   (let [text-ids (into [] (comp (filter cfh/text-shape?) (map :id)) shapes)
         affected-ids (or (shape-ids-for-pending-fonts text-font-state) #{})
         shapes-by-id (d/index-by :id shapes)]
     (when (seq text-ids)
       (if (seq affected-ids)
-        (let [affected-shapes (into [] (keep shapes-by-id) affected-ids)]
+        (let [failed-ids      (shape-ids-for-failed-fonts text-font-state)
+              affected-shapes (into []
+                                    (comp (remove failed-ids) (keep shapes-by-id))
+                                    affected-ids)]
           (force-update-text-layouts affected-ids)
           (sync-stale-text-selrects! affected-shapes))
         (update-text-layouts text-ids)))))
@@ -1868,7 +1898,8 @@
                          ;; is false).  Each call touch_shape → touched_ids.
                          (let [text-ids (into [] (comp (filter cfh/text-shape?) (map :id)) shapes)]
                            (when (seq text-ids)
-                             (update-text-layouts text-ids)))
+                             (update-text-layouts text-ids)
+                             (sync-loaded-text-selrects shapes text-font-state-acc)))
                          (if render-callback
                            (render-callback)
                            (request-render "set-objects-complete"))
@@ -1986,7 +2017,8 @@
                          (if render-callback
                            (render-callback)
                            (request-render "set-objects-sync-complete"))
-                         (ug/dispatch! (ug/event "penpot:wasm:set-objects")))))))
+                         (ug/dispatch! (ug/event "penpot:wasm:set-objects"))))
+      (sync-loaded-text-selrects shapes text-font-state))))
 
 (defn- shapes-in-tree-order
   "Returns shapes sorted in tree order (parents before children).

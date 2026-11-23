@@ -256,12 +256,15 @@
                         (feat.fdata/decode-file-data cfg))]
       (select-keys fragment (sm/keys schema:file-fragment)))))
 
-(defn- check-fragment-scope!
+(defn- check-fragment-scope
   "Checks that the fragment is reachable from the pages authorized by
-  the share-link. Raises a :not-found exception if the fragment is not reachable."
+  the share-link. Raises a :not-found exception if the fragment is not reachable.
+  Only the fragments of the link's pages are authorized: root-level pointers
+  (such as the file's components) never pass."
   [cfg file-id fragment-id pages]
   (let [fdata (-> (bfc/get-file cfg file-id :read-only? true)
                   (get :data)
+                  (select-keys [:pages-index])
                   (update :pages-index select-keys pages))]
     (when-not (contains? (feat.fdata/get-used-pointer-ids fdata) fragment-id)
       (ex/raise :type :not-found
@@ -279,7 +282,7 @@
                  (let [perms (perms/get-file-read-permissions cfg profile-id file-id share-id)]
                    (check-read-permissions! perms)
                    (when (= :share-link (:type perms))
-                     (check-fragment-scope! cfg file-id fragment-id (:pages perms)))
+                     (check-fragment-scope cfg file-id fragment-id (:pages perms)))
                    (-> (get-file-fragment cfg file-id fragment-id)
                        (rph/with-http-cache long-cache-duration))))))
 
@@ -1033,7 +1036,10 @@
                         :modified-at (ct/now)
                         :has-media-trimmed false))))
 
-(defn- get-referenced-files
+(defn get-referenced-files
+  "Ids of the live files using the given file as a library, oldest
+  first. Public so the delete cascade can capture the dependents
+  before removing the relations."
   [cfg library-id]
   (->> (db/exec! cfg [sql:get-referenced-files library-id])
        (into [] bfc/xf-map-id)))
@@ -1147,23 +1153,17 @@
         file  (db/update! conn :file
                           {:deleted-at (ct/in-future delay)}
                           {:id file-id}
-                          {::db/return-keys [:id :name :is-shared :deleted-at
-                                             :project-id :created-at :modified-at]})
-        ;; Files using the library, captured before their relations are removed
-        file-ids (when (:is-shared file)
-                   (get-referenced-files conn file-id))]
-
-    ;; Remove all possible relations for that file
-    (db/delete! conn :file-library-rel
-                {:library-file-id file-id})
-
+                          {::db/return-keys [:name :deleted-at
+                                             :project-id :created-at :modified-at]})]
+    ;; Only the mark happens here, so the file disappears at once. The
+    ;; cascade job captures the files using this one as a library,
+    ;; removes the relations and absorbs them: the relations must still
+    ;; exist when the job runs.
     (jobs/submit cfg
                  {::jobs/name :delete-object
-                  ::jobs/params (cond-> {:object :file
-                                         :deleted-at (:deleted-at file)
-                                         :id file-id}
-                                  (some? file-ids)
-                                  (assoc :file-ids file-ids))})
+                  ::jobs/params {:object :file
+                                 :deleted-at (:deleted-at file)
+                                 :id file-id}})
     file))
 
 (def ^:private

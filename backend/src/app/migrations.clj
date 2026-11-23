@@ -531,9 +531,6 @@
    {:name "0156-reset-pg-storage-defaults"
     :fn (mg/resource "app/migrations/sql/0156-reset-pg-storage-defaults.sql")}
 
-   {:name "0157-add-audit-log-pending-table"
-    :fn (mg/resource "app/migrations/sql/0157-add-audit-log-pending-table.sql")}
-
    {:name "0157-migrate-legacy-file-data"
     :fn (mg/resource "app/migrations/sql/0157-migrate-legacy-file-data.sql")}
 
@@ -544,7 +541,10 @@
     :fn (mg/resource "app/migrations/sql/0158-partition-file-change.sql")}
 
    {:name "0159-add-file-data-storage-object-id"
-    :fn (mg/resource "app/migrations/sql/0159-add-file-data-storage-object-id.sql")}])
+    :fn (mg/resource "app/migrations/sql/0159-add-file-data-storage-object-id.sql")}
+
+   {:name "0159-consumer-generalization"
+    :fn (mg/resource "app/migrations/sql/0159-consumer-generalization.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]

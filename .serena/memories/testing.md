@@ -106,6 +106,11 @@ Use your test framework's parametrize/table-driven mechanism to test multiple
 scenarios with a single test body. Keeps tests concise and surfaces all cases
 at a glance.
 
+Only when the body is short and identical for every row. A loop that builds its
+own world per row (fresh store, fixtures, several awaits) or that nests two
+dimensions hides which case failed and shares state across cases: write one
+test per case instead, with a shared fixture for the arrangement.
+
 ## Test Pyramid
 
 ```

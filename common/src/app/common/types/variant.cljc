@@ -343,8 +343,9 @@
 
 (defn sanitize-properties-set
   "Sanitize the property vectors of all the variants of one set, given in
-   board order. Every vector gets the same names in the same order, and no
-   two vectors share a value combination. Earlier vectors keep their values."
+   layers-panel order (top first). Every vector gets the same names in the
+   same order, and no two vectors share a value combination. Earlier
+   vectors keep their values."
   [props-seq]
   (let [cleaned (mapv sanitize-properties props-seq)
         names   (properties-names cleaned)]

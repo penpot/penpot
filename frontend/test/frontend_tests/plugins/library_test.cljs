@@ -135,7 +135,7 @@
 (def ^:private component-mutations
   [["remove" #(.remove %)]
    ["duplicate" #(.duplicate %)]
-   ["annotation" #(set! (.-annotation %) "Usage")]])
+   ["annotation" (fn [^js component] (set! (.-annotation component) "Usage"))]])
 
 (t/deftest ^:async component-mutations-check-library-write-permission
   (let [file   (file-with-component)
@@ -211,7 +211,7 @@
        {st/state                  store
         shape/lib-component-proxy library/lib-component-proxy}
        (let [copy      (shape/shape-proxy plugin-id (:id file) (thi/id :main-page) (thi/id :copy))
-             component (.component copy)]
+             ^js component (.component copy)]
          (t/is (some? component))
          (t/is (nil? (.mainInstance component))))))))
 

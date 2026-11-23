@@ -25,6 +25,13 @@ desc: Penpot's guide on custom fonts! Upload, manage, and use custom fonts in Pe
 <h4>Edit and style text content</h4>
 <p>Press <kbd>Enter</kbd> with a text layer selected to start editing the text content. You can style parts of the text content as rich text.</p>
 <p>With <a href="/user-guide/first-steps/troubleshooting-webgl/">WebGL rendering</a> enabled, right-click while editing to open a menu with <strong>Cut</strong>, <strong>Copy</strong>, <strong>Paste</strong> and <strong>Select all</strong>. Your text selection is kept.</p>
+<p>With WebGL rendering enabled, text you copy in Penpot keeps its formatting when you paste it, in the same file or in another one: fonts, sizes, styles, decorations and fills. Paste it into a text you are editing, or onto the canvas to create a new text layer. If the destination can't use part of the formatting, Penpot replaces it:</p>
+<ul>
+  <li>Custom fonts from another team change to the default font.</li>
+  <li>Image fills from another file are removed. If the text had no other fill, it gets the default fill.</li>
+  <li>Typographies from a library the destination file doesn't use are detached: the text keeps its style but is no longer linked to the typography.</li>
+</ul>
+<p>Text copied from other apps or web pages keeps its text and paragraphs, and takes the style of the place where you paste it.</p>
 <figure>
   <img src="/img/objects/text-edit.webp" alt="editing text">
 </figure>

@@ -29,3 +29,8 @@ right flow.
 Everything else (title derivation, metadata policy, body templates, Issue
 Type IDs, create/verify/cleanup commands) lives in the memory — go to the
 matching section there.
+
+For the creation step, `python3 scripts/gh.py create-issue --type <type>
+--title "..." --body-file <file>` creates the issue and sets its Issue Type in
+one command (see `mem:scripts/gh`). Title derivation, body templates and
+verification still follow `mem:workflow/creating-issues`.

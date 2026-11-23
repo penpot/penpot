@@ -40,6 +40,8 @@
       load-promise)))
 
 (defn resolve-font
+  "Ensure the font of `node` is loaded. Resolves to `::font-failed` when it
+  cannot be loaded: the text is then laid out with a fallback font."
   [node]
   (let [styles  (dom/get-computed-styles node)
         font    (dom/get-property-value styles "font")
@@ -59,7 +61,7 @@
                      (load-font font))))
          (p/merr (fn [_cause]
                    (js/console.error (str/ffmt "Cannot load font %" font-id))
-                   (p/resolved nil))))))
+                   (p/resolved ::font-failed))))))
 
 
 (defn- process-text-node
@@ -84,7 +86,15 @@
   (let [text-nodes (-> (dom/query (dm/fmt "#html-text-node-%" shape-id))
                        (dom/query-all ".text-node"))]
     (->> (p/all (map resolve-font text-nodes))
-         (p/fmap #(mapcat process-text-node text-nodes)))))
+         (p/fmap (fn [fonts]
+                   (cond-> (into [] (mapcat process-text-node) text-nodes)
+                     (some #{::font-failed} fonts)
+                     (with-meta {::font-failed true})))))))
+
+(defn font-failed?
+  "True when `position-data` was measured with a font that failed to load."
+  [position-data]
+  (true? (::font-failed (meta position-data))))
 
 (defn calc-position-data
   [shape-id]
@@ -113,4 +123,5 @@
     (when (some? shape-id)
       (->> (calc-text-node-positions shape-id)
            (p/fmap (fn [text-data]
-                     (mapv transform-data text-data)))))))
+                     (with-meta (mapv transform-data text-data)
+                       (meta text-data))))))))

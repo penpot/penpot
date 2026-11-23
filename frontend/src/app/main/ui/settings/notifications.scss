@@ -30,15 +30,12 @@
   gap: 0;
 }
 
-.form-container {
-  h3 {
-    color: var(--color-foreground-secondary);
-  }
+.section-title {
+  color: var(--color-foreground-secondary);
+  margin-block: var(--sp-s);
+}
 
-  h4 {
-    font-size: deprecated.$fs-11;
-    color: var(--color-foreground-primary);
-    text-transform: uppercase;
-    margin: deprecated.$s-12;
-  }
+.group-title {
+  color: var(--color-foreground-primary);
+  margin: var(--sp-m);
 }

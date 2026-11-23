@@ -2450,7 +2450,8 @@
 ;; editor treats those as separators, and a later edit strips them.
 ;; Files saved before that strip can also hold two identical names, two
 ;; identical value combinations, or a label that was not saved with the
-;; values. Rewrite the text in place and refresh the label.
+;; values. Rewrite the text in place and refresh the label. On a clash,
+;; the variant at the top of the layers panel keeps its values.
 (defn- variant-container-entries
   [data]
   (concat

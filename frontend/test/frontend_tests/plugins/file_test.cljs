@@ -122,7 +122,7 @@
                                     :label "Version"
                                     :created-at created-at
                                     :created-by "system"})
-             pinned  (await (.pin version))]
+             ^js pinned (await (.pin version))]
          (t/is (file/file-version-proxy? pinned))
          (t/is (= [[:get-team-users file-id]
                    [:update-file-snapshot file-id]]
