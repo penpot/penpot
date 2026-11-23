@@ -18,7 +18,7 @@ JVM Clojure backend. Start in `app.main` for Integrant wiring, `app.rpc.commands
 - File-data blob references, offload and partition-aware lookups: `mem:backend/file-data-storage`.
 - Graph projection parity, debug sessions, access and native resource ownership: `mem:backend/graph-experiment`.
 - Session lifetime, token `:exp` and session GC: `mem:backend/session-expiration`.
-- Auth, product permissions, teams, projects, invitations, comments and webhooks: `mem:backend/auth-permissions-product-domains`.
+- Personal and MCP token authentication: `mem:backend/auth-tokens`. Resource, share-link and invitation permissions: `mem:backend/permissions`.
 - LDAP identity, SSO redirects and invitation-based registration: `mem:backend/auth-sso`.
 - WebSocket connection ownership and revocation: `mem:backend/websocket-subscriptions`.
 - Audit event attribution, fan-out and privacy: `mem:audit-log`; cursor ordering, archival and retention: `mem:backend/audit-consumers`.
