@@ -164,6 +164,8 @@
            :ref on-node-load}
      (if (= type "number")
        [:> deprecated-input/numeric-input* {:value (or (some-> current-value value->label) "")
+                                            :min min-val
+                                            :max max-val
                                             :class input-class
                                             :on-change set-value
                                             :on-focus handle-focus
