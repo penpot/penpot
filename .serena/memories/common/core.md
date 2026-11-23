@@ -2,17 +2,6 @@
 
 `common/` intro: shared CLJC for frontend, backend, exporter, library/file tooling, tests. Small semantic changes can affect multiple runtimes.
 
-## Stable namespace map
-
-- `app.common.data` and `app.common.data.macros`: generic data helpers and performance macros that do not depend on Penpot domain entities.
-- `app.common.types.*`: shared shape/file/page/component/token data types, schemas, predicates, and entity-local operations. `app.common.types.organization` contains organization schemas, `apply-organization`, and fail-closed organization/team permission rules (`allowed?`, `can-send-invitations?`).
-- `app.common.files.*`: file-level operations, shape tree helpers, change application, migrations, validation, and undo/redo-related logic.
-- `app.common.logic.*`: higher-level workflows/algorithms over files, shapes, components, variants, libraries, tokens, etc.
-- `app.common.geom.*`: geometry helpers and transformations.
-- `app.common.schema` / `app.common.schema.*`: Malli abstraction layer.
-- `app.common.math`, `app.common.time`, `app.common.uuid`, `app.common.json`, etc.: cross-runtime utilities.
-- `app.common.test_helpers.*`: test builders and production-path helpers.
-
 ## Layering and cross-runtime rules
 
 Use reader conditionals for platform-specific code. Because CLJC runs on JVM and CLJS targets, avoid assuming browser-only or JVM-only behavior unless the reader conditional isolates it.
@@ -28,9 +17,7 @@ Some legacy code violates this layering; do not copy those violations into new c
 
 ## Build-mode dependent laziness
 
-`app.common.data.macros/lazy-delay` returns a delay whose expression is evaluated eagerly by default. Only the builds that set the `app.common.data.macros/lazy-delay?` closure define to `true` defer it to the first deref; every production build does (frontend `main` and `worker`, exporter, library), so the Closure compiler replaces the constant and drops the eager branch. On the JVM it is always eager.
-
-`app.common.schema/check-fn` resolves its schema through it: an invalid schema definition fails when the namespace loads in development and in tests, and only on the first check call in production. The other lazily built parts of `check-fn` (validator and explainer) are always deferred.
+`app.common.schema/check-fn` resolves schemas through `app.common.data.macros/lazy-delay`: an invalid schema can fail on namespace load in development and JVM tests, but at first use in production CLJS. See the macro docstring and each target's `:closure-defines` for the evaluation rules.
 
 ## Focused memory routing
 
@@ -39,6 +26,7 @@ Some legacy code violates this layering; do not copy those violations into new c
 Model, schema, and persistence shape:
 - File/page/shape/component attr changes, import/export surfaces, inspector/codegen, and cross-module checklist: `mem:common/data-model-change-checklist`.
 - Token data structures, token import/export, active theme/set semantics, and schema/coercion behavior: `mem:common/tokens-schema-subtleties`.
+- For organization and team permission rules shared across runtimes, start at `app.common.types.organization`.
 
 Geometry and layout:
 - Shape geometry invariants, redundant geometry fields, and geometry-sensitive tests: `mem:common/geometry-invariants`.
@@ -47,7 +35,8 @@ Geometry and layout:
 
 Change pipeline, validation, and migrations:
 - Change records, undo/redo architecture, changes-builder API, and production-path mutation guidance: `mem:common/changes-architecture`.
-- Change application, shape-tree edits, validation/repair, migrations, and second-pass touched behavior: `mem:common/file-change-validation-migration-subtleties`.
+- Change application, shape-tree edits, validation/repair, and second-pass touched behavior: `mem:common/file-change-validation-migration-subtleties`.
+- Adding, renumbering or replacing a file migration: `mem:common/file-migrations`.
 
 Components, variants, and debugging:
 - Component/variant data model, ref chains, touched override semantics, and cloning paths: `mem:common/component-data-model`.
@@ -58,7 +47,3 @@ Text and tests:
 - Shared text data conversion, DraftJS compatibility, modern text content, and derived position data: `mem:common/text-subtleties`.
 - Common test commands, helper conventions, production-path test mutations, and runtime coverage choices: `mem:common/testing`.
 - Cross-cutting testing principles, anti-patterns, and verification checklist: `mem:testing`.
-
-## Areas without focused memories
-
-Common areas with little or no dedicated memory include colors, media/SVG helpers, path operations, thumbnail helpers, generic pools, weak refs, and some utility namespaces. Treat work there as source/test-led unless a focused memory exists.

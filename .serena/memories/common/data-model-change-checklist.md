@@ -6,7 +6,7 @@
 - Do not treat nil as a distinct persisted state from absence. Import/export and cleanup paths may filter nil attrs away.
 - Avoid Clojure-special naming in exported object attrs, especially boolean names ending in `?`; exported/imported data must survive JSON/SVG/Transit and external tooling.
 - Any new shape attr that participates in component sync must be listed in `app.common.types.component/sync-attrs` with the correct touched group. Attrs absent from `sync-attrs` are ignored by component synchronization.
-- Shape `:svg-attrs` keys are kebab-case (`fill-rule`, not `fillRule`): birth (`app.common.svg/attrs->kebab-props`, applied everywhere data lands on a shape) normalizes any outside spelling through the `svg-props` whitelist, and render boundaries (`get-svg-props`, `render-xml*`, `svg-node*`) translate back to camelCase for React. `:svg-defs` node attrs follow the same rule recursively; svg-raw `:content` attrs are kebab-ized spelling-only, never filtered — the sidebar reads `:stroke-style`, which is outside the whitelist. Non-spec attrs Penpot keeps live in `penpot-extra-attrs` (seeded with `:stroke-style`) and travel in source spelling. Excluded, each with its reason: `:tag` values (React and tag sets need them verbatim; the schema decoder restores keywords from stored strings), outer `:svg-defs` keys (id strings at birth, keywords or strings after JSON decode — accept both), all values (the kebab reader never touches values). Repair sites: birth plus migration `0035-fix-shape-svg-attrs-and-defs` (replaces the withdrawn `0021`); the binfile cleaner carries no svg repair.
+- Store SVG attribute keys in kebab-case (`fill-rule`, not `fillRule`) and convert to React spelling only at render boundaries. Use `app.common.svg/attrs->kebab-props` for shape and defs-node attrs; for svg-raw `:content`, normalize spelling without filtering unknown keys (the sidebar reads `:stroke-style`). Don't normalize tags, attribute values or outer defs IDs as though they were attribute keys; defs IDs can decode as keywords or strings. Normalize when constructing the shape; legacy data goes through the SVG repair in `app.common.files.migrations`, not the binfile cleaner.
 
 ## Cross-module update checklist
 
@@ -21,6 +21,6 @@ When changing the file data model, check the relevant paths:
 
 ## Migrations
 
-Existing files should keep working unchanged when possible. If absence cannot preserve old behavior, add a migration and preserve append/order semantics described in `mem:common/file-change-validation-migration-subtleties`.
+If an absent attribute cannot preserve old behavior, see `mem:common/file-migrations` for migration and ordering rules.
 
 Model changes can also require file feature flags or migration metadata updates; check nearby migrations and `common/src/app/common/features.cljc` before inventing a new pattern.
