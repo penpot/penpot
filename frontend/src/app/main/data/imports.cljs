@@ -362,7 +362,10 @@
                            (rx/push! upload-events message)))]
     (rx/merge
      upload-events
-     (->> (slurp-uri uri :blob)
+     (->> (if-let [blob (:blob (first entries))]
+            (rx/of blob)
+            ;; Template links can supply only a URL.
+            (slurp-uri uri :blob))
           (rx/mapcat (fn [blob]
                        (->> (uploads/upload-blob-chunked blob :on-progress report-upload!)
                             (rx/tap (fn [_] (finish-upload!))))))

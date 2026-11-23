@@ -51,7 +51,8 @@
                         (mapv (fn [file]
                                 {:name (.-name file)
                                  :size (.-size file)
-                                 :uri  (wapi/create-uri file)}))
+                                 :uri  (wapi/create-uri file)
+                                 :blob file}))
                         (not-empty))]
        (when entries
          (st/emit! (modal/show

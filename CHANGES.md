@@ -111,6 +111,19 @@ If you upgrade blindly: on fresh databases and small instances the startup migra
 - Fix workspace memory growing on every page switch with the WebGL renderer [#13028](https://github.com/penpot/penpot/issues/13028) (PR: [#12877](https://github.com/penpot/penpot/pull/12877))
 - Fix workspace showing React error #310 when the team container renders without a team id (by @filipsajdak) [#12728](https://github.com/penpot/penpot/issues/12728) (PR: [#12920](https://github.com/penpot/penpot/pull/12920))
 
+## 2.19.4
+
+### :bug: Bugs fixed
+
+- Fix importing large `.penpot` files in Chrome [#13165](https://github.com/penpot/penpot/issues/13165) (PR: [#13183](https://github.com/penpot/penpot/pull/13183))
+
+## 2.19.3
+
+### :bug: Bugs fixed
+
+- Fix app startup failure on Chromium browsers with Tampermonkey user scripts enabled [#12924](https://github.com/penpot/penpot/issues/12924) (PR: [#13085](https://github.com/penpot/penpot/pull/13085))
+- Size frontend nginx workers from the container CPU limit to prevent OOM kills on large nodes [#13103](https://github.com/penpot/penpot/issues/13103) (PR: [#13110](https://github.com/penpot/penpot/pull/13110))
+
 ## 2.19.2
 
 ### :bug: Bugs fixed
