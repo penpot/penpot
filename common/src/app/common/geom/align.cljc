@@ -9,7 +9,8 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
-   [app.common.geom.shapes.points :as gpo]))
+   [app.common.geom.shapes.points :as gpo]
+   [app.common.math :as mth]))
 
 ;; --- Alignment
 
@@ -122,9 +123,25 @@
 
 ;; Adjust to viewport
 
+(defn- fit-rect
+  "Returns a viewport-sized rect (in document coordinates) that scales
+  `srect` with `zoom` and centers it in the viewport."
+  [viewport srect zoom]
+  (let [width  (/ (:width viewport) zoom)
+        height (/ (:height viewport) zoom)
+        cx     (+ (:x srect) (/ (:width srect) 2))
+        cy     (+ (:y srect) (/ (:height srect) 2))]
+    (-> srect
+        (assoc :x (- cx (/ width 2))
+               :y (- cy (/ height 2))
+               :width width
+               :height height)
+        (grc/update-rect :position))))
+
 (defn adjust-to-viewport
   ([viewport srect] (adjust-to-viewport viewport srect nil))
-  ([viewport srect {:keys [padding min-zoom] :or {padding 0 min-zoom nil}}]
+  ([viewport srect {:keys [padding min-zoom min-screen-padding]
+                    :or {padding 0 min-zoom nil min-screen-padding 0}}]
    (let [gprop  (/ (:width viewport)
                    (:height viewport))
          srect-padded (-> srect
@@ -154,13 +171,14 @@
                  (grc/update-rect :position)))
 
            :else
-           (grc/update-rect srect-padded :position))]
-     ;; If min-zoom is specified and the resulting zoom would be below it,
-     ;; return a rect with the original top-left corner centered in the viewport
-     ;; instead of using the aspect-ratio-adjusted rect (which can push coords
-     ;; extremely far with extreme aspect ratios).
-     (if (and (some? min-zoom)
-              (< (/ (:width viewport) (:width adjusted-rect)) min-zoom))
+           (grc/update-rect srect-padded :position))
+         zoom   (/ (:width viewport) (:width adjusted-rect))]
+     (cond
+       ;; If min-zoom is specified and the resulting zoom would be below it,
+       ;; return a rect with the original top-left corner centered in the
+       ;; viewport instead of using the aspect-ratio-adjusted rect (which can
+       ;; push coords extremely far with extreme aspect ratios).
+       (and (some? min-zoom) (< zoom min-zoom))
        (let [anchor-x (:x srect)
              anchor-y (:y srect)
              vbox-width (/ (:width viewport) min-zoom)
@@ -171,4 +189,25 @@
                     :width vbox-width
                     :height vbox-height)
              (grc/update-rect :position)))
+
+       ;; The design-space padding shrinks on screen as the zoom decreases. If
+       ;; it becomes smaller than the requested minimum, fit again with a fixed
+       ;; screen margin so the content never sits under fixed overlays (such as
+       ;; the rulers).
+       (and (pos? min-screen-padding)
+            (< (* padding zoom) min-screen-padding))
+       (let [padding (mth/min min-screen-padding
+                              (/ (dec (mth/min (:width viewport)
+                                               (:height viewport)))
+                                 2))
+             zoom    (mth/min (/ (- (:width viewport) (* 2 padding))
+                                 (:width srect))
+                              (/ (- (:height viewport) (* 2 padding))
+                                 (:height srect)))
+             zoom    (if (some? min-zoom)
+                       (mth/max zoom min-zoom)
+                       zoom)]
+         (fit-rect viewport srect zoom))
+
+       :else
        adjusted-rect))))

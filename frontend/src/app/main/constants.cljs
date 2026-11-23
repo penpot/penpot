@@ -9,6 +9,12 @@
 (def viewport-width 4000)
 (def viewport-height 4000)
 
+(def ^:const viewport-fit-min-padding
+  "Minimum margin, in screen pixels, kept around the content when fitting the
+  viewport to it. Keeps the content clear of fixed overlays such as the
+  rulers."
+  40)
+
 (def frame-start-x 1200)
 (def frame-start-y 1200)
 
