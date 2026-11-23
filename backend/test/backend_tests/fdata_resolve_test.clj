@@ -13,7 +13,12 @@
   has to resolve to the blob instead of nil."
   (:require
    [app.features.fdata :as fdata]
+   [app.util.blob :as blob]
    [clojure.test :as t]))
+
+(t/deftest detects-payload-presence-without-decoding-it
+  (t/is (false? (fdata/has-payload? {:data nil})))
+  (t/is (true? (fdata/has-payload? {:data (blob/encode nil)}))))
 
 (t/deftest legacy-db-resolves-the-legacy-blob
   (let [blob (vec (.getBytes "legacy-blob" "UTF-8"))

@@ -36,7 +36,9 @@
    [clojure.set :as set]
    [cuerdas.core :as str]
    [datoteka.fs :as fs]
-   [datoteka.io :as io]))
+   [datoteka.io :as io])
+  (:import
+   java.sql.Connection))
 
 (set! *warn-on-reflection* true)
 
@@ -273,7 +275,8 @@
   they are not resolved nor decoded (see `attach-file-data`). With
   `load-migrations?` the applied migrations are resolved, which is what
   `need-migration?` expects. A skip-locked read answers nil instead of raising
-  when the row is gone."
+  when the row is gone. A locked data read takes the lock before reading the
+  payload."
   [{:keys [::db/conn] :as cfg} id
    {:keys [include-deleted?
            skip-locked?
@@ -283,25 +286,21 @@
            load-migrations?
            load-data?]}]
 
-  (let [sql  (if load-data?
-               sql:get-file
-               sql:get-file-without-data)
-        sql  (cond
-               lock-for-update?
-               (str sql " FOR UPDATE of f")
-
-               lock-for-share?
-               (str sql " FOR SHARE of f")
-
-               :else
-               sql)
-
-        sql  (if (and skip-locked? (or lock-for-share? lock-for-update?))
-               (str sql " SKIP LOCKED")
-               sql)
-
-        file (db/get-with-sql conn [sql id] {::db/throw-if-not-exists false
-                                             ::db/remove-deleted (not include-deleted?)})
+  (let [lock (cond
+               lock-for-update? " FOR UPDATE of f"
+               lock-for-share?  " FOR SHARE of f")
+        lock (cond-> lock
+               (and lock skip-locked?) (str " SKIP LOCKED"))
+        opts {::db/throw-if-not-exists false
+              ::db/remove-deleted (not include-deleted?)}
+        file (if load-data?
+               ;; In READ COMMITTED a joined SELECT FOR UPDATE can return
+               ;; the latest locked file row but the old file_data row.
+               ;; Start the payload statement only once the file is locked.
+               (when (or (nil? lock)
+                         (db/get-with-sql conn [(str sql:get-minimal-file lock) id] opts))
+                 (db/get-with-sql conn [sql:get-file id] opts))
+               (db/get-with-sql conn [(str sql:get-file-without-data lock) id] opts))
         file (some-> file
                      (d/update-when :features db/decode-pgarray #{})
                      (d/update-when :metadata fdata/decode-metadata))
@@ -352,6 +351,7 @@
                 realize?
                 decode?
                 load-data?
+                lock-for-update?
                 lock-for-share?
                 read-only?]
          :as options}
@@ -366,6 +366,9 @@
     (when (and lock-for-share? load-data?)
       (throw (IllegalArgumentException. "invalid options, `:lock-for-share?` is only allowed on row-only reads")))
 
+    (when (and load-data? lock-for-update? (.getAutoCommit ^Connection conn))
+      (throw (IllegalArgumentException. "a locked payload read requires an active transaction")))
+
     (cond
       ;; The caller only wants the row: that read is the answer.
       (not load-data?)
@@ -374,7 +377,9 @@
       (and migrate? decode? (not read-only?))
       (when-let [file (fetch-row cfg id options)]
         (if (fmg/need-migration? file)
-          (when-let [file (fetch-file cfg id (assoc options :lock-for-update? true))]
+          (when-let [file (if lock-for-update?
+                            (attach-file-data cfg file options)
+                            (fetch-file cfg id (assoc options :lock-for-update? true)))]
             (cond-> file
               (fmg/need-migration? file)
               (as-> $ (migrate-file cfg $ options))
@@ -401,11 +406,10 @@
 
   Runs inside a transaction: it joins the caller's when the cfg already
   carries a connection and opens one otherwise, so the migration write
-  commits with the read. A read-only read (`:read-only?`) takes no lock and
-  writes nothing, so it runs on a plain connection instead of opening a
-  transaction of its own; with a cfg that already carries a connection it
-  still joins the caller's. Accepts a cfg map only: a bare pool or a
-  connection raises `IllegalArgumentException`.
+  commits with the read. A read-only read (`:read-only?`) does not persist
+  migrations or open its own transaction; it uses the caller's connection
+  if present. Accepts a cfg map only: a bare pool or a connection raises
+  `IllegalArgumentException`.
 
   Useful when you have plan to apply massive or not surgical
   operations on file, because it removes the overhead of lazy fetching
@@ -420,12 +424,13 @@
   - `:migrate?` applies the pending migrations on read (default true).
   - `:load-migrations?` resolves the applied migrations on a row read
     (default true).
-  - `:read-only?` applies the pending migrations in memory only and skips
-    the transaction. It does not take a lock.
+  - `:read-only?` applies the pending migrations in memory only and does
+    not open a transaction or take a lock for migration.
   - `:lock-for-update?`, `:skip-locked?`, `:include-deleted?` and
-    `:throw-if-not-exists?` are the usual read knobs. A lock needs a
-    read-write transaction from the caller: PostgreSQL rejects row locks in
-    a read-only transaction.
+    `:throw-if-not-exists?` are the usual read knobs. A locked payload read
+    locks the file row in a separate statement before reading its data and
+    requires a read-write transaction. When `:read-only?` is also set, the
+    caller must supply that transaction.
   - `:persist-after-migration?` is internal: `get-file*` turns it off
     for the in-memory migration of a read-only context. Do not pass it."
   [cfg file-id & {:as opts}]

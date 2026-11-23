@@ -715,6 +715,15 @@
                     :read-only (::read-only system)})
         (throw (IllegalArgumentException. "invalid system/cfg provided"))))))
 
+(defn set-tx-isolation
+  "Set the isolation level on the active transaction before its first query.
+  Supports :read-committed and :repeatable-read."
+  [{:keys [::conn]} isolation]
+  (exec-one! conn
+             [(case isolation
+                :read-committed "SET TRANSACTION ISOLATION LEVEL READ COMMITTED"
+                :repeatable-read "SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")]))
+
 (defn run!
   [system f & params]
   (cond

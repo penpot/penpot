@@ -13,6 +13,23 @@
 
 (t/use-fixtures :once th/state-init)
 
+(t/deftest isolation-applies-only-to-the-active-transaction
+  (db/run! th/*pool*
+           (fn [cfg]
+             (let [get-isolation (fn [cfg]
+                                   (:transaction-isolation
+                                    (db/exec-one! cfg ["SHOW transaction_isolation"])))
+                   original      (get-isolation cfg)]
+               (doseq [[isolation expected] [[:repeatable-read "repeatable read"]
+                                             [:read-committed "read committed"]]]
+                 (t/testing (name isolation)
+                   (t/is (= expected
+                            (db/tx-run! cfg
+                                        (fn [tx-cfg]
+                                          (db/set-tx-isolation tx-cfg isolation)
+                                          (get-isolation tx-cfg)))))
+                   (t/is (= original (get-isolation cfg)))))))))
+
 (t/deftest after-commit-runs-after-a-successful-transaction
   (let [events (atom [])]
     (db/tx-run! th/*pool*

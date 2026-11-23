@@ -423,7 +423,8 @@
                                    :label "pinned"}))]
     (t/is (nil? (:error out)))
     (t/is (uuid? (get-in out [:result :id])))
-    (t/is (= [(str bfc/sql:get-file " FOR UPDATE of f")]
+    (t/is (= [(str bfc/sql:get-minimal-file " FOR UPDATE of f")
+              bfc/sql:get-file]
              sqls))))
 
 (t/deftest restore-backup-reads-the-file-row-for-update
@@ -444,7 +445,10 @@
                                    :file-id (:id file)
                                    :id snap-id}))]
     (t/is (nil? (:error out)))
-    (t/is (some #(= (str bfc/sql:get-file " FOR UPDATE of f") %) sqls))
+    (t/is (some #(= [(str bfc/sql:get-minimal-file " FOR UPDATE of f")
+                     bfc/sql:get-file]
+                    %)
+                (partition 2 1 sqls)))
     (t/is (not-any? #(str/includes? % "FOR SHARE") sqls))))
 
 (t/deftest snapshot-creation-serializes-with-file-gc
