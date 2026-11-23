@@ -29,6 +29,7 @@
     :sync-file     component/library propagation (libraries)"
   (:require
    [beicon.v2.core :as rx]
+   [beicon.v2.operators :as rxo]
    [promesa.core :as p]))
 
 ;; Feeder subject receiving task lifecycle messages, scanned into the
@@ -73,6 +74,9 @@
 ;; Reloads rebuild the scan with the latest reducer.
 (def ^:private pending-shapes (rx/behavior-subject {}))
 
+;; Snapshot for synchronous readers (persistence flush gate, unload guard).
+(defonce ^:private pending* (atom {}))
+
 (defonce ^:private pending-subscription (atom nil))
 
 (defn- install-pending-subscription!
@@ -82,8 +86,11 @@
   (rx/push! reflow-input {:op :reset})
   (when-let [subscription @pending-subscription]
     (rx/dispose! subscription))
+  (reset! pending* {})
   (reset! pending-subscription
-          (rx/sub! (->> reflow-input (rx/scan reducer {}))
+          (rx/sub! (->> reflow-input
+                        (rx/scan reducer {})
+                        (rx/tap #(reset! pending* %)))
                    pending-shapes))
   (rx/push! reflow-input {:op :reset}))
 
@@ -245,3 +252,20 @@
     (->> pending-shapes
          (rx/filter done?)
          (rx/take 1))))
+
+(defn- pending-has-kind?
+  [pending kind]
+  (boolean (some (fn [[_ kinds]] (contains? kinds kind)) pending)))
+
+(defn layout-pending?
+  "True when any `:layout` reflow task is open (including other-page worker
+  layout)."
+  []
+  (pending-has-kind? @pending* :layout))
+
+(defn layout-pending-s
+  "Emits whether any `:layout` task is pending; replays the current value."
+  []
+  (->> pending-shapes
+       (rx/map #(pending-has-kind? % :layout))
+       (rx/pipe (rxo/distinct-contiguous))))

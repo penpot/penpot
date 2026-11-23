@@ -85,6 +85,7 @@
         omitset #{:potok.v2.core/undefined
                   :app.main.data.workspace.persistence/update-persistence-status
                   :app.main.data.persistence/sync-unload-guard
+                  :app.main.data.persistence/sync-reflow-unload-guard
                   :app.main.data.websocket/send-message
                   :app.main.data.workspace.notifications/handle-pointer-send
                   :app.main.router/assign-exception}]

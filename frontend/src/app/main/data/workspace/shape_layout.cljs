@@ -112,15 +112,27 @@
 
             update-positions-stream
             (if (d/not-empty? ids)
-              (let [modif-tree (dwm/create-modif-tree ids (ctm/reflow-modifiers))]
-                (if (and (features/active-feature? state "render-wasm/v1")
-                         (= page-id (:current-page-id state)))
+              (let [modif-tree (dwm/create-modif-tree ids (ctm/reflow-modifiers))
+                    wasm?      (features/active-feature? state "render-wasm/v1")
+                    current?   (= page-id (:current-page-id state))]
+                (cond
+                  (and wasm? current?)
                   (rx/of (dwm/apply-wasm-modifiers modif-tree
                                                    :stack-undo? true
                                                    :save-undo? save-undo?
                                                    :skip-component-sync? skip-component-sync?
                                                    :undo-group undo-group
                                                    :ignore-touched true))
+
+                  wasm?
+                  ;; Async worker stream (not `rx/of` + nested event): otherwise
+                  ;; `reflow-tasks` finalize would run before transforms commit.
+                  (dwm/layout-other-page state page-id modif-tree
+                                         :stack-undo? true
+                                         :undo-group undo-group
+                                         :ignore-touched true)
+
+                  :else
                   (rx/of (dwm/apply-modifiers {:page-id page-id
                                                :modifiers modif-tree
                                                :stack-undo? true

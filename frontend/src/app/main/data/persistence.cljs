@@ -24,6 +24,7 @@
    [app.main.data.workspace :as-alias dw]
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.path.state :as path.state]
+   [app.main.data.workspace.reflow :as wrf]
    [app.main.data.workspace.undo :as dwu]
    [app.main.errors :as errors]
    [app.main.refs :as refs]
@@ -1311,15 +1312,23 @@
                         commits))))))
 
 (defn- flush-buffer
-  "Queues the buffered commits, merged into one queue entry per file."
+  "Queues the buffered commits, merged into one queue entry per file.
+
+  Skips while `:layout` reflow is in flight so a component sync is not
+  saved before other-page worker layout has committed geometry."
   []
   (ptk/reify ::flush-buffer
     ptk/WatchEvent
     (watch [_ state _]
-      (if-let [buffer (seq (dm/get-in state [:persistence :buffer]))]
-        (->> (merge-commit buffer)
-             (rx/map append-commit))
-        (rx/empty)))))
+      (cond
+        (wrf/layout-pending?)
+        (rx/empty)
+
+        :else
+        (if-let [buffer (seq (dm/get-in state [:persistence :buffer]))]
+          (->> (merge-commit buffer)
+               (rx/map append-commit))
+          (rx/empty))))))
 
 (defn- resume-on-online
   "Re-enters the runner for a retrying episode when the browser reports
@@ -1347,13 +1356,27 @@
         (swap! st/ongoing-tasks conj :persistence)
         (swap! st/ongoing-tasks disj :persistence)))))
 
+(defn- sync-reflow-unload-guard
+  "Holds the leave-page warning while `:layout` reflow is open (including
+  other-page worker layout), even if the persistence buffer was emptied."
+  []
+  (ptk/reify ::sync-reflow-unload-guard
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (if (wrf/layout-pending?)
+        (swap! st/ongoing-tasks conj :reflow)
+        (swap! st/ongoing-tasks disj :reflow)))))
+
 (defn- persist-buffered
-  "Forces a save when local commits wait in the buffer."
+  "Forces a save when local commits wait in the buffer.
+
+  No-ops while layout reflow is pending; a flush runs when layout settles."
   []
   (ptk/reify ::persist-buffered
     ptk/WatchEvent
     (watch [_ state _]
-      (if (seq (dm/get-in state [:persistence :buffer]))
+      (if (and (seq (dm/get-in state [:persistence :buffer]))
+               (not (wrf/layout-pending?)))
         (rx/of ::force-persist)
         (rx/empty)))))
 
@@ -1439,6 +1462,17 @@
                                     (ptk/type? ::release-failed-file %)
                                     (ptk/type? ::dw/bundle-fetched %)))))
               (rx/map (fn [_] (sync-unload-guard)))
+              (rx/take-until stoper-s))
+
+         ;; Hold unload while layout reflow is open; flush the buffer when it
+         ;; drains so sync+other-page geometry save together.
+         (->> (wrf/layout-pending-s)
+              (rx/merge-map (fn [pending?]
+                              (rx/concat
+                               (rx/of (sync-reflow-unload-guard))
+                               (if pending?
+                                 (rx/empty)
+                                 (rx/of (flush-buffer))))))
               (rx/take-until stoper-s))
 
          ;; Locks the workspace while saves fail and the user can edit
