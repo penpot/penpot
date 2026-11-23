@@ -13,7 +13,7 @@ JVM Clojure backend. Start in `app.main` for Integrant wiring, `app.rpc.commands
 - Session lifetime, token `:exp` and session GC: `mem:backend/session-expiration`.
 - Auth, product permissions, teams, projects, invitations, comments and webhooks: `mem:backend/auth-permissions-product-domains`.
 - WebSocket connection ownership and revocation: `mem:backend/websocket-subscriptions`.
-- Audit collection, fan-out, archival and retention: `mem:audit-log`.
+- Audit event attribution, fan-out and privacy: `mem:audit-log`; cursor ordering, archival and retention: `mem:backend/audit-consumers`.
 - Service layout, task queues versus Pub/Sub, and horizontal scaling: `mem:prod-infra/core`.
 - Public URLs and base subpaths: `mem:common/uri`.
 
