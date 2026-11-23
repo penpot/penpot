@@ -73,7 +73,7 @@ class BuildTaskTests(unittest.TestCase):
         code, out = run_ci("--dry-run", "--all")
 
         self.assertEqual(code, 0, out)
-        self.assertNotIn("build:", out)
+        self.assertNotIn("build: would run", out)
         for task in ("lint", "test", "fmt"):
             self.assertIn(f"{task}: would run", out)
 
@@ -144,6 +144,18 @@ class ModuleCommandTests(unittest.TestCase):
 
         self.assertEqual(code, 0, out)
         self.assertIn("pnpm run check-fmt", out)
+
+    def test_library_format_fix_uses_its_declared_script(self):
+        code, out = run_ci("--fmt", "--fix", "--dry-run", "library")
+
+        self.assertEqual(code, 0, out)
+        self.assertIn("fmt: would run 'pnpm run fmt' in library/", out)
+
+    def test_library_tests_rebuild_the_bundle_first(self):
+        code, out = run_ci("--test", "--dry-run", "library")
+
+        self.assertEqual(code, 0, out)
+        self.assertIn("pnpm run build:bundle && pnpm run test", out)
 
 
 class HelpTests(unittest.TestCase):
