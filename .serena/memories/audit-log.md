@@ -13,6 +13,7 @@
 ## Projection contracts
 
 - Emit the entity and scope IDs receivers need instead of assuming access to production tables. A create needs the new entity's ID; moves need source and destination team IDs; deletes need affected IDs before rows disappear. For bulk paths that bypass per-entity emission, use the create-event helpers in `app.loggers.audit`. An existing membership conflict is not a creation event; keep the actor separate from the member.
+- Preserve `:file-id` and the resolved `:team-id` on `file-gc` trim events. `delete-object-with-cascade` carries flat `:team-ids` alongside the nested `:cascade` map so receivers can route the event without joining production tables.
 - An `update-file` event can describe a successful, partial or rejected save. Only saved changes have `:file-change-id`; it points to the revision, not the previous-state snapshot. Read it with `::db/remove-deleted false` because it already has a future deletion date. Even then GC may have removed it.
 - Preserve explicit business props that receivers depend on, including direct versus team organization invitations. `backend-tests.rpc-audit-test` and `backend-tests.rpc-team-test` cover emission and attribution. Assert exact matching event counts so duplicate emissions cannot pass.
 

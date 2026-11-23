@@ -6,7 +6,7 @@ JVM Clojure backend. Start in `app.main` for Integrant wiring, `app.rpc.commands
 
 - RPC wrapper order, HTTP middleware and session identity: `mem:backend/http-rpc`.
 - Environment coercion and PostgreSQL driver settings: `mem:backend/config`.
-- Media validation and historical topic links: `mem:backend/subtleties`.
+- Local and remote media processing, upload validation and SVG handling: `mem:backend/media`.
 - Metric recording, HTTP and JVM sampling, and log-derived counters: `mem:backend/metrics`.
 - Transaction ownership, after-commit callbacks and advisory locks: `mem:backend/db-transactions`.
 - RPC concurrency limit declarations, acquisition order and queue diagnosis: `mem:backend/rpc-concurrency`.
