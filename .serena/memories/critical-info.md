@@ -44,7 +44,7 @@ This is a monorepo. Principles that apply to one module do *not* generally apply
 - `scripts/gh.py` — GitHub operations helper: list milestone issues, fetch PR details, compare against CHANGES.md, create issues with their Issue Type in one command. Requires `gh` CLI. See `mem:scripts/gh`.
 - Before changing coverage summaries or PR comments, read `mem:scripts/coverage-reporting` for metrics, concurrent comment updates, and fork permissions.
 - `scripts/project-anomalies.py` — Main-board anomaly check for a milestone (`check` writes `tmp/<MILESTONE>-ANOMALIES.md`). Bulk resolution via `scripts/gh.py`. See `mem:scripts/project-anomalies`.
-- `scripts/changelog.py` — Changelog checks for `mem:workflow/updating-changelog`: `boom` (generate the `:boom:` section from `breaking change` issues), `check-merged` (PR merge status), `cross-ref` (milestone PRs vs changelog section), `report` (anomaly report to CHANGES-ISSUES.md). Calls `scripts/gh.py` via subprocess. See `mem:scripts/changelog`.
+- Changelog release and audit workflow: `mem:workflow/updating-changelog`.
 - `scripts/error-reports.mjs` — Query error reports via RPC API with token authentication. Supports list/get operations with filtering and pagination. See `mem:scripts/error-reports`.
 - `scripts/clean-node-modules` — Remove stale `node_modules` from all pnpm workspaces (root, modules, member packages). Keeps the shared pnpm store at `<repo>/.pnpm-store` unless `--store`; ignores `external/` and `.opencode/`. Usage and reinstall steps: `mem:workflow/updating-pnpm`.
 - `scripts/setup-opencode` — Install the opencode CLI in-container as a global pnpm package in `$PNPM_HOME`. Not part of the devenv image; see `mem:devenv/core`.

@@ -1,6 +1,6 @@
 # Updating the changelog
 
-Use this runbook to prepare a release or audit a version. Only update `CHANGES.md` when authorized under `AGENTS.md`. GitHub is the source for release entries; generate the breaking and security sections, not hand-written substitutes. See `mem:scripts/changelog` for command behavior and `mem:scripts/gh` for GitHub lookups.
+Use this runbook to prepare a release or audit a version. Only update `CHANGES.md` when authorized under `AGENTS.md`. GitHub is the source for release entries; generate the breaking and security sections, not hand-written substitutes. Use `python3 scripts/changelog.py <subcommand> --help` for CLI options and see `mem:scripts/gh` for GitHub lookups.
 
 ## Sources and eligibility
 
@@ -23,6 +23,8 @@ Use this runbook to prepare a release or audit a version. Only update `CHANGES.m
 
 Confirm the release version. Save `python3 scripts/changelog.py collect "<VERSION>"` output in a private temporary file (`$snapshot`); it can contain unpublished advisories and PR text. Reuse it through review and verification. Collect again if GitHub changes, or if new references now need to be resolved.
 
+The consuming commands accept a snapshot for the same milestone, but `cross-ref` and `report` still read the current changelog; `report` can query GitHub for references absent from the snapshot.
+
 ### Review
 
 - Reconcile the current version before adding entries. Remove duplicates already listed in an earlier version (earlier wins for backports), stale milestone entries, deleted or transferred issues, and issues now open or excluded. Move retyped issues to the proper section, or remove them if now `Task`. Fix stale PR references, but don't silently drop cross-milestone discrepancies; use **Anomaly report** below. Reconcile the labels for breaking changes and highlights, then add eligible missing issues.
@@ -31,7 +33,7 @@ Confirm the release version. Save `python3 scripts/changelog.py collect "<VERSIO
 
 ### Write
 
-- When authorized, reconcile and draft regular and highlight entries. Preview generated sections first by omitting `--write`. The version header must exist before replacing the generated sections.
+- When authorized, reconcile and draft regular and highlight entries. Preview generated sections first by omitting `--write`; with it, `boom` and `security` replace or remove only their named subsection. The version header must exist before replacing the generated sections.
 
 ```bash
 python3 scripts/changelog.py boom "<VERSION>" --snapshot "$snapshot" --write
@@ -53,3 +55,7 @@ python3 scripts/changelog.py report "<VERSION>" --snapshot "$snapshot"
 - A breaking entry without the label needs a source correction or classification as a regular entry; a missing breaking entry needs regeneration or label correction. Highlight entries must match the eligible labels; resolve the underlying decision instead of silently selecting different highlights.
 - Treat missing major/minor highlights and highlights lacking issue or PR references as warnings, not the same as counted mismatches. A patch release should not require a highlights section. Treat unconfirmed dev-only bug candidates as warnings as well; see `scripts/changelog.py` for the report codes.
 - A deleted or transferred issue can lose its normal entry while a related advisory stays in `:lock:`. For historical Taiga references, resolve the actual GitHub issue from its text or fix PR; matching bare numbers are not enough.
+
+## Maintaining the helper
+
+- Keep version lookup, reference parsing and eligibility shared across commands. Preserve link-aware matching, including legacy links; batch unknown references through `scripts/gh.py` rather than querying inside per-entry loops.
