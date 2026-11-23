@@ -15,6 +15,7 @@
   file reaches every branch cut from it, however deep the chain."
   (:require
    [app.common.features :as cfeat]
+   [app.common.files.branch-merge :as bm]
    [app.common.geom.point :as gpt]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
@@ -302,6 +303,122 @@
       (t/testing "the compare marks die with the branch file"
         (t/is (empty? (th/db-query :file-branch-change-mark
                                    {:file-branch-id (:id branch)})))))))
+
+(defn- add-shape*
+  [profile file-id page-id {:keys [id parent-id frame-id] :as attrs}]
+  (update-file* profile file-id
+                [{:type :add-obj
+                  :page-id page-id
+                  :id id
+                  :parent-id parent-id
+                  :frame-id frame-id
+                  :obj (cts/setup-shape attrs)}]))
+
+(t/deftest a-thread-left-behind-lands-later-on-its-nearest-ancestor
+  ;; A review thread with no open task stays on the branch at the merge.
+  ;; Its layer sits in a group the merge left out. Once the GC took the
+  ;; branch file, moving the thread lands it on the board that held the
+  ;; group, the nearest ancestor main has, from what the merge stored on
+  ;; the thread, and the thread keeps the name of its lost layer.
+  (with-redefs [cf/flags (flags)]
+    (let [author   (th/create-profile* 1 {:is-active true})
+          reviewer (th/create-profile* 2 {:is-active true})
+          _        (th/create-team-role* {:team-id (:default-team-id author)
+                                          :profile-id (:id reviewer)
+                                          :role :editor})
+          file     (th/create-file* 1 {:profile-id (:id author)
+                                       :project-id (:default-project-id author)})
+          page-id  (page-id-of author (:id file))
+          board-id (uuid/random)
+          group-id (uuid/random)
+          badge-id (uuid/random)
+          _        (add-shape* author (:id file) page-id
+                               {:id board-id :name "Checkout" :type :frame
+                                :x 0 :y 0 :width 400 :height 800
+                                :parent-id uuid/zero :frame-id uuid/zero})
+          branch   (create-branch* author (:id file) "promo-badge")
+          bfile-id (:branch-file-id branch)
+          review   (create-review* author branch reviewer)]
+      (add-shape* author bfile-id page-id
+                  {:id group-id :name "Promo" :type :group
+                   :x 20 :y 100 :width 300 :height 48
+                   :parent-id board-id :frame-id board-id})
+      (add-shape* author bfile-id page-id
+                  {:id badge-id :name "Badge" :type :rect
+                   :x 20 :y 100 :width 300 :height 48
+                   :parent-id group-id :frame-id board-id})
+      ;; something the merge carries, besides the group it leaves out
+      (update-file* author bfile-id
+                    [{:type :mod-obj :page-id page-id :id board-id
+                      :operations [{:type :set :attr :name :val "Checkout v2"}]}])
+      (let [thread (create-thread* reviewer bfile-id page-id
+                                   {:frame-id board-id
+                                    :anchor {:type :layer :shape-id badge-id}
+                                    :review-id (:id review)})
+            ;; a closed task on the same layer: its own thread stays behind
+            ;; too, and the task follows that thread when it moves
+            task   (:result (th/command! {::th/type :create-task
+                                          ::rpc/profile-id (:id reviewer)
+                                          :file-id bfile-id
+                                          :page-id page-id
+                                          :frame-id board-id
+                                          :shape-id badge-id
+                                          :position (gpt/point 320 100)
+                                          :review-id (:id review)
+                                          :title "Shorten the badge"}))
+            _      (t/is (nil? (:error (th/command! {::th/type :set-task-status
+                                                     ::rpc/profile-id (:id reviewer)
+                                                     :id (:id task)
+                                                     :status "wont-do"}))))
+            out    (th/command! {::th/type :merge-file-branch
+                                 ::rpc/profile-id (:id author)
+                                 :branch-id (:id branch)
+                                 :excluded #{(bm/change-key {:kind :shape :page-id page-id :id group-id})}})]
+        (t/is (nil? (:error out)))
+
+        (t/testing "the merge leaves the thread behind with what a later move needs"
+          (let [stored (row :comment-thread (:id thread))]
+            (t/is (= bfile-id (:file-id stored)))
+            (t/is (= "Badge" (:lost-shape-name stored)))
+            (t/is (= [group-id board-id] (db/decode-pgarray (:landing-ancestors stored) [])))
+            (t/is (some? (:landing-area stored)))))
+
+        (run-gc!)
+        (t/is (nil? (row :file bfile-id)))
+
+        (t/testing "the review lists the thread with the name of its lost layer only"
+          (let [listed (->> (th/command! {::th/type :get-branch-review-threads
+                                          ::rpc/profile-id (:id author)
+                                          :review-id (:id review)})
+                            :result
+                            (some #(when (= (:id thread) (:id %)) %)))]
+            (t/is (= "Badge" (:lost-shape-name listed)))
+            (t/is (not (contains? listed :landing-ancestors)))
+            (t/is (not (contains? listed :landing-area)))))
+
+        (t/testing "the later move lands it on the board, the group being absent"
+          (let [out   (th/command! {::th/type :move-branch-review-thread
+                                    ::rpc/profile-id (:id author)
+                                    :thread-id (:id thread)})
+                moved (row :comment-thread (:id thread))]
+            (t/is (nil? (:error out)))
+            (t/is (= (:id file) (:file-id moved)))
+            (t/is (= "layer" (:anchor-type moved)))
+            (t/is (= board-id (:shape-id moved)))
+            (t/is (= board-id (:frame-id moved)))
+            (t/is (= "Badge" (:lost-shape-name moved)))
+            (t/is (nil? (:landing-ancestors moved)))
+            (t/is (nil? (:landing-area moved)))))
+
+        (t/testing "a closed task lands with its thread on the later move"
+          (let [out   (th/command! {::th/type :move-branch-review-thread
+                                    ::rpc/profile-id (:id author)
+                                    :thread-id (:thread-id task)})
+                moved (row :file-task (:id task))]
+            (t/is (nil? (:error out)))
+            (t/is (= (:id file) (:file-id moved)))
+            (t/is (= board-id (:shape-id moved)))
+            (t/is (= "Badge" (:lost-shape-name moved)))))))))
 
 (t/deftest a-deleted-unmerged-branch-takes-its-thread-and-review-with-it
   ;; The mirror: nothing moved a thread or a task to the target, so the

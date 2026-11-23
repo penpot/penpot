@@ -16,6 +16,7 @@
    [app.email :as eml]
    [app.msgbus :as mbus]
    [app.rpc :as-alias rpc]
+   [app.rpc.commands.files-task :as ftask]
    [backend-tests.helpers :as th]
    [clojure.test :as t]))
 
@@ -818,10 +819,11 @@
         (t/is (= (:id file) (:file-id row)))
         (t/is (= board-id (:shape-id row)))
         (t/is (= board-id (:frame-id row)))
-        (t/is (nil? (:lost-shape-name row)))
+        (t/is (= "Pay button" (:lost-shape-name row)))
         (t/testing "the thread created with the task follows it"
           (t/is (= "layer" (:anchor-type thread)))
-          (t/is (= board-id (:shape-id thread)))))
+          (t/is (= board-id (:shape-id thread)))
+          (t/is (= "Pay button" (:lost-shape-name thread)))))
       (t/testing "the landing is an event naming the layer"
         (let [event (last (task-events* author (:id task)))]
           (t/is (= "relinked" (:type event)))
@@ -864,6 +866,8 @@
         ;; the mark sits on the top right corner of the lost layer
         (t/is (= {:x 820.0 :y 600.0} (into {} (db/decode-pgpoint (:position row)))))
         (t/is (= "area" (:anchor-type thread)))
+        (t/is (= "Badge" (:lost-shape-name row)))
+        (t/is (= "Badge" (:lost-shape-name thread)))
         (t/is (nil? (:shape-id thread)))
         (t/is (= [520.0 600.0 300.0 48.0]
                  (mapv #(double (get area %)) [:x :y :width :height]))))
@@ -913,6 +917,202 @@
       (let [row (th/db-get :file-task {:id (:id task)})]
         (t/is (= (:id file) (:file-id row)))
         (t/is (= board-id (:shape-id row)))))))
+
+(t/deftest a-resolved-thread-outside-any-review-moves-with-the-merge
+  ;; A thread without a review belongs to the file, which the merge
+  ;; carries to main: resolved or not, it moves.
+  (with-redefs [cf/flags (task-flags)]
+    (let [{:keys [author file page-id branch branch-file-id]} (setup-review)
+          thread (thread* author branch-file-id page-id {:content "settled already"})]
+      (t/is (nil? (:error (th/command! {::th/type :update-comment-thread
+                                        ::rpc/profile-id (:id author)
+                                        :id (:id thread)
+                                        :is-resolved true}))))
+      (t/is (nil? (:error (merge* author branch))))
+      (let [row (th/db-get :comment-thread {:id (:id thread)})]
+        (t/is (true? (:is-resolved row)))
+        (t/is (= (:id file) (:file-id row)))))))
+
+(t/deftest a-lost-layer-lands-on-its-nearest-ancestor-the-target-has
+  (let [page-id  (uuid/random)
+        board-id (uuid/random)
+        group-id (uuid/random)
+        badge-id (uuid/random)
+        board    (cts/setup-shape {:id board-id :name "Checkout" :type :frame
+                                   :x 0 :y 0 :width 400 :height 800
+                                   :parent-id uuid/zero :frame-id uuid/zero})
+        group    (cts/setup-shape {:id group-id :name "Promo" :type :group
+                                   :x 20 :y 100 :width 300 :height 48
+                                   :parent-id board-id :frame-id board-id})
+        badge    (cts/setup-shape {:id badge-id :name "Badge" :type :rect
+                                   :x 20 :y 100 :width 300 :height 48
+                                   :parent-id group-id :frame-id board-id})
+        branch   {:pages-index {page-id {:objects {board-id board group-id group badge-id badge}}}}
+        lost     (ftask/lost-layer [nil branch] page-id badge-id)]
+    (t/testing "the lost layer is read from the first document that has it"
+      (t/is (= "Badge" (:shape-name lost)))
+      (t/is (= [group-id board-id] (:ancestor-ids lost)))
+      (t/is (= [20.0 100.0 300.0 48.0]
+               (mapv #(double (get (:area lost) %)) [:x :y :width :height])))
+      (t/is (nil? (ftask/lost-layer [branch] page-id (uuid/random)))))
+
+    (t/testing "the nearest ancestor the target has, past the group it lacks"
+      (t/is (= {:shape-id board-id
+                :shape-name "Checkout"
+                :frame-id board-id
+                :lost-shape-name "Badge"}
+               (ftask/lost-layer-landing {board-id board} lost (gpt/point 0)))))
+
+    (t/testing "no ancestor on the target: the area the layer covered"
+      (let [landing (ftask/lost-layer-landing {} lost (gpt/point 0))]
+        (t/is (= uuid/zero (:frame-id landing)))
+        (t/is (= (:area lost) (:area landing)))
+        (t/is (= [320.0 100.0] (mapv #(double (get (:position landing) %)) [:x :y])))
+        (t/is (= "Badge" (:lost-shape-name landing)))))
+
+    (t/testing "an unknown layer keeps its spot"
+      (t/is (= {:frame-id uuid/zero :position (gpt/point 5) :lost-shape-name nil}
+               (ftask/lost-layer-landing {board-id board} nil (gpt/point 5)))))))
+
+(defn- add-group*
+  "Add on the branch, inside the board `board-id` of main, a group with a
+  rect inside, which main lacks. Returns their ids."
+  [author branch-file-id page-id board-id]
+  (let [group-id (uuid/random)
+        badge-id (uuid/random)]
+    (add-shape* author branch-file-id page-id
+                {:id group-id :name "Promo" :type :group
+                 :x 20 :y 100 :width 300 :height 48
+                 :parent-id board-id :frame-id board-id})
+    (add-shape* author branch-file-id page-id
+                {:id badge-id :name "Badge" :type :rect
+                 :x 20 :y 100 :width 300 :height 48
+                 :parent-id group-id :frame-id board-id})
+    {:group-id group-id :badge-id badge-id}))
+
+(defn- rename-board*
+  "Rename the board `board-id` on the branch, so a merge that leaves the
+  other changes out still carries something."
+  [author branch-file-id page-id board-id]
+  (update-file* author branch-file-id
+                [{:type :mod-obj :page-id page-id :id board-id
+                  :operations [{:type :set :attr :name :val "Checkout v2"}]}]))
+
+(t/deftest a-mark-in-an-excluded-group-lands-on-the-nearest-ancestor-on-main
+  ;; The merge leaves the new group out, and its rect with it. The thread
+  ;; and the task on the rect land on the board that holds the group, the
+  ;; nearest ancestor main has, not on the group, and keep the name of
+  ;; the rect.
+  (with-redefs [cf/flags (task-flags)]
+    (let [{:keys [author file page-id board-id branch branch-file-id]} (setup-board-branch)
+          {:keys [group-id badge-id]} (add-group* author branch-file-id page-id board-id)
+          thread (thread* author branch-file-id page-id
+                          {:frame-id board-id
+                           :anchor {:type :layer :shape-id badge-id}
+                           :content "is the badge final?"})
+          task   (:result (create-task* author {:file-id branch-file-id
+                                                :page-id page-id
+                                                :frame-id board-id
+                                                :shape-id badge-id}))]
+      (rename-board* author branch-file-id page-id board-id)
+      (t/is (nil? (:error (merge-excluding* author branch page-id [group-id]))))
+      (doseq [id [(:id thread) (:thread-id task)]]
+        (let [row (th/db-get :comment-thread {:id id})]
+          (t/is (= (:id file) (:file-id row)))
+          (t/is (= "layer" (:anchor-type row)))
+          (t/is (= board-id (:shape-id row)))
+          (t/is (= board-id (:frame-id row)))
+          (t/is (= "Badge" (:lost-shape-name row)))))
+      (let [row (th/db-get :file-task {:id (:id task)})]
+        (t/is (= (:id file) (:file-id row)))
+        (t/is (= board-id (:shape-id row)))
+        (t/is (= "Badge" (:lost-shape-name row))))
+      (t/testing "main lists the thread with the name of its lost layer"
+        (let [threads (:result (th/command! {::th/type :get-comment-threads
+                                             ::rpc/profile-id (:id author)
+                                             :file-id (:id file)}))
+              listed  (some #(when (= (:id thread) (:id %)) %) threads)]
+          (t/is (= "Badge" (:lost-shape-name listed)))
+          (t/is (not (contains? listed :landing-ancestors)))))
+      (t/testing "the landing is an event naming the ancestor"
+        (let [event (last (task-events* author (:id task)))]
+          (t/is (= "relinked" (:type event)))
+          (t/is (= {:shape-id board-id :shape-name "Checkout v2"} (:payload event))))))))
+
+(defn- setup-area-landing
+  "A branch whose new board, with a rect inside, the merge leaves out,
+  with a thread outside any review and a task on the rect. Returns the
+  ids the tests need, after the merge."
+  []
+  (let [{:keys [author page-id board-id branch branch-file-id] :as setup} (setup-board-branch)
+        {:keys [promo-id badge-id]} (add-promo* author branch-file-id page-id)
+        thread (thread* author branch-file-id page-id
+                        {:frame-id promo-id
+                         :anchor {:type :layer :shape-id badge-id}
+                         :content "is the badge final?"})
+        task   (:result (create-task* author {:file-id branch-file-id
+                                              :page-id page-id
+                                              :frame-id promo-id
+                                              :shape-id badge-id}))]
+    (rename-board* author branch-file-id page-id board-id)
+    (t/is (nil? (:error (merge-excluding* author branch page-id [promo-id]))))
+    (assoc setup :thread thread :task task :badge-id badge-id)))
+
+(t/deftest a-mark-with-no-ancestor-on-main-lands-on-the-area-and-keeps-the-name
+  (with-redefs [cf/flags (task-flags)]
+    (let [{:keys [thread task]} (setup-area-landing)]
+      (doseq [id [(:id thread) (:thread-id task)]]
+        (let [row (th/db-get :comment-thread {:id id})]
+          (t/is (= "area" (:anchor-type row)))
+          (t/is (nil? (:shape-id row)))
+          (t/is (= "Badge" (:lost-shape-name row)))))
+      (let [row (th/db-get :file-task {:id (:id task)})]
+        (t/is (nil? (:shape-id row)))
+        (t/is (= "Badge" (:lost-shape-name row)))))))
+
+(defn- relink-thread*
+  [profile thread-id page-id shape-id]
+  (th/command! {::th/type :relink-comment-thread
+                ::rpc/profile-id (:id profile)
+                :id thread-id
+                :page-id page-id
+                :frame-id shape-id
+                :shape-id shape-id
+                :shape-name "Checkout v2"}))
+
+(t/deftest relinking-a-lost-thread-points-it-at-the-layer-and-its-task-follows
+  ;; The thread created with a task is the mark of the task, so the task
+  ;; follows it, as the thread follows a relinked task; a thread with no
+  ;; such task moves alone.
+  (with-redefs [cf/flags (task-flags)]
+    (let [{:keys [author page-id board-id thread task]} (setup-area-landing)]
+      (t/testing "a layer on another page is refused"
+        (t/is (= :layer-not-on-thread-page
+                 (-> (relink-thread* author (:id thread) (uuid/random) board-id)
+                     :error ex-data :code))))
+
+      (t/testing "a thread with no task of its own moves alone"
+        (let [out (relink-thread* author (:id thread) page-id board-id)
+              row (th/db-get :comment-thread {:id (:id thread)})]
+          (t/is (nil? (:error out)))
+          (t/is (= [] (-> out :result :task-ids)))
+          (t/is (= "layer" (:anchor-type row)))
+          (t/is (= board-id (:shape-id row)))
+          (t/is (= board-id (:frame-id row)))
+          (t/is (nil? (:area row)))
+          (t/is (nil? (:lost-shape-name row)))))
+
+      (t/testing "the thread created with a task takes the task along"
+        (let [out   (relink-thread* author (:thread-id task) page-id board-id)
+              row   (th/db-get :file-task {:id (:id task)})
+              event (last (task-events* author (:id task)))]
+          (t/is (nil? (:error out)))
+          (t/is (= [(:id task)] (-> out :result :task-ids)))
+          (t/is (= board-id (:shape-id (th/db-get :comment-thread {:id (:thread-id task)}))))
+          (t/is (= board-id (:shape-id row)))
+          (t/is (nil? (:lost-shape-name row)))
+          (t/is (= "relinked" (:type event)))
+          (t/is (= {:shape-id board-id :shape-name "Checkout v2"} (:payload event))))))))
 
 ;; --- Deleted layers of any size
 

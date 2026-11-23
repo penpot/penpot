@@ -239,9 +239,11 @@
 
 (defn load-file-branches
   "Load the open and archived branches of `file-id` into
-  `:dashboard-branches` (used by the dashboard branches popover), the set
-  its badge counts. The previous list is cleared first so a popover opened
-  on another file never shows stale entries."
+  `:dashboard-branches` (used by the dashboard branches popover). These
+  are the file's direct branches: the badge counts the whole family, so
+  the two agree only while branches of branches are off. The previous
+  list is cleared first so a popover opened on another file never shows
+  stale entries."
   [file-id]
   (ptk/reify ::load-file-branches
     ptk/UpdateEvent

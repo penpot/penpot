@@ -19,12 +19,16 @@
 
   The merge of a branch moves into its target the threads that hold an
   open task, whole with their tasks, and the threads written outside any
-  review (`move-branch-tasks`, called from
+  review, resolved or not (`move-branch-tasks`, called from
   `app.rpc.commands.files-branch`). Every other review thread stays on
   the branch file as the record of its review, and outlives that file:
   `get-review-threads` reads it and `move-branch-review-thread` moves it
-  later. Every task, thread, and review belongs to the family of its file
-  (`file_family`), which the branch shares with its target."
+  later. A thread or task whose layer did not reach the target lands on
+  the nearest ancestor of the layer the target has, else on the area the
+  layer covered, and keeps the name of the lost layer
+  (`lost-layer-landing`). Every task, thread, and review belongs to the
+  family of its file (`file_family`), which the branch shares with its
+  target."
   (:require
    [app.binfile.common :as bfc]
    [app.common.data :as d]
@@ -610,29 +614,35 @@
 (defn- anchor-thread
   "Point the thread `thread-id` at the layer `shape-id`; with no layer, at
   the rectangle `area` of the canvas, or at the spot `position` when there
-  is no area either."
-  [conn thread-id {:keys [frame-id shape-id area position]}]
+  is no area either. The thread keeps `lost-shape-name`, the name of the
+  layer it lost (nil when it lost none), and drops what a merge stored
+  for a later move (`keep-lost-layers`)."
+  [conn thread-id {:keys [frame-id shape-id area position lost-shape-name]}]
   (db/update! conn :comment-thread
-              (cond
-                (some? shape-id)
-                {:frame-id frame-id
-                 :shape-id shape-id
-                 :anchor-type "layer"
-                 :area nil}
+              (merge
+               {:lost-shape-name lost-shape-name
+                :landing-ancestors nil
+                :landing-area nil}
+               (cond
+                 (some? shape-id)
+                 {:frame-id frame-id
+                  :shape-id shape-id
+                  :anchor-type "layer"
+                  :area nil}
 
-                (some? area)
-                {:frame-id frame-id
-                 :shape-id nil
-                 :anchor-type "area"
-                 :area (db/tjson area)
-                 :position (db/pgpoint position)}
+                 (some? area)
+                 {:frame-id frame-id
+                  :shape-id nil
+                  :anchor-type "area"
+                  :area (db/tjson area)
+                  :position (db/pgpoint position)}
 
-                :else
-                {:frame-id frame-id
-                 :shape-id nil
-                 :anchor-type "point"
-                 :area nil
-                 :position (db/pgpoint position)})
+                 :else
+                 {:frame-id frame-id
+                  :shape-id nil
+                  :anchor-type "point"
+                  :area nil
+                  :position (db/pgpoint position)}))
               {:id thread-id}
               {::db/return-keys false}))
 
@@ -678,6 +688,75 @@
          (move-task-thread conn task changes)
          (insert-event conn id profile-id "relinked" {:shape-id shape-id :shape-name shape-name})
          (merge task changes))))))
+
+;; --- COMMAND: relink-comment-thread
+
+(def ^:private schema:relink-comment-thread
+  [:map {:title "relink-comment-thread" :closed true}
+   [:id ::sm/uuid]
+   [:page-id ::sm/uuid]
+   [:frame-id ::sm/uuid]
+   [:shape-id ::sm/uuid]
+   ;; the name the layer has now, kept in the events of the tasks that
+   ;; follow the thread
+   [:shape-name [:string {:max 250}]]])
+
+(def ^:private sql:get-tasks-created-with-thread
+  "SELECT * FROM file_task
+    WHERE thread_id = ?
+      AND created_thread
+      AND deleted_at IS NULL
+      FOR UPDATE")
+
+(sv/defmethod ::relink-comment-thread
+  "Point a comment thread at a layer of its page. A thread whose layer
+  was lost stops being lost, and drops what a merge stored to land it
+  later. The tasks created with the thread, whose mark on the canvas the
+  thread is, follow it and stop being lost, each with a `relinked`
+  event, as the thread created with a task follows the task
+  (`relink-task`). A task made from a message of the thread keeps its
+  own layer. Returns the thread id and the ids of the tasks that
+  followed."
+  {::doc/added "2.16"
+   ::sm/params schema:relink-comment-thread}
+  [cfg {:keys [::rpc/profile-id ::rpc/session-id ::rpc/request-at id page-id frame-id shape-id shape-name]}]
+  (let [thread (db/run! cfg (fn [{:keys [::db/conn]}] (db/get* conn :comment-thread {:id id})))]
+    (when (or (nil? thread) (nil? (:file-id thread)))
+      (ex/raise :type :not-found
+                :code :thread-not-found
+                :hint "unable to find a comment thread with the provided id"
+                :thread-id id))
+    (files/check-comment-permissions! cfg profile-id (:file-id thread) nil)
+    (when (not= page-id (:page-id thread))
+      (ex/raise :type :validation
+                :code :layer-not-on-thread-page
+                :hint "the layer must be on the page of the thread"
+                :thread-id id))
+    (run-and-notify
+     cfg {:file-id (:file-id thread) :profile-id profile-id :session-id session-id}
+     :task-ids
+     (fn [{:keys [::db/conn]}]
+       (db/get conn :comment-thread {:id id} {::sql/for-update true})
+       (anchor-thread conn id {:frame-id frame-id :shape-id shape-id})
+       (db/update! conn :comment-thread
+                   {:modified-at (or request-at (ct/now))}
+                   {:id id}
+                   {::db/return-keys false})
+       (let [ts    (ct/now)
+             tasks (db/exec! conn [sql:get-tasks-created-with-thread id])]
+         (doseq [{task-id :id} tasks]
+           (db/update! conn :file-task
+                       {:page-id page-id
+                        :frame-id frame-id
+                        :shape-id shape-id
+                        :lost-shape-name nil
+                        :updated-at ts}
+                       {:id task-id}
+                       {::db/return-keys false})
+           (insert-event conn task-id profile-id "relinked"
+                         {:shape-id shape-id :shape-name shape-name}))
+         {:thread-id id
+          :task-ids (mapv :id tasks)})))))
 
 ;; --- COMMAND: mark-tasks-layer-deleted
 
@@ -1011,44 +1090,82 @@
   [data page-id shape-id]
   (get-in data [:pages-index page-id :objects shape-id]))
 
+(defn layer-ancestor-ids
+  "The ids of the ancestors of the layer `shape-id` among `objects`,
+  nearest first, without the root frame."
+  [objects shape-id]
+  (into [] (remove #(= uuid/zero %)) (cfh/get-parent-ids objects shape-id)))
+
+(defn lost-layer
+  "What a mark needs to land on a target that lacks its layer `shape-id`
+  of the page `page-id`: the name of the layer, its ancestors
+  (`layer-ancestor-ids`), and the area of the canvas it covered, read
+  from the first document of `datas` that has the layer. Nil when none
+  has it."
+  [datas page-id shape-id]
+  (some (fn [data]
+          (let [objects (get-in data [:pages-index page-id :objects])]
+            (when-let [layer (get objects shape-id)]
+              {:shape-name (:name layer)
+               :ancestor-ids (layer-ancestor-ids objects shape-id)
+               :area (when-let [{:keys [x y width height]} (:selrect layer)]
+                       {:x x :y y :width width :height height})})))
+        datas))
+
+(defn lost-layer-landing
+  "Where a mark lands among `objects`, the layers of its page on the
+  target, when the target lacks its layer `lost` (`lost-layer`, nil when
+  unknown): on the nearest ancestor of the layer the target has, so an
+  excluded group does not strand it, else on the area the layer covered,
+  else on the spot `position`. The root frame is no landing. Every
+  landing keeps the name of the lost layer as `:lost-shape-name`."
+  [objects {:keys [shape-name ancestor-ids area]} position]
+  (let [ancestor (some (fn [id]
+                         (let [shape (get objects id)]
+                           (when (and (some? shape) (not (cfh/root? shape)))
+                             shape)))
+                       ancestor-ids)]
+    (cond
+      (some? ancestor)
+      {:shape-id (:id ancestor)
+       :shape-name (:name ancestor)
+       :frame-id (if (cfh/frame-shape? ancestor) (:id ancestor) (:frame-id ancestor))
+       :lost-shape-name shape-name}
+
+      (some? area)
+      {:frame-id uuid/zero
+       :area area
+       ;; the top right corner, where the mark of a task goes
+       :position (gpt/point (+ (:x area) (:width area)) (:y area))
+       :lost-shape-name shape-name}
+
+      :else
+      {:frame-id uuid/zero
+       :position position
+       :lost-shape-name shape-name})))
+
 (defn- layer-landing
   "Where a mark on the layer `shape-id` lands on the target when the
-  target lacks the layer: on the immediate parent of the layer when the
-  target has it, otherwise on the area of the canvas the layer covered.
-  The layer is read from the branch document, or from the merge base when
-  the branch deleted it; when neither has it, the mark keeps its spot
-  `position` on the canvas. Nil when the mark stays as it is: it points
-  at the canvas, its layer is on the target, or its page is not."
-  [{:keys [merged-data branch-data base-data]} page-id shape-id position]
+  target lacks the layer (`lost-layer-landing`). The layer is the one
+  `lost-layers` stores for `shape-id`, else the one of the branch
+  document, else the one of the merge base. Nil when the mark stays as
+  it is: it points at the canvas, its layer is on the target, or its
+  page is not."
+  [{:keys [merged-data branch-data base-data lost-layers]} page-id shape-id position]
   (when (and (some? shape-id)
              (contains? (:pages-index merged-data) page-id)
              (nil? (find-shape merged-data page-id shape-id)))
-    (let [layer  (or (find-shape branch-data page-id shape-id)
-                     (find-shape base-data page-id shape-id))
-          parent (some->> (:parent-id layer) (find-shape merged-data page-id))]
-      (cond
-        (and (some? parent) (not (cfh/root? parent)))
-        {:shape-id (:id parent)
-         :shape-name (:name parent)
-         :frame-id (if (cfh/frame-shape? parent) (:id parent) (:frame-id parent))}
-
-        (some? layer)
-        (let [{:keys [x y width height]} (:selrect layer)]
-          {:frame-id uuid/zero
-           :area {:x x :y y :width width :height height}
-           ;; the top right corner, where the mark of a task goes
-           :position (gpt/point (+ x width) y)})
-
-        :else
-        {:frame-id uuid/zero
-         :position position}))))
+    (lost-layer-landing (get-in merged-data [:pages-index page-id :objects])
+                        (or (get lost-layers shape-id)
+                            (lost-layer [branch-data base-data] page-id shape-id))
+                        position)))
 
 (defn- task-landing
-  "Where an open task of a merged branch lands on the target
-  (`layer-landing`). Nil for a closed task: it stays as it is."
-  [datas {:keys [page-id shape-id position] :as task}]
-  (when (open-task? task)
-    (layer-landing datas page-id shape-id position)))
+  "Where a task of a merged branch lands on the target (`layer-landing`).
+  Closed tasks land too: a task never leaves its thread, so it shares the
+  thread's place whatever its status."
+  [datas {:keys [page-id shape-id position]}]
+  (layer-landing datas page-id shape-id position))
 
 (defn- thread-landing
   "Where a thread of a merged branch lands on the target
@@ -1060,12 +1177,14 @@
 
 (defn- land-task
   "Point `task` where `task-landing` puts it, its thread created with it
-  too, and record it as a `relinked` event."
-  [conn profile-id task {:keys [shape-id shape-name frame-id area position] :as landing}]
+  too, and record it as a `relinked` event. The task keeps the name of
+  its lost layer, so it shows as lost and may be linked to another one;
+  a task whose layer no document has keeps the name it had."
+  [conn profile-id task {:keys [shape-id shape-name frame-id area position lost-shape-name] :as landing}]
   (db/update! conn :file-task
               (cond-> {:shape-id shape-id
                        :frame-id frame-id
-                       :lost-shape-name nil}
+                       :lost-shape-name (or lost-shape-name (:lost-shape-name task))}
                 (some? position) (assoc :position (db/pgpoint position)))
               {:id (:id task)}
               {::db/return-keys false})
@@ -1078,19 +1197,29 @@
 (defn- move-to-target
   "Move `threads` and `tasks` into the file `target-id` for the merge
   `merge-id`. A thread keeps its number, which its family gives it. Each
-  task records the merge and gets a `merged` event. A thread, or an open
-  task, whose layer the target lacks lands where `thread-landing` or
+  task records the merge and gets a `merged` event. A thread or task
+  whose layer the target lacks lands where `thread-landing` or
   `task-landing` says, reading the layer in `datas`; a landed task gets
-  a `relinked` event too."
-  [conn {:keys [target-id merge-id branch-name profile-id]} datas threads tasks]
+  a `relinked` event too. A moved thread drops what the merge stored for
+  a later move (`keep-lost-layers`), and a thread with such a store whose
+  layer the target has by now stops being lost."
+  [conn {:keys [target-id merge-id branch-name profile-id]}
+   {:keys [merged-data lost-layers] :as datas} threads tasks]
   (let [ts (ct/now)]
-    (doseq [{:keys [id] :as thread} threads]
-      (db/update! conn :comment-thread
-                  {:file-id target-id}
-                  {:id id}
-                  {::db/return-keys false})
-      (when-let [landing (thread-landing datas thread)]
-        (anchor-thread conn id landing)))
+    (doseq [{:keys [id page-id shape-id] :as thread} threads]
+      (let [landing (thread-landing datas thread)]
+        (db/update! conn :comment-thread
+                    (cond-> {:file-id target-id
+                             :landing-ancestors nil
+                             :landing-area nil}
+                      (and (nil? landing)
+                           (contains? lost-layers shape-id)
+                           (some? (find-shape merged-data page-id shape-id)))
+                      (assoc :lost-shape-name nil))
+                    {:id id}
+                    {::db/return-keys false})
+        (when (some? landing)
+          (anchor-thread conn id landing))))
     (doseq [{:keys [id] :as task} tasks]
       (db/update! conn :file-task
                   {:file-id target-id
@@ -1119,16 +1248,41 @@
                                                            {::sql/columns [:name]}))}
                                 open))))
 
+(def ^:private sql:get-layer-threads
+  "SELECT id, page_id, shape_id
+     FROM comment_thread
+    WHERE file_id = ?
+      AND anchor_type = 'layer'")
+
+(defn- keep-lost-layers
+  "Store on each thread of `threads`, those the merge leaves behind, what
+  a later move needs to land it when the target lacks its layer
+  (`move-branch-review-thread`), since the branch document is unreadable
+  by then: the name of the layer, its ancestors and its area
+  (`lost-layer`, read from `branch-data`, else `base-data`)."
+  [conn {:keys [merged-data branch-data base-data]} threads]
+  (doseq [{:keys [id page-id shape-id]} threads]
+    (when (nil? (find-shape merged-data page-id shape-id))
+      (when-let [{:keys [shape-name ancestor-ids area]}
+                 (lost-layer [branch-data base-data] page-id shape-id)]
+        (db/update! conn :comment-thread
+                    {:lost-shape-name shape-name
+                     :landing-ancestors (db/create-array conn "uuid" ancestor-ids)
+                     :landing-area (some-> area db/tjson)}
+                    {:id id}
+                    {::db/return-keys false})))))
+
 (defn move-branch-tasks
   "Move into the merge target `target-id`, inside the merge transaction,
   the threads of the branch file that hold an open task, whole with all
-  their tasks, and the threads written outside any review, with theirs.
-  An open task with no thread moves too. Every other thread stays on the
-  branch file with its tasks, as the record of its review. The moved
-  things land as `move-to-target` says, reading the layers in
-  `merged-data`, `branch-data` and `base-data`. When `notify-assignees`
-  is set, the assignees of the moved open tasks are told by email.
-  Returns the moved tasks.
+  their tasks, and the threads written outside any review, resolved or
+  not, with theirs. An open task with no thread moves too. Every other
+  thread stays on the branch file with its tasks, as the record of its
+  review, and keeps what a later move needs to land it
+  (`keep-lost-layers`). The moved things land as `move-to-target` says,
+  reading the layers in `merged-data`, `branch-data` and `base-data`.
+  When `notify-assignees` is set, the assignees of the moved open tasks
+  are told by email. Returns the moved tasks.
 
   The branch file row is locked before the tasks are read, as task
   creation locks it (`lock-file`): a task created meanwhile is either
@@ -1146,6 +1300,9 @@
                                   (contains? thread-ids thread-id)
                                   (open-task? task)))
                               branch-tasks)]
+    (keep-lost-layers conn params
+                      (remove #(contains? thread-ids (:id %))
+                              (db/exec! conn [sql:get-layer-threads branch-file-id])))
     (move-to-target conn params params threads tasks)
     (when notify-assignees
       (notify-merged-assignees cfg params tasks))
@@ -1164,6 +1321,9 @@
           ct.shape_id,
           ct.anchor_type,
           ct.position,
+          ct.lost_shape_name,
+          ct.landing_ancestors,
+          ct.landing_area,
           fb.source_file_id,
           m.id AS merge_id,
           m.file_id AS target_id,
@@ -1173,6 +1333,16 @@
      JOIN file_branch AS fb ON (fb.id = r.file_branch_id)
      LEFT JOIN file_branch_merge AS m ON (m.file_branch_id = fb.id)
     WHERE ct.id = ?")
+
+(defn- stored-lost-layer
+  "The lost layer the merge stored on a thread it left behind
+  (`keep-lost-layers`), as `lost-layer` describes one, or nil when it
+  stored none."
+  [{:keys [lost-shape-name landing-ancestors landing-area]}]
+  (when (or (some? lost-shape-name) (some? landing-ancestors) (some? landing-area))
+    {:shape-name lost-shape-name
+     :ancestor-ids (db/decode-pgarray landing-ancestors [])
+     :area (cond-> landing-area (db/pgobject? landing-area) (db/decode-transit-pgobject))}))
 
 (def ^:private sql:get-thread-tasks
   "SELECT * FROM file_task
@@ -1201,9 +1371,12 @@
   the merge, whole with its tasks: a review thread with no open task does
   not move with the merge. Anybody with edit rights on the target may move
   it. The thread lands on the target as the merge lands it, against the
-  current data of the target: the branch document of a merged branch is
-  not readable, so a thread or task whose layer the target lacks keeps
-  its stored spot on the canvas. Each task records the merge with a
+  current data of the target. The branch document of a merged branch is
+  not readable, so a thread whose layer the target lacks lands on what
+  the merge stored for it (`keep-lost-layers`): the nearest ancestor of
+  the layer the target has now, else the area the layer covered, else
+  its stored spot. Its tasks on the same layer land the same way, and
+  the other ones keep their stored spot. Each task records the merge with a
   `merged` event, and the assignees of its open tasks are told by a
   `tasks-merged` email. Refuses a thread of a branch that is not merged,
   and a thread already on the target."
@@ -1236,9 +1409,13 @@
                      :hint "the thread is already on the target of the merge"
                      :thread-id thread-id))
          (let [tasks (into [] (map decode-row) (db/exec! conn [sql:get-thread-tasks thread-id]))
-               ;; no `branch-data` or `base-data`: a lost layer cannot be
-               ;; looked up, so `layer-landing` keeps the stored spot
-               datas {:merged-data (:data (bfc/get-file cfg target-id :realize? true))}]
+               ;; the branch document is gone: the layer the target
+               ;; lacks is read from what the merge stored on the thread
+               ;; (`keep-lost-layers`), which the tasks on the same layer
+               ;; share
+               lost  (stored-lost-layer thread)
+               datas {:merged-data (:data (bfc/get-file cfg target-id :realize? true))
+                      :lost-layers (when (some? lost) {(:shape-id thread) lost})}]
            (move-to-target conn {:target-id target-id
                                  :merge-id merge-id
                                  :branch-name branch-name
