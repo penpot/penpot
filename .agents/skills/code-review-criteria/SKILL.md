@@ -10,11 +10,11 @@ the diff in context, its intent and relevant tests. Follow project conventions
 and module memories. Do not block on personal preferences or invent problems.
 Apply each axis in proportion to the change and its risks.
 
-Follow `review-code` for delegation and its read-only contract. Never run tests,
-builds, linters or other state-changing checks during a review or follow-up.
-Inspect prior test results or CI evidence when available. Identify their source
-and scope; if evidence is missing, stale or inaccessible, say what is
-unverified. Never claim a suite passed without evidence.
+Follow `review-code` for delegation, read-only rules and the exception for a
+focused check in a temporary worktree. Inspect prior test results or CI
+evidence when available. Identify their source and scope; if evidence is
+missing, stale or inaccessible, say what is unverified. Never claim a suite
+passed without evidence.
 
 ## Review axes
 
