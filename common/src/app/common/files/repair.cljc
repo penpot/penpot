@@ -297,37 +297,49 @@
 
 (defmethod repair-error :ref-shape-not-found
   [_ {:keys [shape page-id] :as error} file-data libraries]
-  (let [lost-main      (let [page (ctpl/get-page file-data page-id)]
-                         (find-lost-main file-data (ctn/get-component-shape (:objects page) shape)))
+  (let [;; An earlier repair of the same pass may have removed the shape, or
+        ;; fixed the reference (e.g. pointed the component back to its main).
+        current        (let [page (ctpl/get-page file-data page-id)]
+                         (get (:objects page) (:id shape)))
 
-        matching-shape (let [page              (ctpl/get-page file-data page-id)
-                             root-shape        (ctn/get-component-shape (:objects page) shape)
-                             component-file    (if (= (:component-file root-shape) (:id file-data))
-                                                 file-data
-                                                 (-> (get libraries (:component-file root-shape)) :data))
-                             component         (when component-file
-                                                 (ctkl/get-component component-file (:component-id root-shape) true))
-                             component-shapes  (ctf/get-component-shapes file-data component)]
+        ref-shape      (when (some? current)
+                         (ctf/find-ref-shape {:id (:id file-data) :data file-data}
+                                             (ctpl/get-page file-data page-id) libraries current
+                                             :include-deleted? true))
 
-                         ;; Check if the shape points to the remote main. If so, reassign to the near main.
-                         (if-let [near-shape-1 (d/seek #(= (:shape-ref %) (:shape-ref shape)) component-shapes)]
-                           near-shape-1
-                           ;; Check if it points to any random shape in the page. If so, try to find a matchng
-                           ;; shape in the near main component.
-                           (when-let [random-shape (ctn/get-shape page (:shape-ref shape))]
-                             (if-let [near-shape-2 (d/seek #(= (:id %) (:shape-ref random-shape)) component-shapes)]
-                               near-shape-2
-                               ;; If not, check if it's a fostered copy and find a direct main.
-                               (let [head-shape        (ctn/get-head-shape (:objects page) shape)
-                                     component-file    (if (= (:component-file head-shape) (:id file-data))
-                                                         file-data
-                                                         (-> (get libraries (:component-file head-shape)) :data))
-                                     component         (when component-file
-                                                         (ctkl/get-component component-file (:component-id head-shape) true))
-                                     component-shapes  (ctf/get-component-shapes file-data component)]
-                                 (if-let [near-shape-3 (d/seek #(= (:id %) (:shape-ref random-shape)) component-shapes)]
-                                   near-shape-3
-                                   nil))))))
+        lost-main      (when (some? current)
+                         (let [page (ctpl/get-page file-data page-id)]
+                           (find-lost-main file-data (ctn/get-component-shape (:objects page) shape))))
+
+        matching-shape (when (some? current)
+                         (let [page              (ctpl/get-page file-data page-id)
+                               root-shape        (ctn/get-component-shape (:objects page) shape)
+                               component-file    (if (= (:component-file root-shape) (:id file-data))
+                                                   file-data
+                                                   (-> (get libraries (:component-file root-shape)) :data))
+                               component         (when component-file
+                                                   (ctkl/get-component component-file (:component-id root-shape) true))
+                               component-shapes  (ctf/get-component-shapes file-data component)]
+
+                           ;; Check if the shape points to the remote main. If so, reassign to the near main.
+                           (if-let [near-shape-1 (d/seek #(= (:shape-ref %) (:shape-ref shape)) component-shapes)]
+                             near-shape-1
+                             ;; Check if it points to any random shape in the page. If so, try to find a matchng
+                             ;; shape in the near main component.
+                             (when-let [random-shape (ctn/get-shape page (:shape-ref shape))]
+                               (if-let [near-shape-2 (d/seek #(= (:id %) (:shape-ref random-shape)) component-shapes)]
+                                 near-shape-2
+                                 ;; If not, check if it's a fostered copy and find a direct main.
+                                 (let [head-shape        (ctn/get-head-shape (:objects page) shape)
+                                       component-file    (if (= (:component-file head-shape) (:id file-data))
+                                                           file-data
+                                                           (-> (get libraries (:component-file head-shape)) :data))
+                                       component         (when component-file
+                                                           (ctkl/get-component component-file (:component-id head-shape) true))
+                                       component-shapes  (ctf/get-component-shapes file-data component)]
+                                   (if-let [near-shape-3 (d/seek #(= (:id %) (:shape-ref random-shape)) component-shapes)]
+                                     near-shape-3
+                                     nil)))))))
         reassign-shape
         (fn [shape]
           (log/debug :hint "  -> reassign shape-ref to" :shape-ref (:id matching-shape))
@@ -343,6 +355,11 @@
     ;; and link to it. If not, detach the shape.
     (log/debug :hint "repairing shape :ref-shape-not-found" :id (:id shape) :name (:name shape) :page-id page-id)
     (cond
+      (or (nil? current) (some? ref-shape))
+      (do
+        (log/debug :hint "  -> shape removed or ref shape found, nothing to repair")
+        (pcb/empty-changes nil page-id))
+
       (some? lost-main)
       (do
         (log/debug :hint "  -> assign main-instance-id" :main-instance-id (:id lost-main))
@@ -881,19 +898,29 @@
   (log/error :hint "Unknown error code, don't know how to repair" :code (:code error))
   file)
 
-(defn repair-file
-  [{:keys [data id] :as file} libraries errors]
+(defn- repair-file*
+  "Repair `errors` in `file`. Return `{:data data' :changes redo-changes}`.
+
+  Each repair is built on the data left by the previous ones, so two
+  repairs that write the same component or shape attribute do not undo
+  each other. The `:shape` of each error is still the one taken by the
+  validation."
+  [{:keys [data id]} libraries errors]
   (log/debug :hint "repairing file" :id (str id) :errors (count errors))
-  (let [{:keys [redo-changes]}
-        (reduce (fn [changes error]
-                  (pcb/concat-changes changes
-                                      (repair-error (:code error)
-                                                    error
-                                                    data
-                                                    libraries)))
-                (pcb/empty-changes nil)
-                errors)]
-    redo-changes))
+  (reduce (fn [{:keys [data] :as result} error]
+            (let [{:keys [redo-changes]} (repair-error (:code error) error data libraries)]
+              (cond-> result
+                (seq redo-changes)
+                (-> (assoc :data (cfc/process-changes data redo-changes))
+                    (update :changes into redo-changes)))))
+          {:data data :changes []}
+          errors))
+
+(defn repair-file
+  "Return the redo changes that repair `errors` in `file`. Applied in
+  order to the file data, they give the repaired data."
+  [file libraries errors]
+  (:changes (repair-file* file libraries errors)))
 
 (defn- error-fingerprint
   [errors]
@@ -937,8 +964,7 @@
                :errors     (not-empty errors)}
 
               :else
-              (let [batch (repair-file file libraries errors)
-                    data' (cfc/process-changes (:data file) batch)]
+              (let [{data' :data batch :changes} (repair-file* file libraries errors)]
                 (if (= data' (:data file))
                   {:file       file
                    :changes    applied
