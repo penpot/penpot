@@ -100,7 +100,11 @@
   (not= :none (-> props :notifications :email-comments)))
 
 (defn send-comment-emails!
-  [{:keys [::db/conn] :as cfg} profile comment thread file]
+  "Tell by email the people a comment concerns: the ones it mentions, the
+  ones the thread mentions and, unless `skip-subscriber-emails` is set,
+  the members with all comments on. A task created on the canvas sets it,
+  so its thread sends the task email and no comment email."
+  [{:keys [::db/conn] :as cfg} profile comment thread file & {:keys [skip-subscriber-emails]}]
   (let [team-users        (get-team-users conn (:team-id file))
         comment-reference (format-comment-ref thread file)
         comment-content   (format-comment comment)
@@ -159,20 +163,21 @@
             :comment-url comment-url}))))
 
     ;; Send to users with the "all" flag activated
-    (doseq [user-id notificate-users-ids]
-      (let [{:keys [id fullname email props]} (get team-users user-id)]
-        (when (notification-email? id (:owner-id thread) props)
-          (eml/send-template
-           cfg
-           {::eml/reuse-conn true
-            ::eml/template "comment-notification"
-            :public-uri (cf/get :public-uri)
-            :to email
-            :name fullname
-            :source-user (:fullname profile)
-            :comment-reference comment-reference
-            :comment-content comment-content
-            :comment-url comment-url}))))))
+    (when-not skip-subscriber-emails
+      (doseq [user-id notificate-users-ids]
+        (let [{:keys [id fullname email props]} (get team-users user-id)]
+          (when (notification-email? id (:owner-id thread) props)
+            (eml/send-template
+             cfg
+             {::eml/reuse-conn true
+              ::eml/template "comment-notification"
+              :public-uri (cf/get :public-uri)
+              :to email
+              :name fullname
+              :source-user (:fullname profile)
+              :comment-reference comment-reference
+              :comment-content comment-content
+              :comment-url comment-url})))))))
 
 (defn- decode-row
   [{:keys [participants position mentions area anchor-type] :as row}]
@@ -551,9 +556,11 @@
   "Create a thread with its first message on the page `page-id` of
   `file-id`, once the quotes of threads and comments allow it. It joins
   the transaction of `cfg` when there is one: a task created on the canvas
-  gets its thread this way (`app.rpc.commands.files-task`). The caller
-  checks the permissions. Returns the thread with the id of its first
-  message (`:comment-id`)."
+  gets its thread this way (`app.rpc.commands.files-task`), with
+  `::skip-subscriber-emails` set so the thread sends no email to the
+  members with all comments on (the ones it mentions are still told). The
+  caller checks the permissions. Returns the thread with the id of its
+  first message (`:comment-id`)."
   [cfg {:keys [::rpc/profile-id file-id page-id] :as params}]
   (let [{:keys [team-id project-id] :as file} (get-file cfg file-id page-id)]
     (-> cfg
@@ -576,12 +583,14 @@
   [cfg {:keys [::rpc/profile-id file-id page-id share-id] :as params}]
   (let [perms (files/check-comment-permissions! cfg profile-id file-id share-id)]
     (check-page-scope perms page-id)
-    (create-comment-thread cfg params)))
+    ;; The flag belongs to the backend callers: a client may not silence
+    ;; the emails of its team.
+    (create-comment-thread cfg (dissoc params ::skip-subscriber-emails))))
 
 (defn- insert-comment-thread
   [{:keys [::db/conn] :as cfg}
    {:keys [::rpc/profile-id ::rpc/request-at ::file position content mentions frame-id
-           pull-request-id anchor]}]
+           pull-request-id anchor ::skip-subscriber-emails]}]
 
   (let [;; NOTE: we take the next seq number from a separate query
         ;; because we need to lock the file for avoid race conditions
@@ -636,7 +645,8 @@
     (update-thread-seqn conn file-id seqn)
 
     ;; Send mentions emails
-    (send-comment-emails! cfg profile comment thread file)
+    (send-comment-emails! cfg profile comment thread file
+                          :skip-subscriber-emails skip-subscriber-emails)
 
     (-> thread
         (add-owner profile)
@@ -825,15 +835,35 @@
           thread_id = NULL,
           comment_id = NULL
     WHERE thread_id = ?
-      AND deleted_at IS NULL")
+      AND deleted_at IS NULL
+    RETURNING id, title")
+
+(defn- insert-task-event
+  "Record an event of a task that a thread delete removes, encoded as the
+  task commands of `app.rpc.commands.files-task` encode theirs. That
+  namespace owns the events, but it requires this one to create the thread
+  of a task, so the insert is repeated here instead of closing a cycle."
+  [conn task-id profile-id type payload]
+  (db/insert! conn :file-task-event
+              {:id (uuid/next)
+               :task-id task-id
+               :profile-id profile-id
+               :type type
+               :payload (some-> payload db/tjson)
+               :created-at (ct/now)}
+              {::db/return-keys false}))
 
 (defn- delete-thread-tasks
-  "Delete the tasks of the thread `thread-id`, which live in its messages,
-  and tell the open clients of `file-id` once the transaction commits."
+  "Delete the tasks of the thread `thread-id`, which live in its messages.
+  Each one gets a `deleted` event first, since the row loses the thread and
+  the message it lived in, and the open clients of `file-id` are told once
+  the transaction commits."
   [{:keys [::db/conn ::mbus/msgbus]} profile-id file-id thread-id]
-  (let [ts     (ct/now)
-        result (db/exec-one! conn [sql:delete-thread-tasks ts ts thread-id])]
-    (when (pos? (db/get-update-count result))
+  (let [ts    (ct/now)
+        tasks (db/exec! conn [sql:delete-thread-tasks ts ts thread-id])]
+    (doseq [{:keys [id title]} tasks]
+      (insert-task-event conn id profile-id "deleted" {:title title}))
+    (when (seq tasks)
       (db/after-commit
        #(mbus/pub! msgbus
                    :topic file-id

@@ -1,0 +1,11 @@
+Hello {{name|abbreviate:25}}!
+
+{{ source-user }} marked this task as done:
+
+{{ task-title }}
+
+Open it to verify it, or reopen it if the work is not finished.
+
+{{ task-url }}
+
+The Penpot team.

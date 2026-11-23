@@ -264,7 +264,8 @@
   [:map {:title "NotificationsForm"}
    [:dashboard-comments [::sm/one-of #{:all :partial :none}]]
    [:email-comments [::sm/one-of #{:all :partial :none}]]
-   [:email-invites [::sm/one-of #{:all :none}]]])
+   [:email-invites [::sm/one-of #{:all :none}]]
+   [:email-tasks [::sm/one-of #{:all :partial :none}]]])
 
 (def ^:private check-update-notifications-params
   (sm/check-fn schema:update-notifications))

@@ -1,0 +1,11 @@
+Hello {{name|abbreviate:25}}!
+
+{{ source-user }} reopened this task:
+
+{{ task-title }}
+
+The work is back with you.
+
+{{ task-url }}
+
+The Penpot team.

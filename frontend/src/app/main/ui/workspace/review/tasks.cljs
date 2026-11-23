@@ -131,7 +131,14 @@
         open?   (deref open*)
         status  (:status task)
         options (use-assignee-options)
+        team    (mf/deref refs/team)
         profile (mf/deref refs/profile)
+
+        ;; Its author, and the owner or an admin of its team, may delete a
+        ;; task; anybody who can read the file may still move it to won't do.
+        can-delete?
+        (or (= (:created-by task) (:id profile))
+            (boolean (get-in team [:permissions :is-admin])))
 
         on-toggle
         (mf/use-fn
@@ -195,8 +202,7 @@
       (when-not (dwtk/closed? task)
         [:> menu-item* {:id "relink"}
          (tr "workspace.tasks.actions.relink")])
-      ;; only its author may delete a task
-      (when (= (:id profile) (:created-by task))
+      (when can-delete?
         [:> menu-item* {:id "delete"}
          (tr "workspace.tasks.actions.delete")])]]))
 

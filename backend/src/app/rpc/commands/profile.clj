@@ -44,10 +44,14 @@
 (declare strip-private-attrs)
 
 (def schema:props-notifications
+  "The email choices of a profile. `:email-tasks` is optional because a
+  profile saved before the key existed does not have it, and the readers
+  of the setting take a missing one as `:partial`."
   [:map {:title "props-notifications"}
    [:dashboard-comments [::sm/one-of #{:all :partial :none}]]
    [:email-comments [::sm/one-of #{:all :partial :none}]]
-   [:email-invites [::sm/one-of #{:all :none}]]])
+   [:email-invites [::sm/one-of #{:all :none}]]
+   [:email-tasks {:optional true} [::sm/one-of #{:all :partial :none}]]])
 
 (def schema:nudge
   [:map {:title "Nudge"}
@@ -263,7 +267,8 @@
   [:map {:title "update-profile-notifications"}
    [:dashboard-comments [::sm/one-of #{:all :partial :none}]]
    [:email-comments [::sm/one-of #{:all :partial :none}]]
-   [:email-invites [::sm/one-of #{:all :none}]]])
+   [:email-invites [::sm/one-of #{:all :none}]]
+   [:email-tasks {:optional true} [::sm/one-of #{:all :partial :none}]]])
 
 (declare update-notifications!)
 
@@ -275,14 +280,19 @@
   (db/tx-run! cfg update-notifications! (assoc params :profile-id profile-id)))
 
 (defn- update-notifications!
-  [{:keys [::db/conn] :as cfg} {:keys [profile-id dashboard-comments email-comments email-invites]}]
+  [{:keys [::db/conn] :as cfg} {:keys [profile-id dashboard-comments email-comments email-invites email-tasks]}]
   (let [profile
         (get-profile conn profile-id ::db/for-update true)
 
+        ;; A client that predates `:email-tasks` does not send it: the
+        ;; stored choice stays as the user left it.
         notifications
-        {:dashboard-comments dashboard-comments
-         :email-comments email-comments
-         :email-invites email-invites}
+        (merge (get-in profile [:props :notifications])
+               {:dashboard-comments dashboard-comments
+                :email-comments email-comments
+                :email-invites email-invites}
+               (when (some? email-tasks)
+                 {:email-tasks email-tasks}))
 
         props
         (-> (get profile :props)

@@ -606,6 +606,34 @@
    :id ::tasks-moved
    :schema schema:tasks-moved))
 
+(def ^:private schema:task-done
+  [:map
+   [:name ::sm/text]
+   [:source-user ::sm/text]
+   [:task-title ::sm/text]
+   [:task-url ::sm/text]])
+
+(def task-done
+  "Email sent to the author of a task when somebody marks it as done, so
+  they verify it."
+  (template-factory
+   :id ::task-done
+   :schema schema:task-done))
+
+(def ^:private schema:task-reopened
+  [:map
+   [:name ::sm/text]
+   [:source-user ::sm/text]
+   [:task-title ::sm/text]
+   [:task-url ::sm/text]])
+
+(def task-reopened
+  "Email sent to the assignee of a task when somebody reopens it: the
+  work is back with them."
+  (template-factory
+   :id ::task-reopened
+   :schema schema:task-reopened))
+
 (def ^:private schema:comment-mention
   [:map
    [:name ::sm/text]
@@ -687,6 +715,8 @@
    "comment-notification"                (template-entry comment-notification schema:comment-notification)
    "review-request"                      (template-entry review-request schema:review-request)
    "task-assigned"                       (template-entry task-assigned schema:task-assigned)
+   "task-done"                           (template-entry task-done schema:task-done)
+   "task-reopened"                       (template-entry task-reopened schema:task-reopened)
    "tasks-moved"                         (template-entry tasks-moved schema:tasks-moved)})
 
 (defn render-template

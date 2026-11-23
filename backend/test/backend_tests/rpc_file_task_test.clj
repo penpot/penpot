@@ -745,6 +745,40 @@
                                  (:id task)])]
           (t/is (= [(:id author)] (mapv :profile-id rows))))))))
 
+(t/deftest a-team-owner-or-admin-may-delete-the-task-of-somebody-else
+  (with-redefs [cf/flags (task-flags)]
+    (let [{:keys [author reviewer page-id branch-file-id]} (setup-review)
+          admin  (th/create-profile* 3 {:is-active true})
+          _      (th/create-team-role* {:team-id (:default-team-id author)
+                                        :profile-id (:id admin)
+                                        :role :admin})
+          task*  (fn [profile]
+                   (:result (create-task* profile {:file-id branch-file-id :page-id page-id})))
+          delete (fn [profile task]
+                   (th/command! {::th/type :delete-task
+                                 ::rpc/profile-id (:id profile)
+                                 :id (:id task)}))
+          actor  (fn [task]
+                   (->> (th/db-exec! ["SELECT profile_id FROM file_task_event
+                                        WHERE task_id = ? AND type = 'deleted'"
+                                      (:id task)])
+                        (mapv :profile-id)))]
+
+      (t/testing "the owner of the team may delete the task of an editor"
+        (let [task (task* reviewer)]
+          (t/is (nil? (:error (delete author task))))
+          (t/is (= [(:id author)] (actor task)))))
+
+      (t/testing "an admin of the team may delete the task of somebody else"
+        (let [task (task* reviewer)]
+          (t/is (nil? (:error (delete admin task))))
+          (t/is (= [(:id admin)] (actor task)))))
+
+      (t/testing "an editor who is not the author may not"
+        (let [task (task* author)]
+          (t/is (= :not-allowed (-> (delete reviewer task) :error ex-data :code)))
+          (t/is (nil? (:deleted-at (th/db-get :file-task {:id (:id task)})))))))))
+
 ;; --- Relinking a task
 
 (t/deftest relinking-a-task-moves-the-thread-it-was-created-with
@@ -791,3 +825,144 @@
           (t/is (nil? (:error (relink task))))
           (t/is (= rect-id (:shape-id (th/db-get :comment-thread {:id (:id thread)}))))
           (t/is (= other-id (:shape-id (th/db-get :file-task {:id (:id task)})))))))))
+
+(t/deftest relinking-a-task-made-from-the-first-message-leaves-its-thread
+  (with-redefs [cf/flags (task-flags)]
+    (let [{:keys [author page-id rect-id branch-file-id]} (setup-review)
+          other-id (uuid/random)
+          thread   (:result (th/command! {::th/type :create-comment-thread
+                                          ::rpc/profile-id (:id author)
+                                          :file-id branch-file-id
+                                          :page-id page-id
+                                          :frame-id uuid/zero
+                                          :position (gpt/point 0)
+                                          :content "the radius is off"
+                                          :anchor {:type :layer :shape-id rect-id}}))
+          task     (:result (create-task* author {:file-id branch-file-id
+                                                  :page-id page-id
+                                                  :shape-id rect-id
+                                                  :thread-id (:id thread)
+                                                  :comment-id (:comment-id thread)}))]
+      (add-rect* author branch-file-id page-id other-id "Promo")
+      (t/is (false? (:created-thread (th/db-get :file-task {:id (:id task)}))))
+      (t/is (nil? (:error (th/command! {::th/type :relink-task
+                                        ::rpc/profile-id (:id author)
+                                        :id (:id task)
+                                        :page-id page-id
+                                        :frame-id uuid/zero
+                                        :shape-id other-id
+                                        :shape-name "Promo"}))))
+      (t/is (= rect-id (:shape-id (th/db-get :comment-thread {:id (:id thread)}))))
+      (t/is (= other-id (:shape-id (th/db-get :file-task {:id (:id task)})))))))
+
+;; --- Renaming a task
+
+(defn- messages-of
+  [profile thread-id]
+  (mapv :content (:result (th/command! {::th/type :get-comments
+                                        ::rpc/profile-id (:id profile)
+                                        :thread-id thread-id}))))
+
+(defn- renamed-titles
+  [profile task]
+  (->> (:result (th/command! {::th/type :get-task-events
+                              ::rpc/profile-id (:id profile)
+                              :id (:id task)}))
+       (filter #(= "renamed" (:type %)))
+       (mapv #(-> % :payload :title))))
+
+(t/deftest renaming-a-task-rewrites-its-message-only-for-the-one-who-wrote-it
+  (with-redefs [cf/flags (task-flags)]
+    (let [{:keys [author reviewer page-id branch-file-id]} (setup-review)
+          rename (fn [profile task title]
+                   (th/command! {::th/type :update-task
+                                 ::rpc/profile-id (:id profile)
+                                 :id (:id task)
+                                 :title title}))]
+
+      (t/testing "the author renames the message of a task created on the canvas"
+        (let [task (:result (create-task* author {:file-id branch-file-id
+                                                  :page-id page-id
+                                                  :title "first title"}))]
+          (t/is (nil? (:error (rename author task "second title"))))
+          (t/is (= "second title" (:title (th/db-get :file-task {:id (:id task)}))))
+          (t/is (= ["second title"] (messages-of author (:thread-id task))))
+          (t/is (= ["second title"] (renamed-titles author task)))))
+
+      (t/testing "somebody else renames the task but not its message"
+        (let [task (:result (create-task* author {:file-id branch-file-id
+                                                  :page-id page-id
+                                                  :title "the author's words"}))]
+          (t/is (nil? (:error (rename reviewer task "the reviewer's words"))))
+          (t/is (= "the reviewer's words" (:title (th/db-get :file-task {:id (:id task)}))))
+          (t/is (= ["the author's words"] (messages-of author (:thread-id task))))
+          (t/is (= ["the reviewer's words"] (renamed-titles author task)))))
+
+      (t/testing "the message of an existing thread stays whatever the title"
+        (let [thread (:result (th/command! {::th/type :create-comment-thread
+                                            ::rpc/profile-id (:id author)
+                                            :file-id branch-file-id
+                                            :page-id page-id
+                                            :frame-id uuid/zero
+                                            :position (gpt/point 0)
+                                            :content "the radius is off"}))
+              task   (:result (create-task* author {:file-id branch-file-id
+                                                    :page-id page-id
+                                                    :thread-id (:id thread)
+                                                    :comment-id (:comment-id thread)}))]
+          (t/is (false? (:created-thread (th/db-get :file-task {:id (:id task)}))))
+          (t/is (nil? (:error (rename author task "a better title"))))
+          (t/is (= ["the radius is off"] (messages-of author (:id thread))))
+          (t/is (= ["a better title"] (renamed-titles author task))))))))
+
+;; --- Emails of a move
+
+(t/deftest a-move-tells-the-person-it-concerns-and-nobody-else
+  (with-redefs [cf/flags (task-flags)]
+    (let [{:keys [author reviewer page-id branch-file-id]} (setup-review)
+          sent (atom [])]
+      (with-redefs [eml/send-template
+                    (fn [_ params]
+                      (swap! sent conj {:template (::eml/template params)
+                                        :to (:to params)
+                                        :task-title (:task-title params)}))]
+        (let [new-task (fn []
+                         (:result (create-task* author {:file-id branch-file-id
+                                                        :page-id page-id
+                                                        :assignee-id (:id reviewer)})))
+              move (fn [profile task status]
+                     (reset! sent [])
+                     (let [out (set-status* profile (:id task) status)]
+                       (t/is (nil? (:error out)))
+                       @sent))]
+
+          (t/testing "done tells the creator"
+            (let [task (new-task)]
+              (t/is (= [{:template "task-done"
+                         :to (:email author)
+                         :task-title (:title task)}]
+                       (move reviewer task "done")))))
+
+          (t/testing "a move that concerns only the actor tells nobody"
+            (let [task (new-task)]
+              (t/is (= [] (move author task "done")))))
+
+          (t/testing "reopened tells the assignee"
+            (let [task (new-task)]
+              (move reviewer task "done")
+              (t/is (= [{:template "task-reopened"
+                         :to (:email reviewer)
+                         :task-title (:title task)}]
+                       (move author task "reopened")))))
+
+          (t/testing "verified tells nobody"
+            (let [task (new-task)]
+              (move reviewer task "done")
+              (t/is (= [] (move author task "verified")))))
+
+          (t/testing "a profile that refuses the task emails is told nothing"
+            (th/db-update! :profile
+                           {:props (db/tjson {:notifications {:email-tasks :none}})}
+                           {:id (:id author)})
+            (let [task (new-task)]
+              (t/is (= [] (move reviewer task "done"))))))))))

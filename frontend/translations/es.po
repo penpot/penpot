@@ -1241,63 +1241,79 @@ msgstr "Penpot Light"
 msgid "dashboard.select-ui-theme.system"
 msgstr "Sistema"
 
-#: src/app/main/ui/settings/notifications.cljs:57
+#: src/app/main/ui/settings/notifications.cljs:59
 msgid "dashboard.settings.notifications.dashboard-comments.all"
 msgstr "Todos los comentarios, menciones y respuestas"
 
-#: src/app/main/ui/settings/notifications.cljs:59
+#: src/app/main/ui/settings/notifications.cljs:61
 msgid "dashboard.settings.notifications.dashboard-comments.none"
 msgstr "Ninguna"
 
-#: src/app/main/ui/settings/notifications.cljs:58
+#: src/app/main/ui/settings/notifications.cljs:60
 msgid "dashboard.settings.notifications.dashboard-comments.partial"
 msgstr "Sólo menciones y respuestas"
 
-#: src/app/main/ui/settings/notifications.cljs:54
+#: src/app/main/ui/settings/notifications.cljs:56
 msgid "dashboard.settings.notifications.dashboard-comments.title"
 msgstr "Comentarios de ficheros"
 
-#: src/app/main/ui/settings/notifications.cljs:53
+#: src/app/main/ui/settings/notifications.cljs:55
 msgid "dashboard.settings.notifications.dashboard.title"
 msgstr "Notificaciones en el panel"
 
-#: src/app/main/ui/settings/notifications.cljs:67
+#: src/app/main/ui/settings/notifications.cljs:69
 msgid "dashboard.settings.notifications.email-comments.all"
 msgstr "Todos los comentarios, menciones y respuestas"
 
-#: src/app/main/ui/settings/notifications.cljs:69
+#: src/app/main/ui/settings/notifications.cljs:71
 msgid "dashboard.settings.notifications.email-comments.none"
 msgstr "Ninguna"
 
-#: src/app/main/ui/settings/notifications.cljs:68
+#: src/app/main/ui/settings/notifications.cljs:70
 msgid "dashboard.settings.notifications.email-comments.partial"
 msgstr "Sólo menciones y respuestas"
 
-#: src/app/main/ui/settings/notifications.cljs:64
+#: src/app/main/ui/settings/notifications.cljs:66
 msgid "dashboard.settings.notifications.email-comments.title"
 msgstr "Comentarios de ficheros"
 
-#: src/app/main/ui/settings/notifications.cljs:76
+#: src/app/main/ui/settings/notifications.cljs:87
 msgid "dashboard.settings.notifications.email-invites.all"
 msgstr "Todas las invitaciones y solicitudes"
 
-#: src/app/main/ui/settings/notifications.cljs:79
+#: src/app/main/ui/settings/notifications.cljs:90
 msgid "dashboard.settings.notifications.email-invites.none"
 msgstr "Ninguna"
 
-#: src/app/main/ui/settings/notifications.cljs:73
+#: src/app/main/ui/settings/notifications.cljs:84
 msgid "dashboard.settings.notifications.email-invites.title"
 msgstr "Invitaciones y solicitudes"
 
-#: src/app/main/ui/settings/notifications.cljs:63
+#: src/app/main/ui/settings/notifications.cljs:78
+msgid "dashboard.settings.notifications.email-tasks.all"
+msgstr "Todas las tareas"
+
+#: src/app/main/ui/settings/notifications.cljs:80
+msgid "dashboard.settings.notifications.email-tasks.none"
+msgstr "Ninguna"
+
+#: src/app/main/ui/settings/notifications.cljs:79
+msgid "dashboard.settings.notifications.email-tasks.partial"
+msgstr "Sólo las tareas que he creado o que tengo asignadas"
+
+#: src/app/main/ui/settings/notifications.cljs:75
+msgid "dashboard.settings.notifications.email-tasks.title"
+msgstr "Tareas"
+
+#: src/app/main/ui/settings/notifications.cljs:65
 msgid "dashboard.settings.notifications.email.title"
 msgstr "Notificaciones de correo electrónico"
 
-#: src/app/main/ui/settings/notifications.cljs:84
+#: src/app/main/ui/settings/notifications.cljs:95
 msgid "dashboard.settings.notifications.submit"
 msgstr "Actualizar configuración"
 
-#: src/app/main/ui/settings/notifications.cljs:52
+#: src/app/main/ui/settings/notifications.cljs:54
 msgid "dashboard.settings.notifications.title"
 msgstr "Notificaciones"
 
