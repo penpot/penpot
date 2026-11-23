@@ -201,8 +201,8 @@
                  color-operations (get groups token-color)]
              (doseq [op color-operations]
                (let [attr (if (= (:prop op) :stroke)
-                             #{:stroke-color}
-                             #{:fill})]
+                            #{:stroke-color}
+                            #{:fill})]
                  (st/emit! (dwta/unapply-token {:token-name token-name
                                                 :attributes attr
                                                 :shape-ids [(:shape-id op)]})))))))
