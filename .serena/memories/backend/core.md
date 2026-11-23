@@ -4,7 +4,8 @@ JVM Clojure backend. Start in `app.main` for Integrant wiring, `app.rpc.commands
 
 ## Focused memories
 
-- RPC wrapper order, DB transactions and advisory locks, config and HTTP middleware, metrics, and file data persistence: `mem:backend/subtleties`.
+- RPC wrapper order, DB transactions and advisory locks, config, HTTP middleware and metrics: `mem:backend/subtleties`.
+- Read-time migrations, fragments and snapshots: `mem:backend/file-data/reads-and-versions`. Partial save and failure handling: `mem:backend/file-data/save`.
 - Job definitions, submission and lifecycle transaction boundaries, dispatch/recovery, user-facing jobs, and metrics: `mem:backend/jobs`.
 - File import/export format compatibility, jobs, permissions and cancellation: `mem:backend/binfile`.
 - Storage bucket rules, object lifecycle, deduplication, access and GC: `mem:backend/storage`.
