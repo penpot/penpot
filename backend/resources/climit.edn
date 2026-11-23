@@ -4,7 +4,7 @@
 ;; Optional: timeout in milliseconds, omitted means the thread waits for a
 ;; permit forever, and a saturated limiter parks it for good. Values below:
 ;; 60s for operations that can be slow (file updates, images, fonts, thumbnails,
-;; snapshots, imports, branches, pull requests) and 30s for the rest.
+;; snapshots, imports, branches, branch reviews) and 30s for the rest.
 ;; Note: a queue bounds how many waiters pile up, a timeout bounds how long one
 ;; waiter waits. Every entry sets a timeout and a queue: a command takes the
 ;; limits it declares before the root ones, so the queue of a limit is where
@@ -99,20 +99,20 @@
  ;;  * `create-file-branch` realizes main once and writes one snapshot
  ;;    (`backend/src/app/rpc/commands/files_branch.clj::create-file-branch`),
  ;;    which is the anchor's shape and the anchor's cost.
- ;;  * `merge-file-branch` and `update-branch-from-main` hold three
+ ;;  * `merge-file-branch` and `update-file-branch-from-source` hold three
  ;;    realized documents at once: main, the derived branch, and the base
  ;;    snapshot (`files_branch.clj::merge-file-branch`,
- ;;    `files_branch.clj::update-branch-from-main`). Both also write a
+ ;;    `files_branch.clj::update-file-branch-from-source`). Both also write a
  ;;    snapshot and a whole file payload, and the update computes a
  ;;    second diff for the squash, so they earn the tightest count.
- ;;  * `materialize-file-branch` realizes the branch and the libraries it
+ ;;  * `detach-file-branch` realizes the branch and the libraries it
  ;;    validates against, then writes the whole payload
- ;;    (`files_branch.clj::materialize-file-branch`), so it sits between
+ ;;    (`files_branch.clj::detach-file-branch`), so it sits between
  ;;    the anchor and the merge pair.
- ;;  * `create-pull-request` and `update-pull-request-snapshot` realize the
- ;;    branch once and write one review snapshot
- ;;    (`files_pull_request.clj::create-pull-request`,
- ;;    `files_pull_request.clj::update-pull-request-snapshot`), which is
+ ;;  * `create-branch-review` and `update-branch-review-revision` realize
+ ;;    the branch once and write one review snapshot
+ ;;    (`files_branch_review.clj::create-branch-review`,
+ ;;    `files_branch_review.clj::update-branch-review-revision`), which is
  ;;    the anchor's shape again.
  ;;
  ;; The numbers here are example defaults, not measurements. Every entry
@@ -121,8 +121,8 @@
  ;; warning (`climit.clj::wrap`). The write-side global queues
  ;; follow the anchor's ratio of five waiters to three permits, rounded
  ;; up. The per-profile entry of one permit and a queue of two keeps a
- ;; single designer to one operation at a time. The two read-side
- ;; entries are generous by design, with the ratio of
+ ;; single designer to one operation at a time. The read-side entries
+ ;; are generous by design, with the ratio of
  ;; `:update-file/global` (fifty waiters to twenty permits), so a panel
  ;; open waits for its turn instead of being refused: six
  ;; three-document comparisons hold eighteen realized documents, fewer
@@ -157,20 +157,20 @@
  ;; An update from main holds the same three documents and pays for a
  ;; snapshot write and a squash diff on top, so it takes the merge's
  ;; count. Provisional.
- :update-branch-from-main/global
+ :update-file-branch-from-source/global
  {:permits 1 :queue 2 :timeout 60000}
 
- :update-branch-from-main/by-profile
+ :update-file-branch-from-source/by-profile
  {:permits 1 :queue 2 :timeout 60000}
 
- ;; Materialize realizes one document plus its libraries and writes the
+ ;; Detach realizes one document plus its libraries and writes the
  ;; payload, which is cheaper than a merge and dearer than the anchor,
  ;; so it admits two where the merge admits one and the anchor admits
  ;; three. Provisional.
- :materialize-file-branch/global
+ :detach-file-branch/global
  {:permits 2 :queue 4 :timeout 60000}
 
- :materialize-file-branch/by-profile
+ :detach-file-branch/by-profile
  {:permits 1 :queue 2 :timeout 60000}
 
  ;; A cold listing realizes main once and derives every uncached branch,
@@ -188,21 +188,77 @@
  ;; The compare dialog's query holds main, the derived branch, and the
  ;; base at once, the same three documents the listing holds, so it takes
  ;; the same count. Provisional.
- :get-branch-diff/global
+ :get-file-branch-diff/global
  {:permits 6 :queue 15 :timeout 60000}
 
- ;; Creating a pull request realizes the branch and pins one review
+ ;; Creating a branch review realizes the branch and pins one review
  ;; snapshot, the anchor's shape. Provisional.
- :create-pull-request/global
+ :create-branch-review/global
  {:permits 3 :queue 5 :timeout 60000}
 
- :create-pull-request/by-profile
+ :create-branch-review/by-profile
  {:permits 1 :queue 2 :timeout 60000}
 
  ;; Publishing the branch state also realizes the branch and pins one
  ;; snapshot. The command declares a single instance-wide queue
- ;; (`files_pull_request.clj::update-pull-request-snapshot`), so the
+ ;; (`files_branch_review.clj::update-branch-review-revision`), so the
  ;; bounded wait sits on the global entry here rather than on a
  ;; per-profile entry. Provisional.
- :update-pull-request-snapshot/global
- {:permits 3 :queue 4 :timeout 60000}}
+ :update-branch-review-revision/global
+ {:permits 3 :queue 4 :timeout 60000}
+
+ ;; The review sandbox decodes the pinned snapshot and serves it whole:
+ ;; one realized document and one whole-file payload in memory, the
+ ;; anchor's shape with no snapshot write behind it. Three at once is the
+ ;; anchor's count, and eight waiters give the reviewers of one review
+ ;; room to open their sandboxes together. Provisional.
+ :get-branch-review-bundle/global
+ {:permits 3 :queue 8 :timeout 60000}
+
+ ;; The activity decodes one blob per row of the review, folds the rows
+ ;; as they stream, and serves the folded history. No document is
+ ;; realized, but the work grows with the number of saves rather than
+ ;; with the size of the file, so it sits between the anchor's three and
+ ;; the listing's six, with the read-side ratio for its waiters.
+ ;; Provisional.
+ :get-branch-review-activity/global
+ {:permits 4 :queue 10 :timeout 60000}
+
+ ;; Moving a thread left behind realizes the target document, then moves
+ ;; the thread, its tasks and their events: the one document
+ ;; `create-branch-review` realizes, so it takes the anchor's numbers,
+ ;; and the per-profile entry keeps one designer to one move at a time.
+ ;; Provisional.
+ :move-branch-review-thread/global
+ {:permits 3 :queue 5 :timeout 60000}
+
+ :move-branch-review-thread/by-profile
+ {:permits 1 :queue 2 :timeout 60000}
+
+ ;; Marking the layers of deleted tasks carries their subtrees in,
+ ;; validates up to `max-restore-objects` shapes per layer
+ ;; (`files_task.clj::restore-objects`), and writes them into the event
+ ;; of every task of the layer, so one call can write a document-sized
+ ;; payload. The anchor's numbers bound those copies in flight, and the
+ ;; per-profile entry keeps one designer's bulk deletions from piling
+ ;; up. Provisional.
+ :mark-tasks-layer-deleted/global
+ {:permits 3 :queue 5 :timeout 60000}
+
+ :mark-tasks-layer-deleted/by-profile
+ {:permits 1 :queue 2 :timeout 60000}
+
+ ;; A file open asks for the branch of the file, and a cold miss on a
+ ;; diverged branch runs the compare dialog's own three-document
+ ;; comparison, so the open path shares the compare's numbers instead of
+ ;; opening a way around them. The shared summary cache answers a warm
+ ;; open without realizing anything. Provisional.
+ :get-file-branch-info/global
+ {:permits 6 :queue 15 :timeout 60000}
+
+ ;; A cold review listing realizes the target once and compares each
+ ;; uncached diverged review against it, the branches listing's shape
+ ;; with main shared across rows, so it takes the listing's numbers.
+ ;; Provisional.
+ :get-file-branch-reviews/global
+ {:permits 6 :queue 15 :timeout 60000}}

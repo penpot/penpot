@@ -120,14 +120,14 @@
   [{:keys [comparison]}]
   (let [{:keys [mode status incoming model selected excluded reviewed copies]} comparison
         counts    (:counts mode)
-        direction (if incoming :main->branch :branch->main)
+        direction (if incoming :source->branch :branch->source)
         tabs      (mf/with-memo [counts]
-                    [{:id "branch->main"
+                    [{:id "branch->source"
                       :label (tab-label (tr "workspace.compare.direction.branch")
-                                        (get counts :branch->main))}
-                     {:id "main->branch"
+                                        (get counts :branch->source))}
+                     {:id "source->branch"
                       :label (tab-label (tr "workspace.compare.direction.main")
-                                        (get counts :main->branch))}])
+                                        (get counts :source->branch))}])
         follows   (mf/with-memo [copies]
                     (brc/copy-follow-counts copies))]
     [:> tab-switcher* {:tabs tabs
@@ -172,7 +172,7 @@
   [{:keys [comparison]}]
   (let [{:keys [mode conflicts selected resolutions]} comparison
         total       (count (:conflicts conflicts))
-        on-all-main   (mf/use-fn (mf/deps comparison) #(cc/keep-all comparison :main))
+        on-all-main   (mf/use-fn (mf/deps comparison) #(cc/keep-all comparison :source))
         on-all-branch (mf/use-fn (mf/deps comparison) #(cc/keep-all comparison :branch))]
     (if (zero? total)
       [:div {:class (stl/css :empty)}

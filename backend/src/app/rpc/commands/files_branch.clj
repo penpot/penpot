@@ -101,7 +101,7 @@
       (ex/raise :type :restriction
                 :code :branching-page-limit-exceeded
                 :hint (str "this file has " pages " pages and branching is limited to "
-                           max-pages "; split the file, or materialise the branch to keep "
+                           max-pages "; split the file, or detach the branch to keep "
                            "working on it as an ordinary file")
                 :operation operation
                 :limit max-pages
@@ -111,7 +111,7 @@
       (ex/raise :type :restriction
                 :code :branching-shape-limit-exceeded
                 :hint (str "this file has " shapes " shapes and branching is limited to "
-                           max-shapes "; split the file, or materialise the branch to keep "
+                           max-shapes "; split the file, or detach the branch to keep "
                            "working on it as an ordinary file")
                 :operation operation
                 :limit max-shapes
@@ -130,7 +130,7 @@
       (ex/raise :type :restriction
                 :code :branching-oplog-limit-exceeded
                 :hint (str "this branch has " depth " changes in its op log and the limit is "
-                           limit "; materialise it into an ordinary file, or delete it")
+                           limit "; detach it into an ordinary file, or delete it")
                 :operation operation
                 :branch-file-id branch-file-id
                 :limit limit
@@ -224,7 +224,7 @@
                from-gs)))
 
 (defn- branch-media-pairs
-  "The branch->main media pairs the comparison and the merge run on,
+  "The branch->source media pairs the comparison and the merge run on,
   from the branch's own record: every op log row stamps the media id map
   the write that produced it applied (`bfc/get-branch-change-media-maps`),
   in the as-applied direction {old-id -> new-id}, so the union of the
@@ -417,39 +417,39 @@
                    :file-id source-file-id
                    :deleted-at deleted-at)))
 
-;; --- Helpers: pull requests attached to a branch
+;; --- Helpers: design reviews of a branch
 ;;
-;; Pull requests live in `app.rpc.commands.files-pull-request`, which
-;; requires THIS namespace (it reuses the diff-count helpers), so the
-;; branch lifecycle hooks below work over the table directly to avoid a
+;; Reviews live in `app.rpc.commands.files-branch-review`, which requires
+;; THIS namespace (it reuses the diff-count helpers), so the branch
+;; lifecycle hooks below work over the table directly to avoid a
 ;; circular dependency.
 
-(def ^:private sql:get-open-branch-pull-requests
-  "SELECT id, source_file_id, review_snapshot_id
-     FROM file_pull_request
+(def ^:private sql:get-open-branch-reviews
+  "SELECT id, title, pinned_snapshot_id
+     FROM file_branch_review
     WHERE file_branch_id = ?
       AND status = 'open'
       AND deleted_at IS NULL")
 
-(defn- close-branch-pull-requests!
-  "Close (or mark merged) any open pull request attached to a branch and
-  release its pinned review snapshot: the review sandbox must not
-  outlive the branch. The pull request row itself is kept as history.
+(defn- close-branch-reviews
+  "Close (or mark merged) any open review of `branch` and release its
+  pinned snapshot: the snapshot lives in the branch file's history and
+  must not outlive the branch. The review row itself is kept as history.
   Must run inside a transaction."
-  [{:keys [::db/conn] :as cfg} branch-id {:keys [profile-id status deleted-at]}]
-  (doseq [pr (db/exec! conn [sql:get-open-branch-pull-requests branch-id])]
+  [{:keys [::db/conn] :as cfg} {:keys [id branch-file-id]} {:keys [profile-id status deleted-at]}]
+  (doseq [review (db/exec! conn [sql:get-open-branch-reviews id])]
     (let [ts (ct/now)]
-      (db/update! conn :file-pull-request
+      (db/update! conn :file-branch-review
                   {:status (or status "closed")
                    :closed-at ts
                    :closed-by profile-id
                    :updated-at ts}
-                  {:id (:id pr)}
+                  {:id (:id review)}
                   {::db/return-keys false})
-      (when-let [snapshot-id (:review-snapshot-id pr)]
+      (when-let [snapshot-id (:pinned-snapshot-id review)]
         (fsnap/delete! cfg
                        :id snapshot-id
-                       :file-id (:source-file-id pr)
+                       :file-id branch-file-id
                        :deleted-at deleted-at)))))
 
 ;; --- Helpers: branch deletion (shared by delete-file-branch and merge)
@@ -473,11 +473,12 @@
                 {:id id}
                 {::db/return-keys false})
     (release-base-snapshot! cfg branch dt)
-    ;; the review sandbox must not outlive the branch (`status` above is
-    ;; the BRANCH status; a pull request closed this way is just "closed")
-    (close-branch-pull-requests! cfg id {:profile-id profile-id
-                                         :status "closed"
-                                         :deleted-at dt})
+    ;; the pinned review snapshot must not outlive the branch (`status`
+    ;; above is the BRANCH status; a review closed this way is just
+    ;; "closed")
+    (close-branch-reviews cfg branch {:profile-id profile-id
+                                      :status "closed"
+                                      :deleted-at dt})
     (jobs/submit cfg
                  {::jobs/name :delete-object
                   ::jobs/params {:object :file :deleted-at dt :id branch-file-id}})
@@ -489,35 +490,100 @@
 
 ;; --- Helpers: merge record
 
-(def ^:private sql:get-open-branch-pull-request
-  "SELECT id, title
-     FROM file_pull_request
-    WHERE file_branch_id = ?
-      AND status = 'open'
-      AND deleted_at IS NULL")
-
-(defn- record-merge!
+(defn- record-merge
   "Insert the record of a merge of `branch` into its source file (see the
-  `file_branch_merge` migration). The open pull request of the branch is
-  the design review the merge accepts, so it is read here, before the
-  merge closes it. A blank comment is stored as no comment. Must run
-  inside the merge transaction. Returns the id of the record."
+  `file_branch_merge` migration), in the family of that file. The open
+  review of the branch is the design review the merge accepts, so it is
+  read here, before the merge closes it. A blank comment is stored as no
+  comment. Must run inside the merge transaction. Returns the id of the
+  record."
   [conn {:keys [id source-file-id name]} {:keys [profile-id comment created-at]}]
-  (let [pr       (db/exec-one! conn [sql:get-open-branch-pull-request id])
+  (let [review   (db/exec-one! conn [sql:get-open-branch-reviews id])
+        family   (db/get conn :file {:id source-file-id}
+                         {::sql/columns [:family-id]
+                          ::db/remove-deleted false})
         comment  (when-not (str/blank? comment) (str/trim comment))
         merge-id (uuid/next)]
     (db/insert! conn :file-branch-merge
                 {:id merge-id
                  :created-at created-at
                  :file-id source-file-id
+                 :family-id (:family-id family)
                  :file-branch-id id
                  :branch-name name
                  :merged-by profile-id
                  :comment comment
-                 :pull-request-id (:id pr)
-                 :pull-request-title (:title pr)}
+                 :review-id (:id review)
+                 :review-title (:title review)}
                 {::db/return-keys false})
     merge-id))
+
+(def ^:private sql:get-child-branches
+  "SELECT id, base_snapshot_id
+     FROM file_branch
+    WHERE source_file_id = ?
+      AND status <> 'merged'
+      AND deleted_at IS NULL")
+
+(defn- reparent-child-branches
+  "Point the branches cut from the merged branch file `branch-file-id` at
+  the merge target `target-id` (`:branch-stacking`), so an open child
+  follows the work of its parent into the target. The merge base of a
+  child is a snapshot of the parent branch file, stored under that file:
+  it moves to the target with the edge, or the deletion of the parent
+  would take it and the child could no longer derive its state. The base
+  revision counted the revisions of the parent, a counter the target does
+  not share, so it restarts at zero: the next comparison then runs the
+  diff instead of trusting a delta of two unrelated counters. A child
+  merged before keeps its edge: the edge names the file it was merged
+  into."
+  [conn branch-file-id target-id]
+  (doseq [{:keys [id base-snapshot-id]} (db/exec! conn [sql:get-child-branches branch-file-id])]
+    (when (some? base-snapshot-id)
+      (db/update! conn :file-change
+                  {:file-id target-id}
+                  {:id base-snapshot-id :file-id branch-file-id}
+                  {::db/return-keys false})
+      (db/update! conn :file-data
+                  {:file-id target-id}
+                  {:id base-snapshot-id :file-id branch-file-id}
+                  {::db/return-keys false}))
+    (db/update! conn :file-branch
+                {:source-file-id target-id
+                 :base-source-revn 0
+                 :updated-at (ct/now)}
+                {:id id}
+                {::db/return-keys false})))
+
+(defn- persist-merge-into-branch
+  "Persist a merge whose target is itself a branch (`:branch-stacking`).
+  The target stores no data payload, so the `changes` of the merge go to
+  the end of its op log, and only its `file` row and the project's
+  modified-at are written. Media the merge copied into the target are
+  rows of the target, so the op log row records no media pairing."
+  [{:keys [::db/conn] :as cfg} file ts changes]
+  (let [target (db/get conn :file-branch {:branch-file-id (:id file)})
+        file   (-> file
+                   (dissoc ::snapshot)
+                   (assoc :modified-at ts)
+                   (assoc :has-media-trimmed false))]
+    (db/update! conn :project
+                {:modified-at ts}
+                {:id (:project-id file)}
+                {::db/return-keys false})
+    (db/insert! conn :file-branch-change
+                {:id (uuid/next)
+                 :branch-id (:id target)
+                 :file-id (:id file)
+                 :revn (:revn file)
+                 :changes (blob/encode (vec changes))
+                 :changes-count (count changes)
+                 :data-version (fmg/data-version)
+                 :created-at ts
+                 :updated-at ts}
+                {::db/return-keys false})
+    (bfc/update-file-row! cfg file)
+    nil))
 
 ;; --- COMMAND: create-file-branch
 
@@ -539,9 +605,14 @@
 (sv/defmethod ::create-file-branch
   "Create a branch from a file. The branch file stores NO data payload:
   its `:data` is derived on every read by replaying the branch's op log
-  over the merge base — a system snapshot of main taken at creation.
-  The branch file row still exists (permissions, libraries, msgbus
-  topics and media ownership key on it), but nothing is duplicated."
+  over the merge base — a system snapshot of the source taken at
+  creation. The branch file row still exists (permissions, libraries,
+  msgbus topics and media ownership key on it), but nothing is
+  duplicated. The branch joins the family of its source, which owns the
+  reviews, threads, and tasks of every file in it.
+
+  A branch of a branch is refused unless the `:branch-stacking` flag is
+  on."
   {::doc/added "2.16"
    ::webhooks/event? true
    ::sm/params schema:create-file-branch
@@ -556,7 +627,8 @@
         file-row (db/get-by-id cfg :file file-id)
         project  (db/get-by-id cfg :project (:project-id file-row))]
 
-    (when (:is-branch file-row)
+    (when (and (:is-branch file-row)
+               (not (contains? cf/flags :branch-stacking)))
       (ex/raise :type :validation
                 :code :cannot-branch-a-branch
                 :hint "branches of branches are not supported"
@@ -624,13 +696,16 @@
                     (bfc/insert-file-row! cfg branch-file {::db/return-keys false})
 
                     ;; 3. Mark the new file row as a branch so it is
-                    ;; hidden from the project/team file listings.
+                    ;; hidden from the project/team file listings, and put
+                    ;; it in the family of its source (the insert gave it
+                    ;; a family of its own, which goes once it is empty).
                     ;; No file role is granted: a branch takes its
                     ;; permissions from the team (and project) roles
                     ;; alone, so every editor of main can open and edit
                     ;; it, and its creator gets no extra rights.
                     (db/update! conn :file
-                                {:is-branch true}
+                                {:is-branch true
+                                 :family-id (:family-id file-row)}
                                 {:id branch-id}
                                 {::db/return-keys false})
 
@@ -648,10 +723,10 @@
                                                         :library-file-id (:library-file-id rel)
                                                         :synced-at (or (:synced-at rel) ts)})))
 
-                    ;; 5. Persist the branch metadata. `base-revn`
-                    ;; tracks MAIN's revision counter and
+                    ;; 5. Persist the branch metadata. `base-source-revn`
+                    ;; tracks the SOURCE's revision counter and
                     ;; `base-branch-revn` the BRANCH file's one. Each
-                    ;; starts at its own side's revn (main's current
+                    ;; starts at its own side's revn (the source's current
                     ;; revn, the new branch file's 0) and is compared
                     ;; against that side alone (see `revn-deltas`).
                     (db/insert! conn :file-branch
@@ -659,7 +734,7 @@
                                  :branch-file-id branch-id
                                  :source-file-id file-id
                                  :base-snapshot-id (:id base)
-                                 :base-revn (:revn file)
+                                 :base-source-revn (:revn file)
                                  :base-branch-revn (:revn branch-file)
                                  :created-by profile-id
                                  :name name
@@ -670,7 +745,7 @@
                     (audited {:id meta-id
                               :branch-file-id branch-id
                               :source-file-id file-id
-                              :base-revn (:revn file)
+                              :base-source-revn (:revn file)
                               :name name
                               :description description
                               :status "open"}
@@ -695,7 +770,7 @@
           fb.updated_at,
           fb.merged_at,
           fb.merged_by,
-          fb.base_revn,
+          fb.base_source_revn,
           fb.base_branch_revn,
           fb.base_snapshot_id,
           bf.revn AS branch_revn,
@@ -714,11 +789,11 @@
   "Cheap `[ahead-revn behind-revn]` deltas gating the expensive diff. Each
   side is compared against ITS OWN counter captured when the base was
   (re)positioned: `branch-revn` vs `base-branch-revn` and `source-revn` vs
-  `base-revn` — the two revns are independent counters and must never be
-  mixed."
-  [{:keys [branch-revn source-revn base-revn base-branch-revn]}]
+  `base-source-revn` — the two revns are independent counters and must
+  never be mixed."
+  [{:keys [branch-revn source-revn base-source-revn base-branch-revn]}]
   [(max 0 (- branch-revn base-branch-revn))
-   (max 0 (- source-revn base-revn))])
+   (max 0 (- source-revn base-source-revn))])
 
 (defn- branch-id-map
   "Reference-normalization map for diffing/merging a branch against its
@@ -825,11 +900,11 @@
             clean-count (fn [m] (let [s (:stats m)]
                                   (+ (:added s) (:modified s) (:deleted s))))
             fwd (when (pos? ahead-revn)
-                  (bm/compute-merge base-data main-data branch-data :branch->main
+                  (bm/compute-merge base-data main-data branch-data :branch->source
                                     (when-let [pages (branch-affected-pages cfg branch-file-id)]
                                       {:only-pages pages})))
             bwd (when (pos? behind-revn)
-                  (bm/compute-merge base-data branch-data main-data :branch->main
+                  (bm/compute-merge base-data branch-data main-data :branch->source
                                     (when moved {:only-pages moved})))]
         [(if fwd (clean-count fwd) 0)
          (if bwd (clean-count bwd) 0)
@@ -850,7 +925,7 @@
   again for a designer who comes back after lunch.
 
   Both surfaces reporting these numbers share it: the branches listing and
-  the pull-request listing ask the same question about the same pair, so
+  the review listing ask the same question about the same pair, so
   whichever runs first warms the other."
   (ucache/create :max-size 8192 :keepalive "8h"))
 
@@ -929,7 +1004,7 @@
   branch-revn)`: a repeated listing with no intervening save performs no
   comparison work, and the tuple names exactly the inputs the computation
   reads, so a stale key cannot exist and the cache needs no invalidation.
-  The pull-request listing reads the same cache, so either surface can
+  The review listing reads the same cache, so either surface can
   arrive warm."
   {::doc/added "2.16"
    ::sm/params schema:get-file-branches
@@ -978,28 +1053,28 @@
              {:branches-compared (count compared)
               :branches-cached (count cached)})))
 
-;; --- COMMAND QUERY: get-branch-diff
+;; --- COMMAND QUERY: get-file-branch-diff
 
-(def ^:private schema:get-branch-diff
-  [:map {:title "get-branch-diff"}
+(def ^:private schema:get-file-branch-diff
+  [:map {:title "get-file-branch-diff"}
    [:branch-id ::sm/uuid]
-   ;; `:branch->main` (default) = the branch's outgoing changes to merge;
-   ;; `:main->branch` = main's incoming changes the branch is missing.
-   [:direction {:optional true} [:enum :branch->main :main->branch]]])
+   ;; `:branch->source` (default) = the branch's outgoing changes to merge;
+   ;; `:source->branch` = the source's incoming changes the branch is missing.
+   [:direction {:optional true} [:enum :branch->source :source->branch]]])
 
-(sv/defmethod ::get-branch-diff
-  "Read-only three-way diff between a branch and its source (main),
-  using the branch's current merge base: the snapshot taken at branch
-  creation, or the one the latest update from main repositioned it to
-  (`reposition-base!` in `update-branch-from-main`). Returns the summary
+(sv/defmethod ::get-file-branch-diff
+  "Read-only three-way diff between a branch and its source, using the
+  branch's current merge base: the snapshot taken at branch creation, or
+  the one the latest update from the source repositioned it to
+  (`reposition-base!` in `update-file-branch-from-source`). Returns the summary
   produced by `branch-merge/compute-merge` (stats, changes, conflicts).
 
   The base is read at the current data version, the version `bfc/get-file`
   reads main and the branch at (`bfc/migrate-branch-base`), so a Penpot
   upgrade since the branch was cut does not read as a change on any side."
   {::doc/added "2.16"
-   ::sm/params schema:get-branch-diff
-   ::climit/id [[:get-branch-diff/global]]
+   ::sm/params schema:get-file-branch-diff
+   ::climit/id [[:get-file-branch-diff/global]]
    ::db/transaction true}
   [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id branch-id direction]}]
   (bp/with-policies
@@ -1014,7 +1089,7 @@
       (files/check-read-permissions! cfg profile-id (:source-file-id branch))
 
       (let [tpoint      (ct/tpoint)
-            dir         (or direction :branch->main)
+            dir         (or direction :branch->source)
             _           (check-oplog-depth-limit! (bfc/get-branch-oplog-depth cfg (:branch-file-id branch))
                                                   (:branch-file-id branch)
                                                   :compare)
@@ -1033,7 +1108,7 @@
                          (:data branch-file)
                          (branch-id-map cfg (:branch-file-id branch) (:source-file-id branch)))
             ;; when the CURRENT merge-base snapshot row was created: the
-            ;; base moves whenever `update-branch-from-main` repositions it,
+            ;; base moves whenever `update-file-branch-from-source` repositions it,
             ;; and a pinned base carries a future `deleted-at`
             base-at     (:created-at (db/get* conn :file-change
                                               {:id (:base-snapshot-id branch)}
@@ -1043,22 +1118,22 @@
             ;; can have changed: the branch's to the pages its log
             ;; touched, main's to the pages whose fragment it no longer
             ;; shares with the base
-            opts        (if (= dir :branch->main)
+            opts        (if (= dir :branch->source)
                           (when-let [pages (affected-pages log)]
                             {:only-pages pages})
                           (when moved
                             {:only-pages moved}))]
         ;; `:meta` carries the "when" of each side so the resolution UI can show
-        ;; how recent main/branch are (base is the snapshot its
+        ;; how recent the source and the branch are (base is the snapshot its
         ;; `base-snapshot-id` currently points at), plus
-        ;; `:main-revn` so the client can do optimistic concurrency on merge
-        ;; (`expected-main-revn`). The last editor's identity is intentionally
+        ;; `:source-revn` so the client can do optimistic concurrency on merge
+        ;; (`expected-source-revn`). The last editor's identity is intentionally
         ;; omitted: files do not store a reliable "modified-by".
         (-> (bm/compute-merge base-data main-data branch-data dir (assoc opts :copies? true))
-            (assoc :meta {:base-at   base-at
-                          :main-at   (:modified-at main-file)
-                          :branch-at (:modified-at branch-file)
-                          :main-revn (:revn main-file)})
+            (assoc :meta {:base-at     base-at
+                          :source-at   (:modified-at main-file)
+                          :branch-at   (:modified-at branch-file)
+                          :source-revn (:revn main-file)})
             (audited tpoint :compare))))))
 
 ;; --- Helpers: post-commit notification
@@ -1067,8 +1142,8 @@
 ;; when it returns, so the messages a transaction collects in `messages`
 ;; leave here, right after the commit: a client that reloads on one of
 ;; them reads the committed state, and a rolled back transaction
-;; publishes nothing. Shared with the pull-request commands
-;; (`app.rpc.commands.files-pull-request`).
+;; publishes nothing. Shared with the review commands
+;; (`app.rpc.commands.files-branch-review`).
 
 (defn tx-run-notify!
   "Run `f` in a transaction, then publish the `messages` it collected (a
@@ -1087,13 +1162,13 @@
    [:branch-id ::sm/uuid]
    ;; conflict resolutions keyed by entity id (uuid) or, for structural
    ;; conflicts, a keyword id like :active-themes. A resolution is either a
-   ;; whole-entity choice (:main/:branch) or a per-attr map {attr -> side}.
-   [:resolutions {:optional true} [:map-of :any [:or [:enum :main :branch] [:map-of :keyword [:enum :main :branch]]]]]
+   ;; whole-entity choice (:source/:branch) or a per-attr map {attr -> side}.
+   [:resolutions {:optional true} [:map-of :any [:or [:enum :source :branch] [:map-of :keyword [:enum :source :branch]]]]]
    ;; the compare panel's per-change selection as a set of change keys
    ;; (`app.common.files.branch-merge/change-key`): the entities the user
    ;; deselected, which the merge resolves to the target side
    [:excluded {:optional true} [::sm/set :string]]
-   [:expected-main-revn {:optional true} ::sm/int]
+   [:expected-source-revn {:optional true} ::sm/int]
    ;; what the user says about the merge; kept in its record
    ;; (`file_branch_merge`), shown in the list of merges of main
    [:comment {:optional true} [:string {:max 4000}]]
@@ -1102,11 +1177,11 @@
    [:notify-assignees {:optional true} ::sm/boolean]])
 
 (sv/defmethod ::merge-file-branch
-  "Merge a branch into its source file (main).
+  "Merge a branch into its source file.
 
   Conflicts that `resolutions` leaves unresolved make the command return
-  `{:status :conflicts}`, with the `:main-revn` they were computed against
-  so the retry can pass it as `expected-main-revn` and the summary's
+  `{:status :conflicts}`, with the `:source-revn` they were computed against
+  so the retry can pass it as `expected-source-revn` and the summary's
   `:copies` (`bm/compute-merge`); a resolved conflict
   merges the side its resolution picks, per entity or per attr. Change
   kinds the engine cannot translate (`bm/unsupported-kinds`) make it return
@@ -1127,7 +1202,7 @@
    ::climit/id [[:merge-file-branch/by-profile ::rpc/profile-id]
                 [:merge-file-branch/global]]}
   [{:keys [::mbus/msgbus] :as cfg}
-   {:keys [::rpc/profile-id ::rpc/session-id branch-id resolutions expected-main-revn comment excluded
+   {:keys [::rpc/profile-id ::rpc/session-id branch-id resolutions expected-source-revn comment excluded
            notify-assignees]}]
   (bp/with-policies
     (check-branching-enabled!)
@@ -1193,14 +1268,14 @@
                                  (assoc branch-file-id main-id))
                  branch-data (bm/remap-refs (:data branch-file) id-map)]
 
-             (when (and (some? expected-main-revn)
-                        (not= expected-main-revn (:revn main-file)))
+             (when (and (some? expected-source-revn)
+                        (not= expected-source-revn (:revn main-file)))
                (ex/raise :type :conflict
                          :code :file-modified
                          :hint "main was modified, recompute the diff and retry"))
 
              (let [merge-summary (bm/compute-merge base-data (:data main-file)
-                                                   branch-data :branch->main
+                                                   branch-data :branch->source
                                                    ;; `:copies` for the conflict dialog
                                                    {:copies? true})
                    conflicts  (:conflicts merge-summary)
@@ -1225,17 +1300,18 @@
                      ;; (no client-driven second call, no window where a
                      ;; crash leaves a stale copy); delete-branch!
                      ;; releases the pinned base snapshot. The record is
-                     ;; written first: it reads the open pull request the
-                     ;; lines below close.
-                     (let [merge-id (record-merge! conn branch {:profile-id profile-id
-                                                                :comment comment
-                                                                :created-at ts})
-                           ;; the tasks of the branch outlive it: the open
-                           ;; ones keep going on main (on the layer the
-                           ;; merge left them), the closed ones are its
-                           ;; history
+                     ;; written first: it reads the open review the lines
+                     ;; below close.
+                     (let [merge-id (record-merge conn branch {:profile-id profile-id
+                                                               :comment comment
+                                                               :created-at ts})
+                           ;; the threads with an open task, and those
+                           ;; written outside any review, move to main
+                           ;; with their tasks (on the layer the merge
+                           ;; left them); the other review threads stay
+                           ;; with the branch as the record of its review
                            moved    (ftask/move-branch-tasks cfg {:branch-file-id branch-file-id
-                                                                  :main-id main-id
+                                                                  :target-id main-id
                                                                   :merge-id merge-id
                                                                   :branch-name (:name branch)
                                                                   :profile-id profile-id
@@ -1252,6 +1328,9 @@
                                                   :profile-id profile-id
                                                   :session-id session-id
                                                   :task-ids (map :id moved)})})))
+                     ;; the open branches cut from this one follow it into
+                     ;; the target (`:branch-stacking`)
+                     (reparent-child-branches conn branch-file-id main-id)
                      (db/update! conn :file-branch
                                  {:status "merged"
                                   :merged-at ts
@@ -1261,12 +1340,12 @@
                                  {::db/return-keys false})
                      (let [team  (teams/get-team conn :profile-id profile-id :file-id main-id)
                            delay (ldel/get-deletion-delay team)]
-                       ;; an open pull request over this branch has served
-                       ;; its purpose: mark it merged and close its sandbox
-                       (close-branch-pull-requests! cfg branch-id
-                                                    {:profile-id profile-id
-                                                     :status "merged"
-                                                     :deleted-at (ct/in-future delay)})
+                       ;; an open review of this branch has served its
+                       ;; purpose: mark it merged and release its snapshot
+                       (close-branch-reviews cfg branch
+                                             {:profile-id profile-id
+                                              :status "merged"
+                                              :deleted-at (ct/in-future delay)})
                        (vswap! messages conj
                                (delete-branch! cfg branch {:profile-id profile-id
                                                            :session-id session-id}))))]
@@ -1275,7 +1354,7 @@
                  ;; `:copies` tells the conflict dialog which copies the
                  ;; integration syncs (`bm/compute-merge`)
                  (audited {:status :conflicts :conflicts conflicts :copies (:copies merge-summary)
-                           :main-revn (:revn main-file)}
+                           :source-revn (:revn main-file)}
                           tpoint :merge)
 
                  :else
@@ -1382,10 +1461,15 @@
                                                                     (into sync)))}
                                          {::db/return-keys false})
 
-                             ;; a page the merge left as it was keeps its
-                             ;; fragment instead of being written again
-                             (fupd/persist-file! (assoc cfg ::fupd/timestamp ts)
-                                                 (reattach-main-pointers cfg main-id main-stored merged))
+                             (let [all-changes (-> (vec changes) (into repair) (into sync))]
+                               (if (:is-branch main-file)
+                                 ;; a target that is itself a branch
+                                 ;; (`:branch-stacking`) stores no data
+                                 (persist-merge-into-branch cfg merged ts all-changes)
+                                 ;; a page the merge left as it was keeps its
+                                 ;; fragment instead of being written again
+                                 (fupd/persist-file! (assoc cfg ::fupd/timestamp ts)
+                                                     (reattach-main-pointers cfg main-id main-stored merged))))
 
                              (when (contains? cf/flags :redis-cache)
                                (fupd/invalidate-caches! cfg merged))
@@ -1402,19 +1486,19 @@
                              (audited {:status :merged :revn (:revn merged) :source-file-id main-id}
                                       tpoint :merge))))))))))))))))
 
-;; --- COMMAND: update-branch-from-main
+;; --- COMMAND: update-file-branch-from-source
 
-(def ^:private schema:update-branch-from-main
-  [:map {:title "update-branch-from-main"}
+(def ^:private schema:update-file-branch-from-source
+  [:map {:title "update-file-branch-from-source"}
    [:branch-id ::sm/uuid]
-   ;; resolutions in UI terms: id -> :main (take main) | :branch (keep
+   ;; resolutions in UI terms: id -> :source (take the source) | :branch (keep
    ;; branch) | {attr -> side} (per-attr)
-   [:resolutions {:optional true} [:map-of :any [:or [:enum :main :branch] [:map-of :keyword [:enum :main :branch]]]]]
+   [:resolutions {:optional true} [:map-of :any [:or [:enum :source :branch] [:map-of :keyword [:enum :source :branch]]]]]
    ;; the compare panel's per-change selection as a set of change keys
    ;; (`app.common.files.branch-merge/change-key`): main's changes the user
    ;; deselected, which the branch keeps its own value for
    [:excluded {:optional true} [::sm/set :string]]
-   [:expected-main-revn {:optional true} ::sm/int]])
+   [:expected-source-revn {:optional true} ::sm/int]])
 
 (defn- persist-branch-update!
   "Persist the result of an update-from-main integration on a branch
@@ -1460,10 +1544,10 @@
     nil))
 
 
-(sv/defmethod ::update-branch-from-main
+(sv/defmethod ::update-file-branch-from-source
   "Bring the changes main received since the merge base into the branch
   (the reverse direction of a merge). Returns `{:status :conflicts}` (with
-  the `:main-revn` they were computed against and the summary's
+  the `:source-revn` they were computed against and the summary's
   `:copies`) when main and the branch
   diverged on the same entity and it is not resolved in `resolutions`, or
   `{:status :unsupported}` for change kinds not yet translatable. On
@@ -1477,11 +1561,11 @@
   (`bm/sync-copies`), before the squash records the branch's net."
   {::doc/added "2.16"
    ::webhooks/event? true
-   ::sm/params schema:update-branch-from-main
-   ::climit/id [[:update-branch-from-main/by-profile ::rpc/profile-id]
-                [:update-branch-from-main/global]]}
+   ::sm/params schema:update-file-branch-from-source
+   ::climit/id [[:update-file-branch-from-source/by-profile ::rpc/profile-id]
+                [:update-file-branch-from-source/global]]}
   [{:keys [::mbus/msgbus] :as cfg}
-   {:keys [::rpc/profile-id ::rpc/session-id branch-id resolutions expected-main-revn excluded]}]
+   {:keys [::rpc/profile-id ::rpc/session-id branch-id resolutions expected-source-revn excluded]}]
   (bp/with-policies
     (check-branching-enabled!)
     (let [branch (db/get* cfg :file-branch {:id branch-id})]
@@ -1516,15 +1600,15 @@
                                (ex/raise :type :validation
                                          :code :branch-not-open
                                          :branch-id branch-id))
-                 [main-stored main-file] (read-main-for-write cfg main-id :update-from-main)
-                 _           (when (and (some? expected-main-revn)
-                                        (not= expected-main-revn (:revn main-file)))
+                 [main-stored main-file] (read-main-for-write cfg main-id :update-from-source)
+                 _           (when (and (some? expected-source-revn)
+                                        (not= expected-source-revn (:revn main-file)))
                                (ex/raise :type :conflict
                                          :code :file-modified
                                          :hint "main was modified, recompute the diff and retry"))
                  _           (check-oplog-depth-limit! (bfc/get-branch-oplog-depth cfg branch-file-id)
                                                        branch-file-id
-                                                       :update-from-main)
+                                                       :update-from-source)
                  branch-file (bfc/get-file cfg branch-file-id :realize? true)
                  base-raw    (get-base-data cfg branch)
 
@@ -1536,7 +1620,7 @@
                  ;; The COMPARISON runs in main's id space, the id space the
                  ;; merge base was captured in, the id space the compare view
                  ;; uses (`files_branch.clj::branch-id-map` in
-                 ;; `files_branch.clj::get-branch-diff`), and the only id space
+                 ;; `files_branch.clj::get-file-branch-diff`), and the only id space
                  ;; the branch's inherited content agrees with. A branch stores
                  ;; no data, so `binfile.clj::branch-file-data` replays its op
                  ;; log over that base and everything it inherited carries the
@@ -1607,26 +1691,26 @@
                      (release-base-snapshot! cfg branch (ct/in-future delay))
                      (db/update! conn :file-branch
                                  {:base-snapshot-id (:id new-base)
-                                  :base-revn (:revn main-file)
+                                  :base-source-revn (:revn main-file)
                                   :base-branch-revn branch-revn
                                   :updated-at ts}
                                  {:id branch-id}
                                  {::db/return-keys false})))
 
                  merge-summary
-                 (bm/compute-merge base-data main-raw branch-cmp :main->branch {:copies? true})
+                 (bm/compute-merge base-data main-raw branch-cmp :source->branch {:copies? true})
 
                  conflicts  (:conflicts merge-summary)
                  resolved?  (fn [c] (or (contains? excluded (:key c))
                                         (bm/conflict-resolved? c (get resolutions (:id c)))))
                  unresolved (remove resolved? conflicts)
 
-                 ;; Resolutions arrive document-keyed (`:main` = main's value).
+                 ;; Resolutions arrive document-keyed (`:source` = the source's value).
                  ;; The update runs compute-changes with main as the source and
                  ;; the branch as the target, where the `:branch` keyword means
                  ;; "take the source (main)" — so invert each side to that
                  ;; vocabulary, including the per-attr maps, value by value.
-                 flip     (fn [v] (case v :main :branch, :branch :main, v))
+                 flip     (fn [v] (case v :source :branch, :branch :source, v))
                  inverted (into {} (map (fn [[k v]]
                                           [k (if (map? v)
                                                (update-vals v flip)
@@ -1636,8 +1720,8 @@
              (cond
                (seq unresolved)
                (audited {:status :conflicts :conflicts conflicts :copies (:copies merge-summary)
-                         :main-revn (:revn main-file)}
-                        tpoint :update-from-main)
+                         :source-revn (:revn main-file)}
+                        tpoint :update-from-source)
 
                (bm/nothing-to-merge? merge-summary excluded)
                ;; the user deselected everything: refuse rather than
@@ -1650,7 +1734,7 @@
                :else
                ;; target = branch, source = main -> changes that bring main's
                ;; net changes (and conflicts resolved to main) into the branch.
-               ;; The `:main->branch` summary reports main's changes against the
+               ;; The `:source->branch` summary reports main's changes against the
                ;; branch, the same assignment compute-changes runs with here, so
                ;; it can be reused for the unsupported-kinds gate without
                ;; re-diffing.
@@ -1669,7 +1753,7 @@
                              ;; container it refuses on
                              :entities (vec (filter #(= :unsupported (:status %))
                                                     (:changes merge-summary)))}
-                            tpoint :update-from-main)
+                            tpoint :update-from-source)
 
                    (and (empty? changes) (not branch-diverged?) (empty? excluded))
                    (let [ts (ct/now)]
@@ -1691,7 +1775,7 @@
                      ;; named by the id main owns, which is what the branch
                      ;; references while it holds no copy
                      (reposition-base! ts (:revn branch-file) (bm/remap-refs main-raw pairs))
-                     (audited {:status :updated :revn (:revn branch-file)} tpoint :update-from-main))
+                     (audited {:status :updated :revn (:revn branch-file)} tpoint :update-from-source))
 
                    :else
                    (let [ts (ct/now)]
@@ -1812,42 +1896,44 @@
                                               :revn (:revn updated)}})
 
                            (audited {:status :updated :revn (:revn updated)}
-                                    tpoint :update-from-main)))))))))))))))
+                                    tpoint :update-from-source)))))))))))))))
 
-;; --- COMMAND: materialize-file-branch
+;; --- COMMAND: detach-file-branch
 
-(def ^:private schema:materialize-file-branch
-  [:map {:title "materialize-file-branch"}
-   [:branch-file-id ::sm/uuid]])
+(def ^:private schema:detach-file-branch
+  [:map {:title "detach-file-branch"}
+   [:branch-id ::sm/uuid]])
 
-(sv/defmethod ::materialize-file-branch
+(sv/defmethod ::detach-file-branch
   "Turn a branch file into an ordinary file: persist its derived state as
   the file's own data payload, drop the op log, release the pinned base
-  snapshot, close any pull request over it, and clear the branch marker so
+  snapshot, close any review over it, and clear the branch marker so
   every read and write path takes the ordinary route from then on
   (`binfile::get-file*` and `files-update::update-file*` both switch on
-  that flag).
+  that flag). The file stays in its family, with the reviews, threads,
+  and tasks of the tree it was cut from.
 
   This is the preview's exit door: with it the `:branching` flag can go
   off and the engine can be replaced without stranding anybody with a file
   nobody can open.
 
-  It keys on the branch FILE rather than on the branch metadata, which is
-  what makes it idempotent: a file carrying no live branch row is already
-  materialised, and the command reports that without touching anything.
-
-  The `:branch-file-id` param is the branch FILE id (what
-  `::create-file-branch` returns as `:branch-file-id`), not the
-  `file_branch` row id the sibling commands take in `:branch-id`/`:id`."
+  It is idempotent: a branch whose row is no longer live (detached,
+  merged, or deleted) is reported as such without touching anything."
   {::doc/added "2.16"
    ::webhooks/event? true
-   ::sm/params schema:materialize-file-branch
-   ::climit/id [[:materialize-file-branch/by-profile ::rpc/profile-id]
-                [:materialize-file-branch/global]]}
-  [cfg {:keys [::rpc/profile-id branch-file-id]}]
+   ::sm/params schema:detach-file-branch
+   ::climit/id [[:detach-file-branch/by-profile ::rpc/profile-id]
+                [:detach-file-branch/global]]}
+  [cfg {:keys [::rpc/profile-id branch-id]}]
   (check-branching-enabled!)
-  (files/check-edition-permissions! cfg profile-id branch-file-id)
-  (let [tpoint (ct/tpoint)]
+  (let [tpoint         (ct/tpoint)
+        branch-file-id (:branch-file-id (db/get* cfg :file-branch {:id branch-id}
+                                                 {::db/remove-deleted false}))]
+    (when (nil? branch-file-id)
+      (ex/raise :type :not-found
+                :code :branch-not-found
+                :branch-id branch-id))
+    (files/check-edition-permissions! cfg profile-id branch-file-id)
     (db/tx-run!
      cfg
      (fn [{:keys [::db/conn] :as cfg}]
@@ -1856,10 +1942,10 @@
        ;; its op would be dropped together with the log
        (db/xact-lock! conn branch-file-id)
 
-       (let [branch (db/get* conn :file-branch {:branch-file-id branch-file-id})]
+       (let [branch (db/get* conn :file-branch {:id branch-id})]
          (if (nil? branch)
-           (audited {:status :materialized :file-id branch-file-id :changed false}
-                    tpoint :materialize)
+           (audited {:status :detached :file-id branch-file-id :changed false}
+                    tpoint :detach)
            (let [file  (bfc/get-file cfg branch-file-id :realize? true)
                  team  (teams/get-team conn :profile-id profile-id :file-id branch-file-id)
                  delay (ldel/get-deletion-delay team)
@@ -1893,7 +1979,7 @@
                                 (not-empty (cfv/validate-file file libs)))]
 
                    (when errors
-                     (l/wrn :hint "materialised file still has validation errors"
+                     (l/wrn :hint "detached file still has validation errors"
                             :file-id (str branch-file-id)
                             :codes (into [] (comp (map :code) (distinct)) errors)))
 
@@ -1918,20 +2004,19 @@
                    ;; the payload replaced the log
                    (db/delete! conn :file-branch-change {:branch-id (:id branch)})
 
-                   ;; a review sandbox over a file that is no longer a branch
-                   ;; has nothing left to review
-                   (close-branch-pull-requests! cfg (:id branch)
-                                                {:profile-id profile-id
-                                                 :status "closed"
-                                                 :deleted-at (ct/in-future delay)})
+                   ;; a review over a file that is no longer a branch has
+                   ;; nothing left to review
+                   (close-branch-reviews cfg branch
+                                         {:profile-id profile-id
+                                          :status "closed"
+                                          :deleted-at (ct/in-future delay)})
 
                    ;; nothing derives from the base any more, so the pin goes
                    (release-base-snapshot! cfg branch (ct/in-future delay))
 
-                   ;; The branch row is archived rather than deleted: its pull
-                   ;; requests reference it with ON DELETE CASCADE, so deleting
-                   ;; it would take the review history along, and `archived` is
-                   ;; a status the schema already allows.
+                   ;; The branch row is archived rather than deleted: its
+                   ;; reviews name it, and through it the file they reviewed,
+                   ;; and `archived` is a status the schema already allows.
                    (db/update! conn :file-branch
                                {:status "archived"
                                 :deleted-at (ct/in-future delay)
@@ -1940,11 +2025,11 @@
                                {::db/return-keys false})
 
                    (audited
-                    {:status :materialized
+                    {:status :detached
                      :file-id branch-file-id
                      :changed true
                      :revn (:revn file)}
-                    tpoint :materialize)))))))))))
+                    tpoint :detach)))))))))))
 
 ;; --- COMMAND QUERY: get-file-branch-info
 
@@ -1962,7 +2047,7 @@
           fb.created_by,
           fb.created_at,
           fb.updated_at,
-          fb.base_revn,
+          fb.base_source_revn,
           fb.base_branch_revn,
           fb.base_snapshot_id,
           bf.revn AS branch_revn,
@@ -1982,9 +2067,15 @@
   open branch whose revn deltas are not both zero runs the three-way diff
   (`branch-diff-counts!`), which loads main, the branch and its base.
   Returns nil when branching is disabled, so it is safe to call on every
-  file open."
+  file open.
+
+  The command declares the compare dialog's limit: a warm open answers
+  from the summary cache without realizing anything, while a cold one on
+  a diverged branch runs the same three-document comparison as
+  `get-file-branch-diff`."
   {::doc/added "2.16"
-   ::sm/params schema:get-file-branch-info}
+   ::sm/params schema:get-file-branch-info
+   ::climit/id [[:get-file-branch-info/global]]}
   [cfg {:keys [::rpc/profile-id file-id]}]
   (when (contains? cf/flags :branching)
     (db/run! cfg
@@ -2066,8 +2157,8 @@
           fbm.branch_name,
           fbm.merged_by,
           fbm.comment,
-          fbm.pull_request_id,
-          fbm.pull_request_title
+          fbm.review_id,
+          fbm.review_title
      FROM file_branch_merge AS fbm
     WHERE fbm.file_id = ?
     ORDER BY fbm.created_at DESC")
@@ -2103,112 +2194,112 @@
     (files/check-read-permissions! cfg profile-id (:source-file-id branch))
     branch))
 
-(def ^:private schema:get-branch-change-reviews
-  [:map {:title "get-branch-change-reviews"}
+(def ^:private schema:get-branch-change-marks
+  [:map {:title "get-branch-change-marks"}
    [:branch-id ::sm/uuid]
-   [:direction [:enum :branch->main :main->branch]]])
+   [:direction [:enum :branch->source :source->branch]]])
 
-(def ^:private sql:get-branch-change-reviews
+(def ^:private sql:get-branch-change-marks
   "SELECT r.change_key, r.fingerprint
-     FROM file_branch_change_review AS r
+     FROM file_branch_change_mark AS r
     WHERE r.file_branch_id = ?
       AND r.profile_id = ?
       AND r.direction = ?")
 
-(sv/defmethod ::get-branch-change-reviews
+(sv/defmethod ::get-branch-change-marks
   "The changes of a comparison the profile marked as reviewed, each with
   the fingerprint of the change when it was marked. The marks are the
   profile's own: nobody else's are returned. A mark whose fingerprint no
   longer matches its change is stale, which the reader of the comparison
   decides: the change may have moved since."
   {::doc/added "2.16"
-   ::sm/params schema:get-branch-change-reviews}
+   ::sm/params schema:get-branch-change-marks}
   [cfg {:keys [::rpc/profile-id branch-id direction]}]
   (check-branching-enabled!)
   (db/run! cfg
            (fn [{:keys [::db/conn] :as cfg}]
              (get-readable-branch cfg profile-id branch-id)
-             (db/exec! conn [sql:get-branch-change-reviews
+             (db/exec! conn [sql:get-branch-change-marks
                              branch-id profile-id (name direction)]))))
 
-(def ^:private schema:set-branch-change-review
-  [:map {:title "set-branch-change-review"}
+(def ^:private schema:set-branch-change-mark
+  [:map {:title "set-branch-change-mark"}
    [:branch-id ::sm/uuid]
-   [:direction [:enum :branch->main :main->branch]]
+   [:direction [:enum :branch->source :source->branch]]
    [:change-key [:string {:max 500}]]
    [:fingerprint [:string {:max 250}]]
    [:reviewed ::sm/boolean]])
 
-(def ^:private sql:upsert-branch-change-review
-  "INSERT INTO file_branch_change_review
+(def ^:private sql:upsert-branch-change-mark
+  "INSERT INTO file_branch_change_mark
           (file_branch_id, profile_id, direction, change_key, fingerprint)
    VALUES (?, ?, ?, ?, ?)
        ON CONFLICT (file_branch_id, profile_id, direction, change_key)
        DO UPDATE SET fingerprint = EXCLUDED.fingerprint,
                      created_at = clock_timestamp()")
 
-(sv/defmethod ::set-branch-change-review
+(sv/defmethod ::set-branch-change-mark
   "Mark a change of a comparison as reviewed by the profile, with the
   fingerprint of the change as it stands, or clear the mark. Reading the
   branch is enough: the mark is the profile's own note and changes
   nothing of the branch."
   {::doc/added "2.16"
-   ::sm/params schema:set-branch-change-review
+   ::sm/params schema:set-branch-change-mark
    ::db/transaction true}
   [{:keys [::db/conn] :as cfg}
    {:keys [::rpc/profile-id branch-id direction change-key fingerprint reviewed]}]
   (check-branching-enabled!)
   (get-readable-branch cfg profile-id branch-id)
   (if reviewed
-    (db/exec-one! conn [sql:upsert-branch-change-review
+    (db/exec-one! conn [sql:upsert-branch-change-mark
                         branch-id profile-id (name direction) change-key fingerprint])
-    (db/delete! conn :file-branch-change-review
+    (db/delete! conn :file-branch-change-mark
                 {:file-branch-id branch-id
                  :profile-id profile-id
                  :direction (name direction)
                  :change-key change-key}))
   nil)
 
-;; --- COMMAND: update-file-branch (rename / description)
+;; --- COMMAND: update-file-branch-info (rename / description)
 
-(def ^:private schema:update-file-branch
-  [:map {:title "update-file-branch"}
-   [:id ::sm/uuid]
+(def ^:private schema:update-file-branch-info
+  [:map {:title "update-file-branch-info"}
+   [:branch-id ::sm/uuid]
    [:name {:optional true} [:string {:max 250}]]
    [:description {:optional true} [:string {:max 4000}]]])
 
-(sv/defmethod ::update-file-branch
+(sv/defmethod ::update-file-branch-info
   "Rename a branch or update its description."
   {::doc/added "2.16"
-   ::sm/params schema:update-file-branch
+   ::sm/params schema:update-file-branch-info
    ::db/transaction true}
-  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id id name description]}]
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id branch-id name description]}]
   (check-branching-enabled!)
   (when (some? name)
     (check-branch-name! name))
   (let [tpoint (ct/tpoint)
-        branch (db/get* conn :file-branch {:id id})]
+        branch (db/get* conn :file-branch {:id branch-id})]
     (when (nil? branch)
-      (ex/raise :type :not-found :code :branch-not-found :branch-id id))
+      (ex/raise :type :not-found :code :branch-not-found :branch-id branch-id))
     (files/check-edition-permissions! cfg profile-id (:branch-file-id branch))
     ;; Serialize against a merge of the same branch (which locks the
     ;; branch file) and re-read the row under the lock: the branch may
     ;; be merged and gone by now.
     (db/xact-lock! conn (:branch-file-id branch))
-    (let [branch (db/get* conn :file-branch {:id id})]
+    (let [branch (db/get* conn :file-branch {:id branch-id})]
       (when (nil? branch)
-        (ex/raise :type :not-found :code :branch-not-found :branch-id id))
+        (ex/raise :type :not-found :code :branch-not-found :branch-id branch-id))
       (db/update! conn :file-branch
                   (cond-> {:updated-at (ct/now)}
                     (some? name)        (assoc :name name)
                     (some? description) (assoc :description description))
-                  {:id id}
+                  {:id branch-id}
                   {::db/return-keys false})
       ;; the branch file carries its own name (set from the branch name
       ;; at creation), so a rename has to reach the file row too
       (when (some? name)
         (files/rename-file conn {:id (:branch-file-id branch) :name name}))
-      (audited {:id id
+      (audited {:id branch-id
                 :name (or name (:name branch))
                 :description (or description (:description branch))}
                tpoint :rename-branch))))
@@ -2217,7 +2308,7 @@
 
 (def ^:private schema:archive-file-branch
   [:map {:title "archive-file-branch"}
-   [:id ::sm/uuid]
+   [:branch-id ::sm/uuid]
    [:archived {:optional true} ::sm/boolean]])
 
 (sv/defmethod ::archive-file-branch
@@ -2225,44 +2316,44 @@
   {::doc/added "2.16"
    ::sm/params schema:archive-file-branch
    ::db/transaction true}
-  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id id archived]}]
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id branch-id archived]}]
   (check-branching-enabled!)
   (let [tpoint (ct/tpoint)
-        branch (db/get* conn :file-branch {:id id})]
+        branch (db/get* conn :file-branch {:id branch-id})]
     (when (nil? branch)
-      (ex/raise :type :not-found :code :branch-not-found :branch-id id))
+      (ex/raise :type :not-found :code :branch-not-found :branch-id branch-id))
     (files/check-edition-permissions! cfg profile-id (:branch-file-id branch))
     ;; Serialize against a merge of the same branch (which locks the
     ;; branch file) and re-read the row under the lock: the branch may
     ;; be merged and gone by now.
     (db/xact-lock! conn (:branch-file-id branch))
-    (let [branch (db/get* conn :file-branch {:id id})]
+    (let [branch (db/get* conn :file-branch {:id branch-id})]
       (when (nil? branch)
-        (ex/raise :type :not-found :code :branch-not-found :branch-id id))
+        (ex/raise :type :not-found :code :branch-not-found :branch-id branch-id))
       (when (= "merged" (:status branch))
-        (ex/raise :type :validation :code :branch-merged :branch-id id))
+        (ex/raise :type :validation :code :branch-merged :branch-id branch-id))
       (let [status (if (false? archived) "open" "archived")]
         (db/update! conn :file-branch
                     {:status status :updated-at (ct/now)}
-                    {:id id}
+                    {:id branch-id}
                     {::db/return-keys false})
-        ;; archiving hides the branch from the default flow, so its review
-        ;; sandbox has no reason to stay open either
+        ;; archiving hides the branch from the default flow, so its open
+        ;; review has no reason to stay open either
         (when (= "archived" status)
           (let [team (teams/get-team conn :profile-id profile-id
                                      :file-id (:branch-file-id branch))
                 dt   (ct/in-future (ldel/get-deletion-delay team))]
-            (close-branch-pull-requests! cfg id {:profile-id profile-id
-                                                 :status "closed"
-                                                 :deleted-at dt})))
-        (audited {:id id :status status} tpoint
+            (close-branch-reviews cfg branch {:profile-id profile-id
+                                              :status "closed"
+                                              :deleted-at dt})))
+        (audited {:id branch-id :status status} tpoint
                  (if (false? archived) :restore-branch :archive-branch))))))
 
 ;; --- COMMAND: delete-file-branch
 
 (def ^:private schema:delete-file-branch
   [:map {:title "delete-file-branch"}
-   [:id ::sm/uuid]])
+   [:branch-id ::sm/uuid]])
 
 (sv/defmethod ::delete-file-branch
   "Logically delete a branch: marks the branch metadata and the branch
@@ -2271,13 +2362,13 @@
   {::doc/added "2.16"
    ::webhooks/event? true
    ::sm/params schema:delete-file-branch}
-  [{:keys [::mbus/msgbus] :as cfg} {:keys [::rpc/profile-id ::rpc/session-id id]}]
+  [{:keys [::mbus/msgbus] :as cfg} {:keys [::rpc/profile-id ::rpc/session-id branch-id]}]
   (check-branching-enabled!)
   (let [tpoint   (ct/tpoint)
-        branch   (db/get* cfg :file-branch {:id id})
+        branch   (db/get* cfg :file-branch {:id branch-id})
         messages (volatile! [])]
     (when (nil? branch)
-      (ex/raise :type :not-found :code :branch-not-found :branch-id id))
+      (ex/raise :type :not-found :code :branch-not-found :branch-id branch-id))
     (files/check-edition-permissions! cfg profile-id (:branch-file-id branch))
     (tx-run-notify!
      cfg
@@ -2289,9 +2380,9 @@
        ;; runs, and the merge then deletes the branch a second time. The
        ;; row is re-read under the lock: the branch may be gone by now.
        (db/xact-lock! conn (:branch-file-id branch))
-       (let [branch (db/get* conn :file-branch {:id id})]
+       (let [branch (db/get* conn :file-branch {:id branch-id})]
          (when (nil? branch)
-           (ex/raise :type :not-found :code :branch-not-found :branch-id id))
+           (ex/raise :type :not-found :code :branch-not-found :branch-id branch-id))
          ;; no `:status` here: a delete keeps the status the row carries
          ;; (deleting a kept merged branch must not rewrite "merged")
          (vswap! messages conj

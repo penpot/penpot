@@ -37,10 +37,10 @@
     :shape {:id path-id :type :path :name "path" :parent-id icon-id}}
    {:kind :shape :status :deleted :id icon-id :shape icon}
    {:kind :shape :status :modified :id board-id
-    :changed-attrs {:width {:main 163 :branch 131}}}])
+    :changed-attrs {:width {:source 163 :branch 131}}}])
 
 (t/deftest a-deleted-layer-comes-back-on-the-side-that-has-it
-  (let [main (brs/side-objects branch-objects items :main :branch)]
+  (let [main (brs/side-objects branch-objects items :source :branch)]
     (t/is (= icon (get main icon-id)))
     (t/is (contains? main path-id))
     (t/is (= [icon-id] (get-in main [board-id :shapes])))))
@@ -51,7 +51,7 @@
     (t/is (= [] (get-in branch [board-id :shapes])))))
 
 (t/deftest a-resized-board-draws-at-its-own-size
-  (let [main (brs/side-objects branch-objects items :main :branch)]
+  (let [main (brs/side-objects branch-objects items :source :branch)]
     (t/is (= 163 (get-in main [board-id :selrect :width])))
     (t/is (= 131 (get-in branch-objects [board-id :selrect :width])))))
 
@@ -79,19 +79,19 @@
 
 (def ^:private moves
   [{:kind :shape :status :modified :id group-id
-    :changed-attrs {:x {:main 10 :branch 300} :y {:main 20 :branch 400}}}
+    :changed-attrs {:x {:source 10 :branch 300} :y {:source 20 :branch 400}}}
    {:kind :shape :status :modified :id line-id
-    :changed-attrs {:content {:main (line-content 30 40)
+    :changed-attrs {:content {:source (line-content 30 40)
                               :branch (line-content 500 600)}}}])
 
 (t/deftest a-moved-group-takes-its-place-on-the-other-side
-  (let [main (brs/side-objects moved-objects moves :main :branch)]
+  (let [main (brs/side-objects moved-objects moves :source :branch)]
     (t/is (= {:x 10 :y 20 :width 50 :height 60}
              (select-keys (get-in main [group-id :selrect]) [:x :y :width :height])))
     (t/is (= 300 (get-in moved-objects [group-id :selrect :x])) "the branch keeps its own")))
 
 (t/deftest a-moved-path-takes-its-place-on-the-other-side
-  (let [main (brs/side-objects moved-objects moves :main :branch)]
+  (let [main (brs/side-objects moved-objects moves :source :branch)]
     (t/is (= {:x 30 :y 40 :width 10 :height 20}
              (select-keys (get-in main [line-id :selrect]) [:x :y :width :height])))
     (t/is (= 500 (get-in moved-objects [line-id :selrect :x])) "the branch keeps its own")))
@@ -108,11 +108,11 @@
   "What main did since the branch left: it widened the button, added a
   badge to it and deleted nothing the branch still has."
   [{:kind :shape :status :modified :id board-id :key "board"
-    :changed-attrs {:width {:main 200 :branch 131}}}
+    :changed-attrs {:width {:source 200 :branch 131}}}
    {:kind :shape :status :added :id badge-id :key "badge" :shape badge}])
 
 (t/deftest an-update-brings-what-main-added-and-changed
-  (let [after (brs/side-objects branch-objects incoming :main :branch :main)]
+  (let [after (brs/side-objects branch-objects incoming :source :branch :source)]
     (t/is (= 200 (get-in after [board-id :selrect :width])))
     (t/is (= badge (get after badge-id)))
     (t/is (= [badge-id] (get-in after [board-id :shapes])))))
@@ -123,7 +123,7 @@
                        (assoc-in [board-id :shapes] [badge-id]))
         after      (brs/side-objects with-badge
                                      [{:kind :shape :status :deleted :id badge-id}]
-                                     :main :branch :main)]
+                                     :source :branch :source)]
     (t/is (not (contains? after badge-id)))
     (t/is (= [] (get-in after [board-id :shapes])))))
 
@@ -131,17 +131,17 @@
 
 (def ^:private clash
   {:kind :shape :status :conflict :id board-id
-   :main   {:id board-id :type :frame :name "Main button" :parent-id uuid/zero
+   :source {:id board-id :type :frame :name "Main button" :parent-id uuid/zero
             :x 0 :y 0 :width 163 :height 48 :opacity 0.5 :shapes []}
    :branch (get branch-objects board-id)
-   :changed-attrs {:width   {:main 163 :branch 131}
-                   :opacity {:main 0.5 :branch nil}}})
+   :changed-attrs {:width   {:source 163 :branch 131}
+                   :opacity {:source 0.5 :branch nil}}})
 
 (t/deftest a-conflict-shows-the-side-chosen-for-each-property
   (let [none  (brs/resolved-objects branch-objects [clash] {})
-        mixed (brs/resolved-objects branch-objects [clash] {board-id {:width :branch :opacity :main}})
-        whole (brs/resolved-objects branch-objects [clash] {board-id :main})
-        gone  (brs/resolved-objects branch-objects [(assoc clash :main nil)] {board-id :main})]
+        mixed (brs/resolved-objects branch-objects [clash] {board-id {:width :branch :opacity :source}})
+        whole (brs/resolved-objects branch-objects [clash] {board-id :source})
+        gone  (brs/resolved-objects branch-objects [(assoc clash :source nil)] {board-id :source})]
     (t/is (identical? branch-objects none) "no choice: the branch as it is")
     (t/is (= 0.5 (get-in mixed [board-id :opacity])))
     (t/is (= 131 (get-in mixed [board-id :selrect :width])) "the branch keeps its width")
@@ -185,11 +185,11 @@
 (t/deftest the-canvas-shows-the-choices-and-the-side-tried-out
   (let [item    (assoc clash :page-id page-id)
         chosen  (cc/canvas-objects (comparison {:phase :resolve
-                                                :resolutions {board-id {:opacity :main}}})
+                                                :resolutions {board-id {:opacity :source}}})
                                    branch-objects page-id)
         tried   (cc/canvas-objects (comparison {:phase :resolve
-                                                :mode {:preview :main}
-                                                :item (assoc item :main nil)})
+                                                :mode {:preview :source}
+                                                :item (assoc item :source nil)})
                                    branch-objects page-id)]
     (t/is (= :result (:kind chosen)))
     (t/is (= 0.5 (get-in chosen [:objects board-id :opacity])))

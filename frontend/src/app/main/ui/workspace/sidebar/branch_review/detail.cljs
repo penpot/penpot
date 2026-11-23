@@ -149,7 +149,7 @@
 (mf/defc side-pill*
   "The name of a side: main, or the branch by its name."
   [{:keys [side branch-name is-review]}]
-  (if (= side :main)
+  (if (= side :source)
     [:> branch-pill* {:label (tr "workspace.branches.main") :is-main true}]
     [:> branch-pill* {:label (or branch-name (tr "workspace.branches.review.side.branch"))
                       :is-review (boolean is-review)}]))
@@ -183,7 +183,7 @@
         values    (get-in conflict [:changed-attrs attr])
         on-choose (mf/use-fn (mf/deps attr on-pick) #(on-pick attr %))]
     [:div {:class (stl/css :options) :role "radiogroup"}
-     (for [side [:main :branch]]
+     (for [side [:source :branch]]
        [:> option-card* {:key (name side)
                          :side side
                          :branch-name branch-name
@@ -201,7 +201,7 @@
   (let [choice    (brc/attr-choice res :content)
         on-choose (mf/use-fn (mf/deps on-pick) #(on-pick :content %))]
     [:div {:class (stl/css :options) :role "radiogroup"}
-     (for [side [:main :branch]
+     (for [side [:source :branch]
            :let [rows (brc/paragraph-rows conflict side)
                  lost (brc/dropped-paragraphs conflict side)]]
        [:> option-card* {:key (name side)
@@ -232,7 +232,7 @@
   deleted the entity, or both added it differently."
   [{:keys [conflict res branch-name is-review on-choose on-preview]}]
   [:div {:class (stl/css :options) :role "radiogroup"}
-   (for [side [:main :branch]]
+   (for [side [:source :branch]]
      [:> option-card* {:key (name side)
                        :side side
                        :branch-name branch-name
@@ -243,7 +243,7 @@
                        :on-choose on-choose
                        :on-preview on-preview}
       [:> text* {:as "span" :typography t/body-small :class (stl/css :muted)}
-       (if (= side :main)
+       (if (= side :source)
          (tr "workspace.branches.resolve.keep-main-version")
          (tr "workspace.branches.resolve.keep-branch-version"))]])])
 
@@ -266,9 +266,9 @@
   {::mf/private true}
   [{:keys [rows res branch-name selected on-pick on-select]}]
   [:div {:class (stl/css :attrs)}
-   (for [{:keys [attr main branch source]} rows
+   (for [{:keys [attr source branch origin]} rows
          :let [choice       (brc/attr-choice res attr)
-               conflicting? (= source :conflict)]]
+               conflicting? (= origin :conflict)]]
      [:div {:class (stl/css-case :attr true
                                  :is-conflicting (and conflicting? (nil? choice))
                                  :is-selected (= attr selected))
@@ -285,7 +285,7 @@
          [:> tag* {:tone "success"} (tr "workspace.branches.resolve.tag.your-choice")]
          conflicting?
          [:> tag* {:tone "warning"} (tr "workspace.branches.resolve.tag.conflict")]
-         (= source :main)
+         (= origin :source)
          [:> tag* {:tone "purple"}
           (tr "workspace.branches.resolve.tag.from" (tr "workspace.branches.compare.main"))]
          :else
@@ -294,15 +294,15 @@
               (or branch-name (tr "workspace.branches.compare.branch")))])]
       [:div {:class (stl/css :attr-values)}
        [:> pick-button* {:attr attr
-                         :side :main
-                         :value main
-                         :choice (or choice (when-not conflicting? source))
+                         :side :source
+                         :value source
+                         :choice (or choice (when-not conflicting? origin))
                          :is-conflicting conflicting?
                          :on-pick on-pick}]
        [:> pick-button* {:attr attr
                          :side :branch
                          :value branch
-                         :choice (or choice (when-not conflicting? source))
+                         :choice (or choice (when-not conflicting? origin))
                          :is-conflicting conflicting?
                          :on-pick on-pick}]]])])
 
@@ -322,7 +322,7 @@
                       :as "span"
                       :typography t/body-small
                       :class (stl/css :outcome-line)}
-            (if (= side :main)
+            (if (= side :source)
               (tr "workspace.branches.resolve.drops.main-short" (str/lower (brc/attr-label attr)))
               (tr "workspace.branches.resolve.drops.branch-short" (str/lower (brc/attr-label attr))))
             " "
@@ -385,7 +385,7 @@
 
      ;; which value is whose: main first, then the branch
      [:div {:class (stl/css :legend)}
-      [:> side-pill* {:side :main}]
+      [:> side-pill* {:side :source}]
       [:> side-pill* {:side :branch :branch-name branch-name :is-review is-review}]]
 
      (cond

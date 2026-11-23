@@ -166,10 +166,10 @@
     :file-restored           (handle-file-restored msg)
     :file-merged             (handle-file-merged msg)
     :library-change          (handle-library-change msg)
-    :pull-request-created          (handle-pull-request-change msg)
-    :pull-request-updated          (handle-pull-request-change msg)
-    :pull-request-review-submitted (handle-pull-request-change msg)
-    :pull-request-closed           (handle-pull-request-change msg)
+    :branch-review-created           (handle-pull-request-change msg)
+    :branch-review-updated           (handle-pull-request-change msg)
+    :branch-review-verdict-submitted (handle-pull-request-change msg)
+    :branch-review-closed            (handle-pull-request-change msg)
     :file-tasks-change             (dwtk/handle-tasks-change msg)
     :notification            (dc/handle-notification msg)
     :team-role-change        (handle-change-team-role msg)
@@ -397,12 +397,12 @@
   "A pull request of this file changed (created / edited / reviewed /
   closed): refresh the sidebar list, and the sandbox banner when it is
   showing that pull request."
-  [{:keys [pull-request-id] :as _msg}]
+  [{:keys [review-id] :as _msg}]
   (ptk/reify ::handle-pull-request-change
     ptk/WatchEvent
     (watch [_ _ _]
       (rx/of (dwpr/fetch-pull-requests)
-             (dwpr/refresh-pull-request-preview-info pull-request-id)))))
+             (dwpr/refresh-pull-request-preview-info review-id)))))
 
 (def ^:private schema:handle-library-change
   [:map {:title "handle-library-change"}

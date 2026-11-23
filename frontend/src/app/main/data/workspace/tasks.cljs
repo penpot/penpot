@@ -352,7 +352,7 @@
             objects (dsh/lookup-page-objects state (:page-id params))
             params  (-> params
                         (select-keys [:title :page-id :frame-id :shape-id :assignee-id
-                                      :pull-request-id :thread-id :comment-id :position])
+                                      :review-id :thread-id :comment-id :position])
                         ;; the root of the page is the canvas: no layer
                         (update :shape-id #(when (not= uuid/zero %) %))
                         (update :frame-id #(or % uuid/zero))
@@ -368,7 +368,7 @@
         (rx/concat
          (rx/of (ev/event {::ev/name "create-task"
                            :from-thread thread?
-                           :in-review (some? (:pull-request-id params))}))
+                           :in-review (some? (:review-id params))}))
          (->> (rp/cmd! :create-task params)
               (rx/mapcat (fn [task]
                            (rx/concat
@@ -675,9 +675,9 @@
   (filter #(and (to-do? %) (= profile-id (:assignee-id %))) tasks))
 
 (defn review-tasks
-  "The tasks of the design review `pull-request-id`."
-  [tasks pull-request-id]
-  (filter #(= pull-request-id (:pull-request-id %)) tasks))
+  "The tasks of the design review `review-id`."
+  [tasks review-id]
+  (filter #(= review-id (:review-id %)) tasks))
 
 (defn sort-tasks
   "Open work first (oldest first), then the tasks to verify, then the

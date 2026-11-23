@@ -216,15 +216,22 @@
   (db/get-by-id conn :comment comment-id opts))
 
 (def ^:private sql:get-next-seqn
-  "SELECT (f.comment_thread_seqn + 1) AS next_seqn
+  "SELECT ff.id AS family_id,
+          (ff.thread_seqn + 1) AS next_seqn
      FROM file AS f
+     JOIN file_family AS ff ON (ff.id = f.family_id)
     WHERE f.id = ?
-      FOR UPDATE")
+      FOR UPDATE OF ff")
 
 (defn- get-next-seqn
+  "The family of the file `file-id` and the next thread number of that
+  family, as `{:family-id .. :next-seqn ..}`. Threads are numbered per
+  family, so a thread keeps its number when a merge moves it from a
+  branch to its target. The family row stays locked until the
+  transaction ends, so two threads of one family never take the same
+  number."
   [conn file-id]
-  (let [res (db/exec-one! conn [sql:get-next-seqn file-id])]
-    (:next-seqn res)))
+  (db/exec-one! conn [sql:get-next-seqn file-id]))
 
 (def sql:upsert-comment-thread-status
   "insert into comment_thread_status (thread_id, profile_id, modified_at)
@@ -278,8 +285,8 @@
            p.team_id AS team_id,
            f.name AS file_name,
            f.project_id AS project_id,
-           fpr.title AS pull_request_title,
-           fpr.status AS pull_request_status,
+           fbr.title AS review_title,
+           fbr.status AS review_status,
            first_value(c.content) OVER w AS content,
            (SELECT count(1)
               FROM comment AS c
@@ -294,7 +301,7 @@
      INNER JOIN project AS p ON (p.id = f.project_id)
       LEFT JOIN comment_thread_status AS cts ON (cts.thread_id = ct.id AND cts.profile_id = ?)
       LEFT JOIN profile AS pf ON (ct.owner_id = pf.id)
-      LEFT JOIN file_pull_request AS fpr ON (fpr.id = ct.pull_request_id)
+      LEFT JOIN file_branch_review AS fbr ON (fbr.id = ct.review_id)
      WHERE f.deleted_at IS NULL
        AND p.deleted_at IS NULL
        %1
@@ -495,10 +502,10 @@
    [:height ::sm/safe-number]])
 
 (def ^:private schema:anchor
-  "What a thread points at: a spot of a board (`:canvas`, the default),
+  "What a thread points at: a spot of a board (`:point`, the default),
   a layer or a rectangle."
   [:multi {:dispatch :type :title "CommentThreadAnchor"}
-   [:canvas [:map [:type [:= :canvas]]]]
+   [:point [:map [:type [:= :point]]]]
    [:layer [:map
             [:type [:= :layer]]
             [:shape-id ::sm/uuid]]]
@@ -516,33 +523,35 @@
    [:frame-id ::sm/uuid]
    [:share-id {:optional true} [:maybe ::sm/uuid]]
    [:mentions {:optional true} [::sm/set ::sm/uuid]]
-   ;; the design review the thread is written in: an open pull request
-   ;; of this file (the branch file it reviews)
-   [:pull-request-id {:optional true} ::sm/uuid]
+   ;; the design review the thread is written in: an open review of
+   ;; this file (the branch file it reviews)
+   [:review-id {:optional true} ::sm/uuid]
    [:anchor {:optional true} schema:anchor]])
 
-(def ^:private sql:get-open-pull-request-of-file
-  "SELECT id FROM file_pull_request
-    WHERE id = ?
-      AND source_file_id = ?
-      AND status = 'open'
-      AND deleted_at IS NULL")
+(def ^:private sql:get-open-review-of-file
+  "SELECT r.id
+     FROM file_branch_review AS r
+     JOIN file_branch AS b ON (b.id = r.file_branch_id)
+    WHERE r.id = ?
+      AND b.branch_file_id = ?
+      AND r.status = 'open'
+      AND r.deleted_at IS NULL")
 
 (defn- check-review-of-file
   "Refuse a thread for a design review that is not an open review of the
   file the thread is written on."
-  [conn pull-request-id file-id]
-  (when-not (db/exec-one! conn [sql:get-open-pull-request-of-file pull-request-id file-id])
+  [conn review-id file-id]
+  (when-not (db/exec-one! conn [sql:get-open-review-of-file review-id file-id])
     (ex/raise :type :validation
-              :code :pull-request-not-open
+              :code :branch-review-not-open
               :hint "the thread names a design review that is not open on this file"
-              :pull-request-id pull-request-id)))
+              :review-id review-id)))
 
 (defn- update-thread-seqn
-  [conn file-id seqn]
-  (db/update! conn :file
-              {:comment-thread-seqn seqn}
-              {:id file-id}
+  [conn family-id seqn]
+  (db/update! conn :file-family
+              {:thread-seqn seqn}
+              {:id family-id}
               {::db/return-keys false}))
 
 (defn add-owner
@@ -590,22 +599,17 @@
 (defn- insert-comment-thread
   [{:keys [::db/conn] :as cfg}
    {:keys [::rpc/profile-id ::rpc/request-at ::file position content mentions frame-id
-           pull-request-id anchor ::skip-subscriber-emails]}]
+           review-id anchor ::skip-subscriber-emails]}]
 
-  (let [;; NOTE: we take the next seq number from a separate query
-        ;; because we need to lock the file for avoid race conditions
-
-        ;; FIXME: this method touches and locks the file table,which
-        ;; is already heavy-update tablel; we need to think on move
-        ;; the sequence state management to a different table or
-        ;; different storage (example: redis) for alivate the update
-        ;; pression on the file table
-
-        _         (when pull-request-id
-                    (check-review-of-file conn pull-request-id (:id file)))
+  (let [_         (when review-id
+                    (check-review-of-file conn review-id (:id file)))
 
         profile   (profile/get-profile conn profile-id)
-        seqn      (get-next-seqn conn (:id file))
+
+        ;; the number comes from the family row, locked until the
+        ;; transaction ends: the file row, a heavily updated one, is
+        ;; not touched
+        {:keys [family-id next-seqn]} (get-next-seqn conn (:id file))
 
         file-id   (get file :id)
         thread-id (uuid/next)
@@ -613,18 +617,19 @@
         thread    (-> (db/insert! conn :comment-thread
                                   {:id thread-id
                                    :file-id file-id
+                                   :family-id family-id
                                    :page-name (:page-name file)
                                    :page-id (:page-id file)
                                    :owner-id profile-id
                                    :participants (db/tjson #{profile-id})
                                    :created-at request-at
                                    :modified-at request-at
-                                   :seqn seqn
+                                   :seqn next-seqn
                                    :frame-id frame-id
                                    :position (db/pgpoint position)
                                    :mentions (db/encode-pgarray mentions conn "uuid")
-                                   :pull-request-id pull-request-id
-                                   :anchor-type (d/name (get anchor :type :canvas))
+                                   :review-id review-id
+                                   :anchor-type (d/name (get anchor :type :point))
                                    :shape-id (:shape-id anchor)
                                    :area (some-> (:area anchor) db/tjson)})
                       (decode-row))
@@ -641,8 +646,8 @@
     ;; Make the current thread as read.
     (upsert-comment-thread-status! conn profile-id thread-id request-at)
 
-    ;; Optimistic update of current seq number on file.
-    (update-thread-seqn conn file-id seqn)
+    ;; Advance the thread counter of the family.
+    (update-thread-seqn conn family-id next-seqn)
 
     ;; Send mentions emails
     (send-comment-emails! cfg profile comment thread file

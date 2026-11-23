@@ -9,10 +9,10 @@
       "~:key": "color//c7ce0794-0992-8105-8004-38f2804439b1",
       "~:label": "Brand",
       "~:base": { "~:name": "Brand", "~:color": "#000000", "~:opacity": 1 },
-      "~:main": { "~:name": "Brand", "~:color": "#00ff00", "~:opacity": 1 },
+      "~:source": { "~:name": "Brand", "~:color": "#00ff00", "~:opacity": 1 },
       "~:branch": { "~:name": "Brand", "~:color": "#ff0000", "~:opacity": 1 },
       "~:changed-attrs": {
-        "~:color": { "~:main": "#00ff00", "~:branch": "#ff0000" }
+        "~:color": { "~:source": "#00ff00", "~:branch": "#ff0000" }
       }
     },
     {
@@ -38,7 +38,7 @@
           ]
         }
       },
-      "~:main": {
+      "~:source": {
         "~:type": "~:text",
         "~:content": {
           "~:type": "root",
@@ -77,7 +77,7 @@
       "~:id": "~uc7ce0794-0992-8105-8004-38f2804439b3",
       "~:key": "typography//c7ce0794-0992-8105-8004-38f2804439b3",
       "~:label": "Heading",
-      "~:main": null,
+      "~:source": null,
       "~:branch": { "~:name": "Heading", "~:font-size": "32" }
     }
   ],
@@ -89,8 +89,8 @@
   },
   "~:meta": {
     "~:base-at": "~m1713536343369",
-    "~:main-at": "~m1713873823633",
+    "~:source-at": "~m1713873823633",
     "~:branch-at": "~m1713873823633",
-    "~:main-revn": 11
+    "~:source-revn": 11
   }
 }

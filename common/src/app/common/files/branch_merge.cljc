@@ -16,9 +16,10 @@
   included, except the residual page attrs (`:page-attrs`), which
   `unsupported-kinds` reports so the caller refuses them.
 
-  Direction `:branch->main` (merge/compare) treats main as `theirs` and
-  branch as `ours`; `:main->branch` (update from main) swaps them. The
-  reported payload names the DOCUMENTS either way (see `compute-merge`)."
+  Direction `:branch->source` (merge/compare) treats the source as `theirs`
+  and the branch as `ours`; `:source->branch` (update from the source) swaps
+  them. The reported payload names the DOCUMENTS either way (see
+  `compute-merge`)."
   (:require
    [app.common.data :as d]
    [app.common.files.changes :as cfc]
@@ -97,7 +98,7 @@
       (name kind)))
 
 (defn- shallow-attr-diff
-  "Map of attr -> {:main v :branch v} for the keys whose values differ
+  "Map of attr -> {:source v :branch v} for the keys whose values differ
   between the `theirs` and `ours` entity maps. Powers the
   \"property changes\" detail in the compare view. Returns `{}` for
   non-map entities (e.g. order/name tuples)."
@@ -109,7 +110,7 @@
                       ov (get ours k)]
                   (if (= tv ov)
                     acc
-                    (assoc acc k {:main tv :branch ov}))))
+                    (assoc acc k {:source tv :branch ov}))))
               {}
               ks))
     {}))
@@ -117,28 +118,28 @@
 ;; --- Per-property conflict resolution ---
 ;;
 ;; A resolution value for a conflicting entity is one of:
-;;   :main            keep main entirely
+;;   :source          keep the source entirely
 ;;   :branch          take branch entirely
-;;   {attr -> side}   per-property: choose :main or :branch for each
+;;   {attr -> side}   per-property: choose :source or :branch for each
 ;;                    changed attribute independently
 ;; The per-attr map only applies to conflicts that carry `:changed-attrs`
 ;; (modify-modify / add-add). Structural conflicts (delete/modify, order,
 ;; presence, …) stay keyword-only.
 
 (defn- attr-side
-  "Resolved side (`:main`/`:branch`) for attribute `k` under resolution
+  "Resolved side (`:source`/`:branch`) for attribute `k` under resolution
   `res`. `:branch` keyword -> branch for every attr; a map -> its per-attr
-  choice (defaulting to `:main`); anything else (`:main`, nil) -> main."
+  choice (defaulting to `:source`); anything else (`:source`, nil) -> source."
   [res k]
   (cond
     (= res :branch) :branch
-    (map? res)      (if (= :branch (get res k)) :branch :main)
-    :else           :main))
+    (map? res)      (if (= :branch (get res k)) :branch :source)
+    :else           :source))
 
 (defn- merge-attrs
-  "Entity to apply for a per-attr resolution: start from main (`t`) and
-  overlay branch's value for each differing attr resolved to `:branch`.
-  For `res = :branch` this equals `o`; for `:main`/nil it equals `t`.
+  "Entity to apply for a per-attr resolution: start from the source (`t`)
+  and overlay branch's value for each differing attr resolved to `:branch`.
+  For `res = :branch` this equals `o`; for `:source`/nil it equals `t`.
   An attr the winning side does not carry is REMOVED (absent key — how the
   closed change schemas express removal) rather than assoc-ed nil."
   [t o res]
@@ -152,13 +153,13 @@
           (shallow-attr-diff t o)))
 
 (defn conflict-resolved?
-  "True when `res` fully resolves `conflict`. A keyword `:main`/`:branch`
+  "True when `res` fully resolves `conflict`. A keyword `:source`/`:branch`
   always resolves it; a per-attr map resolves it only when it carries a
   choice for every key in the conflict's `:changed-attrs` (and the
   conflict actually has changed-attrs)."
   [conflict res]
   (cond
-    (contains? #{:main :branch} res) true
+    (contains? #{:source :branch} res) true
     (map? res) (let [attrs (keys (:changed-attrs conflict))]
                  (boolean (and (seq attrs)
                                (every? #(contains? res %) attrs))))
@@ -245,10 +246,11 @@
   additions/modifications/deletions that apply cleanly to `theirs`, and
   conflicts are entities both sides diverged on.
 
-  Entries label the two sides for the `:branch->main` roles: `:main` holds
-  the `theirs` value and `:branch` the `ours` one. `compute-merge` renames
-  them to the two documents before reporting them (see `doc-sides`), so a
-  summary names main's value `:main` and the branch's `:branch` in both
+  Entries label the two sides for the `:branch->source` roles: `:source`
+  holds the `theirs` value and `:branch` the `ours` one. `compute-merge`
+  renames them to the two documents before reporting them (see
+  `doc-sides`), so a summary names the source's value `:source` and the
+  branch's `:branch` in both
   directions.
 
   `ctx`: `{:kind <keyword> :page-id <optional uuid>}`. Optional display
@@ -289,12 +291,12 @@
            (and in-b? (not in-o?) (not= b t))             ; delete (branch) / modify (main)
            (update acc :conflicts conj (mk :conflict {:id id :reason :delete-modify
                                                       :label (entity-label kind t)
-                                                      :base b :main t :branch nil}))
+                                                      :base b :source t :branch nil}))
 
            (and in-b? (not in-t?) (not= b o))             ; modify (branch) / delete (main)
            (update acc :conflicts conj (mk :conflict {:id id :reason :modify-delete
                                                       :label (entity-label kind o)
-                                                      :base b :main nil :branch o}))
+                                                      :base b :source nil :branch o}))
 
            ;; --- additions ---
            (and (not in-b?) in-o? (not in-t?))            ; new in branch
@@ -310,7 +312,7 @@
            (update acc :conflicts conj (mk :conflict {:id id :reason :add-add
                                                       :label (entity-label kind o)
                                                       :changed-attrs (attr-diff t o)
-                                                      :base nil :main t :branch o}))
+                                                      :base nil :source t :branch o}))
 
            ;; --- present in all three ---
            (= o b)                                        ; branch didn't touch -> main wins
@@ -330,7 +332,7 @@
            (update acc :conflicts conj (mk :conflict {:id id :reason :modify-modify
                                                       :label (entity-label kind o)
                                                       :changed-attrs (attr-diff t o)
-                                                      :base b :main t :branch o})))))
+                                                      :base b :source t :branch o})))))
      {:changes [] :conflicts []}
      ids)))
 
@@ -354,8 +356,8 @@
 ;; at a time, as Penpot's own sync does (`generate-update-tokens` in
 ;; `app.common.logic.libraries`): a slot follows the component unless
 ;; the sync group of the shape attr it drives is touched.
-;; The sides are the comparison roles: `:main` is `theirs` (the target),
-;; `:branch` is `ours` (the source).
+;; The sides are the comparison roles: `:source` is `theirs` (the target),
+;; `:branch` is `ours` (the side merged in).
 
 (def ^:private text-content-groups
   "The groups a text `:content` change marks on top of `:content-group`
@@ -382,10 +384,10 @@
 (defn- copy-reason
   "Why the copy rule took a side for an attr or token slot no more than
   one side overrode: `t?`/`o?` say whether the target/source did. Named
-  in the comparison roles (`:main` = target), as the sides are."
+  in the comparison roles (`:source` = target), as the sides are."
   [t? o?]
   (cond o?    :override-branch
-        t?    :override-main
+        t?    :override-source
         :else :follows-component))
 
 (defn- token-slot-sides
@@ -410,7 +412,7 @@
          (if (or (nil? group) (and t? o?))
            (update acc :open-slots conj slot)
            (-> acc
-               (assoc-in [:slots slot] (if o? :branch :main))
+               (assoc-in [:slots slot] (if o? :branch :source))
                (assoc-in [:slot-reasons slot] (copy-reason t? o?))))))
      {:slots {} :slot-reasons {} :open-slots #{}}
      (sort-by name (filter #(not= (get theirs-tokens %) (get ours-tokens %))
@@ -426,7 +428,7 @@
   :slots {token-attr side} :slot-reasons {token-attr reason}
   :open-slots #{token-attr}}` over the attrs that differ between the two
   sides: `:auto` holds the side the rule picks for each sync attr no
-  more than one side overrode (`:main` when none did), `:reasons` why
+  more than one side overrode (`:source` when none did), `:reasons` why
   (`copy-reason`), and `:open` the attrs left to the user, the ones both
   sides overrode and the ones outside every sync group.
   `:applied-tokens` is settled per slot (`token-slot-sides`): it is open
@@ -452,14 +454,14 @@
                  (update :open conj attr)
 
                  (empty? open-slots)
-                 (assoc-in [:auto attr] (if (some #{:branch} (vals slots)) :branch :main))))
+                 (assoc-in [:auto attr] (if (some #{:branch} (vals slots)) :branch :source))))
              (let [group (ctk/resolve-sync-group (:type so) attr)
                    t?    (and (some? group) (overrode? group tt sb st attr))
                    o?    (and (some? group) (overrode? group ot sb so attr))]
                (if (or (nil? group) (and t? o?))
                  (update acc :open conj attr)
                  (-> acc
-                     (assoc-in [:auto attr] (if o? :branch :main))
+                     (assoc-in [:auto attr] (if o? :branch :source))
                      (assoc-in [:reasons attr] (copy-reason t? o?)))))))
          {:auto {} :reasons {} :open #{} :slots {} :slot-reasons {} :open-slots #{}}
          (shallow-attr-diff st so))))))
@@ -505,7 +507,7 @@
              settled (settled-sides sides)
              change  (fn [status attrs]
                        (-> c
-                           (dissoc :reason :base :main :branch)
+                           (dissoc :reason :base :source :branch)
                            (assoc :status status
                                   :changed-attrs (select-keys changed-attrs attrs)
                                   :settled settled)))]
@@ -539,10 +541,10 @@
                      :else          {})
                    auto)]
     (if (or (seq slots) (seq open-slots))
-      (let [user  (if (= :branch (get res :applied-tokens)) :branch :main)
+      (let [user  (if (= :branch (get res :applied-tokens)) :branch :source)
             slots (merge (zipmap open-slots (repeat user)) slots)]
         (assoc res
-               :applied-tokens (if (some #{:branch} (vals slots)) :branch :main)
+               :applied-tokens (if (some #{:branch} (vals slots)) :branch :source)
                ::token-slots slots))
       res)))
 
@@ -665,7 +667,7 @@
 
 (defn- slim-conflict-sides
   [slim-fn conflicts]
-  (mapv (fn [c] (-> c (update :base slim-fn) (update :main slim-fn) (update :branch slim-fn)))
+  (mapv (fn [c] (-> c (update :base slim-fn) (update :source slim-fn) (update :branch slim-fn)))
         conflicts))
 
 (defn- flatten-plugin-data
@@ -835,16 +837,16 @@
   A mechanism's alternatives:
     `:lost`    `:conflict` (a `:modify-delete` conflict on the container:
                `:branch` restores it as the source has it, additions
-               included, `:main` drops the source's shapes), `:refuse`,
+               included, `:source` drops the source's shapes), `:refuse`,
                `:reparent-to-ancestor`, `:page-root`, `:cascade` (the
                container goes with its whole subtree).
     `:dropped` `:conflict` (a `:delete-modify` conflict on the container:
-               `:branch` deletes the whole subtree knowingly, `:main`
+               `:branch` deletes the whole subtree knowingly, `:source`
                keeps it as the target has it), `:expand` (the target's
                shapes relocate to the container's slot in its parent),
                `:page-root`, `:refuse`, `:cascade`."
   [dir]
-  (let [update? (= dir :main->branch)
+  (let [update? (= dir :source->branch)
         add     (policy :addition-under-deleted-parent)
         cont    (policy :container-delete-over-main-edits)]
     {:order   (policy :same-parent-reorder)
@@ -905,7 +907,7 @@
   (`lost-root`). `:conflict` replaces them with one `:modify-delete`
   conflict on that shape: resolved to `:branch` it restores the shape
   and its subtree as the source has them, additions included; resolved
-  to `:main` it leaves them out. `:refuse` adds an `:unsupported`
+  to `:source` it leaves them out. `:refuse` adds an `:unsupported`
   `:shape-orphan` entry per deleted shape holding an addition. The other
   alternatives act in `page-shape-changes`.
 
@@ -913,7 +915,7 @@
   subtree the target edited (added, changed or reordered something in).
   `:conflict` turns each into one `:delete-modify` conflict that replaces
   its `:deleted` entry and every entry inside its subtree: resolved to
-  `:branch` the whole subtree goes, resolved to `:main` it stays as the
+  `:branch` the whole subtree goes, resolved to `:source` it stays as the
   target has it. `:refuse` adds an `:unsupported` `:shape-orphan` entry
   per such shape the target added inside. The other alternatives act in
   `page-shape-changes`.
@@ -1018,7 +1020,7 @@
          :conflicts conflicts'}))))
 
 (defn- diff-pages
-  ([base theirs ours] (diff-pages base theirs ours nil :branch->main))
+  ([base theirs ours] (diff-pages base theirs ours nil :branch->source))
   ([base theirs ours only-pages dir]
    ;; `only-pages` bounds every page pass, the presence one included,
    ;; because `page-content` strips the shapes of every page it looks at
@@ -1128,7 +1130,7 @@
                                 rehydrate (fn [e]
                                             (assoc e
                                                    :base (get bo (:id e))
-                                                   :main (get to (:id e))
+                                                   :source (get to (:id e))
                                                    :branch (get oo (:id e))))
                                 ;; an added or deleted shape is missing from
                                 ;; one of the two documents, and the compare
@@ -1520,10 +1522,10 @@
 (def ^:private flip-doc
   "The other document, for a side or a copy rule reason named after one;
   anything else (`:open`, `:follows-component`) names none."
-  {:main            :branch
-   :branch          :main
-   :override-main   :override-branch
-   :override-branch :override-main})
+  {:source          :branch
+   :branch          :source
+   :override-source :override-branch
+   :override-branch :override-source})
 
 (defn- flip-decision
   "A copy rule decision `{:side .. :reason ..}` named after the other
@@ -1536,21 +1538,21 @@
 (defn- doc-sides
   "Rewrite one summary entry from the comparison roles to the documents.
 
-  `three-way-entities` reports entries in the `:branch->main` roles — the
-  `theirs` value under `:main`, the `ours` value under `:branch`. For
-  `:main->branch` the engine runs with those roles fed the other way round
-  (so the reported changes are main's), and this renames the payload back
-  before `compute-merge` reports it: the two entity sides, the two values
-  inside every `:changed-attrs` pair, the two delete reasons, and the
-  sides and reasons of the copy rule's `:settled` decisions.
-  `:delete-modify` names the branch's deletion against main's modification
-  and `:modify-delete` the branch's modification against main's deletion —
-  the same meaning in both directions."
+  `three-way-entities` reports entries in the `:branch->source` roles: the
+  `theirs` value under `:source`, the `ours` value under `:branch`. For
+  `:source->branch` the engine runs with those roles fed the other way
+  round (so the reported changes are the source's), and this renames the
+  payload back before `compute-merge` reports it: the two entity sides,
+  the two values inside every `:changed-attrs` pair, the two delete
+  reasons, and the sides and reasons of the copy rule's `:settled`
+  decisions. `:delete-modify` names the branch's deletion against the
+  source's modification and `:modify-delete` the branch's modification
+  against the source's deletion: the same meaning in both directions."
   [{:keys [status changed-attrs settled] :as entry}]
   (let [entry (cond-> entry
                 (map? changed-attrs)
                 (assoc :changed-attrs
-                       (into {} (map (fn [[k v]] [k {:main (:branch v) :branch (:main v)}]))
+                       (into {} (map (fn [[k v]] [k {:source (:branch v) :branch (:source v)}]))
                              changed-attrs))
 
                 (some? settled)
@@ -1559,7 +1561,7 @@
                                     (update :token-slots update-vals flip-decision))))]
     (if (= :conflict status)
       (-> entry
-          (assoc :main (:branch entry) :branch (:main entry))
+          (assoc :source (:branch entry) :branch (:source entry))
           (update :reason #(get {:delete-modify :modify-delete
                                  :modify-delete :delete-modify} % %)))
       entry)))
@@ -1760,14 +1762,14 @@
                  both (fn [] (if (and (some? os) (not= (strip-nil-attrs (get bo id))
                                                        (strip-nil-attrs os)))
                                :branch
-                               :main))
+                               :source))
                  acc (reduce
                       (fn [acc group]
                         (let [t? (contains? tt group) o? (contains? ot group)]
                           (if (or t? o?)
                             (update acc :keeps #(if (contains? % group)
                                                   %
-                                                  (assoc % group (cond (and t? o?) (both) o? :branch :else :main))))
+                                                  (assoc % group (cond (and t? o?) (both) o? :branch :else :source))))
                             (-> acc
                                 (update :follows conj group)
                                 (update ::followed conj [m group])
@@ -1781,7 +1783,7 @@
                       o?       (and (some? group) (contains? ot group))
                       decision (if (and t? o?)
                                  {:side :open :reason :override-both}
-                                 {:side (if o? :branch :main) :reason (copy-reason t? o?)})]
+                                 {:side (if o? :branch :source) :reason (copy-reason t? o?)})]
                   (cond-> (update acc :token-slots
                                   #(let [prev (get % slot)]
                                      (if (and (some? prev) (>= (override-rank prev) (override-rank decision)))
@@ -1921,11 +1923,11 @@
   conflict's resolution."
   [{:keys [shape-type changed-attrs]}]
   (into #{}
-        (mapcat (fn [[attr {:keys [main branch]}]]
+        (mapcat (fn [[attr {:keys [source branch]}]]
                   (case attr
                     :shapes         [:shapes-group]
-                    :applied-tokens (filter #(not= (get main %) (get branch %))
-                                            (set/union (set (keys main)) (set (keys branch))))
+                    :applied-tokens (filter #(not= (get source %) (get branch %))
+                                            (set/union (set (keys source)) (set (keys branch))))
                     (some-> (ctk/resolve-sync-group shape-type attr) vector))))
         changed-attrs))
 
@@ -1954,7 +1956,7 @@
   than one delegating to the other through the var, so that a test which
   counts engine calls counts comparisons and not dispatches."
   [base main branch dir only-pages copies?]
-  (let [update?  (= dir :main->branch)
+  (let [update?  (= dir :source->branch)
         [theirs ours] (if update? [branch main] [main branch])
         results  [(three-way-entities (strip-modified-at (:colors base))
                                       (strip-modified-at (:colors theirs))
@@ -1987,8 +1989,8 @@
                   (diff-tokens base theirs ours)]
         {:keys [changes conflicts]} (merge-results results)
         ;; the engine reports `ours`' changes against `theirs` and labels
-        ;; those roles `:main`/`:branch`; the summary names the DOCUMENTS,
-        ;; so `:main->branch` (theirs=branch, ours=main) is renamed here
+        ;; those roles `:source`/`:branch`; the summary names the DOCUMENTS,
+        ;; so `:source->branch` (theirs=branch, ours=source) is renamed here
         ;; (see `doc-sides`)
         changes   (if update? (mapv doc-sides changes) changes)
         conflicts (if update? (mapv doc-sides conflicts) conflicts)
@@ -2028,14 +2030,14 @@
      :stats     {:added n :modified n :deleted n :conflicts n}
      :copies    [<component copies> ...]}  ; with `:copies? true` only
 
-  Every entry names the two DOCUMENTS, whatever `dir`: `:main` carries
-  main's value, `:branch` the branch's, and each `:changed-attrs` pair
-  (`attribute -> {:main v :branch v}`) says the same. The two delete
-  reasons do not flip with `dir` either: `:delete-modify` names the
-  branch's deletion against main's modification, `:modify-delete` the
-  branch's modification against main's deletion. The `:changes` do follow
-  `dir` — `:branch->main` reports the branch's outgoing changes,
-  `:main->branch` main's incoming ones.
+  Every entry names the two DOCUMENTS, whatever `dir`: `:source` carries
+  the source's value, `:branch` the branch's, and each `:changed-attrs`
+  pair (`attribute -> {:source v :branch v}`) says the same. The two
+  delete reasons do not flip with `dir` either: `:delete-modify` names the
+  branch's deletion against the source's modification, `:modify-delete`
+  the branch's modification against the source's deletion. The `:changes`
+  do follow `dir`: `:branch->source` reports the branch's outgoing
+  changes, `:source->branch` the source's incoming ones.
 
   `opts` may carry `:copies? true`, which adds `:copies` and each
   conflict's `:copies-affected` (below): the scan it takes reads every
@@ -2071,7 +2073,7 @@
 
   with `r` one of `:follows-component` (no side overrode it: the target
   keeps its value until the sync sets the component's, so `s` names the
-  target), `:override-main` and `:override-branch`. `:applied-tokens`
+  target), `:override-source` and `:override-branch`. `:applied-tokens`
   shows through its slots, and is among `:open-attrs` exactly when a
   slot is open. A `:settled` entry applies nothing: it counts
   in no `:stats`, `compute-changes` and `nothing-to-merge?` ignore it,
@@ -2147,7 +2149,7 @@
 
   Clean (non-conflicting) changes are always emitted. Conflicting
   entities are emitted only when `resolutions` selects `:branch` for that
-  id (taking the branch side); `:main` (or absent) leaves main untouched.
+  id (taking the branch side); `:source` (or absent) leaves the source untouched.
   The caller is responsible for refusing the merge while conflicts remain
   unresolved."
   [base theirs ours resolutions add-fn mod-fn del-fn]
@@ -2520,7 +2522,7 @@
              (filterv some?))
 
         ;; the ids the merge deletes. `:dropped :conflict` resolved to
-        ;; `:main` keeps the container's whole subtree as the target has
+        ;; `:source` keeps the container's whole subtree as the target has
         ;; it, so no delete inside it is emitted
         deleted (into #{} (keep (fn [{:keys [type id]}]
                                   (when (= :del-obj type) id)))
@@ -2529,7 +2531,7 @@
                         (source-deleted-roots to deleted))
         kept    (when (= :conflict dropped-mode)
                   (into #{} (mapcat #(preorder-ids to %))
-                        (filter #(= :main (get resolutions %)) dropped-roots)))
+                        (filter #(= :source (get resolutions %)) dropped-roots)))
         mod-del (if (seq kept)
                   (filterv (fn [{:keys [type id]}]
                              (not (and (= :del-obj type) (contains? kept id))))
@@ -2738,7 +2740,7 @@
   ([base main branch resolutions merge-summary]
    (compute-changes base main branch resolutions merge-summary nil))
   ([base main branch resolutions merge-summary excluded]
-   (let [merge-summary (or merge-summary (compute-merge base main branch :branch->main))
+   (let [merge-summary (or merge-summary (compute-merge base main branch :branch->source))
          resolutions   (or resolutions {})
          ;; a `:settled` entry applies nothing, so excluding it excludes
          ;; nothing: its key names a copy the rule decides whatever the
@@ -2939,7 +2941,7 @@
          ;; shapes: the tree-shape policies act per page (see
          ;; `page-shape-changes`); its `:unsupported` entries name the
          ;; container a `:refuse` alternative could not place under
-         dir        (or (:dir merge-summary) :branch->main)
+         dir        (or (:dir merge-summary) :branch->source)
          shapes-res (mapv (fn [pid] (page-shape-changes base main branch resolutions pid dir excluded))
                           common-pages)
          shapes     (into [] (mapcat :changes) shapes-res)

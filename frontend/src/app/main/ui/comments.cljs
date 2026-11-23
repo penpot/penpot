@@ -1068,8 +1068,8 @@
                          :position (:position parent)
                          :thread-id (:id parent)
                          :comment-id (:id comment)
-                         :pull-request-id (when (= "open" (:pull-request-status parent))
-                                            (:pull-request-id parent))
+                         :review-id (when (= "open" (:review-status parent))
+                                      (:review-id parent))
                          :title (subs text 0 (min 250 (count text)))})))))]
 
     [:div {:class (stl/css :floating-thread-item-wrapper)}
@@ -1206,8 +1206,8 @@
          [:> comment-floating-thread-header* {:thread thread
                                               :origin origin}]]
 
-        (when (some? (:pull-request-id thread))
-          [:> review-label* {:label (or (:pull-request-title thread)
+        (when (some? (:review-id thread))
+          [:> review-label* {:label (or (:review-title thread)
                                         (tr "workspace.review.design-review"))}])
 
         ;; the workspace passes what a message shows about its task

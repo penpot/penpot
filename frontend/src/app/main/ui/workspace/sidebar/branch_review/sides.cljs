@@ -18,7 +18,7 @@
   #{:path :bool})
 
 (defn- with-values
-  "`entity` with each attr of `attrs` (`{attr {:main .. :branch ..}}`)
+  "`entity` with each attr of `attrs` (`{attr {:source .. :branch ..}}`)
   set to the value `side-of` picks a side for; an attr it picks no side
   for stays as it is."
   [entity attrs side-of]
@@ -48,11 +48,11 @@
       entity)))
 
 (defn side-entity
-  "One side (`:main` or `:branch`) of diff entry `item`. A conflict carries
-  both; a clean change carries the attrs that differ, so the side the open
-  file does not hold is the open entity with those attrs swapped in. An
-  entry that does not exist on a side has no entity there: `origin` is
-  the side that made the change, so what it added is missing on the
+  "One side (`:source` or `:branch`) of diff entry `item`. A conflict
+  carries both; a clean change carries the attrs that differ, so the side
+  the open file does not hold is the open entity with those attrs swapped
+  in. An entry that does not exist on a side has no entity there: `origin`
+  is the side that made the change, so what it added is missing on the
   other one and what it deleted is missing on its own. An added or
   deleted shape the open file lacks comes whole in the entry's `:shape`."
   [item side open-side origin open-entity]
@@ -122,11 +122,11 @@
            open (get objects id)]
        (cond
          (not= :shape (:kind conflict)) objects
-         (= :main res)                  (put-entity objects id (:main conflict))
+         (= :source res)                (put-entity objects id (:source conflict))
          (and (map? res) (some? open))
          (put-entity objects id
                      (with-values open (:changed-attrs conflict)
-                       #(when (= :main (get res %)) :main)))
+                       #(when (= :source (get res %)) :source)))
          :else objects)))
    objects
    conflicts))

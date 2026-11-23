@@ -12,7 +12,7 @@ const setupBranching = async (workspacePage, rpcs) => {
     "get-file-branch-info?file-id=*":
       "pull-requests/get-file-branch-info-none.json",
     "get-file-branches?file-id=*": "pull-requests/get-file-branches-empty.json",
-    "get-file-pull-requests?file-id=*":
+    "get-file-branch-reviews?file-id=*":
       "pull-requests/get-file-branches-empty.json",
     ...rpcs,
   });

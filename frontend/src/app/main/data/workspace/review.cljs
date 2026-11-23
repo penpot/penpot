@@ -153,12 +153,12 @@
         (case (get-tool state)
           :comment
           (rx/of (dcmt/create-draft
-                  (cond-> (assoc (draft-params state position) :pull-request-id pr-id)
+                  (cond-> (assoc (draft-params state position) :review-id pr-id)
                     (and (some? shape) (not= :frame (:type shape)))
                     (assoc :anchor {:type :layer :shape-id (:id shape)})
 
                     (or (nil? shape) (= :frame (:type shape)))
-                    (assoc :anchor {:type :canvas}))))
+                    (assoc :anchor {:type :point}))))
 
           ;; on the empty canvas the task points at the canvas itself
           :task
@@ -171,7 +171,7 @@
                                 :else                     (:frame-id shape))
                     :shape-id (:id shape)
                     :position position
-                    :pull-request-id pr-id}))
+                    :review-id pr-id}))
            (if (nil? pr-id)
              (rx/of (forget-task-tool))
              (rx/empty)))
@@ -189,7 +189,7 @@
       (let [position {:x (- (+ x width) 1) :y (+ y 1)}]
         (rx/of (dcmt/create-draft
                 (-> (draft-params state (gpt/point position))
-                    (assoc :pull-request-id (review-id state))
+                    (assoc :review-id (review-id state))
                     (assoc :anchor {:type :area :area area}))))))))
 
 ;; --- Activity
@@ -223,7 +223,7 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (->> (rp/cmd! :get-pull-request-activity {:id pr-id})
+      (->> (rp/cmd! :get-branch-review-activity {:id pr-id})
            (rx/map (partial activity-fetched pr-id))
            (rx/catch (fn [_]
                        (rx/of (fn [state]

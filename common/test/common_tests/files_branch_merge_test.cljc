@@ -41,7 +41,7 @@
 
 (t/deftest identity-no-changes
   (let [base (mkdata {:s1 {:id :s1 :name "A" :fill "red"}})
-        r    (bm/compute-merge base base base :branch->main)]
+        r    (bm/compute-merge base base base :branch->source)]
     (t/is (= [] (:changes r)))
     (t/is (= [] (:conflicts r)))
     (t/is (= {:added 0 :modified 0 :deleted 0 :conflicts 0} (:stats r)))))
@@ -50,7 +50,7 @@
   (let [base   (mkdata {:s1 {:id :s1 :name "A"}})
         branch (mkdata {:s1 {:id :s1 :name "A"}
                         :s2 {:id :s2 :name "B"}})
-        r      (bm/compute-merge base base branch :branch->main)
+        r      (bm/compute-merge base base branch :branch->source)
         c      (first (filter #(= :added (:status %)) (:changes r)))]
     (t/is (= 1 (-> r :stats :added)))
     (t/is (= 0 (-> r :stats :conflicts)))
@@ -62,11 +62,11 @@
 (t/deftest modified-in-branch
   (let [base   (mkdata {:s1 {:id :s1 :name "A" :fill "red"}})
         branch (mkdata {:s1 {:id :s1 :name "A" :fill "blue"}})
-        r      (bm/compute-merge base base branch :branch->main)
+        r      (bm/compute-merge base base branch :branch->source)
         c      (first (:changes r))]
     (t/is (= 1 (-> r :stats :modified)))
     (t/is (= :modified (:status c)))
-    (t/is (= {:main "red" :branch "blue"} (get-in c [:changed-attrs :fill])))))
+    (t/is (= {:source "red" :branch "blue"} (get-in c [:changed-attrs :fill])))))
 
 (t/deftest root-frame-and-shapes-churn-hidden
   ;; adding a top-level shape mutates the root frame's `:shapes`; that churn
@@ -76,7 +76,7 @@
         branch (mkdata {uuid/zero {:id uuid/zero :name "Root Frame" :shapes [:s1 :s2]}
                         :s1 {:id :s1 :name "A"}
                         :s2 {:id :s2 :name "B"}})
-        r      (bm/compute-merge base base branch :branch->main)]
+        r      (bm/compute-merge base base branch :branch->source)]
     (t/is (= #{:s2} (set (map :id (:changes r)))))
     (t/is (= 1 (-> r :stats :added)))
     (t/is (= 0 (-> r :stats :modified)))))
@@ -89,7 +89,7 @@
   (binding [bm/*policies* (assoc bm/default-policies :same-parent-reorder :ignore)]
     (let [base   (mkdata {:s1 {:id :s1 :name "A" :shapes [:c1 :c2]}})
           branch (mkdata {:s1 {:id :s1 :name "A" :shapes [:c2 :c1]}})
-          r      (bm/compute-merge base base branch :branch->main)]
+          r      (bm/compute-merge base base branch :branch->source)]
       (t/is (= [] (:changes r)))
       (t/is (= 0 (-> r :stats :modified)))
       (t/is (= [] (:changes (bm/compute-changes base base branch)))))))
@@ -105,7 +105,7 @@
         branch (mkdata {:s1 {:id :s1 :name "A" :fill "blue"
                              :parent-id :new :frame-id :new
                              :selrect {:x 9} :points [3 4] :shapes [:c1 :c2]}})
-        r      (bm/compute-merge base base branch :branch->main)
+        r      (bm/compute-merge base base branch :branch->source)
         c      (first (:changes r))
         chg    (bm/compute-changes base base branch)
         ops    (->> (:changes chg)
@@ -133,7 +133,7 @@
         branch (mkdata {:t1 {:id :t1 :name "Text" :type :text
                              :parent-id :board :frame-id :board}
                         :board {:id :board :name "Board" :type :frame :shapes [:t1]}})
-        r      (bm/compute-merge base base branch :branch->main)
+        r      (bm/compute-merge base base branch :branch->source)
         moved  (first (filter #(and (= :modified (:status %)) (= :t1 (:id %))) (:changes r)))]
     (t/is (some? moved))
     (t/is (contains? (:changed-attrs moved) :frame-id))))
@@ -146,7 +146,7 @@
                         :r1 {:id :r1 :name "Box" :type :rect}
                         :c1 {:id :c1 :name "Btn" :type :frame
                              :component-id (uuid/random) :main-instance true}})
-        r      (bm/compute-merge base base branch :branch->main)
+        r      (bm/compute-merge base base branch :branch->source)
         by-id  (into {} (map (juxt :id identity)) (:changes r))]
     (t/is (= :text (get-in by-id [:t1 :shape-type])))
     (t/is (= :rect (get-in by-id [:r1 :shape-type])))
@@ -155,7 +155,7 @@
 (t/deftest deleted-in-branch
   (let [base   (mkdata {:s1 {:id :s1 :name "A"} :s2 {:id :s2 :name "B"}})
         branch (mkdata {:s1 {:id :s1 :name "A"}})
-        r      (bm/compute-merge base base branch :branch->main)
+        r      (bm/compute-merge base base branch :branch->source)
         c      (first (:changes r))]
     (t/is (= 1 (-> r :stats :deleted)))
     (t/is (= :deleted (:status c)))
@@ -169,9 +169,9 @@
         branch (mkdata {:s1 {:id :s1 :name "A" :selrect {:x 1}}
                         :s3 {:id :s3 :name "C" :selrect {:x 3}}})
         merge  (into {} (map (juxt :id identity))
-                     (:changes (bm/compute-merge base base branch :branch->main)))
+                     (:changes (bm/compute-merge base base branch :branch->source)))
         update (into {} (map (juxt :id identity))
-                     (:changes (bm/compute-merge base branch base :main->branch)))]
+                     (:changes (bm/compute-merge base branch base :source->branch)))]
     (t/is (= {:id :s2 :name "B" :selrect {:x 2}} (get-in merge [:s2 :shape])))
     (t/is (= {:id :s3 :name "C" :selrect {:x 3}} (get-in merge [:s3 :shape])))
     (t/is (= {:id :s2 :name "B" :selrect {:x 2}} (get-in update [:s2 :shape])))
@@ -183,9 +183,9 @@
                          [:pages-index :p1 :flows] {:f1 flow})
         branch (assoc-in base [:pages-index :p1 :flows] {})
         merge  (first (filter #(= :page-flow (:kind %))
-                              (:changes (bm/compute-merge base base branch :branch->main))))
+                              (:changes (bm/compute-merge base base branch :branch->source))))
         update (first (filter #(= :page-flow (:kind %))
-                              (:changes (bm/compute-merge base branch base :main->branch))))]
+                              (:changes (bm/compute-merge base branch base :source->branch))))]
     (t/is (= :deleted (:status merge)))
     (t/is (= flow (:flow merge)))
     (t/is (= :deleted (:status update)))
@@ -194,14 +194,14 @@
 (t/deftest modified-carries-no-shape
   (let [base   (mkdata {:s1 {:id :s1 :name "A" :fill "red"}})
         branch (mkdata {:s1 {:id :s1 :name "A" :fill "blue"}})
-        r      (bm/compute-merge base base branch :branch->main)]
+        r      (bm/compute-merge base base branch :branch->source)]
     (t/is (not (contains? (first (:changes r)) :shape)))))
 
 (t/deftest fast-forward-main-untouched
   ;; main == base; branch changed -> all branch changes apply cleanly
   (let [base   (mkdata {:s1 {:id :s1 :name "A" :fill "red"}})
         branch (mkdata {:s1 {:id :s1 :name "A" :fill "blue"}})
-        r      (bm/compute-merge base base branch :branch->main)]
+        r      (bm/compute-merge base base branch :branch->source)]
     (t/is (= 0 (-> r :stats :conflicts)))
     (t/is (= 1 (-> r :stats :modified)))))
 
@@ -209,7 +209,7 @@
   ;; branch == base; main changed -> branch contributes nothing
   (let [base (mkdata {:s1 {:id :s1 :name "A" :fill "red"}})
         main (mkdata {:s1 {:id :s1 :name "A" :fill "green"}})
-        r    (bm/compute-merge base main base :branch->main)]
+        r    (bm/compute-merge base main base :branch->source)]
     (t/is (= [] (:changes r)))
     (t/is (= 0 (-> r :stats :conflicts)))))
 
@@ -217,11 +217,11 @@
   (let [base   (mkdata {:s1 {:id :s1 :name "A" :fill "red"}})
         main   (mkdata {:s1 {:id :s1 :name "A" :fill "green"}})
         branch (mkdata {:s1 {:id :s1 :name "A" :fill "blue"}})
-        r      (bm/compute-merge base main branch :branch->main)
+        r      (bm/compute-merge base main branch :branch->source)
         cf     (first (:conflicts r))]
     (t/is (= 1 (-> r :stats :conflicts)))
     (t/is (= :modify-modify (:reason cf)))
-    (t/is (= "green" (get-in cf [:changed-attrs :fill :main])))
+    (t/is (= "green" (get-in cf [:changed-attrs :fill :source])))
     (t/is (= "blue" (get-in cf [:changed-attrs :fill :branch])))))
 
 (t/deftest delete-modify-conflict
@@ -229,7 +229,7 @@
   (let [base   (mkdata {:s1 {:id :s1 :name "A" :fill "red"}})
         main   (mkdata {:s1 {:id :s1 :name "A" :fill "green"}})
         branch (mkdata {})
-        r      (bm/compute-merge base main branch :branch->main)
+        r      (bm/compute-merge base main branch :branch->source)
         cf     (first (:conflicts r))]
     (t/is (= 1 (-> r :stats :conflicts)))
     (t/is (= :delete-modify (:reason cf)))))
@@ -237,7 +237,7 @@
 (t/deftest color-added-in-branch
   (let [base   (mkdata {} :colors {})
         branch (mkdata {} :colors {:c1 {:id :c1 :name "Primary"}})
-        r      (bm/compute-merge base base branch :branch->main)
+        r      (bm/compute-merge base base branch :branch->source)
         c      (first (filter #(= :color (:kind %)) (:changes r)))]
     (t/is (= :added (:status c)))
     (t/is (= "Primary" (:label c)))))
@@ -257,7 +257,7 @@
   (let [cid    (uuid/random)
         base   (comp-data {cid {:id cid :name "Button" :path "" :modified-at "t0"}})
         branch (comp-data {cid {:id cid :name "Button" :path "" :modified-at "t1"}})
-        r      (bm/compute-merge base base branch :branch->main)
+        r      (bm/compute-merge base base branch :branch->source)
         {:keys [changes unsupported]} (bm/compute-changes base base branch)]
     (t/is (= [] (:changes r)))
     (t/is (= [] (:conflicts r)))
@@ -272,7 +272,7 @@
         base   (comp-data {cid {:id cid :name "Button" :path "" :modified-at "t0"}})
         main   (comp-data {cid {:id cid :name "Button" :path "" :modified-at "t1"}})
         branch (comp-data {cid {:id cid :name "Button" :path "" :modified-at "t2"}})
-        r      (bm/compute-merge base main branch :branch->main)]
+        r      (bm/compute-merge base main branch :branch->source)]
     (t/is (= [] (:conflicts r)))
     (t/is (= 0 (-> r :stats :conflicts)))))
 
@@ -282,10 +282,10 @@
   (let [cid    (uuid/random)
         base   (comp-data {cid {:id cid :name "Button" :path "" :modified-at "t0"}})
         branch (comp-data {cid {:id cid :name "Primary Button" :path "" :modified-at "t1"}})
-        r      (bm/compute-merge base base branch :branch->main)
+        r      (bm/compute-merge base base branch :branch->source)
         c      (first (filter #(= :component (:kind %)) (:changes r)))]
     (t/is (= :modified (:status c)))
-    (t/is (= {:main "Button" :branch "Primary Button"} (get-in c [:changed-attrs :name])))
+    (t/is (= {:source "Button" :branch "Primary Button"} (get-in c [:changed-attrs :name])))
     (t/is (not (contains? (:changed-attrs c) :modified-at)))))
 
 ;; --- compute-changes (merge -> change maps)
@@ -470,7 +470,7 @@
           op (-> (group-by :type changes) :mod-obj first :operations first)]
       (t/is (= {:type :set :attr :fill :val "blue"} op)))
     ;; resolved to main -> nothing emitted
-    (let [{:keys [changes]} (bm/compute-changes base main branch {:s1 :main})]
+    (let [{:keys [changes]} (bm/compute-changes base main branch {:s1 :source})]
       (t/is (empty? (filterv #(= :mod-obj (:type %)) changes))))
     ;; unresolved -> nothing emitted (caller refuses the merge)
     (let [{:keys [changes]} (bm/compute-changes base main branch {})]
@@ -486,13 +486,13 @@
 ;; --- per-property (per-attr) conflict resolution
 
 (t/deftest conflict-resolved?-predicate
-  (let [cf {:changed-attrs {:fill {:main "g" :branch "b"}
-                            :rx   {:main 0 :branch 8}}}]
+  (let [cf {:changed-attrs {:fill {:source "g" :branch "b"}
+                            :rx   {:source 0 :branch 8}}}]
     ;; whole-entity keyword always resolves
-    (t/is (true? (bm/conflict-resolved? cf :main)))
+    (t/is (true? (bm/conflict-resolved? cf :source)))
     (t/is (true? (bm/conflict-resolved? cf :branch)))
     ;; a full per-attr map resolves
-    (t/is (true? (bm/conflict-resolved? cf {:fill :branch :rx :main})))
+    (t/is (true? (bm/conflict-resolved? cf {:fill :branch :rx :source})))
     ;; a partial map does not
     (t/is (false? (bm/conflict-resolved? cf {:fill :branch})))
     ;; nil / empty map do not
@@ -507,7 +507,7 @@
   (let [base   (mkdata {:s1 {:id :s1 :name "A" :fill "red"   :rx 0}})
         main   (mkdata {:s1 {:id :s1 :name "A" :fill "green" :rx 4}})
         branch (mkdata {:s1 {:id :s1 :name "A" :fill "blue"  :rx 8}})
-        {:keys [changes]} (bm/compute-changes base main branch {:s1 {:fill :branch :rx :main}})
+        {:keys [changes]} (bm/compute-changes base main branch {:s1 {:fill :branch :rx :source}})
         ops (-> (group-by :type changes) :mod-obj first :operations)]
     (t/is (= [{:type :set :attr :fill :val "blue"}] ops))))
 
@@ -531,7 +531,7 @@
   (let [base   (mkdata {} :colors {:c1 {:id :c1 :name "A"    :opacity 1}})
         main   (mkdata {} :colors {:c1 {:id :c1 :name "Main" :opacity 1}})
         branch (mkdata {} :colors {:c1 {:id :c1 :name "Brnc" :opacity 0.5}})
-        {:keys [changes]} (bm/compute-changes base main branch {:c1 {:name :branch :opacity :main}})
+        {:keys [changes]} (bm/compute-changes base main branch {:c1 {:name :branch :opacity :source}})
         color (-> (group-by :type changes) :mod-color first :color)]
     (t/is (= "Brnc" (:name color)))
     (t/is (= 1 (:opacity color)))))
@@ -759,7 +759,7 @@
 (t/deftest compute-merge-file-plugin-data
   (let [base   (file-level-data)
         branch (file-level-data :plugin-data {:my-plugin {"foo" "bar"}})
-        r      (bm/compute-merge base base branch :branch->main)
+        r      (bm/compute-merge base base branch :branch->source)
         c      (first (:changes r))]
     (t/is (= {:added 1 :modified 0 :deleted 0 :conflicts 0} (:stats r)))
     (t/is (= :file-plugin (:kind c)))
@@ -768,7 +768,7 @@
 (t/deftest compute-merge-file-base-font-size
   (let [base   (file-level-data :base-font-size "16px")
         branch (file-level-data :base-font-size "20px")
-        r      (bm/compute-merge base base branch :branch->main)
+        r      (bm/compute-merge base base branch :branch->source)
         c      (first (:changes r))]
     (t/is (= {:added 0 :modified 1 :deleted 0 :conflicts 0} (:stats r)))
     (t/is (= :file-option (:kind c)))
@@ -777,18 +777,18 @@
 (t/deftest compute-merge-file-base-font-size-absent-is-the-default
   (let [base   (file-level-data)
         branch (file-level-data :base-font-size "16px")]
-    (t/is (empty? (:changes (bm/compute-merge base base branch :branch->main))))))
+    (t/is (empty? (:changes (bm/compute-merge base base branch :branch->source))))))
 
 (t/deftest compute-merge-file-level-conflicts
   (let [base   (file-level-data :plugin-data {:my-plugin {"foo" "a"}} :base-font-size "16px")
         main   (file-level-data :plugin-data {:my-plugin {"foo" "b"}} :base-font-size "18px")
         branch (file-level-data :plugin-data {:my-plugin {"foo" "c"}} :base-font-size "20px")
-        r      (bm/compute-merge base main branch :branch->main)]
+        r      (bm/compute-merge base main branch :branch->source)]
     (t/is (= 2 (-> r :stats :conflicts)))
     (t/is (= #{:file-plugin :file-option} (set (map :kind (:conflicts r)))))
     (t/is (every? #(= :modify-modify (:reason %)) (:conflicts r)))
     (t/is (= #{["b" "c"] ["18px" "20px"]}
-             (set (map (juxt :main :branch) (:conflicts r)))))))
+             (set (map (juxt :source :branch) (:conflicts r)))))))
 
 (t/deftest compute-changes-file-plugin-data
   (let [base   (file-level-data :plugin-data {:my-plugin {"gone" "x"}})
@@ -831,7 +831,7 @@
 (t/deftest compute-changes-file-level-update-from-main
   (let [base   (file-level-data)
         main   (file-level-data :plugin-data {:my-plugin {"foo" "bar"}} :base-font-size "20px")
-        r      (bm/compute-merge base main base :main->branch)
+        r      (bm/compute-merge base main base :source->branch)
         data'  (cfc/process-changes base (:changes (bm/compute-changes base base main {} r)))]
     (t/is (= 2 (count (:changes r))))
     (t/is (= "bar" (get-in data' [:plugin-data :my-plugin "foo"])))
@@ -853,7 +853,7 @@
 (t/deftest compute-merge-tokens-source-one-side
   (let [base   (source-data nil)
         branch (source-data lib-a)
-        r      (bm/compute-merge base base branch :branch->main)
+        r      (bm/compute-merge base base branch :branch->source)
         c      (first (:changes r))]
     (t/is (= {:added 0 :modified 1 :deleted 0 :conflicts 0} (:stats r)))
     (t/is (= :tokens-source (:kind c)))
@@ -877,14 +877,14 @@
   (t/testing "main's change stays when the branch leaves the source alone"
     (let [base (source-data nil)
           main (source-data lib-a)]
-      (t/is (empty? (:changes (bm/compute-merge base main base :branch->main))))
+      (t/is (empty? (:changes (bm/compute-merge base main base :branch->source))))
       (t/is (empty? (:changes (bm/compute-changes base main base)))))))
 
 (t/deftest compute-merge-tokens-source-self-id-reads-as-self
   ;; a source naming the file itself is the same as no source
   (let [base   (source-data nil)
         branch (source-data main-file-id)]
-    (t/is (empty? (:changes (bm/compute-merge base base branch :branch->main))))
+    (t/is (empty? (:changes (bm/compute-merge base base branch :branch->source))))
     (t/is (empty? (:changes (bm/compute-changes base base branch))))))
 
 (t/deftest tokens-source-merges-after-branch-remap
@@ -902,15 +902,15 @@
   (let [base   (source-data nil)
         main   (source-data lib-a)
         branch (source-data lib-b)
-        r      (bm/compute-merge base main branch :branch->main)
+        r      (bm/compute-merge base main branch :branch->source)
         c      (first (:conflicts r))
         apply* (fn [resolutions]
                  (:tokens-source
                   (cfc/process-changes main (:changes (bm/compute-changes base main branch resolutions)))))]
     (t/is (= 1 (-> r :stats :conflicts)))
     (t/is (= {:kind :tokens-source :id :tokens-source :reason :modify-modify
-              :base nil :main lib-a :branch lib-b}
-             (select-keys c [:kind :id :reason :base :main :branch])))
+              :base nil :source lib-a :branch lib-b}
+             (select-keys c [:kind :id :reason :base :source :branch])))
     (t/is (bm/conflict-resolved? c :branch))
     (t/testing "unresolved: main keeps its source"
       (t/is (= lib-a (apply* {}))))
@@ -920,7 +920,7 @@
 (t/deftest compute-changes-tokens-source-update-from-main
   (let [base (source-data nil)
         main (source-data lib-a)
-        r    (bm/compute-merge base main base :main->branch)
+        r    (bm/compute-merge base main base :source->branch)
         {:keys [changes unsupported]} (bm/compute-changes base base main {} r)]
     (t/is (= [:tokens-source] (map :kind (:changes r))))
     (t/is (empty? unsupported))
@@ -1066,7 +1066,7 @@
                          (filterv #(= :set-tokens-status (:type %))
                                   (:changes (bm/compute-changes base main branch resolutions))))]
     (t/is (= #{:token-active-themes :token-active-sets}
-             (set (map :kind (:conflicts (bm/compute-merge base main branch :branch->main))))))
+             (set (map :kind (:conflicts (bm/compute-merge base main branch :branch->source))))))
     (t/is (= [] (status-changes {})) "an unresolved conflict keeps main's status")
     (t/is (= [{:type :set-tokens-status :theme-ids #{th-b} :set-ids #{sid-b}}]
              (status-changes {:active-themes :branch :active-sets :branch})))))
@@ -1084,7 +1084,7 @@
         branch (mkdata {:f1 {:id :f1 :name "Frame" :type :frame :shapes [:a :b]}
                         :a  {:id :a :name "A"}
                         :b  {:id :b :name "B" :parent-id :f1 :frame-id :f1}})
-        r      (bm/compute-merge base main branch :branch->main)]
+        r      (bm/compute-merge base main branch :branch->source)]
     (t/is (= [] (:conflicts r)))
     (t/is (= #{:b} (set (map :id (:changes r)))))))
 
@@ -1094,7 +1094,7 @@
   (let [base   (mkdata {:s1 {:id :s1 :name "A" :touched nil}})
         main   (mkdata {:s1 {:id :s1 :name "A" :touched #{:fill-group}}})
         branch (mkdata {})
-        r      (bm/compute-merge base main branch :branch->main)]
+        r      (bm/compute-merge base main branch :branch->source)]
     (t/is (= [] (:conflicts r)))
     (t/is (= [:deleted] (mapv :status (:changes r))))))
 
@@ -1108,7 +1108,7 @@
         branch (mkdata {:f1 {:id :f1 :name "Frame RENAMED" :type :frame :shapes [:c1]
                              :parent-id uuid/zero :frame-id uuid/zero}
                         :c1 {:id :c1 :name "Child" :parent-id :f1 :frame-id :f1}})
-        {:keys [conflicts]} (bm/compute-merge base main branch :branch->main)
+        {:keys [conflicts]} (bm/compute-merge base main branch :branch->source)
         {:keys [changes]}   (bm/compute-changes base main branch {:f1 :branch})
         adds (into {} (comp (filter #(= :add-obj (:type %)))
                             (map (juxt :id identity)))
@@ -1123,11 +1123,11 @@
     (t/is (= "Frame RENAMED" (get-in adds [:f1 :obj :name])))))
 
 (t/deftest compute-changes-modify-delete-resolved-main-drops-shape
-  ;; same conflict resolved to :main -> nothing is re-added
+  ;; same conflict resolved to :source -> nothing is re-added
   (let [base   (mkdata {:s1 {:id :s1 :name "A"}})
         main   (mkdata {})
         branch (mkdata {:s1 {:id :s1 :name "A2"}})
-        {:keys [changes]} (bm/compute-changes base main branch {:s1 :main})]
+        {:keys [changes]} (bm/compute-changes base main branch {:s1 :source})]
     (t/is (= [] (filterv #(= :add-obj (:type %)) changes)))))
 
 ;;; --- Regression tests: order resolution ids ---
@@ -1142,7 +1142,7 @@
         base   (pages-data pi [p1 p2 p3])
         main   (pages-data pi [p2 p1 p3])
         branch (pages-data pi [p3 p1 p2])
-        {:keys [conflicts]} (bm/compute-merge base main branch :branch->main)
+        {:keys [conflicts]} (bm/compute-merge base main branch :branch->source)
         conflict (first (filter #(= :page-order (:kind %)) conflicts))
         {:keys [changes]} (bm/compute-changes base main branch {:page-order :branch})]
     (t/is (= :page-order (:id conflict)))
@@ -1162,7 +1162,7 @@
         base   (mk {:id p2 :name "P2" :objects {}})
         main   (mk {:id p2 :name "P2" :objects {s1 {:id s1 :name "New"}}})
         branch (mk nil)
-        {:keys [conflicts]} (bm/compute-merge base main branch :branch->main)
+        {:keys [conflicts]} (bm/compute-merge base main branch :branch->source)
         conflict (first (filter #(= :page (:kind %)) conflicts))]
     (t/is (some? conflict))
     (t/is (= :delete-modify (:reason conflict)))
@@ -1170,8 +1170,8 @@
     ;; resolved to :branch -> the page is deleted
     (let [{:keys [changes]} (bm/compute-changes base main branch {p2 :branch})]
       (t/is (= [p2] (mapv :id (filter #(= :del-page (:type %)) changes)))))
-    ;; resolved to :main -> the page is kept, nothing emitted for it
-    (let [{:keys [changes]} (bm/compute-changes base main branch {p2 :main})]
+    ;; resolved to :source -> the page is kept, nothing emitted for it
+    (let [{:keys [changes]} (bm/compute-changes base main branch {p2 :source})]
       (t/is (= [] (filterv #(= :del-page (:type %)) changes))))))
 
 (t/deftest page-deleted-in-main-edited-in-branch-restores
@@ -1182,7 +1182,7 @@
         base   (pages-data (pi-with {}) [p1 p2])
         main   (pages-data {p1 {:id p1 :name "P1" :objects {}}} [p1])
         branch (pages-data (pi-with {s1 {:id s1 :name "New"}}) [p1 p2])
-        {:keys [conflicts]} (bm/compute-merge base main branch :branch->main)
+        {:keys [conflicts]} (bm/compute-merge base main branch :branch->source)
         conflict (first (filter #(= :page (:kind %)) conflicts))]
     (t/is (= :modify-delete (:reason conflict)))
     ;; resolved to :branch -> the full branch page is re-added
@@ -1198,7 +1198,7 @@
             p2 {:id p2 :name "P2" :objects {}}}
         base   (pages-data pi [p1 p2])
         branch (pages-data {p1 {:id p1 :name "P1" :objects {}}} [p1])
-        {:keys [conflicts]} (bm/compute-merge base base branch :branch->main)
+        {:keys [conflicts]} (bm/compute-merge base base branch :branch->source)
         {:keys [changes]}   (bm/compute-changes base base branch)]
     (t/is (= [] conflicts))
     (t/is (= [p2] (mapv :id (filter #(= :del-page (:type %)) changes))))))
@@ -1215,16 +1215,16 @@
         base   (with-tokens base-lib)
         main   (with-tokens main-lib)
         branch (with-tokens branch-lib)
-        {:keys [conflicts]} (bm/compute-merge base main branch :branch->main)
+        {:keys [conflicts]} (bm/compute-merge base main branch :branch->source)
         conflict (first (filter #(= :token-set (:kind %)) conflicts))]
     (t/is (some? conflict))
     (t/is (= :delete-modify (:reason conflict)))
     ;; no redundant token-level conflicts for the deleted set
     (t/is (= [] (filterv #(= :token (:kind %)) conflicts)))
-    ;; resolved to :branch -> set deleted; to :main -> set (and token) kept
+    ;; resolved to :branch -> set deleted; to :source -> set (and token) kept
     (let [{:keys [changes]} (bm/compute-changes base main branch {sid :branch})]
       (t/is (some #(and (= :set-token-set (:type %)) (nil? (:attrs %))) changes)))
-    (let [{:keys [changes]} (bm/compute-changes base main branch {sid :main})]
+    (let [{:keys [changes]} (bm/compute-changes base main branch {sid :source})]
       (t/is (= [] (filterv #(= :set-token-set (:type %)) changes)))
       (t/is (= [] (filterv #(= :set-token (:type %)) changes))))))
 
@@ -1237,7 +1237,7 @@
         base   (with-tokens base-lib)
         main   (with-tokens main-lib)
         branch (with-tokens branch-lib)
-        {:keys [conflicts]} (bm/compute-merge base main branch :branch->main)
+        {:keys [conflicts]} (bm/compute-merge base main branch :branch->source)
         conflict (first (filter #(= :token-set (:kind %)) conflicts))]
     (t/is (= :modify-delete (:reason conflict)))
     ;; resolved to :branch -> the set is re-created WITH its tokens
@@ -1258,7 +1258,7 @@
         branch (mkdata {:s1 {:id :s1 :name "A" :x 100
                              :selrect {:x 100} :points [{:x 100}]}})
         {:keys [changes]} (bm/compute-changes base main branch
-                                              {:s1 {:x :branch :name :main}})
+                                              {:s1 {:x :branch :name :source}})
         ops (->> changes
                  (filter #(= :mod-obj (:type %)))
                  first :operations
@@ -1278,32 +1278,32 @@
         base    (mkdata {:s1 (mk "A")})
         main    (mkdata {:s1 (mk "MAIN")})
         branch  (mkdata {:s1 (mk "BRANCH")})
-        {:keys [conflicts]} (bm/compute-merge base main branch :branch->main)
+        {:keys [conflicts]} (bm/compute-merge base main branch :branch->source)
         c       (first conflicts)]
     (t/is (= :modify-modify (:reason c)))
     ;; changed-attrs stay noise-free (no derived attrs)
     (t/is (= #{:name} (set (keys (:changed-attrs c)))))
     ;; but every side carries the full shape, caches included
     (t/is (= selrect (get-in c [:base :selrect])))
-    (t/is (= selrect (get-in c [:main :selrect])))
+    (t/is (= selrect (get-in c [:source :selrect])))
     (t/is (= selrect (get-in c [:branch :selrect])))
-    (t/is (= "MAIN" (get-in c [:main :name])))
+    (t/is (= "MAIN" (get-in c [:source :name])))
     (t/is (= "BRANCH" (get-in c [:branch :name])))))
 
-(t/deftest main->branch-conflict-sides-name-the-documents
-  ;; A conflict descriptor names the DOCUMENTS in both directions: `:main`
+(t/deftest source->branch-conflict-sides-name-the-documents
+  ;; A conflict descriptor names the DOCUMENTS in both directions: `:source`
   ;; is main's value and `:branch` the branch's, the `:changed-attrs`
   ;; pairs included.
   (let [base   (mkdata {:s1 {:id :s1 :name "A" :fill "red"}})
         main   (mkdata {:s1 {:id :s1 :name "A" :fill "green"}})
         branch (mkdata {:s1 {:id :s1 :name "A" :fill "blue"}})
-        r      (bm/compute-merge base main branch :main->branch)
+        r      (bm/compute-merge base main branch :source->branch)
         c      (first (:conflicts r))]
     (t/is (= 1 (-> r :stats :conflicts)))
     (t/is (= :modify-modify (:reason c)))
-    (t/is (= "green" (get-in c [:main :fill])))
+    (t/is (= "green" (get-in c [:source :fill])))
     (t/is (= "blue" (get-in c [:branch :fill])))
-    (t/is (= {:main "green" :branch "blue"} (get-in c [:changed-attrs :fill])))))
+    (t/is (= {:source "green" :branch "blue"} (get-in c [:changed-attrs :fill])))))
 
 (t/deftest delete-reasons-name-the-same-side-in-both-directions
   ;; `:delete-modify` names the branch's deletion against main's
@@ -1312,20 +1312,20 @@
   (let [base   (mkdata {:s1 {:id :s1 :name "A" :fill "red"}})
         main   (mkdata {:s1 {:id :s1 :name "A" :fill "green"}})
         branch (mkdata {})
-        r      (bm/compute-merge base main branch :main->branch)
+        r      (bm/compute-merge base main branch :source->branch)
         c      (first (:conflicts r))]
     (t/is (= 1 (-> r :stats :conflicts)))
     (t/is (= :delete-modify (:reason c)))
-    (t/is (= "green" (get-in c [:main :fill])))
+    (t/is (= "green" (get-in c [:source :fill])))
     (t/is (nil? (:branch c))))
   (let [base   (mkdata {:s1 {:id :s1 :name "A" :fill "red"}})
         main   (mkdata {})
         branch (mkdata {:s1 {:id :s1 :name "A" :fill "blue"}})
-        r      (bm/compute-merge base main branch :main->branch)
+        r      (bm/compute-merge base main branch :source->branch)
         c      (first (:conflicts r))]
     (t/is (= 1 (-> r :stats :conflicts)))
     (t/is (= :modify-delete (:reason c)))
-    (t/is (nil? (:main c)))
+    (t/is (nil? (:source c)))
     (t/is (= "blue" (get-in c [:branch :fill])))))
 
 (t/deftest remap-changes-rewrites-a-del-media-id
@@ -1424,25 +1424,25 @@
   (let [f (uuid/next) a (uuid/next) b (uuid/next) m (uuid/next)
         base   (tree-data [f nil :frame "F"] [a f :rect "A"] [b f :rect "B"])
         branch (tree-edit base assoc-in [f :shapes] [b a])
-        r      (bm/compute-merge base base branch :branch->main)
+        r      (bm/compute-merge base base branch :branch->source)
         entry  (first (:changes r))
         {:keys [data unsupported]} (merged base base branch {})]
     (t/is (= 1 (-> r :stats :modified)))
     (t/is (= [f] (mapv :id (:changes r))))
-    (t/is (= {:main [a b] :branch [b a]} (get-in entry [:changed-attrs :shapes])))
+    (t/is (= {:source [a b] :branch [b a]} (get-in entry [:changed-attrs :shapes])))
     (t/is (empty? unsupported))
     (t/is (= [b a] (tree-children data f)))
 
     (t/testing "main adding a child to F is not a conflict and keeps its slot"
       (let [main (tree-add base m f :rect "M")
-            r    (bm/compute-merge base main branch :branch->main)]
+            r    (bm/compute-merge base main branch :branch->source)]
         (t/is (= [] (:conflicts r)))
         (t/is (= [b a m] (tree-children (:data (merged base main branch {})) f)))))
 
     (t/testing "update from main reports and applies main's reorder"
       (let [main (tree-edit base assoc-in [f :shapes] [b a])
-            r    (bm/compute-merge base main base :main->branch)]
-        (t/is (= {:main [b a] :branch [a b]}
+            r    (bm/compute-merge base main base :source->branch)]
+        (t/is (= {:source [b a] :branch [a b]}
                  (get-in (first (:changes r)) [:changed-attrs :shapes])))
         (t/is (= [b a] (tree-children (:data (merged base base main {})) f)))))))
 
@@ -1453,12 +1453,12 @@
         base   (tree-data [f nil :frame "F"] [a f :rect "A"] [b f :rect "B"] [c f :rect "C"])
         main   (tree-edit base assoc-in [f :shapes] [c a b])
         branch (tree-edit base assoc-in [f :shapes] [b a c])
-        {:keys [conflicts]} (bm/compute-merge base main branch :branch->main)
+        {:keys [conflicts]} (bm/compute-merge base main branch :branch->source)
         cf     (first conflicts)]
     (t/is (= [[f :modify-modify]] (mapv (juxt :id :reason) conflicts)))
-    (t/is (= {:main [c a b] :branch [b a c]} (get-in cf [:changed-attrs :shapes])))
+    (t/is (= {:source [c a b] :branch [b a c]} (get-in cf [:changed-attrs :shapes])))
     (t/is (= [b a c] (tree-children (:data (merged base main branch {f :branch})) f)))
-    (t/is (= [c a b] (tree-children (:data (merged base main branch {f :main})) f)))
+    (t/is (= [c a b] (tree-children (:data (merged base main branch {f :source})) f)))
     (t/is (= [b a c] (tree-children (:data (merged base main branch {f {:shapes :branch}})) f)))))
 
 (t/deftest same-parent-reorder-refuse
@@ -1468,7 +1468,7 @@
     (let [f (uuid/next) a (uuid/next) b (uuid/next)
           base   (tree-data [f nil :frame "F"] [a f :rect "A"] [b f :rect "B"])
           branch (tree-edit base assoc-in [f :shapes] [b a])
-          r      (bm/compute-merge base base branch :branch->main)]
+          r      (bm/compute-merge base base branch :branch->source)]
       ;; every summary entry carries its `change-key` as well (the compare
       ;; panel selects by it); the refusal content is what this asserts
       (t/is (= [{:kind :shape-order :status :unsupported :id f :page-id (tree-page-id base)
@@ -1483,7 +1483,7 @@
     (let [f (uuid/next) a (uuid/next) b (uuid/next)
           base   (tree-data [f nil :frame "F"] [a f :rect "A"] [b f :rect "B"])
           branch (tree-edit base assoc-in [f :shapes] [b a])
-          r      (bm/compute-merge base base branch :branch->main)]
+          r      (bm/compute-merge base base branch :branch->source)]
       (t/is (= {:added 0 :modified 0 :deleted 0 :conflicts 0} (:stats r)))
       (t/is (= [a b] (tree-children (:data (merged base base branch {})) f))))))
 
@@ -1504,12 +1504,12 @@
 (t/deftest addition-under-deleted-parent-conflict
   ;; ws1: main deletes frame P, the branch adds M inside P. Default
   ;; `:conflict`: a `:modify-delete` conflict on P; `:branch` restores P as
-  ;; the branch has it, `:main` drops M.
+  ;; the branch has it, `:source` drops M.
   (let [p (uuid/next) c (uuid/next) m (uuid/next)
         base   (tree-data [p nil :frame "P"] [c p :rect "C"])
         main   (tree-delete base p)
         branch (tree-add base m p :rect "M")
-        r      (bm/compute-merge base main branch :branch->main)
+        r      (bm/compute-merge base main branch :branch->source)
         cf     (first (:conflicts r))]
     (t/is (= [[p :modify-delete]] (mapv (juxt :id :reason) (:conflicts r))))
     (t/is (= [{:id m :label "M"}] (:subtree-edits cf)))
@@ -1519,7 +1519,7 @@
       (t/is (= [p] (get-in objs [uuid/zero :shapes])))
       (t/is (= [c m] (get-in objs [p :shapes])))
       (t/is (= p (get-in objs [m :parent-id]))))
-    (let [objs (tree-objects (:data (merged base main branch {p :main})))]
+    (let [objs (tree-objects (:data (merged base main branch {p :source})))]
       (t/is (= #{uuid/zero} (set (keys objs)))))))
 
 (t/deftest addition-under-deleted-parent-conflict-lifts-restores
@@ -1530,7 +1530,7 @@
         base   (tree-data [p nil :frame "P"] [c p :rect "C"])
         main   (tree-delete base p)
         branch (tree-edit base assoc-in [c :name] "C renamed")
-        r      (bm/compute-merge base main branch :branch->main)]
+        r      (bm/compute-merge base main branch :branch->source)]
     (t/is (= [[p :modify-delete]] (mapv (juxt :id :reason) (:conflicts r))))
     (t/is (= [{:id c :label "C renamed"}] (:subtree-edits (first (:conflicts r)))))
     (let [objs (tree-objects (:data (merged base main branch {p :branch})))]
@@ -1546,7 +1546,7 @@
           base   (tree-data [p nil :frame "P"] [c p :rect "C"])
           main   (tree-delete base p)
           branch (tree-add base m p :rect "M")
-          r      (bm/compute-merge base main branch :branch->main)]
+          r      (bm/compute-merge base main branch :branch->source)]
       ;; every summary entry carries its `change-key` as well (the compare
       ;; panel selects by it); the refusal content is what this asserts
       (t/is (= [{:kind :shape-orphan :status :unsupported :id p :page-id (tree-page-id base)
@@ -1556,9 +1556,9 @@
       (t/is (= #{:shape-orphan} (:unsupported (bm/compute-changes base main branch {}))))
       (let [branch (tree-edit base assoc-in [c :name] "C renamed")]
         (t/is (= [[c :modify-delete]]
-                 (mapv (juxt :id :reason) (:conflicts (bm/compute-merge base main branch :branch->main)))))
+                 (mapv (juxt :id :reason) (:conflicts (bm/compute-merge base main branch :branch->source)))))
         (t/is (= #{:shape-orphan} (:unsupported (bm/compute-changes base main branch {c :branch}))))
-        (t/is (empty? (:unsupported (bm/compute-changes base main branch {c :main}))))))))
+        (t/is (empty? (:unsupported (bm/compute-changes base main branch {c :source}))))))))
 
 (t/deftest addition-under-deleted-parent-reparent-to-ancestor
   ;; `:reparent-to-ancestor`: main deletes P inside board G; the branch's
@@ -1568,7 +1568,7 @@
           base   (tree-data [g nil :frame "G"] [h g :rect "H"] [p g :frame "P"] [c p :rect "C"])
           main   (tree-delete base p)
           branch (tree-add base m p :rect "M")
-          r      (bm/compute-merge base main branch :branch->main)
+          r      (bm/compute-merge base main branch :branch->source)
           {:keys [data unsupported]} (merged base main branch {})
           objs   (tree-objects data)]
       (t/is (= [] (:conflicts r)))
@@ -1589,7 +1589,7 @@
           main   (tree-delete base p)
           branch (tree-add base m p :rect "M")
           objs   (tree-objects (:data (merged base main branch {})))]
-      (t/is (= [] (:conflicts (bm/compute-merge base main branch :branch->main))))
+      (t/is (= [] (:conflicts (bm/compute-merge base main branch :branch->source))))
       (t/is (= [m] (get-in objs [uuid/zero :shapes])))
       (t/is (= uuid/zero (get-in objs [m :parent-id]))))))
 
@@ -1606,14 +1606,14 @@
     {:f f :c c :d d :n n :k k :base base :main main :branch branch}))
 
 (t/deftest container-delete-over-main-edits-conflict
-  ;; default `:conflict`: one `:delete-modify` conflict on F. `:main` keeps
+  ;; default `:conflict`: one `:delete-modify` conflict on F. `:source` keeps
   ;; F and its subtree as main has them, `:branch` deletes it all.
   (let [{:keys [f c d n k base main branch]} (container-delete-case)
-        r (bm/compute-merge base main branch :branch->main)]
+        r (bm/compute-merge base main branch :branch->source)]
     (t/is (= [[f :delete-modify]] (mapv (juxt :id :reason) (:conflicts r))))
     (t/is (= #{c n} (set (map :id (:subtree-edits (first (:conflicts r)))))))
     (t/is (= [] (:changes r)))
-    (let [objs (tree-objects (:data (merged base main branch {f :main})))]
+    (let [objs (tree-objects (:data (merged base main branch {f :source})))]
       (t/is (= [k f] (get-in objs [uuid/zero :shapes])))
       (t/is (= [c d n] (get-in objs [f :shapes])))
       (t/is (= "#FF0000" (get-in objs [c :fills 0 :fill-color]))))
@@ -1622,14 +1622,14 @@
 
 (t/deftest container-delete-over-main-edits-expand
   ;; `:expand`: only what the branch deleted goes; main's addition N, and
-  ;; C when its conflict is resolved to `:main`, move to F's parent where
+  ;; C when its conflict is resolved to `:source`, move to F's parent where
   ;; F was
   (binding [bm/*policies* (policies :container-delete-over-main-edits :expand)]
     (let [{:keys [f c d n k base main branch]} (container-delete-case)
-          r (bm/compute-merge base main branch :branch->main)]
+          r (bm/compute-merge base main branch :branch->source)]
       (t/is (= [[c :delete-modify]] (mapv (juxt :id :reason) (:conflicts r))))
       (t/is (= #{f d} (set (map :id (:changes r)))))
-      (let [objs (tree-objects (:data (merged base main branch {c :main})))]
+      (let [objs (tree-objects (:data (merged base main branch {c :source})))]
         (t/is (= [k c n] (get-in objs [uuid/zero :shapes])))
         (t/is (= #{uuid/zero k c n} (set (keys objs))))
         (t/is (= uuid/zero (get-in objs [n :frame-id])))
@@ -1641,10 +1641,10 @@
   ;; `:cascade`: F goes with its whole subtree, main's edits included
   (binding [bm/*policies* (policies :container-delete-over-main-edits :cascade)]
     (let [{:keys [f c d k base main branch]} (container-delete-case)
-          r (bm/compute-merge base main branch :branch->main)]
+          r (bm/compute-merge base main branch :branch->source)]
       (t/is (= [[c :delete-modify]] (mapv (juxt :id :reason) (:conflicts r))))
       (t/is (= #{f d} (set (map :id (filter #(= :deleted (:status %)) (:changes r))))))
-      (let [objs (tree-objects (:data (merged base main branch {c :main})))]
+      (let [objs (tree-objects (:data (merged base main branch {c :source})))]
         (t/is (= #{uuid/zero k} (set (keys objs))))))))
 
 ;;; --- Regression tests: mov-page indexes ---
@@ -1776,7 +1776,7 @@
                                              (mkdata {})
                                              (mkdata {})
                                              (mkdata {id {:id id :name "A"}})
-                                             :branch->main)))))))))
+                                             :branch->source)))))))))
 
 (t/deftest excluded-clean-change-is-not-emitted
   (let [a (uuid/next) b (uuid/next)
@@ -1801,14 +1801,14 @@
   (let [a (uuid/next)
         base   (tree-data [a nil :rect "A"])
         branch (tree-edit base assoc-in [a :name] "A2")
-        summary (bm/compute-merge base base branch :branch->main)
+        summary (bm/compute-merge base base branch :branch->source)
         ka      (bm/change-key {:kind :shape :page-id (uuid/custom 7 1) :id a})]
     (t/is (seq (:changes summary)))
     (t/is (bm/nothing-to-merge? summary #{ka}))
     (t/is (not (bm/nothing-to-merge? summary #{})))
     (t/is (not (bm/nothing-to-merge? summary #{(str ka "-stale")})))
     (t/testing "a summary with no entries is not a refusal: the merge closes the branch"
-      (t/is (not (bm/nothing-to-merge? (bm/compute-merge base base base :branch->main) #{}))))))
+      (t/is (not (bm/nothing-to-merge? (bm/compute-merge base base base :branch->source) #{}))))))
 
 (t/deftest excluded-conflict-resolves-to-the-target
   (let [a (uuid/next)
@@ -1817,7 +1817,7 @@
         main   (tree-edit base assoc-in [a :name] "main")
         branch (tree-edit base assoc-in [a :name] "branch")
         ka     (bm/change-key {:kind :shape :page-id pid :id a})]
-    (t/is (= 1 (count (:conflicts (bm/compute-merge base main branch :branch->main)))))
+    (t/is (= 1 (count (:conflicts (bm/compute-merge base main branch :branch->source)))))
     (t/testing "a :branch resolution still applies while the change is included"
       (t/is (= 1 (count (:changes (bm/compute-changes base main branch {a :branch} nil #{}))))))
     (t/testing "the exclusion is the recorded choice: the target keeps its value"
@@ -1929,9 +1929,9 @@
   (let [base   (mkdata {:k (copy-shape "red")})
         main   (mkdata {:k (copy-shape "blue")})
         branch (mkdata {:k (copy-shape "green")})
-        r      (bm/compute-merge base main branch :branch->main)]
+        r      (bm/compute-merge base main branch :branch->source)]
     (t/is (empty? (:conflicts r)))
-    (t/is (= [[:k :settled {:attrs {:fills {:side :main :reason :follows-component}}
+    (t/is (= [[:k :settled {:attrs {:fills {:side :source :reason :follows-component}}
                             :token-slots {} :open-attrs #{} :open-token-slots #{}}]]
              (mapv (juxt :id :status :settled) (:changes r))))
     (t/is (= {:added 0 :modified 0 :deleted 0 :conflicts 0} (:stats r)))
@@ -1941,7 +1941,7 @@
   (let [base   (mkdata {:k (copy-shape "red")})
         main   (mkdata {:k (copy-shape "blue")})
         branch (mkdata {:k (copy-shape "green" :touched #{:fill-group})})
-        r      (bm/compute-merge base main branch :branch->main)
+        r      (bm/compute-merge base main branch :branch->source)
         ops    (copy-ops (:changes (bm/compute-changes base main branch {} r)))]
     (t/is (empty? (:conflicts r)))
     (t/testing "the summary reports the override as a change the merge applies"
@@ -1956,9 +1956,9 @@
   (let [base   (mkdata {:k (copy-shape "red")})
         main   (mkdata {:k (copy-shape "blue" :touched #{:fill-group})})
         branch (mkdata {:k (copy-shape "green")})
-        r      (bm/compute-merge base main branch :branch->main)]
+        r      (bm/compute-merge base main branch :branch->source)]
     (t/is (empty? (:conflicts r)))
-    (t/is (= [[:k :settled {:fills {:side :main :reason :override-main}}]]
+    (t/is (= [[:k :settled {:fills {:side :source :reason :override-source}}]]
              (mapv (juxt :id :status (comp :attrs :settled)) (:changes r))))
     (t/is (empty? (copy-ops (:changes (bm/compute-changes base main branch {} r)))))))
 
@@ -1966,7 +1966,7 @@
   (let [base   (mkdata {:k (copy-shape "red")})
         main   (mkdata {:k (copy-shape "blue" :touched #{:fill-group})})
         branch (mkdata {:k (copy-shape "green" :touched #{:fill-group})})
-        r      (bm/compute-merge base main branch :branch->main)]
+        r      (bm/compute-merge base main branch :branch->source)]
     (t/is (= [:k] (mapv :id (:conflicts r))))
     (t/is (= #{:fills} (set (keys (:changed-attrs (first (:conflicts r)))))))
     (t/testing "resolved to the branch, the copy takes its value and override"
@@ -1981,8 +1981,8 @@
         main   (mkdata {:k (copy-shape "blue" :opacity 1 :touched #{:fill-group})})
         branch (mkdata {:k (copy-shape "green" :opacity 0.5
                                        :touched #{:fill-group :layer-effects-group})})
-        r      (bm/compute-merge base main branch :branch->main)
-        ops    (copy-ops (:changes (bm/compute-changes base main branch {:k :main} r)))]
+        r      (bm/compute-merge base main branch :branch->source)
+        ops    (copy-ops (:changes (bm/compute-changes base main branch {:k :source} r)))]
     (t/is (= #{:fills} (set (keys (:changed-attrs (first (:conflicts r)))))))
     (t/is (= [{:type :set :attr :opacity :val 0.5 :ignore-touched true}
               {:type :set-touched :touched #{:fill-group :layer-effects-group}}]
@@ -1993,7 +1993,7 @@
   (let [base   (mkdata {:k (copy-shape "red")})
         main   (mkdata {:k (copy-shape "blue" :touched #{:fill-group})})
         branch (mkdata {:k (copy-shape "green")})
-        r      (bm/compute-merge base main branch :main->branch)
+        r      (bm/compute-merge base main branch :source->branch)
         ops    (copy-ops (:changes (bm/compute-changes base branch main {} r)))]
     (t/is (empty? (:conflicts r)))
     (t/is (= [{:type :set :attr :fills :val [{:fill-color "blue"}] :ignore-touched true}
@@ -2014,7 +2014,7 @@
       (t/is (= [{:type :set :attr :fills :val [{:fill-color "white"}] :ignore-touched true}
                 {:type :set-touched :touched nil}]
                (copy-ops (:changes (bm/compute-changes base base branch {}
-                                                       (bm/compute-merge base branch base :main->branch)))))))))
+                                                       (bm/compute-merge base branch base :source->branch)))))))))
 
 (t/deftest clean-copy-change-marks-no-override
   ;; the branch synced K from its component and main left K alone: the
@@ -2039,9 +2039,9 @@
   (let [base   (mkdata {:k (tokens-copy {})})
         main   (mkdata {:k (tokens-copy {:fill "blue"})})
         branch (mkdata {:k (tokens-copy {:fill "green"})})
-        r      (bm/compute-merge base main branch :branch->main)]
+        r      (bm/compute-merge base main branch :branch->source)]
     (t/is (empty? (:conflicts r)))
-    (t/is (= [[:k :settled {:fill {:side :main :reason :follows-component}}]]
+    (t/is (= [[:k :settled {:fill {:side :source :reason :follows-component}}]]
              (mapv (juxt :id :status (comp :token-slots :settled)) (:changes r))))
     (t/is (empty? (copy-ops (:changes (bm/compute-changes base main branch {} r)))))))
 
@@ -2051,7 +2051,7 @@
   (let [base   (mkdata {:k (tokens-copy {})})
         main   (mkdata {:k (tokens-copy {:fill "yellow"} :touched #{:fill-group})})
         branch (mkdata {:k (tokens-copy {:r1 "round"} :touched #{:radius-group})})
-        r      (bm/compute-merge base main branch :branch->main)]
+        r      (bm/compute-merge base main branch :branch->source)]
     (t/is (empty? (:conflicts r)))
     (t/is (= [[:k :modified #{:applied-tokens}]]
              (mapv (juxt :id :status (comp set keys :changed-attrs)) (:changes r))))
@@ -2067,13 +2067,13 @@
         main   (mkdata {:k (tokens-copy {:fill "yellow"} :touched #{:fill-group})})
         branch (mkdata {:k (tokens-copy {:fill "red" :r1 "round"}
                                         :touched #{:fill-group :radius-group})})
-        r      (bm/compute-merge base main branch :branch->main)]
+        r      (bm/compute-merge base main branch :branch->source)]
     (t/is (= [:k] (mapv :id (:conflicts r))))
     (t/is (contains? (:changed-attrs (first (:conflicts r))) :applied-tokens))
     (t/testing "resolved to main, the radius slot still comes from the branch"
       (t/is (= {:fill "yellow" :r1 "round"}
                (->> (copy-ops (:changes (bm/compute-changes base main branch
-                                                            {:k {:applied-tokens :main :fills :main}}
+                                                            {:k {:applied-tokens :source :fills :source}}
                                                             r)))
                     (filter #(= :applied-tokens (:attr %)))
                     first :val))))
@@ -2089,7 +2089,7 @@
   (let [base   (mkdata {:k (tokens-copy {})})
         main   (mkdata {:k (tokens-copy {:fill "red"} :touched #{:fill-group})})
         branch (mkdata {:k (tokens-copy {:fill "green"})})
-        r      (bm/compute-merge base main branch :main->branch)]
+        r      (bm/compute-merge base main branch :source->branch)]
     (t/is (empty? (:conflicts r)))
     (t/is (= {:fill "red"}
              (->> (copy-ops (:changes (bm/compute-changes base branch main {} r)))
@@ -2146,14 +2146,14 @@
      (let [file   (component-with-copy)
            branch (tho/update-color file :main-child "#00ff00")
            main   (thc/instantiate-component file :c1 :copy2)
-           r      (merge-copies (:data file) (:data main) (:data branch) :branch->main)]
+           r      (merge-copies (:data file) (:data main) (:data branch) :branch->source)]
        (t/is (= [{:component-id (thi/id :c1) :main-id (thi/id :main-root)}]
                 (mapv #(select-keys % [:component-id :main-id]) (:copies r))))
        (t/is (= {(thi/id :copy1) {:follows #{:fill-group} :keeps {} :token-slots {}}
                  (thi/id :copy2) {:follows #{:fill-group} :keeps {} :token-slots {}}}
                 (copies-of r)))
        (t/testing "without `:copies? true` the summary carries no copies"
-         (t/is (not (contains? (bm/compute-merge (:data file) (:data main) (:data branch) :branch->main)
+         (t/is (not (contains? (bm/compute-merge (:data file) (:data main) (:data branch) :branch->source)
                                :copies))))))))
 
 (t/deftest copies-show-the-override-one-side-keeps
@@ -2163,11 +2163,11 @@
            edited   (tho/update-color file :main-child "#00ff00")
            override (tho/update-bottom-color file :copy1 "#ff0000")]
        (t/testing "merging: the branch edits the component, main overrides the copy"
-         (let [r (merge-copies (:data file) (:data override) (:data edited) :branch->main)]
-           (t/is (= {(thi/id :copy1) {:follows #{} :keeps {:fill-group :main} :token-slots {}}}
+         (let [r (merge-copies (:data file) (:data override) (:data edited) :branch->source)]
+           (t/is (= {(thi/id :copy1) {:follows #{} :keeps {:fill-group :source} :token-slots {}}}
                     (copies-of r)))))
        (t/testing "updating: main edits the component, the branch overrides the copy"
-         (let [r (merge-copies (:data file) (:data edited) (:data override) :main->branch)]
+         (let [r (merge-copies (:data file) (:data edited) (:data override) :source->branch)]
            (t/is (= {(thi/id :copy1) {:follows #{} :keeps {:fill-group :branch} :token-slots {}}}
                     (copies-of r)))))))))
 
@@ -2179,7 +2179,7 @@
          (t/testing (name label)
            (let [main   (tho/update-color file label "#0000ff")
                  branch (tho/update-color file label "#00ff00")
-                 r      (merge-copies (:data file) (:data main) (:data branch) :branch->main)]
+                 r      (merge-copies (:data file) (:data main) (:data branch) :branch->source)]
              (t/is (= [[(thi/id label) 1]]
                       (mapv (juxt :id :copies-affected) (:conflicts r)))))))
        (t/testing "a copy keeping its override of the conflict's group is not affected"
@@ -2191,7 +2191,7 @@
                                 (tho/update-bottom-color :copy1 "#ff0000")
                                 (tho/update-color label "#0000ff"))
                      branch (tho/update-color base label "#00ff00")
-                     r      (merge-copies (:data base) (:data main) (:data branch) :branch->main)]
+                     r      (merge-copies (:data base) (:data main) (:data branch) :branch->source)]
                  (t/is (= [[(thi/id label) affected]]
                           (mapv (juxt :id :copies-affected) (:conflicts r)))))))))
        (t/testing "no copy follows the conflict's group: none is affected"
@@ -2199,7 +2199,7 @@
                           (tho/update-bottom-color :copy1 "#ff0000")
                           (tho/update-color :main-child "#0000ff"))
                branch (tho/update-color file :main-child "#00ff00")
-               r      (merge-copies (:data file) (:data main) (:data branch) :branch->main)]
+               r      (merge-copies (:data file) (:data main) (:data branch) :branch->source)]
            (t/is (= [[(thi/id :main-child) 0]]
                     (mapv (juxt :id :copies-affected) (:conflicts r))))))))))
 
@@ -2225,7 +2225,7 @@
                      (into #{}
                            (map (juxt :component-id :via #(into #{} (map :id) (:copies %))))
                            (:copies (merge-copies (:data file) (:data file) (:data branch)
-                                                  :branch->main))))
+                                                  :branch->source))))
            expected #{[(thi/id :component1) nil #{(thi/id :nested2-head)}]
                       [(thi/id :component2) (thi/id :component1) #{(thi/id :copy2-root)}]}]
        (t/testing "the branch left its copies unsynced"
@@ -2234,7 +2234,7 @@
          (t/is (= expected (summary synced))))
        (t/testing "component2's copy follows the fill"
          (t/is (= #{:fill-group}
-                  (->> (:copies (merge-copies (:data file) (:data file) (:data edited) :branch->main))
+                  (->> (:copies (merge-copies (:data file) (:data file) (:data edited) :branch->source))
                        (filter #(= (thi/id :component2) (:component-id %)))
                        first :copies first :follows))))))))
 
@@ -2244,7 +2244,7 @@
   (let [base     (mkdata {:k (copy-shape "red") :s {:id :s :name "S" :fill "red"}})
         main     (mkdata {:k (copy-shape "blue") :s {:id :s :name "S" :fill "red"}})
         branch   (mkdata {:k (copy-shape "green") :s {:id :s :name "S" :fill "blue"}})
-        r        (bm/compute-merge base main branch :branch->main)
+        r        (bm/compute-merge base main branch :branch->source)
         settled  (filterv bm/settled? (:changes r))
         k-key    (:key (first settled))
         s-key    (:key (first (remove bm/settled? (:changes r))))
@@ -2265,7 +2265,7 @@
           main   (mkdata {:k (copy-shape "blue" :opacity 1 :touched #{:fill-group})})
           branch (mkdata {:k (copy-shape "green" :opacity 0.5
                                          :touched #{:fill-group :layer-effects-group})})
-          r      (bm/compute-merge base main branch :branch->main)]
+          r      (bm/compute-merge base main branch :branch->source)]
       (t/is (= {:attrs            {:opacity {:side :branch :reason :override-branch}}
                 :token-slots      {}
                 :open-attrs       #{:fills}
@@ -2276,7 +2276,7 @@
           main   (mkdata {:k (tokens-copy {:fill "yellow"} :touched #{:fill-group})})
           branch (mkdata {:k (tokens-copy {:fill "red" :r1 "round"}
                                           :touched #{:fill-group :radius-group})})
-          r      (bm/compute-merge base main branch :branch->main)]
+          r      (bm/compute-merge base main branch :branch->source)]
       (t/is (= {:attrs            {}
                 :token-slots      {:r1 {:side :branch :reason :override-branch}}
                 :open-attrs       #{:applied-tokens :fills}
@@ -2286,9 +2286,9 @@
     (let [base   (mkdata {:k (tokens-copy {})})
           main   (mkdata {:k (tokens-copy {:fill "red"} :touched #{:fill-group})})
           branch (mkdata {:k (tokens-copy {:fill "green"})})
-          r      (bm/compute-merge base main branch :main->branch)]
-      (t/is (= [[:k :modified {:attrs            {:fills {:side :main :reason :override-main}}
-                               :token-slots      {:fill {:side :main :reason :override-main}}
+          r      (bm/compute-merge base main branch :source->branch)]
+      (t/is (= [[:k :modified {:attrs            {:fills {:side :source :reason :override-source}}
+                               :token-slots      {:fill {:side :source :reason :override-source}}
                                :open-attrs       #{}
                                :open-token-slots #{}}]]
                (mapv (juxt :id :status :settled) (:changes r)))))))

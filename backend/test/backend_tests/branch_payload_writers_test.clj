@@ -99,7 +99,7 @@
 
 (defn- update-from-main!
   [profile branch-file-id]
-  (let [out (th/command! {::th/type :update-branch-from-main
+  (let [out (th/command! {::th/type :update-file-branch-from-source
                           ::rpc/profile-id (:id profile)
                           :branch-id (branch-row-id branch-file-id)})]
     (t/is (nil? (:error out)))
@@ -258,7 +258,7 @@
 
       (t/is (nil? (:error (th/command! {::th/type :delete-file-branch
                                         ::rpc/profile-id (:id profile)
-                                        :id (branch-row-id branch-id)}))))
+                                        :branch-id (branch-row-id branch-id)}))))
 
       ;; the deletion is pending and the branch still links the library
       (t/is (some? (:deleted-at (th/db-get :file {:id branch-id}

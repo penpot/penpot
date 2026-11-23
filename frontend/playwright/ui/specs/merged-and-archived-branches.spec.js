@@ -12,9 +12,10 @@ const setupBranchFile = async (workspacePage, branchInfo) => {
     "get-file-branch-info?file-id=*": `pull-requests/${branchInfo}`,
     "get-file-branches?file-id=*":
       "pull-requests/get-file-branches-closed.json",
-    "get-file-pull-requests?file-id=*":
+    "get-file-branch-reviews?file-id=*":
       "pull-requests/get-file-branches-empty.json",
-    "get-branch-diff?branch-id=*": "pull-requests/get-branch-diff-empty.json",
+    "get-file-branch-diff?branch-id=*":
+      "pull-requests/get-file-branch-diff-empty.json",
   });
 };
 

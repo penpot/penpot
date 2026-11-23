@@ -188,7 +188,7 @@
       (save profile main-id [(set-fill page-id mi-id "#0000ff")
                              (set-fill page-id copy-id "#0000ff")])
 
-      (let [out (th/command! {::th/type :update-branch-from-main
+      (let [out (th/command! {::th/type :update-file-branch-from-source
                               ::rpc/profile-id (:id profile)
                               :branch-id branch-id})]
         (t/is (nil? (:error out)))
@@ -226,10 +226,10 @@
 
 (t/deftest materialize-keeps-the-base-components
   (with-redefs [cf/flags (conj cf/flags :branching)]
-    (let [{:keys [profile page-id comp-id mi-id copy-id branch-file-id]} (setup)
-          out (th/command! {::th/type :materialize-file-branch
+    (let [{:keys [profile page-id comp-id mi-id copy-id branch-id branch-file-id]} (setup)
+          out (th/command! {::th/type :detach-file-branch
                             ::rpc/profile-id (:id profile)
-                            :branch-file-id branch-file-id})]
+                            :branch-id branch-id})]
       (t/is (nil? (:error out)))
 
       (let [file (get-file profile branch-file-id)
@@ -269,14 +269,14 @@
                                        (assoc :fills [{:fill-opacity 1
                                                        :fill-image {:id (:id fmo) :width 100 :height 100
                                                                     :mtype "image/png"}}])))])
-          branch-file-id (-> (th/command! {::th/type :create-file-branch
-                                           ::rpc/profile-id (:id profile)
-                                           :file-id main-id
-                                           :name "photos"})
-                             :result :branch-file-id)
-          out     (th/command! {::th/type :materialize-file-branch
+          create  (:result (th/command! {::th/type :create-file-branch
+                                         ::rpc/profile-id (:id profile)
+                                         :file-id main-id
+                                         :name "photos"}))
+          branch-file-id (:branch-file-id create)
+          out     (th/command! {::th/type :detach-file-branch
                                 ::rpc/profile-id (:id profile)
-                                :branch-file-id branch-file-id})]
+                                :branch-id (:id create)})]
       (t/is (nil? (:error out)))
 
       (let [image-id (-> (get-file profile branch-file-id)

@@ -51,7 +51,7 @@
   "Whether the review layer draws `thread` instead of the plain comment
   bubbles: a thread of a design review, or one attached to a task."
   [task-thread-ids thread]
-  (or (some? (:pull-request-id thread))
+  (or (some? (:review-id thread))
       (contains? task-thread-ids (:id thread))))
 
 (defn- screen-style

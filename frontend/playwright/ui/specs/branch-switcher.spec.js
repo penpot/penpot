@@ -17,7 +17,7 @@ const setupMainWithBranches = async (workspacePage) => {
     "get-file-branch-count?file-id=*":
       "branches/get-file-branch-count-two.json",
     "get-file-branches?file-id=*": "branches/get-file-branches-two.json",
-    "get-file-pull-requests?file-id=*":
+    "get-file-branch-reviews?file-id=*":
       "pull-requests/get-file-branches-empty.json",
   });
 };

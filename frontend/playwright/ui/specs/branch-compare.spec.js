@@ -16,13 +16,13 @@ const setupBranch = async (workspacePage, diff) => {
     "get-file-branch-info?file-id=*":
       "pull-requests/get-file-branch-info-branch.json",
     "get-file-branches?file-id=*": "pull-requests/get-file-branches-empty.json",
-    "get-file-pull-requests?file-id=*":
+    "get-file-branch-reviews?file-id=*":
       "pull-requests/get-file-branches-empty.json",
     "get-file-tasks?file-id=*": "pull-requests/get-file-branches-empty.json",
-    "get-branch-diff?branch-id=*": `compare/${diff}`,
-    "get-branch-change-reviews?branch-id=*":
-      "compare/get-branch-change-reviews-empty.json",
-    "set-branch-change-review": "compare/set-branch-change-review.json",
+    "get-file-branch-diff?branch-id=*": `compare/${diff}`,
+    "get-branch-change-marks?branch-id=*":
+      "compare/get-branch-change-marks-empty.json",
+    "set-branch-change-mark": "compare/set-branch-change-mark.json",
   });
 };
 
@@ -39,7 +39,7 @@ test("comparing takes the canvas, read-only, and Escape leaves it", async ({
   page,
 }) => {
   const workspacePage = new WorkspacePage(page);
-  await setupBranch(workspacePage, "get-branch-diff-changes.json");
+  await setupBranch(workspacePage, "get-file-branch-diff-changes.json");
   await workspacePage.goToWorkspace();
   await enterCompare(page);
 
@@ -67,7 +67,7 @@ test("comparing takes the canvas, read-only, and Escape leaves it", async ({
 
 test("a change left out stays out of the merge", async ({ page }) => {
   const workspacePage = new WorkspacePage(page);
-  await setupBranch(workspacePage, "get-branch-diff-changes.json");
+  await setupBranch(workspacePage, "get-file-branch-diff-changes.json");
   await workspacePage.goToWorkspace();
   await enterCompare(page);
 
@@ -103,14 +103,14 @@ test("main's changes are listed apart and update the branch", async ({
   page,
 }) => {
   const workspacePage = new WorkspacePage(page);
-  await setupBranch(workspacePage, "get-branch-diff-changes.json");
+  await setupBranch(workspacePage, "get-file-branch-diff-changes.json");
   await workspacePage.goToWorkspace();
   await enterCompare(page);
 
   const incoming = page.waitForRequest(
     (req) =>
-      req.url().includes("get-branch-diff") &&
-      req.url().includes("main-%3Ebranch"),
+      req.url().includes("get-file-branch-diff") &&
+      req.url().includes("source-%3Ebranch"),
   );
   await changes(page).getByRole("tab", { name: "In main" }).click();
   await incoming;
@@ -124,7 +124,7 @@ test("main's changes are listed apart and update the branch", async ({
   ).toBeVisible();
 
   const update = page.waitForRequest((req) =>
-    req.url().includes("update-branch-from-main"),
+    req.url().includes("update-file-branch-from-source"),
   );
   await banner(page)
     .getByRole("button", { name: "Update with 2 changes" })
@@ -137,7 +137,7 @@ test("conflicts are decided in the sidebar before they apply", async ({
   page,
 }) => {
   const workspacePage = new WorkspacePage(page);
-  await setupBranch(workspacePage, "get-branch-diff-conflicts.json");
+  await setupBranch(workspacePage, "get-file-branch-diff-conflicts.json");
   await workspacePage.goToWorkspace();
   await enterCompare(page);
 

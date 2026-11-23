@@ -33,11 +33,11 @@
   (mock/stub (fn [cmd params]
                (swap! calls conj [cmd params])
                (cond
-                 (= cmd :get-branch-diff)    (rx/subject)
+                 (= cmd :get-file-branch-diff)    (rx/subject)
                  (seq (:resolutions params)) (rx/empty)
                  :else                       (rx/of {:status :conflicts
                                                      :conflicts [{:id conflict-id}]
-                                                     :main-revn conflict-revn})))))
+                                                     :source-revn conflict-revn})))))
 
 (defn- make-store
   []
@@ -46,7 +46,7 @@
 
 (defn- branch-cmd
   [mode]
-  (if (= mode :update) :update-branch-from-main :merge-file-branch))
+  (if (= mode :update) :update-file-branch-from-source :merge-file-branch))
 
 (defn- open-conflicts!
   "Ask for a `mode` (`:merge` or `:update`) of `branch` and let the conflict
@@ -57,14 +57,14 @@
                      (dwb/update-branch-from-main branch)
                      (dwb/merge-branch branch)))
   (ptk/emit! store (dwb/fetch-branch-diff (:id branch)
-                                          (if (= mode :update) :main->branch :branch->main))))
+                                          (if (= mode :update) :source->branch :branch->source))))
 
 (defn- apply-resolutions!
   "Resolve every conflict to main and apply, as the compare mode does."
   [store mode branch]
   (ptk/emit! store (dwb/set-conflict-resolutions
                     (into {}
-                          (map (fn [conflict] [(:id conflict) :main]))
+                          (map (fn [conflict] [(:id conflict) :source]))
                           (get-in @store [:workspace-branch-conflicts :conflicts]))))
   (let [resolutions (get-in @store [:workspace-branch-diff :resolutions])]
     (ptk/emit! store (if (= mode :update)
@@ -96,8 +96,8 @@
                       "the diff fetch has not answered")
                 (apply-resolutions! store mode branch)
                 (let [params (last-params calls mode)]
-                  (t/is (= {conflict-id :main} (:resolutions params)))
-                  (t/is (= conflict-revn (:expected-main-revn params))
+                  (t/is (= {conflict-id :source} (:resolutions params)))
+                  (t/is (= conflict-revn (:expected-source-revn params))
                         "the resolutions carry the revn of the conflict answer"))
                 (rx/dispose! store))))
           (done'))
@@ -118,9 +118,9 @@
                 (open-conflicts! store mode branch)
                 ;; the diff fetch answers, computed at a newer main
                 (ptk/emit! store (dwb/update-branch-diff {:status :loaded
-                                                          :diff {:meta {:main-revn 9}}}))
+                                                          :diff {:meta {:source-revn 9}}}))
                 (apply-resolutions! store mode branch)
-                (t/is (= 9 (:expected-main-revn (last-params calls mode))))
+                (t/is (= 9 (:expected-source-revn (last-params calls mode))))
                 (rx/dispose! store))))
           (done'))
         done))))
@@ -138,7 +138,7 @@
                     store  (make-store)]
                 (reset! calls [])
                 (open-conflicts! store mode branch)
-                (t/is (not (contains? (last-params calls mode) :expected-main-revn))
+                (t/is (not (contains? (last-params calls mode) :expected-source-revn))
                       "the first request has neither resolutions nor a diff")
                 ;; ask again while the diff is loading, with the conflict
                 ;; answer's revn already stored
@@ -148,7 +148,7 @@
                 (let [params (last-params calls mode)]
                   (t/is (= 2 (count (filter #(= (branch-cmd mode) (first %)) @calls))))
                   (t/is (not (contains? params :resolutions)))
-                  (t/is (not (contains? params :expected-main-revn))
+                  (t/is (not (contains? params :expected-source-revn))
                         "the stored revn only travels with resolutions"))
                 (rx/dispose! store))))
           (done'))
@@ -200,7 +200,7 @@
               (ptk/emit! store (dwb/fetch-branch-diff (:id branch)))
               (t/is (= #{k1} (excluded store))))
             (t/testing "the other direction has a selection of its own"
-              (ptk/emit! store (dwb/fetch-branch-diff (:id branch) :main->branch))
+              (ptk/emit! store (dwb/fetch-branch-diff (:id branch) :source->branch))
               (t/is (= #{} (excluded store)))
               (ptk/emit! store (dwb/toggle-diff-excluded #{k2}))
               (t/is (= #{k2} (excluded store))))
@@ -266,11 +266,11 @@
 
 (def ^:private title
   {:kind :shape :status :modified :id (uuid/next) :key "shape/p/title"
-   :changed-attrs {:opacity {:main 1 :branch 0.5}}})
+   :changed-attrs {:opacity {:source 1 :branch 0.5}}})
 
 (def ^:private logo
   {:kind :shape :status :modified :id (uuid/next) :key "shape/p/logo"
-   :changed-attrs {:rx {:main 0 :branch 8}}})
+   :changed-attrs {:rx {:source 0 :branch 8}}})
 
 (defn- review-stub
   "Fake `rp/cmd!` for a comparison that lists `title` and `logo`: the diff
@@ -280,11 +280,11 @@
   (mock/stub (fn [cmd params]
                (swap! calls conj [cmd params])
                (case cmd
-                 :get-branch-diff           (rx/of {:changes [title logo] :conflicts []})
-                 :get-branch-change-reviews (rx/of @marks)
-                 :set-branch-change-review  (if fail-set?
-                                              (rx/throw (ex-info "refused" {}))
-                                              (rx/of nil))
+                 :get-file-branch-diff    (rx/of {:changes [title logo] :conflicts []})
+                 :get-branch-change-marks (rx/of @marks)
+                 :set-branch-change-mark  (if fail-set?
+                                            (rx/throw (ex-info "refused" {}))
+                                            (rx/of nil))
                  (rx/empty)))))
 
 (defn- last-call
@@ -310,8 +310,8 @@
          (ptk/emit! store (dwb/fetch-branch-diff (:id branch)))
          (await (async/wait-for-store store #(seq (reviewed store)) "the marks load"))
          (t/is (= #{(:key title)} (reviewed store)))
-         (t/is (= {:branch-id (:id branch) :direction :branch->main}
-                  (last-call calls :get-branch-change-reviews))
+         (t/is (= {:branch-id (:id branch) :direction :branch->source}
+                  (last-call calls :get-branch-change-marks))
                "the marks are the ones of the direction compared")
          (rx/dispose! store))))))
 
@@ -323,21 +323,21 @@
      (mock/with-mocks* {rp/cmd! (review-stub calls marks false)}
        (let [store (make-store)]
          (ptk/emit! store (dwb/fetch-branch-diff (:id branch)))
-         (await (async/wait-for #(some? (last-call calls :get-branch-change-reviews))
+         (await (async/wait-for #(some? (last-call calls :get-branch-change-marks))
                                 "the marks are asked for"))
          (ptk/emit! store (dwb/toggle-diff-reviewed (:key logo) true))
          (t/is (= #{(:key logo)} (reviewed store)) "the mark shows at once")
-         (await (async/wait-for #(some? (last-call calls :set-branch-change-review))
+         (await (async/wait-for #(some? (last-call calls :set-branch-change-mark))
                                 "the mark is kept"))
          (t/is (= {:branch-id (:id branch)
-                   :direction :branch->main
+                   :direction :branch->source
                    :change-key (:key logo)
                    :fingerprint (dwb/change-fingerprint logo)
                    :reviewed true}
-                  (last-call calls :set-branch-change-review)))
+                  (last-call calls :set-branch-change-mark)))
          (ptk/emit! store (dwb/toggle-diff-reviewed (:key logo)))
          (t/is (= #{} (reviewed store)) "without a side it flips")
-         (await (async/wait-for #(false? (:reviewed (last-call calls :set-branch-change-review)))
+         (await (async/wait-for #(false? (:reviewed (last-call calls :set-branch-change-mark)))
                                 "the mark is cleared"))
          (rx/dispose! store))))))
 
@@ -349,7 +349,7 @@
      (mock/with-mocks* {rp/cmd! (review-stub calls marks true)}
        (let [store (make-store)]
          (ptk/emit! store (dwb/fetch-branch-diff (:id branch)))
-         (await (async/wait-for #(some? (last-call calls :get-branch-change-reviews))
+         (await (async/wait-for #(some? (last-call calls :get-branch-change-marks))
                                 "the marks are asked for"))
          (ptk/emit! store (dwb/toggle-diff-reviewed (:key title) true))
          (await (async/wait-for-store store #(empty? (reviewed store))

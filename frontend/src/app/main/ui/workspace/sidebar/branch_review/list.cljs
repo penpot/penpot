@@ -241,7 +241,7 @@
     (cond
       (bm/conflict-resolved? conflict res)
       (cond
-        (= res :main)   (tr "workspace.branches.resolve.row.kept-main")
+        (= res :source) (tr "workspace.branches.resolve.row.kept-main")
         (= res :branch) (tr "workspace.branches.resolve.row.kept-branch")
         (seq drops)     (tr "workspace.branches.resolve.row.drops"
                             (str/lower (str/join ", " (map (comp brc/attr-label :attr) drops))))

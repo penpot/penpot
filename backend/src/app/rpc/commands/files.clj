@@ -127,7 +127,6 @@
    [:id ::sm/uuid]
    [:features ::cfeat/features]
    [:has-media-trimmed ::sm/boolean]
-   [:comment-thread-seqn [::sm/int {:min 0}]]
    [:name [:string {:max 250}]]
    [:revn [::sm/int {:min 0}]]
    [:vern [::sm/int {:min 0}]]

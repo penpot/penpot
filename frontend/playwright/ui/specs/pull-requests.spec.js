@@ -18,12 +18,13 @@ const setupPullRequestSandbox = async (workspacePage) => {
     "get-file-branch-info?file-id=*":
       "pull-requests/get-file-branch-info-none.json",
     "get-file-branches?file-id=*": "pull-requests/get-file-branches-empty.json",
-    "get-file-pull-requests?file-id=*":
-      "pull-requests/get-file-pull-requests.json",
-    "get-pull-request?id=*": "pull-requests/get-pull-request.json",
-    "get-branch-diff?branch-id=*": "pull-requests/get-branch-diff-empty.json",
-    "submit-pull-request-review":
-      "pull-requests/submit-pull-request-review.json",
+    "get-file-branch-reviews?file-id=*":
+      "pull-requests/get-file-branch-reviews.json",
+    "get-branch-review?id=*": "pull-requests/get-branch-review.json",
+    "get-file-branch-diff?branch-id=*":
+      "pull-requests/get-file-branch-diff-empty.json",
+    "submit-branch-review-verdict":
+      "pull-requests/submit-branch-review-verdict.json",
   });
 };
 
@@ -160,8 +161,8 @@ test("closing the pull request asks for confirmation", async ({ page }) => {
   const workspacePage = new WorkspacePage(page);
   await setupPullRequestSandbox(workspacePage);
   await workspacePage.mockRPC(
-    "close-pull-request",
-    "pull-requests/close-pull-request.json",
+    "close-branch-review",
+    "pull-requests/close-branch-review.json",
   );
   await workspacePage.goToWorkspace({ extraParams: `&pr-id=${PR_ID}` });
 
@@ -187,7 +188,7 @@ test("on a branch, requesting a review is the primary action", async ({
   await workspacePage.mockRPCs({
     "get-file-branch-info?file-id=*":
       "pull-requests/get-file-branch-info-branch.json",
-    "get-file-pull-requests?file-id=*":
+    "get-file-branch-reviews?file-id=*":
       "pull-requests/get-file-branches-empty.json",
   });
   await workspacePage.goToWorkspace();

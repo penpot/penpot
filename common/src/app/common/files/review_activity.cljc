@@ -8,7 +8,7 @@
   "What the saves of a branch under design review did to its layers.
 
   The backend records one row per branch save while a review is open
-  (`file_pull_request_activity`). `entries` builds that row from the
+  (`file_branch_review_activity`). `entries` builds that row from the
   change vector of the save and the file data before and after it: one
   entry per touched layer, with the kind of change and, for a modified
   layer, the value before and after of each property a person reads.

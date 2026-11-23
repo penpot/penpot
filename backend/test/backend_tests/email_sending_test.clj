@@ -174,7 +174,7 @@
              "request-file-access" "request-file-access-yourpenpot"
              "request-file-access-yourpenpot-view" "request-team-access"
              "comment-mention" "comment-thread" "comment-notification"
-             "review-request" "task-assigned" "tasks-moved"
+             "review-request" "task-assigned" "tasks-merged"
              "task-done" "task-reopened"}
            (set (keys emails/templates)))))
 

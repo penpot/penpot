@@ -63,15 +63,15 @@
 
 (mf/defc value-steps*
   "Each property of a change as `before → after`, the name of the
-  property over its two values. `incoming` says the change is main's,
-  going to the branch: its new value is then main's."
+  property over its two values. `incoming` says the change is the
+  source's, going to the branch: its new value is then the source's."
   [{:keys [attrs incoming]}]
   [:div {:class (stl/css :steps)}
-   (for [[attr {:keys [main branch]}] attrs]
+   (for [[attr {:keys [source branch]}] attrs]
      [:div {:class (stl/css :steps-row) :key (str attr)}
       [:> text* {:as "span" :typography t/body-small :class (stl/css :steps-name)}
        (brc/attr-label attr)]
       [:div {:class (stl/css :steps-values)}
-       [:> value-chip* {:value (if incoming branch main) :is-old true}]
+       [:> value-chip* {:value (if incoming branch source) :is-old true}]
        [:> i/icon* {:icon-id i/arrow-long-right :size "s" :class (stl/css :steps-arrow)}]
-       [:> value-chip* {:value (if incoming main branch)}]]])])
+       [:> value-chip* {:value (if incoming source branch)}]]])])

@@ -17,10 +17,16 @@
   who made it, which is what the thread of the task shows between its
   comments.
 
-  The merge of a branch moves its tasks into main (`move-branch-tasks`,
-  called from `app.rpc.commands.files-branch`): the open ones keep going
-  on main and the closed ones stay as the history of the branch."
+  The merge of a branch moves into its target the threads that hold an
+  open task, whole with their tasks, and the threads written outside any
+  review (`move-branch-tasks`, called from
+  `app.rpc.commands.files-branch`). Every other review thread stays on
+  the branch file as the record of its review, and outlives that file:
+  `get-review-threads` reads it and `move-branch-review-thread` moves it
+  later. Every task, thread, and review belongs to the family of its file
+  (`file_family`), which the branch shares with its target."
   (:require
+   [app.binfile.common :as bfc]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.files.helpers :as cfh]
@@ -37,6 +43,7 @@
    [app.loggers.webhooks :as-alias webhooks]
    [app.msgbus :as mbus]
    [app.rpc :as-alias rpc]
+   [app.rpc.climit :as-alias climit]
    [app.rpc.commands.comments :as comments]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.profile :as profile]
@@ -115,9 +122,9 @@
 (def ^:private sql:select-tasks
   "SELECT t.id,
           t.file_id,
-          t.pull_request_id,
-          coalesce(fpr.title, t.review_title) AS review_title,
-          fpr.status AS review_status,
+          t.review_id,
+          r.title AS review_title,
+          r.status AS review_status,
           t.thread_id,
           t.comment_id,
           ct.seqn AS thread_seqn,
@@ -132,13 +139,14 @@
           t.lost_shape_name,
           t.position,
           t.merge_id,
-          t.branch_name,
+          m.branch_name,
           t.status_changed_at,
           t.status_changed_by,
           t.created_at,
           t.updated_at
      FROM file_task AS t
-     LEFT JOIN file_pull_request AS fpr ON (fpr.id = t.pull_request_id)
+     LEFT JOIN file_branch_review AS r ON (r.id = t.review_id)
+     LEFT JOIN file_branch_merge AS m ON (m.id = t.merge_id)
      LEFT JOIN comment_thread AS ct ON (ct.id = t.thread_id)")
 
 (def ^:private sql:get-file-tasks
@@ -188,21 +196,22 @@
     result))
 
 (def ^:private sql:lock-file
-  "SELECT id, deleted_at FROM file WHERE id = ? FOR UPDATE")
+  "SELECT id, family_id, deleted_at FROM file WHERE id = ? FOR UPDATE")
 
 (defn- lock-file
-  "Lock the row of `file-id` and refuse a deleted file. Task creation and
-  the move of the tasks of a merged branch (`move-branch-tasks`) take
-  this lock: a task created during a merge either lands before the merge
-  reads the tasks of the branch, or waits and finds the branch file
-  deleted."
+  "Lock the row of `file-id` and refuse a deleted file. Returns the row.
+  Task creation and the move of the tasks of a merged branch
+  (`move-branch-tasks`) take this lock: a task created during a merge
+  either lands before the merge reads the tasks of the branch, or waits
+  and finds the branch file deleted."
   [conn file-id]
   (let [file (db/exec-one! conn [sql:lock-file file-id])]
     (when (or (nil? file) (some? (:deleted-at file)))
       (ex/raise :type :not-found
                 :code :object-not-found
                 :hint "the file of the task does not exist or was deleted"
-                :file-id file-id))))
+                :file-id file-id))
+    file))
 
 ;; --- Helpers: emails
 
@@ -339,9 +348,9 @@
    ;; thread sits
    [:position ::gpt/point]
    [:assignee-id {:optional true} [:maybe ::sm/uuid]]
-   ;; the design review the task is created in: an open pull request
-   ;; of this file (the branch file it reviews)
-   [:pull-request-id {:optional true} [:maybe ::sm/uuid]]
+   ;; the design review the task is created in: an open review of this
+   ;; file (the branch file it reviews)
+   [:review-id {:optional true} [:maybe ::sm/uuid]]
    ;; the comment thread the task comes from, which stays attached, and
    ;; the message of that thread it was made from; without them the
    ;; task gets a thread of its own
@@ -349,11 +358,13 @@
    [:comment-id {:optional true} [:maybe ::sm/uuid]]])
 
 (def ^:private sql:get-open-review-of-file
-  "SELECT id, title FROM file_pull_request
-    WHERE id = ?
-      AND source_file_id = ?
-      AND status = 'open'
-      AND deleted_at IS NULL")
+  "SELECT r.id
+     FROM file_branch_review AS r
+     JOIN file_branch AS b ON (b.id = r.file_branch_id)
+    WHERE r.id = ?
+      AND b.branch_file_id = ?
+      AND r.status = 'open'
+      AND r.deleted_at IS NULL")
 
 (def ^:private sql:get-task-of-comment
   "SELECT id FROM file_task
@@ -392,7 +403,7 @@
   when there is none) and belongs to the design review of the task. The
   task tells its assignee by email, so the thread tells nobody that a
   comment was added."
-  [cfg profile-id {:keys [file-id title page-id frame-id shape-id position pull-request-id]}]
+  [cfg profile-id {:keys [file-id title page-id frame-id shape-id position review-id]}]
   (comments/create-comment-thread
    cfg
    (cond-> {::rpc/profile-id profile-id
@@ -405,8 +416,8 @@
             ::comments/skip-subscriber-emails true
             :anchor (if (some? shape-id)
                       {:type :layer :shape-id shape-id}
-                      {:type :canvas})}
-     (some? pull-request-id) (assoc :pull-request-id pull-request-id))))
+                      {:type :point})}
+     (some? review-id) (assoc :review-id review-id))))
 
 (sv/defmethod ::create-task
   "Create an open task on a file, in a message of a comment thread: the
@@ -420,7 +431,7 @@
    ::webhooks/event? true
    ::sm/params schema:create-task}
   [cfg {:keys [::rpc/profile-id ::rpc/session-id file-id title page-id frame-id shape-id position
-               assignee-id pull-request-id thread-id comment-id] :as params}]
+               assignee-id review-id thread-id comment-id] :as params}]
   (check-tasks-enabled)
   (when (str/blank? title)
     (ex/raise :type :validation
@@ -431,14 +442,14 @@
    cfg {:file-id file-id :profile-id profile-id :session-id session-id}
    (comp vector :id)
    (fn [{:keys [::db/conn] :as cfg}]
-     (lock-file conn file-id)
-     (let [team-id (perms/get-team-id-for-file conn file-id)
-           review  (when pull-request-id
-                     (or (db/exec-one! conn [sql:get-open-review-of-file pull-request-id file-id])
-                         (ex/raise :type :validation
-                                   :code :pull-request-not-open
-                                   :hint "the task names a design review that is not open on this file"
-                                   :pull-request-id pull-request-id)))
+     (let [file    (lock-file conn file-id)
+           team-id (perms/get-team-id-for-file conn file-id)
+           _       (when (and (some? review-id)
+                              (nil? (db/exec-one! conn [sql:get-open-review-of-file review-id file-id])))
+                     (ex/raise :type :validation
+                               :code :branch-review-not-open
+                               :hint "the task names a design review that is not open on this file"
+                               :review-id review-id))
            _       (when thread-id
                      (check-thread conn thread-id file-id))
            _       (when comment-id
@@ -450,8 +461,8 @@
            task    {:id (uuid/next)
                     :position position
                     :file-id file-id
-                    :pull-request-id pull-request-id
-                    :review-title (:title review)
+                    :family-id (:family-id file)
+                    :review-id review-id
                     :thread-id (or thread-id (:id thread))
                     :comment-id (or comment-id (:comment-id thread))
                     :created-thread (some? thread)
@@ -594,38 +605,43 @@
            (send-task-status-email cfg profile-id task)
            task))))))
 
-;; --- Helpers: the thread created with a task
+;; --- Helpers: the place of a thread
+
+(defn- anchor-thread
+  "Point the thread `thread-id` at the layer `shape-id`; with no layer, at
+  the rectangle `area` of the canvas, or at the spot `position` when there
+  is no area either."
+  [conn thread-id {:keys [frame-id shape-id area position]}]
+  (db/update! conn :comment-thread
+              (cond
+                (some? shape-id)
+                {:frame-id frame-id
+                 :shape-id shape-id
+                 :anchor-type "layer"
+                 :area nil}
+
+                (some? area)
+                {:frame-id frame-id
+                 :shape-id nil
+                 :anchor-type "area"
+                 :area (db/tjson area)
+                 :position (db/pgpoint position)}
+
+                :else
+                {:frame-id frame-id
+                 :shape-id nil
+                 :anchor-type "point"
+                 :area nil
+                 :position (db/pgpoint position)})
+              {:id thread-id}
+              {::db/return-keys false}))
 
 (defn- move-task-thread
-  "Point the thread created with `task` where the task points now: at the
-  layer `shape-id`; with no layer, at the rectangle `area` of the canvas,
-  or at the spot `position` when there is no area either. A thread the
-  task was made from keeps its own place."
-  [conn task {:keys [frame-id shape-id area position]}]
+  "Point the thread created with `task` where the task points now
+  (`anchor-thread`). A thread the task was made from keeps its own place."
+  [conn task landing]
   (when (:created-thread task)
-    (db/update! conn :comment-thread
-                (cond
-                  (some? shape-id)
-                  {:frame-id frame-id
-                   :shape-id shape-id
-                   :anchor-type "layer"
-                   :area nil}
-
-                  (some? area)
-                  {:frame-id frame-id
-                   :shape-id nil
-                   :anchor-type "area"
-                   :area (db/tjson area)
-                   :position (db/pgpoint position)}
-
-                  :else
-                  {:frame-id frame-id
-                   :shape-id nil
-                   :anchor-type "canvas"
-                   :area nil
-                   :position (db/pgpoint position)})
-                {:id (:thread-id task)}
-                {::db/return-keys false})))
+    (anchor-thread conn (:thread-id task) landing)))
 
 ;; --- COMMAND: relink-task
 
@@ -716,7 +732,9 @@
   the deleted layer, so it can be restored later, when the layer is small
   and valid enough (`restore-objects`). Returns the tasks it moved."
   {::doc/added "2.16"
-   ::sm/params schema:mark-tasks-layer-deleted}
+   ::sm/params schema:mark-tasks-layer-deleted
+   ::climit/id [[:mark-tasks-layer-deleted/by-profile ::rpc/profile-id]
+                [:mark-tasks-layer-deleted/global]]}
   [cfg {:keys [::rpc/profile-id ::rpc/session-id file-id layers]}]
   (check-tasks-enabled)
   (files/check-read-permissions! cfg profile-id file-id)
@@ -824,32 +842,32 @@
 ;; --- Review counts
 
 (def ^:private sql:get-review-task-counts
-  "SELECT pull_request_id, status, count(*) AS total
+  "SELECT review_id, status, count(*) AS total
      FROM file_task
-    WHERE pull_request_id = ANY(?)
+    WHERE review_id = ANY(?)
       AND deleted_at IS NULL
-    GROUP BY pull_request_id, status")
+    GROUP BY review_id, status")
 
 (def ^:private sql:get-review-comment-counts
-  "SELECT pull_request_id, is_resolved, count(*) AS total
+  "SELECT review_id, is_resolved, count(*) AS total
      FROM comment_thread
-    WHERE pull_request_id = ANY(?)
-    GROUP BY pull_request_id, is_resolved")
+    WHERE review_id = ANY(?)
+    GROUP BY review_id, is_resolved")
 
 (defn get-review-counts
-  "{pull-request-id {:tasks {status count} :comments-open n
+  "{review-id {:tasks {status count} :comments-open n
   :comments-resolved n}} for the given design reviews."
-  [conn pull-request-ids]
-  (if (empty? pull-request-ids)
+  [conn review-ids]
+  (if (empty? review-ids)
     {}
-    (let [ids      (db/create-array conn "uuid" (vec pull-request-ids))
+    (let [ids      (db/create-array conn "uuid" (vec review-ids))
           empty    {:tasks {} :comments-open 0 :comments-resolved 0}
-          by-tasks (reduce (fn [acc {:keys [pull-request-id status total]}]
-                             (assoc-in acc [pull-request-id :tasks status] total))
+          by-tasks (reduce (fn [acc {:keys [review-id status total]}]
+                             (assoc-in acc [review-id :tasks status] total))
                            {}
                            (db/exec! conn [sql:get-review-task-counts ids]))]
-      (reduce (fn [acc {:keys [pull-request-id is-resolved total]}]
-                (update acc pull-request-id
+      (reduce (fn [acc {:keys [review-id is-resolved total]}]
+                (update acc review-id
                         (fn [counts]
                           (assoc (merge empty counts)
                                  (if is-resolved :comments-resolved :comments-open)
@@ -857,7 +875,87 @@
               (update-vals by-tasks #(merge empty %))
               (db/exec! conn [sql:get-review-comment-counts ids])))))
 
-;; --- Merge: move the tasks of a branch into main
+;; --- COMMAND QUERY: get-file-branch-counts
+;;
+;; The delete confirmation of a branch says how many threads and tasks go
+;; with it. `get-review-counts` answers per review, which leaves out what
+;; was written on the branch outside any review, so these count by the
+;; branch file, where the deletion lands: the file row goes, and the
+;; threads and tasks that named it lose their file with it.
+
+(def ^:private sql:get-branch-file-id
+  "SELECT fb.branch_file_id
+     FROM file_branch AS fb
+    WHERE fb.id = ?
+      AND fb.deleted_at IS NULL")
+
+(def ^:private sql:get-thread-count
+  "SELECT count(*) AS total
+     FROM comment_thread
+    WHERE file_id = ?")
+
+(def ^:private sql:get-task-counts
+  "SELECT status, count(*) AS total
+     FROM file_task
+    WHERE file_id = ?
+      AND deleted_at IS NULL
+    GROUP BY status")
+
+(defn- branch-counts
+  "The live threads and tasks written on the branch file `file-id`:
+  `{:threads n :open-tasks n :closed-tasks n}`, tasks split as
+  `closed-statuses` splits them."
+  [conn file-id]
+  (let [threads (-> (db/exec-one! conn [sql:get-thread-count file-id]) :total)]
+    (reduce (fn [counts {:keys [status total]}]
+              (let [k (if (contains? closed-statuses status) :closed-tasks :open-tasks)]
+                (update counts k + total)))
+            {:threads threads :open-tasks 0 :closed-tasks 0}
+            (db/exec! conn [sql:get-task-counts file-id]))))
+
+(def ^:private schema:get-file-branch-counts
+  [:map {:title "get-file-branch-counts"}
+   [:branch-id ::sm/uuid]])
+
+(sv/defmethod ::get-file-branch-counts
+  "What deleting the branch takes with it, for the confirmation the client
+  shows before it deletes: how many live threads and tasks were written
+  on the branch file, tasks split into open and closed, where closed
+  means verified or dropped as won't do, as the merge reads a task. A
+  thread has no deleted marker (a deleted thread is gone) and a
+  logically deleted task is not counted. The dialog asks just before the
+  delete, so the numbers are the ones the deletion lands on. Needs read
+  rights on the branch file, and takes no climit: two indexed counts,
+  nothing realized."
+  {::doc/added "2.16"
+   ::sm/params schema:get-file-branch-counts}
+  [cfg {:keys [::rpc/profile-id branch-id]}]
+  (check-tasks-enabled)
+  (db/run! cfg
+           (fn [{:keys [::db/conn] :as cfg}]
+             (let [row           (db/exec-one! conn [sql:get-branch-file-id branch-id])
+                   branch-file-id (:branch-file-id row)]
+               (when (nil? row)
+                 (ex/raise :type :not-found
+                           :code :branch-not-found
+                           :hint "unable to find branch with the provided id"
+                           :branch-id branch-id))
+               ;; a kept branch whose file the GC took away carries no
+               ;; threads or tasks any more, and cannot be deleted either
+               (when (nil? branch-file-id)
+                 (ex/raise :type :not-found
+                           :code :object-not-found
+                           :hint "the branch has no file left to count"
+                           :branch-id branch-id))
+               (files/check-read-permissions! cfg profile-id branch-file-id)
+               (branch-counts conn branch-file-id)))))
+
+;; --- Merge: move the threads and tasks of a branch into its target
+;;
+;; The thread is the unit: a merge moves a thread whole, with every task
+;; it holds, or leaves it on the branch file. A thread that stays keeps
+;; its review and its family when the branch file goes, and
+;; `move-branch-review-thread` can still move it later.
 
 (def ^:private sql:get-branch-tasks
   "SELECT * FROM file_task
@@ -866,30 +964,26 @@
     ORDER BY created_at ASC
       FOR UPDATE")
 
-(def ^:private sql:lock-thread-seqn
-  "SELECT comment_thread_seqn FROM file WHERE id = ? FOR UPDATE")
+;; the threads the merge moves: those written outside any review, and
+;; those holding an open task
+(def ^:private sql:get-merged-threads
+  "SELECT ct.id, ct.page_id, ct.shape_id, ct.anchor_type, ct.position
+     FROM comment_thread AS ct
+    WHERE ct.file_id = ?
+      AND (ct.review_id IS NULL
+           OR EXISTS (SELECT 1
+                        FROM file_task AS t
+                       WHERE t.thread_id = ct.id
+                         AND t.deleted_at IS NULL
+                         AND t.status NOT IN ('verified', 'wont-do')))
+      FOR UPDATE OF ct")
 
-(defn- move-threads
-  "Move the comment threads `thread-ids` of the branch into main. The
-  number of a thread is unique in its file, so each one takes the next
-  number of main."
-  [conn main-id thread-ids]
-  (when (seq thread-ids)
-    (let [seqn (-> (db/exec-one! conn [sql:lock-thread-seqn main-id])
-                   (:comment-thread-seqn 0))]
-      (doseq [[index thread-id] (d/enumerate thread-ids)]
-        (db/update! conn :comment-thread
-                    {:file-id main-id
-                     :seqn (+ seqn index 1)}
-                    {:id thread-id}
-                    {::db/return-keys false}))
-      (db/update! conn :file
-                  {:comment-thread-seqn (+ seqn (count thread-ids))}
-                  {:id main-id}
-                  {::db/return-keys false}))))
+(defn- open-task?
+  [{:keys [status]}]
+  (not (contains? closed-statuses status)))
 
-(defn- send-tasks-moved-emails
-  [{:keys [::db/conn] :as cfg} {:keys [team-id main-id actor-id branch-name file-name]} tasks]
+(defn- send-tasks-merged-emails
+  [{:keys [::db/conn] :as cfg} {:keys [team-id target-id actor-id branch-name file-name]} tasks]
   (let [users (team-users conn team-id)
         actor (get-in users [actor-id :fullname] "")]
     (doseq [[assignee-id tasks] (group-by :assignee-id tasks)]
@@ -900,7 +994,7 @@
           (eml/send-template
            cfg
            {::eml/reuse-conn true
-            ::eml/template "tasks-moved"
+            ::eml/template "tasks-merged"
             :public-uri (cf/get :public-uri)
             :to email
             :name fullname
@@ -910,24 +1004,23 @@
             :task-titles (str/join "\n" (map #(str "- " (:title %)) tasks))
             :file-url (str/join [(cf/get :public-uri)
                                  "/#/workspace?"
-                                 (uri/map->query-string {:file-id main-id
+                                 (uri/map->query-string {:file-id target-id
                                                          :team-id team-id})])}))))))
 
 (defn- find-shape
   [data page-id shape-id]
   (get-in data [:pages-index page-id :objects shape-id]))
 
-(defn- task-landing
-  "Where an open task of a merged branch lands on main when the merge did
-  not carry its layer: on the immediate parent of the layer when main has
-  it, otherwise on the area of the canvas the layer covered. The layer is
-  read from the branch document, or from the merge base when the branch
-  deleted it; when neither has it, the task keeps its spot of the canvas.
-  Nil when the task stays as it is: it is closed, points at the canvas,
-  its layer reached main, or its page did not."
-  [{:keys [merged-data branch-data base-data]} {:keys [page-id shape-id status position]}]
+(defn- layer-landing
+  "Where a mark on the layer `shape-id` lands on the target when the
+  target lacks the layer: on the immediate parent of the layer when the
+  target has it, otherwise on the area of the canvas the layer covered.
+  The layer is read from the branch document, or from the merge base when
+  the branch deleted it; when neither has it, the mark keeps its spot
+  `position` on the canvas. Nil when the mark stays as it is: it points
+  at the canvas, its layer is on the target, or its page is not."
+  [{:keys [merged-data branch-data base-data]} page-id shape-id position]
   (when (and (some? shape-id)
-             (not (contains? closed-statuses status))
              (contains? (:pages-index merged-data) page-id)
              (nil? (find-shape merged-data page-id shape-id)))
     (let [layer  (or (find-shape branch-data page-id shape-id)
@@ -950,6 +1043,21 @@
         {:frame-id uuid/zero
          :position position}))))
 
+(defn- task-landing
+  "Where an open task of a merged branch lands on the target
+  (`layer-landing`). Nil for a closed task: it stays as it is."
+  [datas {:keys [page-id shape-id position] :as task}]
+  (when (open-task? task)
+    (layer-landing datas page-id shape-id position)))
+
+(defn- thread-landing
+  "Where a thread of a merged branch lands on the target
+  (`layer-landing`). Nil for a thread that points at no layer."
+  [datas {:keys [anchor-type page-id shape-id position]}]
+  (when (= "layer" anchor-type)
+    (layer-landing datas page-id shape-id
+                   (cond-> position (db/pgpoint? position) (db/decode-pgpoint)))))
+
 (defn- land-task
   "Point `task` where `task-landing` puts it, its thread created with it
   too, and record it as a `relinked` event."
@@ -967,53 +1075,230 @@
                   {:shape-id shape-id :shape-name shape-name}
                   {:shape-id nil :area area})))
 
+(defn- move-to-target
+  "Move `threads` and `tasks` into the file `target-id` for the merge
+  `merge-id`. A thread keeps its number, which its family gives it. Each
+  task records the merge and gets a `merged` event. A thread, or an open
+  task, whose layer the target lacks lands where `thread-landing` or
+  `task-landing` says, reading the layer in `datas`; a landed task gets
+  a `relinked` event too."
+  [conn {:keys [target-id merge-id branch-name profile-id]} datas threads tasks]
+  (let [ts (ct/now)]
+    (doseq [{:keys [id] :as thread} threads]
+      (db/update! conn :comment-thread
+                  {:file-id target-id}
+                  {:id id}
+                  {::db/return-keys false})
+      (when-let [landing (thread-landing datas thread)]
+        (anchor-thread conn id landing)))
+    (doseq [{:keys [id] :as task} tasks]
+      (db/update! conn :file-task
+                  {:file-id target-id
+                   :merge-id merge-id
+                   :updated-at ts}
+                  {:id id}
+                  {::db/return-keys false})
+      (insert-event conn id profile-id "merged"
+                    {:merge-id merge-id :branch-name branch-name})
+      (when-let [landing (task-landing datas task)]
+        (land-task conn profile-id task landing)))))
+
+(defn- notify-merged-assignees
+  "Tell the assignees of the open tasks among `tasks`, moved into
+  `target-id`, by a `tasks-merged` email (`send-tasks-merged-emails`:
+  never the actor `profile-id`, and only those who admit task emails)."
+  [{:keys [::db/conn] :as cfg} {:keys [target-id branch-name profile-id]} tasks]
+  (let [open (filterv open-task? tasks)]
+    (when (seq open)
+      (send-tasks-merged-emails cfg
+                                {:team-id (perms/get-team-id-for-file conn target-id)
+                                 :target-id target-id
+                                 :actor-id profile-id
+                                 :branch-name branch-name
+                                 :file-name (:name (db/get conn :file {:id target-id}
+                                                           {::sql/columns [:name]}))}
+                                open))))
+
 (defn move-branch-tasks
-  "Move every task of the branch file into main, inside the merge
-  transaction: the open ones keep going on main, the closed ones stay as
-  the history of the branch. Each task keeps the names it shows (the
-  review title is refreshed from its pull request, which goes away with
-  the branch), records the merge and gets a `moved-to-main` event. The
-  threads of the tasks move with them. An open task whose layer the merge
-  did not carry lands where `task-landing` says, with a `relinked` event,
-  reading the layer in `merged-data`, `branch-data` and `base-data`. When
-  `notify-assignees` is set, the assignees of the open tasks are told by
-  email. Returns the moved tasks.
+  "Move into the merge target `target-id`, inside the merge transaction,
+  the threads of the branch file that hold an open task, whole with all
+  their tasks, and the threads written outside any review, with theirs.
+  An open task with no thread moves too. Every other thread stays on the
+  branch file with its tasks, as the record of its review. The moved
+  things land as `move-to-target` says, reading the layers in
+  `merged-data`, `branch-data` and `base-data`. When `notify-assignees`
+  is set, the assignees of the moved open tasks are told by email.
+  Returns the moved tasks.
 
   The branch file row is locked before the tasks are read, as task
   creation locks it (`lock-file`): a task created meanwhile is either
-  read here or refused once the merge deleted the branch file."
+  read here or refused once the merge deleted the branch file. The tasks
+  of the branch are locked before the threads are chosen, so no task
+  changes its state between the choice and the move."
   [{:keys [::db/conn] :as cfg}
-   {:keys [branch-file-id main-id merge-id branch-name profile-id notify-assignees] :as params}]
+   {:keys [branch-file-id notify-assignees] :as params}]
   (db/exec-one! conn [sql:lock-file branch-file-id])
-  (let [tasks (into [] (map decode-row) (db/exec! conn [sql:get-branch-tasks branch-file-id]))]
-    (when (seq tasks)
-      (let [reviews (->> (keep :pull-request-id tasks)
-                         (distinct)
-                         (map #(db/get* conn :file-pull-request {:id %}))
-                         (remove nil?)
-                         (d/index-by :id))
-            ts      (ct/now)]
-        (move-threads conn main-id (into [] (comp (keep :thread-id) (distinct)) tasks))
-        (doseq [{:keys [id pull-request-id review-title] :as task} tasks]
-          (db/update! conn :file-task
-                      {:file-id main-id
-                       :merge-id merge-id
-                       :branch-name branch-name
-                       :review-title (or (get-in reviews [pull-request-id :title]) review-title)
-                       :updated-at ts}
-                      {:id id}
-                      {::db/return-keys false})
-          (insert-event conn (:id task) profile-id "moved-to-main"
-                        {:merge-id merge-id :branch-name branch-name})
-          (when-let [landing (task-landing params task)]
-            (land-task conn profile-id task landing)))
-        (when notify-assignees
-          (let [main (db/get conn :file {:id main-id} {::sql/columns [:name]})]
-            (send-tasks-moved-emails cfg
-                                     {:team-id (perms/get-team-id-for-file conn main-id)
-                                      :main-id main-id
-                                      :actor-id profile-id
-                                      :branch-name branch-name
-                                      :file-name (:name main)}
-                                     (remove #(contains? closed-statuses (:status %)) tasks))))
-        tasks))))
+  (let [branch-tasks (into [] (map decode-row) (db/exec! conn [sql:get-branch-tasks branch-file-id]))
+        threads      (db/exec! conn [sql:get-merged-threads branch-file-id])
+        thread-ids   (into #{} (map :id) threads)
+        tasks        (filterv (fn [{:keys [thread-id] :as task}]
+                                (if (some? thread-id)
+                                  (contains? thread-ids thread-id)
+                                  (open-task? task)))
+                              branch-tasks)]
+    (move-to-target conn params params threads tasks)
+    (when notify-assignees
+      (notify-merged-assignees cfg params tasks))
+    tasks))
+
+;; --- COMMAND: move-branch-review-thread
+
+(def ^:private schema:move-branch-review-thread
+  [:map {:title "move-branch-review-thread" :closed true}
+   [:thread-id ::sm/uuid]])
+
+(def ^:private sql:get-review-thread
+  "SELECT ct.id,
+          ct.file_id,
+          ct.page_id,
+          ct.shape_id,
+          ct.anchor_type,
+          ct.position,
+          fb.source_file_id,
+          m.id AS merge_id,
+          m.file_id AS target_id,
+          m.branch_name
+     FROM comment_thread AS ct
+     JOIN file_branch_review AS r ON (r.id = ct.review_id AND r.deleted_at IS NULL)
+     JOIN file_branch AS fb ON (fb.id = r.file_branch_id)
+     LEFT JOIN file_branch_merge AS m ON (m.file_branch_id = fb.id)
+    WHERE ct.id = ?")
+
+(def ^:private sql:get-thread-tasks
+  "SELECT * FROM file_task
+    WHERE thread_id = ?
+      AND deleted_at IS NULL
+    ORDER BY created_at ASC
+      FOR UPDATE")
+
+(defn- get-review-thread
+  "The thread `thread-id` of a design review, with the merge of its
+  branch (`merge-id`, `target-id`, nil before the merge), or raise
+  :not-found."
+  [conn thread-id & {:as opts}]
+  (let [thread (db/exec-one! conn [(cond-> sql:get-review-thread
+                                     (::sql/for-update opts) (str " FOR UPDATE OF ct"))
+                                   thread-id])]
+    (when (nil? thread)
+      (ex/raise :type :not-found
+                :code :thread-not-found
+                :hint "unable to find a thread of a design review with the provided id"
+                :thread-id thread-id))
+    thread))
+
+(sv/defmethod ::move-branch-review-thread
+  "Move a thread that stayed behind on a merged branch into the target of
+  the merge, whole with its tasks: a review thread with no open task does
+  not move with the merge. Anybody with edit rights on the target may move
+  it. The thread lands on the target as the merge lands it, against the
+  current data of the target: the branch document of a merged branch is
+  not readable, so a thread or task whose layer the target lacks keeps
+  its stored spot on the canvas. Each task records the merge with a
+  `merged` event, and the assignees of its open tasks are told by a
+  `tasks-merged` email. Refuses a thread of a branch that is not merged,
+  and a thread already on the target."
+  {::doc/added "2.16"
+   ::webhooks/event? true
+   ::sm/params schema:move-branch-review-thread
+   ::climit/id [[:move-branch-review-thread/by-profile ::rpc/profile-id]
+                [:move-branch-review-thread/global]]}
+  [cfg {:keys [::rpc/profile-id ::rpc/session-id thread-id]}]
+  (check-tasks-enabled)
+  (let [{:keys [target-id source-file-id]}
+        (db/run! cfg (fn [{:keys [::db/conn]}] (get-review-thread conn thread-id)))]
+    (when (nil? target-id)
+      (files/check-read-permissions! cfg profile-id source-file-id)
+      (ex/raise :type :validation
+                :code :branch-not-merged
+                :hint "the thread belongs to a branch that is not merged"
+                :thread-id thread-id))
+    (files/check-edition-permissions! cfg profile-id target-id)
+    (run-and-notify
+     cfg {:file-id target-id :profile-id profile-id :session-id session-id}
+     :task-ids
+     (fn [{:keys [::db/conn] :as cfg}]
+       (lock-file conn target-id)
+       (let [{:keys [file-id merge-id branch-name] :as thread}
+             (get-review-thread conn thread-id {::sql/for-update true})]
+         (when (= target-id file-id)
+           (ex/raise :type :validation
+                     :code :thread-already-on-target
+                     :hint "the thread is already on the target of the merge"
+                     :thread-id thread-id))
+         (let [tasks (into [] (map decode-row) (db/exec! conn [sql:get-thread-tasks thread-id]))
+               ;; no `branch-data` or `base-data`: a lost layer cannot be
+               ;; looked up, so `layer-landing` keeps the stored spot
+               datas {:merged-data (:data (bfc/get-file cfg target-id :realize? true))}]
+           (move-to-target conn {:target-id target-id
+                                 :merge-id merge-id
+                                 :branch-name branch-name
+                                 :profile-id profile-id}
+                           datas [thread] tasks)
+           (notify-merged-assignees cfg {:target-id target-id
+                                         :branch-name branch-name
+                                         :profile-id profile-id}
+                                    tasks)
+           {:thread-id thread-id
+            :file-id target-id
+            :task-ids (mapv :id tasks)}))))))
+
+;; --- Review threads, wherever they live
+
+(def ^:private sql:get-review-threads
+  "SELECT ct.*,
+          pf.fullname AS owner_fullname,
+          pf.email AS owner_email,
+          pf.photo_id AS owner_photo_id
+     FROM comment_thread AS ct
+     LEFT JOIN profile AS pf ON (pf.id = ct.owner_id)
+    WHERE ct.review_id = ?
+    ORDER BY ct.seqn ASC")
+
+(def ^:private sql:get-review-comments
+  "SELECT c.*,
+          ct.file_id AS file_id,
+          pf.fullname AS owner_fullname,
+          pf.email AS owner_email,
+          pf.photo_id AS owner_photo_id
+     FROM comment AS c
+     JOIN comment_thread AS ct ON (ct.id = c.thread_id)
+     LEFT JOIN profile AS pf ON (pf.id = c.owner_id)
+    WHERE ct.review_id = ?
+    ORDER BY c.created_at ASC")
+
+(def ^:private sql:get-review-thread-tasks
+  (str sql:select-tasks
+       " WHERE ct.review_id = ?
+           AND t.deleted_at IS NULL
+         ORDER BY t.created_at ASC"))
+
+(defn get-review-threads
+  "The threads of the design review `review-id`, by number, each with its
+  `:comments`, oldest first, and its `:tasks` as `get-file-tasks` lists
+  them. A thread is listed wherever it lives: on the target when the
+  merge moved it, on the branch file when it stayed, or on no file
+  (`file-id` nil) once the branch file is gone."
+  [conn review-id]
+  (let [comments (->> (db/exec! conn [sql:get-review-comments review-id])
+                      (into [] comments/xf-decode-row)
+                      (group-by :thread-id))
+        tasks    (->> (db/exec! conn [sql:get-review-thread-tasks review-id])
+                      (into [] (map decode-row))
+                      (group-by :thread-id))]
+    (into []
+          (comp comments/xf-decode-row
+                (map (fn [{:keys [id] :as thread}]
+                       (assoc thread
+                              :comments (get comments id [])
+                              :tasks (get tasks id [])))))
+          (db/exec! conn [sql:get-review-threads review-id]))))

@@ -415,11 +415,11 @@
   them as entries of their own; this ties them to their cause. `objects`
   is the page as the side that holds the layer has it, `inner` the
   entries folded under it (`fold-cascades`), and `incoming` says the
-  changes are main's, going to the branch, rather than the branch's
-  going to main."
+  changes are the source's, going to the branch, rather than the branch's
+  going to the source."
   [item items objects inner incoming]
-  (let [from     (if incoming :branch :main)
-        to       (if incoming :main :branch)
+  (let [from     (if incoming :branch :source)
+        to       (if incoming :source :branch)
         deleted? (= :deleted (:status item))
         ids      (into #{(:id item)} (map :id) inner)
         page-id  (:page-id item)
@@ -649,23 +649,23 @@
 (defn- attr-sources
   "Every changed attr of a conflict with who changed it, using the base
   value both sides started from. `:conflict` attrs moved on both sides; a
-  `:main` or `:branch` attr moved on that side alone, so its value is not
-  in doubt. Without a base (both sides added the entity) every attr
+  `:source` or `:branch` attr moved on that side alone, so its value is
+  not in doubt. Without a base (both sides added the entity) every attr
   conflicts."
   [conflict]
   (let [base      (:base conflict)
         has-base? (map? base)]
     (->> (:changed-attrs conflict)
-         (map (fn [[attr {:keys [main branch]}]]
+         (map (fn [[attr {:keys [source branch]}]]
                 (let [base-v (get base attr)]
                   {:attr   attr
                    :base   base-v
-                   :main   main
+                   :source source
                    :branch branch
-                   :source (cond
+                   :origin (cond
                              (not has-base?)    :conflict
-                             (= base-v main)    :branch
-                             (= base-v branch)  :main
+                             (= base-v source)  :branch
+                             (= base-v branch)  :source
                              :else              :conflict)})))
          (sort-by (comp attr-label :attr))
          vec)))
@@ -678,21 +678,21 @@
   [conflict]
   (let [all     (attr-sources conflict)
         visible (filterv #(not (contains? technical-attrs (:attr %))) all)]
-    (if (and (not-any? #(= :conflict (:source %)) visible)
-             (some #(= :conflict (:source %)) all))
+    (if (and (not-any? #(= :conflict (:origin %)) visible)
+             (some #(= :conflict (:origin %)) all))
       all
       visible)))
 
 (defn conflicting-attrs
   [rows]
-  (into [] (comp (filter #(= :conflict (:source %))) (map :attr)) rows))
+  (into [] (comp (filter #(= :conflict (:origin %))) (map :attr)) rows))
 
 (defn- hidden-conflicts
   "The conflicting attrs `conflict-attr-rows` does not show."
   [conflict]
   (let [shown (into #{} (map :attr) (conflict-attr-rows conflict))]
     (into []
-          (comp (filter #(= :conflict (:source %)))
+          (comp (filter #(= :conflict (:origin %)))
                 (map :attr)
                 (remove shown))
           (attr-sources conflict))))
@@ -704,15 +704,15 @@
   conflicting attrs comes out resolved."
   [conflict]
   (into {}
-        (comp (remove #(= :conflict (:source %)))
-              (map (juxt :attr :source)))
+        (comp (remove #(= :conflict (:origin %)))
+              (map (juxt :attr :origin)))
         (attr-sources conflict)))
 
 (defn per-attr?
   "Whether a conflict can be decided property by property."
   [conflict]
   (and (seq (:changed-attrs conflict))
-       (map? (:main conflict))
+       (map? (:source conflict))
        (map? (:branch conflict))))
 
 (defn choose-attr
@@ -720,10 +720,10 @@
   `res` (nil, a whole-side keyword or a per-attr map)."
   [conflict res attr side]
   (let [seed (cond
-               (map? res)      res
-               (= res :branch) (zipmap (keys (:changed-attrs conflict)) (repeat :branch))
-               (= res :main)   (zipmap (keys (:changed-attrs conflict)) (repeat :main))
-               :else           (prefill-resolution conflict))]
+               (map? res)        res
+               (= res :branch)   (zipmap (keys (:changed-attrs conflict)) (repeat :branch))
+               (= res :source)   (zipmap (keys (:changed-attrs conflict)) (repeat :source))
+               :else             (prefill-resolution conflict))]
     (reduce (fn [res hidden] (assoc res hidden side))
             (assoc seed attr side)
             (hidden-conflicts conflict))))
@@ -740,12 +740,12 @@
     side))
 
 (defn attr-choice
-  "Currently-selected side (`:main`/`:branch`) for `attr` under resolution
-  `res`, or nil when undecided."
+  "Currently-selected side (`:source`/`:branch`) for `attr` under
+  resolution `res`, or nil when undecided."
   [res attr]
   (cond
     (= res :branch) :branch
-    (= res :main)   :main
+    (= res :source) :source
     (map? res)      (get res attr)
     :else           nil))
 
@@ -756,14 +756,14 @@
   [conflict res]
   (let [rows (conflict-attr-rows conflict)]
     (into []
-          (keep (fn [{:keys [attr base main branch]}]
+          (keep (fn [{:keys [attr base source branch]}]
                   (let [choice (attr-choice res attr)
                         has-base? (map? (:base conflict))]
                     (cond
-                      (and (= choice :branch) (or (not has-base?) (not= main base)))
-                      {:attr attr :side :main :value main}
+                      (and (= choice :branch) (or (not has-base?) (not= source base)))
+                      {:attr attr :side :source :value source}
 
-                      (and (= choice :main) (or (not has-base?) (not= branch base)))
+                      (and (= choice :source) (or (not has-base?) (not= branch base)))
                       {:attr attr :side :branch :value branch}
 
                       :else nil))))
@@ -774,7 +774,7 @@
   this side edited it, `:dropped` when only the other side edited it (so
   keeping this side drops that edit), or nil when neither did."
   [conflict side]
-  (let [other  (if (= side :main) :branch :main)
+  (let [other  (if (= side :source) :branch :source)
         base   (content-paragraphs (get-in conflict [:base :content]))
         mine   (content-paragraphs (get-in conflict [side :content]))
         theirs (content-paragraphs (get-in conflict [other :content]))]
@@ -808,13 +808,13 @@
   [conflict]
   (boolean
    (and (per-attr? conflict)
-        (some #(and (= :content (:attr %)) (= :conflict (:source %)))
+        (some #(and (= :content (:attr %)) (= :conflict (:origin %)))
               (conflict-attr-rows conflict)))))
 
 (defn dropped-paragraphs
   "The paragraph edits keeping `side` drops."
   [conflict side]
-  (let [other (if (= side :main) :branch :main)]
+  (let [other (if (= side :source) :branch :source)]
     (filterv #(= :kept (:status %)) (paragraph-rows conflict other))))
 
 (defn loses-work?
@@ -823,7 +823,7 @@
   [conflict]
   (boolean
    (and (text-conflict? conflict)
-        (seq (dropped-paragraphs conflict :main))
+        (seq (dropped-paragraphs conflict :source))
         (seq (dropped-paragraphs conflict :branch)))))
 
 (defn pending-attr
@@ -1005,13 +1005,13 @@
   [reason]
   (case reason
     :follows-component (tr "workspace.branches.review.copies.reason.follows-component")
-    :override-main     (tr "workspace.branches.review.copies.reason.override-main")
+    :override-source   (tr "workspace.branches.review.copies.reason.override-main")
     :override-branch   (tr "workspace.branches.review.copies.reason.override-branch")
     (tr "workspace.branches.review.copies.reason.override-both")))
 
 (defn side-label
   [side]
-  (if (= side :main)
+  (if (= side :source)
     (tr "workspace.branches.review.side.main")
     (tr "workspace.branches.review.side.branch")))
 
@@ -1061,8 +1061,8 @@
                        {}
                        (sort-by (comp group-label key) (:keeps copy)))]
     (reduce (fn [acc [slot {:keys [side reason]}]]
-              (if (and (contains? #{:main :branch} side)
-                       (contains? #{:override-main :override-branch} reason))
+              (if (and (contains? #{:source :branch} side)
+                       (contains? #{:override-source :override-branch} reason))
                 (update acc side (fnil conj []) (token-slot-label slot))
                 acc))
             groups

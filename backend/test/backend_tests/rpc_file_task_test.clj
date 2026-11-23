@@ -79,7 +79,7 @@
                                         ::rpc/profile-id (:id author)
                                         :file-id (:id file)
                                         :name "feature-login"}))
-          review (:result (th/command! {::th/type :create-pull-request
+          review (:result (th/command! {::th/type :create-branch-review
                                         ::rpc/profile-id (:id author)
                                         :branch-id (:id branch)
                                         :title "Checkout redesign"
@@ -117,11 +117,18 @@
                                        :page-id page-id
                                        :shape-id rect-id
                                        :assignee-id (:id author)
-                                       :pull-request-id (:id review)})
+                                       :review-id (:id review)})
           task (:result out)]
       (t/is (nil? (:error out)))
       (t/is (= "open" (:status task)))
-      (t/is (= "Checkout redesign" (:review-title task)))
+      (t/is (= "Checkout redesign"
+               (->> (th/command! {::th/type :get-file-tasks
+                                  ::rpc/profile-id (:id author)
+                                  :file-id branch-file-id})
+                    :result
+                    (filter #(= (:id task) (:id %)))
+                    first
+                    :review-title)))
 
       (t/testing "the assignee marks it done and the reviewer verifies it"
         (t/is (nil? (:error (set-status* author (:id task) "done"))))
@@ -137,7 +144,7 @@
           (t/is (= {:from "done" :to "verified"} (:payload (last events))))))
 
       (t/testing "the review counts its tasks"
-        (let [row (:result (th/command! {::th/type :get-pull-request
+        (let [row (:result (th/command! {::th/type :get-branch-review
                                          ::rpc/profile-id (:id author)
                                          :id (:id review)}))]
           (t/is (= {"verified" 1} (-> row :counts :tasks))))))))
@@ -196,14 +203,14 @@
                             :frame-id uuid/zero
                             :position (gpt/point 10 20)
                             :content "The pay button loses contrast"
-                            :pull-request-id (:id review)
+                            :review-id (:id review)
                             :anchor {:type :layer :shape-id rect-id}})]
       (t/is (nil? (:error out)))
       (let [[thread] (:result (th/command! {::th/type :get-comment-threads
                                             ::rpc/profile-id (:id reviewer)
                                             :file-id branch-file-id}))]
-        (t/is (= (:id review) (:pull-request-id thread)))
-        (t/is (= "Checkout redesign" (:pull-request-title thread)))
+        (t/is (= (:id review) (:review-id thread)))
+        (t/is (= "Checkout redesign" (:review-title thread)))
         (t/is (= :layer (:anchor-type thread)))
         (t/is (= rect-id (:shape-id thread)))))))
 
@@ -217,8 +224,8 @@
                             :frame-id uuid/zero
                             :position (gpt/point 0)
                             :content "on main"
-                            :pull-request-id (:id review)})]
-      (t/is (= :pull-request-not-open (-> out :error ex-data :code))))))
+                            :review-id (:id review)})]
+      (t/is (= :branch-review-not-open (-> out :error ex-data :code))))))
 
 (t/deftest branch-save-under-review-records-its-activity
   (with-redefs [cf/flags (task-flags)]
@@ -226,7 +233,7 @@
       (update-file* author branch-file-id
                     [{:type :mod-obj :page-id page-id :id rect-id
                       :operations [{:type :set :attr :name :val "Pay"}]}])
-      (let [result (:result (th/command! {::th/type :get-pull-request-activity
+      (let [result (:result (th/command! {::th/type :get-branch-review-activity
                                           ::rpc/profile-id (:id author)
                                           :id (:id review)}))]
         (t/is (= [{:id rect-id :kind :modified :attrs {:name ["Pay button" "Pay"]}}]
@@ -255,12 +262,12 @@
                                         :frame-id uuid/zero
                                         :position (gpt/point 0)
                                         :content "fix the radius"
-                                        :pull-request-id (:id review)}))
+                                        :review-id (:id review)}))
           open   (:result (create-task* author {:file-id branch-file-id
                                                 :page-id page-id
                                                 :shape-id rect-id
                                                 :thread-id (:id thread)
-                                                :pull-request-id (:id review)}))
+                                                :review-id (:id review)}))
           closed (:result (create-task* author {:file-id branch-file-id
                                                 :page-id page-id
                                                 :title "Drop the promo"}))]
@@ -283,16 +290,213 @@
         (t/is (every? #(= (:id merge-row) (:merge-id %)) tasks))
         (t/is (every? #(= "feature-login" (:branch-name %)) tasks))
         (t/is (= "Checkout redesign"
-                 (:review-title (th/db-get :file-task {:id (:id open)})))))
+                 (:review-title (first (filter #(= (:id open) (:id %)) tasks)))))
+        (t/is (= (:id review) (:review-id merge-row)))
+        (t/is (= "Checkout redesign" (:review-title merge-row)))
+        (t/is (= (:family-id (th/db-get :file {:id (:id file)})) (:family-id merge-row))))
 
-      (t/testing "the threads move with their tasks and take the next numbers of main"
+      (t/testing "every task gets a `merged` event naming the merge"
+        (let [events (:result (th/command! {::th/type :get-task-events
+                                            ::rpc/profile-id (:id author)
+                                            :id (:id open)}))]
+          (t/is (= "merged" (:type (last events))))
+          (t/is (= "feature-login" (-> events last :payload :branch-name)))))
+
+      (t/testing "the threads move with their tasks and keep their numbers in the family"
         (let [moved  (th/db-get :comment-thread {:id (:id thread)})
-              closed (th/db-get :comment-thread {:id (:thread-id closed)})]
+              closed (th/db-get :comment-thread {:id (:thread-id closed)})
+              family (:family-id (th/db-get :file {:id (:id file)}))]
           (t/is (= (:id file) (:file-id moved)))
           (t/is (= (:id file) (:file-id closed)))
+          (t/is (= [family family] [(:family-id moved) (:family-id closed)]))
           (t/is (= [2 3] [(:seqn moved) (:seqn closed)]))
-          (t/is (= 3 (:comment-thread-seqn (th/db-get :file {:id (:id file)}
-                                                      {::db/remove-deleted false})))))))))
+          (t/is (= 3 (:thread-seqn (th/db-get :file-family {:id family})))))))))
+
+;; --- What the merge moves: the thread is the unit
+
+(defn- thread*
+  [profile file-id page-id params]
+  (:result (th/command! (merge {::th/type :create-comment-thread
+                                ::rpc/profile-id (:id profile)
+                                :file-id file-id
+                                :page-id page-id
+                                :frame-id uuid/zero
+                                :position (gpt/point 0)
+                                :content "fix the radius"}
+                               params))))
+
+(defn- message-ids*
+  "The ids of the messages of a thread, oldest first."
+  [profile thread-id]
+  (->> (th/command! {::th/type :get-comments
+                     ::rpc/profile-id (:id profile)
+                     :thread-id thread-id})
+       :result
+       (sort-by :created-at)
+       (mapv :id)))
+
+(defn- setup-review-threads
+  "The branch of `setup-review` with four threads: a review thread holding
+  an open task and a closed one (`mixed`), a review thread whose only task
+  is closed (`closed` is that task), a review thread with no task
+  (`quiet`), and a thread written outside the review (`loose`)."
+  []
+  (let [{:keys [author reviewer page-id branch-file-id review] :as setup} (setup-review)
+        mixed (thread* reviewer branch-file-id page-id {:review-id (:id review)})
+        _     (th/command! {::th/type :create-comment
+                            ::rpc/profile-id (:id reviewer)
+                            :thread-id (:id mixed)
+                            :content "and the shadow"})
+        [first-id reply-id] (message-ids* author (:id mixed))
+        open   (:result (create-task* author {:file-id branch-file-id
+                                              :page-id page-id
+                                              :review-id (:id review)
+                                              :thread-id (:id mixed)
+                                              :comment-id first-id
+                                              :assignee-id (:id reviewer)
+                                              :title "Fix the radius"}))
+        done   (:result (create-task* author {:file-id branch-file-id
+                                              :page-id page-id
+                                              :review-id (:id review)
+                                              :thread-id (:id mixed)
+                                              :comment-id reply-id
+                                              :title "Fix the shadow"}))
+        closed (:result (create-task* author {:file-id branch-file-id
+                                              :page-id page-id
+                                              :review-id (:id review)
+                                              :assignee-id (:id reviewer)
+                                              :title "Drop the promo"}))
+        quiet  (thread* reviewer branch-file-id page-id {:review-id (:id review)
+                                                         :content "Is this button still needed?"})
+        loose  (thread* author branch-file-id page-id {:content "a note outside the review"})]
+    (set-status* author (:id done) "wont-do")
+    (set-status* author (:id closed) "wont-do")
+    (assoc setup
+           :mixed mixed
+           :open open
+           :done done
+           :closed closed
+           :quiet quiet
+           :loose loose)))
+
+(defn- merge*
+  [profile branch & {:as params}]
+  (th/command! (merge {::th/type :merge-file-branch
+                       ::rpc/profile-id (:id profile)
+                       :branch-id (:id branch)}
+                      params)))
+
+(t/deftest merge-moves-the-threads-with-an-open-task-and-those-outside-reviews
+  (let [sent (atom [])]
+    (with-redefs [cf/flags (task-flags)
+                  eml/send-template (fn [_ params] (swap! sent conj params) nil)]
+      (let [{:keys [author reviewer file branch branch-file-id review mixed open done closed quiet loose]}
+            (setup-review-threads)]
+        (reset! sent [])
+        (t/is (nil? (:error (merge* author branch :notify-assignees true))))
+
+        (t/testing "a thread holding an open task moves whole, with its closed task"
+          (t/is (= (:id file) (:file-id (th/db-get :comment-thread {:id (:id mixed)}))))
+          (let [rows (mapv #(th/db-get :file-task {:id (:id %)}) [open done])]
+            (t/is (= [(:id file) (:id file)] (mapv :file-id rows)))
+            (t/is (every? (comp some? :merge-id) rows))))
+
+        (t/testing "a thread written outside any review moves"
+          (t/is (= (:id file) (:file-id (th/db-get :comment-thread {:id (:id loose)})))))
+
+        (t/testing "a review thread with no open task stays on the branch file"
+          (let [task (th/db-get :file-task {:id (:id closed)})]
+            (t/is (= branch-file-id (:file-id task)))
+            (t/is (nil? (:merge-id task)))
+            (t/is (= branch-file-id (:file-id (th/db-get :comment-thread {:id (:thread-id closed)}))))))
+
+        (t/testing "a review thread with no task stays on the branch file"
+          (t/is (= branch-file-id (:file-id (th/db-get :comment-thread {:id (:id quiet)})))))
+
+        (t/testing "main lists the moved threads and their tasks only"
+          (let [threads (:result (th/command! {::th/type :get-comment-threads
+                                               ::rpc/profile-id (:id author)
+                                               :file-id (:id file)}))
+                tasks   (:result (th/command! {::th/type :get-file-tasks
+                                               ::rpc/profile-id (:id author)
+                                               :file-id (:id file)}))]
+            (t/is (= #{(:id mixed) (:id loose)} (into #{} (map :id) threads)))
+            (t/is (= #{(:id open) (:id done)} (into #{} (map :id) tasks)))))
+
+        (t/testing "the assignee of the moved open task is told, and nobody else"
+          (let [merged (filterv #(= "tasks-merged" (::eml/template %)) @sent)]
+            (t/is (= [(:email reviewer)] (mapv :to merged)))
+            (t/is (= "- Fix the radius" (:task-titles (first merged))))))
+
+        (t/testing "the review is kept as merged"
+          (t/is (= "merged" (:status (th/db-get :file-branch-review {:id (:id review)})))))))))
+
+(defn- move-thread*
+  [profile thread-id]
+  (th/command! {::th/type :move-branch-review-thread
+                ::rpc/profile-id (:id profile)
+                :thread-id thread-id}))
+
+(t/deftest a-thread-left-behind-moves-to-the-target-on-request
+  (let [sent (atom [])]
+    (with-redefs [cf/flags (task-flags)
+                  eml/send-template (fn [_ params] (swap! sent conj params) nil)]
+      (let [{:keys [author reviewer file branch branch-file-id closed quiet]} (setup-review-threads)
+            viewer (th/create-profile* 3 {:is-active true})
+            thread-id (:thread-id closed)]
+        (th/create-team-role* {:team-id (:default-team-id author)
+                               :profile-id (:id viewer)
+                               :role :viewer})
+
+        (t/testing "a thread of a branch that is not merged is refused"
+          (t/is (= :branch-not-merged (-> (move-thread* author thread-id) :error ex-data :code)))
+          (t/is (= branch-file-id (:file-id (th/db-get :comment-thread {:id thread-id})))))
+
+        (t/is (nil? (:error (merge* author branch))))
+        (t/is (= branch-file-id (:file-id (th/db-get :comment-thread {:id thread-id}))))
+
+        ;; the task of the thread left behind is open again: no command
+        ;; reaches a task on the deleted branch file, so the row is set
+        ;; directly, to see the move tell its assignee
+        (th/db-exec! ["UPDATE file_task SET status = 'reopened' WHERE id = ?" (:id closed)])
+
+        (t/testing "a viewer of the target may not move it"
+          (t/is (= :not-found (-> (move-thread* viewer thread-id) :error ex-data :type)))
+          (t/is (= branch-file-id (:file-id (th/db-get :comment-thread {:id thread-id})))))
+
+        (reset! sent [])
+
+        (t/testing "an editor of the target moves it whole, with its task"
+          (let [out  (move-thread* author thread-id)
+                task (th/db-get :file-task {:id (:id closed)})
+                [merge-row] (th/db-query :file-branch-merge {:file-id (:id file)})]
+            (t/is (nil? (:error out)))
+            (t/is (= [(:id closed)] (-> out :result :task-ids)))
+            (t/is (= (:id file) (:file-id (th/db-get :comment-thread {:id thread-id}))))
+            (t/is (= (:id file) (:file-id task)))
+            (t/is (= (:id merge-row) (:merge-id task)))
+            (let [event (last (:result (th/command! {::th/type :get-task-events
+                                                     ::rpc/profile-id (:id author)
+                                                     :id (:id closed)})))]
+              (t/is (= "merged" (:type event)))
+              (t/is (= "feature-login" (-> event :payload :branch-name))))))
+
+        (t/testing "the assignee of the moved open task is told, the mover not"
+          (let [merged (filterv #(= "tasks-merged" (::eml/template %)) @sent)]
+            (t/is (= [(:email reviewer)] (mapv :to merged)))
+            (t/is (= "- Drop the promo" (:task-titles (first merged))))))
+
+        (t/testing "the moved thread reads on the target, the other one still not"
+          (let [threads (:result (th/command! {::th/type :get-comment-threads
+                                               ::rpc/profile-id (:id author)
+                                               :file-id (:id file)}))
+                ids     (into #{} (map :id) threads)]
+            (t/is (contains? ids thread-id))
+            (t/is (not (contains? ids (:id quiet))))))
+
+        (t/testing "a thread already on the target is refused"
+          (t/is (= :thread-already-on-target
+                   (-> (move-thread* author thread-id) :error ex-data :code))))))))
 
 (t/deftest each-message-of-a-thread-may-be-a-task
   (with-redefs [cf/flags (task-flags)]
@@ -368,7 +572,7 @@
                                        :shape-id rect-id
                                        :position (gpt/point 30 40)
                                        :title "  Use the secondary token  "
-                                       :pull-request-id (:id review)})
+                                       :review-id (:id review)})
           task (:result out)]
       (t/is (nil? (:error out)))
       (t/is (some? (:thread-id task)))
@@ -378,7 +582,7 @@
         (let [thread (th/db-get :comment-thread {:id (:thread-id task)})]
           (t/is (= branch-file-id (:file-id thread)))
           (t/is (= (:id reviewer) (:owner-id thread)))
-          (t/is (= (:id review) (:pull-request-id thread)))
+          (t/is (= (:id review) (:review-id thread)))
           (t/is (= "layer" (:anchor-type thread)))
           (t/is (= rect-id (:shape-id thread)))))
 
@@ -404,9 +608,9 @@
                                                 :page-id page-id
                                                 :position (gpt/point 120 340)}))
           thread (th/db-get :comment-thread {:id (:thread-id task)})]
-      (t/is (= "canvas" (:anchor-type thread)))
+      (t/is (= "point" (:anchor-type thread)))
       (t/is (nil? (:shape-id thread)))
-      (t/is (nil? (:pull-request-id thread)))
+      (t/is (nil? (:review-id thread)))
       (t/is (= {:x 120.0 :y 340.0} (into {} (db/decode-pgpoint (:position thread))))))))
 
 (t/deftest deleting-a-thread-deletes-its-tasks
@@ -666,6 +870,49 @@
       (let [event (last (task-events* author (:id task)))]
         (t/is (= "relinked" (:type event)))
         (t/is (some? (-> event :payload :area)))))))
+
+(t/deftest a-moved-review-thread-whose-layer-the-branch-deleted-lands-on-its-parent
+  ;; The thread is the unit: a review thread holding an open task moves
+  ;; with the merge, and when the branch deleted the layer it points at,
+  ;; the thread itself lands on the parent of that layer, as its task does.
+  (with-redefs [cf/flags (task-flags)
+                eml/send-template (fn [_ _] nil)]
+    (let [{:keys [author file page-id board-id rect-id branch branch-file-id]} (setup-board-branch)
+          reviewer (th/create-profile* 2 {:is-active true})
+          _        (th/create-team-role* {:team-id (:default-team-id author)
+                                          :profile-id (:id reviewer)
+                                          :role :editor})
+          review   (:result (th/command! {::th/type :create-branch-review
+                                          ::rpc/profile-id (:id author)
+                                          :branch-id (:id branch)
+                                          :title "Checkout redesign"
+                                          :reviewers [(:id reviewer)]}))
+          thread   (thread* reviewer branch-file-id page-id
+                            {:frame-id board-id
+                             :review-id (:id review)
+                             :anchor {:type :layer :shape-id rect-id}
+                             :content "Is this button still needed?"})
+          task     (:result (create-task* author {:file-id branch-file-id
+                                                  :page-id page-id
+                                                  :frame-id board-id
+                                                  :shape-id rect-id
+                                                  :review-id (:id review)
+                                                  :thread-id (:id thread)
+                                                  :comment-id (first (message-ids* author (:id thread)))}))]
+      (t/is (some? (:id task)))
+      (t/is (nil? (:error (update-file* author branch-file-id
+                                        [{:type :del-obj :page-id page-id :id rect-id}]))))
+      (t/is (nil? (:error (merge* author branch))))
+
+      (let [row (th/db-get :comment-thread {:id (:id thread)})]
+        (t/is (= (:id file) (:file-id row)))
+        (t/is (= (:id review) (:review-id row)))
+        (t/is (= "layer" (:anchor-type row)))
+        (t/is (= board-id (:shape-id row)))
+        (t/is (= board-id (:frame-id row))))
+      (let [row (th/db-get :file-task {:id (:id task)})]
+        (t/is (= (:id file) (:file-id row)))
+        (t/is (= board-id (:shape-id row)))))))
 
 ;; --- Deleted layers of any size
 
@@ -966,3 +1213,43 @@
                            {:id (:id author)})
             (let [task (new-task)]
               (t/is (= [] (move reviewer task "done"))))))))))
+
+;; --- Counts of what a branch deletion takes with it
+
+(defn- branch-counts*
+  [profile branch-id]
+  (th/command! {::th/type :get-file-branch-counts
+                ::rpc/profile-id (:id profile)
+                :branch-id branch-id}))
+
+(t/deftest branch-counts-say-what-a-delete-takes-with-it
+  (with-redefs [cf/flags (task-flags)
+                eml/send-template (fn [_ _] nil)]
+    (let [{:keys [author reviewer branch quiet closed]} (setup-review-threads)]
+
+      (t/testing "threads and tasks are counted by the branch file"
+        (let [out (branch-counts* author (:id branch))]
+          (t/is (nil? (:error out)))
+          ;; `mixed` holds the open task and the closed one, the closed
+          ;; task outside it got a thread of its own, and `quiet` and
+          ;; `loose` are the threads with no task
+          (t/is (= {:threads 4 :open-tasks 1 :closed-tasks 2} (:result out)))))
+
+      (t/testing "a deleted thread and a deleted task are not counted"
+        (t/is (nil? (:error (th/command! {::th/type :delete-comment-thread
+                                          ::rpc/profile-id (:id reviewer)
+                                          :id (:id quiet)}))))
+        (t/is (nil? (:error (th/command! {::th/type :delete-task
+                                          ::rpc/profile-id (:id author)
+                                          :id (:id closed)}))))
+        (t/is (= {:threads 3 :open-tasks 1 :closed-tasks 1}
+                 (:result (branch-counts* author (:id branch))))))
+
+      (t/testing "a profile that cannot read the branch file is refused"
+        (let [stranger (th/create-profile* 3 {:is-active true})]
+          (t/is (= :not-found (-> (branch-counts* stranger (:id branch))
+                                  :error ex-data :type)))))
+
+      (t/testing "a branch that does not exist is not found"
+        (t/is (= :branch-not-found (-> (branch-counts* author (uuid/random))
+                                       :error ex-data :code)))))))

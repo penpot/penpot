@@ -327,9 +327,9 @@
         resolving? (= phase :resolve)
         hidden?    (:hidden mode)
         loaded?    (= status :loaded)
-        direction  (if incoming :main->branch :branch->main)
+        direction  (if incoming :source->branch :branch->source)
         total      (get-in model [:counts :all])
-        other-dir  (if incoming :branch->main :main->branch)
+        other-dir  (if incoming :branch->source :source->branch)
         ;; the changes of the other direction come with every diff, so
         ;; its tab can count them before it is shown
         other-total (mf/with-memo [(:other-changes mode) (:other-conflicts mode) data]

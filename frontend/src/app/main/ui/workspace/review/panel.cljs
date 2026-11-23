@@ -47,7 +47,7 @@
   [{:keys [thread objects is-open show-review]}]
   (let [owner   (d/without-nils (dcmt/get-owner thread))
         replies (dec (or (:count-comments thread) 1))
-        review? (some? (:pull-request-id thread))
+        review? (some? (:review-id thread))
 
         on-click
         (mf/use-fn
@@ -70,7 +70,7 @@
                                 [:> layer-chip* {:label (rvc/thread-anchor-label objects thread)
                                                  :icon (rvc/thread-anchor-icon thread)}])
                        :review (when (and show-review review?)
-                                 (or (:pull-request-title thread)
+                                 (or (:review-title thread)
                                      (tr "workspace.review.design-review")))
                        :is-review review?
                        :is-open is-open
@@ -143,10 +143,10 @@
 ;; --- Tasks
 
 (mf/defc tasks-tab*
-  "The tasks of the review (`pull-request-id`), or of the file when there
-  is none: its progress, filters and list. With `show-review`, each task
+  "The tasks of the review (`review-id`), or of the file when there is
+  none: its progress, filters and list. With `show-review`, each task
   names the design review it belongs to."
-  [{:keys [tasks pull-request-id grouped show-review]}]
+  [{:keys [tasks review-id grouped show-review]}]
   (let [profile  (mf/deref refs/profile)
         local    (mf/deref refs/review-local)
         selected (mf/deref refs/selected-shapes)
@@ -175,7 +175,7 @@
 
         on-new-task
         (mf/use-fn
-         (mf/deps selected objects page-id pull-request-id)
+         (mf/deps selected objects page-id review-id)
          (fn [_]
            (let [shape (some->> (first selected) (get objects))]
              (if (some? shape)
@@ -183,7 +183,7 @@
                           {:page-id page-id
                            :frame-id (if (cfh/frame-shape? shape) (:id shape) (:frame-id shape))
                            :shape-id (:id shape)
-                           :pull-request-id pull-request-id}))
+                           :review-id review-id}))
                ;; no layer chosen yet: the task tool picks it on the canvas
                (st/emit! (dwrv/set-tool :task))))))]
 
@@ -254,7 +254,7 @@
         tab      (get local :panel-tab :inspect)
 
         threads  (mf/with-memo [threads* pr-id]
-                   (filterv #(= pr-id (:pull-request-id %)) (vals threads*)))
+                   (filterv #(= pr-id (:review-id %)) (vals threads*)))
         tasks    (mf/with-memo [tasks* pr-id]
                    (vec (dwtk/sort-tasks (dwtk/review-tasks (vals tasks*) pr-id))))
 
@@ -290,5 +290,5 @@
           [:div {:class (stl/css :inspect-tab)} inspect]
           [:div {:class (stl/css :review-tab-content)}
            (if (= tab :tasks)
-             [:> tasks-tab* {:tasks tasks :pull-request-id pr-id}]
+             [:> tasks-tab* {:tasks tasks :review-id pr-id}]
              [:> comments-tab* {:threads threads}])])]])))

@@ -17,7 +17,7 @@
    [app.features.fdata :as fdata]
    [app.features.file-snapshots :as fsnap]
    [app.rpc :as-alias rpc]
-   [app.rpc.commands.files-pull-request :as fpr]
+   [app.rpc.commands.files-branch-review :as fbr]
    [app.rpc.commands.teams :as teams]
    [app.rpc.cond :as-alias cond]
    [app.rpc.doc :as-alias doc]
@@ -140,8 +140,8 @@
         file    (-> (bfc/get-file cfg file-id)
                     (bfc/file->response))
 
-        ;; pull request review sandbox: the viewer shows the pinned
-        ;; review snapshot of the branch, not its live state
+        ;; branch review sandbox: the viewer shows the pinned snapshot
+        ;; of the branch, not its live state
         file    (if-let [snapshot (::snapshot params)]
                   (-> file
                       (assoc :data (:data snapshot))
@@ -230,36 +230,47 @@
      :team (assoc team :permissions perms)
      :permissions perms}))
 
-(defn- get-pull-request-view-context
-  "Resolve the review-sandbox context of `pr-id`: permissions taken from
-  the pull request's TARGET file (share-links do not apply here) with
-  edition stripped, plus the pinned review snapshot whose data replaces
-  the branch file's live state. Refuses when the pull request is not
-  open or does not belong to `file-id` — the sandbox must never silently
-  degrade to the live branch."
-  [system profile-id file-id pr-id]
-  (fpr/check-pull-requests-enabled!)
-  (let [pr (db/get* system :file-pull-request {:id pr-id})]
-    (when (or (nil? pr)
-              (some? (:deleted-at pr))
-              (not= file-id (:source-file-id pr)))
+(def ^:private sql:get-branch-review-for-viewer
+  "SELECT r.id,
+          r.status,
+          r.pinned_snapshot_id,
+          fb.branch_file_id AS source_file_id,
+          fb.source_file_id AS target_file_id
+     FROM file_branch_review AS r
+     JOIN file_branch AS fb ON (fb.id = r.file_branch_id)
+    WHERE r.id = ?
+      AND r.deleted_at IS NULL")
+
+(defn- get-branch-review-view-context
+  "Resolve the review-sandbox context of `review-id`: permissions taken
+  from the review's TARGET file (share-links do not apply here) with
+  edition stripped, plus the pinned snapshot whose data replaces the
+  branch file's live state. Refuses when the review is not open or its
+  branch file is not `file-id` — the sandbox must never silently degrade
+  to the live branch. Both sides come from the branch edge, which is the
+  only place they live."
+  [system profile-id file-id review-id]
+  (fbr/check-branch-reviews-enabled!)
+  (let [review (db/exec-one! system [sql:get-branch-review-for-viewer review-id])]
+    (when (or (nil? review)
+              (not= file-id (:source-file-id review)))
       (ex/raise :type :not-found
-                :code :pull-request-not-found
-                :hint "unable to find pull request with the provided id"
-                :pull-request-id pr-id))
-    (when (not= "open" (:status pr))
+                :code :branch-review-not-found
+                :hint "unable to find the branch review with the provided id"
+                :review-id review-id))
+    (when (not= "open" (:status review))
       (ex/raise :type :validation
-                :code :pull-request-not-open
-                :hint "the review sandbox only exists while the pull request is open"
-                :pull-request-id pr-id))
-    (let [perms    (perms/get-file-read-permissions system profile-id (:target-file-id pr))
-          snapshot (when (:review-snapshot-id pr)
-                     (fsnap/get-snapshot system (:source-file-id pr) (:review-snapshot-id pr)))]
+                :code :branch-review-not-open
+                :hint "the review sandbox only exists while the branch review is open"
+                :review-id review-id))
+    (let [perms    (perms/get-file-read-permissions system profile-id (:target-file-id review))
+          snapshot (when (:pinned-snapshot-id review)
+                     (fsnap/get-snapshot system (:source-file-id review) (:pinned-snapshot-id review)))]
       (when (and perms (nil? snapshot))
         (ex/raise :type :not-found
                   :code :review-snapshot-missing
-                  :hint "the pull request review snapshot cannot be resolved"
-                  :pull-request-id pr-id))
+                  :hint "the branch review snapshot cannot be resolved"
+                  :review-id review-id))
       {:perms (some-> perms (assoc :can-edit false :is-admin false :is-owner false))
        :snapshot snapshot})))
 
@@ -267,19 +278,19 @@
   [:map {:title "get-view-only-bundle"}
    [:file-id ::sm/uuid]
    [:share-id {:optional true} ::sm/uuid]
-   [:pr-id {:optional true} ::sm/uuid]
+   [:review-id {:optional true} ::sm/uuid]
    [:features {:optional true} ::cfeat/features]])
 
 (sv/defmethod ::get-view-only-bundle
   {::rpc/auth false
    ::doc/added "1.17"
    ::sm/params schema:get-view-only-bundle}
-  [system {:keys [::rpc/profile-id file-id share-id pr-id] :as params}]
+  [system {:keys [::rpc/profile-id file-id share-id review-id] :as params}]
   (db/run! system
            (fn [system]
              (let [{:keys [perms snapshot]}
-                   (if (some? pr-id)
-                     (get-pull-request-view-context system profile-id file-id pr-id)
+                   (if (some? review-id)
+                     (get-branch-review-view-context system profile-id file-id review-id)
                      {:perms (perms/get-file-read-permissions system profile-id file-id share-id)})
 
                    params (-> params
