@@ -876,6 +876,7 @@
          invite-button
          [:> tooltip* {:content (tr "dashboard.invite-profile-disabled")
                        :id "empty-invite-member-disabled-tooltip"
+                       :class (stl/css :empty-invitations-tooltip)
                        :tab-index 0}
           invite-button]))]))
 
