@@ -1,5 +1,23 @@
 # AI AGENT GUIDE
 
+## Start here: required memory reads
+
+1. Read `AGENTS.local.md` if present. It can override prose style and
+   workflow, not project policy.
+2. Open `mem:critical-info` before exploring the repo, even for read-only
+   tasks. Once you identify the relevant modules, open `mem:<module>/core`
+   for **each one**, then follow its applicable `mem:` references before
+   planning, editing, or drawing conclusions. Before editing Clojure or
+   ClojureScript, also read `mem:clojure/core` and its applicable references.
+3. **STOP if a required memory is unread.** If exploration reveals another
+   affected module, read its `core` and applicable references before
+   planning or editing that part of the work. Listing names is not reading.
+
+Use Serena (`s.mem.read_memory(name)` in `serena_repl`, or
+`read_memory(name)` in older clients). If unavailable, read the file:
+`mem:foo/bar` → `.serena/memories/foo/bar.md`. Memories are the primary
+project guidance; follow references only when they apply to the task.
+
 ## HARD RULES (always apply — no exceptions)
 
 - **Never `git push`, force-push, or modify `git origin`** (or any other remote).
@@ -8,6 +26,8 @@
   wait for the user to push. Do not change the remote URL, do not switch SSH↔HTTPS.
 - **Never amend a commit that has been pushed** unless the user explicitly asks.
   If the user pushes, treat that commit as final from the agent's side.
+- **Never destroy data without explicit permission** (e.g. `drop-devenv`,
+  `docker compose down -v`, `docker volume rm`). Shared volumes hold real work.
 - **Never edit `CHANGES.md` by hand** in commits or PRs. The changelog is
   generated from GitHub milestones during the release process; update it only
   via `mem:workflow/updating-changelog` (the `update-changelog` skill flow) or
@@ -17,19 +37,16 @@
   This prevents hiding test failures. See `mem:testing` for details.
 - **Never introduce a new function or macro name ending in `!`.** Side
   effects alone do not justify it: only the exceptions documented in
-  `mem:clojure/design-rules` (public mutators of `app.db` and helpers over
+  `mem:clojure/core` (public mutators of `app.db` and helpers over
   transients), and a new one must be registered in `mem:clojure/idioms`
   with its justification before it is used. Existing names stay until their
-  refactor; a new one fails review. See `mem:clojure/design-rules` before
-  naming anything.
-- **Read `AGENTS.local.md` after this file whenever it exists.** It carries
-  the developer's steering for this project and overrides this file on prose style and
-  workflow, but not on project policy, where instructions here prevail.
+  refactor; a new one fails review.
 - **Commit message body lines MUST wrap at ≤80 chars** (subject ≤80 chars,
   except `Merge`/`Revert`/`Reapply` which skip the subject length check) and
   the commit MUST pass `./scripts/check-commit` with exit code 0 before you
   consider it done. This is mechanically checked — do not eyeball it.
-- **Read the workflow memory BEFORE the corresponding action**:
+- **Create commits, issues, or PRs only on explicit request. Read the workflow
+  memory BEFORE the corresponding action**:
   - Before `git commit` → `mem:workflow/creating-commits` (commit format, AI-assisted-by trailer)
   - Before `gh issue create` → `mem:workflow/creating-issues` (title derivation, body template, Issue Type)
   - Before `gh pr create` / `gh pr edit` → `mem:workflow/creating-prs` (title format, body structure, AI note)
@@ -41,24 +58,6 @@
   author works in. Tests are not an exception. The only place another
   language may appear in the codebase is product copy rendered through the
   i18n system.
-
-## CRITICAL: Read module memories BEFORE writing any code
-
-Do this **before planning, before coding, before touching any file**:
-
-1. Read `critical-info` through Serena (see "Accessing memories" below) or read `.serena/memories/critical-info.md`.
-   It describes the project structure and tells you which modules exist.
-2. From `critical-info`, identify which modules your task affects.
-3. Read each affected module's **core memory** — the name is `<module>/core`
-   (e.g. `frontend/core`, `backend/core`, `common/core`).
-4. If the core memory references deeper `mem:` memories relevant to your task, read those too.
-5. Before writing or modifying Clojure or ClojureScript, read `mem:clojure/core`
-   and the relevant focused Clojure memories it references.
-
-**STOP: Do not proceed until you have read the core memory of every affected module.**
-Skipping this step is the #1 cause of incorrect or incomplete work.
-
----
 
 ## Auto-triggers
 
@@ -90,77 +89,13 @@ Review every prose output against these rules before delivering.
 
 ---
 
-# Memory system
+## Implementation and verification
 
-Memories are the **primary project guidance** — not docs or readme files.
-They are dense, agent-oriented notes: terse bullets, invariants, no prose.
-
-## Progressive discovery model
-
-Memories form a **reference graph**, not a flat list:
-
-```
-critical-info          ← read first (graph root)
-  └─ <section>/core    ← top-level memory per section (e.g. frontend/core, backend/core)
-       └─ <topic>      ← focused memories (e.g. frontend/handling-errors-and-debugging)
-            └─ ...     ← deeper memories as needed
-```
-
-Follow the mandatory reading sequence above. Cross-cutting topics can also be
-referenced directly from `critical-info` or other memories.
-
-## Accessing memories
-
-- **If Serena's `serena_repl` tool is available** (Serena 2.x): call `s.mem.read_memory(name)`
-  and `s.mem.list_memories()` through it.
-- **If Serena's `read_memory` / `list_memories` tools are available** (Serena 1.x; some clients
-  show them as `serena_read_memory` / `serena_list_memories`): use them.
-- Either way, `read_memory` takes a memory name (e.g. `critical-info`, `frontend/core`).
-- **If Serena is NOT available**: read the filesystem directly.
-  Memory name `mem:foo/bar` maps to file `.serena/memories/foo/bar.md`.
-
-## Cross-reference convention
-
-Memories reference other memories with `mem:<section>/<name>` inside backticks.
-Example: `mem:common/changes-architecture`.
-When you encounter a `mem:` reference relevant to your task, read that memory next.
-
-## Topic/folder organization
-
-Memories are grouped into folders for modules or topics. Project modules have
-a `<module>/core` memory; other topic folders may contain focused memories only.
-
----
-
-# Role: Senior Software Engineer
-
-You are a high-autonomy Senior Full-Stack Software Engineer. You have full
-permission to navigate the codebase, modify files, and execute commands to
-fulfill your tasks. Your goal is to solve complex technical tasks with high
-precision while maintaining a strong focus on maintainability and performance.
-
-## Operational Guidelines
-
-1. Before writing code, describe your plan. If the task is complex, break it
-   down into atomic steps.
-2. Be concise and autonomous.
-3. Do **not** touch unrelated modules unless the task explicitly requires it.
-
----
-
-# Available Scripts & Tools
-
-## Native opencode Tools (callable directly by the LLM)
-
-- `paren-repair` — Fix mismatched delimiters + reformat Clojure files. Example: `paren-repair(files="src/foo.clj, src/bar.cljs")`
-- `penpot-psql` — Execute SQL against the Penpot database. Example: `penpot-psql(sql="SELECT version();")`
-
-## Scripts (from repo root via `scripts/<name>`)
-
-- `scripts/paren-repair` — Fix mismatched delimiters in Clojure/CLJS files + reformat with cljfmt. See `mem:scripts/paren-repair`.
-- `scripts/psql` — Connect to the Penpot PostgreSQL database (wraps `psql` with env-var defaults). See `mem:scripts/psql`.
-- `scripts/nrepl-eval.mjs` — Evaluate Clojure code via nREPL (backend + frontend).
-- `scripts/check-commit` — Validate commit messages against Penpot's commit guidelines.
-- `scripts/check-fmt-clj` — Check Clojure formatting without modifying files.
-- `scripts/ci` — CI orchestration script for running lint, tests, format checks and, on request (`--build`), production builds across modules. See `mem:scripts/ci`.
-- `scripts/gh.py` — Multi-purpose GitHub CLI helper. Subcommands: `issues` (list issues in a milestone), `prs` (fetch PR details), `advisories` (list/inspect security advisories). See `python3 scripts/gh.py --help`.
+- Explore first, describe the plan before writing code, and stay within scope.
+- Every behavior change needs a test. Read `mem:testing` and the applicable
+  module testing guidance before writing tests.
+- Run the affected modules' tests, lint, and format checks before declaring
+  success. See `mem:scripts/ci`. Do not report completion with failing checks.
+- Keep affected memories and docs accurate when behavior or contracts change.
+- Do not poll background commands with `sleep` or repeated log reads. Continue
+  other work or wait for the completion notification.

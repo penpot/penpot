@@ -1,0 +1,7 @@
+# CI coverage reporting
+
+- Backend, Common, Frontend and Render WASM test workflows use `scripts/coverage-summary.mjs` to write source-area tables from lcov to `$GITHUB_STEP_SUMMARY` (`--title`, `--lcov`, optional `--note`, `--unloaded`). Module coverage commands: `mem:backend/testing`, `mem:common/testing`, `mem:frontend/testing`.
+- `scripts/coverage-comment.mjs` maintains one PR comment marked `<!-- coverage-report -->`. It renders the four projects together, including changed-file coverage and a run/commit footer. `scripts/coverage-lcov.mjs` supplies shared lcov parsing.
+- Each job updates only its project. Base64-encoded `coverage-data` holds all four projects; the writer re-reads after a delay based on `SETTLE_MS` and retries if a concurrent update dropped its data. Concurrent creates are merged and extra comments deleted.
+- Line thresholds affect status color only: Backend 70%, Common 70%, Frontend 50%, Render WASM 40%. Other metrics use the neutral blue status. Backend/Common statement counts are Clojure forms (`--emma-xml`); Render WASM statement counts are LLVM regions (`--llvm-json`).
+- The comment steps use job-level `pull-requests: write` and `continue-on-error`, and run only for same-repo pull requests with coverage output. Fork PRs receive the run-page summary, not a comment; their PR token is read-only. A `workflow_run` commenter would run from the default branch's workflow, not the PR's.
