@@ -204,6 +204,7 @@ overrides:
 
 patchedDependencies:
   '@zip.js/zip.js@2.8.34': 7b556bbd426f152eb086f0126a53900e369a95cf64357c380b7c8d8e940c3d95
+  opentype.js@2.0.0: a953004e3c9d590e606d66204516f1df16774a3cc4be1fedf22f74250d21b580
 
 importers:
 
@@ -344,7 +345,7 @@ importers:
         version: 4.1.5
       opentype.js:
         specifier: ^2.0.0
-        version: 2.0.0
+        version: 2.0.0(patch_hash=a953004e3c9d590e606d66204516f1df16774a3cc4be1fedf22f74250d21b580)
       p-limit:
         specifier: ^7.3.3
         version: 7.3.3
@@ -8095,7 +8096,7 @@ snapshots:
       is-inside-container: 1.0.0
       wsl-utils: 0.1.0
 
-  opentype.js@2.0.0: {}
+  opentype.js@2.0.0(patch_hash=a953004e3c9d590e606d66204516f1df16774a3cc4be1fedf22f74250d21b580): {}
 
   own-keys@1.0.2:
     dependencies:

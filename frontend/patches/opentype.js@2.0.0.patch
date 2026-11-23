@@ -1,0 +1,44 @@
+diff --git a/dist/opentype.js b/dist/opentype.js
+--- a/dist/opentype.js
++++ b/dist/opentype.js
+@@ -3565,6 +3565,18 @@
+     }
+     if (offset === -1) {
+       throw new Error("No valid cmap sub-tables found.");
++    }
++    // Prefer the Unicode BMP map when the selected legacy table is format 6.
++    if (parse_default.getUShort(data, start + offset) === 6) {
++      for (let i = cmap.numTables - 1; i >= 0; i -= 1) {
++        const record = start + 4 + i * 8;
++        if (parse_default.getUShort(data, record) !== 0 || parse_default.getUShort(data, record + 2) !== 3) continue;
++        const unicodeOffset = parse_default.getULong(data, record + 4);
++        if (parse_default.getUShort(data, start + unicodeOffset) === 4) {
++          offset = unicodeOffset;
++          break;
++        }
++      }
+     }
+     const p = new parse_default.Parser(data, start + offset);
+     cmap.format = p.parseUShort();
+diff --git a/dist/opentype.mjs b/dist/opentype.mjs
+--- a/dist/opentype.mjs
++++ b/dist/opentype.mjs
+@@ -3533,6 +3533,18 @@
+   }
+   if (offset === -1) {
+     throw new Error("No valid cmap sub-tables found.");
++  }
++  // Prefer the Unicode BMP map when the selected legacy table is format 6.
++  if (parse_default.getUShort(data, start + offset) === 6) {
++    for (let i = cmap.numTables - 1; i >= 0; i -= 1) {
++      const record = start + 4 + i * 8;
++      if (parse_default.getUShort(data, record) !== 0 || parse_default.getUShort(data, record + 2) !== 3) continue;
++      const unicodeOffset = parse_default.getULong(data, record + 4);
++      if (parse_default.getUShort(data, start + unicodeOffset) === 4) {
++        offset = unicodeOffset;
++        break;
++      }
++    }
+   }
+   const p = new parse_default.Parser(data, start + offset);
+   cmap.format = p.parseUShort();

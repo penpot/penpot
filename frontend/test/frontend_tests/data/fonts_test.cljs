@@ -7,6 +7,7 @@
 (ns frontend-tests.data.fonts-test
   "Tests for the upload metadata resolution in app.main.data.fonts."
   (:require
+   ["opentype.js" :as ot]
    [app.common.uuid :as uuid]
    [app.main.data.fonts :as df]
    [app.main.data.uploads :as uploads]
@@ -15,6 +16,46 @@
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.async :as async]
    [frontend-tests.helpers.mock :as mock]))
+
+(t/deftest parse-font-with-legacy-format-six-cmap
+  ;; Generated font with a Unicode format 4 map and a legacy Macintosh format 6 map.
+  (let [encoded (str
+                      "T1RUTwAKAIAAAwAgQ0ZGIMBKUFkAAAVcAAAApE9TLzJmlmDgAAABEAAAAGBjbWFwAAwAdQAA"
+                      "BiAAAABCaGVhZC9eoOQAAACsAAAANmhoZWEDIgEwAAAA5AAAACRobXR4BdwAAAAABgAAAAAM"
+                      "bHRhZ2V+AAQAAAYMAAAAEm1heHAAA1AAAAABCAAAAAZuYW1lzvVNlAAAAXAAAAOfcG9zdAAD"
+                      "AAAAAAU8AAAAIAABAAAAAQAAUuCFL18PPPUAAwPoAAAAAOcqMAIAAAAA5yowAgAAAAAB9AAA"
+                      "AAAAAwACAAAAAAAAAAEAAAMg/zgAAAH0AAAAAAAAAAEAAAAAAAAAAAAAAAAAAAADAABQAAAD"
+                      "AAAAAwH0AfQABQAAAooCuwAAAIwCigK7AAAB3wAxAQIAAAAAAAAAAAAAAAAAAAABAAAAAAAA"
+                      "AAAAAAAAWFhYWABAAEEAQgMg/zgAAAAAAAAAAAABAAAAAAGQAAAAAAAAAAAAAAAzAmoAAAAE"
+                      "AAAAAAACAAgAAAAEAAAAAQAeAAAAAAAEAAAAAgAOAB4AAAAEAAAAAwA0AJoAAAAEAAAABAAu"
+                      "ACwAAAAEAAAABQAWAIQAAAAEAAAABgAqAFoAAAAEAAAABwACAAgAAAAEAAAACAACAAgAAAAE"
+                      "AAAACQACAAgAAAAEAAAACgACAAgAAAAEAAAACwACAAgAAAAEAAAADAACAAgAAAAEAAAADQAC"
+                      "AAgAAAAEAAAADgACAAgAAAAEAAAAEAAeAAAAAAAEAAAAEQAOAB4AAQAAAAAAAAABAAkAAQAA"
+                      "AAAAAQAPAM4AAQAAAAAAAgAHAN0AAQAAAAAAAwAaARsAAQAAAAAABAAXAOQAAQAAAAAABQAL"
+                      "ARAAAQAAAAAABgAVAPsAAQAAAAAABwABAAkAAQAAAAAACAABAAkAAQAAAAAACQABAAkAAQAA"
+                      "AAAACgABAAkAAQAAAAAACwABAAkAAQAAAAAADAABAAkAAQAAAAAADQABAAkAAQAAAAAADgAB"
+                      "AAkAAQAAAAAAEAAPAM4AAQAAAAAAEQAHAN0AAwABBAkAAAACAAgAAwABBAkAAQAeAAAAAwAB"
+                      "BAkAAgAOAB4AAwABBAkAAwA0AJoAAwABBAkABAAuACwAAwABBAkABQAWAIQAAwABBAkABgAq"
+                      "AFoAAwABBAkABwACAAgAAwABBAkACAACAAgAAwABBAkACQACAAgAAwABBAkACgACAAgAAwAB"
+                      "BAkACwACAAgAAwABBAkADAACAAgAAwABBAkADQACAAgAAwABBAkADgACAAgAAwABBAkAEAAe"
+                      "AAAAAwABBAkAEQAOAB4AQwBtAGEAcAAgAFIAZQBnAHIAZQBzAHMAaQBvAG4AUgBlAGcAdQBs"
+                      "AGEAcgBDAG0AYQBwACAAUgBlAGcAcgBlAHMAcwBpAG8AbgAgAFIAZQBnAHUAbABhAHIAQwBt"
+                      "AGEAcABSAGUAZwByAGUAcwBzAGkAbwBuAFIAZQBnAHUAbABhAHIAVgBlAHIAcwBpAG8AbgAg"
+                      "ADAALgAxACAAOgAgAEMAbQBhAHAAIABSAGUAZwByAGUAcwBzAGkAbwBuACAAUgBlAGcAdQBs"
+                      "AGEAckNtYXAgUmVncmVzc2lvblJlZ3VsYXJDbWFwIFJlZ3Jlc3Npb24gUmVndWxhckNtYXBS"
+                      "ZWdyZXNzaW9uUmVndWxhclZlcnNpb24gMC4xIDogQ21hcCBSZWdyZXNzaW9uIFJlZ3VsYXIA"
+                      "AAAAAQADAAEAAAAMAAQAIAAAAAQABAABAAAAQv//AAAAQf///8AAAQAAAAAAAwAAAAAAAAAA"
+                      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEABAEAAQEBFkNtYXBSZWdyZXNzaW9uUmVndWxhcgAB"
+                      "AQEn+BsA+BwC+B0D+B4Ei4v5tPiIBR0AAACPDx0AAACUEYsdAAAApBIABgEBDCMyOTo7VmVy"
+                      "c2lvbiAwLjFDbWFwIFJlZ3Jlc3Npb24gUmVndWxhckNtYXAgUmVncmVzc2lvblJlZ3VsYXJB"
+                      "QgAAAAGLAYwAAwEBBAcK+IgO+IgO+IgOAfQAAAH0AAAB9AAAAAAAAQAAAAAAAAABABAAAmVu"
+                      "AAAAAAACAAAAAwAAABQAAQAAAAAANAAEACAAAAAEAAQAAQAAAEL//wAAAEH////AAAEAAAAA"
+                      "AAYADgAAAEEAAgABAAI=")
+        bytes   (js/Uint8Array.from (js/atob encoded) #(.charCodeAt % 0))
+        font    (ot/parse (.-buffer bytes))]
+    (t/is (= "Cmap Regression" (.getEnglishName ^js font "fontFamily")))
+    (t/is (= 1 (.charToGlyphIndex ^js font "A")))
+    (t/is (= 2 (.charToGlyphIndex ^js font "B")))))
 
 (t/deftest resolve-font-metadata-prefers-opentype-values
   (t/testing "opentype.js values win over the filename"
