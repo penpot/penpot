@@ -818,12 +818,16 @@
                (rx/of (dwva/rename-variant shape-id clean-name))
                (rx/of
                 (dwu/start-undo-transaction undo-id)
-                ;; Rename the shape if string is not empty/blank
-                (update-shape shape-id {:name clean-name})
 
-                ;; Update the component in case shape is a main instance
+                ;; Rename the component in case shape is a main instance.
+                ;; Note that this needs to be done before the shape rename,
+                ;; because the shape validation of the rename checks that the
+                ;; main instance name matches its component.
                 (when (and (some? component-id) (ctc/main-instance? shape))
                   (dwl/rename-component component-id clean-name))
+
+                ;; Rename the shape if string is not empty/blank
+                (update-shape shape-id {:name clean-name})
                 (dwh/dehighlight-shape shape-id)
                 (dwu/commit-undo-transaction undo-id))))))))))
 

@@ -110,12 +110,13 @@
 (defn get-primary-variant
   "Return the main instance of the primary variant (the last one) in the variant container."
   [data component]
-  (let [page-id (:main-instance-page component)
-        objects (-> (dm/get-in data [:pages-index page-id])
-                    (get :objects))]
-    (->> (get-variant-mains data component)
-         peek
-         (get objects))))
+  (when component
+    (let [page-id (:main-instance-page component)
+          objects (-> (dm/get-in data [:pages-index page-id])
+                      (get :objects))]
+      (->> (get-variant-mains data component)
+           peek
+           (get objects)))))
 
 (defn get-primary-component
   [data component-id]

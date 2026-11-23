@@ -86,7 +86,8 @@
 
 (defn generate-update-shapes
   [changes ids update-fn objects {:keys [attrs changed-sub-attr changed-item-index ignore-tree ignore-touched with-objects? translation? skip-grid-reassignment? skip-validation? extra-context]}]
-  (let [changes   (reduce
+  (let [redo-count (count (:redo-changes changes))
+        changes   (reduce
                    (fn [changes id]
                      (let [opts {:attrs attrs
                                  :ignore-geometry? (get ignore-tree id)
@@ -113,11 +114,15 @@
                   (pcb/get-page-id changes))
         modified-components (ctn/get-all-instance-roots objects ids)
 
+        ;; Only validate when the update actually produced changes: an
+        ;; otherwise no-op update would add a commit of its own.
+        changed? (> (count (:redo-changes changes)) redo-count)
+
         ;; skip-validation? is for updates that can't break the references
         ;; between components (e.g. geometry only). The validation covers
         ;; the whole instance, so it could stop on copies that other
         ;; changes have not synced yet.
-        changes (if (and page-id (seq modified-components) (not skip-validation?))
+        changes (if (and changed? page-id (seq modified-components) (not skip-validation?))
                   (pcb/validate-shapes changes
                                        page-id
                                        modified-components

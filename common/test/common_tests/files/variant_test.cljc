@@ -193,7 +193,7 @@
                     (ths/add-sample-shape :s01))
         data    (:data file)
         shape   (ths/get-shape file :s01)]
-    (t/is (= (fv/extract-properties-names data shape)
+    (t/is (= (cfv/extract-properties-names data shape)
              []))))
 
 (t/deftest extract-properties-names-non-variant
@@ -201,7 +201,7 @@
                     (tho/add-simple-component :c01 :m01 :s01))
         data    (:data file)
         main    (ths/get-shape file :m01)]
-    (t/is (= (fv/extract-properties-names data main)
+    (t/is (= (cfv/extract-properties-names data main)
              []))))
 
 (t/deftest extract-properties-names-normal
@@ -209,7 +209,7 @@
                     (thv/add-variant :v01 :c01 :m01 :c02 :m02))
         data    (:data file)
         main1   (ths/get-shape file :m01)]
-    (t/is (= (fv/extract-properties-names data main1)
+    (t/is (= (cfv/extract-properties-names data main1)
              ["Property 1"]))))
 
 (t/deftest extract-properties-names-two-properties
@@ -217,7 +217,7 @@
                     (thv/add-variant-two-properties :v01 :c01 :m01 :c02 :m02))
         data    (:data file)
         main1   (ths/get-shape file :m01)]
-    (t/is (= (fv/extract-properties-names data main1)
+    (t/is (= (cfv/extract-properties-names data main1)
              ["Property 1" "Property 2"]))))
 
 ;; ============================================================

@@ -67,7 +67,7 @@
                         (map :component)
                         (reverse))
         props      (-> components first :variant-properties)]
-    (if (and (seq props) (<= 0 pos) (< pos (count props)))
+    (if (and (some? pos) (seq props) (<= 0 pos) (< pos (count props)))
       (let [stripped  (mapv #(d/remove-at-index (:variant-properties %) pos) components)
             props-seq (cond-> stripped
                         sanitize-set? ctv/sanitize-properties-set)
