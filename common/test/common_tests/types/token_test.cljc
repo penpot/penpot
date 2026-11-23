@@ -8,6 +8,7 @@
   (:require
    [app.common.schema :as sm]
    [app.common.types.token :as cto]
+   [clojure.set :as set]
    [clojure.test :as t]))
 
 (t/deftest test-valid-token-name
@@ -44,6 +45,51 @@
     (t/is (false? (cto/per-side-stroke-shape? :image)))
     (t/is (false? (cto/per-side-stroke-shape? :group)))
     (t/is (false? (cto/per-side-stroke-shape? nil)))))
+
+(t/deftest shape-type->attributes-test
+  (t/testing "rectangles and images take radius tokens but no spacing or typography"
+    (let [attrs (cto/shape-type->attributes :rect false)]
+      (t/is (set/subset? cto/border-radius-keys attrs))
+      (t/is (set/subset? cto/color-keys attrs))
+      (t/is (set/subset? #{:x :y} attrs))
+      (t/is (empty? (set/intersection cto/spacing-gap-padding-keys attrs)))
+      (t/is (empty? (set/intersection cto/typography-keys attrs)))
+      (t/is (= attrs (cto/shape-type->attributes :image false)))))
+
+  (t/testing "boards take gap and padding tokens only when they have a layout"
+    (let [board        (cto/shape-type->attributes :frame false)
+          layout-board (cto/shape-type->attributes :frame true)]
+      (t/is (= (cto/shape-type->attributes :rect false) board))
+      (t/is (empty? (set/intersection cto/spacing-gap-padding-keys board)))
+      (t/is (set/subset? cto/spacing-gap-padding-keys layout-board))
+      (t/is (set/subset? board layout-board))))
+
+  (t/testing "texts take typography and number tokens but no radius"
+    (let [attrs (cto/shape-type->attributes :text false)]
+      (t/is (set/subset? cto/typography-keys attrs))
+      (t/is (set/subset? cto/number-keys attrs))
+      (t/is (set/subset? cto/color-keys attrs))
+      (t/is (empty? (set/intersection cto/border-radius-keys attrs)))))
+
+  (t/testing "circles, paths, booleans and svgs share the generic attributes"
+    (let [attrs (cto/shape-type->attributes :circle false)]
+      (t/is (set/subset? cto/stroke-width-keys attrs))
+      (t/is (set/subset? cto/shadow-keys attrs))
+      (t/is (empty? (set/intersection cto/border-radius-keys attrs)))
+      (t/is (= attrs
+               (cto/shape-type->attributes :path false)
+               (cto/shape-type->attributes :bool false)
+               (cto/shape-type->attributes :svg-raw false)))))
+
+  (t/testing "the layout flag only matters for boards"
+    (t/is (= (cto/shape-type->attributes :rect false)
+             (cto/shape-type->attributes :rect true)))
+    (t/is (= (cto/shape-type->attributes :text false)
+             (cto/shape-type->attributes :text true))))
+
+  (t/testing "groups take no tokens"
+    (t/is (nil? (cto/shape-type->attributes :group false)))
+    (t/is (nil? (cto/shape-type->attributes :group true)))))
 
 (t/deftest token-value-with-refs
   (t/testing "empty value"
