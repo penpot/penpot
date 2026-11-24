@@ -6,10 +6,73 @@
 
 (ns frontend-tests.data.repo-test
   (:require
+   [app.common.uri :as u]
+   [app.config :as cf]
+   [app.main.data.event :as-alias ev]
    [app.main.repo :as repo]
+   [app.util.globals :as globals]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
-   [cuerdas.core :as str]))
+   [cuerdas.core :as str]
+   [frontend-tests.helpers.async :as async]
+   [frontend-tests.helpers.http :as http-mock]
+   [frontend-tests.helpers.mock :as mock]))
+
+(defn- ^:async capture-request
+  [command params]
+  (let [request  (volatile! nil)
+        original (http-mock/install-fetch-mock!
+                  (fn [url ^js options]
+                    (vreset! request [url options])
+                    (js/Promise.resolve (http-mock/make-transit-response {}))))]
+    (try
+      (await (async/->promise (repo/cmd! command params)))
+      @request
+      (finally
+        (http-mock/restore-fetch! original)))))
+
+(t/deftest ^:async penpot-api-requests-send-the-page-origin
+  (await (mock/with-mocks*
+           {(.-origin ^js globals/location) "https://alias.example"
+            cf/public-uri (u/uri "https://canonical.example/penpot/")
+            cf/external-session-id (fn [] "external-session")}
+           ;; Keep the page origin distinct from the request URI to prove
+           ;; which one supplies the header.
+           (doseq [[command method path]
+                   [[:get-profile "GET" "/penpot/api/main/methods/get-profile"]
+                    [:login-with-oidc "POST" "/penpot/api/auth/oidc"]
+                    [:upload-chunk "POST" "/penpot/api/main/methods/upload-chunk"]
+                    [:create-file-thumbnail "POST" "/penpot/api/main/methods/create-file-thumbnail"]]]
+             (t/testing (name command)
+               (let [[url ^js options] (await (capture-request command (with-meta {} {::ev/origin "test"})))
+                     headers           (js/Headers. (.-headers options))]
+                 (t/is (= (str "https://canonical.example" path) url))
+                 (t/is (= method (.-method options)))
+                 (t/is (= "include" (.-credentials options)))
+                 (t/is (= "cors" (.-mode options)))
+                 (t/is (= "https://alias.example" (.get headers "x-penpot-origin")))
+                 (t/is (= "external-session" (.get headers "x-external-session-id")))
+                 (t/is (= "test" (.get headers "x-event-origin")))
+                 (when (= :get-profile command)
+                   (t/is (= "application/transit+json,text/event-stream,*/*" (.get headers "accept")))
+                   (t/is (= (str cf/session-id) (.get headers "x-session-id"))))
+                 (when (#{:upload-chunk :create-file-thumbnail} command)
+                   (t/is (instance? js/FormData (.-body options)))
+                   (t/is (not (.has headers "content-type"))))))))))
+
+(t/deftest ^:async exporter-requests-do-not-send-the-page-origin
+  (await (mock/with-mocks*
+           {(.-origin ^js globals/location) "https://alias.example"
+            cf/public-uri (u/uri "https://alias.example/penpot/")}
+           (doseq [[command params path]
+                   [[:export {} "/penpot/api/export"]
+                    [:create-export-job {} "/penpot/api/export/jobs"]
+                    [:cancel-export-job {:job-id "job-id"} "/penpot/api/export/jobs/job-id"]]]
+             (t/testing (name command)
+               (let [[url ^js options] (await (capture-request command params))
+                     headers           (js/Headers. (.-headers options))]
+                 (t/is (= path (.-pathname (js/URL. url))))
+                 (t/is (not (.has headers "x-penpot-origin")))))))))
 
 ;; ---------------------------------------------------------------------------
 ;; retryable-error? tests (synchronous)

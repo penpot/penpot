@@ -52,7 +52,10 @@
     {::yres/headers default-headers
      ::yres/status 200
      ::yres/body (yres/stream-body
-                  (fn [_ output]
+                  ;; The body runs after the request handler has returned, so
+                  ;; capture its dynamic bindings (notably the effective
+                  ;; :public-uri) to keep links on the requesting origin.
+                  (bound-fn [_ output]
 
                     (let [channel  (sp/chan :buf buf :xf (keep encode))
                           listener (events/spawn-listener

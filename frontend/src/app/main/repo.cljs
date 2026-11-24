@@ -14,6 +14,7 @@
    [app.common.uri :as u]
    [app.config :as cf]
    [app.main.data.event :as-alias ev]
+   [app.util.globals :as globals]
    [app.util.http :as http]
    [app.util.sse :as sse]
    [beicon.v2.core :as rx]
@@ -214,6 +215,16 @@
 
    :retrieve-list-of-builtin-templates {:query-params :all}})
 
+(defn- get-backend-headers
+  [params]
+  ;; RPC and OIDC select a public base on the backend. The backend validates
+  ;; the page origin, which is needed even for GETs without an Origin header.
+  (let [origin (.-origin ^js globals/location)]
+    (cond-> {"x-external-session-id" (cf/external-session-id)
+             "x-event-origin" (::ev/origin (meta params))}
+      (some? origin)
+      (assoc "x-penpot-origin" origin))))
+
 (defn- send!
   [id params options]
   (let [{:keys [response-type
@@ -244,10 +255,9 @@
         {:method method
          :uri (u/join cf/public-uri "api/main/methods/" nid)
          :credentials "include"
-         :headers {"accept" "application/transit+json,text/event-stream,*/*"
-                   "x-external-session-id" (cf/external-session-id)
-                   "x-session-id" (str cf/session-id)
-                   "x-event-origin" (::ev/origin (meta params))}
+         :headers (assoc (get-backend-headers params)
+                         "accept" "application/transit+json,text/event-stream,*/*"
+                         "x-session-id" (str cf/session-id))
          :body (when (= method :post)
                  (if form-data?
                    (http/form-data params)
@@ -313,8 +323,7 @@
     (->> (http/send! {:method :post
                       :uri uri
                       :credentials "include"
-                      :headers {"x-external-session-id" (cf/external-session-id)
-                                "x-event-origin" (::ev/origin (meta params))}
+                      :headers (get-backend-headers params)
                       :query params})
          (rx/map http/conditional-decode-transit)
          (rx/mapcat handle-response))))
@@ -363,8 +372,7 @@
   (->> (http/send! {:method :post
                     :uri  (u/join cf/public-uri "api/main/methods/" (name id))
                     :credentials "include"
-                    :headers {"x-external-session-id" (cf/external-session-id)
-                              "x-event-origin" (::ev/origin (meta params))}
+                    :headers (get-backend-headers params)
                     :body (http/form-data params)})
        (rx/map http/conditional-decode-transit)
        (rx/mapcat handle-response)))

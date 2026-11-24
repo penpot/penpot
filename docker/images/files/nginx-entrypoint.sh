@@ -44,8 +44,18 @@ update_oidc_name() {
   fi
 }
 
+update_trusted_origins() {
+  if [ -n "${PENPOT_TRUSTED_ORIGINS:-}" ]; then
+    local encoded
+    # Encode the UTF-8 bytes on one line so the value cannot end the JS string.
+    encoded="$(printf '%s' "$PENPOT_TRUSTED_ORIGINS" | base64 -w 0)" || return 1
+    printf 'var penpotTrustedOrigins = "%s";\n' "$encoded" >> "$1"
+  fi
+}
+
 update_flags /var/www/app/js/config.js
 update_oidc_name /var/www/app/js/config.js
+update_trusted_origins /var/www/app/js/config.js || exit 1
 
 #########################################
 ## Nginx Config

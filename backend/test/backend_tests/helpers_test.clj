@@ -13,6 +13,7 @@
   the helper fails loudly here instead of as a flood of unrelated
   test errors."
   (:require
+   [app.config :as cf]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
    [yetti.request :as yreq]))
@@ -151,3 +152,28 @@
         request  (:app.http/request (meta params))]
     (t/is (instance? backend_tests.helpers.DummyRequest request))
     (t/is (= {:events [{:name "event"}]} (:params request)))))
+
+(t/deftest command-through-middleware-preserves-processed-request
+  (let [origin   "https://alt.example.com"
+        data     (with-meta {::th/type :dummy :name "new"}
+                   {:app.http/request {:headers th/multipart-headers
+                                       :params {:name "old" :description "kept"}
+                                       :remote-addr "192.0.2.1"}})
+        method   (fn [params]
+                   (let [request (:app.http/request (meta params))]
+                     {:origin      (:app.http/trusted-origin request)
+                      :remote-addr (:remote-addr request)
+                      :auth-data   (:app.http/auth-data request)
+                      :body        (:params request)
+                      :multipart   (:app.rpc/is-multipart params)}))
+        options  {:headers {"origin" origin}
+                  :request-attrs {:app.http/auth-data {:provider "test"}}}]
+    (binding [cf/config (assoc cf/config :trusted-origins #{origin})
+              th/*system* {:app.rpc/methods {:dummy [{} method]}}]
+      (t/is (= {:error nil
+                :result {:origin origin
+                         :remote-addr "192.0.2.1"
+                         :auth-data {:provider "test"}
+                         :body {:name "new" :description "kept"}
+                         :multipart true}}
+               (th/command-through-middleware data options))))))

@@ -228,9 +228,13 @@
 
 (defn- build-email-template
   [id context]
-  (let [subj (render-email-template-part :subj id context)
-        text (render-email-template-part :txt id context)
-        html (render-email-template-part :html id context)]
+  ;; Templates supply the slash before both links and assets.
+  (let [context (cond-> context
+                  (some? (:public-uri context))
+                  (update :public-uri #(str/rtrim (str %) "/")))
+        subj    (render-email-template-part :subj id context)
+        text    (render-email-template-part :txt id context)
+        html    (render-email-template-part :html id context)]
     (when (or (not subj)
               (and (not text)
                    (not html)))

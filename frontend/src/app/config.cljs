@@ -194,9 +194,44 @@
   ;; all path join operations works as expected.
   (u/ensure-path-slash uri-str))
 
+(defn- normalize-trusted-origin
+  [value]
+  (when-let [[value host]
+             (re-matches #"https?://(\[[0-9a-f:.]+\]|[a-z0-9.-]+)(?::[0-9]+)?"
+                         (str/lower value))]
+    (try
+      (let [url (js/URL. value)]
+        ;; Do not let URL parsing turn a different host spelling into a
+        ;; trusted host, or accept DNS names the backend does not parse.
+        (when (and (= host (.-hostname url))
+                   (or (str/starts-with? host "[")
+                       (re-matches #"[0-9]+(?:\.[0-9]+){3}" host)
+                       (re-matches #"[a-z0-9]+(?:[a-z0-9-]*[a-z0-9])?" host)
+                       (re-matches #"(?:[a-z0-9]+(?:[a-z0-9-]*[a-z0-9])?\.)*[a-z](?:[a-z0-9-]*[a-z0-9])?\.?" host)))
+          (.-origin url)))
+      (catch :default _ nil))))
+
+(defn- decode-trusted-origins
+  [encoded]
+  (when (string? encoded)
+    (try
+      (into #{} (keep normalize-trusted-origin)
+            (str/split (js/atob encoded) #"[ \t\n\r\f\u000b,]+"))
+      (catch :default _ nil))))
+
+(defn- resolve-public-uri
+  [canonical browser-origin encoded-origins]
+  (let [base    (normalize-uri (or canonical browser-origin))
+        origins (decode-trusted-origins encoded-origins)]
+    (if (contains? origins browser-origin)
+      (let [{:keys [scheme host port]} (u/uri browser-origin)]
+        (assoc base :scheme scheme :host host :port port))
+      base)))
+
 (def public-uri
-  (normalize-uri (or (obj/get global "penpotPublicURI")
-                     (obj/get location "origin"))))
+  (resolve-public-uri (obj/get global "penpotPublicURI")
+                      (obj/get location "origin")
+                      (obj/get global "penpotTrustedOrigins")))
 
 (def mcp-ws-uri
   (or (some-> (obj/get global "penpotMcpServerURI") u/uri)

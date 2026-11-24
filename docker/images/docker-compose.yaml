@@ -32,6 +32,15 @@ x-flags: &penpot-flags
 x-uri: &penpot-public-uri
   PENPOT_PUBLIC_URI: http://localhost:9001
 
+## Optional alternate origins shared by the frontend and backend.
+## Set PENPOT_TRUSTED_ORIGINS in your environment or .env to a list of bare
+## origins (no path), separated by commas or whitespace. Use HTTPS in production.
+## Route each alias to the same frontend and public path. Register the OIDC
+## callback for each alias, including the public subpath, if any.
+## This setting does not grant CORS access.
+x-trusted-origins: &penpot-trusted-origins
+  PENPOT_TRUSTED_ORIGINS: "${PENPOT_TRUSTED_ORIGINS:-}"
+
 x-body-size: &penpot-http-body-size
   # Max body size
   PENPOT_HTTP_SERVER_MAX_BODY_SIZE: 367001600
@@ -120,7 +129,7 @@ services:
       # - "traefik.http.routers.penpot-https.tls=true"
 
     environment:
-      << : [*penpot-flags, *penpot-http-body-size, *penpot-public-uri]
+      << : [*penpot-flags, *penpot-http-body-size, *penpot-public-uri, *penpot-trusted-origins]
 
       # Don't touch it; this uses an internal docker network to
       # communicate with the admin-console.
@@ -149,7 +158,7 @@ services:
 
 
     environment:
-      << : [*penpot-flags, *penpot-public-uri, *penpot-http-body-size, *penpot-secret-key, *penpot-database]
+      << : [*penpot-flags, *penpot-public-uri, *penpot-trusted-origins, *penpot-http-body-size, *penpot-secret-key, *penpot-database]
 
       # Don't touch it; this uses an internal docker network to
       # communicate with the admin-console.

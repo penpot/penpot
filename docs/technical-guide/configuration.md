@@ -123,11 +123,14 @@ To configure the authentication with third-party auth providers you will need to
 configure Penpot and set the correct callback of your Penpot instance in the auth-provider
 configuration.
 
-The callback has the following format:
+Append `api/auth/oidc/callback` to the public URL with a single `/` between
+them. Register the exact URL, including any configured subpath:
 
-```html
-https://<your_domain>/api/auth/oidc/callback
-```
+- Public URL `https://mycompany.com/`: `https://mycompany.com/api/auth/oidc/callback`
+- Public URL `https://mycompany.com/penpot/`: `https://mycompany.com/penpot/api/auth/oidc/callback`
+
+If you configure [trusted alternate origins](#trusted-alternate-origins), register
+the callback for each alias as well.
 
 #### Google
 
@@ -413,6 +416,10 @@ Existing bookmarks and integrations that use the previous root URL must be
 updated. You may also configure a redirect from the previous URL. If the scheme
 or hostname changes in addition to the path, review your authentication provider
 callback URLs and cookie settings. Active users may need to sign in again.
+After upgrading, register the callback with the subpath at the identity provider
+even when the scheme and hostname stay the same. For example, register
+`https://mycompany.com/penpot/api/auth/oidc/callback` for
+`https://mycompany.com/penpot/`.
 
 <p class="advice">
     If you plan to serve Penpot under different domain than `localhost` without HTTPS,
@@ -421,6 +428,114 @@ callback URLs and cookie settings. Active users may need to sign in again.
     not work properly under non-https environments, this unsecure configuration
     may limit the usage of Penpot; as an example, the clipboard does not work with HTTP.
 </p>
+
+### Trusted alternate origins
+
+Use `PENPOT_TRUSTED_ORIGINS` to serve the same Penpot installation on more than
+one domain with a single frontend and a common backend. Give both services the
+same list of aliases. With the official Docker Compose file, set the
+canonical URL in the `x-uri` block. The separate `x-trusted-origins` block
+passes the alias list only to the frontend and backend:
+
+```yaml
+x-uri: &penpot-public-uri
+  PENPOT_PUBLIC_URI: https://mycompany.com/penpot/
+
+x-trusted-origins: &penpot-trusted-origins
+  PENPOT_TRUSTED_ORIGINS: "${PENPOT_TRUSTED_ORIGINS:-}"
+```
+
+Set the alias once in your environment or Compose `.env` file:
+
+```dotenv
+PENPOT_TRUSTED_ORIGINS=https://alt.mycompany.com
+```
+
+Set up DNS and TLS for both names. Configure your reverse proxy or Ingress to
+route `https://mycompany.com/penpot/` and `https://alt.mycompany.com/penpot/` to
+the same frontend, without rewriting the path. Follow the [subpath proxy
+requirements](#serve-penpot-from-a-subpath) for both names. This setting does
+not configure the proxy or share browser sessions between the two domains.
+
+**Only list aliases you control.** Penpot can put the alias in sensitive links,
+such as password reset links. Use HTTPS in production.
+
+- Separate entries with commas or whitespace. Each is a bare HTTP(S) origin
+  (`scheme://host[:port]`): no path (not even a trailing slash), query, fragment,
+  credentials, or wildcard. Matching ignores case and surrounding whitespace.
+  HTTPS with or without `:443` matches the same origin, as does HTTP with or
+  without `:80`. Other ports must match exactly. For IPv6, use the origin
+  as the browser reports it, without a path. For example, use
+  `https://[::1]:9443`, not `https://[0:0:0:0:0:0:0:1]:9443`.
+- At startup, the backend warns about and ignores invalid entries. It also logs
+  one warning if the list contains any valid HTTP origin whose hostname is not
+  `localhost`. Those HTTP entries still work; they do not change the secure
+  session cookie flags.
+- The frontend container writes the list to the existing `config.js` as data.
+  At startup, the frontend uses the browser's origin if it matches the list;
+  otherwise it keeps the canonical URL. On a match, only the scheme, host,
+  and port change. Navigation, assets, and API calls keep the path and trailing
+  slash from the configured base.
+- The frontend sends `X-Penpot-Origin` only on Penpot API calls that need to
+  select the public base, including RPC reads that may lack `Origin` and OIDC
+  login requests. It does not add the header to general HTTP requests for
+  fonts, assets, or external URLs. The backend uses `X-Penpot-Origin` if it
+  matches the list, then tries `Origin`. If neither matches, it uses
+  `PENPOT_PUBLIC_URI`. Generated links keep the configured path.
+- This list does not grant cross-origin browser access. With `enable-cors`,
+  `PENPOT_ALLOWED_ORIGINS` separately controls which origins may make CORS
+  requests. Listing an origin in either setting does not add it to the other.
+
+Register the exact OIDC callback URL for the canonical base and for each alias
+at the identity provider. For example, with `PENPOT_PUBLIC_URI` set to
+`https://mycompany.com/penpot/` and `https://alt.mycompany.com` in the list, register
+both `https://mycompany.com/penpot/api/auth/oidc/callback` and
+`https://alt.mycompany.com/penpot/api/auth/oidc/callback`. If you use SSO logout,
+register the post-logout redirect URL as well. The OIDC callback reuses the
+origin from the signed login state and combines it with the configured path.
+Removing an alias does not invalidate state already signed with it; that state
+expires within four hours. The backend can still redirect the user to the
+removed alias, but if the frontend no longer accepts it, the user may need
+to start a new login on the canonical domain. Changing the configured path
+during a login can also require a new login. MCP OAuth always uses the
+canonical base.
+
+Server-sent events (SSE) keep the full base of the request that opened the stream.
+An export requested through a trusted alias saves the full base in the job's
+parameters for the download link. Without an alias, the export worker uses its
+canonical base. Templated emails save the request's base in the template data
+and the worker uses it when it renders the email. Workers that build new links
+without a saved request base use the canonical `PENPOT_PUBLIC_URI`, as do
+server-to-server calls with no matching origin.
+
+#### Upgrade or roll back the `binfile` workers
+
+Before enabling aliases, upgrade every worker that consumes the `binfile` queue.
+Older workers whose export job schema does not accept `public-uri` reject jobs
+that store an alternate public base.
+
+To roll back to those workers, first disable aliases on the frontend and
+all backend instances that accept requests so no new jobs store an alternate
+base. Keep the upgraded workers
+running until all queued or running export jobs with a saved alternate base
+have finished. Removing an alias does not change jobs already submitted.
+
+#### Retire an alternate domain
+
+1. Remove the alias from `PENPOT_TRUSTED_ORIGINS` on the frontend and backend,
+   and apply the new configuration on all instances. Direct users to the
+   canonical URL for new logins and links.
+2. Review pending mail in Penpot and any downstream mail queues. Stop delivery
+   of sensitive links to the retired domain where possible, and reissue links
+   from the canonical URL if users still need them. Queued mail can still
+   contain the old base after you change the setting.
+3. Keep control of the old domain until any sensitive links and in-flight OIDC
+   logins that reference it are no longer valid. Removing the alias does not
+   revoke links or signed state. Cancel invitations you need to invalidate
+   rather than waiting for them to expire. For flows without a supported
+   way to invalidate an individual link, such as password recovery or email
+   verification, wait for the token to expire. Check the lifetime for each
+   flow; there is no single safe waiting period for all links.
 
 ## Email configuration
 
