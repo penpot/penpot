@@ -177,6 +177,39 @@
                @captured)))))
 
 
+(t/deftest text-range-direction-sets-the-paragraph-direction
+  (let [shape-id (random-uuid)
+        range    (plugins.text/text-range-proxy plugin-id (random-uuid) (random-uuid) shape-id 1 4)
+        captured (atom [])]
+    (with-redefs [r/check-permission (constantly true)
+                  u/page-active? (constantly true)
+                  dwt/update-text-range
+                  (fn [id start end attrs]
+                    (swap! captured conj [id start end attrs])
+                    :update-text-range)
+                  st/emit! mock/noop]
+      (set! (.-direction range) "rtl")
+      (t/is (= [[shape-id 1 4 {:text-direction "rtl"}]] @captured)))))
+
+(t/deftest text-range-align-and-direction-read-the-paragraphs
+  ;; Spans of a new text carry the default alignment and direction; the
+  ;; paragraph holds the values that are drawn.
+  (let [span    {:text "ab" :text-align "left" :text-direction "ltr"}
+        content {:type "root"
+                 :children [{:type "paragraph-set"
+                             :children [{:type "paragraph" :children [span]}
+                                        {:type "paragraph" :text-align "right" :text-direction "rtl"
+                                         :children [(assoc span :text "cd")]}]}]}
+        range   (fn [start end]
+                  (plugins.text/text-range-proxy
+                   plugin-id (random-uuid) (random-uuid) (random-uuid) start end))]
+    (with-redefs [u/proxy->shape (constantly {:content content})]
+      (t/is (= "right" (.-align (range 3 5))))
+      (t/is (= "rtl" (.-direction (range 3 5))))
+      (t/is (= "left" (.-align (range 0 2)))
+            "a paragraph without an alignment reads as the default")
+      (t/is (= "mixed" (.-align (range 1 4)))))))
+
 (t/deftest font-apply-to-text-uses-font-id-not-shape-id
   (let [file-id  (random-uuid)
         page-id  (random-uuid)

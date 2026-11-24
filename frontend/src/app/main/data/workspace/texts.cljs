@@ -628,27 +628,42 @@
             [start end] (annotated-span-bounds content start end)]
         (<= (count (overlapping-text-nodes content start end)) 1))))
 
-;; Paragraph attrs a text range sets on the whole paragraphs it touches.
+;; Paragraph attrs a text range sets on the whole paragraphs it touches:
+;; the renderers read them from the paragraph, never from a span.
 (def ^:private range-paragraph-attrs
-  [:text-language])
+  (d/concat-vec txt/text-align-attrs
+                txt/text-direction-attrs
+                [:text-language]))
+
+(defn- paragraph-in-range?
+  "True when `node` of a range-decorated content is a paragraph with
+   characters in [start, end)."
+  [node start end]
+  (and (txt/is-paragraph-node? node)
+       (let [{node-start :start node-end :end} (meta node)]
+         (and (< node-start end) (< start node-end)))))
+
+(defn range-paragraphs
+  "Paragraphs of `content` with characters in [start, end)."
+  [content start end]
+  (->> (txt/node-seq txt/is-paragraph-node? (decorate-range-info content))
+       (filter #(paragraph-in-range? % start end))))
 
 (defn- update-paragraph-range
   "Applies `attrs` to the paragraphs of a range-decorated content with
    characters in [start, end); a nil value removes the attr."
   [content start end attrs]
   (txt/transform-nodes
-   (fn [node]
-     (and (txt/is-paragraph-node? node)
-          (let [{node-start :start node-end :end} (meta node)]
-            (and (< node-start end) (< start node-end)))))
+   #(paragraph-in-range? % start end)
    #(d/patch-object % attrs)
    content))
 
 (defn update-text-range-attrs
   "Applies `attrs` to the characters [start, end) of a text shape. A range
    that cuts a ruby or warichu span covers the whole span. Spans left with
-   the same style as their neighbour are joined back. Paragraph attrs such
-   as the language go to the whole paragraphs the range touches."
+   the same style as their neighbour are joined back. Paragraph attrs (the
+   alignment, the direction and the language) go to the whole paragraphs
+   the range touches."
   [shape start end attrs]
   (let [content     (decorate-range-info (:content shape))
         [start end] (annotated-span-bounds content start end)

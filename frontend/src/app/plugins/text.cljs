@@ -120,6 +120,15 @@
          (map #(get % attr default))
          (u/mixed-value))))
 
+(defn- range-paragraph-value
+  "Value of a paragraph `attr` over the paragraphs a text range proxy
+   touches, with unset paragraphs at their default."
+  [range-proxy start end attr]
+  (let [default (get txt/default-paragraph-attrs attr)]
+    (->> (-> range-proxy u/proxy->shape :content (dwt/range-paragraphs start end))
+         (map #(get % attr default))
+         (u/mixed-value))))
+
 (defn- enum-value?
   "Validator accepting the values of the CJK layout enum `attr`."
   [attr]
@@ -560,9 +569,7 @@
     {:this true
      :get
      (fn [self]
-       (let [range-data
-             (-> self u/proxy->shape :content (content-range->text+styles start end))]
-         (->> range-data (map :direction) u/mixed-value)))
+       (range-paragraph-value self start end :text-direction))
      :set
      (fn [_ value]
        (cond
@@ -576,15 +583,13 @@
          (u/not-valid plugin-id :direction "Cannot modify a page that is not currently active")
 
          :else
-         (st/emit! (dwt/update-text-range id start end {:direction value}))))}
+         (st/emit! (dwt/update-text-range id start end {:text-direction value}))))}
 
     :align
     {:this true
      :get
      (fn [self]
-       (let [range-data
-             (-> self u/proxy->shape :content (content-range->text+styles start end))]
-         (->> range-data (map :text-align) u/mixed-value)))
+       (range-paragraph-value self start end :text-align))
      :set
      (fn [_ value]
        (cond

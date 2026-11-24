@@ -5279,7 +5279,9 @@ export interface TextRange {
   lang: string | 'mixed' | null;
 
   /**
-   * The text direction for the text range. It can be a specific direction or 'mixed' if multiple directions are used.
+   * The text direction for the text range. It belongs to paragraphs:
+   * setting it applies to every paragraph the range touches. Returns
+   * 'mixed' if those paragraphs use different directions.
    */
   direction: 'ltr' | 'rtl' | 'mixed' | null;
 
@@ -5289,7 +5291,9 @@ export interface TextRange {
   fills: Fill[] | 'mixed';
 
   /**
-   * The horizontal alignment of the text range. It can be a specific alignment or 'mixed' if multiple alignments are used.
+   * The alignment of the text range. It belongs to paragraphs: setting it
+   * applies to every paragraph the range touches. Returns 'mixed' if those
+   * paragraphs use different alignments.
    */
   align:
     'left' | 'center' | 'right' | 'justify' | 'distribute' | 'mixed' | null;

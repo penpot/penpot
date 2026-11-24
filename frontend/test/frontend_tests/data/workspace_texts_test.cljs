@@ -1102,6 +1102,27 @@
       (t/is (= [{:text "一盅兩件"}] (spans-of shape)))
       (t/is (dwt/single-span-range? (:content shape) 0 4)))))
 
+(t/deftest update-text-range-sets-alignment-and-direction-on-the-paragraphs-it-touches
+  (let [content {:type "root"
+                 :children [{:type "paragraph-set"
+                             :children [{:type "paragraph" :text-align "left" :text-direction "ltr"
+                                         :children [{:text "ab" :font-size "20"}]}
+                                        {:type "paragraph" :text-align "left" :text-direction "ltr"
+                                         :children [{:text "cd" :font-size "20"}]}]}]}
+        paragraphs (fn [shape]
+                     (->> (:content shape)
+                          (txt/node-seq txt/is-paragraph-node?)
+                          (mapv #(select-keys % [:text-align :text-direction]))))
+        shape (-> {:content content}
+                  (dwt/update-text-range-attrs 3 5 {:text-align "right"})
+                  (dwt/update-text-range-attrs 3 4 {:text-direction "rtl"}))]
+    (t/is (= [{:text-align "left" :text-direction "ltr"}
+              {:text-align "right" :text-direction "rtl"}]
+             (paragraphs shape)))
+    (t/is (= [{:text "ab" :font-size "20"} {:text "cd" :font-size "20"}]
+             (->> (:content shape) (txt/node-seq txt/is-text-node?) (mapv #(into {} %))))
+          "spans are neither split nor given the paragraph attrs")))
+
 (t/deftest update-text-range-sets-the-language-on-the-paragraphs-it-touches
   (let [content {:type "root"
                  :children [{:type "paragraph-set"
