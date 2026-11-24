@@ -114,11 +114,12 @@
   (assoc state :open? false))
 
 (mf/defc assets-context-menu*
-  [{:keys [options state on-close]}]
+  [{:keys [options state on-close origin]}]
   [:> context-menu*
    {:show (:open? state)
     :fixed (or (not= (:top state) 0) (not= (:left state) 0))
     :on-close on-close
+    :origin origin
     :top (:top state)
     :left (:left state)
     :options options}])
