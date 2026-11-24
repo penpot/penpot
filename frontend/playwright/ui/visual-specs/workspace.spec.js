@@ -1726,6 +1726,62 @@ test.describe("Shadow type select", () => {
   });
 });
 
+test.describe("Color mode select", () => {
+  test("Shows the color mode select closed, open and changed", async ({
+    page,
+  }) => {
+    const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(/get\-file\?/, "workspace/get-file-not-empty.json");
+    await workspace.goToWorkspace({
+      fileId: "6191cd35-bb1f-81f7-8004-7cc63d087374",
+      pageId: "6191cd35-bb1f-81f7-8004-7cc63d087375",
+    });
+    await workspace.clickLeafLayer("Rectangle");
+    await page.getByRole("button", { name: "#B1B2B5" }).click();
+
+    const modeSelect = workspace.colorpicker.getByText("Solid", {
+      exact: true,
+    });
+    await expect(modeSelect).toBeVisible();
+    const pickerBox = await workspace.colorpicker.boundingBox();
+    // The top of the picker, with room below the select for the open list.
+    const clip = {
+      x: Math.floor(pickerBox.x),
+      y: Math.floor(pickerBox.y),
+      width: Math.ceil(pickerBox.width),
+      height: 160,
+    };
+    await page.mouse.move(0, 0);
+    await expect(page).toHaveScreenshot({ clip, ...shot });
+
+    await modeSelect.hover();
+    await expect(page).toHaveScreenshot({ clip, ...shot });
+
+    await modeSelect.click();
+    const image = workspace.colorpicker.getByText("Image", { exact: true });
+    await expect(image).toBeVisible();
+    await page.mouse.move(0, 0);
+    await expect(page).toHaveScreenshot({ clip, ...shot });
+
+    await image.hover();
+    await expect(page).toHaveScreenshot({ clip, ...shot });
+
+    await image.click();
+    await expect(
+      workspace.colorpicker.getByText("Image", { exact: true }),
+    ).toBeVisible();
+    // The image mode changes the picker height, so it moves on screen.
+    const imageBox = await workspace.colorpicker.boundingBox();
+    await page.mouse.move(0, 0);
+    await expect(page).toHaveScreenshot({
+      clip: { ...clip, y: Math.floor(imageBox.y) },
+      ...shot,
+    });
+  });
+});
+
 test.describe("Shortcuts panel", () => {
   const shot = { maxDiffPixelRatio: 0, threshold: 0 };
 
