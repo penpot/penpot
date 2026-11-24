@@ -953,9 +953,8 @@
               :mod-page
               (conj page-ids id)
 
-              ;; restore-component resurrects a deleted component (touches the
-              ;; component definition) and places its main instance on a page
-              ;; (touches that page's shape tree)
+              ;; Conservatively validate the referenced page as well as the
+              ;; restored component. Separate add-obj changes restore shapes.
               :restore-component
               (conj page-ids page-id)
 

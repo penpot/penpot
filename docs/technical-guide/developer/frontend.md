@@ -303,15 +303,15 @@ Ensure your development environment docker image is up to date.
 
 **NOTE** You can learn more about how to set up, start and stop our development environment [here](/technical-guide/developer/devenv)
 
-#### Release mode
+#### Build the frontend
 
-This is not required, but it may be convenient to compile Penpot in release mode before running the tests. This way they will be much quicker and stable. For this, go to the frontend window in the tmux session (<code class="language-bash">Ctrl + b 1</code>), interrupt the watch process with <code class="language-bash">Ctrl + C</code> and type:
+Playwright serves the release bundle from <code class="language-bash">frontend/resources/public</code>, not the live sources. Before running the tests, build the frontend from the frontend window in the tmux session (<code class="language-bash">Ctrl + b 1</code>). Interrupt the watch process with <code class="language-bash">Ctrl + C</code> and run:
 
 ```bash
 ./scripts/build
 ```
 
-Obviously, in this mode if you make changes to the source code, you will need to repeat the build manually each time. It may be useful to use wath mode when debugging a single test, and use release mode to run all the suite.
+Rebuild after product code or asset changes, or after switching to a branch with different sources or assets. Changes only to integration specs do not require a rebuild. Watch mode does not replace the release build for these tests.
 
 
 ### Running the integration tests

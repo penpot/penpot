@@ -471,7 +471,7 @@
                                                 page-deleted
                                                 (:objects page-deleted))
 
-        file' (thf/apply-changes file changes)
+        file' (thf/apply-changes file-deleted changes)
 
         ;; ==== Get
         component1'        (thc/get-component file' :component1 :include-deleted? false)
@@ -483,12 +483,20 @@
         saved-objects'     (:objects component1')]
 
     ;; ==== Check
+    (t/is (true? (:deleted (thc/get-component file-deleted :component1 :include-deleted? true))))
+    (t/is (nil? (ths/get-shape file-deleted :main1-root)))
+    (t/is (nil? (ths/get-shape file-deleted :main1-child)))
+    (t/is (some? component1'))
     (t/is (nil? (:deleted component1')))
     (t/is (some? copy1-root'))
     (t/is (some? main1-root'))
     (t/is (some? main1-child'))
     (t/is (ctk/main-instance? main1-root'))
     (t/is (ctk/main-instance-of? (:id main1-root') (:id page) component1'))
+    (t/is (= (:id main1-root') (:parent-id main1-child')))
+    (t/is (some #{(:id main1-child')} (:shapes main1-root')))
+    (t/is (some #{(:id main1-root')}
+                (:shapes (get-in (thf/current-page file') [:objects (:parent-id main1-root')]))))
     (t/is (nil? saved-objects'))))
 
 (t/deftest test-instantiate-component
