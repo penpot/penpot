@@ -89,10 +89,15 @@
                base-id         (:parent-id base)
 
                frame-id        (or frame-id
-                                   (if (or selected-frame? (empty? selected)
-                                           (not= :frame (dm/get-in objects [base-id :type])))
+                                   (cond
+                                     (or selected-frame? (empty? selected) (nil? base))
                                      (ctst/top-nested-frame objects position)
-                                     base-id))
+
+                                     (= :frame (dm/get-in objects [base-id :type]))
+                                     base-id
+
+                                     :else
+                                     (dm/get-in objects [base-id :frame-id])))
 
                parent-id       (if (or selected-frame? (empty? selected) (nil? base))
                                  frame-id
