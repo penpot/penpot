@@ -296,7 +296,20 @@
            (when head
              (println head))
            (doseq [line (if trace-length (take trace-length tail) tail)]
-             (println line)))))))
+             (println line))))
+
+       ;; The cause holds the original failure, e.g. the WASM trap behind a
+       ;; `:wasm-error` (`RuntimeError: unreachable`, `Aborted(OOM)`). Its
+       ;; message is printed on its own: only V8 starts `.stack` with it.
+       (when-let [inner (ex-cause cause)]
+         (let [message (if (ex-data inner) (ex-message inner) (str inner))]
+           (println)
+           (println "Caused by:")
+           (println "--------------------")
+           (println (truncate message max-message-length))
+           (when (or (ex-data inner) (.-stack inner))
+             (println)
+             (print (format-throwable inner :trace-length trace-length))))))))
 
 (defn first-line
   [s]

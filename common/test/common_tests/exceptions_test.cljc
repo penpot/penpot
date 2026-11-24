@@ -51,6 +51,26 @@
        (t/is (<= (count msg) (+ ex/max-message-length 16))))))
 
 #?(:cljs
+   (t/deftest format-throwable-includes-the-cause-test
+     (let [cause (js/Error. "memory access out of bounds")
+           out   (ex/format-throwable (ex-info "WASM Error (wasm-critical)"
+                                               {:type :wasm-error}
+                                               cause))]
+       (t/is (str/includes? out "Caused by:"))
+       (t/is (str/includes? out "memory access out of bounds")))))
+
+#?(:cljs
+   (t/deftest format-throwable-includes-a-non-error-cause-test
+     (let [out (ex/format-throwable (ex-info "outer" {} "Aborted(OOM)"))]
+       (t/is (str/includes? out "Caused by:"))
+       (t/is (str/includes? out "Aborted(OOM)")))))
+
+#?(:cljs
+   (t/deftest format-throwable-omits-the-cause-block-without-a-cause-test
+     (t/is (not (str/includes? (ex/format-throwable (ex-info "boom" {}))
+                               "Caused by:")))))
+
+#?(:cljs
    (t/deftest format-throwable-honors-trace-length-test
      (let [full  (ex/format-throwable (ex-info "boom" {}))
            short (ex/format-throwable (ex-info "boom" {}) {:trace-length 1})]
