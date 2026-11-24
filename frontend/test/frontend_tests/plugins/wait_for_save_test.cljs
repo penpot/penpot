@@ -184,7 +184,7 @@
 (t/deftest ^:async buffer-race-waits-for-commit-not-stale-saved
   (await
    (with-persistence
-     (^:async fn [{:keys [file-id response requests store]}]
+     (^:async fn [{:keys [file-id response answers requests store]}]
        (await
         (with-save-mocks store
           (^:async fn []
@@ -199,7 +199,7 @@
                0)
               (await (async/wait-for #(seq (saves requests))
                                      "force-persist sent the edit"))
-              (rx/push! response {:revn 1})
+              (await (thp/answer! response answers {:revn 1}))
               (let [outcome (await (await-outcome p))]
                 (t/is (contains? outcome :ok)
                       "wait covers the late-buffered commit instead of stale empty :saved"))))))))))
@@ -207,7 +207,7 @@
 (t/deftest ^:async pending-work-emits-force-persist
   (await
    (with-persistence
-     (^:async fn [{:keys [file-id response requests store]}]
+     (^:async fn [{:keys [file-id response answers requests store]}]
        (await
         (with-save-mocks store
           (^:async fn []
@@ -217,7 +217,7 @@
             (let [p (persist/wait-for-save 5000)]
               (await (async/wait-for #(seq (saves requests))
                                      "force-persist flushed the buffer"))
-              (rx/push! response {:revn 1})
+              (await (thp/answer! response answers {:revn 1}))
               (let [outcome (await (await-outcome p))]
                 (t/is (contains? outcome :ok)
                       "pending work resolves once the save lands"))))))))))
@@ -256,7 +256,7 @@
 (t/deftest ^:async soft-rejection-during-wait-rejects
   (await
    (with-persistence
-     (^:async fn [{:keys [file-id response requests store]}]
+     (^:async fn [{:keys [file-id response answers requests store]}]
        (await
         (with-save-mocks store
           (^:async fn []
@@ -264,11 +264,15 @@
               (ptk/emit! store commit)
               (await (async/wait-for #(seq (get-in @store [:persistence :buffer]))
                                      "commit is buffered"))
-              (let [p (persist/wait-for-save 5000)]
+              ;; Attach the handler before the answer: the rollback rejection
+              ;; settles in the answer's microtask, and an unhandled
+              ;; rejection is fatal to the test process.
+              (let [p         (persist/wait-for-save 5000)
+                    outcome-p (await-outcome p)]
                 (await (async/wait-for #(seq (saves requests))
                                        "force-persist flushed the buffer"))
-                (rx/push! response (thp/rejection (:id @commit)))
-                (let [outcome (await (await-outcome p))]
+                (await (thp/answer! response answers (thp/rejection (:id @commit))))
+                (let [outcome (await outcome-p)]
                   (t/is (contains? outcome :error)
                         "soft rejection rejects wait-for-save, not success on later :saved")
                   (t/is (re-find #"(?i)roll"

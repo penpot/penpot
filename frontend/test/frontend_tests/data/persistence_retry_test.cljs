@@ -523,24 +523,27 @@
 ;; `generate-report` stays doubled), so the test exercises the governor,
 ;; the thunk contract and the emit path end to end.
 (t/deftest ^:async repeated-stalls-across-windows-emit-each-report
-  (let [clock    (atom 0)
-        ticks    (rx/subject)
-        response (rx/subject)
-        requests (atom [])
-        causes   (atom [])
-        events   (atom [])
-        file-id  (uuid/next)
-        store    (ptk/store {:state {:current-file-id file-id
-                                     :permissions {:can-edit true}
-                                     :files {file-id {:id file-id :revn 0}}}
-                             :on-error #(t/is false (str %))})]
+  (let [clock     (atom 0)
+        ticks     (rx/subject)
+        response  (rx/subject)
+        requests  (atom [])
+        requests$ (rx/subject)
+        causes    (atom [])
+        events    (atom [])
+        file-id   (uuid/next)
+        store     (ptk/store {:state {:current-file-id file-id
+                                      :permissions {:can-edit true}
+                                      :files {file-id {:id file-id :revn 0}}}
+                              :on-error #(t/is false (str %))})]
     (errors/reset-report-governor!)
     (await
      (mock/with-mocks*
        {ct/now                 (mock/stub #(ct/inst @clock))
         rx/interval            (mock/stub (fn [_] ticks))
         rp/cmd!                (mock/stub (fn [cmd params]
-                                            (swap! requests conj {:cmd cmd :params params})
+                                            (let [entry {:cmd cmd :params params}]
+                                              (swap! requests conj entry)
+                                              (rx/push! requests$ entry))
                                             (->> response (rx/take 1) (rx/observe-on :async))))
         st/state               store
         errors/generate-report (fn [cause & _]
@@ -577,6 +580,7 @@
          (finally
            (rx/dispose! store)
            (rx/end! ticks)
+           (rx/end! requests$)
            (rx/end! response)))))))
 
 ;; Scenario: the first send never answers. The request timeout fails it as
