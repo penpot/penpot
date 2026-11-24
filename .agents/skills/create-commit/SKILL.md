@@ -47,8 +47,10 @@ hard blocker: fix the message and re-check it before reporting success.
    ```
    If it fails, amend the message (`git commit --amend`) until it passes. Do
    not finish with a failing checker.
-5. The `AI-assisted-by` trailer value is provided by the calling context — use
-   it verbatim.
+5. When adding an `AI-assisted-by` trailer, use the canonical model ID from
+   the calling context as a bare lowercase slug (for example,
+   `gpt-6.1-terra`), without a provider prefix or display name. Do not guess
+   the ID.
 
 ## Constraints
 

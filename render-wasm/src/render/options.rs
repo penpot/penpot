@@ -1,7 +1,6 @@
 // Render options flags
 const DEBUG_VISIBLE: u32 = 0x01;
 const PROFILE_REBUILD_TILES: u32 = 0x02;
-const TEXT_EDITOR_V3: u32 = 0x04;
 const SHOW_WASM_INFO: u32 = 0x08;
 
 // Render performance options
@@ -112,10 +111,6 @@ impl RenderOptions {
 
     pub fn set_interactive_transform(&mut self, enabled: bool) {
         self.interactive_transform = enabled;
-    }
-
-    pub fn is_text_editor_v3(&self) -> bool {
-        self.flags & TEXT_EDITOR_V3 == TEXT_EDITOR_V3
     }
 
     pub fn show_wasm_info(&self) -> bool {

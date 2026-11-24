@@ -17,6 +17,7 @@ import importlib.util
 import io
 import os
 import pathlib
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -192,6 +193,53 @@ class CoAuthorTrailerTests(unittest.TestCase):
 
     def test_similar_trailer_passes(self):
         self.assert_ok(":bug: Fix crash\n\nBody.\n\nCo-developed-by: Someone <someone@example.com>\n")
+
+
+class AIAssistedTrailerTests(unittest.TestCase):
+    def test_valid_and_absent_trailers(self):
+        for trailer in ("", "AI-assisted-by: gpt-6.1-terra",
+                        "ai-assisted-by: deepseek-v4-flash",
+                        "AI-assisted-by: gpt-6.1-terra\nAI-assisted-by: mimo-v2.5"):
+            with self.subTest(trailer=trailer):
+                ok, error = check_commit.check_ai_assisted_by(":bug: Fix crash\n\n" + trailer)
+                self.assertTrue(ok, error)
+
+    def test_invalid_values_are_reported(self):
+        for value in ("", "openai/gpt-6.1-terra", "GPT-6.1 Terra",
+                      "gpt-6.1-terra extra", "-gpt", "gpt-", "gpt..6", "gpt_6"):
+            with self.subTest(value=value):
+                ok, error = check_commit.check_ai_assisted_by(
+                    ":bug: Fix crash\n\nAI-assisted-by: " + value
+                )
+                self.assertFalse(ok)
+                self.assertIn("line 3", error)
+
+    def test_each_trailer_is_checked_and_all_offenders_reported(self):
+        ok, error = check_commit.check_ai_assisted_by(
+            ":bug: Fix crash\n\nAI-assisted-by: gpt-6.1-terra\n"
+            "AI-assisted-by: openai/gpt-6.1-terra\n"
+            "ai-assisted-by: GPT-6.1 Terra"
+        )
+        self.assertFalse(ok)
+        self.assertIn("line 4", error)
+        self.assertIn("line 5", error)
+
+    def test_cli_rejects_invalid_trailer(self):
+        with tempfile.TemporaryDirectory() as directory:
+            subprocess.run(["git", "init", "-q", directory], check=True)
+            subprocess.run(
+                ["git", "-C", directory, "-c", "user.name=Test",
+                 "-c", "user.email=test@example.com", "commit", "-q",
+                 "--allow-empty", "-m", ":bug: Fix crash",
+                 "-m", "AI-assisted-by: openai/gpt-6.1-terra"],
+                check=True,
+            )
+            result = subprocess.run(
+                [str(SCRIPT_PATH), "-c", "HEAD"], cwd=directory,
+                capture_output=True, text=True, check=False,
+            )
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("AI-assisted-by", result.stderr)
 
 
 class SubjectRulesRegressionTests(unittest.TestCase):

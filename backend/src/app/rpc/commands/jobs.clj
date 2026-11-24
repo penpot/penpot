@@ -273,10 +273,20 @@
                                          :filename "package.penpot"
                                          :mtype    "application/zip"})]
             (try
-              (let [summary (get-job-summary cfg (submit-job cfg job-def :import-binfile params profile-id
-                                                             :resource-id (:resource-id staged)))]
+              (let [{:keys [summary team-id]}
+                    (db/tx-run! cfg
+                                (fn [tx-cfg]
+                                  (let [project (projects/get-project-for-update tx-cfg project-id)
+                                        _       (projects/check-edition-permissions! tx-cfg profile-id project-id)
+                                        team-id (:team-id project)
+                                        params  (assoc params :team-id team-id)
+                                        job-id  (submit-job tx-cfg job-def :import-binfile params profile-id
+                                                            :resource-id (:resource-id staged))]
+                                    {:summary (get-job-summary tx-cfg job-id)
+                                     :team-id team-id})))]
                 (with-meta summary
                   {::audit/props {:job-id      (:id summary)
+                                  :team-id     team-id
                                   :generated-by (:generated-by manifest)
                                   :referer      referer}}))
 

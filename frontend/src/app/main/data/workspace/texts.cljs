@@ -300,6 +300,16 @@
             (update :workspace-editor-state dissoc id)
             (update :workspace-new-text-shapes disj id))))))
 
+(defn editor-shape-content
+  "The `:content` of the text `shape` after editing it with the legacy
+  editor: the `exported` editor content with the root attrs of the
+  shape. The editor keeps paragraph data as it was set, nil values
+  included, so the result goes through `ensure-valid-text-content` like
+  the other commit paths."
+  [exported shape]
+  (ensure-valid-text-content
+   (d/merge exported (dissoc (:content shape) :children))))
+
 (defn finalize-editor-state
   [id update-name?]
   (ptk/reify ::finalize-editor-state
@@ -316,8 +326,7 @@
               new-shape?   (contains? (:workspace-new-text-shapes state) id)]
           (if (ted/content-has-text? content)
             (if (features/active-feature? state "render-wasm/v1")
-              (let [content  (d/merge (ted/export-content content)
-                                      (dissoc (:content shape) :children))
+              (let [content  (editor-shape-content (ted/export-content content) shape)
                     new-size (dwwt/get-wasm-text-new-size shape content)]
                 (rx/merge
                  (rx/of (update-editor-state shape nil))
@@ -337,8 +346,7 @@
                               (ctm/change-size shape (:width new-size) (:height new-size))))))
                      {:undo-group (when new-shape? id)})))))
 
-              (let [content (d/merge (ted/export-content content)
-                                     (dissoc (:content shape) :children))
+              (let [content   (editor-shape-content (ted/export-content content) shape)
                     modifiers (get-in state [:workspace-text-modifier id])]
                 (rx/merge
                  (rx/of (update-editor-state shape nil))

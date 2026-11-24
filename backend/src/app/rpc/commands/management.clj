@@ -419,6 +419,8 @@
   - Permission exceptions if user lacks required permissions
   - Team compatibility exceptions if teams are incompatible"
   [{:keys [::db/conn] :as cfg} {:keys [profile-id team-id project-id] :as params}]
+  ;; Lock before reading or validating; retain get-by-id's not-found behavior.
+  (proj/get-project-for-update cfg project-id)
   (let [project (db/get-by-id conn :project project-id {:columns [:id :team-id]})
         pids    (->> (db/query conn :project {:team-id (:team-id project)} {:columns [:id]})
                      (map :id)

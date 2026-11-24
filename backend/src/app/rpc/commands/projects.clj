@@ -81,6 +81,12 @@
 (def check-read-permissions!
   (perms/make-check-fn has-read-permissions?))
 
+(defn get-project-for-update
+  "Lock a project against concurrent updates for the caller's transaction."
+  [cfg project-id]
+  (db/exec-one! cfg ["SELECT id, team_id FROM project WHERE id = ? FOR NO KEY UPDATE"
+                     project-id]))
+
 ;; --- QUERY: Get projects
 
 (def ^:private sql:projects
