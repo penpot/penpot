@@ -1,42 +1,7 @@
-# Component Swap and Variant Switch Pipeline
+# Component swap and variant switch
 
-## Entry points
-
-Frontend entry points under `frontend/src/app/main/data/workspace/`:
-- `variants.cljs`: `variants-switch` and `variant-switch` events feed property-toggle UI and Plugin API `switchVariant` behavior into `dwl/component-swap`.
-- `libraries.cljs`: `component-swap` is the single-swap workhorse; `component-multi-swap` batches swaps and calls `component-swap` with `keep-touched? = false`.
-
-`keep-touched? = true` is the discriminator for preserving user overrides during variant switch. Batch/multi-swap paths intentionally bypass that logic.
-
-## Common-side pipeline
-
-For a single swap with `keep-touched? = true`:
-
-1. `cll/generate-component-swap` in `common/src/app/common/logic/libraries.cljc` builds the base changes: remove old shape and instantiate the target component in its place through `generate-new-shape-for-swap`, `generate-instantiate-component`, and `make-component-instance`.
-2. `clv/generate-keep-touched` in `common/src/app/common/logic/variants.cljc` walks pre-swap children, augments each with chain-derived touched flags through `add-touched-from-ref-chain`, finds the equivalent target shape through `find-shape-ref-child-of`, then calls `update-attrs-on-switch`.
-3. `update-attrs-on-switch` in `app.common.logic.libraries` decides which touched attrs from the previous shape should be copied onto the freshly instantiated target shape.
-
-## update-attrs-on-switch hazards
-
-The routine compares `current-shape` (fresh target copy), `previous-shape` (pre-swap shape with chain-derived touched), and `origin-ref-shape` (source variant master's equivalent shape). It loops over sync attrs except `swap-keep-attrs` and copies only attrs that pass several guards:
-
-- skip equal previous/current values;
-- skip equal composite geometry for selected attrs;
-- require the corresponding touched group;
-- for most attrs, require source and target masters to agree;
-- for fixed-size selrect/points/width/height, use dedicated fixed-layout geometry handling;
-- text and path shapes have specialized value conversion paths.
-
-The generic fallback branch copies from `previous-shape`. It represents the intended "carry user override through switch" behavior, but bugs usually appear when guards fail to reject incompatible geometry or master differences before reaching that branch.
-
-## Known sharp edges
-
-- Composite `:selrect` and `:points` bypass the simple different-master skip; width/height checks catch some but not all positional differences.
-- `previous-shape` may be repositioned by destination-root minus origin-root before copying. For normal variant switch this is often zero, but do not assume it for all swap entry points.
-- Touched flags can be inherited through ref chains, so a shape that looks untouched locally may still behave as touched after `add-touched-from-ref-chain`.
-
-## Test harness
-
-`common/src/app/common/test_helpers/compositions.cljc` has `swap-component-in-shape`, which drives `generate-component-swap` plus `generate-keep-touched` with the production `keep-touched?` flag. Use it for focused common tests of variant-switch behavior.
-
-`common/test/common_tests/logic/variants_switch_test.cljc` is the canonical reference suite for swap+touched scenarios. Read nearby tests before adding another case.
+- Start at `app.main.data.workspace.variants` and `app.main.data.workspace.libraries/component-swap`. Variant switch uses `keep-touched?` to preserve eligible overrides; `component-multi-swap` intentionally passes false.
+- A swap re-reads the shape from live page objects before building changes: sibling swaps or layout can move it, and a missing shape becomes a no-op. Do not use a closed-over shape as the current location.
+- `app.common.logic.libraries/generate-component-swap` creates the replacement; when keeping touched state, `app.common.logic.variants/generate-keep-touched` walks the old children, incorporates touched groups from their ref chains and finds corresponding shapes in the target. Model and slot semantics are in `mem:common/component-data-model`.
+- `update-attrs-on-switch` compares the old copy, fresh target and origin master before carrying an override. Preserve its guards for differing masters, shape types, auto text and composite geometry; `:selrect`, `:points` and path content need special handling, including fixed-layout cases. Do not assume an apparently untouched local shape lacks inherited touched groups, or that the roots have the same position.
+- Use `app.common.test-helpers.compositions/swap-component-in-shape` with `:keep-touched?` to exercise the production path. Nearby cases in `common/test/common_tests/logic/variants_switch_test.cljc` cover swap and touched behavior; follow `mem:common/testing` for runtime and fixture guidance.
