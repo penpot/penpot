@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns app.main.ui.workspace.sidebar.branch-review.detail
+(ns app.main.ui.workspace.sidebar.branch-compare.detail
   "The detail of the entry chosen in a comparison. A change says what it
   did, property by property, as `before → after`, and what else comes
   with it. A conflict shows the two sides of each property: only the
@@ -22,9 +22,9 @@
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.ds.product.branch-pill :refer [branch-pill*]]
    [app.main.ui.ds.product.tag :refer [tag*]]
-   [app.main.ui.workspace.sidebar.branch-review.common :as brc]
-   [app.main.ui.workspace.sidebar.branch-review.facts :as brf]
-   [app.main.ui.workspace.sidebar.branch-review.layout :as brl]
+   [app.main.ui.workspace.sidebar.branch-compare.common :as brc]
+   [app.main.ui.workspace.sidebar.branch-compare.facts :as brf]
+   [app.main.ui.workspace.sidebar.branch-compare.layout :as brl]
    [app.util.clipboard :as clipboard]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -62,7 +62,7 @@
     :added    [:> tag* {:tone "success"} (tr "workspace.branches.status.added")]
     :deleted  [:> tag* {:tone "error"} (tr "workspace.branches.status.deleted")]
     :conflict [:> tag* {:tone "warning"} (tr "workspace.branches.status.conflict")]
-    :settled  [:> tag* {} (tr "workspace.branches.review.copies.settled-tag")]
+    :settled  [:> tag* {} (tr "workspace.branches.compare.copies.settled-tag")]
     [:> tag* {:tone "info"} (tr "workspace.branches.status.modified")]))
 
 ;; --- A change
@@ -83,11 +83,11 @@
                        :summary (when-not (bm/settled? item) (brc/change-summary item))}
       [:> status-tag* {:status (:status item)}]
       (when excluded
-        [:> tag* {:tone "info"} (tr "workspace.branches.review.row.left-out")])]
+        [:> tag* {:tone "info"} (tr "workspace.branches.compare.row.left-out")])]
 
      (when conflict?
        [:> brl/notice* {:level :warning}
-        (tr "workspace.branches.review.decision.body")])
+        (tr "workspace.branches.compare.decision.body")])
 
      ;; a copy the copy rule settled changes nothing: its section below
      ;; says what the rule decided instead
@@ -142,7 +142,7 @@
              :else                   (tr "workspace.compare.action.leave-out-merge"))])
         (when on-resolve
           [:> button* {:variant "secondary" :class (stl/css :wide-action) :on-click on-resolve}
-           (tr "workspace.branches.review.row.choose")])])]))
+           (tr "workspace.branches.compare.row.choose")])])]))
 
 ;; --- A choice between the two sides
 
@@ -151,7 +151,7 @@
   [{:keys [side branch-name is-review]}]
   (if (= side :source)
     [:> branch-pill* {:label (tr "workspace.branches.main") :is-main true}]
-    [:> branch-pill* {:label (or branch-name (tr "workspace.branches.review.side.branch"))
+    [:> branch-pill* {:label (or branch-name (tr "workspace.branches.compare.side.branch"))
                       :is-review (boolean is-review)}]))
 
 (mf/defc option-card*

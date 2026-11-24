@@ -19,7 +19,7 @@
    [app.main.ui.ds.product.branch-pill :refer [branch-pill*]]
    [app.main.ui.workspace.compare.common :as cc]
    [app.main.ui.workspace.review.overlays :as rvo]
-   [app.main.ui.workspace.sidebar.branch-review.common :as brc]
+   [app.main.ui.workspace.sidebar.branch-compare.common :as brc]
    [app.main.ui.workspace.viewport.rulers :as rulers]
    [app.render-wasm.api :as wasm.api]
    [app.util.i18n :refer [tr]]

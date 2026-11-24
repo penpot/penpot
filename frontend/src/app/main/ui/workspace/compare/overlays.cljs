@@ -27,8 +27,8 @@
    [app.main.ui.workspace.compare.common :as cc]
    [app.main.ui.workspace.compare.side :refer [side-view*]]
    [app.main.ui.workspace.review.overlays :as rvo]
-   [app.main.ui.workspace.sidebar.branch-review.common :as brc]
-   [app.main.ui.workspace.sidebar.branch-review.detail :as brd]
+   [app.main.ui.workspace.sidebar.branch-compare.common :as brc]
+   [app.main.ui.workspace.sidebar.branch-compare.detail :as brd]
    [app.render-wasm.api :as wasm.api]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
@@ -163,7 +163,7 @@
 
         on-previous (mf/use-fn (mf/deps comparison) #(cc/select-step comparison -1))
         on-next     (mf/use-fn (mf/deps comparison) #(cc/select-step comparison 1))
-        on-mark     (mf/use-fn (mf/deps comparison) #(cc/mark-reviewed comparison))
+        on-mark     (mf/use-fn (mf/deps comparison) #(cc/mark-viewed comparison))
         on-pending  (mf/use-fn (mf/deps comparison) #(cc/next-pending comparison))
         on-clear    (mf/use-fn (mf/deps comparison) #(cc/clear-choice comparison))
 
@@ -207,7 +207,7 @@
        (not resolving?)
        [:> button* {:variant "ghost" :class (stl/css :navigator-action)
                     :disabled (nil? item) :on-click on-mark}
-        (tr "workspace.compare.navigator.mark-reviewed")]
+        (tr "workspace.compare.navigator.mark-viewed")]
 
        (and resolved? all-done?)
        [:> button* {:variant "ghost" :class (stl/css :navigator-action) :on-click on-clear}
@@ -221,7 +221,7 @@
 
 (def ^:private next-key? (kbd/is-key-ignore-case? "j"))
 (def ^:private previous-key? (kbd/is-key-ignore-case? "k"))
-(def ^:private reviewed-key? (kbd/is-key-ignore-case? "r"))
+(def ^:private viewed-key? (kbd/is-key-ignore-case? "r"))
 (def ^:private exclude-key? (kbd/is-key-ignore-case? "x"))
 (def ^:private peek-key? (kbd/is-key-ignore-case? "m"))
 (def ^:private align-key? (kbd/is-key-ignore-case? "a"))
@@ -241,7 +241,7 @@
 (defn- use-shortcuts
   "The keys of the compare mode: Escape leaves it (or goes back from the
   conflicts to the changes), J and K go to the next and the previous
-  row, R marks the change as reviewed, X leaves it out or takes it back
+  row, R marks the change as viewed, X leaves it out or takes it back
   in, M shows main for as long as it is held, and A lines main up with
   the change chosen, or links it again, while it is beside the branch.
   A dialog, a field or a tool in use keeps its own keys."
@@ -274,8 +274,8 @@
                     (next-key? event)     (cc/select-step comparison 1)
                     (previous-key? event) (cc/select-step comparison -1)
 
-                    (and (reviewed-key? event) (not resolving?))
-                    (cc/mark-reviewed comparison)
+                    (and (viewed-key? event) (not resolving?))
+                    (cc/mark-viewed comparison)
 
                     (and (exclude-key? event) (not resolving?))
                     (cc/toggle-excluded comparison)
@@ -320,7 +320,7 @@
   [{:keys [vbox vport zoom page-id show-rulers hover-ids]}]
   (let [comparison (cc/use-comparison)
         objects    (mf/deref refs/workspace-page-objects)
-        review?    (some? (mf/deref refs/pull-request-preview))
+        review?    (some? (mf/deref refs/branch-review-preview))
 
         {:keys [mode phase status incoming selected hovered item rows model
                 conflicts excluded resolutions data res attr]} comparison

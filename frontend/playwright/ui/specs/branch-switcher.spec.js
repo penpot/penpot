@@ -13,12 +13,12 @@ const setupMainWithBranches = async (workspacePage) => {
   await workspacePage.setupEmptyFile();
   await workspacePage.mockRPCs({
     "get-file-branch-info?file-id=*":
-      "pull-requests/get-file-branch-info-none.json",
+      "branch-reviews/get-file-branch-info-none.json",
     "get-file-branch-count?file-id=*":
       "branches/get-file-branch-count-two.json",
     "get-file-branches?file-id=*": "branches/get-file-branches-two.json",
     "get-file-branch-reviews?file-id=*":
-      "pull-requests/get-file-branches-empty.json",
+      "branch-reviews/get-file-branches-empty.json",
   });
 };
 

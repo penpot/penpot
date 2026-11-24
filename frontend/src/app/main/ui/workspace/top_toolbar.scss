@@ -129,7 +129,7 @@
   background-color: var(--color-accent-default);
 }
 
-// the tools of a design review use the review colour: blue on the tool in
+// the tools of a branch review use the review colour: blue on the tool in
 // use and on hover, instead of the accent of the drawing tools
 .review-tool:hover {
   --button-hover-bg-color: var(--color-background-quaternary);

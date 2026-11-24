@@ -4,33 +4,33 @@ import { WorkspacePage } from "../pages/WorkspacePage";
 const PR_ID = "c7ce0794-0992-8105-8004-38f280443999";
 
 // The review bar at the bottom of the canvas: the review's own chrome,
-// which replaces the branch bar while a design review is open.
-const reviewBar = (page) => page.getByRole("region", { name: "Design review" });
+// which replaces the branch bar while a branch review is open.
+const reviewBar = (page) => page.getByRole("region", { name: "Branch review" });
 
 test.beforeEach(async ({ page }) => {
   await WorkspacePage.init(page);
   await WorkspacePage.mockConfigFlags(page, ["enable-branching"]);
 });
 
-const setupPullRequestSandbox = async (workspacePage) => {
+const setupBranchReview = async (workspacePage) => {
   await workspacePage.setupEmptyFile();
   await workspacePage.mockRPCs({
     "get-file-branch-info?file-id=*":
-      "pull-requests/get-file-branch-info-none.json",
-    "get-file-branches?file-id=*": "pull-requests/get-file-branches-empty.json",
+      "branch-reviews/get-file-branch-info-none.json",
+    "get-file-branches?file-id=*": "branch-reviews/get-file-branches-empty.json",
     "get-file-branch-reviews?file-id=*":
-      "pull-requests/get-file-branch-reviews.json",
-    "get-branch-review?id=*": "pull-requests/get-branch-review.json",
+      "branch-reviews/get-file-branch-reviews.json",
+    "get-branch-review?id=*": "branch-reviews/get-branch-review.json",
     "get-file-branch-diff?branch-id=*":
-      "pull-requests/get-file-branch-diff-empty.json",
+      "branch-reviews/get-file-branch-diff-empty.json",
     "submit-branch-review-verdict":
-      "pull-requests/submit-branch-review-verdict.json",
+      "branch-reviews/submit-branch-review-verdict.json",
   });
 };
 
-test("opening a file with pr-id enters the design review", async ({ page }) => {
+test("opening a file with pr-id enters the branch review", async ({ page }) => {
   const workspacePage = new WorkspacePage(page);
-  await setupPullRequestSandbox(workspacePage);
+  await setupBranchReview(workspacePage);
   await workspacePage.goToWorkspace({ extraParams: `&pr-id=${PR_ID}` });
 
   // the review bar names the review being read, and the header trades the
@@ -47,21 +47,21 @@ test("opening a file with pr-id enters the design review", async ({ page }) => {
   // assigned reviewer, and the way out
   await expect(bar.getByRole("button", { name: "Details" })).toBeVisible();
   await expect(
-    bar.getByRole("button", { name: "Submit review" }),
+    bar.getByRole("button", { name: "Review", exact: true }),
   ).toBeVisible();
   await expect(bar.getByRole("button", { name: "Exit review" })).toBeVisible();
 
-  // comparing, merging and cancelling live behind the kebab menu
+  // comparing, merging and closing live behind the kebab menu
   await expect(bar.getByRole("button", { name: "Compare" })).toBeHidden();
   await bar.getByRole("button", { name: "Options" }).click();
   await expect(page.getByText("Compare", { exact: true })).toBeVisible();
-  await expect(page.getByText("Merge to main")).toBeVisible();
-  await expect(page.getByText("Cancel review")).toBeVisible();
+  await expect(page.getByText("Merge into main")).toBeVisible();
+  await expect(page.getByText("Close review")).toBeVisible();
 });
 
 test("comparing shows the proposed changes on the canvas", async ({ page }) => {
   const workspacePage = new WorkspacePage(page);
-  await setupPullRequestSandbox(workspacePage);
+  await setupBranchReview(workspacePage);
   await workspacePage.goToWorkspace({ extraParams: `&pr-id=${PR_ID}` });
 
   // comparing is one of the review bar's options
@@ -82,23 +82,25 @@ test("comparing shows the proposed changes on the canvas", async ({ page }) => {
   await expect(bar.getByText("In review", { exact: true })).toBeVisible();
 });
 
-test("accepting the pull request opens the merge dialog", async ({ page }) => {
+test("accepting the branch review opens the merge dialog", async ({ page }) => {
   const workspacePage = new WorkspacePage(page);
-  await setupPullRequestSandbox(workspacePage);
+  await setupBranchReview(workspacePage);
   await workspacePage.goToWorkspace({ extraParams: `&pr-id=${PR_ID}` });
 
   const banner = reviewBar(page);
   await banner.getByRole("button", { name: "Options" }).click();
-  await page.getByText("Merge to main").click();
+  await page.getByText("Merge into main").click();
 
   // the branching merge dialog handles the actual integration
-  await expect(page.getByText("Merge into main")).toBeVisible();
+  await expect(
+    page.getByRole("dialog").getByText("Merge into main"),
+  ).toBeVisible();
   await expect(page.getByText("checkout").first()).toBeVisible();
 });
 
 test("the review is read-only", async ({ page }) => {
   const workspacePage = new WorkspacePage(page);
-  await setupPullRequestSandbox(workspacePage);
+  await setupBranchReview(workspacePage);
   await workspacePage.goToWorkspace({ extraParams: `&pr-id=${PR_ID}` });
 
   await expect(reviewBar(page)).toBeVisible();
@@ -130,52 +132,78 @@ test("the review is read-only", async ({ page }) => {
   await expect(page.getByRole("tab", { name: "Tasks (0)" })).toBeVisible();
 });
 
-test("an assigned reviewer can submit a verdict from the review bar", async ({
+test("without a comment, a verdict button submits at once", async ({
   page,
 }) => {
   const workspacePage = new WorkspacePage(page);
-  await setupPullRequestSandbox(workspacePage);
+  await setupBranchReview(workspacePage);
   await workspacePage.goToWorkspace({ extraParams: `&pr-id=${PR_ID}` });
 
   // the logged-in profile is an assigned reviewer in the fixture, so the
   // bar offers the verdict
   const bar = reviewBar(page);
-  await bar.getByRole("button", { name: "Submit review" }).click();
+  await bar.getByRole("button", { name: "Review", exact: true }).click();
 
   const dialog = page.getByRole("dialog");
   await expect(dialog).toBeVisible();
   await expect(
-    dialog.getByRole("heading", { name: "Submit review" }),
+    dialog.getByRole("heading", { name: "Checkout redesign" }),
   ).toBeVisible();
+  await expect(dialog.getByRole("button", { name: "Send" })).toBeHidden();
 
-  // the verdicts are a choice of one: radios, each with its hint
-  const requestChanges = dialog.getByRole("radio", { name: /Request changes/ });
-  await requestChanges.click();
-  await expect(requestChanges).toBeChecked();
-  await dialog.getByRole("button", { name: "Submit review" }).click();
+  await dialog.getByRole("button", { name: "Request changes" }).click();
 
   await expect(page.getByText("Review submitted")).toBeVisible();
 });
 
-test("closing the pull request asks for confirmation", async ({ page }) => {
+test("with a comment, the verdict buttons pick and Send submits", async ({
+  page,
+}) => {
   const workspacePage = new WorkspacePage(page);
-  await setupPullRequestSandbox(workspacePage);
+  await setupBranchReview(workspacePage);
+  await workspacePage.goToWorkspace({ extraParams: `&pr-id=${PR_ID}` });
+
+  const bar = reviewBar(page);
+  await bar.getByRole("button", { name: "Review", exact: true }).click();
+
+  const dialog = page.getByRole("dialog");
+  await dialog.getByRole("button", { name: "Add a comment" }).click();
+
+  // Send waits for a verdict
+  const send = dialog.getByRole("button", { name: "Send" });
+  await expect(send).toBeDisabled();
+
+  await dialog.getByRole("textbox").fill("Looks good");
+  const approve = dialog.getByRole("button", { name: "Approve" });
+  await approve.click();
+
+  // picking a verdict submits nothing yet
+  await expect(approve).toHaveAttribute("aria-pressed", "true");
+  await expect(dialog).toBeVisible();
+
+  await send.click();
+  await expect(page.getByText("Review submitted")).toBeVisible();
+});
+
+test("closing the branch review asks for confirmation", async ({ page }) => {
+  const workspacePage = new WorkspacePage(page);
+  await setupBranchReview(workspacePage);
   await workspacePage.mockRPC(
     "close-branch-review",
-    "pull-requests/close-branch-review.json",
+    "branch-reviews/close-branch-review.json",
   );
   await workspacePage.goToWorkspace({ extraParams: `&pr-id=${PR_ID}` });
 
   const banner = reviewBar(page);
   await banner.getByRole("button", { name: "Options" }).click();
-  await page.getByText("Cancel review").click();
+  await page.getByText("Close review").click();
 
   // nothing is closed yet: a confirmation dialog takes over
-  await expect(page.getByText("will be cancelled")).toBeVisible();
+  await expect(page.getByText("will be closed")).toBeVisible();
 
-  // confirming closes the pull request; being inside its sandbox, the
+  // confirming closes the branch review; being inside its sandbox, the
   // user is taken back to the file (no pr-id in the url)
-  await page.getByRole("button", { name: "Cancel design review" }).click();
+  await page.getByRole("button", { name: "Close review" }).click();
   await expect(page).not.toHaveURL(/pr-id/);
 });
 
@@ -183,13 +211,13 @@ test("on a branch, requesting a review is the primary action", async ({
   page,
 }) => {
   const workspacePage = new WorkspacePage(page);
-  await setupPullRequestSandbox(workspacePage);
-  // the open file IS a branch without an open pull request
+  await setupBranchReview(workspacePage);
+  // the open file IS a branch without an open branch review
   await workspacePage.mockRPCs({
     "get-file-branch-info?file-id=*":
-      "pull-requests/get-file-branch-info-branch.json",
+      "branch-reviews/get-file-branch-info-branch.json",
     "get-file-branch-reviews?file-id=*":
-      "pull-requests/get-file-branches-empty.json",
+      "branch-reviews/get-file-branches-empty.json",
   });
   await workspacePage.goToWorkspace();
 
@@ -198,18 +226,20 @@ test("on a branch, requesting a review is the primary action", async ({
     page.getByRole("button", { name: "Request review" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "Merge to main" }),
+    page.getByRole("button", { name: "Merge into main" }),
   ).toBeHidden();
 
   const banner = page.locator("#branch-banner");
   await banner.getByRole("button", { name: "Options" }).click();
-  await page.getByText("Merge to main").click();
-  await expect(page.getByText("Merge into main")).toBeVisible();
+  await page.getByText("Merge into main").click();
+  await expect(
+    page.getByRole("dialog").getByText("Merge into main"),
+  ).toBeVisible();
 });
 
 test("exiting the review takes the user back to the file", async ({ page }) => {
   const workspacePage = new WorkspacePage(page);
-  await setupPullRequestSandbox(workspacePage);
+  await setupBranchReview(workspacePage);
   await workspacePage.goToWorkspace({ extraParams: `&pr-id=${PR_ID}` });
 
   // the way out is an icon button on the bar, named by its tooltip
@@ -227,11 +257,11 @@ test("during a review the header names the branch under review", async ({
   page,
 }) => {
   const workspacePage = new WorkspacePage(page);
-  await setupPullRequestSandbox(workspacePage);
+  await setupBranchReview(workspacePage);
   // the review link opens the author's branch
   await workspacePage.mockRPC(
     "get-file-branch-info?file-id=*",
-    "pull-requests/get-file-branch-info-branch.json",
+    "branch-reviews/get-file-branch-info-branch.json",
   );
   await workspacePage.goToWorkspace({ extraParams: `&pr-id=${PR_ID}` });
 
@@ -243,11 +273,11 @@ test("during a review the header names the branch under review", async ({
 
 test("a branch that cannot be compared with main says so", async ({ page }) => {
   const workspacePage = new WorkspacePage(page);
-  await setupPullRequestSandbox(workspacePage);
+  await setupBranchReview(workspacePage);
   // the backend answers nil counts when it cannot compare the branch
   await workspacePage.mockRPC(
     "get-file-branch-info?file-id=*",
-    "pull-requests/get-file-branch-info-uncompared.json",
+    "branch-reviews/get-file-branch-info-uncompared.json",
   );
   await workspacePage.goToWorkspace();
 
@@ -262,10 +292,10 @@ test("on a branch, the all-branches dialog offers no new branch", async ({
   page,
 }) => {
   const workspacePage = new WorkspacePage(page);
-  await setupPullRequestSandbox(workspacePage);
+  await setupBranchReview(workspacePage);
   await workspacePage.mockRPC(
     "get-file-branch-info?file-id=*",
-    "pull-requests/get-file-branch-info-branch.json",
+    "branch-reviews/get-file-branch-info-branch.json",
   );
   await workspacePage.goToWorkspace();
 

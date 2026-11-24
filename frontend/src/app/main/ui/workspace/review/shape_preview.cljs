@@ -6,7 +6,7 @@
 
 (ns app.main.ui.workspace.review.shape-preview
   "A small drawing of a layer, for the card of a change in the details of
-  a design review."
+  a branch review."
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]

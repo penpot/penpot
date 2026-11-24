@@ -4,14 +4,13 @@
 ;;
 ;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
-(ns app.main.data.workspace.pull-requests
-  "Data layer for pull requests over file branches. A pull request points
-  to a pinned review snapshot of its branch. Reviewing opens the live
-  branch file as a normal, editable workspace with a review context
-  attached (`:workspace-pr-preview`, which drives the review banner and
-  header), so a reviewer's edits change the branch and mark the pull
-  request outdated. The pinned snapshot backs the interactions viewer and
-  the outdated flag, not the canvas. Mirrors the patterns of
+(ns app.main.data.workspace.branch-reviews
+  "Data layer for branch reviews. Reviewing opens the live branch file as
+  a normal, editable workspace with a review context attached
+  (`:workspace-pr-preview`, which drives the review banner and header),
+  so a reviewer's edits change the branch. Reviewers always see the live
+  branch, in the canvas and in the interactions viewer: a verdict given
+  before the branch changed again is stale. Mirrors the patterns of
   `app.main.data.workspace.branches`."
   (:require
    [app.config :as cf]
@@ -32,46 +31,46 @@
   (contains? cf/flags :branching))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; PULL REQUEST LIST (sidebar section)
+;; BRANCH REVIEW LIST (sidebar section)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defonce default-state
   {:status :loading
    :data nil})
 
-(defn- update-pull-requests-state
+(defn- update-branch-reviews-state
   [pr-state]
-  (ptk/reify ::update-pull-requests-state
+  (ptk/reify ::update-branch-reviews-state
     ptk/UpdateEvent
     (update [_ state]
-      (update state :workspace-pull-requests merge pr-state))))
+      (update state :workspace-branch-reviews merge pr-state))))
 
-(defn fetch-pull-requests
-  "Load the pull requests of the current file into
-  `:workspace-pull-requests`. The backend resolves a branch file id to
+(defn fetch-branch-reviews
+  "Load the branch reviews of the current file into
+  `:workspace-branch-reviews`. The backend resolves a branch file id to
   its source, so the list is complete whether the user is on main or on
   a branch. Closed ones are included; the UI decides what to show."
   []
-  (ptk/reify ::fetch-pull-requests
+  (ptk/reify ::fetch-branch-reviews
     ptk/WatchEvent
     (watch [_ state _]
       (when (enabled?)
         (when-let [file-id (:current-file-id state)]
           (->> (rp/cmd! :get-file-branch-reviews {:file-id file-id :include-closed true})
-               (rx/map #(update-pull-requests-state {:status :loaded :data %}))
+               (rx/map #(update-branch-reviews-state {:status :loaded :data %}))
                (rx/catch (fn [_]
-                           (rx/of (update-pull-requests-state {:status :loaded :data []}))))))))))
+                           (rx/of (update-branch-reviews-state {:status :loaded :data []}))))))))))
 
-(defn init-pull-requests-state
+(defn init-branch-reviews-state
   []
-  (ptk/reify ::init-pull-requests-state
+  (ptk/reify ::init-branch-reviews-state
     ptk/UpdateEvent
     (update [_ state]
-      (assoc state :workspace-pull-requests default-state))
+      (assoc state :workspace-branch-reviews default-state))
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/of (fetch-pull-requests)))))
+      (rx/of (fetch-branch-reviews)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PENDING REVIEWS (dashboard notifications area)
@@ -85,7 +84,7 @@
       (assoc state :dashboard-pending-reviews rows))))
 
 (defn fetch-pending-reviews
-  "Load into `:dashboard-pending-reviews` the open pull requests of
+  "Load into `:dashboard-pending-reviews` the open branch reviews of
   `team-id` where the current profile is a reviewer without a current
   verdict. Feeds the dashboard notifications dropdown."
   [team-id]
@@ -98,20 +97,20 @@
              (rx/catch (fn [_] (rx/of (set-pending-reviews [])))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; LIFECYCLE (create / edit / publish / close / reopen)
+;; LIFECYCLE (create / edit / close / reopen)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(declare refresh-pull-request-preview-info)
+(declare refresh-branch-review-preview-info)
 
-(defn create-pull-request
-  "Create a pull request from `branch-id` towards its source file. When
+(defn create-branch-review
+  "Create a branch review from `branch-id` towards its source file. When
   the branch is the currently open file, pending local changes are
-  force-persisted first so the review snapshot captures them. Errors
-  surface as a toast; the caller closes the dialog."
+  force-persisted first so the review starts from the branch the author
+  sees. Errors surface as a toast; the caller closes the dialog."
   [branch-id {:keys [title description reviewers]}]
   (assert (uuid? branch-id) "expected valid uuid for `branch-id`")
   (assert (string? title) "expected string for `title`")
-  (ptk/reify ::create-pull-request
+  (ptk/reify ::create-branch-review
     ptk/WatchEvent
     (watch [_ state _]
       (let [;; the branch context is the open file's, and it is loaded
@@ -124,8 +123,8 @@
                        (rx/of :ready))]
         (rx/concat
          (if from-ws?
-           (rx/of ::dwp/force-persist (ev/event {::ev/name "create-pull-request"}))
-           (rx/of (ev/event {::ev/name "create-pull-request"})))
+           (rx/of ::dwp/force-persist (ev/event {::ev/name "create-branch-review"}))
+           (rx/of (ev/event {::ev/name "create-branch-review"})))
          (->> wait
               (rx/mapcat #(rp/cmd! :create-branch-review
                                    {:branch-id branch-id
@@ -134,20 +133,20 @@
                                     :reviewers (vec (or reviewers []))}))
               (rx/mapcat
                (fn [_]
-                 (rx/of (ntf/success (tr "workspace.pull-requests.create.success" title))
-                        (fetch-pull-requests))))
+                 (rx/of (ntf/success (tr "workspace.branch-review.create.success" title))
+                        (fetch-branch-reviews))))
               (rx/catch
                (fn [cause]
                  (if (= :branch-review-already-exists (:code (ex-data cause)))
-                   (rx/of (ntf/warn (tr "workspace.pull-requests.create.already-exists")))
-                   (rx/of (ntf/error (tr "workspace.pull-requests.create.error"))))))))))))
+                   (rx/of (ntf/warn (tr "workspace.branch-review.create.already-exists")))
+                   (rx/of (ntf/error (tr "workspace.branch-review.create.error"))))))))))))
 
-(defn update-pull-request
-  "Edit a pull request's title, description or reviewer list (author or
+(defn update-branch-review
+  "Edit a branch review's title, description or reviewer list (author or
   team admins only, enforced server-side)."
   [id {:keys [title description reviewers]}]
   (assert (uuid? id) "expected valid uuid for `id`")
-  (ptk/reify ::update-pull-request
+  (ptk/reify ::update-branch-review
     ptk/WatchEvent
     (watch [_ _ _]
       (->> (rp/cmd! :update-branch-review-info
@@ -155,41 +154,12 @@
                       (some? title)       (assoc :title title)
                       (some? description) (assoc :description description)
                       (some? reviewers)   (assoc :reviewers (vec reviewers))))
-           (rx/mapcat (fn [_] (rx/of (fetch-pull-requests)
-                                     (refresh-pull-request-preview-info id))))
-           (rx/catch (fn [_] (rx/of (ntf/error (tr "workspace.pull-requests.lifecycle.error")))))))))
-
-(defn update-pull-request-snapshot
-  "Publish the branch's current state to the reviewers (repositions the
-  review snapshot). When the branch is the currently open file, pending
-  local changes are force-persisted first. Once published, the review
-  open in the workspace learns it is up to date."
-  [id]
-  (assert (uuid? id) "expected valid uuid for `id`")
-  (ptk/reify ::update-pull-request-snapshot
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [from-ws? (some? (:current-file-id state))
-            wait     (if from-ws? (dwp/wait-persisted) (rx/of :ready))]
-        (rx/concat
-         (if from-ws?
-           (rx/of ::dwp/force-persist (ev/event {::ev/name "update-pull-request-snapshot"}))
-           (rx/of (ev/event {::ev/name "update-pull-request-snapshot"})))
-         (->> wait
-              (rx/mapcat #(rp/cmd! :update-branch-review-revision {:id id}))
-              (rx/mapcat
-               (fn [{:keys [updated]}]
-                 (rx/of (if updated
-                          (ntf/success (tr "workspace.pull-requests.publish.success"))
-                          (ntf/info (tr "workspace.pull-requests.publish.up-to-date")))
-                        (fetch-pull-requests)
-                        (refresh-pull-request-preview-info id))))
-              (rx/catch
-               (fn [_]
-                 (rx/of (ntf/error (tr "workspace.pull-requests.lifecycle.error")))))))))))
+           (rx/mapcat (fn [_] (rx/of (fetch-branch-reviews)
+                                     (refresh-branch-review-preview-info id))))
+           (rx/catch (fn [_] (rx/of (ntf/error (tr "workspace.branch-review.lifecycle.error")))))))))
 
 (defn submit-review
-  "Submit a verdict on a pull request, or retract it with `nil`. Only
+  "Submit a verdict on a branch review, or retract it with `nil`. Only
   assigned reviewers may submit (enforced server-side)."
   [id verdict comment]
   (assert (uuid? id) "expected valid uuid for `id`")
@@ -200,30 +170,30 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (rx/concat
-       (rx/of (ev/event {::ev/name "submit-pull-request-review"}))
+       (rx/of (ev/event {::ev/name "submit-branch-review-verdict"}))
        (->> (rp/cmd! :submit-branch-review-verdict
                      (cond-> {:id id}
                        (some? verdict) (assoc :verdict verdict)
                        (some? comment) (assoc :comment comment)))
             (rx/mapcat
              (fn [_]
-               (rx/of (ntf/success (tr "workspace.pull-requests.review.submitted"))
-                      (fetch-pull-requests)
-                      (refresh-pull-request-preview-info id))))
+               (rx/of (ntf/success (tr "workspace.branch-review.review.submitted"))
+                      (fetch-branch-reviews)
+                      (refresh-branch-review-preview-info id))))
             (rx/catch
              (fn [cause]
                (if (= :not-a-reviewer (:code (ex-data cause)))
-                 (rx/of (ntf/warn (tr "workspace.pull-requests.review.not-a-reviewer")))
-                 (rx/of (ntf/error (tr "workspace.pull-requests.lifecycle.error")))))))))))
+                 (rx/of (ntf/warn (tr "workspace.branch-review.review.not-a-reviewer")))
+                 (rx/of (ntf/error (tr "workspace.branch-review.lifecycle.error")))))))))))
 
-(declare exit-pull-request-preview)
+(declare exit-branch-review-preview)
 
-(defn close-pull-request
-  "Close (discard) a pull request. Its sandbox stops existing; if the user
+(defn close-branch-review
+  "Close (discard) a branch review. Its sandbox stops existing; if the user
   is currently inside it, take them back to the branch file."
   [id]
   (assert (uuid? id) "expected valid uuid for `id`")
-  (ptk/reify ::close-pull-request
+  (ptk/reify ::close-branch-review
     ptk/WatchEvent
     (watch [_ state _]
       (let [inside? (= id (get-in state [:workspace-pr-preview :pr-id]))]
@@ -231,47 +201,47 @@
              (rx/mapcat
               (fn [_]
                 (rx/concat
-                 (rx/of (ntf/success (tr "workspace.pull-requests.lifecycle.closed"))
-                        (fetch-pull-requests))
+                 (rx/of (ntf/success (tr "workspace.branch-review.lifecycle.closed"))
+                        (fetch-branch-reviews))
                  (if inside?
-                   (rx/of (exit-pull-request-preview))
+                   (rx/of (exit-branch-review-preview))
                    (rx/empty)))))
              (rx/catch
               (fn [_]
-                (rx/of (ntf/error (tr "workspace.pull-requests.lifecycle.error"))))))))))
+                (rx/of (ntf/error (tr "workspace.branch-review.lifecycle.error"))))))))))
 
-(defn reopen-pull-request
+(defn reopen-branch-review
   [id]
   (assert (uuid? id) "expected valid uuid for `id`")
-  (ptk/reify ::reopen-pull-request
+  (ptk/reify ::reopen-branch-review
     ptk/WatchEvent
     (watch [_ _ _]
       (->> (rp/cmd! :reopen-branch-review {:id id})
-           (rx/mapcat (fn [_] (rx/of (ntf/success (tr "workspace.pull-requests.lifecycle.reopened"))
-                                     (fetch-pull-requests))))
+           (rx/mapcat (fn [_] (rx/of (ntf/success (tr "workspace.branch-review.lifecycle.reopened"))
+                                     (fetch-branch-reviews))))
            (rx/catch
             (fn [cause]
               (case (:code (ex-data cause))
                 :branch-not-open
-                (rx/of (ntf/warn (tr "workspace.pull-requests.lifecycle.branch-gone")))
+                (rx/of (ntf/warn (tr "workspace.branch-review.lifecycle.branch-gone")))
 
                 :branch-review-already-exists
-                (rx/of (ntf/warn (tr "workspace.pull-requests.create.already-exists")))
+                (rx/of (ntf/warn (tr "workspace.branch-review.create.already-exists")))
 
-                (rx/of (ntf/error (tr "workspace.pull-requests.lifecycle.error"))))))))))
+                (rx/of (ntf/error (tr "workspace.branch-review.lifecycle.error"))))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; REVIEW CONTEXT (the live, editable branch file plus the review banner)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn open-pull-request
+(defn open-branch-review
   "Navigate into the review of `pr`: the branch file's workspace with the
   `pr-id` query param, which attaches the review context once the file is
-  initialized (`initialize-pull-request-preview`). The canvas is the live
+  initialized (`initialize-branch-review-preview`). The canvas is the live
   branch, editable as always."
   [pr]
-  (assert (uuid? (:id pr)) "expected a pull request row with a valid `:id`")
-  (ptk/reify ::open-pull-request
+  (assert (uuid? (:id pr)) "expected a branch review row with a valid `:id`")
+  (ptk/reify ::open-branch-review
     ptk/WatchEvent
     (watch [_ state _]
       (let [params (-> (rt/get-params state)
@@ -281,23 +251,23 @@
                        (dissoc :page-id))]
         (rx/of (rt/nav :workspace params))))))
 
-(defn- set-pull-request-preview
+(defn- set-branch-review-preview
   [preview]
-  (ptk/reify ::set-pull-request-preview
+  (ptk/reify ::set-branch-review-preview
     ptk/UpdateEvent
     (update [_ state]
       (if (nil? preview)
         (dissoc state :workspace-pr-preview)
         (update state :workspace-pr-preview merge preview)))))
 
-(defn refresh-pull-request-preview-info
-  "Refetch the pull request row backing the active sandbox (verdicts,
-  counts, outdated flag). No-op when the sandbox is not active or shows
-  another pull request. If the pull request finished meanwhile (merged
-  or cancelled), the review context is dropped: the branch is a normal
+(defn refresh-branch-review-preview-info
+  "Refetch the branch review row backing the active sandbox (verdicts and
+  their staleness, counts). No-op when the sandbox is not active or shows
+  another branch review. If the branch review finished meanwhile (merged
+  or closed), the review context is dropped: the branch is a normal
   branch again."
   [id]
-  (ptk/reify ::refresh-pull-request-preview-info
+  (ptk/reify ::refresh-branch-review-preview-info
     ptk/WatchEvent
     (watch [_ state _]
       (when (= id (get-in state [:workspace-pr-preview :pr-id]))
@@ -305,17 +275,17 @@
              (rx/mapcat
               (fn [info]
                 (if (not= "open" (:status info))
-                  (rx/of (exit-pull-request-preview))
-                  (rx/of (set-pull-request-preview {:info info})))))
+                  (rx/of (exit-branch-review-preview))
+                  (rx/of (set-branch-review-preview {:info info})))))
              (rx/catch (fn [_] (rx/empty))))))))
 
-(defn exit-pull-request-preview
+(defn exit-branch-review-preview
   "Leave the review context: drop the state entry and the `pr-id` query
   param. The file itself was never altered (it is the live branch file,
   opened normally), so no reload is needed — the branch banner simply
   takes over again."
   []
-  (ptk/reify ::exit-pull-request-preview
+  (ptk/reify ::exit-branch-review-preview
     ptk/UpdateEvent
     (update [_ state]
       (dissoc state :workspace-pr-preview :workspace-review-local :workspace-review-activity))
@@ -328,16 +298,15 @@
                (dcmt/close-thread)
                (rt/nav :workspace params))))))
 
-(defn- enter-pull-request-preview
-  "Worker for `initialize-pull-request-preview`: load the pull request
+(defn- enter-branch-review-preview
+  "Worker for `initialize-branch-review-preview`: load the branch review
   info and attach the review context to the open file. The file stays a
   NORMAL workspace file — fully navigable and editable, so reviewers can
-  try and validate anything (edits go to the branch, as always); the
-  pinned snapshot backs the interactions viewer and the outdated
-  tracking, not the canvas. Cleans the url when the pull request does
-  not belong to the open file or cannot be loaded."
+  try and validate anything (edits go to the branch, as always). Cleans
+  the url when the branch review does not belong to the open file or
+  cannot be loaded."
   [pr-id]
-  (ptk/reify ::enter-pull-request-preview
+  (ptk/reify ::enter-branch-review-preview
     ptk/UpdateEvent
     (update [_ state]
       (assoc state :workspace-pr-preview {:pr-id pr-id
@@ -353,16 +322,16 @@
                   ;; a stale pr-id param carried over a navigation (e.g.
                   ;; landing on main after merging from the review)
                   (not= file-id (:source-file-id info))
-                  (rx/of (exit-pull-request-preview))
+                  (rx/of (exit-branch-review-preview))
 
-                  ;; the pull request already finished (merged or
-                  ;; cancelled): the branch is a normal branch again, so
+                  ;; the branch review already finished (merged or
+                  ;; closed): the branch is a normal branch again, so
                   ;; there is no review context to restore
                   (not= "open" (:status info))
-                  (rx/of (exit-pull-request-preview))
+                  (rx/of (exit-branch-review-preview))
 
                   :else
-                  (rx/of (set-pull-request-preview {:status :loaded :info info})
+                  (rx/of (set-branch-review-preview {:status :loaded :info info})
                          ;; the review opens on the inspect of the selection:
                          ;; the move tool picks layers, and the comments and
                          ;; tasks show on the canvas
@@ -370,18 +339,18 @@
                          (dwl/toggle-layout-flag :display-comments :force? true)))))
              (rx/catch
               (fn [_]
-                (rx/of (ntf/warn (tr "workspace.pull-requests.preview.unavailable"))
-                       (exit-pull-request-preview)))))))))
+                (rx/of (ntf/warn (tr "workspace.branch-review.preview.unavailable"))
+                       (exit-branch-review-preview)))))))))
 
-(defn initialize-pull-request-preview
+(defn initialize-branch-review-preview
   "Attach the review context for `pr-id` to the open file. Split from the
   worker event so a re-emission (page navigation re-runs the workspace
   effect) is a cheap no-op."
   [pr-id]
   (assert (uuid? pr-id) "expected valid uuid for `pr-id`")
-  (ptk/reify ::initialize-pull-request-preview
+  (ptk/reify ::initialize-branch-review-preview
     ptk/WatchEvent
     (watch [_ state _]
       (if (= pr-id (get-in state [:workspace-pr-preview :pr-id]))
         (rx/empty)
-        (rx/of (enter-pull-request-preview pr-id))))))
+        (rx/of (enter-branch-review-preview pr-id))))))

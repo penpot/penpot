@@ -24,7 +24,7 @@
 (mf/defc branch-pill*
   "A branch name inside running text, as a static pill. Main is drawn
   muted; any other branch in the accent color, or in the info blue when
-  it is the branch of a pull request under review."
+  it is the branch of a branch review under review."
   {::mf/schema schema:branch-pill}
   [{:keys [class label is-main is-review] :rest props}]
   (let [is-main   (d/nilv is-main false)

@@ -7510,13 +7510,13 @@ msgid "workspace.branches.restore.title"
 msgstr "Restaurar rama"
 
 msgid "workspace.branches.reviews.design.empty"
-msgstr "Todavía no hay revisiones de diseño"
+msgstr "Todavía no hay revisiones de rama"
 
 msgid "workspace.branches.reviews.error"
 msgstr "No se han podido cargar las fusiones"
 
 msgid "workspace.branches.reviews.from-review"
-msgstr "De la revisión de diseño \"%s\""
+msgstr "De la revisión de rama \"%s\""
 
 msgid "workspace.branches.reviews.loading"
 msgstr "Cargando revisiones…"
@@ -7543,10 +7543,10 @@ msgid "workspace.branches.reviews.see-more"
 msgstr "Ver más"
 
 msgid "workspace.branches.reviews.tab.design"
-msgstr "Revisiones de diseño"
+msgstr "Revisiones de rama"
 
 msgid "workspace.branches.reviews.tab.merges"
-msgstr "Revisiones de fusión"
+msgstr "Fusiones"
 
 msgid "workspace.branches.reviews.title"
 msgstr "Revisiones"
@@ -7582,524 +7582,524 @@ msgstr "Eliminado"
 msgid "workspace.branches.status.modified"
 msgstr "Modificado"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
-msgid "workspace.branches.review.copies.affected"
-msgid_plural "workspace.branches.review.copies.affected"
+#: src/app/main/ui/workspace/sidebar/branch_compare/facts.cljs
+msgid "workspace.branches.compare.copies.affected"
+msgid_plural "workspace.branches.compare.copies.affected"
 msgstr[0] "Elegir un lado aquí también decide 1 copia."
 msgstr[1] "Elegir un lado aquí también decide %s copias."
 
-#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
-msgid "workspace.branches.review.copies.follow"
-msgid_plural "workspace.branches.review.copies.follow"
+#: src/app/main/ui/workspace/sidebar/branch_compare/facts.cljs
+msgid "workspace.branches.compare.copies.follow"
+msgid_plural "workspace.branches.compare.copies.follow"
 msgstr[0] "1 copia seguirá este componente"
 msgstr[1] "%s copias seguirán este componente"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
-msgid "workspace.branches.review.copies.follows"
+#: src/app/main/ui/workspace/sidebar/branch_compare/facts.cljs
+msgid "workspace.branches.compare.copies.follows"
 msgstr "Sigue al componente en: %s"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
-msgid "workspace.branches.review.copies.follows-all"
+#: src/app/main/ui/workspace/sidebar/branch_compare/facts.cljs
+msgid "workspace.branches.compare.copies.follows-all"
 msgstr "Sigue todos los cambios"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.copies.group.blur"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.copies.group.blur"
 msgstr "Desenfoque"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.copies.group.clip"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.copies.group.clip"
 msgstr "Truncar contenido"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.copies.group.constraints"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.copies.group.constraints"
 msgstr "Restricciones"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.copies.group.content"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.copies.group.content"
 msgstr "Contenido"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.copies.group.exports"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.copies.group.exports"
 msgstr "Exportaciones"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.copies.group.fill"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.copies.group.fill"
 msgstr "Relleno"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.copies.group.font"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.copies.group.font"
 msgstr "Fuente"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.copies.group.geometry"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.copies.group.geometry"
 msgstr "Tamaño y posición"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.copies.group.grids"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.copies.group.grids"
 msgstr "Guías"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.copies.group.layer"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.copies.group.layer"
 msgstr "Opacidad y modo de fusión"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.copies.group.layout"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.copies.group.layout"
 msgstr "Layout"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.copies.group.layout-item"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.copies.group.layout-item"
 msgstr "Elemento de layout"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.copies.group.lock"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.copies.group.lock"
 msgstr "Bloqueo"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.copies.group.mask"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.copies.group.mask"
 msgstr "Máscara"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.copies.group.name"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.copies.group.name"
 msgstr "Nombre"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.copies.group.radius"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.copies.group.radius"
 msgstr "Radio"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.copies.group.shadow"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.copies.group.shadow"
 msgstr "Sombra"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.copies.group.stroke"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.copies.group.stroke"
 msgstr "Borde"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.copies.group.swap"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.copies.group.swap"
 msgstr "Componente intercambiado"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.copies.group.text-display"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.copies.group.text-display"
 msgstr "Espaciado y alineación del texto"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.copies.group.visibility"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.copies.group.visibility"
 msgstr "Visibilidad"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
-msgid "workspace.branches.review.copies.keeping"
-msgid_plural "workspace.branches.review.copies.keeping"
+#: src/app/main/ui/workspace/sidebar/branch_compare/facts.cljs
+msgid "workspace.branches.compare.copies.keeping"
+msgid_plural "workspace.branches.compare.copies.keeping"
 msgstr[0] "1 mantiene modificaciones"
 msgstr[1] "%s mantienen modificaciones"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
-msgid "workspace.branches.review.copies.keeps-branch"
+#: src/app/main/ui/workspace/sidebar/branch_compare/facts.cljs
+msgid "workspace.branches.compare.copies.keeps-branch"
 msgstr "Mantiene su modificación de %s, hecha en la rama"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
-msgid "workspace.branches.review.copies.keeps-main"
+#: src/app/main/ui/workspace/sidebar/branch_compare/facts.cljs
+msgid "workspace.branches.compare.copies.keeps-main"
 msgstr "Mantiene su modificación de %s, hecha en main"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
-msgid "workspace.branches.review.copies.open-note"
+#: src/app/main/ui/workspace/sidebar/branch_compare/facts.cljs
+msgid "workspace.branches.compare.copies.open-note"
 msgstr "Tu elección solo decide %s. La regla de copias decide el resto."
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.copies.reason.follows-component"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.copies.reason.follows-component"
 msgstr "sigue al componente"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.copies.reason.override-both"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.copies.reason.override-both"
 msgstr "modificado en ambos lados"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.copies.reason.override-branch"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.copies.reason.override-branch"
 msgstr "modificado en la rama"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.copies.reason.override-main"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.copies.reason.override-main"
 msgstr "modificado en main"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/compare.cljs
-msgid "workspace.branches.review.copies.row-follow"
-msgid_plural "workspace.branches.review.copies.row-follow"
+#: src/app/main/ui/workspace/sidebar/branch_compare/compare.cljs
+msgid "workspace.branches.compare.copies.row-follow"
+msgid_plural "workspace.branches.compare.copies.row-follow"
 msgstr[0] "1 copia lo sigue"
 msgstr[1] "%s copias lo siguen"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
-msgid "workspace.branches.review.copies.settled-notice"
+#: src/app/main/ui/workspace/sidebar/branch_compare/facts.cljs
+msgid "workspace.branches.compare.copies.settled-notice"
 msgstr ""
 "La regla de copias decide todos los cambios de esta copia, así que no hay "
 "nada que elegir ni dejar fuera."
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.copies.settled-row"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.copies.settled-row"
 msgstr "Decidido por la regla de copias"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/compare.cljs
-msgid "workspace.branches.review.copies.settled-tag"
+#: src/app/main/ui/workspace/sidebar/branch_compare/compare.cljs
+msgid "workspace.branches.compare.copies.settled-tag"
 msgstr "Regla de copias"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
-msgid "workspace.branches.review.copies.settled-title"
+#: src/app/main/ui/workspace/sidebar/branch_compare/facts.cljs
+msgid "workspace.branches.compare.copies.settled-title"
 msgstr "Decidido por la regla de copias"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
-msgid "workspace.branches.review.copies.slots-open"
+#: src/app/main/ui/workspace/sidebar/branch_compare/facts.cljs
+msgid "workspace.branches.compare.copies.slots-open"
 msgstr "Ambos lados modifican el %s: tu elección decide"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.copies.token-slot"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.copies.token-slot"
 msgstr "Token de %s"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
-msgid "workspace.branches.review.copies.via"
+#: src/app/main/ui/workspace/sidebar/branch_compare/facts.cljs
+msgid "workspace.branches.compare.copies.via"
 msgstr "%s sigue el cambio a través de su copia de %s"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/compare.cljs:750
-msgid "workspace.branches.review.footer.reviewed"
-msgstr "%s de %s revisados"
+#: src/app/main/ui/workspace/sidebar/branch_compare/compare.cljs:750
+msgid "workspace.branches.compare.footer.viewed"
+msgstr "%s de %s vistos"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/compare.cljs:151
-msgid "workspace.branches.review.group.decisions"
+#: src/app/main/ui/workspace/sidebar/branch_compare/compare.cljs:151
+msgid "workspace.branches.compare.group.decisions"
 msgstr "Necesita tu decisión (%s)"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs:392
-msgid "workspace.branches.review.group.library"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs:392
+msgid "workspace.branches.compare.group.library"
 msgstr "Biblioteca"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/compare.cljs:72
-msgid "workspace.branches.review.row.choose"
+#: src/app/main/ui/workspace/sidebar/branch_compare/compare.cljs:72
+msgid "workspace.branches.compare.row.choose"
 msgstr "Elegir"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/compare.cljs:75
-msgid "workspace.branches.review.row.left-out"
+#: src/app/main/ui/workspace/sidebar/branch_compare/compare.cljs:75
+msgid "workspace.branches.compare.row.left-out"
 msgstr "Fuera"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/compare.cljs:78
-msgid "workspace.branches.review.row.reviewed"
-msgstr "Revisado"
+#: src/app/main/ui/workspace/sidebar/branch_compare/compare.cljs:78
+msgid "workspace.branches.compare.row.viewed"
+msgstr "Visto"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/compare.cljs:228
-msgid "workspace.branches.review.side.branch"
+#: src/app/main/ui/workspace/sidebar/branch_compare/compare.cljs:228
+msgid "workspace.branches.compare.side.branch"
 msgstr "Rama"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/compare.cljs:221
-msgid "workspace.branches.review.side.main"
+#: src/app/main/ui/workspace/sidebar/branch_compare/compare.cljs:221
+msgid "workspace.branches.compare.side.main"
 msgstr "Main"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs:321
-msgid "workspace.branches.review.summary.changed"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs:321
+msgid "workspace.branches.compare.summary.changed"
 msgstr "Cambiado"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs:318
-msgid "workspace.branches.review.summary.deleted"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs:318
+msgid "workspace.branches.compare.summary.deleted"
 msgstr "%s eliminado"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs:381
-msgid "workspace.branches.review.unknown-page"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs:381
+msgid "workspace.branches.compare.unknown-page"
 msgstr "Página desconocida"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/compare.cljs:201
-msgid "workspace.branches.review.view.side"
+#: src/app/main/ui/workspace/sidebar/branch_compare/compare.cljs:201
+msgid "workspace.branches.compare.view.side"
 msgstr "Lado a lado"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:297
+#: src/app/main/ui/workspace/sidebar/branch_compare/conflicts.cljs:297
 msgid "workspace.branches.resolve.tag.conflicts"
 msgid_plural "workspace.branches.resolve.tag.conflicts"
 msgstr[0] "1 conflicto"
 msgstr[1] "%s conflictos"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:299
+#: src/app/main/ui/workspace/sidebar/branch_compare/conflicts.cljs:299
 msgid "workspace.branches.resolve.tag.independent"
 msgid_plural "workspace.branches.resolve.tag.independent"
 msgstr[0] "1 edición independiente"
 msgstr[1] "%s ediciones independientes"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/compare.cljs:631
-msgid "workspace.branches.review.action.merge"
-msgid_plural "workspace.branches.review.action.merge"
+#: src/app/main/ui/workspace/sidebar/branch_compare/compare.cljs:631
+msgid "workspace.branches.compare.action.merge"
+msgid_plural "workspace.branches.compare.action.merge"
 msgstr[0] "Fusionar 1 cambio"
 msgstr[1] "Fusionar %s cambios"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/compare.cljs:618
-msgid "workspace.branches.review.action.resolve"
-msgid_plural "workspace.branches.review.action.resolve"
+#: src/app/main/ui/workspace/sidebar/branch_compare/compare.cljs:618
+msgid "workspace.branches.compare.action.resolve"
+msgid_plural "workspace.branches.compare.action.resolve"
 msgstr[0] "Resolver 1 decisión"
 msgstr[1] "Resolver %s decisiones"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/compare.cljs:625
-msgid "workspace.branches.review.action.update"
-msgid_plural "workspace.branches.review.action.update"
+#: src/app/main/ui/workspace/sidebar/branch_compare/compare.cljs:625
+msgid "workspace.branches.compare.action.update"
+msgid_plural "workspace.branches.compare.action.update"
 msgstr[0] "Actualizar con 1 cambio"
 msgstr[1] "Actualizar con %s cambios"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/compare.cljs:755
-msgid "workspace.branches.review.footer.left-out"
-msgid_plural "workspace.branches.review.footer.left-out"
+#: src/app/main/ui/workspace/sidebar/branch_compare/compare.cljs:755
+msgid "workspace.branches.compare.footer.left-out"
+msgid_plural "workspace.branches.compare.footer.left-out"
 msgstr[0] "1 fuera"
 msgstr[1] "%s fuera"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/compare.cljs:88
-msgid "workspace.branches.review.row.edits"
-msgid_plural "workspace.branches.review.row.edits"
+#: src/app/main/ui/workspace/sidebar/branch_compare/compare.cljs:88
+msgid "workspace.branches.compare.row.edits"
+msgid_plural "workspace.branches.compare.row.edits"
 msgstr[0] "1 edición"
 msgstr[1] "%s ediciones"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.summary.text"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.summary.text"
 msgstr "Texto reescrito"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.summary.renamed"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.summary.renamed"
 msgstr "Renombrado"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.summary.moved"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.summary.moved"
 msgstr "Movido"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.summary.resized"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.summary.resized"
 msgstr "Redimensionado"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.summary.rotated"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.summary.rotated"
 msgstr "Rotado"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.summary.reparented"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.summary.reparented"
 msgstr "Movido a otro contenedor"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.summary.visibility"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.summary.visibility"
 msgstr "Mostrado u ocultado"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.summary.spacing"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.summary.spacing"
 msgstr "Espaciado cambiado"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.summary.layout"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.summary.layout"
 msgstr "Layout cambiado"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.summary.attr"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.summary.attr"
 msgstr "%s cambiado"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.summary.more"
-msgid_plural "workspace.branches.review.summary.more"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.summary.more"
+msgid_plural "workspace.branches.compare.summary.more"
 msgstr[0] "+1 más"
 msgstr[1] "+%s más"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.type.page"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.type.page"
 msgstr "Página"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.type.page-settings"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.type.page-settings"
 msgstr "Ajustes de la página"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.type.page-order"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.type.page-order"
 msgstr "Orden de las páginas"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.type.guides"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.type.guides"
 msgstr "Guías"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.type.flows"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.type.flows"
 msgstr "Flujos"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.type.grids"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.type.grids"
 msgstr "Rejillas"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.type.plugin-data"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.type.plugin-data"
 msgstr "Datos de plugins"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.type.file-options"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.type.file-options"
 msgstr "Opciones del archivo"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.type.token-set"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.type.token-set"
 msgstr "Set de tokens"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.type.token-set-order"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.type.token-set-order"
 msgstr "Orden de los sets de tokens"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.type.theme"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.type.theme"
 msgstr "Tema"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.type.active-themes"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.type.active-themes"
 msgstr "Temas activos"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.type.active-sets"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.type.active-sets"
 msgstr "Sets de tokens activos"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.type.tokens-source"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.type.tokens-source"
 msgstr "Origen de los tokens"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
-msgid "workspace.branches.review.facts.contents"
+#: src/app/main/ui/workspace/sidebar/branch_compare/facts.cljs
+msgid "workspace.branches.compare.facts.contents"
 msgstr "Contenido"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
-msgid "workspace.branches.review.facts.board-names"
+#: src/app/main/ui/workspace/sidebar/branch_compare/facts.cljs
+msgid "workspace.branches.compare.facts.board-names"
 msgstr "Tableros"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
-msgid "workspace.branches.review.facts.page-goes"
+#: src/app/main/ui/workspace/sidebar/branch_compare/facts.cljs
+msgid "workspace.branches.compare.facts.page-goes"
 msgstr "Esta página desaparece"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
-msgid "workspace.branches.review.facts.page-goes-merge"
+#: src/app/main/ui/workspace/sidebar/branch_compare/facts.cljs
+msgid "workspace.branches.compare.facts.page-goes-merge"
 msgstr "La fusión elimina esta página y todo lo que contiene: %s y %s."
 
-#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
-msgid "workspace.branches.review.facts.page-goes-update"
+#: src/app/main/ui/workspace/sidebar/branch_compare/facts.cljs
+msgid "workspace.branches.compare.facts.page-goes-update"
 msgstr "La actualización elimina esta página y todo lo que contiene: %s y %s."
 
-#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
-msgid "workspace.branches.review.facts.type"
+#: src/app/main/ui/workspace/sidebar/branch_compare/facts.cljs
+msgid "workspace.branches.compare.facts.type"
 msgstr "Tipo"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
-msgid "workspace.branches.review.facts.size"
+#: src/app/main/ui/workspace/sidebar/branch_compare/facts.cljs
+msgid "workspace.branches.compare.facts.size"
 msgstr "Tamaño"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
-msgid "workspace.branches.review.facts.position"
+#: src/app/main/ui/workspace/sidebar/branch_compare/facts.cljs
+msgid "workspace.branches.compare.facts.position"
 msgstr "Posición"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
-msgid "workspace.branches.review.facts.where-was"
+#: src/app/main/ui/workspace/sidebar/branch_compare/facts.cljs
+msgid "workspace.branches.compare.facts.where-was"
 msgstr "Dónde estaba"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
-msgid "workspace.branches.review.facts.where-lands"
+#: src/app/main/ui/workspace/sidebar/branch_compare/facts.cljs
+msgid "workspace.branches.compare.facts.where-lands"
 msgstr "Dónde queda"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
-msgid "workspace.branches.review.facts.copies-orphaned-title"
+#: src/app/main/ui/workspace/sidebar/branch_compare/facts.cljs
+msgid "workspace.branches.compare.facts.copies-orphaned-title"
 msgstr "Hay copias que pierden su componente principal"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
-msgid "workspace.branches.review.facts.unused-title"
+#: src/app/main/ui/workspace/sidebar/branch_compare/facts.cljs
+msgid "workspace.branches.compare.facts.unused-title"
 msgstr "No se usa en este archivo"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
-msgid "workspace.branches.review.facts.deleted-unused"
+#: src/app/main/ui/workspace/sidebar/branch_compare/facts.cljs
+msgid "workspace.branches.compare.facts.deleted-unused"
 msgstr "Ninguna capa de este archivo lo usa, así que eliminarlo no rompe nada."
 
-#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
-msgid "workspace.branches.review.facts.used-by"
+#: src/app/main/ui/workspace/sidebar/branch_compare/facts.cljs
+msgid "workspace.branches.compare.facts.used-by"
 msgstr "Se usa en este archivo"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
-msgid "workspace.branches.review.facts.boards"
-msgid_plural "workspace.branches.review.facts.boards"
+#: src/app/main/ui/workspace/sidebar/branch_compare/facts.cljs
+msgid "workspace.branches.compare.facts.boards"
+msgid_plural "workspace.branches.compare.facts.boards"
 msgstr[0] "1 tablero"
 msgstr[1] "%s tableros"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
-msgid "workspace.branches.review.facts.layers"
-msgid_plural "workspace.branches.review.facts.layers"
+#: src/app/main/ui/workspace/sidebar/branch_compare/facts.cljs
+msgid "workspace.branches.compare.facts.layers"
+msgid_plural "workspace.branches.compare.facts.layers"
 msgstr[0] "1 capa"
 msgstr[1] "%s capas"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
-msgid "workspace.branches.review.facts.copies"
-msgid_plural "workspace.branches.review.facts.copies"
+#: src/app/main/ui/workspace/sidebar/branch_compare/facts.cljs
+msgid "workspace.branches.compare.facts.copies"
+msgid_plural "workspace.branches.compare.facts.copies"
 msgstr[0] "1 copia"
 msgstr[1] "%s copias"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
-msgid "workspace.branches.review.facts.copies-orphaned-merge"
-msgid_plural "workspace.branches.review.facts.copies-orphaned-merge"
+#: src/app/main/ui/workspace/sidebar/branch_compare/facts.cljs
+msgid "workspace.branches.compare.facts.copies-orphaned-merge"
+msgid_plural "workspace.branches.compare.facts.copies-orphaned-merge"
 msgstr[0] ""
 "1 copia de este archivo apunta a un componente que la fusión elimina."
 msgstr[1] ""
 "%s copias de este archivo apuntan a un componente que la fusión elimina."
 
-#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
-msgid "workspace.branches.review.facts.copies-orphaned-update"
-msgid_plural "workspace.branches.review.facts.copies-orphaned-update"
+#: src/app/main/ui/workspace/sidebar/branch_compare/facts.cljs
+msgid "workspace.branches.compare.facts.copies-orphaned-update"
+msgid_plural "workspace.branches.compare.facts.copies-orphaned-update"
 msgstr[0] ""
 "1 copia de este archivo apunta a un componente que la actualización elimina."
 msgstr[1] ""
 "%s copias de este archivo apuntan a un componente que la actualización "
 "elimina."
 
-#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
-msgid "workspace.branches.review.facts.used-title"
-msgid_plural "workspace.branches.review.facts.used-title"
+#: src/app/main/ui/workspace/sidebar/branch_compare/facts.cljs
+msgid "workspace.branches.compare.facts.used-title"
+msgid_plural "workspace.branches.compare.facts.used-title"
 msgstr[0] "Lo usa 1 capa"
 msgstr[1] "Lo usan %s capas"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
-msgid "workspace.branches.review.facts.deleted-component-used"
-msgid_plural "workspace.branches.review.facts.deleted-component-used"
+#: src/app/main/ui/workspace/sidebar/branch_compare/facts.cljs
+msgid "workspace.branches.compare.facts.deleted-component-used"
+msgid_plural "workspace.branches.compare.facts.deleted-component-used"
 msgstr[0] "1 copia de este archivo pierde su componente principal."
 msgstr[1] "%s copias de este archivo pierden su componente principal."
 
-#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
-msgid "workspace.branches.review.facts.deleted-used"
-msgid_plural "workspace.branches.review.facts.deleted-used"
+#: src/app/main/ui/workspace/sidebar/branch_compare/facts.cljs
+msgid "workspace.branches.compare.facts.deleted-used"
+msgid_plural "workspace.branches.compare.facts.deleted-used"
 msgstr[0] "1 capa de este archivo pierde su enlace con él."
 msgstr[1] "%s capas de este archivo pierden su enlace con él."
 
-#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
-msgid "workspace.branches.review.effects.title-deleted"
+#: src/app/main/ui/workspace/sidebar/branch_compare/facts.cljs
+msgid "workspace.branches.compare.effects.title-deleted"
 msgstr "Lo que se va con él"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
-msgid "workspace.branches.review.effects.title-added"
+#: src/app/main/ui/workspace/sidebar/branch_compare/facts.cljs
+msgid "workspace.branches.compare.effects.title-added"
 msgstr "Lo que llega con él"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
-msgid "workspace.branches.review.effects.interactions"
-msgid_plural "workspace.branches.review.effects.interactions"
+#: src/app/main/ui/workspace/sidebar/branch_compare/facts.cljs
+msgid "workspace.branches.compare.effects.interactions"
+msgid_plural "workspace.branches.compare.effects.interactions"
 msgstr[0] "1 interacción del prototipo lleva aquí y también se va"
 msgstr[1] "%s interacciones del prototipo llevan aquí y también se van"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
-msgid "workspace.branches.review.effects.interactions-from"
+#: src/app/main/ui/workspace/sidebar/branch_compare/facts.cljs
+msgid "workspace.branches.compare.effects.interactions-from"
 msgstr "En %s"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
-msgid "workspace.branches.review.effects.flows"
-msgid_plural "workspace.branches.review.effects.flows"
+#: src/app/main/ui/workspace/sidebar/branch_compare/facts.cljs
+msgid "workspace.branches.compare.effects.flows"
+msgid_plural "workspace.branches.compare.effects.flows"
 msgstr[0] "1 flujo del prototipo empieza aquí y también se va"
 msgstr[1] "%s flujos del prototipo empiezan aquí y también se van"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
-msgid "workspace.branches.review.effects.moved"
-msgid_plural "workspace.branches.review.effects.moved"
+#: src/app/main/ui/workspace/sidebar/branch_compare/facts.cljs
+msgid "workspace.branches.compare.effects.moved"
+msgid_plural "workspace.branches.compare.effects.moved"
 msgstr[0] "Se mueve 1 capa más"
 msgstr[1] "Se mueven %s capas más"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
-msgid "workspace.branches.review.group.pages"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs
+msgid "workspace.branches.compare.group.pages"
 msgstr "Páginas"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
-msgid "workspace.branches.review.facts.empty-page"
+#: src/app/main/ui/workspace/sidebar/branch_compare/facts.cljs
+msgid "workspace.branches.compare.facts.empty-page"
 msgstr "Página vacía"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs
+#: src/app/main/ui/workspace/sidebar/branch_compare/conflicts.cljs
 msgid "workspace.branches.resolve.drops.main-short"
 msgstr "%s de main:"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs
+#: src/app/main/ui/workspace/sidebar/branch_compare/conflicts.cljs
 msgid "workspace.branches.resolve.drops.branch-short"
 msgstr "%s de la rama:"
 
@@ -10318,24 +10318,24 @@ msgstr "¡LA EXTENSIÓN '%s' HA SIDO INSTALADA PARA TU USUARIO!"
 msgid "workspace.plugins.try-out.try"
 msgstr "PROBAR PLUGIN"
 
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:426, src/app/main/ui/workspace/sidebar/pull_requests.cljs:505, src/app/main/ui/workspace/sidebar/pull_requests.cljs:564
-msgid "workspace.pull-requests.actions.close"
-msgstr "Cancelar revisión de diseño"
+#: src/app/main/ui/workspace/sidebar/branch_reviews.cljs:426, src/app/main/ui/workspace/sidebar/branch_reviews.cljs:505, src/app/main/ui/workspace/sidebar/branch_reviews.cljs:564
+msgid "workspace.branch-review.actions.close"
+msgstr "Cerrar revisión"
 
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:440, src/app/main/ui/workspace/sidebar/pull_requests.cljs:561, src/app/main/ui/workspace/sidebar/pull_requests.cljs:754
-msgid "workspace.pull-requests.actions.merge"
+#: src/app/main/ui/workspace/sidebar/branch_reviews.cljs:440, src/app/main/ui/workspace/sidebar/branch_reviews.cljs:561, src/app/main/ui/workspace/sidebar/branch_reviews.cljs:754
+msgid "workspace.branch-review.actions.merge"
 msgstr "Fusionar en main"
 
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:435
-msgid "workspace.pull-requests.actions.open-review"
+#: src/app/main/ui/workspace/sidebar/branch_reviews.cljs:435
+msgid "workspace.branch-review.actions.open-review"
 msgstr "Abrir revisión"
 
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:430, src/app/main/ui/workspace/sidebar/pull_requests.cljs:567
-msgid "workspace.pull-requests.actions.reopen"
-msgstr "Reabrir revisión de diseño"
+#: src/app/main/ui/workspace/sidebar/branch_reviews.cljs:430, src/app/main/ui/workspace/sidebar/branch_reviews.cljs:567
+msgid "workspace.branch-review.actions.reopen"
+msgstr "Reabrir revisión"
 
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:359, src/app/main/ui/workspace/sidebar/pull_requests.cljs:537, src/app/main/ui/workspace/sidebar/pull_requests.cljs:722
-msgid "workspace.pull-requests.badge.conflicts"
+#: src/app/main/ui/workspace/sidebar/branch_reviews.cljs:359, src/app/main/ui/workspace/sidebar/branch_reviews.cljs:537, src/app/main/ui/workspace/sidebar/branch_reviews.cljs:722
+msgid "workspace.branch-review.badge.conflicts"
 msgstr "%s conflictos"
 
 #: src/app/main/ui/workspace/viewport/top_bar.cljs:46
@@ -11711,394 +11711,345 @@ msgstr "Si quieres aumentar este límite, contáctanos en [support@penpot.app](%
 msgid "workspace.versions.warning.text"
 msgstr "Los autoguardados duran %s días."
 
-#: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:361
+#: src/app/main/ui/workspace/sidebar/branch_compare/conflicts.cljs:361
 msgid "workspace.branches.resolve.change-choice"
 msgstr "Cambiar la elección"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:241
+#: src/app/main/ui/workspace/sidebar/branch_compare/conflicts.cljs:241
 msgid "workspace.branches.resolve.copy-dropped"
 msgstr "Copiar el texto descartado"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:99
+#: src/app/main/ui/workspace/sidebar/branch_compare/conflicts.cljs:99
 msgid "workspace.branches.resolve.decided"
 msgstr "Decidido"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:259
+#: src/app/main/ui/workspace/sidebar/branch_compare/conflicts.cljs:259
 msgid "workspace.branches.resolve.deletes-it"
 msgstr "Esta versión lo elimina"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:358
+#: src/app/main/ui/workspace/sidebar/branch_compare/conflicts.cljs:358
 msgid "workspace.branches.resolve.drops.none"
 msgstr "No se descarta nada: se conservan todas las ediciones."
 
-#: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:232
+#: src/app/main/ui/workspace/sidebar/branch_compare/conflicts.cljs:232
 msgid "workspace.branches.resolve.drops-paragraphs"
 msgstr "Descarta %s del otro lado"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:349
+#: src/app/main/ui/workspace/sidebar/branch_compare/conflicts.cljs:349
 msgid "workspace.branches.resolve.drops.title"
 msgstr "Lo que descarta esta elección"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:305
+#: src/app/main/ui/workspace/sidebar/branch_compare/conflicts.cljs:305
 msgid "workspace.branches.resolve.intro-attrs"
 msgstr ""
 "Main y esta rama editaron esto. Solo las propiedades marcadas como Conflicto "
 "necesitan una elección; las demás cambiaron en un solo lado, así que ya están "
 "rellenas."
 
-#: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:304
+#: src/app/main/ui/workspace/sidebar/branch_compare/conflicts.cljs:304
 msgid "workspace.branches.resolve.intro-text"
 msgstr ""
 "Main y esta rama editaron este texto. Penpot conserva un texto entero, así "
 "que si cada lado cambió un párrafo distinto, cualquier elección descarta una "
 "de esas ediciones."
 
-#: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:306
+#: src/app/main/ui/workspace/sidebar/branch_compare/conflicts.cljs:306
 msgid "workspace.branches.resolve.intro-whole"
 msgstr ""
 "Esto no se puede dividir por propiedades. Quédate con una de las dos "
 "versiones."
 
-#: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:503
+#: src/app/main/ui/workspace/sidebar/branch_compare/conflicts.cljs:503
 msgid "workspace.branches.resolve.keep-all-branch"
 msgstr "Mantener todo de la rama"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:501
+#: src/app/main/ui/workspace/sidebar/branch_compare/conflicts.cljs:501
 msgid "workspace.branches.resolve.keep-all-main"
 msgstr "Mantener todo de main"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:254
+#: src/app/main/ui/workspace/sidebar/branch_compare/conflicts.cljs:254
 msgid "workspace.branches.resolve.keep-branch-version"
 msgstr "Mantener tu versión"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:253
+#: src/app/main/ui/workspace/sidebar/branch_compare/conflicts.cljs:253
 msgid "workspace.branches.resolve.keep-main-version"
 msgstr "Mantener la versión de main"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:239
+#: src/app/main/ui/workspace/sidebar/branch_compare/conflicts.cljs:239
 msgid "workspace.branches.resolve.keep-safe"
 msgstr "Guarda a salvo la edición descartada:"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:79
+#: src/app/main/ui/workspace/sidebar/branch_compare/conflicts.cljs:79
 msgid "workspace.branches.resolve.row.both-changed"
 msgstr "%s - cambiado en los dos lados"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:74
+#: src/app/main/ui/workspace/sidebar/branch_compare/conflicts.cljs:74
 msgid "workspace.branches.resolve.row.drops"
 msgstr "Descarta %s del otro lado"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:76
+#: src/app/main/ui/workspace/sidebar/branch_compare/conflicts.cljs:76
 msgid "workspace.branches.resolve.row.kept-both"
 msgstr "Se conservan las ediciones de los dos lados"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:73
+#: src/app/main/ui/workspace/sidebar/branch_compare/conflicts.cljs:73
 msgid "workspace.branches.resolve.row.kept-branch"
 msgstr "Se mantiene tu versión"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:72
+#: src/app/main/ui/workspace/sidebar/branch_compare/conflicts.cljs:72
 msgid "workspace.branches.resolve.row.kept-main"
 msgstr "Se mantiene la versión de main"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:102
+#: src/app/main/ui/workspace/sidebar/branch_compare/conflicts.cljs:102
 msgid "workspace.branches.resolve.row.loses-work"
 msgstr "Se pierde trabajo"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:156
+#: src/app/main/ui/workspace/sidebar/branch_compare/conflicts.cljs:156
 msgid "workspace.branches.resolve.tag.conflict"
 msgstr "Conflicto"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:154
+#: src/app/main/ui/workspace/sidebar/branch_compare/conflicts.cljs:154
 msgid "workspace.branches.resolve.tag.your-choice"
 msgstr "Tu elección"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs:141
-msgid "workspace.branches.review.attr.fill"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs:141
+msgid "workspace.branches.compare.attr.fill"
 msgstr "Relleno"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs:143
-msgid "workspace.branches.review.attr.gap"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs:143
+msgid "workspace.branches.compare.attr.gap"
 msgstr "Separación entre elementos"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs:144
-msgid "workspace.branches.review.attr.padding"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs:144
+msgid "workspace.branches.compare.attr.padding"
 msgstr "Padding"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs:142
-msgid "workspace.branches.review.attr.stroke"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs:142
+msgid "workspace.branches.compare.attr.stroke"
 msgstr "Borde"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs:140
-msgid "workspace.branches.review.attr.text"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs:140
+msgid "workspace.branches.compare.attr.text"
 msgstr "Texto"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs:259
-msgid "workspace.branches.review.category.layout"
+#: src/app/main/ui/workspace/sidebar/branch_compare/common.cljs:259
+msgid "workspace.branches.compare.category.layout"
 msgstr "Layout"
 
-#: src/app/main/ui/workspace/sidebar/branch_review/compare.cljs:342
-msgid "workspace.branches.review.decision.body"
+#: src/app/main/ui/workspace/sidebar/branch_compare/compare.cljs:342
+msgid "workspace.branches.compare.decision.body"
 msgstr ""
 "Main y esta rama lo editaron. Elige qué versión mantener antes de fusionar."
 
 #: src/app/main/ui/workspace/left_header.cljs:177
-msgid "workspace.pull-requests.header-label"
+msgid "workspace.branch-review.header-label"
 msgstr "Revisión:"
 
 #: src/app/main/ui/workspace/left_header.cljs:54
-msgid "workspace.pull-requests.header-title"
+msgid "workspace.branch-review.header-title"
 msgstr "Revisión: %s"
 
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:385, src/app/main/ui/workspace/sidebar/pull_requests.cljs:542
-msgid "workspace.pull-requests.info.approvals"
+#: src/app/main/ui/workspace/sidebar/branch_reviews.cljs:385, src/app/main/ui/workspace/sidebar/branch_reviews.cljs:542
+msgid "workspace.branch-review.info.approvals"
 msgstr "Aprobaciones"
 
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:369
-msgid "workspace.pull-requests.info.author"
+#: src/app/main/ui/workspace/sidebar/branch_reviews.cljs:369
+msgid "workspace.branch-review.info.author"
 msgstr "Autor"
 
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:375
-msgid "workspace.pull-requests.info.created-at"
+#: src/app/main/ui/workspace/sidebar/branch_reviews.cljs:375
+msgid "workspace.branch-review.info.created-at"
 msgstr "Creada"
 
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:364
-msgid "workspace.pull-requests.info.description"
+#: src/app/main/ui/workspace/sidebar/branch_reviews.cljs:364
+msgid "workspace.branch-review.info.description"
 msgstr "Descripción"
 
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:392
-msgid "workspace.pull-requests.info.reviewers"
+#: src/app/main/ui/workspace/sidebar/branch_reviews.cljs:392
+msgid "workspace.branch-review.info.reviewers"
 msgstr "Revisores"
 
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:380
-msgid "workspace.pull-requests.info.updated-at"
-msgstr "Revisión actualizada"
+#: src/app/main/data/workspace/branch_reviews.cljs:252
+msgid "workspace.branch-review.lifecycle.branch-gone"
+msgstr "La rama de esta revisión ya no está abierta"
 
-#: src/app/main/data/workspace/pull_requests.cljs:252
-msgid "workspace.pull-requests.lifecycle.branch-gone"
-msgstr "La rama de la revisión de diseño ya no está abierta"
+#: src/app/main/data/workspace/branch_reviews.cljs:230
+msgid "workspace.branch-review.lifecycle.closed"
+msgstr "Revisión cerrada"
 
-#: src/app/main/data/workspace/pull_requests.cljs:230
-msgid "workspace.pull-requests.lifecycle.closed"
-msgstr "Revisión de diseño cerrada"
+#: src/app/main/data/workspace/branch_reviews.cljs:160, src/app/main/data/workspace/branch_reviews.cljs:187, src/app/main/data/workspace/branch_reviews.cljs:213, src/app/main/data/workspace/branch_reviews.cljs:237, src/app/main/data/workspace/branch_reviews.cljs:257
+msgid "workspace.branch-review.lifecycle.error"
+msgstr "Se ha producido un error al actualizar la revisión de rama"
 
-#: src/app/main/data/workspace/pull_requests.cljs:160, src/app/main/data/workspace/pull_requests.cljs:187, src/app/main/data/workspace/pull_requests.cljs:213, src/app/main/data/workspace/pull_requests.cljs:237, src/app/main/data/workspace/pull_requests.cljs:257
-msgid "workspace.pull-requests.lifecycle.error"
-msgstr "Se ha producido un error al actualizar la revisión de diseño"
-
-#: src/app/main/data/workspace/pull_requests.cljs:246
-msgid "workspace.pull-requests.lifecycle.reopened"
-msgstr "Revisión de diseño reabierta"
-
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:558
-msgid "workspace.pull-requests.menu.publish"
-msgstr "Publicar los últimos cambios"
+#: src/app/main/data/workspace/branch_reviews.cljs:246
+msgid "workspace.branch-review.lifecycle.reopened"
+msgstr "Revisión reabierta"
 
 #: src/app/main/ui/workspace/sidebar/branches.cljs:691
-msgid "workspace.pull-requests.menu.request-review"
+msgid "workspace.branch-review.menu.request-review"
 msgstr "Pedir revisión"
 
 #: src/app/main/ui/workspace/sidebar/branches.cljs:700
-msgid "workspace.pull-requests.menu.review-details"
+msgid "workspace.branch-review.menu.review-details"
 msgstr "Detalles de la revisión"
 
-#: src/app/main/data/workspace/pull_requests.cljs:396
-msgid "workspace.pull-requests.preview.unavailable"
-msgstr ""
-"El entorno de revisión no está disponible (puede que la revisión de diseño "
-"esté cerrada)"
+#: src/app/main/data/workspace/branch_reviews.cljs:396
+msgid "workspace.branch-review.preview.unavailable"
+msgstr "La revisión de rama no está disponible (puede que esté cerrada)"
 
-#: src/app/main/data/workspace/pull_requests.cljs:182
-msgid "workspace.pull-requests.publish.success"
-msgstr "Quienes revisan ya ven los últimos cambios de la rama"
+#: src/app/main/ui/workspace/sidebar/branch_reviews.cljs:412
+msgid "workspace.branch-review.review-state.approved"
+msgstr "Aprobado"
 
-#: src/app/main/data/workspace/pull_requests.cljs:183
-msgid "workspace.pull-requests.publish.up-to-date"
-msgstr "La revisión ya está al día con la rama"
-
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:412
-msgid "workspace.pull-requests.review-state.approved"
-msgstr "Aprobada"
-
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:415
-msgid "workspace.pull-requests.review-state.changes-requested"
-msgstr "Pidió cambios"
-
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:418
-msgid "workspace.pull-requests.review-state.pending"
+#: src/app/main/ui/workspace/sidebar/branch_reviews.cljs:418
+msgid "workspace.branch-review.review-state.pending"
 msgstr "Pendiente"
 
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:409
-msgid "workspace.pull-requests.review-state.stale"
-msgstr "Revisó una versión anterior"
+#: src/app/main/ui/workspace/sidebar/branch_reviews.cljs
+msgid "workspace.branch-review.review-state.stale-approved"
+msgstr "Aprobado en una versión anterior"
 
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:258
-msgid "workspace.pull-requests.review.approve"
+#: src/app/main/ui/workspace/sidebar/branch_reviews.cljs
+msgid "workspace.branch-review.review-state.stale-changes-requested"
+msgstr "Cambios pedidos en una versión anterior"
+
+#: src/app/main/ui/workspace/sidebar/branch_reviews.cljs
+msgid "workspace.branch-review.review.add-comment"
+msgstr "Añadir un comentario"
+
+#: src/app/main/ui/workspace/sidebar/branch_reviews.cljs:258
+msgid "workspace.branch-review.review.approve"
 msgstr "Aprobar"
 
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:260
-msgid "workspace.pull-requests.review.approve-hint"
-msgstr "Los cambios te parecen bien"
-
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:275
-msgid "workspace.pull-requests.review.comment-label"
+#: src/app/main/ui/workspace/sidebar/branch_reviews.cljs:275
+msgid "workspace.branch-review.review.comment-label"
 msgstr "Comentario (opcional)"
 
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:278
-msgid "workspace.pull-requests.review.comment-placeholder"
+#: src/app/main/ui/workspace/sidebar/branch_reviews.cljs:278
+msgid "workspace.branch-review.review.comment-placeholder"
 msgstr "Comparte tu opinión con quien hizo los cambios"
 
-#: src/app/main/data/workspace/pull_requests.cljs:212
-msgid "workspace.pull-requests.review.not-a-reviewer"
+#: src/app/main/data/workspace/branch_reviews.cljs:212
+msgid "workspace.branch-review.review.not-a-reviewer"
 msgstr "Solo quienes tienen asignada la revisión pueden enviarla"
 
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:269
-msgid "workspace.pull-requests.review.request-changes"
+#: src/app/main/ui/workspace/sidebar/branch_reviews.cljs:269
+msgid "workspace.branch-review.review.request-changes"
 msgstr "Pedir cambios"
 
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:271
-msgid "workspace.pull-requests.review.request-changes-hint"
-msgstr "Hay algo que corregir antes de fusionar"
+#: src/app/main/ui/workspace/sidebar/branch_reviews.cljs
+msgid "workspace.branch-review.review.send"
+msgstr "Enviar"
 
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:287
-msgid "workspace.pull-requests.review.submit"
-msgstr "Enviar revisión"
-
-#: src/app/main/data/workspace/pull_requests.cljs:206
-msgid "workspace.pull-requests.review.submitted"
+#: src/app/main/data/workspace/branch_reviews.cljs:206
+msgid "workspace.branch-review.review.submitted"
 msgstr "Revisión enviada"
 
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:242
-msgid "workspace.pull-requests.review.title"
-msgstr "Enviar revisión"
-
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:100
+#: src/app/main/ui/workspace/sidebar/branch_reviews.cljs:100
 #, unused
-msgid "workspace.pull-requests.state.approved"
+msgid "workspace.branch-review.state.approved"
 msgstr "Aprobada"
 
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:100
+#: src/app/main/ui/workspace/sidebar/branch_reviews.cljs:100
 #, unused
-msgid "workspace.pull-requests.state.changes-requested"
-msgstr "Con cambios pedidos"
+msgid "workspace.branch-review.state.changes-requested"
+msgstr "Cambios pedidos"
 
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:100
+#: src/app/main/ui/workspace/sidebar/branch_reviews.cljs:100
 #, unused
-msgid "workspace.pull-requests.state.closed"
+msgid "workspace.branch-review.state.closed"
 msgstr "Cerrada"
 
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:100
+#: src/app/main/ui/workspace/sidebar/branch_reviews.cljs:100
 #, unused
-msgid "workspace.pull-requests.state.in-review"
+msgid "workspace.branch-review.state.in-review"
 msgstr "En revisión"
 
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:100
+#: src/app/main/ui/workspace/sidebar/branch_reviews.cljs:100
 #, unused
-msgid "workspace.pull-requests.state.merged"
+msgid "workspace.branch-review.state.merged"
 msgstr "Fusionada"
 
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:100
+#: src/app/main/ui/workspace/sidebar/branch_reviews.cljs:100
 #, unused
-msgid "workspace.pull-requests.state.open"
+msgid "workspace.branch-review.state.open"
 msgstr "Abierta"
 
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs
-msgid "workspace.pull-requests.badge.outdated"
-msgstr "Cambios sin publicar"
-
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs
-msgid "workspace.pull-requests.badge.outdated-hint"
-msgstr ""
-"La rama tiene cambios que los reviewers aún no ven. Al fusionar se incluyen."
-
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:623
-msgid "workspace.pull-requests.banner.cancel"
-msgstr "Cancelar revisión"
-
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:759
-msgid "workspace.pull-requests.banner.exit"
+#: src/app/main/ui/workspace/sidebar/branch_reviews.cljs:759
+msgid "workspace.branch-review.banner.exit"
 msgstr "Salir de la revisión"
 
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs
-msgid "workspace.pull-requests.banner.publish"
-msgstr "Publicar últimos cambios"
-
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs
-msgid "workspace.pull-requests.banner.publish-hint"
-msgstr ""
-"Los reviewers verán los últimos cambios de la rama. Las aprobaciones dadas "
-"hasta ahora se tendrán que renovar."
-
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:710
-msgid "workspace.pull-requests.banner.reviewing"
+#: src/app/main/ui/workspace/sidebar/branch_reviews.cljs:710
+msgid "workspace.branch-review.banner.reviewing"
 msgstr "En revisión"
 
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:504
-msgid "workspace.pull-requests.close.message"
+#: src/app/main/ui/workspace/sidebar/branch_reviews.cljs:504
+msgid "workspace.branch-review.close.message"
 msgstr ""
-"Se cancelará la revisión de \"%s\". La rama no se elimina: vuelve a ser una "
+"Se cerrará la revisión de \"%s\". La rama no se elimina: vuelve a ser una "
 "rama normal."
 
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:503
-msgid "workspace.pull-requests.close.title"
-msgstr "Cancelar revisión de diseño"
+#: src/app/main/ui/workspace/sidebar/branch_reviews.cljs:503
+msgid "workspace.branch-review.close.title"
+msgstr "Cerrar revisión"
 
-#: src/app/main/data/workspace/pull_requests.cljs:142, src/app/main/data/workspace/pull_requests.cljs:255
-msgid "workspace.pull-requests.create.already-exists"
-msgstr "Esta rama ya tiene una revisión de diseño abierta"
+#: src/app/main/data/workspace/branch_reviews.cljs:142, src/app/main/data/workspace/branch_reviews.cljs:255
+msgid "workspace.branch-review.create.already-exists"
+msgstr "Esta rama ya tiene una revisión de rama abierta"
 
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:167
-msgid "workspace.pull-requests.create.description-label"
+#: src/app/main/ui/workspace/sidebar/branch_reviews.cljs:167
+msgid "workspace.branch-review.create.description-label"
 msgstr "Descripción"
 
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:170
-msgid "workspace.pull-requests.create.description-placeholder"
+#: src/app/main/ui/workspace/sidebar/branch_reviews.cljs:170
+msgid "workspace.branch-review.create.description-placeholder"
 msgstr "¿Qué ha cambiado y qué hay que revisar o validar?"
 
-#: src/app/main/data/workspace/pull_requests.cljs:143
-msgid "workspace.pull-requests.create.error"
-msgstr "Se ha producido un error al crear la revisión de diseño"
+#: src/app/main/data/workspace/branch_reviews.cljs:143
+msgid "workspace.branch-review.create.error"
+msgstr "Se ha producido un error al crear la revisión de rama"
 
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:193
-msgid "workspace.pull-requests.create.info"
+#: src/app/main/ui/workspace/sidebar/branch_reviews.cljs:193
+msgid "workspace.branch-review.create.info"
 msgstr ""
 "Quienes revisan abren la propia rama, así que cualquier edición suya cambia "
 "la rama, y el modo Ver reproduce la rama tal como está ahora. Puedes seguir "
-"trabajando en la rama y publicar cambios más recientes cuando quieras."
+"trabajando en la rama: quienes revisan siempre ven sus últimos cambios."
 
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:159
-msgid "workspace.pull-requests.create.name-label"
+#: src/app/main/ui/workspace/sidebar/branch_reviews.cljs:159
+msgid "workspace.branch-review.create.name-label"
 msgstr "Título"
 
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:161
-msgid "workspace.pull-requests.create.name-placeholder"
+#: src/app/main/ui/workspace/sidebar/branch_reviews.cljs:161
+msgid "workspace.branch-review.create.name-placeholder"
 msgstr "¿De qué trata esta revisión?"
 
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:179
-msgid "workspace.pull-requests.create.no-members"
+#: src/app/main/ui/workspace/sidebar/branch_reviews.cljs:179
+msgid "workspace.branch-review.create.no-members"
 msgstr "No hay más miembros del equipo a quienes pedir una revisión"
 
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:176
-msgid "workspace.pull-requests.create.reviewers-label"
+#: src/app/main/ui/workspace/sidebar/branch_reviews.cljs:176
+msgid "workspace.branch-review.create.reviewers-label"
 msgstr "Revisores"
 
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:202
-msgid "workspace.pull-requests.create.submit"
-msgstr "Crear revisión de diseño"
+#: src/app/main/ui/workspace/sidebar/branch_reviews.cljs:202
+msgid "workspace.branch-review.create.submit"
+msgstr "Crear revisión"
 
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:152
-msgid "workspace.pull-requests.create.subtitle"
+#: src/app/main/ui/workspace/sidebar/branch_reviews.cljs:152
+msgid "workspace.branch-review.create.subtitle"
 msgstr "Pide una revisión de los cambios de \"%s\""
 
-#: src/app/main/data/workspace/pull_requests.cljs:137
-msgid "workspace.pull-requests.create.success"
-msgstr "Revisión de diseño \"%s\" creada"
+#: src/app/main/data/workspace/branch_reviews.cljs:137
+msgid "workspace.branch-review.create.success"
+msgstr "Revisión de rama \"%s\" creada"
 
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:150
-msgid "workspace.pull-requests.create.title"
-msgstr "Crear revisión de diseño"
+#: src/app/main/ui/workspace/sidebar/branch_reviews.cljs:150
+msgid "workspace.branch-review.create.title"
+msgstr "Crear revisión de rama"
 
 #: src/app/main/ui/workspace/left_header.cljs:163
-msgid "workspace.pull-requests.header-badge-tooltip"
-msgstr "Revisando la revisión de diseño: %s"
+msgid "workspace.branch-review.header-badge-tooltip"
+msgstr "Revisión de rama: %s"
 
 #: src/app/main/ui/workspace/sidebar/branches.cljs
 msgid "workspace.branches.merge.confirm-anyway"
@@ -12168,17 +12119,21 @@ msgstr "Capa borrada"
 msgid "workspace.review.approved-of"
 msgstr "%s de %s aprobadas"
 
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs
+#: src/app/main/ui/workspace/sidebar/branch_reviews.cljs
 msgid "workspace.review.bar.details"
 msgstr "Detalles"
 
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs
+#: src/app/main/ui/workspace/sidebar/branch_reviews.cljs
 msgid "workspace.review.bar.label"
-msgstr "Revisión de diseño"
+msgstr "Revisión de rama"
 
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs
+#: src/app/main/ui/workspace/sidebar/branch_reviews.cljs
 msgid "workspace.review.bar.tasks"
 msgstr "%s/%s tareas"
+
+#: src/app/main/ui/comments.cljs
+msgid "workspace.review.branch-review"
+msgstr "Revisión de rama"
 
 #: src/app/main/ui/workspace/review/overlays.cljs
 msgid "workspace.review.change.added"
@@ -12251,10 +12206,6 @@ msgstr "1 respuesta"
 #: src/app/main/ui/workspace/review/panel.cljs
 msgid "workspace.review.comments.replies"
 msgstr "%s respuestas"
-
-#: src/app/main/ui/comments.cljs
-msgid "workspace.review.design-review"
-msgstr "Revisión de diseño"
 
 #: src/app/main/ui/workspace/review/details.cljs
 msgid "workspace.review.details.activity"
@@ -12364,9 +12315,9 @@ msgstr "%s tareas"
 msgid "workspace.review.route"
 msgstr "%s → %s"
 
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs
+#: src/app/main/ui/workspace/sidebar/branch_reviews.cljs
 msgid "workspace.review.submit"
-msgstr "Enviar revisión"
+msgstr "Revisar"
 
 #: src/app/main/ui/workspace/review/panel.cljs
 msgid "workspace.review.tab.comments"
@@ -12865,8 +12816,8 @@ msgstr "Conflictos por resolver"
 msgid "workspace.compare.navigator.in-main"
 msgstr "%s en main"
 
-msgid "workspace.compare.navigator.mark-reviewed"
-msgstr "Marcar como revisado"
+msgid "workspace.compare.navigator.mark-viewed"
+msgstr "Marcar como visto"
 
 msgid "workspace.compare.navigator.next-pending"
 msgstr "Siguiente pendiente"

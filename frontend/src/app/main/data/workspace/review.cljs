@@ -39,7 +39,7 @@
   (some? (:workspace-pr-preview state)))
 
 (defn review-id
-  "The id of the design review open now."
+  "The id of the branch review open now."
   [state]
   (get-in state [:workspace-pr-preview :pr-id]))
 

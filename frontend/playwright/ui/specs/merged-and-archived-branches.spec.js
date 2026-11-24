@@ -9,13 +9,13 @@ test.beforeEach(async ({ page }) => {
 const setupBranchFile = async (workspacePage, branchInfo) => {
   await workspacePage.setupEmptyFile();
   await workspacePage.mockRPCs({
-    "get-file-branch-info?file-id=*": `pull-requests/${branchInfo}`,
+    "get-file-branch-info?file-id=*": `branch-reviews/${branchInfo}`,
     "get-file-branches?file-id=*":
-      "pull-requests/get-file-branches-closed.json",
+      "branch-reviews/get-file-branches-closed.json",
     "get-file-branch-reviews?file-id=*":
-      "pull-requests/get-file-branches-empty.json",
+      "branch-reviews/get-file-branches-empty.json",
     "get-file-branch-diff?branch-id=*":
-      "pull-requests/get-file-branch-diff-empty.json",
+      "branch-reviews/get-file-branch-diff-empty.json",
   });
 };
 
@@ -45,7 +45,7 @@ test("an archived branch opens read-only and offers its ways out", async ({
   await setupBranchFile(workspacePage, "get-file-branch-info-archived.json");
   await workspacePage.mockRPC(
     "archive-file-branch",
-    "pull-requests/archive-file-branch-restore.json",
+    "branch-reviews/archive-file-branch-restore.json",
   );
   await workspacePage.goToWorkspace();
 
@@ -65,7 +65,7 @@ test("an archived branch opens read-only and offers its ways out", async ({
   // its new status
   await workspacePage.mockRPC(
     "get-file-branch-info?file-id=*",
-    "pull-requests/get-file-branch-info-branch.json",
+    "branch-reviews/get-file-branch-info-branch.json",
   );
   const restore = page.waitForRequest(
     (req) =>

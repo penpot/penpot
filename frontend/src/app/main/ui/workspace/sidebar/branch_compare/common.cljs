@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns app.main.ui.workspace.sidebar.branch-review.common
+(ns app.main.ui.workspace.sidebar.branch-compare.common
   "What the compare mode says about a diff entry, kept free of rendering:
   labels, values, one-line summaries, the page/board a change lives on,
   the list the changes make and the marks they leave on the canvas, how a
@@ -129,20 +129,20 @@
     :typography          (tr "workspace.branches.compare.type.typography")
     :media               (tr "workspace.branches.compare.type.media")
     :token               (tr "workspace.branches.compare.type.token")
-    :page                (tr "workspace.branches.review.type.page")
-    :page-attrs          (tr "workspace.branches.review.type.page-settings")
-    :page-order          (tr "workspace.branches.review.type.page-order")
-    :page-guide          (tr "workspace.branches.review.type.guides")
-    :page-flow           (tr "workspace.branches.review.type.flows")
-    :page-grid           (tr "workspace.branches.review.type.grids")
-    (:page-plugin :file-plugin) (tr "workspace.branches.review.type.plugin-data")
-    :file-option         (tr "workspace.branches.review.type.file-options")
-    (:token-set :token-set-rename) (tr "workspace.branches.review.type.token-set")
-    :token-set-order     (tr "workspace.branches.review.type.token-set-order")
-    :token-theme         (tr "workspace.branches.review.type.theme")
-    :token-active-themes (tr "workspace.branches.review.type.active-themes")
-    :token-active-sets   (tr "workspace.branches.review.type.active-sets")
-    :tokens-source       (tr "workspace.branches.review.type.tokens-source")
+    :page                (tr "workspace.branches.compare.type.page")
+    :page-attrs          (tr "workspace.branches.compare.type.page-settings")
+    :page-order          (tr "workspace.branches.compare.type.page-order")
+    :page-guide          (tr "workspace.branches.compare.type.guides")
+    :page-flow           (tr "workspace.branches.compare.type.flows")
+    :page-grid           (tr "workspace.branches.compare.type.grids")
+    (:page-plugin :file-plugin) (tr "workspace.branches.compare.type.plugin-data")
+    :file-option         (tr "workspace.branches.compare.type.file-options")
+    (:token-set :token-set-rename) (tr "workspace.branches.compare.type.token-set")
+    :token-set-order     (tr "workspace.branches.compare.type.token-set-order")
+    :token-theme         (tr "workspace.branches.compare.type.theme")
+    :token-active-themes (tr "workspace.branches.compare.type.active-themes")
+    :token-active-sets   (tr "workspace.branches.compare.type.active-sets")
+    :tokens-source       (tr "workspace.branches.compare.type.tokens-source")
     nil))
 
 ;; --- Property labels and values
@@ -156,11 +156,11 @@
   [attr]
   (case attr
     (:rx :ry :r1 :r2 :r3 :r4) (tr "workspace.branches.compare.attr.corner-radius")
-    :content         (tr "workspace.branches.review.attr.text")
-    :fills           (tr "workspace.branches.review.attr.fill")
-    :strokes         (tr "workspace.branches.review.attr.stroke")
-    :layout-gap      (tr "workspace.branches.review.attr.gap")
-    :layout-padding  (tr "workspace.branches.review.attr.padding")
+    :content         (tr "workspace.branches.compare.attr.text")
+    :fills           (tr "workspace.branches.compare.attr.fill")
+    :strokes         (tr "workspace.branches.compare.attr.stroke")
+    :layout-gap      (tr "workspace.branches.compare.attr.gap")
+    :layout-padding  (tr "workspace.branches.compare.attr.padding")
     :grow-type       (tr "workspace.branches.compare.attr.text-auto-grow")
     :blend-mode      (tr "workspace.branches.compare.attr.blend-mode")
     :shape-ref       (tr "workspace.branches.compare.attr.component-reference")
@@ -292,20 +292,20 @@
   than its values, which the detail pane shows."
   [attr]
   (case attr
-    :content                          (tr "workspace.branches.review.summary.text")
-    :name                             (tr "workspace.branches.review.summary.renamed")
-    (:x :y)                           (tr "workspace.branches.review.summary.moved")
-    (:width :height)                  (tr "workspace.branches.review.summary.resized")
-    :rotation                         (tr "workspace.branches.review.summary.rotated")
-    (:parent-id :frame-id)            (tr "workspace.branches.review.summary.reparented")
-    :hidden                           (tr "workspace.branches.review.summary.visibility")
+    :content                          (tr "workspace.branches.compare.summary.text")
+    :name                             (tr "workspace.branches.compare.summary.renamed")
+    (:x :y)                           (tr "workspace.branches.compare.summary.moved")
+    (:width :height)                  (tr "workspace.branches.compare.summary.resized")
+    :rotation                         (tr "workspace.branches.compare.summary.rotated")
+    (:parent-id :frame-id)            (tr "workspace.branches.compare.summary.reparented")
+    :hidden                           (tr "workspace.branches.compare.summary.visibility")
     (:layout-gap :layout-padding :layout-padding-type :layout-gap-type)
-    (tr "workspace.branches.review.summary.spacing")
+    (tr "workspace.branches.compare.summary.spacing")
     (:layout :layout-flex-dir :layout-wrap-type :layout-justify-content
              :layout-align-items :layout-align-content :layout-justify-items
              :layout-grid-rows :layout-grid-columns :layout-grid-cells)
-    (tr "workspace.branches.review.summary.layout")
-    (tr "workspace.branches.review.summary.attr" (attr-label attr))))
+    (tr "workspace.branches.compare.summary.layout")
+    (tr "workspace.branches.compare.summary.attr" (attr-label attr))))
 
 (defn change-summary
   "One line that says what a change did, in words: what was added or
@@ -321,13 +321,13 @@
         more    (- (count phrases) (count shown))]
     (case status
       :added   (tr "workspace.branches.compare.subtitle-new" (or lbl ""))
-      :deleted (tr "workspace.branches.review.summary.deleted" (or lbl ""))
-      :settled (tr "workspace.branches.review.copies.settled-row")
+      :deleted (tr "workspace.branches.compare.summary.deleted" (or lbl ""))
+      :settled (tr "workspace.branches.compare.copies.settled-row")
       (if (empty? phrases)
-        (or lbl (tr "workspace.branches.review.summary.changed"))
+        (or lbl (tr "workspace.branches.compare.summary.changed"))
         (cond-> (str/join ", " shown)
           (pos? more)
-          (dm/str " " (tr "workspace.branches.review.summary.more" (i18n/c more))))))))
+          (dm/str " " (tr "workspace.branches.compare.summary.more" (i18n/c more))))))))
 
 ;; --- Where a change lives: page and board
 
@@ -513,7 +513,7 @@
                              vec)]
             {:id      (str page-id)
              :page-id page-id
-             :name    (or (:name page) (tr "workspace.branches.review.unknown-page"))
+             :name    (or (:name page) (tr "workspace.branches.compare.unknown-page"))
              :rows    (into [] (comp (remove second) (map first)) placed)
              :boards  boards
              :count   (count (remove bm/settled? page-items))}))
@@ -528,14 +528,14 @@
                  vec)
       (seq page-rows)
       (conj {:id     "pages"
-             :name   (tr "workspace.branches.review.group.pages")
+             :name   (tr "workspace.branches.compare.group.pages")
              :rows   page-rows
              :boards []
              :count  (count page-rows)})
 
       (seq library)
       (conj {:id     "library"
-             :name   (tr "workspace.branches.review.group.library")
+             :name   (tr "workspace.branches.compare.group.library")
              :rows   library
              :boards []
              :count  (count library)}))))
@@ -970,50 +970,50 @@
   [group]
   (let [gname (name group)]
     (case group
-      :name-group          (tr "workspace.branches.review.copies.group.name")
-      :fill-group          (tr "workspace.branches.review.copies.group.fill")
-      :stroke-group        (tr "workspace.branches.review.copies.group.stroke")
-      :content-group       (tr "workspace.branches.review.copies.group.content")
-      :geometry-group      (tr "workspace.branches.review.copies.group.geometry")
-      :radius-group        (tr "workspace.branches.review.copies.group.radius")
-      :visibility-group    (tr "workspace.branches.review.copies.group.visibility")
-      :modifiable-group    (tr "workspace.branches.review.copies.group.lock")
-      :text-font-group     (tr "workspace.branches.review.copies.group.font")
-      :text-display-group  (tr "workspace.branches.review.copies.group.text-display")
-      :layer-effects-group (tr "workspace.branches.review.copies.group.layer")
-      :shadow-group        (tr "workspace.branches.review.copies.group.shadow")
-      :blur-group          (tr "workspace.branches.review.copies.group.blur")
-      :mask-group          (tr "workspace.branches.review.copies.group.mask")
-      :constraints-group   (tr "workspace.branches.review.copies.group.constraints")
-      :exports-group       (tr "workspace.branches.review.copies.group.exports")
-      :grids-group         (tr "workspace.branches.review.copies.group.grids")
-      :show-content        (tr "workspace.branches.review.copies.group.clip")
+      :name-group          (tr "workspace.branches.compare.copies.group.name")
+      :fill-group          (tr "workspace.branches.compare.copies.group.fill")
+      :stroke-group        (tr "workspace.branches.compare.copies.group.stroke")
+      :content-group       (tr "workspace.branches.compare.copies.group.content")
+      :geometry-group      (tr "workspace.branches.compare.copies.group.geometry")
+      :radius-group        (tr "workspace.branches.compare.copies.group.radius")
+      :visibility-group    (tr "workspace.branches.compare.copies.group.visibility")
+      :modifiable-group    (tr "workspace.branches.compare.copies.group.lock")
+      :text-font-group     (tr "workspace.branches.compare.copies.group.font")
+      :text-display-group  (tr "workspace.branches.compare.copies.group.text-display")
+      :layer-effects-group (tr "workspace.branches.compare.copies.group.layer")
+      :shadow-group        (tr "workspace.branches.compare.copies.group.shadow")
+      :blur-group          (tr "workspace.branches.compare.copies.group.blur")
+      :mask-group          (tr "workspace.branches.compare.copies.group.mask")
+      :constraints-group   (tr "workspace.branches.compare.copies.group.constraints")
+      :exports-group       (tr "workspace.branches.compare.copies.group.exports")
+      :grids-group         (tr "workspace.branches.compare.copies.group.grids")
+      :show-content        (tr "workspace.branches.compare.copies.group.clip")
       (cond
-        (ctk/swap-slot? group)                 (tr "workspace.branches.review.copies.group.swap")
-        (str/starts-with? gname "layout-item") (tr "workspace.branches.review.copies.group.layout-item")
-        (str/starts-with? gname "layout")      (tr "workspace.branches.review.copies.group.layout")
+        (ctk/swap-slot? group)                 (tr "workspace.branches.compare.copies.group.swap")
+        (str/starts-with? gname "layout-item") (tr "workspace.branches.compare.copies.group.layout-item")
+        (str/starts-with? gname "layout")      (tr "workspace.branches.compare.copies.group.layout")
         :else (-> gname (str/replace #"-group$" "") (str/replace "-" " ") str/capital)))))
 
 (defn token-slot-label
   "A token slot (token attr of `:applied-tokens`) in words: the property
   the token drives."
   [slot]
-  (tr "workspace.branches.review.copies.token-slot" (str/lower (attr-label slot))))
+  (tr "workspace.branches.compare.copies.token-slot" (str/lower (attr-label slot))))
 
 (defn reason-label
   "Why the copy rule gave a property to a side, in words."
   [reason]
   (case reason
-    :follows-component (tr "workspace.branches.review.copies.reason.follows-component")
-    :override-source   (tr "workspace.branches.review.copies.reason.override-main")
-    :override-branch   (tr "workspace.branches.review.copies.reason.override-branch")
-    (tr "workspace.branches.review.copies.reason.override-both")))
+    :follows-component (tr "workspace.branches.compare.copies.reason.follows-component")
+    :override-source   (tr "workspace.branches.compare.copies.reason.override-main")
+    :override-branch   (tr "workspace.branches.compare.copies.reason.override-branch")
+    (tr "workspace.branches.compare.copies.reason.override-both")))
 
 (defn side-label
   [side]
   (if (= side :source)
-    (tr "workspace.branches.review.side.main")
-    (tr "workspace.branches.review.side.branch")))
+    (tr "workspace.branches.compare.side.main")
+    (tr "workspace.branches.compare.side.branch")))
 
 (defn copies-entry
   "The `:copies` entry of the summary (`app.common.files.branch-merge/compute-merge`)

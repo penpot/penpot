@@ -4,13 +4,13 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns app.main.ui.workspace.sidebar.pull-requests
-  "Pull request UI. A pull request is presented as a STATE of its branch
-  (one branch → at most one open pull request), so there is no separate
-  pull request list: the branch entries in the sidebar surface the review
+(ns app.main.ui.workspace.sidebar.branch-reviews
+  "Branch review UI. A branch review is presented as a STATE of its
+  branch (one branch → at most one open review), so there is no separate
+  review list: the branch entries in the sidebar surface the review
   state (see `app.main.ui.workspace.sidebar.branches`), and this namespace
   provides the shared pieces — state badge, action helpers, the creation /
-  review / details modals and the review-sandbox banner."
+  verdict / details modals and the review bar."
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
@@ -19,8 +19,8 @@
    [app.common.uuid :as uuid]
    [app.main.data.modal :as modal]
    [app.main.data.team :as dtm]
+   [app.main.data.workspace.branch-reviews :as dwbr]
    [app.main.data.workspace.compare :as dwcp]
-   [app.main.data.workspace.pull-requests :as dwpr]
    [app.main.data.workspace.review :as dwrv]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -36,7 +36,6 @@
    [app.main.ui.ds.layout.modal :refer [modal* modal-header* modal-content* modal-footer*]]
    [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
    [app.main.ui.ds.product.avatar :refer [avatar*]]
-   [app.main.ui.ds.tooltip :refer [tooltip*]]
    [app.main.ui.workspace.compare.common :as cc]
    [app.main.ui.workspace.review.common :as rvc]
    [app.util.dom :as dom]
@@ -46,8 +45,61 @@
 
 ;; --- Derived display state
 
+(defn verdict-stale?
+  "True when the verdict of `review` was given on an earlier revision of
+  the branch of `pr`. While that branch is the open file, `file` decides
+  at once: it is the `:id` and the saved `:revn` of the open file
+  (`app.main.refs/open-file-revision`), and
+  `app.main.data.persistence/update-file-revn` raises that `:revn` after
+  each save of the file, its own or a peer's. The verdict is then stale
+  once the revision passes its `:verdict-revn`. Otherwise the `:stale`
+  the server computed stands."
+  [pr file review]
+  (let [revn         (:revn file)
+        verdict-revn (:verdict-revn review)]
+    (if (and (some? (:id file))
+             (= (:id file) (:source-file-id pr))
+             (int? revn)
+             (int? verdict-revn))
+      (> revn verdict-revn)
+      (boolean (:stale review)))))
+
+(defn- overall-verdict
+  "The aggregate verdict of `reviews`, as the server computes it:
+  changes requested beats approved, a stale verdict only counts as in
+  review, and no verdict at all is pending."
+  [reviews]
+  (let [submitted (filter #(contains? #{"approved" "changes-requested"} (:verdict %)) reviews)
+        current   (remove :stale submitted)]
+    (cond
+      (some #(= "changes-requested" (:verdict %)) current) "changes-requested"
+      (some #(= "approved" (:verdict %)) current)          "approved"
+      (seq submitted)                                      "in-review"
+      :else                                                "pending")))
+
+(defn live-verdicts
+  "`pr` with the `:stale` of each of its reviews (`verdict-stale?`) and its
+  `:overall-verdict` brought up to the open file `file`. A review of
+  another branch than the open file stays as the server sent it."
+  [pr file]
+  (if (and (some? pr)
+           (some? (:id file))
+           (= (:id file) (:source-file-id pr)))
+    (let [reviews (mapv #(assoc % :stale (verdict-stale? pr file %)) (:reviews pr))]
+      (assoc pr
+             :reviews reviews
+             :overall-verdict (overall-verdict reviews)))
+    pr))
+
+(defn use-live-verdicts
+  "`live-verdicts` of `pr` against the open file, followed save by save."
+  [pr]
+  (let [file (mf/deref refs/open-file-revision)]
+    (mf/with-memo [pr file]
+      (live-verdicts pr file))))
+
 (defn- display-state
-  "The single most relevant label for a pull request: its stored status
+  "The single most relevant label for a branch review: its stored status
   for finished ones, the aggregate review verdict for open ones."
   [{:keys [status overall-verdict]}]
   (case status
@@ -62,16 +114,16 @@
 (defn- state-label
   [state]
   (case state
-    :open              (tr "workspace.pull-requests.state.open")
-    :in-review         (tr "workspace.pull-requests.state.in-review")
-    :approved          (tr "workspace.pull-requests.state.approved")
-    :changes-requested (tr "workspace.pull-requests.state.changes-requested")
-    :merged            (tr "workspace.pull-requests.state.merged")
-    :closed            (tr "workspace.pull-requests.state.closed")))
+    :open              (tr "workspace.branch-review.state.open")
+    :in-review         (tr "workspace.branch-review.state.in-review")
+    :approved          (tr "workspace.branch-review.state.approved")
+    :changes-requested (tr "workspace.branch-review.state.changes-requested")
+    :merged            (tr "workspace.branch-review.state.merged")
+    :closed            (tr "workspace.branch-review.state.closed")))
 
-(mf/defc pr-state-badge*
+(mf/defc review-state-badge*
   [{:keys [pr]}]
-  (let [state (display-state pr)]
+  (let [state (display-state (use-live-verdicts pr))]
     [:span {:class (stl/css-case :pr-badge true
                                  :badge-open (= state :open)
                                  :badge-in-review (= state :in-review)
@@ -82,14 +134,31 @@
      (state-label state)]))
 
 (defn current-approvals
-  "[current-approvals total-reviewers] of a pull request; stale verdicts
+  "[current-approvals total-reviewers] of a branch review; stale verdicts
   do not count."
   [{:keys [reviews]}]
   [(count (filter #(and (= "approved" (:verdict %)) (not (:stale %))) reviews))
    (count reviews)])
 
+(defn verdict-label
+  "What the row of a reviewer says: the verdict, or that it was given on
+  an earlier version when the branch changed after it."
+  [{:keys [verdict stale]}]
+  (case verdict
+    "approved"
+    (if stale
+      (tr "workspace.branch-review.review-state.stale-approved")
+      (tr "workspace.branch-review.review-state.approved"))
+
+    "changes-requested"
+    (if stale
+      (tr "workspace.branch-review.review-state.stale-changes-requested")
+      (tr "workspace.branch-review.state.changes-requested"))
+
+    (tr "workspace.branch-review.review-state.pending")))
+
 (defn- pr->branch
-  "A branch-row-shaped map for the pull request's branch, enough for the
+  "A branch-row-shaped map for the branch review's branch, enough for the
   branching compare / merge dialogs (they key on :id and :name; the
   counts feed their action buttons)."
   [pr]
@@ -102,32 +171,32 @@
    :conflicts (:conflicts pr)})
 
 (defn open-compare!
-  "Compare the pull request's branch with main on the canvas, so the
+  "Compare the branch review's branch with main on the canvas, so the
   proposed changes can be inspected. Like merging, it diffs the LIVE
   branch against main. The branch is the open file inside its review."
   [pr]
   (st/emit! (dwcp/enter (pr->branch pr))))
 
 (defn confirm-merge!
-  "Open the branching merge dialog for the pull request's branch:
-  accepting a pull request goes through the exact same integration flow
+  "Open the branching merge dialog for the branch review's branch:
+  accepting a branch review goes through the exact same integration flow
   (confirmation, conflict resolution, safety snapshot) as merging the
-  branch directly. Merging always integrates the LIVE branch state, so
-  an outdated pull request merges the newest changes, not the snapshot."
+  branch directly. Merging integrates the live branch, the same state
+  the reviewers see."
   [pr]
   (modal/show! :merge-branch {:branch (pr->branch pr)}))
 
 (defn confirm-close!
-  "Ask for confirmation before cancelling a pull request: the review is
-  discarded and the branch simply goes back to being a normal branch
-  (it is NOT deleted)."
+  "Ask for confirmation before closing a branch review: the review ends
+  and the branch simply goes back to being a normal branch (it is NOT
+  deleted)."
   [pr]
   (st/emit! (modal/show {:type :confirm
-                         :title (tr "workspace.pull-requests.close.title")
-                         :message (tr "workspace.pull-requests.close.message" (:title pr))
-                         :accept-label (tr "workspace.pull-requests.actions.close")
+                         :title (tr "workspace.branch-review.close.title")
+                         :message (tr "workspace.branch-review.close.message" (:title pr))
+                         :accept-label (tr "workspace.branch-review.actions.close")
                          :accept-style :danger
-                         :on-accept (fn [_] (st/emit! (dwpr/close-pull-request (:id pr))))})))
+                         :on-accept (fn [_] (st/emit! (dwbr/close-branch-review (:id pr))))})))
 
 ;; --- The action of a banner
 
@@ -144,7 +213,7 @@
 ;; --- Dialog header
 
 (mf/defc dialog-header*
-  "The header the branch and pull request dialogs share: an icon tile,
+  "The header the branch and branch review dialogs share: an icon tile,
   the title and a subtitle (a plain string, or any element), then
   whatever the dialog adds after them, such as a status chip. The close
   button belongs to `modal*`."
@@ -175,11 +244,11 @@
     (when-not open?
       (on-close))))
 
-;; --- Create pull request dialog (modal)
+;; --- Create branch review dialog (modal)
 
-(mf/defc create-pull-request-dialog*
+(mf/defc create-branch-review-dialog*
   {::mf/register modal/components
-   ::mf/register-as :create-pull-request}
+   ::mf/register-as :create-branch-review}
   [{:keys [branch]}]
   (let [profile     (mf/deref refs/profile)
         team        (mf/deref refs/team)
@@ -218,7 +287,7 @@
          (mf/deps branch title description selected valid?)
          (fn [_]
            (when valid?
-             (st/emit! (dwpr/create-pull-request
+             (st/emit! (dwbr/create-branch-review
                         (:id branch)
                         {:title (str/trim title)
                          :description (str/trim description)
@@ -233,32 +302,32 @@
                 :on-open-change (on-dismiss on-close)
                 :size "large"}
      [:> dialog-header* {:icon i/git-pull-request-create-arrow
-                         :title (tr "workspace.pull-requests.create.title")
-                         :subtitle (tr "workspace.pull-requests.create.subtitle" (or (:name branch) ""))}]
+                         :title (tr "workspace.branch-review.create.title")
+                         :subtitle (tr "workspace.branch-review.create.subtitle" (or (:name branch) ""))}]
 
      [:> modal-content* {:class (stl/css :dialog-content)}
-      [:> input* {:label (tr "workspace.pull-requests.create.name-label")
+      [:> input* {:label (tr "workspace.branch-review.create.name-label")
                   :icon i/git-pull-request-arrow
-                  :placeholder (tr "workspace.pull-requests.create.name-placeholder")
+                  :placeholder (tr "workspace.branch-review.create.name-placeholder")
                   :value title
                   :on-change on-title-change}]
 
       [:div {:class (stl/css :field)}
        [:label {:class (stl/css :field-label) :for desc-id}
-        (tr "workspace.pull-requests.create.description-label")]
+        (tr "workspace.branch-review.create.description-label")]
        [:> textarea* {:id desc-id
                       :class (stl/css :field-textarea)
                       :value description
-                      :placeholder (tr "workspace.pull-requests.create.description-placeholder")
+                      :placeholder (tr "workspace.branch-review.create.description-placeholder")
                       :on-change on-description-change
                       :rows 3}]]
 
       [:div {:class (stl/css :field)}
        [:label {:class (stl/css :field-label)}
-        (tr "workspace.pull-requests.create.reviewers-label")]
+        (tr "workspace.branch-review.create.reviewers-label")]
        (if (empty? members)
          [:span {:class (stl/css :reviewers-empty)}
-          (tr "workspace.pull-requests.create.no-members")]
+          (tr "workspace.branch-review.create.no-members")]
          [:ul {:class (stl/css :reviewers-list)}
           (for [member members]
             [:li {:key (dm/str (:id member))}
@@ -276,7 +345,7 @@
                 [:> i/icon* {:icon-id i/tick :size "s" :class (stl/css :reviewer-tick)}])]])])]
 
       [:> context-notification* {:level :info :type :context}
-       (tr "workspace.pull-requests.create.info")]]
+       (tr "workspace.branch-review.create.info")]]
 
      [:> modal-footer* {:class (stl/css :dialog-footer)}
       [:> button* {:class (stl/css :dialog-action)
@@ -287,105 +356,120 @@
                    :icon i/git-pull-request-create-arrow
                    :disabled (not valid?)
                    :on-click on-submit}
-       (tr "workspace.pull-requests.create.submit")]]]))
+       (tr "workspace.branch-review.create.submit")]]]))
 
 ;; --- Review dialog (approve / request changes)
 
-(mf/defc pull-request-review-dialog*
+(mf/defc branch-review-verdict-dialog*
+  "The verdict of a reviewer: Approve or Request changes. Without a
+  comment, each button submits its verdict at once. Once the reviewer
+  adds a comment, the buttons pick the verdict and Send submits both."
   {::mf/register modal/components
-   ::mf/register-as :pull-request-review}
+   ::mf/register-as :branch-review-verdict}
   [{:keys [pr]}]
-  (let [comment-id (mf/use-id)
-        verdict*  (mf/use-state "approved")
-        verdict   (deref verdict*)
-        comment*  (mf/use-state "")
-        comment   (deref comment*)
+  (let [comment-id  (mf/use-id)
+        commenting* (mf/use-state false)
+        commenting? (deref commenting*)
+        verdict*    (mf/use-state nil)
+        verdict     (deref verdict*)
+        comment*    (mf/use-state "")
+        comment     (deref comment*)
+
+        submit
+        (mf/use-fn
+         (mf/deps pr comment)
+         (fn [verdict]
+           (st/emit! (dwbr/submit-review (:id pr) verdict
+                                         (let [c (str/trim comment)]
+                                           (when-not (str/blank? c) c)))
+                     (modal/hide))))
 
         on-comment-change
         (mf/use-fn #(reset! comment* (dom/get-target-val %)))
 
-        on-select-verdict
+        on-add-comment
+        (mf/use-fn #(reset! commenting* true))
+
+        on-verdict
         (mf/use-fn
+         (mf/deps commenting? submit)
          (fn [event]
-           (reset! verdict* (-> (dom/get-current-target event)
-                                (dom/get-data "verdict")))))
+           (let [verdict (-> (dom/get-current-target event)
+                             (dom/get-data "verdict"))]
+             (if commenting?
+               (reset! verdict* verdict)
+               (submit verdict)))))
+
+        on-send
+        (mf/use-fn
+         (mf/deps verdict submit)
+         (fn [_]
+           (when (some? verdict)
+             (submit verdict))))
 
         on-close
-        (mf/use-fn #(st/emit! (modal/hide)))
-
-        on-submit
-        (mf/use-fn
-         (mf/deps pr verdict comment)
-         (fn [_]
-           (st/emit! (dwpr/submit-review (:id pr) verdict
-                                         (let [c (str/trim comment)]
-                                           (when-not (str/blank? c) c)))
-                     (modal/hide))))]
+        (mf/use-fn #(st/emit! (modal/hide)))]
 
     [:> modal* {:is-open true
                 :on-open-change (on-dismiss on-close)
                 :size "large"}
      [:> dialog-header* {:icon i/git-pull-request-arrow
-                         :title (tr "workspace.pull-requests.review.title")
-                         :subtitle (:title pr)}]
+                         :title (:title pr)
+                         :subtitle (tr "workspace.review.route" (:branch-name pr)
+                                       (rvc/route-target pr (tr "workspace.branches.main")))}]
 
      [:> modal-content* {:class (stl/css :dialog-content)}
-      ;; one of two, each with a hint the DS radio buttons have no room for
-      [:div {:class (stl/css :verdict-options)
-             :role "radiogroup"
-             :aria-label (tr "workspace.pull-requests.review.title")}
-       [:button {:class (stl/css-case :verdict-option true
-                                      :is-selected (= verdict "approved"))
-                 :role "radio"
-                 :aria-checked (= verdict "approved")
-                 :data-verdict "approved"
-                 :on-click on-select-verdict}
-        [:> i/icon* {:icon-id i/tick}]
-        [:div {:class (stl/css :verdict-option-text)}
-         [:span {:class (stl/css :verdict-option-title)}
-          (tr "workspace.pull-requests.review.approve")]
-         [:span {:class (stl/css :verdict-option-hint)}
-          (tr "workspace.pull-requests.review.approve-hint")]]]
+      ;; with a comment the buttons only pick the verdict, so they say
+      ;; which one is picked
+      [:div {:class (stl/css :verdict-buttons)}
+       [:> button* {:variant (if (= verdict "approved") "primary" "secondary")
+                    :icon i/tick
+                    :aria-pressed (when commenting? (= verdict "approved"))
+                    :data-verdict "approved"
+                    :on-click on-verdict}
+        (tr "workspace.branch-review.review.approve")]
+       [:> button* {:variant (if (= verdict "changes-requested") "primary" "secondary")
+                    :icon i/triangle-alert
+                    :aria-pressed (when commenting? (= verdict "changes-requested"))
+                    :data-verdict "changes-requested"
+                    :on-click on-verdict}
+        (tr "workspace.branch-review.review.request-changes")]]
 
-       [:button {:class (stl/css-case :verdict-option true
-                                      :is-selected (= verdict "changes-requested"))
-                 :role "radio"
-                 :aria-checked (= verdict "changes-requested")
-                 :data-verdict "changes-requested"
-                 :on-click on-select-verdict}
-        [:> i/icon* {:icon-id i/triangle-alert}]
-        [:div {:class (stl/css :verdict-option-text)}
-         [:span {:class (stl/css :verdict-option-title)}
-          (tr "workspace.pull-requests.review.request-changes")]
-         [:span {:class (stl/css :verdict-option-hint)}
-          (tr "workspace.pull-requests.review.request-changes-hint")]]]]
-
-      [:div {:class (stl/css :field)}
-       [:label {:class (stl/css :field-label) :for comment-id}
-        (tr "workspace.pull-requests.review.comment-label")]
-       [:> textarea* {:id comment-id
-                      :class (stl/css :field-textarea)
-                      :value comment
-                      :placeholder (tr "workspace.pull-requests.review.comment-placeholder")
-                      :on-change on-comment-change
-                      :rows 3}]]]
+      (if commenting?
+        [:div {:class (stl/css :field)}
+         [:label {:class (stl/css :field-label) :for comment-id}
+          (tr "workspace.branch-review.review.comment-label")]
+         [:> textarea* {:id comment-id
+                        :class (stl/css :field-textarea)
+                        :value comment
+                        :placeholder (tr "workspace.branch-review.review.comment-placeholder")
+                        :on-change on-comment-change
+                        :rows 3}]]
+        [:> button* {:class (stl/css :add-comment)
+                     :variant "ghost"
+                     :icon i/add
+                     :on-click on-add-comment}
+         (tr "workspace.branch-review.review.add-comment")])]
 
      [:> modal-footer* {:class (stl/css :dialog-footer)}
       [:> button* {:class (stl/css :dialog-action)
                    :variant "secondary" :on-click on-close}
        (tr "labels.cancel")]
-      [:> button* {:class (stl/css :dialog-action)
-                   :variant "primary"
-                   :on-click on-submit}
-       (tr "workspace.pull-requests.review.submit")]]]))
+      (when commenting?
+        [:> button* {:class (stl/css :dialog-action)
+                     :variant "primary"
+                     :disabled (nil? verdict)
+                     :on-click on-send}
+         (tr "workspace.branch-review.review.send")])]]))
 
 ;; --- Details dialog
 
-(mf/defc pull-request-info-dialog*
+(mf/defc branch-review-info-dialog*
   {::mf/register modal/components
-   ::mf/register-as :pull-request-info}
+   ::mf/register-as :branch-review-info}
   [{:keys [pr]}]
-  (let [profiles  (mf/deref refs/profiles)
+  (let [pr        (use-live-verdicts pr)
+        profiles  (mf/deref refs/profiles)
         profile   (mf/deref refs/profile)
         team      (mf/deref refs/team)
         author    (get profiles (:created-by pr))
@@ -394,10 +478,10 @@
         can-merge? (boolean (get-in team [:permissions :can-edit]))
         open?     (= "open" (:status pr))
         closed?   (= "closed" (:status pr))
-        ;; already inside this pull request's review sandbox: offering to
+        ;; already inside this branch review's review sandbox: offering to
         ;; open it again would be a no-op
         reviewing? (= (:id pr)
-                      (:pr-id (mf/deref refs/pull-request-preview)))
+                      (:pr-id (mf/deref refs/branch-review-preview)))
         [approvals total] (current-approvals pr)
 
         on-close
@@ -415,7 +499,7 @@
          (mf/deps pr)
          (fn [_]
            (st/emit! (modal/hide)
-                     (dwpr/open-pull-request pr))))
+                     (dwbr/open-branch-review pr))))
 
         on-close-pr
         (mf/use-fn
@@ -429,7 +513,7 @@
          (mf/deps pr)
          (fn [_]
            (st/emit! (modal/hide)
-                     (dwpr/reopen-pull-request (:id pr)))))]
+                     (dwbr/reopen-branch-review (:id pr)))))]
 
     [:> modal* {:is-open true
                 :on-open-change (on-dismiss on-close)
@@ -440,7 +524,7 @@
        :subtitle
        (mf/html
         [:div {:class (stl/css :dialog-subtitle-row)}
-         [:> pr-state-badge* {:pr pr}]
+         [:> review-state-badge* {:pr pr}]
          [:> text* {:as "span"
                     :typography t/body-small
                     :class (stl/css :dialog-subtitle)}
@@ -449,41 +533,33 @@
           ;; itself, and the target's name for a branch of a branch
           (tr "workspace.review.route" (:branch-name pr)
               (rvc/route-target pr (tr "workspace.branches.main")))]
-         (when (and open? (:outdated pr))
-           [:span {:class (stl/css :pr-badge :badge-outdated)}
-            (tr "workspace.pull-requests.badge.outdated")])
          (when (and open? (pos? (or (:conflicts pr) 0)))
            [:span {:class (stl/css :pr-badge :badge-conflicts)}
-            (tr "workspace.pull-requests.badge.conflicts" (dm/str (:conflicts pr)))])])}]
+            (tr "workspace.branch-review.badge.conflicts" (dm/str (:conflicts pr)))])])}]
 
      [:> modal-content* {:class (stl/css :dialog-content)}
       [:div {:class (stl/css :pr-info-card)}
        [:div {:class (stl/css :pr-info-grid)}
         [:div {:class (stl/css :pr-info-item)}
-         [:span {:class (stl/css :field-label)} (tr "workspace.pull-requests.info.author")]
+         [:span {:class (stl/css :field-label)} (tr "workspace.branch-review.info.author")]
          [:div {:class (stl/css :pr-info-value)}
           (when author [:> avatar* {:profile author :variant "S"}])
           [:span (get author :fullname "—")]]]
 
         [:div {:class (stl/css :pr-info-item)}
-         [:span {:class (stl/css :field-label)} (tr "workspace.pull-requests.info.created-at")]
+         [:span {:class (stl/css :field-label)} (tr "workspace.branch-review.info.created-at")]
          [:div {:class (stl/css :pr-info-value)}
           [:span (ct/format-inst (:created-at pr) :localized-date-time)]]]
 
         [:div {:class (stl/css :pr-info-item)}
-         [:span {:class (stl/css :field-label)} (tr "workspace.pull-requests.info.updated-at")]
-         [:div {:class (stl/css :pr-info-value)}
-          [:span (ct/format-inst (:pinned-at pr) :localized-date-time)]]]
-
-        [:div {:class (stl/css :pr-info-item)}
-         [:span {:class (stl/css :field-label)} (tr "workspace.pull-requests.info.approvals")]
+         [:span {:class (stl/css :field-label)} (tr "workspace.branch-review.info.approvals")]
          [:div {:class (stl/css :pr-info-value)}
           [:span (dm/str approvals "/" total)]]]]
 
        (when (pos? total)
          [:div {:class (stl/css :field)}
           [:label {:class (stl/css :field-label)}
-           (tr "workspace.pull-requests.info.reviewers")]
+           (tr "workspace.branch-review.info.reviewers")]
           [:ul {:class (stl/css :pr-info-reviewers)}
            (for [review (:reviews pr)]
              (let [reviewer (get profiles (:profile-id review))]
@@ -498,18 +574,7 @@
                                              :reviewer-changes (and (= "changes-requested" (:verdict review))
                                                                     (not (:stale review)))
                                              :reviewer-stale (:stale review))}
-                 (cond
-                   (:stale review)
-                   (tr "workspace.pull-requests.review-state.stale")
-
-                   (= "approved" (:verdict review))
-                   (tr "workspace.pull-requests.review-state.approved")
-
-                   (= "changes-requested" (:verdict review))
-                   (tr "workspace.pull-requests.review-state.changes-requested")
-
-                   :else
-                   (tr "workspace.pull-requests.review-state.pending"))]
+                 (verdict-label review)]
                 (when-not (str/blank? (:comment review))
                   [:> text* {:as "p" :typography t/body-small :class (stl/css :reviewer-comment)}
                    (:comment review)])]))]])]
@@ -517,7 +582,7 @@
       (when-not (str/blank? (:description pr))
         [:div {:class (stl/css :pr-info-description-block)}
          [:label {:class (stl/css :field-label)}
-          (tr "workspace.pull-requests.info.description")]
+          (tr "workspace.branch-review.info.description")]
          [:> text* {:as "p" :typography t/body-medium :class (stl/css :pr-info-description)}
           (:description pr)]])]
 
@@ -526,26 +591,26 @@
         [:> button* {:class (stl/css :dialog-action)
                      :variant "secondary"
                      :on-click on-close-pr}
-         (tr "workspace.pull-requests.actions.close")])
+         (tr "workspace.branch-review.actions.close")])
       (when (and (or author? admin?) closed?)
         [:> button* {:class (stl/css :dialog-action)
                      :variant "secondary"
                      :on-click on-reopen-pr}
-         (tr "workspace.pull-requests.actions.reopen")])
+         (tr "workspace.branch-review.actions.reopen")])
       (when (and open? (not reviewing?))
         [:> button* {:class (stl/css :dialog-action)
                      :variant "primary"
                      :icon i/arrow-up-right
                      :on-click on-open-review}
-         (tr "workspace.pull-requests.actions.open-review")])
+         (tr "workspace.branch-review.actions.open-review")])
       (when (and open? can-merge?)
         [:> button* {:class (stl/css :dialog-action)
                      :variant "primary"
                      :icon i/git-merge
                      :on-click on-merge}
-         (tr "workspace.pull-requests.actions.merge")])]]))
+         (tr "workspace.branch-review.actions.merge")])]]))
 
-;; --- Review bar (replaces the branch banner inside a design review)
+;; --- Review bar (replaces the branch banner inside a branch review)
 
 (mf/defc compare-banner-content*
   "What the review bar says and offers while the branch of the review is
@@ -608,17 +673,13 @@
         rulers       (if rulers? 22 0)]
     (+ left rulers (/ (- (:width vport) rulers) 2))))
 
-(mf/defc pr-review-banner*
-  "The bar at the bottom of the canvas inside a design review: the review
+(mf/defc review-banner*
+  "The bar at the bottom of the canvas inside a branch review: the review
   being reviewed, the progress of its tasks, its details, the verdict of
-  the reviewer and the way out. The review is read-only; merging and
-  cancelling the review sit behind the menu.
-
-  When the branch moved past what the review shows, its author gets the
-  button that publishes the latest changes; everybody else gets a badge
-  that says the branch has changes they cannot see yet."
+  the reviewer and the way out. Merging and closing the review sit behind
+  the menu."
   []
-  (let [preview    (mf/deref refs/pull-request-preview)
+  (let [preview    (mf/deref refs/branch-review-preview)
         vport      (mf/deref refs/workspace-vport)
         rulers?    (mf/deref refs/rulers?)
         pr         (:info preview)
@@ -629,9 +690,8 @@
         author?    (= (:created-by pr) (:id profile))
         reviewer?  (some #(= (:profile-id %) (:id profile)) (:reviews pr))
         can-merge? (boolean (get-in team [:permissions :can-edit]))
-        can-cancel? (and (or author? (boolean (get-in team [:permissions :is-admin])))
-                         (= "open" (:status pr)))
-        outdated?  (boolean (:outdated pr))
+        can-close? (and (or author? (boolean (get-in team [:permissions :is-admin])))
+                        (= "open" (:status pr)))
 
         tasks      (mf/with-memo [tasks* pr]
                      (filterv #(= (:id pr) (:review-id %)) (vals tasks*)))
@@ -650,15 +710,10 @@
         (mf/use-fn #(st/emit! (dwrv/set-panel-tab :tasks)))
 
         on-review
-        (mf/use-fn (mf/deps pr) #(modal/show! :pull-request-review {:pr pr}))
+        (mf/use-fn (mf/deps pr) #(modal/show! :branch-review-verdict {:pr pr}))
 
         on-exit
-        (mf/use-fn #(st/emit! (dwpr/exit-pull-request-preview)))
-
-        on-publish
-        (mf/use-fn
-         (mf/deps pr)
-         #(st/emit! (dwpr/update-pull-request-snapshot (:id pr))))
+        (mf/use-fn #(st/emit! (dwbr/exit-branch-review-preview)))
 
         on-menu-action
         (mf/use-fn
@@ -668,7 +723,7 @@
            (case action
              "compare" (open-compare! pr)
              "merge"   (confirm-merge! pr)
-             "cancel"  (confirm-close! pr)
+             "close"   (confirm-close! pr)
              nil)))]
 
     (when (some? pr)
@@ -686,15 +741,9 @@
            [:> i/icon* {:icon-id i/git-pull-request-arrow}]]
           [:div {:class (stl/css :pr-banner-text)}
            [:span {:class (stl/css :pr-banner-title)}
-            (tr "workspace.pull-requests.banner.reviewing")]
+            (tr "workspace.branch-review.banner.reviewing")]
            ;; cut short when it is long: the whole of it on hover
-           [:span {:class (stl/css :pr-banner-name) :title (:title pr)} (:title pr)]
-           ;; the author publishes them with the button instead
-           (when (and outdated? (not author?))
-             [:> tooltip* {:content (tr "workspace.pull-requests.badge.outdated-hint")
-                           :placement "top"}
-              [:span {:class (stl/css :pr-badge :badge-outdated)}
-               (tr "workspace.pull-requests.badge.outdated")]])]
+           [:span {:class (stl/css :pr-banner-name) :title (:title pr)} (:title pr)]]
 
           [:div {:class (stl/css :pr-banner-separator)}]
 
@@ -710,17 +759,12 @@
           [:div {:class (stl/css :pr-banner-actions)}
            [:> button* {:variant "secondary" :on-click on-details}
             (tr "workspace.review.bar.details")]
-           (when (and outdated? author?)
-             [:> tooltip* {:content (tr "workspace.pull-requests.banner.publish-hint")
-                           :placement "top"}
-              [:> button* {:variant "primary" :on-click on-publish}
-               (tr "workspace.pull-requests.banner.publish")]])
            (when reviewer?
              [:> button* {:variant "primary" :on-click on-review}
               (tr "workspace.review.submit")])
            [:> icon-button* {:variant "ghost"
                              :icon i/exit
-                             :aria-label (tr "workspace.pull-requests.banner.exit")
+                             :aria-label (tr "workspace.branch-review.banner.exit")
                              :tooltip-placement "top"
                              :on-click on-exit}]
 
@@ -741,7 +785,7 @@
               (tr "workspace.branches.compare")]
              (when can-merge?
                [:> menu-item* {:id "merge"}
-                (tr "workspace.pull-requests.actions.merge")])
-             (when can-cancel?
-               [:> menu-item* {:id "cancel"}
-                (tr "workspace.pull-requests.banner.cancel")])]]]])])))
+                (tr "workspace.branch-review.actions.merge")])
+             (when can-close?
+               [:> menu-item* {:id "close"}
+                (tr "workspace.branch-review.actions.close")])]]]])])))

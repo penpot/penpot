@@ -15,8 +15,8 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.modal :as modal]
+   [app.main.data.workspace.branch-reviews :as dwbr]
    [app.main.data.workspace.branches :as dwb]
-   [app.main.data.workspace.pull-requests :as dwpr]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.ds.controls.input :refer [input*]]
@@ -28,7 +28,7 @@
    [app.main.ui.ds.product.branch-row :refer [branch-row*]]
    [app.main.ui.ds.product.branch-status :refer [branch-status*]]
    [app.main.ui.workspace.menu-shortcuts :refer [shortcuts*]]
-   [app.main.ui.workspace.sidebar.pull-requests :as prui]
+   [app.main.ui.workspace.sidebar.branch-reviews :as brui]
    ;; registers the reviews dialog the popover opens
    [app.main.ui.workspace.sidebar.reviews]
    [app.util.dom :as dom]
@@ -52,7 +52,7 @@
   (l/derived #(boolean (:workspace-branch-switcher %)) st/state))
 
 (defn- open-pr-by-branch
-  "The open pull requests indexed by the id of their branch."
+  "The open branch reviews indexed by the id of their branch."
   [prs]
   (->> (:data prs)
        (filter #(= "open" (:status %)))
@@ -60,11 +60,12 @@
        (into {})))
 
 (mf/defc row-status*
-  "The `branch-status*` of a branch row and its open pull request (nil
+  "The `branch-status*` of a branch row and its open branch review (nil
   when it has none)."
   {::mf/private true}
   [{:keys [row pr]}]
-  (let [[approvals reviewers] (if pr (prui/current-approvals pr) [0 0])
+  (let [pr     (brui/use-live-verdicts pr)
+        [approvals reviewers] (if pr (brui/current-approvals pr) [0 0])
         review (when (some? pr)
                  (if (and (pos? reviewers) (= approvals reviewers)) "approved" "pending"))]
     [:> branch-status* {:ahead (:ahead row)
@@ -292,11 +293,11 @@
         open?     (mf/deref switcher-open)
         ctx       (mf/deref refs/branch-context)
         profile   (mf/deref refs/profile)
-        prs       (mf/deref refs/pull-requests)
+        prs       (mf/deref refs/branch-reviews)
 
         prs-by-branch
         (mf/with-memo [prs]
-          (when (dwpr/enabled?)
+          (when (dwbr/enabled?)
             (open-pr-by-branch prs)))
 
         ;; what the open file is: its branch row, or main

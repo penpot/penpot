@@ -206,8 +206,8 @@
     :export-link-later
 
     ;; Enables file branching: isolated file copies ("branches") that
-    ;; can be merged back to their source file, including design reviews
-    ;; (review requests over a pinned snapshot of a branch). Disabled by
+    ;; can be merged back to their source file, including branch reviews
+    ;; (review requests over the live state of a branch). Disabled by
     ;; default.
     :branching
 

@@ -60,10 +60,10 @@
   outside it."
   (l/derived :workspace-compare st/state))
 
-(def pull-requests
-  (l/derived :workspace-pull-requests st/state))
+(def branch-reviews
+  (l/derived :workspace-branch-reviews st/state))
 
-(def pull-request-preview
+(def branch-review-preview
   ;; active review context: {:pr-id .. :status .. :info <pr-row>}; the
   ;; open file is the live branch, opened normally — this only drives
   ;; the review banner/actions. nil when no review is active.
@@ -91,7 +91,7 @@
   (l/derived :workspace-review-activity st/state))
 
 (def pending-reviews
-  ;; dashboard: open pull requests awaiting the current profile's review
+  ;; dashboard: open branch reviews awaiting the current profile's review
   (l/derived #(get % :dashboard-pending-reviews) st/state))
 
 (def fetch-failures
@@ -119,7 +119,7 @@
          (= (:file-id ctx) (:current-file-id state)))))
 
 (defn- reviewing?
-  "True while the open file is shown inside a design review: the review
+  "True while the open file is shown inside a branch review: the review
   is read-only, the branch is edited outside it."
   [state]
   (some? (:workspace-pr-preview state)))
@@ -132,7 +132,7 @@
 
 (def permissions
   "The team permissions, without edition on a merged or archived branch,
-  inside a design review or while comparing a branch with main."
+  inside a branch review or while comparing a branch with main."
   (l/derived (fn [state]
                (cond-> (:permissions (dsh/lookup-team state))
                  (or (open-closed-branch? state)
@@ -183,6 +183,16 @@
                      files   (:files state)]
                  (get files file-id)))
              st/state))
+
+(def open-file-revision
+  "The `:id` and the saved `:revn` of the open file. The revision rises
+  with each save of the file, its own or a peer's
+  (`app.main.data.persistence/update-file-revn`)."
+  (l/derived (fn [state]
+               (let [file-id (:current-file-id state)]
+                 {:id   file-id
+                  :revn (dm/get-in state [:files file-id :revn])}))
+             st/state =))
 
 (def shared-files
   "A derived state that points to the current list of shared

@@ -11,11 +11,11 @@
    [app.common.time :as ct]
    [app.config :as cf]
    [app.main.data.modal :as modal]
+   [app.main.data.workspace.branch-reviews :as dwbr]
    [app.main.data.workspace.branches :as dwb]
    [app.main.data.workspace.compare :as dwcp]
    [app.main.data.workspace.drawing :as dwd]
    [app.main.data.workspace.layout :as dwlo]
-   [app.main.data.workspace.pull-requests :as dwpr]
    [app.main.data.workspace.review :as dwrv]
    [app.main.data.workspace.tasks :as dwtk]
    [app.main.refs :as refs]
@@ -37,8 +37,8 @@
    [app.main.ui.ds.tooltip :refer [tooltip*]]
    [app.main.ui.workspace.compare.common :as cc]
    [app.main.ui.workspace.review.tasks :as rvt]
-   [app.main.ui.workspace.sidebar.branch-review.common :as brc]
-   [app.main.ui.workspace.sidebar.pull-requests :as prui :refer [pr-state-badge*]]
+   [app.main.ui.workspace.sidebar.branch-compare.common :as brc]
+   [app.main.ui.workspace.sidebar.branch-reviews :as brui :refer [review-state-badge*]]
    [app.util.dom :as dom]
    [app.util.globals :as globals]
    [app.util.i18n :as i18n :refer [tr]]
@@ -89,8 +89,8 @@
                        (modal/hide)))))]
 
     [:> modal* {:is-open true
-                :on-open-change (prui/on-dismiss on-close)}
-     [:> prui/dialog-header* {:icon i/git-branch
+                :on-open-change (brui/on-dismiss on-close)}
+     [:> brui/dialog-header* {:icon i/git-branch
                               :title (tr "workspace.branches.create.title")}]
 
      [:> modal-content* {:class (stl/css :dialog-content)}
@@ -170,8 +170,8 @@
              (on-submit event))))]
 
     [:> modal* {:is-open true
-                :on-open-change (prui/on-dismiss on-close)}
-     [:> prui/dialog-header* {:icon i/git-branch
+                :on-open-change (brui/on-dismiss on-close)}
+     [:> brui/dialog-header* {:icon i/git-branch
                               :title (tr "workspace.branches.rename.title")
                               :subtitle (:name branch)}]
 
@@ -224,8 +224,8 @@
       (st/emit! (dwb/fetch-branching-limits)))
 
     [:> modal* {:is-open true
-                :on-open-change (prui/on-dismiss on-close)}
-     [:> prui/dialog-header* {:icon i/git-branch
+                :on-open-change (brui/on-dismiss on-close)}
+     [:> brui/dialog-header* {:icon i/git-branch
                               :title (tr "workspace.branches.limits.title")
                               :subtitle (tr "workspace.branches.limits.subtitle")}]
 
@@ -329,7 +329,7 @@
                          (fn [_] (reset! tasks* [])))))))
 
     [:> modal* {:is-open true
-                :on-open-change (prui/on-dismiss on-close)}
+                :on-open-change (brui/on-dismiss on-close)}
      [:> modal-header* {:title (tr "workspace.branches.merge.confirm-title")}]
 
      [:> modal-content* {:class (stl/css :dialog-content)}
@@ -499,8 +499,8 @@
         on-materialize (mf/use-fn (mf/deps branch)
                                   #(confirm-materialize! branch))]
     [:> modal* {:is-open true
-                :on-open-change (prui/on-dismiss on-close)}
-     [:> prui/dialog-header* {:icon i/git-branch
+                :on-open-change (brui/on-dismiss on-close)}
+     [:> brui/dialog-header* {:icon i/git-branch
                               :title (tr "workspace.branches.info.title")
                               :subtitle (:name branch)}
       [:span {:class (stl/css-case :info-status true
@@ -622,7 +622,8 @@
 (mf/defc branch-entry*
   {::mf/private true}
   [{:keys [entry profiles current pr menu-open? on-set-menu]}]
-  (let [author    (get profiles (:created-by entry))
+  (let [pr        (brui/use-live-verdicts pr)
+        author    (get profiles (:created-by entry))
         ahead     (:ahead entry)
         behind    (:behind entry)
         main?     (:is-main entry)
@@ -632,7 +633,7 @@
         ;; branch work, and dimmed in the list
         closed?   (or merged? archived?)
 
-        ;; `pr` is the branch's open pull request (nil when none): the
+        ;; `pr` is the branch's open branch review (nil when none): the
         ;; review is a STATE of the branch, so the entry surfaces it as a
         ;; badge and swaps "Request review" for the review actions
         profile    (mf/deref refs/profile)
@@ -641,7 +642,7 @@
         admin?     (boolean (get-in team [:permissions :is-admin]))
         can-merge? (boolean (get-in team [:permissions :can-edit]))
 
-        [approvals total] (if pr (prui/current-approvals pr) [0 0])
+        [approvals total] (if pr (brui/current-approvals pr) [0 0])
 
         editing?   (mf/use-state false)
 
@@ -694,7 +695,7 @@
          (fn [event]
            (dom/stop-propagation event)
            (on-set-menu false)
-           (modal/show! :create-pull-request {:branch entry})))
+           (modal/show! :create-branch-review {:branch entry})))
 
         on-open-review
         (mf/use-fn
@@ -702,7 +703,7 @@
          (fn [event]
            (dom/stop-propagation event)
            (on-set-menu false)
-           (st/emit! (dwpr/open-pull-request pr))))
+           (st/emit! (dwbr/open-branch-review pr))))
 
         on-review-details
         (mf/use-fn
@@ -710,15 +711,7 @@
          (fn [event]
            (dom/stop-propagation event)
            (on-set-menu false)
-           (modal/show! :pull-request-info {:pr pr})))
-
-        on-publish-review
-        (mf/use-fn
-         (mf/deps pr)
-         (fn [event]
-           (dom/stop-propagation event)
-           (on-set-menu false)
-           (st/emit! (dwpr/update-pull-request-snapshot (:id pr)))))
+           (modal/show! :branch-review-info {:pr pr})))
 
         on-merge-review
         (mf/use-fn
@@ -728,13 +721,13 @@
            (on-set-menu false)
            (brc/confirm-merge! entry)))
 
-        on-cancel-review
+        on-close-review
         (mf/use-fn
          (mf/deps pr)
          (fn [event]
            (dom/stop-propagation event)
            (on-set-menu false)
-           (prui/confirm-close! pr)))
+           (brui/confirm-close! pr)))
 
         on-rename-commit
         (mf/use-fn
@@ -809,10 +802,10 @@
       (when (some? pr)
         [:div {:class (stl/css :branch-entry-badges)}
          [:> i/icon* {:icon-id i/git-pull-request-arrow :size "s"}]
-         [:> pr-state-badge* {:pr pr}]
+         [:> review-state-badge* {:pr pr}]
          (when (pos? total)
            [:span {:class (stl/css :branch-pr-approvals)
-                   :title (tr "workspace.pull-requests.info.approvals")}
+                   :title (tr "workspace.branch-review.info.approvals")}
             [:> i/icon* {:icon-id i/tick :size "s"}]
             (dm/str approvals "/" total)])])]
 
@@ -862,28 +855,25 @@
           (when (and (not closed?) (pos? (or behind 0)))
             [:> menu-item* {:id "update" :on-action on-update}
              (tr "workspace.branches.update")])
-          ;; review lifecycle: a branch without an open pull request offers to
+          ;; review lifecycle: a branch without an open branch review offers to
           ;; request one; with it, the review actions take its place (the
-          ;; review either ends merging the branch or is cancelled, leaving
+          ;; review either ends merging the branch or is closed, leaving
           ;; the branch as a normal branch again)
-          (when (and (not closed?) (dwpr/enabled?) (nil? pr))
+          (when (and (not closed?) (dwbr/enabled?) (nil? pr))
             [:> menu-item* {:id "request-review" :on-action on-request-review}
-             (tr "workspace.pull-requests.menu.request-review")])
+             (tr "workspace.branch-review.menu.request-review")])
           (when (some? pr)
             [:> menu-item* {:id "open-review" :on-action on-open-review}
-             (tr "workspace.pull-requests.actions.open-review")])
+             (tr "workspace.branch-review.actions.open-review")])
           (when (some? pr)
             [:> menu-item* {:id "review-details" :on-action on-review-details}
-             (tr "workspace.pull-requests.menu.review-details")])
-          (when (and (some? pr) author?)
-            [:> menu-item* {:id "publish-review" :on-action on-publish-review}
-             (tr "workspace.pull-requests.menu.publish")])
+             (tr "workspace.branch-review.menu.review-details")])
           (when (and (some? pr) can-merge?)
             [:> menu-item* {:id "merge-review" :on-action on-merge-review}
-             (tr "workspace.pull-requests.actions.merge")])
+             (tr "workspace.branch-review.actions.merge")])
           (when (and (some? pr) (or author? admin?))
-            [:> menu-item* {:id "cancel-review" :on-action on-cancel-review}
-             (tr "workspace.pull-requests.actions.close")])
+            [:> menu-item* {:id "close-review" :on-action on-close-review}
+             (tr "workspace.branch-review.actions.close")])
           (when-not closed?
             [:> menu-item* {:id "rename" :on-action on-start-rename}
              (tr "labels.rename")])
@@ -923,7 +913,7 @@
         profile        (mf/deref refs/profile)
         file           (mf/deref refs/file)
         branch-ctx     (mf/deref branch-context)
-        prs            (mf/deref refs/pull-requests)
+        prs            (mf/deref refs/branch-reviews)
         profile-id     (:id profile)
 
         profiles       (cond-> profiles
@@ -931,7 +921,7 @@
 
         prs-by-branch
         (mf/with-memo [prs]
-          (when (dwpr/enabled?)
+          (when (dwbr/enabled?)
             (->> (:data prs)
                  (filter #(= "open" (:status %)))
                  (map (juxt :file-branch-id identity))
@@ -1004,8 +994,8 @@
     ;; place of the loading state
     (mf/with-layout-effect []
       (st/emit! (dwb/init-branches-state))
-      (when (dwpr/enabled?)
-        (st/emit! (dwpr/fetch-pull-requests))))
+      (when (dwbr/enabled?)
+        (st/emit! (dwbr/fetch-branch-reviews))))
 
     [:> modal* {:is-open true
                 :on-open-change on-open-change
@@ -1117,7 +1107,7 @@
        :label (tr "workspace.branches.banner.status.behind" (i18n/c behind))}
 
       (some? pr)
-      (let [[approvals total] (prui/current-approvals pr)]
+      (let [[approvals total] (brui/current-approvals pr)]
         {:id :review
          :icon i/git-pull-request-arrow
          :label (tr "workspace.branches.banner.status.in-review"
@@ -1181,15 +1171,16 @@
         persistence (mf/deref refs/persistence)
         pstatus     (:status persistence)
 
-        ;; with pull requests enabled the merge action moves behind the
+        ;; with branch reviews enabled the merge action moves behind the
         ;; kebab menu and requesting a review becomes the primary action
-        ;; (or opening the branch's already-open pull request)
-        prs-enabled? (dwpr/enabled?)
+        ;; (or opening the branch's already-open branch review)
+        prs-enabled? (dwbr/enabled?)
         open-pr      (when prs-enabled?
-                       (->> (:data (mf/deref refs/pull-requests))
+                       (->> (:data (mf/deref refs/branch-reviews))
                             (filter #(and (= "open" (:status %))
                                           (= (:id ctx) (:file-branch-id %))))
                             (first)))
+        open-pr      (brui/use-live-verdicts open-pr)
 
         profile      (mf/deref refs/profile)
         team         (mf/deref refs/team)
@@ -1234,12 +1225,12 @@
         on-request-review
         (mf/use-fn
          (mf/deps ctx)
-         #(modal/show! :create-pull-request {:branch ctx}))
+         #(modal/show! :create-branch-review {:branch ctx}))
 
         on-open-review
         (mf/use-fn
          (mf/deps open-pr)
-         #(st/emit! (dwpr/open-pull-request open-pr)))
+         #(st/emit! (dwbr/open-branch-review open-pr)))
 
         ;; the same options as the branch's entry in the branch list;
         ;; deleting the open branch lands on the file it comes from
@@ -1250,12 +1241,11 @@
            (case action
              "info"           (modal/show! :branch-info {:branch ctx})
              "update"         (brc/confirm-update! ctx)
-             "request-review" (modal/show! :create-pull-request {:branch ctx})
-             "open-review"    (st/emit! (dwpr/open-pull-request open-pr))
-             "review-details" (modal/show! :pull-request-info {:pr open-pr})
-             "publish-review" (st/emit! (dwpr/update-pull-request-snapshot (:id open-pr)))
+             "request-review" (modal/show! :create-branch-review {:branch ctx})
+             "open-review"    (st/emit! (dwbr/open-branch-review open-pr))
+             "review-details" (modal/show! :branch-review-info {:pr open-pr})
              "merge"          (brc/confirm-merge! ctx)
-             "cancel-review"  (prui/confirm-close! open-pr)
+             "close-review"  (brui/confirm-close! open-pr)
              "rename"         (modal/show! :rename-branch {:branch ctx})
              "archive"        (confirm-archive! ctx true)
              "materialize"    (confirm-materialize! ctx)
@@ -1286,9 +1276,9 @@
       (when (contains? cf/flags :branching)
         (st/emit! (dwb/fetch-branch-context)))
       ;; the primary action depends on whether the branch already has an
-      ;; open pull request, and the bar counts the tasks for the user
-      (when (dwpr/enabled?)
-        (st/emit! (dwpr/fetch-pull-requests)
+      ;; open branch review, and the bar counts the tasks for the user
+      (when (dwbr/enabled?)
+        (st/emit! (dwbr/fetch-branch-reviews)
                   (dwtk/fetch-tasks))))
 
     ;; refresh the change counts every time a save settles (and when
@@ -1313,7 +1303,7 @@
     (when ctx
       [:div {:id "branch-banner"
              :style (when (some? vport)
-                      #js {"insetInlineStart" (dm/str (prui/canvas-center vport rulers?) "px")})
+                      #js {"insetInlineStart" (dm/str (brui/canvas-center vport rulers?) "px")})
              :class (stl/css-case :branch-banner true
                                   :branch-banner-merged (or merged? archived?)
                                   :is-collapsed collapsed?)}
@@ -1339,7 +1329,7 @@
 
           (when (pos? (or my-tasks 0))
             [:*
-             [:> prui/banner-button* {:class (stl/css :branch-banner-tasks)
+             [:> brui/banner-button* {:class (stl/css :branch-banner-tasks)
                                       :on-click on-my-tasks}
               [:> i/icon* {:icon-id i/view-as-list :size "s"}]
               (tr "workspace.tasks.for-you-count" (i18n/c my-tasks))]
@@ -1378,7 +1368,7 @@
                            :on-click on-compare}
                (tr "workspace.branches.compare")]
 
-              ;; with pull requests enabled the primary flow is asking for a
+              ;; with branch reviews enabled the primary flow is asking for a
               ;; review (merging moves to the options menu)
               (case primary
                 :resolve
@@ -1397,13 +1387,13 @@
                 [:> button* {:variant "primary"
                              :icon i/git-pull-request-arrow
                              :on-click on-open-review}
-                 (tr "workspace.pull-requests.actions.open-review")]
+                 (tr "workspace.branch-review.actions.open-review")]
 
                 :request-review
                 [:> button* {:variant "primary"
                              :icon i/git-pull-request-create-arrow
                              :on-click on-request-review}
-                 (tr "workspace.pull-requests.menu.request-review")]
+                 (tr "workspace.branch-review.menu.request-review")]
 
                 :merge
                 [:> button* {:variant "primary"
@@ -1435,23 +1425,20 @@
                 (tr "workspace.branches.update")])
              (when (and open? prs-enabled? (nil? open-pr) (not= primary :request-review))
                [:> menu-item* {:id "request-review"}
-                (tr "workspace.pull-requests.menu.request-review")])
+                (tr "workspace.branch-review.menu.request-review")])
              (when (and (some? open-pr) (not= primary :open-review))
                [:> menu-item* {:id "open-review"}
-                (tr "workspace.pull-requests.actions.open-review")])
+                (tr "workspace.branch-review.actions.open-review")])
              (when (some? open-pr)
                [:> menu-item* {:id "review-details"}
-                (tr "workspace.pull-requests.menu.review-details")])
-             (when pr-author?
-               [:> menu-item* {:id "publish-review"}
-                (tr "workspace.pull-requests.menu.publish")])
+                (tr "workspace.branch-review.menu.review-details")])
              (when (and open? prs-enabled? (not= primary :merge)
                         (or (nil? open-pr) can-merge?))
                [:> menu-item* {:id "merge"}
-                (tr "workspace.pull-requests.actions.merge")])
+                (tr "workspace.branch-review.actions.merge")])
              (when (and (some? open-pr) (or pr-author? admin?))
-               [:> menu-item* {:id "cancel-review"}
-                (tr "workspace.pull-requests.actions.close")])
+               [:> menu-item* {:id "close-review"}
+                (tr "workspace.branch-review.actions.close")])
              (when open?
                [:> menu-item* {:id "rename"}
                 (tr "labels.rename")])

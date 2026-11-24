@@ -25,8 +25,8 @@
    [app.main.ui.ds.product.filter-chip :refer [filter-chip*]]
    [app.main.ui.ds.product.tag :refer [tag*]]
    [app.main.ui.workspace.compare.common :as cc]
-   [app.main.ui.workspace.sidebar.branch-review.common :as brc]
-   [app.main.ui.workspace.sidebar.branch-review.list :as brli]
+   [app.main.ui.workspace.sidebar.branch-compare.common :as brc]
+   [app.main.ui.workspace.sidebar.branch-compare.list :as brli]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
@@ -94,13 +94,13 @@
                        :data-filter "layers"
                        :on-click on-filter}])
    (when (pos? (:library counts))
-     [:> filter-chip* {:label (dm/str (tr "workspace.branches.review.group.library")
+     [:> filter-chip* {:label (dm/str (tr "workspace.branches.compare.group.library")
                                       " (" (:library counts) ")")
                        :is-selected (= selected :library)
                        :data-filter "library"
                        :on-click on-filter}])
    (when (pos? (:left-out counts))
-     [:> filter-chip* {:label (dm/str (tr "workspace.branches.review.row.left-out")
+     [:> filter-chip* {:label (dm/str (tr "workspace.branches.compare.row.left-out")
                                       " (" (:left-out counts) ")")
                        :is-selected (= selected :left-out)
                        :data-filter "left-out"
@@ -118,7 +118,7 @@
   "The changes of the direction shown, under the tabs that switch it."
   {::mf/private true}
   [{:keys [comparison]}]
-  (let [{:keys [mode status incoming model selected excluded reviewed copies]} comparison
+  (let [{:keys [mode status incoming model selected excluded viewed copies]} comparison
         counts    (:counts mode)
         direction (if incoming :source->branch :branch->source)
         tabs      (mf/with-memo [counts]
@@ -159,7 +159,7 @@
                                 :follow-counts follows
                                 :selected selected
                                 :excluded excluded
-                                :reviewed reviewed
+                                :viewed viewed
                                 :collapsed (:collapsed mode)
                                 :on-select on-select
                                 :on-toggle on-toggle

@@ -92,23 +92,30 @@
   the switcher or the all-branches dialog. A count belonging to ANOTHER
   file is dropped synchronously, as `fetch-branch-context` drops its own.
   A failure is kept as an error, which shows the row: a count that is
-  unknown must not hide branches the file may have. The count lives under
-  its own key because `init-branches-state` resets `:workspace-branches`."
-  []
-  (ptk/reify ::fetch-branch-count
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [file-id (:current-file-id state)]
-        (if (= file-id (get-in state [:workspace-branch-count :file-id]))
-          state
-          (dissoc state :workspace-branch-count))))
+  unknown must not hide branches the file may have. With `listed`, the
+  number of branches a listing just returned, a failure keeps that number
+  instead: the listing is a lower bound of the family's count, which is
+  all the header needs to show its row. The count lives under its own key
+  because `init-branches-state` resets `:workspace-branches`."
+  ([] (fetch-branch-count nil))
+  ([listed]
+   (ptk/reify ::fetch-branch-count
+     ptk/UpdateEvent
+     (update [_ state]
+       (let [file-id (:current-file-id state)]
+         (if (= file-id (get-in state [:workspace-branch-count :file-id]))
+           state
+           (dissoc state :workspace-branch-count))))
 
-    ptk/WatchEvent
-    (watch [_ state _]
-      (when-let [file-id (:current-file-id state)]
-        (->> (rp/cmd! :get-file-branch-count {:file-id file-id})
-             (rx/map #(set-branch-count file-id {:count (:count %)}))
-             (rx/catch (fn [_] (rx/of (set-branch-count file-id {:status :error})))))))))
+     ptk/WatchEvent
+     (watch [_ state _]
+       (when-let [file-id (:current-file-id state)]
+         (->> (rp/cmd! :get-file-branch-count {:file-id file-id})
+              (rx/map #(set-branch-count file-id {:count (:count %)}))
+              (rx/catch (fn [_]
+                          (rx/of (set-branch-count file-id (if (some? listed)
+                                                             {:count listed}
+                                                             {:status :error})))))))))))
 
 (defn branch-count-failed?
   "True when the branch count of the open file could not be loaded."
@@ -121,7 +128,8 @@
   branches. A successful listing also reloads the branch count, so the
   header follows a delete or a materialize made from the listing. The
   count is reloaded rather than taken from the listing, which holds only
-  the branches of one source while the count covers the family."
+  the branches of one source while the count covers the family; the
+  listing's size stands in only when that reload fails."
   []
   (ptk/reify ::fetch-branches
     ptk/WatchEvent
@@ -136,7 +144,7 @@
                             (rp/cmd! :get-file-branches {:file-id root :include-archived true}))))
              (rx/mapcat (fn [data]
                           (rx/of (update-branches-state {:status :loaded :data data})
-                                 (fetch-branch-count))))
+                                 (fetch-branch-count (count data)))))
              (rx/catch (fn [_]
                          (rx/of (update-branches-state {:status :error})))))))))
 
@@ -428,7 +436,7 @@
 
 (defn item-key
   "The key a change or a conflict of a diff is chosen and marked as
-  reviewed by: its change key
+  viewed by: its change key
   (`app.common.files.branch-merge/change-key`), or its kind and id for an
   entry that carries none."
   [item]
@@ -441,7 +449,7 @@
   [item]
   (str (hash [(:status item) (:changed-attrs item) (:shape item) (:source item) (:branch item)])))
 
-(declare fetch-diff-reviewed)
+(declare fetch-diff-viewed)
 
 (defn update-branch-diff
   [diff-state]
@@ -477,13 +485,13 @@
                  :excluded  (if same? (or (:excluded prev) {}) {})
                  ;; the review marks are the ones of the direction: they
                  ;; stay while it reloads, and load again with the diff
-                 :reviewed  (if same-direction? (or (:reviewed prev) #{}) #{})
+                 :viewed  (if same-direction? (or (:viewed prev) #{}) #{})
                  :resolutions (when same? (:resolutions prev))})))
      ptk/WatchEvent
      (watch [_ _ stream]
        (->> (rp/cmd! :get-file-branch-diff {:branch-id branch-id :direction direction})
             (rx/mapcat #(rx/of (update-branch-diff {:status :loaded :diff %})
-                               (fetch-diff-reviewed)))
+                               (fetch-diff-viewed)))
             (rx/catch (fn [_]
                         (rx/of (update-branch-diff {:status :error}))))
             (rx/take-until (rx/filter (ptk/type? ::fetch-branch-diff) stream)))))))
@@ -528,28 +536,28 @@
         (concat (get-in diff-state [:diff :changes])
                 (get-in diff-state [:diff :conflicts]))))
 
-(defn- set-diff-reviewed
-  "Keep `reviewed` as the review marks of the diff of `branch-id` in
+(defn- set-diff-viewed
+  "Keep `viewed` as the review marks of the diff of `branch-id` in
   `direction`, when that is still the one in the store."
-  [branch-id direction reviewed]
-  (ptk/reify ::set-diff-reviewed
+  [branch-id direction viewed]
+  (ptk/reify ::set-diff-viewed
     ptk/UpdateEvent
     (update [_ state]
       (let [diff-st (:workspace-branch-diff state)]
         (if (and (= branch-id (:branch-id diff-st))
                  (= direction (:direction diff-st)))
-          (assoc-in state [:workspace-branch-diff :reviewed] reviewed)
+          (assoc-in state [:workspace-branch-diff :viewed] viewed)
           state)))))
 
-(defn fetch-diff-reviewed
-  "Load the changes the profile marked as reviewed in the comparison the
+(defn fetch-diff-viewed
+  "Load the changes the profile marked as viewed in the comparison the
   store holds. A mark counts while its change is still what it was when
   it was marked (`change-fingerprint`): a layer that changed again asks
-  to be reviewed again. The marks are the profile's own and the same
-  inside and outside a design review. A failure leaves the marks as they
+  to be viewed again. The marks are the profile's own and the same
+  inside and outside a branch review. A failure leaves the marks as they
   are."
   []
-  (ptk/reify ::fetch-diff-reviewed
+  (ptk/reify ::fetch-diff-viewed
     ptk/WatchEvent
     (watch [_ state _]
       (let [{:keys [branch-id direction status] :as diff-st} (:workspace-branch-diff state)]
@@ -557,7 +565,7 @@
           (let [items (diff-items diff-st)]
             (->> (rp/cmd! :get-branch-change-marks {:branch-id branch-id :direction direction})
                  (rx/map (fn [marks]
-                           (set-diff-reviewed
+                           (set-diff-viewed
                             branch-id direction
                             (into #{}
                                   (keep (fn [{:keys [change-key fingerprint]}]
@@ -568,30 +576,30 @@
                  (rx/catch (fn [_] (rx/empty)))))
           (rx/empty))))))
 
-(defn toggle-diff-reviewed
-  "Mark the change `item-key` as reviewed in the compare mode, or clear
-  the mark. `reviewed?` forces one side; nil flips it. The mark shows at
+(defn toggle-diff-viewed
+  "Mark the change `item-key` as viewed in the compare mode, or clear
+  the mark. `viewed?` forces one side; nil flips it. The mark shows at
   once and is kept for the profile, with the fingerprint of the change
   as it stands; if it cannot be kept, the marks are read again. The
   marks only guide the review: the merge does not read them."
-  ([item-key] (toggle-diff-reviewed item-key nil))
-  ([item-key reviewed?]
-   (ptk/reify ::toggle-diff-reviewed
+  ([item-key] (toggle-diff-viewed item-key nil))
+  ([item-key viewed?]
+   (ptk/reify ::toggle-diff-viewed
      ptk/UpdateEvent
      (update [_ state]
-       (update-in state [:workspace-branch-diff :reviewed]
-                  (fn [reviewed]
-                    (let [reviewed  (or reviewed #{})
-                          reviewed? (if (some? reviewed?)
-                                      reviewed?
-                                      (not (contains? reviewed item-key)))]
-                      (if reviewed?
-                        (conj reviewed item-key)
-                        (disj reviewed item-key))))))
+       (update-in state [:workspace-branch-diff :viewed]
+                  (fn [viewed]
+                    (let [viewed  (or viewed #{})
+                          viewed? (if (some? viewed?)
+                                    viewed?
+                                    (not (contains? viewed item-key)))]
+                      (if viewed?
+                        (conj viewed item-key)
+                        (disj viewed item-key))))))
 
      ptk/WatchEvent
      (watch [_ state _]
-       (let [{:keys [branch-id direction reviewed] :as diff-st} (:workspace-branch-diff state)
+       (let [{:keys [branch-id direction viewed] :as diff-st} (:workspace-branch-diff state)
              item (get (diff-items diff-st) item-key)]
          ;; only a change of the diff has a mark to keep
          (if (and (some? item) (uuid? branch-id))
@@ -600,9 +608,9 @@
                           :direction direction
                           :change-key item-key
                           :fingerprint (change-fingerprint item)
-                          :reviewed (contains? reviewed item-key)})
+                          :viewed (contains? viewed item-key)})
                 (rx/ignore)
-                (rx/catch (fn [_] (rx/of (fetch-diff-reviewed)))))
+                (rx/catch (fn [_] (rx/of (fetch-diff-viewed)))))
            (rx/empty)))))))
 
 (defn clear-diff-excluded

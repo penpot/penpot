@@ -214,7 +214,7 @@
                               :direction :branch->source
                               :change-key (str "shape:" rect-id)
                               :fingerprint "0c0ffee"
-                              :reviewed true})]
+                              :viewed true})]
         (t/is (nil? (:error out))))
 
       ;; the branch deletes the layer its thread points at: the review is
@@ -445,7 +445,7 @@
                               :direction :branch->source
                               :change-key "shape:pay-button"
                               :fingerprint "0c0ffee"
-                              :reviewed true})]
+                              :viewed true})]
         (t/is (nil? (:error out))))
 
       ;; a save of the branch while the review is open records activity

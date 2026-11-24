@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns app.main.ui.workspace.sidebar.branch-review.sides
+(ns app.main.ui.workspace.sidebar.branch-compare.sides
   "The two sides of a change, main and the branch. The diff carries whole
   entities for conflicts and for added or deleted shapes; for a modified
   entity the open file holds one side and the changed attrs give the

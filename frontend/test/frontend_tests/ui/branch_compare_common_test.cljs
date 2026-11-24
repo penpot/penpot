@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns frontend-tests.ui.branch-review-common-test
+(ns frontend-tests.ui.branch-compare-common-test
   "What the compare mode says about a diff: how a conflict splits into the
   properties both sides moved and the ones a single side moved, what an
   entry is and affects, the list the changes make and the marks they
@@ -13,7 +13,7 @@
    [app.common.files.branch-merge :as bm]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.compare :as dwcp]
-   [app.main.ui.workspace.sidebar.branch-review.common :as brc]
+   [app.main.ui.workspace.sidebar.branch-compare.common :as brc]
    [cljs.test :as t :include-macros true]))
 
 (def ^:private card

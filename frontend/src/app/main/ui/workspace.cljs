@@ -13,8 +13,8 @@
    [app.main.data.persistence :as dps]
    [app.main.data.plugins :as dpl]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.branch-reviews :as dwbr]
    [app.main.data.workspace.drawing :as dwd]
-   [app.main.data.workspace.pull-requests :as dwpr]
    [app.main.data.workspace.tasks :as dwtk]
    [app.main.features :as features]
    [app.main.fonts :as fonts]
@@ -37,9 +37,9 @@
    [app.main.ui.workspace.plugins]
    [app.main.ui.workspace.review.details]
    [app.main.ui.workspace.sidebar :refer [sidebar*]]
+   [app.main.ui.workspace.sidebar.branch-reviews :refer [review-banner*]]
    [app.main.ui.workspace.sidebar.branches :refer [branch-context-banner*]]
    [app.main.ui.workspace.sidebar.history :refer [history-toolbox*]]
-   [app.main.ui.workspace.sidebar.pull-requests :refer [pr-review-banner*]]
    [app.main.ui.workspace.tokens.export]
    [app.main.ui.workspace.tokens.export.modal]
    [app.main.ui.workspace.tokens.import]
@@ -96,14 +96,14 @@
 
         node-ref (use-resize-observer on-resize)
 
-        pr-preview (mf/deref refs/pull-request-preview)]
+        pr-preview (mf/deref refs/branch-review-preview)]
     [:*
      (when (not ^boolean hide-ui?)
-       ;; during a pull request review the review banner replaces the
-       ;; branch banner. The canvas is still the live, editable branch:
-       ;; edits change it and mark the pull request outdated
+       ;; during a branch review the review banner replaces the branch
+       ;; banner. The canvas is still the live, editable branch, which
+       ;; is what the reviewers see
        (if (some? pr-preview)
-         [:> pr-review-banner* {}]
+         [:> review-banner* {}]
          [:> branch-context-banner* {:file-id (get file :id)}]))
 
      (when (not ^boolean hide-ui?)
@@ -271,13 +271,13 @@
         (st/emit! (dcm/go-to-workspace :file-id file-id ::rt/replace true))))
 
     ;; Review context: once the (branch) file is initialized, attach the
-    ;; pull request info so the review banner and actions show up; the
+    ;; branch review info so the review banner and actions show up; the
     ;; file itself stays a normal, editable workspace file. The event is
     ;; idempotent per pr-id, so page navigation re-running this effect
     ;; is harmless.
     (mf/with-effect [file-id page-id pr-id file-loaded?]
       (when (and file-loaded? page-id pr-id)
-        (st/emit! (dwpr/initialize-pull-request-preview pr-id))))
+        (st/emit! (dwbr/initialize-branch-review-preview pr-id))))
 
     ;; a link to a task (the email that assigns it) opens the task
     (mf/with-effect [file-id task-id file-loaded?]

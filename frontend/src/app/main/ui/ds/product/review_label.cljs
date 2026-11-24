@@ -17,7 +17,7 @@
    [:label :string]])
 
 (mf/defc review-label*
-  "Says that a comment or a task belongs to a design review, with the name
+  "Says that a comment or a task belongs to a branch review, with the name
   of the review."
   {::mf/schema schema:review-label}
   [{:keys [class label] :rest props}]

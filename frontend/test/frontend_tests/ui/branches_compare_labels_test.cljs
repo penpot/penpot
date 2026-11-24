@@ -10,7 +10,7 @@
   them. The catalogue here is a stand-in for en.po: its values are picked
   to differ from the English the dialog used to hardcode."
   (:require
-   [app.main.ui.workspace.sidebar.branch-review.common :as brc]
+   [app.main.ui.workspace.sidebar.branch-compare.common :as brc]
    [app.util.i18n :as i18n]
    [cljs.test :as t :include-macros true]))
 

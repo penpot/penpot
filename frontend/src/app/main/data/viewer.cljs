@@ -150,9 +150,9 @@
                        (uuid? share-id)
                        (assoc :share-id share-id)
 
-                       ;; pull request review sandbox: the bundle serves
-                       ;; the pinned review snapshot instead of the live
-                       ;; branch state
+                       ;; branch review: the backend checks the review is
+                       ;; open on this branch file and serves the live
+                       ;; branch to its reviewers
                        (uuid? pr-id)
                        (assoc :review-id pr-id))
 

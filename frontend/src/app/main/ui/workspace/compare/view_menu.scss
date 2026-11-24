@@ -8,7 +8,7 @@
 @use "ds/_sizes.scss" as *;
 
 // the active element of the toolbar: the accent of the drawing tools on a
-// branch, the blue of the review inside a design review
+// branch, the blue of the review inside a branch review
 .trigger {
   --trigger-bg-color: var(--color-background-quaternary);
   --trigger-fg-color: var(--color-accent-primary);

@@ -85,8 +85,7 @@
     WHERE r.file_branch_id = ?
       AND NOT EXISTS (SELECT 1
                         FROM file_branch_merge AS fbm
-                       WHERE fbm.review_id = r.id)
-    RETURNING r.pinned_snapshot_id")
+                       WHERE fbm.review_id = r.id)")
 
 (defn- delete-unmerged-branch
   "Delete what belonged to a branch that no merge accepted, before its
@@ -106,15 +105,7 @@
   ;; first and the tasks are still found by their file afterwards
   (db/delete! conn :comment-thread {:file-id file-id} {::db/return-keys false})
   (db/delete! conn :file-task {:file-id file-id} {::db/return-keys false})
-  (doseq [{:keys [pinned-snapshot-id]} (db/exec! conn [sql:delete-unmerged-branch-reviews edge-id])]
-    ;; the pinned revision is a change row of the branch file, held for
-    ;; years while the review lives; it dies with the review, or it would
-    ;; keep the file row from being collected
-    (when (some? pinned-snapshot-id)
-      (fsnap/delete! cfg
-                     :id pinned-snapshot-id
-                     :file-id file-id
-                     :deleted-at deleted-at)))
+  (db/exec-one! conn [sql:delete-unmerged-branch-reviews edge-id])
   ;; the merge base is a change row of the source, pinned while the
   ;; branch is open; it dies with the branch, or the source file row
   ;; could not be collected either

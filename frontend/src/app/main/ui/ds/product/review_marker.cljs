@@ -22,7 +22,7 @@
    [:aria-label :string]])
 
 (mf/defc review-marker*
-  "The mark a design review leaves on the canvas. A comment is a round
+  "The mark a branch review leaves on the canvas. A comment is a round
   mark with its number; a task, a square one with the task icon. Active
   is the one open now, resolved a comment already settled (it shows a
   tick instead of its number), lost a mark whose layer was deleted and

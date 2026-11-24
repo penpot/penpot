@@ -22,8 +22,8 @@
    [app.main.ui.workspace.compare.common :as cc]
    [app.main.ui.workspace.review.panel :refer [thread-card*]]
    [app.main.ui.workspace.review.tasks :refer [task-list*]]
-   [app.main.ui.workspace.sidebar.branch-review.common :as brc]
-   [app.main.ui.workspace.sidebar.branch-review.detail :as brd]
+   [app.main.ui.workspace.sidebar.branch-compare.common :as brc]
+   [app.main.ui.workspace.sidebar.branch-compare.detail :as brd]
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
@@ -139,7 +139,7 @@
 (mf/defc compare-detail*
   []
   (let [comparison (cc/use-comparison)
-        preview    (mf/deref refs/pull-request-preview)
+        preview    (mf/deref refs/branch-review-preview)
         review?    (some? preview)
         {:keys [item phase status]} comparison]
     (cond

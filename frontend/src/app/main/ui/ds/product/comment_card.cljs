@@ -33,7 +33,7 @@
 (mf/defc comment-card*
   "One comment of a list: where it is, who wrote it and when (`avatar`, an
   avatar), its text (`children`), and its replies beside what it points at
-  (`anchor`, a chip). The whole card opens it. `review` names the design review
+  (`anchor`, a chip). The whole card opens it. `review` names the branch review
   it belongs to, and `is-review` outlines it open in the review colour."
   {::mf/schema schema:comment-card}
   [{:keys [class location author time replies avatar anchor review is-review is-open is-resolved
