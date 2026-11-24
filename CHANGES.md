@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2.19.5
+
+### :bug: Bugs fixed
+
+- Revert [#13165](https://github.com/penpot/penpot/issues/13165), because it causes more regression, the issue is already correctly fixed on the upcoming 2.20.0
+
 ## 2.19.4
 
 ### :bug: Bugs fixed
