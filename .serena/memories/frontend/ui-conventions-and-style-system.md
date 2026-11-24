@@ -26,9 +26,7 @@
 ## I18n
 
 - Translations must be resolved during render or render-time memoization, not at namespace load time. For static option lists, memoize inside render so locale changes still update labels.
-- Translation files live in `frontend/translations/*.po`. Translation changes are bundled into `index.html`; refresh the browser after changing translations because there is no hot reload for translation strings.
-- Run `pnpm run translations` from `frontend/` after adding/updating translation text.
-- Adding a new supported locale requires updates in both `frontend/src/app/util/i18n.cljs` (`supported-locales`) and `frontend/scripts/_helpers.js` (`langs`).
+- For catalog edits, locale registration and generated translation assets see `mem:frontend/translations`.
 
 ## Performance
 

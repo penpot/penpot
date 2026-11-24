@@ -1,6 +1,8 @@
 # Frontend translations
 
 - `frontend/translations/en.po` defines the keys and English text; `es.po` is a support reference, not the base. Add new keys to both in the same change. Locale conventions: `mem:frontend/translations/ca` and `mem:frontend/translations/ru`.
+- Adding a supported locale requires updating both `frontend/src/app/util/i18n.cljs` (`supported-locales`) and `frontend/scripts/_helpers.js` (`langs`).
+- `compileTranslations` generates `resources/public/js/translation.<locale>.js` modules from PO files. The app asset build generates them and the asset watcher regenerates them on translation changes; regeneration does not itself guarantee that the browser reloads an already imported module. Refresh the browser when checking changed text. `pnpm run translations` without a subcommand only shows the toolkit help.
 
 ## Keys and catalog sync
 
