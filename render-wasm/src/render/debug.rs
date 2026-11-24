@@ -57,26 +57,17 @@ pub fn render_wasm_label(render_state: &mut RenderState) {
     let mut paint = skia::Paint::default();
     paint.set_color(skia::Color::GRAY);
 
-    let mut str = if render_state.options.is_debug_visible() {
+    let str = if render_state.options.is_debug_visible() {
         "WebGL rendering (debug)"
     } else {
         "WebGL rendering"
     };
     let dpr = render_state.options.dpr;
-    let (scalar, _) = get_resources().fonts.debug_font().measure_str(str, None);
-    let mut p = skia::Point::new(canvas_width - (20.0 * dpr) - scalar, 50.0 * dpr);
-
     let debug_font = get_resources().fonts.debug_font();
+    let (scalar, _) = debug_font.measure_str(str, None);
+    let p = skia::Point::new(canvas_width - (20.0 * dpr) - scalar, 50.0 * dpr);
+
     canvas.draw_str(str, p, debug_font, &paint);
-
-    if render_state.options.is_text_editor_v3() {
-        str = "Text Editor v3";
-
-        let (scalar, _) = get_resources().fonts.debug_font().measure_str(str, None);
-        p.x = canvas_width - (20.0 * dpr) - scalar;
-        p.y += 15.0 * dpr;
-        canvas.draw_str(str, p, debug_font, &paint);
-    }
 }
 
 pub fn render_debug_tiles_for_viewbox(render_state: &mut RenderState) {
