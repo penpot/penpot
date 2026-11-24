@@ -29,8 +29,7 @@ Model, schema, and persistence shape:
 - For organization and team permission rules shared across runtimes, start at `app.common.types.organization`.
 
 Geometry and layout:
-- Shape geometry invariants, redundant geometry fields, and geometry-sensitive tests: `mem:common/geometry-invariants`.
-- Coordinate drift and approximate float comparisons: `mem:common/decimals-and-coordinates`.
+- Shape geometry invariants, coordinate drift and approximate comparisons: `mem:common/geometry`.
 - Layout/grid assignment, deassignment, metadata cleanup, and auto-positioning: `mem:common/layout-grid-subtleties`.
 
 Change pipeline, validation, and migrations:
