@@ -4,8 +4,8 @@ Start at `app.main.ui` for Rumext components, `app.main.data` for Potok events, 
 
 ## UI and integration
 
-- CLJS components, Design System, SCSS modules, accessibility and render cost: `mem:frontend/ui-conventions-and-style-system`.
-- JS/TS packages, shared React UI, Storybook and text editor boundaries: `mem:frontend/ui-packages-text-editor-workflow`.
+- CLJS app components, accessibility and Design System: `mem:frontend/ui-cljs`. SCSS modules and Design System tokens: `mem:frontend/ui-styles`.
+- Shared `frontend/packages/ui` React library and Storybook: `mem:frontend/ui-package`. JS text editor and render-wasm artifacts: `mem:frontend/text-editor`.
 - PO files and locale conventions: `mem:frontend/translations`.
 - JS Plugin API bindings and proxies: `mem:frontend/plugin-api-to-cljs-binding`; plugin save waits and rollback events: `mem:frontend/plugin-save-events`. External SaaS hooks and script load order: `mem:frontend/host-integration`.
 
