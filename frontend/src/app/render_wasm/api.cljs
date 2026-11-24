@@ -1859,6 +1859,32 @@
          (rx/take 1)
          (rx/ignore))))
 
+;; Longest wait for the fonts of a page before revealing it, as the block
+;; period of CSS `font-display: block`: past it, its texts show in the
+;; fallback faces until the fonts arrive.
+(def ^:private ^:const FONT_REVEAL_TIMEOUT_MS 3000)
+
+(defn- when-faces-ready
+  "Calls `on-ready` once the faces `text-font-state` waits on are stored or
+  have failed, after relayouting and rendering the texts that use them, or
+  after `FONT_REVEAL_TIMEOUT_MS`. Right away when no face is pending. A
+  page transition begun meanwhile drops the call: its page is gone."
+  [shapes text-font-state on-ready]
+  (let [pending-faces (:pending-faces text-font-state)
+        epoch         @transition-epoch*]
+    (if (empty? pending-faces)
+      (on-ready)
+      (->> (rx/race (rx/concat (await-pending-faces pending-faces) (rx/of :faces))
+                    (rx/map (constantly :timeout) (rx/timer FONT_REVEAL_TIMEOUT_MS)))
+           (rx/take 1)
+           (rx/subs!
+            (fn [result]
+              (when (= epoch @transition-epoch*)
+                (when (and (= :faces result) (wasm/live?))
+                  (relayout-after-fonts! shapes text-font-state)
+                  (request-render "faces-ready"))
+                (on-ready))))))))
+
 (defn process-pending
   [shapes thumbnails full text-font-state on-complete]
   (let [pending-thumbnails
@@ -1985,8 +2011,11 @@
                    (do
                      (perf/end-measure "set-objects")
 
-                     ;; Notify that shapes are loaded and tiles rebuilt
-                     (when on-shapes-ready (on-shapes-ready))
+                     ;; Notify that shapes are loaded and tiles rebuilt, once
+                     ;; their fonts are: a text revealed before its font
+                     ;; shows missing glyphs.
+                     (when on-shapes-ready
+                       (when-faces-ready shapes text-font-state-acc on-shapes-ready))
                      (if-not (wasm/live?)
                        (do
                          (end-shapes-loading!)
@@ -2113,7 +2142,8 @@
              :full (persistent! full-acc)
              :text-font-state font-state-acc}))]
     (perf/end-measure "set-objects")
-    (when on-shapes-ready (on-shapes-ready))
+    (when on-shapes-ready
+      (when-faces-ready shapes text-font-state on-shapes-ready))
     (when (wasm/live?)
       ;; Rebuild the tile index so _render knows which shapes
       ;; map to which tiles after a page switch.
@@ -2162,10 +2192,10 @@
    Shapes are processed in tree order (parents before children)
    to maintain proper shape reference consistency in WASM.
 
-   on-shapes-ready is an optional callback invoked right after shapes are
-   loaded into WASM (and tiles rebuilt for async). It fires before image
-   loading begins, allowing callers to reveal the page content during
-   transitions."
+   on-shapes-ready is an optional callback invoked once shapes are loaded
+   into WASM (and tiles rebuilt for async) and the fonts of their texts are
+   stored, or `FONT_REVEAL_TIMEOUT_MS` passed. It does not wait for images,
+   allowing callers to reveal the page content during transitions."
   ([objects]
    (set-objects objects nil nil false))
   ([objects render-callback]

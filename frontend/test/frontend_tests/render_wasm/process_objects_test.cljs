@@ -129,6 +129,34 @@
     (rx/push! wasm.fonts/font-stored-stream face)
     (await (async/wait-for #(deref completed) "storing the face completes the wait"))))
 
+(t/deftest shapes-without-pending-faces-are-ready-at-once
+  (let [ready (atom false)]
+    (@#'wasm.api/when-faces-ready [] {:pending-faces #{}} #(reset! ready true))
+    (t/is (true? @ready))))
+
+(t/deftest ^:async shapes-are-ready-once-their-pending-faces-are-stored
+  "A page is revealed once the fonts of its texts are in WASM: revealed
+  before, its texts show missing glyphs."
+  (let [face  "reveal-face-key"
+        ready (atom false)]
+    (@#'wasm.api/when-faces-ready [] {:font-index {face #{}} :pending-faces #{face}}
+                                  #(reset! ready true))
+    (await (async/settle))
+    (t/is (not @ready) "the reveal waits for the pending face")
+    (rx/push! wasm.fonts/font-stored-stream face)
+    (await (async/wait-for #(deref ready) "storing the face reveals the page"))))
+
+(t/deftest ^:async a-page-transition-drops-the-reveal-of-the-previous-page
+  (let [face  "dropped-face-key"
+        ready (atom false)]
+    (@#'wasm.api/when-faces-ready [] {:font-index {face #{}} :pending-faces #{face}}
+                                  #(reset! ready true))
+    (wasm.api/begin-page-transition!)
+    (reset! wasm.api/page-transition? false)
+    (rx/push! wasm.fonts/font-stored-stream face)
+    (await (async/settle))
+    (t/is (not @ready) "the faces of a page left behind reveal nothing")))
+
 (t/deftest empty-grid-tracks-do-not-allocate-zero-bytes
   (let [calls  (atom [])
         ;; `h/call` is a macro that resolves the wasm function off the module
