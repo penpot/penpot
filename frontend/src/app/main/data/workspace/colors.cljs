@@ -872,7 +872,11 @@
     ptk/WatchEvent
     (watch [_ state _]
       (when-let [color (some-> state :colorpicker get-color-from-colorpicker-state)]
-        (on-change color)))))
+        ;; A gradient without stops or coordinates is not a valid color;
+        ;; applying it would send an invalid shape to the backend.
+        (when (or (nil? (:gradient color))
+                  (clr/valid-color? color))
+          (on-change color))))))
 
 (defn initialize-colorpicker
   [on-change tab]
@@ -942,7 +946,11 @@
                             (assoc :current-color (split-color-components (dissoc data :gradient))))
                           (dissoc :editing-stop)
                           (dissoc :gradient)
-                          (dissoc :stops))))))))))
+                          (dissoc :stops)
+                          ;; The color is no longer a gradient (e.g. after an
+                          ;; undo), so leave the gradient tab too.
+                          (cond-> (contains? #{:linear-gradient :radial-gradient} (:type state))
+                            (assoc :type (if (:image data) :image :color))))))))))))
 
 (defn update-colorpicker-gradient-opacity
   [opacity]
