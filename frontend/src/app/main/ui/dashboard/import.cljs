@@ -13,7 +13,6 @@
    [app.common.logging :as log]
    [app.main.data.dashboard :as dd]
    [app.main.data.event :as ev]
-   [app.main.data.imports :as imports]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
    [app.main.repo :as rp]
@@ -51,8 +50,7 @@
      (let [entries (->> entries
                         (mapv (fn [file]
                                 {:name (.-name file)
-                                 :uri  (wapi/create-uri file)
-                                 :blob file}))
+                                 :uri  (wapi/create-uri file)}))
                         (not-empty))]
        (when entries
          (st/emit! (modal/show
@@ -89,25 +87,13 @@
             (assoc :deleted true)))
         entries))
 
-(defn- blobs-by-uri
-  [entries]
-  (into {}
-        (keep (fn [{:keys [uri blob]}]
-                (when (and uri blob) [uri blob])))
-        entries))
-
 (defn- update-with-analyze-result
   [entries {:keys [file-id status] :as updated}]
-  ;; Analyze replies have no :blob (transit); copy it back by :uri.
-  (let [blobs   (blobs-by-uri entries)
-        entries (filterv (comp uuid? :file-id) entries)
+  (let [entries (filterv (comp uuid? :file-id) entries)
         status  (case status
                   :success :import-ready
                   :error :analyze-error)
-        updated (-> updated
-                    (assoc :status status)
-                    (cond-> (contains? blobs (:uri updated))
-                      (assoc :blob (get blobs (:uri updated)))))]
+        updated (assoc updated :status status)]
     (if (some #(= file-id (:file-id %)) entries)
       (mapv (fn [entry]
               (if (= (:file-id entry) file-id)
@@ -194,11 +180,10 @@
 
 (defn- analyze-entries
   [state entries]
-  (let [features (get @st/state :features)
-        files    (mapv #(dissoc % :blob) entries)]
+  (let [features (get @st/state :features)]
     (->> (mw/ask-many!
           {:cmd :analyze-import
-           :files files
+           :files entries
            :features features})
          (rx/mapcat #(rx/delay emit-delay (rx/of %)))
          (rx/filter some?)
@@ -214,17 +199,21 @@
   (st/emit! (ev/event {::ev/name "import-files"
                        :num-files (count entries)}))
 
-  (->> (imports/import-files {:project-id project-id
-                              :files entries})
-       (rx/filter some?)
-       (rx/subs!
-        (fn [message]
-          ;; Capture library-resolution data if present (same for all
-          ;; entries from the same zip, so first one wins)
-          (if-let [resolution  (-> (:libraries-resolution message)
-                                   (not-empty))]
-            (reset! library-resolution-data* resolution)
-            (swap! state update-entry-status message))))))
+  (let [features (get @st/state :features)]
+    (->> (mw/ask-many!
+          {:cmd :import-files
+           :project-id project-id
+           :files entries
+           :features features})
+         (rx/filter some?)
+         (rx/subs!
+          (fn [message]
+            ;; Capture library-resolution data if present (same for all
+            ;; entries from the same zip, so first one wins)
+            (if-let [resolution  (-> (:libraries-resolution message)
+                                     (not-empty))]
+              (reset! library-resolution-data* resolution)
+              (swap! state update-entry-status message)))))))
 
 (mf/defc import-entry*
   {::mf/memo true
