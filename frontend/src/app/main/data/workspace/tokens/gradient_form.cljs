@@ -19,13 +19,13 @@
    [app.common.data :as d]
    [app.common.math :as mth]
    [app.common.types.color :as cc]
-   [app.common.types.tokens-lib :as ctob]
    [app.main.data.tinycolor :as tinycolor]
    [app.main.data.workspace.tokens.format :as dwtf]
    [app.main.data.workspace.tokens.gradient :as wtg]
    [app.util.i18n :refer [tr]]
    [clojure.walk :as walk]
    [cuerdas.core :as str]
+   [tokenscript.document.dtcg :as tsd]
    [tokenscript.importers.css :as tsi]))
 
 (def gradient-kinds #{"linear" "radial"})
@@ -79,7 +79,7 @@
   or a percentage (`50%`). Nil for a reference, an expression or a
   position out of range."
   [position]
-  (let [offset (ctob/gradient-position->offset (str position))]
+  (let [offset (tsd/gradient-offset position)]
     (when (and (some? offset) (<= 0 offset 1))
       offset)))
 

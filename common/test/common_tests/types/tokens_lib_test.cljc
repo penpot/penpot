@@ -1976,13 +1976,13 @@
         exported     (ctob/export-dtcg-json original-lib)
         imported-lib (ctob/parse-decoded-json exported "")]
 
-    (t/testing "export writes the gradient type, string keys and numbers"
+    (t/testing "export writes the gradient type, string keys and the values as given"
       (let [token (get-in exported ["test-set" "gradient" "brand"])]
         (t/is (= "gradient" (get token "$type")))
         (t/is (= {"kind" "linear"
-                  "angle" 45
-                  "stops" [{"color" "{color.brand}" "position" 0}
-                           {"color" "rgba(0, 0, 255, 0.5)" "position" 1}]}
+                  "angle" "45"
+                  "stops" [{"color" "{color.brand}" "position" "0"}
+                           {"color" "rgba(0, 0, 255, 0.5)" "position" "1"}]}
                  (get token "$value")))
         (t/is (= "{gradient.brand}"
                  (get-in exported ["test-set" "gradient" "ref" "$value"])))
@@ -2001,23 +2001,7 @@
         (t/is (= :gradient (:type imported)))
         (t/is (= css-gradient (:value imported)))))))
 
-(t/deftest gradient-position->offset-test
-  (t/testing "a fraction is kept, a percentage becomes a fraction"
-    (t/is (= 0.5 (ctob/gradient-position->offset "0.5")))
-    (t/is (= 0.5 (ctob/gradient-position->offset "50%")))
-    (t/is (= 0.6667 (ctob/gradient-position->offset " 66.67 % ")))
-    (t/is (== 1 (ctob/gradient-position->offset "1"))))
-
-  (t/testing "the range is left to the gradient type"
-    (t/is (== 1.5 (ctob/gradient-position->offset "150%"))))
-
-  (t/testing "references, expressions and other values are no position"
-    (t/is (nil? (ctob/gradient-position->offset "{stop.mid}")))
-    (t/is (nil? (ctob/gradient-position->offset "25% + 25%")))
-    (t/is (nil? (ctob/gradient-position->offset "")))
-    (t/is (nil? (ctob/gradient-position->offset nil)))))
-
-(t/deftest gradient-token-export-of-form-values
+(t/deftest gradient-token-dtcg-export-of-form-values
   (let [gradient     {:kind "linear"
                       :angle "45deg"
                       :stops [{:color "#ff0000" :position "0%"}
@@ -2034,22 +2018,18 @@
                                      {:name "gradient.form"
                                       :type :gradient
                                       :value gradient})})))
-        exported     (ctob/export-dtcg-json original-lib)
+        exported     (ctob/export-dtcg-json original-lib (ctos/make-tokens-status) {:profile :dtcg})
         imported-lib (ctob/parse-decoded-json exported "")]
 
-    (t/testing "a percentage is written as a fraction, other values as they are"
-      (t/is (= {"kind" "linear"
-                "angle" "45deg"
-                "stops" [{"color" "#ff0000" "position" 0}
-                         {"color" "#00ff00" "position" 0.125}
-                         {"color" "#ffff00" "position" 0.101}
-                         {"color" "#00ffff" "position" 0.6667}
-                         {"color" "#0000ff" "position" "{position.end}"}]}
-               (get-in exported ["test-set" "gradient" "form" "$value"]))))
+    (t/testing "the angle in degrees is a number, a percentage a fraction, a reference kept"
+      (let [value (get-in exported ["test-set" "gradient" "form" "$value"])]
+        (t/is (= 45 (get value "angle")))
+        (t/is (= [0 0.125 0.101 0.6667 "{position.end}"]
+                 (map #(get % "position") (get value "stops"))))))
 
     (t/testing "the imported gradient has the same stops"
       (t/is (= {:kind "linear"
-                :angle "45deg"
+                :angle "45"
                 :stops [{:color "#ff0000" :position "0"}
                         {:color "#00ff00" :position "0.125"}
                         {:color "#ffff00" :position "0.101"}
