@@ -1406,11 +1406,13 @@ fn latin_readings_share_one_baseline_whatever_their_letters() {
 
 #[test]
 fn emphasis_position_overrides_the_language_and_stacks_on_its_own_side() {
+    // The rect ends at the em box bottom, so plain and stacked marks under
+    // the base share an anchor and differ by the reading only.
     let placement = super::emphasis::HorizontalEmphasisPlacement {
         span: 0,
         range: 0..1,
         mark: '•',
-        rect: skia::Rect::from_xywh(0.0, 20.0, 20.0, 20.0),
+        rect: skia::Rect::from_xywh(0.0, 20.0, 20.0, 16.0),
         em_top: 20.0,
     };
     for (language, position, under) in [
@@ -1552,7 +1554,33 @@ fn chinese_horizontal_emphasis_defaults_below_the_base() {
     };
     let ink = skia::Rect::from_wh(8.0, 8.0);
     let mark = super::emphasis::horizontal_emphasis_mark_box(&span, &placement, &ink);
-    assert!(mark.top() >= placement.rect.bottom());
+    assert!(mark.top() >= placement.em_top + span.font_size);
+}
+
+#[test]
+fn chinese_horizontal_emphasis_attaches_to_the_em_box_not_the_tight_rect() {
+    // CJK faces have an hhea descent past the em box, so the tight rect of
+    // the base ends well below it. A mark attached to that rect, plus the
+    // line box of the mark font, landed on the glyphs of the next line.
+    let span = TextSpan {
+        language: "zh-Hans-CN".to_string(),
+        layout_policy: TextLayoutPolicy::for_language("zh-Hans-CN", Default::default()),
+        text_emphasis: TextEmphasis::FilledDot,
+        ..make_span("中文", 0.0)
+    };
+    let placement = super::emphasis::HorizontalEmphasisPlacement {
+        span: 0,
+        range: 0..1,
+        mark: '•',
+        rect: skia::Rect::from_xywh(0.0, 18.0, 16.0, 28.0),
+        em_top: 22.0,
+    };
+    let ink = skia::Rect::from_wh(8.0, 12.0);
+    let mark = super::emphasis::horizontal_emphasis_mark_box(&span, &placement, &ink);
+    let mark_size = span.font_size * EMPHASIS_FONT_SCALE;
+    let em_bottom = placement.em_top + span.font_size;
+    assert!((mark.center_y() - (em_bottom + mark_size / 2.0)).abs() < 0.01);
+    assert!(mark.center_y() < placement.rect.bottom());
 }
 
 #[test]
@@ -2525,7 +2553,10 @@ fn horizontal_emphasis_mark_box_is_the_painted_mark_on_either_side() {
         if position == TextEmphasisPosition::OverRight {
             assert_eq!(mark_box.bottom(), placement.em_top - offset);
         } else {
-            assert_eq!(mark_box.top(), placement.rect.bottom() + offset);
+            let mark_size = span.font_size * EMPHASIS_FONT_SCALE;
+            let em_bottom = placement.em_top + span.font_size;
+            assert_eq!(offset, 0.0);
+            assert!((mark_box.center_y() - (em_bottom + mark_size / 2.0)).abs() < 0.01);
         }
 
         let (x, y) = (20.0, 60.0);

@@ -8,8 +8,10 @@ use unicode_segmentation::UnicodeSegmentation;
 use skia_safe::{textlayout::TypefaceFontProvider, FontMgr, Typeface};
 
 use crate::render::FallbackFonts;
+use crate::shapes::cjk_chars::COMMAS_AND_FULL_STOPS;
 use crate::shapes::jlreq::{classify, JlreqClass};
 use crate::shapes::jlreq::{forbidden_at_line_end, forbidden_at_line_start};
+use crate::shapes::text_policy::{ChineseRegion, TextLayoutPolicy};
 use crate::shapes::text_warichu::{warichu_split_chars, WARICHU_FONT_SCALE};
 use crate::shapes::{FontFeatures, TextCombineUpright, TextSpan};
 
@@ -60,12 +62,65 @@ fn centered_flow_shift(ink_top: f32, ink_bottom: f32, em_body: f32) -> f32 {
     em_body / 2.0 - (ink_top + ink_bottom) / 2.0
 }
 
-/// A single-glyph cluster whose font has no vertical alternate for it: the
-/// shaped glyph is still the horizontal one.
+/// True for a single-glyph cluster whose font has no vertical alternate for
+/// it: the shaped glyph is still the horizontal one.
+fn keeps_horizontal_glyph(run: &ShapedRun, glyph: usize, count: usize, ch: char) -> bool {
+    count == 1 && run.glyphs[glyph] == run.font.unichar_to_glyph(ch as i32)
+}
+
+/// A horizontal glyph that turns on its side for lack of a vertical form.
 fn needs_rotated_vertical_fallback(run: &ShapedRun, glyph: usize, count: usize, ch: char) -> bool {
-    count == 1
-        && uses_rotated_vertical_fallback(ch)
-        && run.glyphs[glyph] == run.font.unichar_to_glyph(ch as i32)
+    uses_rotated_vertical_fallback(ch) && keeps_horizontal_glyph(run, glyph, count, ch)
+}
+
+/// Where vertical Chinese text sets a full-width comma, full stop, colon or
+/// semicolon (CLREQ): in the centre of the em box in Taiwan and Hong Kong,
+/// and the top-right corner in mainland China and without a region. Colons
+/// and semicolons are centred everywhere. The layout places these itself:
+/// fonts set them in the convention of their own region, and a Traditional
+/// Chinese face has no vertical forms for them, its plain glyph being
+/// already centred, so turning it on its side was wrong.
+#[derive(Debug, Clone, Copy, PartialEq)]
+enum StopPlacement {
+    Centre,
+    Corner,
+}
+
+fn chinese_stop_placement(policy: TextLayoutPolicy, c: char) -> Option<StopPlacement> {
+    let TextLayoutPolicy::Chinese(region) = policy else {
+        return None;
+    };
+    if "：；".contains(c) {
+        Some(StopPlacement::Centre)
+    } else if COMMAS_AND_FULL_STOPS.contains(c) {
+        Some(match region {
+            ChineseRegion::Taiwan | ChineseRegion::HongKong => StopPlacement::Centre,
+            ChineseRegion::Mainland | ChineseRegion::Basic => StopPlacement::Corner,
+        })
+    } else {
+        None
+    }
+}
+
+/// Draw shifts (across the column, along it) that move the ink of a stop to
+/// its `placement` in an em box `cross_em` wide and `flow_em` tall. The ink
+/// centre is `ink_center`, measured from the column centre and the cell
+/// top. A corner stop whose font has a vertical form (`font_vertical`)
+/// stays where the font puts it; else its ink centres in the top-right
+/// quarter of the box.
+fn stop_shifts(
+    placement: StopPlacement,
+    font_vertical: bool,
+    ink_center: (f32, f32),
+    cross_em: f32,
+    flow_em: f32,
+) -> Option<(f32, f32)> {
+    let (cross, flow) = ink_center;
+    match placement {
+        StopPlacement::Centre => Some((-cross, flow_em / 2.0 - flow)),
+        StopPlacement::Corner if font_vertical => None,
+        StopPlacement::Corner => Some((cross_em / 4.0 - cross, flow_em / 4.0 - flow)),
+    }
 }
 
 fn is_tcy_digit(c: char) -> bool {
@@ -223,6 +278,7 @@ impl<'a> SpanCells<'a> {
             decoration: self.span.text_decoration,
             underline_side: self.span.text_underline_position.side(),
             glyph_flow_shift: 0.0,
+            glyph_cross_shift: 0.0,
         }
     }
 
@@ -388,9 +444,11 @@ impl<'a> SpanCells<'a> {
             let (vpal_advance, vpal_flow_shift) = vpal_delta.unwrap_or((0.0, 0.0));
             let extent = vertical_advance + vpal_advance + letter_spacing;
 
-            let synthetic_rotation =
-                ch.is_some_and(|ch| needs_rotated_vertical_fallback(run, glyph, count, ch));
-            let ink = run.cluster_ink_bounds(glyph, count).map(|ink| {
+            let placement = ch.and_then(|c| chinese_stop_placement(self.span.layout_policy, c));
+            let synthetic_rotation = placement.is_none()
+                && ch.is_some_and(|ch| needs_rotated_vertical_fallback(run, glyph, count, ch));
+            let ink_rect = run.cluster_ink_bounds(glyph, count);
+            let ink = ink_rect.map(|ink| {
                 if synthetic_rotation {
                     (ink.left, ink.right)
                 } else {
@@ -405,7 +463,28 @@ impl<'a> SpanCells<'a> {
             // unless vpal already centres it. Western glyphs hung from a
             // shared baseline leave uneven gaps: a descender meets the next
             // cell's ascender (`gf`) while x-height letters float apart.
-            let glyph_flow_shift = if !synthetic_rotation
+            let stop = placement
+                .zip(ink_rect)
+                .zip(ch)
+                .and_then(|((placement, rect), c)| {
+                    let ink_center = (
+                        (rect.left + rect.right) / 2.0 - h_advance / 2.0,
+                        (ink_top + ink_bottom) / 2.0,
+                    );
+                    let font_vertical = !keeps_horizontal_glyph(run, glyph, count, c);
+                    stop_shifts(
+                        placement,
+                        font_vertical,
+                        ink_center,
+                        font_size,
+                        extent - letter_spacing,
+                    )
+                });
+            let (glyph_flow_shift, glyph_cross_shift) = if let Some((cross, flow)) = stop {
+                ink_top += flow;
+                ink_bottom += flow;
+                (vpal_flow_shift + flow, cross)
+            } else if !synthetic_rotation
                 && vpal_delta.is_none()
                 && ink.is_some()
                 && ch.is_some_and(|c| is_centered_punctuation(c) || !is_upright_char(c))
@@ -413,9 +492,9 @@ impl<'a> SpanCells<'a> {
                 let shift = centered_flow_shift(ink_top, ink_bottom, extent - letter_spacing);
                 ink_top += shift;
                 ink_bottom += shift;
-                shift
+                (shift, 0.0)
             } else {
-                vpal_flow_shift
+                (vpal_flow_shift, 0.0)
             };
 
             let kind = if synthetic_rotation {
@@ -439,6 +518,7 @@ impl<'a> SpanCells<'a> {
                 ink_top,
                 ink_bottom,
                 glyph_flow_shift,
+                glyph_cross_shift,
                 ..self.cell(kind, start, end, extent)
             };
             cells.push(FlowCell::new(cell, ch, FlowScript::Upright, letter_spacing));
@@ -1272,6 +1352,93 @@ mod tests {
     // vertical alternates of 、。「」 halve their vertical advances (「 also
     // lifts its ink by 481 units) and the あ/く alternates tighten by
     // 58/60 units with small placement lifts.
+
+    /// Ink centre of an upright cell as painted: across from the column
+    /// centre, along from the cell top.
+    fn painted_ink_centre(
+        layout: &super::super::layout::VerticalLayout,
+        index: usize,
+    ) -> (f32, f32) {
+        let cell = &layout.cells[index];
+        let CellKind::Upright { run, glyph, count } = cell.kind else {
+            panic!("expected an upright cell, got {:?}", cell.kind);
+        };
+        let rect = layout.runs[run]
+            .cluster_ink_bounds(glyph, count)
+            .expect("ink");
+        (
+            (rect.left + rect.right) / 2.0 - cell.h_advance / 2.0 + cell.glyph_cross_shift,
+            (cell.ink_top + cell.ink_bottom) / 2.0,
+        )
+    }
+
+    fn chinese_layout(
+        font: &[u8],
+        text: &str,
+        language: &str,
+    ) -> super::super::layout::VerticalLayout {
+        let mut content = vpal_content(text, FontFeatures::None);
+        content.paragraphs_mut()[0].set_language(language.to_string());
+        layout_with(&provider(font), &content)
+    }
+
+    #[test]
+    fn traditional_chinese_centres_commas_and_stops_whatever_the_font() {
+        // The face's vertical 、 sits in the top-right corner, as in Japanese.
+        for language in ["zh-Hant-TW", "zh-Hant-HK"] {
+            let layout = chinese_layout(VPAL_TEST_FONT, "あ、あ", language);
+            let (cross, flow) = painted_ink_centre(&layout, 1);
+            let em = layout.cells[1].extent;
+            assert!(
+                cross.abs() < 0.01,
+                "{language}: centred across, got {cross}"
+            );
+            assert!(
+                (flow - em / 2.0).abs() < 0.01,
+                "{language}: centred along, got {flow}"
+            );
+        }
+    }
+
+    #[test]
+    fn mainland_chinese_keeps_the_vertical_form_of_the_font() {
+        let layout = chinese_layout(VPAL_TEST_FONT, "あ、あ", "zh-Hans-CN");
+        assert!(matches!(layout.cells[1].kind, CellKind::Upright { .. }));
+        assert_eq!(layout.cells[1].glyph_cross_shift, 0.0);
+        let (cross, flow) = painted_ink_centre(&layout, 1);
+        assert!(
+            cross > 0.0 && flow < layout.cells[1].extent / 2.0,
+            "top-right corner"
+        );
+    }
+
+    #[test]
+    fn chinese_comma_without_a_vertical_form_stays_upright_in_its_corner() {
+        // Without a `vert` form the comma kept its horizontal glyph and
+        // turned on its side; a Traditional face centres that glyph.
+        let japanese = chinese_layout(TEST_FONT, "，", "ja");
+        assert!(matches!(
+            japanese.cells[0].kind,
+            CellKind::SyntheticRotated { .. }
+        ));
+
+        let mainland = chinese_layout(TEST_FONT, "，", "zh-Hans-CN");
+        let (cross, flow) = painted_ink_centre(&mainland, 0);
+        assert!(
+            (cross - EM / 4.0).abs() < 0.01,
+            "right quarter, got {cross}"
+        );
+        assert!(
+            (flow - mainland.cells[0].extent / 4.0).abs() < 0.01,
+            "top quarter, got {flow}"
+        );
+
+        let taiwan = chinese_layout(TEST_FONT, "，；", "zh-Hant-TW");
+        for index in 0..2 {
+            let (cross, flow) = painted_ink_centre(&taiwan, index);
+            assert!(cross.abs() < 0.01 && (flow - taiwan.cells[index].extent / 2.0).abs() < 0.01);
+        }
+    }
 
     #[test]
     fn native_vertical_alternates_are_not_synthetically_rotated() {

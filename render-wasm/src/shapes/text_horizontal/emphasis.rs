@@ -118,6 +118,13 @@ impl HorizontalEmphasisMark {
 /// Box of a horizontal emphasis mark whose ink is `ink`, in the laid-out
 /// paragraph: centred beside its base character on the selected side,
 /// outside stacked annotations. This is exactly where the mark paints.
+///
+/// A mark under its base with nothing in between centres in the mark-sized
+/// box below the base em box, as CSS places `text-emphasis`. The tight
+/// rect reaches past the em box by the hhea descent of CJK faces, and
+/// `ink` spans the whole line box of the mark font: attaching one to the
+/// other put marks on the next line. Under readings and underlines attach
+/// to the tight rect, so a mark stacked outside them does too.
 pub(crate) fn horizontal_emphasis_mark_box(
     span: &TextSpan,
     placement: &HorizontalEmphasisPlacement,
@@ -126,8 +133,11 @@ pub(crate) fn horizontal_emphasis_mark_box(
     let offset = span.emphasis_outside_offset(false);
     let top = if span.emphasis_side(false) == AnnotationSide::Over {
         placement.em_top - offset - ink.height()
-    } else {
+    } else if offset > 0.0 {
         placement.rect.bottom() + offset
+    } else {
+        let mark_size = span.font_size * EMPHASIS_FONT_SCALE;
+        placement.em_top + span.font_size + (mark_size - ink.height()) / 2.0
     };
     skia::Rect::from_xywh(
         placement.rect.center_x() - ink.width() / 2.0,

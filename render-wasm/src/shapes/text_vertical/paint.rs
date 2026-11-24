@@ -135,7 +135,10 @@ fn cell_draws(layout: &VerticalLayout, cell: &VerticalCell, origin: (f32, f32)) 
             let baseline =
                 y_top + cell.glyph_flow_shift + upright_baseline(&run.font, cell.font_size);
             run.cluster_blob(glyph, count)
-                .map(|blob| GlyphDraw::at(blob, (x_center - cell.h_advance / 2.0, baseline)))
+                .map(|blob| {
+                    let left = x_center - cell.h_advance / 2.0 + cell.glyph_cross_shift;
+                    GlyphDraw::at(blob, (left, baseline))
+                })
                 .into_iter()
                 .collect()
         }

@@ -103,6 +103,9 @@ pub struct VerticalCell {
     pub underline_side: AnnotationSide,
     /// Draw-only flow shift for half-width opening punctuation (jlreq aki).
     pub glyph_flow_shift: f32,
+    /// Draw-only shift across the column (+x) of an upright glyph, for the
+    /// Chinese commas and stops the layout places itself.
+    pub glyph_cross_shift: f32,
 }
 
 /// A laid-out column, x measured from the *content* left edge (the content
