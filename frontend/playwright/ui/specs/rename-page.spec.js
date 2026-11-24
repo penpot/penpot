@@ -55,14 +55,6 @@ async function setupWorkspace(workspacePage) {
     "workspace/update-file-create-rect.json",
   );
 
-  // The base WorkspacePage uses `this.pageName` (getByTestId("page-name")) as a
-  // readiness signal inside goToWorkspace. With 3 pages in the sidebar there are
-  // 3 matching elements, which violates Playwright's strict mode. Narrow the
-  // locator to the first occurrence so the internal readiness check can pass.
-  workspacePage.pageName = workspacePage.page
-    .getByTestId("page-name")
-    .first();
-
   await workspacePage.goToWorkspace({
     fileId: FILE_ID,
     pageId: PAGE1_ID,
