@@ -128,9 +128,8 @@
                                                               :name "theme-3"
                                                               :sets #{"set-c" "set-d"})))
           ;; Build a legacy tokens lib to test migration
-          tokens-lib (ctob/map->tokens-lib {:sets (.-sets base-lib)
-                                            :themes (.-themes base-lib)
-                                            :active-themes #{"/theme-1" "/theme-2"}})
+          tokens-lib (ctob/map->tokens-lib
+                      (assoc (datafy base-lib) :active-themes #{"/theme-1" "/theme-2"}))
 
           tokens-status (cfo/make-tokens-status-from-lib tokens-lib)]
 
@@ -151,9 +150,7 @@
   (t/testing "returns empty sets when no active themes"
     (let [base-lib     (ctob/make-tokens-lib)
           tokens-lib   (ctob/map->tokens-lib
-                        {:sets   (.-sets base-lib)
-                         :themes (.-themes base-lib)
-                         :active-themes #{}})
+                        (assoc (datafy base-lib) :active-themes #{}))
           status       (cfo/make-tokens-status-from-lib tokens-lib)]
       (t/is (= #{} (ctos/get-active-theme-ids status)))
       (t/is (= #{} (ctos/get-active-set-ids status))))))
