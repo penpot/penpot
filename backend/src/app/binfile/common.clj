@@ -418,7 +418,7 @@
 (defn get-branch-change-media-maps
   "The media id maps the branch's op log rows carry, in the stored (as
   applied) direction {old-id -> new-id}: the remap a save's media fix-up
-  or an update from main applied, one map per row, oldest first. A nil
+  or an update from the source applied, one map per row, oldest first. A nil
   element means the row carries no stamp: either it was written before
   the column existed, or it recorded the empty map explicitly."
   [{:keys [::db/conn] :as cfg} branch-file-id]
@@ -448,10 +448,10 @@
 
 (defn migrate-branch-base
   "The `:data` of a branch's merge-base snapshot at the current data
-  version. The snapshot keeps the version main had when the base was
-  taken, while `get-file` migrates main and the branch on every read, so
-  a three-way comparison sees one version on all three sides only when
-  the base migrates the same way, with main's libraries. A base already
+  version. The snapshot keeps the version the source had when the base
+  was taken, while `get-file` migrates the source and the branch on every
+  read, so a three-way comparison sees one version on all three sides
+  only when the base migrates the same way, with the source's libraries. A base already
   at the current version comes back as it is.
 
   `snapshot` is a snapshot row with its data decoded: `:file-id`,
@@ -504,7 +504,7 @@
 
   With `include-base-data?` true the returned file also carries the
   merge-base document under `::base-data`, migrated to the current data
-  version (`migrate-branch-base`), the version `get-file` brings main and
+  version (`migrate-branch-base`), the version `get-file` brings the source and
   the branch to. A caller that is about to compare the branch with its
   base reads the branch file with that flag and takes the value, and it
   never decodes the same snapshot a second time."
@@ -547,7 +547,7 @@
         base (fdata/resolve-file-data cfg base)
         base (fdata/decode-file-data cfg base)
         ;; the fragment ids the base names, read before the realize
-        ;; drops them: a comparison skips every page main still shares
+        ;; drops them: a comparison skips every page the source still shares
         base-ids (fdata/get-page-pointer-ids (:data base))
 
         ;; the base shares the source file's fragments; past this point
@@ -593,7 +593,7 @@
                (not decode?) (blob/encode))
 
         ;; the comparison's `base` is the merge base before the replay,
-        ;; at the version main and the branch are read at. The replay
+        ;; at the version the source and the branch are read at. The replay
         ;; returns the branch's own state in `data`, so a comparison
         ;; handed `data` as its base would compare the branch with
         ;; itself.
@@ -624,7 +624,7 @@
         (cond-> include-base-data?
           (assoc ::base-data base-data
                  ;; a migrated base no longer holds what its fragments
-                 ;; hold, so its ids say nothing about main
+                 ;; hold, so its ids say nothing about the source
                  ::base-page-pointers (when (identical? base-data (:data base))
                                         base-ids)))
         ;; the numbers travel with the value, because the RPC audit event

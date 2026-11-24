@@ -6,11 +6,11 @@
 
 (ns app.rpc.commands.files-branch
   "RPC commands for file branching: create a branch of a file linked to
-  its source file (\"main\"), list branches, diff a branch against main,
-  merge a branch into main (with conflict resolutions), and update a
-  branch from main. A branch is a file row with no data of its own: its
-  state is derived from a pinned base snapshot of main plus the branch's
-  op log (`app.binfile.common/branch-file-data`). See
+  its source file, list branches, diff a branch against its source,
+  merge a branch into its source (with conflict resolutions), and update
+  a branch from its source. A branch is a file row with no data of its
+  own: its state is derived from a pinned base snapshot of the source
+  plus the branch's op log (`app.binfile.common/branch-file-data`). See
   `app.rpc.commands.files-snapshot` for the patterns this namespace
   mirrors."
   (:require
@@ -187,12 +187,13 @@
 ;; --- Helpers: media pairing
 ;;
 ;; A branch copies no media at creation: the content it inherits from its
-;; base references main's file_media_object rows. Rows cross between the
-;; two files only as copies under FRESH ids (`copy-media-rows!`): an update
-;; from main copies the media main added into the branch, and a merge
-;; copies the media the branch added into main. So the same image can
-;; carry a different id on each side. Before diffing or merging, the
-;; branch-side media ids must be normalized back to the target's ids
+;; base references the source's file_media_object rows. Rows cross between
+;; the two files only as copies under FRESH ids (`copy-media-rows!`): an
+;; update from the source copies the media the source added into the
+;; branch, and a merge copies the media the branch added into the source.
+;; So the same image can carry a different id on each side. Before
+;; diffing or merging, the branch-side media ids must be normalized back
+;; to the target's ids
 ;; (together with the file id, via `bm/remap-refs`); otherwise every image
 ;; looks changed, and merged shapes would reference media rows owned by the
 ;; branch file — which break when the branch is deleted and GC'd.
@@ -207,8 +208,8 @@
   "{from-media-id -> to-media-id} for the file_media_object rows present on
   both files with the same content identity (storage object + name +
   dimensions + mtype), such as the rows one file received as a copy of
-  the other's (`copy-media-rows!`, run by an update from main or a merge).
-  Rows with several identical copies are paired positionally (they are
+  the other's (`copy-media-rows!`, run by an update from the source or a
+  merge). Rows with several identical copies are paired positionally (they are
   interchangeable). Media added on one side stays unpaired."
   [cfg from-file-id to-file-id]
   (let [ident   (juxt :media-id :name :width :height :mtype)
@@ -290,39 +291,41 @@
 
 ;; --- Helpers: merge base snapshot
 
-(defn- read-main-for-write
-  "Read main for a command that writes a snapshot naming main's fragments
-  or persists main itself. Returns `[stored file]`: `stored` keeps main's
-  fragment pointers, and `file` is the same document realized and
-  checked against the size limits.
+(defn- read-source-for-write
+  "Read the source for a command that writes a snapshot naming the
+  source's fragments or persists the source itself. Returns `[stored
+  file]`: `stored` keeps the source's fragment pointers, and `file` is
+  the same document realized and checked against the size limits.
 
   The row is read FOR UPDATE, since a data read cannot take FOR SHARE.
   File-gc takes it FOR UPDATE too and marks every fragment that neither
-  main nor a committed snapshot names, so a snapshot that copies main's
-  pointers must commit before the next pass can read the row."
-  [cfg main-id operation]
-  (let [stored (bfc/get-file cfg main-id :lock-for-update? true)
+  the source nor a committed snapshot names, so a snapshot that copies
+  the source's pointers must commit before the next pass can read the
+  row."
+  [cfg source-id operation]
+  (let [stored (bfc/get-file cfg source-id :lock-for-update? true)
         file   (-> (fdata/realize cfg stored)
                    (check-file-size-limits! operation))]
     [stored file]))
 
-(defn- reattach-main-pointers
-  "`file` with main's stored fragment pointers put back on every page
-  whose value still equals main's, so a base or a merged main shares
-  those fragments instead of writing copies, and an unchanged page keeps
-  its fragment id. `stored` is the first value `read-main-for-write`
-  returns."
-  [cfg main-id stored file]
-  (fdata/with-pointers cfg main-id
+(defn- reattach-source-pointers
+  "`file` with the source's stored fragment pointers put back on every
+  page whose value still equals the source's, so a base or a merged
+  source shares those fragments instead of writing copies, and an
+  unchanged page keeps its fragment id. `stored` is the first value
+  `read-source-for-write` returns."
+  [cfg source-id stored file]
+  (fdata/with-pointers cfg source-id
     (fdata/reattach-unchanged (fdata/original-pointers (:data stored)) file)))
 
 (defn- get-base-data
   "The merge-base `:data` from the branch's base snapshot, migrated to
   the current data version (`bfc/migrate-branch-base`): `bfc/get-file`
-  migrates main and the branch on read, and a base left at an older
+  migrates the source and the branch on read, and a base left at an older
   version reads as a change on every side that migrated. Raises when the
-  snapshot cannot be resolved: silently falling back to main would degrade
-  the three-way merge into \"branch overwrites main\" without conflicts.
+  snapshot cannot be resolved: silently falling back to the source would
+  degrade the three-way merge into \"branch overwrites source\" without
+  conflicts.
 
   Prefer `branch-base-data` where the branch file was read with
   `:include-base-data? true`: the derive decoded the merge base to replay
@@ -331,8 +334,9 @@
 
   The snapshot stores the branch's id space — its media references name
   the branch's own paired rows, what the replay reproduces — while a
-  comparison runs in main's id space, so the media ids are normalized
-  back here through the pairs, the way `branch-id-map` normalizes the
+  comparison runs in the source's id space, so the media ids are
+  normalized back here through the pairs, the way `branch-id-map`
+  normalizes the
   branch's own data."
   [cfg {:keys [source-file-id branch-file-id base-snapshot-id] :as branch}]
   (when-not base-snapshot-id
@@ -357,8 +361,8 @@
   nil.
 
   Like `get-base-data`, it comes back with the media ids normalized into
-  main's id space: the snapshot names the branch's own paired rows, the
-  comparison runs against main's."
+  the source's id space: the snapshot names the branch's own paired rows,
+  the comparison runs against the source's."
   [cfg source-file-id {:keys [id] :as branch-file}]
   (-> (or (::bfc/base-data branch-file)
           (ex/raise :type :assertion
@@ -367,33 +371,34 @@
       (bm/remap-refs (branch-media-pairs cfg id source-file-id))))
 
 (defn- moved-pages
-  "The pages on which main can differ from a branch's base: every page
-  whose fragment main does not share with the base. Nil when that set
-  cannot bound a comparison, which leaves the whole-file comparison in
-  place: main or the base holds no pointers, or main ordered the pages
-  both hold differently from the base. The page order lives in the
-  document root rather than in a page's fragment, and a bounded
-  comparison only orders the pages it covers. `stored` is main's `:data`
-  with its pointers unrealized, `base` the comparison's base, and
+  "The pages on which the source can differ from a branch's base: every
+  page whose fragment the source does not share with the base. Nil when
+  that set cannot bound a comparison, which leaves the whole-file
+  comparison in place: the source or the base holds no pointers, or the
+  source ordered the pages both hold differently from the base. The
+  page order lives in the document root rather than in a page's
+  fragment, and a bounded comparison only orders the pages it covers.
+  `stored` is the source's `:data` with its pointers unrealized, `base`
+  the comparison's base, and
   `base-ids` the `::bfc/base-page-pointers` of the branch read."
   [stored base base-ids]
   (when (seq base-ids)
-    (let [main-ids (fdata/get-page-pointer-ids stored)
-          both     (set/intersection (set (:pages stored)) (set (:pages base)))]
-      (when (and (seq main-ids)
+    (let [source-ids (fdata/get-page-pointer-ids stored)
+          both       (set/intersection (set (:pages stored)) (set (:pages base)))]
+      (when (and (seq source-ids)
                  (= (filterv both (:pages stored)) (filterv both (:pages base))))
         (into #{}
               (remove (fn [page-id]
-                        (let [id (get main-ids page-id)]
+                        (let [id (get source-ids page-id)]
                           (and (some? id) (= id (get base-ids page-id))))))
               (into (set (keys (:pages-index stored))) (keys base-ids)))))))
 
-(defn- comparison-main
-  "Main realized for a comparison with a branch, and the pages main moved
-  since the branch's base (`moved-pages`). Only the moved pages load:
-  every other page holds the same document as the base's, so the base's
-  page, which the derive already realized, stands in for it. `base-data`
-  is the comparison's base, in main's id space."
+(defn- comparison-source
+  "The source realized for a comparison with a branch, and the pages the
+  source moved since the branch's base (`moved-pages`). Only the moved
+  pages load: every other page holds the same document as the base's, so
+  the base's page, which the derive already realized, stands in for it.
+  `base-data` is the comparison's base, in the source's id space."
   [cfg source-file-id branch-file base-data]
   (let [stored (bfc/get-file cfg source-file-id)
         moved  (moved-pages (:data stored) base-data (::bfc/base-page-pointers branch-file))
@@ -656,14 +661,14 @@
                 (fn [{:keys [::db/conn] :as cfg}]
                   (db/exec-one! conn ["SET CONSTRAINTS ALL DEFERRED"])
 
-                  ;; Serialize against concurrent update-file on main
-                  ;; (same advisory lock) so the base snapshot and the
-                  ;; branch's initial state (the empty op log over that
-                  ;; base) are taken from the SAME state of main.
+                  ;; Serialize against concurrent update-file on the
+                  ;; source (same advisory lock) so the base snapshot and
+                  ;; the branch's initial state (the empty op log over
+                  ;; that base) are taken from the SAME state of the source.
                   ;;
                   ;; The family id is locked too: the quota counts the
                   ;; whole family, and two creators cutting from two files
-                  ;; of it (main and a child of main) would otherwise take
+                  ;; of it (the root and a branch of it) would otherwise take
                   ;; two different locks and both pass the quota for the
                   ;; last slot. Sorted, as `merge-file-branch` takes its
                   ;; two, to avoid deadlocks. The family id is the root
@@ -688,12 +693,12 @@
                       (quotes/check! {::quotes/id ::quotes/branches-per-file}
                                      {::quotes/id ::quotes/branches-per-team}))
 
-                  ;; 1. Pin the merge base: a system snapshot of main,
+                  ;; 1. Pin the merge base: a system snapshot of the source,
                   ;; kept long-lived so it is not pruned by the snapshot
                   ;; GC while the branch is open (it is released when the
                   ;; branch is deleted or its base moves). The snapshot
-                  ;; stores main's fragment pointers, not its pages, so
-                  ;; main's row is read FOR UPDATE: file-gc takes it FOR
+                  ;; stores the source's fragment pointers, not its pages,
+                  ;; so the source's row is read FOR UPDATE: file-gc takes it FOR
                   ;; UPDATE as well, and a pass that ran between this read
                   ;; and the commit could mark a fragment the base names.
                   (let [file (bfc/get-file cfg file-id :lock-for-update? true)
@@ -709,7 +714,7 @@
                         branch-id  (uuid/next)
 
                         ;; 2. Create the branch file: an empty file row
-                        ;; carrying main's project, features and data
+                        ;; carrying the source's project, features and data
                         ;; version. No data, no media, no library copy:
                         ;; the read path derives the state.
                         branch-file
@@ -731,7 +736,7 @@
                     ;; a family of its own, which goes once it is empty).
                     ;; No file role is granted: a branch takes its
                     ;; permissions from the team (and project) roles
-                    ;; alone, so every editor of main can open and edit
+                    ;; alone, so every editor of the source can open and edit
                     ;; it, and its creator gets no extra rights.
                     (db/update! conn :file
                                 {:is-branch true
@@ -740,7 +745,7 @@
                                 {::db/return-keys false})
 
                     ;; 4. The branch resolves libraries exactly like
-                    ;; main (component instances from shared libraries
+                    ;; the source (component instances from shared libraries
                     ;; must keep resolving on the derived state).
                     (doseq [rel (bfc/get-files-rels cfg #{file-id})]
                       (let [rel-params (-> rel
@@ -885,22 +890,23 @@
 
 (defn branch-diff-counts!
   "Entity-level `[ahead behind conflicts]` change counts between a branch
-  file and its source (main) — the same numbers the compare dialog lists
+  file and its source — the same numbers the compare dialog lists
   (root-frame churn and structural noise filtered out). The revn deltas
   are used only as a cheap gate to skip the (expensive) 3-way diff when a
-  side hasn't moved. `main-data` may be pre-realized and shared across
+  side hasn't moved. `source-data` may be pre-realized and shared across
   branches of the same source; otherwise it is loaded on demand.
 
   The forward pass is bounded to the pages the branch's op log touched
   when that set is complete (`branch-affected-pages`), and the reverse
-  pass, which reports MAIN's changes, to the pages whose fragment main no
-  longer shares with the base (`moved-pages`). Without a shared
-  `main-data`, main loads only those pages (`comparison-main`).
+  pass, which reports the SOURCE's changes, to the pages whose fragment
+  the source no longer shares with the base (`moved-pages`). Without a
+  shared `source-data`, the source loads only those pages
+  (`comparison-source`).
 
   Raises on failure instead of degrading: the caller decides whether the
   result is worth caching, and a value computed from an error must never
   enter the summary cache."
-  [cfg main-data {:keys [source-file-id branch-file-id ahead-revn behind-revn]}]
+  [cfg source-data {:keys [source-file-id branch-file-id ahead-revn behind-revn]}]
   (bp/with-policies
     (if (and (zero? ahead-revn) (zero? behind-revn))
       [0 0 0]
@@ -914,27 +920,27 @@
                          (branch-id-map cfg branch-file-id source-file-id))
             base-data   (branch-base-data cfg source-file-id branch-file)
             base-ids    (::bfc/base-page-pointers branch-file)
-            [main-data moved]
+            [source-data moved]
             (cond
-              (nil? main-data)
-              (let [[file moved] (comparison-main cfg source-file-id branch-file base-data)]
+              (nil? source-data)
+              (let [[file moved] (comparison-source cfg source-file-id branch-file base-data)]
                 [(:data file) moved])
 
               ;; the stored document is a handful of pointers, read only
               ;; when the base holds pointers to compare them with
               (seq base-ids)
-              [main-data (moved-pages (:data (bfc/get-file cfg source-file-id)) base-data base-ids)]
+              [source-data (moved-pages (:data (bfc/get-file cfg source-file-id)) base-data base-ids)]
 
               :else
-              [main-data nil])
+              [source-data nil])
             clean-count (fn [m] (let [s (:stats m)]
                                   (+ (:added s) (:modified s) (:deleted s))))
             fwd (when (pos? ahead-revn)
-                  (bm/compute-merge base-data main-data branch-data :branch->source
+                  (bm/compute-merge base-data source-data branch-data :branch->source
                                     (when-let [pages (branch-affected-pages cfg branch-file-id)]
                                       {:only-pages pages})))
             bwd (when (pos? behind-revn)
-                  (bm/compute-merge base-data branch-data main-data :branch->source
+                  (bm/compute-merge base-data branch-data source-data :branch->source
                                     (when moved {:only-pages moved})))]
         [(if fwd (clean-count fwd) 0)
          (if bwd (clean-count bwd) 0)
@@ -968,9 +974,9 @@
 
 (defn cached-summary
   "The cached summary of a branch row, or nil when it would have to be
-  computed. Public because a listing decides whether to realize main
-  before it pays for it, and a listing whose rows are all cached needs no
-  main at all."
+  computed. Public because a listing decides whether to realize the
+  source before it pays for it, and a listing whose rows are all cached
+  needs no source at all."
   [row]
   (bp/with-policies
     (ucache/get branch-summary-cache (summary-cache-key row))))
@@ -988,16 +994,16 @@
   error never enters the cache.
 
   `branch` carries the key tuple and the pair being compared, with
-  `source-file-id` naming main and `branch-file-id` the branch, whichever
+  `source-file-id` naming the source and `branch-file-id` the branch, whichever
   listing is asking."
-  [cfg main-data branch]
+  [cfg source-data branch]
   (bp/with-policies
     (let [[ahead-revn behind-revn] (revn-deltas branch)]
       (try
         (ucache/get branch-summary-cache
                     (summary-cache-key branch)
                     (fn [_]
-                      (branch-diff-counts! cfg main-data
+                      (branch-diff-counts! cfg source-data
                                            (assoc branch
                                                   :ahead-revn ahead-revn
                                                   :behind-revn behind-revn))))
@@ -1011,7 +1017,7 @@
 (sv/defmethod ::get-file-branches
   "List the branches of a file. `ahead`/`behind` are entity-level change
   counts (matching the compare dialog), gated by the cheap revn deltas so
-  in-sync branches skip the diff entirely; `main` is realized once and
+  in-sync branches skip the diff entirely; the source is realized once and
   shared across branches.
 
   A row whose comparison cannot be made carries `:diff-error true` and no
@@ -1049,36 +1055,36 @@
         ;; only OPEN branches get diff counts: merged/archived ones
         ;; are not going to be merged as-is, so the expensive diff
         ;; would be wasted work (and their base may be released)
-        open?     (fn [row] (= "open" (:status row)))
+        open?       (fn [row] (= "open" (:status row)))
         ;; an open branch whose cheap revn deltas say it diverged is
         ;; the only one the listing looks a comparison up for
-        diverged? (fn [row] (let [[a b] (revn-deltas row)] (or (pos? a) (pos? b))))
-        compared  (filterv (fn [row] (and (open? row) (diverged? row))) rows)
+        diverged?   (fn [row] (let [[a b] (revn-deltas row)] (or (pos? a) (pos? b))))
+        compared    (filterv (fn [row] (and (open? row) (diverged? row))) rows)
         ;; the rows the summary cache answers without computing
-        cached    (filterv (comp some? cached-summary) compared)
-        ;; realize main once, only if some compared branch is not
+        cached      (filterv (comp some? cached-summary) compared)
+        ;; realize the source once, only if some compared branch is not
         ;; already cached
-        need?     (< (count cached) (count compared))
-        main-data (when need?
-                    (db/run! cfg (fn [cfg] (:data (bfc/get-file cfg file-id :realize? true)))))
-        branches  (mapv (fn [row]
-                          (let [counts (if (open? row)
-                                         ;; a cached summary answers without
-                                         ;; touching the database; anything
-                                         ;; else compares on a connection of
-                                         ;; its own, taken and returned around
-                                         ;; the comparison
-                                         (or (cached-summary row)
-                                             (db/run! cfg (fn [cfg] (cached-diff-counts cfg main-data row))))
-                                         [0 0 0])
-                                [ahead behind conflicts] counts]
-                            (cond-> (-> row
-                                        (assoc :ahead ahead :behind behind :conflicts conflicts)
-                                        (dissoc :branch-revn :source-revn :base-snapshot-id :base-branch-revn))
-                              ;; the comparison could not be made: the
-                              ;; marker stands where the counts would be
-                              (nil? counts) (assoc :diff-error true))))
-                        rows)]
+        need?       (< (count cached) (count compared))
+        source-data (when need?
+                      (db/run! cfg (fn [cfg] (:data (bfc/get-file cfg file-id :realize? true)))))
+        branches    (mapv (fn [row]
+                            (let [counts (if (open? row)
+                                           ;; a cached summary answers without
+                                           ;; touching the database; anything
+                                           ;; else compares on a connection of
+                                           ;; its own, taken and returned around
+                                           ;; the comparison
+                                           (or (cached-summary row)
+                                               (db/run! cfg (fn [cfg] (cached-diff-counts cfg source-data row))))
+                                           [0 0 0])
+                                  [ahead behind conflicts] counts]
+                              (cond-> (-> row
+                                          (assoc :ahead ahead :behind behind :conflicts conflicts)
+                                          (dissoc :branch-revn :source-revn :base-snapshot-id :base-branch-revn))
+                                ;; the comparison could not be made: the
+                                ;; marker stands where the counts would be
+                                (nil? counts) (assoc :diff-error true))))
+                          rows)]
     (audited branches tpoint :list-branches
              {:branches-compared (count compared)
               :branches-cached (count cached)})))
@@ -1100,7 +1106,7 @@
   produced by `branch-merge/compute-merge` (stats, changes, conflicts).
 
   The base is read at the current data version, the version `bfc/get-file`
-  reads main and the branch at (`bfc/migrate-branch-base`), so a Penpot
+  reads the source and the branch at (`bfc/migrate-branch-base`), so a Penpot
   upgrade since the branch was cut does not read as a change on any side."
   {::doc/added "2.16"
    ::sm/params schema:get-file-branch-diff
@@ -1127,13 +1133,13 @@
             branch-file (bfc/get-file cfg (:branch-file-id branch)
                                       :realize? true :include-base-data? true)
             base-data   (branch-base-data cfg (:source-file-id branch) branch-file)
-            ;; the size gate runs after the derive: main loads only the
+            ;; the size gate runs after the derive: the source loads only the
             ;; pages it moved since the base, so the base is needed first,
             ;; and the derive's own cost is bounded by the gates the base
             ;; passed when it was written
-            [main-file moved] (comparison-main cfg (:source-file-id branch) branch-file base-data)
-            _           (check-file-size-limits! main-file :compare)
-            main-data   (:data main-file)
+            [source-file moved] (comparison-source cfg (:source-file-id branch) branch-file base-data)
+            _           (check-file-size-limits! source-file :compare)
+            source-data (:data source-file)
             branch-data (bm/remap-refs
                          (:data branch-file)
                          (branch-id-map cfg (:branch-file-id branch) (:source-file-id branch)))
@@ -1146,7 +1152,7 @@
                                                ::db/remove-deleted false}))
             ;; each direction is bounded to the pages the side it reports
             ;; can have changed: the branch's to the pages its log
-            ;; touched, main's to the pages whose fragment it no longer
+            ;; touched, the source's to the pages whose fragment it no longer
             ;; shares with the base
             opts        (if (= dir :branch->source)
                           (when-let [pages (affected-pages log)]
@@ -1159,11 +1165,11 @@
         ;; `:source-revn` so the client can do optimistic concurrency on merge
         ;; (`expected-source-revn`). The last editor's identity is intentionally
         ;; omitted: files do not store a reliable "modified-by".
-        (-> (bm/compute-merge base-data main-data branch-data dir (assoc opts :copies? true))
+        (-> (bm/compute-merge base-data source-data branch-data dir (assoc opts :copies? true))
             (assoc :meta {:base-at     base-at
-                          :source-at   (:modified-at main-file)
+                          :source-at   (:modified-at source-file)
                           :branch-at   (:modified-at branch-file)
-                          :source-revn (:revn main-file)})
+                          :source-revn (:revn source-file)})
             (audited tpoint :compare))))))
 
 ;; --- Helpers: post-commit notification
@@ -1200,10 +1206,10 @@
    [:excluded {:optional true} [::sm/set :string]]
    [:expected-source-revn {:optional true} ::sm/int]
    ;; what the user says about the merge; kept in its record
-   ;; (`file_branch_merge`), shown in the list of merges of main
+   ;; (`file_branch_merge`), shown in the list of merges of the source
    [:comment {:optional true} [:string {:max 4000}]]
    ;; tell the assignees of the open tasks of the branch, by email, that
-   ;; the merge moved their tasks into main
+   ;; the merge moved their tasks into the source
    [:notify-assignees {:optional true} ::sm/boolean]])
 
 (sv/defmethod ::merge-file-branch
@@ -1216,14 +1222,14 @@
   merges the side its resolution picks, per entity or per attr. Change
   kinds the engine cannot translate (`bm/unsupported-kinds`) make it return
   `{:status :unsupported}` so no change is silently dropped. Otherwise it
-  takes a safety snapshot of main, applies the merge to main through the
+  takes a safety snapshot of the source, applies the merge to the source through the
   production change pipeline, records the merge with its `comment`
   (`file_branch_merge`), deletes the branch and its file and notifies
   open clients via msgbus.
 
   Copies follow the merged components: a copy attr no side overrode is
   no conflict, and after the merge (and its repair) applies, the copies
-  of every local component whose main it changed are synced on main
+  of every local component whose main it changed are synced on the source
   (`bm/sync-copies`). The sync changes go into the same `file_change`
   row and the same validation as the merge."
   {::doc/added "2.16"
@@ -1247,11 +1253,11 @@
                   :branch-id branch-id))
 
       (let [tpoint         (ct/tpoint)
-            main-id        (:source-file-id branch)
+            source-id      (:source-file-id branch)
             branch-file-id (:branch-file-id branch)
             messages       (volatile! [])]
-        ;; Only editors of main can integrate (same rule as Figma).
-        (files/check-edition-permissions! cfg profile-id main-id)
+        ;; Only editors of the source can integrate (same rule as Figma).
+        (files/check-edition-permissions! cfg profile-id source-id)
 
         (tx-run-notify!
          cfg
@@ -1263,7 +1269,7 @@
            ;; to avoid deadlocks): without the branch lock, edits saved to
            ;; the branch while the merge runs would be silently lost when
            ;; the branch is marked merged and deleted below.
-           (run! (partial db/xact-lock! conn) (sort [main-id branch-file-id]))
+           (run! (partial db/xact-lock! conn) (sort [source-id branch-file-id]))
 
            ;; the row read before the lock is stale by now: a competing
            ;; merge, delete or archive may have committed while these
@@ -1279,35 +1285,35 @@
                                          :branch-id branch-id))
                  ;; a merge into a branch needs that branch open: an
                  ;; archived target is set aside (`:branch-stacking`)
-                 _           (check-source-open conn main-id)
-                 [main-stored main-file] (read-main-for-write cfg main-id :merge)
+                 _           (check-source-open conn source-id)
+                 [source-stored source-file] (read-source-for-write cfg source-id :merge)
                  _           (check-oplog-depth-limit! (bfc/get-branch-oplog-depth cfg branch-file-id)
                                                        branch-file-id
                                                        :merge)
                  branch-file (bfc/get-file cfg branch-file-id
                                            :realize? true :include-base-data? true)
-                 base-data   (branch-base-data cfg main-id branch-file)
+                 base-data   (branch-base-data cfg source-id branch-file)
 
-                 ;; canonicalize the branch's local refs to main's ids: the
+                 ;; canonicalize the branch's local refs to the source's ids: the
                  ;; branch file id (components, library color/typography
                  ;; refs) and the paired media ids; media ADDED on the
                  ;; branch gets fresh ids pre-allocated here — the rows are
-                 ;; copied into main only if the merge actually applies.
-                 pairs       (branch-media-pairs cfg branch-file-id main-id)
+                 ;; copied into the source only if the merge actually applies.
+                 pairs       (branch-media-pairs cfg branch-file-id source-id)
                  new-media   (unpaired-media-rows cfg branch-file-id (:data branch-file) pairs)
                  fresh-map   (into {} (map (fn [row] [(:id row) (uuid/next)])) new-media)
                  id-map      (-> pairs
                                  (merge fresh-map)
-                                 (assoc branch-file-id main-id))
+                                 (assoc branch-file-id source-id))
                  branch-data (bm/remap-refs (:data branch-file) id-map)]
 
              (when (and (some? expected-source-revn)
-                        (not= expected-source-revn (:revn main-file)))
+                        (not= expected-source-revn (:revn source-file)))
                (ex/raise :type :conflict
                          :code :file-modified
-                         :hint "main was modified, recompute the diff and retry"))
+                         :hint "source was modified, recompute the diff and retry"))
 
-             (let [merge-summary (bm/compute-merge base-data (:data main-file)
+             (let [merge-summary (bm/compute-merge base-data (:data source-file)
                                                    branch-data :branch->source
                                                    ;; `:copies` for the conflict dialog
                                                    {:copies? true})
@@ -1339,12 +1345,12 @@
                                                                :comment comment
                                                                :created-at ts})
                            ;; the threads with an open task, and those
-                           ;; written outside any review, move to main
+                           ;; written outside any review, move to the source
                            ;; with their tasks (on the layer the merge
                            ;; left them); the other review threads stay
                            ;; with the branch as the record of its review
                            moved    (ftask/move-branch-tasks cfg {:branch-file-id branch-file-id
-                                                                  :target-id main-id
+                                                                  :target-id source-id
                                                                   :merge-id merge-id
                                                                   :branch-name (:name branch)
                                                                   :profile-id profile-id
@@ -1352,18 +1358,18 @@
                                                                   :merged-data merged-data
                                                                   :branch-data branch-data
                                                                   :base-data base-data})]
-                       ;; main's open clients patch their task list
+                       ;; the source's open clients patch their task list
                        (when (seq moved)
                          (vswap! messages conj
-                                 {:topic main-id
+                                 {:topic source-id
                                   :message (ftask/tasks-change-message
-                                            conn {:file-id main-id
+                                            conn {:file-id source-id
                                                   :profile-id profile-id
                                                   :session-id session-id
                                                   :task-ids (map :id moved)})})))
                      ;; the open branches cut from this one follow it into
                      ;; the target (`:branch-stacking`)
-                     (reparent-child-branches conn branch-file-id main-id)
+                     (reparent-child-branches conn branch-file-id source-id)
                      (db/update! conn :file-branch
                                  {:status "merged"
                                   :merged-at ts
@@ -1384,12 +1390,12 @@
                  ;; `:copies` tells the conflict dialog which copies the
                  ;; integration syncs (`bm/compute-merge`)
                  (audited {:status :conflicts :conflicts conflicts :copies (:copies merge-summary)
-                           :source-revn (:revn main-file)}
+                           :source-revn (:revn source-file)}
                           tpoint :merge)
 
                  :else
                  (let [{:keys [changes unsupported]}
-                       (bm/compute-changes base-data (:data main-file) branch-data
+                       (bm/compute-changes base-data (:data source-file) branch-data
                                            (or resolutions {})
                                            merge-summary
                                            excluded)]
@@ -1406,35 +1412,35 @@
                               tpoint :merge)
 
                      (empty? changes)
-                     ;; Nothing to integrate (branch matches main): close the
-                     ;; branch without touching main.
+                     ;; Nothing to integrate (branch matches the source):
+                     ;; close the branch without touching the source.
                      (let [ts (ct/now)]
-                       (finish-branch! ts (:data main-file))
-                       (audited {:status :merged :revn (:revn main-file) :source-file-id main-id}
+                       (finish-branch! ts (:data source-file))
+                       (audited {:status :merged :revn (:revn source-file) :source-file-id source-id}
                                 tpoint :merge))
 
                      :else
-                     (let [team  (teams/get-team conn :profile-id profile-id :file-id main-id)
+                     (let [team  (teams/get-team conn :profile-id profile-id :file-id source-id)
                            delay (ldel/get-deletion-delay team)
                            ts    (ct/now)]
-                       (fdata/with-tracked-pointers cfg main-id
-                         (binding [cfeat/*current*  (:features main-file)
-                                   cfeat/*previous* (:features main-file)]
+                       (fdata/with-tracked-pointers cfg source-id
+                         (binding [cfeat/*current*  (:features source-file)
+                                   cfeat/*previous* (:features source-file)]
 
-                           ;; Safety snapshot of pre-merge main (rollback via
-                           ;; versions). It names main's fragments rather than
-                           ;; copying its pages.
-                           (fsnap/create! cfg main-stored
+                           ;; Safety snapshot of the pre-merge source (rollback
+                           ;; via versions). It names the source's fragments
+                           ;; rather than copying its pages.
+                           (fsnap/create! cfg source-stored
                                           {:label (str "pre-merge/" (:name branch))
                                            :created-by "system"
                                            :deleted-at (ct/in-future delay)
                                            :profile-id profile-id})
 
-                           ;; media added on the branch: copy its rows into main
+                           ;; media added on the branch: copy its rows into the source
                            ;; under the pre-allocated ids the changes reference
-                           (copy-media-rows! conn main-id fresh-map new-media)
+                           (copy-media-rows! conn source-id fresh-map new-media)
 
-                           (let [applied (-> main-file
+                           (let [applied (-> source-file
                                              (update :revn inc)
                                              (update :data #(cpc/process-changes % changes)))
                                  libs    (bfc/get-resolved-file-libraries cfg applied)
@@ -1452,8 +1458,8 @@
                                  ;; synced, as the workspace syncs them after
                                  ;; an edit (`bm/sync-copies`)
                                  {synced :data sync :changes}
-                                 (bm/sync-copies main-id (:data merged)
-                                                 (into (bm/changed-components (:data main-file) changes)
+                                 (bm/sync-copies source-id (:data merged)
+                                                 (into (bm/changed-components (:data source-file) changes)
                                                        (bm/changed-components (:data applied) repair)))
                                  merged  (assoc merged :data synced)
                                  libs    (if (seq sync)
@@ -1482,7 +1488,7 @@
                                           :created-at ts
                                           :updated-at ts
                                           :deleted-at (ct/in-future {:hours 1})
-                                          :file-id main-id
+                                          :file-id source-id
                                           :revn (:revn merged)
                                           :version (:version merged)
                                           :features (into-array (:features merged))
@@ -1492,14 +1498,14 @@
                                          {::db/return-keys false})
 
                              (let [all-changes (-> (vec changes) (into repair) (into sync))]
-                               (if (:is-branch main-file)
+                               (if (:is-branch source-file)
                                  ;; a target that is itself a branch
                                  ;; (`:branch-stacking`) stores no data
                                  (persist-merge-into-branch cfg merged ts all-changes)
                                  ;; a page the merge left as it was keeps its
                                  ;; fragment instead of being written again
                                  (fupd/persist-file! (assoc cfg ::fupd/timestamp ts)
-                                                     (reattach-main-pointers cfg main-id main-stored merged))))
+                                                     (reattach-source-pointers cfg source-id source-stored merged))))
 
                              (when (contains? cf/flags :redis-cache)
                                (fupd/invalidate-caches! cfg merged))
@@ -1507,13 +1513,13 @@
                              (finish-branch! ts (:data merged))
 
                              (vswap! messages conj
-                                     {:topic main-id
+                                     {:topic source-id
                                       :message {:type :file-merged
-                                                :file-id main-id
+                                                :file-id source-id
                                                 :session-id session-id
                                                 :revn (:revn merged)}})
 
-                             (audited {:status :merged :revn (:revn merged) :source-file-id main-id}
+                             (audited {:status :merged :revn (:revn merged) :source-file-id source-id}
                                       tpoint :merge))))))))))))))))
 
 ;; --- COMMAND: update-file-branch-from-source
@@ -1525,26 +1531,26 @@
    ;; branch) | {attr -> side} (per-attr)
    [:resolutions {:optional true} [:map-of :any [:or [:enum :source :branch] [:map-of :keyword [:enum :source :branch]]]]]
    ;; the compare panel's per-change selection as a set of change keys
-   ;; (`app.common.files.branch-merge/change-key`): main's changes the user
+   ;; (`app.common.files.branch-merge/change-key`): the source's changes the user
    ;; deselected, which the branch keeps its own value for
    [:excluded {:optional true} [::sm/set :string]]
    [:expected-source-revn {:optional true} ::sm/int]])
 
 (defn- persist-branch-update!
-  "Persist the result of an update-from-main integration on a branch
+  "Persist the result of an update-from-source integration on a branch
   file: update the `file` row and the project modified-at without any
   data payload, and REPLACE the branch's op log with the squashed
   branch-only changes. The repositioned merge base already carries
-  everything main contributed, so replaying the squash over it
+  everything the source contributed, so replaying the squash over it
   reproduces the updated branch exactly, and the log never accumulates
-  main-side ops (which would otherwise be double-applied on read).
+  source-side ops (which would otherwise be double-applied on read).
 
   The squash is computed between documents `bfc/get-file` read at the
   current data version, so its row records that version.
 
   The row also stamps the media id map the update applied, as applied
-  ({main-media-id -> branch-media-id}): the squashed changes were
-  computed against main's document moved into the branch's id space, so
+  ({source-media-id -> branch-media-id}): the squashed changes were
+  computed against the source's document moved into the branch's id space, so
   the pairing the log describes after the squash is the one the stamps
   rebuild (`branch-media-pairs`), not the content identity heuristic."
   [{:keys [::db/conn] :as cfg} file ts branch-id changes media-map]
@@ -1575,17 +1581,17 @@
 
 
 (sv/defmethod ::update-file-branch-from-source
-  "Bring the changes main received since the merge base into the branch
-  (the reverse direction of a merge). Returns `{:status :conflicts}` (with
-  the `:source-revn` they were computed against and the summary's
-  `:copies`) when main and the branch
+  "Bring the changes the source received since the merge base into the
+  branch (the reverse direction of a merge). Returns `{:status
+  :conflicts}` (with the `:source-revn` they were computed against and
+  the summary's `:copies`) when the source and the branch
   diverged on the same entity and it is not resolved in `resolutions`, or
   `{:status :unsupported}` for change kinds not yet translatable. On
-  success it applies main's changes (and any conflicts resolved to main)
-  to the branch, takes a safety snapshot, and repositions the merge base
-  to the current state of main.
+  success it applies the source's changes (and any conflicts resolved to
+  the source) to the branch, takes a safety snapshot, and repositions the
+  merge base to the current state of the source.
 
-  Copies follow the integrated components as in a merge: after main's
+  Copies follow the integrated components as in a merge: after the source's
   changes apply, the copies of every local component whose main they
   changed are synced on the branch, in the branch's id space
   (`bm/sync-copies`), before the squash records the branch's net."
@@ -1606,7 +1612,7 @@
 
       (let [tpoint         (ct/tpoint)
             branch-file-id (:branch-file-id branch)
-            main-id        (:source-file-id branch)
+            source-id      (:source-file-id branch)
             messages       (volatile! [])]
         ;; Editing the branch -> need edition permissions on the branch file.
         (files/check-edition-permissions! cfg profile-id branch-file-id)
@@ -1632,13 +1638,13 @@
                                          :branch-id branch-id))
                  ;; an archived source is set aside, so nothing flows
                  ;; from it either (`:branch-stacking`)
-                 _           (check-source-open conn main-id)
-                 [main-stored main-file] (read-main-for-write cfg main-id :update-from-source)
+                 _           (check-source-open conn source-id)
+                 [source-stored source-file] (read-source-for-write cfg source-id :update-from-source)
                  _           (when (and (some? expected-source-revn)
-                                        (not= expected-source-revn (:revn main-file)))
+                                        (not= expected-source-revn (:revn source-file)))
                                (ex/raise :type :conflict
                                          :code :file-modified
-                                         :hint "main was modified, recompute the diff and retry"))
+                                         :hint "source was modified, recompute the diff and retry"))
                  _           (check-oplog-depth-limit! (bfc/get-branch-oplog-depth cfg branch-file-id)
                                                        branch-file-id
                                                        :update-from-source)
@@ -1650,7 +1656,7 @@
 
                  ;; Two id maps, one per direction of the crossing.
                  ;;
-                 ;; The COMPARISON runs in main's id space, the id space the
+                 ;; The COMPARISON runs in the source's id space, the id space the
                  ;; merge base was captured in, the id space the compare view
                  ;; uses (`files_branch.clj::branch-id-map` in
                  ;; `files_branch.clj::get-file-branch-diff`), and the only id space
@@ -1658,27 +1664,27 @@
                  ;; no data, so `binfile.clj::branch-file-data` replays its op
                  ;; log over that base and everything it inherited carries the
                  ;; base's ids. Comparing in the branch's id space instead
-                 ;; rewrites main's and the base's local references to the
-                 ;; branch file id, and a self reference in main is then
+                 ;; rewrites the source's and the base's local references to the
+                 ;; branch file id, and a self reference in the source is then
                  ;; unequal to the branch's own copy of it, so every shape
-                 ;; main touched that carries one reads as an edit on both
+                 ;; the source touched that carries one reads as an edit on both
                  ;; sides.
                  base-data   base-raw
-                 main-raw    (:data main-file)
+                 source-raw  (:data source-file)
                  branch-cmp  (bm/remap-refs (:data branch-file)
-                                            (branch-id-map cfg branch-file-id main-id))
+                                            (branch-id-map cfg branch-file-id source-id))
 
                  ;; The WRITE runs in the branch's id space: a reference is only
-                 ;; a reference in the file it names, so main's file id and
-                 ;; main's media rows are re-pointed at the branch's ids before
-                 ;; the change reaches the branch. Media ADDED on main has no
+                 ;; a reference in the file it names, so the source's file id and
+                 ;; the source's media rows are re-pointed at the branch's ids before
+                 ;; the change reaches the branch. Media ADDED on the source has no
                  ;; branch row yet, so it gets a fresh id here and its row is
                  ;; copied below only if the update applies.
-                 ;; the WRITE direction ({main-media-id -> branch-media-id})
+                 ;; the WRITE direction ({source-media-id -> branch-media-id})
                  ;; is the inverse of the comparison's pairs
                  pairs       (set/map-invert
-                              (branch-media-pairs cfg branch-file-id main-id))
-                 new-media   (unpaired-media-rows cfg main-id main-raw pairs)
+                              (branch-media-pairs cfg branch-file-id source-id))
+                 new-media   (unpaired-media-rows cfg source-id source-raw pairs)
                  fresh-map   (into {} (map (fn [row] [(:id row) (uuid/next)])) new-media)
                  ;; the branch's OWN id space: every media row the branch
                  ;; references is one of its own — a paired copy or one of
@@ -1686,8 +1692,8 @@
                  ;; base name those; `apply-map` adds the file id on top for
                  ;; the change payloads, which re-point their file refs too.
                  media-map   (merge pairs fresh-map)
-                 apply-map   (assoc media-map main-id branch-file-id)
-                 main-data   (bm/remap-refs main-raw apply-map)
+                 apply-map   (assoc media-map source-id branch-file-id)
+                 source-data (bm/remap-refs source-raw apply-map)
 
                  ;; did the branch carry its OWN changes before this update?
                  ;; (revn moved since the base was last positioned)
@@ -1700,21 +1706,21 @@
                    ;; the base is pinned in the branch's id space — its media
                    ;; references name the branch's own rows — because it is what
                    ;; the op log replays over: the derived document carries that
-                   ;; id space, so a base naming main's rows would make every
+                   ;; id space, so a base naming the source's rows would make every
                    ;; paired media read as deleted+added on the next squash. The
-                   ;; comparisons normalize it back to main's id space on read
+                   ;; comparisons normalize it back to the source's id space on read
                    ;; (`get-base-data`/`branch-base-data`). A page the remap
-                   ;; left equal to main's names main's fragment.
-                   (let [new-base (fsnap/create! cfg (reattach-main-pointers
-                                                      cfg main-id main-stored
-                                                      (assoc main-file :data base-data))
+                   ;; left equal to the source's names the source's fragment.
+                   (let [new-base (fsnap/create! cfg (reattach-source-pointers
+                                                      cfg source-id source-stored
+                                                      (assoc source-file :data base-data))
                                                  {:label (str "branch-base/" (:name branch))
                                                   :created-by "system"
                                                   :deleted-at (ct/in-future {:days 3650})
                                                   :profile-id profile-id})
                          ;; the ahead/behind revn gate compares each side's revn
                          ;; against this stored counter to SKIP the diff. After
-                         ;; an update the new base equals MAIN, so a branch that
+                         ;; an update the new base equals the SOURCE, so a branch that
                          ;; had its own changes still differs from it even if
                          ;; its revn never moves again — keep the gate open by
                          ;; storing one revn less; the diff then reports the
@@ -1724,14 +1730,14 @@
                      (release-base-snapshot! cfg branch (ct/in-future delay))
                      (db/update! conn :file-branch
                                  {:base-snapshot-id (:id new-base)
-                                  :base-source-revn (:revn main-file)
+                                  :base-source-revn (:revn source-file)
                                   :base-branch-revn branch-revn
                                   :updated-at ts}
                                  {:id branch-id}
                                  {::db/return-keys false})))
 
                  merge-summary
-                 (bm/compute-merge base-data main-raw branch-cmp :source->branch {:copies? true})
+                 (bm/compute-merge base-data source-raw branch-cmp :source->branch {:copies? true})
 
                  conflicts  (:conflicts merge-summary)
                  resolved?  (fn [c] (or (contains? excluded (:key c))
@@ -1739,9 +1745,9 @@
                  unresolved (remove resolved? conflicts)
 
                  ;; Resolutions arrive document-keyed (`:source` = the source's value).
-                 ;; The update runs compute-changes with main as the source and
-                 ;; the branch as the target, where the `:branch` keyword means
-                 ;; "take the source (main)" — so invert each side to that
+                 ;; The update runs compute-changes with the source file as
+                 ;; the source and the branch as the target, where the
+                 ;; `:branch` keyword means "take the source file" — so invert each side to that
                  ;; vocabulary, including the per-attr maps, value by value.
                  flip     (fn [v] (case v :source :branch, :branch :source, v))
                  inverted (into {} (map (fn [[k v]]
@@ -1753,7 +1759,7 @@
              (cond
                (seq unresolved)
                (audited {:status :conflicts :conflicts conflicts :copies (:copies merge-summary)
-                         :source-revn (:revn main-file)}
+                         :source-revn (:revn source-file)}
                         tpoint :update-from-source)
 
                (bm/nothing-to-merge? merge-summary excluded)
@@ -1765,14 +1771,15 @@
                          :hint "select at least one change to merge")
 
                :else
-               ;; target = branch, source = main -> changes that bring main's
-               ;; net changes (and conflicts resolved to main) into the branch.
-               ;; The `:source->branch` summary reports main's changes against the
+               ;; target = branch, source = the source file -> changes that
+               ;; bring the source's net changes (and conflicts resolved to
+               ;; the source) into the branch. The `:source->branch` summary
+               ;; reports the source's changes against the
                ;; branch, the same assignment compute-changes runs with here, so
                ;; it can be reused for the unsupported-kinds gate without
                ;; re-diffing.
                (let [{:keys [changes unsupported]}
-                     (bm/compute-changes base-data branch-cmp main-raw
+                     (bm/compute-changes base-data branch-cmp source-raw
                                          (or inverted {})
                                          merge-summary
                                          excluded)]
@@ -1790,7 +1797,7 @@
 
                    (and (empty? changes) (not branch-diverged?) (empty? excluded))
                    (let [ts (ct/now)]
-                     ;; the branch is in sync with main: the repositioned
+                     ;; the branch is in sync with the source: the repositioned
                      ;; base already represents the branch, so the op log
                      ;; is emptied (old ops were built against the old base).
                      ;; The log is a branch's only durable record, so it may
@@ -1799,15 +1806,15 @@
                      ;; that log, so it falls through to the squash below,
                      ;; which re-derives the net against the new base. The
                      ;; shortcut needs no exclusion in play either: excluded
-                     ;; main work is NOT in the branch, so the branch differs
+                     ;; source work is NOT in the branch, so the branch differs
                      ;; from the repositioned base and the squash has to
                      ;; record that difference as a branch-side delta.
                      (db/delete! conn :file-branch-change {:branch-id branch-id})
                      ;; in sync, so no row is copied and the pairs are all
                      ;; the id space the base needs: unpaired rows stay
-                     ;; named by the id main owns, which is what the branch
+                     ;; named by the id the source owns, which is what the branch
                      ;; references while it holds no copy
-                     (reposition-base! ts (:revn branch-file) (bm/remap-refs main-raw pairs))
+                     (reposition-base! ts (:revn branch-file) (bm/remap-refs source-raw pairs))
                      (audited {:status :updated :revn (:revn branch-file)} tpoint :update-from-source))
 
                    :else
@@ -1822,7 +1829,7 @@
                                          :deleted-at (ct/in-future delay)
                                          :profile-id profile-id})
 
-                         ;; media added on main: copy its rows into the branch
+                         ;; media added on the source: copy its rows into the branch
                          ;; under the pre-allocated ids the changes reference
                          (copy-media-rows! conn branch-file-id fresh-map new-media)
 
@@ -1892,8 +1899,8 @@
                                                                   (into sync)))}
                                        {::db/return-keys false})
 
-                           ;; SQUASH: the new base (main's current state)
-                           ;; already carries everything main contributed,
+                           ;; SQUASH: the new base (the source's current
+                           ;; state) already carries everything the source contributed,
                            ;; so the op log is replaced with the net
                            ;; branch-only changes computed against the new
                            ;; base. Refuse if that net cannot be translated
@@ -1902,7 +1909,7 @@
                            ;; undoes the snapshot and media copies above.
                            (let [{net-changes :changes
                                   unsupported :unsupported}
-                                 (bm/compute-changes main-data main-data (:data updated) {})]
+                                 (bm/compute-changes source-data source-data (:data updated) {})]
                              (when (seq unsupported)
                                (ex/raise :type :validation
                                          :code :unsupported-update-squash
@@ -1912,14 +1919,14 @@
                              ;; update applied: the log it replaces was
                              ;; written against the OLD merge base, and
                              ;; the squash is what names the branch's
-                             ;; pairing with main from now on
+                             ;; pairing with the source from now on
                              (persist-branch-update! cfg updated ts branch-id
                                                      net-changes media-map))
 
                            (when (contains? cf/flags :redis-cache)
                              (fupd/invalidate-caches! cfg updated))
                            (reposition-base! ts (:revn updated)
-                                             (bm/remap-refs main-raw media-map))
+                                             (bm/remap-refs source-raw media-map))
 
                            (vswap! messages conj
                                    {:topic branch-file-id
@@ -2097,7 +2104,7 @@
   entity-level `ahead`/`behind`/`conflicts` counts read through the
   summary cache (`cached-diff-counts`); otherwise nil. A cache miss on an
   open branch whose revn deltas are not both zero runs the three-way diff
-  (`branch-diff-counts!`), which loads main, the branch and its base.
+  (`branch-diff-counts!`), which loads the source, the branch and its base.
   Returns nil when branching is disabled, so it is safe to call on every
   file open.
 
@@ -2201,7 +2208,7 @@
   "List the merges into a file, newest first: each one names the merged
   branch, who merged it and when, the comment left with it and the design
   review it accepted, if any. When the file is itself a branch, the
-  merges into its source (main) are listed. The records outlive the
+  merges into its source are listed. The records outlive the
   branches they name (see the `file_branch_merge` migration)."
   {::doc/added "2.16"
    ::sm/params schema:get-file-branch-merges}
@@ -2209,14 +2216,14 @@
   (check-branching-enabled!)
   (db/run! cfg
            (fn [{:keys [::db/conn] :as cfg}]
-             (let [main-id (:id (db/exec-one! conn [sql:resolve-source-file file-id file-id]))]
-               (files/check-read-permissions! cfg profile-id main-id)
-               (db/exec! conn [sql:get-file-branch-merges main-id])))))
+             (let [source-id (:id (db/exec-one! conn [sql:resolve-source-file file-id file-id]))]
+               (files/check-read-permissions! cfg profile-id source-id)
+               (db/exec! conn [sql:get-file-branch-merges source-id])))))
 
 ;; --- COMMANDS: the changes a profile marked as viewed
 
 (defn- get-readable-branch
-  "The branch `branch-id`, once `profile-id` is known to read its main.
+  "The branch `branch-id`, once `profile-id` is known to read its source.
   Raises when there is no such branch."
   [{:keys [::db/conn] :as cfg} profile-id branch-id]
   (let [branch (db/get* conn :file-branch {:id branch-id})]

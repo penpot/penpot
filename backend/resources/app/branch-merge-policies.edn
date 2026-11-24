@@ -22,26 +22,27 @@
   :same-parent-reorder :merge
 
   ;; --- :addition-under-deleted-parent
-  ;; main deleted the frame P while the branch added a shape inside P.
+  ;; The source deleted the frame P while the branch added a shape inside P.
   ;;
   ;; :conflict              a :modify-delete conflict on P: :branch
   ;;                        restores P as the branch has it, addition
-  ;;                        included; :main drops the addition.
+  ;;                        included; :source drops the addition.
   ;; :refuse                the merge/update refuses with :unsupported.
   ;; :reparent-to-ancestor  place the addition under the nearest
-  ;;                        ancestor main still has.
+  ;;                        ancestor the source still has.
   ;; :page-root             today's behaviour: the addition lands at
   ;;                        the page root.
   :addition-under-deleted-parent :conflict
 
-  ;; --- :container-delete-over-main-edits
-  ;; The branch deleted the container F while main modified or added
-  ;; anything inside F's subtree.
+  ;; --- :container-delete-over-target-edits
+  ;; One side of a merge or an update deleted the container F while the
+  ;; side receiving the changes modified or added anything inside F's
+  ;; subtree.
   ;;
   ;; :conflict  a :delete-modify conflict on F: :branch deletes the
-  ;;            whole subtree knowingly; :main keeps F and its subtree
-  ;;            as main has them.
-  ;; :expand    delete only shapes the branch deleted; main's additions
+  ;;            whole subtree knowingly; :source keeps F and its subtree
+  ;;            as the source has them.
+  ;; :expand    delete only shapes the branch deleted; the source's additions
   ;;            move to F's parent.
   ;; :cascade   today's behaviour: the whole subtree goes.
-  :container-delete-over-main-edits :conflict}
+  :container-delete-over-target-edits :conflict}

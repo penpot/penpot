@@ -97,7 +97,7 @@
     (t/is (nil? (:error out)))
     (into #{} (map :id) (:result out))))
 
-(defn- update-from-main!
+(defn- update-from-source!
   [profile branch-file-id]
   (let [out (th/command! {::th/type :update-file-branch-from-source
                           ::rpc/profile-id (:id profile)
@@ -110,22 +110,22 @@
   (get-in data [:pages-index page-id :objects shape-id :fills 0 :fill-color-ref-file]))
 
 (defn- setup-library-use!
-  "A shared library publishing one colour, and a main file linked to it
+  "A shared library publishing one colour, and a source file linked to it
   whose one shape fills with that colour."
   [profile]
   (let [library  (th/create-file* 1 {:profile-id (:id profile)
                                      :project-id (:default-project-id profile)
                                      :is-shared true})
-        main     (create-file profile 2)
+        source   (create-file profile 2)
         color-id (uuid/random)
         shape-id (uuid/random)
-        page-id  (-> (file-data profile (:id main)) :pages first)]
+        page-id  (-> (file-data profile (:id source)) :pages first)]
 
     (apply-change! profile (:id library)
                    {:type :add-color
                     :color {:id color-id :name "Brand" :color "#ff0000" :opacity 1}})
-    (th/link-file-to-library* {:file-id (:id main) :library-id (:id library)})
-    (apply-change! profile (:id main)
+    (th/link-file-to-library* {:file-id (:id source) :library-id (:id library)})
+    (apply-change! profile (:id source)
                    {:type :add-obj
                     :page-id page-id
                     :id shape-id
@@ -140,8 +140,8 @@
                                              :fill-color-ref-file (:id library)}]))})
 
     {:library-id (:id library)
-     :main-id    (:id main)
-     :main       main
+     :source-id  (:id source)
+     :source     source
      :color-id   color-id
      :page-id    page-id
      :shape-id   shape-id}))
@@ -212,12 +212,12 @@
   ;; Unpublishing a library absorbs its assets into the files that use it
   ;; through `bfc/update-file!`, a write a branch must never take. The
   ;; branch keeps its link instead, so the unpublished library still
-  ;; resolves there, and its next update from main brings main's
+  ;; resolves there, and its next update from the source brings the source's
   ;; absorbed copy.
   (with-redefs [cf/flags (conj cf/flags :branching)]
     (let [profile   (th/create-profile* 1 {:is-active true})
-          {:keys [library-id main-id main color-id] :as ids} (setup-library-use! profile)
-          branch-id (create-branch! profile main "absorb")
+          {:keys [library-id source-id source color-id] :as ids} (setup-library-use! profile)
+          branch-id (create-branch! profile source "absorb")
           revn      (:revn (th/db-get :file {:id branch-id}))
           out       (th/command! {::th/type :set-file-shared
                                   ::rpc/profile-id (:id profile)
@@ -226,11 +226,11 @@
 
       (t/is (nil? (:error out)))
 
-      (t/testing "main absorbs the colour and drops its link"
-        (let [data (file-data profile main-id)]
+      (t/testing "the source absorbs the colour and drops its link"
+        (let [data (file-data profile source-id)]
           (t/is (some? (get-in data [:colors color-id])))
-          (t/is (= main-id (fill-ref-file data ids))))
-        (t/is (not (contains? (linked-library-ids profile main-id) library-id))))
+          (t/is (= source-id (fill-ref-file data ids))))
+        (t/is (not (contains? (linked-library-ids profile source-id) library-id))))
 
       (t/testing "the branch writes nothing and still resolves the library"
         (t/is (empty? (payload-rows branch-id)))
@@ -240,8 +240,8 @@
         (t/is (contains? (linked-library-ids profile branch-id) library-id))
         (t/is (some? (get-in (file-data profile library-id) [:colors color-id]))))
 
-      (t/testing "the next update from main brings main's absorbed copy"
-        (update-from-main! profile branch-id)
+      (t/testing "the next update from the source brings the source's absorbed copy"
+        (update-from-source! profile branch-id)
         (let [data (file-data profile branch-id)]
           (t/is (some? (get-in data [:colors color-id])))
           (t/is (not= library-id (fill-ref-file data ids))))
@@ -253,8 +253,8 @@
   ;; The unpublish must not reach it.
   (with-redefs [cf/flags (conj cf/flags :branching)]
     (let [profile   (th/create-profile* 1 {:is-active true})
-          {:keys [library-id main-id main color-id]} (setup-library-use! profile)
-          branch-id (create-branch! profile main "deleted")]
+          {:keys [library-id source-id source color-id]} (setup-library-use! profile)
+          branch-id (create-branch! profile source "deleted")]
 
       (t/is (nil? (:error (th/command! {::th/type :delete-file-branch
                                         ::rpc/profile-id (:id profile)
@@ -272,18 +272,18 @@
                               :is-shared false})]
         (t/is (nil? (:error out))))
 
-      (t/is (some? (get-in (file-data profile main-id) [:colors color-id])))
+      (t/is (some? (get-in (file-data profile source-id) [:colors color-id])))
       (t/is (empty? (payload-rows branch-id))))))
 
 (t/deftest delete-library-skips-branch
   ;; The deletion task absorbs a shared library into the files still
   ;; linked to it; a project deletion keeps those links. A branch
   ;; resolves nothing through the soft-deleted library until its next
-  ;; update from main brings main's absorbed copy.
+  ;; update from the source brings the source's absorbed copy.
   (with-redefs [cf/flags (conj cf/flags :branching)]
     (let [profile   (th/create-profile* 1 {:is-active true})
-          {:keys [library-id main-id main color-id] :as ids} (setup-library-use! profile)
-          branch-id (create-branch! profile main "absorb")
+          {:keys [library-id source-id source color-id] :as ids} (setup-library-use! profile)
+          branch-id (create-branch! profile source "absorb")
           revn      (:revn (th/db-get :file {:id branch-id}))]
 
       (th/run-task! :delete-object {:object :file
@@ -291,10 +291,10 @@
                                     :id library-id})
 
       ;; the task logs an absorption error instead of raising it, so
-      ;; main's absorbed copy is what proves the absorption ran
-      (let [data (file-data profile main-id)]
+      ;; the source's absorbed copy is what proves the absorption ran
+      (let [data (file-data profile source-id)]
         (t/is (some? (get-in data [:colors color-id])))
-        (t/is (= main-id (fill-ref-file data ids))))
+        (t/is (= source-id (fill-ref-file data ids))))
 
       (t/testing "the branch writes nothing and resolves nothing until the update"
         (t/is (empty? (payload-rows branch-id)))
@@ -303,8 +303,8 @@
         (t/is (= library-id (fill-ref-file (file-data profile branch-id) ids)))
         (t/is (not (contains? (linked-library-ids profile branch-id) library-id))))
 
-      (t/testing "the next update from main brings main's absorbed copy"
-        (update-from-main! profile branch-id)
+      (t/testing "the next update from the source brings the source's absorbed copy"
+        (update-from-source! profile branch-id)
         (let [data (file-data profile branch-id)]
           (t/is (some? (get-in data [:colors color-id])))
           (t/is (not= library-id (fill-ref-file data ids))))

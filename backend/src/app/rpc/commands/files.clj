@@ -1016,8 +1016,8 @@
 
 ;; Absorption skips branch files. A branch stores no data payload, so an
 ;; absorption written to one would land in a `file_data` row that no read
-;; consults. An open branch reaches main's absorbed copies on its next
-;; update from main. Until then an unpublished library still resolves in
+;; consults. An open branch reaches its source's absorbed copies on its
+;; next update from the source. Until then an unpublished library still resolves in
 ;; the branch through the branch's own link, which `set-file-shared`
 ;; keeps, and a soft-deleted library resolves nothing in the branch. A
 ;; branch file keeps `is_branch` while its deletion is pending, so the

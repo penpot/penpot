@@ -6,7 +6,7 @@
 
 (ns backend-tests.branch-file-queries-test
   "Regression tests for the queries that count or list a team's files: a
-  branch file is a hidden copy of its main file, so none of them may
+  branch file is a hidden copy of its source file, so none of them may
   count it, list it, or copy it as an ordinary file."
   (:require
    [app.binfile.common :as bfc]
@@ -28,22 +28,22 @@
           library   (th/create-file* 1 {:profile-id (:id profile)
                                         :project-id proj-id
                                         :is-shared true})
-          main      (th/create-file* 2 {:profile-id (:id profile)
+          source    (th/create-file* 2 {:profile-id (:id profile)
                                         :project-id proj-id
                                         :is-shared false})
-          _         (th/link-file-to-library* {:file-id (:id main) :library-id (:id library)})
+          _         (th/link-file-to-library* {:file-id (:id source) :library-id (:id library)})
           out       (th/command! {::th/type :create-file-branch
                                   ::rpc/profile-id (:id profile)
-                                  :file-id (:id main)
+                                  :file-id (:id source)
                                   :name "hidden"})
           branch-id (-> out :result :branch-file-id)]
 
       (t/is (nil? (:error out)))
-      ;; the branch copied main's link to the library
+      ;; the branch copied the source's link to the library
       (t/is (seq (th/db-query :file-library-rel {:file-id branch-id
                                                  :library-file-id (:id library)})))
 
-      (t/testing "the project counts the library and main only"
+      (t/testing "the project counts the library and the source only"
         (let [out  (th/command! {::th/type :get-projects
                                  ::rpc/profile-id (:id profile)
                                  :team-id team-id})
@@ -52,20 +52,20 @@
           (t/is (= 2 (:count proj)))
           (t/is (= 2 (:total-count proj)))))
 
-      (t/testing "the team stats count the library and main only"
+      (t/testing "the team stats count the library and the source only"
         (let [out (th/command! {::th/type :get-team-stats
                                 ::rpc/profile-id (:id profile)
                                 :team-id team-id})]
           (t/is (nil? (:error out)))
           (t/is (= 2 (-> out :result :files)))))
 
-      (t/testing "the unpublish dialog lists main only"
+      (t/testing "the unpublish dialog lists the source only"
         (let [out (th/command! {::th/type :get-library-file-references
                                 ::rpc/profile-id (:id profile)
                                 :file-id (:id library)})]
           (t/is (nil? (:error out)))
-          (t/is (= [(:id main)] (mapv :id (:result out))))))
+          (t/is (= [(:id source)] (mapv :id (:result out))))))
 
-      (t/testing "a team duplication copies the library and main only"
-        (t/is (= #{(:id library) (:id main)}
+      (t/testing "a team duplication copies the library and the source only"
+        (t/is (= #{(:id library) (:id source)}
                  (db/run! th/*system* bfc/get-team-files-ids team-id)))))))

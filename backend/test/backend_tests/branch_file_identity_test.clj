@@ -6,9 +6,9 @@
 
 (ns backend-tests.branch-file-identity-test
   "A branch file is its own file: the document a branch derives from
-  main's base snapshot names the branch, in `:data :id` and in every
+  its source's base snapshot names the branch, in `:data :id` and in every
   reference to itself (component instances, library colours, the tokens
-  source). The tests build main with a local component and a token set,
+  source). The tests build a source file with a local component and a token set,
   branch it, and check each branch verb against that identity."
   (:require
    [app.binfile.common :as bfc]
@@ -93,7 +93,7 @@
                                          :ref-id color-id :ref-file file-id}}]))))
 
 (defn- setup
-  "Main holding a local component (main `:mi-id`, copy `:copy-id`), a
+  "A source file holding a local component (main `:mi-id`, copy `:copy-id`), a
   library colour painted on `:swatch-id`, and a token set, branched
   once."
   []
@@ -101,8 +101,8 @@
         file      (th/create-file* 1 {:profile-id (:id profile)
                                       :project-id (:default-project-id profile)
                                       :is-shared false})
-        main-id   (:id file)
-        page-id   (-> (get-file profile main-id) :data :pages first)
+        source-id (:id file)
+        page-id   (-> (get-file profile source-id) :data :pages first)
         comp-id   (uuid/random)
         mi-id     (uuid/random)
         copy-id   (uuid/random)
@@ -110,26 +110,26 @@
         swatch-id (uuid/random)
         set-id    (uuid/random)
         tok-id    (uuid/random)]
-    (save profile main-id
+    (save profile source-id
           [(add-root page-id mi-id (component-frame mi-id {:component-root true
                                                            :main-instance true
                                                            :component-id comp-id
-                                                           :component-file main-id}))
+                                                           :component-file source-id}))
            {:type :add-component :id comp-id :name "Button" :path ""
             :main-instance-id mi-id :main-instance-page page-id}
-           (copy-of page-id copy-id comp-id mi-id main-id)
+           (copy-of page-id copy-id comp-id mi-id source-id)
            {:type :add-color
             :color {:id color-id :name "red" :color "#ff0000" :opacity 1}}
-           (painted page-id swatch-id color-id main-id)
+           (painted page-id swatch-id color-id source-id)
            {:type :set-token-set :id set-id :attrs {:id set-id :name "core"}}
            {:type :set-token :set-id set-id :token-id tok-id
             :attrs {:id tok-id :name "brand" :type :color :value "#ff0000"}}])
     (let [branch (:result (th/command! {::th/type :create-file-branch
                                         ::rpc/profile-id (:id profile)
-                                        :file-id main-id
+                                        :file-id source-id
                                         :name "identity"}))]
       {:profile        profile
-       :main-id        main-id
+       :source-id      source-id
        :page-id        page-id
        :comp-id        comp-id
        :mi-id          mi-id
@@ -178,15 +178,15 @@
       (t/testing "the branch validates clean"
         (t/is (empty? (validation-codes branch)))))))
 
-(t/deftest update-from-main-keeps-a-branch-copy-of-a-base-component
+(t/deftest update-from-source-keeps-a-branch-copy-of-a-base-component
   (with-redefs [cf/flags (conj cf/flags :branching)]
-    (let [{:keys [profile main-id page-id comp-id mi-id copy-id branch-id branch-file-id]} (setup)
+    (let [{:keys [profile source-id page-id comp-id mi-id copy-id branch-id branch-file-id]} (setup)
           own-copy (uuid/random)]
       ;; the workspace instantiates a local component with the current
       ;; file, the branch, as its library
       (save profile branch-file-id [(copy-of page-id own-copy comp-id mi-id branch-file-id)])
-      (save profile main-id [(set-fill page-id mi-id "#0000ff")
-                             (set-fill page-id copy-id "#0000ff")])
+      (save profile source-id [(set-fill page-id mi-id "#0000ff")
+                               (set-fill page-id copy-id "#0000ff")])
 
       (let [out (th/command! {::th/type :update-file-branch-from-source
                               ::rpc/profile-id (:id profile)
@@ -199,9 +199,9 @@
         (t/is (= branch-file-id (:component-file (shape branch page-id own-copy))))
         (t/is (empty? (validation-codes branch)))))))
 
-(t/deftest merge-names-main-in-what-it-applies
+(t/deftest merge-names-the-source-in-what-it-applies
   (with-redefs [cf/flags (conj cf/flags :branching)]
-    (let [{:keys [profile main-id page-id comp-id mi-id color-id branch-id branch-file-id]} (setup)
+    (let [{:keys [profile source-id page-id comp-id mi-id color-id branch-id branch-file-id]} (setup)
           own-copy   (uuid/random)
           own-swatch (uuid/random)]
       ;; the workspace paints with a local colour naming the current
@@ -216,13 +216,13 @@
         (t/is (nil? (:error out)))
         (t/is (= :merged (-> out :result :status))))
 
-      (let [main (get-file profile main-id)]
-        (t/is (= main-id (-> main :data :id)))
-        (t/is (= main-id (:component-file (shape main page-id own-copy))))
-        (t/is (= main-id (:component-file (shape main page-id mi-id))))
-        (t/is (= "#00ff00" (-> (shape main page-id mi-id) :fills first :fill-color)))
-        (t/is (= [main-id main-id] (colour-refs main page-id own-swatch)))
-        (t/is (empty? (validation-codes main)))))))
+      (let [source (get-file profile source-id)]
+        (t/is (= source-id (-> source :data :id)))
+        (t/is (= source-id (:component-file (shape source page-id own-copy))))
+        (t/is (= source-id (:component-file (shape source page-id mi-id))))
+        (t/is (= "#00ff00" (-> (shape source page-id mi-id) :fills first :fill-color)))
+        (t/is (= [source-id source-id] (colour-refs source page-id own-swatch)))
+        (t/is (empty? (validation-codes source)))))))
 
 (t/deftest materialize-keeps-the-base-components
   (with-redefs [cf/flags (conj cf/flags :branching)]
@@ -243,25 +243,25 @@
 
 (t/deftest materialize-owns-the-images-it-inherited
   ;; a materialized file outlives its source's media rows only if it owns
-  ;; copies: main's file-gc and main's deletion take main's rows along
+  ;; copies: the source's file-gc and the source's deletion take the source's rows along
   (with-redefs [cf/flags (conj cf/flags :branching)]
     (let [profile (th/create-profile* 1 {:is-active true})
           file    (th/create-file* 1 {:profile-id (:id profile)
                                       :project-id (:default-project-id profile)
                                       :is-shared false})
-          main-id (:id file)
-          page-id (-> (get-file profile main-id) :data :pages first)
+          source-id (:id file)
+          page-id (-> (get-file profile source-id) :data :pages first)
           storage (-> (:app.storage/storage th/*system*)
                       (assoc :app.storage/backend :fs))
           sobj    (sto/put-object! storage {::sto/content (sto/content "photo")
                                             :bucket :file-media-object
                                             :content-type "image/png"})
-          fmo     (th/create-file-media-object* {:file-id main-id
+          fmo     (th/create-file-media-object* {:file-id source-id
                                                  :name "photo.png"
                                                  :mtype "image/png"
                                                  :media-id (:id sobj)})
           photo   (uuid/random)
-          _       (save profile main-id
+          _       (save profile source-id
                         [(add-root page-id photo
                                    (-> (cts/setup-shape {:id photo :name "Photo" :type :rect
                                                          :x 0 :y 0 :width 100 :height 100
@@ -271,7 +271,7 @@
                                                                     :mtype "image/png"}}])))])
           create  (:result (th/command! {::th/type :create-file-branch
                                          ::rpc/profile-id (:id profile)
-                                         :file-id main-id
+                                         :file-id source-id
                                          :name "photos"}))
           branch-file-id (:branch-file-id create)
           out     (th/command! {::th/type :detach-file-branch

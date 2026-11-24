@@ -102,14 +102,14 @@
           (t/is (= (:name file) (:source-name info)))
           (t/is (= 0 (:ahead info)))
           (t/is (= 0 (:behind info))))
-        ;; the main file is not a branch -> nil
+        ;; the source file is not a branch -> nil
         (let [out (th/command! {::th/type :get-file-branch-info
                                 ::rpc/profile-id (:id profile)
                                 :file-id (:id file)})]
           (t/is (nil? (:error out)))
           (t/is (nil? (:result out)))))
 
-      (t/testing "merge base snapshot created on main"
+      (t/testing "merge base snapshot created on the source"
         (let [rows (th/db-query :file-change {:file-id (:id file)})]
           (t/is (pos? (count rows)))
           (t/is (some #(= "system" (:created-by %)) rows))))
@@ -122,14 +122,14 @@
               meta  (-> out :result :meta)]
           (t/is (nil? (:error out)))
           (t/is (map? stats))
-          ;; base == main == branch at fork -> nothing to merge, no conflicts
+          ;; base == source == branch at fork -> nothing to merge, no conflicts
           (t/is (= 0 (:conflicts stats)))
           ;; the resolution UI gets the "when" of each side
           (t/is (some? (:source-at meta)))
           (t/is (some? (:branch-at meta)))
           (t/is (some? (:base-at meta)))))
 
-      (t/testing "merge branch into main (clean, no-op)"
+      (t/testing "merge branch into the source (clean, no-op)"
         (let [out (th/command! {::th/type :merge-file-branch
                                 ::rpc/profile-id (:id profile)
                                 :branch-id @branch-meta-id})]
@@ -150,10 +150,10 @@
                                          :file-id (:id file)
                                          :name "cache-probe"}))
           branch-file-id (:branch-file-id create)
-          main-page-id   (uuid/random)
+          source-page-id (uuid/random)
           branch-page-id (uuid/random)]
 
-      (t/testing "diverge both sides: one page on main, one on the branch"
+      (t/testing "diverge both sides: one page on the source, one on the branch"
         (let [mf  (th/db-get :file {:id (:id file)})
               out (th/command! {::th/type :update-file
                                 ::rpc/profile-id (:id profile)
@@ -162,7 +162,7 @@
                                 :revn (:revn mf)
                                 :vern (:vern mf)
                                 :features cfeat/supported-features
-                                :changes [{:type :add-page :id main-page-id :name "main-side"}]})]
+                                :changes [{:type :add-page :id source-page-id :name "source-side"}]})]
           (t/is (nil? (:error out)))
           (let [bf  (th/db-get :file {:id branch-file-id})
                 out (th/command! {::th/type :update-file
@@ -227,7 +227,7 @@
           (t/is (nil? (:error out)))))
 
       (t/testing "branch info reports diff-based ahead/behind"
-        ;; one logical change on the branch (the added color), main untouched
+        ;; one logical change on the branch (the added color), the source untouched
         (let [info (:result (th/command! {::th/type :get-file-branch-info
                                           ::rpc/profile-id (:id profile)
                                           :file-id branch-file-id}))]
@@ -244,7 +244,7 @@
           (t/is (= 0 (:behind row)))
           (t/is (= 0 (:conflicts row)))))
 
-      (t/testing "merge brings the new color into main"
+      (t/testing "merge brings the new color into the source"
         (let [out (th/command! {::th/type :merge-file-branch
                                 ::rpc/profile-id (:id profile)
                                 :branch-id branch-id})]
@@ -259,7 +259,7 @@
           (t/is (contains? colors color-id))
           (t/is (= "Brand" (get-in colors [color-id :name]))))))))
 
-(t/deftest update-branch-pulls-main-changes
+(t/deftest update-branch-pulls-source-changes
   (with-redefs [cf/flags (conj cf/flags :branching)]
     (let [profile (th/create-profile* 1 {:is-active true})
           proj-id (:default-project-id profile)
@@ -275,9 +275,9 @@
           branch-id      (:id create)
 
           color-id (uuid/random)
-          color    {:id color-id :name "MainColor" :color "#00ff00" :opacity 1}]
+          color    {:id color-id :name "SourceColor" :color "#00ff00" :opacity 1}]
 
-      (t/testing "add a color on main (after the branch was created)"
+      (t/testing "add a color on the source (after the branch was created)"
         (let [mf  (th/db-get :file {:id (:id file)})
               out (th/command! {::th/type :update-file
                                 ::rpc/profile-id (:id profile)
@@ -289,7 +289,7 @@
                                 :changes [{:type :add-color :color color}]})]
           (t/is (nil? (:error out)))))
 
-      (t/testing "compare in the :source->branch direction shows main's incoming change"
+      (t/testing "compare in the :source->branch direction shows the source's incoming change"
         (let [diff (:result (th/command! {::th/type :get-file-branch-diff
                                           ::rpc/profile-id (:id profile)
                                           :branch-id branch-id
@@ -298,7 +298,7 @@
           (t/is (= 1 (-> diff :stats :added)))
           (t/is (= color-id (-> added first :id)))))
 
-      (t/testing "update the branch from main"
+      (t/testing "update the branch from the source"
         (let [out (th/command! {::th/type :update-file-branch-from-source
                                 ::rpc/profile-id (:id profile)
                                 :branch-id branch-id})]
@@ -311,7 +311,7 @@
               colors (-> out :result :data :colors)]
           (t/is (contains? colors color-id)))
 
-        ;; merge base repositioned to the current state of main
+        ;; merge base repositioned to the current state of the source
         (let [[row] (th/db-query :file-branch {:id branch-id})
               mf    (th/db-get :file {:id (:id file)})]
           (t/is (= (:revn mf) (:base-source-revn row))))))))
@@ -343,7 +343,7 @@
                                 :changes [{:type :add-page :id new-page-id :name "Branch Page"}]})]
           (t/is (nil? (:error out)))))
 
-      (t/testing "merge brings the new page into main"
+      (t/testing "merge brings the new page into the source"
         (let [out (th/command! {::th/type :merge-file-branch
                                 ::rpc/profile-id (:id profile)
                                 :branch-id branch-id})]
@@ -357,8 +357,8 @@
           (t/is (contains? pages new-page-id)))))))
 
 (t/deftest merge-reparents-existing-shape
-  ;; main: a rect at the page root. branch: that rect moved into a new board.
-  ;; after merge main must have the rect INSIDE the board and NOT loose at
+  ;; source: a rect at the page root. branch: that rect moved into a new board.
+  ;; after merge the source must have the rect INSIDE the board and NOT loose at
   ;; root (regression: reparenting was applied as :set parent-id, which left
   ;; the shape duplicated/loose).
   (with-redefs [cf/flags (conj cf/flags :branching)]
@@ -374,7 +374,7 @@
           rect-id (uuid/random)
           board-id (uuid/random)]
 
-      (t/testing "add a rect at the root of main"
+      (t/testing "add a rect at the root of the source"
         (let [mf  (th/db-get :file {:id (:id file)})
               out (th/command! {::th/type :update-file
                                 ::rpc/profile-id (:id profile)
@@ -444,9 +444,9 @@
             (t/is (not (contains? (set (get-in objects [uuid/zero :shapes])) rect-id)))))))))
 
 (t/deftest merge-component-stays-a-component
-  ;; create a component on a branch, merge it into main, and verify the
+  ;; create a component on a branch, merge it into the source, and verify the
   ;; merged main instance is still a valid component head (component-id set,
-  ;; component-file re-pointed to main) — regression: it was detached.
+  ;; component-file re-pointed to the source) — regression: it was detached.
   (with-redefs [cf/flags (conj cf/flags :branching)]
     (let [profile (th/create-profile* 1 {:is-active true})
           proj-id (:default-project-id profile)
@@ -496,7 +496,7 @@
                                   :main-instance-page page-id}]})]
           (t/is (nil? (:error out)))))
 
-      (t/testing "merge integrates the component into main as a real head"
+      (t/testing "merge integrates the component into the source as a real head"
         (let [out (th/command! {::th/type :merge-file-branch
                                 ::rpc/profile-id (:id profile)
                                 :branch-id branch-id})]
@@ -508,9 +508,9 @@
                                         :id (:id file)})
                           :result :data)
               shape   (get-in data [:pages-index page-id :objects mi-id])]
-          ;; the component registry row landed in main
+          ;; the component registry row landed in the source
           (t/is (contains? (:components data) comp-id))
-          ;; the main instance is NOT detached: still a head pointing at main
+          ;; the main instance is NOT detached: still a head pointing at the source
           (t/is (= comp-id (:component-id shape)))
           (t/is (= (:id file) (:component-file shape)))
           (t/is (true? (:main-instance shape)))
@@ -566,7 +566,7 @@
           (t/is (some? (:deleted-at row)))
           (t/is (some? (:deleted-at frow))))))))
 
-(t/deftest update-resolves-conflict-to-main
+(t/deftest update-resolves-conflict-to-source
   (with-redefs [cf/flags (conj cf/flags :branching)]
     (let [profile (th/create-profile* 1 {:is-active true})
           proj-id (:default-project-id profile)
@@ -586,7 +586,7 @@
                             :features cfeat/supported-features
                             :changes [change]})))]
 
-      ;; color exists on main before branching (base = red)
+      ;; color exists on the source before branching (base = red)
       (apply-change (:id file) {:type :add-color :color {:id cid :name "Brand" :color "#ff0000" :opacity 1}})
 
       (let [create (:result (th/command! {::th/type :create-file-branch
@@ -596,7 +596,7 @@
             branch-id      (:id create)
             branch-file-id (:branch-file-id create)]
 
-        ;; main edits the color -> green; branch edits it -> blue (conflict)
+        ;; the source edits the color -> green; branch edits it -> blue (conflict)
         (apply-change (:id file) {:type :mod-color :color {:id cid :name "Brand" :color "#00ff00" :opacity 1}})
         (apply-change branch-file-id {:type :mod-color :color {:id cid :name "Brand" :color "#0000ff" :opacity 1}})
 
@@ -606,7 +606,7 @@
                                   :branch-id branch-id})]
             (t/is (= :conflicts (-> out :result :status)))))
 
-        (t/testing "resolving to main brings main's value into the branch"
+        (t/testing "resolving to the source brings the source's value into the branch"
           (let [out (th/command! {::th/type :update-file-branch-from-source
                                   ::rpc/profile-id (:id profile)
                                   :branch-id branch-id
@@ -619,7 +619,7 @@
                 color (get-in out [:result :data :colors cid])]
             (t/is (= "#00ff00" (:color color)))))))))
 
-(t/deftest branch-count-counts-from-main-without-comparing
+(t/deftest branch-count-counts-from-the-root-without-comparing
   (with-redefs [cf/flags (conj cf/flags :branching)]
     (let [profile  (th/create-profile* 1 {:is-active true})
           stranger (th/create-profile* 2 {:is-active true})
@@ -659,7 +659,7 @@
         (t/testing "archived branches count, deleted ones do not"
           (t/is (= {:count 2} (:result (count-of (:id profile) (:id file))))))
 
-        (t/testing "from a branch, the branches of its main are counted"
+        (t/testing "from a branch, the branches of its family root are counted"
           (t/is (= {:count 2} (:result (count-of (:id profile) (:branch-file-id kept))))))
 
         (t/testing "a profile that cannot read the file is refused"
@@ -709,11 +709,11 @@
     (let [profile (th/create-profile* 1 {:is-active true})
           file    (th/create-file* 1 {:profile-id (:id profile)
                                       :project-id (:default-project-id profile)})
-          main-data (fn []
-                      (-> (th/command! {::th/type :get-file
-                                        ::rpc/profile-id (:id profile)
-                                        :id (:id file)})
-                          :result :data))]
+          source-data (fn []
+                        (-> (th/command! {::th/type :get-file
+                                          ::rpc/profile-id (:id profile)
+                                          :id (:id file)})
+                            :result :data))]
       (doseq [[label change landed?]
               [["file plugin data" file-plugin-change
                 #(= "bar" (get-in % [:plugin-data :my-plugin "foo"]))]
@@ -734,7 +734,7 @@
                                     :branch-id (:id create)})]
               (t/is (nil? (:error out)))
               (t/is (= :merged (-> out :result :status))))
-            (t/is (landed? (main-data)))))))))
+            (t/is (landed? (source-data)))))))))
 
 (t/deftest merge-reports-file-level-conflicts
   (with-redefs [cf/flags (conj cf/flags :branching)]
@@ -747,7 +747,7 @@
                                          :name "b"}))]
       (apply-change* profile (:branch-file-id create) file-plugin-change)
       (apply-change* profile (:branch-file-id create) base-font-size-change)
-      (apply-change* profile (:id file) (assoc file-plugin-change :value "main"))
+      (apply-change* profile (:id file) (assoc file-plugin-change :value "source"))
       (apply-change* profile (:id file) (assoc base-font-size-change :base-font-size "18px"))
       (let [info (:result (th/command! {::th/type :get-file-branch-info
                                         ::rpc/profile-id (:id profile)
@@ -831,7 +831,7 @@
       (let [out (merge! (:id second-b) {:comment "   "})]
         (t/is (nil? (:error out))))
 
-      (t/testing "the merges are listed newest first, from main or a branch"
+      (t/testing "the merges are listed newest first, from the source or a branch"
         (let [out    (th/command! {::th/type :get-file-branch-merges
                                    ::rpc/profile-id (:id profile)
                                    :file-id (:id file)})
@@ -862,7 +862,7 @@
                                 :file-id (:id file)})]
       (t/is (th/ex-of-type? (:error out) :not-found)))))
 
-(t/deftest merge-requires-main-edition-permissions
+(t/deftest merge-requires-source-edition-permissions
   (with-redefs [cf/flags (conj cf/flags :branching)]
     (let [profile1 (th/create-profile* 1 {:is-active true})
           profile2 (th/create-profile* 2 {:is-active true})
@@ -877,7 +877,7 @@
           branch-file-id (:branch-file-id create)]
 
       ;; profile2 is a team viewer, editor of the BRANCH file but only a
-      ;; viewer of main
+      ;; viewer of the source
       (th/create-team-role* {:team-id (:default-team-id profile1)
                              :profile-id (:id profile2)
                              :role :viewer})
@@ -893,7 +893,7 @@
                               :branch-id branch-id})]
         (t/is (some? (:error out))))
 
-      ;; but profile2 CAN update the branch from main (edits the branch)
+      ;; but profile2 CAN update the branch from the source (edits the branch)
       (let [out (th/command! {::th/type :update-file-branch-from-source
                               ::rpc/profile-id (:id profile2)
                               :branch-id branch-id})]
@@ -927,7 +927,7 @@
                                       :project-id proj-id})
           cid     (uuid/random)]
 
-      ;; color exists on main before branching (base = red)
+      ;; color exists on the source before branching (base = red)
       (apply-change* profile (:id file)
                      {:type :add-color :color {:id cid :name "Brand" :color "#ff0000" :opacity 1}})
 
@@ -938,7 +938,7 @@
             branch-id      (:id create)
             branch-file-id (:branch-file-id create)]
 
-        ;; main edits the color -> green; branch edits it -> blue (conflict)
+        ;; the source edits the color -> green; branch edits it -> blue (conflict)
         (apply-change* profile (:id file)
                        {:type :mod-color :color {:id cid :name "Brand" :color "#00ff00" :opacity 1}})
         (apply-change* profile branch-file-id
@@ -954,7 +954,7 @@
             (t/is (= :validation (:type (ex-data error))))
             (t/is (= :params-validation (:code (ex-data error))))))
 
-        (t/testing "a typo in a per-attr value is refused, not silently read as main"
+        (t/testing "a typo in a per-attr value is refused, not silently read as the source"
           (let [out   (th/command! {::th/type :merge-file-branch
                                     ::rpc/profile-id (:id profile)
                                     :branch-id branch-id
@@ -991,7 +991,7 @@
           branch-file-id (:branch-file-id create)
           cid (uuid/random)]
 
-      ;; main advances after the branch was created
+      ;; the source advances after the branch was created
       (apply-change* profile (:id file)
                      {:type :add-color :color {:id cid :name "M" :color "#00ff00" :opacity 1}})
 
@@ -1022,20 +1022,20 @@
                                 :id branch-file-id})]
           (t/is (contains? (-> out :result :data :colors) cid)))))))
 
-(t/deftest conflict-responses-carry-the-main-revn
+(t/deftest conflict-responses-carry-the-source-revn
   ;; A `:conflicts` response is what a resolving client works from, so it
-  ;; names the revision of main its conflicts were computed against. The
+  ;; names the revision of the source its conflicts were computed against. The
   ;; client sends that revision back as `expected-source-revn` with its
-  ;; resolutions, and a main that moved meanwhile is refused.
+  ;; resolutions, and a source that moved meanwhile is refused.
   (with-redefs [cf/flags (conj cf/flags :branching)]
-    (let [profile   (th/create-profile* 1 {:is-active true})
-          proj-id   (:default-project-id profile)
-          file      (th/create-file* 1 {:profile-id (:id profile)
-                                        :project-id proj-id})
-          cid       (uuid/random)
-          main-revn (fn [] (:revn (th/db-get :file {:id (:id file)})))]
+    (let [profile     (th/create-profile* 1 {:is-active true})
+          proj-id     (:default-project-id profile)
+          file        (th/create-file* 1 {:profile-id (:id profile)
+                                          :project-id proj-id})
+          cid         (uuid/random)
+          source-revn (fn [] (:revn (th/db-get :file {:id (:id file)})))]
 
-      ;; color exists on main before branching (base = red)
+      ;; color exists on the source before branching (base = red)
       (apply-change* profile (:id file)
                      {:type :add-color :color {:id cid :name "Brand" :color "#ff0000" :opacity 1}})
 
@@ -1046,16 +1046,16 @@
             branch-id      (:id create)
             branch-file-id (:branch-file-id create)]
 
-        ;; main edits the color -> green; branch edits it -> blue (conflict).
-        ;; Main moves past the revision the branch was cut at, so the
+        ;; the source edits the color -> green; branch edits it -> blue (conflict).
+        ;; The source moves past the revision the branch was cut at, so the
         ;; revision a response names is the current one, not the base's.
         (apply-change* profile (:id file)
                        {:type :mod-color :color {:id cid :name "Brand" :color "#00ff00" :opacity 1}})
         (apply-change* profile branch-file-id
                        {:type :mod-color :color {:id cid :name "Brand" :color "#0000ff" :opacity 1}})
 
-        (t/testing "an update that stops on conflicts names main's revision"
-          (let [revn (main-revn)
+        (t/testing "an update that stops on conflicts names the source's revision"
+          (let [revn (source-revn)
                 out  (th/command! {::th/type :update-file-branch-from-source
                                    ::rpc/profile-id (:id profile)
                                    :branch-id branch-id})]
@@ -1063,8 +1063,8 @@
             (t/is (= :conflicts (-> out :result :status)))
             (t/is (= revn (-> out :result :source-revn)))))
 
-        (t/testing "a merge that stops on conflicts names main's revision"
-          (let [revn (main-revn)
+        (t/testing "a merge that stops on conflicts names the source's revision"
+          (let [revn (source-revn)
                 out  (th/command! {::th/type :merge-file-branch
                                    ::rpc/profile-id (:id profile)
                                    :branch-id branch-id})]
@@ -1081,7 +1081,7 @@
                 (t/is (nil? (:error retry)))
                 (t/is (= :merged (-> retry :result :status)))))))))))
 
-(t/deftest revn-gate-survives-update-from-main
+(t/deftest revn-gate-survives-update-from-source
   (with-redefs [cf/flags (conj cf/flags :branching)]
     (let [profile (th/create-profile* 1 {:is-active true})
           proj-id (:default-project-id profile)
@@ -1101,7 +1101,7 @@
       ;; ONE change on the branch...
       (apply-change* profile branch-file-id
                      {:type :add-color :color {:id bid :name "B" :color "#0000ff" :opacity 1}})
-      ;; ...while main advances MORE times than the branch (its revn ends up
+      ;; ...while the source advances MORE times than the branch (its revn ends up
       ;; far ahead of the branch's own revn counter)
       (doseq [[id nm] [[m1 "M1"] [m2 "M2"] [m3 "M3"]]]
         (apply-change* profile (:id file)
@@ -1202,7 +1202,7 @@
         (t/is (nil? (:error out)))
         (t/is (= :merged (-> out :result :status))))
 
-      (t/testing "the parent branch takes the change in its op log, main does not"
+      (t/testing "the parent branch takes the change in its op log, the root does not"
         (t/is (contains? (colors-of profile (:branch-file-id parent)) color-id))
         (t/is (seq (th/db-query :file-branch-change {:branch-id (:id parent)})))
         (t/is (empty? (th/db-query :file-data {:file-id (:branch-file-id parent) :type "main"})))
@@ -1212,7 +1212,7 @@
         (let [[row] (th/db-query :file-branch-merge {:file-id (:branch-file-id parent)})]
           (t/is (= "child" (:branch-name row)))))
 
-      (t/testing "merging the parent then brings the change into main"
+      (t/testing "merging the parent then brings the change into the root"
         (t/is (nil? (:error (th/command! {::th/type :merge-file-branch
                                           ::rpc/profile-id (:id profile)
                                           :branch-id (:id parent)}))))
@@ -1241,7 +1241,7 @@
                                         ::rpc/profile-id (:id profile)
                                         :branch-id (:id parent)}))))
 
-      (t/testing "the child now branches from main, its base with it"
+      (t/testing "the child now branches from the root, its base with it"
         (let [row (th/db-get :file-branch {:id (:id child)})]
           (t/is (= "open" (:status row)))
           (t/is (= (:id file) (:source-file-id row)))
@@ -1249,7 +1249,7 @@
           (t/is (= (:id file) (:file-id (th/db-get :file-change {:id base-id}
                                                    {::db/remove-deleted false}))))))
 
-      (t/testing "the child still derives its state and compares against main"
+      (t/testing "the child still derives its state and compares against the root"
         (let [colors (colors-of profile (:branch-file-id child))]
           (t/is (contains? colors parent-color))
           (t/is (contains? colors child-color)))
@@ -1258,7 +1258,7 @@
                                 :branch-id (:id child)})]
           (t/is (nil? (:error out)))))
 
-      (t/testing "the child merges into main"
+      (t/testing "the child merges into the root"
         (t/is (nil? (:error (th/command! {::th/type :merge-file-branch
                                           ::rpc/profile-id (:id profile)
                                           :branch-id (:id child)}))))
@@ -1291,7 +1291,7 @@
 
 (t/deftest the-branch-quota-counts-the-whole-family
   ;; Counted by direct source, the chain below holds one branch per
-  ;; source, so a third branch from main passed a quota of two.
+  ;; source, so a third branch from the root passed a quota of two.
   (with-redefs [cf/flags (stacking-flags)
                 cf/get   (th/config-get-mock {:quotes-branches-per-file 2})]
     (let [{:keys [profile proj-id file branches]} (branch-chain*)
@@ -1429,7 +1429,7 @@
         (t/is (nil? row))
         (t/is (some? (:deleted-at bf)))))))
 
-(t/deftest merge-copies-branch-media-into-main
+(t/deftest merge-copies-branch-media-into-source
   (with-redefs [cf/flags (conj cf/flags :branching)]
     (let [profile (th/create-profile* 1 {:is-active true})
           proj-id (:default-project-id profile)
@@ -1444,7 +1444,7 @@
                                               :bucket :file-media-object
                                               :content-type "image/png"}))
 
-          ;; media present on MAIN before branching (will be paired)
+          ;; media present on the SOURCE before branching (will be paired)
           sobj1  (mk-sobj "shared-image")
           fmo1   (th/create-file-media-object* {:file-id (:id file)
                                                 :name "shared.png"
@@ -1488,7 +1488,7 @@
           (t/is (= 1 (:ahead info)))
           (t/is (= 0 (:behind info)))))
 
-      (t/testing "merging brings the new media with a MAIN-owned row"
+      (t/testing "merging brings the new media with a source-owned row"
         (let [out (th/command! {::th/type :merge-file-branch
                                 ::rpc/profile-id (:id profile)
                                 :branch-id branch-id})]
@@ -1501,14 +1501,14 @@
               media (-> out :result :data :media)
               added (->> (vals media) (filter #(= "new.png" (:name %))) first)]
           (t/is (some? added))
-          ;; the merged entry references a row owned by MAIN (a copy), not
+          ;; the merged entry references a row owned by the SOURCE (a copy), not
           ;; the branch's row (which dies with the branch file)
           (t/is (not= (:id fmo2) (:id added)))
           (let [row (th/db-get :file-media-object {:id (:id added)})]
             (t/is (= (:id file) (:file-id row)))
             (t/is (= (:id sobj2) (:media-id row)))))))))
 
-(t/deftest merge-copies-colour-image-media-into-main
+(t/deftest merge-copies-colour-image-media-into-source
   (with-redefs [cf/flags (conj cf/flags :branching)]
     (let [profile (th/create-profile* 1 {:is-active true})
           proj-id (:default-project-id profile)
@@ -1557,14 +1557,14 @@
                                  :id (:id file)})
             img-id (get-in out [:result :data :colors cid :image :id])]
         (t/is (some? img-id))
-        ;; the colour's image is a row owned by MAIN (a copy), not the
+        ;; the colour's image is a row owned by the SOURCE (a copy), not the
         ;; branch's row (which dies with the branch file)
         (t/is (not= (:id fmo) img-id))
         (let [row (th/db-get :file-media-object {:id img-id})]
           (t/is (= (:id file) (:file-id row)))
           (t/is (= (:id sobj) (:media-id row))))))))
 
-(t/deftest update-from-main-copies-colour-image-media-into-branch
+(t/deftest update-from-source-copies-colour-image-media-into-branch
   (with-redefs [cf/flags (conj cf/flags :branching)]
     (let [profile (th/create-profile* 1 {:is-active true})
           proj-id (:default-project-id profile)
@@ -1581,12 +1581,12 @@
           branch-id      (:id create)
           branch-file-id (:branch-file-id create)
 
-          ;; media ADDED on MAIN after forking, used only by a library colour
-          sobj   (sto/put-object! storage {::sto/content (sto/content "main-colour-image")
+          ;; media ADDED on the SOURCE after forking, used only by a library colour
+          sobj   (sto/put-object! storage {::sto/content (sto/content "source-colour-image")
                                            :bucket :file-media-object
                                            :content-type "image/png"})
           fmo    (th/create-file-media-object* {:file-id (:id file)
-                                                :name "main-colour.png"
+                                                :name "source-colour.png"
                                                 :mtype "image/png"
                                                 :media-id (:id sobj)})
           cid    (uuid/random)
@@ -1626,7 +1626,7 @@
 
       (t/testing "the update logs no phantom branch change"
         ;; the colour image id must be re-pointed at the copy like every
-        ;; other ref (`bm/remap-changes`); left in main's id space it makes
+        ;; other ref (`bm/remap-changes`); left in the source's id space it makes
         ;; the colour differ from the new base and lands in the op log
         (t/is (empty? (th/db-query :file-branch-change {:branch-id branch-id})))))))
 
@@ -1813,11 +1813,11 @@
   (let [orig   bm/compute-merge
         pruned (atom 0)]
     (with-redefs [bm/compute-merge
-                  (fn [base main branch dir & [opts]]
-                    (let [res (orig base main branch dir opts)]
+                  (fn [base source branch dir & [opts]]
+                    (let [res (orig base source branch dir opts)]
                       (when (:only-pages opts)
                         (swap! pruned inc)
-                        (t/is (= (orig base main branch dir (dissoc opts :only-pages)) res)
+                        (t/is (= (orig base source branch dir (dissoc opts :only-pages)) res)
                               "the pruned summary differs from the whole-file summary"))
                       res))]
       (f))
@@ -1842,7 +1842,7 @@
           branch-file-id (:branch-file-id create)
           rect-id        (uuid/random)]
 
-      (t/testing "a page-scoped edit on the branch and a page on main"
+      (t/testing "a page-scoped edit on the branch and a page on the source"
         (let [bf  (th/db-get :file {:id branch-file-id})
               out (th/command! {::th/type :update-file
                                 ::rpc/profile-id (:id profile)
@@ -1868,7 +1868,7 @@
                                 :revn (:revn mf)
                                 :vern (:vern mf)
                                 :features cfeat/supported-features
-                                :changes [{:type :add-page :id (uuid/random) :name "main-side"}]})]
+                                :changes [{:type :add-page :id (uuid/random) :name "source-side"}]})]
           (t/is (nil? (:error out)))))
 
       (t/testing "the compare is pruned and reports the same summary"
@@ -2111,8 +2111,8 @@
             (t/is (zero? @reads) "the refused compare decoded the op log")
             (t/is (zero? @derives) "the refused compare derived the branch first"))))
 
-      (t/testing "an update from main stamps the squash it writes"
-        (apply-change* profile (:id file) {:type :add-page :id (uuid/random) :name "on-main"})
+      (t/testing "an update from the source stamps the squash it writes"
+        (apply-change* profile (:id file) {:type :add-page :id (uuid/random) :name "on-source"})
         (let [out (th/command! {::th/type :update-file-branch-from-source
                                 ::rpc/profile-id (:id profile)
                                 :branch-id branch-id})]
@@ -2378,7 +2378,7 @@
                                          :name "meta"}))
           branch-id (:id create)]
 
-      ;; main moves after the fork...
+      ;; the source moves after the fork...
       (apply-change* profile (:id file)
                      {:type :add-color
                       :color {:id (uuid/random) :name "M" :color "#00ff00" :opacity 1}})
@@ -2447,7 +2447,7 @@
           branch-id      (:id create)
           branch-file-id (:branch-file-id create)
           branch-color   (uuid/random)
-          main-color     (uuid/random)
+          source-color   (uuid/random)
 
           ;; validation reports an error the repair cannot fix: the
           ;; repair produces no changes and the re-validation still
@@ -2455,7 +2455,7 @@
           unfixable (fn [file _libs] (synthetic-validation-error file))
           no-repair (fn [_file _libs _errors] [])]
 
-      (t/testing "the merge refuses and leaves main and the branch untouched"
+      (t/testing "the merge refuses and leaves the source and the branch untouched"
         (apply-change* profile branch-file-id
                        {:type :add-color
                         :color {:id branch-color :name "B" :color "#112233" :opacity 1}})
@@ -2484,7 +2484,7 @@
       (t/testing "the update refuses and leaves the branch untouched"
         (apply-change* profile (:id file)
                        {:type :add-color
-                        :color {:id main-color :name "M" :color "#445566" :opacity 1}})
+                        :color {:id source-color :name "M" :color "#445566" :opacity 1}})
 
         (let [[base] (th/db-query :file-branch {:id branch-id})]
           (with-redefs [cfv/validate-file unfixable
@@ -2503,7 +2503,7 @@
                                          :id branch-file-id})
                            :result :data :colors)]
             (t/is (contains? colors branch-color))
-            (t/is (not (contains? colors main-color))))
+            (t/is (not (contains? colors source-color))))
 
           (let [[row] (th/db-query :file-branch {:id branch-id})]
             (t/is (= "open" (:status row)))
@@ -2617,12 +2617,12 @@
                                            ::rpc/profile-id (:id profile)
                                            :id id})))]
 
-      (t/testing "the merge drops the cached summary of main"
+      (t/testing "the merge drops the cached summary of the source"
         (apply-change* profile branch-file-id
                        {:type :add-color
                         :color {:id (uuid/random) :name "B" :color "#112233" :opacity 1}})
 
-        ;; the cache now describes the pre-merge main
+        ;; the cache now describes the pre-merge source
         (t/is (= 0 (-> (summary (:id file)) :colors :count)))
 
         (let [out (th/command! {::th/type :merge-file-branch
@@ -2727,7 +2727,7 @@
                                   :branch-id branch-id})]
             (t/is (= :branch-not-found (-> out :error ex-data :code)))))
         (t/is (= :merged (-> @merged :result :status)))
-        (t/testing "main holds the first merge's revn only"
+        (t/testing "the source holds the first merge's revn only"
           (t/is (= (-> @merged :result :revn)
                    (:revn (first (th/db-query :file {:id (:id file)}))))))
         (t/testing "the winning merge is the only one recorded"
@@ -2740,7 +2740,7 @@
 (t/deftest merge-releases-the-base-the-lock-shows
   ;; the merge releases the base snapshot pin (on the delete path), and
   ;; the id must come from the row as it stands under the lock: an
-  ;; update-from-main that repositions the base while the merge waits
+  ;; update-from-source that repositions the base while the merge waits
   ;; must not leave the new base pinned for ten years while the
   ;; superseded one is released a second time
   (with-redefs [cf/flags (conj cf/flags :branching)]
@@ -2757,7 +2757,7 @@
           old-base       (:base-snapshot-id (first (th/db-query :file-branch {:id branch-id})))
           cid (uuid/random)
           mid (uuid/random)]
-      ;; the branch carries its own change and main moves ahead, so the
+      ;; the branch carries its own change and the source moves ahead, so the
       ;; competing update really repositions the merge base
       (apply-change* profile branch-file-id
                      {:type :add-color :color {:id cid :name "C" :color "#112233" :opacity 1}})
@@ -2769,7 +2769,7 @@
         (with-redefs [db/xact-lock!
                       (fn [conn id]
                         ;; before the merge takes any lock, an update
-                        ;; from main repositions the merge base and
+                        ;; from the source repositions the merge base and
                         ;; releases the pin the branch carried so far
                         (when (compare-and-set! raced? false true)
                           (t/is (nil? (:error (th/command! {::th/type :update-file-branch-from-source
@@ -2795,7 +2795,7 @@
 
 (t/deftest update-releases-the-base-the-lock-shows
   ;; the same stale base id on the update path: the second of two
-  ;; overlapping updates from main must release the base the first one
+  ;; overlapping updates from the source must release the base the first one
   ;; created, not the one it superseded
   (with-redefs [cf/flags (conj cf/flags :branching)]
     (let [profile (th/create-profile* 1 {:is-active true})
@@ -2910,7 +2910,7 @@
           (t/is (= :file-modified (-> out :error ex-data :code)))
           (t/is (empty? @seen)))
         ;; the merge deletes the branch: its file's clients hear of the
-        ;; deletion and main's of the merge
+        ;; deletion and the source's of the merge
         (let [out (th/command! {::th/type :merge-file-branch
                                 ::rpc/profile-id (:id profile)
                                 :branch-id branch-id})]
@@ -3075,7 +3075,7 @@
                           conn))
 
                       fbranch/branch-diff-counts!
-                      (fn [cfg main-data branch]
+                      (fn [cfg source-data branch]
                         (let [conn (db/get-connection cfg)
                               prev (:conn (peek @runs))]
                           (swap! runs conj
@@ -3089,7 +3089,7 @@
                                   :held (into []
                                               (remove #(.isClosed ^java.sql.Connection %))
                                               @checkouts)}))
-                        (orig-compute cfg main-data branch))]
+                        (orig-compute cfg source-data branch))]
           (t/is (nil? (:error (th/command! {::th/type :get-file-branches
                                             ::rpc/profile-id (:id profile)
                                             :file-id (:id file)})))))
@@ -3109,7 +3109,7 @@
 
 (defn- squashed-log-types
   "Change types the branch's op log (`file_branch_change`) carries after
-  the squash an update-from-main performs."
+  the squash an update-from-source performs."
   [branch-id]
   (into []
         (mapcat (fn [row] (map :type (blob/decode (:changes row)))))
@@ -3118,10 +3118,10 @@
 (def ^:private media-change-types
   #{:add-media :mod-media :del-media})
 
-(t/deftest update-from-main-deletes-the-paired-media-copy
-  ;; main deletes a media object the branch holds as a paired copy: the
+(t/deftest update-from-source-deletes-the-paired-media-copy
+  ;; the source deletes a media object the branch holds as a paired copy: the
   ;; delete travels through `bm/remap-changes` with the pair map and must
-  ;; name the branch's copy, not main's row — the branch holds neither the
+  ;; name the branch's copy, not the source's row — the branch holds neither the
   ;; id the change was computed with nor a second copy of the content
   (with-redefs [cf/flags (conj cf/flags :branching)]
     (let [profile (th/create-profile* 1 {:is-active true})
@@ -3153,8 +3153,8 @@
                                                    ::rpc/profile-id (:id profile)
                                                    :id branch-file-id})]
                              (-> out :result :data :media)))]
-      ;; a main-side change so the first update reaches the write path and
-      ;; copies main's row into the branch
+      ;; a source-side change so the first update reaches the write path and
+      ;; copies the source's row into the branch
       (t/is (nil? (:error (apply-change* profile (:id file)
                                          {:type :add-color
                                           :color {:id (uuid/random) :name "C1"
@@ -3172,7 +3172,7 @@
           (t/is (= (:id sobj)
                    (:media-id (th/db-get :file-media-object {:id (:id media)}))))))
 
-      (t/testing "deleting it on main deletes the branch's copy"
+      (t/testing "deleting it on the source deletes the branch's copy"
         (t/is (nil? (:error (apply-change* profile (:id file)
                                            {:type :del-media :id (:id fmo)}))))
         (let [out (th/command! {::th/type :update-file-branch-from-source
@@ -3182,9 +3182,9 @@
         (t/is (empty? (branch-media)))))))
 
 (t/deftest repeated-updates-squash-no-phantom-media
-  ;; a second update from main must not squash media changes the branch
-  ;; never made: the write re-points main's media rows at the branch's
-  ;; copies, and the squashed log compares the updated branch with main's
+  ;; a second update from the source must not squash media changes the branch
+  ;; never made: the write re-points the source's media rows at the branch's
+  ;; copies, and the squashed log compares the updated branch with the source's
   ;; state — if one side is re-pointed and the other is not, the paired
   ;; media reads as deleted+added on every update
   (with-redefs [cf/flags (conj cf/flags :branching)]
@@ -3192,30 +3192,30 @@
           proj-id (:default-project-id profile)
           storage (-> (:app.storage/storage th/*system*)
                       (assoc :app.storage/backend :fs))
-          add-media-on-main! (fn [file name]
-                               (let [sobj (sto/put-object! storage {::sto/content (sto/content name)
-                                                                    :bucket :file-media-object
-                                                                    :content-type "image/png"})
-                                     fmo  (th/create-file-media-object* {:file-id (:id file)
-                                                                         :name name
-                                                                         :media-id (:id sobj)})]
+          add-media-on-source! (fn [file name]
+                                 (let [sobj (sto/put-object! storage {::sto/content (sto/content name)
+                                                                      :bucket :file-media-object
+                                                                      :content-type "image/png"})
+                                       fmo  (th/create-file-media-object* {:file-id (:id file)
+                                                                           :name name
+                                                                           :media-id (:id sobj)})]
+                                   (apply-change* profile (:id file)
+                                                  {:type :add-media
+                                                   :object {:id (:id fmo) :name name
+                                                            :media-id (:id sobj)
+                                                            :width 100 :height 100
+                                                            :mtype "image/png"}})))
+          add-color-on-source! (fn [file]
                                  (apply-change* profile (:id file)
-                                                {:type :add-media
-                                                 :object {:id (:id fmo) :name name
-                                                          :media-id (:id sobj)
-                                                          :width 100 :height 100
-                                                          :mtype "image/png"}})))
-          add-color-on-main! (fn [file]
-                               (apply-change* profile (:id file)
-                                              {:type :add-color
-                                               :color {:id (uuid/random) :name "C"
-                                                       :color "#112233" :opacity 1}}))
+                                                {:type :add-color
+                                                 :color {:id (uuid/random) :name "C"
+                                                         :color "#112233" :opacity 1}}))
           update! (fn [branch-id]
                     (th/command! {::th/type :update-file-branch-from-source
                                   ::rpc/profile-id (:id profile)
                                   :branch-id branch-id}))]
 
-      (t/testing "media added on main after the fork"
+      (t/testing "media added on the source after the fork"
         (let [file    (th/create-file* 1 {:profile-id (:id profile)
                                           :project-id proj-id})
               create  (:result (th/command! {::th/type :create-file-branch
@@ -3223,11 +3223,11 @@
                                              :file-id (:id file)
                                              :name "after-fork"}))
               branch-id (:id create)]
-          (t/is (nil? (:error (add-media-on-main! file "after.png"))))
+          (t/is (nil? (:error (add-media-on-source! file "after.png"))))
           (t/is (= :updated (-> (update! branch-id) :result :status)))
           (t/is (empty? (filter media-change-types (squashed-log-types branch-id))))
-          ;; again, with and without new main changes
-          (t/is (nil? (:error (add-color-on-main! file))))
+          ;; again, with and without new source changes
+          (t/is (nil? (:error (add-color-on-source! file))))
           (t/is (= :updated (-> (update! branch-id) :result :status)))
           (t/is (empty? (filter media-change-types (squashed-log-types branch-id))))
           (t/is (= :updated (-> (update! branch-id) :result :status)))
@@ -3236,18 +3236,18 @@
       (t/testing "media present before the fork"
         (let [file    (th/create-file* 2 {:profile-id (:id profile)
                                           :project-id proj-id})
-              _       (t/is (nil? (:error (add-media-on-main! file "before.png"))))
+              _       (t/is (nil? (:error (add-media-on-source! file "before.png"))))
               create  (:result (th/command! {::th/type :create-file-branch
                                              ::rpc/profile-id (:id profile)
                                              :file-id (:id file)
                                              :name "before-fork"}))
               branch-id (:id create)]
-          ;; a main-side change so the update reaches the write path
-          (t/is (nil? (:error (add-color-on-main! file))))
+          ;; a source-side change so the update reaches the write path
+          (t/is (nil? (:error (add-color-on-source! file))))
           (t/is (= :updated (-> (update! branch-id) :result :status)))
           (t/is (empty? (filter media-change-types (squashed-log-types branch-id))))
-          ;; again, with and without new main changes
-          (t/is (nil? (:error (add-color-on-main! file))))
+          ;; again, with and without new source changes
+          (t/is (nil? (:error (add-color-on-source! file))))
           (t/is (= :updated (-> (update! branch-id) :result :status)))
           (t/is (empty? (filter media-change-types (squashed-log-types branch-id))))
           (t/is (= :updated (-> (update! branch-id) :result :status)))
@@ -3346,7 +3346,7 @@
                       (#'fbranch/summary-cache-key row)))
         k-default (key-of bm/default-policies)
         k-ignore  (key-of (assoc bm/default-policies :same-parent-reorder :ignore))
-        k-expand  (key-of (assoc bm/default-policies :container-delete-over-main-edits :expand))]
+        k-expand  (key-of (assoc bm/default-policies :container-delete-over-target-edits :expand))]
 
     ;; the key is stable for the same policies …
     (t/is (= k-default (key-of bm/default-policies)))
@@ -3427,20 +3427,20 @@
           (t/is (not (contains? (-> out :result :data :colors) color-id)))))
 
       (t/testing "the update refuses the same way when every incoming change is excluded"
-        (let [main-id (uuid/random)]
+        (let [source-color-id (uuid/random)]
           (apply-change* profile (:id file)
-                         {:type :add-color :color {:id main-id :name "Main" :color "#00ff00" :opacity 1}})
+                         {:type :add-color :color {:id source-color-id :name "Source" :color "#00ff00" :opacity 1}})
           (let [out   (th/command! {::th/type :update-file-branch-from-source
                                     ::rpc/profile-id (:id profile)
                                     :branch-id branch-id
-                                    :excluded #{(bm/change-key {:kind :color :id main-id})}})
+                                    :excluded #{(bm/change-key {:kind :color :id source-color-id})}})
                 error (:error out)]
             (t/is (some? error))
             (t/is (= :nothing-to-merge (-> error ex-data :code))))
           (let [out (th/command! {::th/type :get-file
                                   ::rpc/profile-id (:id profile)
                                   :id branch-file-id})]
-            (t/is (not (contains? (-> out :result :data :colors) main-id)))))))))
+            (t/is (not (contains? (-> out :result :data :colors) source-color-id)))))))))
 
 (t/deftest update-with-exclusion-replays-the-branch-from-its-base
   (with-redefs [cf/flags (conj cf/flags :branching)]
@@ -3454,23 +3454,23 @@
                                          :name "partial-update"}))
           branch-id      (:id create)
           branch-file-id (:branch-file-id create)
-          main-1  (uuid/random)
-          main-2  (uuid/random)
-          own     (uuid/random)]
+          source-1 (uuid/random)
+          source-2 (uuid/random)
+          own      (uuid/random)]
 
-      ;; main advances twice; the branch carries work of its own
+      ;; the source advances twice; the branch carries work of its own
       (apply-change* profile (:id file)
-                     {:type :add-color :color {:id main-1 :name "M1" :color "#111111" :opacity 1}})
+                     {:type :add-color :color {:id source-1 :name "M1" :color "#111111" :opacity 1}})
       (apply-change* profile (:id file)
-                     {:type :add-color :color {:id main-2 :name "M2" :color "#222222" :opacity 1}})
+                     {:type :add-color :color {:id source-2 :name "M2" :color "#222222" :opacity 1}})
       (apply-change* profile branch-file-id
                      {:type :add-color :color {:id own :name "Own" :color "#333333" :opacity 1}})
 
-      (t/testing "the update takes main's selected change and keeps the excluded one out"
+      (t/testing "the update takes the source's selected change and keeps the excluded one out"
         (let [out (th/command! {::th/type :update-file-branch-from-source
                                 ::rpc/profile-id (:id profile)
                                 :branch-id branch-id
-                                :excluded #{(bm/change-key {:kind :color :id main-1})}})]
+                                :excluded #{(bm/change-key {:kind :color :id source-1})}})]
           (t/is (nil? (:error out)))
           (t/is (= :updated (-> out :result :status))))
 
@@ -3480,27 +3480,27 @@
                                    ::rpc/profile-id (:id profile)
                                    :id branch-file-id})
               colors (-> out :result :data :colors)]
-          (t/is (contains? colors main-2))
+          (t/is (contains? colors source-2))
           (t/is (contains? colors own))
-          (t/is (not (contains? colors main-1))))
+          (t/is (not (contains? colors source-1))))
 
-        ;; the base moved to main, and main still holds the excluded work
+        ;; the base moved to the source, and the source still holds the excluded work
         (let [[row] (th/db-query :file-branch {:id branch-id})
               mf    (th/db-get :file {:id (:id file)})]
           (t/is (= (:revn mf) (:base-source-revn row))))
         (let [out (th/command! {::th/type :get-file
                                 ::rpc/profile-id (:id profile)
                                 :id (:id file)})]
-          (t/is (contains? (-> out :result :data :colors) main-1))))
+          (t/is (contains? (-> out :result :data :colors) source-1))))
 
-      (t/testing "the excluded main work is a branch-side delta over the new base"
+      (t/testing "the excluded source work is a branch-side delta over the new base"
         ;; the branch does not carry it and the base does, so the squashed
         ;; net records the difference as a change of the branch's own
         (let [diff (:result (th/command! {::th/type :get-file-branch-diff
                                           ::rpc/profile-id (:id profile)
                                           :branch-id branch-id}))]
           (t/is (some #(and (= :color (:kind %))
-                            (= main-1 (:id %))
+                            (= source-1 (:id %))
                             (= :deleted (:status %)))
                       (:changes diff))))))))
 
@@ -3584,8 +3584,8 @@
           (t/is (= :not-found (th/ex-type (:error out))))
           (t/is (= :branch-not-found (th/ex-code (:error out)))))))))
 
-(t/deftest merge-and-update-from-main-record-revision-rows
-  ;; the revision rows the merge and the update from main write carry
+(t/deftest merge-and-update-from-source-record-revision-rows
+  ;; the revision rows the merge and the update from the source write carry
   ;; their kind, as the save path's do: a kind-filtered read sees them
   (with-redefs [cf/flags (conj cf/flags :branching)]
     (let [profile        (th/create-profile* 1 {:is-active true})
@@ -3602,9 +3602,9 @@
                                                        WHERE file_id = ? AND session_id = ?"
                                                      file-id session-id])))]
       (apply-change* profile (:id file)
-                     {:type :add-color :color {:id (uuid/random) :name "Main" :color "#00ff00" :opacity 1}})
+                     {:type :add-color :color {:id (uuid/random) :name "Source" :color "#00ff00" :opacity 1}})
 
-      (t/testing "the update from main"
+      (t/testing "the update from the source"
         (let [session-id (uuid/random)
               out        (th/command! {::th/type :update-file-branch-from-source
                                        ::rpc/profile-id (:id profile)
