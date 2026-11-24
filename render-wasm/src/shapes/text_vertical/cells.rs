@@ -895,6 +895,50 @@ mod tests {
         );
     }
 
+    /// The glyph each upright cell of `text` draws, with the glyph its
+    /// font maps the cell's character to, under text-orientation: upright.
+    fn upright_glyphs(font: &[u8], text: &str) -> Vec<(char, skia::GlyphId, skia::GlyphId)> {
+        let mut content = make_content(&[text], 1000.0);
+        content.paragraphs_mut()[0].children_mut()[0].text_orientation = TextOrientation::Upright;
+        let layout = layout_with(&provider(font), &content);
+        layout
+            .cells
+            .iter()
+            .map(|cell| {
+                let CellKind::Upright { run, glyph, .. } = cell.kind else {
+                    panic!("expected an upright cell, got {:?}", cell.kind);
+                };
+                let run = &layout.runs[run];
+                let ch = char::decode_utf16(text.encode_utf16().skip(cell.start))
+                    .next()
+                    .and_then(Result::ok)
+                    .expect("a character at the cell start");
+                (ch, run.glyphs[glyph], run.font.unichar_to_glyph(ch as i32))
+            })
+            .collect()
+    }
+
+    #[test]
+    fn upright_latin_keeps_its_glyph_in_a_font_whose_vrt2_rotates_it() {
+        // `vrt2` swaps proportional Latin for glyphs already turned on their
+        // side, for fonts that set mixed text by substitution. Under
+        // text-orientation: upright the letters must stand upright.
+        for (ch, drawn, upright) in upright_glyphs(VRT2_TEST_FONT, "Aa") {
+            assert_eq!(drawn, upright, "{ch} is drawn with a rotated glyph");
+        }
+    }
+
+    #[test]
+    fn upright_punctuation_takes_its_vertical_form_in_a_font_with_vrt2() {
+        for (ch, drawn, horizontal) in upright_glyphs(VRT2_TEST_FONT, "縦、。") {
+            if ch == '縦' {
+                assert_eq!(drawn, horizontal, "{ch} keeps its glyph");
+            } else {
+                assert_ne!(drawn, horizontal, "{ch} needs its vertical form");
+            }
+        }
+    }
+
     #[test]
     fn upright_latin_ink_is_centred_in_its_cell() {
         // A descender followed by an ascender (`gf`) must not touch: each

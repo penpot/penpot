@@ -3,7 +3,7 @@
 // module owns the whole vertical pipeline:
 //
 //   segment spans by glyph orientation and shape each segment with
-//   SkShaper, OpenType `vert`/`vrt2` for upright runs (`text_shaping`) ->
+//   SkShaper, OpenType `vert` for upright runs (`text_shaping`) ->
 //   derive cells: one per upright glyph cluster, one per rotated run, one per
 //   composite (`cells`) -> JLREQ spacing and kinsoku-aware column breaks
 //   (`flow`) -> place columns and annotations (`layout`, `annotations`) ->

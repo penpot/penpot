@@ -322,8 +322,11 @@ fn font_feature(font_features: FontFeatures) -> Option<Feature> {
 }
 
 /// Shape one orientation segment on a single unbounded line. Upright
-/// segments get the OpenType vertical substitution features so CJK
-/// punctuation and brackets take their vertical forms.
+/// segments get the OpenType `vert` feature so CJK punctuation and brackets
+/// take their vertical forms. Not `vrt2`: on top of `vert`, it swaps
+/// proportional glyphs such as Latin for forms already turned on their
+/// side, which would set Latin sideways under text-orientation: upright.
+/// Sideways runs are rotated by the layout instead.
 pub(crate) fn shape_segment(
     text: &str,
     font: &Font,
@@ -338,7 +341,7 @@ pub(crate) fn shape_segment(
     let mut lang_iter = skia::Shaper::new_trivial_language_run_iterator(language, text.len());
 
     let mut features = if upright {
-        vec![feature(b"vert"), feature(b"vrt2")]
+        vec![feature(b"vert")]
     } else {
         vec![]
     };

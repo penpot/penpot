@@ -42,7 +42,7 @@ pub(crate) fn is_upright_char(c: char) -> bool {
 }
 
 /// Characters whose horizontal glyph needs a vertical alternate, normally
-/// from `vert` / `vrt2`. When the face has no such substitution, the
+/// from `vert`. When the face has no such substitution, the
 /// horizontal glyph rotates clockwise as a fallback. Covers UAX #50 `Tr`,
 /// plus comma/full-stop punctuation whose plain glyph sits in the wrong
 /// half of the vertical em box.

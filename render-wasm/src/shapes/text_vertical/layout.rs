@@ -39,7 +39,7 @@ pub enum CellKind {
         glyph: usize,
         count: usize,
     },
-    /// An upright-flow character whose font lacks a `vert`/`vrt2` alternate,
+    /// An upright-flow character whose font lacks a `vert` alternate,
     /// rotated in its own cell so wrapping, kinsoku and editor offsets stay
     /// per character.
     SyntheticRotated {

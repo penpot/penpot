@@ -25,6 +25,10 @@ pub(crate) const VMTX_TEST_FONT: &[u8] = include_bytes!("../../fonts/notosansjp-
 /// Noto Sans JP subset with GSUB `vert` and GPOS `vpal` for 、。「」あく.
 pub(crate) const VPAL_TEST_FONT: &[u8] = include_bytes!("../../fonts/notosansjp-vpal-test.ttf");
 
+/// Shippori Mincho subset for `Aa縦、。一`. Its `vrt2` swaps Latin for
+/// glyphs turned on their side; its `vert` leaves Latin alone.
+pub(crate) const VRT2_TEST_FONT: &[u8] = include_bytes!("../../fonts/shipporimincho-vrt2-test.ttf");
+
 /// Font size of every test span.
 pub(crate) const EM: f32 = 20.0;
 
