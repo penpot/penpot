@@ -97,19 +97,29 @@
   ;; Undoing a gradient with the colorpicker open sends a plain color.
   ;; The colorpicker dropped the stops but stayed in gradient mode, so
   ;; adding a stop built a gradient without coordinates or colors.
-  (let [state  {:colorpicker gradient-colorpicker}
-        event  (dwc/update-colorpicker {:color "#000000" :opacity 1})
-        result (:colorpicker (ptk/update event state))]
-    (t/is (= :color (:type result)))
-    (t/is (nil? (:stops result)))
-    (t/is (nil? (:gradient result)))))
+  (doseq [type [:linear-gradient :radial-gradient]]
+    (t/testing (name type)
+      (let [state  {:colorpicker (assoc gradient-colorpicker :type type)}
+            event  (dwc/update-colorpicker {:color "#000000" :opacity 1})
+            result (:colorpicker (ptk/update event state))]
+        (t/is (= :color (:type result)))
+        (t/is (nil? (:stops result)))
+        (t/is (nil? (:gradient result)))))))
 
-(t/deftest update-colorpicker-keeps-image-tab-on-image-color
+(t/deftest update-colorpicker-switches-to-image-tab-on-image-color
   (let [state  {:colorpicker gradient-colorpicker}
         image  {:id uuid/zero :width 10 :height 10 :mtype "image/png"}
         event  (dwc/update-colorpicker {:image image :opacity 1})
         result (:colorpicker (ptk/update event state))]
     (t/is (= :image (:type result)))))
+
+(t/deftest update-colorpicker-keeps-color-tab-on-plain-color
+  (let [state  {:colorpicker {:type :color
+                              :current-color {:color "#000000" :opacity 1}}}
+        event  (dwc/update-colorpicker {:color "#ff0000" :opacity 1})
+        result (:colorpicker (ptk/update event state))]
+    (t/is (= :color (:type result)))
+    (t/is (= "#ff0000" (get-in result [:current-color :color])))))
 
 (t/deftest colorpicker-onchange-runner-skips-invalid-gradient
   (let [calls  (atom [])
@@ -123,3 +133,17 @@
     (t/is (= [{:color "#000000" :opacity 1 :offset 0}
               {:color "#000000" :opacity 0 :offset 1}]
              (get-in (first @calls) [:gradient :stops])))))
+
+(t/deftest colorpicker-onchange-runner-applies-plain-and-image-colors
+  ;; The guard only drops invalid gradients: colors without a gradient
+  ;; must still reach `on-change`.
+  (let [calls  (atom [])
+        runner (#'dwc/colorpicker-onchange-runner #(swap! calls conj %))
+        image  {:id uuid/zero :width 10 :height 10 :mtype "image/png"}]
+    (ptk/watch runner {:colorpicker {:type :color
+                                     :current-color {:color "#ff0000" :opacity 1}}} nil)
+    (ptk/watch runner {:colorpicker {:type :image
+                                     :current-color {:image image :opacity 1}}} nil)
+    (t/is (= 2 (count @calls)))
+    (t/is (= "#ff0000" (:color (first @calls))))
+    (t/is (= image (:image (second @calls))))))
