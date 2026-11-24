@@ -308,11 +308,11 @@
                                              (ctpl/get-page file-data page-id) libraries current
                                              :include-deleted? true))
 
-        lost-main      (when (some? current)
+        lost-main      (when (and (some? current) (not (ctk/main-instance? current)))
                          (let [page (ctpl/get-page file-data page-id)]
                            (find-lost-main file-data (ctn/get-component-shape (:objects page) shape))))
 
-        matching-shape (when (some? current)
+        matching-shape (when (and (some? current) (not (ctk/main-instance? current)))
                          (let [page              (ctpl/get-page file-data page-id)
                                root-shape        (ctn/get-component-shape (:objects page) shape)
                                component-file    (if (= (:component-file root-shape) (:id file-data))
@@ -327,7 +327,7 @@
                              near-shape-1
                              ;; Check if it points to any random shape in the page. If so, try to find a matchng
                              ;; shape in the near main component.
-                             (when-let [random-shape (ctn/get-shape page (:shape-ref shape))]
+                             (when-let [random-shape (some->> (:shape-ref shape) (ctn/get-shape page))]
                                (if-let [near-shape-2 (d/seek #(= (:id %) (:shape-ref random-shape)) component-shapes)]
                                  near-shape-2
                                  ;; If not, check if it's a fostered copy and find a direct main.
@@ -356,9 +356,9 @@
     ;; and link to it. If not, detach the shape.
     (log/debug :hint "repairing shape :ref-shape-not-found" :id (:id shape) :name (:name shape) :page-id page-id)
     (cond
-      (or (nil? current) (some? ref-shape))
+      (or (nil? current) (some? ref-shape) (ctk/main-instance? current))
       (do
-        (log/debug :hint "  -> shape removed or ref shape found, nothing to repair")
+        (log/debug :hint "  -> shape removed, ref shape found or shape is a main, nothing to repair")
         (pcb/empty-changes nil page-id))
 
       (some? lost-main)
@@ -488,17 +488,27 @@
 
 (defmethod repair-error :nested-main-not-allowed
   [_ {:keys [shape page-id] :as error} file-data _]
-  (let [repair-shape
+  (let [objects      (-> (ctpl/get-page file-data page-id) :objects)
+        current      (get objects (:id shape))
+        inside-main? (some ctk/main-instance? (cfh/get-parents objects (:id shape)))
+
+        repair-shape
         (fn [shape]
-          ;; Convert the shape in a top main head.
+          ;; Convert the shape in a top main head. It moves to the page
+          ;; root only when an ancestor is a main; otherwise it stays in place.
           (log/debug :hint "  -> set :component-root")
           (assoc shape :component-root true))]
 
     (log/debug :hint "repairing shape :nested-main-not-allowed" :id (:id shape) :name (:name shape) :page-id page-id)
-    (-> (pcb/empty-changes nil page-id)
-        (pcb/with-file-data file-data)
-        (pcb/update-shapes [(:id shape)] repair-shape)
-        (pcb/change-parent uuid/zero [shape] nil {:allow-altering-copies true}))))
+    (if (nil? current)
+      (do
+        (log/debug :hint "  -> shape removed, nothing to repair")
+        (pcb/empty-changes nil page-id))
+      (cond-> (-> (pcb/empty-changes nil page-id)
+                  (pcb/with-file-data file-data)
+                  (pcb/update-shapes [(:id shape)] repair-shape))
+        inside-main?
+        (pcb/change-parent uuid/zero [current] nil {:allow-altering-copies true})))))
 
 (defmethod repair-error :root-copy-not-allowed
   [_ {:keys [shape page-id] :as error} file-data _]
@@ -857,12 +867,33 @@
 (defmethod repair-error :variant-not-main
   [_ {:keys [shape page-id]} file-data _]
   (let [page      (ctpl/get-page file-data page-id)
-        shape-ids (cfh/get-children-ids-with-self (:objects page) (:id shape))]
+        current   (get (:objects page) (:id shape))
+        component (ctkl/get-component file-data (:component-id shape))
+        ;; A stale :main-instance-page is fixed by the
+        ;; :invalid-main-instance-page repair once the shape is a main again.
+        claimed?  (and (some? component)
+                       (= (:component-file shape) (:id file-data))
+                       (= (:main-instance-id component) (:id shape)))]
     (log/debug :hint "repairing shape :variant-not-main" :id (:id shape) :name (:name shape) :page-id page-id)
-    (log/debug :hint "  -> delete shapes" :shape-ids shape-ids)
-    (-> (pcb/empty-changes nil page-id)
-        (pcb/with-file-data file-data)
-        (pcb/remove-objects shape-ids))))
+    (cond
+      (nil? current)
+      (do
+        (log/debug :hint "  -> shape removed, nothing to repair")
+        (pcb/empty-changes nil page-id))
+
+      claimed?
+      (do
+        (log/debug :hint "  -> set :main-instance")
+        (-> (pcb/empty-changes nil page-id)
+            (pcb/with-file-data file-data)
+            (pcb/update-shapes [(:id shape)] #(assoc % :main-instance true))))
+
+      :else
+      (let [shape-ids (cfh/get-children-ids-with-self (:objects page) (:id shape))]
+        (log/debug :hint "  -> delete shapes" :shape-ids shape-ids)
+        (-> (pcb/empty-changes nil page-id)
+            (pcb/with-file-data file-data)
+            (pcb/remove-objects shape-ids))))))
 
 (defmethod repair-error :parent-not-variant
   [_ {:keys [shape page-id]} file-data _]

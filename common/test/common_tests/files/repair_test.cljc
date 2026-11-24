@@ -403,25 +403,57 @@
       (t/is (nil? (ths/get-shape file' :inner)))
       (t/is (not-any? removed (:shapes (ths/get-shape file' :variant1))))))
 
-  ;; Guards against a crash, not a lost fix: without the removed-shape check
-  ;; in the :ref-shape-not-found repair, its lookups throw on the removed
-  ;; root1. Removing the variant's main here is the behaviour #13257 tracks;
-  ;; revisit this fixture when that issue changes it.
+  ;; Guards against a crash: without the removed-shape check in the
+  ;; :ref-shape-not-found repair, its lookups throw on a shape that the
+  ;; :variant-not-main repair removed earlier in the same pass.
   (t/testing ":ref-shape-not-found on a shape that an earlier repair of the same pass removed"
     (let [file   (-> (thf/sample-file :file1 :page-label :page1)
                      (thv/add-variant :variant1 :component1 :root1 :component2 :root2)
-                     (ths/update-shape :root1 :main-instance nil))
+                     ;; A variant-like frame that claims :component1 but is not its main
+                     (ths/add-sample-shape :stray :type :frame :parent-label :variant1
+                                           :component-id (thi/id :component1)
+                                           :component-file (thi/id :file1)
+                                           :component-root true
+                                           :variant-id (thi/id :variant1)
+                                           :variant-name "Value3"))
           errors (cfv/validate-file file {})
-          result (cfr/repair-file-until-valid
-                  file {}
-                  (fn [file _] (cfv/validate-file file {})))]
+          result (repair-until-valid file)]
 
-      (t/is (= [[:variant-not-main (thi/id :root1)]
-                [:invalid-main-instance (thi/id :root1)]
-                [:ref-shape-not-found (thi/id :root1)]]
+      (t/is (= [[:variant-not-main (thi/id :stray)]
+                [:variant-main-bad-variant-name (thi/id :stray)]
+                [:ref-shape-not-found (thi/id :stray)]]
                (mapv (juxt :code :shape-id) errors)))
-      (t/is (= 1 (:iterations result)))
-      (t/is (nil? (:errors result))))))
+      (t/is (nil? (ths/get-shape (:file result) :stray)))
+      (t/is (nil? (:errors result)))
+      (t/is (true? (:main-instance (ths/get-shape (:file result) :root1))))
+      (t/is (= (thi/id :root1)
+               (:main-instance-id (thc/get-component (:file result) :component1)))))))
+
+(t/deftest repair-nested-main-not-allowed
+  (t/testing "a main in a plain board keeps its place and gets :component-root"
+    (let [file   (-> (thf/sample-file :file1 :page-label :page1)
+                     (ths/add-sample-shape :outer :type :frame)
+                     (ths/add-sample-shape :root1 :type :frame :parent-label :outer)
+                     (thc/make-component :component1 :root1)
+                     (ths/update-shape :root1 :component-root nil))
+          result (repair-until-valid file)
+          root'  (ths/get-shape (:file result) :root1)]
+      (t/is (nil? (:errors result)))
+      (t/is (true? (:component-root root')))
+      (t/is (= (thi/id :outer) (:parent-id root')))))
+
+  (t/testing "a main inside another main moves to the page root"
+    (let [file   (-> (thf/sample-file :file1 :page-label :page1)
+                     (ths/add-sample-shape :outer :type :frame)
+                     (thc/make-component :component1 :outer)
+                     (ths/add-sample-shape :root1 :type :frame :parent-label :outer)
+                     (thc/make-component :component2 :root1)
+                     (ths/update-shape :root1 :component-root nil))
+          result (repair-until-valid file)
+          root'  (ths/get-shape (:file result) :root1)]
+      (t/is (nil? (:errors result)))
+      (t/is (true? (:component-root root')))
+      (t/is (= uuid/zero (:parent-id root'))))))
 
 (t/deftest repair-variant-not-main
   (t/testing "detect and repair a non-main-instance shape inside a variant container"
@@ -1417,6 +1449,60 @@
     (t/is (nil? (:variant-properties comp')))
     (t/is (= "SoloMain" (:path comp')))
     (t/is (= "ab" (:name comp')))))
+
+(t/deftest repair-variant-not-main-claimed-by-component
+  (t/testing "a variant main that lost :main-instance gets it back"
+    (let [file   (-> (thf/sample-file :file1 :page-label :page1)
+                     (thv/add-variant :variant1 :component1 :root1 :component2 :root2)
+                     (ths/add-sample-shape :child1 :type :rect :parent-label :root1)
+                     (ths/update-shape :root1 :main-instance nil))
+          result (repair-until-valid file)
+          root'  (ths/get-shape (:file result) :root1)]
+      (t/is (nil? (:errors result)))
+      ;; One pass: the :ref-shape-not-found of the same pass leaves the main alone
+      (t/is (= 1 (:iterations result)))
+      (t/is (true? (:main-instance root')))
+      (t/is (nil? (:shape-ref root')))
+      (t/is (= (thi/id :variant1) (:variant-id root')))
+      (t/is (= [(thi/id :child1)] (:shapes root')))))
+
+  (t/testing "a variant main whose component has a stale page gets :main-instance back"
+    (let [file   (-> (thf/sample-file :file1 :page-label :page1)
+                     (thv/add-variant :variant1 :component1 :root1 :component2 :root2)
+                     (ths/add-sample-shape :child1 :type :rect :parent-label :root1)
+                     (ths/update-shape :root1 :main-instance nil)
+                     (thc/update-component :component1 {:main-instance-page (uuid/next)}))
+          result (repair-until-valid file)
+          root'  (ths/get-shape (:file result) :root1)
+          comp'  (thc/get-component (:file result) :component1)]
+      (t/is (nil? (:errors result)))
+      (t/is (true? (:main-instance root')))
+      (t/is (= [(thi/id :child1)] (:shapes root')))
+      (t/is (= (thi/id :root1) (:main-instance-id comp')))
+      (t/is (= (thi/id :page1) (:main-instance-page comp')))))
+
+  (t/testing "a claimed variant main off its board is restored, then detached to a plain main"
+    (let [file   (-> (live-solo-file (uuid/next) (uuid/next) [{:name "SizeBig" :value "ab"}])
+                     (ths/update-shape :root1 :main-instance nil))
+          result (repair-until-valid file)
+          root'  (ths/get-shape (:file result) :root1)
+          comp'  (thc/get-component (:file result) :component1)]
+      (t/is (nil? (:errors result)))
+      (t/is (true? (:main-instance root')))
+      (t/is (nil? (:variant-id root')))
+      (t/is (nil? (:variant-id comp')))))
+
+  (t/testing "a variant main of a deleted component is removed with its children"
+    (let [file   (-> (thf/sample-file :file1 :page-label :page1)
+                     (thv/add-variant :variant1 :component1 :root1 :component2 :root2)
+                     (ths/add-sample-shape :child1 :type :rect :parent-label :root1)
+                     (ths/update-shape :root1 :main-instance nil)
+                     (thc/update-component :component1 {:deleted true}))
+          result (repair-until-valid file)]
+      (t/is (nil? (:errors result)))
+      (t/is (nil? (ths/get-shape (:file result) :root1)))
+      (t/is (nil? (ths/get-shape (:file result) :child1)))
+      (t/is (some? (ths/get-shape (:file result) :root2))))))
 
 (t/deftest repair-variant-main-outside-board
   (t/testing "a live solo on an ordinary frame reports only :variant-main-outside-board among the variant codes"
