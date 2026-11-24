@@ -50,9 +50,10 @@
                                                   :behavior "smooth"}))))))
 
 (defn- initial-tab
-  "The tab a token form opens on: its reference tab when the token
-  references another one. A composite token whose value is a string is
-  one as well: a reference, or tokenscript that resolves to its value."
+  "Picks the tab that a token form opens on. The form opens on the
+  reference tab when the token references another token. A composite
+  token with a string value also opens there. The string is a reference,
+  or tokenscript that resolves to the value."
   [token value-type]
   (if (or (cfo/is-reference? token)
           (and (= :composite value-type)

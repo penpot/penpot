@@ -210,26 +210,27 @@
             value))))))
 
 (defn visible-hint
-  "The hint of a field. A form that shows the resolved values elsewhere
-  hides the hint with the resolved value, `is-resolved-hint-hidden`;
-  an error hint always shows."
+  "Gives the hint of a field. A form that shows the resolved values in a
+  different place hides the hint with the resolved value
+  (`is-resolved-hint-hidden`). An error hint always shows."
   [hint is-resolved-hint-hidden]
   (if (and is-resolved-hint-hidden (= "hint" (:type hint)))
     {}
     hint))
 
 (defn ramp-open?
-  "Whether the color ramp of a color input is open. A form that shows
-  one ramp for several inputs decides it for each; otherwise it is open
-  after the swatch was clicked."
+  "Checks whether the color ramp of a color input is open. A form that
+  shows one ramp for several inputs decides this for each input.
+  Otherwise, the ramp opens after a click on the swatch."
   [is-ramp-open is-opened-by-swatch]
   (if (some? is-ramp-open)
     is-ramp-open
     is-opened-by-swatch))
 
 (defn ramp-color
-  "The color the ramp of a color input shows: its color, or for a
-  reference the color it resolves to."
+  "Gives the color that the ramp of a color input shows. This is the
+  color of the input or, for a reference, the color that the reference
+  resolves to."
   [value resolved-color]
   (if (tinycolor/valid-color value)
     value

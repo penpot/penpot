@@ -5,16 +5,18 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.data.workspace.tokens.gradient-form
-  "What the gradient token form edits and shows: the value of the form
-  and the stops of its gradient editor, with the steps that change them
-  (adding, moving, reversing a stop) and the conversion of a pasted CSS
-  gradient.
+  "Works out what the gradient token form edits and shows. It keeps the
+  value of the form and the stops of its gradient editor. It adds, moves
+  and reverses stops. It converts a pasted CSS gradient.
 
-  The form edits `{:reference .. :kind .. :angle .. :stops [..]}`: the
-  reference tab fills `:reference`, the composite tab the rest. The token
-  keeps one of both: the reference string, or the gradient map. A stop's
-  position is a percentage in the form, as in the gradient editor of the
-  color picker, unless it is a reference or an expression."
+  The form edits `{:reference .. :kind .. :angle .. :stops [..]}`. The
+  reference tab fills `:reference`. The composite tab fills the other
+  keys. The token keeps one of the two: the reference string or the
+  gradient map.
+
+  In the form, the position of a stop is a percentage, as in the
+  gradient editor of the color picker. A reference or an expression
+  stays as written."
   (:require
    [app.common.data :as d]
    [app.common.math :as mth]
@@ -40,31 +42,31 @@
    :stops default-token-stops})
 
 (defn- with-stop-ids
-  "The stops with an `:id` each, which the form keeps while they move:
-  a row and what it shows about its stop follow the stop."
+  "Gives each stop an `:id`. The form keeps the ids while the stops move,
+  so that each row and what it shows follow its stop."
   [stops]
   (into [] (map-indexed (fn [index stop] (assoc stop :id index))) stops))
 
 (defn next-stop-id
-  "The id the next stop added to `stops` gets."
+  "Gives the id of the next stop that the form adds to `stops`."
   [stops]
   (inc (reduce max -1 (keep :id stops))))
 
 (defn selected-index
-  "The index of the selected stop, the one with the id `id`: the
+  "Finds the index of the selected stop, which has the id `id`. The
   selection follows its stop when stops are added, moved or removed.
-  The first stop when it is gone."
+  When that stop is gone, gives the index of the first stop."
   [stops id]
   (or (d/index-of-pred stops #(= id (:id %))) 0))
 
 (defn stop-id-at
-  "The id of the stop at `index`."
+  "Gives the id of the stop at `index`."
   [stops index]
   (:id (get stops index)))
 
 (defn- percent
-  "The percentage a position field holds. Nil for a reference or an
-  expression."
+  "Reads the percentage in a position field. Gives nil for a reference or
+  an expression."
   [position]
   (when (and (string? position)
              (re-matches #"^\s*-?\d+(?:\.\d+)?\s*$" position))
@@ -75,9 +77,9 @@
   (str (mth/precision (* offset 100) 2)))
 
 (defn- stored-offset
-  "The offset, from 0 to 1, of a position a token keeps: a fraction (`0.5`)
-  or a percentage (`50%`). Nil for a reference, an expression or a
-  position out of range."
+  "Gives the offset, from 0 to 1, of a position that a token keeps. The
+  token keeps a fraction (`0.5`) or a percentage (`50%`). Gives nil for
+  a reference, an expression or a position out of range."
   [position]
   (let [offset (tsd/gradient-offset position)]
     (when (and (some? offset) (<= 0 offset 1))
@@ -112,8 +114,8 @@
       (update :stops with-stop-ids)))
 
 (defn form-value->token-value
-  "The gradient the token keeps, from the fields of the composite tab. A
-  radial gradient has no angle."
+  "Makes the gradient that the token keeps from the fields of the
+  composite tab. A radial gradient has no angle."
   [{:keys [kind angle stops]}]
   (cond-> {:kind kind
            :stops (mapv (fn [stop]
@@ -124,40 +126,41 @@
     (assoc :angle angle)))
 
 (defn angle-token
-  "The token the angle field of the gradient `value` resolves as: a
-  rotation, which takes any unit, as the angle of a gradient token
-  does."
+  "Makes the token that the angle field of the gradient `value` resolves
+  as. This is a rotation token. A rotation takes any angle unit, the
+  same as the angle of a gradient token."
   [value]
   (d/without-nils
    {:type :rotation
     :value (get value :angle)}))
 
 (defn stop-token
-  "The token the field `field` (`:color` or `:position`) of the stop at
-  `index` of the gradient `value` resolves as. A position has no type of
-  its own: the gradient checks its range."
+  "Makes the token that a field of a stop resolves as. `field` is
+  `:color` or `:position`, and `index` is the index of the stop in the
+  gradient `value`. A position has no type of its own, because the
+  gradient checks its range."
   [value index field]
   (d/without-nils
    {:type (when (= :color field) :color)
     :value (get-in value [:stops index field])}))
 
 (defn position-hint-hidden?
-  "Whether the position field hides the value its position resolves to:
-  a plain percentage shows it already. A reference or an expression
-  shows it."
+  "Checks whether the position field hides the value that its position
+  resolves to. A plain percentage already shows that value, so the field
+  hides it. For a reference or an expression, the field shows it."
   [position]
   (some? (percent position)))
 
 (defn complete-stop?
-  "Whether a stop has its color and its position."
+  "Checks whether a stop has a color and a position."
   [{:keys [color position]}]
   (not (or (str/blank? color) (str/blank? position))))
 
 (defn- marker-stop
-  "A stop of the form as the strip draws it: with its own color and
-  position when they are plain values, else with the ones they resolve
-  to. The color its input resolved comes first, since it moves with the
-  stop. Nil while the stop has no color or no position."
+  "Gives a stop of the form as the strip draws it. Plain values stay as
+  they are. References give the values that they resolve to. The color
+  that the input of the stop resolved has priority, because it moves
+  with the stop. Gives nil while the stop has no color or no position."
   [index {:keys [color color-result position]} resolved]
   (let [color    (d/seek tinycolor/valid-color
                          (filter string? [color color-result (:color resolved)]))
@@ -171,8 +174,9 @@
         (assoc stop :index index :r r :g g :b b :alpha opacity)))))
 
 (defn marker-stops
-  "The stops of the form as the strip draws them, the ones with
-  references as the gradient the form resolves to has them."
+  "Gives the stops of the form as the strip draws them. A stop with
+  references gets its values from the gradient that the form resolves
+  to."
   [stops resolved]
   (let [resolved-stops (when (= (count stops) (count (:stops resolved)))
                          (:stops resolved))]
@@ -182,10 +186,10 @@
           stops)))
 
 (defn with-resolved-colors
-  "The stops with the color each resolves to, as their color inputs keep
-  it to draw their swatch. An input only resolves its color once it is
-  edited, so a token that is opened gets them from its resolved
-  gradient."
+  "Adds to each stop the color that it resolves to. The color inputs keep
+  this color to draw their swatch. An input resolves its color only
+  after an edit. So when the form opens a token, the stops get these
+  colors from its resolved gradient."
   [stops resolved]
   (if (= (count stops) (count (:stops resolved)))
     (mapv (fn [stop {:keys [color]}]
@@ -201,7 +205,8 @@
   (assoc-in value [:stops index :position] (format-percent offset)))
 
 (defn- stop-color
-  "A color as the form writes it: hex, or rgba when it has an opacity."
+  "Writes a color as the form does: hex, or rgba when the color has an
+  opacity."
   [{:keys [color opacity]}]
   (if (< opacity 1)
     (-> (tinycolor/valid-color color)
@@ -211,7 +216,7 @@
 
 (defn set-stop-opacity
   "Sets the opacity of the color of a stop. A color that is a reference
-  keeps the opacity it resolves to."
+  keeps the opacity that it resolves to."
   [value index opacity]
   (update-in value [:stops index]
              (fn [{:keys [color] :as stop}]
@@ -221,8 +226,9 @@
                  stop))))
 
 (defn add-stop
-  "Adds a stop where the strip was clicked, after the stops before it,
-  with the color the gradient has there."
+  "Adds a stop at the point where the user clicked the strip. The new
+  stop goes after the stops before that point and gets the color that
+  the gradient has there."
   [value markers offset]
   (let [sorted (vec (sort-by :offset markers))
         stop   {:id (next-stop-id (:stops value))
@@ -250,9 +256,9 @@
                                            :position "100"}))))
 
 (defn reverse-stops
-  "Makes the gradient run the other way: its stops are mirrored. With a
-  position that is a reference the positions stay and the colors swap
-  places instead."
+  "Makes the gradient run the other way by mirroring its stops. When a
+  position is a reference, the positions stay and the colors swap places
+  instead."
   [value]
   (let [stops    (:stops value)
         percents (map (comp percent :position) stops)]
@@ -269,8 +275,9 @@
                    stops (reverse stops))))))
 
 (defn reorder-stops
-  "Moves the stop at `from` to `to`. As in the color picker the positions
-  stay where they are, so the colors of the stops change places."
+  "Moves the stop at `from` to `to`. As in the color picker, the
+  positions stay where they are, so the colors of the stops change
+  places."
   [value from to]
   (let [stops (:stops value)
         moved (d/insert-at-index stops to [(get stops from)])]
@@ -280,22 +287,23 @@
                  stops moved))))
 
 (def ^:private angle-turns
-  "A quarter and a full turn in each unit an angle may have. Without a
-  unit an angle is in degrees."
+  "A quarter turn and a full turn in each unit that an angle can have. An
+  angle without a unit is in degrees."
   {"deg"  {:quarter 90 :full 360}
    "turn" {:quarter 0.25 :full 1}
    "grad" {:quarter 100 :full 400}
    "rad"  {:quarter (/ mth/PI 2) :full (* 2 mth/PI)}})
 
 (def ^:private literal-angle-re
-  "A literal angle as tokenscript reads it: a number (`.5` too), with an
-  angle unit in any case right after it, no space between."
+  "Matches a literal angle as tokenscript reads it. That is a number,
+  `.5` included, with an angle unit in any letter case directly after it
+  and no space between them."
   #"(?i)^\s*(-?(?:\d+(?:\.\d+)?|\.\d+))(deg|turn|grad|rad)?\s*$")
 
 (defn- parse-angle
-  "The number and the unit of a literal angle (`90`, `45deg`, `0.25turn`,
-  `1rad`, `100grad`). A blank angle is the default one. Nil for a
-  reference or an expression."
+  "Reads the number and the unit of a literal angle (`90`, `45deg`,
+  `0.25turn`, `1rad`, `100grad`). A blank angle gives the default angle.
+  Gives nil for a reference or an expression."
   [angle]
   (if (str/blank? angle)
     {:number wtg/default-angle :unit ""}
@@ -304,14 +312,14 @@
        :unit (if unit (str/lower unit) "")})))
 
 (defn rotatable-angle?
-  "Whether the rotate button can turn `angle`: a reference or an
-  expression can't be turned."
+  "Checks whether the rotate button can turn `angle`. The button cannot
+  turn a reference or an expression."
   [angle]
   (some? (parse-angle angle)))
 
 (defn rotate-angle
-  "The angle a quarter turn further, in its own unit. An angle that is a
-  reference or an expression is kept."
+  "Turns the angle a quarter turn further, in its own unit. A reference
+  or an expression stays as it is."
   [angle]
   (if-let [{:keys [number unit]} (parse-angle angle)]
     (let [{:keys [quarter full]} (get angle-turns (if (= "" unit) "deg" unit))]
@@ -324,16 +332,17 @@
       (nil? (percent position))))
 
 (defn- resolved-title
-  "What a stop with a reference resolves to, to show it on the strip."
+  "Writes what a stop with a reference resolves to, for the strip to
+  show."
   [stop marker]
   (when (referenced? stop)
     (tr "workspace.tokens.resolved-value"
         (str (stop-color marker) " " (dwtf/format-position (:offset marker))))))
 
 (defn editor-stops
-  "The stops of the form for the gradient editor, which lists them all:
-  each as the strip draws it, or without a position while it does not
-  resolve."
+  "Gives the stops of the form for the gradient editor, which lists all
+  stops. Each stop is as the strip draws it. While a stop does not
+  resolve, it has no position."
   [stops markers]
   (let [markers (d/index-by :index markers)]
     (into []
@@ -346,23 +355,23 @@
           stops)))
 
 (defn css->form-value
-  "The fields of the gradient for the tokenscript or CSS `linear-gradient()`
-  `text`, when it is one."
+  "Reads the form fields of the gradient in `text`, when `text` is a
+  tokenscript or CSS `linear-gradient()`."
   [text]
   (some-> (tsi/linear-gradient text)
           (walk/keywordize-keys)
           (make-default-value)))
 
 (defn converted-paste
-  "What a pasted CSS gradient is converted to for tokenscript. Nil when the
-  text is no CSS gradient or is already written as tokenscript."
+  "Converts a pasted CSS gradient to tokenscript. Gives nil when the text
+  is not a CSS gradient, or when it is tokenscript already."
   [text]
   (when-let [converted (tsi/linear-gradient->tokenscript text)]
     (when (not= converted (str/trim text))
       converted)))
 
 (defn pasted-text
-  "The text of a field after `pasted` is pasted over what is selected in
-  it, from `start` to `end`."
+  "Gives the text of a field after `pasted` replaces the selected text,
+  from `start` to `end`."
   [text start end pasted]
   (str (subs text 0 start) pasted (subs text end)))

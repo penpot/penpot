@@ -168,8 +168,7 @@
       {:color hex :opacity opacity})))
 
 (defn value->paint
-  "Transform a color or a gradient token value into penpot color data
-  structure"
+  "Converts a color or a gradient token value into penpot color data."
   [value]
   (if (map? value)
     (when-let [gradient (wtg/value->gradient value)]

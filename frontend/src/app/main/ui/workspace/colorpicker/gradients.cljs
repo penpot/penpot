@@ -182,10 +182,10 @@
    {:id "radial-gradient" :label "Radial"}])
 
 (mf/defc gradient-preview*
-  "The stops of a gradient on a strip. A stop is dragged along it to
-  move it, and clicking the strip adds one there. A stop that has no
-  position yet is not on the strip. One that resolves from references
-  shows what it resolves to when it is hovered."
+  "Shows the stops of a gradient on a strip. The user drags a stop along
+  the strip to move it, and clicks the strip to add a stop there. A stop
+  that has no position yet is not on the strip. A stop with references
+  shows what it resolves to when the pointer is on it."
   [{:keys [stops
            editing-stop
            is-add-disabled
@@ -324,9 +324,10 @@
                 :style {"--position" (dm/str (* offset 100) "%")}}]])]]))
 
 (mf/defc gradients*
-  "The gradient editor of the color picker: the stops of a gradient on a
-  strip, its type and the list of its stops. A form can put its own
-  fields in the rows of the stops, and turn rotating off."
+  "Shows the gradient editor of the color picker: the stops of a gradient
+  on a strip, its type and the list of its stops. A form can put its own
+  fields in the rows of the stops. A form can also disable the rotate
+  button."
   [{:keys [type
            stops
            editing-stop

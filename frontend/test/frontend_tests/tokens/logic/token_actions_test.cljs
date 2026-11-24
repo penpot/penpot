@@ -351,9 +351,9 @@
            {:color "#0000ff" :opacity 0.2 :offset 1}]})
 
 (defn- ^:async run-with-tokenscript
-  "Runs `events` on `store` with tokenscript on, which resolves gradient
-  tokens, and resolves with the state they leave. The flag is restored
-  also when the run fails."
+  "Runs `events` on `store` with the tokenscript flag on, so that
+  gradient tokens resolve. Resolves with the state after the events.
+  Restores the flag also when the run fails."
   [store events]
   (let [state (atom nil)]
     (await (mock/with-mocks* {cf/flags (conj cf/flags :tokenscript)}

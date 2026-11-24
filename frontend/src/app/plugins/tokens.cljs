@@ -154,8 +154,8 @@
   "Gradient tokens need the token-gradient and tokenscript flags.")
 
 (defn token-type-disabled?
-  "Whether tokens of `type` can't be added, edited or applied: gradient
-  tokens are behind flags."
+  "Checks whether a plugin cannot add, edit or apply tokens of `type`.
+  Gradient tokens need flags."
   [type]
   (and (= :gradient type) (not (wtg/enabled?))))
 
@@ -284,11 +284,11 @@
     (into-array (map shadow-entry->js entries))))
 
 (defn- gradient-resolved-value->js
-  "Converts a resolved gradient into the plugin's `TokenGradientValue`
-   shape: its kind, the angle in degrees of a linear one, and its stops,
-   each with a hex color and a position from 0 to 1. A linear gradient
-   without an angle has the one penpot draws it with; a radial one has
-   none."
+  "Converts a resolved gradient into the `TokenGradientValue` of the
+  plugin API. It has the kind, the angle in degrees of a linear
+  gradient, and the stops. Each stop has a hex color and a position from
+  0 to 1. A linear gradient without an angle gets the angle that penpot
+  draws it with. A radial gradient has no angle."
   [{:keys [kind angle stops] :as value}]
   (when (map? value)
     (clj->js (cond-> {:kind kind

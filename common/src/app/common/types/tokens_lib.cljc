@@ -1541,16 +1541,16 @@
                       (shadow-with-dtcg-keys value)))))
 
 (defn- gradient-field
-  "A gradient field as the token forms edit it: numbers become strings."
+  "Converts a gradient field for the token forms. Numbers become strings."
   [value]
   (cond-> value (number? value) str))
 
 (defn convert-dtcg-gradient-composite
-  "Convert gradient token value from DTCG format to internal format: its
-  kind, its angle and its color stops, which the token forms edit. Fields
-  penpot can not draw (points, radius, midpoints, ...) are dropped. What a
-  gradient is in a file, such as a list of stops being a linear gradient,
-  is read by the tokenscript package."
+  "Converts a gradient token value from the DTCG format to the internal
+  format. It keeps the kind, the angle and the color stops, which the
+  token forms edit. It drops the fields that penpot cannot draw (points,
+  radius, midpoints, ...). The tokenscript package reads what a gradient
+  is in a file, such as a list of stops as a linear gradient."
   [value]
   (let [value (tsd/read-gradient value)]
     (if (map? value)
@@ -1782,9 +1782,9 @@
     value))
 
 (defn- gradient-token->dtcg-token
-  "Convert gradient token value from internal format to DTCG format:
-  string keys. The tokenscript writer turns its angle and stop positions
-  into numbers for the `:dtcg` profile."
+  "Converts a gradient token value from the internal format to the DTCG
+  format, with string keys. For the `:dtcg` profile, the tokenscript
+  writer writes its angle and stop positions as numbers."
   [value]
   (cond-> value
     (map? value) walk/stringify-keys))

@@ -44,7 +44,7 @@
 
     - colors: hex strings (alpha as `#rrggbbaa`)
     - `rem` values: pixels (16px root font size), `%` values: fractions
-    - angles in `turn`, `rad` and `grad`: degrees, as `deg` angles are
+    - angles in `turn`, `rad` and `grad`: degrees, the same as `deg` angles
     - other numbers with unit: the number
     - structured tokens (typography, shadows): maps with keyword keys and
       vectors

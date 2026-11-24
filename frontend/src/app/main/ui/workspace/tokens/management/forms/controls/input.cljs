@@ -291,10 +291,10 @@
                        (update :extra-errors dissoc "")))))))
 
 (mf/defc input-composite*
-  "A field of a composite token. With `is-tokenscript` it is resolved by
-  tokenscript, as the fields of a token type only tokenscript resolves
-  (gradients) need. `format-resolved` writes the resolved value of its
-  hint."
+  "Shows a field of a composite token. With `is-tokenscript`, tokenscript
+  resolves the field. The fields of gradients need this, because only
+  tokenscript resolves gradients. `format-resolved` writes the resolved
+  value in the hint of the field."
   [{:keys [name tokens token is-tokenscript format-resolved] :rest props}]
 
   (let [form       (mf/use-ctx fc/context)
@@ -432,10 +432,11 @@
                        (update :extra-errors dissoc "")))))))
 
 (mf/defc input-indexed*
-  "A field of an item of a token with a list of items (shadows, the stops
-  of a gradient). With `is-tokenscript` it is resolved by tokenscript,
-  as the fields of a token type only tokenscript resolves (gradients)
-  need. `format-resolved` writes the resolved value of its hint."
+  "Shows a field of an item of a token with a list of items, such as a
+  shadow or the stops of a gradient. With `is-tokenscript`, tokenscript
+  resolves the field. The fields of gradients need this, because only
+  tokenscript resolves gradients. `format-resolved` writes the resolved
+  value in the hint of the field."
   [{:keys [name tokens token index value-subfield nillable is-resolved-hint-hidden is-tokenscript format-resolved] :rest props}]
 
   (let [form       (mf/use-ctx fc/context)

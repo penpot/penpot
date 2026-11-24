@@ -301,8 +301,8 @@
     (set! (.-value ^js node) value)))
 
 (defn set-input-value!
-  "Sets the text of an input the way typing does, so that the change
-  handler of a React input runs. A plain `set-value!` is not noticed."
+  "Sets the text of an input as typing does, so that the change handler
+  of a React input runs. React does not see a plain `set-value!`."
   [^js node value]
   (when (some? node)
     (let [descriptor (js/Object.getOwnPropertyDescriptor js/HTMLInputElement.prototype "value")]
@@ -310,7 +310,7 @@
       (.dispatchEvent node (js/Event. "input" #js {:bubbles true})))))
 
 (defn get-clipboard-text
-  "The plain text of a paste event."
+  "Gives the plain text of a paste event."
   [^js event]
   (some-> (.-clipboardData event)
           (.getData "text")))

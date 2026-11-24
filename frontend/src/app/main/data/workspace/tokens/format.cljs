@@ -46,29 +46,29 @@
   (and (map? token-value) (contains? token-value :stops)))
 
 (defn format-angle
-  "An angle as tooltips, Inspect and the angle field of the gradient
-  form write it: a resolved number in degrees, other values as they
-  are."
+  "Writes an angle as tooltips, Inspect and the angle field of the
+  gradient form show it. Writes a resolved number in degrees. Other
+  values stay as they are."
   [angle]
   (if (number? angle)
     (str (mth/precision angle 2) "deg")
     (str angle)))
 
 (defn format-position
-  "A gradient stop position as tooltips, Inspect and the position field
-  of the gradient form write it: a resolved fraction from 0 to 1 as a
-  percentage, other values as they are."
+  "Writes a gradient stop position as tooltips, Inspect and the position
+  field of the gradient form show it. Writes a resolved fraction from 0
+  to 1 as a percentage. Other values stay as they are."
   [position]
   (if (number? position)
     (str (mth/precision (* 100 position) 2) "%")
     (str position)))
 
 (defn- format-gradient
-  "A gradient on one line: its kind and angle, then each stop's color
-  and position, like `linear 90deg: #ff0000 0%, {color.brand} 100%`.
-  A resolved gradient has numbers, which are written as the gradient
-  form shows them (degrees, percentages); a token value keeps its
-  text."
+  "Writes a gradient on one line: its kind and angle, then the color and
+  position of each stop, like
+  `linear 90deg: #ff0000 0%, {color.brand} 100%`. A resolved gradient
+  has numbers. They are written as the gradient form shows them, in
+  degrees and percentages. A token value keeps its text."
   [{:keys [kind angle stops]}]
   (str kind
        (when (some? angle) (str " " (format-angle angle)))

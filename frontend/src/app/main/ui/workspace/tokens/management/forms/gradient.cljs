@@ -64,8 +64,9 @@
   (mf/create-context nil))
 
 (mf/defc stop-fields*
-  "The fields of a stop in the gradient editor: its position, its color
-  and the opacity of the color. Position and color take references."
+  "Shows the fields of a stop in the gradient editor: its position, its
+  color and the opacity of the color. The position and the color take
+  references."
   {::mf/private true}
   [{:keys [stop index is-selected on-select-stop on-remove-stop]}]
   (let [{:keys [token tokens ramp-container on-change-opacity is-removable]}
@@ -351,9 +352,9 @@
      [:div {:ref set-ramp-container}]]))
 
 (mf/defc reference-form*
-  "The reference to a gradient token, or tokenscript that resolves to a
-  gradient. A CSS `linear-gradient()` pasted here is converted to
-  tokenscript, and a tokenscript `linear-gradient()` can be edited in
+  "Edits the reference to a gradient token, or tokenscript that resolves
+  to a gradient. The form converts a pasted CSS `linear-gradient()` to
+  tokenscript. The user can edit a tokenscript `linear-gradient()` in
   the gradient editor."
   {::mf/private true}
   [{:keys [token tokens handle-toggle]}]

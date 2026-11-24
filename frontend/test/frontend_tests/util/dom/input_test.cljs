@@ -5,20 +5,21 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns frontend-tests.util.dom.input-test
-  "Setting the text of an input like typing does, and reading the text of
-  a paste. The input comes from jsdom since the runner has no DOM."
+  "Tests how penpot sets the text of an input as typing does, and how it
+  reads the text of a paste. The input comes from jsdom, because the
+  test runner has no DOM."
   (:require
    ["jsdom" :refer [JSDOM]]
    [app.util.dom :as dom]
    [cljs.test :as t :include-macros true]))
 
 (def ^:private globals
-  "What `set-input-value!` reads from the global scope."
+  "The globals that `set-input-value!` reads."
   ["HTMLInputElement" "Event"])
 
 (defn- with-input
-  "Calls `f` with an input of a jsdom document, which stands in for the
-  globals of a browser meanwhile."
+  "Calls `f` with an input of a jsdom document. During the call, the
+  globals of the jsdom window replace the globals of the browser."
   [f]
   (let [window   (.-window (JSDOM. "<!doctype html><input id=\"field\">"))
         previous (mapv #(unchecked-get js/globalThis %) globals)]
