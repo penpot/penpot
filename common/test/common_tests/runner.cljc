@@ -7,6 +7,7 @@
 (ns common-tests.runner
   (:require
    #?(:clj [common-tests.fressian-test])
+   #?(:cljs ["node:fs" :as fs])
    #?(:cljs [app.common.logging :as l])
    #?(:cljs [clojure.string :as str])
    #?(:cljs [clojure.tools.cli :refer [parse-opts]])
@@ -137,7 +138,8 @@
    [common-tests.variant-test]))
 
 (def test-namespaces
-  [#?(:clj 'common-tests.fressian-test)
+  [#?(:cljs 'common-tests.runner)
+   #?(:clj 'common-tests.fressian-test)
    'common-tests.attrs-test
    'common-tests.buffer-test
    'common-tests.colors-test
@@ -305,14 +307,23 @@
 
      (defn- usage
        [summary]
-       (str "Usage: pnpm run test:js -- [options]\n\n"
+       (str "Usage: pnpm run test -- [options]\n\n"
             "Options:\n"
             summary "\n\n"
             "Focus examples:\n"
-            "  pnpm run test:js -- --focus common-tests.logic.comp-sync-test\n"
-            "  pnpm run test:js -- --focus common-tests.logic.comp-sync-test/test-sync-when-changing-attribute\n\n"
+            "  pnpm run test -- --focus common-tests.logic.comp-sync-test\n"
+            "  pnpm run test -- --focus common-tests.logic.comp-sync-test/test-sync-when-changing-attribute\n\n"
             "Log level example (quiets app logging during the run):\n"
-            "  pnpm run test:js -- --focus common-tests.logic.comp-sync-test --log-level warn"))
+            "  pnpm run test -- --focus common-tests.logic.comp-sync-test --log-level warn"))
+
+     (t/deftest runner-usage-uses-existing-package-scripts
+       (let [package (js/JSON.parse (.readFileSync fs "package.json" "utf8"))
+             scripts (.-scripts package)
+             commands (re-seq #"pnpm run ([\w:-]+)" (usage ""))]
+         (t/is (seq commands))
+         (doseq [[_ command] commands]
+           (t/is (some? (gobj/get scripts command))
+                 (str "Unknown package script in runner help: " command)))))
 
      (defn- fail!
        [message]
