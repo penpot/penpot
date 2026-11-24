@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns app.main.ui.workspace.sidebar.branch-review.layout
+(ns app.main.ui.workspace.sidebar.branch-compare.layout
   "The small pieces the list and the detail of a comparison share: the
   heading of a group, a note, and a property value alone or as `before →
   after`."
@@ -14,7 +14,7 @@
    [app.main.ui.ds.foundations.typography :as t]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
-   [app.main.ui.workspace.sidebar.branch-review.common :as brc]
+   [app.main.ui.workspace.sidebar.branch-compare.common :as brc]
    [rumext.v2 :as mf]))
 
 (mf/defc group-head*

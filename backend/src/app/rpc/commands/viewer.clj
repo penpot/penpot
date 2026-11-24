@@ -15,7 +15,6 @@
    [app.config :as cf]
    [app.db :as db]
    [app.features.fdata :as fdata]
-   [app.features.file-snapshots :as fsnap]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files-branch-review :as fbr]
    [app.rpc.commands.teams :as teams]
@@ -140,16 +139,6 @@
         file    (-> (bfc/get-file cfg file-id)
                     (bfc/file->response))
 
-        ;; branch review sandbox: the viewer shows the pinned snapshot
-        ;; of the branch, not its live state
-        file    (if-let [snapshot (::snapshot params)]
-                  (-> file
-                      (assoc :data (:data snapshot))
-                      (assoc :version (:version snapshot))
-                      (assoc :features (:features snapshot))
-                      (assoc :revn (:revn snapshot)))
-                  file)
-
         project (db/get conn :project
                         {:id (:project-id file)}
                         {:columns [:id :name :team-id]})
@@ -233,7 +222,6 @@
 (def ^:private sql:get-branch-review-for-viewer
   "SELECT r.id,
           r.status,
-          r.pinned_snapshot_id,
           fb.branch_file_id AS source_file_id,
           fb.source_file_id AS target_file_id
      FROM file_branch_review AS r
@@ -241,14 +229,12 @@
     WHERE r.id = ?
       AND r.deleted_at IS NULL")
 
-(defn- get-branch-review-view-context
-  "Resolve the review-sandbox context of `review-id`: permissions taken
-  from the review's TARGET file (share-links do not apply here) with
-  edition stripped, plus the pinned snapshot whose data replaces the
-  branch file's live state. Refuses when the review is not open or its
-  branch file is not `file-id` — the sandbox must never silently degrade
-  to the live branch. Both sides come from the branch edge, which is the
-  only place they live."
+(defn- get-branch-review-view-perms
+  "Resolve the viewer permissions of `review-id`: taken from the review's
+  TARGET file (share-links do not apply here) with edition stripped, so
+  the viewer plays the live branch file read-only. Refuses when the
+  review is not open or its branch file is not `file-id`. Both sides come
+  from the branch edge, which is the only place they live."
   [system profile-id file-id review-id]
   (fbr/check-branch-reviews-enabled!)
   (let [review (db/exec-one! system [sql:get-branch-review-for-viewer review-id])]
@@ -261,18 +247,10 @@
     (when (not= "open" (:status review))
       (ex/raise :type :validation
                 :code :branch-review-not-open
-                :hint "the review sandbox only exists while the branch review is open"
+                :hint "the review viewer only exists while the branch review is open"
                 :review-id review-id))
-    (let [perms    (perms/get-file-read-permissions system profile-id (:target-file-id review))
-          snapshot (when (:pinned-snapshot-id review)
-                     (fsnap/get-snapshot system (:source-file-id review) (:pinned-snapshot-id review)))]
-      (when (and perms (nil? snapshot))
-        (ex/raise :type :not-found
-                  :code :review-snapshot-missing
-                  :hint "the branch review snapshot cannot be resolved"
-                  :review-id review-id))
-      {:perms (some-> perms (assoc :can-edit false :is-admin false :is-owner false))
-       :snapshot snapshot})))
+    (some-> (perms/get-file-read-permissions system profile-id (:target-file-id review))
+            (assoc :can-edit false :is-admin false :is-owner false))))
 
 (def schema:get-view-only-bundle
   [:map {:title "get-view-only-bundle"}
@@ -288,15 +266,13 @@
   [system {:keys [::rpc/profile-id file-id share-id review-id] :as params}]
   (db/run! system
            (fn [system]
-             (let [{:keys [perms snapshot]}
-                   (if (some? review-id)
-                     (get-branch-review-view-context system profile-id file-id review-id)
-                     {:perms (perms/get-file-read-permissions system profile-id file-id share-id)})
+             (let [perms  (if (some? review-id)
+                            (get-branch-review-view-perms system profile-id file-id review-id)
+                            (perms/get-file-read-permissions system profile-id file-id share-id))
 
                    params (-> params
                               (assoc ::perms perms)
-                              (assoc :profile-id profile-id)
-                              (cond-> (some? snapshot) (assoc ::snapshot snapshot)))]
+                              (assoc :profile-id profile-id))]
 
                ;; When we have neither profile nor share, we just return a not
                ;; found response to the user.

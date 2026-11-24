@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns frontend-tests.ui.branch-review-sides-test
+(ns frontend-tests.ui.branch-compare-sides-test
   "How the compare mode rebuilds the side the open file lacks: a deleted
   layer comes back from the diff, inside the board it was in, and a
   resized board takes its own size."
@@ -14,7 +14,7 @@
    [app.main.ui.workspace.compare.common :as cc]
    [app.main.ui.workspace.compare.detail :as detail]
    [app.main.ui.workspace.compare.side :as side]
-   [app.main.ui.workspace.sidebar.branch-review.sides :as brs]
+   [app.main.ui.workspace.sidebar.branch-compare.sides :as brs]
    [cljs.test :as t :include-macros true]))
 
 (def ^:private board-id (uuid/next))

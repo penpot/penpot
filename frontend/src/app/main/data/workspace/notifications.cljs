@@ -20,11 +20,11 @@
    [app.main.data.plugins :as dpl]
    [app.main.data.websocket :as dws]
    [app.main.data.workspace :as-alias dw]
+   [app.main.data.workspace.branch-reviews :as dwbr]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.layout :as dwly]
    [app.main.data.workspace.libraries :as dwl]
-   [app.main.data.workspace.pull-requests :as dwpr]
    [app.main.data.workspace.tasks :as dwtk]
    [app.main.data.workspace.texts :as dwt]
    [app.main.router :as rt]
@@ -45,7 +45,7 @@
 (declare handle-file-deleted)
 (declare handle-file-restored)
 (declare handle-file-merged)
-(declare handle-pull-request-change)
+(declare handle-branch-review-change)
 (declare handle-library-change)
 (declare handle-pointer-send)
 (declare handle-export-update)
@@ -166,10 +166,10 @@
     :file-restored           (handle-file-restored msg)
     :file-merged             (handle-file-merged msg)
     :library-change          (handle-library-change msg)
-    :branch-review-created           (handle-pull-request-change msg)
-    :branch-review-updated           (handle-pull-request-change msg)
-    :branch-review-verdict-submitted (handle-pull-request-change msg)
-    :branch-review-closed            (handle-pull-request-change msg)
+    :branch-review-created           (handle-branch-review-change msg)
+    :branch-review-updated           (handle-branch-review-change msg)
+    :branch-review-verdict-submitted (handle-branch-review-change msg)
+    :branch-review-closed            (handle-branch-review-change msg)
     :file-tasks-change             (dwtk/handle-tasks-change msg)
     :notification            (dc/handle-notification msg)
     :team-role-change        (handle-change-team-role msg)
@@ -393,16 +393,16 @@
       (when (= file-id (:current-file-id state))
         (rx/of (ptk/event ::dw/reload-current-file))))))
 
-(defn handle-pull-request-change
-  "A pull request of this file changed (created / edited / reviewed /
+(defn handle-branch-review-change
+  "A branch review of this file changed (created / edited / reviewed /
   closed): refresh the sidebar list, and the sandbox banner when it is
-  showing that pull request."
+  showing that branch review."
   [{:keys [review-id] :as _msg}]
-  (ptk/reify ::handle-pull-request-change
+  (ptk/reify ::handle-branch-review-change
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/of (dwpr/fetch-pull-requests)
-             (dwpr/refresh-pull-request-preview-info review-id)))))
+      (rx/of (dwbr/fetch-branch-reviews)
+             (dwbr/refresh-branch-review-preview-info review-id)))))
 
 (def ^:private schema:handle-library-change
   [:map {:title "handle-library-change"}

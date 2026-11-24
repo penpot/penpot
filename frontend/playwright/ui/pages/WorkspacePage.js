@@ -223,7 +223,7 @@ export class WorkspacePage extends BaseWebSocketPage {
     pageId = this.pageId ?? WorkspacePage.anyPageId,
     pageName = "Page 1",
     // extra query params appended verbatim, e.g. "&pr-id=<uuid>" for the
-    // pull request review sandbox
+    // branch review sandbox
     extraParams = "",
   } = {}) {
     // Helpers often call setup (and this) several times per test with the

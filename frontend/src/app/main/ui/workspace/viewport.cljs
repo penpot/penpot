@@ -252,8 +252,8 @@
 
         disable-events?          (contains? layout :comments)
         comments-mode?           (= drawing-tool :comments)
-        reviewing?               (some? (mf/deref refs/pull-request-preview))
-        ;; inside a design review the global "show comments" option
+        reviewing?               (some? (mf/deref refs/branch-review-preview))
+        ;; inside a branch review the global "show comments" option
         ;; decides alone: it shows or hides comments and tasks
         show-comments?           (if reviewing?
                                    (contains? layout :display-comments)
@@ -398,7 +398,7 @@
              :edition edition}])]]]
 
 
-      ;; the changes of a design review and the layer picker of a task
+      ;; the changes of a branch review and the layer picker of a task
       [:> review-overlays* {:vbox vbox
                             :vport vport
                             :zoom zoom

@@ -6,16 +6,14 @@
 
 (ns app.rpc.commands.files-branch-review
   "RPC commands for branch reviews on top of file branching: a review
-  request over a pinned revision of a branch. A branch review does NOT
-  create a new file. Reviewers open the live branch file, which stays
-  editable, so their edits change the branch and mark the review
-  `outdated` (the branch revn moved past the pinned one). The pinned
-  snapshot serves only the read-only views: the interactions viewer
-  (`viewer/get-view-only-bundle` with `:review-id`) and
-  `get-branch-review-bundle`. Both refuse once the review is no longer
-  open, and closing it releases the snapshot pin. Merging stays on
-  `app.rpc.commands.files-branch`; a verdict is informative and never a
-  gate for the merge.
+  request over the live state of a branch. A branch review does NOT
+  create a new file and does not freeze the branch. Reviewers open the
+  live branch file, which stays editable, and the interactions viewer
+  (`viewer/get-view-only-bundle` with `:review-id`) plays the live branch
+  read-only while the review is open. A verdict records the branch revn
+  it was issued over, so every later save of the branch file makes it
+  stale. Merging stays on `app.rpc.commands.files-branch`; a verdict is
+  informative and never a gate for the merge.
 
   The review's two sides are derived, never stored: the branch file is
   the `file_branch` edge's `branch_file_id` and the target its
@@ -27,7 +25,6 @@
    [app.binfile.common :as bfc]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
-   [app.common.features :as-alias cfeat]
    [app.common.files.review-activity :as ra]
    [app.common.schema :as sm]
    [app.common.time :as ct]
@@ -36,8 +33,6 @@
    [app.config :as cf]
    [app.db :as db]
    [app.email :as eml]
-   [app.features.file-snapshots :as fsnap]
-   [app.features.logical-deletion :as ldel]
    [app.loggers.webhooks :as-alias webhooks]
    [app.msgbus :as mbus]
    [app.rpc :as-alias rpc]
@@ -75,9 +70,6 @@
           r.created_at,
           r.updated_at,
           r.status,
-          r.pinned_snapshot_id,
-          r.pinned_revn,
-          r.pinned_at,
           r.closed_at,
           r.closed_by,
           fb.name AS branch_name,
@@ -124,29 +116,6 @@
                 :code :object-not-found
                 :hint "not found"))))
 
-(defn- release-review-snapshot!
-  "Reschedule a branch review's pinned snapshot for normal deletion: it is
-  pinned ~10 years while the review is open and must be released when the
-  review is closed, merged or its snapshot is repositioned. The snapshot
-  belongs to the BRANCH file (the review's source)."
-  [cfg {:keys [pinned-snapshot-id source-file-id]} deleted-at]
-  (when pinned-snapshot-id
-    (fsnap/delete! cfg
-                   :id pinned-snapshot-id
-                   :file-id source-file-id
-                   :deleted-at deleted-at)))
-
-(defn- pin-review-snapshot!
-  "Materialize the review snapshot of the branch file: what reviewers see
-  in the sandbox, pinned so the snapshot GC does not prune it while the
-  review is open."
-  [cfg branch-file title profile-id]
-  (fsnap/create! cfg branch-file
-                 {:label (str "branch-review/" title)
-                  :profile-id profile-id
-                  :created-by "system"
-                  :deleted-at (ct/in-future {:days 3650})}))
-
 (defn- validate-reviewers!
   "Check every reviewer id is a member of `team-id`; the author is
   silently dropped (requesting a review from yourself is meaningless).
@@ -176,23 +145,26 @@
 
 (defn- get-reviews-map
   "{review-id -> [reviewer ...]} for the given branch reviews, each
-  reviewer annotated with `:stale` (verdict submitted over a previous
-  review revision). A NULL verdict is a pending reviewer."
+  reviewer annotated with `:stale` (verdict issued over an earlier revn
+  of the branch file: the branch was saved since). A NULL verdict is a
+  pending reviewer."
   [cfg reviews]
   (if (empty? reviews)
     {}
     (let [ids  (db/create-array (db/get-connection cfg) "uuid" (mapv :id reviews))
-          revn (into {} (map (juxt :id :pinned-revn)) reviews)]
+          revn (into {} (map (juxt :id :branch-revn)) reviews)]
       (->> (db/exec! cfg [sql:get-reviews ids])
            (mapv (fn [{:keys [review-id verdict verdict-revn] :as row}]
-                   (assoc row :stale (and (some? verdict)
-                                          (not= verdict-revn (get revn review-id))))))
+                   (let [branch-revn (get revn review-id)]
+                     (assoc row :stale (boolean (and (some? verdict)
+                                                     (some? branch-revn)
+                                                     (> branch-revn verdict-revn)))))))
            (group-by :review-id)))))
 
 (defn- overall-verdict
   "Aggregate verdict of a branch review: `changes-requested` beats
-  `approved`; stale verdicts (submitted over a previous review
-  revision) only count as `in-review`; no verdict at all is `pending`."
+  `approved`; stale verdicts (issued over an earlier revn of the branch
+  file) only count as `in-review`; no verdict at all is `pending`."
   [reviews]
   (let [submitted (remove #(nil? (:verdict %)) reviews)
         current   (remove :stale submitted)]
@@ -204,10 +176,9 @@
 
 (defn- decorate-branch-review
   "Attach the derived attributes the UI needs: the reviewers (+ aggregate
-  `overall-verdict`), `outdated` (the branch moved past the pinned
-  revision, cheap revn gate) and entity-level ahead/behind/conflicts
-  counts against the target (only for open reviews, gated like the
-  branches listing).
+  `overall-verdict`) and entity-level ahead/behind/conflicts counts
+  against the target (only for open reviews, gated like the branches
+  listing).
 
   The row carries the review's two sides as the SQL of the edge aliases
   them (`source-file-id` the branch file, `target-file-id` the target),
@@ -218,8 +189,7 @@
   the branches listing uses, so ten open reviews on one file cost one
   computation per branch and nothing at all once that panel has been
   opened."
-  [cfg target-data reviews-map counts-map {:keys [id status file-branch-id source-file-id target-file-id
-                                                  pinned-revn branch-revn]
+  [cfg target-data reviews-map counts-map {:keys [id status file-branch-id source-file-id target-file-id]
                                            :as row}]
   (let [reviews (get reviews-map id [])
         open?   (= "open" status)
@@ -234,12 +204,11 @@
     (-> row
         (assoc :reviews (mapv #(dissoc % :review-id) reviews))
         (assoc :overall-verdict (overall-verdict reviews))
-        (assoc :outdated (and open? (> branch-revn pinned-revn)))
         (assoc :ahead ahead :behind behind :conflicts conflicts)
         ;; the comments and tasks of the review, for its overview
         (assoc :counts (get counts-map id {:tasks {} :comments-open 0 :comments-resolved 0}))
         (dissoc :branch-revn :source-revn :base-snapshot-id
-                :base-source-revn :base-branch-revn :pinned-snapshot-id))))
+                :base-source-revn :base-branch-revn))))
 
 (def ^:private sql:get-open-branch-review-for-branch
   "SELECT id FROM file_branch_review
@@ -297,11 +266,10 @@
 
 (sv/defmethod ::create-branch-review
   "Create a branch review from an open branch towards the file the branch
-  was cut from (its source). Pins a snapshot of the branch (the revision
-  reviewers see) and registers the requested reviewers, who must be
-  members of the team. At most one open review may exist per branch. The
-  review joins the family of the target file, which is what outlives the
-  branch."
+  was cut from (its source). Registers the requested reviewers, who must
+  be members of the team; they review the live branch. At most one open
+  review may exist per branch. The review joins the family of the target
+  file, which is what outlives the branch."
   {::doc/added "2.16"
    ::webhooks/event? true
    ::sm/params schema:create-branch-review
@@ -349,10 +317,9 @@
          msgbus
          messages
          (fn [{:keys [::db/conn] :as cfg}]
-           ;; Serialize against concurrent update-file on the branch so
-           ;; the review snapshot captures a consistent state (same
-           ;; advisory lock the save path takes), and against a
-           ;; concurrent create-branch-review on the same branch.
+           ;; Serialize against a concurrent create-branch-review on the
+           ;; same branch (the advisory lock the save path takes on the
+           ;; branch file).
            (db/xact-lock! conn branch-file-id)
 
            ;; Serialize against a merge of the same branch (which locks
@@ -378,10 +345,7 @@
                          :hint "the branch already has an open review"
                          :branch-id branch-id))
 
-             (let [branch-file (bfc/get-file cfg branch-file-id :realize? true)
-                   snapshot    (pin-review-snapshot! cfg branch-file title profile-id)
-                   review-id   (uuid/next)
-                   ts          (ct/now)]
+             (let [review-id (uuid/next)]
 
                (db/insert! conn :file-branch-review
                            {:id review-id
@@ -390,10 +354,7 @@
                             :title title
                             :description description
                             :created-by profile-id
-                            :status "open"
-                            :pinned-snapshot-id (:id snapshot)
-                            :pinned-revn (:revn branch-file)
-                            :pinned-at ts}
+                            :status "open"}
                            {::db/return-keys false})
 
                (doseq [reviewer-id reviewers]
@@ -427,7 +388,6 @@
                 :title title
                 :description description
                 :status "open"
-                :pinned-revn (:revn branch-file)
                 :reviewers reviewers}))))))))
 
 ;; --- COMMAND QUERY: get-file-branch-reviews
@@ -451,9 +411,6 @@
           r.created_at,
           r.updated_at,
           r.status,
-          r.pinned_snapshot_id,
-          r.pinned_revn,
-          r.pinned_at,
           r.closed_at,
           r.closed_by,
           fb.name AS branch_name,
@@ -478,8 +435,8 @@
 (sv/defmethod ::get-file-branch-reviews
   "List the branch reviews of a file. Accepts either the target file or a
   branch file id (it resolves to its source through the branch edge).
-  Every open review is annotated with its reviewers, the aggregate
-  `overall-verdict`, the `outdated` flag and the entity-level
+  Every open review is annotated with its reviewers (each with its
+  `stale` flag), the aggregate `overall-verdict` and the entity-level
   ahead/behind/conflicts counts (gated by the cheap revn deltas, with the
   target realized once and shared, like the branches listing).
 
@@ -666,56 +623,6 @@
                   (files/check-read-permissions! cfg profile-id (:target-file-id review))
                   (get-activity conn id)))))
 
-;; --- COMMAND QUERY: get-branch-review-bundle
-
-(def ^:private schema:get-branch-review-bundle
-  [:map {:title "get-branch-review-bundle"}
-   [:id ::sm/uuid]
-   [:features {:optional true} ::cfeat/features]])
-
-(sv/defmethod ::get-branch-review-bundle
-  "Retrieve the review sandbox of an OPEN branch review: the branch file
-  bundle with the data of the pinned snapshot overlaid, served with
-  edition permissions stripped so the client always opens it read-only.
-  Does not modify any database state. Refuses when the snapshot cannot be
-  resolved — silently serving the live branch would show reviewers a
-  state nobody asked them to review."
-  {::doc/added "2.16"
-   ::sm/params schema:get-branch-review-bundle
-   ::sm/result files/schema:file-with-permissions
-   ::climit/id [[:get-branch-review-bundle/global]]
-   ::db/transaction true}
-  [cfg {:keys [::rpc/profile-id id]}]
-  (check-branch-reviews-enabled!)
-  (let [review (get-branch-review* cfg id)]
-    (when (not= "open" (:status review))
-      (ex/raise :type :validation
-                :code :branch-review-not-open
-                :hint "the review sandbox only exists while the branch review is open"
-                :review-id id))
-    (let [perms (perms/get-file-read-permissions cfg profile-id (:target-file-id review))]
-      (files/check-read-permissions! perms)
-      (let [snapshot (when (:pinned-snapshot-id review)
-                       (fsnap/get-snapshot cfg (:source-file-id review) (:pinned-snapshot-id review)))]
-        (when-not snapshot
-          (ex/raise :type :not-found
-                    :code :review-snapshot-missing
-                    :hint "the branch review snapshot cannot be resolved"
-                    :review-id id))
-        (let [base-file (bfc/get-file cfg (:source-file-id review) :load-data? false)]
-          (-> base-file
-              (assoc :data (:data snapshot))
-              (assoc :version (:version snapshot))
-              (assoc :features (:features snapshot))
-              (assoc :revn (:revn snapshot))
-              (assoc :vern (rand-int 100000))
-              ;; the sandbox is read-only by construction, whatever the
-              ;; caller's role on the team is
-              (assoc :permissions (assoc perms
-                                         :can-edit false
-                                         :is-admin false
-                                         :is-owner false))))))))
-
 ;; --- COMMAND: update-branch-review-info
 
 (def ^:private schema:update-branch-review-info
@@ -797,73 +704,6 @@
           :title (or title (:title review))
           :description (or description (:description review))})))))
 
-;; --- COMMAND: update-branch-review-revision
-
-(def ^:private schema:update-branch-review-revision
-  [:map {:title "update-branch-review-revision"}
-   [:id ::sm/uuid]])
-
-(sv/defmethod ::update-branch-review-revision
-  "Publish the branch's current state to the reviewers: reposition the
-  pinned snapshot to the head of the branch (releasing the previous pin).
-  Verdicts submitted over the previous revision become stale
-  (`verdict-revn` no longer matches) but are kept for the history. It is
-  an explicit author action — the sandbox never moves on its own."
-  {::doc/added "2.16"
-   ::webhooks/event? true
-   ::sm/params schema:update-branch-review-revision
-   ::climit/id [[:update-branch-review-revision/global]]}
-  [{:keys [::mbus/msgbus] :as cfg} {:keys [::rpc/profile-id id]}]
-  (check-branch-reviews-enabled!)
-  (let [review  (get-branch-review* cfg id)
-        messages (volatile! [])]
-    (when (not= "open" (:status review))
-      (ex/raise :type :validation
-                :code :branch-review-not-open
-                :review-id id))
-
-    ;; publishing the branch state is an author-side action, like
-    ;; creating the branch review
-    (files/check-edition-permissions! cfg profile-id (:source-file-id review))
-
-    (fbranch/tx-run-notify!
-     cfg
-     msgbus
-     messages
-     (fn [{:keys [::db/conn] :as cfg}]
-       ;; serialize against concurrent update-file on the branch so the
-       ;; new snapshot captures a consistent state
-       (db/xact-lock! conn (:source-file-id review))
-
-       (let [branch-file (bfc/get-file cfg (:source-file-id review) :realize? true)]
-         (if (= (:revn branch-file) (:pinned-revn review))
-           ;; nothing new to publish: the sandbox already shows this state
-           {:id id :pinned-revn (:pinned-revn review) :updated false}
-
-           (let [team     (teams/get-team conn :profile-id profile-id
-                                          :file-id (:target-file-id review))
-                 delay    (ldel/get-deletion-delay team)
-                 snapshot (pin-review-snapshot! cfg branch-file (:title review) profile-id)
-                 ts       (ct/now)]
-             ;; the previous review snapshot is superseded: release its pin
-             (release-review-snapshot! cfg review (ct/in-future delay))
-             (db/update! conn :file-branch-review
-                         {:pinned-snapshot-id (:id snapshot)
-                          :pinned-revn (:revn branch-file)
-                          :pinned-at ts
-                          :updated-at ts}
-                         {:id id}
-                         {::db/return-keys false})
-
-             (vswap! messages conj
-                     {:topic (:target-file-id review)
-                      :message {:type :branch-review-updated
-                                :file-id (:target-file-id review)
-                                :review-id id
-                                :profile-id profile-id}})
-
-             {:id id :pinned-revn (:revn branch-file) :updated true})))))))
-
 ;; --- COMMAND: submit-branch-review-verdict
 
 (def ^:private schema:submit-branch-review-verdict
@@ -877,9 +717,10 @@
 (sv/defmethod ::submit-branch-review-verdict
   "Submit (or retract, with a null `:verdict`) a verdict on an open branch
   review. Only assigned reviewers may submit; the verdict records the
-  branch revision it was issued over, so it goes stale when the author
-  publishes newer changes. Approval is informative: it never gates the
-  merge, which keeps requiring edition permissions on the target."
+  revn of the branch file it was issued over, so it goes stale as soon
+  as the branch file is saved again. Approval is informative: it never
+  gates the merge, which keeps requiring edition permissions on the
+  target."
   {::doc/added "2.16"
    ::webhooks/event? true
    ::sm/params schema:submit-branch-review-verdict}
@@ -899,8 +740,11 @@
      msgbus
      messages
      (fn [{:keys [::db/conn]}]
-       (let [reviewer (db/get* conn :file-branch-reviewer
-                               {:review-id id :profile-id profile-id})]
+       (let [reviewer     (db/get* conn :file-branch-reviewer
+                                   {:review-id id :profile-id profile-id})
+             verdict-revn (when (some? verdict)
+                            (:revn (db/get conn :file {:id (:source-file-id review)}
+                                           {:columns [:revn]})))]
          (when-not reviewer
            (ex/raise :type :validation
                      :code :not-a-reviewer
@@ -909,7 +753,7 @@
 
          (db/update! conn :file-branch-reviewer
                      {:verdict verdict
-                      :verdict-revn (when (some? verdict) (:pinned-revn review))
+                      :verdict-revn verdict-revn
                       :comment comment
                       :updated-at (ct/now)}
                      {:review-id id :profile-id profile-id}
@@ -926,7 +770,7 @@
          {:id id
           :profile-id profile-id
           :verdict verdict
-          :verdict-revn (:pinned-revn review)})))))
+          :verdict-revn verdict-revn})))))
 
 ;; --- COMMAND: close-branch-review
 
@@ -935,10 +779,9 @@
    [:id ::sm/uuid]])
 
 (sv/defmethod ::close-branch-review
-  "Close (discard) an open branch review: the review sandbox stops
-  resolving and the pinned snapshot is released to the normal snapshot
-  GC. The branch itself is not touched. Allowed to the author and to team
-  admins/owners."
+  "Close (discard) an open branch review: its read-only viewer stops
+  resolving and reviewers can no longer submit verdicts. The branch
+  itself is not touched. Allowed to the author and to team admins/owners."
   {::doc/added "2.16"
    ::webhooks/event? true
    ::sm/params schema:close-branch-review}
@@ -956,11 +799,8 @@
      cfg
      msgbus
      messages
-     (fn [{:keys [::db/conn] :as cfg}]
-       (let [team  (teams/get-team conn :profile-id profile-id
-                                   :file-id (:target-file-id review))
-             delay (ldel/get-deletion-delay team)
-             ts    (ct/now)]
+     (fn [{:keys [::db/conn]}]
+       (let [ts (ct/now)]
          (db/update! conn :file-branch-review
                      {:status "closed"
                       :closed-at ts
@@ -968,7 +808,6 @@
                       :updated-at ts}
                      {:id id}
                      {::db/return-keys false})
-         (release-review-snapshot! cfg review (ct/in-future delay))
 
          (vswap! messages conj
                  {:topic (:target-file-id review)
@@ -987,9 +826,9 @@
 
 (sv/defmethod ::reopen-branch-review
   "Reopen a closed branch review, as long as its branch is still open and
-  the branch has no other open review. The pinned snapshot is re-pinned at
-  the CURRENT head of the branch (the previous one may already be
-  garbage-collected). Allowed to the author and to team admins/owners."
+  the branch has no other open review. Reviewers find the live branch,
+  so a verdict issued before the close is stale if the branch was saved
+  since. Allowed to the author and to team admins/owners."
   {::doc/added "2.16"
    ::sm/params schema:reopen-branch-review}
   [{:keys [::mbus/msgbus] :as cfg} {:keys [::rpc/profile-id id]}]
@@ -1015,7 +854,7 @@
        cfg
        msgbus
        messages
-       (fn [{:keys [::db/conn] :as cfg}]
+       (fn [{:keys [::db/conn]}]
          (db/xact-lock! conn (:source-file-id review))
 
          ;; Serialize against a merge of the same branch (which locks the
@@ -1035,16 +874,11 @@
                      :hint "the branch already has an open review"
                      :branch-id (:file-branch-id review)))
 
-         (let [branch-file (bfc/get-file cfg (:source-file-id review) :realize? true)
-               snapshot    (pin-review-snapshot! cfg branch-file (:title review) profile-id)
-               ts          (ct/now)]
+         (let [ts (ct/now)]
            (db/update! conn :file-branch-review
                        {:status "open"
                         :closed-at nil
                         :closed-by nil
-                        :pinned-snapshot-id (:id snapshot)
-                        :pinned-revn (:revn branch-file)
-                        :pinned-at ts
                         :updated-at ts}
                        {:id id}
                        {::db/return-keys false})
@@ -1056,7 +890,7 @@
                               :review-id id
                               :profile-id profile-id}})
 
-           {:id id :status "open" :pinned-revn (:revn branch-file)}))))))
+           {:id id :status "open"}))))))
 
 ;; --- COMMAND QUERY: get-profile-review-requests
 
@@ -1069,7 +903,6 @@
           r.title,
           r.created_by,
           r.created_at,
-          r.pinned_at,
           fb.branch_file_id AS source_file_id,
           fb.source_file_id AS target_file_id,
           fb.name AS branch_name,
@@ -1078,6 +911,7 @@
      FROM file_branch_reviewer AS v
      JOIN file_branch_review AS r ON (r.id = v.review_id)
      JOIN file_branch AS fb ON (fb.id = r.file_branch_id)
+     JOIN file AS bf ON (bf.id = fb.branch_file_id)
      JOIN file AS sf ON (sf.id = fb.source_file_id)
      JOIN project AS p ON (p.id = sf.project_id)
     WHERE v.profile_id = ?
@@ -1087,13 +921,13 @@
       AND sf.deleted_at IS NULL
       AND p.deleted_at IS NULL
       AND (v.verdict IS NULL
-           OR v.verdict_revn IS DISTINCT FROM r.pinned_revn)
-    ORDER BY r.pinned_at DESC")
+           OR v.verdict_revn < bf.revn)
+    ORDER BY r.created_at DESC")
 
 (sv/defmethod ::get-profile-review-requests
   "The open branch reviews of a team where the calling profile is a
-  reviewer without a CURRENT verdict (never reviewed, or the author
-  published newer changes since their last verdict). Feeds the dashboard
+  reviewer without a CURRENT verdict (never reviewed, or the branch file
+  was saved since their last verdict). Feeds the dashboard
   notifications area."
   {::doc/added "2.16"
    ::sm/params schema:get-profile-review-requests}

@@ -5,7 +5,7 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.review.details
-  "The details of a design review: an overview (who opened it, where it
+  "The details of a branch review: an overview (who opened it, where it
   stands, its description and reviewers), its activity (what the saves
   of the branch did since it opened) and its tasks."
   (:require-macros [app.main.style :as stl])
@@ -15,7 +15,7 @@
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.main.data.modal :as modal]
-   [app.main.data.workspace.pull-requests :as dwpr]
+   [app.main.data.workspace.branch-reviews :as dwbr]
    [app.main.data.workspace.review :as dwrv]
    [app.main.data.workspace.tasks :as dwtk]
    [app.main.refs :as refs]
@@ -42,9 +42,9 @@
    [app.main.ui.workspace.review.common :as rvc]
    [app.main.ui.workspace.review.shape-preview :refer [shape-preview*]]
    [app.main.ui.workspace.review.tasks :as rvt]
-   [app.main.ui.workspace.sidebar.branch-review.common :as brc]
-   [app.main.ui.workspace.sidebar.branch-review.layout :as brl]
-   [app.main.ui.workspace.sidebar.pull-requests :as prui :refer [pr-state-badge* dialog-header*]]
+   [app.main.ui.workspace.sidebar.branch-compare.common :as brc]
+   [app.main.ui.workspace.sidebar.branch-compare.layout :as brl]
+   [app.main.ui.workspace.sidebar.branch-reviews :as brui :refer [review-state-badge* dialog-header*]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [cuerdas.core :as str]
@@ -82,12 +82,12 @@
                    (mf/deps pr value)
                    (fn [_]
                      (reset! editing* false)
-                     (st/emit! (dwpr/update-pull-request (:id pr) {:description (str/trim value)}))))]
+                     (st/emit! (dwbr/update-branch-review (:id pr) {:description (str/trim value)}))))]
 
     [:section {:class (stl/css :section)}
      [:div {:class (stl/css :section-head)}
       [:> heading* {:level 3 :typography t/body-small :class (stl/css :section-title)}
-       (tr "workspace.pull-requests.info.description")]
+       (tr "workspace.branch-review.info.description")]
       (when (and can-edit (not editing?))
         [:> button* {:variant "ghost" :on-click on-edit}
          (tr "labels.edit")])]
@@ -100,7 +100,7 @@
                        :rows 3
                        :max-length 4000
                        :auto-focus true
-                       :aria-label (tr "workspace.pull-requests.info.description")
+                       :aria-label (tr "workspace.branch-review.info.description")
                        :on-change on-change}]
         [:div {:class (stl/css :edit-actions)}
          [:> button* {:variant "secondary" :on-click on-cancel} (tr "labels.cancel")]
@@ -113,14 +113,6 @@
        :else
        [:> text* {:as "p" :typography t/body-medium :class (stl/css :description)}
         (:description pr)])]))
-
-(defn- verdict-label
-  [{:keys [verdict stale]}]
-  (cond
-    stale                           (tr "workspace.pull-requests.review-state.stale")
-    (= "approved" verdict)          (tr "workspace.pull-requests.review-state.approved")
-    (= "changes-requested" verdict) (tr "workspace.pull-requests.review-state.changes-requested")
-    :else                           (tr "workspace.pull-requests.review-state.pending")))
 
 (defn- verdict-tone
   [{:keys [verdict stale]}]
@@ -153,14 +145,14 @@
                    (mf/deps pr current)
                    (fn [id]
                      (reset! adding* false)
-                     (st/emit! (dwpr/update-pull-request
+                     (st/emit! (dwbr/update-branch-review
                                 (:id pr)
                                 {:reviewers (conj (vec current) (uuid/parse id))}))))]
 
     [:section {:class (stl/css :section)}
      [:div {:class (stl/css :section-head)}
       [:> heading* {:level 3 :typography t/body-small :class (stl/css :section-title)}
-       (tr "workspace.pull-requests.info.reviewers")]
+       (tr "workspace.branch-review.info.reviewers")]
       (when (and can-edit (seq options) (not adding?))
         [:> link-button* {:icon i/add :on-click on-add}
          (tr "workspace.review.details.add-reviewer")])]
@@ -186,7 +178,7 @@
               [:> tag* {:variant "pill"
                         :tone (verdict-tone review)
                         :class (stl/css :push-end)}
-               (verdict-label review)]]
+               (brui/verdict-label review)]]
              (when-not (str/blank? (:comment review))
                [:> text* {:as "p" :typography t/body-small :class (stl/css :reviewer-comment)}
                 (tr "workspace.review.details.quoted-comment" (:comment review))])]))])]))
@@ -201,7 +193,7 @@
         can-edit (or (= (:created-by pr) (:id profile))
                      (boolean (get-in team [:permissions :is-admin])))
 
-        [approvals total] (prui/current-approvals pr)
+        [approvals total] (brui/current-approvals pr)
         missing  (- total approvals)
         open     (count (remove dwtk/closed? tasks))
         closed   (count (filter dwtk/closed? tasks))
@@ -212,7 +204,7 @@
      [:div {:class (stl/css :facts)}
       [:div {:class (stl/css :fact)}
        [:> text* {:as "span" :typography t/body-small :class (stl/css :muted)}
-        (tr "workspace.pull-requests.info.author")]
+        (tr "workspace.branch-review.info.author")]
        [:div {:class (stl/css :fact-value)}
         (when author [:> avatar* {:profile author :variant "S"}])
         [:> text* {:as "span" :typography t/body-small} (rvc/profile-name profiles (:created-by pr))]]]
@@ -229,7 +221,7 @@
           (tr "workspace.review.details.last-change-by"
               (ct/timeago (:created-at last-save))
               (rvc/profile-name profiles (:profile-id last-save)))
-          (ct/timeago (:pinned-at pr)))]]]
+          (ct/timeago (:created-at pr)))]]]
 
      (when (and (pos? missing) (= "open" (:status pr)))
        [:> context-notification* {:level :warning :appearance :ghost}
@@ -238,7 +230,7 @@
                   (dm/str " " (tr "workspace.review.details.open-tasks-dont-block" (i18n/c open)))))])
 
      [:div {:class (stl/css :stats)}
-      [:> stat-card* {:label (tr "workspace.pull-requests.info.approvals")}
+      [:> stat-card* {:label (tr "workspace.branch-review.info.approvals")}
        [:span (tr "workspace.review.details.x-of-y" approvals total)]
        [:span {:class (stl/css :avatars)}
         (for [review (:reviews pr)]
@@ -254,7 +246,7 @@
       [:> stat-card* {:label (tr "workspace.review.details.branch")}
        (cond
          (pos? (or (:conflicts pr) 0))
-         [:span {:class (stl/css :warning)} (tr "workspace.pull-requests.badge.conflicts" (dm/str (:conflicts pr)))]
+         [:span {:class (stl/css :warning)} (tr "workspace.branch-review.badge.conflicts" (dm/str (:conflicts pr)))]
 
          (pos? (or (:behind pr) 0))
          [:span {:class (stl/css :warning)} (tr "workspace.review.details.behind" (i18n/c (:behind pr)))]
@@ -601,9 +593,10 @@
   {::mf/register modal/components
    ::mf/register-as :review-details}
   [{:keys [pr tab]}]
-  (let [preview  (mf/deref refs/pull-request-preview)
+  (let [preview  (mf/deref refs/branch-review-preview)
         ;; the review open now is fresher than the row the dialog got
         pr       (if (= (:id pr) (:pr-id preview)) (or (:info preview) pr) pr)
+        pr       (brui/use-live-verdicts pr)
         profile  (mf/deref refs/profile)
         team     (mf/deref refs/team)
         tasks*   (mf/deref refs/tasks)
@@ -633,9 +626,9 @@
                       (st/emit! (modal/update-props :review-details {:tab id}))))
         on-close   (mf/use-fn #(st/emit! (modal/hide)))
         on-open-change (mf/use-fn (fn [open?] (when-not open? (st/emit! (modal/hide)))))
-        on-compare (mf/use-fn (mf/deps pr) #(prui/open-compare! pr))
-        on-review  (mf/use-fn (mf/deps pr) #(modal/show! :pull-request-review {:pr pr}))
-        on-close-review (mf/use-fn (mf/deps pr) #(prui/confirm-close! pr))]
+        on-compare (mf/use-fn (mf/deps pr) #(brui/open-compare! pr))
+        on-review  (mf/use-fn (mf/deps pr) #(modal/show! :branch-review-verdict {:pr pr}))
+        on-close-review (mf/use-fn (mf/deps pr) #(brui/confirm-close! pr))]
 
     (mf/with-effect [pr]
       (st/emit! (dwrv/fetch-activity (:id pr))
@@ -650,7 +643,7 @@
        :subtitle
        (mf/html
         [:div {:class (stl/css :subtitle)}
-         [:> pr-state-badge* {:pr pr}]
+         [:> review-state-badge* {:pr pr}]
          [:> text* {:as "span" :typography t/body-small :class (stl/css :muted)}
           (tr "workspace.review.text-and-detail"
               (tr "workspace.review.route" (:branch-name pr)

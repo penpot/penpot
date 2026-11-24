@@ -93,7 +93,7 @@
 ;; --- Entries
 
 (def item-key
-  "The key a change or a conflict is chosen and marked as reviewed by
+  "The key a change or a conflict is chosen and marked as viewed by
   (`dwb/item-key`)."
   dwb/item-key)
 
@@ -208,7 +208,7 @@
         (rx/of (modal/hide)
                (dwdc/clear-drawing)
                (dws/deselect-all true)
-               ;; the changes of a design review give way to these ones
+               ;; the changes of a branch review give way to these ones
                (dwrv/hide-changes)
                (dwb/fetch-branch-diff (:id branch)))
         (rx/empty)))))

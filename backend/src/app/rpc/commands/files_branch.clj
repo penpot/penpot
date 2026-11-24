@@ -425,18 +425,17 @@
 ;; circular dependency.
 
 (def ^:private sql:get-open-branch-reviews
-  "SELECT id, title, pinned_snapshot_id
+  "SELECT id, title
      FROM file_branch_review
     WHERE file_branch_id = ?
       AND status = 'open'
       AND deleted_at IS NULL")
 
 (defn- close-branch-reviews
-  "Close (or mark merged) any open review of `branch` and release its
-  pinned snapshot: the snapshot lives in the branch file's history and
-  must not outlive the branch. The review row itself is kept as history.
-  Must run inside a transaction."
-  [{:keys [::db/conn] :as cfg} {:keys [id branch-file-id]} {:keys [profile-id status deleted-at]}]
+  "Close (or mark merged) any open review of `branch`, for a branch that
+  merges, goes, is archived, or stops being a branch. The review row
+  itself is kept as history. Must run inside a transaction."
+  [{:keys [::db/conn]} {:keys [id]} {:keys [profile-id status]}]
   (doseq [review (db/exec! conn [sql:get-open-branch-reviews id])]
     (let [ts (ct/now)]
       (db/update! conn :file-branch-review
@@ -445,12 +444,7 @@
                    :closed-by profile-id
                    :updated-at ts}
                   {:id (:id review)}
-                  {::db/return-keys false})
-      (when-let [snapshot-id (:pinned-snapshot-id review)]
-        (fsnap/delete! cfg
-                       :id snapshot-id
-                       :file-id branch-file-id
-                       :deleted-at deleted-at)))))
+                  {::db/return-keys false}))))
 
 ;; --- Helpers: branch deletion (shared by delete-file-branch and merge)
 
@@ -473,12 +467,10 @@
                 {:id id}
                 {::db/return-keys false})
     (release-base-snapshot! cfg branch dt)
-    ;; the pinned review snapshot must not outlive the branch (`status`
-    ;; above is the BRANCH status; a review closed this way is just
-    ;; "closed")
+    ;; an open review has nothing left to review (`status` above is the
+    ;; BRANCH status; a review closed this way is just "closed")
     (close-branch-reviews cfg branch {:profile-id profile-id
-                                      :status "closed"
-                                      :deleted-at dt})
+                                      :status "closed"})
     (jobs/submit cfg
                  {::jobs/name :delete-object
                   ::jobs/params {:object :file :deleted-at dt :id branch-file-id}})
@@ -1379,17 +1371,14 @@
                                   :updated-at ts}
                                  {:id branch-id}
                                  {::db/return-keys false})
-                     (let [team  (teams/get-team conn :profile-id profile-id :file-id main-id)
-                           delay (ldel/get-deletion-delay team)]
-                       ;; an open review of this branch has served its
-                       ;; purpose: mark it merged and release its snapshot
-                       (close-branch-reviews cfg branch
-                                             {:profile-id profile-id
-                                              :status "merged"
-                                              :deleted-at (ct/in-future delay)})
-                       (vswap! messages conj
-                               (delete-branch! cfg branch {:profile-id profile-id
-                                                           :session-id session-id}))))]
+                     ;; an open review of this branch has served its
+                     ;; purpose: mark it merged
+                     (close-branch-reviews cfg branch
+                                           {:profile-id profile-id
+                                            :status "merged"})
+                     (vswap! messages conj
+                             (delete-branch! cfg branch {:profile-id profile-id
+                                                         :session-id session-id})))]
                (cond
                  (seq unresolved)
                  ;; `:copies` tells the conflict dialog which copies the
@@ -2052,8 +2041,7 @@
                    ;; nothing left to review
                    (close-branch-reviews cfg branch
                                          {:profile-id profile-id
-                                          :status "closed"
-                                          :deleted-at (ct/in-future delay)})
+                                          :status "closed"})
 
                    ;; nothing derives from the base any more, so the pin goes
                    (release-base-snapshot! cfg branch (ct/in-future delay))
@@ -2225,7 +2213,7 @@
                (files/check-read-permissions! cfg profile-id main-id)
                (db/exec! conn [sql:get-file-branch-merges main-id])))))
 
-;; --- COMMANDS: the changes a profile marked as reviewed
+;; --- COMMANDS: the changes a profile marked as viewed
 
 (defn- get-readable-branch
   "The branch `branch-id`, once `profile-id` is known to read its main.
@@ -2253,7 +2241,7 @@
       AND r.direction = ?")
 
 (sv/defmethod ::get-branch-change-marks
-  "The changes of a comparison the profile marked as reviewed, each with
+  "The changes of a comparison the profile marked as viewed, each with
   the fingerprint of the change when it was marked. The marks are the
   profile's own: nobody else's are returned. A mark whose fingerprint no
   longer matches its change is stale, which the reader of the comparison
@@ -2274,7 +2262,7 @@
    [:direction [:enum :branch->source :source->branch]]
    [:change-key [:string {:max 500}]]
    [:fingerprint [:string {:max 250}]]
-   [:reviewed ::sm/boolean]])
+   [:viewed ::sm/boolean]])
 
 (def ^:private sql:upsert-branch-change-mark
   "INSERT INTO file_branch_change_mark
@@ -2285,7 +2273,7 @@
                      created_at = clock_timestamp()")
 
 (sv/defmethod ::set-branch-change-mark
-  "Mark a change of a comparison as reviewed by the profile, with the
+  "Mark a change of a comparison as viewed by the profile, with the
   fingerprint of the change as it stands, or clear the mark. Reading the
   branch is enough: the mark is the profile's own note and changes
   nothing of the branch."
@@ -2293,10 +2281,10 @@
    ::sm/params schema:set-branch-change-mark
    ::db/transaction true}
   [{:keys [::db/conn] :as cfg}
-   {:keys [::rpc/profile-id branch-id direction change-key fingerprint reviewed]}]
+   {:keys [::rpc/profile-id branch-id direction change-key fingerprint viewed]}]
   (check-branching-enabled!)
   (get-readable-branch cfg profile-id branch-id)
-  (if reviewed
+  (if viewed
     (db/exec-one! conn [sql:upsert-branch-change-mark
                         branch-id profile-id (name direction) change-key fingerprint])
     (db/delete! conn :file-branch-change-mark
@@ -2386,12 +2374,8 @@
         ;; archiving hides the branch from the default flow, so its open
         ;; review has no reason to stay open either
         (when (= "archived" status)
-          (let [team (teams/get-team conn :profile-id profile-id
-                                     :file-id (:branch-file-id branch))
-                dt   (ct/in-future (ldel/get-deletion-delay team))]
-            (close-branch-reviews cfg branch {:profile-id profile-id
-                                              :status "closed"
-                                              :deleted-at dt})))
+          (close-branch-reviews cfg branch {:profile-id profile-id
+                                            :status "closed"}))
         (audited {:id branch-id :status status} tpoint
                  (if (false? archived) :restore-branch :archive-branch))))))
 

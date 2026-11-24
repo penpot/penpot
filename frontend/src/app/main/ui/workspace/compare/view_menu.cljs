@@ -51,7 +51,7 @@
         side?     (and wasm? (= view :side) (not hidden))
         aligned?  (= side-mode :aligned)
         highlight (tr "workspace.compare.view.highlight")
-        side      (tr "workspace.branches.review.view.side")
+        side      (tr "workspace.branches.compare.view.side")
         linked    (tr "workspace.compare.view.side.linked")
         lined-up  (tr "workspace.compare.view.side.aligned")
         ;; the mode of the side view is told by the note on the canvas

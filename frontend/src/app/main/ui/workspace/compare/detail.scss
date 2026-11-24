@@ -7,7 +7,7 @@
 @use "ds/mixins.scss" as *;
 
 // its blocks over the whole width undo this padding
-// (`branch_review/detail.scss`)
+// (`branch_compare/detail.scss`)
 .compare-detail {
   @include custom-scrollbar;
 

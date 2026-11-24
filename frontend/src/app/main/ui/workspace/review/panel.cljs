@@ -33,7 +33,7 @@
    [app.main.ui.workspace.review.common :as rvc]
    [app.main.ui.workspace.review.filter-menu :refer [filter-menu*]]
    [app.main.ui.workspace.review.tasks :as rvt]
-   [app.main.ui.workspace.sidebar.pull-requests :as prui :refer [pr-state-badge*]]
+   [app.main.ui.workspace.sidebar.branch-reviews :as brui :refer [review-state-badge*]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
@@ -43,7 +43,7 @@
 (mf/defc thread-card*
   "A comment thread of the review: its number and board, who wrote it and
   when, what it points at, its text and its replies. With `show-review`,
-  it names the design review it belongs to."
+  it names the branch review it belongs to."
   [{:keys [thread objects is-open show-review]}]
   (let [owner   (d/without-nils (dcmt/get-owner thread))
         replies (dec (or (:count-comments thread) 1))
@@ -71,7 +71,7 @@
                                                  :icon (rvc/thread-anchor-icon thread)}])
                        :review (when (and show-review review?)
                                  (or (:review-title thread)
-                                     (tr "workspace.review.design-review")))
+                                     (tr "workspace.review.branch-review")))
                        :is-review review?
                        :is-open is-open
                        :is-resolved (:is-resolved thread)
@@ -81,7 +81,7 @@
 (mf/defc comments-tab*
   "The comment threads `threads`: filters and the cards grouped by board
   (by page and board with `show-page`). With `show-review`, each card names
-  the design review it belongs to."
+  the branch review it belongs to."
   [{:keys [threads show-page show-review]}]
   (let [profile  (mf/deref refs/profile)
         clocal   (mf/deref refs/comments-local)
@@ -145,7 +145,7 @@
 (mf/defc tasks-tab*
   "The tasks of the review (`review-id`), or of the file when there is
   none: its progress, filters and list. With `show-review`, each task
-  names the design review it belongs to."
+  names the branch review it belongs to."
   [{:keys [tasks review-id grouped show-review]}]
   (let [profile  (mf/deref refs/profile)
         local    (mf/deref refs/review-local)
@@ -227,14 +227,15 @@
 (mf/defc review-header*
   {::mf/private true}
   [{:keys [pr]}]
-  (let [[approvals total] (prui/current-approvals pr)
+  (let [pr    (brui/use-live-verdicts pr)
+        [approvals total] (brui/current-approvals pr)
         route (tr "workspace.review.route" (:branch-name pr)
                   (rvc/route-target pr (tr "workspace.branches.main")))]
     [:div {:class (stl/css :review-header)}
      [:div {:class (stl/css :review-title-row)}
       [:> heading* {:level 2 :typography t/body-large :class (stl/css :review-title)}
        (:title pr)]
-      [:> pr-state-badge* {:pr pr}]]
+      [:> review-state-badge* {:pr pr}]]
      [:> text* {:as "span" :typography t/body-small :class (stl/css :review-route)}
       (if (pos? total)
         (tr "workspace.review.text-and-detail" route (tr "workspace.review.approved-of" approvals total))
@@ -245,7 +246,7 @@
   (`inspect`, the element the workspace renders for it), and the
   comments and tasks of the review."
   [{:keys [inspect]}]
-  (let [preview  (mf/deref refs/pull-request-preview)
+  (let [preview  (mf/deref refs/branch-review-preview)
         pr       (:info preview)
         pr-id    (:pr-id preview)
         threads* (mf/deref refs/threads)

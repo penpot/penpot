@@ -14,7 +14,7 @@
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.main.data.modal :as modal]
-   [app.main.data.workspace.pull-requests :as dwpr]
+   [app.main.data.workspace.branch-reviews :as dwbr]
    [app.main.data.workspace.review :as dwrv]
    [app.main.data.workspace.tasks :as dwtk]
    [app.main.refs :as refs]
@@ -228,7 +228,7 @@
                    :is-selected is-selected
                    :is-review review?
                    :review (when (and show-review review?)
-                             (or (:review-title task) (tr "workspace.review.design-review")))
+                             (or (:review-title task) (tr "workspace.review.branch-review")))
                    :on-click on-click
                    :assignee (when assignee
                                (mf/html [:> avatar* {:profile assignee :variant "S"}]))
@@ -236,7 +236,7 @@
 
 (mf/defc task-list*
   "The tasks `tasks`, each one opening on the canvas when clicked. With
-  `show-review`, each one names the design review it belongs to."
+  `show-review`, each one names the branch review it belongs to."
   [{:keys [tasks show-review]}]
   (let [data      (mf/deref refs/workspace-data)
         profiles  (mf/deref refs/profiles)
@@ -381,7 +381,7 @@
   (let [profiles  (mf/deref refs/profiles)
         profile   (mf/deref refs/profile)
         data      (mf/deref refs/workspace-data)
-        preview   (mf/deref refs/pull-request-preview)
+        preview   (mf/deref refs/branch-review-preview)
         objects   (page-objects data (:page-id task))
         for-me?   (= (:assignee-id task) (:id profile))
         lost?     (dwtk/lost? task)
@@ -395,8 +395,8 @@
         (mf/use-fn
          (mf/deps task file-id)
          (fn [_]
-           (st/emit! (dwpr/open-pull-request {:id (:review-id task)
-                                              :source-file-id file-id}))))]
+           (st/emit! (dwbr/open-branch-review {:id (:review-id task)
+                                               :source-file-id file-id}))))]
 
     [:div {:class (stl/css :task-state)}
      [:div {:class (stl/css :task-state-row)}
@@ -433,7 +433,7 @@
   (let [profiles  (mf/deref refs/profiles)
         events    (get (mf/deref refs/task-events) (:id task))
         data      (mf/deref refs/workspace-data)
-        preview   (mf/deref refs/pull-request-preview)
+        preview   (mf/deref refs/branch-review-preview)
         objects   (page-objects data (:page-id task))
         status    (:status task)
 
@@ -672,7 +672,7 @@
   (count (filter f tasks)))
 
 (defn group-tasks
-  "The tasks of the branch workspace list: those of each design review
+  "The tasks of the branch workspace list: those of each branch review
   first (the open review first), then the others."
   [tasks]
   (let [[review other] ((juxt filter remove) (comp some? :review-id) tasks)]

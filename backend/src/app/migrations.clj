@@ -602,7 +602,10 @@
     :fn (mg/resource "app/migrations/sql/0817-file-family-and-branch-review.sql")}
 
    {:name "0818-mod-comment-thread-add-lost-layer"
-    :fn (mg/resource "app/migrations/sql/0818-mod-comment-thread-add-lost-layer.sql")}])
+    :fn (mg/resource "app/migrations/sql/0818-mod-comment-thread-add-lost-layer.sql")}
+
+   {:name "0819-mod-file-branch-review-drop-pinned-revision"
+    :fn (mg/resource "app/migrations/sql/0819-mod-file-branch-review-drop-pinned-revision.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]

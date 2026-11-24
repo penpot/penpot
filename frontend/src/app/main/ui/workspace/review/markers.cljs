@@ -5,11 +5,11 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.review.markers
-  "The marks of the design reviews and the tasks on the canvas. They live
+  "The marks of the branch reviews and the tasks on the canvas. They live
   in the comments layer, inside its box translated by the viewbox, so a
   canvas point `p` sits at `p * zoom`.
 
-  A thread written in a design review shows as a numbered review mark
+  A thread written in a branch review shows as a numbered review mark
   (in the review colour, wherever the file is open), the tasks of a
   thread show as a task mark that opens it, and a thread on an area
   draws its area while it is open. Marks that would overlap show as one,
@@ -49,7 +49,7 @@
 
 (defn review-thread?
   "Whether the review layer draws `thread` instead of the plain comment
-  bubbles: a thread of a design review, or one attached to a task."
+  bubbles: a thread of a branch review, or one attached to a task."
   [task-thread-ids thread]
   (or (some? (:review-id thread))
       (contains? task-thread-ids (:id thread))))

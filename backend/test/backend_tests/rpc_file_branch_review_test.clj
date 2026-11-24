@@ -17,7 +17,6 @@
    [app.rpc :as-alias rpc]
    [app.util.blob :as blob]
    [backend-tests.helpers :as th]
-   [clojure.string :as str]
    [clojure.test :as t]))
 
 (t/use-fixtures :once th/state-init)
@@ -95,15 +94,6 @@
               (t/is (= [(:id reviewer)] (:reviewers result)))
               (vreset! review-id (:id result)))))
 
-        (t/testing "review snapshot is pinned on the branch file"
-          (let [rows (->> (th/db-query :file-change {:file-id branch-file-id})
-                          (filter #(some-> (:label %) (str/starts-with? "branch-review/"))))]
-            (t/is (= 1 (count rows)))
-            (t/is (every? (fn [{:keys [deleted-at]}]
-                            (and (some? deleted-at)
-                                 (ct/is-after? deleted-at (ct/in-future {:days 3000}))))
-                          rows))))
-
         (t/testing "list from the target file"
           (let [out (th/command! {::th/type :get-file-branch-reviews
                                   ::rpc/profile-id (:id author)
@@ -116,7 +106,6 @@
               (t/is (= "feature" (:branch-name row)))
               (t/is (= (:name file) (:target-name row)))
               (t/is (= "pending" (:overall-verdict row)))
-              (t/is (false? (:outdated row)))
               ;; the branch carries one change (the added color)
               (t/is (= 1 (:ahead row)))
               (t/is (= 0 (:behind row)))
@@ -184,112 +173,33 @@
               out     (create-review* viewer (:id branch2) {})]
           (t/is (some? (:error out))))))))
 
-(t/deftest bundle-serves-the-pinned-snapshot
+(t/deftest viewer-bundle-plays-the-live-branch
   (with-redefs [cf/flags (pr-flags)]
     (let [author  (th/create-profile* 1 {:is-active true})
           file    (th/create-file* 1 {:profile-id (:id author)
                                       :project-id (:default-project-id author)})
           branch  (create-branch* author file "feature")
-          bfid    (:branch-file-id branch)
-          color-1 (uuid/random)
-          color-2 (uuid/random)]
+          bfid    (:branch-file-id branch)]
 
-      (apply-change* author bfid
-                     {:type :add-color
-                      :color {:id color-1 :name "One" :color "#111111" :opacity 1}})
+      (add-color* author bfid "One")
 
       (let [pr (:result (create-review* author (:id branch) {}))]
 
         ;; the branch keeps moving AFTER the branch review was created
-        (apply-change* author bfid
-                       {:type :add-color
-                        :color {:id color-2 :name "Two" :color "#222222" :opacity 1}})
-
-        (t/testing "the sandbox shows the reviewed state, not the live branch"
-          (let [out    (th/command! {::th/type :get-branch-review-bundle
-                                     ::rpc/profile-id (:id author)
-                                     :id (:id pr)})
-                result (:result out)
-                colors (-> result :data :colors)]
-            (t/is (nil? (:error out)))
-            (t/is (contains? colors color-1))
-            (t/is (not (contains? colors color-2)))
-            ;; read-only by construction, whatever the caller's role is
-            (t/is (false? (-> result :permissions :can-edit)))))
-
-        (t/testing "the branch review reports the branch moved on"
-          (let [out (th/command! {::th/type :get-branch-review
-                                  ::rpc/profile-id (:id author)
-                                  :id (:id pr)})]
-            (t/is (true? (-> out :result :outdated)))))
-
-        (t/testing "publishing the branch state refreshes the sandbox"
-          (let [out (th/command! {::th/type :update-branch-review-revision
-                                  ::rpc/profile-id (:id author)
-                                  :id (:id pr)})]
-            (t/is (nil? (:error out)))
-            (t/is (true? (-> out :result :updated))))
-
-          (let [out    (th/command! {::th/type :get-branch-review-bundle
-                                     ::rpc/profile-id (:id author)
-                                     :id (:id pr)})
-                colors (-> out :result :data :colors)]
-            (t/is (contains? colors color-2)))
-
-          (let [out (th/command! {::th/type :get-branch-review
-                                  ::rpc/profile-id (:id author)
-                                  :id (:id pr)})]
-            (t/is (false? (-> out :result :outdated)))))
-
-        (t/testing "publishing again with no new changes is a no-op"
-          (let [out (th/command! {::th/type :update-branch-review-revision
-                                  ::rpc/profile-id (:id author)
-                                  :id (:id pr)})]
-            (t/is (nil? (:error out)))
-            (t/is (false? (-> out :result :updated)))))))))
-
-(t/deftest viewer-bundle-serves-the-pinned-snapshot
-  (with-redefs [cf/flags (pr-flags)]
-    (let [author  (th/create-profile* 1 {:is-active true})
-          file    (th/create-file* 1 {:profile-id (:id author)
-                                      :project-id (:default-project-id author)})
-          branch  (create-branch* author file "feature")
-          bfid    (:branch-file-id branch)
-          color-1 (uuid/random)
-          color-2 (uuid/random)]
-
-      (apply-change* author bfid
-                     {:type :add-color
-                      :color {:id color-1 :name "One" :color "#111111" :opacity 1}})
-
-      (let [pr (:result (create-review* author (:id branch) {}))]
-
-        ;; the branch keeps moving AFTER the branch review was created
-        (apply-change* author bfid
-                       {:type :add-color
-                        :color {:id color-2 :name "Two" :color "#222222" :opacity 1}})
+        (add-color* author bfid "Two")
 
         ;; the bundle strips file :data down to pages/components, so the
-        ;; served state is asserted through :revn (the overlay carries the
-        ;; snapshot's revn; the live branch is one save ahead)
-        (t/testing "the viewer bundle shows the reviewed state, read-only"
+        ;; served state is asserted through :revn
+        (t/testing "the viewer bundle of a review shows the live branch, read-only"
           (let [out    (th/command! {::th/type :get-view-only-bundle
                                      ::rpc/profile-id (:id author)
                                      :file-id bfid
                                      :review-id (:id pr)})
-                result (:result out)]
+                result (:result out)
+                bf     (th/db-get :file {:id bfid})]
             (t/is (nil? (:error out)))
-            (t/is (= (:pinned-revn pr) (-> result :file :revn)))
+            (t/is (= (:revn bf) (-> result :file :revn)))
             (t/is (false? (-> result :permissions :can-edit)))))
-
-        (t/testing "the viewer bundle without review-id keeps the live state"
-          (let [out (th/command! {::th/type :get-view-only-bundle
-                                  ::rpc/profile-id (:id author)
-                                  :file-id bfid})
-                bf  (th/db-get :file {:id bfid})]
-            (t/is (nil? (:error out)))
-            (t/is (= (:revn bf) (-> out :result :file :revn)))
-            (t/is (< (:pinned-revn pr) (:revn bf)))))
 
         (t/testing "the viewer bundle refuses a closed branch review"
           (th/command! {::th/type :close-branch-review
@@ -347,12 +257,8 @@
             (t/is (= "approved" (:overall-verdict row)))
             (t/is (false? (-> row :reviews first :stale)))))
 
-        (t/testing "publishing new changes makes the verdict stale"
+        (t/testing "a save of the branch makes the verdict stale"
           (add-color* author bfid "Another")
-          (let [out (th/command! {::th/type :update-branch-review-revision
-                                  ::rpc/profile-id (:id author)
-                                  :id (:id pr)})]
-            (t/is (nil? (:error out))))
           (let [row (:result (th/command! {::th/type :get-branch-review
                                            ::rpc/profile-id (:id author)
                                            :id (:id pr)}))]
@@ -371,6 +277,81 @@
                                            ::rpc/profile-id (:id author)
                                            :id (:id pr)}))]
             (t/is (= "changes-requested" (:overall-verdict row)))))))))
+
+(t/deftest verdict-goes-stale-after-a-branch-save
+  (with-redefs [cf/flags (pr-flags)]
+    (let [author   (th/create-profile* 1 {:is-active true})
+          reviewer (th/create-profile* 2 {:is-active true})
+          team-id  (:default-team-id author)
+          file     (th/create-file* 1 {:profile-id (:id author)
+                                       :project-id (:default-project-id author)})]
+
+      (th/create-team-role* {:team-id team-id
+                             :profile-id (:id reviewer)
+                             :role :editor})
+
+      (let [branch   (create-branch* author file "feature")
+            bfid     (:branch-file-id branch)
+            _        (add-color* author bfid "Brand")
+            pr       (:result (create-review* author (:id branch)
+                                              {:reviewers [(:id reviewer)]}))
+            review   (fn []
+                       (:result (th/command! {::th/type :get-branch-review
+                                              ::rpc/profile-id (:id author)
+                                              :id (:id pr)})))
+            listed   (fn []
+                       (->> (th/command! {::th/type :get-file-branch-reviews
+                                          ::rpc/profile-id (:id author)
+                                          :file-id (:id file)})
+                            :result
+                            (filter #(= (:id pr) (:id %)))
+                            (first)))
+            requests (fn []
+                       (->> (th/command! {::th/type :get-profile-review-requests
+                                          ::rpc/profile-id (:id reviewer)
+                                          :team-id team-id})
+                            :result
+                            (mapv :id)))]
+
+        (t/testing "a pending reviewer is asked for a verdict"
+          (t/is (= [(:id pr)] (requests))))
+
+        (t/testing "a verdict records the live revn of the branch file"
+          (let [out (th/command! {::th/type :submit-branch-review-verdict
+                                  ::rpc/profile-id (:id reviewer)
+                                  :id (:id pr)
+                                  :verdict "approved"})]
+            (t/is (nil? (:error out)))
+            (t/is (= (:revn (th/db-get :file {:id bfid}))
+                     (-> out :result :verdict-revn)))))
+
+        (t/testing "the verdict is current before any save of the branch"
+          (let [row (review)]
+            (t/is (= "approved" (:overall-verdict row)))
+            (t/is (false? (-> row :reviews first :stale)))
+            (t/is (not (contains? row :outdated)))
+            (t/is (not (contains? row :pinned-revn))))
+          (t/is (false? (-> (listed) :reviews first :stale)))
+          (t/is (= [] (requests))))
+
+        (t/testing "a save of the branch file makes the verdict stale"
+          (t/is (nil? (:error (add-color* author bfid "Accent"))))
+          (let [row (review)]
+            (t/is (= "in-review" (:overall-verdict row)))
+            (t/is (= "approved" (-> row :reviews first :verdict)))
+            (t/is (true? (-> row :reviews first :stale))))
+          (t/is (true? (-> (listed) :reviews first :stale)))
+          (t/is (= [(:id pr)] (requests))))
+
+        (t/testing "a new verdict over the live branch is current again"
+          (th/command! {::th/type :submit-branch-review-verdict
+                        ::rpc/profile-id (:id reviewer)
+                        :id (:id pr)
+                        :verdict "approved"})
+          (let [row (review)]
+            (t/is (= "approved" (:overall-verdict row)))
+            (t/is (false? (-> row :reviews first :stale))))
+          (t/is (= [] (requests))))))))
 
 (t/deftest update-branch-review-metadata-and-reviewers
   (with-redefs [cf/flags (pr-flags)]
@@ -437,7 +418,6 @@
                              :role :admin})
 
       (let [branch (create-branch* author file "feature")
-            bfid   (:branch-file-id branch)
             pr     (:result (create-review* author (:id branch) {}))]
 
         (t/testing "a plain editor cannot close someone else's branch review"
@@ -453,32 +433,12 @@
             (t/is (nil? (:error out)))
             (t/is (= "closed" (-> out :result :status)))))
 
-        (t/testing "the sandbox stops resolving once closed"
-          (let [out   (th/command! {::th/type :get-branch-review-bundle
-                                    ::rpc/profile-id (:id author)
-                                    :id (:id pr)})
-                error (:error out)]
-            (t/is (some? error))
-            (t/is (= :branch-review-not-open (-> error ex-data :code)))))
-
-        (t/testing "the review snapshot pin is released on close"
-          (let [rows (->> (th/db-query :file-change {:file-id bfid})
-                          (filter #(some-> (:label %) (str/starts-with? "branch-review/"))))]
-            (t/is (seq rows))
-            (t/is (every? (fn [{:keys [deleted-at]}]
-                            (and (some? deleted-at)
-                                 (ct/is-before? deleted-at (ct/in-future {:days 400}))))
-                          rows))))
-
-        (t/testing "the author can reopen it, re-pinned at the current head"
-          (add-color* author bfid "Late")
+        (t/testing "the author can reopen it"
           (let [out (th/command! {::th/type :reopen-branch-review
                                   ::rpc/profile-id (:id author)
-                                  :id (:id pr)})
-                bf  (th/db-get :file {:id bfid})]
+                                  :id (:id pr)})]
             (t/is (nil? (:error out)))
-            (t/is (= "open" (-> out :result :status)))
-            (t/is (= (:revn bf) (-> out :result :pinned-revn)))))))))
+            (t/is (= "open" (-> out :result :status)))))))))
 
 (t/deftest branch-lifecycle-closes-reviews
   (with-redefs [cf/flags (pr-flags)]
@@ -716,17 +676,6 @@
                                           [:title]))
               :expected (constantly {:title "renamed"})}
 
-             {:label "update-branch-review-revision"
-              :type :update-branch-review-revision
-              :actor :author
-              ;; the sandbox only republishes when the branch moved
-              :before (fn [] (add-color* author bfid "Extra"))
-              :params (fn [id] {:id id})
-              :message-type :branch-review-updated
-              :view (fn [id] (select-keys (th/db-get :file-branch-review {:id id})
-                                          [:pinned-revn]))
-              :expected (fn [_] {:pinned-revn (:revn (th/db-get :file {:id bfid}))})}
-
              {:label "submit-branch-review-verdict"
               :type :submit-branch-review-verdict
               :actor :reviewer
@@ -736,8 +685,8 @@
                                                      {:review-id id
                                                       :profile-id (:id reviewer)})
                                           [:verdict :verdict-revn]))
-              :expected (fn [id] {:verdict "approved"
-                                  :verdict-revn (:pinned-revn (th/db-get :file-branch-review {:id id}))})}
+              :expected (fn [_] {:verdict "approved"
+                                 :verdict-revn (:revn (th/db-get :file {:id bfid}))})}
 
              {:label "close-branch-review"
               :type :close-branch-review
@@ -758,10 +707,9 @@
               :expected (constantly {:status "open"})}]]
         (loop [cases cases
                review-id nil]
-          (when-some [{:keys [label type actor before params message-type view expected]}
+          (when-some [{:keys [label type actor params message-type view expected]}
                       (first cases)]
             (let [seen (atom [])
-                  _    (when before (before))
                   out  (with-redefs [mbus/pub!
                                      (fn [_ & {:keys [message]}]
                                        (swap! seen conj {:message message

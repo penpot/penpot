@@ -73,7 +73,7 @@
                   :class (stl/css-case :pill true
                                        :pill-pending (= review "pending")
                                        :pill-approved (= review "approved"))
-                  :title (tr "workspace.pull-requests.info.approvals")}
+                  :title (tr "workspace.branch-review.info.approvals")}
         [:> icon* {:icon-id i/git-pull-request-arrow :size "s"}]
         (when (pos? reviewers)
           (dm/str approvals "/" reviewers))])]))

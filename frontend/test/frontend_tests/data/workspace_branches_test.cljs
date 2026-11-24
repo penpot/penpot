@@ -11,8 +11,8 @@
    [app.main.data.common :as dcm]
    [app.main.data.modal :as modal]
    [app.main.data.persistence :as dwp]
+   [app.main.data.workspace.branch-reviews :as dwbr]
    [app.main.data.workspace.branches :as dwb]
-   [app.main.data.workspace.pull-requests :as dwpr]
    [app.main.repo :as rp]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
@@ -292,9 +292,9 @@
   [calls cmd]
   (->> @calls (filter #(= cmd (first %))) (last) (second)))
 
-(defn- reviewed
+(defn- viewed
   [store]
-  (get-in @store [:workspace-branch-diff :reviewed]))
+  (get-in @store [:workspace-branch-diff :viewed]))
 
 (t/deftest ^:async a-mark-counts-while-its-change-is-what-it-was
   (let [calls  (atom [])
@@ -308,8 +308,8 @@
      (mock/with-mocks* {rp/cmd! (review-stub calls marks false)}
        (let [store (make-store)]
          (ptk/emit! store (dwb/fetch-branch-diff (:id branch)))
-         (await (async/wait-for-store store #(seq (reviewed store)) "the marks load"))
-         (t/is (= #{(:key title)} (reviewed store)))
+         (await (async/wait-for-store store #(seq (viewed store)) "the marks load"))
+         (t/is (= #{(:key title)} (viewed store)))
          (t/is (= {:branch-id (:id branch) :direction :branch->source}
                   (last-call calls :get-branch-change-marks))
                "the marks are the ones of the direction compared")
@@ -325,19 +325,19 @@
          (ptk/emit! store (dwb/fetch-branch-diff (:id branch)))
          (await (async/wait-for #(some? (last-call calls :get-branch-change-marks))
                                 "the marks are asked for"))
-         (ptk/emit! store (dwb/toggle-diff-reviewed (:key logo) true))
-         (t/is (= #{(:key logo)} (reviewed store)) "the mark shows at once")
+         (ptk/emit! store (dwb/toggle-diff-viewed (:key logo) true))
+         (t/is (= #{(:key logo)} (viewed store)) "the mark shows at once")
          (await (async/wait-for #(some? (last-call calls :set-branch-change-mark))
                                 "the mark is kept"))
          (t/is (= {:branch-id (:id branch)
                    :direction :branch->source
                    :change-key (:key logo)
                    :fingerprint (dwb/change-fingerprint logo)
-                   :reviewed true}
+                   :viewed true}
                   (last-call calls :set-branch-change-mark)))
-         (ptk/emit! store (dwb/toggle-diff-reviewed (:key logo)))
-         (t/is (= #{} (reviewed store)) "without a side it flips")
-         (await (async/wait-for #(false? (:reviewed (last-call calls :set-branch-change-mark)))
+         (ptk/emit! store (dwb/toggle-diff-viewed (:key logo)))
+         (t/is (= #{} (viewed store)) "without a side it flips")
+         (await (async/wait-for #(false? (:viewed (last-call calls :set-branch-change-mark)))
                                 "the mark is cleared"))
          (rx/dispose! store))))))
 
@@ -351,10 +351,10 @@
          (ptk/emit! store (dwb/fetch-branch-diff (:id branch)))
          (await (async/wait-for #(some? (last-call calls :get-branch-change-marks))
                                 "the marks are asked for"))
-         (ptk/emit! store (dwb/toggle-diff-reviewed (:key title) true))
-         (await (async/wait-for-store store #(empty? (reviewed store))
+         (ptk/emit! store (dwb/toggle-diff-viewed (:key title) true))
+         (await (async/wait-for-store store #(empty? (viewed store))
                                       "the marks are read again"))
-         (t/is (= #{} (reviewed store)))
+         (t/is (= #{} (viewed store)))
          (rx/dispose! store))))))
 
 (t/deftest the-fingerprint-follows-what-the-change-is
@@ -491,7 +491,7 @@
              (t/is (false? (dwb/has-branches? @store)))
              (rx/dispose! store)))))
 
-(t/deftest ^:async a-pull-request-from-the-open-branch-saves-first-without-the-listing
+(t/deftest ^:async a-branch-review-from-the-open-branch-saves-first-without-the-listing
   (let [waits     (atom 0)
         branch-id (uuid/next)]
     (await (mock/with-mocks*
@@ -504,7 +504,7 @@
                                  {:file-id file-id
                                   :loaded? true
                                   :info {:id branch-id :branch-file-id file-id}}))]
-               (ptk/emit! store (dwpr/create-pull-request branch-id {:title "Review me"}))
+               (ptk/emit! store (dwbr/create-branch-review branch-id {:title "Review me"}))
                (await (async/wait-for #(pos? @waits) "the pending edits are saved first"))
                (rx/dispose! store))))))
 

@@ -126,7 +126,7 @@
           (some? (get-in state [:workspace-tasks-local :open]))
           (rx/of (dwtk/close-task))
 
-          ;; inside a design review the review tool says what a click does;
+          ;; inside a branch review the review tool says what a click does;
           ;; the area tool draws with the pointer instead
           (dwrv/reviewing? state)
           (if (= :comment-area (dwrv/get-tool state))

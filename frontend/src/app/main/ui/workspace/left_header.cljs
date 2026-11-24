@@ -43,17 +43,17 @@
         branch-ctx  (mf/deref refs/branch-context)
         branch?     (and (some? branch-ctx) (some? (:source-name branch-ctx)))
 
-        ;; When a pull request review is active the header gets a
-        ;; distinct badge and the pull request title, so the user knows a
+        ;; When a branch review is active the header gets a
+        ;; distinct badge and the branch review title, so the user knows a
         ;; review is open. The file is still the live, editable branch.
-        pr-preview  (mf/deref refs/pull-request-preview)
+        pr-preview  (mf/deref refs/branch-review-preview)
         review?     (some? pr-preview)
         pr-title    (get-in pr-preview [:info :title] "")
 
         display-name
         (cond
           ^boolean review?
-          (tr "workspace.pull-requests.header-title" pr-title)
+          (tr "workspace.branch-review.header-title" pr-title)
 
           ^boolean branch?
           (:source-name branch-ctx)
@@ -166,7 +166,7 @@
                           :error (tr "workspace.header.save-error")
                           nil)}]
           (when ^boolean review?
-            [:> tooltip* {:content (tr "workspace.pull-requests.header-badge-tooltip" pr-title)
+            [:> tooltip* {:content (tr "workspace.branch-review.header-badge-tooltip" pr-title)
                           :placement "bottom"}
              [:span {:class (stl/css :review-badge)}
               [:> icon* {:icon-id i/git-pull-request-arrow :size "s"}]]])
@@ -174,7 +174,7 @@
            (if ^boolean review?
              [:*
               [:span {:class (stl/css :review-label)}
-               (tr "workspace.pull-requests.header-label")]
+               (tr "workspace.branch-review.header-label")]
               " " pr-title]
              display-name)]])]
       (when ^boolean shared?

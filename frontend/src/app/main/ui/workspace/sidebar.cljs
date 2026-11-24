@@ -129,8 +129,8 @@
         file-id        (get file :id)
 
         design-tokens? (features/use-feature "design-tokens/v1")
-        ;; a design review is read-only: it shows the pages and layers alone
-        reviewing?     (some? (mf/deref refs/pull-request-preview))
+        ;; a branch review is read-only: it shows the pages and layers alone
+        reviewing?     (some? (mf/deref refs/branch-review-preview))
         ;; comparing the branch with main, the changes take their place
         comparing?     (some? (mf/deref refs/compare-mode))
         mode-inspect?  (or reviewing? (= options-mode :inspect))
@@ -301,7 +301,7 @@
 
 (mf/defc right-sidebar*
   [{:keys [layout section file-id page-id drawing-tool active-tokens] :as props}]
-  (let [reviewing?       (some? (mf/deref refs/pull-request-preview))
+  (let [reviewing?       (some? (mf/deref refs/branch-review-preview))
         ;; comparing the branch with main, the panel shows the change
         ;; chosen; a commenting tool brings the comments and tasks back
         is-comparing?    (and (some? (mf/deref refs/compare-mode))
@@ -376,7 +376,7 @@
           (and is-comparing? (not is-history?))
           [:> compare-detail* {}]
 
-          ;; inside a design review the panel shows the inspect of the
+          ;; inside a branch review the panel shows the inspect of the
           ;; selection (the same one the workspace has) and the comments and
           ;; tasks of the review
           (and reviewing? (not is-history?))

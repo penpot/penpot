@@ -14,11 +14,11 @@ const setupBranch = async (workspacePage, diff) => {
   await workspacePage.setupEmptyFile();
   await workspacePage.mockRPCs({
     "get-file-branch-info?file-id=*":
-      "pull-requests/get-file-branch-info-branch.json",
-    "get-file-branches?file-id=*": "pull-requests/get-file-branches-empty.json",
+      "branch-reviews/get-file-branch-info-branch.json",
+    "get-file-branches?file-id=*": "branch-reviews/get-file-branches-empty.json",
     "get-file-branch-reviews?file-id=*":
-      "pull-requests/get-file-branches-empty.json",
-    "get-file-tasks?file-id=*": "pull-requests/get-file-branches-empty.json",
+      "branch-reviews/get-file-branches-empty.json",
+    "get-file-tasks?file-id=*": "branch-reviews/get-file-branches-empty.json",
     "get-file-branch-diff?branch-id=*": `compare/${diff}`,
     "get-branch-change-marks?branch-id=*":
       "compare/get-branch-change-marks-empty.json",

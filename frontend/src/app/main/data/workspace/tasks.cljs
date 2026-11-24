@@ -10,7 +10,7 @@
   so its thread can go on (a thread may hold several tasks): a task made
   from a message keeps that thread, and a task created on the canvas gets
   a thread whose first message is its title. A task may also belong to a
-  design review.
+  branch review.
 
   The tasks of the open file live in `:workspace-tasks`, the events of a
   task (what the thread of the task shows between its comments) in
@@ -43,7 +43,7 @@
    [potok.v2.core :as ptk]))
 
 (defn enabled?
-  "Tasks ride on the branching feature, like design reviews."
+  "Tasks ride on the branching feature, like branch reviews."
   []
   (contains? cf/flags :branching))
 
@@ -309,7 +309,7 @@
   page, board and layer (`page-id`, `frame-id`, `shape-id`) and,
   optionally, the message of a comment thread the task comes from
   (`thread-id` and `comment-id`, with its text as the first `title`) and
-  the design review it belongs to."
+  the branch review it belongs to."
   [params]
   (ptk/reify ::start-new-task
     ptk/UpdateEvent
@@ -677,7 +677,7 @@
   (filter #(and (to-do? %) (= profile-id (:assignee-id %))) tasks))
 
 (defn review-tasks
-  "The tasks of the design review `review-id`."
+  "The tasks of the branch review `review-id`."
   [tasks review-id]
   (filter #(= review-id (:review-id %)) tasks))
 

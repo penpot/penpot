@@ -303,11 +303,11 @@
     (st/emit! (dwrv/set-tool tool))))
 
 (mf/defc read-only-toolbar*
-  "The toolbar of a read-only mode of the workspace (a design review, the
+  "The toolbar of a read-only mode of the workspace (a branch review, the
   comparison of a branch with main). It offers no drawing: moving
   around, commenting on a spot or a layer, commenting on an area and
   creating a task, and then what the mode adds (`children`). Inside a
-  design review (`is-review`) the tool in use takes the review colour;
+  branch review (`is-review`) the tool in use takes the review colour;
   outside it, the accent of the drawing tools."
   {::mf/private true}
   [{:keys [aria-label is-review rulers-enabled toolbar-hidden on-toggle-toolbar children]}]
@@ -369,7 +369,7 @@
                        :on-click on-toggle-changes}]]))
 
 (mf/defc compare-toolbar*
-  "The toolbar of the compare mode, with or without a design review
+  "The toolbar of the compare mode, with or without a branch review
   around it: the same tools, and the control that says how the canvas
   shows the changes in place of the one that shows them."
   {::mf/private true}
@@ -395,7 +395,7 @@
 
         plugins-enabled? (features/active-feature? @st/state "plugins/runtime")
         read-only?       (mf/use-ctx ctx/workspace-read-only?)
-        reviewing?       (some? (mf/deref refs/pull-request-preview))
+        reviewing?       (some? (mf/deref refs/branch-review-preview))
         compare-mode     (mf/deref refs/compare-mode)
 
         mcp-conn-status  (get mcp :connection-status)

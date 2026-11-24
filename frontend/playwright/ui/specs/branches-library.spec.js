@@ -10,10 +10,10 @@ const setupBranching = async (workspacePage, rpcs) => {
   await workspacePage.setupEmptyFile();
   await workspacePage.mockRPCs({
     "get-file-branch-info?file-id=*":
-      "pull-requests/get-file-branch-info-none.json",
-    "get-file-branches?file-id=*": "pull-requests/get-file-branches-empty.json",
+      "branch-reviews/get-file-branch-info-none.json",
+    "get-file-branches?file-id=*": "branch-reviews/get-file-branches-empty.json",
     "get-file-branch-reviews?file-id=*":
-      "pull-requests/get-file-branches-empty.json",
+      "branch-reviews/get-file-branches-empty.json",
     ...rpcs,
   });
 };
@@ -24,7 +24,7 @@ test("on a branch of a library, the header says consumers read main", async ({
   const workspacePage = new WorkspacePage(page);
   await setupBranching(workspacePage, {
     "get-file-branch-info?file-id=*":
-      "pull-requests/get-file-branch-info-library-branch.json",
+      "branch-reviews/get-file-branch-info-library-branch.json",
   });
   await workspacePage.goToWorkspace();
 
@@ -45,9 +45,9 @@ test("on a library, the create dialog says consumers read main", async ({
   await setupBranching(workspacePage, {
     "get-file-branch-count?file-id=*":
       "branches/get-file-branch-count-two.json",
-    "get-file-branches?file-id=*": "pull-requests/get-file-branches-one.json",
+    "get-file-branches?file-id=*": "branch-reviews/get-file-branches-one.json",
   });
-  await workspacePage.mockGetFile("pull-requests/get-file-blank-shared.json");
+  await workspacePage.mockGetFile("branch-reviews/get-file-blank-shared.json");
   await workspacePage.goToWorkspace();
 
   await expect(page.getByText("Default branch", { exact: true })).toBeVisible();
@@ -70,7 +70,7 @@ test("on an ordinary file, the create dialog keeps its note", async ({
   await setupBranching(workspacePage, {
     "get-file-branch-count?file-id=*":
       "branches/get-file-branch-count-two.json",
-    "get-file-branches?file-id=*": "pull-requests/get-file-branches-one.json",
+    "get-file-branches?file-id=*": "branch-reviews/get-file-branches-one.json",
   });
   await workspacePage.goToWorkspace();
 

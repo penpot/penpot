@@ -109,11 +109,10 @@
  ;;    validates against, then writes the whole payload
  ;;    (`files_branch.clj::detach-file-branch`), so it sits between
  ;;    the anchor and the merge pair.
- ;;  * `create-branch-review` and `update-branch-review-revision` realize
- ;;    the branch once and write one review snapshot
- ;;    (`files_branch_review.clj::create-branch-review`,
- ;;    `files_branch_review.clj::update-branch-review-revision`), which is
- ;;    the anchor's shape again.
+ ;;  * `create-branch-review` realizes no document and writes no
+ ;;    snapshot (`files_branch_review.clj::create-branch-review`): it
+ ;;    checks the branch, inserts the review rows, and queues the
+ ;;    reviewer emails, so it is far below the anchor's cost.
  ;;
  ;; The numbers here are example defaults, not measurements. Every entry
  ;; of this file carries a queue because `climit_test.clj` checks this
@@ -191,29 +190,14 @@
  :get-file-branch-diff/global
  {:permits 6 :queue 15 :timeout 60000}
 
- ;; Creating a branch review realizes the branch and pins one review
- ;; snapshot, the anchor's shape. Provisional.
+ ;; Creating a branch review writes the review rows and queues the
+ ;; reviewer emails; it realizes no document. The anchor's count keeps it
+ ;; bounded beside the other write-side branch operations. Provisional.
  :create-branch-review/global
  {:permits 3 :queue 5 :timeout 60000}
 
  :create-branch-review/by-profile
  {:permits 1 :queue 2 :timeout 60000}
-
- ;; Publishing the branch state also realizes the branch and pins one
- ;; snapshot. The command declares a single instance-wide queue
- ;; (`files_branch_review.clj::update-branch-review-revision`), so the
- ;; bounded wait sits on the global entry here rather than on a
- ;; per-profile entry. Provisional.
- :update-branch-review-revision/global
- {:permits 3 :queue 4 :timeout 60000}
-
- ;; The review sandbox decodes the pinned snapshot and serves it whole:
- ;; one realized document and one whole-file payload in memory, the
- ;; anchor's shape with no snapshot write behind it. Three at once is the
- ;; anchor's count, and eight waiters give the reviewers of one review
- ;; room to open their sandboxes together. Provisional.
- :get-branch-review-bundle/global
- {:permits 3 :queue 8 :timeout 60000}
 
  ;; The activity decodes one blob per row of the review, folds the rows
  ;; as they stream, and serves the folded history. No document is

@@ -1208,7 +1208,7 @@
 
         (when (some? (:review-id thread))
           [:> review-label* {:label (or (:review-title thread)
-                                        (tr "workspace.review.design-review"))}])
+                                        (tr "workspace.review.branch-review"))}])
 
         ;; the workspace passes what a message shows about its task
         [:div {:class (stl/css :floating-thread-main)}

@@ -299,7 +299,7 @@
             permissions (get state :permissions)]
 
         ;; Historical previews must not create edits to the live file, and
-        ;; a design review and the comparison of a branch with main are
+        ;; a branch review and the comparison of a branch with main are
         ;; read-only (the branch is edited outside them).
         ;; Check this when creating commits so previously queued edits can
         ;; still save. While saves fail, a user edit would queue behind the

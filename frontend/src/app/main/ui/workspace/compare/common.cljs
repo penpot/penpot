@@ -17,8 +17,8 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.ds.foundations.assets.icon :as i]
-   [app.main.ui.workspace.sidebar.branch-review.common :as brc]
-   [app.main.ui.workspace.sidebar.branch-review.sides :as brs]
+   [app.main.ui.workspace.sidebar.branch-compare.common :as brc]
+   [app.main.ui.workspace.sidebar.branch-compare.sides :as brs]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.webapi :as wapi]
@@ -32,7 +32,7 @@
                    `:phase`, `:selected`, `:hovered` and `:attr`;
     `:status`      of the diff (`:loading`, `:loaded`, `:error`);
     `:incoming`    true when the changes listed are main's;
-    `:excluded`, `:reviewed`, `:resolutions`  the marks on the diff;
+    `:excluded`, `:viewed`, `:resolutions`  the marks on the diff;
     `:diff`, `:data`, `:copies`  what the detail and the export read;
     `:model`       the list of changes (`brc/change-model`);
     `:conflicts`   the list of conflicts (`brc/conflict-model`);
@@ -49,7 +49,7 @@
         {:keys [status diff resolutions]} diff-st
         incoming? (= :source->branch (:direction diff-st))
         excluded  (dwb/diff-excluded diff-st)
-        reviewed  (or (:reviewed diff-st) #{})
+        viewed    (or (:viewed diff-st) #{})
         active    (:filter mode)
 
         model     (mf/with-memo [diff active excluded data]
@@ -73,7 +73,7 @@
      :status      status
      :incoming    incoming?
      :excluded    excluded
-     :reviewed    reviewed
+     :viewed    viewed
      :resolutions (or resolutions {})
      :diff        diff
      :data        data
@@ -222,15 +222,15 @@
   (when-let [item-key (brc/step rows selected offset)]
     (st/emit! (dwcp/select item-key))))
 
-(defn mark-reviewed
-  "Mark the change chosen as reviewed and go to the next one not reviewed
+(defn mark-viewed
+  "Mark the change chosen as viewed and go to the next one not viewed
   yet."
-  [{:keys [rows selected item reviewed]}]
+  [{:keys [rows selected item viewed]}]
   (when (some? item)
-    (st/emit! (dwb/toggle-diff-reviewed selected true)))
+    (st/emit! (dwb/toggle-diff-viewed selected true)))
   (when-let [item-key (brc/next-pending rows selected
                                         #(or (bm/settled? %)
-                                             (contains? reviewed (dwcp/item-key %))))]
+                                             (contains? viewed (dwcp/item-key %))))]
     (st/emit! (dwcp/select item-key))))
 
 (defn toggle-excluded
@@ -322,11 +322,11 @@
   (st/emit! (dwcp/apply-resolutions)))
 
 (defn- compare-bar
-  [{:keys [branch status incoming model reviewed excluded]}]
+  [{:keys [branch status incoming model viewed excluded]}]
   (let [{:keys [counted decisions kept left-out]} model
         loaded?    (= status :loaded)
         total      (count counted)
-        reviewed-n (count (filter #(contains? reviewed (dwcp/item-key %)) counted))]
+        viewed-n   (count (filter #(contains? viewed (dwcp/item-key %)) counted))]
     {:icon   (if incoming i/arrow-down i/git-compare-arrows)
      :title  (if (and incoming loaded?)
                (tr "workspace.branches.banner.status.behind" (i18n/c total))
@@ -339,30 +339,30 @@
                          (remove nil?
                                  [(tr "workspace.branches.compare.footer-changes" (i18n/c total))
                                   (when (pos? left-out)
-                                    (tr "workspace.branches.review.footer.left-out" (i18n/c left-out)))
-                                  (when (pos? reviewed-n)
-                                    (tr "workspace.branches.review.footer.reviewed"
-                                        (str reviewed-n) (str total)))])))
+                                    (tr "workspace.branches.compare.footer.left-out" (i18n/c left-out)))
+                                  (when (pos? viewed-n)
+                                    (tr "workspace.branches.compare.footer.viewed"
+                                        (str viewed-n) (str total)))])))
      :progress (when loaded?
-                 (tr "workspace.branches.review.footer.reviewed" (str reviewed-n) (str total)))
+                 (tr "workspace.branches.compare.footer.viewed" (str viewed-n) (str total)))
      :exit   {:label (tr "workspace.compare.bar.exit") :icon i/close :on-click on-exit}
      :action (cond
                (not loaded?)
                nil
 
                (pos? decisions)
-               {:label (tr "workspace.branches.review.action.resolve" (i18n/c decisions))
+               {:label (tr "workspace.branches.compare.action.resolve" (i18n/c decisions))
                 :icon i/git-merge-conflict
                 :on-click on-resolve}
 
                incoming
-               {:label (tr "workspace.branches.review.action.update" (i18n/c kept))
+               {:label (tr "workspace.branches.compare.action.update" (i18n/c kept))
                 :icon i/status-update
                 :disabled (zero? kept)
                 :on-click #(brc/confirm-update! branch excluded)}
 
                :else
-               {:label (tr "workspace.branches.review.action.merge" (i18n/c kept))
+               {:label (tr "workspace.branches.compare.action.merge" (i18n/c kept))
                 :icon i/git-merge
                 :merge true
                 :disabled (zero? kept)

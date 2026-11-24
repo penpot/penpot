@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns app.main.ui.workspace.sidebar.branch-review.facts
+(ns app.main.ui.workspace.sidebar.branch-compare.facts
   "What the detail says about an entry that has no before and after:
   a new or deleted page or layer, and the library entries other layers
   depend on. It answers what the entry is, where it lands and what it
@@ -18,9 +18,9 @@
    [app.main.ui.ds.foundations.typography :as t]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.ds.product.tag :refer [tag*]]
-   [app.main.ui.workspace.sidebar.branch-review.common :as brc]
-   [app.main.ui.workspace.sidebar.branch-review.layout :as brl]
-   [app.main.ui.workspace.sidebar.branch-review.sides :as brs]
+   [app.main.ui.workspace.sidebar.branch-compare.common :as brc]
+   [app.main.ui.workspace.sidebar.branch-compare.layout :as brl]
+   [app.main.ui.workspace.sidebar.branch-compare.sides :as brs]
    [app.util.i18n :as i18n :refer [tr]]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
@@ -34,7 +34,7 @@
   [names]
   (dm/str (str/join ", " (take max-names names))
           (when (> (count names) max-names)
-            (dm/str " " (tr "workspace.branches.review.summary.more"
+            (dm/str " " (tr "workspace.branches.compare.summary.more"
                             (i18n/c (- (count names) max-names)))))))
 
 (mf/defc fact-list*
@@ -67,23 +67,23 @@
     (when page
       [:*
        [:> fact-list*
-        {:rows [[(tr "workspace.branches.review.facts.contents")
+        {:rows [[(tr "workspace.branches.compare.facts.contents")
                  (if (zero? layers)
-                   (tr "workspace.branches.review.facts.empty-page")
-                   (dm/str (tr "workspace.branches.review.facts.boards" (i18n/c (count boards)))
+                   (tr "workspace.branches.compare.facts.empty-page")
+                   (dm/str (tr "workspace.branches.compare.facts.boards" (i18n/c (count boards)))
                            " - "
-                           (tr "workspace.branches.review.facts.layers" (i18n/c layers))))]
+                           (tr "workspace.branches.compare.facts.layers" (i18n/c layers))))]
                 (when (seq names)
-                  [(tr "workspace.branches.review.facts.board-names")
+                  [(tr "workspace.branches.compare.facts.board-names")
                    (names-line names)])]}]
        (when (and deleted? (pos? layers))
          [:> brl/notice* {:level :warning
-                          :title (tr "workspace.branches.review.facts.page-goes")}
-          (let [boards (tr "workspace.branches.review.facts.boards" (i18n/c (count boards)))
-                layers (tr "workspace.branches.review.facts.layers" (i18n/c layers))]
+                          :title (tr "workspace.branches.compare.facts.page-goes")}
+          (let [boards (tr "workspace.branches.compare.facts.boards" (i18n/c (count boards)))
+                layers (tr "workspace.branches.compare.facts.layers" (i18n/c layers))]
             (if incoming
-              (tr "workspace.branches.review.facts.page-goes-update" boards layers)
-              (tr "workspace.branches.review.facts.page-goes-merge" boards layers)))])])))
+              (tr "workspace.branches.compare.facts.page-goes-update" boards layers)
+              (tr "workspace.branches.compare.facts.page-goes-merge" boards layers)))])])))
 
 ;; --- Layers
 
@@ -98,22 +98,22 @@
                     (get-in data [:components component-id :name]))]
     (cond-> []
       type-label
-      (conj [(tr "workspace.branches.review.facts.type") type-label])
+      (conj [(tr "workspace.branches.compare.facts.type") type-label])
 
       (and (number? width) (number? height))
-      (conj [(tr "workspace.branches.review.facts.size")
+      (conj [(tr "workspace.branches.compare.facts.size")
              (dm/str (brc/display-val width) " × " (brc/display-val height))])
 
       (and (number? x) (number? y))
-      (conj [(tr "workspace.branches.review.facts.position")
+      (conj [(tr "workspace.branches.compare.facts.position")
              (dm/str (brc/display-val x) ", " (brc/display-val y))])
 
       fill
-      (conj [(tr "workspace.branches.review.attr.fill")
+      (conj [(tr "workspace.branches.compare.attr.fill")
              (mf/html [:> brl/value-chip* {:value fill}])])
 
       text
-      (conj [(tr "workspace.branches.review.attr.text") (brc/display-val text)])
+      (conj [(tr "workspace.branches.compare.attr.text") (brc/display-val text)])
 
       component
       (conj [(tr "workspace.branches.compare.attr.component") component]))))
@@ -128,10 +128,10 @@
   "A board with a layout around the layer: how it resizes, or how many
   of its other layers move."
   [{:keys [name layout from to moved]}]
-  [(tr "workspace.branches.review.category.layout")
+  [(tr "workspace.branches.compare.category.layout")
    (dm/str name " (" (if (= :grid layout) (tr "labels.grid-layout") (tr "labels.flex-layout")) ") - "
            (if moved
-             (tr "workspace.branches.review.effects.moved" (i18n/c moved))
+             (tr "workspace.branches.compare.effects.moved" (i18n/c moved))
              (dm/str (size-line from) " → " (size-line to))))])
 
 (mf/defc effects*
@@ -148,22 +148,22 @@
         deleted? (= :deleted (:status item))
         rows     (cond-> (mapv layout-row layouts)
                    (seq names)
-                   (conj [(tr "workspace.branches.review.facts.contents") (names-line names)]))]
+                   (conj [(tr "workspace.branches.compare.facts.contents") (names-line names)]))]
     (when (or (seq interactions) (seq flows) (seq rows))
       [:div {:class (stl/css :section)}
        [:> section-title* {}
         (if deleted?
-          (tr "workspace.branches.review.effects.title-deleted")
-          (tr "workspace.branches.review.effects.title-added"))]
+          (tr "workspace.branches.compare.effects.title-deleted")
+          (tr "workspace.branches.compare.effects.title-added"))]
        (when (seq interactions)
          [:> brl/notice* {:level :warning
-                          :title (tr "workspace.branches.review.effects.interactions"
+                          :title (tr "workspace.branches.compare.effects.interactions"
                                      (i18n/c (reduce + (map :count interactions))))}
-          (tr "workspace.branches.review.effects.interactions-from"
+          (tr "workspace.branches.compare.effects.interactions-from"
               (names-line (map :label interactions)))])
        (when (seq flows)
          [:> brl/notice* {:level :warning
-                          :title (tr "workspace.branches.review.effects.flows"
+                          :title (tr "workspace.branches.compare.effects.flows"
                                      (i18n/c (count flows)))}
           (names-line flows)])
        (when (seq rows)
@@ -195,16 +195,16 @@
       [:*
        [:> fact-list*
         {:rows (into [[(if deleted?
-                         (tr "workspace.branches.review.facts.where-was")
-                         (tr "workspace.branches.review.facts.where-lands"))
+                         (tr "workspace.branches.compare.facts.where-was")
+                         (tr "workspace.branches.compare.facts.where-lands"))
                        (str/join " › " (cons page (brc/shape-path objects (:id item))))]]
                      (shape-rows shape data type-lbl))}]
        (when (and copies (pos? copies))
          [:> brl/notice* {:level :warning
-                          :title (tr "workspace.branches.review.facts.copies-orphaned-title")}
+                          :title (tr "workspace.branches.compare.facts.copies-orphaned-title")}
           (if incoming
-            (tr "workspace.branches.review.facts.copies-orphaned-update" (i18n/c copies))
-            (tr "workspace.branches.review.facts.copies-orphaned-merge" (i18n/c copies)))])
+            (tr "workspace.branches.compare.facts.copies-orphaned-update" (i18n/c copies))
+            (tr "workspace.branches.compare.facts.copies-orphaned-merge" (i18n/c copies)))])
        [:> effects* {:item item :items items :objects objects
                      :inner inner :incoming incoming}]])))
 
@@ -222,22 +222,22 @@
       (cond
         (and deleted? (pos? n))
         [:> brl/notice* {:level :warning
-                         :title (tr "workspace.branches.review.facts.used-title" (i18n/c n))}
+                         :title (tr "workspace.branches.compare.facts.used-title" (i18n/c n))}
          (if (= kind :component)
-           (tr "workspace.branches.review.facts.deleted-component-used" (i18n/c n))
-           (tr "workspace.branches.review.facts.deleted-used" (i18n/c n)))]
+           (tr "workspace.branches.compare.facts.deleted-component-used" (i18n/c n))
+           (tr "workspace.branches.compare.facts.deleted-used" (i18n/c n)))]
 
         deleted?
         [:> brl/notice* {:level :success
-                         :title (tr "workspace.branches.review.facts.unused-title")}
-         (tr "workspace.branches.review.facts.deleted-unused")]
+                         :title (tr "workspace.branches.compare.facts.unused-title")}
+         (tr "workspace.branches.compare.facts.deleted-unused")]
 
         :else
         [:> fact-list*
-         {:rows [[(tr "workspace.branches.review.facts.used-by")
+         {:rows [[(tr "workspace.branches.compare.facts.used-by")
                   (if (= kind :component)
-                    (tr "workspace.branches.review.facts.copies" (i18n/c n))
-                    (tr "workspace.branches.review.facts.layers" (i18n/c n)))]]}]))))
+                    (tr "workspace.branches.compare.facts.copies" (i18n/c n))
+                    (tr "workspace.branches.compare.facts.layers" (i18n/c n)))]]}]))))
 
 ;; --- Component copies
 
@@ -257,19 +257,19 @@
         own?    (or (seq keeps) (seq open))]
     (cond-> []
       (not own?)
-      (conj (tr "workspace.branches.review.copies.follows-all"))
+      (conj (tr "workspace.branches.compare.copies.follows-all"))
 
       (seq (:source keeps))
-      (conj (tr "workspace.branches.review.copies.keeps-main" (lower-list (:source keeps))))
+      (conj (tr "workspace.branches.compare.copies.keeps-main" (lower-list (:source keeps))))
 
       (seq (:branch keeps))
-      (conj (tr "workspace.branches.review.copies.keeps-branch" (lower-list (:branch keeps))))
+      (conj (tr "workspace.branches.compare.copies.keeps-branch" (lower-list (:branch keeps))))
 
       (seq open)
-      (conj (tr "workspace.branches.review.copies.slots-open" (lower-list open)))
+      (conj (tr "workspace.branches.compare.copies.slots-open" (lower-list open)))
 
       (and own? (seq follows))
-      (conj (tr "workspace.branches.review.copies.follows" (lower-list follows))))))
+      (conj (tr "workspace.branches.compare.copies.follows" (lower-list follows))))))
 
 (defn- keeps-own?
   [copy]
@@ -300,14 +300,14 @@
     (when (pos? n)
       [:div {:class (stl/css :section)}
        [:> brl/group-head*
-        {:label (cond-> (tr "workspace.branches.review.copies.follow" (i18n/c n))
+        {:label (cond-> (tr "workspace.branches.compare.copies.follow" (i18n/c n))
                   (pos? keeping)
-                  (dm/str " - " (tr "workspace.branches.review.copies.keeping" (i18n/c keeping))))
+                  (dm/str " - " (tr "workspace.branches.compare.copies.keeping" (i18n/c keeping))))
          :is-open open?
          :on-toggle on-toggle}]
        (when via
          [:> text* {:as "p" :typography t/body-small :class (stl/css :copy-via)}
-          (tr "workspace.branches.review.copies.via"
+          (tr "workspace.branches.compare.copies.via"
               (:component-name entry) (component-name copies data via))])
        (when open?
          [:div {:class (stl/css :copy-list)}
@@ -319,7 +319,7 @@
                (:label copy)]
               [:> text* {:as "span" :typography t/body-small :class (stl/css :copy-page)}
                (or (get-in data [:pages-index (:page-id copy) :name])
-                   (tr "workspace.branches.review.unknown-page"))]]
+                   (tr "workspace.branches.compare.unknown-page"))]]
              (for [[idx line] (map-indexed vector (copy-lines copy))]
                [:> text* {:key idx :as "span" :typography t/body-small
                           :class (stl/css :copy-line)}
@@ -331,7 +331,7 @@
   [{:keys [n]}]
   (when (pos? n)
     [:> brl/notice* {:level :info}
-     (tr "workspace.branches.review.copies.affected" (i18n/c n))]))
+     (tr "workspace.branches.compare.copies.affected" (i18n/c n))]))
 
 (mf/defc settled-facts*
   "What the copy rule decided on a copy (`settled`, the entry's
@@ -346,10 +346,10 @@
     (when (seq rows)
       [:div {:class (stl/css :section)}
        [:> section-title* {}
-        (tr "workspace.branches.review.copies.settled-title")]
+        (tr "workspace.branches.compare.copies.settled-title")]
        (when is-settled
          [:> brl/notice* {:level :info}
-          (tr "workspace.branches.review.copies.settled-notice")])
+          (tr "workspace.branches.compare.copies.settled-notice")])
        [:> fact-list*
         {:rows (mapv (fn [{:keys [label side reason]}]
                        [label
@@ -361,4 +361,4 @@
                      rows)}]
        (when (and is-conflict (seq open))
          [:> brl/notice* {:level :info}
-          (tr "workspace.branches.review.copies.open-note" (lower-list open))])])))
+          (tr "workspace.branches.compare.copies.open-note" (lower-list open))])])))

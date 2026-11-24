@@ -11,8 +11,8 @@
    [app.common.uuid :as uuid]
    [app.main.data.comments :as dcm]
    [app.main.data.event :as ev]
+   [app.main.data.workspace.branch-reviews :as dwbr]
    [app.main.data.workspace.comments :as dwcm]
-   [app.main.data.workspace.pull-requests :as dwpr]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.comments :as cmt]
@@ -78,7 +78,7 @@
                           (first))]
              (when row
                (on-hide-comments)
-               (st/emit! (-> (dwpr/open-pull-request row)
+               (st/emit! (-> (dwbr/open-branch-review row)
                              (with-meta {::ev/origin "dashboard"})))))))
 
         on-read-all
@@ -91,7 +91,7 @@
      (mf/deps team-id)
      (fn []
        (st/emit! (dcm/retrieve-unread-comment-threads team-id)
-                 (dwpr/fetch-pending-reviews team-id))))
+                 (dwbr/fetch-pending-reviews team-id))))
 
     (mf/use-effect
      (mf/deps show?)

@@ -3504,7 +3504,7 @@
                             (= :deleted (:status %)))
                       (:changes diff))))))))
 
-;;; --- The changes a profile marked as reviewed ---
+;;; --- The changes a profile marked as viewed ---
 
 (t/deftest review-marks-belong-to-a-profile-a-direction-and-a-change
   (with-redefs [cf/flags (conj cf/flags :branching)]
@@ -3521,14 +3521,14 @@
                                           ::rpc/profile-id (:id owner)
                                           :file-id (:id file)
                                           :name "review-marks"}))
-          mark     (fn [profile direction change-key fingerprint reviewed]
+          mark     (fn [profile direction change-key fingerprint viewed]
                      (th/command! {::th/type :set-branch-change-mark
                                    ::rpc/profile-id (:id profile)
                                    :branch-id (:id branch)
                                    :direction direction
                                    :change-key change-key
                                    :fingerprint fingerprint
-                                   :reviewed reviewed}))
+                                   :viewed viewed}))
           marks    (fn [profile direction]
                      (let [out (th/command! {::th/type :get-branch-change-marks
                                              ::rpc/profile-id (:id profile)

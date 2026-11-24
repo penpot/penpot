@@ -312,8 +312,8 @@
 
         read-only?     (mf/use-ctx ctx/workspace-read-only?)
         permissions    (mf/use-ctx ctx/permissions)
-        ;; a design review is read-only for everybody, editors included
-        reviewing?     (some? (mf/deref refs/pull-request-preview))]
+        ;; a branch review is read-only for everybody, editors included
+        reviewing?     (some? (mf/deref refs/branch-review-preview))]
 
     ;; NOTE: a layout effect, so the saved position is back before the
     ;; selected page item runs its `scroll-into-view-if-needed!` effect.

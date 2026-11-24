@@ -92,7 +92,7 @@
         objects     (mf/deref refs/workspace-page-objects)
         review-local (mf/deref refs/review-local)
         drawing-tool (mf/deref refs/selected-drawing-tool)
-        reviewing?  (some? (mf/deref refs/pull-request-preview))
+        reviewing?  (some? (mf/deref refs/branch-review-preview))
 
         task-thread-ids
         (mf/with-memo [tasks]
@@ -104,7 +104,7 @@
                (filter #(= (:page-id %) page-id))
                (dcm/apply-filters local profile)))
 
-        ;; the threads of the design reviews and of the tasks have marks of
+        ;; the threads of the branch reviews and of the tasks have marks of
         ;; their own (`review-markers*`); the rest are plain bubbles
         [review-threads threads]
         (mf/with-memo [all-threads task-thread-ids]

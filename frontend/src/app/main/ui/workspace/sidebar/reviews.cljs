@@ -6,7 +6,7 @@
 
 (ns app.main.ui.workspace.sidebar.reviews
   "The reviews dialog: the merges into main, each with who made it, when
-  and the comment left with it, and the design reviews (pull requests) of
+  and the comment left with it, and the branch reviews of
   the file. It follows the all-branches dialog: tabs with their counts,
   a search box and one list per tab."
   (:require-macros [app.main.style :as stl])
@@ -14,8 +14,8 @@
    [app.common.data.macros :as dm]
    [app.common.time :as ct]
    [app.main.data.modal :as modal]
+   [app.main.data.workspace.branch-reviews :as dwbr]
    [app.main.data.workspace.branches :as dwb]
-   [app.main.data.workspace.pull-requests :as dwpr]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.ds.buttons.button :refer [button*]]
@@ -31,7 +31,7 @@
    [app.main.ui.ds.product.avatar :refer [avatar*]]
    [app.main.ui.ds.product.branch-pill :refer [branch-pill*]]
    [app.main.ui.ds.product.empty-state :refer [empty-state*]]
-   [app.main.ui.workspace.sidebar.pull-requests :as prui :refer [pr-state-badge*]]
+   [app.main.ui.workspace.sidebar.branch-reviews :as brui :refer [review-state-badge*]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -129,7 +129,7 @@
     [:div {:class (stl/css :entry-avatar :entry-avatar-unknown)}
      [:> i/icon* {:icon-id i/user :size "s"}]]))
 
-;; --- Merge reviews
+;; --- Merges
 
 (mf/defc merge-entry*
   {::mf/private true}
@@ -146,7 +146,7 @@
        [:span {:class (stl/css :entry-meta-text)}
         (tr "workspace.branches.reviews.merged")]
        [:> route* {:branch-name (:branch-name merge)}]]
-      ;; the merge accepted a design review: name it, it may be gone by now
+      ;; the merge accepted a branch review: name it, it may be gone by now
       (when-let [title (:review-title merge)]
         [:div {:class (stl/css :entry-review)}
          [:> i/icon* {:icon-id i/git-pull-request-arrow :size "s"}]
@@ -157,17 +157,18 @@
          (tr "workspace.branches.reviews.no-comment")]
         [:> clamped-text* {:text (:comment merge)}])]]))
 
-;; --- Design reviews
+;; --- Branch reviews
 
 (mf/defc design-review-entry*
-  "A design review: the entry opens it while it is open; a finished one
+  "A branch review: the entry opens it while it is open; a finished one
   (merged or closed) can no longer be opened, so the entry shows its
   details instead. Its options menu shows the details of every review and
   reopens a closed one for its author or a team admin, as the details
   dialog does."
   {::mf/private true}
   [{:keys [pr profiles]}]
-  (let [author  (get profiles (:created-by pr))
+  (let [pr      (brui/use-live-verdicts pr)
+        author  (get profiles (:created-by pr))
         profile (mf/deref refs/profile)
         team    (mf/deref refs/team)
         open?   (= "open" (:status pr))
@@ -175,7 +176,7 @@
         can-reopen? (and closed?
                          (or (= (:created-by pr) (:id profile))
                              (boolean (get-in team [:permissions :is-admin]))))
-        [approvals total] (prui/current-approvals pr)
+        [approvals total] (brui/current-approvals pr)
 
         ;; each entry keeps its own menu state: the DS menu closes every
         ;; other open menu by itself when one opens
@@ -189,8 +190,8 @@
          (mf/deps pr)
          (fn [action]
            (case action
-             "details" (modal/show! :pull-request-info {:pr pr})
-             "reopen"  (st/emit! (dwpr/reopen-pull-request (:id pr)))
+             "details" (modal/show! :branch-review-info {:pr pr})
+             "reopen"  (st/emit! (dwbr/reopen-branch-review (:id pr)))
              nil)))
 
         on-open
@@ -199,8 +200,8 @@
          (fn [_]
            (if open?
              (st/emit! (modal/hide)
-                       (dwpr/open-pull-request pr))
-             (modal/show! :pull-request-info {:pr pr}))))
+                       (dwbr/open-branch-review pr))
+             (modal/show! :branch-review-info {:pr pr}))))
 
         on-key-down
         (mf/use-fn
@@ -214,15 +215,15 @@
           :role "button"
           :tab-index 0
           :title (if open?
-                   (tr "workspace.pull-requests.actions.open-review")
-                   (tr "workspace.pull-requests.menu.review-details"))
+                   (tr "workspace.branch-review.actions.open-review")
+                   (tr "workspace.branch-review.menu.review-details"))
           :on-click on-open
           :on-key-down on-key-down}
      [:> author* {:profile author}]
      [:div {:class (stl/css :entry-body)}
       [:div {:class (stl/css :entry-head)}
        [:span {:class (stl/css :entry-title)} (:title pr)]
-       [:> pr-state-badge* {:pr pr}]
+       [:> review-state-badge* {:pr pr}]
        [:> entry-date* {:date (:created-at pr)}]]
       [:div {:class (stl/css :entry-meta)}
        [:span {:class (stl/css :entry-meta-text)}
@@ -230,7 +231,7 @@
        [:> route* {:branch-name (:branch-name pr) :is-review open?}]
        (when (pos? total)
          [:span {:class (stl/css :entry-approvals)
-                 :title (tr "workspace.pull-requests.info.approvals")}
+                 :title (tr "workspace.branch-review.info.approvals")}
           [:> i/icon* {:icon-id i/tick :size "s"}]
           (dm/str approvals "/" total)])]
       (when-not (str/blank? (:description pr))
@@ -253,10 +254,10 @@
                                     :aria-pressed menu-open?
                                     :on-click on-toggle-menu}])}
        [:> menu-item* {:id "details"}
-        (tr "workspace.pull-requests.menu.review-details")]
+        (tr "workspace.branch-review.menu.review-details")]
        (when can-reopen?
          [:> menu-item* {:id "reopen"}
-          (tr "workspace.pull-requests.actions.reopen")])]]]))
+          (tr "workspace.branch-review.actions.reopen")])]]]))
 
 ;; --- Dialog
 
@@ -288,9 +289,9 @@
    ::mf/register-as :branch-reviews}
   []
   (let [merges-state (mf/deref merges)
-        prs-state    (mf/deref refs/pull-requests)
+        prs-state    (mf/deref refs/branch-reviews)
         profiles     (mf/deref refs/profiles)
-        prs-enabled? (dwpr/enabled?)
+        prs-enabled? (dwbr/enabled?)
 
         tab*      (mf/use-state "merges")
         tab       (deref tab*)
@@ -355,8 +356,8 @@
     ;; place of the loading state
     (mf/with-layout-effect []
       (st/emit! (dwb/fetch-branch-merges))
-      (when (dwpr/enabled?)
-        (st/emit! (dwpr/fetch-pull-requests))))
+      (when (dwbr/enabled?)
+        (st/emit! (dwbr/fetch-branch-reviews))))
 
     [:> modal* {:is-open true
                 :on-open-change on-open-change
