@@ -45,6 +45,7 @@
                          (:value color) (dissoc :value)))
 
         color-id    (:id color)
+        menu-id     (dm/str "color-options-" file-id "-" color-id)
 
         item-ref    (mf/use-ref)
         dragging*   (mf/use-state false)
@@ -57,6 +58,8 @@
         editing?    (deref editing*)
 
         menu-state  (mf/use-state cmm/initial-context-menu-state)
+        menu-open?  (:open? @menu-state)
+
         read-only?  (mf/use-ctx ctx/workspace-read-only?)
 
         opacity      (:opacity color)
@@ -145,7 +148,7 @@
 
         open-menu
         (mf/use-fn
-         (mf/deps color-id selected on-clear-selection read-only?)
+         (mf/deps color-id selected on-clear-selection is-local read-only?)
          (fn [pos]
            (when (and is-local (not read-only?))
              (when-not (contains? selected color-id)
@@ -159,20 +162,23 @@
            (dom/prevent-default event)
            (open-menu (dom/get-client-position event))))
 
-        on-menu-button-click
-        (mf/use-fn
-         (mf/deps open-menu)
-         (fn [event]
-           ;; Opens the same menu as a right click, for devices without one
-           ;; (tablets). Stop the click so it doesn't also apply the color.
-           (dom/stop-propagation event)
-           (let [rect (dom/get-bounding-rect (dom/get-current-target event))]
-             (open-menu {:x (:left rect) :y (:bottom rect)}))))
-
         on-close-menu
         (mf/use-fn
          (fn []
            (swap! menu-state cmm/close-context-menu)))
+
+        on-menu-button-click
+        (mf/use-fn
+         (mf/deps open-menu on-close-menu menu-open?)
+         (fn [event]
+           ;; Opens the same menu as a right click, for devices without one
+           ;; (tablets), and closes it on a second click. Stop the click so it
+           ;; doesn't also apply the color.
+           (dom/stop-propagation event)
+           (if menu-open?
+             (on-close-menu)
+             (let [rect (dom/get-bounding-rect (dom/get-current-target event))]
+               (open-menu {:x (:left rect) :y (:bottom rect)})))))
 
         on-drop
         (mf/use-fn
@@ -264,7 +270,10 @@
      (when (and is-local (not read-only?) (not editing?))
        [:div {:class (stl/css :element-set-actions)}
         [:> icon-button* {:variant "action"
+                          :id menu-id
                           :aria-label (tr "labels.options")
+                          :aria-haspopup "menu"
+                          :aria-expanded menu-open?
                           :on-click on-menu-button-click
                           :icon i/menu}]])
 
@@ -272,6 +281,7 @@
        [:> cmm/assets-context-menu*
         {:on-close on-close-menu
          :state @menu-state
+         :origin menu-id
          :options [(when-not (or is-multi-colors is-multi-assets)
                      {:name    (tr "workspace.assets.rename")
                       :id      "assets-rename-color"

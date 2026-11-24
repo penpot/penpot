@@ -23,6 +23,7 @@ $assets-button-width: deprecated.$s-28;
   position: relative;
   display: grid;
   grid-template-columns: auto 1fr #{$assets-button-width};
+  align-content: center;
   align-items: center;
   height: deprecated.$s-32;
   padding: deprecated.$s-8;
@@ -62,6 +63,7 @@ $assets-button-width: deprecated.$s-28;
 
 .element-set-actions {
   display: flex;
+
   // Hidden with opacity, not visibility, so the button stays in the tab order
   // and keyboard focus can reveal it through :focus-within
   opacity: var(--actions-opacity, 0);
