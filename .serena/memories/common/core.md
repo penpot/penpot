@@ -33,8 +33,7 @@ Geometry and layout:
 - Layout/grid assignment, deassignment, metadata cleanup, and auto-positioning: `mem:common/layout-grid-subtleties`.
 
 Change pipeline, validation, and migrations:
-- Change records, undo/redo architecture, changes-builder API, and production-path mutation guidance: `mem:common/changes-architecture`.
-- Change application, shape-tree edits and change-scoped schema validation: `mem:common/change-application`.
+- Change construction, undo/redo, application, compaction and schema validation: `mem:common/changes`.
 - Adding, renumbering or replacing a file migration: `mem:common/file-migrations`.
 
 Components, variants, and debugging:
