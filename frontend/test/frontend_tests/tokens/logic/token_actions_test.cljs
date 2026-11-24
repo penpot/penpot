@@ -19,6 +19,7 @@
    [app.main.data.workspace.colors :as dc]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
+   [app.main.data.workspace.tokens.propagation :as dwtp]
    [app.main.data.workspace.wasm-text :as dwwt]
    [app.main.store :as st]
    [app.util.i18n :refer [tr]]
@@ -610,6 +611,42 @@
                (t/is (= (:stroke-width-bottom (:applied-tokens rect-without-stroke')) (:name token-target')))
                (t/is (= (:stroke-width-left (:applied-tokens rect-without-stroke')) (:name token-target')))
                (t/is (= (get-in rect-without-stroke' [:strokes 0 :stroke-width]) 10))))))))))
+
+(t/deftest test-propagate-tokens-sharing-a-value
+  (t/testing "tokens of different types resolved to the same value are all propagated"
+    (t/async
+      done
+      (let [file  (-> (ctht/sample-file-with-tokens
+                       :lib-fn #(-> %
+                                    (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :set-a)
+                                                                       :name "Set A"))
+                                    (ctob/add-theme (ctob/make-token-theme :id (cthi/new-id! :theme-a)
+                                                                           :name "Theme A"
+                                                                           :sets #{"Set A"}))
+                                    (ctob/add-token (cthi/id :set-a)
+                                                    (ctob/make-token {:name "radius" :value "4" :type :border-radius}))
+                                    (ctob/add-token (cthi/id :set-a)
+                                                    (ctob/make-token {:name "stroke" :value "4" :type :stroke-width})))
+                       :status-fn #(ctos/set-tokens-status % #{(cthi/id :theme-a)} #{(cthi/id :set-a)}))
+                      ;; Stored values out of date with the tokens
+                      (ctho/add-rect :rect-1 {:r1 0 :r2 0 :r3 0 :r4 0
+                                              :strokes [{:stroke-alignment :inner
+                                                         :stroke-style :solid
+                                                         :stroke-color "#000000"
+                                                         :stroke-opacity 1
+                                                         :stroke-width 1}]
+                                              :applied-tokens {:r1 "radius" :r2 "radius" :r3 "radius" :r4 "radius"
+                                                               :stroke-width-top "stroke"
+                                                               :stroke-width-right "stroke"
+                                                               :stroke-width-bottom "stroke"
+                                                               :stroke-width-left "stroke"}}))
+            store (ths/setup-store file)]
+        (tohs/run-store-async
+         store done [(dwtp/propagate-workspace-tokens)]
+         (fn [new-state]
+           (let [rect' (cths/get-shape (ths/get-file-from-state new-state) :rect-1)]
+             (t/is (= 4 (:r1 rect')))
+             (t/is (= 4 (get-in rect' [:strokes 0 :stroke-width]))))))))))
 
 (t/deftest test-apply-stroke-width-per-side-new-shape
   (t/testing "applying a stroke-width token to one side of a shape without strokes zeroes the other sides"

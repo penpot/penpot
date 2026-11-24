@@ -75,22 +75,35 @@
              (update acc resolved-value (fnil conj #{}) k))))
        {} xs)))
 
-(defn- split-attribute-groups [attrs-values-map]
+(defn- split-by-action
+  "Attributes applied by different actions can share a value (a radius
+  and a stroke width of 4): one group per action, or only one of them
+  would be applied (see `actionize-shapes-update-info`)."
+  [attrs-values-map]
   (reduce
    (fn [acc [attrs v]]
-     (cond
-       (some attrs #{:width :height}) (let [[_ a b] (data/diff #{:width :height} attrs)]
-                                        (cond-> (assoc acc b v)
-                                          ;; Exact match in attrs
-                                          a (assoc a v)))
-       (some attrs ctt/spacing-keys) (let [[_ rst gap] (data/diff #{:row-gap :column-gap} attrs)
-                                           [_ position padding] (data/diff #{:p1 :p2 :p3 :p4} rst)]
-                                       (cond-> acc
-                                         (seq gap) (assoc gap v)
-                                         (seq position) (assoc position v)
-                                         (seq padding) (assoc padding v)))
-       attrs (assoc acc attrs v)))
+     (reduce (fn [acc group] (assoc acc (set group) v))
+             acc
+             (vals (group-by attribute-actions-map attrs))))
    {} attrs-values-map))
+
+(defn- split-attribute-groups [attrs-values-map]
+  (-> (reduce
+       (fn [acc [attrs v]]
+         (cond
+           (some attrs #{:width :height}) (let [[_ a b] (data/diff #{:width :height} attrs)]
+                                            (cond-> (assoc acc b v)
+                                              ;; Exact match in attrs
+                                              a (assoc a v)))
+           (some attrs ctt/spacing-keys) (let [[_ rst gap] (data/diff #{:row-gap :column-gap} attrs)
+                                               [_ position padding] (data/diff #{:p1 :p2 :p3 :p4} rst)]
+                                           (cond-> acc
+                                             (seq gap) (assoc gap v)
+                                             (seq position) (assoc position v)
+                                             (seq padding) (assoc padding v)))
+           attrs (assoc acc attrs v)))
+       {} attrs-values-map)
+      (split-by-action)))
 
 (defn- shape-ids-by-values
   [attrs-values-map object-id]
