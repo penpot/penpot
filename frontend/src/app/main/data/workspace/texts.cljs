@@ -1272,14 +1272,19 @@
    (assert (or (nil? ids) (and (set? ids) (every? uuid? ids))))
    (ptk/reify ::apply-typography
      ptk/WatchEvent
-     (watch [_ state _]
+     (watch [_ state stream]
        (let [editor-state (:workspace-editor-state state)
+             objects      (dsh/lookup-page-objects state)
              ids          (d/nilv ids (dsh/lookup-selected state))
              attrs        (-> typography
                               (assoc :typography-ref-file file-id)
                               (assoc :typography-ref-id (:id typography))
                               (dissoc :id :name))
-             undo-id (js/Symbol)]
+             auto-ids     (into []
+                                (comp (mapcat #(resolve-text-ids objects %))
+                                      (remove #(= :fixed (:grow-type (get objects %)))))
+                                ids)
+             undo-id      (js/Symbol)]
 
          (rx/concat
           (rx/of (dwu/start-undo-transaction undo-id))
@@ -1287,6 +1292,9 @@
                (rx/map (fn [id]
                          (let [editor (get editor-state id)]
                            (update-text-attrs {:id id :editor editor :attrs attrs})))))
+          ;; WASM does not re-measure on its own; the new font may still be loading.
+          (when (features/active-feature? state "render-wasm/v1")
+            (await-font-resize stream auto-ids))
           (rx/of (dwu/commit-undo-transaction undo-id))))))))
 
 (defn generate-typography-name
