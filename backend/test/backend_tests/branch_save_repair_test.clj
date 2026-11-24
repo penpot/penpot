@@ -107,7 +107,7 @@
                                       [(add-rect page-id shape-a)
                                        (add-rect page-id shape-b)])))
 
-      ;; main carries the damage before the fork, so the branch inherits
+      ;; the source carries the damage before the fork, so the branch inherits
       ;; it through its merge base
       (t/is (th/success? (update-file profile file-id
                                       [(set-attr page-id shape-a :frame-id (uuid/next))]
@@ -157,7 +157,7 @@
                                           [(set-attr page-id shape-b :name "again")])))
           (t/is (= 1 (count (repair-rows branch-file-id)))))
 
-        ;; the merge validates and repairs its own result, so main ends
+        ;; the merge validates and repairs its own result, so the source ends
         ;; valid either way; the branch diff is what shows that the
         ;; repair travels with the branch
         (t/testing "the branch diff carries the repaired shape"
@@ -166,7 +166,7 @@
                                             :branch-id branch-id}))]
             (t/is (some #(= shape-a (:id %)) (:changes diff)))))
 
-        (t/testing "the merge carries the repair into main"
+        (t/testing "the merge carries the repair into the source"
           (let [out (th/command! {::th/type :merge-file-branch
                                   ::rpc/profile-id (:id profile)
                                   :branch-id branch-id})]

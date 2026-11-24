@@ -357,7 +357,7 @@
   (when is-branch
     (ex/raise :type :validation
               :code :branch-file-cant-be-restored
-              :hint "branch file data is derived from the branch base and the operation log; restore the snapshot on the source file or update the branch from main instead"
+              :hint "branch file data is derived from the branch base and the operation log; restore the snapshot on the source file or update the branch from its source instead"
               :file-id id)))
 
 (defn restore!

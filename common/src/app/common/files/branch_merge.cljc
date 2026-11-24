@@ -7,9 +7,9 @@
 (ns app.common.files.branch-merge
   "Three-way, entity-level merge/diff engine for file branching.
 
-  `compute-merge` takes the file `:data` of the merge base, main and
-  branch and returns a serializable summary of what the branch changes
-  relative to main, plus the set of conflicting entities. It never
+  `compute-merge` takes the file `:data` of the merge base, the source
+  and the branch and returns a serializable summary of what the branch
+  changes relative to the source, plus the set of conflicting entities. It never
   mutates the blob. `compute-changes` translates the same comparison
   into `changes` for an actual merge or update, resolved conflicts
   included. It covers every kind `compute-merge` reports, token kinds
@@ -48,7 +48,7 @@
   "Policy chosen for each tree-shape case when none is configured."
   {:same-parent-reorder              :merge
    :addition-under-deleted-parent    :conflict
-   :container-delete-over-main-edits :conflict})
+   :container-delete-over-target-edits :conflict})
 
 (def policy-values
   "Allowed alternatives per policy key.
@@ -72,7 +72,7 @@
     `:page-root` the addition lands at the page root (the behaviour before
                 the policy).
 
-  `:container-delete-over-main-edits`: the source deleted container F while
+  `:container-delete-over-target-edits`: the source deleted container F while
   the target modified or added something in F's subtree.
     `:conflict` a `:delete-modify` conflict on F.
     `:expand`   only what the source deleted goes; the target's additions
@@ -81,7 +81,7 @@
                 policy)."
   {:same-parent-reorder              #{:merge :refuse :ignore}
    :addition-under-deleted-parent    #{:conflict :refuse :reparent-to-ancestor :page-root}
-   :container-delete-over-main-edits #{:conflict :expand :cascade}})
+   :container-delete-over-target-edits #{:conflict :expand :cascade}})
 
 (def ^:dynamic *policies*
   "Effective policies; the engine reads only `(get *policies* k)`."
@@ -176,7 +176,7 @@
 
   Classifying on stripped shapes is what prevents FALSE conflicts: both
   sides adding children to the same frame only differ on `:shapes`, and a
-  library sync on main only flips `:touched` — neither is a user change,
+  library sync on the source only flips `:touched` — neither is a user change,
   so neither may turn a clean branch edit into a modify-modify/delete
   conflict. The merge still applies the real values: containment through
   add/del/move ops, geometry caches piggybacked on the geometry attrs
@@ -198,7 +198,7 @@
   `nil` value compares equal to an absent key.
 
   The three sides reach the comparison by different routes: the base is a
-  stored snapshot, main is its own saved data, and the branch is that base
+  stored snapshot, the source is its own saved data, and the branch is that base
   with its op log replayed over it. They do not always spell an unset
   attribute the same way: one side can carry a key like
   `:fill-color-ref-file` or `:typography-ref-file` with `nil` where another
@@ -282,18 +282,18 @@
            (and in-b? (not in-o?) (not in-t?))            ; deleted in both
            acc
 
-           (and in-b? (not in-o?) (= b t))                ; deleted in branch, main intact
+           (and in-b? (not in-o?) (= b t))                ; deleted in branch, source intact
            (update acc :changes conj (mk :deleted {:id id :label (entity-label kind t)}))
 
-           (and in-b? (not in-t?) (= b o))                ; deleted in main, branch intact
+           (and in-b? (not in-t?) (= b o))                ; deleted in source, branch intact
            acc
 
-           (and in-b? (not in-o?) (not= b t))             ; delete (branch) / modify (main)
+           (and in-b? (not in-o?) (not= b t))             ; delete (branch) / modify (source)
            (update acc :conflicts conj (mk :conflict {:id id :reason :delete-modify
                                                       :label (entity-label kind t)
                                                       :base b :source t :branch nil}))
 
-           (and in-b? (not in-t?) (not= b o))             ; modify (branch) / delete (main)
+           (and in-b? (not in-t?) (not= b o))             ; modify (branch) / delete (source)
            (update acc :conflicts conj (mk :conflict {:id id :reason :modify-delete
                                                       :label (entity-label kind o)
                                                       :base b :source nil :branch o}))
@@ -302,7 +302,7 @@
            (and (not in-b?) in-o? (not in-t?))            ; new in branch
            (update acc :changes conj (mk :added {:id id :label (entity-label kind o)}))
 
-           (and (not in-b?) in-t? (not in-o?))            ; new in main only
+           (and (not in-b?) in-t? (not in-o?))            ; new in source only
            acc
 
            (and (not in-b?) in-o? in-t? (= o t))          ; both added the same
@@ -315,10 +315,10 @@
                                                       :base nil :source t :branch o}))
 
            ;; --- present in all three ---
-           (= o b)                                        ; branch didn't touch -> main wins
+           (= o b)                                        ; branch didn't touch -> source wins
            acc
 
-           (= t b)                                        ; main didn't touch, branch did
+           (= t b)                                        ; source didn't touch, branch did
            (let [ca (attr-diff t o)]
              (if (and drop-empty-modified? (map? o) (empty? ca))
                acc
@@ -623,7 +623,7 @@
   "The `:mod-page` attrs for the winning meta map `m` of a page whose
   target meta is `t`: a clearable attr `m` lacks but `t` still carries is
   emitted as explicit nil — the value `mod-page` removes on (an absent key
-  would leave main's value in place)."
+  would leave the target's value in place)."
   [t m]
   (reduce (fn [acc k]
             (cond-> acc
@@ -827,10 +827,11 @@
 
   The policies name the documents and the engine handles two role
   shapes: `:lost`, the target deleted a container the source edits
-  inside (main deleted P and the branch added into it, when merging),
-  and `:dropped`, the source deleted a container the target edits into
-  (the branch deleted F while main edited inside it, when merging). A
-  merge maps each policy to its own shape; an update from main swaps the
+  inside (the source file deleted P and the branch added into it, when
+  merging), and `:dropped`, the source deleted a container the target
+  edits into (the branch deleted F while the source file edited inside
+  it, when merging). A merge maps each policy to its own shape; an
+  update from the source file swaps the
   roles, so each policy drives the other shape through the alternative
   that means the same thing for the documents.
 
@@ -848,7 +849,7 @@
   [dir]
   (let [update? (= dir :source->branch)
         add     (policy :addition-under-deleted-parent)
-        cont    (policy :container-delete-over-main-edits)]
+        cont    (policy :container-delete-over-target-edits)]
     {:order   (policy :same-parent-reorder)
      :lost    (if update?
                 (get {:conflict :conflict :expand :reparent-to-ancestor :cascade :cascade}
@@ -1229,16 +1230,16 @@
       attrs)))
 
 (defn- set-rename-attrs
-  "Attrs to rename a set: take branch's name/description but keep MAIN's
+  "Attrs to rename a set: take branch's name/description but keep the SOURCE's
   tokens — emitted before the per-token pass, which then layers branch's
   token edits on top. `:set-token-set`/`update-set` relocates the set and
   updates theme references for the new name."
-  [main-lib branch-lib set-id]
+  [source-lib branch-lib set-id]
   (let [bs (ctob/get-set branch-lib set-id)]
     {:id set-id
      :name (ctob/get-name bs)
      :description (ctob/get-description bs)
-     :tokens (ctob/get-tokens main-lib set-id)}))
+     :tokens (ctob/get-tokens source-lib set-id)}))
 
 (defn- set-meta-of
   [lib set-id]
@@ -1247,7 +1248,7 @@
 
 (defn- set-rename-wins?
   "True when the rename/description change for `sid` is emitted: branch
-  changed the set metadata and either main left it at the base or the
+  changed the set metadata and either the source left it at the base or the
   resolution takes branch. Those renames run before the set-order moves
   in the change list, so they settle the names the moves address."
   [bl ml ol resolutions sid]
@@ -1507,8 +1508,8 @@
 
   `:modified-at` is a \"last touched\" stamp refreshed on EVERY apply
   (`components-list/touch`, `types.library/touch`): diffing it flags
-  spurious `:modified` entries — e.g. an update-from-main restamps the
-  copied entities, making them differ from main forever after — and, when
+  spurious `:modified` entries — e.g. an update-from-source restamps the
+  copied entities, making them differ from the source forever after — and, when
   both sides edited the same entity, spurious `:modify-modify` conflicts
   whose only difference is the timestamp. Dropping it is safe because the
   change pipeline regenerates it on apply anyway."
@@ -1955,9 +1956,9 @@
   "The comparison itself. Both arities of `compute-merge` land here rather
   than one delegating to the other through the var, so that a test which
   counts engine calls counts comparisons and not dispatches."
-  [base main branch dir only-pages copies?]
+  [base source branch dir only-pages copies?]
   (let [update?  (= dir :source->branch)
-        [theirs ours] (if update? [branch main] [main branch])
+        [theirs ours] (if update? [branch source] [source branch])
         results  [(three-way-entities (strip-modified-at (:colors base))
                                       (strip-modified-at (:colors theirs))
                                       (strip-modified-at (:colors ours))
@@ -2022,10 +2023,10 @@
                            copies)))))
 
 (defn compute-merge
-  "Compute the three-way diff between the merge `base`, `main` and
+  "Compute the three-way diff between the merge `base`, `source` and
   `branch` file `:data`. Returns:
 
-    {:changes   [<change descriptor> ...]   ; clean, branch -> main
+    {:changes   [<change descriptor> ...]   ; clean, branch -> source
      :conflicts [<conflict descriptor> ...] ; need resolution
      :stats     {:added n :modified n :deleted n :conflicts n}
      :copies    [<component copies> ...]}  ; with `:copies? true` only
@@ -2049,7 +2050,7 @@
   `ours`-side change and no page outside it can hold a conflict, which
   needs one. A branch whose op log touches only those pages satisfies
   that by construction, since its state IS the base plus that log. It is
-  NOT sound for the direction that reports main's changes, and passing it
+  NOT sound for the direction that reports the source's changes, and passing it
   there would hide them.
 
   The `:tokens-lib` is diffed as well (`diff-tokens`), so token changes
@@ -2102,9 +2103,9 @@
   number of the component's listed copies that follow that shape in a
   sync group or token slot the conflict's attrs drive: a copy keeping
   its override there, on either side, does not take the resolution."
-  ([base main branch dir] (compute-merge* base main branch dir nil false))
-  ([base main branch dir {:keys [only-pages copies?]}]
-   (compute-merge* base main branch dir only-pages (true? copies?))))
+  ([base source branch dir] (compute-merge* base source branch dir nil false))
+  ([base source branch dir {:keys [only-pages copies?]}]
+   (compute-merge* base source branch dir only-pages (true? copies?))))
 
 (defn settled?
   "True for a summary entry that only shows a copy the copy rule settled
@@ -2164,22 +2165,22 @@
          ;; present in all three
          (and in-b? in-o? in-t?)
          (cond (= o b) acc                          ; branch didn't touch
-               (= t b) (conj acc (mod-fn id o))     ; main didn't touch, branch did
+               (= t b) (conj acc (mod-fn id o))     ; source didn't touch, branch did
                (= o t) acc                          ; both reached same value
                (= res :branch) (conj acc (mod-fn id o)) ; modify/modify -> branch
                (map? res) (let [eff (merge-attrs t o res)] ; modify/modify -> per-attr
                             (if (= eff t) acc (conj acc (mod-fn id eff))))
                :else acc)
 
-         ;; deleted in branch, still in main
+         ;; deleted in branch, still in source
          (and in-b? (not in-o?) in-t?)
          (cond (= b t) (conj acc (del-fn id))       ; clean delete
                (= res :branch) (conj acc (del-fn id)) ; delete/modify -> branch (delete)
                :else acc)
 
-         ;; deleted in main, still in branch
+         ;; deleted in source, still in branch
          (and in-b? in-o? (not in-t?))
-         (cond (= b o) acc                          ; clean (already gone in main)
+         (cond (= b o) acc                          ; clean (already gone in source)
                (= res :branch) (conj acc (add-fn id o)) ; modify/delete -> keep branch
                :else acc)
 
@@ -2210,7 +2211,7 @@
   #{:x :y :width :height :rotation :transform :transform-inverse :flip-x :flip-y})
 
 (defn- shape-set-ops
-  "`:set` operations for the attrs that differ between the main and branch
+  "`:set` operations for the attrs that differ between the source and branch
   shape (FULL maps, so geometry caches ride along), excluding the
   structural ones (see `structural-set-attrs`)."
   [t o]
@@ -2242,12 +2243,12 @@
 
 (defn- page-move-changes
   "Emit `:mov-objects` for EXISTING shapes the branch reparented to a
-  different container, when the branch wins (main left the shape untouched,
+  different container, when the branch wins (the source left the shape untouched,
   or the conflict was resolved to `:branch`). Reparenting cannot be applied
   as a `:set :parent-id` op — that only rewrites the attribute and leaves
   the shape loose in its old parent, duplicated by file repair.
-  `sbo`/`sto` are the STRIPPED base/main objects (see `strip-shapes`), used
-  for the \"main untouched\" check so derived-attr churn on main does not
+  `sbo`/`sto` are the STRIPPED base/source objects (see `strip-shapes`), used
+  for the \"source untouched\" check so derived-attr churn on the source does not
   block a branch reparent."
   [to oo sbo sto resolutions page-id]
   (->> (keys oo)
@@ -2256,7 +2257,7 @@
                      o (get oo id)]
                  (when (and (some? t)                          ; exists on both sides
                             (not= id uuid/zero)
-                            (or (= (get sbo id) (get sto id))   ; main untouched -> branch wins
+                            (or (= (get sbo id) (get sto id))   ; source untouched -> branch wins
                                 (= :branch (attr-side (get resolutions id) :parent-id))))
                    (let [new-parent (:parent-id o)]
                      (when (not= new-parent (:parent-id t))     ; reparented
@@ -2694,8 +2695,11 @@
      :unsupported (into #{} refused)}))
 
 (defn compute-changes
-  "Translate the branch→main merge into a vector of raw change maps
-  applicable to main via `app.common.files.changes/process-changes`.
+  "Translate the merge of `branch` into `source` into a vector of raw
+  change maps applicable to `source` via
+  `app.common.files.changes/process-changes`. An update from the source
+  passes the two the other way round: the branch as `source`, the
+  source file as `branch`, with the resolutions inverted.
 
   Clean changes are always included. Conflicting entities are included
   only for those `resolutions` selects `:branch` (the caller must ensure
@@ -2718,7 +2722,7 @@
   the change, so the
   result is exactly what the target has, and a conflicting entity lands
   there whatever `resolutions` says. Excluding an added shape cascades to
-  every shape the source places under it (its added descendants and any
+  every shape `branch` places under it (its added descendants and any
   shape it reparented there), so no emitted change can reference a parent
   the merge does not create; the alternative policy, refusing the
   exclusion and naming those shapes instead, stays documented and is not
@@ -2730,17 +2734,17 @@
   written as one map merged token attr by token attr: the rule's side
   for the settled ones, the user's side for the open ones
   (`copy-resolution`). The operations written on a copy never mark an
-  override the source does not have (`copy-touched-ops`). The attrs the
+  override `branch` does not have (`copy-touched-ops`). The attrs the
   rule leaves at the target's value follow the component through
   `sync-copies`, which the caller runs after applying these changes."
-  ([base main branch]
-   (compute-changes base main branch {}))
-  ([base main branch resolutions]
-   (compute-changes base main branch resolutions nil))
-  ([base main branch resolutions merge-summary]
-   (compute-changes base main branch resolutions merge-summary nil))
-  ([base main branch resolutions merge-summary excluded]
-   (let [merge-summary (or merge-summary (compute-merge base main branch :branch->source))
+  ([base source branch]
+   (compute-changes base source branch {}))
+  ([base source branch resolutions]
+   (compute-changes base source branch resolutions nil))
+  ([base source branch resolutions merge-summary]
+   (compute-changes base source branch resolutions merge-summary nil))
+  ([base source branch resolutions merge-summary excluded]
+   (let [merge-summary (or merge-summary (compute-merge base source branch :branch->source))
          resolutions   (or resolutions {})
          ;; a `:settled` entry applies nothing, so excluding it excludes
          ;; nothing: its key names a copy the rule decides whatever the
@@ -2776,7 +2780,7 @@
          ;; regenerates it via `touch`, so the emitted values may omit it)
          colors (flat :color {}
                       (strip-modified-at (:colors base))
-                      (strip-modified-at (:colors main))
+                      (strip-modified-at (:colors source))
                       (strip-modified-at (:colors branch))
                       (fn [_ o] {:type :add-color :color o})
                       (fn [_ o] {:type :mod-color :color o})
@@ -2784,14 +2788,14 @@
 
          typos  (flat :typography {}
                       (strip-modified-at (:typographies base))
-                      (strip-modified-at (:typographies main))
+                      (strip-modified-at (:typographies source))
                       (strip-modified-at (:typographies branch))
                       (fn [_ o] {:type :add-typography :typography o})
                       (fn [_ o] {:type :mod-typography :typography o})
                       (fn [id] {:type :del-typography :id id}))
 
          media  (flat :media {}
-                      (:media base) (:media main) (:media branch)
+                      (:media base) (:media source) (:media branch)
                       (fn [_ o] {:type :add-media :object o})
                       (fn [_ o] {:type :mod-media :object o})
                       (fn [id] {:type :del-media :id id}))
@@ -2799,7 +2803,7 @@
          ;; file-level plugin-data (flattened to [ns key] -> value)
          file-plugins (flat :file-plugin {}
                             (flatten-plugin-data (:plugin-data base))
-                            (flatten-plugin-data (:plugin-data main))
+                            (flatten-plugin-data (:plugin-data source))
                             (flatten-plugin-data (:plugin-data branch))
                             (fn [[ns k] v] {:type :set-plugin-data :object-type :file :namespace ns :key k :value v})
                             (fn [[ns k] v] {:type :set-plugin-data :object-type :file :namespace ns :key k :value v})
@@ -2808,29 +2812,29 @@
          ;; file options: every side carries every option (`file-options`
          ;; fills the default), so no option is ever added or deleted
          file-opts (flat :file-option {}
-                         (file-options base) (file-options main) (file-options branch)
+                         (file-options base) (file-options source) (file-options branch)
                          set-option-change set-option-change (fn [_] nil))
 
          ;; tokens source: always present on every side (nil = self), so
          ;; never added or deleted. The change names the target document.
-         ids       (self-ids base main branch)
+         ids       (self-ids base source branch)
          set-source (fn [_ library-id]
-                      {:type :set-tokens-source :file-id (:id main) :library-id library-id})
+                      {:type :set-tokens-source :file-id (:id source) :library-id library-id})
          source-changes (flat :tokens-source {}
-                              (tokens-source base ids) (tokens-source main ids)
+                              (tokens-source base ids) (tokens-source source ids)
                               (tokens-source branch ids)
                               set-source set-source (fn [_] nil))
 
          ;; pages: add (full page incl. objects) / delete + rename (mod-page)
-         bpi (:pages-index base) mpi (:pages-index main) opi (:pages-index branch)
+         bpi (:pages-index base) mpi (:pages-index source) opi (:pages-index branch)
          bpids (set (keys bpi)) mpids (set (keys mpi)) opids (set (keys opi))
          common-pages (set/intersection mpids opids)
          tri-common-pages (set/intersection bpids mpids opids)
 
          ;; presence over page CONTENT (mirrors `diff-pages`): a clean delete
-         ;; requires main untouched; a delete conflict resolved to `:branch`
+         ;; requires the source untouched; a delete conflict resolved to `:branch`
          ;; either deletes (branch deleted) or RESTORES the full branch page
-         ;; via the add-fn (main deleted, branch edited)
+         ;; via the add-fn (source deleted, branch edited)
          page-presence (->> (flat :page {}
                                   (page-content-map bpi bpids)
                                   (page-content-map mpi mpids)
@@ -2853,7 +2857,7 @@
                            (mapcat (fn [pid]
                                      (flat :page-guide {:page-id pid}
                                            (get-in base [:pages-index pid :guides] {})
-                                           (get-in main [:pages-index pid :guides] {})
+                                           (get-in source [:pages-index pid :guides] {})
                                            (get-in branch [:pages-index pid :guides] {})
                                            (fn [gid g] {:type :set-guide :page-id pid :id gid :params g})
                                            (fn [gid g] {:type :set-guide :page-id pid :id gid :params g})
@@ -2863,7 +2867,7 @@
                           (mapcat (fn [pid]
                                     (flat :page-flow {:page-id pid}
                                           (get-in base [:pages-index pid :flows] {})
-                                          (get-in main [:pages-index pid :flows] {})
+                                          (get-in source [:pages-index pid :flows] {})
                                           (get-in branch [:pages-index pid :flows] {})
                                           (fn [fid f] {:type :set-flow :page-id pid :id fid :params f})
                                           (fn [fid f] {:type :set-flow :page-id pid :id fid :params f})
@@ -2875,7 +2879,7 @@
                           (mapcat (fn [pid]
                                     (flat :page-grid {:page-id pid}
                                           (get-in base [:pages-index pid :default-grids] {})
-                                          (get-in main [:pages-index pid :default-grids] {})
+                                          (get-in source [:pages-index pid :default-grids] {})
                                           (get-in branch [:pages-index pid :default-grids] {})
                                           (fn [gt p] {:type :set-default-grid :page-id pid :grid-type gt :params p})
                                           (fn [gt p] {:type :set-default-grid :page-id pid :grid-type gt :params p})
@@ -2887,7 +2891,7 @@
                             (mapcat (fn [pid]
                                       (flat :page-plugin {:page-id pid}
                                             (flatten-plugin-data (get-in base [:pages-index pid :plugin-data] {}))
-                                            (flatten-plugin-data (get-in main [:pages-index pid :plugin-data] {}))
+                                            (flatten-plugin-data (get-in source [:pages-index pid :plugin-data] {}))
                                             (flatten-plugin-data (get-in branch [:pages-index pid :plugin-data] {}))
                                             (fn [[ns k] v] {:type :set-plugin-data :object-type :page :object-id pid :namespace ns :key k :value v})
                                             (fn [[ns k] v] {:type :set-plugin-data :object-type :page :object-id pid :namespace ns :key k :value v})
@@ -2897,11 +2901,11 @@
          ;; page order: reorder the common pages to branch's order via
          ;; mov-page. Every :index counts the FULL :pages vector as it is
          ;; when the op runs: the presence changes above are already in it
-         ;; and the moves before it have landed, so a page main added keeps
+         ;; and the moves before it have landed, so a page the source added keeps
          ;; its slot while the common pages reorder around it.
          page-order-changes
          (let [order-of (fn [data] (filterv tri-common-pages (or (:pages data) [])))
-               bo (order-of base) mo (order-of main) oo (order-of branch)]
+               bo (order-of base) mo (order-of source) oo (order-of branch)]
            (if (and (not (excl? :page-order {} :page-order))
                     (not= oo bo)
                     (or (= mo bo) (= (get resolutions :page-order) :branch)))
@@ -2910,7 +2914,7 @@
                                          :add-page (:pages (ctpl/add-page {:pages pages} (:page change)))
                                          :del-page (:pages (ctpl/delete-page {:pages pages} (:id change)))
                                          pages))
-                                     (vec (or (:pages main) []))
+                                     (vec (or (:pages source) []))
                                      page-presence)
                    ;; target: the common pages in branch's order, every
                    ;; other page where it already is
@@ -2942,7 +2946,7 @@
          ;; `page-shape-changes`); its `:unsupported` entries name the
          ;; container a `:refuse` alternative could not place under
          dir        (or (:dir merge-summary) :branch->source)
-         shapes-res (mapv (fn [pid] (page-shape-changes base main branch resolutions pid dir excluded))
+         shapes-res (mapv (fn [pid] (page-shape-changes base source branch resolutions pid dir excluded))
                           common-pages)
          shapes     (into [] (mapcat :changes) shapes-res)
 
@@ -2951,7 +2955,7 @@
          ;; as a proper del-component so the deletion propagates.
          components (flat :component {}
                           (strip-modified-at (:components base))
-                          (strip-modified-at (:components main))
+                          (strip-modified-at (:components source))
                           (strip-modified-at (:components branch))
                           (fn [_ c] (assoc c :type :add-component))
                           (fn [id c] (if (:deleted c)
@@ -2959,7 +2963,7 @@
                                        (assoc c :type :mod-component)))
                           (fn [id] {:type :del-component :id id}))
 
-         bl (:tokens-lib base) ml (:tokens-lib main) ol (:tokens-lib branch)
+         bl (:tokens-lib base) ml (:tokens-lib source) ol (:tokens-lib branch)
          set-ids (set/union (lib-set-ids bl) (lib-set-ids ml) (lib-set-ids ol))
 
          ;; set add/delete, presence over set CONTENT (mirrors `diff-tokens`):
@@ -2975,7 +2979,7 @@
                                  (fn [sid] {:type :set-token-set :id sid :attrs nil}))
                            (filterv some?))
 
-         ;; set rename: take branch name/description, keep main's tokens
+         ;; set rename: take branch name/description, keep the source's tokens
          ;; (the per-token pass then layers branch's token edits). Emitted
          ;; before token-vals. An excluded rename leaves the target's name
          ;; standing, so the set-order moves below address that name.
@@ -3001,18 +3005,18 @@
                     (= o m) m
                     (= (get resolutions k) :branch) o
                     :else m))
-         main-theme-ids (active-theme-ids main)
-         main-set-ids   (active-set-ids main)
-         theme-ids      (settle (active-theme-ids base) main-theme-ids (active-theme-ids branch)
-                                :token-active-themes :active-themes)
-         active-ids     (settle (active-set-ids base) main-set-ids (active-set-ids branch)
-                                :token-active-sets :active-sets)
+         source-theme-ids (active-theme-ids source)
+         source-set-ids   (active-set-ids source)
+         theme-ids        (settle (active-theme-ids base) source-theme-ids (active-theme-ids branch)
+                                  :token-active-themes :active-themes)
+         active-ids       (settle (active-set-ids base) source-set-ids (active-set-ids branch)
+                                  :token-active-sets :active-sets)
          active-changes
-         (if (and (= theme-ids main-theme-ids) (= active-ids main-set-ids))
+         (if (and (= theme-ids source-theme-ids) (= active-ids source-set-ids))
            []
            [{:type :set-tokens-status :theme-ids theme-ids :set-ids active-ids}])
 
-         ;; set order: reorder main's common sets to branch's order using
+         ;; set order: reorder the source's common sets to branch's order using
          ;; "move nᵢ before nᵢ₊₁" right-to-left. Emitted after renames so set
          ;; names are settled.
          set-order-changes
@@ -3023,8 +3027,8 @@
                     (not= oo bo)
                     (or (= mo bo) (= (get resolutions :token-set-order) :branch)))
              ;; the moves address the sets by name as the renames above
-             ;; leave them: branch's name where the rename wins, main's
-             ;; where main's rename stands
+             ;; leave them: branch's name where the rename wins, the source's
+             ;; where the source's rename stands
              (let [names (mapv (fn [sid]
                                  (ctob/get-name
                                   (ctob/get-set (if (rename-wins? sid) ol ml) sid)))

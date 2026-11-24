@@ -743,14 +743,14 @@
     (t/is (nil? (:path body)))))
 
 (t/deftest conflict-error-answers-409
-  ;; A `:type :conflict` refusal (`:file-modified` on merge/update-from-main,
+  ;; A `:type :conflict` refusal (`:file-modified` on merge/update-from-source,
   ;; `:file-locked` and restore `:file-modified` on snapshots) answers 409
   ;; carrying its own ex-data; without a `:conflict` method it fell to the
   ;; default handler: 500 with `:type :server-error`, logged as unhandled.
   (let [cause    (ex-info "conflict"
                           {:type :conflict
                            :code :file-modified
-                           :hint "main was modified, recompute the diff and retry"})
+                           :hint "source was modified, recompute the diff and retry"})
         response (http-errors/handle cause {})
         body     (::yres/body response)]
     (t/is (= 409 (::yres/status response)))

@@ -131,33 +131,33 @@
 (t/deftest base-readers-realize-with-the-source-file-id
   (with-redefs [cf/flags (conj cf/flags :branching)]
     (let [{:keys [profile-id file-id]} (setup)
-          branch (create-branch! profile-id file-id "readers")
+          branch      (create-branch! profile-id file-id "readers")
           ;; whatever creation stores, pin a base that holds the source
           ;; file's pointers: the readers are what this test is about
-          source (bfc/get-file th/*system* file-id)
-          _      (t/is (seq (page-pointer-ids (:data source))))
-          snap   (fsnap/create! th/*system* source
-                                {:label "branch-base/readers"
-                                 :profile-id profile-id
-                                 :created-by "system"})
-          _      (th/db-update! :file-branch
-                                {:base-snapshot-id (:id snap)}
-                                {:id (:id branch)})
-          main   (realized-data file-id)]
+          source      (bfc/get-file th/*system* file-id)
+          _           (t/is (seq (page-pointer-ids (:data source))))
+          snap        (fsnap/create! th/*system* source
+                                     {:label "branch-base/readers"
+                                      :profile-id profile-id
+                                      :created-by "system"})
+          _           (th/db-update! :file-branch
+                                     {:base-snapshot-id (:id snap)}
+                                     {:id (:id branch)})
+          source-data (realized-data file-id)]
 
       (t/testing "the derive reads the base"
         (let [file (bfc/get-file th/*system* (:branch-file-id branch)
                                  :realize? true :include-base-data? true)]
           (t/is (not (holds-pointers? (:data file))))
-          (t/is (= (:pages-index main) (:pages-index (:data file))))
+          (t/is (= (:pages-index source-data) (:pages-index (:data file))))
           (t/is (not (holds-pointers? (::bfc/base-data file))))
-          (t/is (= (:pages-index main) (:pages-index (::bfc/base-data file))))))
+          (t/is (= (:pages-index source-data) (:pages-index (::bfc/base-data file))))))
 
       (t/testing "the snapshot reader reads the base"
         (let [row  (th/db-get :file-branch {:id (:id branch)})
               data (db/run! th/*system* #(#'fbranch/get-base-data % row))]
           (t/is (not (holds-pointers? data)))
-          (t/is (= (:pages-index main) (:pages-index data))))))))
+          (t/is (= (:pages-index source-data) (:pages-index data))))))))
 
 (t/deftest file-gc-keeps-the-fragments-a-base-names
   (with-redefs [cf/flags (conj cf/flags :branching)]
@@ -167,13 +167,13 @@
           pinned  (set (vals (page-pointer-ids (:data (base-snapshot (:id branch))))))]
       (t/is (seq pinned))
 
-      ;; the edit replaces the page's fragment on main, so only the
+      ;; the edit replaces the page's fragment on the source, so only the
       ;; base still names the old one
       (update-file! profile-id file-id [(add-rect page-id)])
-      (let [main-ids (set (vals (page-pointer-ids
-                                 (:data (bfc/get-file th/*system* file-id)))))]
-        (t/is (seq (remove main-ids pinned))))
-      ;; the save took an automatic snapshot of pre-edit main, which names
+      (let [source-ids (set (vals (page-pointer-ids
+                                   (:data (bfc/get-file th/*system* file-id)))))]
+        (t/is (seq (remove source-ids pinned))))
+      ;; the save took an automatic snapshot of the pre-edit source, which names
       ;; the same fragments; drop every snapshot but the base so the base
       ;; is what keeps them alive
       (let [base-id (:base-snapshot-id (th/db-get :file-branch {:id (:id branch)}))]
@@ -191,7 +191,7 @@
                                         :direction :source->branch}))]
         (t/is (= 1 (-> diff :stats :added)))))))
 
-(t/deftest update-from-main-pins-main-pointers
+(t/deftest update-from-source-pins-source-pointers
   (with-redefs [cf/flags (conj cf/flags :branching)]
     (let [{:keys [profile-id file-id]} (setup)
           branch  (create-branch! profile-id file-id "update")
@@ -203,12 +203,12 @@
         (t/is (nil? (:error out)))
         (t/is (= :updated (-> out :result :status))))
 
-      ;; the repositioned base names main's current fragments for every
-      ;; page the update left equal to main
-      (let [main-ids (page-pointer-ids (:data (bfc/get-file th/*system* file-id)))
-            base-ids (page-pointer-ids (:data (base-snapshot (:id branch))))]
+      ;; the repositioned base names the source's current fragments for every
+      ;; page the update left equal to the source
+      (let [source-ids (page-pointer-ids (:data (bfc/get-file th/*system* file-id)))
+            base-ids   (page-pointer-ids (:data (base-snapshot (:id branch))))]
         (t/is (seq base-ids))
-        (t/is (= main-ids base-ids)))
+        (t/is (= source-ids base-ids)))
 
       (t/is (= (:pages-index (realized-data file-id))
                (:pages-index (realized-data (:branch-file-id branch))))))))
@@ -246,14 +246,14 @@
   [file-id branch-file-id dir]
   (db/run! th/*system*
            (fn [cfg]
-             (let [main   (:data (bfc/get-file cfg file-id :realize? true))
+             (let [source (:data (bfc/get-file cfg file-id :realize? true))
                    bfile  (bfc/get-file cfg branch-file-id :realize? true :include-base-data? true)
                    base   (#'fbranch/branch-base-data cfg file-id bfile)
                    branch (bm/remap-refs (:data bfile)
                                          (#'fbranch/branch-id-map cfg branch-file-id file-id))]
-               (bm/compute-merge base main branch dir)))))
+               (bm/compute-merge base source branch dir)))))
 
-(t/deftest compare-loads-only-the-pages-main-moved
+(t/deftest compare-loads-only-the-pages-the-source-moved
   (with-redefs [cf/flags (conj cf/flags :branching)]
     (let [{:keys [profile-id file-id]} (setup)
           page-a  (first (:pages (realized-data file-id)))
@@ -267,11 +267,11 @@
           branch  (create-branch! profile-id file-id "lazy")
           bfid    (:branch-file-id branch)
           page-b  (first others)]
-      ;; the branch renames the shape main renames too, a conflict on
-      ;; page A, and adds a shape; main also adds a shape on page B, so
-      ;; main moved two of six pages
+      ;; the branch renames the shape the source renames too, a conflict on
+      ;; page A, and adds a shape; the source also adds a shape on page B, so
+      ;; the source moved two of six pages
       (update-file! profile-id bfid [(rename-shape page-a shape "branch") (add-rect page-a)])
-      (update-file! profile-id file-id [(rename-shape page-a shape "main") (add-rect page-b)])
+      (update-file! profile-id file-id [(rename-shape page-a shape "source") (add-rect page-b)])
 
       (doseq [dir [:branch->source :source->branch]]
         (let [loads (atom 0)
@@ -288,10 +288,10 @@
             (t/is (= (:changes eager) (:changes (:result out))))
             (t/is (= (:conflicts eager) (:conflicts (:result out))))
             (t/is (= 1 (count (:conflicts eager)))))
-          (t/testing (str dir " loads the base's six pages and main's two moved ones")
+          (t/testing (str dir " loads the base's six pages and the source's two moved ones")
             (t/is (= 8 @loads))))))))
 
-(t/deftest compare-reports-a-page-reorder-on-main
+(t/deftest compare-reports-a-page-reorder-on-the-source
   ;; the page order lives in the document root, not in a page's fragment,
   ;; so a reorder moves no fragment and must not bound the comparison
   (with-redefs [cf/flags (conj cf/flags :branching)]

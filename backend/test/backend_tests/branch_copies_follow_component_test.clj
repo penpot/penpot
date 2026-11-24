@@ -6,13 +6,13 @@
 
 (ns backend-tests.branch-copies-follow-component-test
   "Copies follow their merged component. When a branch is merged into
-  main, or main's changes are brought into the branch, the copies of a
+  its source, or the source's changes are brought into the branch, the copies of a
   local component end up as Penpot's component sync leaves them after
   the integrated component: an attribute no side overrode by hand follows
   the component, an attribute one side overrode keeps that side's value,
   and only an attribute both sides overrode differently is a conflict.
 
-  Each test builds main with a local component (main `:mi-id`) and one
+  Each test builds a source file with a local component (main `:mi-id`) and one
   copy of it (`:copy-id`), branches it, edits both sides and integrates.
   A component edit writes the main and, as the workspace's sync does,
   the untouched copy with `:ignore-touched`; an override writes the copy
@@ -98,7 +98,7 @@
    (sync-fill page-id copy-id color)])
 
 (def ^:private token-colors
-  "The colour tokens `setup` adds to main, by name."
+  "The colour tokens `setup` adds to the source, by name."
   {"green" "#00ff00" "blue" "#0000ff" "red" "#ff0000" "yellow" "#ffff00"})
 
 (defn- apply-fill-token
@@ -129,45 +129,45 @@
    (sync-fill-token page-id copy-id token-name)])
 
 (defn- setup
-  "Main holding a local component (main `:mi-id`) with one copy
+  "A source file holding a local component (main `:mi-id`) with one copy
   (`:copy-id`) and a token set with the colour tokens `token-colors`,
   branched once. `n` numbers the profile and the file, so one test can
   build more than one. With `:override`, the copy's fill is overridden
   to that colour before branching, so the base holds the override."
   [n & {:keys [override]}]
-  (let [profile (th/create-profile* n {:is-active true})
-        file    (th/create-file* n {:profile-id (:id profile)
-                                    :project-id (:default-project-id profile)
-                                    :is-shared false})
-        main-id (:id file)
-        page-id (-> (get-file profile main-id) :data :pages first)
-        comp-id (uuid/random)
-        mi-id   (uuid/random)
-        copy-id (uuid/random)
-        set-id  (uuid/random)]
-    (save profile main-id
+  (let [profile   (th/create-profile* n {:is-active true})
+        file      (th/create-file* n {:profile-id (:id profile)
+                                      :project-id (:default-project-id profile)
+                                      :is-shared false})
+        source-id (:id file)
+        page-id   (-> (get-file profile source-id) :data :pages first)
+        comp-id   (uuid/random)
+        mi-id     (uuid/random)
+        copy-id   (uuid/random)
+        set-id    (uuid/random)]
+    (save profile source-id
           [(add-root page-id mi-id (component-frame mi-id {:component-root true
                                                            :main-instance true
                                                            :component-id comp-id
-                                                           :component-file main-id}))
+                                                           :component-file source-id}))
            {:type :add-component :id comp-id :name "Button" :path ""
             :main-instance-id mi-id :main-instance-page page-id}
-           (copy-of page-id copy-id comp-id mi-id main-id)
+           (copy-of page-id copy-id comp-id mi-id source-id)
            {:type :set-token-set :id set-id :attrs {:id set-id :name "core"}}])
-    (save profile main-id
+    (save profile source-id
           (mapv (fn [[token-name color]]
                   (let [token-id (uuid/random)]
                     {:type :set-token :set-id set-id :token-id token-id
                      :attrs {:id token-id :name token-name :type :color :value color}}))
                 token-colors))
     (when override
-      (save profile main-id [(set-fill page-id copy-id override)]))
+      (save profile source-id [(set-fill page-id copy-id override)]))
     (let [branch (:result (th/command! {::th/type :create-file-branch
                                         ::rpc/profile-id (:id profile)
-                                        :file-id main-id
+                                        :file-id source-id
                                         :name "copies"}))]
       {:profile        profile
-       :main-id        main-id
+       :source-id      source-id
        :page-id        page-id
        :comp-id        comp-id
        :mi-id          mi-id
@@ -208,29 +208,29 @@
 
 ;; --- a: one side edits the component, the other adds a copy
 
-(t/deftest merge-syncs-a-copy-main-added-to-the-branch-component
+(t/deftest merge-syncs-a-copy-the-source-added-to-the-branch-component
   (with-redefs [cf/flags (conj cf/flags :branching)]
-    (let [{:keys [profile main-id branch-file-id page-id comp-id mi-id copy-id] :as ctx} (setup 1)
+    (let [{:keys [profile source-id branch-file-id page-id comp-id mi-id copy-id] :as ctx} (setup 1)
           new-copy (uuid/random)]
       (save profile branch-file-id (edit-component page-id mi-id copy-id "#00ff00"))
-      (save profile main-id [(copy-of page-id new-copy comp-id mi-id main-id)])
+      (save profile source-id [(copy-of page-id new-copy comp-id mi-id source-id)])
 
       (let [out (merge-branch ctx)]
         (t/is (nil? (:error out)))
         (t/is (= :merged (-> out :result :status))))
 
-      (let [main (get-file profile main-id)]
-        (t/is (= "#00ff00" (fill main page-id mi-id)))
-        (t/is (= "#00ff00" (fill main page-id new-copy)))
-        (t/is (= "#00ff00" (fill main page-id copy-id)))
-        (t/is (empty? (:touched (shape main page-id copy-id))))
-        (t/is (empty? (validation-codes main)))))))
+      (let [source (get-file profile source-id)]
+        (t/is (= "#00ff00" (fill source page-id mi-id)))
+        (t/is (= "#00ff00" (fill source page-id new-copy)))
+        (t/is (= "#00ff00" (fill source page-id copy-id)))
+        (t/is (empty? (:touched (shape source page-id copy-id))))
+        (t/is (empty? (validation-codes source)))))))
 
-(t/deftest update-syncs-a-copy-the-branch-added-to-main-component
+(t/deftest update-syncs-a-copy-the-branch-added-to-the-source-component
   (with-redefs [cf/flags (conj cf/flags :branching)]
-    (let [{:keys [profile main-id branch-file-id page-id comp-id mi-id copy-id] :as ctx} (setup 1)
+    (let [{:keys [profile source-id branch-file-id page-id comp-id mi-id copy-id] :as ctx} (setup 1)
           new-copy (uuid/random)]
-      (save profile main-id (edit-component page-id mi-id copy-id "#0000ff"))
+      (save profile source-id (edit-component page-id mi-id copy-id "#0000ff"))
       (save profile branch-file-id [(copy-of page-id new-copy comp-id mi-id branch-file-id)])
 
       (let [out (update-branch ctx)]
@@ -247,15 +247,15 @@
 ;; --- b: both sides edit the component, each syncs its copy
 
 (defn- both-edit-component
-  [{:keys [profile main-id branch-file-id page-id mi-id copy-id]}]
+  [{:keys [profile source-id branch-file-id page-id mi-id copy-id]}]
   (save profile branch-file-id (edit-component page-id mi-id copy-id "#00ff00"))
-  (save profile main-id (edit-component page-id mi-id copy-id "#0000ff")))
+  (save profile source-id (edit-component page-id mi-id copy-id "#0000ff")))
 
 (t/deftest merge-of-a-component-both-sides-edited-conflicts-on-the-component-only
   (with-redefs [cf/flags (conj cf/flags :branching)]
     (doseq [[side color] [[:branch "#00ff00"] [:source "#0000ff"]]]
       (t/testing (str "resolved to " side)
-        (let [{:keys [profile main-id page-id mi-id copy-id] :as ctx} (setup (if (= :branch side) 1 2))]
+        (let [{:keys [profile source-id page-id mi-id copy-id] :as ctx} (setup (if (= :branch side) 1 2))]
           (both-edit-component ctx)
 
           (let [out (merge-branch ctx)]
@@ -269,11 +269,11 @@
             (t/is (nil? (:error out)))
             (t/is (= :merged (-> out :result :status))))
 
-          (let [main (get-file profile main-id)]
-            (t/is (= color (fill main page-id mi-id)))
-            (t/is (= color (fill main page-id copy-id)))
-            (t/is (empty? (:touched (shape main page-id copy-id))))
-            (t/is (empty? (validation-codes main)))))))))
+          (let [source (get-file profile source-id)]
+            (t/is (= color (fill source page-id mi-id)))
+            (t/is (= color (fill source page-id copy-id)))
+            (t/is (empty? (:touched (shape source page-id copy-id))))
+            (t/is (empty? (validation-codes source)))))))))
 
 (t/deftest update-of-a-component-both-sides-edited-conflicts-on-the-component-only
   (with-redefs [cf/flags (conj cf/flags :branching)]
@@ -322,24 +322,24 @@
 
 (t/deftest merge-keeps-the-branch-override-of-a-copy
   (with-redefs [cf/flags (conj cf/flags :branching)]
-    (let [{:keys [profile main-id branch-file-id page-id mi-id copy-id] :as ctx} (setup 1)]
+    (let [{:keys [profile source-id branch-file-id page-id mi-id copy-id] :as ctx} (setup 1)]
       (save profile branch-file-id [(set-fill page-id copy-id "#ff0000")])
-      (save profile main-id (edit-component page-id mi-id copy-id "#0000ff"))
+      (save profile source-id (edit-component page-id mi-id copy-id "#0000ff"))
 
       (let [out (merge-branch ctx)]
         (t/is (nil? (:error out)))
         (t/is (= :merged (-> out :result :status))))
 
-      (let [main (get-file profile main-id)]
-        (t/is (= "#0000ff" (fill main page-id mi-id)))
-        (t/is (= "#ff0000" (fill main page-id copy-id)))
-        (t/is (contains? (:touched (shape main page-id copy-id)) :fill-group))
-        (t/is (empty? (validation-codes main)))))))
+      (let [source (get-file profile source-id)]
+        (t/is (= "#0000ff" (fill source page-id mi-id)))
+        (t/is (= "#ff0000" (fill source page-id copy-id)))
+        (t/is (contains? (:touched (shape source page-id copy-id)) :fill-group))
+        (t/is (empty? (validation-codes source)))))))
 
-(t/deftest update-keeps-main-override-of-a-copy
+(t/deftest update-keeps-the-source-override-of-a-copy
   (with-redefs [cf/flags (conj cf/flags :branching)]
-    (let [{:keys [profile main-id branch-file-id page-id mi-id copy-id] :as ctx} (setup 1)]
-      (save profile main-id [(set-fill page-id copy-id "#ff0000")])
+    (let [{:keys [profile source-id branch-file-id page-id mi-id copy-id] :as ctx} (setup 1)]
+      (save profile source-id [(set-fill page-id copy-id "#ff0000")])
       (save profile branch-file-id (edit-component page-id mi-id copy-id "#00ff00"))
 
       (let [out (update-branch ctx)]
@@ -356,9 +356,9 @@
 
 (t/deftest merge-of-a-copy-both-sides-overrode-is-a-conflict
   (with-redefs [cf/flags (conj cf/flags :branching)]
-    (let [{:keys [profile main-id branch-file-id page-id copy-id] :as ctx} (setup 1)]
+    (let [{:keys [profile source-id branch-file-id page-id copy-id] :as ctx} (setup 1)]
       (save profile branch-file-id [(set-fill page-id copy-id "#ff0000")])
-      (save profile main-id [(set-fill page-id copy-id "#ffff00")])
+      (save profile source-id [(set-fill page-id copy-id "#ffff00")])
 
       (let [out (merge-branch ctx)]
         (t/is (= :conflicts (-> out :result :status)))
@@ -366,9 +366,9 @@
 
 (t/deftest update-of-a-copy-both-sides-overrode-is-a-conflict
   (with-redefs [cf/flags (conj cf/flags :branching)]
-    (let [{:keys [profile main-id branch-file-id page-id copy-id] :as ctx} (setup 1)]
+    (let [{:keys [profile source-id branch-file-id page-id copy-id] :as ctx} (setup 1)]
       (save profile branch-file-id [(set-fill page-id copy-id "#ff0000")])
-      (save profile main-id [(set-fill page-id copy-id "#ffff00")])
+      (save profile source-id [(set-fill page-id copy-id "#ffff00")])
 
       (let [out (update-branch ctx)]
         (t/is (= :conflicts (-> out :result :status)))
@@ -400,7 +400,7 @@
 
 (t/deftest merge-keeps-a-reset-of-an-override-the-base-holds
   (with-redefs [cf/flags (conj cf/flags :branching)]
-    (let [{:keys [profile main-id branch-file-id page-id comp-id mi-id copy-id] :as ctx}
+    (let [{:keys [profile source-id branch-file-id page-id comp-id mi-id copy-id] :as ctx}
           (setup 1 :override "#ff0000")]
       (reset-copy profile branch-file-id page-id copy-id)
       (t/testing "the reset clears the override on the branch"
@@ -412,21 +412,21 @@
         (t/is (nil? (:error out)))
         (t/is (= :merged (-> out :result :status))))
 
-      (let [main (get-file profile main-id)]
-        (t/is (not (contains? (:touched (shape main page-id copy-id)) :fill-group)))
-        (t/is (= (fill main page-id mi-id) (fill main page-id copy-id)))
-        (t/is (empty? (validation-codes main))))
-      (t/is (follows-component? profile main-id page-id comp-id mi-id copy-id)))))
+      (let [source (get-file profile source-id)]
+        (t/is (not (contains? (:touched (shape source page-id copy-id)) :fill-group)))
+        (t/is (= (fill source page-id mi-id) (fill source page-id copy-id)))
+        (t/is (empty? (validation-codes source))))
+      (t/is (follows-component? profile source-id page-id comp-id mi-id copy-id)))))
 
 (t/deftest update-keeps-a-reset-of-an-override-the-base-holds
   (with-redefs [cf/flags (conj cf/flags :branching)]
-    (let [{:keys [profile main-id branch-file-id page-id comp-id mi-id copy-id] :as ctx}
+    (let [{:keys [profile source-id branch-file-id page-id comp-id mi-id copy-id] :as ctx}
           (setup 1 :override "#ff0000")]
-      (reset-copy profile main-id page-id copy-id)
-      (t/testing "the reset clears the override on main"
-        (let [main (get-file profile main-id)]
-          (t/is (not (contains? (:touched (shape main page-id copy-id)) :fill-group)))
-          (t/is (= (fill main page-id mi-id) (fill main page-id copy-id)))))
+      (reset-copy profile source-id page-id copy-id)
+      (t/testing "the reset clears the override on the source"
+        (let [source (get-file profile source-id)]
+          (t/is (not (contains? (:touched (shape source page-id copy-id)) :fill-group)))
+          (t/is (= (fill source page-id mi-id) (fill source page-id copy-id)))))
 
       (let [out (update-branch ctx)]
         (t/is (nil? (:error out)))
@@ -445,11 +445,11 @@
   (get-in (shape file page-id id) [:applied-tokens :fill]))
 
 (defn- integrate
-  "Merge the branch (`:merge`) or update it from main (`:update`), and
+  "Merge the branch (`:merge`) or update it from the source (`:update`), and
   return the result and the file the integration wrote to."
-  [dir {:keys [profile main-id branch-file-id] :as ctx} & {:as params}]
+  [dir {:keys [profile source-id branch-file-id] :as ctx} & {:as params}]
   (case dir
-    :merge  [(merge-branch ctx params) (get-file profile main-id)]
+    :merge  [(merge-branch ctx params) (get-file profile source-id)]
     :update [(update-branch ctx params) (get-file profile branch-file-id)]))
 
 (def ^:private ok-status
@@ -460,9 +460,9 @@
     (doseq [[n dir side token] [[1 :merge :branch "green"] [2 :merge :source "blue"]
                                 [3 :update :branch "green"] [4 :update :source "blue"]]]
       (t/testing (str dir " resolved to " side)
-        (let [{:keys [profile main-id branch-file-id page-id mi-id copy-id] :as ctx} (setup n)]
+        (let [{:keys [profile source-id branch-file-id page-id mi-id copy-id] :as ctx} (setup n)]
           (save profile branch-file-id (tokenize-component page-id mi-id copy-id "green"))
-          (save profile main-id (tokenize-component page-id mi-id copy-id "blue"))
+          (save profile source-id (tokenize-component page-id mi-id copy-id "blue"))
 
           (let [[out] (integrate dir ctx)]
             (t/is (= :conflicts (-> out :result :status)))
@@ -481,11 +481,11 @@
   (with-redefs [cf/flags (conj cf/flags :branching)]
     (doseq [[n dir] [[1 :merge] [2 :update]]]
       (t/testing (str dir)
-        (let [{:keys [profile main-id branch-file-id page-id mi-id copy-id] :as ctx} (setup n)
+        (let [{:keys [profile source-id branch-file-id page-id mi-id copy-id] :as ctx} (setup n)
               ;; the source overrides the copy, the target edits the component
               [source target] (if (= :merge dir)
-                                [branch-file-id main-id]
-                                [main-id branch-file-id])]
+                                [branch-file-id source-id]
+                                [source-id branch-file-id])]
           (save profile source [(apply-fill-token page-id copy-id "red")])
           (save profile target (tokenize-component page-id mi-id copy-id "blue"))
 
@@ -502,9 +502,9 @@
   (with-redefs [cf/flags (conj cf/flags :branching)]
     (doseq [[n dir] [[1 :merge] [2 :update]]]
       (t/testing (str dir)
-        (let [{:keys [profile main-id branch-file-id page-id copy-id] :as ctx} (setup n)]
+        (let [{:keys [profile source-id branch-file-id page-id copy-id] :as ctx} (setup n)]
           (save profile branch-file-id [(apply-fill-token page-id copy-id "red")])
-          (save profile main-id [(apply-fill-token page-id copy-id "yellow")])
+          (save profile source-id [(apply-fill-token page-id copy-id "yellow")])
 
           (let [[out] (integrate dir ctx)]
             (t/is (= :conflicts (-> out :result :status)))
@@ -514,12 +514,12 @@
   (with-redefs [cf/flags (conj cf/flags :branching)]
     (doseq [[n dir] [[1 :merge] [2 :update]]]
       (t/testing (str dir)
-        (let [{:keys [profile main-id branch-file-id page-id comp-id mi-id copy-id] :as ctx} (setup n)
+        (let [{:keys [profile source-id branch-file-id page-id comp-id mi-id copy-id] :as ctx} (setup n)
               new-copy (uuid/random)
               ;; the source tokenizes the component, the target adds a copy
               [source target] (if (= :merge dir)
-                                [branch-file-id main-id]
-                                [main-id branch-file-id])]
+                                [branch-file-id source-id]
+                                [source-id branch-file-id])]
           (save profile source (tokenize-component page-id mi-id copy-id "green"))
           (save profile target [(copy-of page-id new-copy comp-id mi-id target)])
 

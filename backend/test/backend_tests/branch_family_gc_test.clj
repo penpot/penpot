@@ -232,7 +232,7 @@
       (t/testing "the branch file is gone"
         (t/is (nil? (row :file branch-file-id))))
 
-      (t/testing "main does not list the threads the merge left behind"
+      (t/testing "the source does not list the threads the merge left behind"
         (t/is (empty? (threads-of author (:id file)))))
 
       (t/testing "the threads read through their review, with no file"
@@ -255,7 +255,7 @@
           (t/is (= ["wont-do"] (mapv :status (:tasks closed))))
           (t/is (nil? (:file-id (row :file-task (:id task)))))))
 
-      (t/testing "a thread left behind moves to main with its task, the branch file gone"
+      (t/testing "a thread left behind moves to the source with its task, the branch file gone"
         (let [out   (th/command! {::th/type :move-branch-review-thread
                                   ::rpc/profile-id (:id author)
                                   :thread-id (:thread-id task)})
@@ -274,7 +274,7 @@
           (t/is (= "merged" (:type event)))
           (t/is (= "review-pay-button" (-> event :payload :branch-name)))))
 
-      (t/testing "the review reads on main with its verdict"
+      (t/testing "the review reads on the source with its verdict"
         (let [result (review-of author (:id review))]
           (t/is (some? result))
           (t/is (= "Checkout redesign" (:title result)))
@@ -318,7 +318,7 @@
   ;; A review thread with no open task stays on the branch at the merge.
   ;; Its layer sits in a group the merge left out. Once the GC took the
   ;; branch file, moving the thread lands it on the board that held the
-  ;; group, the nearest ancestor main has, from what the merge stored on
+  ;; group, the nearest ancestor the source has, from what the merge stored on
   ;; the thread, and the thread keeps the name of its lost layer.
   (with-redefs [cf/flags (flags)]
     (let [author   (th/create-profile* 1 {:is-active true})

@@ -220,7 +220,7 @@
   ;; The timer starts BEFORE `get-file`. A branch file stores no payload,
   ;; so that read folds the merge-base snapshot and the op log into the
   ;; derived document, and every other branch command (compare, merge,
-  ;; update-from-main, materialize) creates its timer ahead of its own
+  ;; update-from-source, materialize) creates its timer ahead of its own
   ;; file reads. Starting here puts a branch save's `branch-duration-ms`
   ;; on the same footing as theirs: the number covers the read, and for a
   ;; branch the derive inside it, as well as the rest of the save. The
@@ -636,7 +636,7 @@
   It also records the media id map the fix-up applied, as applied
   ({old-id -> new-id}, the branch's copy is the new one), filtered to
   the copies whose source row the branch's source file owns: a copy of
-  media from another file is branch-own media with no main counterpart,
+  media from another file is branch-own media with no source counterpart,
   and only the source's pairing is what a comparison rebuilds from the
   stamps (`files_branch.clj::branch-media-pairs`)."
   [{:keys [::db/conn ::timestamp] :as cfg} file changes media-index]
@@ -658,7 +658,7 @@
                 :file-id (:id file)))
 
     ;; Only an open branch takes saves. A branch kept after its merge has
-    ;; its work in main, and no command integrates ops appended after the
+    ;; its work in the source, and no command integrates ops appended after the
     ;; merge. An archived branch is read-only until it is restored or
     ;; turned into an ordinary file. Refuse instead of stranding the ops.
     (case (:status branch)

@@ -8,9 +8,9 @@
   "Engine-level tests for the three-way comparison, with data built by hand
   rather than through a file fixture.
 
-  The case that matters here came from a real update-from-main: the branch
+  The case that matters here came from a real update-from-source: the branch
   copy and its base disagreed only on whether a reference attribute was
-  present with a `nil` value or was absent, and because main had moved the
+  present with a `nil` value or was absent, and because the source had moved the
   same shapes, the engine called 368 of them `:modify-modify` conflicts."
   (:require
    [app.common.files.branch-merge :as bm]
@@ -40,13 +40,13 @@
 (def ^:private nil-ref {:typography-ref-file nil})
 
 (deftest nil-ref-and-absent-ref-are-the-same-shape
-  (testing "the branch's copy has the ref with nil, its base without, and main moved the shape"
+  (testing "the branch's copy has the ref with nil, its base without, and the source moved the shape"
     (let [res (bm/compute-merge (file-data 0 {})
                                 (file-data 5 {})
                                 (file-data 0 nil-ref)
                                 :source->branch)]
       (is (zero? (count (:conflicts res))) "a nil-versus-absent reference is not a branch edit")
-      (is (= 1 (count (:changes res))) "main's move still travels as a change")
+      (is (= 1 (count (:changes res))) "the source's move still travels as a change")
       (is (= :modified (:status (first (:changes res)))))))
 
   (testing "and the same with the sides the other way round"

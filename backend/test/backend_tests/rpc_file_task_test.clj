@@ -63,7 +63,7 @@
                          :parent-id uuid/zero :frame-id uuid/zero})}]))
 
 (defn- setup-review
-  "A file with a rect on main, a branch of it and an open design review of
+  "A source file with a rect, a branch of it and an open design review of
   the branch. Returns the ids the tests need."
   []
   (let [author   (th/create-profile* 1 {:is-active true})
@@ -224,7 +224,7 @@
                             :page-id page-id
                             :frame-id uuid/zero
                             :position (gpt/point 0)
-                            :content "on main"
+                            :content "on the source"
                             :review-id (:id review)})]
       (t/is (= :branch-review-not-open (-> out :error ex-data :code))))))
 
@@ -243,11 +243,11 @@
         (t/is (= 1 (:people result)))
         (t/is (= 1 (count (:sessions result))))))))
 
-(t/deftest merge-moves-the-tasks-and-their-threads-into-main
+(t/deftest merge-moves-the-tasks-and-their-threads-into-the-source
   (with-redefs [cf/flags (task-flags)
                 eml/send-template (fn [_ _] nil)]
     (let [{:keys [author page-id rect-id file branch branch-file-id review]} (setup-review)
-          ;; main has a thread of its own already: the moved one must not
+          ;; the source has a thread of its own already: the moved one must not
           ;; take its number
           _      (th/command! {::th/type :create-comment-thread
                                ::rpc/profile-id (:id author)
@@ -255,7 +255,7 @@
                                :page-id page-id
                                :frame-id uuid/zero
                                :position (gpt/point 0)
-                               :content "on main"})
+                               :content "on the source"})
           thread (:result (th/command! {::th/type :create-comment-thread
                                         ::rpc/profile-id (:id author)
                                         :file-id branch-file-id
@@ -414,7 +414,7 @@
         (t/testing "a review thread with no task stays on the branch file"
           (t/is (= branch-file-id (:file-id (th/db-get :comment-thread {:id (:id quiet)})))))
 
-        (t/testing "main lists the moved threads and their tasks only"
+        (t/testing "the source lists the moved threads and their tasks only"
           (let [threads (:result (th/command! {::th/type :get-comment-threads
                                                ::rpc/profile-id (:id author)
                                                :file-id (:id file)}))
@@ -675,7 +675,7 @@
           (t/is (= [(:id @task)] (:task-ids message)))
           (t/is (empty? (:tasks message))))))))
 
-(t/deftest the-merge-tells-main-that-its-tasks-changed
+(t/deftest the-merge-tells-the-source-that-its-tasks-changed
   (with-redefs [cf/flags (task-flags)
                 eml/send-template (fn [_ _] nil)]
     (let [{:keys [author page-id rect-id file branch branch-file-id]} (setup-review)
@@ -742,7 +742,7 @@
                   :obj (cts/setup-shape attrs)}]))
 
 (defn- setup-board-branch
-  "A file whose main holds a board with a rect inside, and a branch of
+  "A source file holding a board with a rect inside, and a branch of
   it. Returns the ids the tests need."
   []
   (let [author   (th/create-profile* 1 {:is-active true})
@@ -772,7 +772,7 @@
        :branch-file-id (:branch-file-id branch)})))
 
 (defn- add-promo*
-  "Add on the branch a board with a rect inside, which main lacks.
+  "Add on the branch a board with a rect inside, which the source lacks.
   Returns their ids."
   [author branch-file-id page-id]
   (let [promo-id (uuid/random)
@@ -802,7 +802,7 @@
                          ::rpc/profile-id (:id profile)
                          :id task-id})))
 
-(t/deftest a-carried-task-lands-on-the-layer-its-parent-has-on-main
+(t/deftest a-carried-task-lands-on-the-layer-its-parent-has-on-the-source
   (with-redefs [cf/flags (task-flags)]
     (let [{:keys [author file page-id board-id rect-id branch branch-file-id]} (setup-board-branch)
           task (:result (create-task* author {:file-id branch-file-id
@@ -852,7 +852,7 @@
                                               :page-id page-id
                                               :frame-id promo-id
                                               :shape-id badge-id}))]
-      ;; something else merges: the board of main is renamed
+      ;; something else merges: the board of the source is renamed
       (update-file* author branch-file-id
                     [{:type :mod-obj :page-id page-id :id board-id
                       :operations [{:type :set :attr :name :val "Checkout v2"}]}])
@@ -920,7 +920,7 @@
 
 (t/deftest a-resolved-thread-outside-any-review-moves-with-the-merge
   ;; A thread without a review belongs to the file, which the merge
-  ;; carries to main: resolved or not, it moves.
+  ;; carries to the source: resolved or not, it moves.
   (with-redefs [cf/flags (task-flags)]
     (let [{:keys [author file page-id branch branch-file-id]} (setup-review)
           thread (thread* author branch-file-id page-id {:content "settled already"})]
@@ -975,8 +975,8 @@
                (ftask/lost-layer-landing {board-id board} nil (gpt/point 5)))))))
 
 (defn- add-group*
-  "Add on the branch, inside the board `board-id` of main, a group with a
-  rect inside, which main lacks. Returns their ids."
+  "Add on the branch, inside the board `board-id` of the source, a group with a
+  rect inside, which the source lacks. Returns their ids."
   [author branch-file-id page-id board-id]
   (let [group-id (uuid/random)
         badge-id (uuid/random)]
@@ -998,10 +998,10 @@
                 [{:type :mod-obj :page-id page-id :id board-id
                   :operations [{:type :set :attr :name :val "Checkout v2"}]}]))
 
-(t/deftest a-mark-in-an-excluded-group-lands-on-the-nearest-ancestor-on-main
+(t/deftest a-mark-in-an-excluded-group-lands-on-the-nearest-ancestor-on-the-source
   ;; The merge leaves the new group out, and its rect with it. The thread
   ;; and the task on the rect land on the board that holds the group, the
-  ;; nearest ancestor main has, not on the group, and keep the name of
+  ;; nearest ancestor the source has, not on the group, and keep the name of
   ;; the rect.
   (with-redefs [cf/flags (task-flags)]
     (let [{:keys [author file page-id board-id branch branch-file-id]} (setup-board-branch)
@@ -1027,7 +1027,7 @@
         (t/is (= (:id file) (:file-id row)))
         (t/is (= board-id (:shape-id row)))
         (t/is (= "Badge" (:lost-shape-name row))))
-      (t/testing "main lists the thread with the name of its lost layer"
+      (t/testing "the source lists the thread with the name of its lost layer"
         (let [threads (:result (th/command! {::th/type :get-comment-threads
                                              ::rpc/profile-id (:id author)
                                              :file-id (:id file)}))
@@ -1058,7 +1058,7 @@
     (t/is (nil? (:error (merge-excluding* author branch page-id [promo-id]))))
     (assoc setup :thread thread :task task :badge-id badge-id)))
 
-(t/deftest a-mark-with-no-ancestor-on-main-lands-on-the-area-and-keeps-the-name
+(t/deftest a-mark-with-no-ancestor-on-the-source-lands-on-the-area-and-keeps-the-name
   (with-redefs [cf/flags (task-flags)]
     (let [{:keys [thread task]} (setup-area-landing)]
       (doseq [id [(:id thread) (:thread-id task)]]

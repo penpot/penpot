@@ -64,7 +64,7 @@
 
     :same-parent-reorder              :merge | :refuse | :ignore
     :addition-under-deleted-parent    :conflict | :refuse | :reparent-to-ancestor | :page-root
-    :container-delete-over-main-edits :conflict | :expand | :cascade
+    :container-delete-over-target-edits :conflict | :expand | :cascade
 
   An invalid file logs a warning and the engine runs the built-in
   defaults until the file is fixed."
@@ -216,7 +216,7 @@
      :main        (fn [page-id]
                     [(del-obj page-id parent)])}))
 
-(defn- case-delete-container-over-main-edits
+(defn- case-delete-container-over-target-edits
   "The branch deletes the frame F while main recolours F's child C and
   adds N inside F."
   []
@@ -297,7 +297,7 @@
                       [case-reorder-branch-only
                        case-reorder-both-sides
                        case-add-under-deleted-parent
-                       case-delete-container-over-main-edits
+                       case-delete-container-over-target-edits
                        case-addition-order])]
     (println "project:" (:name project) (str (:id project)))
     (print-table [:id :name :branch-id :branch-file-id] files)
