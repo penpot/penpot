@@ -24,6 +24,8 @@
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
    [app.common.test-helpers.variants :as thv]
+   [app.common.types.file :as ctf]
+   [app.common.types.pages-list :as ctpl]
    [app.common.uuid :as uuid]
    [clojure.test :as t]))
 
@@ -1822,14 +1824,14 @@
     (update-in file [:data :pages-index page-id :objects] dissoc root-id)))
 
 (t/deftest repair-invalid-variant-properties-live-missing-main
-  (t/testing "a live solo with clean text and a missing main does not fail the component save"
+  (t/testing "a live solo with clean text and a missing main is removed and does not fail the component save"
     (let [file    (live-solo-missing-main [{:name "SizeBig" :value "ab"}])
           changes [{:type :mod-component :id (thi/id :component1)}]
           result  (repair-until-valid-affected file changes)]
       (t/is (nil? (seq (property-errors result))))
       (t/is (nil? (:errors result)))
       (t/is (nil? (ths/get-shape (:file result) :root1)))
-      (t/is (= (:data file) (:data (:file result))))))
+      (t/is (nil? (thc/get-component (:file result) :component1 :include-deleted? true)))))
 
   (t/testing "a full repair of that live solo does not create the missing main"
     (let [file   (live-solo-missing-main [{:name "SizeBig" :value "ab"}])
@@ -1838,14 +1840,14 @@
       (t/is (nil? (seq (property-errors result))))
       (t/is (nil? (ths/get-shape file' :root1)))))
 
-  (t/testing "a live solo with dirty text and a missing main rewrites the text and creates no shape"
+  (t/testing "a live solo with dirty text and a missing main is removed and creates no shape"
     (let [file    (live-solo-missing-main [{:name "Size=Big" :value "a=b"}])
           changes [{:type :mod-component :id (thi/id :component1)}]
           result  (repair-until-valid-affected file changes)
           file'   (:file result)
           result2 (repair-until-valid-affected file' changes)
-          comp'   (thc/get-component file' :component1)]
-      (t/is (= [{:name "SizeBig" :value "ab"}] (:variant-properties comp')))
+          comp'   (thc/get-component file' :component1 :include-deleted? true)]
+      (t/is (nil? comp'))
       (t/is (nil? (ths/get-shape file' :root1)))
       (t/is (nil? (seq (property-errors result))))
       (t/is (nil? (:errors result)))
@@ -1855,7 +1857,108 @@
     (let [file   (live-solo-missing-main [{:name "Size=Big" :value "a=b"}])
           result (repair-until-valid file)
           file'  (:file result)
-          comp'  (thc/get-component file' :component1)]
-      (t/is (= [{:name "SizeBig" :value "ab"}] (:variant-properties comp')))
+          comp'  (thc/get-component file' :component1 :include-deleted? true)]
+      (t/is (nil? comp'))
       (t/is (nil? (ths/get-shape file' :root1)))
       (t/is (nil? (seq (property-errors result)))))))
+
+
+(defn- remove-main
+  "Remove the shapes `labels` from the objects of the page `page-label` and
+  from their parent's children, leaving the component in place."
+  [file page-label & labels]
+  (let [ids (into #{} (map thi/id) labels)]
+    (ctf/update-file-data
+     file
+     (fn [file-data]
+       (ctpl/update-page
+        file-data
+        (thi/id page-label)
+        (fn [page]
+          (update page :objects
+                  (fn [objects]
+                    (reduce-kv (fn [result id shape]
+                                 (if (contains? ids id)
+                                   result
+                                   (assoc result id (update shape :shapes #(into [] (remove ids) %)))))
+                               {}
+                               objects)))))))))
+
+(t/deftest repair-component-main-not-found-relinks-main-on-another-page
+  (t/testing "a component pointing to no shape is relinked to its main on another page"
+    (let [file       (-> (thf/sample-file :file1 :page-label :page1)
+                         (thf/add-sample-page :page2)
+                         (tho/add-simple-component :component1 :root1 :child1)
+                         (thc/update-component :component1
+                                               :main-instance-id (uuid/next)
+                                               :main-instance-page (thi/id :page1)))
+          changes    [{:type :mod-component :id (thi/id :component1)}]
+          errors     (cfv/validate-file-affected file {} changes)
+          result     (repair-until-valid-affected file changes)
+          component' (thc/get-component (:file result) :component1)]
+
+      (t/is (= [:component-main-not-found] (mapv :code errors)))
+      (t/is (nil? (:errors result)))
+      (t/is (nil? (cfv/validate-file (:file result) {})))
+      (t/is (= (thi/id :root1) (:main-instance-id component')))
+      (t/is (= (thi/id :page2) (:main-instance-page component')))
+      (t/is (not (:deleted component'))))))
+
+(t/deftest repair-component-main-not-found-relinks-main-on-component-page
+  (t/testing "a component pointing to a missing shape is relinked to the main on its page"
+    (let [file       (-> (thf/sample-file :file1 :page-label :page1)
+                         (tho/add-simple-component :component1 :root1 :child1)
+                         (thc/update-component :component1 :main-instance-id (uuid/next)))
+          changes    [{:type :mod-component :id (thi/id :component1)}]
+          result     (repair-until-valid-affected file changes)
+          component' (thc/get-component (:file result) :component1)]
+
+      (t/is (nil? (:errors result)))
+      (t/is (= (thi/id :root1) (:main-instance-id component')))
+      (t/is (= (thi/id :page1) (:main-instance-page component'))))))
+
+(t/deftest repair-component-main-not-found-removes-component-without-main
+  (t/testing "a component with no main anywhere is removed and its copy detached"
+    (let [file    (-> (thf/sample-file :file1 :page-label :page1)
+                      (tho/add-simple-component :component1 :root1 :child1)
+                      (thf/add-sample-page :page2)
+                      (thc/instantiate-component :component1 :copy1)
+                      (remove-main :page1 :root1 :child1))
+          result  (repair-until-valid file)
+          file'   (:file result)
+          copy1'  (ths/get-shape file' :copy1 :page-label :page2)]
+
+      (t/is (nil? (:errors result)))
+      (t/is (nil? (cfv/validate-file file' {})))
+      (t/is (nil? (thc/get-component file' :component1 :include-deleted? true)))
+      (t/is (some? copy1'))
+      (t/is (nil? (:component-id copy1')))
+      (t/is (nil? (:shape-ref copy1'))))))
+
+(t/deftest repair-component-main-not-found-removes-variant-component-without-main
+  (t/testing "a variant component with no main is removed and the other variant stays"
+    (let [file    (-> (thf/sample-file :file1 :page-label :page1)
+                      (thv/add-variant :variant1 :component1 :root1 :component2 :root2)
+                      (remove-main :page1 :root1))
+          result  (repair-until-valid file)
+          file'   (:file result)]
+
+      (t/is (nil? (:errors result)))
+      (t/is (nil? (cfv/validate-file file' {})))
+      (t/is (nil? (thc/get-component file' :component1 :include-deleted? true)))
+      (t/is (some? (thc/get-component file' :component2)))
+      (t/is (some? (ths/get-shape file' :variant1)))
+      (t/is (some? (ths/get-shape file' :root2))))))
+
+(t/deftest repair-component-main-not-found-keeps-component-claimed-by-main
+  (t/testing "a main that also gets :invalid-main-instance-id does not lead to a removal"
+    (let [file    (lost-main-file)
+          result  (cfr/repair-file-until-valid
+                   file {}
+                   (fn [file _] (cfv/validate-file file {}))
+                   :max-iterations 1)
+          file'   (:file result)]
+
+      (t/is (nil? (:errors result)))
+      (t/is (= (thi/id :root1) (:main-instance-id (thc/get-component file' :component1))))
+      (t/is (some? (ths/get-shape file' :root1 :page-label :page1))))))

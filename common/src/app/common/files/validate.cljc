@@ -61,6 +61,7 @@
     :not-component-not-allowed
     :component-nil-objects-not-allowed
     :non-deleted-component-cannot-have-objects
+    :component-main-not-found
     :instance-head-not-frame
     :invalid-text-touched
     :misplaced-slot
@@ -943,6 +944,13 @@
                   "A non-deleted component cannot have shapes inside"
                   component file nil)))
 
+(defn- check-component-main
+  [component file]
+  (when (nil? (ctf/get-component-root (:data file) component))
+    (report-error :component-main-not-found
+                  "A non-deleted component must have its main instance"
+                  component file nil)))
+
 (defn- board-on-members-page?
   "True when the board `shape`, found in `objects`, is also a shape on the
    page of one of its qualifying members' mains. The page walk checks
@@ -1011,7 +1019,8 @@
                   component file nil))
   (when-not (:deleted component)
     (check-main-inside-main component file)
-    (check-not-objects component file))
+    (check-not-objects component file)
+    (check-component-main component file))
   (when (:deleted component)
     (check-component-duplicate-swap-slot component file)
     (check-ref-cycles component file))
