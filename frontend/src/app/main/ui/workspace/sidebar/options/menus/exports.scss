@@ -82,9 +82,6 @@
 }
 
 .export-btn {
-  @extend %button-secondary;
-  @include deprecated.uppercase-title-typography;
-
   grid-column: 1 / span 9;
-  height: deprecated.$s-32;
+  justify-content: center;
 }

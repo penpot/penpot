@@ -1128,6 +1128,75 @@ test.describe("Selected colors", () => {
   });
 });
 
+test.describe("Export menu controls", () => {
+  test("Shows the export button at rest, on hover and exporting", async ({
+    page,
+  }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(/get\-file\?/, "workspace/get-file-9066.json");
+    // The export never answers, so the button stays in "Exporting…".
+    await page.route(/\/api\/export$/, () => {});
+    await workspace.goToWorkspace({
+      fileId: "e179d9df-de35-80bf-8005-283bbd5516b0",
+      pageId: "e179d9df-de35-80bf-8005-283bbd5516b1",
+    });
+
+    await workspace.clickLeafLayer("Board");
+    await workspace.rightSidebar
+      .getByRole("button", { name: "Add export" })
+      .click();
+
+    const button = workspace.rightSidebar.getByRole("button", {
+      name: /^Export(ing| 1 element)/,
+    });
+    await expect(button).toBeVisible();
+    await page.mouse.move(0, 0);
+    await expect(button).toHaveScreenshot("export-button-rest.png", {
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    await button.hover();
+    await expect(button).toHaveScreenshot("export-button-hover.png", {
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    await button.click();
+    await expect(button).toHaveText("Exporting…");
+    await page.mouse.move(0, 0);
+    await expect(button).toHaveScreenshot("export-button-exporting.png", {
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
+
+  test("Shows the export row", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(/get\-file\?/, "workspace/get-file-9066.json");
+    await workspace.goToWorkspace({
+      fileId: "e179d9df-de35-80bf-8005-283bbd5516b0",
+      pageId: "e179d9df-de35-80bf-8005-283bbd5516b1",
+    });
+
+    await workspace.clickLeafLayer("Board");
+    await workspace.rightSidebar
+      .getByRole("button", { name: "Add export" })
+      .click();
+    const row = workspace.rightSidebar.locator(
+      "[class*='menus_exports__element-group']",
+    );
+    await expect(row).toBeVisible();
+    await page.mouse.move(0, 0);
+    await expect(row).toHaveScreenshot("export-row.png", {
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
+});
+
 test.describe("Imported SVG attributes", () => {
   test("Shows the attributes of an imported SVG shape", async ({ page }) => {
     const workspace = new WorkspacePage(page);
