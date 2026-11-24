@@ -73,6 +73,9 @@ NON_HUMAN_COAUTHOR_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
+AI_TRAILER_PATTERN = re.compile(r"^\s*ai-assisted-by\s*:(.*)$", re.IGNORECASE)
+MODEL_ID_PATTERN = re.compile(r"[a-z0-9]+(?:[.-][a-z0-9]+)*")
+
 URL_PATTERN = re.compile(r"https?://\S+")
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -243,6 +246,26 @@ def check_co_authored_by(message):
     )
 
 
+def check_ai_assisted_by(message):
+    """Validate every AI-assisted-by value as a bare lowercase model ID."""
+    offenders = []
+    for line_number, line in enumerate(message.split("\n"), start=1):
+        match = AI_TRAILER_PATTERN.match(line)
+        if match and not MODEL_ID_PATTERN.fullmatch(match.group(1).strip()):
+            offenders.append((line_number, line))
+    if not offenders:
+        return True, None
+    details = "\n".join(
+        f"    line {line_number}: {line!r}"
+        for line_number, line in offenders
+    )
+    return False, (
+        "AI-assisted-by must use a bare lowercase canonical model ID slug "
+        "(for example, gpt-6.1-terra), without a provider prefix. "
+        "Offending line(s):\n" + details
+    )
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def main():
@@ -269,6 +292,7 @@ def main():
         ("Blank line after subject", check_body_blank_line),
         ("Body wrapped at 80 chars", check_body_line_length),
         ("Co-authored-by is human only", check_co_authored_by),
+        ("AI-assisted-by uses a model ID slug", check_ai_assisted_by),
     ]
 
     all_ok = True

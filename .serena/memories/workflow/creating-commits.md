@@ -48,8 +48,8 @@ that breaks them is wrong, even if the code is right.
 - Exceptions inside the body (do not wrap these): `Signed-off-by:`, `Co-authored-by:`, `AI-assisted-by:` trailers, and lines carrying a URL.
 
 **AI-assisted-by trailer rules:**
-- Use only the model name, e.g. `mimo-v2.5`, `deepseek-v4-flash`
-- Do NOT add prefixes like `opencode-go/` — use the bare model name
+- Optional; when present, every trailer must use the bare canonical model ID as a lowercase slug, e.g. `gpt-6.1-terra`, `mimo-v2.5`, `deepseek-v4-flash`.
+- Use lowercase ASCII letters and digits separated by single `-` or `.` characters; no provider prefix, display name, or guessed ID. `scripts/check-commit` checks the format, not whether the ID exists.
 
 ## Commit Type Emojis
 
