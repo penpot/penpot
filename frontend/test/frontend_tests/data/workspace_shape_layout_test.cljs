@@ -35,3 +35,28 @@
         result (dwsl/update-shape-layout shape {:layout-gap {:row-gap 4}})]
     (t/is (not (contains? result :layout-padding)))
     (t/is (= {:row-gap 4} (:layout-gap result)))))
+
+(t/deftest update-shape-layout-completes-a-padding-side-cleared-to-nil
+  (let [shape  {:layout :flex
+                :layout-padding-type :multiple
+                :layout-padding {:p1 1 :p2 2 :p3 3 :p4 4}}
+        result (dwsl/update-shape-layout shape {:layout-padding {:p1 nil}})]
+    (t/is (= {:p1 0 :p2 2 :p3 3 :p4 4} (:layout-padding result)))
+    (t/is (valid-layout-padding? (select-keys result [:layout-padding])))))
+
+(t/deftest update-shape-layout-removes-padding-when-the-whole-value-is-nil
+  (let [shape  {:layout :flex
+                :layout-padding-type :multiple
+                :layout-padding {:p1 1 :p2 2 :p3 3 :p4 4}}
+        result (dwsl/update-shape-layout shape {:layout-padding nil})]
+    (t/is (not (contains? result :layout-padding)))))
+
+(t/deftest update-shape-layout-completes-a-stored-partial-padding
+  ;; A board saved with a partial padding before the fix is completed by
+  ;; any later layout change, not only by a padding one.
+  (let [shape  {:layout :flex
+                :layout-padding-type :multiple
+                :layout-padding {:p1 12}}
+        result (dwsl/update-shape-layout shape {:layout-gap {:row-gap 4}})]
+    (t/is (= {:p1 12 :p2 0 :p3 0 :p4 0} (:layout-padding result)))
+    (t/is (valid-layout-padding? (select-keys result [:layout-padding])))))

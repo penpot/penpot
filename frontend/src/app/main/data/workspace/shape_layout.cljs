@@ -375,16 +375,14 @@
                (dwu/commit-undo-transaction undo-id))))))
 
 (defn update-shape-layout
-  "Patch the layout attributes of `shape` with `changes`. A padding change
-  starts from the four sides at 0 when the shape has no padding yet, so
-  setting one side never saves a padding without the other three."
+  "Patch the layout attributes of `shape` with `changes`. A padding always
+  keeps its four sides: after patching, a missing or nil side becomes 0."
   [shape changes]
-  (cond-> shape
-    (contains? changes :layout-padding)
-    (update :layout-padding #(merge {:p1 0 :p2 0 :p3 0 :p4 0} %))
-
-    :always
-    (d/patch-object changes)))
+  (let [shape (d/patch-object shape changes)]
+    (cond-> shape
+      (map? (:layout-padding shape))
+      (update :layout-padding #(merge {:p1 0 :p2 0 :p3 0 :p4 0}
+                                      (d/without-nils %))))))
 
 (defn update-layout
   ([ids changes] (update-layout ids changes nil))
