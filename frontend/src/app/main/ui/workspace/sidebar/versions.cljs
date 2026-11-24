@@ -35,6 +35,10 @@
 (def ^:private versions
   (l/derived :workspace-versions st/state))
 
+(def menu-open-ref
+  "True while a menu in the History tab is open."
+  (l/derived #(some? (:menu %)) versions))
+
 (defn- get-versions-stored-days
   [team profile]
   (let [subscription-type (get-subscription-type (:subscription team))
@@ -222,6 +226,9 @@
 
              (kbd/esc? event)
              (when (fn? on-cancel-edit)
+               ;; This Escape only cancels the rename; keep it from the
+               ;; History panel, which would close on it.
+               (dom/stop-propagation event)
                (mf/set-ref-val! restore-focus-ref true)
                (on-cancel-edit (:id entry) event)))))]
 

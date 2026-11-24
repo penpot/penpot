@@ -39,11 +39,10 @@
    [app.main.ui.workspace.sidebar.options :refer [options-toolbox*]]
    [app.main.ui.workspace.sidebar.shortcuts :refer [shortcuts-container*]]
    [app.main.ui.workspace.sidebar.sitemap :refer [sitemap*]]
-   [app.main.ui.workspace.sidebar.versions :refer [versions-toolbox*]]
+   [app.main.ui.workspace.sidebar.versions :refer [menu-open-ref versions-toolbox*]]
    [app.main.ui.workspace.tokens.sidebar :refer [tokens-sidebar-tab*]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
-   [okulary.core :as l]
    [rumext.v2 :as mf]))
 
 ;; --- Left Sidebar (Component)
@@ -238,14 +237,6 @@
   []
   (st/emit! (dw/remove-layout-flag :document-history)))
 
-(def ^:private history-nested-open-ref
-  "True while a menu or a version rename in the History tab is open."
-  (l/derived (fn [state]
-               (let [versions (get state :workspace-versions)]
-                 (or (some? (get versions :menu))
-                     (some? (get versions :editing)))))
-             st/state))
-
 (defn- on-history-panel-ref
   "Focus the panel when it opens, so Escape reaches it whether it was
   opened from the header, the shortcut or the main menu."
@@ -263,18 +254,16 @@
         selected
         (deref selected*)
 
-        nested-open
-        (mf/deref history-nested-open-ref)
+        menu-open
+        (mf/deref menu-open-ref)
 
         ;; The open menu closes itself on the keyup of this same Escape,
-        ;; and the rename box cancels the rename on its own keydown, so
-        ;; the panel only has to stay open. `nested-open` comes from the
-        ;; last render: the rename box has already cleared the editing
-        ;; state when this runs.
+        ;; so the panel only has to stay open. The rename box stops its
+        ;; own Escape, so it never reaches the panel.
         dismiss-nested
         (mf/use-fn
-         (mf/deps nested-open)
-         (fn [] nested-open))
+         (mf/deps menu-open)
+         (fn [] menu-open))
 
         on-key-down
         (hooks/use-escape-to-close on-close-document-history dismiss-nested)
