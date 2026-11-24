@@ -854,64 +854,57 @@
                           :command (ds/c-mod "alt+enter")
                           :fn #(emit-when-no-readonly (dp/open-preview-selected))}})
 
+;; Number keys used to set the opacity of the selection, and were easy to
+;; press by accident (https://github.com/penpot/penpot/issues/13303). The
+;; shortcuts stay, with no default key: users assign one in Settings.
 (def opacity-shortcuts
   {:opacity-0 {:label (fn [] (tr "shortcuts.opacity-0"))
-               :tooltip "0"
-               :command ["0" "num0"]
+               :command ""
                :section [:workspace]
                :subsections [:modify-layers]
                :fn #(emit-when-no-readonly (dwly/pressed-opacity 0))}
    :opacity-1 {:label (fn [] (tr "shortcuts.opacity-1"))
-               :tooltip "1"
-               :command ["1" "num1"]
+               :command ""
                :section [:workspace]
                :subsections [:modify-layers]
                :fn #(emit-when-no-readonly (dwly/pressed-opacity 1))}
    :opacity-2 {:label (fn [] (tr "shortcuts.opacity-2"))
-               :tooltip "2"
-               :command ["2" "num2"]
+               :command ""
                :section [:workspace]
                :subsections [:modify-layers]
                :fn #(emit-when-no-readonly (dwly/pressed-opacity 2))}
    :opacity-3 {:label (fn [] (tr "shortcuts.opacity-3"))
-               :tooltip "3"
-               :command ["3" "num3"]
+               :command ""
                :section [:workspace]
                :subsections [:modify-layers]
                :fn #(emit-when-no-readonly (dwly/pressed-opacity 3))}
    :opacity-4 {:label (fn [] (tr "shortcuts.opacity-4"))
-               :tooltip "4"
-               :command ["4" "num4"]
+               :command ""
                :section [:workspace]
                :subsections [:modify-layers]
                :fn #(emit-when-no-readonly (dwly/pressed-opacity 4))}
    :opacity-5 {:label (fn [] (tr "shortcuts.opacity-5"))
-               :tooltip "5"
-               :command ["5" "num5"]
+               :command ""
                :section [:workspace]
                :subsections [:modify-layers]
                :fn #(emit-when-no-readonly (dwly/pressed-opacity 5))}
    :opacity-6 {:label (fn [] (tr "shortcuts.opacity-6"))
-               :tooltip "6"
-               :command ["6" "num6"]
+               :command ""
                :section [:workspace]
                :subsections [:modify-layers]
                :fn #(emit-when-no-readonly (dwly/pressed-opacity 6))}
    :opacity-7 {:label (fn [] (tr "shortcuts.opacity-7"))
-               :tooltip "7"
-               :command ["7" "num7"]
+               :command ""
                :section [:workspace]
                :subsections [:modify-layers]
                :fn #(emit-when-no-readonly (dwly/pressed-opacity 7))}
    :opacity-8 {:label (fn [] (tr "shortcuts.opacity-8"))
-               :tooltip "8"
-               :command ["8" "num8"]
+               :command ""
                :section [:workspace]
                :subsections [:modify-layers]
                :fn #(emit-when-no-readonly (dwly/pressed-opacity 8))}
    :opacity-9 {:label (fn [] (tr "shortcuts.opacity-9"))
-               :tooltip "9"
-               :command ["9" "num9"]
+               :command ""
                :section [:workspace]
                :subsections [:modify-layers]
                :fn #(emit-when-no-readonly (dwly/pressed-opacity 9))}})
