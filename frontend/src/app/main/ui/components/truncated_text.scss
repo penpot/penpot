@@ -1,0 +1,11 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS SUBSIDIARY SL
+
+// The tooltip wraps the text in its own element: let it shrink inside a
+// flex or grid parent, so the text keeps being cut instead of overflowing.
+.tooltip {
+  min-inline-size: 0;
+}
