@@ -18,28 +18,23 @@ In the `libs` folder you'll find:
 In the `apps` folder you'll find some examples that use the libraries mentioned
 above.
 
-- contrast-plugin: to run this example check <a
-  href="#create-a-plugin-from-scratch-or-run-the-examples-from-the-apps-folder">Create
-  a plugin from scratch</a>
+- contrast-plugin: see [Run Penpot sample plugins](#run-penpot-sample-plugins).
 
 - example-styles: to run this example you should run
 
 ```
-pnpm run start:styles-example
+pnpm run start:app:styles-example
 ```
 
 Open in your browser: `http://localhost:4202/`
 
 ## Run Penpot sample plugins
 
-This guide will help you launch a Penpot plugin from the penpot-plugins
-repository. Before proceeding, ensure that you have Penpot running locally by
-following the [setup
+Before running a sample plugin, start Penpot locally by following the [setup
 instructions](https://help.penpot.app/technical-guide/developer/devenv/).
 
-In the terminal, navigate to the **penpot-plugins** repository and run `pnpm -r
-install` to install the required dependencies. Then, run `pnpm run start` to
-launch the plugins runtime.
+In the `plugins/` directory, run `pnpm -r install` to install the dependencies.
+Then run `pnpm run start` to launch the plugins runtime.
 
 After installing the dependencies, choose a plugin to launch. You can either run
 one of the provided examples or create your own (see "Creating a plugin from
@@ -49,12 +44,10 @@ appropriate startup script for the chosen plugin.
 For instance, to launch the Contrast plugin, use the following command:
 
 ```
-// for the contrast plugin
 pnpm run start:plugin:contrast
 ```
 
-Finally, open in your browser the specific port. In this specific example would
-be `http://localhost:4302`
+Open `http://localhost:4202` in your browser.
 
 A table listing the available plugins and their corresponding startup commands
 is provided below.
@@ -68,7 +61,7 @@ is provided below.
 | icons-plugin            | Tool to add icons from [Feather](https://feathericons.com/) | 4202 | pnpm run start:plugin:icons            | http://localhost:4202/assets/manifest.json |
 | lorem-ipsum-plugin      | Generate Lorem ipsum text                                   | 4202 | pnpm run start:plugin:loremipsum       | http://localhost:4202/assets/manifest.json |
 | create-palette-plugin   | Creates a board with all the palette colors                 | 4202 | pnpm run start:plugin:palette          | http://localhost:4202/assets/manifest.json |
-| table-plugin            | Create or import table                                      | 4202 | pnpm run start:table-plugin            | http://localhost:4202/assets/manifest.json |
+| table-plugin            | Create or import table                                      | 4202 | pnpm run start:plugin:table            | http://localhost:4202/assets/manifest.json |
 | rename-layers-plugin    | Rename layers in bulk                                       | 4202 | pnpm run start:plugin:renamelayers     | http://localhost:4202/assets/manifest.json |
 | colors-to-tokens-plugin | Generate tokens JSON file                                   | 4202 | pnpm run start:plugin:colors-to-tokens | http://localhost:4202/assets/manifest.json |
 | poc-tokens-plugin       | Sandbox plugin to test tokens functionality                 | 4202 | pnpm run start:plugin:poc-tokens       | http://localhost:4202/assets/manifest.json |
@@ -78,7 +71,7 @@ is provided below.
 | App             | Description                                                       | PORT | Start command                     | URL                    |
 | --------------- | ----------------------------------------------------------------- | ---- | --------------------------------- | ---------------------- |
 | plugins-runtime | Runtime for the plugins subsystem                                 | 4200 | pnpm run start:app:runtime        |                        |
-| example-styles  | Showcase of some of the Penpot styles that can be used in plugins | 4201 | pnpm run start:app:styles-example | http://localhost:4201/ |
+| example-styles  | Showcase of some of the Penpot styles that can be used in plugins | 4202 | pnpm run start:app:styles-example | http://localhost:4202/ |
 
 ## Creating a plugin from scratch
 

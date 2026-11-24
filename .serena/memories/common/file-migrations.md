@@ -1,0 +1,7 @@
+# File migrations
+
+- Start at `app.common.files.migrations` for `available-migrations` and transforms. Prefer optional attributes with compatible defaults. If removing a key from a closed schema, migrate existing data in the same change: the new schema rejects the key, not just its value. See `mem:common/data-model-change-checklist` for consumers.
+- Keep the ordered registry stable. On a rebase collision, keep the upstream ID, move the unshipped branch migration to the next free number at the end, and update its test file/namespace and all references together.
+- Once a file records an ID, changing its implementation alone won't run it again. If a safe replacement must run at the same stage, use a new versioned ID at the same position. If adding a separate repair for already-migrated files, check the relative order: a repair that parses a malformed value must run before one that drops it.
+- Withdraw an ID only when the replacement remains safe on files that already ran it. Remove the old implementation and registry entry; leave historical IDs in saved files and fixtures. A registry change also changes the `get-file` ETag, so clients can refetch and files can migrate on the next read.
+- Preserve the full applied migration set when upgrading a file that used legacy numeric versions, even when individual transforms are no-ops. For cleanup across pages, preserve the original objects map on a no-op so a healthy page is not marked modified and rewritten.

@@ -14,6 +14,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
+   [app.main.constants :as mconst]
    [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.viewport-wasm :as dwvw]
@@ -124,7 +125,9 @@
             state
             (update state :workspace-local
                     (fn [{:keys [vport] :as local}]
-                      (let [srect (gal/adjust-to-viewport vport srect {:padding 160 :min-zoom 0.01})
+                      (let [srect (gal/adjust-to-viewport vport srect {:padding 160
+                                                                       :min-zoom 0.01
+                                                                       :min-screen-padding mconst/viewport-fit-min-padding})
                             zoom  (/ (:width vport) (:width srect))]
                         (-> local
                             (assoc :zoom zoom)
@@ -177,7 +180,9 @@
                                (gsh/shapes->rect))]
               (update state :workspace-local
                       (fn [{:keys [vport] :as local}]
-                        (let [srect (gal/adjust-to-viewport vport srect {:padding 40 :min-zoom 0.01})
+                        (let [srect (gal/adjust-to-viewport vport srect {:padding 40
+                                                                         :min-zoom 0.01
+                                                                         :min-screen-padding mconst/viewport-fit-min-padding})
                               zoom  (/ (:width vport) (:width srect))]
                           (-> local
                               (assoc :zoom zoom)
@@ -205,7 +210,9 @@
                   (fn [{:keys [vport] :as local}]
                     (let [srect (gal/adjust-to-viewport
                                  vport srect
-                                 {:padding 40 :min-zoom 0.01})
+                                 {:padding 40
+                                  :min-zoom 0.01
+                                  :min-screen-padding mconst/viewport-fit-min-padding})
                           zoom  (/ (:width vport)
                                    (:width srect))]
                       (-> local

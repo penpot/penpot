@@ -94,3 +94,55 @@
           srect    {:x 0 :y 0 :width 100 :height 100}
           result   (gal/adjust-to-viewport viewport srect {:min-zoom 0.5})]
       (t/is (some? result)))))
+
+(t/deftest adjust-to-viewport-min-screen-padding-test
+  (t/testing "Fitted wide content keeps the minimum margin on every edge"
+    (let [viewport   {:width 1000 :height 800}
+          srect      {:x 0 :y 0 :width 8000 :height 6000}
+          result     (gal/adjust-to-viewport viewport srect
+                                             {:padding 40
+                                              :min-zoom 0.01
+                                              :min-screen-padding 40})
+          zoom       (/ (:width viewport) (:width result))
+          left-gap   (* (- (:x srect) (:x result)) zoom)
+          right-gap  (* (- (+ (:x result) (:width result))
+                           (+ (:x srect) (:width srect)))
+                        zoom)
+          top-gap    (* (- (:y srect) (:y result)) zoom)
+          bottom-gap (* (- (+ (:y result) (:height result))
+                           (+ (:y srect) (:height srect)))
+                        zoom)]
+      (t/is (mth/close? 40 left-gap))
+      (t/is (mth/close? 40 right-gap))
+      (t/is (<= 40 top-gap))
+      (t/is (<= 40 bottom-gap))))
+
+  (t/testing "Fitted tall content keeps the minimum margin on every edge"
+    (let [viewport   {:width 1000 :height 800}
+          srect      {:x 0 :y 0 :width 6000 :height 8000}
+          result     (gal/adjust-to-viewport viewport srect
+                                             {:padding 40
+                                              :min-zoom 0.01
+                                              :min-screen-padding 40})
+          zoom       (/ (:width viewport) (:width result))
+          left-gap   (* (- (:x srect) (:x result)) zoom)
+          right-gap  (* (- (+ (:x result) (:width result))
+                           (+ (:x srect) (:width srect)))
+                        zoom)
+          top-gap    (* (- (:y srect) (:y result)) zoom)
+          bottom-gap (* (- (+ (:y result) (:height result))
+                           (+ (:y srect) (:height srect)))
+                        zoom)]
+      (t/is (<= 40 left-gap))
+      (t/is (<= 40 right-gap))
+      (t/is (mth/close? 40 top-gap))
+      (t/is (mth/close? 40 bottom-gap))))
+
+  (t/testing "Design-space padding is kept when it is larger on screen"
+    (let [viewport {:width 1000 :height 800}
+          srect    {:x 0 :y 0 :width 200 :height 100}
+          expected (gal/adjust-to-viewport viewport srect {:padding 40})
+          result   (gal/adjust-to-viewport viewport srect
+                                           {:padding 40
+                                            :min-screen-padding 40})]
+      (t/is (= expected result)))))

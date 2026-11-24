@@ -57,7 +57,7 @@
 
 (mf/defc sidebar-project*
   {::mf/private true}
-  [{:keys [item is-selected]}]
+  [{:keys [item is-selected can-edit]}]
   (let [dstate           (mf/deref refs/dashboard-local)
         selected-files   (:selected-files dstate)
         selected-project (:selected-project dstate)
@@ -141,6 +141,7 @@
                (st/emit! (dd/move-files (with-meta data mdata)))))))]
 
     [:> context-menu* {:aria-label (tr "dashboard.options")
+                       :is-disabled (not can-edit)
                        :trigger
                        (mf/html
                         [:li {:tab-index "0"
@@ -150,7 +151,7 @@
                                                    :dragging (:dragging? local))
                               :on-click on-click
                               :on-key-down on-key-down
-                              :on-double-click on-edit-open
+                              :on-double-click (when can-edit on-edit-open)
                               :on-drag-enter on-drag-enter
                               :on-drag-over on-drag-over
                               :on-drag-leave on-drag-leave
@@ -385,7 +386,8 @@
                :key (dm/str (:id item))
                :id (:id item)
                :team-id (:id team)
-               :is-selected (= (:id item) (:id project))}])]
+               :is-selected (= (:id item) (:id project))
+               :can-edit (-> team :permissions :can-edit)}])]
           [:div {:class (stl/css :sidebar-empty-placeholder)}
            [:> icon* {:icon-id i/pin
                       :size "s"

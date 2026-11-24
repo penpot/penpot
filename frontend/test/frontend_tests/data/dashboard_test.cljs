@@ -16,9 +16,11 @@
    [app.main.data.websocket :as dws]
    [app.main.repo :as rp]
    [app.main.router :as rt]
+   [app.util.clipboard :as clipboard]
    [app.util.i18n :as i18n]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
+   [cuerdas.core :as str]
    [frontend-tests.helpers.async :as async]
    [frontend-tests.helpers.mock :as mock]
    [potok.v2.core :as ptk]))
@@ -298,3 +300,51 @@
        (await (async/wait-for #(seq @errors) "the copy fails"))
        (await (async/settle))
        (t/is (nil? (:notification @store)))))))
+
+(defn- run-copy-link
+  "Runs copy-link for the workspace of a new file with `to-clipboard`
+  mocked, and returns the copied text and the resulting notification."
+  [to-clipboard]
+  (let [team-id (uuid/next)
+        file-id (uuid/next)
+        copied  (atom nil)
+        result  (atom {:router #{:workspace}})
+        event   (dd/copy-link :workspace {:team-id team-id :file-id file-id})]
+    (-> (mock/with-mocks*
+          {clipboard/to-clipboard (mock/stub (fn [text]
+                                               (reset! copied text)
+                                               (to-clipboard text)))}
+          (await (async/observe (ptk/watch event @result nil)
+                                :on-next #(swap! result (partial ptk/update %)))))
+        (.then (fn [_]
+                 {:team-id      team-id
+                  :file-id      file-id
+                  :copied       @copied
+                  :notification (:notification @result)})))))
+
+(t/deftest ^:async copy-link-copies-the-route-url-and-confirms
+  (let [{:keys [team-id file-id copied notification]}
+        (await (run-copy-link (fn [_] (js/Promise.resolve nil))))]
+    (t/is (str/includes? copied "screen=workspace"))
+    (t/is (str/includes? copied (str "team-id=" team-id)))
+    (t/is (str/includes? copied (str "file-id=" file-id)))
+    (t/is (= :success (:level notification)))
+    (t/is (= (i18n/tr "dashboard.success-copy-link") (:content notification)))))
+
+(t/deftest ^:async copy-link-reports-an-unavailable-clipboard
+  (let [{:keys [notification]}
+        (await (run-copy-link
+                (fn [_]
+                  (js/Promise.reject
+                   (js/Error. "Clipboard API is unavailable. Serve over HTTPS.")))))]
+    (t/is (= :error (:level notification)))
+    (t/is (= (i18n/tr "errors.clipboard-api-unavailable") (:content notification)))
+    (t/is (= ntf/default-timeout (:timeout notification)))))
+
+(t/deftest ^:async copy-link-reports-an-unknown-error
+  (let [{:keys [notification]}
+        (await (run-copy-link
+                (fn [_] (js/Promise.reject (js/Error. "unexpected")))))]
+    (t/is (= :error (:level notification)))
+    (t/is (= (i18n/tr "errors.generic") (:content notification)))
+    (t/is (= ntf/default-timeout (:timeout notification)))))

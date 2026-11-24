@@ -47,7 +47,7 @@ declare -A TEST_CMD=(
   [exporter]="PENPOT_SECRET_KEY=${PENPOT_SECRET_KEY:-test-secret-key} pnpm run test:quiet"
   [mcp]="pnpm run test"
   [plugins]="pnpm run test"
-  [library]="pnpm run test"
+  [library]="pnpm run build:bundle && pnpm run test"
   [media-processor]="pnpm run test"
 )
 
@@ -71,7 +71,7 @@ declare -A FMT_FIX_CMD=(
   [exporter]="pnpm run fmt:clj"
   [mcp]="pnpm run fmt"
   [plugins]="pnpm run format"
-  [library]="pnpm run fmt:clj"
+  [library]="pnpm run fmt"
   [media-processor]="pnpm run fmt"
 )
 

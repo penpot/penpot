@@ -1,158 +1,17 @@
 # Penpot MCP
 
-This subproject provides an MCP server for Penpot integration.
-The MCP server communicates with a Penpot plugin via WebSockets, allowing
-the MCP server to send tasks to the plugin and receive results,
-enabling advanced AI-driven features in Penpot.
+- Start at `mcp/README.md` for setup, server modes and release commands. The public high-level overview lives in `mcp/packages/server/data/initial_instructions.md`; API data generation is documented in `mcp/types-generator/README.md`.
+- Plugin WebSocket, session ownership and reconnect: `mem:mcp/connections`. Save results and rollback delivery: `mem:mcp/save-and-rollback`. Remote client authorization and discovery: `mem:mcp/oauth`.
 
-## Tech Stack
+## Tools and tasks
 
-- Language: TypeScript
-- Runtime: Node.js
-- Framework: MCP SDK (@modelcontextprotocol/sdk)
-- Build Tool: TypeScript Compiler (tsc) + esbuild
-- Package Manager: pnpm
+- Keep each concern in one class or component with a small public surface. Prefer explicitly typed abstractions for non-trivial collaborators and concrete classes over interface-only object literals. Use braces even for single-line blocks. Start doc comments with a precise descriptive phrase; short inline comments start lowercase, longer explanations use sentences.
+- Extend `Tool` and register the tool in `PenpotMcpServer`. Let errors from `executeCore` reach the central handler. For a plugin task, keep input types in `packages/common/src/types.ts`, the server task in `packages/server/src/tasks/`, and the handler in `packages/plugin/src/task-handlers/`. Register the handler in `plugin.ts`; call `task.sendSuccess` on success and let failures propagate.
+- For direct backend tools, start at `PenpotMcpServer` and `PenpotBackendClient`. Keep the tool schema aligned with the authoritative backend schema. For `submit_feedback`, keep the payload out of argument logs and distinguish a queued mail job from delivery.
 
-## Principles & Code Style
+## Local checks
 
-IMPORTANT: Use an idiomatic, object-oriented style.
-* You keep each concern in exactly one home.
-  A mechanism whose parts are only correct in combination is implemented as a single component/class, and its parts are private to it;
-  expose a minimal public surface. Java-like encapsulation: If helper functions and constants are only used by one abstraction,
-  make them internal to the respective class.
-* For any non-trivial interfaces, you use functions/methods that expect explicitly typed abstractions
-  rather than mere functions (i.e. use the strategy pattern, for example).
-* Prefer declaring and instantiating concrete classes over defining only interfaces and using object literals.
-
-Comments:
-* When describing parameters, methods/functions and classes, you use a precise style, where the initial (elliptical) phrase
-  clearly defines *what* it is. Any details then follow in subsequent sentences.
-* When describing what blocks of code do, you also use an elliptical style and start with a lower-case letter unless
-  the comment is a lengthy explanation with at least two sentences (in which case you start with a capital letter, as is
-  required for sentences).
-
-Syntax: 
-* Never use if blocks (or other blocks) without braces, even for single-line cases.
-
-## Project Structure (Excerpt)
-
-```
-mcp/
-├── packages/common/           # Shared type definitions
-│   ├── src/
-│   │   ├── index.ts           # exports for shared types
-│   │   └── types.ts           # PluginTaskResult, request/response interfaces
-│   └── package.json           # @penpot-mcp/common package
-├── packages/server/           # MCP server subproject
-│   ├── src/
-│   │   ├── index.ts           # entry point
-│   │   ├── PenpotMcpServer.ts # MCP server implementation (connection handling, tool registration, etc.)
-│   │   ├── Tool.ts            # base class for tools
-│   │   ├── PluginTask.ts      # base class for plugin tasks
-│   │   ├── tasks/             # PluginTask implementations
-│   │   └── tools/             # Tool implementations
-|   ├── data/                  # contains resources, such as API info and prompts
-│   └── package.json           
-├── packages/plugin/           # Penpot plugin subproject
-│   ├── src/
-│   │   ├── main.ts            # handles communication
-│   │   └── plugin.ts          # plugin implementation
-│   └── package.json           # Plugin deps: published plugin-styles, linked plugin-types
-└── prepare-api-docs           # Python project for the generation of API docs
-```
-
-## Key Development Tasks
-
-### Adjusting the Prompts
-
-The system prompt file (aka Penpot High-Level Overview) is located in 
-`packages/server/data/initial_instructions.md`.
-
-### Adding a new Tool
-
-1. Implement the tool class in `packages/server/src/tools/` following the `Tool` interface.
-   IMPORTANT: Do not catch any exceptions in the `executeCore` method. Let them propagate to be handled centrally.
-2. Register the tool in `PenpotMcpServer`.
-
-Tools can be associated with a `PluginTask` that is executed in the plugin.
-Many tools build on `ExecuteCodePluginTask`, as many operations can be reduced to code execution.
-
-### Adding a new PluginTask
-
-1. Implement the input data interface for the task in `packages/common/src/types.ts`.
-2. Implement the `PluginTask` class in `packages/server/src/tasks/`.
-3. Implement the corresponding task handler class in the plugin (`packages/plugin/src/task-handlers/`).
-    * In the success case, call `task.sendSuccess`.
-    * In the failure case, just throw an exception, which will be handled centrally!
-4. Register the task handler in `packages/plugin/src/plugin.ts` in the `taskHandlers` list.
-
-## Dev Tooling
-
-From the `mcp/` directory, run
-
-* `pnpm run build` to test the build of all packages
-* `pnpm run fmt` to apply the auto-formatter
-* `pnpm run test` runs the tests of `plugin` (node test runner) and `server` (tsx).
-  The committed `typescript` version is 6.x: the 7.x line ships only a version stub
-  at the `typescript` entry point, and its synchronous compiler API is gone, so
-  `ts.transpileModule` (used by the plugin tests to compile `main.ts`/`plugin.ts`
-  into a sandboxed browser-like context) fails there.
-* `packages/server` type-checks against the built `dist` of `@penpot/mcp-common`;
-  a stale `packages/common/dist` makes `types:check` fail with missing exports
-  (e.g. `PenpotSession`). Run `pnpm --filter mcp-common run build` first.
-* The server logger (`packages/server/src/logger.ts`) uses pino transports only
-  outside `node:test` (`logTransportTargets`). A transport spawns a worker thread
-  whose message port stays referenced once a line is in flight, so the test child
-  process keeps running after the tests finish and the suite hangs intermittently
-  (node reports `Promise resolution is still pending but the event loop has
-  already resolved` for the file's root test). Inside tests the logger writes to
-  stdout directly. `NODE_TEST_CONTEXT` is the env var `node --test` sets.
-* `packages/plugin` takes `@penpot/plugin-styles` from the registry but links
-  `@penpot/plugin-types` to `plugins/libs/plugin-types` (`link:` in the manifest
-  and in `mcp/pnpm-lock.yaml`, with no registry entry, because a linked package
-  has no resolution): the published types do not declare the `penpotMgmt`
-  global the plugin needs. On a plugins libs version bump, only the styles
-  version moves. After editing the manifest, `pnpm install --lockfile-only` in
-  `mcp/` must leave the lock untouched.
-* Cross-cutting testing principles and anti-patterns: `mem:testing`.
-
-## OAuth for remote MCP clients
-
-- Authorization/discovery URLs, self-contained client IDs, consent and PKCE/code binding, backend Redis state, deployment wiring, and compatibility limits: `mem:mcp/oauth`.
-
-## Host and Origin allowlist (`RequestGuard`)
-
-- `RequestGuard` checks `Host` and `Origin` (hostname only, port ignored) on `/mcp`, the REPL (Express middleware, 403) and the plugin WebSocket (close `1008` before any message is read). It stops web pages on the user's machine from driving a local server (DNS rebinding, cross-site WebSocket).
-- Allowlist: `PENPOT_MCP_ALLOWED_HOSTS` (`*` turns the check off); unset → loopback only in single-user mode (local or remote: no other barrier, `execute_code` still runs in the user's session), any host in multi-user mode (relies on user tokens; behind nginx `/mcp/ws` the server sees `Host: penpot-mcp:4402`). A missing `Origin` passes (non-browser clients).
-- Entries must be `*`, a hostname or a bracketed IPv6 address; one with a scheme, port or path makes `fromEnvironment` throw, so the server does not start. Startup logs a `warn` when the check is off in single-user mode.
-- The plugin iframe has `allow-same-origin`, so its WebSocket carries the real plugin origin (`http://localhost:4400` locally, the Penpot origin when integrated).
-- Test mocks of `PenpotMcpServer` passed to `PluginBridge` must provide `requestGuard`.
-
-## Backend tools (`submit_feedback`)
-
-- Tools that call the Penpot backend directly (not through the plugin) register only when `PENPOT_MCP_BACKEND_URI` is nonblank (`PenpotMcpServer.initTools`). Currently only `SubmitFeedbackTool`.
-- `PenpotBackendClient` owns the HTTP call and the status-to-message mapping; it posts to `api/main/methods/send-mcp-feedback` with `Authorization: Token <MCP user token>`. The token comes from the session context (OAuth bearer or `?userToken=`); without one the tool fails before calling the backend.
-- Tool zod schemas mirror the backend malli schema (lengths, blank, control characters); keep both in sync. The backend is the authority.
-- Success means the mail job was queued, not delivered; the tool text says so. `formatArgs` hides the feedback from logs.
-- Backend side: `send-mcp-feedback` in `app.rpc.commands.feedback`, configured by `PENPOT_MCP_FEEDBACK_EMAIL`; MCP-token auth rules in `mem:backend/auth-permissions-product-domains`.
-- User docs: `mcp/README.md` (env tables), `docs/mcp/index.md` (tool list), `docs/technical-guide/configuration.md` (MCP feedback section).
-
-## Devenv plugin/server wiring
-
-In the normal Penpot devenv MCP path, the browser plugin does not discover or route through Postgres. The frontend provides the plugin extension API with `mcp.getServerUrl()`, currently derived from `frontend/src/app/config.cljs` as `penpotMcpServerURI` if set, otherwise `<public-uri>/mcp/ws`. The MCP plugin opens a direct WebSocket to that URL and appends the current MCP access token as a query parameter.
-
-The live plugin connection registry is in-memory inside each MCP server process (`PluginBridge.connectedClients` / `clientsByToken`). The database only stores MCP access tokens and profile props such as `mcp-enabled`; it does not manage which plugin is connected to which MCP server.
-
-For parallel devenvs, prefer same-origin MCP routing: each Penpot instance should expose `/mcp/ws` through its own nginx/Caddy path to the MCP server running inside the same main container. Keep container-internal ports fixed (MCP defaults `4401/4402/4403`, backend/exporter/frontend defaults, etc.) and only offset host-side published ports per instance. If internal ports are offset, hardcoded local proxy config such as `docker/devenv/files/nginx.conf` will misroute unless templated too.
-
-## Plugin reconnect policy
-
-- The plugin treats WebSocket close code `1008` (policy violation) as terminal: it stops auto-reconnecting and stays disconnected until the user explicitly reconnects. Other close codes keep the capped-backoff retry. The decision lives in `ReconnectPolicy.ts` (`shouldReconnectAfterClose`), kept as a pure module so it is unit-testable without DOM/CSS.
-- The MCP server emits `1008` for a `Host`/`Origin` outside the `RequestGuard` allowlist, for a missing `userToken` in multi-user mode, for missing/invalid connection metadata, and to close a connection displaced by a newer one with the same user and session ID.
-- Session IDs are deterministic per tab and file, so a reconnect reuses its ID while the old socket may be half-open: the newest connection wins (`PluginBridge.displaceConnection`). Across instances, each new connection publishes a session claim on a per-user Redis channel; an instance displaces its local connection only on a foreign claim that arrives after its own claim (channel order, no clocks). Discovery deduplicates by session ID.
-- A tab rejected with `1008` never reaches `connected`, so the frontend's 60s reconnect watcher (`start-reconnect-watcher` in `app.main.data.workspace.mcp`, started only on `connected`) does not engage; recovery is manual via the MCP menu.
-
-## Rollback warnings
-
-- `ExecuteCodeTaskHandler` awaits `penpot.waitForSave()` after the code and outside its swallow catch, so a save failure, save timeout or rollback during the wait fails that `execute_code` call itself. It hard-fails as "missing Plugin API support" when `penpot.waitForSave` is absent (old Penpot or stale runtime build, or broken `api.cljs` wiring). Both waits run only when `penpotMgmt.workspace.status` is `"ready"` (or there is no `penpotMgmt`), checked at each wait: dashboard calls skip them, because persistence `:error` outlives the workspace and would fail successful `penpotMgmt` calls. Budget: layout wait 30s before the code + save wait 60s after it, under `PENPOT_MCP_TOOL_TIMEOUT_S` (120s). `RollbackNotices` below only cover rollbacks that land after the call returned (concurrent edits, a response after a timeout).
-- The plugin's `RollbackLog` (`packages/plugin/src/RollbackLog.ts`) holds the `contentrollback` events not yet sent with a task response; `Task.sendResponse` attaches them and acknowledges them once sent, and the server's `unclaimed-rollbacks` message (a response that came after its task timed out) puts them back. With a `RollbackStore` (`LocalStorageRollbackStore` over `penpot.localStorage`, one entry per file) every change is written through, so a reload of the tab or plugin keeps them; storage failures fall back to memory. Plugin tests run with `node --experimental-strip-types`, which rejects TypeScript parameter properties: declare fields explicitly.
+- See `mem:scripts/ci` and `mem:testing`. Server type-checks read the built `mcp-common` package; rebuild it with `pnpm --filter mcp-common run build` from `mcp/` before diagnosing missing exports.
+- Plugin tests use `ts.transpileModule`; do not upgrade past TypeScript 6 without replacing that dependency in the test harness. The Node test runner's `--experimental-strip-types` also rejects parameter properties: declare fields explicitly.
+- Keep Pino transports disabled under `NODE_TEST_CONTEXT`; the transport worker can keep a child test process alive after its tests finish.
+- The plugin uses published `@penpot/plugin-styles` but links `@penpot/plugin-types` from the workspace for `penpotMgmt`. Do not replace the link with a registry pin during a version bump. Verify that regenerating the lockfile produces no additional diff.

@@ -1,0 +1,7 @@
+# MCP OAuth client identification
+
+- Start at `backend/src/app/mcp/oauth_clients.clj`. Registration issues a reusable self-contained ID, not a client record. Its metadata is public, unsigned and unencrypted: validate it on every resolution. A generated client secret is separate; only its hash is in the ID. Keep registrations reusable across flows without expiring Redis registration state.
+- An edited payload is a different ID. At code exchange compare the exact ID string with the approved request before resolving metadata, rather than comparing decoded fields; otherwise code ownership and PKCE binding can be bypassed.
+- Dynamic registration supports public clients and Basic or form-post client secrets. HTTPS client metadata documents (CIMD) select public-client `none`. A document advertising extra grants is not proof those grants are implemented: require `authorization_code` and normalize to the supported grant.
+- Redirect matching is exact except for the port of an HTTP loopback redirect. Host, path and query still match; reject userinfo, fragments and lookalike localhost hosts. Supported schemes and validation rules are in `redirect-matches?` and `validate-metadata`.
+- Fetch CIMD through the SSRF-checked HTTP client without redirects, with bounded body and timeouts, and require the returned `client_id` to match. Cache no longer than the publisher allows; absent cache lifetime, `no-cache` and `no-store` mean no reuse. See `fetch-metadata` and its tests for current bounds.

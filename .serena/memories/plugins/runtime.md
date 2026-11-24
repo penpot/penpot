@@ -1,0 +1,7 @@
+# Plugin runtime
+
+- Start in `plugins/libs/plugins-runtime/src/index.ts` and `lib/{bootstrap,load-plugin,create-sandbox,plugin-manager}.ts` under `src/`. For how the frontend initializes the runtime and reports failure, see `mem:frontend/plugin-api-to-cljs-binding`.
+- SES repairs intrinsics at module load and hardens them when the first sandbox is created. If repair throws, the app still boots without installing the plugin globals; this does not mean SES left the host untouched. Do not run plugins on that path. Do not deep-freeze the host context in the loader: it can freeze shared host prototypes too early. Apply `ses.safeReturn` at the sandbox boundary instead. `load-plugin-real-path.spec.ts` tests the production order without hardening up front.
+- Opening a workspace plugin closes other ordinary plugins, not global or background plugins. Survivors must remain in the registry because it routes iframe messages and lets `ɵunloadPlugin` find them. Opening a global plugin does not close existing plugins and ignores a duplicate load, including one still pending.
+- `ɵunloadPlugin` cancels a pending load as well as closing a registered instance. A close can happen during startup: guard evaluation and registration after awaits, and only clear the pending entry owned by that load so a late completion cannot erase a newer one.
+- Preserve cleanup on evaluation failure and explicit close. Queued callbacks can outlive close, so check `destroyed` before invoking plugin code. Track plugin-originated errors out of band: SES can freeze the error object.

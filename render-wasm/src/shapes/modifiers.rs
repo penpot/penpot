@@ -114,7 +114,7 @@ fn calculate_masked_group_bounds(
     shapes: ShapesPoolRef,
     bounds: &HashMap<Uuid, Bounds>,
 ) -> Option<Bounds> {
-    let mask = shape.mask_id().and_then(|id| shapes.get(id))?;
+    let mask = shape.mask_id().and_then(|id| shapes.get(&id))?;
     Some(bounds.find(mask))
 }
 

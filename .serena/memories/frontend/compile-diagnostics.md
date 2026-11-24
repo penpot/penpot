@@ -1,32 +1,6 @@
-# Frontend Compile Diagnostics
+# Frontend compile diagnostics
 
-Separate from runtime crash recovery.
-
-## First check the shadow-cljs build
-
-Use the Penpot MCP `cljs_compiler_output` tool to inspect the latest shadow-cljs `:main` build status. This is the fastest way to distinguish a bad build from a runtime error in the browser.
-
-Recommended order after CLJ/CLJC/CLJS source edits:
-1. Run `cljs_compiler_output`.
-2. If the compiler reports a Clojure syntax problem, especially unmatched delimiters or a confusing location, run `clj_check_parentheses` on the absolute path of the suspect `.clj`, `.cljc`, or `.cljs` file.
-3. After the build is healthy, use `mem:frontend/cljs-repl`, browser tools, or runtime crash checks for behavior.
-
-## Parentheses checker
-
-`clj_check_parentheses` analyzes one Clojure/ClojureScript source file and reports the area likely responsible for unclosed parentheses/brackets/braces. Use it when compiler output points near EOF, points at a misleading later form, or says delimiter-related syntax errors.
-
-## Test build warnings
-
-`clojure -M:dev:shadow-cljs compile test` (from `frontend/`) is the compile that
-prints the analyzer warnings CI reports. Warnings are printed only for the
-namespaces the compiler actually recompiles, so a cached build reports none
-while old ones are still latent: force it with
-`find test -name '*.cljs' -exec touch {} +` (or by clearing
-`.shadow-cljs/builds/test`) before claiming a clean tree. Why `:fn-arity`
-cannot be ignored: `mem:frontend/testing`.
-
-## Hot reload notes
-
-When the frontend shadow-cljs watch process is running, edits to CLJC files in `common/` are normally recompiled into the browser automatically. Do not restart the frontend before checking `cljs_compiler_output`; stale behavior is often a failed build.
-
-For production/minified stack traces, build the production bundle from `frontend/` with `pnpm run build:app`. Output and source maps are generated under `frontend/resources/public/js`; inspect source maps or shadow-cljs reports using build ids from `shadow-cljs.edn`.
+- Diagnose the `:main` shadow-cljs build before restarting the app or treating stale behavior as a runtime bug. Read the watch output or use Penpot MCP `cljs_compiler_output` if available. `common/` CLJC changes normally recompile through the same watch.
+- A delimiter error can point to a later form or EOF. Repair the affected file before linting with `bb scripts/paren-repair <file>` from the repo root. Penpot MCP `clj_check_parentheses`, if available, can help locate the mismatch.
+- From `frontend/`, `clojure -M:dev:shadow-cljs compile test` reports analyzer warnings only for namespaces it recompiles. A warm incremental run with no warnings is not evidence that old warnings are gone; use a fresh test build cache to verify the whole target. Treat `:fn-arity` as a defect; see `mem:frontend/testing-unit`.
+- If the build succeeds but the browser still fails, use `mem:frontend/cljs-repl` or `mem:frontend/handling-crashes`. For minified stacks, consult the release targets and source-map settings in `frontend/shadow-cljs.edn` and the build commands in `frontend/package.json`.
