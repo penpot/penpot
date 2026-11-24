@@ -88,9 +88,11 @@
 
                base-id         (:parent-id base)
 
+               keep-parent?    (not (or selected-frame? (empty? selected) (nil? base)))
+
                frame-id        (or frame-id
                                    (cond
-                                     (or selected-frame? (empty? selected) (nil? base))
+                                     (not keep-parent?)
                                      (ctst/top-nested-frame objects position)
 
                                      (= :frame (dm/get-in objects [base-id :type]))
@@ -99,9 +101,7 @@
                                      :else
                                      (dm/get-in objects [base-id :frame-id])))
 
-               parent-id       (if (or selected-frame? (empty? selected) (nil? base))
-                                 frame-id
-                                 base-id)
+               parent-id       (if keep-parent? base-id frame-id)
 
                [new-shape new-children]
                (sb/create-svg-shapes id svg-data position objects frame-id parent-id selected true)

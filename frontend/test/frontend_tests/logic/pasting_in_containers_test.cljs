@@ -1014,7 +1014,7 @@
      (dwsvg/add-svg-shapes nil svg-data position nil)]))
 
 (defn- check-svg-in-group
-  [new-state]
+  [new-state expected-frame-id]
   (let [file'   (ths/get-file-from-state new-state)
         objects (:objects (cthf/current-page file'))
         svg'    (->> (vals objects)
@@ -1022,7 +1022,9 @@
                      first)
         parent' (get objects (:parent-id svg'))]
     ;; The shape is created inside the group, with the group's frame
+    (t/is (some? svg'))
     (t/is (= :group (:type parent')))
+    (t/is (= expected-frame-id (:frame-id svg')))
     (t/is (= (:frame-id parent') (:frame-id svg')))
     (cthf/validate-file! file')))
 
@@ -1041,7 +1043,10 @@
           events (svg-upload-in-group-events (cths/get-shape file :rect1)
                                              (gpt/point 2000 2000))]
 
-      (ths/run-store store done events check-svg-in-group))))
+      (ths/run-store
+       store done events
+       (fn [new-state]
+         (check-svg-in-group new-state (:id (cths/get-shape file :board))))))))
 
 (t/deftest svg-upload-in-group-at-root-uses-group-frame
   "Uploading an SVG with a selection inside a group at the root keeps the root as frame, even with the cursor over a board"
@@ -1057,7 +1062,48 @@
           events (svg-upload-in-group-events (cths/get-shape file :rect1)
                                              (gpt/point 1200 1200))]
 
-      (ths/run-store store done events check-svg-in-group))))
+      (ths/run-store
+       store done events
+       (fn [new-state]
+         (check-svg-in-group new-state uuid/zero))))))
+
+(t/deftest svg-upload-in-board-keeps-parent-board
+  "Uploading an SVG with a shape selected directly in a board keeps that board as frame, even with the cursor over another board"
+  (t/async
+    done
+    (let [;; ==== Setup
+          file     (-> (cthf/sample-file :file1)
+                       (ctho/add-frame :board-a {:name "board-a" :x 0 :y 0 :width 500 :height 500})
+                       (ctho/add-frame :board-b {:name "board-b" :x 1000 :y 1000 :width 500 :height 500})
+                       (cths/add-sample-shape :rect1 :parent-label :board-a
+                                              :x 10 :y 10 :width 50 :height 50))
+          store    (ths/setup-store file)
+
+          ;; ==== Action
+          svg-data {:name "test.svg"
+                    :attrs {:width 100 :height 100}
+                    :content [{:tag :rect
+                               :attrs {:x "10" :y "10" :width "20" :height "20"}}]}
+
+          events   [(dws/select-shapes (d/ordered-set (:id (cths/get-shape file :rect1))))
+                    (dwsvg/add-svg-shapes nil svg-data (gpt/point 1200 1200) nil)]]
+
+      (ths/run-store
+       store done events
+       (fn [new-state]
+         (let [;; ==== Get
+               file'   (ths/get-file-from-state new-state)
+               objects (:objects (cthf/current-page file'))
+               svg'    (->> (vals objects)
+                            (filter #(= (:name %) "test"))
+                            first)
+               board-a (cths/get-shape file :board-a)]
+
+           ;; ==== Check
+           (t/is (some? svg'))
+           (t/is (= (:id board-a) (:frame-id svg')))
+           (t/is (= (:id board-a) (:parent-id svg')))
+           (cthf/validate-file! file')))))))
 
 (t/deftest props-paste-with-unloaded-page-is-noop
   "Pasting props while the page is not loaded is ignored instead of crashing"
