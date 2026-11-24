@@ -40,9 +40,7 @@
           (reset! downloading? true)
           (->> (http/send! {:method :get :uri link :response-type :blob :mode :no-cors})
                (rx/subs! (fn [{:keys [body] :as response}]
-                           (open-import-modal {:name name
-                                               :uri  (wapi/create-uri body)
-                                               :blob body}))
+                           (open-import-modal {:name name :uri (wapi/create-uri body)}))
                          (fn [error]
                            (reset! downloading? false)
                            (js/console.error "error" error))
