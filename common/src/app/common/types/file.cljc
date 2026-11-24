@@ -652,7 +652,9 @@
           (ctkl/mark-component-deleted component-id)))))
 
 (defn restore-component
-  "Recover a deleted component and all its shapes and put all this again in place."
+  "Restore a deleted component record, optionally updating its main instance page.
+  Remove the stored objects and, for a variant, take its variant id from the
+  existing main instance shape. This does not restore shapes to the page."
   [file-data component-id page-id]
   (let [update-page?       (not (nil? page-id))
         component          (ctkl/get-component file-data component-id true)

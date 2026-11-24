@@ -172,6 +172,20 @@
      :child-id child-id
      :component-id component-id}))
 
+(t/deftest restore-component-alone-does-not-restore-shapes
+  (let [{:keys [data page-id main-id child-id component-id]} (make-deleted-component)
+        deleted (ch/process-changes data [{:type :del-obj :id main-id :page-id page-id}])
+        restored (ch/process-changes deleted [{:type :restore-component
+                                               :id component-id :page-id page-id}])
+        component (get-in restored [:components component-id])]
+    (t/is (true? (get-in deleted [:components component-id :deleted])))
+    (t/is (some? (get-in deleted [:components component-id :objects main-id])))
+    (t/is (not (contains? component :deleted)))
+    (t/is (not (contains? component :objects)))
+    (t/is (= page-id (:main-instance-page component)))
+    (t/is (nil? (get-in restored [:pages-index page-id :objects main-id])))
+    (t/is (nil? (get-in restored [:pages-index page-id :objects child-id])))))
+
 (t/deftest update-component-does-not-carry-the-objects-map
   (let [{:keys [data component-id]} (make-deleted-component)
         changes (pcb/update-component (pcb/with-library-data (pcb/empty-changes nil) data)
