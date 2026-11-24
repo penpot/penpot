@@ -4,6 +4,10 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
+@use "ds/_utils.scss" as *;
+
+// Only for the constraints widget (raw buttons) and the "Fix when
+// scrolling" checkbox, which moves to the DS with the checkboxes group.
 @use "refactor/common-refactor.scss" as deprecated;
 
 .element-set {
@@ -131,13 +135,12 @@
 .constraints-selects {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--sp-xs);
 }
 
 .horizontal-select,
 .vertical-select {
-  width: deprecated.$s-124;
-  padding: 0;
+  inline-size: px2rem(124);
 }
 
 .checkbox {
