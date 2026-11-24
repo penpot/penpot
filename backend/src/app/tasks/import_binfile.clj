@@ -174,6 +174,7 @@
   outside any request, so the event carries no request context."
   [cfg {:keys [params status result] :as job}]
   (let [{:keys [project-id team-id name version generated-by referer]} params
+        ;; Fallback for older jobs without a team-id; remove in 2.21.0.
         team-id  (or team-id (:team-id (db/get* cfg :project {:id project-id})))
         file-ids (:file-ids result)
         props    (cond-> {:project-id   project-id
