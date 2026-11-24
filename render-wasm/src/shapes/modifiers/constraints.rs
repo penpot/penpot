@@ -134,7 +134,7 @@ pub fn propagate_shape_constraints(
         parent_transform.post_translate(center);
         parent_transform.pre_translate(-center);
 
-        let parent_transform_inv = &parent_transform.invert().ok_or(Error::CriticalError(
+        let parent_transform_inv = &parent_transform.invert().ok_or(Error::RecoverableError(
             "Failed to invert parent transform".to_string(),
         ))?;
         let origin = parent_transform_inv.map_point(child_bounds_after.nw);

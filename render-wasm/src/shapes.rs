@@ -1785,6 +1785,11 @@ impl Shape {
         }
     }
 
+    /// Whether flex layout places this shape: neither absolute nor hidden.
+    pub fn is_in_flow(&self) -> bool {
+        !self.is_absolute() && !self.hidden()
+    }
+
     pub fn z_index(&self) -> i32 {
         match &self.layout_item {
             Some(LayoutItem {
