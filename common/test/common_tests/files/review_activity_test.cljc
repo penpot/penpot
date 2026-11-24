@@ -140,3 +140,14 @@
         result  (ra/sessions rows)]
     (t/is (= [marc marc ana] (mapv :profile-id result)))
     (t/is (= {:r1 [8 12]} (-> result last :entries first :attrs)))))
+
+(t/deftest sessions-carry-the-revn-of-their-last-save
+  (let [minute  (* 60 1000)
+        rows    [(assoc (row ana 0 [(assoc modified-entry :attrs {:r1 [8 10]})]) :revn 3)
+                 (assoc (row ana (* 10 minute) [(assoc modified-entry :attrs {:r1 [10 12]})]) :revn 5)
+                 (assoc (row marc (* 20 minute) [(assoc modified-entry :attrs {:r1 [12 14]})]) :revn 6)
+                 (assoc (row marc (* 90 minute) [(assoc modified-entry :attrs {:r1 [14 16]})]) :revn 9)]
+        result  (ra/sessions rows)]
+    (t/is (= [9 6 5] (mapv :revn result)))
+    (t/testing "a sitting whose rows carry no revn has none"
+      (t/is (nil? (:revn (first (ra/sessions [(row ana 0 [(assoc modified-entry :attrs {:r1 [8 10]})])]))))))))

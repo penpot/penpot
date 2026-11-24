@@ -90,6 +90,11 @@
 (def review-activity
   (l/derived :workspace-review-activity st/state))
 
+(def review-layers
+  "The layers the activity cards draw as their sitting left them, by
+  `app.main.data.workspace.review/layer-key`."
+  (l/derived :workspace-review-layers st/state))
+
 (def pending-reviews
   ;; dashboard: open branch reviews awaiting the current profile's review
   (l/derived #(get % :dashboard-pending-reviews) st/state))

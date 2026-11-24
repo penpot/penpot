@@ -531,7 +531,7 @@
   500)
 
 (def ^:private sql:get-branch-review-activity
-  "SELECT a.id, a.profile_id, a.entries, a.created_at
+  "SELECT a.id, a.profile_id, a.revn, a.entries, a.created_at
      FROM file_branch_review_activity AS a
     WHERE a.review_id = ?
     ORDER BY a.created_at ASC, a.id ASC")
@@ -609,9 +609,11 @@
   "What the saves of the branch did to its layers since the branch review
   opened, folded on the server: `:entries` what each layer ends up as
   (`app.common.files.review-activity/net-entries`), `:sessions` the
-  sittings of saves the activity lists, `:people` how many people saved
-  and `:last-save` the newest save. Every row of the review is read, so
-  the oldest change still counts in what a layer ends up as."
+  sittings of saves the activity lists, each with the branch `:revn` its
+  last save produced (what `get-branch-layer-at-revision` takes),
+  `:people` how many people saved, and `:last-save` the newest save.
+  Every row of the review is read, so the oldest change still counts in
+  what a layer ends up as."
   {::doc/added "2.16"
    ::sm/params schema:get-branch-review-activity
    ::climit/id [[:get-branch-review-activity/global]]}
