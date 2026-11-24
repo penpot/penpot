@@ -35,7 +35,7 @@ Geometry and layout:
 
 Change pipeline, validation, and migrations:
 - Change records, undo/redo architecture, changes-builder API, and production-path mutation guidance: `mem:common/changes-architecture`.
-- Change application, shape-tree edits, validation/repair, and second-pass touched behavior: `mem:common/file-change-validation-migration-subtleties`.
+- Change application, shape-tree edits and second-pass touched behavior: `mem:common/change-application`. File validation and repair: `mem:common/file-validation`.
 - Adding, renumbering or replacing a file migration: `mem:common/file-migrations`.
 
 Components, variants, and debugging:
