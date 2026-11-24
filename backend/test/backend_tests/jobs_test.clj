@@ -163,6 +163,62 @@
       nil)
     (-purge [_ _] nil)))
 
+(t/deftest terminal-hooks-run-in-the-winning-transaction
+  (doseq [[status transition terminal-status result error]
+          [["running" (fn [cfg id] (jobs/complete cfg :job-id id :result {:value 1}))
+            "completed" {:value 1} nil]
+           ["running" (fn [cfg id] (jobs/fail cfg id test-error))
+            "failed" nil test-error]
+           ["new" jobs/cancel "cancelled" nil nil]]]
+    (let [seen   (atom [])
+          defs   (assoc-in (get-job-defs) [:echo ::jobs/on-terminal]
+                           (fn [tx-cfg job]
+                             (swap! seen conj job)
+                             (db/exec-one! tx-cfg ["UPDATE job SET label = ? WHERE id = ?"
+                                                   "hook-ran" (:id job)])))
+          cfg    (make-cfg defs)
+          params (make-params)
+          id     (jobs/submit cfg {::jobs/name :echo ::jobs/params params})]
+      (th/db-exec! ["UPDATE job SET status = ? WHERE id = ?" status id])
+      (t/is (= 1 (transition cfg id)))
+      (t/is (= 0 (transition cfg id)))
+      (t/is (= 1 (count @seen)))
+      (t/is (= id (:id (first @seen))))
+      (t/is (= params (:params (first @seen))))
+      (t/is (= terminal-status (:status (first @seen))))
+      (t/is (= result (:result (first @seen))))
+      (t/is (= error (:error (first @seen))))
+      (t/is (= (= terminal-status "completed") (contains? (first @seen) :result)))
+      (t/is (= (= terminal-status "failed") (contains? (first @seen) :error)))
+      (t/is (= "hook-ran" (:label (jobs/get-job cfg id)))))))
+
+(t/deftest terminal-hook-failure-rolls-back-transition-and-writes
+  (doseq [[status transition]
+          [["running" (fn [cfg id] (jobs/complete cfg :job-id id :result nil))]
+           ["running" (fn [cfg id] (jobs/fail cfg id test-error))]
+           ["new" jobs/cancel]]]
+    (let [defs (assoc-in (get-job-defs) [:echo ::jobs/on-terminal]
+                         (fn [tx-cfg job]
+                           (db/exec-one! tx-cfg ["UPDATE job SET label = ? WHERE id = ?"
+                                                 "rolled-back" (:id job)])
+                           (throw (ex-info "hook failed" {}))))
+          cfg  (make-cfg defs)
+          id   (jobs/submit cfg {::jobs/name :echo ::jobs/params (make-params)})]
+      (th/db-exec! ["UPDATE job SET status = ? WHERE id = ?" status id])
+      (t/is (some? (raised #(transition cfg id))))
+      (t/is (= status (:status (jobs/get-job cfg id))))
+      (t/is (not= "rolled-back" (:label (jobs/get-job cfg id))))
+      (t/is (empty? (get-outcomes id))))))
+
+(t/deftest terminal-transitions-allow-a-missing-definition-or-hook
+  (doseq [remove-definition [false true]]
+    (let [defs (get-job-defs)
+          cfg  (make-cfg defs)
+          id   (jobs/submit cfg {::jobs/name :echo ::jobs/params (make-params)})
+          cfg  (if remove-definition (assoc cfg ::jobs/defs {}) cfg)]
+      (t/is (= 1 (jobs/cancel cfg id)))
+      (t/is (= ["cancelled"] (get-outcomes id))))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TESTS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -77,6 +77,9 @@ PR descriptions follow this structure:
 The "Note:" line is required at the top. Adjust if this is a manual (non-AI) PR.
 When the PR requests a regular merge instead of a squash merge, its
 `**Merge:**` line goes above the `**Note:**` line (see Merge Strategy).
+For AI-assisted work, include one `AI-assisted-by:` trailer per model that
+worked on the branch, using the canonical model ID rules in
+`mem:workflow/creating-commits`. Preserve the attributions when updating a PR.
 
 ## Writing Principles
 

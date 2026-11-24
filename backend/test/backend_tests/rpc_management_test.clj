@@ -16,6 +16,7 @@
    [app.db :as db]
    [app.http :as http]
    [app.rpc :as-alias rpc]
+   [app.rpc.commands.management :as management]
    [app.storage :as sto]
    [backend-tests.helpers :as th]
    [backend-tests.storage-test :refer [configure-storage-backend]]
@@ -670,6 +671,35 @@
       ;; the file2 should not have any link to libraries
       (let [rows (th/db-query :file-library-rel {:file-id (:id file2)})]
         (t/is (zero? (count rows)))))))
+
+(t/deftest move-project-locks-before-validating
+  (let [profile (th/create-profile* 1 {:is-active true})
+        project-id (:default-project-id profile)
+        locked  (promise)
+        release (promise)
+        holder  (future
+                  (db/tx-run! th/*system*
+                              (fn [{:keys [::db/conn]}]
+                                (db/exec-one! conn ["SELECT id FROM project WHERE id = ? FOR NO KEY UPDATE"
+                                                    project-id])
+                                (deliver locked true)
+                                (deref release 10000 ::timeout))))]
+    (try
+      (t/is (= true (deref locked 10000 ::timeout)))
+      (let [error (try
+                    (db/tx-run! th/*system*
+                                (fn [{:keys [::db/conn] :as cfg}]
+                                  (db/exec-one! conn ["SET LOCAL lock_timeout = '100ms'"])
+                                  (management/move-project
+                                   cfg {:profile-id (:id profile)
+                                        :project-id project-id
+                                        :team-id (:default-team-id profile)})))
+                    nil
+                    (catch java.sql.SQLException cause cause))]
+        (t/is (= "55P03" (some-> error .getSQLState))))
+      (finally
+        (deliver release true)
+        (t/is (not= ::timeout (deref holder 10000 ::timeout)))))))
 
 (t/deftest move-project
   (let [profile  (th/create-profile* 1 {:is-active true})

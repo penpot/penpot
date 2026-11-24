@@ -38,7 +38,9 @@ the user agrees.
    `:emoji:` title, the `**Note:**` line, and the `## What` / `## Why` /
    `## How` sections. Derive them from the commits and the issue body when
    there is one. Repeat the `AI-assisted-by:` trailer once per model that
-   worked on the branch. Put the body in a temp file to avoid shell quoting.
+   worked on the branch, using the bare canonical model ID under the rules in
+   `mem:workflow/creating-commits` (for example, `gpt-6.1-terra`). Put the
+   body in a temp file to avoid shell quoting.
 2. Decide whether the PR resolves an issue. If it does, include `Closes
    #NNNN` in the body for human readers and pass `--issue NNNN` so the
    command creates the GitHub link. If the user's invocation says `no issue`
@@ -67,6 +69,8 @@ error. Do not ask the user and do not add pre-flight checks for this case.
 1. Identify the PR: the number given by the user, or `gh pr list --head
    <branch>`.
 2. Write the new title and/or body following `mem:workflow/creating-prs`.
+   Preserve each model attribution using the same canonical model ID rules
+   as in Open mode.
 3. Apply and verify:
 
 ```bash
