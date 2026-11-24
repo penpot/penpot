@@ -88,7 +88,6 @@
          (ptk/emit! store (dwcp/enter branch))
          (ptk/emit! store (dwb/toggle-diff-excluded #{"color//a/1"}))
          (ptk/emit! store (dwb/open-conflict-resolutions {:branch branch
-                                                          :mode :merge
                                                           :conflicts [{:id (uuid/next)}]}))
          (ptk/emit! store (dwcp/exit))
          (await (async/wait-for-store store
@@ -336,7 +335,6 @@
      (mock/with-mocks* {rp/cmd! (cmd-stub calls)}
        (let [store (on-branch)]
          (ptk/emit! store (dwb/open-conflict-resolutions {:branch branch
-                                                          :mode :merge
                                                           :conflicts [{:id (uuid/next)}]}))
          (ptk/emit! store (dwcp/start-resolve))
          (await (async/wait-for #(some? (last-call calls :get-file-branch-diff))
@@ -516,13 +514,12 @@
 
 ;;; --- Resolving conflicts ---
 
-(t/deftest ^:async resolving-starts-in-the-direction-of-the-attempt
+(t/deftest ^:async resolving-starts-on-the-branch-with-main-s-changes
   (let [calls (atom [])]
     (await
      (mock/with-mocks* {rp/cmd! (cmd-stub calls)}
        (let [store (on-branch)]
          (ptk/emit! store (dwb/open-conflict-resolutions {:branch branch
-                                                          :mode :update
                                                           :conflicts [{:id (uuid/next)}]}))
          (ptk/emit! store (dwcp/start-resolve))
          (await (async/wait-for #(some? (last-call calls :get-file-branch-diff))
@@ -530,7 +527,7 @@
          (t/is (= :resolve (get-in @store [:workspace-compare :phase])))
          (t/is (= (:id branch) (get-in @store [:workspace-compare :branch :id])))
          (t/is (= :source->branch (:direction (last-call calls :get-file-branch-diff)))
-               "an update resolves main's changes")
+               "the conflicts are resolved as an update from main")
          (rx/dispose! store))))))
 
 (t/deftest ^:async conflicts-of-another-file-wait-for-their-branch
@@ -539,7 +536,6 @@
      (mock/with-mocks* {rp/cmd! (cmd-stub calls)}
        (let [store (make-store {:current-file-id main-file-id})]
          (ptk/emit! store (dwb/open-conflict-resolutions {:branch branch
-                                                          :mode :merge
                                                           :conflicts [{:id (uuid/next)}]}))
          (ptk/emit! store (dwcp/start-resolve))
          (await (async/wait-for-store store
@@ -578,30 +574,42 @@
                       diff-st)
                :workspace-branch-conflicts attempt}))
 
-(t/deftest ^:async applying-a-merge-sends-what-the-attempt-carried
+(t/deftest ^:async resolving-without-an-attempt-starts-on-the-branch-too
+  (let [calls (atom [])]
+    (await
+     (mock/with-mocks* {rp/cmd! (cmd-stub calls)}
+       (let [store (on-branch)]
+         ;; the banner's way in: the comparison of the branch is open in
+         ;; its own direction, and no command returned conflicts
+         (ptk/emit! store (dwcp/enter branch))
+         (ptk/emit! store (dwcp/start-resolve))
+         (await (async/wait-for #(= :source->branch (:direction (last-call calls :get-file-branch-diff)))
+                                "main's changes are asked for"))
+         (t/is (= :resolve (get-in @store [:workspace-compare :phase])))
+         (rx/dispose! store))))))
+
+(t/deftest ^:async applying-the-choices-updates-the-branch-with-the-attempt
   (let [calls       (atom [])
         conflict-id (uuid/next)]
     (await
      (mock/with-mocks* {rp/cmd! (cmd-stub calls)}
        (let [store (resolving conflict-id
-                              {:direction :branch->source
-                               :excluded {:branch->source #{"from-the-comparison"}}}
+                              {:direction :source->branch
+                               :excluded {:source->branch #{"from-the-comparison"}}}
                               {:branch-id (:id branch)
-                               :mode :merge
                                :conflicts [{:id conflict-id}]
                                :source-revn 7
-                               :excluded #{"from-the-attempt"}
-                               :comment "Ships the header"})]
+                               :excluded #{"from-the-attempt"}})]
          (ptk/emit! store (dwcp/apply-resolutions))
-         (await (async/wait-for #(some? (last-call calls :merge-file-branch))
-                                "the merge is asked for"))
+         (await (async/wait-for #(some? (last-call calls :update-file-branch-from-source))
+                                "the update is asked for"))
          (t/is (= {:branch-id (:id branch)
                    :resolutions {conflict-id :branch}
                    :excluded #{"from-the-attempt"}
-                   :comment "Ships the header"
                    :expected-source-revn 9}
-                  (last-call calls :merge-file-branch))
-               "only the choices of its conflicts travel, with its selection and comment")
+                  (last-call calls :update-file-branch-from-source))
+               "only the choices of its conflicts travel, with its selection")
+         (t/is (nil? (last-call calls :merge-file-branch)) "nothing is merged")
          (rx/dispose! store))))))
 
 (t/deftest ^:async applying-an-update-from-the-comparison-sends-its-selection
