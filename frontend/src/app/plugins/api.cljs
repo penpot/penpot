@@ -726,7 +726,9 @@
 
         :else
         ;; convert-selected-to-path converts the shapes in place (keeping their
-        ;; ids), so return proxies for the same ids, now resolving as paths.
+        ;; ids), so return proxies for the same ids, resolving as paths. A
+        ;; text whose font still loads becomes a path once the font is in:
+        ;; `waitForLayoutUpdate` waits for it.
         (let [file-id (:current-file-id @st/state)
               page-id (:current-page-id @st/state)
               ids (mapv #(obj/get % "$id") shapes)]

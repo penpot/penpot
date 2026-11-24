@@ -18,6 +18,7 @@
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
    [app.main.data.helpers :as dsh]
+   [app.main.data.workspace.reflow :as wrf]
    [app.main.data.workspace.selection :as dws]
    [app.main.features :as features]
    [app.render-wasm.api :as wasm.api]
@@ -41,7 +42,54 @@
       (dissoc :selrect :points)
       (path/update-geometry)))
 
+(defn- convert-to-path-in-wasm
+  "Converts the shapes `ids` to paths with the outlines WASM draws, reading
+  the page as it is when the event runs."
+  [ids]
+  (ptk/reify ::convert-to-path-in-wasm
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [page-id  (:current-page-id state)
+            objects  (dsh/lookup-page-objects state)
+            selected
+            (->> ids
+                 (filter #(contains? objects %))
+                 (remove #(ctn/has-any-copy-parent? objects (get objects %))))
+
+            children-ids
+            (into #{}
+                  (mapcat #(cph/get-children-ids objects %))
+                  selected)
+
+            changes
+            (-> (pcb/empty-changes it page-id)
+                (pcb/with-objects objects)
+                (pcb/update-shapes
+                 selected
+                 (fn [shape]
+                   ;; Keep path content in world coordinates.
+                   (if (cph/path-shape? shape)
+                     (flatten-path shape)
+                     (let [content (wasm.api/shape-to-path (:id shape))]
+                       (-> shape
+                           (assoc :type :path)
+                           (cond-> (cph/text-shape? shape)
+                             (assoc :fills
+                                    (->> (txt/node-seq txt/is-text-node? (:content shape))
+                                         (map :fills)
+                                         (first))))
+                           (cond-> (cph/image-shape? shape)
+                             (assoc :fill-image (get shape :metadata)))
+                           (d/without-keys dissoc-attrs)
+                           (path/update-geometry content))))))
+                (pcb/remove-objects children-ids))]
+        (rx/of (dch/commit-changes changes))))))
+
 (defn convert-selected-to-path
+  "Converts the shapes `ids`, or the selection, to paths. With WASM, the
+  texts among them and their descendants are outlined once their fonts are
+  loaded: a font just chosen may still be on its way. The wait is tracked
+  as `:font` reflow work, so layout waits cover the conversion."
   ([]
    (convert-selected-to-path nil))
   ([ids]
@@ -49,40 +97,16 @@
      ptk/WatchEvent
      (watch [it state _]
        (if (features/active-feature? state "render-wasm/v1")
-         (let [page-id  (:current-page-id state)
-               objects  (dsh/lookup-page-objects state)
-               selected
-               (->> (or ids (dsh/lookup-selected state))
-                    (remove #(ctn/has-any-copy-parent? objects (get objects %))))
-
-               children-ids
-               (into #{}
-                     (mapcat #(cph/get-children-ids objects %))
-                     selected)
-
-               changes
-               (-> (pcb/empty-changes it page-id)
-                   (pcb/with-objects objects)
-                   (pcb/update-shapes
-                    selected
-                    (fn [shape]
-                      ;; Keep path content in world coordinates.
-                      (if (cph/path-shape? shape)
-                        (flatten-path shape)
-                        (let [content (wasm.api/shape-to-path (:id shape))]
-                          (-> shape
-                              (assoc :type :path)
-                              (cond-> (cph/text-shape? shape)
-                                (assoc :fills
-                                       (->> (txt/node-seq txt/is-text-node? (:content shape))
-                                            (map :fills)
-                                            (first))))
-                              (cond-> (cph/image-shape? shape)
-                                (assoc :fill-image (get shape :metadata)))
-                              (d/without-keys dissoc-attrs)
-                              (path/update-geometry content))))))
-                   (pcb/remove-objects children-ids))]
-           (rx/of (dch/commit-changes changes)))
+         (let [objects (dsh/lookup-page-objects state)
+               ids     (into #{} (or ids (dsh/lookup-selected state)))
+               shapes  (into []
+                             (comp (mapcat #(cons % (cph/get-children-ids objects %)))
+                                   (keep objects))
+                             ids)]
+           (->> (rx/concat
+                 (wasm.api/await-text-fonts shapes)
+                 (rx/of (convert-to-path-in-wasm ids)))
+                (wrf/with-pending :font ids)))
 
          (let [page-id  (:current-page-id state)
                objects  (dsh/lookup-page-objects state)

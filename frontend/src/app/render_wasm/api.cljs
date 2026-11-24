@@ -1859,6 +1859,29 @@
          (rx/take 1)
          (rx/ignore))))
 
+;; Longest wait for the fonts of texts about to become paths. Past it, they
+;; are outlined with the faces WASM holds.
+(def ^:private ^:const TEXT_OUTLINE_FONT_TIMEOUT_MS 10000)
+
+(defn await-text-fonts
+  "Completes once the faces of the text `shapes` are stored in WASM or have
+  failed, after laying those texts out again: outlined while a face still
+  loads, a text would trace its fallback font. Completes at once when no
+  face is pending, and after `TEXT_OUTLINE_FONT_TIMEOUT_MS` at the latest."
+  [shapes]
+  (let [text-ids (into [] (comp (filter cfh/text-shape?) (map :id)) shapes)
+        pending  (into #{}
+                       (comp (filter cfh/text-shape?)
+                             (mapcat (comp :pending-faces text-font-state-for-shape)))
+                       shapes)]
+    (if (empty? pending)
+      (rx/empty)
+      (->> (rx/race (rx/concat (await-pending-faces pending) (rx/of :faces))
+                    (rx/map (constantly :timeout) (rx/timer TEXT_OUTLINE_FONT_TIMEOUT_MS)))
+           (rx/take 1)
+           (rx/tap (fn [_] (force-update-text-layouts text-ids)))
+           (rx/ignore)))))
+
 ;; Longest wait for the fonts of a page before revealing it, as the block
 ;; period of CSS `font-display: block`: past it, its texts show in the
 ;; fallback faces until the fonts arrive.

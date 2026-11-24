@@ -1619,6 +1619,9 @@ export interface Context {
   /**
    * Converts the shapes into Paths. If the shapes are complex will put together
    * all its paths into one.
+   * A text whose font is still loading is converted once the font is loaded,
+   * so its returned shape stays a text until then; await
+   * `penpot.waitForLayoutUpdate()` before reading it as a path.
    * @param shapes to flatten
    */
   flatten(shapes: Shape[]): Path[];
