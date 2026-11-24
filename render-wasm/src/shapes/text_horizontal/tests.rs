@@ -780,6 +780,30 @@ fn horizontal_long_ruby_counts_only_source_characters_of_its_base() {
 }
 
 #[test]
+fn adjacent_western_readings_keep_a_space_between_them() {
+    init_state();
+    let reading = |base: &str, ruby: &str| {
+        let mut span = make_span(base, 0.0);
+        span.ruby = ruby.to_string();
+        span.ruby_overhang = RubyOverhang::None;
+        span
+    };
+    let gap = |spans: Vec<TextSpan>| test_ruby_spacing(&make_paragraph(spans, 0.0)).base_gaps[0];
+
+    let alone = gap(vec![reading("i", "gwong2"), make_span("b", 0.0)]);
+    let paired = gap(vec![reading("i", "gwong2"), reading("i", "dung1")]);
+    let space = WESTERN_READING_SPACE * reading("i", "gwong2").ruby_font_size();
+    assert!(
+        (paired - alone - 2.0 * space).abs() < 0.01,
+        "the base grows by a space at each end of the reading: {alone} -> {paired}"
+    );
+
+    let kana_alone = gap(vec![reading("字", "じじじじ"), make_span("字", 0.0)]);
+    let kana_paired = gap(vec![reading("字", "じじじじ"), reading("字", "かかかか")]);
+    assert_eq!(kana_paired, kana_alone, "kana readings stay solid");
+}
+
+#[test]
 fn horizontal_short_ruby_adds_no_spacing() {
     init_state();
     let mut base = make_span("MMMM", 0.0);

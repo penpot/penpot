@@ -9,7 +9,8 @@ use skia_safe::{self as skia, Font};
 
 use crate::shapes::text_attrs::{emphasis_char_allowed, EMPHASIS_FONT_SCALE};
 use crate::shapes::text_ruby::{
-    distribute_ruby_pieces, long_ruby_gap, ruby_overhang_room, ruby_pieces, OverhangClaims,
+    distribute_ruby_pieces, long_ruby_gap, reading_end_space, ruby_overhang_room, ruby_pieces,
+    OverhangClaims,
 };
 use crate::shapes::{
     AnnotationSide, AppliedTextTransform, FontFeatures, Paragraph, RubyOverhang, TextContent,
@@ -116,6 +117,10 @@ pub(super) struct RubyBaseUnit {
     overhang: RubyOverhang,
     /// Overhang room over the characters before and after the base.
     room: (f32, f32),
+    /// Space the reading keeps at each end when it sits beside another reading.
+    beside_space: f32,
+    /// Space the reading keeps at each end of its base.
+    end_space: f32,
 }
 
 impl RubyBaseUnit {
@@ -123,9 +128,9 @@ impl RubyBaseUnit {
         self.spans.contains(&cell.span) && cell.start < self.end && cell.end > self.start
     }
 
-    /// Flow length of the reading set solid.
+    /// Flow length the reading claims: set solid, plus its end spaces.
     fn ruby_line(&self) -> f32 {
-        self.ruby_length
+        self.ruby_length + 2.0 * self.end_space
     }
 }
 
@@ -177,6 +182,8 @@ pub(super) fn ruby_base_units(
             ruby_font_size: span.ruby_font_size(),
             overhang: span.ruby_overhang,
             room: (0.0, 0.0),
+            beside_space: reading_end_space(span.ruby_text(), span.ruby_font_size(), true),
+            end_space: 0.0,
         })
         .collect()
 }
@@ -225,12 +232,12 @@ pub(super) fn set_ruby_overhang_rooms(flow: &[FlowCell], ruby_units: &mut [RubyB
     };
     let indices = annotated_indices(flow.iter().map(|item| &item.cell), ruby_units);
     let mut claims = OverhangClaims::new();
-    let rooms: Vec<(f32, f32)> = ruby_units
+    let rooms: Vec<((f32, f32), f32)> = ruby_units
         .iter()
         .zip(&indices)
         .map(|(unit, indices)| {
             let (Some(first), Some(last)) = (indices.first(), indices.last()) else {
-                return unit.room;
+                return (unit.room, unit.end_space);
             };
             let room = |index: Option<usize>| {
                 index.map_or(0.0, |index| {
@@ -246,15 +253,23 @@ pub(super) fn set_ruby_overhang_rooms(flow: &[FlowCell], ruby_units: &mut [RubyB
             let before = first.checked_sub(1);
             let after = Some(last + 1).filter(|index| *index < flow.len());
             let base: f32 = indices.iter().map(|index| flow[*index].cell.extent).sum();
-            claims.room(
+            let beside_reading = [before, after].into_iter().flatten().any(annotated);
+            let end_space = if beside_reading {
+                unit.beside_space
+            } else {
+                0.0
+            };
+            let room = claims.room(
                 before,
                 after,
                 (room(before), room(after)),
-                unit.ruby_line() - base,
-            )
+                unit.ruby_length + 2.0 * end_space - base,
+            );
+            (room, end_space)
         })
         .collect();
-    for (unit, room) in ruby_units.iter_mut().zip(rooms) {
+    for (unit, (room, end_space)) in ruby_units.iter_mut().zip(rooms) {
+        unit.end_space = end_space;
         unit.room = room;
     }
 }
@@ -327,7 +342,7 @@ pub(super) fn grow_ruby_bases(flow: &mut [FlowCell], ruby_units: &[RubyBaseUnit]
     let all_indices = annotated_indices(flow.iter().map(|item| &item.cell), ruby_units);
     for (unit, indices) in ruby_units.iter().zip(&all_indices) {
         let base_total: f32 = indices.iter().map(|index| flow[*index].cell.extent).sum();
-        let gap = long_ruby_gap(unit.ruby_length, base_total, unit.room, indices.len());
+        let gap = long_ruby_gap(unit.ruby_line(), base_total, unit.room, indices.len());
         if gap <= 0.0 {
             continue;
         }
@@ -1615,6 +1630,43 @@ mod tests {
             .iter()
             .find(|ruby| ruby.span == span)
             .expect("ruby cell")
+    }
+
+    #[test]
+    fn adjacent_western_readings_keep_a_space_between_them() {
+        let content = |second: &str| {
+            spans_content(
+                vec![
+                    TextSpan {
+                        ruby: "gwong2gwong2".to_string(),
+                        ruby_overhang: RubyOverhang::None,
+                        ..make_span("漢")
+                    },
+                    TextSpan {
+                        ruby: second.to_string(),
+                        ruby_overhang: RubyOverhang::None,
+                        ..make_span("字")
+                    },
+                ],
+                1000.0,
+            )
+        };
+        let extent = |content: &TextContent| {
+            layout_with(&provider(VMTX_TEST_FONT), content)
+                .cells
+                .iter()
+                .find(|cell| cell.span == 0)
+                .expect("base cell")
+                .extent
+        };
+        let alone = extent(&content(""));
+        let paired = extent(&content("dung1"));
+        let space =
+            crate::shapes::text_ruby::WESTERN_READING_SPACE * make_span("漢").ruby_font_size();
+        assert!(
+            (paired - alone - 2.0 * space).abs() < 0.01,
+            "the base grows by a space at each end of the reading: {alone} -> {paired}"
+        );
     }
 
     #[test]

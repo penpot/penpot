@@ -5,6 +5,7 @@ use std::collections::HashMap;
 use std::hash::Hash;
 
 use crate::shapes::jlreq::{classify, JlreqClass};
+use crate::shapes::text_shaping::is_upright_char;
 use crate::shapes::{RubyAlign, RubyOverhang};
 
 /// Room a long reading may overhang one neighbouring character (JLREQ
@@ -91,6 +92,21 @@ impl<K: Eq + Hash> OverhangClaims<K> {
             self.claimed.insert(after, ruby_overhangs(overflow, room).1);
         }
         room
+    }
+}
+
+/// Space, in ruby em, that a Western reading keeps at each end beside
+/// another reading, so adjacent readings read as separate words.
+pub(crate) const WESTERN_READING_SPACE: f32 = 0.125;
+
+/// Space a reading keeps at each end of its base: `WESTERN_READING_SPACE` for
+/// a reading without upright characters that sits `beside_reading`, none
+/// otherwise. Kana and Han readings set solid, as JLREQ mono-ruby does.
+pub(crate) fn reading_end_space(ruby_text: &str, ruby_font_size: f32, beside_reading: bool) -> f32 {
+    if beside_reading && !ruby_text.chars().any(is_upright_char) {
+        WESTERN_READING_SPACE * ruby_font_size
+    } else {
+        0.0
     }
 }
 

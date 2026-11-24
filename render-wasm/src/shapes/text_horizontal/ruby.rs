@@ -271,9 +271,14 @@ pub(super) fn horizontal_ruby_spacing_with(
         );
         let (_, pieces, _) =
             horizontal_ruby_pieces(&ruby_glyph_refs(span.ruby_text(), &shaped, ruby_font_size));
-        let ruby_length: f32 = pieces.iter().sum();
         let previous = layout_neighbour(texts, group.start, false);
         let next = layout_neighbour(texts, group.end - 1, true);
+        let beside_reading = [previous, next]
+            .into_iter()
+            .flatten()
+            .any(|(owner, _, _)| spans[owner].has_ruby());
+        let end_space = reading_end_space(span.ruby_text(), ruby_font_size, beside_reading);
+        let ruby_length: f32 = pieces.iter().sum::<f32>() + 2.0 * end_space;
         let room = |neighbour: Option<(usize, usize, char)>| {
             neighbour.map_or(0.0, |(owner, _, ch)| {
                 ruby_overhang_room(
