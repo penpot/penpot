@@ -1,6 +1,6 @@
 import { z } from "zod";
 import "reflect-metadata";
-import { TextResponse, ToolResponse } from "./ToolResponse";
+import { ErrorResponse, TextResponse, ToolResponse } from "./ToolResponse";
 import type { PenpotMcpServer, SessionContext } from "./PenpotMcpServer";
 import { createLogger } from "./logger";
 import { RollbackNotices } from "./RollbackNotices";
@@ -76,7 +76,7 @@ export abstract class Tool<TArgs extends object> {
             return result;
         } catch (error) {
             this.logger.error("Tool execution #%d failed: %s; error: %s", executionId, this.getToolName(), error);
-            return new TextResponse(`Tool execution failed: ${String(error)}`);
+            return new ErrorResponse(`Tool execution failed: ${String(error)}`);
         }
     }
 

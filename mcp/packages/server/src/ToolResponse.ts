@@ -101,6 +101,11 @@ export class TextResponse extends ToolResponse {
     }
 }
 
+/** A tool response that marks its text as a failed execution for MCP clients. */
+export class ErrorResponse extends TextResponse {
+    readonly isError = true as const;
+}
+
 export class PNGResponse extends ToolResponse {
     /**
      * @param data - PNG image data as Uint8Array or as object (from JSON conversion of Uint8Array)
