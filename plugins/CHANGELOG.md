@@ -10,6 +10,7 @@
 
 ### 🩹 Fixes
 
+- **plugin-types:** Clarified that `waitForSave` rejects while a terminal save error remains and recovery may discard unsaved changes.
 - **plugins-runtime:** Methods that rejected an invalid value with a plain string (`connectLibrary`, file `restore`, `remove`, `pin`, `export`, `findVersions`, `saveVersion`) now reject with an `Error` carrying the same message.
 - **plugin-runtime:** `LibraryComponent.instance()`, `createShapeFromSvg()` and `createShapeFromSvgWithImages()` now create shapes at the page root instead of inside a board at the page origin. Closes #12086.
 - **plugin-types, plugin-runtime:** Dashboard property setters now update values after backend success and log failures without interrupting the workspace. File moves reject projects in other teams, backend rejections include their type and code, and `project.fileCount` stays at its listing snapshot. Duplicated projects include their file count and pinned state.

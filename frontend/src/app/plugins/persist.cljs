@@ -46,9 +46,8 @@
     err))
 
 (def ^:private earlier-failure-message
-  (dm/str "Changes could not be saved: the file has a failed save that "
-          "stays until the file is reopened, so no change can be confirmed "
-          "as saved. Reopen the file to resume saving."))
+  (dm/str "Changes could not be saved: a previous save failed. "
+          "Unsaved changes may be discarded during recovery."))
 
 (def ^:private retrying-message
   (dm/str "Changes could not be saved yet: saves are failing and Penpot "
@@ -95,7 +94,7 @@
   or there is nothing to save after a short intake window.
 
   Rejects when `timeout` is invalid, the save fails (also a failure from
-  before the call: a terminal one stays until the file is reopened),
+  before the call while the error remains),
   changes are rolled back during the wait, or the deadline elapses. The
   Error `code` is `save-timeout`, `rolled-back`, `save-retrying` (an
   earlier failure Penpot keeps retrying), or the failure code

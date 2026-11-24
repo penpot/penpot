@@ -105,7 +105,7 @@
             (let [outcome (await (await-outcome (persist/wait-for-save 2000)))]
               (t/is (contains? outcome :error)
                     "terminal :error rejects waitForSave")
-              (t/is (re-find #"(?i)could not be saved.*reopen"
+              (t/is (re-find #"(?i)unsaved changes may be discarded during recovery"
                              (or (some-> (:error outcome) .-message) "")))
               (t/is (= "save-permission-denied" (error-code outcome))
                     "the stored failure code is kept")))))))))
