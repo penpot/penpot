@@ -254,7 +254,14 @@ impl ColumnGeometry {
         } else {
             1.2
         };
-        let max_font_size = spans.iter().map(|s| s.font_size).fold(12.0, f32::max);
+        // The largest span sets the column; a paragraph without spans
+        // takes 12px. Seeding the maximum with 12 widened every column of
+        // smaller text to that size.
+        let max_font_size = spans
+            .iter()
+            .map(|s| s.font_size)
+            .reduce(f32::max)
+            .unwrap_or(12.0);
 
         // Under automatic clearance, ruby reserves its configured-size gutter
         // on the logical annotation side. In vertical-rl, `over` is right and
@@ -1274,6 +1281,27 @@ mod tests {
             "three half-size characters per sub-line, got {}",
             first.extent
         );
+    }
+
+    #[test]
+    fn small_text_columns_are_as_wide_as_their_line_height() {
+        for font_size in [4.0, 8.0, 12.0, 20.0] {
+            let span = TextSpan {
+                font_size,
+                ..make_span("あい")
+            };
+            let content = content_of(
+                vec![vertical_paragraph(vec![span], TextAlign::Left, 1.4)],
+                1000.0,
+                GrowType::Fixed,
+            );
+            let layout = layout_content(&content, 1000.0);
+            let width = layout.columns[0].width;
+            assert!(
+                (width - font_size * 1.4).abs() < 0.01,
+                "a {font_size}px column is {width}px wide"
+            );
+        }
     }
 
     #[test]
