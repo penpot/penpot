@@ -25,7 +25,7 @@
   right: deprecated.$s-16;
   top: deprecated.$s-48;
   display: grid;
-  grid-template-columns: deprecated.$s-24 1fr deprecated.$s-24;
+  grid-template-columns: deprecated.$s-24 1fr auto;
   grid-template-areas:
     "icon text close"
     "bar bar bar";
@@ -50,12 +50,10 @@
 }
 
 .icon {
-  @extend %button-icon;
-
   grid-area: icon;
   align-self: center;
   margin-inline-start: deprecated.$s-8;
-  stroke: var(--export-modal-icon-color);
+  color: var(--export-modal-icon-color);
 }
 
 .title {
@@ -92,10 +90,7 @@
 }
 
 .progress-close-button {
-  @include deprecated.button-style;
-
-  padding: 0;
-  margin-inline-end: deprecated.$s-8;
+  grid-area: close;
 }
 
 .close-icon {
