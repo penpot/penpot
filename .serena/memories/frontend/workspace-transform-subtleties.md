@@ -19,3 +19,4 @@
 - WASM modifier updates set plugin/local props with parsed geometry/structure modifiers rather than directly mutating file data.
 - The position-data recomputation watcher ignores commits tagged `:position-data`; keep that tag when adding derived position-data commits.
 - Rotation has separate WASM and non-WASM event paths. Check both when changing rotation modifier semantics.
+- A `:text/reflow` signal holds the text in the reflow pending map (`:text-bridge`) until a `:text-resize` or `:text-measure` task starts; a signal no resize follows makes `waitForLayoutUpdate` time out. `reflow/signals.cljs` signals only texts auto-sized after the update, and `apply-wasm-modifiers` commits with `:text-reflow? false` because WASM already laid its texts out. A new commit path that settles text geometry itself must pass the same prop.
