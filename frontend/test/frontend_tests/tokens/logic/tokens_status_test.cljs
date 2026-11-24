@@ -1,14 +1,22 @@
 (ns frontend-tests.tokens.logic.tokens-status-test
   (:require
+   [app.common.test-helpers.compositions :as ctho]
    [app.common.test-helpers.ids-map :as thi]
+   [app.common.test-helpers.shapes :as cths]
    [app.common.test-helpers.tokens :as tho]
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.tokens-status :as ctos]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
+   [app.main.data.workspace.tokens.propagation :as dwtp]
+   [app.main.data.workspace.undo :as dwu]
+   [app.main.store :as st]
    [cljs.test :as t :include-macros true]
+   [frontend-tests.helpers.async :as async]
+   [frontend-tests.helpers.mock :as mock]
    [frontend-tests.helpers.pages :as thp]
    [frontend-tests.helpers.state :as ths]
-   [frontend-tests.tokens.helpers.state :as tohs]))
+   [frontend-tests.tokens.helpers.state :as tohs]
+   [potok.v2.core :as ptk]))
 
 (t/use-fixtures :each
   {:before thp/reset-idmap!})
@@ -116,3 +124,50 @@
                  "inactive theme should become active after toggle")
            (t/is (ctos/set-active? status set-id)
                  "set should be active when its theme is toggled on")))))))
+
+(defn- setup-file-with-radius
+  "The sets `mobile` and `desktop` define `radius` as 8 and 16, activated
+  by the themes Mobile and Desktop of the group Platform. Mobile is
+  active. A rect has `radius` applied."
+  []
+  (-> (tho/sample-file-with-tokens
+       :lib-fn #(-> %
+                    (ctob/add-set (ctob/make-token-set :id (thi/new-id! :set-mobile) :name "mobile"))
+                    (ctob/add-set (ctob/make-token-set :id (thi/new-id! :set-desktop) :name "desktop"))
+                    (ctob/add-theme (ctob/make-token-theme :id (thi/new-id! :mobile)
+                                                           :name "Mobile"
+                                                           :group "Platform"
+                                                           :sets #{"mobile"}))
+                    (ctob/add-theme (ctob/make-token-theme :id (thi/new-id! :desktop)
+                                                           :name "Desktop"
+                                                           :group "Platform"
+                                                           :sets #{"desktop"}))
+                    (ctob/add-token (thi/id :set-mobile)
+                                    (ctob/make-token {:name "radius" :value "8" :type :border-radius}))
+                    (ctob/add-token (thi/id :set-desktop)
+                                    (ctob/make-token {:name "radius" :value "16" :type :border-radius})))
+       :status-fn #(ctos/set-tokens-status % #{(thi/id :mobile)} #{(thi/id :set-mobile)}))
+      (ctho/add-rect :rect-1 :applied-tokens {:r1 "radius"})))
+
+(t/deftest ^:async test-undo-theme-change-at-once
+  (t/testing "one undo brings back the active theme and the values it propagated"
+    (let [file   (setup-file-with-radius)
+          store  (ths/setup-store file)
+          state  #(deref store)
+          radius #(:r1 (cths/get-shape (ths/get-file-from-state (state)) :rect-1))
+          themes #(ctos/get-active-theme-ids (get-tokens-status (ths/get-file-from-state (state))))]
+      (await
+       (mock/with-mocks* {st/state store st/stream (ptk/input-stream store)}
+         (st/emit! (tohs/watch-undo-stack)
+                   (dwtp/propagate-workspace-tokens))
+         (await (async/wait-for #(= 8 (radius)) "file propagated"))
+         (st/emit! dwu/reinitialize-undo
+                   (dwtl/set-token-theme-active (thi/id :desktop) true))
+         (await (async/wait-for #(and (= 16 (radius))
+                                      (seq (get-in (state) [:workspace-undo :items])))
+                                "theme changed"))
+         (t/is (contains? (themes) (thi/id :desktop)))
+         (st/emit! dwu/undo)
+         (await (async/wait-for #(= 8 (radius)) "undone"))
+         (t/is (contains? (themes) (thi/id :mobile)))
+         (t/is (not (contains? (themes) (thi/id :desktop)))))))))

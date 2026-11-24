@@ -265,3 +265,45 @@
                                        (rx/throw %))))
                       (rx/of (dwsh/update-shapes-buffer-stop))
                       (rx/of (dwu/commit-undo-transaction undo-id)))))))))))))
+
+(defn with-propagation
+  "`event`, which changes what tokens resolve to (the active themes or
+  sets...), and the propagation of the tokens that
+  resolve differently because of it, as a single undo entry: undoing it
+  brings the change back too, not only the values. Only the shapes of
+  `scope` (see `propagate-workspace-tokens`) and their children can
+  resolve differently.
+
+  The texts whose size changes are resized asynchronously, after the
+  propagation: on a page with texts using tokens, the entry is closed
+  once the propagation is done and the changes stop for a moment, so
+  that one undo reverts them too; at once otherwise. Closing
+  it early matters: an undo does nothing while it is open."
+  [event scope]
+  (ptk/reify ::with-propagation
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [undo-id (js/Symbol)]
+        (rx/of (dwu/start-undo-transaction undo-id :timeout false)
+               event
+               ;; After `event`, to propagate what it changed
+               (ptk/reify ::propagate-and-commit
+                 ptk/WatchEvent
+                 (watch [_ state stream]
+                   (let [;; Only texts are resized after the propagation
+                         texts? (some #(and (cfh/text-shape? %) (seq (:applied-tokens %)))
+                                      (vals (dsh/lookup-page-objects state)))]
+                     (rx/concat
+                      (or (ptk/watch (propagate-workspace-tokens scope) state stream)
+                          (rx/empty))
+                      (if texts?
+                        (->> (rx/merge
+                              (->> stream
+                                   (rx/filter (ptk/type? ::dch/commit-changes))
+                                   (rx/start-with nil)
+                                   (rx/debounce 300))
+                              ;; Closed anyway when changes keep coming
+                              (rx/timer 3000))
+                             (rx/take 1)
+                             (rx/map (fn [_] (dwu/commit-undo-transaction undo-id))))
+                        (rx/of (dwu/commit-undo-transaction undo-id))))))))))))
