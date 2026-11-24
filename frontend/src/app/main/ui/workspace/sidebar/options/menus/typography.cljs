@@ -26,10 +26,10 @@
    [app.main.ui.components.numeric-input :as deprecated-input]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.components.search-bar :refer [search-bar*]]
-   [app.main.ui.components.select :refer [select]]
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.controls.select :refer [select*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
@@ -583,6 +583,20 @@
            (when-not (str/empty? new-font-size)
              (on-change {:font-size (str new-font-size)}))))
 
+        mixed-variant?
+        (or (= font-variant-id :multiple) (= font-variant-id "mixed"))
+
+        ;; When the selection mixes variants, a blank option shows "--" as
+        ;; the collapsed value while the variants of the resolved font are
+        ;; still listed below it.
+        variant-options
+        (mf/with-memo [font mixed-variant?]
+          (cond->> (mapv (fn [variant]
+                           {:id (:id variant) :label (:name variant)})
+                         (:variants font))
+            mixed-variant?
+            (into [{:id "" :label "--"}])))
+
         on-font-variant-change
         (mf/use-fn
          (mf/deps font on-change)
@@ -671,30 +685,11 @@
 
       [:div {:class (stl/css :font-variant-options)
              :title (tr "inspect.attributes.typography.font-style")}
-       (let [basic-variant-options (->> (:variants font)
-                                        (map (fn [variant]
-                                               {:value (:id variant)
-                                                :key (pr-str variant)
-                                                :label (:name variant)})))
-             ;; When the selection mixes variants we prepend a "--" entry: it is
-             ;; shown as the collapsed value (nothing single is selected) while
-             ;; the real variants of the resolved font are still listed below it.
-             variant-options (if (or (= font-variant-id :multiple) (= font-variant-id "mixed"))
-                               (conj basic-variant-options
-                                     {:value ""
-                                      :key :multiple-variants
-                                      :label "--"})
-                               basic-variant-options)
-             font-variant-value (attr->string font-variant-id)
-             font-variant-value (if (= font-variant-value "mixed") "" font-variant-value)]
-
-         ;;  TODO Add disabled mode
-         [:& select
-          {:class (stl/css :font-variant-select)
-           :default-value font-variant-value
-           :options variant-options
-           :on-change on-font-variant-change
-           :on-blur on-blur}])]]]))
+       ;;  TODO Add disabled mode
+       (when (seq variant-options)
+         [:> select* {:default-selected (if mixed-variant? "" (attr->string font-variant-id))
+                      :options variant-options
+                      :on-change on-font-variant-change}])]]]))
 
 (mf/defc spacing-options*
   [{:keys [values on-change on-blur]}]
