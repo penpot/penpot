@@ -87,6 +87,7 @@
 
 .progress-close-button {
   grid-area: close;
+  margin-inline-end: var(--sp-xs);
 }
 
 .progress-bar {

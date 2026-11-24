@@ -73,7 +73,7 @@
            [:span {:class (stl/css :progress)}
             (dm/str progress " / " total)])]
 
-        [:> icon-button* {:variant "ghost"
+        [:> icon-button* {:variant "action"
                           :aria-label (tr "labels.close")
                           :tooltip-class (stl/css :progress-close-button)
                           :tooltip-placement "top-left"
