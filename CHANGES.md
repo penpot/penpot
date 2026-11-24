@@ -111,6 +111,12 @@ If you upgrade blindly: on fresh databases and small instances the startup migra
 - Fix workspace memory growing on every page switch with the WebGL renderer [#13028](https://github.com/penpot/penpot/issues/13028) (PR: [#12877](https://github.com/penpot/penpot/pull/12877))
 - Fix workspace showing React error #310 when the team container renders without a team id (by @filipsajdak) [#12728](https://github.com/penpot/penpot/issues/12728) (PR: [#12920](https://github.com/penpot/penpot/pull/12920))
 
+## 2.19.5
+
+### :bug: Bugs fixed
+
+- Revert [#13165](https://github.com/penpot/penpot/issues/13165), because it causes more regression, the issue is already correctly fixed on the upcoming 2.20.0
+
 ## 2.19.4
 
 ### :bug: Bugs fixed
