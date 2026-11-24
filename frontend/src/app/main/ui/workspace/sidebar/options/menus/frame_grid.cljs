@@ -221,6 +221,7 @@
                                :class (stl/css :column-select)
                                :input-class (stl/css :numeric-input)
                                :min 1
+                               :is-nillable true
                                :options size-options
                                :placeholder "Auto"
                                :on-change handle-change-size}]])]

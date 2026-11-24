@@ -210,10 +210,13 @@
 
         handle-focus
         (mf/use-callback
-         (mf/deps on-focus select-on-focus?)
+         (mf/deps on-focus select-on-focus? value)
          (fn [event]
            (when-not (= :dragging (mf/ref-val drag-state*))
-             (reset! last-value* (parse-value))
+             ;; Keep the current value, not the parsed one: parsing clamps
+             ;; it to the limits, so leaving the input without typing would
+             ;; save a value the user did not enter.
+             (reset! last-value* value)
              (let [target (dom/get-target event)]
                (when on-focus
                  (mf/set-ref-val! dirty-ref true)
