@@ -545,16 +545,18 @@
 
 (mf/defc ruby-presentation-grid*
   "Size and side, then alignment and overhang of the readings, two to a
-  row in a light box. Side names both writing modes, so it reads the same
-  in horizontal and vertical text."
-  [{:keys [values on-change on-blur class]}]
+  row. `boxed` draws them in a light box, to set them apart from the rows
+  around them when a button opens them. Side names both writing modes, so
+  it reads the same in horizontal and vertical text."
+  [{:keys [values on-change on-blur class boxed]}]
   (let [props   (mf/props {:values values :on-change on-change :on-blur on-blur})
         options (mf/with-memo []
                   {:ruby-size     (ruby-size-options tr)
                    :ruby-side     (ruby-side-options tr)
                    :ruby-align    (ruby-align-options tr)
                    :ruby-overhang (ruby-overhang-options tr)})]
-    [:div {:class [class (stl/css :ruby-presentation-grid)]
+    [:div {:class [class (stl/css-case :ruby-presentation-grid true
+                                       :ruby-presentation-grid-boxed boxed)]
            :data-testid "ruby-presentation-options"}
      [:> ruby-presentation-cell* (mf/spread-props props {:attr :ruby-size
                                                          :label (tr "workspace.options.text-options.ruby-size")
@@ -591,4 +593,5 @@
      (when ^boolean open?
        [:> ruby-presentation-grid* {:values values
                                     :on-change on-change
-                                    :on-blur on-blur}])]))
+                                    :on-blur on-blur
+                                    :boxed true}])]))

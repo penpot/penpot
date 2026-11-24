@@ -123,11 +123,15 @@
   color: var(--color-foreground-error);
 }
 
-// The reading options, two to a row in a light box.
+// The reading options, two to a row.
 .ruby-presentation-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--sp-s) var(--sp-xs);
+}
+
+// In a light box when a button opens them below the reading input.
+.ruby-presentation-grid-boxed {
   padding: var(--sp-s);
   border: $b-1 solid var(--color-background-quaternary);
   border-radius: $br-8;
