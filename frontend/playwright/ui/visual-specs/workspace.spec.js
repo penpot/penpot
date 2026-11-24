@@ -368,6 +368,50 @@ test.describe("Design tab", () => {
   });
 });
 
+test.describe("Measures controls", () => {
+  test("Shows the clip content, show in view mode and ratio lock toggles", async ({
+    page,
+  }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(/get\-file\?/, "workspace/get-file-9066.json");
+    await workspace.goToWorkspace({
+      fileId: "e179d9df-de35-80bf-8005-283bbd5516b0",
+      pageId: "e179d9df-de35-80bf-8005-283bbd5516b1",
+    });
+    await workspace.clickLeafLayer("Board");
+
+    const sidebar = workspace.rightSidebar;
+    const toggles = sidebar.locator("[class*='menus_measures__clip-show']");
+    // A label over a hidden checkbox before, a button after.
+    const clip = sidebar
+      .getByTitle("Clip content")
+      .or(sidebar.getByRole("button", { name: "Clip content" }));
+    const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+
+    await expect(toggles).toBeVisible();
+    await page.mouse.move(0, 0);
+    await expect(toggles).toHaveScreenshot("measures-toggles-rest.png", shot);
+
+    await clip.hover();
+    await expect(toggles).toHaveScreenshot("measures-toggles-hover.png", shot);
+
+    // Both start on: one click turns clip content off.
+    await clip.click();
+    await page.mouse.move(0, 0);
+    await expect(toggles).toHaveScreenshot("measures-toggles-off.png", shot);
+
+    const lock = sidebar.getByRole("button", { name: /^(Lock|Unlock) ratio$/ });
+    await expect(lock).toHaveScreenshot("measures-lock-off.png", shot);
+    await lock.click();
+    await page.mouse.move(0, 0);
+    await expect(
+      sidebar.getByRole("button", { name: "Unlock ratio" }),
+    ).toBeVisible();
+    await expect(lock).toHaveScreenshot("measures-lock-on.png", shot);
+  });
+});
+
 test.describe("Component options", () => {
   test("Shows the component pill of a copy", async ({ page }) => {
     const workspace = new WorkspacePage(page);
