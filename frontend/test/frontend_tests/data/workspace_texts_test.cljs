@@ -14,6 +14,7 @@
    [app.common.test-helpers.shapes :as cths]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape :as cts]
+   [app.common.types.shape.text :as ctst]
    [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.texts :as dwt]
@@ -641,6 +642,29 @@
   (t/testing "a non-root content (e.g. paragraph) is left alone"
     (let [node {:type "paragraph" :children []}]
       (t/is (= node (dwt/ensure-valid-text-content node))))))
+
+;; ---------------------------------------------------------------------------
+;; Tests: editor-shape-content (legacy editor commit)
+;; ---------------------------------------------------------------------------
+
+(t/deftest editor-shape-content-drops-nil-paragraph-attrs
+  (t/testing "a nil :text-decoration left in the paragraph data is dropped"
+    (let [exported {:type "root"
+                    :children [{:type "paragraph-set"
+                                :children [{:type "paragraph"
+                                            :key "1gt0a"
+                                            :font-family "sourcesanspro"
+                                            :text-decoration nil
+                                            :typography-ref-id nil
+                                            :children [{:text "hello"
+                                                        :font-family "sourcesanspro"}]}]}]}
+          shape    {:content {:type "root" :vertical-align "center" :children []}}
+          content  (dwt/editor-shape-content exported shape)
+          para     (get-in content [:children 0 :children 0])]
+      (t/is (ctst/valid-content? content))
+      (t/is (not (contains? para :text-decoration)))
+      (t/is (= "sourcesanspro" (:font-family para)))
+      (t/is (= "center" (:vertical-align content))))))
 
 ;; ---------------------------------------------------------------------------
 ;; Tests: merge-live-text-dimensions (Design tab / edition outline)
