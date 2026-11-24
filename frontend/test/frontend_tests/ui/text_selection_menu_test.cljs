@@ -55,3 +55,29 @@
   (let [markup (render 10 {})]
     (t/is (str/includes? markup "top:30px") "anchored at the bottom right corner")
     (t/is (str/includes? markup "selection-anchor-below"))))
+
+(defn- render-toolbar
+  "Static markup of the toolbar for a `family` text, its readings zhuyin
+  when `zhuyin` is true."
+  [family zhuyin]
+  (rds/renderToStaticMarkup
+   (mf/element @#'selection-menu/toolbar*
+               (mf/props {:shape-id (random-uuid)
+                          :family family
+                          :zhuyin zhuyin
+                          :annotations {}
+                          :readable true
+                          :ruby-enabled true
+                          :warichu-enabled true
+                          :emphasis-open false
+                          :on-emphasis-open identity
+                          :on-ruby identity}))))
+
+(t/deftest reading-item-shows-the-glyph-of-the-language
+  (t/is (str/includes? (render-toolbar :japanese false) "あ"))
+  (let [pinyin (render-toolbar :chinese false)
+        zhuyin (render-toolbar :chinese true)]
+    (t/is (str/includes? pinyin "拼"))
+    (t/is (not (str/includes? pinyin "あ")))
+    (t/is (str/includes? zhuyin "ㄅ"))
+    (t/is (not (str/includes? zhuyin "あ")))))

@@ -9316,6 +9316,14 @@ msgid "workspace.text-selection-menu.emphasis"
 msgstr "Emphasis"
 
 #: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+msgid "workspace.text-selection-menu.furigana"
+msgstr "Furigana"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+msgid "workspace.text-selection-menu.pinyin"
+msgstr "Pinyin"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
 msgid "workspace.text-selection-menu.reading"
 msgstr "Reading"
 
@@ -9326,10 +9334,6 @@ msgstr "Select text without a reading or warichu, or a whole reading"
 #: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
 msgid "workspace.text-selection-menu.remove"
 msgstr "Remove"
-
-#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
-msgid "workspace.text-selection-menu.ruby"
-msgstr "Ruby"
 
 #: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
 msgid "workspace.text-selection-menu.ruby-options"
@@ -9346,6 +9350,10 @@ msgstr "Text annotations"
 #: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
 msgid "workspace.text-selection-menu.warichu"
 msgstr "Warichu"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+msgid "workspace.text-selection-menu.zhuyin"
+msgstr "Zhuyin"
 
 #: src/app/main/data/workspace/comments.cljs:49
 msgid "workspace.toast.comments-hidden"

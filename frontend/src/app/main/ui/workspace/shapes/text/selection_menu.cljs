@@ -80,6 +80,25 @@
   (let [value (get styles attr)]
     (when-not (= :multiple value) value)))
 
+(defn- reading-label
+  "Name of the reading of a `family` text: furigana for Japanese, pinyin
+  or `zhuyin` for Chinese."
+  [family zhuyin]
+  (cond
+    (= family :japanese) (tr "workspace.text-selection-menu.furigana")
+    (true? zhuyin)       (tr "workspace.text-selection-menu.zhuyin")
+    :else                (tr "workspace.text-selection-menu.pinyin")))
+
+(defn- reading-glyph
+  "Glyph standing for the reading of a `family` text: a hiragana for
+  furigana, the first character of 拼音 for pinyin and the first zhuyin
+  symbol for `zhuyin`."
+  [family zhuyin]
+  (cond
+    (= family :japanese) "あ"
+    (true? zhuyin)       "ㄅ"
+    :else                "拼"))
+
 (defn annotated?
   "True when the selection has a reading, emphasis marks, warichu or
   combine (see `annotations` in `selection-menu*`)."
@@ -163,9 +182,10 @@
   "The annotations of the `family` language for the selected text of
   `shape-id`. `annotations` holds what the text has (nil when its spans
   differ). A reading takes text without annotations or a whole base
-  (`readable`); a warichu note, the text of one span (`warichu-enabled`)."
+  (`readable`); a warichu note, the text of one span (`warichu-enabled`).
+  The reading is furigana, pinyin or, with `zhuyin`, zhuyin."
   {::mf/private true}
-  [{:keys [shape-id family annotations on-ruby emphasis-open on-emphasis-open
+  [{:keys [shape-id family zhuyin annotations on-ruby emphasis-open on-emphasis-open
            ^boolean readable ^boolean ruby-enabled ^boolean warichu-enabled]}]
   (let [{:keys [ruby emphasis warichu combine]} annotations
 
@@ -209,14 +229,14 @@
            (apply-text-attrs shape-id {:text-combine-upright (if combine? "none" "all")})))]
 
     [:*
-     [:> menu-item* {:label (tr "workspace.text-selection-menu.ruby")
+     [:> menu-item* {:label (reading-label family zhuyin)
                      :active ruby?
                      :disabled (not ruby-enabled)
                      :hint (if readable
                              (tr "workspace.options.text-options.zhuyin-selection-hint")
                              (tr "workspace.text-selection-menu.reading-hint"))
                      :on-click open-ruby}
-      [:> glyph* {:glyph "あ"}]]
+      [:> glyph* {:glyph (reading-glyph family zhuyin)}]]
      [:div {:class (stl/css :emphasis-anchor)}
       [:> menu-item* {:label (tr "workspace.text-selection-menu.emphasis")
                       :dropdown true
@@ -245,12 +265,12 @@
          [:> icon* {:icon-id i/text-combine-upright-all :aria-hidden true}]]])]))
 
 (mf/defc ruby-input*
-  "Input for the ruby reading of the selected text, starting from its
-  current `reading`. Enter applies it, Remove drops the current one, and
-  Escape and the back button return to the toolbar. A `validate` fn rejects
-  the readings it returns false for."
+  "Input for the ruby reading of the selected text, named `label`, starting
+  from its current `reading`. Enter applies it, Remove drops the current
+  one, and Escape and the back button return to the toolbar. A `validate`
+  fn rejects the readings it returns false for."
   {::mf/private true}
-  [{:keys [reading validate invalid-hint on-apply on-back more-open on-more]}]
+  [{:keys [label reading validate invalid-hint on-apply on-back more-open on-more]}]
   (let [reading* (mf/use-state (or reading ""))
         value    (deref reading*)
         valid?   (or (str/blank? value) (nil? validate) (validate (str/trim value)))
@@ -301,7 +321,7 @@
                :aria-label (tr "workspace.text-selection-menu.back")
                :on-click on-back}
       [:> icon* {:icon-id i/arrow-left :aria-hidden true}]
-      [:span {:class (stl/css :label)} (tr "workspace.text-selection-menu.ruby")]]
+      [:span {:class (stl/css :label)} label]]
      [:input {:type "text"
               :class (stl/css :reading-input)
               :aria-label (tr "workspace.text-selection-menu.reading")
@@ -440,7 +460,8 @@
               :aria-label (tr "workspace.text-selection-menu.title")}
         (case view
           :ruby [:*
-                 [:> ruby-input* {:reading (:ruby annotations)
+                 [:> ruby-input* {:label (reading-label family zhuyin)
+                                  :reading (:ruby annotations)
                                   :validate (when zhuyin cjk/zhuyin-reading?)
                                   :invalid-hint (tr "workspace.options.text-options.zhuyin-invalid")
                                   :more-open more-open
@@ -453,6 +474,7 @@
                                       :vertical vertical}])]
           [:> toolbar* {:shape-id shape-id
                         :family family
+                        :zhuyin zhuyin
                         :annotations annotations
                         :readable readable
                         :ruby-enabled ruby-enabled

@@ -23,6 +23,7 @@
    [app.main.ui.workspace.sidebar.options.menus.text-cjk-controls :as tcc]
    [app.util.i18n :refer [tr]]
    [app.util.text.layout :as tl]
+   [app.util.text.writing-mode :as wm]
    [rumext.v2 :as mf]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -469,6 +470,8 @@
   "Options of the CJK language of the texts in `ids`, in a view of their
   own that `on-close` leaves. Selected text (with a text selection) comes
   first, then Layout, then Ruby when the text has readings (`has-ruby`).
+  Layout starts with the writing mode row of the Text section, so the
+  view holds every option of the language.
   The view closes when the texts no longer share a CJK language."
   [{:keys [ids options-props on-change on-close has-ruby]}]
   (let [language-ref (mf/with-memo [ids] (refs/texts-language ids))
@@ -515,6 +518,8 @@
 
      (when (some? family)
        [:> language-group* {:title (tr "workspace.options.text-options.language-group-layout")}
+        (when ^boolean (wm/vertical-layout-active?)
+          [:> tcc/writing-mode-row* {:values values :on-change on-change :on-blur on-blur}])
         (case family
           :japanese [:> japanese-layout-options* options-props]
           :chinese  [:> chinese-layout-options*
