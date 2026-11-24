@@ -983,9 +983,8 @@
 (defn validate-file-affected
   "Validate only the pages and components touched by `changes`.
 
-  Semantics are identical to `validate-file` but the work is bounded
-  to the entities that were actually mutated, making it safe and cheap
-  to call on every incremental file update.
+  Unlike `validate-file`, this does not check for a missing tokens-status.
+  Both validations run only for files with the components/v2 feature.
 
   Returns a list of errors or `nil`."
   [{:keys [data features] :as file} libraries changes]

@@ -3,7 +3,7 @@
 ## Attribute conventions
 
 - Prefer optional page/shape attrs with default behavior when absent. Reverting to default should usually remove the attr instead of storing nil.
-- Do not treat nil as a distinct persisted state from absence. Import/export and cleanup paths may filter nil attrs away.
+- Do not design nil as a distinct persisted state from absence: import/export and cleanup paths may filter nil attrs away. Change records can nevertheless distinguish omission from explicit nil; see `mem:common/changes` for `:mod-component`.
 - Avoid Clojure-special naming in exported object attrs, especially boolean names ending in `?`; exported/imported data must survive JSON/SVG/Transit and external tooling.
 - Normal shape attrs that participate in component sync belong in `app.common.types.component/sync-attrs` with the correct touched group. `:applied-tokens` participates through a separate route, not `sync-attrs`. See `mem:common/components` for synchronization and touched semantics.
 - Store SVG attribute keys in kebab-case (`fill-rule`, not `fillRule`) and convert to React spelling only at render boundaries. Use `app.common.svg/attrs->kebab-props` for shape and defs-node attrs; for svg-raw `:content`, normalize spelling without filtering unknown keys (the sidebar reads `:stroke-style`). Don't normalize tags, attribute values or outer defs IDs as though they were attribute keys; defs IDs can decode as keywords or strings. Normalize when constructing the shape; legacy data goes through the SVG repair in `app.common.files.migrations`, not the binfile cleaner.

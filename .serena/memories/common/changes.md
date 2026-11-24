@@ -6,7 +6,7 @@
 
 - Preserve redo and undo order when compacting: merge `:reg-objects` per container and place registrations after changes that resize children. Never compact across commit boundaries; the backend can reject individual commits by `commit-id`. Client save ordering is in `mem:frontend/workspace-persistence`.
 - Do not send a deleted component's entire object map for a metadata-only edit. Scope shape edits to `:component-id` using the builder's container context. Omitted `:objects` preserves stored shapes; explicit nil clears them. Reserve `:objects? true` for repairs that intentionally move or clear the whole map.
-- Apply fixture edits through `app.common.test-helpers.files/apply-changes`; disable its validation only for intentionally invalid intermediate states. See `mem:common/testing`.
+- For fixture edits and validation controls see `mem:common/testing`.
 
 ## Application and schema validation
 
