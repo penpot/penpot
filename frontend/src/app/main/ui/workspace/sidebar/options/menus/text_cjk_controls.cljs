@@ -454,14 +454,15 @@
                          :icon        i/menu}])]))
 
 (mf/defc ruby-hidden-option*
-  "Switch hiding the readings, unset when the spans differ."
-  [{:keys [values on-change on-blur]}]
+  "Switch hiding the readings, unset when the spans differ. It reads
+  `(:hidden labels)` when given."
+  [{:keys [values labels on-change on-blur]}]
   (let [value    (:ruby-hidden values)
         enabled? (cond
                    (mixed-span-value? value) nil
                    (true? value) true
                    :else false)
-        label    (tr "workspace.options.text-options.ruby-hidden")
+        label    (or (:hidden labels) (tr "workspace.options.text-options.ruby-hidden"))
         handle-change
         (mf/use-fn
          (mf/deps on-change on-blur)

@@ -220,12 +220,12 @@
   (if zhuyin?
     {:input       (tr "workspace.options.text-options.zhuyin")
      :placeholder (tr "workspace.options.text-options.zhuyin-placeholder")
-     :advanced    (tr "workspace.options.text-options.ruby-advanced-options")
      :validate    cjk/zhuyin-reading?
      :invalid     (tr "workspace.options.text-options.zhuyin-invalid")}
     {:input       (tr "workspace.options.text-options.pinyin")
      :placeholder (tr "workspace.options.text-options.pinyin-placeholder")
-     :advanced    (tr "workspace.options.text-options.ruby-advanced-options")}))
+     :advanced    (tr "workspace.options.text-options.pinyin-advanced-options")
+     :hidden      (tr "workspace.options.text-options.pinyin-hidden")}))
 
 (mf/defc chinese-selection-options*
   "Chinese options of a text selection: its reading, pinyin or zhuyin, when
@@ -312,12 +312,33 @@
 ;; Ruby
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn ruby-group-labels
+  "Title and hide switch label of the readings group of a `family` text:
+  ruby for Japanese; pinyin, zhuyin or, when the readings mix both
+  (`zhuyin` is `:multiple`), readings for Chinese."
+  [family zhuyin]
+  (cond
+    (not= family :chinese)
+    {:title (tr "workspace.options.text-options.language-group-ruby")}
+
+    (true? zhuyin)
+    {:title  (tr "workspace.options.text-options.zhuyin")
+     :hidden (tr "workspace.options.text-options.zhuyin-hidden")}
+
+    (= :multiple zhuyin)
+    {:title  (tr "workspace.options.text-options.language-group-readings")
+     :hidden (tr "workspace.options.text-options.readings-hidden")}
+
+    :else
+    {:title  (tr "workspace.options.text-options.pinyin")
+     :hidden (tr "workspace.options.text-options.pinyin-hidden")}))
+
 (mf/defc ruby-group-options*
   "How the readings of the text look. `values` are the ruby values of the
   text (or of the selection), and `on-change` applies to every reading of
   the text without a selection. Zhuyin readings can only be hidden."
-  [{:keys [values on-change on-blur]}]
-  (let [props (mf/props {:values values :on-change on-change :on-blur on-blur
+  [{:keys [values labels on-change on-blur]}]
+  (let [props (mf/props {:values values :labels labels :on-change on-change :on-blur on-blur
                          :vertical (tcc/vertical-writing? values)})]
     [:*
      [:> tcc/annotation-clearance-option* props]
@@ -486,8 +507,11 @@
 
         select-language (use-select-language on-change nil)
 
+        ruby-labels (ruby-group-labels family (:ruby-zhuyin ruby-values))
+
         ruby-props
         (mf/props {:values (assoc ruby-values :writing-mode (:writing-mode values))
+                   :labels ruby-labels
                    :on-change on-ruby-presentation-change
                    :on-blur on-blur})]
 
@@ -527,5 +551,5 @@
           :korean   [:> korean-layout-options* options-props])])
 
      (when (and ^boolean has-ruby (not= :korean family) (some? family))
-       [:> language-group* {:title (tr "workspace.options.text-options.language-group-ruby")}
+       [:> language-group* {:title (:title ruby-labels)}
         [:> ruby-group-options* ruby-props]])]))

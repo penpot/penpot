@@ -212,6 +212,28 @@
              (count-of (render-language-view "zh-Hant-TW" {:has-ruby true}) clearance))
           "with readings, clearance shows once, in the Ruby group")))
 
+(t/deftest chinese-readings-group-names-pinyin-or-zhuyin
+  (doseq [[zhuyin title hidden]
+          [[false     "workspace.options.text-options.pinyin" "workspace.options.text-options.pinyin-hidden"]
+           [true      "workspace.options.text-options.zhuyin" "workspace.options.text-options.zhuyin-hidden"]
+           [:multiple "workspace.options.text-options.language-group-readings"
+            "workspace.options.text-options.readings-hidden"]]]
+    (let [markup (render-language-view "zh-Hant-TW" {:has-ruby true
+                                                     :ruby-values {:ruby-zhuyin zhuyin}})]
+      (t/is (pos? (count-of markup title)) (str zhuyin))
+      (t/is (pos? (count-of markup hidden)) (str zhuyin))
+      (t/is (not (str/includes? markup "workspace.options.text-options.language-group-ruby")))
+      (t/is (zero? (count-of markup "workspace.options.text-options.ruby-hidden")))))
+  (t/is (str/includes? (render-language-view "ja" {:has-ruby true})
+                       "workspace.options.text-options.language-group-ruby")
+        "Japanese keeps the ruby group"))
+
+(t/deftest pinyin-input-names-its-options-pinyin
+  (with-redefs [hooks/use-portal-container (fn ([] nil) ([_] nil))]
+    (let [markup (render-language-view "zh-Hans-CN" {:selection true :reading true})]
+      (t/is (str/includes? markup "workspace.options.text-options.pinyin-advanced-options"))
+      (t/is (not (str/includes? markup "workspace.options.text-options.ruby-advanced-options"))))))
+
 (t/deftest zhuyin-explains-what-selection-it-needs
   (let [hint "workspace.options.text-options.zhuyin-selection-hint"]
     (t/is (str/includes? (render-language-view "zh-Hant-TW" {:values {:ruby-zhuyin true}

@@ -81,3 +81,23 @@
     (t/is (not (str/includes? pinyin "あ")))
     (t/is (str/includes? zhuyin "ㄅ"))
     (t/is (not (str/includes? zhuyin "あ")))))
+
+(defn- render-ruby-input
+  "Static markup of the reading input, with a more button when `on-more`."
+  [on-more]
+  (rds/renderToStaticMarkup
+   (mf/element @#'selection-menu/ruby-input*
+               (mf/props {:label "reading"
+                          :reading ""
+                          :more-label "workspace.text-selection-menu.pinyin-options"
+                          :more-open false
+                          :on-more on-more
+                          :on-apply identity
+                          :on-back identity}))))
+
+(t/deftest reading-input-shows-its-options-button-only-with-on-more
+  (let [markup (render-ruby-input identity)]
+    (t/is (str/includes? markup "data-testid=\"selection-menu-ruby-options\""))
+    (t/is (str/includes? markup "aria-label=\"workspace.text-selection-menu.pinyin-options\"")))
+  (t/is (not (str/includes? (render-ruby-input nil) "selection-menu-ruby-options"))
+        "zhuyin has no presentation options"))

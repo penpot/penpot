@@ -89,6 +89,13 @@
     (true? zhuyin)       (tr "workspace.text-selection-menu.zhuyin")
     :else                (tr "workspace.text-selection-menu.pinyin")))
 
+(defn- reading-options-label
+  "Name of the presentation options of the reading of a `family` text."
+  [family]
+  (if (= family :japanese)
+    (tr "workspace.text-selection-menu.ruby-options")
+    (tr "workspace.text-selection-menu.pinyin-options")))
+
 (defn- reading-glyph
   "Glyph standing for the reading of a `family` text: a hiragana for
   furigana, the first character of 拼音 for pinyin and the first zhuyin
@@ -268,9 +275,10 @@
   "Input for the ruby reading of the selected text, named `label`, starting
   from its current `reading`. Enter applies it, Remove drops the current
   one, and Escape and the back button return to the toolbar. A `validate`
-  fn rejects the readings it returns false for."
+  fn rejects the readings it returns false for. The `more-label` button
+  shows only with `on-more`."
   {::mf/private true}
-  [{:keys [label reading validate invalid-hint on-apply on-back more-open on-more]}]
+  [{:keys [label reading validate invalid-hint on-apply on-back more-label more-open on-more]}]
   (let [reading* (mf/use-state (or reading ""))
         value    (deref reading*)
         valid?   (or (str/blank? value) (nil? validate) (validate (str/trim value)))
@@ -337,15 +345,16 @@
                  :class (stl/css :remove-button)
                  :on-click on-remove}
         [:span {:class (stl/css :label)} (tr "workspace.text-selection-menu.remove")]])
-     [:button {:type "button"
-               :class (stl/css :more-button)
-               :aria-label (tr "workspace.text-selection-menu.ruby-options")
-               :aria-expanded more-open
-               :data-testid "selection-menu-ruby-options"
-               :on-click on-more}
-      [:> icon* {:icon-id i/menu
-                 :class (stl/css :more-icon)
-                 :aria-hidden true}]]]))
+     (when (some? on-more)
+       [:button {:type "button"
+                 :class (stl/css :more-button)
+                 :aria-label more-label
+                 :aria-expanded more-open
+                 :data-testid "selection-menu-ruby-options"
+                 :on-click on-more}
+        [:> icon* {:icon-id i/menu
+                   :class (stl/css :more-icon)
+                   :aria-hidden true}]])]))
 
 (mf/defc ruby-options*
   "Size, alignment, overhang and side of the reading of the selection."
@@ -464,11 +473,13 @@
                                   :reading (:ruby annotations)
                                   :validate (when zhuyin cjk/zhuyin-reading?)
                                   :invalid-hint (tr "workspace.options.text-options.zhuyin-invalid")
+                                  :more-label (reading-options-label family)
                                   :more-open more-open
-                                  :on-more toggle-more
+                                  ;; Zhuyin has a fixed size and position.
+                                  :on-more (when-not zhuyin toggle-more)
                                   :on-apply apply-ruby
                                   :on-back close-ruby}]
-                 (when ^boolean more-open
+                 (when (and ^boolean more-open (not zhuyin))
                    [:> ruby-options* {:shape-id shape-id
                                       :values ruby-values
                                       :vertical vertical}])]

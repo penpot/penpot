@@ -8505,6 +8505,10 @@ msgstr "Ancho automático"
 msgid "workspace.options.text-options.grow-fixed"
 msgstr "Fijo"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.language-group-readings"
+msgstr "Lecturas"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:732
 msgid "workspace.options.text-options.letter-spacing"
 msgstr "Espaciado entre letras"
@@ -8512,6 +8516,18 @@ msgstr "Espaciado entre letras"
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:713
 msgid "workspace.options.text-options.line-height"
 msgstr "Altura de línea"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.pinyin-advanced-options"
+msgstr "Opciones de pinyin"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.pinyin-hidden"
+msgstr "Ocultar pinyin"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.readings-hidden"
+msgstr "Ocultar lecturas"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:212
 msgid "workspace.options.text-options.strikethrough"
@@ -8563,6 +8579,10 @@ msgstr "Subrayado (%s)"
 
 msgid "workspace.options.text-options.zhuyin"
 msgstr "Zhuyin"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.zhuyin-hidden"
+msgstr "Ocultar zhuyin"
 
 msgid "workspace.options.text-options.zhuyin-invalid"
 msgstr ""
@@ -9225,6 +9245,10 @@ msgstr "Furigana"
 #: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
 msgid "workspace.text-selection-menu.pinyin"
 msgstr "Pinyin"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+msgid "workspace.text-selection-menu.pinyin-options"
+msgstr "Opciones de pinyin"
 
 #: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
 msgid "workspace.text-selection-menu.reading"

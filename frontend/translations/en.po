@@ -8413,6 +8413,10 @@ msgstr "Clearance"
 msgid "workspace.options.text-options.annotation-clearance-auto"
 msgstr "Automatic"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.language-group-readings"
+msgstr "Readings"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/text_japanese_layout.cljs
 msgid "workspace.options.text-options.line-adjustment"
 msgstr "Line breaking"
@@ -8476,6 +8480,18 @@ msgstr "Letter Spacing"
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:713
 msgid "workspace.options.text-options.line-height"
 msgstr "Line height"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.pinyin-advanced-options"
+msgstr "Pinyin options"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.pinyin-hidden"
+msgstr "Hide pinyin"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.readings-hidden"
+msgstr "Hide readings"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.ruby"
@@ -8676,6 +8692,10 @@ msgstr "Horizontal"
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.writing-mode-vertical"
 msgstr "Vertical (right to left)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.zhuyin-hidden"
+msgstr "Hide zhuyin"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:788
 msgid "workspace.options.use-play-button"
@@ -9322,6 +9342,10 @@ msgstr "Furigana"
 #: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
 msgid "workspace.text-selection-menu.pinyin"
 msgstr "Pinyin"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+msgid "workspace.text-selection-menu.pinyin-options"
+msgstr "Pinyin options"
 
 #: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
 msgid "workspace.text-selection-menu.reading"
