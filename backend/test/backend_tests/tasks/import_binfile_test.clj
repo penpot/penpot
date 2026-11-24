@@ -9,6 +9,7 @@
   it leaves behind when it fails."
   (:require
    [app.binfile.common :as bfc]
+   [app.binfile.jobs :as bfj]
    [app.binfile.v1 :as v1]
    [app.binfile.v3 :as v3]
    [app.common.uuid :as uuid]
@@ -16,13 +17,13 @@
    [app.db :as db]
    [app.jobs :as jobs]
    [app.jobs.storage :as js]
+   [app.loggers.audit :as audit]
    [app.storage :as sto]
    [app.storage.tmp :as tmp]
    [backend-tests.helpers :as th]
    [clojure.java.io :as jio]
    [clojure.test :as t]
-   [datoteka.io :as io]
-   [mockery.core :refer [with-mocks]]))
+   [datoteka.io :as io]))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each (th/serial th/database-reset th/clean-storage))
@@ -87,12 +88,20 @@
   []
   (seq (.list (jio/file tmp/default-tmp-dir))))
 
-(defn- audit-events
-  "The audit events a mock of `audit/submit` received with that name."
-  [mock event-name]
-  (->> (:call-args-list @mock)
-       (map second)
-       (filter #(= event-name (:name %)))))
+(def ^:private real-audit-submit audit/submit)
+
+(defn- get-audit-events
+  [event-name]
+  (->> (th/db-exec! ["SELECT * FROM audit_log WHERE name = ? AND source = 'backend'"
+                     event-name])
+       (mapv #(update % :props db/decode-transit-pgobject))))
+
+(defn- create-import-job
+  [profile params resource-id]
+  (let [job-id (th/create-job* :import-binfile {:profile-id (:id profile)
+                                                :resource-id resource-id})]
+    (th/db-update! :job {:params (db/json params)} {:id job-id})
+    job-id))
 
 (defn- project-modified-at
   [project-id]
@@ -276,101 +285,166 @@
         (t/is (= before (project-files project-id)))))))
 
 (t/deftest a-completed-import-submits-its-audit-events
-  (with-mocks [mock {:target 'app.loggers.audit/submit :return nil}]
-    ;; the `create-file` events are only built when the audit log is on
-    (with-redefs [cf/flags (conj cf/flags :audit-log)]
-      (let [profile (th/create-profile* 1)
-            staged  (stage-package! profile (fixture-path))
-            job-id  (th/create-job* :import-binfile {:profile-id (:id profile)
-                                                     :resource-id (:resource-id staged)})
-            result  (run-import job-id {:project-id   (:default-project-id profile)
-                                        :name         "imported"
-                                        :version      3
-                                        :referer      "penpot"
-                                        :generated-by "penpot/2.20.0"})
-            file-id (first (:file-ids result))
-            [event :as events] (audit-events mock "import-binfile")]
-
-        (t/testing "the import submits one event with the legacy name and props"
-          (t/is (= 1 (count events)))
-          (t/is (= "command" (:type event)))
-          (t/is (= (:id profile) (:profile-id event)))
-          (t/is (= "completed" (-> event :props :status)))
-          (t/is (= [file-id] (-> event :props :file-ids)))
-          (t/is (= 1 (-> event :props :file-count)))
-          (t/is (= (:default-project-id profile) (-> event :props :project-id)))
-          (t/is (= 3 (-> event :props :version)))
-          (t/is (= "penpot" (-> event :props :referer)))
-          (t/is (= "penpot/2.20.0" (-> event :props :generated-by))))
-
-        (t/testing "and what only the job knows"
-          (t/is (= job-id (-> event :props :job-id)))
-          (t/is (= (:default-team-id profile) (-> event :props :team-id)))
-          (t/is (pos? (-> event :props :file-size)))
-          (t/is (nat-int? (-> event :props :elapsed-ms))))
-
-        (t/testing "every imported file gets its create-file event"
-          (let [[created :as created-events] (audit-events mock "create-file")]
-            (t/is (= 1 (count created-events)))
-            (t/is (= file-id (-> created :props :id)))
-            (t/is (= (:id profile) (:profile-id created)))
-            (t/is (= (:default-team-id profile) (-> created :props :team-id)))))))))
-
-(t/deftest a-failed-import-submits-its-outcome
-  (with-mocks [mock {:target 'app.loggers.audit/submit :return nil}]
-    (with-redefs [cf/flags (conj cf/flags :audit-log)]
-      (let [profile (th/create-profile* 1)
-            staged  (stage-package! profile (fixture-path))
-            job-id  (th/create-job* :import-binfile {:profile-id (:id profile)
-                                                     :resource-id (:resource-id staged)})]
-
-        (with-redefs [v3/import-files! (fn [_] (throw (ex-info "boom" {:type :internal})))]
-          (t/is (thrown? Throwable
-                         (run-import job-id {:project-id (:default-project-id profile)
-                                             :name       "imported"
-                                             :version    3}))))
-
-        (let [[event :as events] (audit-events mock "import-binfile")]
-          (t/is (= 1 (count events)))
-          (t/is (= "failed" (-> event :props :status)))
-          (t/is (= job-id (-> event :props :job-id)))
-          (t/is (not (contains? (:props event) :file-ids))))
-
-        (t/testing "and no file is reported as created"
-          (t/is (empty? (audit-events mock "create-file"))))))))
-
-(t/deftest a-cancelled-import-submits-its-outcome
-  (with-mocks [mock {:target 'app.loggers.audit/submit :return nil}]
+  (with-redefs [audit/submit real-audit-submit
+                cf/audit-persist? true
+                cf/telemetry-enabled? false
+                cf/webhooks-enabled? false]
     (let [profile (th/create-profile* 1)
+          params  {:project-id (:default-project-id profile)
+                   :name "imported" :version 3
+                   :referer "penpot" :generated-by "penpot/2.20.0"}
           staged  (stage-package! profile (fixture-path))
-          job-id  (th/create-job* :import-binfile {:profile-id (:id profile)
-                                                   :resource-id (:resource-id staged)})]
-
-      ;; the user cancels while the import is running
-      (with-redefs [jobs/heartbeat (fn [& _]
-                                     (th/db-update! :job {:status "cancelled"} {:id job-id})
-                                     1)]
-        (t/is (thrown? Throwable
-                       (run-import job-id {:project-id (:default-project-id profile)
-                                           :name       "imported"
-                                           :version    3}))))
-
-      (let [[event :as events] (audit-events mock "import-binfile")]
+          job-id  (create-import-job profile params (:resource-id staged))
+          result  (run-import job-id params)
+          file-id (first (:file-ids result))]
+      (t/is (empty? (get-audit-events "import-binfile")))
+      (t/is (= 1 (jobs/complete th/*system* :job-id job-id :result result)))
+      (t/is (zero? (jobs/complete th/*system* :job-id job-id :result result)))
+      (let [[event :as events] (get-audit-events "import-binfile")
+            [created :as created-events] (get-audit-events "create-file")]
         (t/is (= 1 (count events)))
-        (t/is (= "cancelled" (-> event :props :status)))))))
+        (t/is (= "command" (:type event)))
+        (t/is (= (:id profile) (:profile-id event)))
+        (t/is (= {:status "completed" :job-id job-id
+                  :project-id (:default-project-id profile)
+                  :team-id (:default-team-id profile)
+                  :name "imported" :version 3 :referer "penpot"
+                  :generated-by "penpot/2.20.0"
+                  :file-ids [file-id] :file-count 1}
+                 (:props event)))
+        (t/is (= 1 (count created-events)))
+        (t/is (= file-id (-> created :props :id)))
+        (t/is (= (:id profile) (:profile-id created)))
+        (t/is (= (:default-team-id profile) (-> created :props :team-id)))))))
 
-(t/deftest an-import-without-permission-submits-no-outcome
-  (with-mocks [mock {:target 'app.loggers.audit/submit :return nil}]
-    (let [owner  (th/create-profile* 1)
-          other  (th/create-profile* 2)
-          staged (stage-package! other (fixture-path))
-          job-id (th/create-job* :import-binfile {:profile-id (:id other)
-                                                  :resource-id (:resource-id staged)})]
+(t/deftest a-failed-import-submits-its-terminal-outcome
+  (with-redefs [audit/submit real-audit-submit
+                cf/audit-persist? true
+                cf/telemetry-enabled? false
+                cf/webhooks-enabled? false]
+    (let [profile (th/create-profile* 1)
+          params  {:project-id (:default-project-id profile) :name "imported" :version 3}
+          staged  (stage-package! profile (fixture-path))
+          job-id  (create-import-job profile params (:resource-id staged))]
+      (with-redefs [v3/import-files! (fn [_] (throw (ex-info "boom" {:type :internal})))]
+        (t/is (thrown? Throwable (run-import job-id params))))
+      (t/is (= 1 (jobs/fail th/*system* job-id {:type :internal :code :unexpected-error :hint "import failed"})))
+      (t/is (zero? (jobs/fail th/*system* job-id {:type :internal :code :unexpected-error :hint "import failed"})))
+      (let [[event :as events] (get-audit-events "import-binfile")]
+        (t/is (= 1 (count events)))
+        (t/is (= (:id profile) (:profile-id event)))
+        (t/is (= "failed" (-> event :props :status)))
+        (t/is (= job-id (-> event :props :job-id)))
+        (t/is (not (contains? (:props event) :file-ids)))
+        (t/is (not (contains? (:props event) :file-count))))
+      (t/is (empty? (get-audit-events "create-file"))))))
 
-      (t/is (thrown? Throwable
-                     (run-import job-id {:project-id (:default-project-id owner)
-                                         :name       "imported"
-                                         :version    3})))
+(t/deftest a-queued-cancellation-submits-one-outcome-without-loading-input
+  (with-redefs [audit/submit real-audit-submit
+                cf/audit-persist? true
+                cf/telemetry-enabled? false
+                cf/webhooks-enabled? false]
+    (let [profile (th/create-profile* 1)
+          params  {:project-id (:default-project-id profile) :name "imported" :version 3}
+          job-id  (create-import-job profile params nil)]
+      (th/db-update! :job {:status "new"} {:id job-id})
+      (t/is (= 1 (jobs/cancel th/*system* job-id)))
+      (t/is (zero? (jobs/cancel th/*system* job-id)))
+      (t/is (zero? (jobs/complete th/*system* :job-id job-id :result nil)))
+      (let [[event :as events] (get-audit-events "import-binfile")]
+        (t/is (= 1 (count events)))
+        (t/is (= (:id profile) (:profile-id event)))
+        (t/is (= "cancelled" (-> event :props :status)))
+        (t/is (= job-id (-> event :props :job-id)))
+        (t/is (not (contains? (:props event) :file-ids)))
+        (t/is (not (contains? (:props event) :file-count))))
+      (t/is (empty? (get-audit-events "create-file"))))))
 
-      (t/testing "the import never started, as with the legacy RPC"
-        (t/is (empty? (audit-events mock "import-binfile")))))))
+(t/deftest cancellation-after-the-last-check-can-leave-imported-files
+  (with-redefs [audit/submit real-audit-submit
+                cf/audit-persist? true
+                cf/telemetry-enabled? false
+                cf/webhooks-enabled? false]
+    (let [profile (th/create-profile* 1)
+          params  {:project-id (:default-project-id profile) :name "imported" :version 3}
+          staged  (stage-package! profile (fixture-path))
+          job-id  (create-import-job profile params (:resource-id staged))
+          run     bfj/run
+          result  (with-redefs [bfj/run (fn [cfg context f]
+                                          (let [result (run cfg context f)]
+                                            (jobs/cancel th/*system* job-id)
+                                            result))]
+                    (run-import job-id params))]
+      (t/is (= "cancelled" (:status (jobs/get-job th/*system* job-id))))
+      (t/is (zero? (jobs/complete th/*system* :job-id job-id :result result)))
+      (t/is (= (set (:file-ids result))
+               (set (map :id (project-files (:default-project-id profile))))))
+      (t/is (= ["cancelled"] (mapv #(get-in % [:props :status])
+                                   (get-audit-events "import-binfile"))))
+      (t/is (= 1 (count (get-audit-events "create-file")))))))
+
+(t/deftest file-created-events-require-full-audit-persistence
+  (with-redefs [audit/submit real-audit-submit
+                cf/audit-persist? false
+                cf/telemetry-enabled? false
+                cf/webhooks-enabled? false]
+    (let [profile (th/create-profile* 1)
+          params  {:project-id (:default-project-id profile) :name "imported" :version 3}
+          staged  (stage-package! profile (fixture-path))
+          job-id  (create-import-job profile params (:resource-id staged))
+          result  (run-import job-id params)]
+      (t/is (= 1 (count (:file-ids result))))
+      (t/is (empty? (get-audit-events "create-file"))))))
+
+(t/deftest a-terminal-audit-failure-does-not-undo-the-committed-import
+  (with-redefs [audit/submit real-audit-submit
+                cf/audit-persist? true
+                cf/telemetry-enabled? false
+                cf/webhooks-enabled? false]
+    (let [profile (th/create-profile* 1)
+          params  {:project-id (:default-project-id profile) :name "imported" :version 3}
+          staged  (stage-package! profile (fixture-path))
+          job-id  (create-import-job profile params (:resource-id staged))
+          result  (run-import job-id params)]
+      (with-redefs [audit/submit (fn [cfg event]
+                                   (real-audit-submit cfg event)
+                                   (throw (ex-info "audit failure" {})))]
+        (t/is (thrown-with-msg? Exception #"audit failure"
+                                (jobs/complete th/*system* :job-id job-id :result result))))
+      (t/is (= "running" (:status (jobs/get-job th/*system* job-id))))
+      (t/is (empty? (get-audit-events "import-binfile")))
+      (t/is (= (set (:file-ids result))
+               (set (map :id (project-files (:default-project-id profile))))))
+      (t/is (= 1 (count (get-audit-events "create-file")))))))
+
+(t/deftest a-file-created-audit-failure-leaves-the-imported-file-committed
+  (with-redefs [audit/submit real-audit-submit
+                cf/audit-persist? true
+                cf/telemetry-enabled? false
+                cf/webhooks-enabled? false]
+    (let [profile (th/create-profile* 1)
+          params  {:project-id (:default-project-id profile) :name "imported" :version 3}
+          staged  (stage-package! profile (fixture-path))
+          job-id  (create-import-job profile params (:resource-id staged))]
+      (with-redefs [audit/submit (fn [cfg event]
+                                   (real-audit-submit cfg event)
+                                   (throw (ex-info "audit failure" {})))]
+        (t/is (thrown-with-msg? Exception #"audit failure" (run-import job-id params))))
+      (t/is (= 1 (count (project-files (:default-project-id profile)))))
+      (t/is (empty? (get-audit-events "create-file")))
+      (t/is (empty? (get-audit-events "import-binfile"))))))
+
+(t/deftest an-aborted-import-does-not-report-a-cancellation
+  (with-redefs [audit/submit real-audit-submit
+                cf/audit-persist? true
+                cf/telemetry-enabled? false
+                cf/webhooks-enabled? false]
+    (let [profile (th/create-profile* 1)
+          params  {:project-id (:default-project-id profile) :name "imported" :version 3}
+          staged  (stage-package! profile (fixture-path))
+          job-id  (create-import-job profile params (:resource-id staged))]
+      (th/db-update! :job {:status "aborted"} {:id job-id})
+      (t/is (thrown? Throwable (run-import job-id params)))
+      (t/is (zero? (jobs/cancel th/*system* job-id)))
+      (t/is (empty? (get-audit-events "import-binfile")))
+      (t/is (empty? (get-audit-events "create-file"))))))

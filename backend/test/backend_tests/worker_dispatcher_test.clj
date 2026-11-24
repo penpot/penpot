@@ -406,6 +406,26 @@
     (t/testing "recent running job is not touched"
       (t/is (= "running" (:status (get-row fresh)))))))
 
+(t/deftest dispatcher-aborts-do-not-run-terminal-hooks
+  (let [calls  (atom [])
+        cfg    (assoc (mk-cfg)
+                      ::jobs/defs
+                      {:test-job {::jobs/decoder identity
+                                  ::jobs/on-terminal
+                                  (fn [_ job _ outcome]
+                                    (swap! calls conj [(:id job) outcome]))}})
+        lost   (mk-job {:status "scheduled"
+                        :modified-at (ct/minus (ct/now)
+                                               (ct/duration {:minutes 6}))})
+        orphan (mk-job {:status "running"
+                        :modified-at (ct/minus (ct/now)
+                                               (ct/plus (cf/get-jobs-lease)
+                                                        (ct/duration {:minutes 1})))})]
+    (wdisp/run-batch cfg)
+    (t/is (= "aborted" (:status (get-row lost))))
+    (t/is (= "aborted" (:status (get-row orphan))))
+    (t/is (= [] @calls))))
+
 (t/deftest dispatcher-orphan-sweep-records-the-terminal-counter
   (let [metrics (make-orphan-metrics)
         cfg     (assoc (mk-cfg) ::mtx/metrics metrics)

@@ -155,32 +155,27 @@
                           (assoc :version (:version params))
                           (check-result))))))
 
-(defn- get-outcome
-  "The status the audit gives to an import that raised: an `:interrupt`
-  means the job stopped being active (the user cancelled it), anything
-  else is a failure."
-  [cause]
-  (if (= :interrupt (:type (ex-data cause)))
-    "cancelled"
-    "failed"))
-
 (defn- submit-import-event
   "Submit the `import-binfile` audit event with the outcome of the job.
 
-  It keeps the name and the props of the event the legacy RPC submits, so
-  the series continues across both paths, and adds what only the job
-  knows. The job runs outside any request, so the event carries no
-  request context."
-  [cfg context params props]
-  (audit/submit cfg {:type             "command"
-                     :name             "import-binfile"
-                     :profile-id       (:profile-id context)
-                     :props            (-> params
-                                           (assoc :job-id (:id context))
-                                           (merge props)
-                                           (d/without-nils))
-                     :context          {:triggered-by "import-binfile-job"}
-                     ::webhooks/event? true}))
+  The event shares the terminal transition's transaction. The job runs
+  outside any request, so the event carries no request context."
+  [cfg job params {:keys [outcome result]}]
+  (let [project  (db/get* cfg :project {:id (:project-id params)})
+        file-ids (:file-ids result)
+        props    (cond-> {:status (name outcome)
+                          :team-id (:team-id project)}
+                   (= outcome :completed)
+                   (assoc :file-ids file-ids :file-count (count file-ids)))]
+    (audit/submit cfg {:type             "command"
+                       :name             "import-binfile"
+                       :profile-id       (:profile-id job)
+                       :props            (-> params
+                                             (assoc :job-id (:id job))
+                                             (merge props)
+                                             (d/without-nils))
+                       :context          {:triggered-by "import-binfile-job"}
+                       ::webhooks/event? true})))
 
 (defn- submit-file-created-events
   "The imported files get no event from their own command, so emit one per
@@ -200,9 +195,8 @@
   substrate checks the result again when the job is completed, which is
   the only net for a job that does not validate its own result.
 
-  Once the permission holds, every outcome of the import (completed,
-  failed or cancelled) submits the `import-binfile` audit event, and a
-  completed import submits a `create-file` event per file it created.
+  A completed import submits a `create-file` event per file it created.
+  The terminal hook submits the import outcome.
 
   The package is the input of the job: it is released and its temporary
   copy deleted once the job is terminal, whatever the outcome. A crash is
@@ -210,7 +204,6 @@
   [cfg context params]
   (let [profile-id (:profile-id context)
         project-id (:project-id params)
-        tpoint     (ct/tpoint)
         input      (js/load-input cfg context)]
 
     (try
@@ -224,24 +217,9 @@
                                  :hint "the destination project is not available"
                                  :profile-id profile-id
                                  :project-id project-id))
-            props  {:team-id   (:id team)
-                    :file-size (fs/size input)}
-            result (try
-                     (import-files cfg context params team input)
-                     (catch Throwable cause
-                       (submit-import-event cfg context params
-                                            (assoc props
-                                                   :status     (get-outcome cause)
-                                                   :elapsed-ms (inst-ms (tpoint))))
-                       (throw cause)))]
+            result (import-files cfg context params team input)]
 
         (submit-file-created-events cfg context team (:file-ids result))
-        (submit-import-event cfg context params
-                             (assoc props
-                                    :status     "completed"
-                                    :file-ids   (:file-ids result)
-                                    :file-count (count (:file-ids result))
-                                    :elapsed-ms (inst-ms (tpoint))))
         result)
 
       (finally
@@ -262,6 +240,7 @@
    ::jobs/schema        schema:params
    ::jobs/handler       (fn [context params]
                           (execute-import cfg context params))
+   ::jobs/on-terminal   submit-import-event
    ::jobs/decoder       (sm/decoder schema:params sm/json-transformer)
    ::jobs/validator     (sm/validator schema:params)
    ;; The resolution is keyed by file id: without the result schema the

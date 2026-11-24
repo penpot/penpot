@@ -161,6 +161,10 @@
    [::handler ::sm/fn]
    [::decoder ::sm/fn]
    [::validator ::sm/fn]
+   ;; Runs in the winning complete/fail/cancel transaction with the cfg,
+   ;; job row, decoded params and outcome. A throw rolls the transition back.
+   ;; Dispatcher abort sweeps do not invoke this hook.
+   [::on-terminal {:optional true} ::sm/fn]
    ;; A result crosses a plain JSON column on its way out of the job, so a
    ;; uuid comes back as the text it is on disk and a uuid used as a map
    ;; key comes back as a keyword. A def that declares the schema of its
@@ -566,6 +570,13 @@
       (decode-json-col :params)
       (decode-json-col :result)
       (decode-json-col :error)))
+
+(defn- run-on-terminal
+  "Run the job definition's terminal hook in the transition transaction."
+  [cfg job outcome]
+  (when-let [job-def (get (get-defs cfg) (keyword (:name job)))]
+    (when-let [hook (::on-terminal job-def)]
+      (hook cfg job (decode-params job-def (:params job)) outcome))))
 
 (defn- decode-result-of
   "Decode the result of a row with the decoder of the job-def that owns it.
@@ -1248,6 +1259,7 @@
                               (if (db/exec-one! conn [sql:complete-job (ct/now) (ct/now)
                                                       encoded resource-id job-id])
                                 (do
+                                  (run-on-terminal tx-cfg job {:outcome :completed :result result})
                                   (insert-event tx-cfg
                                                 job-id "end" {:outcome "completed"})
                                   (db/after-commit
@@ -1264,7 +1276,7 @@
       SET status='failed', modified_at=?, error=?
     WHERE id=?
       AND status IN ('running','retry')
-    RETURNING id")
+    RETURNING *")
 
 (defn fail
   "Mark a running job as failed and record the `end` event.
@@ -1279,12 +1291,13 @@
   affected rows."
   [cfg job-id error]
   (assert (mtx/instance cfg) "missing ::mtx/metrics on the jobs cfg")
-  (let [job     (get-job cfg job-id)
-        encoded (db/json (check-job-error error))
+  (let [encoded (db/json (check-job-error error))
         n       (db/tx-run! (db/own-transaction cfg)
                             (fn [{:keys [::db/conn] :as tx-cfg}]
-                              (if (db/exec-one! conn [sql:fail-job (ct/now) encoded job-id])
+                              (if-let [job (some-> (db/exec-one! conn [sql:fail-job (ct/now) encoded job-id])
+                                                   decode-row)]
                                 (do
+                                  (run-on-terminal tx-cfg job {:outcome :failed :error error})
                                   (insert-event tx-cfg
                                                 job-id "end" {:outcome "failed"})
                                   (db/after-commit
@@ -1301,7 +1314,7 @@
       SET status='cancelled', modified_at=?
     WHERE id=?
       AND status IN ('new','scheduled','retry','running')
-    RETURNING id")
+    RETURNING *")
 
 (defn cancel
   "Cancel a pending or running job (new/scheduled/retry/running) and
@@ -1313,11 +1326,12 @@
   and writes no event. Returns the number of affected rows."
   [cfg job-id]
   (assert (mtx/instance cfg) "missing ::mtx/metrics on the jobs cfg")
-  (let [job     (get-job cfg job-id)
-        n       (db/tx-run! (db/own-transaction cfg)
+  (let [n       (db/tx-run! (db/own-transaction cfg)
                             (fn [{:keys [::db/conn] :as tx-cfg}]
-                              (if (db/exec-one! conn [sql:cancel-job (ct/now) job-id])
+                              (if-let [job (some-> (db/exec-one! conn [sql:cancel-job (ct/now) job-id])
+                                                   decode-row)]
                                 (do
+                                  (run-on-terminal tx-cfg job {:outcome :cancelled})
                                   (insert-event tx-cfg
                                                 job-id "end" {:outcome "cancelled"})
                                   (db/after-commit
