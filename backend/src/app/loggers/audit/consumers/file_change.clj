@@ -6,6 +6,7 @@
 
 (ns app.loggers.audit.consumers.file-change
   (:require
+   [app.common.logging :as l]
    [app.common.time :as ct]
    [app.config :as cf]
    [app.db :as db]
@@ -14,48 +15,73 @@
    [app.metrics :as mtx]
    [integrant.core :as ig]))
 
-(def ^:private xf:filter-file-ids
-  (comp
-   (filter (fn [{:keys [name source]}]
-             (and (= "backend" source)
-                  (or (= name "update-file")
-                      (= name "create-file-snapshot")))))
-   (map consumers/decode-row)
-   (filter (fn [row]
-             (= "app" (-> row :context :initiator))))
-   (keep (fn [{:keys [name props]}]
-           (let [file-id (case name
-                           "update-file"
-                           (when (contains? #{"saved" "partial"} (:outcome props))
-                             (:id props))
+(def ^:private xf:backend-event
+  (filter #(= "backend" (get % :source))))
 
-                           "create-file-snapshot"
-                           (:file-id props))]
-             (when (uuid? file-id)
-               file-id))))))
+(def ^:private xf:decode-row
+  (map consumers/decode-row))
+
+(def ^:private xf:filter-initiator
+  (filter #(= "app" (-> % :context :initiator))))
+
+(defn- make-file-event-xf
+  [event-name get-file-id]
+  (comp
+   xf:backend-event
+   (filter #(= event-name (get % :name)))
+   xf:decode-row
+   xf:filter-initiator
+   (map (comp get-file-id :props))
+   (filter uuid?)))
+
+(def ^:private xf:saved-file-ids
+  (make-file-event-xf "update-file"
+                      (fn [{:keys [id outcome]}]
+                        (when (contains? #{"saved" "partial"} outcome)
+                          id))))
+
+(def ^:private xf:snapshot-file-ids
+  (make-file-event-xf "create-file-snapshot" :file-id))
 
 (defn- process-chunk
   [cfg rows]
-  (let [pending
-        (into [] xf:filter-file-ids rows)
+  (let [saved-ids            (into #{} xf:saved-file-ids rows)
+        snapshot-ids         (into #{} xf:snapshot-file-ids rows)
+        snapshot-only-ids    (remove saved-ids snapshot-ids)
+        fragment-gc-enabled? (contains? cf/flags :feature-fdata-pointer-map)]
+    (doseq [file-id (into saved-ids snapshot-ids)]
+      (jobs/submit cfg {::jobs/name :index-file-change-refs-scheduler
+                        ::jobs/params {:file-id file-id}
+                        ::jobs/label (str file-id)
+                        ::jobs/dedupe true}))
 
-        submit-fragment-gc?
-        (contains? cf/flags :feature-fdata-pointer-map)]
+    (when fragment-gc-enabled?
+      (let [delay (cf/get-file-clean-delay)]
+        (doseq [file-id saved-ids]
+          (jobs/submit cfg {::jobs/name :file-fragments-gc
+                            ::jobs/params {:file-id file-id}
+                            ::jobs/label (str file-id)
+                            ::jobs/delay delay
+                            ::jobs/debounce true})))
 
-    (run! (fn [file-id]
-            (jobs/submit cfg {::jobs/name :index-file-change-refs-scheduler
-                              ::jobs/params {:file-id file-id}
-                              ::jobs/label (str file-id)
-                              ::jobs/dedupe true})
-            (when submit-fragment-gc?
-              (jobs/submit cfg {::jobs/name :file-fragments-gc
-                                ::jobs/params {:file-id file-id}
-                                ::jobs/label (str file-id)
-                                ::jobs/delay (ct/duration {:minutes 10})
-                                ::jobs/debounce true})))
-          (distinct pending))
+      ;; A snapshot does not reset inactivity or move pending GC.
+      (doseq [file-id snapshot-only-ids]
+        (jobs/submit cfg {::jobs/name :file-fragments-gc
+                          ::jobs/params {:file-id file-id}
+                          ::jobs/label (str file-id)
+                          ::jobs/delay (ct/duration "10m")
+                          ::jobs/dedupe true})))
 
-    {:processed (count pending)}))
+    (when (or (seq saved-ids) (seq snapshot-ids))
+      (let [files-with-saves    (count saved-ids)
+            snapshot-only-files (count snapshot-only-ids)]
+        (db/after-commit
+         #(l/dbg :hint "file change batch processed"
+                 :files-with-saves files-with-saves
+                 :snapshot-only-files snapshot-only-files
+                 :fragment-gc-enabled fragment-gc-enabled?))))
+
+    {:processed (count rows)}))
 
 (def consumer
   {:id      consumers/file-change-refs

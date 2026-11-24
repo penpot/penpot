@@ -7,6 +7,7 @@
 (ns backend-tests.file-change-refs-consumer-test
   (:require
    [app.common.features :as cfeat]
+   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -26,40 +27,59 @@
 (def ^:private submit-audit audit/submit)
 
 (defn- insert-event
-  [name source initiator props]
-  (th/db-exec-one!
-   ["INSERT INTO audit_log (id, name, type, source, profile_id, ip_addr, props, context)
-     VALUES (?, ?, 'action', ?, ?, '127.0.0.1', ?, ?)"
-    (uuid/next) name source uuid/zero (db/tjson props)
-    (db/tjson {:initiator initiator})]))
+  ([name source initiator props]
+   (insert-event name source initiator props (ct/now)))
+  ([name source initiator props created-at]
+   (th/db-exec-one!
+    ["INSERT INTO audit_log (id, name, type, source, profile_id, ip_addr, props, context, created_at)
+      VALUES (?, ?, 'action', ?, ?, '127.0.0.1', ?, ?, ?)"
+     (uuid/next) name source uuid/zero (db/tjson props)
+     (db/tjson {:initiator initiator}) created-at])))
 
 (defn- pending
   [name]
   (mapv (comp db/decode-json-pgobject :params)
         (th/db-exec! ["SELECT params FROM job WHERE name = ? ORDER BY created_at" name])))
 
-(t/deftest unrelated-rows-are-not-decoded-and-only-valid-events-count
-  (let [file-id (uuid/next)
-        decode  db/decode-transit-pgobject
-        ignored (db/tjson {})
-        save    {:name "update-file"
-                 :source "backend"
-                 :props (db/tjson {:id file-id :outcome "saved"})
-                 :context (db/tjson {:initiator "app"})}]
+(t/deftest all-rows-count-but-only-relevant-events-are-decoded
+  (let [file-id  (uuid/next)
+        decode   db/decode-transit-pgobject
+        ignored  (db/tjson {})
+        save     {:name "update-file"
+                  :source "backend"
+                  :props (db/tjson {:id file-id :outcome "saved"})
+                  :context (db/tjson {:initiator "app"})}
+        snapshot (assoc save :name "create-file-snapshot"
+                        :props (db/tjson {:file-id file-id}))]
     (binding [cf/flags (disj cf/flags :feature-fdata-pointer-map)]
       (with-redefs [db/decode-transit-pgobject
                     (fn [value]
                       (when (identical? ignored value)
                         (throw (ex-info "unrelated row was decoded" {})))
                       (decode value))]
-        (t/is (= {:processed 2}
+        (t/is (= {:processed 6}
                  ((:process consumer/consumer) th/*system*
                                                [save
                                                 (assoc save :name "get-file" :props ignored)
-                                                (assoc save :props (db/tjson {:id (str file-id) :outcome "saved"}))
+                                                (assoc save :props (db/tjson {:id (str (uuid/next)) :outcome "saved"}))
                                                 (assoc save :name "create-file-snapshot" :props (db/tjson {}))
+                                                snapshot
                                                 save])))))
     (t/is (= [{:file-id (str file-id)}] (pending "index-file-change-refs-scheduler")))))
+
+(t/deftest repeated-mixed-events-share-pending-jobs-for-each-affected-file
+  (let [saved-id    (uuid/next)
+        snapshot-id (uuid/next)
+        event       {:source "backend" :context {:initiator "app"}}
+        save        (assoc event :name "update-file" :props {:id saved-id :outcome "saved"})
+        snapshot    (assoc event :name "create-file-snapshot" :props {:file-id snapshot-id})
+        rows        [save save snapshot (assoc-in snapshot [:props :file-id] saved-id)]
+        process     (:process consumer/consumer)]
+    (binding [cf/flags #{:feature-fdata-pointer-map}]
+      (process th/*system* rows)
+      (process th/*system* rows))
+    (t/is (= 2 (count (pending "index-file-change-refs-scheduler"))))
+    (t/is (= 2 (count (pending "file-fragments-gc"))))))
 
 (t/deftest events-for-the-same-file-share-one-pending-index-scheduler
   (let [file-id (uuid/next)]
@@ -157,6 +177,63 @@
                (into #{} (map :file-id) (pending "file-fragments-gc"))))
       (t/is (= #{(str file-id) (str snapshot)}
                (into #{} (map :file-id) (pending "index-file-change-refs-scheduler")))))))
+
+(t/deftest saves-refresh-pending-gc-from-the-enqueue-time
+  (let [now     (ct/inst "2026-11-24T12:00:00Z")
+        later   (ct/plus now "2h")
+        file-id (uuid/next)
+        where   {:name "file-fragments-gc" :label (str file-id)}
+        delay   (ct/duration "36h")]
+    (binding [cf/flags #{:feature-fdata-pointer-map}
+              cf/config (assoc cf/config :file-clean-delay delay)]
+      (binding [ct/*clock* (ct/fixed-clock now)]
+        (insert-event "update-file" "backend" "app"
+                      {:id file-id :outcome "saved"} (ct/minus now "4h"))
+        (consumers/run-pass th/*system* consumer/consumer))
+      (let [job (th/db-get :job where)]
+        (t/is (= (ct/plus now delay) (:scheduled-at job)))
+        (binding [ct/*clock* (ct/fixed-clock later)]
+          (insert-event "update-file" "backend" "app" {:id file-id :outcome "partial"})
+          (insert-event "update-file" "backend" "app" {:id file-id :outcome "saved"})
+          (insert-event "create-file-snapshot" "backend" "app" {:file-id file-id})
+          (consumers/run-pass th/*system* consumer/consumer))
+        (let [refreshed (th/db-get :job where)]
+          (t/is (= (:id job) (:id refreshed)))
+          (t/is (= (ct/plus later delay) (:scheduled-at refreshed)))
+          (binding [ct/*clock* (ct/fixed-clock (ct/plus later "1h"))]
+            (insert-event "create-file-snapshot" "backend" "app" {:file-id file-id})
+            (consumers/run-pass th/*system* consumer/consumer))
+          (t/is (= [(:scheduled-at refreshed)]
+                   (mapv :scheduled-at (th/db-query :job where)))))))))
+
+(t/deftest a-delayed-save-event-still-queues-gc-with-the-full-delay
+  (let [now     (ct/inst "2026-11-24T12:00:00Z")
+        file-id (uuid/next)]
+    (binding [ct/*clock* (ct/fixed-clock now)
+              cf/flags #{:feature-fdata-pointer-map}
+              cf/config (assoc cf/config :file-clean-delay (ct/duration "48h"))]
+      (insert-event "update-file" "backend" "app"
+                    {:id file-id :outcome "saved"} (ct/minus now "72h"))
+      (consumers/run-pass th/*system* consumer/consumer)
+      (t/is (= (ct/plus now "48h")
+               (:scheduled-at (th/db-get :job {:name "file-fragments-gc"
+                                               :label (str file-id)})))))))
+
+(t/deftest snapshots-queue-gc-without-refreshing-a-pending-job
+  (let [now     (ct/inst "2026-11-24T12:00:00Z")
+        file-id (uuid/next)
+        where   {:name "file-fragments-gc" :label (str file-id)}]
+    (binding [cf/flags #{:feature-fdata-pointer-map}]
+      (binding [ct/*clock* (ct/fixed-clock now)]
+        (insert-event "create-file-snapshot" "backend" "app" {:file-id file-id})
+        (consumers/run-pass th/*system* consumer/consumer))
+      (let [job (th/db-get :job where)]
+        (t/is (= (ct/plus now "10m") (:scheduled-at job)))
+        (binding [ct/*clock* (ct/fixed-clock (ct/plus now "5m"))]
+          (insert-event "create-file-snapshot" "backend" "app" {:file-id file-id})
+          (consumers/run-pass th/*system* consumer/consumer))
+        (t/is (= [(select-keys job [:id :scheduled-at])]
+                 (mapv #(select-keys % [:id :scheduled-at]) (th/db-query :job where))))))))
 
 (t/deftest audit-cursor-and-index-submission-roll-back-together
   (let [file-id (uuid/next)
