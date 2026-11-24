@@ -6,8 +6,8 @@ use crate::{
         add_text_with_tabs, add_trailing_space_anchor, calculate_text_layout_data, set_paint_fill,
         vertical_align_offset, ListMarker, ListStyleType, Paragraph as TextParagraph,
         ParagraphBuilderGroup, ParagraphLayout, Stroke, StrokeKind, TextContent,
-        TextDecorationSegment, TextDirection, LIST_MARKER_CENTER_FACTOR, LIST_MARKER_GAP_FACTOR,
-        LIST_MARKER_MIN_RADIUS, LIST_MARKER_RADIUS_FACTOR,
+        TextDecorationSegment, TextDirection, Type, LIST_MARKER_CENTER_FACTOR,
+        LIST_MARKER_GAP_FACTOR, LIST_MARKER_MIN_RADIUS, LIST_MARKER_RADIUS_FACTOR,
     },
     utils::{get_fallback_fonts, get_font_collection},
 };
@@ -362,6 +362,87 @@ pub fn try_paint_from_layout_cache(
     }
 
     Ok(false)
+}
+
+/// Shared gate for the letter stand-in: solid fills, body under
+/// [`crate::shapes::TEXT_GLYPH_MIN_DEVICE_PX`], cached Skia layout, no
+/// stroke/blur/shadow. Without a layout the caller paints real glyphs and
+/// fills the cache.
+fn overview_stand_in<'a>(shape: &'a Shape, scale: f32) -> Option<&'a TextContent> {
+    let Type::Text(content) = &shape.shape_type else {
+        return None;
+    };
+    if shape.has_visible_strokes()
+        || shape.blur.is_some()
+        || content.glyphs_visible_at_scale(scale)
+        || !content.has_usable_paint_layout(shape)
+        || !content.overview_fills_are_solid()
+        || shape
+            .drop_shadows_visible()
+            .any(|shadow| shadow.is_perceptible_at_scale(scale))
+        || shape
+            .inner_shadows_visible()
+            .any(|shadow| shadow.is_perceptible_at_scale(scale))
+    {
+        return None;
+    }
+    Some(content)
+}
+
+fn fill_rects(canvas: &Canvas, color: skia::Color, rects: &[Rect]) {
+    if rects.is_empty() {
+        return;
+    }
+    let mut builder = skia::PathBuilder::new();
+    for rect in rects {
+        builder.add_rect(*rect, None, None);
+    }
+    let mut paint = Paint::default();
+    paint.set_anti_alias(false);
+    paint.set_color(color);
+    canvas.draw_path(&builder.detach(), &paint);
+}
+
+/// Paint one mark per letter and skip glyphs when the body is under
+/// [`crate::shapes::TEXT_GLYPH_MIN_DEVICE_PX`].
+///
+/// Returns `true` when the caller must not build paragraphs. Export always
+/// draws glyphs. Marks come from the cached Skia layout; each keeps its span
+/// color.
+pub fn paint_overview_block(
+    render_state: &mut RenderState,
+    shape: &Shape,
+    surface_id: SurfaceId,
+) -> bool {
+    if render_state.export_context.is_some()
+        || !matches!(surface_id, SurfaceId::Current | SurfaceId::Fills)
+    {
+        return false;
+    }
+
+    let Some(content) = overview_stand_in(shape, render_state.get_scale()) else {
+        return false;
+    };
+    let Some(runs) = content.overview_runs(&shape.selrect(), shape.vertical_align()) else {
+        return false;
+    };
+    if runs.is_empty() {
+        return true;
+    }
+
+    let canvas = render_state.surfaces.canvas_and_mark_dirty(surface_id);
+    let mut groups: Vec<(skia::Color, Vec<Rect>)> = Vec::new();
+    for (rect, color) in runs {
+        if let Some((_, rects)) = groups.iter_mut().find(|(c, _)| *c == color) {
+            rects.push(rect);
+        } else {
+            groups.push((color, vec![rect]));
+        }
+    }
+    for (color, rects) in groups {
+        fill_rects(canvas, color, &rects);
+    }
+    true
 }
 
 fn paint_from_cached_layout(canvas: &Canvas, shape: &Shape, text_content: &TextContent) {

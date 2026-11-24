@@ -1550,15 +1550,22 @@ impl RenderState {
             }
 
             if let Type::Text(stored_text_content) = &shape.shape_type {
-                self.tile_atlas_flushed = true;
+                // Glyph uploads need a GPU sync before the tile snapshot. The
+                // letter stand-in does not upload glyphs, so it must not.
+                let overview = text::paint_overview_block(self, shape, target_surface);
+                if !overview {
+                    self.tile_atlas_flushed = true;
+                }
 
-                if !text::try_paint_from_layout_cache(
-                    Some(self),
-                    None,
-                    shape,
-                    Some(target_surface),
-                    text_layout_cache_rotation_only,
-                )? {
+                if !overview
+                    && !text::try_paint_from_layout_cache(
+                        Some(self),
+                        None,
+                        shape,
+                        Some(target_surface),
+                        text_layout_cache_rotation_only,
+                    )?
+                {
                     let rebound_text_content =
                         stored_text_content.paint_content_for_selrect(shape.selrect());
                     let text_content = rebound_text_content.as_ref();
@@ -1707,8 +1714,6 @@ impl RenderState {
             }
 
             Type::Text(stored_text_content) => {
-                self.tile_atlas_flushed = true;
-
                 self.surfaces.apply_mut(surface_ids, |s| {
                     s.canvas().concat(&matrix);
                 });
@@ -1723,14 +1728,21 @@ impl RenderState {
                                 .drop_shadows_visible()
                                 .any(|s| s.is_perceptible_at_scale(self.get_scale()))
                             && shape.inner_shadow_paints().is_empty()));
-                if !(can_use_layout_cache
-                    && text::try_paint_from_layout_cache(
-                        Some(self),
-                        None,
-                        &shape,
-                        Some(fills_surface_id),
-                        text_layout_cache_rotation_only,
-                    )?)
+                let overview = parent_shadows.is_none()
+                    && text::paint_overview_block(self, &shape, fills_surface_id);
+                if !overview {
+                    // Glyph uploads need a GPU sync before the tile snapshot.
+                    self.tile_atlas_flushed = true;
+                }
+                if !overview
+                    && !(can_use_layout_cache
+                        && text::try_paint_from_layout_cache(
+                            Some(self),
+                            None,
+                            &shape,
+                            Some(fills_surface_id),
+                            text_layout_cache_rotation_only,
+                        )?)
                 {
                     let rebound_text_content =
                         stored_text_content.paint_content_for_selrect(shape.selrect());
