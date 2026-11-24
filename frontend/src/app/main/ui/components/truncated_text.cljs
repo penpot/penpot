@@ -47,8 +47,13 @@
           #(.disconnect observer))))
 
     (if ^boolean truncated
+      ;; The tooltip trigger sets `line-height: 0`, which the text would
+      ;; inherit and collapse. An inline style restores the parent one: a
+      ;; class here would tie with the trigger class and depend on the
+      ;; order of the stylesheets.
       [:> tooltip* {:content text
                     :trigger-ref text-ref
+                    :style #js {:lineHeight "inherit"}
                     :class (dm/str (stl/css :tooltip) " " tooltip-class)}
        [:> as text-props text]]
       [:> as text-props text])))

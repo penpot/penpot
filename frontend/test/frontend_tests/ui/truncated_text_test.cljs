@@ -104,6 +104,14 @@
        (t/is (= long-name (.-textContent container)))
        (t/is (some? (tooltip-trigger container)))))))
 
+(t/deftest ^:async cut-text-keeps-the-line-height-of-its-parent
+  ;; The DS tooltip trigger sets `line-height: 0`. A cut text inside it
+  ;; would inherit it and collapse, hiding the text.
+  (await
+   (with-mounted-text (atom {:scroll 320 :client 200})
+     (fn [container _]
+       (t/is (= "inherit" (.. (tooltip-trigger container) -style -lineHeight)))))))
+
 (t/deftest ^:async tooltip-follows-the-size-of-the-box
   ;; Wrapping the text in the tooltip mounts a new node: the observer
   ;; must follow it, or the tooltip would stay after the box grows again.
