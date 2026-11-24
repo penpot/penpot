@@ -288,7 +288,8 @@
   (ptk/reify ::exit-branch-review-preview
     ptk/UpdateEvent
     (update [_ state]
-      (dissoc state :workspace-pr-preview :workspace-review-local :workspace-review-activity))
+      (dissoc state :workspace-pr-preview :workspace-review-local :workspace-review-activity
+              :workspace-review-layers))
 
     ptk/WatchEvent
     (watch [_ state _]

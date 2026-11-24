@@ -305,3 +305,39 @@ test("on a branch, the all-branches dialog offers no new branch", async ({
   // branches only grow from main: the button stays, disabled
   await expect(page.getByRole("button", { name: "New branch" })).toBeDisabled();
 });
+
+test("a card of the activity draws the layer as its sitting left it", async ({
+  page,
+}) => {
+  const workspacePage = new WorkspacePage(page);
+  await setupBranchReview(workspacePage);
+  await workspacePage.mockRPCs({
+    "get-branch-review-activity?id=*":
+      "branch-reviews/get-branch-review-activity.json",
+    "get-branch-layer-at-revision?*":
+      "branch-reviews/get-branch-layer-at-revision-approximate.json",
+  });
+  const layerRequest = page.waitForRequest(/get-branch-layer-at-revision/);
+  await workspacePage.goToWorkspace({ extraParams: `&pr-id=${PR_ID}` });
+
+  await reviewBar(page).getByRole("button", { name: "Details" }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByRole("tab", { name: "Activity (1)" }).click();
+
+  // the layer is not in the open file: the card draws the one the
+  // command rebuilt at the revision of the sitting
+  await dialog.getByText("Checkout button").hover();
+  const request = await layerRequest;
+  const params = new URL(request.url()).searchParams;
+  expect(params.get("revn")).toBe("7");
+  expect(params.get("branch-id")).toBe(
+    "c7ce0794-0992-8105-8004-38f280443998",
+  );
+
+  const card = page.getByRole("tooltip");
+  await expect(card.locator('svg[viewBox="40 30 120 54"]')).toBeVisible();
+
+  // the branch no longer keeps that save, so the card says it shows the
+  // layer as it is now
+  await expect(card.getByText("Shown as it is now")).toBeVisible();
+});

@@ -14,7 +14,9 @@
   `:workspace-review-local` keeps the tool in use, the tab and filters of
   the review panel and the change shown on the canvas;
   `:workspace-review-activity` the activity of the review, folded by the
-  backend from the saves of the branch since the review opened."
+  backend from the saves of the branch since the review opened;
+  `:workspace-review-layers` the layers the cards of that activity draw,
+  each as the save of its sitting left it."
   (:require
    [app.common.geom.point :as gpt]
    [app.common.uuid :as uuid]
@@ -230,6 +232,48 @@
                                 (assoc state :workspace-review-activity
                                        {:pr-id pr-id :status :error})))))))))
 
+;; --- Layers as a sitting left them
+
+(defn layer-key
+  "The key a layer drawn at a revision of the branch is cached under:
+  the review, the revision and the layer."
+  [pr-id revn shape-id]
+  [pr-id revn shape-id])
+
+(defn- set-layer
+  [cache-key value]
+  (ptk/reify ::set-layer
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-review-layers cache-key] value))))
+
+(defn fetch-layer-at-revision
+  "Load the layer `shape-id` of the page `page-id` as the save of the
+  revision `revn` of the branch `branch-id` (the `file_branch` row) left
+  it, for the cards of the review `pr-id`. A layer is asked once: a key
+  already loading, loaded or failed is not asked again, and a failure
+  leaves the card on the workspace drawing."
+  [{:keys [pr-id branch-id revn page-id shape-id]}]
+  (assert (uuid? pr-id) "expected a valid uuid for `pr-id`")
+  (assert (uuid? branch-id) "expected a valid uuid for `branch-id`")
+  (assert (int? revn) "expected an integer `revn`")
+  (assert (uuid? page-id) "expected a valid uuid for `page-id`")
+  (assert (uuid? shape-id) "expected a valid uuid for `shape-id`")
+  (ptk/reify ::fetch-layer-at-revision
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [cache-key (layer-key pr-id revn shape-id)]
+        (if (contains? (:workspace-review-layers state) cache-key)
+          (rx/empty)
+          (rx/concat
+           (rx/of (set-layer cache-key {:status :loading}))
+           (->> (rp/cmd! :get-branch-layer-at-revision {:branch-id branch-id
+                                                        :revn revn
+                                                        :page-id page-id
+                                                        :shape-id shape-id})
+                (rx/map #(set-layer cache-key {:status :loaded :layer %}))
+                (rx/catch (fn [_] (rx/of (set-layer cache-key {:status :error})))))))))))
+
 ;; --- Details
 
 (defn open-details
@@ -341,4 +385,4 @@
   (ptk/reify ::reset-review-local
     ptk/UpdateEvent
     (update [_ state]
-      (dissoc state :workspace-review-local :workspace-review-activity))))
+      (dissoc state :workspace-review-local :workspace-review-activity :workspace-review-layers))))

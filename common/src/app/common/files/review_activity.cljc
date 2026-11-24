@@ -257,11 +257,19 @@
   milliseconds, belong to different sittings."
   (* 30 60 1000))
 
+(defn- last-revn
+  "The newest branch revn among `rows`: the revn the last save of a
+  sitting produced. Nil when no row carries one."
+  [rows]
+  (some->> (seq (keep :revn rows))
+           (reduce max)))
+
 (defn sessions
   "Cut `rows` into sittings: runs of saves of one person with no gap
   longer than `gap-ms` milliseconds between two of them, newest first.
-  Each sitting has the person (`:profile-id`), when it started and ended
-  and its own `net-entries`."
+  Each sitting has the person (`:profile-id`), when it started and ended,
+  the branch revn its last save produced (`:revn`, the highest revn of
+  its rows), and its own `net-entries`."
   ([rows] (sessions rows default-session-gap-ms))
   ([rows gap-ms]
    (->> rows
@@ -285,6 +293,7 @@
                   (when (seq entries)
                     (-> session
                         (dissoc :rows)
+                        (assoc :revn (last-revn rows))
                         (assoc :entries entries))))))
         (reverse)
         (vec))))

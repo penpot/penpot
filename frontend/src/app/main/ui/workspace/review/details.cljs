@@ -304,27 +304,73 @@
     #js {:left (dm/str x "px")
          :top (dm/str (max gap y) "px")}))
 
+(defn- card-layer
+  "What the card of `entry` draws: the layer as the save of its sitting
+  left it, from `fetched` (a `get-branch-layer-at-revision` result) when
+  that holds the layer, even a layer the sitting deleted; otherwise the
+  layer as the workspace `objects` have it now, and nothing for a deleted
+  layer. Returns `{:shape :objects :approximate}` or nil."
+  [entry objects fetched]
+  (let [id     (:id entry)
+        saved  (:objects fetched)
+        shape  (get saved id)
+        now    (get objects id)]
+    (cond
+      (some? shape)
+      {:shape shape :objects saved :approximate (true? (:approximate fetched))}
+
+      (and (some? now) (not= :deleted (:kind entry)))
+      {:shape now :objects objects :approximate false})))
+
+(mf/defc card-preview*
+  "The drawing of the layer of a card (`card-layer`), marked when the
+  branch no longer keeps the save of its sitting and the drawing is the
+  layer as it is now."
+  {::mf/private true}
+  [{:keys [layer]}]
+  [:*
+   [:div {:class (stl/css :change-card-preview)}
+    (if (some? layer)
+      [:> shape-preview* {:shape (:shape layer) :objects (:objects layer)}]
+      [:div {:class (stl/css :deleted-preview)}])]
+   (when (:approximate layer)
+     [:> text* {:as "span" :typography t/body-small :class (stl/css :muted)}
+      (tr "workspace.review.activity.drawn-as-now")])])
+
 (mf/defc change-card*
   "What a change did, beside its row. It goes in a portal so the scroll of
-  the dialog never cuts it."
+  the dialog never cuts it. The layer is drawn as the save of the sitting
+  `revn` left it, once fetched; until then, or when it cannot be, as the
+  workspace has it now."
   {::mf/private true}
-  [{:keys [entry tasks rect]}]
-  (let [profiles (mf/deref refs/profiles)
-        data     (mf/deref refs/workspace-data)
-        objects  (dm/get-in data [:pages-index (:page-id entry) :objects])
-        shape    (get objects (:id entry))
-        attrs    (:attrs entry)
-        tokens   (:applied-tokens attrs)
-        linked   (filterv #(= (:id entry) (:shape-id %)) tasks)]
+  [{:keys [pr revn entry tasks rect]}]
+  (let [profiles  (mf/deref refs/profiles)
+        data      (mf/deref refs/workspace-data)
+        layers    (mf/deref refs/review-layers)
+        objects   (dm/get-in data [:pages-index (:page-id entry) :objects])
+        pr-id     (:id pr)
+        branch-id (:file-branch-id pr)
+        cache-key (dwrv/layer-key pr-id revn (:id entry))
+        fetched   (when (= :loaded (dm/get-in layers [cache-key :status]))
+                    (dm/get-in layers [cache-key :layer]))
+        layer     (card-layer entry objects fetched)
+        attrs     (:attrs entry)
+        tokens    (:applied-tokens attrs)
+        linked    (filterv #(= (:id entry) (:shape-id %)) tasks)]
+
+    (mf/with-effect [cache-key branch-id]
+      (when (and (some? revn) (uuid? branch-id))
+        (st/emit! (dwrv/fetch-layer-at-revision {:pr-id pr-id
+                                                 :branch-id branch-id
+                                                 :revn revn
+                                                 :page-id (:page-id entry)
+                                                 :shape-id (:id entry)}))))
 
     [:div {:class (stl/css :change-card) :role "tooltip" :style (card-style rect)}
      [:div {:class (stl/css :change-card-head)}
       [:> text* {:as "span" :typography t/body-small :class (stl/css :strong)} (:name entry)]
       [:> tag* {:tone (kind-tone (:kind entry))} (rvc/change-kind-label (:kind entry))]]
-     [:div {:class (stl/css :change-card-preview)}
-      (if (and (some? shape) (not= :deleted (:kind entry)))
-        [:> shape-preview* {:shape shape :objects objects}]
-        [:div {:class (stl/css :deleted-preview)}])]
+     [:> card-preview* {:layer layer}]
      (when (seq attrs)
        [:dl {:class (stl/css :attrs)}
         (for [[attr diff] (dissoc attrs :applied-tokens :parent-id)]
@@ -364,7 +410,7 @@
   "One change of a group: a click shows it on the canvas, and hovering it
   shows what it did."
   {::mf/private true}
-  [{:keys [entry tasks portal]}]
+  [{:keys [pr revn entry tasks portal]}]
   (let [id       (:id entry)
         tone     (kind-tone (:kind entry))
         rect*    (mf/use-state nil)
@@ -386,12 +432,12 @@
                       :on-click on-show}]
      (when (some? rect)
        (mf/portal
-        (mf/html [:> change-card* {:entry entry :tasks tasks :rect rect}])
+        (mf/html [:> change-card* {:pr pr :revn revn :entry entry :tasks tasks :rect rect}])
         portal))]))
 
 (mf/defc change-group*
   {::mf/private true}
-  [{:keys [session tasks is-open]}]
+  [{:keys [pr session tasks is-open]}]
   (let [profiles  (mf/deref refs/profiles)
         open*     (mf/use-state is-open)
         open?     (deref open*)
@@ -422,6 +468,8 @@
        [:ul {:class (stl/css :change-rows)}
         (for [entry shown]
           [:> change-item* {:key (dm/str (:id entry))
+                            :pr pr
+                            :revn (:revn session)
                             :entry entry
                             :tasks tasks
                             :portal portal}])
@@ -433,7 +481,7 @@
 (mf/defc day-group*
   "The changes of one day: only the group of its last session opens."
   {::mf/private true}
-  [{:keys [sessions tasks]}]
+  [{:keys [pr sessions tasks]}]
   (let [sessions (mf/with-memo [sessions]
                    (into [] d/xf:add-index sessions))]
     [:section {:class (stl/css :section)}
@@ -441,6 +489,7 @@
       (day-label (:end (first sessions)))]
      (for [session sessions]
        [:> change-group* {:key (dm/str (inst-ms (:start session)) (:profile-id session))
+                          :pr pr
                           :session session
                           :tasks tasks
                           :is-open (zero? (::d/index session))}])]))
@@ -497,6 +546,7 @@
                            :text (tr "workspace.review.activity.empty")}]
          (for [day by-day]
            [:> day-group* {:key (day-label (:end (first day)))
+                           :pr pr
                            :sessions day
                            :tasks tasks}]))
 

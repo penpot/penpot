@@ -12072,6 +12072,10 @@ msgid "workspace.review.activity.click-to-show"
 msgstr "Haz clic para verlo en el lienzo"
 
 #: src/app/main/ui/workspace/review/details.cljs
+msgid "workspace.review.activity.drawn-as-now"
+msgstr "Se muestra como está ahora"
+
+#: src/app/main/ui/workspace/review/details.cljs
 msgid "workspace.review.activity.empty"
 msgstr "No ha cambiado nada desde que se abrió la revisión."
 
