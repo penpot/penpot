@@ -12,17 +12,10 @@
    [app.util.i18n :as i18n]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
-   [clojure.string :as str]))
+   [clojure.string :as str]
+   [frontend-tests.helpers.i18n :refer [tr-stub]]))
 
 (def ^:private import-warnings-notification @#'dwti/import-warnings-notification)
-
-;; Echoes the key and its arguments, so the test sees what went into each
-;; string. Both arities, like `tr`: a call site compiled for one of them
-;; looks up that arity on the replacement.
-(defn- tr-stub
-  ([key] key)
-  ([key & args]
-   (str key "(" (str/join ", " (map #(if (i18n/c? %) @% %) args)) ")")))
 
 (t/deftest import-warnings-notification-test
   (with-redefs [i18n/tr tr-stub]

@@ -2176,12 +2176,12 @@
                  (map first result)))
         (t/is (= (map first result) (map (comp :name second) result)))))
 
-    (t/testing "tokens without the group's name in their path stay as they are"
+    (t/testing "tokens outside the renamed group stay as they are"
       (let [result (into {} (ctob/update-tokens-group active-tokens "color.brand" "brand" "accent"))]
         (t/is (= (get active-tokens "color.neutral.gray") (get result "color.neutral.gray")))
         (t/is (= (get active-tokens "spacing.sm") (get result "spacing.sm")))))
 
-    (t/testing "renaming a top level group renames it in the tokens that have its name"
+    (t/testing "renaming a top level group renames it in all of its tokens"
       (t/is (= ["palette.brand.primary" "palette.brand.secondary" "palette.neutral.gray" "spacing.sm"]
                (map first (ctob/update-tokens-group active-tokens "color" "color" "palette")))))))
 
