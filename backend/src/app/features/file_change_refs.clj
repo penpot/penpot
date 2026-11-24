@@ -91,10 +91,15 @@
                                       file-id change-id]))
          true)))))
 
+(defn plan-missing-change-ids
+  "Plan a scan of uncovered file change IDs, including marked changes."
+  [cfg file-id]
+  (db/plan cfg [(str "SELECT c.id FROM file_change c WHERE c.file_id = ? AND "
+                     sql:missing-ref)
+                file-id]))
+
 (defn get-missing-change-ids
-  "Return up to `limit` uncovered file change IDs in database UUID order,
-  including marked changes. Pass `:after-id` to resume after a previous
-  page; omit it when checking coverage of the whole file."
+  "Return up to `limit` uncovered IDs in UUID order, including marked changes."
   [cfg file-id limit & {:keys [after-id]}]
   (let [sql (str "SELECT c.id FROM file_change c WHERE c.file_id = ? AND "
                  (when after-id "c.id > ? AND ")

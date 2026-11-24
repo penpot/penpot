@@ -13,31 +13,24 @@
    [app.metrics :as mtx]
    [integrant.core :as ig]))
 
-(def ^:private batch-size 32)
-
-(defn- schedule-changes
-  [cfg file-id scheduled change-ids]
-  (reduce (fn [scheduled change-id]
-            (jobs/heartbeat cfg)
-            (if (jobs/submit cfg {::jobs/name :index-file-change-refs
-                                  ::jobs/params {:file-id file-id :change-id change-id}
-                                  ::jobs/label (str file-id "/" change-id)
-                                  ::jobs/skip-if-active true})
-              (inc scheduled)
-              scheduled))
-          scheduled
-          change-ids))
-
 (defn execute
-  "Scan uncovered changes in bounded pages and count newly queued jobs."
+  "Scan uncovered changes and count newly queued jobs."
   [cfg {:keys [file-id]}]
-  (loop [after-id  nil
-         scheduled 0]
-    (let [ids       (refs/get-missing-change-ids cfg file-id batch-size :after-id after-id)
-          scheduled (schedule-changes cfg file-id scheduled ids)]
-      (if (= batch-size (count ids))
-        (recur (peek ids) scheduled)
-        {:file-id file-id :scheduled scheduled}))))
+  (db/tx-run!
+   cfg
+   (fn [cfg]
+     (let [scheduled
+           (reduce (fn [scheduled {change-id :id}]
+                     (jobs/heartbeat cfg)
+                     (if (jobs/submit cfg {::jobs/name :index-file-change-refs
+                                           ::jobs/params {:file-id file-id :change-id change-id}
+                                           ::jobs/label (str file-id "/" change-id)
+                                           ::jobs/skip-if-active true})
+                       (inc scheduled)
+                       scheduled))
+                   0
+                   (refs/plan-missing-change-ids cfg file-id))]
+       {:file-id file-id :scheduled scheduled}))))
 
 (def ^:private schema:params
   [:map {:closed true}

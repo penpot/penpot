@@ -6,7 +6,6 @@
 
 (ns app.loggers.audit.consumers.file-change
   (:require
-   [app.common.logging :as l]
    [app.common.time :as ct]
    [app.config :as cf]
    [app.db :as db]
@@ -15,22 +14,13 @@
    [app.metrics :as mtx]
    [integrant.core :as ig]))
 
-(def ^:private xf:backend-event
-  (filter #(= "backend" (get % :source))))
-
-(def ^:private xf:decode-row
-  (map consumers/decode-row))
-
-(def ^:private xf:filter-initiator
-  (filter #(= "app" (-> % :context :initiator))))
-
 (defn- make-file-event-xf
   [event-name get-file-id]
   (comp
-   xf:backend-event
-   (filter #(= event-name (get % :name)))
-   xf:decode-row
-   xf:filter-initiator
+   (filter #(and (= "backend" (:source %))
+                 (= event-name (:name %))))
+   (map consumers/decode-row)
+   (filter #(= "app" (get-in % [:context :initiator])))
    (map (comp get-file-id :props))
    (filter uuid?)))
 
@@ -71,15 +61,6 @@
                           ::jobs/label (str file-id)
                           ::jobs/delay (ct/duration "10m")
                           ::jobs/dedupe true})))
-
-    (when (or (seq saved-ids) (seq snapshot-ids))
-      (let [files-with-saves    (count saved-ids)
-            snapshot-only-files (count snapshot-only-ids)]
-        (db/after-commit
-         #(l/dbg :hint "file change batch processed"
-                 :files-with-saves files-with-saves
-                 :snapshot-only-files snapshot-only-files
-                 :fragment-gc-enabled fragment-gc-enabled?))))
 
     {:processed (count rows)}))
 

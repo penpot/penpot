@@ -43,15 +43,21 @@
   []
   (th/db-query :job {:name "index-file-change-refs"}))
 
+(defn- missing-change-ids
+  [file-id]
+  (db/tx-run! th/*system*
+              (fn [cfg]
+                (into #{} (map :id) (refs/plan-missing-change-ids cfg file-id)))))
+
 (t/deftest the-index-job-requires-a-change-id
   (let [failure (ex/try! (jobs/submit th/*system* {::jobs/name :index-file-change-refs
                                                    ::jobs/params {:file-id (uuid/next)}}))]
     (t/is (= :data-validation (:code (ex-data failure))))
     (t/is (empty? (index-jobs)))))
 
-(t/deftest scheduler-queues-uncovered-changes-across-pages-without-indexing
+(t/deftest scheduler-queues-uncovered-changes-without-indexing
   (let [file-id    (create-file)
-        change-ids (mapv #(UUID. 0 (long %)) (range 1 67))
+        change-ids (mapv #(UUID. 0 (long %)) (range 1 1035))
         first-id   (first change-ids)]
     (doseq [id change-ids]
       (th/db-insert! :file-change {:file-id file-id :id id :kind fchanges/revision-kind}))
@@ -65,7 +71,7 @@
                                               :result {:file-id file-id :scheduled -1}))]
           (t/is (= :invalid-result (:code (ex-data failure)))))
         (let [result (run-scheduler file-id)]
-          (t/is (= {:file-id file-id :scheduled 65} result))
+          (t/is (= {:file-id file-id :scheduled 1033} result))
           (t/is (= 1 (jobs/complete th/*system* :job-id id :result result)))
           (t/is (= result (:result (jobs/get-job th/*system* id))))))
       (t/is (= {:file-id file-id :scheduled 0} (run-scheduler file-id)))
@@ -73,8 +79,23 @@
         (t/is (= {:file-id missing-id :scheduled 0} (run-scheduler missing-id)))))
     (t/is (= (set (map str (rest change-ids)))
              (into #{} (map (comp :change-id db/decode-json-pgobject :params)) (index-jobs))))
-    (t/is (= [(second change-ids)] (refs/get-missing-change-ids th/*system* file-id 1)))
+    (t/is (= (set (rest change-ids)) (missing-change-ids file-id)))
     (t/is (empty? (th/db-query :job {:name "file-fragments-gc"})))))
+
+(t/deftest scheduler-rolls-back-all-submissions-on-failure
+  (let [file-id (create-file)
+        submit  jobs/submit
+        calls   (atom 0)]
+    (doseq [id [(uuid/next) (uuid/next)]]
+      (th/db-insert! :file-change {:file-id file-id :id id :kind fchanges/revision-kind}))
+    (with-redefs [jobs/submit (fn [cfg options]
+                                (if (= 2 (swap! calls inc))
+                                  (throw (ex-info "submission failed" {}))
+                                  (submit cfg options)))]
+      (t/is (thrown-with-msg? clojure.lang.ExceptionInfo #"submission failed"
+                              (run-scheduler file-id))))
+    (t/is (empty? (index-jobs)))
+    (t/is (= {:file-id file-id :scheduled 2} (run-scheduler file-id)))))
 
 (t/deftest a-running-index-job-is-not-scheduled-again
   (let [file-id   (create-file)
@@ -104,7 +125,7 @@
 
     (t/is (= {:file-id file-id :change-id snapshot :indexed false} (run-index file-id snapshot)))
     (t/is (= {:file-id file-id :change-id revision :indexed true} (run-index file-id revision)))
-    (t/is (= [snapshot] (refs/get-missing-change-ids th/*system* file-id 2)))))
+    (t/is (= #{snapshot} (missing-change-ids file-id)))))
 
 (t/deftest an-index-failure-only-retries-the-affected-change
   (let [file-id    (create-file)
@@ -125,10 +146,10 @@
       (t/is (= :file-change-index-failed (:code (ex-data failure))))
       (t/is (= failing-id (:change-id (ex-data failure))))
       (t/is (= (ct/duration "1m") (:delay (ex-data failure)))))
-    (t/is (= [failing-id later-id] (refs/get-missing-change-ids th/*system* file-id 3)))
+    (t/is (= #{failing-id later-id} (missing-change-ids file-id)))
     (t/is (:indexed (run-index file-id later-id)))
-    (t/is (= [failing-id] (refs/get-missing-change-ids th/*system* file-id 3)))
+    (t/is (= #{failing-id} (missing-change-ids file-id)))
 
     (th/db-update! :file-data {:data payload} {:file-id file-id :id failing-id})
     (t/is (:indexed (run-index file-id failing-id)))
-    (t/is (empty? (refs/get-missing-change-ids th/*system* file-id 3)))))
+    (t/is (empty? (missing-change-ids file-id)))))
