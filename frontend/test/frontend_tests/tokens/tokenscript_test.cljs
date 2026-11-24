@@ -7,6 +7,7 @@
 (ns frontend-tests.tokens.tokenscript-test
   (:require
    [app.common.files.tokens :as cfo]
+   [app.common.math :as mth]
    [app.common.test-helpers.ids-map :as cthi]
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
@@ -207,6 +208,37 @@
     (t/testing "an angle that is no rotation has an error of its own"
       (t/is (nil? (get-in resolved ["gradient.bad-angle" :resolved-value])))
       (t/is (= :error.style-dictionary/invalid-token-value-gradient-angle (code "gradient.bad-angle"))))))
+
+;; Angles in turn, rad and grad resolve to degrees for every token, not
+;; only for gradients: a rotation token in turns rotates a shape by the
+;; degrees it is.
+(t/deftest resolve-tokens-angle-units-test
+  (let [gradient (fn [name angle]
+                   {:name name :type :gradient
+                    :value {:kind "linear"
+                            :angle angle
+                            :stops [{:color "#ff0000" :position "0"}
+                                    {:color "#0000ff" :position "1"}]}})
+        resolved (ts/resolve-tokens
+                  (tokens-map {:name "rotation.deg" :value "45deg" :type :rotation}
+                              {:name "rotation.turn" :value "0.25turn" :type :rotation}
+                              {:name "rotation.rad" :value "1rad" :type :rotation}
+                              {:name "rotation.grad" :value "100grad" :type :rotation}
+                              {:name "rotation.alias" :value "{rotation.turn} + 10deg" :type :rotation}
+                              (gradient "gradient.rad" "1rad")
+                              (gradient "gradient.grad" "50grad")))
+        value    (fn [name] (get-in resolved [name :resolved-value]))
+        angle    (fn [name] (get-in resolved [name :resolved-value :angle]))]
+    (t/testing "a rotation token resolves to degrees in any angle unit"
+      (t/is (= 45 (value "rotation.deg")))
+      (t/is (= 90 (value "rotation.turn")))
+      (t/is (mth/close? (/ 180 js/Math.PI) (value "rotation.rad")))
+      (t/is (mth/close? 90 (value "rotation.grad"))))
+    (t/testing "a rotation that references one in turns adds up in degrees"
+      (t/is (mth/close? 100 (value "rotation.alias"))))
+    (t/testing "a gradient angle in rad or grad resolves to degrees"
+      (t/is (mth/close? (/ 180 js/Math.PI) (angle "gradient.rad")))
+      (t/is (mth/close? 45 (angle "gradient.grad"))))))
 
 (t/deftest resolve-tokens-value-validation-test
   (let [resolved (ts/resolve-tokens
