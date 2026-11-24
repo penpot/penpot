@@ -33,6 +33,7 @@
    [common-tests.files-migrations-0038-test]
    [common-tests.files-migrations-0039-test]
    [common-tests.files-migrations-test]
+   [common-tests.files.changes-builder-test]
    [common-tests.files.comp-processors-test]
    [common-tests.files.helpers-test]
    [common-tests.files.page-diff-test]
@@ -160,6 +161,7 @@
    'common-tests.files-migrations-0038-test
    'common-tests.files-migrations-0039-test
    'common-tests.files-migrations-test
+   'common-tests.files.changes-builder-test
    'common-tests.files.comp-processors-test
    'common-tests.files.helpers-test
    'common-tests.files.page-diff-test

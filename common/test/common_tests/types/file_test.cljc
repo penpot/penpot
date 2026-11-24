@@ -95,3 +95,55 @@
     (t/is (= 1 (swap-level file :effects-copy 1)))
     ;; With no levels to look at, not even the shape itself is checked
     (t/is (= 0 (swap-level file :effects-in-mid 0)))))
+
+(defn- outer-swap
+  [file label base-label]
+  (let [page (thf/current-page file)]
+    (ctf/find-outer-swap (ctn/make-container page :page)
+                         {(:id file) file}
+                         (ths/get-shape file label)
+                         (thi/id base-label))))
+
+(t/deftest test-find-outer-swap-up-the-ref-chain
+  (let [file (setup-file)]
+    ;; Level 1 is the ref shape
+    (t/is (= [1 (thi/id :plain-in-inner)] (outer-swap file :effects-in-top :frame-inner)))
+    (t/is (= [2 (thi/id :plain-in-inner)] (outer-swap file :effects-copy :frame-inner)))))
+
+(t/deftest test-find-outer-swap-excludes-the-shape-itself
+  (let [file (setup-file)]
+    ;; :effects-in-mid is swapped, but its ref chain has no swap
+    (t/is (nil? (outer-swap file :effects-in-mid :frame-inner)))))
+
+(t/deftest test-find-outer-swap-stops-at-base
+  (let [file (setup-file)]
+    ;; The swap is made inside :frame-mid
+    (t/is (nil? (outer-swap file :effects-copy :frame-mid)))))
+
+(t/deftest test-find-outer-swap-none-found
+  (let [file (setup-file)]
+    ;; The ref chain of the copy has no swap and reaches the main
+    (t/is (nil? (outer-swap file :inner-copy :frame-base)))
+    ;; The base main has no ref chain at all
+    (t/is (nil? (outer-swap file :frame-base :frame-inner)))))
+
+(t/deftest test-find-outer-swap-in-deleted-component
+  (let [file (-> (setup-file)
+                 (tho/delete-shape :frame-mid))]
+    (t/is (nil? (thc/get-component file :mid)))
+    (t/is (= [2 (thi/id :plain-in-inner)] (outer-swap file :effects-copy :frame-inner)))))
+
+(defn- outer-swaps
+  [file label]
+  (let [page (thf/current-page file)]
+    (ctf/get-outer-swaps (ctn/make-container page :page)
+                         {(:id file) file}
+                         (ths/get-shape file label))))
+
+(t/deftest test-get-outer-swaps
+  (let [file (setup-file)]
+    ;; :effects-copy was swapped in :frame-mid, outside the main of :inner-copy
+    (t/is (= {(thi/id :effects-copy) [2 (thi/id :plain-in-inner)]}
+             (outer-swaps file :inner-copy)))
+    ;; but inside the main of :mid-copy, so it is part of its definition
+    (t/is (= {} (outer-swaps file :mid-copy)))))

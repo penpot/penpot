@@ -70,42 +70,19 @@
    [potok.v2.core :as ptk]
    [promesa.core :as p]))
 
-(defn- advance-shape
-  [file libraries page level-delta head-id objects shape]
-  (let [new-shape-ref (ctf/advance-shape-ref file page libraries shape level-delta {:include-deleted? true})
-        container     (ctn/make-container page :page)
-        ;; The head becomes a root copy, which cannot carry a swap slot, so
-        ;; strip inherited slots only for it. Nested sub-heads keep them so
-        ;; they still pair with the children of the new near main.
-        head?         (= (:id shape) head-id)
-        new-touched   (ctf/get-touched-from-ref-chain-until-target-ref
-                       container libraries shape new-shape-ref :remove-slots? head?)]
-    (cond-> objects
-      (and (some? new-shape-ref) (not= new-shape-ref (:shape-ref shape)))
-      (update (:id shape) assoc :shape-ref new-shape-ref :touched new-touched))))
-
-(defn- advance-subtree
-  "Advance the shape and its children. A head swapped in one of the levels
-   being dropped already points to the new component main from that level,
-   so it and its children advance only up to there."
-  [file libraries page head-id level-delta objects shape]
-  (let [level-delta (if (ctk/instance-head? shape)
-                      (ctf/get-swap-level (ctn/make-container page :page)
-                                          libraries shape level-delta)
-                      level-delta)]
-    (if (pos? level-delta)
-      (reduce #(advance-subtree file libraries page head-id level-delta %1
-                                (get %1 %2))
-              (advance-shape file libraries page level-delta head-id objects shape)
-              (:shapes shape))
-      objects)))
-
 (defn- advance-copy
+  "Advance the refs of the copy and its children. The head becomes a root
+   copy, which cannot carry a swap slot, so only the head loses the inherited
+   slots. Nested sub-heads keep them so they still pair with the children of
+   the new near main."
   [file libraries page objects shape]
   (if (and (ctk/instance-head? shape) (not (ctk/main-instance? shape)))
-    (advance-subtree file libraries page (:id shape)
-                     (ctn/get-nesting-level-delta (:objects page) shape uuid/zero)
-                     objects shape)
+    (reduce-kv (fn [objects id refs]
+                 (update objects id merge refs))
+               objects
+               (ctf/get-advanced-refs file (ctn/make-container page :page) libraries (:id shape)
+                                      (ctn/get-nesting-level-delta (:objects page) shape uuid/zero)
+                                      shape))
     objects))
 
 (defn advance-copies

@@ -1969,6 +1969,23 @@ export interface File extends PluginData {
   readonly revn: number;
 
   /**
+   * The features of the open file, sorted by name, e.g. `"components/v2"`
+   * or `"variants/v1"`. It also lists the features active in the session,
+   * such as `"render-wasm/v1"` when the new render engine (WebGL) draws the
+   * file. Each read returns a new array.
+   *
+   * Only `penpot.currentFile` answers it: for any other file, such as a
+   * library, or a `File` kept after the user opens another file, it is
+   * `null`.
+   *
+   * @example
+   * ```js
+   * const webgl = penpot.currentFile.features.includes('render-wasm/v1');
+   * ```
+   */
+  readonly features: string[] | null;
+
+  /**
    * List all the pages for the current file
    */
   readonly pages: Page[];

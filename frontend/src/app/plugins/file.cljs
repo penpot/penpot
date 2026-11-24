@@ -13,6 +13,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.exports.files :as exports.files]
+   [app.main.data.helpers :as dsh]
    [app.main.data.plugins :as dp]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.versions :as dwv]
@@ -28,7 +29,8 @@
    [app.plugins.utils :as u]
    [app.util.http :as http]
    [app.util.object :as obj]
-   [beicon.v2.core :as rx]))
+   [beicon.v2.core :as rx]
+   [clojure.set :as set]))
 
 (defn file-version-proxy?
   [proxy]
@@ -129,6 +131,19 @@
                                                              :deleted-at nil)))))
                      reject))))))))))
 
+(defn get-file-features
+  "Sorted features of the open file `file-id`: its stored features plus
+  the features active in the session. `render-wasm/v1` comes from the
+  session alone, so it is present only when the WebGL renderer draws the
+  file. Returns nil when `file-id` is not the open file."
+  [state file-id]
+  (when (= file-id (:current-file-id state))
+    (let [file (dsh/lookup-file state file-id)]
+      (-> (set (:features file))
+          (disj "render-wasm/v1")
+          (set/union (:features state))
+          (sort)))))
+
 (defn file-proxy? [p]
   (obj/type-of? p "FileProxy"))
 
@@ -147,6 +162,9 @@
 
     :revn
     {:get #(-> (u/locate-file id) :revn)}
+
+    :features
+    {:get #(some->> (get-file-features @st/state id) (apply array))}
 
     :pages
     {:this true

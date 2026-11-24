@@ -126,6 +126,7 @@
    [frontend-tests.render-dimensions-test]
    [frontend-tests.render-wasm.call-test]
    [frontend-tests.render-wasm.modifiers-test]
+   [frontend-tests.render-wasm.fonts-test]
    [frontend-tests.render-wasm.process-objects-test]
    [frontend-tests.render-wasm.serialization-test]
    [frontend-tests.render-wasm.shape-proxy-test]
@@ -367,6 +368,7 @@
    'frontend-tests.plugins.wait-for-save-test
    'frontend-tests.render-wasm.call-test
    'frontend-tests.render-wasm.modifiers-test
+   'frontend-tests.render-wasm.fonts-test
    'frontend-tests.render-wasm.process-objects-test
    'frontend-tests.render-wasm.serialization-test
    'frontend-tests.render-wasm.shape-proxy-test
