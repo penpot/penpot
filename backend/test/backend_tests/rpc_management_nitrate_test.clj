@@ -1431,6 +1431,52 @@
                  (->> (:result out)
                       (into {} (map (juxt :team-id :count))))))))))
 
+(t/deftest count-organization-team-invitations-for-non-members-handles-empty-lists
+  (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}]
+    (let [profile      (th/create-profile* 1 {:is-active true})
+          deleted      (th/create-profile* 2 {:is-active true :email "deleted@example.com"})
+          _            (th/db-update! :profile
+                                      {:deleted-at (ct/now)}
+                                      {:id (:id deleted)})
+          team-1       (th/create-team* 1 {:profile-id (:id profile)})
+          team-2       (th/create-team* 2 {:profile-id (:id profile)})
+          invite       (fn [team email]
+                         (th/db-insert! :team-invitation
+                                        {:id (uuid/random)
+                                         :team-id (:id team)
+                                         :org-id nil
+                                         :email-to email
+                                         :created-by (:id profile)
+                                         :role "editor"
+                                         :valid-until (ct/in-future "24h")}))
+          count!       (fn [team-ids member-ids]
+                         (let [out (th/management-command!
+                                    {::th/type :count-organization-team-invitations-for-non-members
+                                     ::rpc/profile-id (:id profile)
+                                     :team-ids team-ids
+                                     :member-ids member-ids})]
+                           (t/is (th/success? out))
+                           (into {} (map (juxt :team-id :count)) (:result out))))
+          all-pending  {(:id team-1) 2
+                        (:id team-2) 1}]
+
+      (invite team-1 "deleted@example.com")
+      (invite team-1 "outsider-a@example.com")
+      (invite team-2 "outsider-b@example.com")
+
+      (t/testing "no team ids give no counts"
+        (t/is (= {} (count! [] [])))
+        (t/is (= {} (count! [] [(:id profile)]))))
+
+      (t/testing "no member ids count every pending invitation"
+        (t/is (= all-pending
+                 (count! [(:id team-1) (:id team-2)] []))))
+
+      (t/testing "member ids without an email count every pending invitation"
+        (t/is (= all-pending
+                 (count! [(:id team-1) (:id team-2)]
+                         [(:id deleted) (uuid/random)])))))))
+
 (t/deftest delete-organization-team-invitations-for-non-members-removes-non-member-invitations
   (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}]
     (let [member1     (th/create-profile* 1 {:is-active true :email "member1@example.com"})
