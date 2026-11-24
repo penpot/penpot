@@ -396,7 +396,7 @@
         fallback-families (map (fn [font]
                                  (font-family-from-font-id (:font-id font))) fallback-fonts)
 
-        [{:keys [x y width height ime-width ime-left]} transform]
+        [{:keys [x y width height ime-width ime-left hit-rect]} transform]
         (let [dimension (wasm.api/get-text-dimensions shape-id)
               selrect-transform (mf/deref refs/workspace-selrect)
               vbox (mf/deref refs/vbox)
@@ -422,10 +422,13 @@
               y top]
           ;; Widen the foreignObject (not the clip) toward the IME anchor, or
           ;; the browser scrolls to reveal the caret and cancels the offset.
+          ;; The clip keeps pointer events to the text itself, so the room
+          ;; reserved for growth does not take clicks from the viewport.
           [(assoc selrect
                   :x x :y y :width overlay-width :height overlay-height
                   :ime-width (+ overlay-width (:right ime-padding))
-                  :ime-left (:left ime-padding))
+                  :ime-left (:left ime-padding)
+                  :hit-rect {:x left :y top :width (- right left) :height (- bottom top)})
            transform])
 
         schedule-ime-caret!
@@ -1047,7 +1050,8 @@
                              :composition-base-ref composition-base-ref}]
      [:defs
       [:clipPath {:id clip-id}
-       [:rect {:x x :y y :width width :height height}]]]
+       [:rect {:x (:x hit-rect) :y (:y hit-rect)
+               :width (:width hit-rect) :height (:height hit-rect)}]]]
 
      [:foreignObject {:x (- x ime-left) :y y :width (+ ime-width ime-left) :height height}
       [:div {:on-click on-click
