@@ -6,6 +6,8 @@
 
 (ns frontend-tests.data.workspace-colors-test
   (:require
+   [app.common.schema :as sm]
+   [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.colors :as dwc]
    [clojure.test :as t]
@@ -46,6 +48,27 @@
                    (ptk/event? (dwc/add-fill #{uuid/zero} color3 1))))
     (t/is (thrown? js/Error
                    (ptk/event? (dwc/add-fill #{uuid/zero} color4 1))))))
+
+(t/deftest update-shape-stroke-attrs-changes-an-existing-stroke
+  (let [shape {:strokes [{:stroke-color "#000000" :stroke-opacity 1
+                          :stroke-width 1 :stroke-style :solid
+                          :stroke-alignment :inner}]}
+        result (dwc/update-shape-stroke-attrs shape 0 {:stroke-width 4})]
+    (t/is (= {:stroke-color "#000000" :stroke-opacity 1
+              :stroke-width 4 :stroke-style :solid
+              :stroke-alignment :inner}
+             (get-in result [:strokes 0])))))
+
+(t/deftest update-shape-stroke-attrs-creates-a-stroke-with-color
+  ;; Regression for https://github.com/penpot/penpot/issues/12463.
+  ;; A stroke built from style attributes alone has no color, so the
+  ;; backend rejects the shape as invalid.
+  (let [result (dwc/update-shape-stroke-attrs {:type :bool} 0 {:stroke-width 4})
+        stroke (get-in result [:strokes 0])]
+    (t/is (= 1 (count (:strokes result))))
+    (t/is (= "#000000" (:stroke-color stroke)))
+    (t/is (= 4 (:stroke-width stroke)))
+    (t/is (sm/validate cts/schema:stroke stroke))))
 
 
 (t/deftest update-colorpicker-color-skips-add-recent-on-incomplete-image-state

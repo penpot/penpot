@@ -10,6 +10,7 @@
    [app.config :as cf]
    [app.main.ui.workspace.sidebar.options.menus.stroke :as stroke]
    [app.main.ui.workspace.sidebar.options.rows.stroke-row :as stroke-row]
+   [app.main.ui.workspace.sidebar.options.shapes.multiple :as multiple]
    [clojure.test :as t :include-macros true]))
 
 (def ^:private per-side-flags (conj cf/flags :stroke-per-side))
@@ -93,3 +94,31 @@
                    {:stroke-width-top "sw" :stroke-width-left "other"} true)))
     (t/is (nil? (stroke-row/stroke-width-input-token
                  {:stroke-width-left "other"} true)))))
+
+(def ^:private solid-stroke
+  {:stroke-color "#000000"
+   :stroke-opacity 1
+   :stroke-width 1
+   :stroke-style :solid
+   :stroke-alignment :inner})
+
+(defn- multiple-stroke-values
+  [shapes]
+  (let [[_ids values _tokens] (multiple/get-attrs* shapes {} :stroke)]
+    values))
+
+(t/deftest multiple-selection-reads-bool-strokes-test
+  ;; Regression for https://github.com/penpot/penpot/issues/13263: the
+  ;; menu ignored the bool strokes, showed the rect stroke as shared and
+  ;; editing it created a stroke on the bool.
+  (t/testing "a bool without strokes and a rect with one are mixed"
+    (t/is (= :multiple
+             (:strokes (multiple-stroke-values
+                        [{:id :bool-a :type :bool :strokes []}
+                         {:id :rect-a :type :rect :strokes [solid-stroke]}])))))
+
+  (t/testing "bools with the same stroke share it"
+    (t/is (= [solid-stroke]
+             (:strokes (multiple-stroke-values
+                        [{:id :bool-a :type :bool :strokes [solid-stroke]}
+                         {:id :bool-b :type :bool :strokes [solid-stroke]}]))))))
