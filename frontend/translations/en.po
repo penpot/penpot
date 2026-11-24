@@ -12682,9 +12682,6 @@ msgstr "Leave out of update"
 msgid "workspace.compare.bar.all-decided"
 msgstr "All conflicts decided"
 
-msgid "workspace.compare.bar.apply-update"
-msgstr "Apply and update"
-
 msgid "workspace.compare.bar.back"
 msgstr "Back to compare"
 

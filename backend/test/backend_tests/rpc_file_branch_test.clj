@@ -3730,7 +3730,7 @@
             (t/is (= :merged (-> out :result :status))))
           (t/is (contains? (colors-of profile (:id file)) third-id)))))))
 
-(t/deftest apply-refuses-a-branch-behind-main
+(t/deftest apply-refuses-a-branch-behind-its-source
   (with-redefs [cf/flags (conj cf/flags :branching)]
     (let [{:keys [profile file branch]} (setup-branch* "behind")
           branch-id      (:id branch)
@@ -3743,7 +3743,7 @@
       (let [source-revn (:revn (th/db-get :file {:id (:id file)}))
             out       (apply-branch* profile branch-id)]
         (t/is (= :validation (th/ex-type (:error out))))
-        (t/is (= :branch-behind-main (th/ex-code (:error out))))
+        (t/is (= :branch-behind-source (th/ex-code (:error out))))
         (t/is (= source-revn (:revn (th/db-get :file {:id (:id file)}))))
         (t/is (not (contains? (colors-of profile (:id file)) branch-color))))
 
@@ -3846,8 +3846,8 @@
                                                  :name "new.png"
                                                  :media-id (:id sobj)})
           source-rows (fn []
-                      (->> (th/db-query :file-media-object {:file-id (:id file)})
-                           (filterv #(= (:id sobj) (:media-id %)))))]
+                        (->> (th/db-query :file-media-object {:file-id (:id file)})
+                             (filterv #(= (:id sobj) (:media-id %)))))]
       (t/is (nil? (:error (apply-change* profile branch-file-id
                                          {:type :add-media
                                           :object {:id (:id fmo) :name "new.png"

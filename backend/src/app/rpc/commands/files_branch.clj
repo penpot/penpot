@@ -1530,16 +1530,16 @@
 
                            {merged :file}
                            (integrate-into-source cfg {:source-id source-id
-                                                     :source-stored source-stored
-                                                     :source-file source-file
-                                                     :changes changes
-                                                     :fresh-map fresh-map
-                                                     :new-media new-media
-                                                     :label (str "pre-merge/" (:name branch))
-                                                     :deleted-at (ct/in-future delay)
-                                                     :profile-id profile-id
-                                                     :session-id session-id
-                                                     :ts ts})]
+                                                       :source-stored source-stored
+                                                       :source-file source-file
+                                                       :changes changes
+                                                       :fresh-map fresh-map
+                                                       :new-media new-media
+                                                       :label (str "pre-merge/" (:name branch))
+                                                       :deleted-at (ct/in-future delay)
+                                                       :profile-id profile-id
+                                                       :session-id session-id
+                                                       :ts ts})]
                        (finish-branch! ts (:data merged))
 
                        (vswap! messages conj
@@ -1635,7 +1635,7 @@
            profile-id deleted-at ts]}]
   (let [source-id     (:source-file-id branch)
         new-base    (fsnap/create! cfg (reattach-source-pointers cfg source-id source-stored
-                                                               (assoc source-file :data base-data))
+                                                                 (assoc source-file :data base-data))
                                    {:label (str "branch-base/" (:name branch))
                                     :created-by "system"
                                     :deleted-at (ct/in-future {:days 3650})
@@ -2022,7 +2022,7 @@
       (when (or (pos? (+ (:added stats) (:modified stats) (:deleted stats)))
                 (seq conflicts))
         (ex/raise :type :validation
-                  :code :branch-behind-main
+                  :code :branch-behind-source
                   :hint "the source has changes the branch is missing; update the branch from the source first"
                   :branch-id (:id branch))))))
 
@@ -2123,7 +2123,7 @@
   "Apply a branch to its source file and keep the branch open.
 
   The branch must be up to date with the source: when the source has
-  changes the branch lacks it raises `:branch-behind-main`, and the user
+  changes the branch lacks it raises `:branch-behind-source`, and the user
   updates the branch from the source first. So an apply meets no
   conflict and takes no resolutions. Change kinds the engine cannot
   translate return `{:status :unsupported}`, as in a merge.
@@ -2225,7 +2225,7 @@
              ;; drop a side
              (when (seq (:conflicts summary))
                (ex/raise :type :validation
-                         :code :branch-behind-main
+                         :code :branch-behind-source
                          :hint "the source has changes the branch is missing; update the branch from the source first"
                          :branch-id branch-id))
 
@@ -2252,38 +2252,38 @@
                        {merged :file extra :extra}
                        (if (seq changes)
                          (integrate-into-source cfg {:source-id source-id
-                                                   :source-stored source-stored
-                                                   :source-file source-file
-                                                   :changes changes
-                                                   :fresh-map fresh-map
-                                                   :new-media new-media
-                                                   :label (str "pre-apply/" (:name branch))
-                                                   :deleted-at deleted-at
-                                                   :profile-id profile-id
-                                                   :session-id session-id
-                                                   :ts ts})
+                                                     :source-stored source-stored
+                                                     :source-file source-file
+                                                     :changes changes
+                                                     :fresh-map fresh-map
+                                                     :new-media new-media
+                                                     :label (str "pre-apply/" (:name branch))
+                                                     :deleted-at deleted-at
+                                                     :profile-id profile-id
+                                                     :session-id session-id
+                                                     :ts ts})
                          {:file source-file :extra []})
 
                        ;; the base names the fragments the source holds NOW: the
                        ;; write gave every page it changed a new one
                        source-stored (if (seq changes)
-                                     (bfc/get-file cfg source-id)
-                                     source-stored)
+                                       (bfc/get-file cfg source-id)
+                                       source-stored)
 
                        branch-revn
                        (rebase-branch-onto-source cfg {:branch branch
-                                                     :branch-file branch-file
-                                                     :log log
-                                                     :merged merged
-                                                     :source-stored source-stored
-                                                     :extra extra
-                                                     ;; {source-media-id -> branch-media-id}
-                                                     :media-map (set/map-invert (merge pairs fresh-map))
-                                                     :source-unmoved (= (:revn source-file) (:base-source-revn branch))
-                                                     :profile-id profile-id
-                                                     :session-id session-id
-                                                     :deleted-at deleted-at
-                                                     :ts ts})]
+                                                       :branch-file branch-file
+                                                       :log log
+                                                       :merged merged
+                                                       :source-stored source-stored
+                                                       :extra extra
+                                                       ;; {source-media-id -> branch-media-id}
+                                                       :media-map (set/map-invert (merge pairs fresh-map))
+                                                       :source-unmoved (= (:revn source-file) (:base-source-revn branch))
+                                                       :profile-id profile-id
+                                                       :session-id session-id
+                                                       :deleted-at deleted-at
+                                                       :ts ts})]
 
                    (record-merge conn branch {:kind "apply"
                                               :profile-id profile-id

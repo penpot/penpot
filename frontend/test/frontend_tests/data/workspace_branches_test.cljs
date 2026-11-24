@@ -729,11 +729,11 @@
                (t/is (= 1 @reloads))
                (rx/dispose! store))))))
 
-(t/deftest ^:async an-apply-of-a-branch-behind-main-says-so
+(t/deftest ^:async an-apply-of-a-branch-behind-its-source-says-so
   (let [calls (atom [])]
     (await (mock/with-mocks*
              {rp/cmd! (apply-stub calls (rx/throw (ex-info "behind" {:type :validation
-                                                                     :code :branch-behind-main})))}
+                                                                     :code :branch-behind-source})))}
              (let [store (make-store-with (on-the-applied-branch 3))]
                (ptk/emit! store (dwb/apply-branch-to-main applied-branch))
                (await (async/wait-for #(some? (:notification @store)) "a notification shows"))

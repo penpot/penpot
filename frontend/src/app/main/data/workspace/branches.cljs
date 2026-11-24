@@ -227,7 +227,7 @@
       (ntf/warn (tr "workspace.branches.limits.refuse-name"))
 
       ;; an apply needs the branch up to date with main
-      :branch-behind-main
+      :branch-behind-source
       (ntf/warn (tr "workspace.branches.apply.behind"))
 
       ;; the same refusal as the `:unsupported` merge status, raised while
@@ -944,7 +944,7 @@
   top of the new main with only what was left out as its own work.
 
   The branch must be up to date with main (the server refuses with
-  `:branch-behind-main` otherwise), so there are no conflicts to resolve
+  `:branch-behind-source` otherwise), so there are no conflicts to resolve
   and no resolutions to send.
 
   Options:
