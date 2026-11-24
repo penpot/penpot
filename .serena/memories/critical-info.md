@@ -41,7 +41,8 @@ This is a monorepo. Principles that apply to one module do *not* generally apply
 
 - `scripts/nrepl-eval.mjs` — Evaluate Clojure/ClojureScript code via nREPL. Supports `--backend` (port 6064) and `--frontend` (port 3447) aliases. See `mem:scripts/nrepl-eval`.
 - `scripts/psql` — PostgreSQL client wrapper with devenv defaults. Companion: `scripts/db-schema` for DDL dumps. See `mem:scripts/psql`.
-- `scripts/gh.py` — GitHub operations helper: list milestone issues, fetch PR details, compare against CHANGES.md, create issues with their Issue Type in one command. Requires `gh` CLI. See `mem:scripts/gh`.
+- `scripts/gh.py` — GitHub operations helper: list milestone issues, fetch PR details, compare against CHANGES.md, create issues with their Issue Type, and create PRs with optional issue linking. Requires `gh` CLI. See `mem:scripts/gh`.
+- `scripts/coverage-summary.mjs` and `scripts/coverage-comment.mjs` — Write test coverage summaries and update the coverage PR comment. See `mem:scripts/coverage-reporting`.
 - Before changing coverage summaries or PR comments, read `mem:scripts/coverage-reporting` for metrics, concurrent comment updates, and fork permissions.
 - `scripts/project-anomalies.py` — Main-board anomaly check for a milestone (`check` writes `tmp/<MILESTONE>-ANOMALIES.md`). Bulk resolution via `scripts/gh.py`. See `mem:scripts/project-anomalies`.
 - Changelog release and audit workflow: `mem:workflow/updating-changelog`.

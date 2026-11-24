@@ -10,7 +10,7 @@ use crate::uuid::Uuid;
 
 use std::collections::{HashMap, HashSet, VecDeque};
 
-use super::common::GetBounds;
+use super::common::{has_non_absolute_children, GetBounds};
 
 const MIN_SIZE: f32 = 0.01;
 const MAX_SIZE: f32 = f32::INFINITY;
@@ -890,7 +890,11 @@ pub fn reflow_grid_layout(
         }
     }
 
-    if shape.is_layout_horizontal_auto() || shape.is_layout_vertical_auto() {
+    // Like the CLJS layout, skip auto-size when every child is absolute: the
+    // size comes from the tracks, and hidden children still count.
+    if (shape.is_layout_horizontal_auto() || shape.is_layout_vertical_auto())
+        && has_non_absolute_children(shape, shapes)
+    {
         let width = layout_bounds.width();
         let height = layout_bounds.height();
 
@@ -915,7 +919,7 @@ pub fn reflow_grid_layout(
 
         let parent_transform = layout_bounds.transform_matrix().unwrap_or_default();
 
-        let parent_transform_inv = &parent_transform.invert().ok_or(Error::CriticalError(
+        let parent_transform_inv = &parent_transform.invert().ok_or(Error::RecoverableError(
             "Failed to invert parent transform".to_string(),
         ))?;
         let origin = parent_transform_inv.map_point(layout_bounds.nw);
