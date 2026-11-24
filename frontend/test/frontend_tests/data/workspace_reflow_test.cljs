@@ -12,6 +12,7 @@
   (:require
    [app.common.uuid :as uuid]
    [app.main.data.workspace.reflow :as wrf]
+   [app.main.data.workspace.reflow.signals :as wrfs]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.texts :as dwtxt]
@@ -156,6 +157,34 @@
                    (wrf/finish! task-a)
                    (wrf/finish! task-b)
                    (done)))))))
+
+(defn- text-reflow-ids
+  "Texts that the update of a text from `before` to `after` signals for
+  reflow, with the features in `features` and the update `props`."
+  ([features before after]
+   (text-reflow-ids features before after {}))
+  ([features before after props]
+   (let [page-id (uuid/next)
+         state   {:features features :current-page-id page-id}
+         id      (:id before)]
+     (:text-ids (wrfs/reflow-ids state page-id {id before} {id after} [id] props)))))
+
+(t/deftest wasm-text-reflow-follows-the-updated-grow-type
+  (let [id    (uuid/next)
+        text  {:id id :type :text :grow-type :auto-width :width 10 :content {:text "a"}}
+        fixed (assoc text :grow-type :fixed :width 300)
+        wasm  #{"render-wasm/v1"}]
+    (t/is (nil? (text-reflow-ids wasm text fixed))
+          "a text that becomes fixed starts no wasm resize")
+    (t/is (= [id] (text-reflow-ids wasm fixed text))
+          "a text that becomes auto-sized is resized")
+    (t/is (= [id] (text-reflow-ids wasm text (assoc text :content {:text "b"}))))
+    (t/is (nil? (text-reflow-ids wasm fixed (assoc fixed :content {:text "b"}))))
+    (t/is (= [id] (text-reflow-ids #{} text fixed))
+          "the DOM renderer measures every changed text")
+    (t/is (nil? (text-reflow-ids wasm text (assoc text :grow-type :auto-height)
+                                 {:text-reflow? false}))
+          "a modifiers commit has already laid the text out")))
 
 (t/deftest text-bridge-waits-for-each-shape
   ;; Starting measurement for one id must not release sibling bridge tasks.

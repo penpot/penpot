@@ -934,6 +934,9 @@
                     (assoc :reg-objects? true)
                     (assoc :ignore-tree ignore-tree)
                     (assoc :translation? translation?)
+                    ;; WASM laid the texts out while propagating, so their
+                    ;; geometry needs no later resize.
+                    (assoc :text-reflow? false)
                     ;; Attributes that can change in the transform. This
                     ;; way we don't have to check all the attributes
                     (assoc :attrs transform-attrs))

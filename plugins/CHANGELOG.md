@@ -42,6 +42,7 @@
 - **plugins-runtime:** A SES `repairIntrinsics` failure at startup (for example, when a browser extension wraps the native `Temporal` global) no longer leaves the whole app blank. Plugins are skipped for that session, the error is logged, and a telemetry event reports the unavailable runtime; the editor, login and sign-up pages load as usual. Plugins work as before in every other environment. When startup fails, SES has already replaced `Function.prototype.toString` in the host realm before throwing, but no intrinsics are hardened and no sandbox is created. Closes #12924.
 - **plugins-runtime:** `Variants.removeProperty()` no longer leaves two variants with the same values. When several variants clash, the top one in the layers panel keeps its values and each lower one gets a numbered value (`Big (1)`, or `(1)` when all its remaining values are empty). Closes #12959.
 - **plugins-runtime:** `Variants.properties` and `Variants.currentValues()` keep the order of the variant properties and values when there are more than eight. They used to come back shuffled, so `removeProperty()` and `renameProperty()` could hit the wrong property when called with an index read from `properties`. Closes #13247.
+- **plugins-runtime:** `waitForLayoutUpdate()` settles after a text is resized to a fixed size or its size changes through `resize()`. It used to wait for a text measurement that never came, so the promise always timed out.
 
 ## 1.6.0 (2026-11-10)
 

@@ -313,6 +313,31 @@ describe('WaitForLayoutUpdate', () => {
       expect(t.width).toBeGreaterThan(w0);
     });
 
+    test('wait settles after resizing an auto-width text', async (ctx) => {
+      // `resize` makes the text fixed: no text measurement follows, so the
+      // wait must not hold for one.
+      const t = autoWidthText(ctx, 'The quick brown fox');
+      await t.waitForLayoutUpdate();
+
+      t.resize(300, 80);
+      await t.waitForLayoutUpdate(5000);
+      await ctx.penpot.waitForLayoutUpdate(5000);
+      expect(t.growType).toBe('fixed');
+      expect(Math.round(t.width)).toBe(300);
+      expect(Math.round(t.height)).toBe(80);
+    });
+
+    test('wait settles after resizing a vertical text', async (ctx) => {
+      const t = autoWidthText(ctx, '春眠不覺曉');
+      t.lang = 'zh-Hant-TW';
+      t.writingMode = 'vertical-rl';
+      await t.waitForLayoutUpdate();
+
+      t.resize(100, 300);
+      await t.waitForLayoutUpdate(5000);
+      expect(Math.round(t.height)).toBe(300);
+    });
+
     test('shape-level wait covers the text own resize', async (ctx) => {
       const t = autoWidthText(ctx, 'The quick brown fox');
       await t.waitForLayoutUpdate();

@@ -69,15 +69,14 @@
      changed)))
 
 (defn- async-text-reflow?
-  "Whether `shape` enters an asynchronous text geometry pipeline. The HTML
-  renderer measures every changed text; WASM only resizes auto-sized texts.
-  A grow-type transition is included because `shape` is the value before the
-  update and may still be fixed."
-  [state shape changed]
+  "Whether `shape` enters an asynchronous text geometry pipeline once updated
+  to `changed-shape`. The HTML renderer measures every changed text; WASM only
+  resizes texts that are auto-sized after the update, so a text that becomes
+  fixed starts no work."
+  [state shape changed-shape]
   (and (cfh/text-shape? shape)
        (or (not (features/active-feature? state "render-wasm/v1"))
-           (not= :fixed (:grow-type shape))
-           (contains? changed :grow-type))))
+           (not= :fixed (:grow-type (or changed-shape shape))))))
 
 (defn- get-reflow-changes
   [state objects changed-objects ids {:keys [attrs] :as props}]
@@ -110,7 +109,7 @@
     (let [edition (dm/get-in state [:workspace-local :edition])]
       (->> reflow-changes
            (into [] (comp (filter (fn [[shape changed-shape changed]]
-                                    (and (async-text-reflow? state shape changed)
+                                    (and (async-text-reflow? state shape changed-shape)
                                          (text-reflow-changed?
                                           state shape changed-shape changed))))
                           (map (comp :id first))
@@ -119,23 +118,27 @@
 
 (defn reflow-ids
   "Ids a shape update has to signal: `:layout-ids` for `:layout/update`,
-  `:text-ids` for `:text/reflow`. Both are nil when nothing changed.
+  `:text-ids` for `:text/reflow`. Both are nil when nothing changed. A
+  `:text-reflow?` false in `props` marks an update whose texts are already laid
+  out, so it signals no text.
 
   Both sets come from one comparison pass, so `update-fn` and the attribute
   diff only run once per shape."
   [state page-id objects changed-objects ids props]
   (let [reflow-changes (get-reflow-changes state objects changed-objects ids props)]
     {:layout-ids (get-layout-reflow-ids reflow-changes)
-     :text-ids   (get-text-reflow-ids state page-id reflow-changes)}))
+     :text-ids   (when-not (false? (:text-reflow? props))
+                   (get-text-reflow-ids state page-id reflow-changes))}))
 
 (defn text-reflow-candidate?
   "Whether `props` can start renderer text work, judged from the caller metadata
   alone. Cheap pre-filter for callers that buffer updates before they have
   objects to compare."
   [state props]
-  (reflow-candidate? (renderer-text-reflow-attr? state) props))
+  (and (not (false? (:text-reflow? props)))
+       (reflow-candidate? (renderer-text-reflow-attr? state) props)))
 
 (defn new-text-reflow?
   "Whether a newly added `shape` enters an asynchronous text geometry pipeline."
   [state shape]
-  (async-text-reflow? state shape nil))
+  (async-text-reflow? state shape shape))
