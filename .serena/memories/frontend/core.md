@@ -19,7 +19,7 @@ Start at `app.main.ui` for Rumext components, `app.main.data` for Potok events, 
 
 ## App shell
 
-- Router, history, SSO destinations and team context: `mem:frontend/routing-app-shell-subtleties`.
+- Router, history, SSO destinations and team context: `mem:frontend/routing`.
 - Authentication event sources and invitations: `mem:frontend/auth-events`.
 - Error boundary, transport errors and reports: `mem:frontend/error-reporting`.
 - WebSocket lifetime, membership revocation, and job progress: `mem:frontend/websocket-notifications`.
