@@ -56,12 +56,11 @@
     {}))
 
 (defn extract-properties-names
-  "Get the names of the properties of the component of which this shape
-   is main instance."
-  [data main-instance]
-  (if (and (ctk/main-instance? main-instance)
-           (ctv/variant-shape? main-instance))
-    (->> main-instance
+  "Get the names of the variant properties of the component this shape
+   belongs to. Return an empty list when the shape is not a variant shape."
+  [data shape]
+  (if (ctv/variant-shape? shape)
+    (->> shape
          (#(ctkl/get-component data (:component-id %) true))
          :variant-properties
          (map :name))

@@ -170,11 +170,12 @@
                                     current-parent
                                     delta-fn)
 
-        ;; We need to update the swap slot only when it pointed
-        ;; to the swap-ref-id. Oterwise this is a swapped item
-        ;; inside a nested copy, so we need to keep it.
+        ;; We need to update the swap slot when it pointed to the swap-ref-id,
+        ;; and also when the child has no slot of its own because the swap
+        ;; comes from an outer main. Otherwise this is a swapped item inside a
+        ;; nested copy, so we need to keep its slot.
         (cond->
-         (= prev-swap-slot swap-ref-id)
+         (or (= prev-swap-slot swap-ref-id) (nil? prev-swap-slot))
           (pcb/update-shapes
            [(:id orig-swapped-child)]
            #(-> %
