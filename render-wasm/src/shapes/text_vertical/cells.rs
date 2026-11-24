@@ -23,7 +23,7 @@ use crate::shapes::text_shaping::{
 use crate::shapes::text_shaping::{
     resolve_typefaces, shape_with_typefaces, span_font_families, ShapedRun,
 };
-use crate::shapes::text_shaping::{upright_baseline, vertical_metrics, vpal_table};
+use crate::shapes::text_shaping::{upright_baseline, vpal_table};
 
 /// Smallest horizontal scale for `all` tate-chu-yoko, except short Western
 /// runs; digit modes use 1 / run length.
@@ -402,7 +402,6 @@ impl<'a> SpanCells<'a> {
     ) {
         let font_size = self.span.font_size;
         let letter_spacing = self.span.letter_spacing;
-        let vmetrics = vertical_metrics(&run.font);
         // vpal applies here: SkShaper's horizontal shaping skips vertical GPOS.
         let vpal = (self.span.font_features == FontFeatures::Vpal)
             .then(|| vpal_table(&run.font))
@@ -421,22 +420,7 @@ impl<'a> SpanCells<'a> {
                 advance if advance > 0.0 => advance,
                 _ => font_size,
             };
-            // No `vmtx`: h-advance, with forced-upright Latin floored to an em.
-            let horizontal_fallback = if ch.is_some_and(|c| !is_upright_char(c)) {
-                h_advance.max(font_size)
-            } else {
-                h_advance
-            };
-            let vertical_advance = vmetrics
-                .as_ref()
-                .map(|vm| {
-                    glyphs
-                        .iter()
-                        .map(|g| vm.advance(*g, font_size))
-                        .sum::<f32>()
-                })
-                .filter(|advance| *advance > 0.0)
-                .unwrap_or(horizontal_fallback);
+            let vertical_advance = run.upright_cluster_advance(glyph, count);
             // vpal tightens the cell and lifts the ink by the font's deltas.
             let vpal_delta = vpal
                 .as_ref()
@@ -742,6 +726,10 @@ impl<'a> WarichuNote<'a> {
     }
 
     /// Shape one sub-line part of a member; empty parts shape to no runs.
+    /// Every character stands upright in the sub-line, one per cluster.
+    /// Tate-chu-yoko does not apply in a note: its digits stand one by one,
+    /// like kanji numerals, as a combined pair would leave each digit a
+    /// quarter em wide and could not cross the split into two sub-lines.
     fn shape_part(&self, member: usize, range: Range<usize>) -> Option<(Vec<ShapedRun>, f32)> {
         if range.is_empty() {
             return Some((Vec::new(), 0.0));
@@ -752,7 +740,13 @@ impl<'a> WarichuNote<'a> {
         if runs.is_empty() {
             return None;
         }
-        let advance = runs.iter().map(|r| r.advance).sum();
+        let advance = runs
+            .iter()
+            .flat_map(|run| {
+                run.cluster_spans()
+                    .map(|(glyph, count)| run.upright_cluster_advance(glyph, count))
+            })
+            .sum();
         Some((runs, advance))
     }
 

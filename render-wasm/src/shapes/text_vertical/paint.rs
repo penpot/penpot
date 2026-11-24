@@ -221,7 +221,9 @@ fn cell_draws(layout: &VerticalLayout, cell: &VerticalCell, origin: (f32, f32)) 
 }
 
 /// One warichu sub-line: half-size upright glyphs stacked down the
-/// sub-column centred on `x_center`, one cluster per cell.
+/// sub-column centred on `x_center`, one cluster per cell. Each cell is
+/// as tall as the cluster's upright advance, the one the note's extent
+/// sums, so narrow digits and Latin do not overlap.
 fn warichu_line_draws(runs: &[ShapedRun], x_center: f32, y_top: f32) -> Vec<GlyphDraw> {
     let mut draws = Vec::new();
     let mut cursor = y_top;
@@ -239,7 +241,7 @@ fn warichu_line_draws(runs: &[ShapedRun], x_center: f32, y_top: f32) -> Vec<Glyp
                     (x_center - advance / 2.0, cursor + baseline_offset),
                 ));
             }
-            cursor += advance;
+            cursor += run.upright_cluster_advance(glyph, count);
         }
     }
     draws
@@ -962,6 +964,49 @@ mod tests {
                 (draw.offset.y - expected).abs() < 0.01,
                 "baseline {} instead of {expected}",
                 draw.offset.y
+            );
+        }
+    }
+
+    #[test]
+    fn warichu_digits_under_tate_chu_yoko_do_not_overlap_down_their_sub_line() {
+        // A note sets its digits upright one by one, as it sets kanji
+        // numerals: tate-chu-yoko does not apply inside it. A digit is
+        // taller than it is wide, so each needs a full half-size em down
+        // its sub-line, not its narrow horizontal advance.
+        let content = spans_content(
+            vec![TextSpan {
+                warichu: true,
+                text_combine_upright: TextCombineUpright::Digits,
+                ..make_span("1939")
+            }],
+            400.0,
+        );
+        let layout = layout_content(&content, 400.0);
+        assert!(layout
+            .cells
+            .iter()
+            .all(|cell| matches!(cell.kind, CellKind::Warichu { .. })));
+
+        let glyphs: Vec<skia::Rect> =
+            paths_from_layout(&layout, &content.bounds(), VerticalAlign::Top, true)
+                .iter()
+                .map(|(path, _)| *path.bounds())
+                .collect();
+        assert_eq!(glyphs.len(), 4, "one glyph per digit");
+        let middle = glyphs.iter().map(|g| g.center_x()).sum::<f32>() / 4.0;
+        for first_line in [true, false] {
+            let mut line: Vec<&skia::Rect> = glyphs
+                .iter()
+                .filter(|glyph| (glyph.center_x() > middle) == first_line)
+                .collect();
+            line.sort_by(|a, b| a.top.total_cmp(&b.top));
+            assert_eq!(line.len(), 2, "two digits per sub-line");
+            assert!(
+                line[0].bottom <= line[1].top,
+                "digits overlap down the sub-line: {:?} then {:?}",
+                line[0],
+                line[1]
             );
         }
     }

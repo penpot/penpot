@@ -14,7 +14,8 @@ use skia_safe::{
 use crate::render::{FallbackFonts, DEFAULT_EMOJI_FONT};
 use crate::shapes::{FontFeatures, TextSpan};
 
-use super::font_tables::upright_centre_metrics;
+use super::font_tables::{upright_centre_metrics, vertical_metrics};
+use super::orientation::is_upright_char;
 
 /// JLREQ preferred width of a word space inside sideways Western text.
 pub(crate) const WESTERN_WORD_SPACING_EM: f32 = 1.0 / 3.0;
@@ -89,6 +90,37 @@ impl ShapedRun {
     /// Summed horizontal advance of a cluster.
     pub(crate) fn cluster_advance(&self, glyph: usize, count: usize) -> f32 {
         self.advances[glyph..glyph + count].iter().sum()
+    }
+
+    /// Flow advance of a cluster set upright in vertical text, before
+    /// letter-spacing: its `vmtx` advance. Without one, its horizontal
+    /// advance (an em when that is empty), floored to an em for characters
+    /// that are upright only by choice, such as Latin and digits: their
+    /// glyphs are taller than they are wide.
+    pub(crate) fn upright_cluster_advance(&self, glyph: usize, count: usize) -> f32 {
+        let font_size = self.font.size();
+        let horizontal = match self.cluster_advance(glyph, count) {
+            advance if advance > 0.0 => advance,
+            _ => font_size,
+        };
+        let forced_upright = self.text[self.text_range(glyph, count)]
+            .chars()
+            .next()
+            .is_some_and(|c| !is_upright_char(c));
+        let horizontal = if forced_upright {
+            horizontal.max(font_size)
+        } else {
+            horizontal
+        };
+        vertical_metrics(&self.font)
+            .map(|vm| {
+                self.glyphs[glyph..glyph + count]
+                    .iter()
+                    .map(|g| vm.advance(*g, font_size))
+                    .sum::<f32>()
+            })
+            .filter(|advance| *advance > 0.0)
+            .unwrap_or(horizontal)
     }
 
     /// Positions of a cluster's glyphs relative to its first glyph's pen x.
