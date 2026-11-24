@@ -10,4 +10,4 @@
 - Applying a token is blocked while a text shape is being edited. Otherwise the workspace records its name, resolves active tokens through Style Dictionary or tokenscript according to feature flags, updates concrete attrs and groups the operation in an undo transaction.
 - Composite and atomic typography token attrs replace one another. Spacing application targets gap/padding on layout containers and margins on immediate layout children.
 - Propagation resolves active tokens and buffers `update-shapes` commits, processing the current page before other pages. It clears affected frame/component thumbnails and drops text `:position-data` on non-current pages so it can be regenerated.
-- For workspace state and undo see `mem:frontend/workspace-store` and `mem:frontend/workspace-commits`; for geometry and text data see `mem:common/geometry` and `mem:common/text-subtleties`.
+- For workspace state and undo see `mem:frontend/workspace-store` and `mem:frontend/workspace-commits`; for geometry and text data see `mem:common/geometry` and `mem:common/text`.

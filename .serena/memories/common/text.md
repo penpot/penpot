@@ -1,4 +1,4 @@
-# Common Text Subtleties
+# Common text
 
 ## DraftJS compatibility
 
@@ -10,5 +10,5 @@
 ## Modern text content
 
 - Modern text content schema is narrow: root -> paragraph-set -> paragraph -> text nodes.
-- `position-data` is derived layout/geometry/font fragment data and should be treated as generated state, not source-of-truth file data.
+- `position-data` is derived layout/geometry/font fragment data. It can be committed to the shape, but is generated state rather than the source of truth and must be regenerable from the content and runtime context.
 - Token propagation and some non-current-page text updates drop `:position-data` so it can be regenerated in the right runtime context.
