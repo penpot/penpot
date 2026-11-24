@@ -2972,3 +2972,70 @@ fn a_joined_reading_paints_like_the_reading_of_one_span() {
         "{joined:?} vs {one:?}"
     );
 }
+
+/// Noto Serif TC subset (，。「」晚): its stops sit in the centre of the em.
+const TC_STOPS_TEST_FONT: &[u8] = include_bytes!("../../fonts/notoseriftc-stops-test.ttf");
+
+#[test]
+fn a_traditional_face_draws_its_stops_centred() {
+    use crate::shapes::text_vertical::test_support::{provider, VPAL_TEST_FONT};
+    let fallbacks = crate::render::FallbackFonts::default();
+    let span = make_span("。", 0.0);
+    let traditional = provider(TC_STOPS_TEST_FONT);
+    assert!(draws_stop_centred_with(
+        &span,
+        '。',
+        &traditional,
+        &fallbacks
+    ));
+    assert!(draws_stop_centred_with(
+        &span,
+        '，',
+        &traditional,
+        &fallbacks
+    ));
+    assert!(
+        !draws_stop_centred_with(&span, '。', &provider(VPAL_TEST_FONT), &fallbacks),
+        "Noto Sans JP sets 。 in the left half"
+    );
+}
+
+#[test]
+fn mainland_spacing_trims_a_centred_stop_by_a_quarter_em() {
+    init_state();
+    let texts = vec!["晚。」".to_string()];
+    let mut paragraph = make_paragraph(vec![make_span(&texts[0], 0.0)], 0.0);
+    paragraph.set_language("zh-Hans-CN".to_owned());
+    let sheds =
+        |centred: bool| horizontal_pairwise_spacing_with(&paragraph, &texts, |_, _| centred);
+    assert_eq!(sheds(false), vec![vec![(1, 8.0)]], "half of the 16px em");
+    assert_eq!(sheds(true), vec![vec![(1, 4.0)]], "a quarter of it");
+
+    paragraph.set_language("zh-Hant-HK".to_owned());
+    assert_eq!(
+        horizontal_pairwise_spacing_with(&paragraph, &texts, |_, _| panic!("asked")),
+        vec![vec![(1, 4.0)]],
+        "only mainland spacing measures the font"
+    );
+}
+
+#[test]
+fn mainland_text_in_a_traditional_face_sheds_as_in_hong_kong() {
+    init_state();
+    let mut resources =
+        crate::render::RenderResources::try_new_headless().expect("headless resources");
+    let family = crate::shapes::FontFamily::new(Uuid::nil(), 400, crate::shapes::FontStyle::Normal);
+    resources
+        .fonts
+        .add(family, TC_STOPS_TEST_FONT, false, false)
+        .expect("test font");
+    let _guard = crate::globals::TestRenderResourcesGuard::install(&mut resources);
+    let texts = vec!["晚。」".to_string()];
+    let mut paragraph = make_paragraph(vec![make_span(&texts[0], 0.0)], 0.0);
+    paragraph.set_language("zh-Hans-CN".to_owned());
+    assert_eq!(
+        horizontal_pair_spacing(&paragraph, &texts),
+        vec![vec![(1, 4.0)]],
+        "the centred 。 gives up a quarter of its 16px em to 」"
+    );
+}

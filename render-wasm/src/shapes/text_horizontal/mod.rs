@@ -33,6 +33,7 @@ use crate::math::Point;
 use crate::shapes::jlreq::{
     aki_class, is_cjk_text_char, pair_rule, punctuation_aki_sheds, AkiShed, JlreqClass,
 };
+use crate::shapes::text_policy::{ChineseRegion, TextLayoutPolicy};
 use crate::shapes::{line_breaks, merge_fills};
 use crate::utils::{get_fallback_fonts, get_font_collection};
 use skia_safe::{
@@ -148,8 +149,71 @@ fn jlreq_aki_sheds(paragraph: &Paragraph, texts: &[String]) -> Vec<Vec<(usize, f
 /// Signed advance changes: positive removes punctuation space, negative adds
 /// the regional Han/Latin gap. Source and builder text stay unchanged.
 fn horizontal_pairwise_spacing(paragraph: &Paragraph, texts: &[String]) -> Vec<Vec<(usize, f32)>> {
+    horizontal_pairwise_spacing_with(paragraph, texts, draws_stop_centred)
+}
+
+/// Whether the font of `span` draws the regional stop `ch` in the centre of
+/// its em, as Traditional Chinese faces do, rather than in the left half,
+/// as mainland faces do. False when there are no fonts to measure.
+fn draws_stop_centred(span: &TextSpan, ch: char) -> bool {
+    if !crate::globals::has_render_resources() {
+        return false;
+    }
+    let provider = get_resources().fonts.font_provider();
+    draws_stop_centred_with(span, ch, provider, get_fallback_fonts())
+}
+
+fn draws_stop_centred_with(
+    span: &TextSpan,
+    ch: char,
+    provider: &skia::textlayout::TypefaceFontProvider,
+    fallbacks: &crate::render::FallbackFonts,
+) -> bool {
+    let runs = shape_segment_with_fallbacks(
+        &ch.to_string(),
+        span.font_size.max(1.0),
+        &span_font_families(span, fallbacks),
+        provider,
+        false,
+        span.font_features,
+        &FontMgr::from(provider.clone()),
+        &span.language,
+    );
+    let [run] = runs.as_slice() else {
+        return false;
+    };
+    let count = run.glyphs.len();
+    let advance = run.cluster_advance(0, count);
+    // A left-half mark centres its ink near a quarter of the em.
+    advance > 0.0
+        && run
+            .cluster_ink_bounds(0, count)
+            .is_some_and(|ink| ink.center_x() > advance * 0.375)
+}
+
+/// `horizontal_pairwise_spacing` with `centred` telling whether a span's
+/// font draws a regional stop in the centre of its em. Only mainland
+/// spacing asks, once per span and mark.
+fn horizontal_pairwise_spacing_with(
+    paragraph: &Paragraph,
+    texts: &[String],
+    centred: impl Fn(&TextSpan, char) -> bool,
+) -> Vec<Vec<(usize, f32)>> {
     let mut result = vec![Vec::new(); texts.len()];
     let policy = paragraph.layout_policy();
+    let asks = policy == TextLayoutPolicy::Chinese(ChineseRegion::Mainland);
+    let mut measured: Vec<(usize, char, bool)> = Vec::new();
+    let mut is_centred = |span: usize, ch: char| -> bool {
+        if !asks || !TextLayoutPolicy::is_regional_stop(ch) {
+            return false;
+        }
+        if let Some(&(_, _, known)) = measured.iter().find(|m| m.0 == span && m.1 == ch) {
+            return known;
+        }
+        let known = centred(&paragraph.children()[span], ch);
+        measured.push((span, ch, known));
+        known
+    };
     let mut previous: Option<(usize, usize, char)> = None;
     for (span, text) in texts.iter().enumerate() {
         for (index, ch) in text.chars().enumerate() {
@@ -161,7 +225,8 @@ fn horizontal_pairwise_spacing(paragraph: &Paragraph, texts: &[String]) -> Vec<V
                 let b = &paragraph.children()[span];
                 if !a.has_ruby() && !b.has_ruby() && !a.is_warichu() && !b.is_warichu() {
                     let em = a.font_size.min(b.font_size);
-                    let spacing = policy.pair_spacing_em(before, ch, false);
+                    let drawn = (is_centred(before_span, before), is_centred(span, ch));
+                    let spacing = policy.drawn_pair_spacing_em(before, ch, false, drawn);
                     // `palt` already sets punctuation proportionally.
                     let compression = if a.font_features == FontFeatures::Palt
                         || b.font_features == FontFeatures::Palt

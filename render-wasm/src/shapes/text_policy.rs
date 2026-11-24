@@ -292,9 +292,34 @@ impl TextLayoutPolicy {
         }
     }
 
-    pub fn compression_em(self, before: char, after: char, vertical: bool) -> f32 {
-        let a = self.punctuation_space(before, vertical);
-        let b = self.punctuation_space(after, vertical);
+    /// True for the marks whose place in the em CLREQ sets by region in
+    /// horizontal text: the left half in mainland China, the centre in
+    /// Taiwan and Hong Kong. A font draws them in the way of its own region.
+    pub fn is_regional_stop(ch: char) -> bool {
+        COMMAS_AND_FULL_STOPS.contains(ch) || "：；！？".contains(ch)
+    }
+
+    /// `punctuation_space` of `ch` as its font draws it. Mainland spacing
+    /// puts the blank half of a regional stop on its right; a stop its font
+    /// draws `centred` (a Traditional Chinese face) has a quarter em blank
+    /// on each side, and sheds those as Hong Kong does.
+    fn drawn_punctuation_space(self, ch: char, vertical: bool, centred: bool) -> (f32, f32) {
+        let (start, end) = self.punctuation_space(ch, vertical);
+        if centred
+            && !vertical
+            && self == Self::Chinese(ChineseRegion::Mainland)
+            && Self::is_regional_stop(ch)
+        {
+            let half = (start + end) / 2.0;
+            (half, half)
+        } else {
+            (start, end)
+        }
+    }
+
+    /// Punctuation space to remove between two characters, in em, from
+    /// their removable side bearings `a` and `b`.
+    fn compression_between(a: (f32, f32), b: (f32, f32)) -> f32 {
         // Both characters must be adjustable punctuation. Never trim ordinary
         // Han cells or assume proportional ASCII punctuation contains half an em.
         if a == (0.0, 0.0) || b == (0.0, 0.0) {
@@ -308,8 +333,24 @@ impl TextLayoutPolicy {
     /// compression to remove and the script gap to add. Each axis applies
     /// its own caps and skips.
     pub fn pair_spacing_em(self, before: char, after: char, vertical: bool) -> PairSpacing {
+        self.drawn_pair_spacing_em(before, after, vertical, (false, false))
+    }
+
+    /// `pair_spacing_em` for marks as their fonts draw them: `centred` tells,
+    /// for `before` and `after`, whether the font draws that character in
+    /// the centre of its em (see `drawn_punctuation_space`).
+    pub fn drawn_pair_spacing_em(
+        self,
+        before: char,
+        after: char,
+        vertical: bool,
+        centred: (bool, bool),
+    ) -> PairSpacing {
         PairSpacing {
-            compression: self.compression_em(before, after, vertical),
+            compression: Self::compression_between(
+                self.drawn_punctuation_space(before, vertical, centred.0),
+                self.drawn_punctuation_space(after, vertical, centred.1),
+            ),
             script_gap: self.script_spacing_em(before, after),
         }
     }
@@ -496,9 +537,9 @@ mod tests {
         let cn = TextLayoutPolicy::Chinese(ChineseRegion::Mainland);
         let tw = TextLayoutPolicy::Chinese(ChineseRegion::Taiwan);
         let hk = TextLayoutPolicy::Chinese(ChineseRegion::HongKong);
-        assert_eq!(cn.compression_em('，', '」', false), 0.5);
-        assert_eq!(tw.compression_em('，', '」', false), 0.0);
-        assert_eq!(hk.compression_em('，', '」', false), 0.25);
+        assert_eq!(cn.pair_spacing_em('，', '」', false).compression, 0.5);
+        assert_eq!(tw.pair_spacing_em('，', '」', false).compression, 0.0);
+        assert_eq!(hk.pair_spacing_em('，', '」', false).compression, 0.25);
         assert_eq!(cn.punctuation_space('！', true), (0.0, 0.0));
         assert_eq!(hk.punctuation_space('！', false), (0.0, 0.0));
         assert_eq!(tw.hanging_em('，', false), 0.0);
@@ -516,6 +557,34 @@ mod tests {
         assert_eq!(
             TextLayoutPolicy::Korean(KoreanWrap::KeepWords).expansion_em(' ', '한'),
             (1, 0.5)
+        );
+    }
+
+    #[test]
+    fn a_centred_mainland_stop_sheds_on_both_sides_as_in_hong_kong() {
+        let cn = TextLayoutPolicy::Chinese(ChineseRegion::Mainland);
+        let hk = TextLayoutPolicy::Chinese(ChineseRegion::HongKong);
+        let compression = |policy: TextLayoutPolicy, before, after, centred| {
+            policy
+                .drawn_pair_spacing_em(before, after, false, centred)
+                .compression
+        };
+        // A left-half 。 gives its blank right half to 」; a centred one only
+        // has a quarter em there.
+        assert_eq!(compression(cn, '。', '」', (false, false)), 0.5);
+        assert_eq!(compression(cn, '。', '」', (true, false)), 0.25);
+        assert_eq!(
+            compression(cn, '。', '」', (true, false)),
+            compression(hk, '。', '」', (true, false))
+        );
+        // A centred ： still meets the blank half of 「.
+        assert_eq!(compression(cn, '：', '「', (true, false)), 0.5);
+        // Brackets keep their own sides; vertical text places stops itself.
+        assert_eq!(compression(cn, '」', '「', (true, true)), 0.5);
+        assert_eq!(
+            cn.drawn_pair_spacing_em('。', '」', true, (true, false))
+                .compression,
+            cn.pair_spacing_em('。', '」', true).compression
         );
     }
 
