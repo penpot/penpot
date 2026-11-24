@@ -23,7 +23,7 @@ Start at `app.main.ui` for Rumext components, `app.main.data` for Potok events, 
 - Authentication event sources and invitations: `mem:frontend/auth-events`.
 - Error boundary, transport errors and reports: `mem:frontend/error-reporting`.
 - WebSocket lifetime, membership revocation, and job progress: `mem:frontend/websocket-notifications`.
-- Dashboard and viewer behavior: `mem:frontend/dashboard-viewer-subtleties`.
+- Dashboard state and invitation controls: `mem:frontend/dashboard`. Import analysis and uploads: `mem:frontend/imports`. Viewer routes and bundle resolution: `mem:frontend/viewer`.
 
 ## Testing and diagnosis
 
