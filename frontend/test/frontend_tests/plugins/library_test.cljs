@@ -366,6 +366,15 @@
         (t/is (= [plugin-id :removeProperty "Plugin doesn't have 'library:write' permission"]
                  (first @errors)))))))
 
+(t/deftest variant-properties-keep-order-past-eight
+  (let [names      (mapv #(str "Property " %) (range 1 12))
+        components [{:variant-properties (mapv #(hash-map :name % :value "a") names)}
+                    {:variant-properties (mapv #(hash-map :name % :value "b") names)}]]
+    (with-redefs [library/get-variant-components (constantly components)]
+      (let [proxy (library/variant-proxy plugin-id (uuid/next) (uuid/next))]
+        (t/is (= names (vec (.-properties proxy))))
+        (t/is (= ["a" "b"] (vec (.currentValues proxy "Property 9"))))))))
+
 (t/deftest variant-rename-property-checks-permission
   (let [plugin-id "test-plugin"
         file-id   (uuid/next)
