@@ -161,9 +161,10 @@
    [::handler ::sm/fn]
    [::decoder ::sm/fn]
    [::validator ::sm/fn]
-   ;; Runs in the winning complete/fail/cancel transaction with the cfg,
-   ;; job row, decoded params and outcome. A throw rolls the transition back.
-   ;; Dispatcher abort sweeps do not invoke this hook.
+   ;; Runs in the winning complete/fail/cancel transaction with the cfg and
+   ;; a terminal job map. Params and result are decoded, status is terminal,
+   ;; and result or error is present only for its corresponding outcome.
+   ;; A throw rolls the transition back; dispatcher aborts do not invoke it.
    [::on-terminal {:optional true} ::sm/fn]
    ;; A result crosses a plain JSON column on its way out of the job, so a
    ;; uuid comes back as the text it is on disk and a uuid used as a map
@@ -573,10 +574,17 @@
 
 (defn- run-on-terminal
   "Run the job definition's terminal hook in the transition transaction."
-  [cfg job outcome]
+  [cfg job terminal]
   (when-let [job-def (get (get-defs cfg) (keyword (:name job)))]
     (when-let [hook (::on-terminal job-def)]
-      (hook cfg job (decode-params job-def (:params job)) outcome))))
+      (let [job (-> job
+                    (dissoc :result :error)
+                    (assoc :params (decode-params job-def (:params job)))
+                    (merge terminal))
+            job (if (contains? terminal :result)
+                  (update job :result #(decode-result job-def %))
+                  job)]
+        (hook cfg job)))))
 
 (defn- decode-result-of
   "Decode the result of a row with the decoder of the job-def that owns it.
@@ -1259,7 +1267,9 @@
                               (if (db/exec-one! conn [sql:complete-job (ct/now) (ct/now)
                                                       encoded resource-id job-id])
                                 (do
-                                  (run-on-terminal tx-cfg job {:outcome :completed :result result})
+                                  (run-on-terminal tx-cfg job (cond-> {:status "completed"
+                                                                       :result result}
+                                                                resource-id (assoc :resource-id resource-id)))
                                   (insert-event tx-cfg
                                                 job-id "end" {:outcome "completed"})
                                   (db/after-commit
@@ -1297,7 +1307,7 @@
                               (if-let [job (some-> (db/exec-one! conn [sql:fail-job (ct/now) encoded job-id])
                                                    decode-row)]
                                 (do
-                                  (run-on-terminal tx-cfg job {:outcome :failed :error error})
+                                  (run-on-terminal tx-cfg job {:status "failed" :error error})
                                   (insert-event tx-cfg
                                                 job-id "end" {:outcome "failed"})
                                   (db/after-commit
@@ -1331,7 +1341,7 @@
                               (if-let [job (some-> (db/exec-one! conn [sql:cancel-job (ct/now) job-id])
                                                    decode-row)]
                                 (do
-                                  (run-on-terminal tx-cfg job {:outcome :cancelled})
+                                  (run-on-terminal tx-cfg job {:status "cancelled"})
                                   (insert-event tx-cfg
                                                 job-id "end" {:outcome "cancelled"})
                                   (db/after-commit

@@ -412,8 +412,8 @@
                       ::jobs/defs
                       {:test-job {::jobs/decoder identity
                                   ::jobs/on-terminal
-                                  (fn [_ job _ outcome]
-                                    (swap! calls conj [(:id job) outcome]))}})
+                                  (fn [_ job]
+                                    (swap! calls conj job))}})
         lost   (mk-job {:status "scheduled"
                         :modified-at (ct/minus (ct/now)
                                                (ct/duration {:minutes 6}))})

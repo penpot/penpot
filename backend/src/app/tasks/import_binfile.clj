@@ -160,12 +160,12 @@
 
   The event shares the terminal transition's transaction. The job runs
   outside any request, so the event carries no request context."
-  [cfg job params {:keys [outcome result]}]
+  [cfg {:keys [params status result] :as job}]
   (let [project  (db/get* cfg :project {:id (:project-id params)})
         file-ids (:file-ids result)
-        props    (cond-> {:status (name outcome)
+        props    (cond-> {:status status
                           :team-id (:team-id project)}
-                   (= outcome :completed)
+                   (= status "completed")
                    (assoc :file-ids file-ids :file-count (count file-ids)))]
     (audit/submit cfg {:type             "command"
                        :name             "import-binfile"
