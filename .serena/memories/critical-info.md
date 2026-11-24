@@ -61,4 +61,4 @@ This is a monorepo. Principles that apply to one module do *not* generally apply
 - executing ClojureScript code in the frontend: `mem:frontend/cljs-repl`.
 - Failed ClojureScript build or stale hot reload: `mem:frontend/compile-diagnostics`.
 
-- Successful `execute_code` followed by Internal Error: `mem:frontend/handling-crashes` for delayed failures, store inspection and recovery.
+- Frontend Internal Error or runtime crash: `mem:frontend/handling-crashes` for store inspection and recovery.
