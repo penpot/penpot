@@ -30,7 +30,7 @@ Model, schema, and persistence shape:
 
 Geometry and layout:
 - Shape geometry invariants, coordinate drift and approximate comparisons: `mem:common/geometry`.
-- Layout/grid assignment, deassignment, metadata cleanup, and auto-positioning: `mem:common/layout-grid-subtleties`.
+- Layout/grid assignment, deassignment, metadata cleanup, and auto-positioning: `mem:common/layout`.
 
 Change pipeline, validation, and migrations:
 - Change construction, undo/redo, application, compaction and schema validation: `mem:common/changes`.
