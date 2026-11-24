@@ -43,6 +43,7 @@
 - **plugins-runtime:** `Variants.removeProperty()` no longer leaves two variants with the same values. When several variants clash, the top one in the layers panel keeps its values and each lower one gets a numbered value (`Big (1)`, or `(1)` when all its remaining values are empty). Closes #12959.
 - **plugins-runtime:** `Variants.properties` and `Variants.currentValues()` keep the order of the variant properties and values when there are more than eight. They used to come back shuffled, so `removeProperty()` and `renameProperty()` could hit the wrong property when called with an index read from `properties`. Closes #13247.
 - **plugins-runtime:** `waitForLayoutUpdate()` settles after a text is resized to a fixed size or its size changes through `resize()`. It used to wait for a text measurement that never came, so the promise always timed out.
+- **plugin-types:** The CJK text members say which languages render them (`lang`): `textCombineUpright`, `warichu`, `fontFeatures` and `lineAdjustment` only in Japanese, `textEmphasisPosition`, `textUnderlinePosition` and `rubyZhuyin` only in Chinese, and vertical writing only in Japanese, Chinese and Korean. Other languages keep the values without effect.
 
 ## 1.6.0 (2026-11-10)
 

@@ -4815,6 +4815,9 @@ export interface Text extends ShapeBase {
    * only when line-breaking rules leave no other choice; `push-out-only`
    * never squeezes. It applies to the whole shape; `align` still decides
    * what happens to the space a line leaves over.
+   *
+   * Only Japanese text renders it (see `lang`); other languages keep the value
+   * without effect.
    */
   lineAdjustment: 'push-in-first' | 'push-out-first' | 'push-out-only';
 
@@ -4822,6 +4825,9 @@ export interface Text extends ShapeBase {
    * The writing mode of the text shape: `horizontal-tb` (horizontal lines,
    * the default) or `vertical-rl` (vertical columns, right to left). It
    * applies to the whole shape.
+   *
+   * Only Japanese, Chinese and Korean text render it (see `lang`); other text
+   * keeps the value and stays horizontal.
    */
   writingMode: 'horizontal-tb' | 'vertical-rl';
 
@@ -4830,6 +4836,9 @@ export interface Text extends ShapeBase {
    * non-CJK runs sideways; `upright` keeps every character upright. It
    * applies to the whole shape, so `mixed` is always the orientation value,
    * never a report of differing values.
+   *
+   * Only Japanese, Chinese and Korean text render it (see `lang`); other text
+   * keeps the value and stays horizontal.
    */
   textOrientation: 'mixed' | 'upright';
 
@@ -4839,6 +4848,9 @@ export interface Text extends ShapeBase {
    * lone digit stands upright (`digits2`/`digits3` cap the run at 2/3);
    * `none` (the default) turns it off. Returns 'mixed' if text spans use
    * different values.
+   *
+   * Only Japanese text renders it (see `lang`); other languages keep the value
+   * without effect.
    */
   textCombineUpright:
     'none' | 'all' | 'digits' | 'digits2' | 'digits3' | 'mixed';
@@ -4847,6 +4859,9 @@ export interface Text extends ShapeBase {
    * Emphasis marks (圏点 / bouten) beside each base character, as in CSS
    * `text-emphasis-style`. `none` (the default) removes them.
    * Returns 'mixed' if text spans use different values.
+   *
+   * Only Japanese and Chinese text render it (see `lang`); other languages
+   * keep the value without effect.
    */
   textEmphasis:
     | 'none'
@@ -4863,10 +4878,19 @@ export interface Text extends ShapeBase {
    * `none` (the default) turns it off. Setting `warichu` on a text with more
    * than one text span is rejected: use a `TextRange` inside one span.
    * Returns 'mixed' if text spans use different values.
+   *
+   * Only Japanese text renders it (see `lang`); other languages keep the value
+   * without effect.
    */
   warichu: 'none' | 'warichu' | 'mixed';
 
-  /** Emphasis position in horizontal and vertical text; auto uses the language default. */
+  /**
+   * Emphasis position in horizontal and vertical text; auto uses the language
+   * default.
+   *
+   * Only Chinese text renders it (see `lang`); other languages keep the value
+   * without effect.
+   */
   textEmphasisPosition:
     | 'auto'
     | 'over-right'
@@ -4875,7 +4899,12 @@ export interface Text extends ShapeBase {
     | 'under-left'
     | 'mixed';
 
-  /** Underline depth and vertical side; independent of emphasis and readings. */
+  /**
+   * Underline depth and vertical side; independent of emphasis and readings.
+   *
+   * Only Chinese text renders it (see `lang`); other languages keep the value
+   * without effect.
+   */
   textUnderlinePosition:
     | 'auto'
     | 'under'
@@ -4889,6 +4918,9 @@ export interface Text extends ShapeBase {
    * OpenType proportional metrics for Japanese text: `palt` for horizontal
    * writing, `vpal` for vertical. `none` (the default) turns them off.
    * Returns 'mixed' if text spans use different values.
+   *
+   * Only Japanese text renders it (see `lang`); other languages keep the value
+   * without effect.
    */
   fontFeatures: 'none' | 'palt' | 'vpal' | 'mixed';
 
@@ -4898,6 +4930,9 @@ export interface Text extends ShapeBase {
    * text; `none` (the default) keeps the set line height, so annotations sit
    * in the gap between lines. Returns 'mixed' if text spans use different
    * values.
+   *
+   * Only Japanese and Chinese text render it (see `lang`); other languages
+   * keep the value without effect.
    */
   annotationClearance: 'none' | 'auto' | 'mixed';
 
@@ -4907,25 +4942,61 @@ export interface Text extends ShapeBase {
    * Adding a reading to a text with more than one text span is rejected: use
    * a `TextRange` inside one span. Returns 'mixed' if text spans carry
    * different ruby values.
+   *
+   * Only Japanese and Chinese text render it (see `lang`); other languages
+   * keep the value without effect.
    */
   ruby: string | 'mixed' | null;
 
-  /** Whether the ruby reading is hidden; `false` by default. */
+  /**
+   * Whether the ruby reading is hidden; `false` by default.
+   *
+   * Only Japanese and Chinese text render it (see `lang`); other languages
+   * keep the value without effect.
+   */
   rubyHidden: boolean | 'mixed';
 
-  /** Ruby size relative to the base text: `half` (default), `third` or `quarter`. */
+  /**
+   * Ruby size relative to the base text: `half` (default), `third` or
+   * `quarter`.
+   *
+   * Only Japanese and Chinese text render it (see `lang`); other languages
+   * keep the value without effect.
+   */
   rubySize: 'half' | 'third' | 'quarter' | 'mixed';
 
-  /** How ruby glyphs spread over the base text; defaults to `space-around`. */
+  /**
+   * How ruby glyphs spread over the base text; defaults to `space-around`.
+   *
+   * Only Japanese and Chinese text render it (see `lang`); other languages
+   * keep the value without effect.
+   */
   rubyAlign: 'space-around' | 'center' | 'start' | 'space-between' | 'mixed';
 
-  /** Whether ruby may extend past its base text: `auto` (default) or `none`. */
+  /**
+   * Whether ruby may extend past its base text: `auto` (default) or `none`.
+   *
+   * Only Japanese and Chinese text render it (see `lang`); other languages
+   * keep the value without effect.
+   */
   rubyOverhang: 'auto' | 'none' | 'mixed';
 
-  /** Set one Han base and one typed Mandarin syllable as upright right-side Zhuyin. */
+  /**
+   * Set one Han base and one typed Mandarin syllable as upright right-side
+   * Zhuyin.
+   *
+   * Only Chinese text renders it (see `lang`); other languages keep the value
+   * without effect.
+   */
   rubyZhuyin: boolean | 'mixed';
 
-  /** Ruby side: `over` (above or right, the default) or `under` (below or left). */
+  /**
+   * Ruby side: `over` (above or right, the default) or `under` (below or
+   * left).
+   *
+   * Only Japanese and Chinese text render it (see `lang`); other languages
+   * keep the value without effect.
+   */
   rubySide: 'over' | 'under' | 'mixed';
 
   /**
@@ -5043,6 +5114,9 @@ export interface TextRange {
   /**
    * Combines the range upright in vertical writing. Returns 'mixed' when the
    * range contains different span values.
+   *
+   * Only Japanese text renders it (see `lang`); other languages keep the value
+   * without effect.
    */
   textCombineUpright:
     'none' | 'all' | 'digits' | 'digits2' | 'digits3' | 'mixed' | null;
@@ -5050,6 +5124,9 @@ export interface TextRange {
   /**
    * Emphasis marks (圏点 / bouten) applied to the range. Returns 'mixed' when
    * the range contains different span values.
+   *
+   * Only Japanese and Chinese text render it (see `lang`); other languages
+   * keep the value without effect.
    */
   textEmphasis:
     | 'none'
@@ -5062,10 +5139,21 @@ export interface TextRange {
     | 'mixed'
     | null;
 
-  /** Warichu applied to the range, or 'mixed' for different span values. */
+  /**
+   * Warichu applied to the range, or 'mixed' for different span values.
+   *
+   * Only Japanese text renders it (see `lang`); other languages keep the value
+   * without effect.
+   */
   warichu: 'none' | 'warichu' | 'mixed' | null;
 
-  /** Emphasis position in horizontal and vertical text; auto uses the language default. */
+  /**
+   * Emphasis position in horizontal and vertical text; auto uses the language
+   * default.
+   *
+   * Only Chinese text renders it (see `lang`); other languages keep the value
+   * without effect.
+   */
   textEmphasisPosition:
     | 'auto'
     | 'over-right'
@@ -5075,7 +5163,12 @@ export interface TextRange {
     | 'mixed'
     | null;
 
-  /** Underline depth and vertical side; independent of emphasis and readings. */
+  /**
+   * Underline depth and vertical side; independent of emphasis and readings.
+   *
+   * Only Chinese text renders it (see `lang`); other languages keep the value
+   * without effect.
+   */
   textUnderlinePosition:
     | 'auto'
     | 'under'
@@ -5089,6 +5182,9 @@ export interface TextRange {
   /**
    * OpenType proportional metrics for the range: `palt` (horizontal), `vpal`
    * (vertical) or `none`. Returns 'mixed' for different span values.
+   *
+   * Only Japanese text renders it (see `lang`); other languages keep the value
+   * without effect.
    */
   fontFeatures: 'none' | 'palt' | 'vpal' | 'mixed' | null;
 
@@ -5097,6 +5193,9 @@ export interface TextRange {
    * and the emphasis marks to the line height, or the column width in
    * vertical text; `none` (the default) keeps the set line height. Returns
    * 'mixed' for different span values.
+   *
+   * Only Japanese and Chinese text render it (see `lang`); other languages
+   * keep the value without effect.
    */
   annotationClearance: 'none' | 'auto' | 'mixed' | null;
 
@@ -5105,26 +5204,62 @@ export interface TextRange {
    * Set `null` to remove it. A reading must cover characters of a single
    * text span; a range that covers several spans is rejected. Returns
    * 'mixed' if the range contains different ruby values.
+   *
+   * Only Japanese and Chinese text render it (see `lang`); other languages
+   * keep the value without effect.
    */
   ruby: string | 'mixed' | null;
 
-  /** Whether the ruby reading of the range is hidden; `false` by default. */
+  /**
+   * Whether the ruby reading of the range is hidden; `false` by default.
+   *
+   * Only Japanese and Chinese text render it (see `lang`); other languages
+   * keep the value without effect.
+   */
   rubyHidden: boolean | 'mixed' | null;
 
-  /** Ruby size relative to the base text: `half` (default), `third` or `quarter`. */
+  /**
+   * Ruby size relative to the base text: `half` (default), `third` or
+   * `quarter`.
+   *
+   * Only Japanese and Chinese text render it (see `lang`); other languages
+   * keep the value without effect.
+   */
   rubySize: 'half' | 'third' | 'quarter' | 'mixed' | null;
 
-  /** How ruby glyphs spread over the base text; defaults to `space-around`. */
+  /**
+   * How ruby glyphs spread over the base text; defaults to `space-around`.
+   *
+   * Only Japanese and Chinese text render it (see `lang`); other languages
+   * keep the value without effect.
+   */
   rubyAlign:
     'space-around' | 'center' | 'start' | 'space-between' | 'mixed' | null;
 
-  /** Whether ruby may extend past its base text: `auto` (default) or `none`. */
+  /**
+   * Whether ruby may extend past its base text: `auto` (default) or `none`.
+   *
+   * Only Japanese and Chinese text render it (see `lang`); other languages
+   * keep the value without effect.
+   */
   rubyOverhang: 'auto' | 'none' | 'mixed' | null;
 
-  /** Set one Han base and one typed Mandarin syllable as upright right-side Zhuyin. */
+  /**
+   * Set one Han base and one typed Mandarin syllable as upright right-side
+   * Zhuyin.
+   *
+   * Only Chinese text renders it (see `lang`); other languages keep the value
+   * without effect.
+   */
   rubyZhuyin: boolean | 'mixed' | null;
 
-  /** Ruby side: `over` (above or right, the default) or `under` (below or left). */
+  /**
+   * Ruby side: `over` (above or right, the default) or `under` (below or
+   * left).
+   *
+   * Only Japanese and Chinese text render it (see `lang`); other languages
+   * keep the value without effect.
+   */
   rubySide: 'over' | 'under' | 'mixed' | null;
 
   /**
