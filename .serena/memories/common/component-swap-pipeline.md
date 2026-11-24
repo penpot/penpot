@@ -1,7 +1,0 @@
-# Component swap and variant switch
-
-- Start at `app.main.data.workspace.variants` and `app.main.data.workspace.libraries/component-swap`. Variant switch uses `keep-touched?` to preserve eligible overrides; `component-multi-swap` intentionally passes false.
-- A swap re-reads the shape from live page objects before building changes: sibling swaps or layout can move it, and a missing shape becomes a no-op. Do not use a closed-over shape as the current location.
-- `app.common.logic.libraries/generate-component-swap` creates the replacement; when keeping touched state, `app.common.logic.variants/generate-keep-touched` walks the old children, incorporates touched groups from their ref chains and finds corresponding shapes in the target. Model and slot semantics are in `mem:common/component-data-model`.
-- `update-attrs-on-switch` compares the old copy, fresh target and origin master before carrying an override. Preserve its guards for differing masters, shape types, auto text and composite geometry; `:selrect`, `:points` and path content need special handling, including fixed-layout cases. Do not assume an apparently untouched local shape lacks inherited touched groups, or that the roots have the same position.
-- Use `app.common.test-helpers.compositions/swap-component-in-shape` with `:keep-touched?` to exercise the production path. Nearby cases in `common/test/common_tests/logic/variants_switch_test.cljc` cover swap and touched behavior; follow `mem:common/testing` for runtime and fixture guidance.

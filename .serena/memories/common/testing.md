@@ -7,4 +7,4 @@
 - Helpers live under `common/src/app/common/test_helpers/`. Tests using label-to-UUID helpers need `(t/use-fixtures :each thi/test-fixture)` to reset labels between tests. Inspect the builders there rather than recreating common file, component or variant setup.
 - Prefer production-path mutations such as `cls/generate-update-shapes` with `thf/apply-changes`; the latter validates by default. Disable validation only for intentionally malformed intermediate state. For swaps that keep touched state use `tho/swap-component-in-shape` with `{:keep-touched? true}`. `add-variant-with-copy` does not take child position params; move them after creation. For geometry-sensitive setup see `mem:common/geometry-invariants`.
 - `sg/sample` is unseeded by default. If a test filters for a subtype, fix the seed and verify the subtype exists; otherwise `first` can yield nil and later produce a typeless shape.
-- For change and component debugging see `mem:common/component-debugging-recipes`.
+- For component and referential-integrity debugging see `mem:common/components`.

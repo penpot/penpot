@@ -35,13 +35,11 @@ Geometry and layout:
 
 Change pipeline, validation, and migrations:
 - Change records, undo/redo architecture, changes-builder API, and production-path mutation guidance: `mem:common/changes-architecture`.
-- Change application, shape-tree edits and second-pass touched behavior: `mem:common/change-application`. File validation and repair: `mem:common/file-validation`.
+- Change application, shape-tree edits and change-scoped schema validation: `mem:common/change-application`.
 - Adding, renumbering or replacing a file migration: `mem:common/file-migrations`.
 
 Components, variants, and debugging:
-- Component/variant data model, ref chains, touched override semantics, and cloning paths: `mem:common/component-data-model`.
-- Component swap, variant switch, and keep-touched pipeline: `mem:common/component-swap-pipeline`.
-- Live inspection snippets, temporary runtime patching, and test-side debugging helpers for common change/component behavior: `mem:common/component-debugging-recipes`.
+- Components, variants, referential integrity, repair and diagnosis: `mem:common/components`.
 
 Text and tests:
 - Shared text data conversion, DraftJS compatibility, modern text content, and derived position data: `mem:common/text-subtleties`.
