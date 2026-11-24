@@ -4,8 +4,9 @@ use skia_safe::{self as skia, Canvas, Paint, RRect};
 
 use crate::error::Result;
 use crate::shapes::{
-    circle_segments_local, merge_fills, radius_to_sigma, rect_segments_local, stroke_to_path,
-    BlurType, Fill, Frame, Path, Rect, Shape, SolidColor, Stroke, StrokeKind, StrokeStyle, Type,
+    circle_segments_local, has_only_image_fills, merge_fills, radius_to_sigma, rect_segments_local,
+    stroke_to_path, BlurType, Fill, Frame, Path, Rect, Shape, SolidColor, Stroke, StrokeKind,
+    StrokeStyle, Type,
 };
 use crate::state::ShapesPoolRef;
 use crate::uuid::Uuid;
@@ -33,8 +34,9 @@ pub(super) struct VectorRenderer<'a> {
     compose_fills: bool,
     /// Set when an enclosing layer already applies the shape's layer blur.
     blur_in_layer: bool,
-    /// Set inside a container's drop-shadow pass: text glyphs paint opaque.
-    silhouette: bool,
+    /// Set inside a container's drop-shadow pass, to its spread: text glyphs
+    /// paint opaque and image fills grow by the spread.
+    silhouette: Option<f32>,
 }
 
 impl<'a> VectorRenderer<'a> {
@@ -50,7 +52,7 @@ impl<'a> VectorRenderer<'a> {
             scale,
             compose_fills,
             blur_in_layer: false,
-            silhouette: false,
+            silhouette: None,
         }
     }
 
@@ -72,6 +74,13 @@ impl ShapeRenderer for VectorRenderer<'_> {
     fn draw_fills(&mut self, shape: &Shape, fills: &[Fill]) -> Result<()> {
         if fills.is_empty() {
             return Ok(());
+        }
+
+        if let Some(spread) = self
+            .silhouette
+            .filter(|&spread| spread > 0.0 && has_only_image_fills(fills))
+        {
+            return draw_image_silhouette(self.shared, self.canvas, shape, fills, spread);
         }
 
         let blur_filter = self.layer_blur_filter(shape);
@@ -137,16 +146,26 @@ impl ShapeRenderer for VectorRenderer<'_> {
                     .bounds(&layer_bounds)
                     .paint(&paint);
                 self.canvas.save_layer(&layer_rec);
-                let mut fill_paint = Paint::default();
-                fill_paint.set_anti_alias(true);
-                fill_paint.set_color(skia::Color::BLACK);
-                // Spread as a mitered outline: Skia's dilate filter runs as
-                // SkSL per pixel on CPU canvases, which takes minutes.
-                if shadow.spread > 0.0 {
-                    fill_paint.set_style(skia::PaintStyle::StrokeAndFill);
-                    fill_paint.set_stroke_width(2.0 * shadow.spread);
+                if shape.has_only_image_fills() {
+                    draw_image_silhouette(
+                        self.shared,
+                        self.canvas,
+                        shape,
+                        &shape.fills,
+                        shadow.spread,
+                    )?;
+                } else {
+                    let mut fill_paint = Paint::default();
+                    fill_paint.set_anti_alias(true);
+                    fill_paint.set_color(skia::Color::BLACK);
+                    // Spread as a mitered outline: Skia's dilate filter runs as
+                    // SkSL per pixel on CPU canvases, which takes minutes.
+                    if shadow.spread > 0.0 {
+                        fill_paint.set_style(skia::PaintStyle::StrokeAndFill);
+                        fill_paint.set_stroke_width(2.0 * shadow.spread);
+                    }
+                    draw_shape_geometry(self.canvas, shape, &fill_paint);
                 }
-                draw_shape_geometry(self.canvas, shape, &fill_paint);
                 self.canvas.restore();
             }
         }
@@ -198,7 +217,7 @@ impl ShapeRenderer for VectorRenderer<'_> {
 
         let text_content = text_content.new_bounds(shape.selrect());
         let mut paragraph_builders =
-            text_content.paragraph_builder_group_from_text(Some(self.silhouette));
+            text_content.paragraph_builder_group_from_text(Some(self.silhouette.is_some()));
         let blur_filter = self.layer_blur_filter(shape);
 
         // Text drop shadows: one filter layer per shadow over fill + stroke
@@ -588,8 +607,7 @@ fn render_tree_inner(
             } else {
                 element.fills.as_slice()
             };
-            let silhouette = opts.silhouette.is_some();
-            render_leaf(shared, canvas, element, fills, scale, silhouette)?;
+            render_leaf(shared, canvas, element, fills, scale, opts.silhouette)?;
         }
     }
 
@@ -983,6 +1001,7 @@ fn render_frame(
         let mut renderer = VectorRenderer::new(canvas, shared, scale, true);
         // The opacity/blend layer above carries the frame's layer blur.
         renderer.blur_in_layer = needs_layer;
+        renderer.silhouette = opts.silhouette;
         renderer.draw_fills(element, &element.fills)?;
         renderer.draw_fill_inner_shadows(element)?;
         canvas.restore();
@@ -1040,7 +1059,12 @@ fn render_container_drop_shadows(
 
         // Spread grows every silhouette shape instead of dilating the layer.
         let spread = opts.silhouette.unwrap_or(0.0) + shadow.spread.max(0.0);
-        if draw_fills && !element.fills.is_empty() {
+        if draw_fills && element.has_only_image_fills() {
+            canvas.save();
+            canvas.concat(&element.centered_transform());
+            draw_image_silhouette(shared, canvas, element, &element.fills, spread)?;
+            canvas.restore();
+        } else if draw_fills && !element.fills.is_empty() {
             let mut background = Cow::Borrowed(element);
             if spread > 0.0 {
                 background.to_mut().selrect.outset((spread, spread));
@@ -1086,12 +1110,19 @@ fn spread_shape(shape: &Shape, spread: f32) -> Cow<'_, Shape> {
 
 /// `shape` as drawn in a container's drop-shadow pass: grown by `spread` and
 /// solid black, since fill and stroke opacity don't affect the shadow (GPU).
+/// Image-only fills stay (export draws images opaque) and grow in
+/// `draw_image_silhouette` instead.
 fn silhouette_shape(shape: &Shape, spread: f32) -> Cow<'_, Shape> {
-    let mut shape = spread_shape(shape, spread);
+    let image_silhouette = shape.has_only_image_fills();
+    let mut shape = if image_silhouette {
+        Cow::Borrowed(shape)
+    } else {
+        spread_shape(shape, spread)
+    };
     if shape.has_fills() || !shape.strokes.is_empty() {
         let black = Fill::Solid(SolidColor(skia::Color::BLACK));
         let shape = shape.to_mut();
-        if shape.has_fills() {
+        if shape.has_fills() && !image_silhouette {
             shape.clear_fills();
             shape.add_fill(black.clone());
         }
@@ -1112,7 +1143,7 @@ fn render_leaf(
     element: &Shape,
     fills: &[Fill],
     scale: f32,
-    silhouette: bool,
+    silhouette: Option<f32>,
 ) -> Result<()> {
     let needs_layer = element.needs_layer();
 
@@ -1199,6 +1230,96 @@ pub(super) fn render_leaf_content<R: ShapeRenderer + ?Sized>(
 // ---------------------------------------------------------------------------
 // Private helpers (canvas-only)
 // ---------------------------------------------------------------------------
+
+/// Image spread mask resolution: the PDF raster DPI in points, capped to
+/// `MAX_SPREAD_MASK_SIZE` pixels per side.
+const SPREAD_MASK_PX_PER_UNIT: f32 = 300.0 / 72.0;
+const MAX_SPREAD_MASK_SIZE: f32 = 4096.0;
+
+/// Image fills as a drop-shadow silhouette: their alpha, grown by `spread`
+/// with the square dilate the GPU uses. Skia's `dilate` runs as SkSL per pixel
+/// on CPU canvases, so the mask grows by stamping instead.
+fn draw_image_silhouette(
+    shared: &mut RenderResources,
+    canvas: &Canvas,
+    shape: &Shape,
+    fills: &[Fill],
+    spread: f32,
+) -> Result<()> {
+    if spread <= 0.0 {
+        return draw_image_fills(shared, canvas, shape, fills);
+    }
+
+    let mut bounds = shape.selrect;
+    bounds.outset((spread, spread));
+    let px_per_unit =
+        SPREAD_MASK_PX_PER_UNIT.min(MAX_SPREAD_MASK_SIZE / bounds.width().max(bounds.height()));
+    let width = (bounds.width() * px_per_unit).ceil() as i32;
+    let height = (bounds.height() * px_per_unit).ceil() as i32;
+    if width <= 0 || height <= 0 {
+        return Ok(());
+    }
+
+    let info = skia::ImageInfo::new_a8((width, height));
+    let Some(mut surface) = skia::surfaces::raster(&info, None, None) else {
+        return Ok(());
+    };
+    {
+        let mask = surface.canvas();
+        mask.clear(skia::Color::TRANSPARENT);
+        mask.scale((px_per_unit, px_per_unit));
+        mask.translate((-bounds.left, -bounds.top));
+        draw_image_fills(shared, mask, shape, fills)?;
+    }
+
+    // Square dilate: stamp the mask over itself at ±1, ±2, ±4… px per axis.
+    // No step goes past one beyond the reach so far, so the union has no gaps.
+    let radius = (spread * px_per_unit).round() as i32;
+    surface.canvas().reset_matrix();
+    for (dx, dy) in [(1, 0), (0, 1)] {
+        let mut reach = 0;
+        while reach < radius {
+            let step = (reach + 1).min(radius - reach);
+            let snapshot = surface.image_snapshot();
+            for sign in [-1, 1] {
+                let offset = ((sign * step * dx) as f32, (sign * step * dy) as f32);
+                surface.canvas().draw_image(&snapshot, offset, None);
+            }
+            reach += step;
+        }
+    }
+    let image = surface.image_snapshot();
+    let dest = skia::Rect::from_xywh(
+        bounds.left,
+        bounds.top,
+        width as f32 / px_per_unit,
+        height as f32 / px_per_unit,
+    );
+    let mut paint = Paint::default();
+    paint.set_color(skia::Color::BLACK);
+    canvas.draw_image_rect_with_sampling_options(
+        &image,
+        None,
+        dest,
+        skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::None),
+        &paint,
+    );
+    Ok(())
+}
+
+fn draw_image_fills(
+    shared: &mut RenderResources,
+    canvas: &Canvas,
+    shape: &Shape,
+    fills: &[Fill],
+) -> Result<()> {
+    for fill in fills.iter().rev() {
+        if let Fill::Image(image_fill) = fill {
+            draw_image_fill(shared, canvas, shape, image_fill, None)?;
+        }
+    }
+    Ok(())
+}
 
 fn draw_image_fill(
     shared: &mut RenderResources,
