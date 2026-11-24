@@ -34,6 +34,7 @@
   format version and the manifest metadata kept for audit."
   [:map {:title "import-binfile-params" :closed true}
    [:project-id   ::sm/uuid]
+   [:team-id      {:optional true} ::sm/uuid]
    [:name         [:or [:string {:max 250}]
                    [:map-of ::sm/uuid [:string {:max 250}]]]]
    [:version      [:enum 1 3]]
@@ -127,33 +128,44 @@
   schema inside that same transaction: a result the contract does not
   accept rolls the import back instead of leaving half of a file
   imported."
-  [cfg context params team input]
+  [cfg context params input]
   (let [profile-id (:profile-id context)
         project-id (:project-id params)]
     (db/tx-run! cfg (fn [tx-cfg]
-                      ;; the core joins this transaction: it is the one
-                      ;; that decides whether the whole import is kept or
-                      ;; rolled back
-                      (-> (bfc/import-cfg tx-cfg {:profile-id profile-id
-                                                  :project-id project-id
-                                                  :team       team
-                                                  :name       (:name params)
-                                                  :input      input})
-                          (bfj/check-active context)
-                          (bfj/run context
-                                   (fn [cfg]
-                                     (let [result (case (int (:version params))
-                                                    1 (bf.v1/import-files! cfg)
-                                                    3 (bf.v3/import-files! cfg)
-                                                    (ex/raise :type :validation
-                                                              :code :unsupported-version
-                                                              :hint "unsupported binfile version"
-                                                              :version (:version params)))]
-                                       (touch-project cfg project-id)
-                                       result)))
-                          (assoc :name (:name params))
-                          (assoc :version (:version params))
-                          (check-result))))))
+                      (let [project (projects/get-project-for-update tx-cfg project-id)
+                            _       (bfj/check-active tx-cfg context)
+                            _       (projects/check-edition-permissions! tx-cfg profile-id project-id)
+                            team    (teams/get-team tx-cfg :profile-id profile-id
+                                                    :project-id project-id)]
+                        (when (and (:team-id params)
+                                   (not= (:team-id params) (:team-id project)))
+                          (ex/raise :type :validation
+                                    :code :import-team-changed
+                                    :hint "the destination project changed teams"))
+                        ;; the core joins this transaction: it is the one
+                        ;; that decides whether the whole import is kept or
+                        ;; rolled back
+                        (-> (bfc/import-cfg tx-cfg {:profile-id profile-id
+                                                    :project-id project-id
+                                                    :team       team
+                                                    :name       (:name params)
+                                                    :input      input})
+                            (bfj/check-active context)
+                            (bfj/run context
+                                     (fn [cfg]
+                                       (let [result (case (int (:version params))
+                                                      1 (bf.v1/import-files! cfg)
+                                                      3 (bf.v3/import-files! cfg)
+                                                      (ex/raise :type :validation
+                                                                :code :unsupported-version
+                                                                :hint "unsupported binfile version"
+                                                                :version (:version params)))]
+                                         (touch-project cfg project-id)
+                                         result)))
+                            (assoc :name (:name params))
+                            (assoc :version (:version params))
+                            (check-result)
+                            (as-> result {:team team :result result})))))))
 
 (defn- submit-import-event
   "Submit the `import-binfile` audit event with the outcome of the job.
@@ -161,19 +173,23 @@
   The event shares the terminal transition's transaction. The job runs
   outside any request, so the event carries no request context."
   [cfg {:keys [params status result] :as job}]
-  (let [project  (db/get* cfg :project {:id (:project-id params)})
+  (let [{:keys [project-id team-id name version generated-by referer]} params
+        team-id  (or team-id (:team-id (db/get* cfg :project {:id project-id})))
         file-ids (:file-ids result)
-        props    (cond-> {:status status
-                          :team-id (:team-id project)}
+        props    (cond-> {:project-id   project-id
+                          :name         name
+                          :version      version
+                          :generated-by generated-by
+                          :referer      referer
+                          :job-id       (:id job)
+                          :team-id      team-id
+                          :status       status}
                    (= status "completed")
                    (assoc :file-ids file-ids :file-count (count file-ids)))]
     (audit/submit cfg {:type             "command"
                        :name             "import-binfile"
                        :profile-id       (:profile-id job)
-                       :props            (-> params
-                                             (assoc :job-id (:id job))
-                                             (merge props)
-                                             (d/without-nils))
+                       :props            (d/without-nils props)
                        :context          {:triggered-by "import-binfile-job"}
                        ::webhooks/event? true})))
 
@@ -202,22 +218,10 @@
   copy deleted once the job is terminal, whatever the outcome. A crash is
   covered by the storage GC."
   [cfg context params]
-  (let [profile-id (:profile-id context)
-        project-id (:project-id params)
-        input      (js/load-input cfg context)]
+  (let [input (js/load-input cfg context)]
 
     (try
-      (projects/check-edition-permissions! cfg profile-id project-id)
-
-      (let [team   (or (teams/get-team cfg
-                                       :profile-id profile-id
-                                       :project-id project-id)
-                       (ex/raise :type :not-found
-                                 :code :project-not-found
-                                 :hint "the destination project is not available"
-                                 :profile-id profile-id
-                                 :project-id project-id))
-            result (import-files cfg context params team input)]
+      (let [{:keys [team result]} (import-files cfg context params input)]
 
         (submit-file-created-events cfg context team (:file-ids result))
         result)

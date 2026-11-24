@@ -20,6 +20,7 @@
    [app.loggers.audit :as audit]
    [app.storage :as sto]
    [app.storage.tmp :as tmp]
+   [app.tasks.import-binfile :as import-binfile]
    [backend-tests.helpers :as th]
    [clojure.java.io :as jio]
    [clojure.test :as t]
@@ -204,6 +205,17 @@
     (t/testing "and the package is released"
       (t/is (some? (:deleted-at (input-row (:resource-id staged))))))))
 
+(t/deftest an-import-refuses-a-project-that-changed-teams
+  (let [profile    (th/create-profile* 1)
+        project-id (:default-project-id profile)
+        staged     (stage-package! profile (fixture-path))
+        params     {:project-id project-id :team-id (uuid/next)
+                    :name "imported" :version 3}
+        job-id     (create-import-job profile params (:resource-id staged))
+        before     (project-files project-id)]
+    (t/is (thrown? Throwable (run-import job-id params)))
+    (t/is (= before (project-files project-id)))))
+
 (t/deftest an-import-cancelled-while-it-runs-leaves-nothing-behind
   (let [profile (th/create-profile* 1)
         staged  (stage-package! profile (fixture-path))
@@ -283,6 +295,26 @@
 
       (t/testing "and the import is rolled back: the destination keeps no files"
         (t/is (= before (project-files project-id)))))))
+
+(t/deftest import-audit-excludes-unlisted-job-params
+  (let [profile (th/create-profile* 1)
+        event   (atom nil)
+        job     {:id (uuid/next)
+                 :profile-id (:id profile)
+                 :status "cancelled"
+                 :params {:project-id (:default-project-id profile)
+                          :name "imported"
+                          :version 3
+                          :future-param "not for audit"}}]
+    (with-redefs [audit/submit (fn [_ submitted] (reset! event submitted))]
+      (#'import-binfile/submit-import-event th/*system* job))
+    (t/is (= {:project-id (:default-project-id profile)
+              :name "imported"
+              :version 3
+              :job-id (:id job)
+              :status "cancelled"
+              :team-id (:default-team-id profile)}
+             (:props @event)))))
 
 (t/deftest a-completed-import-submits-its-audit-events
   (with-redefs [audit/submit real-audit-submit
