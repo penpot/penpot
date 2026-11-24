@@ -7,6 +7,7 @@
 (ns app.util.text.content
   (:require
    [app.common.types.text :as txt]
+   [app.common.types.text.cjk-layout :as cjk]
    [app.main.refs :as refs]
    [app.util.text.content.from-dom :as fd]
    [app.util.text.content.to-dom :as td]))
@@ -32,7 +33,7 @@
         language      (or (deref refs/default-text-language)
                           (deref refs/file-text-language))
         text-defaults (cond-> (merge (txt/get-default-text-attrs) default-font)
-                        (some? language) (assoc :text-language language))
+                        (some? language) (merge (cjk/chosen-language-attrs language nil)))
         default-span  (merge {:text ""}
                              (select-keys text-defaults txt/text-node-attrs))
         default-paragraph (merge {:type "paragraph"

@@ -101,12 +101,13 @@
 .ruby-advanced-options {
   display: flex;
   flex-direction: column;
-  overflow: visible;
+  gap: var(--sp-xs);
 }
 
 .ruby-options {
   display: flex;
-  align-items: flex-end;
+  flex-wrap: wrap;
+  align-items: center;
   gap: var(--sp-xs);
 }
 
@@ -114,11 +115,27 @@
   flex: 1;
 }
 
-.ruby-advanced-content {
+.ruby-invalid {
+  @include t.use-typography("body-small");
+
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--color-foreground-error);
+}
+
+// The reading options, two to a row in a light box.
+.ruby-presentation-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-s) var(--sp-xs);
+  padding: var(--sp-s);
+  border: $b-1 solid var(--color-background-quaternary);
+  border-radius: $br-8;
+}
+
+.ruby-presentation-cell {
   display: flex;
   flex-direction: column;
   gap: var(--sp-xs);
-  padding: var(--sp-xs);
-  border: $b-1 solid var(--color-background-quaternary);
-  border-radius: $br-8;
+  min-inline-size: 0;
 }

@@ -8490,16 +8490,20 @@ msgid "workspace.options.text-options.pinyin-hidden"
 msgstr "Hide pinyin"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.pinyin-shown"
+msgstr "Show pinyin"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
 msgid "workspace.options.text-options.readings-hidden"
 msgstr "Hide readings"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.ruby"
-msgstr "Ruby"
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.readings-shown"
+msgstr "Show readings"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.ruby-advanced-options"
-msgstr "Ruby options"
+msgstr "Furigana options"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.ruby-align"
@@ -8523,7 +8527,11 @@ msgstr "Start"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text_japanese_layout.cljs
 msgid "workspace.options.text-options.ruby-hidden"
-msgstr "Hide ruby"
+msgstr "Hide furigana"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.ruby-shown"
+msgstr "Show furigana"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.ruby-overhang"
@@ -8539,11 +8547,19 @@ msgstr "None"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.ruby-placeholder"
-msgstr "Ruby"
+msgstr "Furigana"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.ruby-side"
 msgstr "Side"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_cjk_controls.cljs
+msgid "workspace.options.text-options.ruby-side-over"
+msgstr "Over / right"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_cjk_controls.cljs
+msgid "workspace.options.text-options.ruby-side-under"
+msgstr "Under / left"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.ruby-size"
@@ -8611,7 +8627,7 @@ msgstr "Up to 4 digits"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.text-combine-upright-digits-count"
-msgstr "Digit count"
+msgstr "Combine digits"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.text-combine-upright-none"
@@ -8696,6 +8712,10 @@ msgstr "Vertical (right to left)"
 #: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
 msgid "workspace.options.text-options.zhuyin-hidden"
 msgstr "Hide zhuyin"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.zhuyin-shown"
+msgstr "Show zhuyin"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:788
 msgid "workspace.options.use-play-button"
@@ -10332,7 +10352,7 @@ msgstr "Chinese, Hong Kong"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
 msgid "workspace.options.text-options.korean-wrap-keep-words"
-msgstr "Keep words together"
+msgstr "By word"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
 msgid "workspace.options.text-options.pinyin"
@@ -10340,7 +10360,7 @@ msgstr "Pinyin"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
 msgid "workspace.options.text-options.pinyin-placeholder"
-msgstr "nǐ hǎo"
+msgstr "Pinyin"
 
 
 
@@ -10372,10 +10392,14 @@ msgid "workspace.options.text-options.zhuyin"
 msgstr "Zhuyin"
 
 msgid "workspace.options.text-options.zhuyin-placeholder"
-msgstr "e.g. ㄋㄧˇ"
+msgstr "Zhuyin"
 
 msgid "workspace.options.text-options.chinese-reading-format"
 msgstr "Reading format"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.combine-characters"
+msgstr "Combine characters"
 
 msgid "workspace.options.text-options.zhuyin-selection-hint"
 msgstr "Select one Han character. Enter 1–3 Zhuyin symbols and an optional tone. Symbols stay upright on the right; the neutral tone sits above. Size and position are fixed for this mode."
@@ -10405,7 +10429,7 @@ msgstr "Layout"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
 msgid "workspace.options.text-options.language-group-ruby"
-msgstr "Ruby"
+msgstr "Furigana"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
 msgid "workspace.options.text-options.add-language"

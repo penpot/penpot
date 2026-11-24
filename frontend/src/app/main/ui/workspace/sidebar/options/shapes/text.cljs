@@ -151,6 +151,9 @@
         ;; stays stable when feature flags change at runtime (e.g. switching
         ;; renderer while editing a text). The selection happens afterwards.
         wasm-editor-styles-map (mf/deref refs/workspace-wasm-editor-styles)
+        ;; Changes with the WASM editor selection: renders the options
+        ;; again for a new range, even one with the same styles.
+        _selection-rects       (mf/deref refs/workspace-wasm-editor-selection-rects)
         v2-editor-state-map    (mf/deref refs/workspace-v2-editor-state)
         v1-editor-state-map    (mf/deref refs/workspace-editor-state)
         editor                 (mf/deref refs/workspace-editor)
@@ -187,6 +190,14 @@
 
            :else
            (draft-text-range-selected? editor-state)))
+
+        ;; Names the selected range, so options opened for one range
+        ;; close on the next. Only the WASM editor tells.
+        text-selection-key
+        (when (and text-selection-active text-editor-wasm?)
+          (let [{:keys [anchor-para anchor-offset focus-para focus-offset]}
+                (wasm.text-editor/text-editor-get-selection)]
+            (str anchor-para ":" anchor-offset "-" focus-para ":" focus-offset)))
 
         reading-selection-active
         (and text-selection-active
@@ -250,6 +261,7 @@
         :values text-values
         :ruby-values ruby-values
         :text-selection-active text-selection-active
+        :text-selection-key text-selection-key
         :reading-selection-active reading-selection-active
         :zhuyin-selection-active zhuyin-selection-active
         :libraries libraries

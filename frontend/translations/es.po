@@ -8485,6 +8485,10 @@ msgstr "Alinear arriba"
 msgid "workspace.options.text-options.chinese-reading-format"
 msgstr "Formato de lectura"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.combine-characters"
+msgstr "Combinar caracteres"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:100
 msgid "workspace.options.text-options.direction-ltr"
 msgstr "LTR"
@@ -8526,8 +8530,16 @@ msgid "workspace.options.text-options.pinyin-hidden"
 msgstr "Ocultar pinyin"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.pinyin-shown"
+msgstr "Mostrar pinyin"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
 msgid "workspace.options.text-options.readings-hidden"
 msgstr "Ocultar lecturas"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.readings-shown"
+msgstr "Mostrar lecturas"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:212
 msgid "workspace.options.text-options.strikethrough"
@@ -8584,13 +8596,17 @@ msgstr "Zhuyin"
 msgid "workspace.options.text-options.zhuyin-hidden"
 msgstr "Ocultar zhuyin"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.zhuyin-shown"
+msgstr "Mostrar zhuyin"
+
 msgid "workspace.options.text-options.zhuyin-invalid"
 msgstr ""
 "Escribe entre 1 y 3 símbolos zhuyin con un solo tono como máximo. Coloca el "
 "tono neutro antes o después de los símbolos, y los demás tonos al final."
 
 msgid "workspace.options.text-options.zhuyin-placeholder"
-msgstr "p. ej. ㄋㄧˇ"
+msgstr "Zhuyin"
 
 msgid "workspace.options.text-options.zhuyin-selection-hint"
 msgstr ""
@@ -10251,7 +10267,7 @@ msgstr "Chino, Hong Kong"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
 msgid "workspace.options.text-options.korean-wrap-keep-words"
-msgstr "Mantener las palabras juntas"
+msgstr "Por palabra"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
 msgid "workspace.options.text-options.pinyin"
@@ -10259,7 +10275,7 @@ msgstr "Pinyin"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
 msgid "workspace.options.text-options.pinyin-placeholder"
-msgstr "nǐ hǎo"
+msgstr "Pinyin"
 
 
 
@@ -10309,7 +10325,7 @@ msgstr "Composición"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
 msgid "workspace.options.text-options.language-group-ruby"
-msgstr "Ruby"
+msgstr "Furigana"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
 msgid "workspace.options.text-options.add-language"
@@ -10358,16 +10374,16 @@ msgid "dashboard.text-language.none"
 msgstr "Ninguno"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text_japanese_layout.cljs
-msgid "workspace.options.text-options.ruby"
-msgstr "Ruby"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text_japanese_layout.cljs
 msgid "workspace.options.text-options.ruby-advanced-options"
-msgstr "Opciones de ruby"
+msgstr "Opciones de furigana"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text_japanese_layout.cljs
 msgid "workspace.options.text-options.ruby-hidden"
-msgstr "Ocultar ruby"
+msgstr "Ocultar furigana"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.ruby-shown"
+msgstr "Mostrar furigana"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text_japanese_layout.cljs
 msgid "workspace.options.text-options.ruby-size"
@@ -10384,6 +10400,14 @@ msgstr "Saliente"
 #: src/app/main/ui/workspace/sidebar/options/menus/text_japanese_layout.cljs
 msgid "workspace.options.text-options.ruby-side"
 msgstr "Lado"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_cjk_controls.cljs
+msgid "workspace.options.text-options.ruby-side-over"
+msgstr "Encima / derecha"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_cjk_controls.cljs
+msgid "workspace.options.text-options.ruby-side-under"
+msgstr "Debajo / izquierda"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text_japanese_layout.cljs
 msgid "workspace.options.text-options.position-over"

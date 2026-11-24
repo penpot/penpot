@@ -15,10 +15,9 @@
    [app.main.ui.ds.controls.input :refer [input*]]
    [app.main.ui.ds.controls.radio-buttons :refer [radio-buttons*]]
    [app.main.ui.ds.controls.select :refer [select*]]
-   [app.main.ui.ds.controls.switch :refer [switch*]]
    [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
    [app.main.ui.ds.tooltip :refer [tooltip*]]
-   [app.main.ui.workspace.sidebar.options.common :refer [advanced-options* radio-selected]]
+   [app.main.ui.workspace.sidebar.options.common :refer [radio-selected]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
@@ -203,10 +202,12 @@
 
 (mf/defc writing-mode-row*
   "Text section row for texts with a CJK language: the writing mode, the
-  orientation for vertical text, and Distribute at the end."
-  [{:keys [values on-change on-blur]}]
+  orientation for vertical text, the radio groups in `children`, and
+  Distribute at the end."
+  [{:keys [values on-change on-blur children]}]
   [:div {:class (stl/css :writing-mode-row)}
-   [:> writing-mode-controls* {:values values :on-change on-change :on-blur on-blur}]
+   [:> writing-mode-controls* {:values values :on-change on-change :on-blur on-blur}
+    children]
    [:> distribute-toggle* {:values values :on-change on-change :on-blur on-blur}]])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -249,6 +250,14 @@
                                (or block inline)  (or block inline)
                                :else              "auto")))
 
+(defn ruby-side-options
+  "Sides of a reading. Ruby takes the block side in both writing modes:
+  over the line in horizontal text is right of the column in vertical
+  text, so each choice names both."
+  [translate]
+  [{:id "over" :label (translate "workspace.options.text-options.ruby-side-over")}
+   {:id "under" :label (translate "workspace.options.text-options.ruby-side-under")}])
+
 (defn position-options
   "Choices of the position `attr` for the writing mode."
   [attr vertical]
@@ -256,11 +265,9 @@
         over   {:id "over" :label (tr "workspace.options.text-options.position-over")}
         under  {:id "under" :label (tr "workspace.options.text-options.position-under")}
         right  {:id "right" :label (tr "workspace.options.text-options.position-right")}
-        left   {:id "left" :label (tr "workspace.options.text-options.position-left")}
-        ;; Ruby takes the block side in vertical text too: over reads right.
-        ruby-v [(assoc right :id "over") (assoc left :id "under")]]
+        left   {:id "left" :label (tr "workspace.options.text-options.position-left")}]
     (case attr
-      :ruby-side               (if ^boolean vertical ruby-v [over under])
+      :ruby-side               (ruby-side-options tr)
       :text-emphasis-position  (if ^boolean vertical [auto right left] [auto over under])
       :text-underline-position (if ^boolean vertical [auto right left] [auto under]))))
 
@@ -397,8 +404,31 @@
   [{:id "auto" :label (translate "workspace.options.text-options.ruby-overhang-auto")}
    {:id "none" :label (translate "workspace.options.text-options.ruby-overhang-none")}])
 
+;; The labels of a reading row: `:placeholder` names the reading format
+;; (Furigana, Pinyin, Zhuyin) and also names the input; `:hidden`/`:shown`
+;; name the eye button; `:advanced` the button opening its options.
+
+(mf/defc ruby-visibility-button*
+  "Eye button hiding or showing the readings of `values`. Mixed values show
+  as shown, and the click hides them all."
+  [{:keys [values labels on-change on-blur]}]
+  (let [hidden? (true? (:ruby-hidden values))
+        handle-click
+        (mf/use-fn
+         (mf/deps hidden? on-change on-blur)
+         (fn [_event]
+           (on-change {:ruby-hidden (not hidden?)})
+           (when (some? on-blur) (on-blur))))]
+    [:> icon-button* {:variant      "ghost"
+                      :aria-label   (if hidden? (:shown labels) (:hidden labels))
+                      :aria-pressed hidden?
+                      :data-testid  "ruby-visibility-toggle"
+                      :on-click     handle-click
+                      :icon         (if hidden? i/hide i/shown)}]))
+
 (mf/defc ruby-options*
-  "Input of the reading of the selected span."
+  "Input of the reading of the selected span, with the eye button and,
+  given `on-toggle-advanced`, the button opening the reading options."
   [{:keys [values on-change on-blur advanced-open on-toggle-advanced labels]}]
   (let [ruby       (span-input-value (:ruby values))
         ruby*      (mf/use-state ruby)
@@ -436,14 +466,14 @@
 
     [:div {:class (stl/css :ruby-options)}
      [:> input* {:class       (stl/css :ruby-input)
-                 :label       (:input labels)
+                 :aria-label  (:placeholder labels)
                  :placeholder (:placeholder labels)
                  :value       value
                  :on-change   handle-change
                  :on-blur     commit!
                  :on-key-down handle-key-down}]
-     (when-not valid?
-       [:p {:role "alert"} (:invalid labels)])
+     [:> ruby-visibility-button* {:values values :labels labels
+                                  :on-change on-change :on-blur on-blur}]
      (when on-toggle-advanced
        [:> icon-button* {:variant     "ghost"
                          :selected    advanced-open
@@ -451,28 +481,9 @@
                          :aria-expanded advanced-open
                          :data-testid "ruby-advanced-options-toggle"
                          :on-click    on-toggle-advanced
-                         :icon        i/menu}])]))
-
-(mf/defc ruby-hidden-option*
-  "Switch hiding the readings, unset when the spans differ. It reads
-  `(:hidden labels)` when given."
-  [{:keys [values labels on-change on-blur]}]
-  (let [value    (:ruby-hidden values)
-        enabled? (cond
-                   (mixed-span-value? value) nil
-                   (true? value) true
-                   :else false)
-        label    (or (:hidden labels) (tr "workspace.options.text-options.ruby-hidden"))
-        handle-change
-        (mf/use-fn
-         (mf/deps on-change on-blur)
-         (fn [checked?]
-           (on-change {:ruby-hidden checked?})
-           (when (some? on-blur) (on-blur))))]
-    [:> option-row* {:label label :switch true}
-     [:> switch* {:default-checked enabled?
-                  :aria-label      label
-                  :on-change       handle-change}]]))
+                         :icon        i/menu}])
+     (when-not valid?
+       [:p {:class (stl/css :ruby-invalid) :role "alert"} (:invalid labels)])]))
 
 (defn- ruby-common-props
   [values on-change on-blur labels vertical]
@@ -484,7 +495,7 @@
     :vertical  vertical}))
 
 (mf/defc ruby-presentation-fields*
-  "Size, alignment, overhang and side of the readings."
+  "Size, alignment, overhang and side of the readings, one row each."
   [{:keys [values on-change on-blur labels vertical]}]
   (let [common-props (ruby-common-props values on-change on-blur labels vertical)
         options      (mf/with-memo []
@@ -511,24 +522,73 @@
                                                   {:attr :ruby-side
                                                    :label (tr "workspace.options.text-options.ruby-side")})]]))
 
-(mf/defc ruby-customization-options*
-  [{:keys [values on-change on-blur labels vertical]}]
-  (let [common-props (ruby-common-props values on-change on-blur labels vertical)]
-    [:div {:class (stl/css :option-list)}
-     [:> ruby-presentation-fields* common-props]
-     [:> ruby-hidden-option* common-props]]))
+(mf/defc ruby-presentation-cell*
+  "One reading option of `ruby-presentation-grid*`: its label over its
+  select, with a disabled entry for mixed values."
+  {::mf/private true}
+  [{:keys [values on-change on-blur attr label options]}]
+  (let [value    (get values attr)
+        selected (span-select-value value (cjk/enum-default attr))
+        options  (with-mixed-span-option options value)
+        handle-change
+        (mf/use-fn
+         (mf/deps attr on-change on-blur)
+         (fn [value]
+           (on-change {attr value})
+           (when (some? on-blur) (on-blur))))]
+    [:div {:class (stl/css :ruby-presentation-cell)}
+     [:span {:class (stl/css :option-label)} label]
+     [:> select* {:default-selected selected
+                  :aria-label       label
+                  :options          options
+                  :on-change        handle-change}]]))
+
+(mf/defc ruby-presentation-grid*
+  "Size and side, then alignment and overhang of the readings, two to a
+  row in a light box. Side names both writing modes, so it reads the same
+  in horizontal and vertical text."
+  [{:keys [values on-change on-blur class]}]
+  (let [props   (mf/props {:values values :on-change on-change :on-blur on-blur})
+        options (mf/with-memo []
+                  {:ruby-size     (ruby-size-options tr)
+                   :ruby-side     (ruby-side-options tr)
+                   :ruby-align    (ruby-align-options tr)
+                   :ruby-overhang (ruby-overhang-options tr)})]
+    [:div {:class [class (stl/css :ruby-presentation-grid)]
+           :data-testid "ruby-presentation-options"}
+     [:> ruby-presentation-cell* (mf/spread-props props {:attr :ruby-size
+                                                         :label (tr "workspace.options.text-options.ruby-size")
+                                                         :options (:ruby-size options)})]
+     [:> ruby-presentation-cell* (mf/spread-props props {:attr :ruby-side
+                                                         :label (tr "workspace.options.text-options.ruby-side")
+                                                         :options (:ruby-side options)})]
+     [:> ruby-presentation-cell* (mf/spread-props props {:attr :ruby-align
+                                                         :label (tr "workspace.options.text-options.ruby-align")
+                                                         :options (:ruby-align options)})]
+     [:> ruby-presentation-cell* (mf/spread-props props {:attr :ruby-overhang
+                                                         :label (tr "workspace.options.text-options.ruby-overhang")
+                                                         :options (:ruby-overhang options)})]]))
 
 (mf/defc ruby-advanced-options*
-  "Reading input of a text selection, with its presentation options."
-  [{:keys [values on-change on-blur labels vertical]}]
+  "Reading input of a text selection. Its ⋮ button opens the reading
+  options in place, below it; they close on the button again or when
+  `selection-key` changes: another range was selected."
+  [{:keys [values on-change on-blur labels selection-key]}]
   (let [open*       (mf/use-state false)
         open?       (deref open*)
-        toggle-open (mf/use-fn #(swap! open* not))
-        common-props (ruby-common-props values on-change on-blur labels vertical)]
+        toggle-open (mf/use-fn #(swap! open* not))]
+
+    (mf/with-effect [selection-key]
+      (reset! open* false))
+
     [:div {:class (stl/css :ruby-advanced-options)}
-     [:> ruby-options* (mf/spread-props common-props
-                                        {:advanced-open     open?
-                                         :on-toggle-advanced toggle-open})]
-     [:> advanced-options* {:class      (stl/css :ruby-advanced-content)
-                            :is-visible open?}
-      [:> ruby-customization-options* common-props]]]))
+     [:> ruby-options* {:values             values
+                        :on-change          on-change
+                        :on-blur            on-blur
+                        :labels             labels
+                        :advanced-open      open?
+                        :on-toggle-advanced toggle-open}]
+     (when ^boolean open?
+       [:> ruby-presentation-grid* {:values values
+                                    :on-change on-change
+                                    :on-blur on-blur}])]))

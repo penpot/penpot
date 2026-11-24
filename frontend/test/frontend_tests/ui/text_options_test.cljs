@@ -68,7 +68,7 @@
 
 (defn- render-language-view
   "Static markup of the language options view for texts with `language`."
-  [language {:keys [values ruby-values selection reading has-ruby]}]
+  [language {:keys [values ruby-values selection reading zhuyin has-ruby]}]
   (with-redefs [refs/texts-language (fn [_] (l/atom language))
                 hooks/use-portal-container (fn ([] nil) ([_] nil))]
     (rds/renderToStaticMarkup
@@ -78,7 +78,7 @@
                                                       :ruby-values ruby-values
                                                       :text-selection-active (boolean selection)
                                                       :reading-selection-active (boolean reading)
-                                                      :zhuyin-selection-active false
+                                                      :zhuyin-selection-active (boolean zhuyin)
                                                       :on-change identity
                                                       :on-ruby-presentation-change identity})
                             :on-change identity
@@ -151,6 +151,23 @@
     (t/is (= "ko" (language "ko" "ja")) "the language used last wins")
     (t/is (nil? (language nil nil)))))
 
+(t/deftest new-korean-texts-break-between-words
+  (let [wrap (fn [remembered]
+               (with-redefs [refs/default-font (l/atom nil)
+                             refs/default-text-language (l/atom remembered)
+                             refs/file-text-language (l/atom nil)]
+                 (get-in (tc/v2-default-text-content)
+                         [:children 0 :children 0 :korean-wrap])))]
+    (t/is (= "keep-words" (wrap "ko")))
+    (t/is (nil? (wrap "ja")))
+    (t/is (nil? (wrap nil))))
+  (t/is (= {:text-language "ko" :korean-wrap "keep-words"}
+           (cjk/chosen-language-attrs "ko" {})))
+  (t/is (= {:text-language "ko"} (cjk/chosen-language-attrs "ko" {:korean-wrap "syllable"}))
+        "a text keeps the wrapping it has")
+  (t/is (= {:text-language "ja"} (cjk/chosen-language-attrs "ja" {})))
+  (t/is (= {:text-language nil} (cjk/chosen-language-attrs nil {}))))
+
 (t/deftest korean-word-wrapping-is-distinct-from-the-saved-experiment
   (t/is (= ["syllable" "keep-words"]
            (mapv :id (tll/korean-wrap-options nil identity))))
@@ -191,37 +208,44 @@
             "Escape clears the edition before the editor is disposed")
       (t/is (false? (text-shape-options/wasm-text-range-selected? id (random-uuid)))))))
 
-(t/deftest language-view-shows-ruby-options-only-for-text-with-ruby
-  (let [group "workspace.options.text-options.language-group-ruby"]
-    (t/is (not (str/includes? (render-language-view "ja" {}) group)))
-    (t/is (not (str/includes? (render-language-view "ja" {}) "workspace.options.text-options.annotation-clearance"))
-          "clearance shows with the readings")
-    (let [markup (render-language-view "ja" {:has-ruby true})]
-      (t/is (str/includes? markup group))
-      (doseq [label ["annotation-clearance" "ruby-size" "ruby-align" "ruby-overhang" "ruby-side" "ruby-hidden"]]
-        (t/is (str/includes? markup (str "workspace.options.text-options." label)) label)))
-    (t/is (not (str/includes? (render-language-view "ko" {:has-ruby true}) group)))))
-
 (defn- count-of
   "Times the translation key `text` shows in `markup`, as a whole key."
   [markup text]
   (count (re-seq (js/RegExp. (str (str/replace text "." "\\.") "(?![-\\w])") "g")
                  markup)))
 
-(t/deftest chinese-layout-keeps-emphasis-and-clearance-of-the-whole-text
+(t/deftest language-view-shows-ruby-options-only-for-text-with-ruby
+  (let [group "workspace.options.text-options.language-group-ruby"]
+    (t/is (not (str/includes? (render-language-view "ja" {}) group)))
+    (let [markup (render-language-view "ja" {:has-ruby true})]
+      (t/is (str/includes? markup group))
+      (t/is (str/includes? markup "data-testid=\"ruby-presentation-options\""))
+      (t/is (str/includes? markup "data-testid=\"ruby-visibility-toggle\""))
+      (doseq [label ["ruby-size" "ruby-align" "ruby-overhang" "ruby-side" "ruby-hidden"]]
+        (t/is (str/includes? markup (str "workspace.options.text-options." label)) label)))
+    (t/is (not (str/includes? (render-language-view "ja" {:has-ruby true :selection true}) group))
+          "with a selection, its reading options are the ones shown")
+    (t/is (not (str/includes? (render-language-view "ko" {:has-ruby true}) group)))))
+
+(t/deftest clearance-is-a-layout-option-with-or-without-readings
+  (let [clearance "workspace.options.text-options.annotation-clearance"]
+    (doseq [language ["ja" "zh-Hant-TW"]
+            has-ruby [false true]
+            :let [markup (render-language-view language {:has-ruby has-ruby})]]
+      (t/is (= 1 (count-of markup clearance)) (str language " " has-ruby))
+      (t/is (< (str/index-of markup "workspace.options.text-options.language-group-layout")
+               (str/index-of markup clearance))))))
+
+(t/deftest chinese-emphasis-marks-are-options-of-a-selection
   (let [emphasis  "workspace.options.text-options.text-emphasis"
         position  "workspace.options.text-options.emphasis-position"
-        clearance "workspace.options.text-options.annotation-clearance"
         whole     (render-language-view "zh-Hant-TW" {})
         selection (render-language-view "zh-Hant-TW" {:selection true})]
-    (t/is (pos? (count-of whole emphasis)) "emphasis marks apply to the whole text")
-    (t/is (str/includes? whole position))
-    (t/is (str/includes? whole clearance) "clearance also spaces emphasis marks")
-    (t/is (= (count-of whole emphasis) (count-of selection emphasis))
-          "with a selection, emphasis marks show once, for the selection")
-    (t/is (= (count-of (render-language-view "ja" {:has-ruby true}) clearance)
-             (count-of (render-language-view "zh-Hant-TW" {:has-ruby true}) clearance))
-          "with readings, clearance shows once, in the Ruby group")))
+    (t/is (zero? (count-of whole emphasis)))
+    (t/is (not (str/includes? whole position)))
+    (t/is (= 1 (count-of selection emphasis)))
+    (t/is (str/includes? selection position))
+    (t/is (str/includes? whole "workspace.options.text-options.underline-position"))))
 
 (t/deftest chinese-readings-group-names-pinyin-or-zhuyin
   (doseq [[zhuyin title hidden]
@@ -288,28 +312,50 @@
     (t/is (= "none" (.-rubyOverhang style)))
     (t/is (= "under" (.-rubyPosition style)))))
 
+(def ^:private furigana-labels
+  {:placeholder "workspace.options.text-options.ruby-placeholder"
+   :advanced    "workspace.options.text-options.ruby-advanced-options"
+   :hidden      "workspace.options.text-options.ruby-hidden"
+   :shown       "workspace.options.text-options.ruby-shown"})
+
 (t/deftest advanced-ruby-options-of-a-selection-are-collapsed-by-default
   (with-redefs [hooks/use-portal-container (fn ([] nil) ([_] nil))]
     (let [markup (rds/renderToStaticMarkup
                   (mf/element tcc/ruby-advanced-options*
                               #js {:values {}
-                                   :labels {:input "workspace.options.text-options.ruby"
-                                            :placeholder "workspace.options.text-options.ruby-placeholder"
-                                            :advanced "workspace.options.text-options.ruby-advanced-options"}
+                                   :labels furigana-labels
                                    :on-change identity
                                    :on-blur identity}))]
       (t/is (str/includes? markup "data-testid=\"ruby-advanced-options-toggle\""))
-      (t/is (str/includes? markup "aria-expanded=\"false\"")))))
+      (t/is (str/includes? markup "aria-expanded=\"false\""))
+      (t/is (not (str/includes? markup "ruby-presentation-options"))))))
 
-(t/deftest advanced-furigana-options-include-hide-toggle
-  (let [markup (rds/renderToStaticMarkup
-                (mf/element tcc/ruby-hidden-option*
-                            #js {:values {:ruby-hidden true}
-                                 :on-change identity
-                                 :on-blur identity}))]
-    (t/is (str/includes? markup "workspace.options.text-options.ruby-hidden"))
-    (t/is (str/includes? markup "role=\"switch\""))
-    (t/is (str/includes? markup "aria-checked=\"true\""))))
+(t/deftest reading-input-is-named-by-its-format
+  (let [markup (with-redefs [hooks/use-portal-container (fn ([] nil) ([_] nil))]
+                 (rds/renderToStaticMarkup
+                  (mf/element tcc/ruby-options*
+                              #js {:values {} :labels furigana-labels
+                                   :on-change identity :on-blur identity})))]
+    (t/is (str/includes? markup "placeholder=\"workspace.options.text-options.ruby-placeholder\""))
+    (t/is (str/includes? markup "aria-label=\"workspace.options.text-options.ruby-placeholder\""))
+    (t/is (not (str/includes? markup "<label")) "no label over the field")))
+
+(t/deftest reading-eye-button-hides-and-shows-the-readings
+  (let [render  (fn [values on-change]
+                  (with-redefs [hooks/use-portal-container (fn ([] nil) ([_] nil))]
+                    (rds/renderToStaticMarkup
+                     (mf/element tcc/ruby-visibility-button*
+                                 #js {:values values :labels furigana-labels
+                                      :on-change on-change :on-blur identity}))))
+        shown   (render {:ruby-hidden false} identity)
+        hidden  (render {:ruby-hidden true} identity)
+        mixed   (render {:ruby-hidden :multiple} identity)]
+    (t/is (str/includes? shown "workspace.options.text-options.ruby-hidden"))
+    (t/is (str/includes? shown "aria-pressed=\"false\""))
+    (t/is (str/includes? hidden "workspace.options.text-options.ruby-shown"))
+    (t/is (str/includes? hidden "aria-pressed=\"true\""))
+    (t/is (str/includes? mixed "workspace.options.text-options.ruby-hidden")
+          "mixed readings offer to hide them all")))
 
 (t/deftest hidden-furigana-renders-base-text-without-ruby-layout
   (let [markup (rds/renderToStaticMarkup
@@ -422,6 +468,53 @@
     (t/is (= "vertical-rl" (:writing-mode paragraph-values)))
     (t/is (= "upright" (:text-orientation paragraph-values)))
     (t/is (= "digits2" (:text-combine-upright text-values)))))
+
+(t/deftest japanese-tate-chu-yoko-joins-the-writing-mode-row
+  (with-redefs [wm/vertical-layout-active? (constantly true)]
+    (let [vertical {:writing-mode "vertical-rl"}
+          markup   (render-language-view "ja" {:values vertical})
+          digits   (render-language-view "ja" {:values (assoc vertical :text-combine-upright "digits2")})
+          row-end  (str/index-of markup "text-align-distribute")]
+      (t/is (< (str/index-of markup "upright-text-orientation")
+               (str/index-of markup "digits-text-combine-upright")
+               row-end)
+            "orientation, tate-chu-yoko, then Distribute")
+      (t/is (not (str/includes? markup "text-combine-upright-digits-count"))
+            "the digit count needs Digits")
+      (t/is (str/includes? digits "workspace.options.text-options.text-combine-upright-digits-count"))
+      (t/is (not (str/includes? (render-language-view "ja" {}) "digits-text-combine-upright"))
+            "horizontal text has no tate-chu-yoko")
+      (t/is (not (str/includes? (render-language-view "zh-Hant-TW" {:values vertical})
+                                "digits-text-combine-upright"))
+            "tate-chu-yoko is Japanese only"))))
+
+(t/deftest japanese-selection-rows-are-labelled
+  (let [horizontal (render-language-view "ja" {:selection true})
+        vertical   (render-language-view "ja" {:selection true :values {:writing-mode "vertical-rl"}})]
+    (t/is (str/includes? horizontal "workspace.options.text-options.warichu"))
+    (t/is (not (str/includes? horizontal "workspace.options.text-options.combine-characters")))
+    (t/is (str/includes? vertical "workspace.options.text-options.combine-characters"))
+    (t/is (str/includes? vertical "all-combine-upright"))))
+
+(t/deftest chinese-readings-default-to-zhuyin-in-taiwan-and-hong-kong
+  (doseq [[tag zhuyin] [["zh-Hant-TW" true] ["zh-Hant-HK" true]
+                        ["zh-Hant-CN" false] ["zh-Hans-CN" false] ["ja" false]]]
+    (t/is (= zhuyin (boolean (cjk/zhuyin-default? tag))) tag))
+  (let [taiwan {:text-language "zh-Hant-TW"}]
+    (t/is (true? (tll/reading-zhuyin? taiwan true)))
+    (t/is (false? (tll/reading-zhuyin? taiwan false))
+          "a selection zhuyin cannot take falls back to pinyin")
+    (t/is (false? (tll/reading-zhuyin? (assoc taiwan :ruby "nǐ") true))
+          "a reading without format is pinyin")
+    (t/is (true? (tll/reading-zhuyin? (assoc taiwan :ruby-zhuyin false) true))
+          "the editor reports a span without reading as not zhuyin")
+    (t/is (false? (tll/reading-zhuyin? (assoc taiwan :ruby-zhuyin :multiple) true)))
+    (t/is (true? (tll/reading-zhuyin? {:text-language "zh-Hans-CN" :ruby-zhuyin true} false)))
+    (t/is (false? (tll/reading-zhuyin? {:text-language "zh-Hans-CN"} true))))
+  (let [markup (render-language-view "zh-Hant-TW" {:selection true :reading true :zhuyin true})]
+    (t/is (str/includes? markup "workspace.options.text-options.zhuyin-placeholder"))
+    (t/is (not (str/includes? markup "ruby-advanced-options-toggle"))
+          "zhuyin readings have no options to open")))
 
 (t/deftest japanese-controls-distinguish-horizontal-and-vertical-modes
   (t/is (false? (tcc/vertical-writing? {})))
@@ -648,12 +741,11 @@
 
 (t/deftest positions-show-only-the-sides-of-the-writing-mode
   (let [labels #(mapv :label (tcc/position-options %1 %2))]
-    (t/is (= ["workspace.options.text-options.position-over"
-              "workspace.options.text-options.position-under"]
-             (labels :ruby-side false)))
-    (t/is (= ["workspace.options.text-options.position-right"
-              "workspace.options.text-options.position-left"]
-             (labels :ruby-side true)))
+    (t/is (= ["workspace.options.text-options.ruby-side-over"
+              "workspace.options.text-options.ruby-side-under"]
+             (labels :ruby-side false)
+             (labels :ruby-side true))
+          "a reading side names both writing modes")
     (t/is (= ["auto" "over" "under"] (mapv :id (tcc/position-options :text-emphasis-position false))))
     (t/is (= ["auto" "right" "left"] (mapv :id (tcc/position-options :text-emphasis-position true))))
     (t/is (= ["auto" "under"] (mapv :id (tcc/position-options :text-underline-position false))))

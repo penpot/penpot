@@ -297,6 +297,8 @@
                      (unchecked-get o-props "typographies"))
          (identical? (unchecked-get n-props "textSelectionActive")
                      (unchecked-get o-props "textSelectionActive"))
+         (identical? (unchecked-get n-props "textSelectionKey")
+                     (unchecked-get o-props "textSelectionKey"))
          (identical? (unchecked-get n-props "readingSelectionActive")
                      (unchecked-get o-props "readingSelectionActive"))
          (identical? (unchecked-get n-props "languageView")
@@ -357,7 +359,8 @@
   `on-close-language-view` leaves it. Without `on-open-language-view` the
   Language panel offers no options."
   {::mf/wrap [#(mf/memo' % check-props)]}
-  [{:keys [ids type values ruby-values text-selection-active reading-selection-active zhuyin-selection-active
+  [{:keys [ids type values ruby-values text-selection-active text-selection-key
+           reading-selection-active zhuyin-selection-active
            applied-tokens libraries file-id typographies
            language-view on-open-language-view on-close-language-view has-ruby]}]
 
@@ -562,6 +565,7 @@
           :values                      values
           :ruby-values                 ruby-values
           :text-selection-active       text-selection-active
+          :selection-key               text-selection-key
           :reading-selection-active    reading-selection-active
           :zhuyin-selection-active     zhuyin-selection-active
           :on-change                   on-change
@@ -693,5 +697,6 @@
 
        (when (and ^boolean cjk-feature? ^boolean (wm/vertical-layout-active?))
          [:> tll/language-section* {:ids ids
+                                    :values values
                                     :on-change on-change
                                     :on-open-view on-open-language-view}])])))

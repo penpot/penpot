@@ -312,6 +312,24 @@
       "ko" :korean
       nil)))
 
+(defn zhuyin-default?
+  "True when new readings of a Chinese text with the language `tag` are
+  zhuyin rather than pinyin: in Taiwan and Hong Kong."
+  [tag]
+  (boolean
+   (and (= :chinese (language-family tag))
+        (some #{"TW" "HK"} (map str/upper (rest (str/split tag "-")))))))
+
+(defn chosen-language-attrs
+  "Paragraph attrs a text takes when `tag` is chosen as its language. A
+  Korean text breaks between words unless it already has a wrapping in
+  `values`; texts without one keep breaking between syllables."
+  [tag values]
+  (cond-> {:text-language tag}
+    (and (= :korean (language-family tag))
+         (nil? (:korean-wrap values)))
+    (assoc :korean-wrap "keep-words")))
+
 (def ^:private ruby-attrs
   (into #{:ruby :ruby-group} ruby-presentation-attrs))
 

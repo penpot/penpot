@@ -101,18 +101,6 @@
   }
 }
 
-.icon-options {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--sp-xs);
-}
-
-.digit-count {
-  flex: 1;
-  min-inline-size: 0;
-}
-
 // The options of the text language, in a view that replaces the design tab
 // (like editing a grid layout).
 .language-view {
@@ -135,9 +123,21 @@
   color: var(--color-foreground-primary);
 }
 
+// Each group sits under a divider, apart from the language and the other
+// groups.
 .language-group {
   display: flex;
   flex-direction: column;
+  gap: var(--sp-xs);
+  margin-block-start: var(--sp-xs);
+  padding-block-start: var(--sp-s);
+  border-block-start: $b-1 solid var(--color-background-quaternary);
+}
+
+.language-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: var(--sp-xs);
 }
 

@@ -7701,10 +7701,6 @@ msgid "workspace.options.text-options.line-height"
 msgstr "行の高さ"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.ruby"
-msgstr "ふりがな"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.ruby-advanced-options"
 msgstr "ふりがなの詳細設定"
 
