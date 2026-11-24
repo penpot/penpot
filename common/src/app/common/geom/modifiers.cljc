@@ -249,8 +249,23 @@
                   layout-data (gcgl/calc-layout-data parent @parent-bounds children bounds objects)]
               (gcgl/layout-content-bounds bounds parent layout-data))))
 
-        auto-width (when content-bounds (gpo/width-points content-bounds))
-        auto-height (when content-bounds (gpo/height-points content-bounds))]
+        ;; A board sized by its content keeps its own minimum and
+        ;; maximum sizes, as the generated CSS does, whether or not it
+        ;; is itself a layout item
+        clamp
+        (fn [size min-size max-size]
+          (cond-> size
+            (some? min-size) (max min-size)
+            (some? max-size) (min max-size)))
+
+        auto-width (when content-bounds
+                     (clamp (gpo/width-points content-bounds)
+                            (:layout-item-min-w parent)
+                            (:layout-item-max-w parent)))
+        auto-height (when content-bounds
+                      (clamp (gpo/height-points content-bounds)
+                             (:layout-item-min-h parent)
+                             (:layout-item-max-h parent)))]
     (cond-> (ctm/empty)
       (and (some? auto-width) auto-width?)
       (set-parent-auto-width auto-width)

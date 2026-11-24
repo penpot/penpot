@@ -8,6 +8,7 @@
   (:require
    [app.common.geom.modifiers :as gm]
    [app.common.geom.point :as gpt]
+   [app.common.geom.shapes :as gsh]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
@@ -185,3 +186,30 @@
 
       (t/is (some? result))
       (t/is (contains? result rect-id)))))
+
+(defn- auto-height-after-layout
+  "The height of the board `:frame1`, sized by its content, once its
+  layout runs again (a move of its child triggers it)."
+  [frame-params]
+  (let [file     (-> (thf/sample-file :file1)
+                     (add-flex-frame :frame1 (merge {:layout :flex
+                                                     :layout-flex-dir :column
+                                                     :layout-item-v-sizing :auto}
+                                                    frame-params))
+                     (add-rect-child :rect1 :frame1 :height 50))
+        objects  (:objects (thf/current-page file))
+        frame-id (thi/id :frame1)
+        result   (gm/set-objects-modifiers {(thi/id :rect1) {:modifiers (ctm/move-modifiers (gpt/point 0 1))}}
+                                           objects)]
+    (:height (gsh/transform-shape (get objects frame-id)
+                                  (get-in result [frame-id :modifiers])))))
+
+(t/deftest auto-sized-board-keeps-its-min-and-max-sizes
+  (t/testing "A board sized by its content follows it"
+    (t/is (= 50 (auto-height-after-layout {}))))
+
+  (t/testing "A board sized by its content keeps its minimum size"
+    (t/is (= 80 (auto-height-after-layout {:layout-item-min-h 80}))))
+
+  (t/testing "A board sized by its content keeps its maximum size"
+    (t/is (= 30 (auto-height-after-layout {:layout-item-max-h 30})))))

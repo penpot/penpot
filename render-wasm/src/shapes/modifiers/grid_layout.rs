@@ -901,11 +901,24 @@ pub fn reflow_grid_layout(
         let mut scale_width = 1.0;
         let mut scale_height = 1.0;
 
+        // A board sized by its content keeps its own minimum and maximum sizes, as the
+        // generated CSS does (the tracks keep their content size inside)
+        let clamp = |size: f32, min: Option<f32>, max: Option<f32>| {
+            let size = min.map_or(size, |min| f32::max(size, min));
+            max.map_or(size, |max| f32::min(size, max))
+        };
+        let item = shape.layout_item;
+
         if shape.is_layout_horizontal_auto() {
             let auto_width = column_tracks.iter().map(|t| t.size).sum::<f32>()
                 + layout_data.padding_left
                 + layout_data.padding_right
                 + column_tracks.len().saturating_sub(1) as f32 * layout_data.column_gap;
+            let auto_width = clamp(
+                auto_width,
+                item.and_then(|i| i.min_w),
+                item.and_then(|i| i.max_w),
+            );
             scale_width = auto_width / width;
         }
 
@@ -914,6 +927,11 @@ pub fn reflow_grid_layout(
                 + layout_data.padding_top
                 + layout_data.padding_bottom
                 + row_tracks.len().saturating_sub(1) as f32 * layout_data.row_gap;
+            let auto_height = clamp(
+                auto_height,
+                item.and_then(|i| i.min_h),
+                item.and_then(|i| i.max_h),
+            );
             scale_height = auto_height / height;
         }
 
