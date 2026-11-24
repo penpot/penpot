@@ -161,7 +161,12 @@
                  node   (mf/ref-val ref)]
              (when (or up? down?)
                (set-delta event up? down?))
-             (reset! last-value* (parse-value))
+             ;; Only a step or a confirmed value is stored: parsing clamps
+             ;; it to the limits, so Tab or Escape on an untouched input
+             ;; would save a value the user did not enter. Typed text is
+             ;; stored by handle-change.
+             (when (or up? down? enter?)
+               (reset! last-value* (parse-value)))
              (when enter?
                (dom/blur! node))
              (when esc?
@@ -188,13 +193,13 @@
 
         handle-blur
         (mf/use-fn
-         (mf/deps parse-value apply-value update-input on-blur)
+         (mf/deps apply-value on-blur is-nillable default)
          (fn [event]
            (when (mf/ref-val dirty-ref)
-             (let [new-value (or @last-value* default)]
-               (if (or is-nillable new-value)
-                 (apply-value event new-value)
-                 (update-input new-value)))
+             ;; A mixed value has no number. Unless the input is nillable,
+             ;; leaving it untouched saves nothing instead of the default.
+             (when (or is-nillable (some? @last-value*))
+               (apply-value event (or @last-value* default)))
              (when (fn? on-blur)
                (on-blur event)))))
 

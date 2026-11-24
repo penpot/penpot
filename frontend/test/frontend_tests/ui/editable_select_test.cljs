@@ -45,12 +45,16 @@
     (try
       (rd/flushSync
        (fn []
-         (.render root (mf/element editable-select
-                                   (clj->js (merge {:type "number"
-                                                    :value 12
-                                                    :options [8 12 16]
-                                                    :on-change #(vswap! changes conj %)}
-                                                   props))))))
+         (let [props   (merge {:type "number"
+                               :value 12
+                               :options [8 12 16]
+                               :on-change #(vswap! changes conj %)}
+                              props)
+               js-props (clj->js props)]
+           ;; clj->js turns keywords into strings: keep the :multiple
+           ;; value of a mixed selection as the menus pass it.
+           (set! (.-value js-props) (:value props))
+           (.render root (mf/element editable-select js-props)))))
       (let [input  (.querySelector container "input")
             _      (set! (.-attachEvent input) (fn [_ _]))
             _      (set! (.-detachEvent input) (fn [_ _]))
@@ -84,6 +88,22 @@
                      (rd/flushSync #(.blur input))))))]
     changes))
 
+(defn- ^:async press-key
+  "Focuses the input of a number `editable-select` with `props`, presses
+  `key` without typing and leaves the input. Resolves to the values passed
+  to `:on-change`."
+  [props key]
+  (let [[_ changes]
+        (await (with-editable-select
+                 props
+                 (fn [input window]
+                   (rd/flushSync #(.focus input))
+                   (rd/flushSync
+                    #(.dispatchEvent input (new (.-KeyboardEvent window) "keydown"
+                                                #js {:key key :bubbles true})))
+                   (rd/flushSync #(.blur input)))))]
+    changes))
+
 (defn- ^:async rendered-text
   "Resolves to the text shown by the input of a number `editable-select`
   with `props`."
@@ -104,7 +124,7 @@
 (t/deftest ^:async leaving-an-auto-field-keeps-it-auto
   ;; An empty grid size means Auto. Focusing the field and leaving it
   ;; without typing must not save the minimum.
-  (t/is (= [] (await (type-value {:value nil :min 1} nil)))))
+  (t/is (= [] (await (type-value {:value nil :min 1 :is-nillable true} nil)))))
 
 (t/deftest ^:async leaving-a-field-keeps-a-stored-value-out-of-range
   (t/is (= [] (await (type-value {:value 2 :min 3 :max 1000} nil)))))
@@ -118,3 +138,15 @@
   ;; instead of the input default 0.
   (t/is (= "" (await (rendered-text {:value nil :is-nillable true :placeholder "Auto"}))))
   (t/is (= "0" (await (rendered-text {:value nil})))))
+
+(t/deftest ^:async tab-or-escape-keeps-a-stored-value-out-of-range
+  ;; Only typed and stepped values are clamped: leaving a font size of 2
+  ;; with Tab or Escape must not save the minimum.
+  (t/is (= [] (await (press-key {:value 2 :min 3 :max 1000} "Tab"))))
+  (t/is (= [] (await (press-key {:value 2 :min 3 :max 1000} "Escape")))))
+
+(t/deftest ^:async leaving-a-mixed-field-saves-nothing
+  ;; A mixed font size has no value. Leaving it without typing must not
+  ;; save the input default 0, which the backend rejects.
+  (t/is (= [] (await (type-value {:value :multiple :min 3 :max 1000} nil))))
+  (t/is (= [] (await (press-key {:value :multiple :min 3 :max 1000} "Tab")))))
