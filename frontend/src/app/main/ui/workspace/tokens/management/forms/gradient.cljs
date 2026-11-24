@@ -383,10 +383,10 @@
              (when (some? converted)
                (dom/prevent-default event)
                (reset! converted* converted)
-               (dom/set-input-value! input (wtgf/pasted-text (dom/get-value input)
-                                                             (dom/selection-start input)
-                                                             (dom/selection-end input)
-                                                             converted))))))
+               (dom/set-input-value input (wtgf/pasted-text (dom/get-value input)
+                                                            (dom/selection-start input)
+                                                            (dom/selection-end input)
+                                                            converted))))))
 
         on-edit
         (mf/use-fn

@@ -300,7 +300,7 @@
   (when (some? node)
     (set! (.-value ^js node) value)))
 
-(defn set-input-value!
+(defn set-input-value
   "Sets the text of an input as typing does, so that the change handler
   of a React input runs. React does not see a plain `set-value!`."
   [^js node value]

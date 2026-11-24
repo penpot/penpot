@@ -14,7 +14,7 @@
    [cljs.test :as t :include-macros true]))
 
 (def ^:private globals
-  "The globals that `set-input-value!` reads."
+  "The globals that `set-input-value` reads."
   ["HTMLInputElement" "Event"])
 
 (defn- with-input
@@ -38,7 +38,7 @@
       (fn [input]
         (let [seen (atom [])]
           (.addEventListener input "input" (fn [event] (swap! seen conj [(.-type event) (.-value input)])))
-          (dom/set-input-value! input "linear-gradient(red, blue)")
+          (dom/set-input-value input "linear-gradient(red, blue)")
           (t/is (= "linear-gradient(red, blue)" (.-value input)))
           (t/is (= [["input" "linear-gradient(red, blue)"]] @seen))))))
 
@@ -47,11 +47,11 @@
       (fn [input]
         (let [seen (atom 0)]
           (.addEventListener (.-parentNode input) "input" (fn [_] (swap! seen inc)))
-          (dom/set-input-value! input "a")
+          (dom/set-input-value input "a")
           (t/is (= 1 @seen))))))
 
   (t/testing "without an input nothing happens"
-    (t/is (nil? (dom/set-input-value! nil "a")))))
+    (t/is (nil? (dom/set-input-value nil "a")))))
 
 (t/deftest get-clipboard-text-test
   (t/testing "the plain text of the paste"
