@@ -1,0 +1,43 @@
+{
+  "~:entries": [
+    {
+      "~:id": "~uc7ce0794-0992-8105-8004-38f280443a01",
+      "~:page-id": "~uc7ce0794-0992-8105-8004-38f280443a02",
+      "~:name": "Checkout button",
+      "~:type": "~:rect",
+      "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+      "~:frame-name": null,
+      "~:kind": "~:modified",
+      "~:attrs": {},
+      "~:profile-id": "~uc7ce0794-0992-8105-8004-38e630f29a9c",
+      "~:changed-at": "~m1713873823633"
+    }
+  ],
+  "~:sessions": [
+    {
+      "~:profile-id": "~uc7ce0794-0992-8105-8004-38e630f29a9c",
+      "~:start": "~m1713873000000",
+      "~:end": "~m1713873823633",
+      "~:revn": 7,
+      "~:entries": [
+        {
+          "~:id": "~uc7ce0794-0992-8105-8004-38f280443a01",
+          "~:page-id": "~uc7ce0794-0992-8105-8004-38f280443a02",
+          "~:name": "Checkout button",
+          "~:type": "~:rect",
+          "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+          "~:frame-name": null,
+          "~:kind": "~:modified",
+          "~:attrs": {},
+          "~:profile-id": "~uc7ce0794-0992-8105-8004-38e630f29a9c",
+          "~:changed-at": "~m1713873823633"
+        }
+      ]
+    }
+  ],
+  "~:people": 1,
+  "~:last-save": {
+    "~:created-at": "~m1713873823633",
+    "~:profile-id": "~uc7ce0794-0992-8105-8004-38e630f29a9c"
+  }
+}

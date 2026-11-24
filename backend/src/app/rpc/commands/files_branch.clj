@@ -2645,6 +2645,38 @@
              (db/exec! conn [sql:get-branch-change-marks
                              branch-id profile-id (name direction)]))))
 
+;; --- COMMAND QUERY: get-branch-layer-at-revision
+
+(def ^:private schema:get-branch-layer-at-revision
+  [:map {:title "get-branch-layer-at-revision" :closed true}
+   [:branch-id ::sm/uuid]
+   [:revn ::sm/int]
+   [:page-id ::sm/uuid]
+   [:shape-id ::sm/uuid]])
+
+(sv/defmethod ::get-branch-layer-at-revision
+  "A layer of the branch `branch-id` with its whole subtree as the branch
+  revision `revn` left it, rebuilt from the branch's op log
+  (`app.binfile.common/get-branch-layer-at-revision`). Returns `{:revn
+  :objects :approximate :deleted}`: `:objects` maps each id to its shape
+  and is empty when the shape is unknown, `:approximate` says the
+  revision predates the last update from the source and the layer is
+  the current one, and `:deleted` says the layer was gone at that
+  revision and comes back as it stood just before its removal. Reading
+  the branch is enough."
+  {::doc/added "2.16"
+   ::sm/params schema:get-branch-layer-at-revision
+   ::climit/id [[:get-branch-layer-at-revision/by-profile ::rpc/profile-id]
+                [:get-branch-layer-at-revision/global]]}
+  [cfg {:keys [::rpc/profile-id branch-id revn page-id shape-id]}]
+  (check-branching-enabled!)
+  (db/tx-run! (assoc cfg ::db/read-only true)
+              (fn [cfg]
+                (let [branch (get-readable-branch cfg profile-id branch-id)]
+                  (-> (bfc/get-branch-layer-at-revision cfg (:branch-file-id branch)
+                                                        page-id shape-id revn)
+                      (assoc :revn revn))))))
+
 (def ^:private schema:set-branch-change-mark
   [:map {:title "set-branch-change-mark"}
    [:branch-id ::sm/uuid]

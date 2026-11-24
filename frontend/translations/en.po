@@ -11992,6 +11992,10 @@ msgid "workspace.review.activity.click-to-show"
 msgstr "Click to show it on the canvas"
 
 #: src/app/main/ui/workspace/review/details.cljs
+msgid "workspace.review.activity.drawn-as-now"
+msgstr "Shown as it is now"
+
+#: src/app/main/ui/workspace/review/details.cljs
 msgid "workspace.review.activity.empty"
 msgstr "Nothing has changed since the review opened."
 

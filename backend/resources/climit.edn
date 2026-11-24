@@ -217,6 +217,19 @@
  :get-branch-review-activity/global
  {:permits 4 :queue 10 :timeout 60000}
 
+ ;; Rebuilding a layer at a branch revision costs at most one branch
+ ;; read: the base and the op log replayed up to the revision, one
+ ;; document where the listing holds three, so it takes the listing's
+ ;; six. A review card asks for its layer when it is shown, so opening
+ ;; the activity sends one request per visible card: the per-profile
+ ;; entry runs two of them at once and lets the rest of the cards queue.
+ ;; Provisional.
+ :get-branch-layer-at-revision/global
+ {:permits 6 :queue 20 :timeout 60000}
+
+ :get-branch-layer-at-revision/by-profile
+ {:permits 2 :queue 20 :timeout 60000}
+
  ;; Moving a thread left behind realizes the target document, then moves
  ;; the thread, its tasks and their events: the one document
  ;; `create-branch-review` realizes, so it takes the anchor's numbers,

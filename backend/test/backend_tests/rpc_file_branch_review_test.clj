@@ -6,9 +6,12 @@
 
 (ns backend-tests.rpc-file-branch-review-test
   (:require
+   [app.common.data :as d]
    [app.common.features :as cfeat]
    [app.common.files.branch-merge :as bm]
+   [app.common.files.migrations :as fmg]
    [app.common.time :as ct]
+   [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -17,6 +20,7 @@
    [app.rpc :as-alias rpc]
    [app.util.blob :as blob]
    [backend-tests.helpers :as th]
+   [clojure.string :as str]
    [clojure.test :as t]))
 
 (t/use-fixtures :once th/state-init)
@@ -849,3 +853,218 @@
         (t/is (= 2 (count (:sessions result))))
         (t/is (= 1 (:people result)))
         (t/is (= (:id author) (-> result :last-save :profile-id)))))))
+
+;; --- A layer at a branch revision
+
+(defn- page-id-of
+  [profile file-id]
+  (-> (th/command! {::th/type :get-file
+                    ::rpc/profile-id (:id profile)
+                    :id file-id})
+      :result :data :pages first))
+
+(defn- add-shape*
+  [profile file-id page-id {:keys [id parent-id frame-id] :as attrs}]
+  (apply-change* profile file-id
+                 {:type :add-obj
+                  :page-id page-id
+                  :id id
+                  :parent-id parent-id
+                  :frame-id frame-id
+                  :obj (cts/setup-shape attrs)}))
+
+(defn- rename*
+  [profile file-id page-id id name]
+  (let [out (apply-change* profile file-id
+                           {:type :mod-obj
+                            :page-id page-id
+                            :id id
+                            :operations [{:type :set :attr :name :val name}]})]
+    (t/is (nil? (:error out)))
+    out))
+
+(defn- revn-of
+  [file-id]
+  (:revn (th/db-get :file {:id file-id})))
+
+(defn- layer-at*
+  [profile branch-id revn page-id shape-id]
+  (th/command! {::th/type :get-branch-layer-at-revision
+                ::rpc/profile-id (:id profile)
+                :branch-id branch-id
+                :revn revn
+                :page-id page-id
+                :shape-id shape-id}))
+
+(defn- names-of
+  [result]
+  (update-vals (:objects result) :name))
+
+(defn- setup-board-branch
+  "A source file holding a board with a rect inside, and a branch of it.
+  Returns the ids the tests need."
+  []
+  (let [author   (th/create-profile* 1 {:is-active true})
+        file     (th/create-file* 1 {:profile-id (:id author)
+                                     :project-id (:default-project-id author)})
+        page-id  (page-id-of author (:id file))
+        board-id (uuid/random)
+        rect-id  (uuid/random)]
+    (add-shape* author (:id file) page-id
+                {:id board-id :name "Checkout" :type :frame
+                 :x 0 :y 0 :width 400 :height 800
+                 :parent-id uuid/zero :frame-id uuid/zero})
+    (add-shape* author (:id file) page-id
+                {:id rect-id :name "Pay button" :type :rect
+                 :x 10 :y 10 :width 100 :height 40
+                 :parent-id board-id :frame-id board-id})
+    (let [branch (create-branch* author file "feature")]
+      {:author author
+       :file file
+       :page-id page-id
+       :board-id board-id
+       :rect-id rect-id
+       :branch branch
+       :branch-file-id (:branch-file-id branch)})))
+
+(t/deftest layer-at-revision-follows-each-save
+  (with-redefs [cf/flags (pr-flags)]
+    (let [{:keys [author page-id board-id rect-id branch branch-file-id]} (setup-board-branch)
+          _  (rename* author branch-file-id page-id board-id "Checkout A")
+          r1 (revn-of branch-file-id)
+          _  (rename* author branch-file-id page-id rect-id "Pay")
+          r2 (revn-of branch-file-id)
+          _  (rename* author branch-file-id page-id board-id "Checkout C")
+          r3 (revn-of branch-file-id)]
+
+      (t/testing "each save comes back as it left the board and its child"
+        (doseq [[revn expected] [[r1 {board-id "Checkout A" rect-id "Pay button"}]
+                                 [r2 {board-id "Checkout A" rect-id "Pay"}]
+                                 [r3 {board-id "Checkout C" rect-id "Pay"}]]]
+          (let [out    (layer-at* author (:id branch) revn page-id board-id)
+                result (:result out)]
+            (t/is (nil? (:error out)))
+            (t/is (= revn (:revn result)))
+            (t/is (= expected (names-of result)))
+            (t/is (false? (:approximate result)))
+            (t/is (false? (:deleted result))))))
+
+      (t/testing "an unknown shape comes back empty"
+        (let [result (:result (layer-at* author (:id branch) r3 page-id (uuid/random)))]
+          (t/is (= {} (:objects result)))
+          (t/is (false? (:deleted result))))))))
+
+(def ^:private layer-test-migration
+  "9999-test-upper-layer-names")
+
+;; A file migration that rewrites every layer name, so a name tells
+;; whether the document crossed it before or after a change applied.
+(defmethod fmg/migrate-data "9999-test-upper-layer-names"
+  [data _]
+  (d/update-when data :pages-index update-vals
+                 (fn [page]
+                   (d/update-when page :objects update-vals
+                                  (fn [shape]
+                                    (d/update-when shape :name str/upper-case))))))
+
+(t/deftest layer-at-revision-replays-across-a-file-migration
+  ;; An ordinary file saved "Pay" before the upgrade holds "PAY" after
+  ;; it; a name saved after the upgrade stays as written.
+  (with-redefs [cf/flags (pr-flags)]
+    (let [{:keys [author page-id board-id rect-id branch branch-file-id]} (setup-board-branch)
+          _  (rename* author branch-file-id page-id rect-id "Pay")
+          r1 (revn-of branch-file-id)
+          v1 (fmg/data-version)]
+
+      (with-redefs [fmg/available-migrations (conj fmg/available-migrations layer-test-migration)]
+        (rename* author branch-file-id page-id rect-id "Pay now")
+        (let [r2 (revn-of branch-file-id)]
+
+          (t/testing "the rows straddle the upgrade"
+            (t/is (= [v1 layer-test-migration]
+                     (->> (th/db-query :file-branch-change {:file-id branch-file-id})
+                          (sort-by :revn)
+                          (mapv :data-version)))))
+
+          (t/testing "a revision before the upgrade migrates after its row applies"
+            (let [result (:result (layer-at* author (:id branch) r1 page-id board-id))]
+              (t/is (= {board-id "CHECKOUT" rect-id "PAY"} (names-of result)))
+              (t/is (false? (:approximate result)))))
+
+          (t/testing "a revision after the upgrade keeps what its row wrote"
+            (let [result (:result (layer-at* author (:id branch) r2 page-id board-id))]
+              (t/is (= {board-id "CHECKOUT" rect-id "Pay now"} (names-of result)))
+              (t/is (false? (:approximate result))))))))))
+
+(t/deftest layer-before-an-update-from-source-is-approximate
+  (with-redefs [cf/flags (pr-flags)]
+    (let [{:keys [author file page-id rect-id branch branch-file-id]} (setup-board-branch)]
+      (rename* author branch-file-id page-id rect-id "Mine")
+      (let [before (revn-of branch-file-id)]
+        (add-color* author (:id file) "Source color")
+        (let [out (th/command! {::th/type :update-file-branch-from-source
+                                ::rpc/profile-id (:id author)
+                                :branch-id (:id branch)})]
+          (t/is (nil? (:error out)))
+          (t/is (= :updated (-> out :result :status))))
+        (rename* author branch-file-id page-id rect-id "Later")
+
+        (let [after    (revn-of branch-file-id)
+              earlier  (:result (layer-at* author (:id branch) before page-id rect-id))
+              latest   (:result (layer-at* author (:id branch) after page-id rect-id))]
+          (t/testing "a revision the squash took comes back as the current layer"
+            (t/is (true? (:approximate earlier)))
+            (t/is (= {rect-id "Later"} (names-of earlier))))
+
+          (t/testing "a revision after the update comes back exact"
+            (t/is (false? (:approximate latest)))
+            (t/is (= {rect-id "Later"} (names-of latest)))))))))
+
+(t/deftest deleted-layer-comes-back-as-it-stood-before
+  (with-redefs [cf/flags (pr-flags)]
+    (let [{:keys [author page-id board-id rect-id branch branch-file-id]} (setup-board-branch)
+          _  (rename* author branch-file-id page-id board-id "Going")
+          r1 (revn-of branch-file-id)
+          _  (t/is (nil? (:error (apply-change* author branch-file-id
+                                                {:type :del-obj :page-id page-id :id board-id}))))
+          r2 (revn-of branch-file-id)]
+
+      (t/testing "the deleting revision returns the board as it stood before"
+        (let [result (:result (layer-at* author (:id branch) r2 page-id board-id))]
+          (t/is (true? (:deleted result)))
+          (t/is (false? (:approximate result)))
+          (t/is (= {board-id "Going" rect-id "Pay button"} (names-of result)))))
+
+      (t/testing "the revision before it is not deleted"
+        (let [result (:result (layer-at* author (:id branch) r1 page-id board-id))]
+          (t/is (false? (:deleted result)))
+          (t/is (= {board-id "Going" rect-id "Pay button"} (names-of result))))))))
+
+(t/deftest layer-at-revision-needs-read-rights
+  (with-redefs [cf/flags (pr-flags)]
+    (let [{:keys [page-id board-id branch branch-file-id]} (setup-board-branch)
+          stranger (th/create-profile* 2 {:is-active true})]
+
+      (t/testing "a profile that cannot read the source is refused"
+        (let [out (layer-at* stranger (:id branch) (revn-of branch-file-id) page-id board-id)]
+          (t/is (= :not-found (-> out :error ex-data :type)))
+          (t/is (= :object-not-found (-> out :error ex-data :code)))))
+
+      (t/testing "an unknown branch is refused"
+        (let [out (layer-at* stranger (uuid/random) 0 page-id board-id)]
+          (t/is (= :branch-not-found (-> out :error ex-data :code))))))))
+
+(t/deftest activity-sittings-carry-the-revn-of-their-last-save
+  (with-redefs [cf/flags (pr-flags)]
+    (let [{:keys [author page-id board-id rect-id branch branch-file-id]} (setup-board-branch)
+          review-id (-> (create-review* author (:id branch) {}) :result :id)]
+      (rename* author branch-file-id page-id board-id "Checkout A")
+      (rename* author branch-file-id page-id rect-id "Pay")
+      (let [out    (th/command! {::th/type :get-branch-review-activity
+                                 ::rpc/profile-id (:id author)
+                                 :id review-id})
+            result (:result out)]
+        (t/is (nil? (:error out)))
+        (t/is (= 1 (count (:sessions result))))
+        (t/is (= (revn-of branch-file-id)
+                 (-> result :sessions first :revn)))))))

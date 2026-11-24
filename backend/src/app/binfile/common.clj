@@ -465,6 +465,81 @@
       (:data (migrate-detached cfg base fmg/migrate-file))
       data)))
 
+(defn- get-branch-replay-start
+  "What a replay of the op log of the branch `file` starts from: the
+  `file_branch` row (`:branch`), the merge-base snapshot realized to
+  plain maps (`:base`), the fragment ids the base named before the
+  realize (`:base-ids`), and the document the replay works on (`:doc`).
+  That document is the merge base at the base's data version, under the
+  branch file's identity, so a migration on the way resolves the
+  branch's libraries, and a change or migration that compares a
+  reference with the document's own `:id` sees the branch."
+  [{:keys [::db/conn] :as cfg} {:keys [id] :as file}]
+  (let [branch (db/get* conn :file-branch {:branch-file-id id})
+
+        _ (when (nil? branch)
+            (ex/raise :type :not-found
+                      :code :branch-metadata-missing
+                      :hint "branch metadata not found for branch file"
+                      :file-id id))
+
+        base (db/get-with-sql cfg
+                              [sql:get-branch-base-snapshot
+                               (:source-file-id branch)
+                               (:base-snapshot-id branch)
+                               (ct/now)]
+                              {::db/remove-deleted false})
+
+        _ (when (nil? base)
+            (ex/raise :type :not-found
+                      :code :base-snapshot-missing
+                      :hint "the branch merge-base snapshot cannot be resolved"
+                      :file-id id))
+
+        ;; same decode `fsnap/get-snapshot` applies: storage-backed
+        ;; snapshots carry the storage ref inside :metadata, so it must
+        ;; be decoded before `resolve-file-data` can fetch the object.
+        ;; NOTE the (cfg file) argument order of both fdata fns: the
+        ;; snapshot row is the FILE argument, never the cfg.
+        base (-> base
+                 (d/update-when :metadata fdata/decode-metadata))
+
+        base (if (nil? (:migrations base))
+               (dissoc base :migrations)
+               (update base :migrations db/pgarray->set))
+
+        base (fdata/resolve-file-data cfg base)
+        base (fdata/decode-file-data cfg base)
+        ;; the fragment ids the base names, read before the realize
+        ;; drops them: a comparison skips every page the source still shares
+        base-ids (fdata/get-page-pointer-ids (:data base))
+
+        ;; the base shares the source file's fragments; past this point
+        ;; the replay, the migrations and every caller see plain data
+        base (realize-branch-base cfg base)]
+
+    {:branch branch
+     :base base
+     :base-ids base-ids
+     :doc (-> file
+              (assoc :data (assoc (:data base) :id id))
+              (assoc :version (or (:version base) (:version file)))
+              (assoc :migrations (:migrations base)))}))
+
+(defn- replay-branch-row
+  "Apply one op log `row` to the replayed document `doc`. A row's
+  `data_version` is the version its changes were written at: the
+  document migrates to it before the row applies, and in the steady
+  state that check is one set lookup. Returns the document after the row
+  and the number of changes the row held."
+  [cfg doc {:keys [changes data-version]}]
+  (let [changes (blob/decode changes)
+        doc     (if (fmg/need-migration-to? doc data-version)
+                  (migrate-detached cfg doc #(fmg/migrate-file-to %1 %2 data-version))
+                  doc)]
+    [(update doc :data cpc/process-changes changes)
+     (count changes)]))
+
 (defn- branch-file-data
   "Derive the `:data` of a branch file: the merge-base snapshot plus
   every op appended to the branch's log, replayed in revn order.
@@ -511,78 +586,18 @@
   [{:keys [::db/conn] :as cfg} {:keys [id] :as file} decode? include-base-data?]
   (let [tpoint (ct/tpoint)
 
-        branch (db/get* conn :file-branch {:branch-file-id id})
-
-        _ (when (nil? branch)
-            (ex/raise :type :not-found
-                      :code :branch-metadata-missing
-                      :hint "branch metadata not found for branch file"
-                      :file-id id))
-
-        base (db/get-with-sql cfg
-                              [sql:get-branch-base-snapshot
-                               (:source-file-id branch)
-                               (:base-snapshot-id branch)
-                               (ct/now)]
-                              {::db/remove-deleted false})
-
-        _ (when (nil? base)
-            (ex/raise :type :not-found
-                      :code :base-snapshot-missing
-                      :hint "the branch merge-base snapshot cannot be resolved"
-                      :file-id id))
-
-        ;; same decode `fsnap/get-snapshot` applies: storage-backed
-        ;; snapshots carry the storage ref inside :metadata, so it must
-        ;; be decoded before `resolve-file-data` can fetch the object.
-        ;; NOTE the (cfg file) argument order of both fdata fns: the
-        ;; snapshot row is the FILE argument, never the cfg.
-        base (-> base
-                 (d/update-when :metadata fdata/decode-metadata))
-
-        base (if (nil? (:migrations base))
-               (dissoc base :migrations)
-               (update base :migrations db/pgarray->set))
-
-        base (fdata/resolve-file-data cfg base)
-        base (fdata/decode-file-data cfg base)
-        ;; the fragment ids the base names, read before the realize
-        ;; drops them: a comparison skips every page the source still shares
-        base-ids (fdata/get-page-pointer-ids (:data base))
-
-        ;; the base shares the source file's fragments; past this point
-        ;; the replay, the migrations and every caller see plain data
-        base (realize-branch-base cfg base)
+        {:keys [branch base base-ids doc]} (get-branch-replay-start cfg file)
 
         rows (db/exec! conn [sql:get-branch-changes id])
-
-        ;; the document the replay works on: the merge base at the
-        ;; base's data version, under the branch file's identity, so a
-        ;; migration on the way resolves the branch's libraries, and a
-        ;; change or migration that compares a reference with the
-        ;; document's own `:id` sees the branch
-        doc (-> file
-                (assoc :data (assoc (:data base) :id id))
-                (assoc :version (or (:version base) (:version file)))
-                (assoc :migrations (:migrations base)))
 
         ;; the derive replays the log batch by batch, so each batch is
         ;; decoded exactly once. `depth` is the flattened op count, the
         ;; quantity `files_branch.clj::check-oplog-depth-limit!` limits,
         ;; and the one that predicts the cost of the replay.
-        ;;
-        ;; A row's `data_version` is the version its changes were
-        ;; written at; the document migrates to it before the row
-        ;; applies, and in the steady state that check is one set
-        ;; lookup.
         [doc depth]
-        (reduce (fn [[doc depth] {:keys [changes data-version]}]
-                  (let [changes (blob/decode changes)
-                        doc     (if (fmg/need-migration-to? doc data-version)
-                                  (migrate-detached cfg doc #(fmg/migrate-file-to %1 %2 data-version))
-                                  doc)]
-                    [(update doc :data cpc/process-changes changes)
-                     (+ depth (count changes))]))
+        (reduce (fn [[doc depth] row]
+                  (let [[doc n] (replay-branch-row cfg doc row)]
+                    [doc (+ depth n)]))
                 [doc 0]
                 rows)
 
@@ -755,6 +770,117 @@
   (if (:read-only? opts)
     (db/run! cfg get-file* file-id opts)
     (db/tx-run! cfg get-file* file-id opts)))
+
+;; --- A layer of a branch at one of its revisions
+
+(def ^:private sql:get-branch-changes-up-to
+  "SELECT changes, data_version
+     FROM file_branch_change
+    WHERE file_id = ?
+      AND deleted_at IS NULL
+      AND revn <= ?
+    ORDER BY revn ASC")
+
+(defn- layer-present?
+  [doc page-id shape-id]
+  (-> doc :data :pages-index (get page-id) :objects (contains? shape-id)))
+
+(defn- layer-subtree
+  "The shape `shape-id` of page `page-id` of `data` with its whole
+  subtree, as an `{id -> shape}` map, or an empty map when the page does
+  not hold the shape."
+  [data page-id shape-id]
+  (let [objects (-> data :pages-index (get page-id) :objects)]
+    (if (contains? objects shape-id)
+      (select-keys objects (cfh/get-children-ids-with-self objects shape-id))
+      {})))
+
+(defn- squashed-revn?
+  "Whether the branch revision `revn` predates the last update of the
+  branch from its source, which the op log can no longer rebuild. An
+  update moves the merge base to the source and replaces the log with
+  one squashed row (`files_branch.clj::persist-branch-update!`), and it
+  stores in `base_branch_revn` the branch revn it ran at, one less when
+  the branch carried work of its own. Every save before the update
+  produced a revn at or below that counter, and every save after it a
+  revn above. A branch never updated keeps the counter at 0, the revn of
+  the empty file it was cut as, whose state is the base itself."
+  [{:keys [base-branch-revn]} revn]
+  (and (pos? base-branch-revn)
+       (<= revn base-branch-revn)))
+
+(defn get-branch-layer-at-revision
+  "The shape `shape-id` of page `page-id` of the branch file `file-id`,
+  with its whole subtree, as the branch revision `revn` left it. Returns
+  `{:objects :approximate :deleted}`, `:objects` an `{id -> shape}` map
+  at the current data version with the ids unchanged, empty when the
+  shape is unknown.
+
+  The replay is the one `branch-file-data` runs, stopped after the last
+  op log row at or below `revn`: each row applies at the data version it
+  was written at, and the result migrates to the current version. A
+  revision older than the last update from the source is gone from the
+  log (`squashed-revn?`): the whole log replays and `:approximate` is
+  true. A branch detached into an ordinary file has no log left, so its
+  current layer comes back approximate as well.
+
+  When the shape is absent at the end of the replay but stood in it
+  earlier, `:deleted` is true and the shape comes back as it stood just
+  before the row that removed it."
+  [{:keys [::db/conn] :as cfg} file-id page-id shape-id revn]
+  (let [row (db/get conn :file {:id file-id}
+                    {:columns [:is-branch]
+                     ::db/remove-deleted false})]
+    (if-not (:is-branch row)
+      {:objects (-> (get-file cfg file-id
+                              :realize? true
+                              :read-only? true
+                              :include-deleted? true)
+                    (:data)
+                    (layer-subtree page-id shape-id))
+       :approximate true
+       :deleted false}
+
+      (let [file (get-file cfg file-id
+                           :load-data? false
+                           :migrate? false
+                           :read-only? true
+                           :include-deleted? true)
+
+            {:keys [branch doc]} (get-branch-replay-start cfg file)
+
+            approximate? (squashed-revn? branch revn)
+
+            rows (if approximate?
+                   (db/exec! conn [sql:get-branch-changes file-id])
+                   (db/exec! conn [sql:get-branch-changes-up-to file-id revn]))
+
+            ;; `removed` is the document just before the last row that
+            ;; took the shape away, nil while the shape stands
+            [doc removed]
+            (reduce (fn [[before removed] row]
+                      (let [[after _] (replay-branch-row cfg before row)]
+                        [after (cond
+                                 (layer-present? after page-id shape-id) nil
+                                 (layer-present? before page-id shape-id) before
+                                 :else removed)]))
+                    [doc nil]
+                    rows)
+
+            deleted? (some? removed)
+            doc      (if deleted? removed doc)
+            doc      (if (fmg/need-migration? doc)
+                       (migrate-detached cfg doc fmg/migrate-file)
+                       doc)
+
+            ;; the base and early op log rows name the source; the
+            ;; branch reads name itself, as `branch-file-data` does
+            id-map   {(:source-file-id branch) file-id}
+            objects  (layer-subtree (:data doc) page-id shape-id)]
+
+        {:objects (:objects (cfh/relink-page {:objects objects} #(get id-map % %)))
+         :approximate approximate?
+         :deleted deleted?}))))
 
 (defn clean-file-features
   [file]
