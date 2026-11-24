@@ -15,17 +15,14 @@ Respect the intended abstraction direction in new/refactored code:
 
 Some legacy code violates this layering; do not copy those violations into new code when a focused refactor is practical.
 
-## Build-mode dependent laziness
-
-`app.common.schema/check-fn` resolves schemas through `app.common.data.macros/lazy-delay`: an invalid schema can fail on namespace load in development and JVM tests, but at first use in production CLJS. See the macro docstring and each target's `:closure-defines` for the evaluation rules.
-
 ## Focused memory routing
 
 - URL construction on either runtime: `mem:common/uri` for relative-path resolution and preserving a deployment subpath.
 
 Model, schema, and persistence shape:
 - File/page/shape/component attr changes, import/export surfaces, inspector/codegen, and cross-module checklist: `mem:common/data-model-change-checklist`.
-- Token data structures, token import/export, active theme/set semantics, and schema/coercion behavior: `mem:common/tokens-schema-subtleties`.
+- Design token model, import/export and workspace application: `mem:common/tokens`.
+- Shared schema coercion, validators and build-mode resolution: `mem:common/schema`.
 - For organization and team permission rules shared across runtimes, start at `app.common.types.organization`.
 
 Geometry and layout:

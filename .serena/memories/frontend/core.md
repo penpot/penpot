@@ -15,7 +15,7 @@ Start at `app.main.ui` for Rumext components, `app.main.data` for Potok events, 
 - Local and remote commits, rebase, and undo: `mem:frontend/workspace-commits`.
 - Save queue, rejected edits, retries, and recovery: `mem:frontend/workspace-state-persistence-subtleties`.
 - Modifier previews, transform commits, and WASM bridge: `mem:frontend/workspace-transforms`.
-- Token application and propagation: `mem:frontend/workspace-token-subtleties`; token model: `mem:common/tokens-schema-subtleties`.
+- Design token model, workspace application and propagation: `mem:common/tokens`.
 
 ## App shell
 
