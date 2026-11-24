@@ -5,7 +5,6 @@
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
 @use "ds/_borders.scss" as *;
-@use "ds/_sizes.scss" as *;
 
 .radio-cards {
   display: flex;
@@ -55,14 +54,18 @@
 }
 
 // out of sight but still in the tab order and the accessibility tree,
-// so the keyboard and assistive technology use the native radio
+// so the keyboard and assistive technology use the native radio. It
+// covers the whole card, above its icon and text, so a click anywhere
+// on the card lands on the radio itself
 .input {
   position: absolute;
-  inline-size: $sz-1;
-  block-size: $sz-1;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
   margin: 0;
+  border-radius: inherit;
   opacity: 0;
-  pointer-events: none;
+  cursor: inherit;
 }
 
 .icon {

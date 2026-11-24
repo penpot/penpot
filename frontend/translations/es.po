@@ -6791,6 +6791,10 @@ msgid "workspace.branches.apply.comment-label"
 msgstr "Comentario de la aplicación"
 
 #: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.apply.conflicts-hint"
+msgstr "Resuelve antes los conflictos en la rama."
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
 msgid "workspace.branches.apply.confirm-accept"
 msgstr "Aplicar a main"
 
@@ -7091,9 +7095,9 @@ msgstr "no"
 msgid "workspace.branches.compare.value-true"
 msgstr "sí"
 
-#: src/app/main/ui/workspace/sidebar/branches.cljs:1534
-msgid "workspace.branches.conflicts.apply"
-msgstr "Aplicar y fusionar"
+#: src/app/main/ui/workspace/compare/common.cljs
+msgid "workspace.branches.conflicts.apply-to-branch"
+msgstr "Aplicar a la rama"
 
 #: src/app/main/ui/workspace/sidebar/branches.cljs:1444
 msgid "workspace.branches.conflicts.empty"
@@ -7118,6 +7122,12 @@ msgstr "editado en main y en la rama desde la base"
 #: src/app/main/ui/workspace/sidebar/branches.cljs:1134, src/app/main/ui/workspace/sidebar/branches.cljs:1626
 msgid "workspace.branches.conflicts.resolve"
 msgstr "Resolver conflictos"
+
+#: src/app/main/data/workspace/branches.cljs, src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.conflicts.resolve-first"
+msgstr ""
+"Esta rama tiene conflictos con main. Resuelve los conflictos en la rama "
+"antes de fusionar o aplicar sus cambios."
 
 #: src/app/main/ui/workspace/sidebar/branches.cljs:593, src/app/main/ui/workspace/sidebar/branches.cljs:824, src/app/main/ui/workspace/sidebar/branches.cljs:1933
 msgid "workspace.branches.counts.ahead"
@@ -12447,7 +12457,6 @@ msgstr "Ver los cambios"
 msgid "workspace.review.toolbar.task"
 msgstr "Crear una tarea"
 
-
 #: src/app/main/ui/workspace/review/tasks.cljs
 msgid "workspace.tasks.actions.assign"
 msgstr "Asignar a"
@@ -12898,12 +12907,6 @@ msgstr "Marcar como revisado"
 msgid "workspace.compare.navigator.next-pending"
 msgstr "Siguiente pendiente"
 
-msgid "workspace.compare.popover.applies-merge"
-msgstr "Nada cambia hasta que apliques y fusiones."
-
-msgid "workspace.compare.popover.applies-update"
-msgstr "Nada cambia hasta que apliques y actualices."
-
 msgid "workspace.compare.popover.attr"
 msgstr "Main y la rama lo cambiaron. Elige cuál conservar."
 
@@ -12948,6 +12951,10 @@ msgstr "Vista previa - %s tras la actualización"
 
 msgid "workspace.compare.navigator.peek"
 msgstr "%s - mantén M para ver main"
+
+#: src/app/main/ui/workspace/compare/overlays.cljs
+msgid "workspace.compare.popover.applies-branch"
+msgstr "Nada cambia hasta que apliques tus elecciones a la rama."
 
 msgid "workspace.compare.popover.hover"
 msgstr "Al pasar por una opción se previsualiza en el lienzo."

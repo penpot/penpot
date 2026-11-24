@@ -6690,6 +6690,10 @@ msgid "workspace.branches.apply.comment-label"
 msgstr "Apply comment"
 
 #: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.apply.conflicts-hint"
+msgstr "Resolve the conflicts on the branch first."
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
 msgid "workspace.branches.apply.confirm-accept"
 msgstr "Apply to main"
 
@@ -6990,9 +6994,9 @@ msgstr "false"
 msgid "workspace.branches.compare.value-true"
 msgstr "true"
 
-#: src/app/main/ui/workspace/sidebar/branches.cljs:1534
-msgid "workspace.branches.conflicts.apply"
-msgstr "Apply and merge"
+#: src/app/main/ui/workspace/compare/common.cljs
+msgid "workspace.branches.conflicts.apply-to-branch"
+msgstr "Apply to branch"
 
 #: src/app/main/ui/workspace/sidebar/branches.cljs:1444
 msgid "workspace.branches.conflicts.empty"
@@ -7017,6 +7021,12 @@ msgstr "edited in main and in the branch since the base"
 #: src/app/main/ui/workspace/sidebar/branches.cljs:1134, src/app/main/ui/workspace/sidebar/branches.cljs:1626
 msgid "workspace.branches.conflicts.resolve"
 msgstr "Resolve conflicts"
+
+#: src/app/main/data/workspace/branches.cljs, src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.conflicts.resolve-first"
+msgstr ""
+"This branch has conflicts with main. Resolve them on the branch, then "
+"merge or apply it."
 
 #: src/app/main/ui/workspace/sidebar/branches.cljs:593, src/app/main/ui/workspace/sidebar/branches.cljs:824, src/app/main/ui/workspace/sidebar/branches.cljs:1933
 msgid "workspace.branches.counts.ahead"
@@ -12294,7 +12304,6 @@ msgstr "Show changes"
 msgid "workspace.review.toolbar.task"
 msgstr "Create a task"
 
-
 #: src/app/main/ui/workspace/review/tasks.cljs
 msgid "workspace.tasks.actions.assign"
 msgstr "Assign to"
@@ -12745,12 +12754,6 @@ msgstr "Mark as reviewed"
 msgid "workspace.compare.navigator.next-pending"
 msgstr "Next pending"
 
-msgid "workspace.compare.popover.applies-merge"
-msgstr "Nothing changes until you apply and merge."
-
-msgid "workspace.compare.popover.applies-update"
-msgstr "Nothing changes until you apply and update."
-
 msgid "workspace.compare.popover.attr"
 msgstr "Both sides changed it. Pick the one to keep."
 
@@ -12795,6 +12798,10 @@ msgstr "Preview - %s after the update"
 
 msgid "workspace.compare.navigator.peek"
 msgstr "%s - hold M to see main"
+
+#: src/app/main/ui/workspace/compare/overlays.cljs
+msgid "workspace.compare.popover.applies-branch"
+msgstr "Nothing changes until you apply your choices to the branch."
 
 msgid "workspace.compare.popover.hover"
 msgstr "Hovering an option previews it on the canvas."
