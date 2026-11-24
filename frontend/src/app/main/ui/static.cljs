@@ -240,8 +240,9 @@
         [:div {:key index} content])
       [:div {:class (stl/css :sign-info)}
        (when cancel-text
-         [:button {:class (stl/css :cancel-button)
-                   :on-click on-close}
+         [:> button* {:variant "secondary"
+                      :type "button"
+                      :on-click on-close}
           cancel-text])
        [:> button* {:variant "primary" :on-click on-click} button-text]]]]))
 

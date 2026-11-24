@@ -1065,6 +1065,42 @@ test.describe("Download report", () => {
   });
 });
 
+test.describe("Request access dialog controls", () => {
+  test("Go to Personal Projects and Ask buttons", async ({ page }) => {
+    const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+    await DashboardPage.mockConfigFlags(page, ["disable-onboarding"]);
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.setupDashboardFull();
+    await page.route("**/api/main/methods/get-projects?*", (route) =>
+      route.fulfill({
+        status: 404,
+        contentType: "application/transit+json",
+        body: '["^ ","~:type","~:not-found","~:code","~:object-not-found"]',
+      }),
+    );
+    await page.route("**/api/main/methods/get-team-info?*", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/transit+json",
+        body: `["^ ","~:id","~u${DashboardPage.anyTeamId}","~:is-default",false]`,
+      }),
+    );
+    await page.goto(
+      `/?screen=dashboard-recent&team-id=${DashboardPage.anyTeamId}`,
+    );
+
+    const actions = page.locator("[class*='static__sign-info']");
+    const goToDashboard = actions.getByText("Go to Personal Projects", {
+      exact: true,
+    });
+    await expect(goToDashboard).toBeVisible();
+    await page.mouse.move(10, 10);
+    await expect(actions).toHaveScreenshot(shot);
+    await goToDashboard.hover();
+    await expect(actions).toHaveScreenshot(shot);
+  });
+});
+
 test.describe("Team settings organization", () => {
   test("Shows the Add to an organization link", async ({ page }) => {
     const shot = { maxDiffPixelRatio: 0, threshold: 0 };

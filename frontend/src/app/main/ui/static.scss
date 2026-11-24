@@ -324,6 +324,7 @@
 .overlay .dialog-login .sign-info {
   display: flex;
   justify-content: flex-end;
+  gap: var(--sp-l);
   margin-block-start: var(--sp-xxxl);
 }
 
