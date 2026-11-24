@@ -847,6 +847,9 @@ fn render_background_blur_image(
         blur_surface.image_snapshot()
     };
 
+    // Page-space transform of the canvas, which a PDF page starts scaled by
+    // raster_dpi / 72: the backdrop is drawn back in this space below.
+    let page_matrix = canvas.local_to_device();
     let matrix = shape.centered_transform();
     canvas.save();
     canvas.concat(&matrix);
@@ -871,10 +874,12 @@ fn render_background_blur_image(
             clip_to_shape(canvas, shape, true);
         }
     }
-    // Draw the pre-blurred full-page bitmap in device space (1 image px per
-    // device unit) so it aligns with the page regardless of the shape transform.
-    canvas.reset_matrix();
-    canvas.draw_image(&blurred, (0.0, 0.0), None);
+    // Draw the pre-blurred full-page bitmap over the page rect, in page space,
+    // so it aligns with the page regardless of the shape transform. Resetting
+    // to device space instead dropped the PDF page scale and drew the bitmap
+    // outside the clip.
+    canvas.set_matrix(&page_matrix);
+    canvas.draw_image_rect(&blurred, None, bounds, &Paint::default());
     canvas.restore();
     Ok(())
 }

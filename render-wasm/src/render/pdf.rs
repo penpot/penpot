@@ -216,6 +216,58 @@ mod tests {
     }
 
     #[test]
+    fn embedded_background_blur_follows_the_page_scale() {
+        // A PDF page canvas starts scaled by raster_dpi / 72. The embedded
+        // backdrop was drawn after resetting the matrix, so it landed that
+        // many times too small, outside the panel: the PDF showed no blur.
+        use crate::shapes::{Blur, BlurType, Frame};
+
+        let mut pool = ShapesPool::new();
+        let (board, red, panel) = (uid(1), uid(2), uid(3));
+        {
+            let shape = pool.add_shape(board);
+            shape.set_parent(Uuid::nil());
+            shape.set_shape_type(Type::Frame(Frame::default()));
+            shape.set_selrect(0.0, 0.0, 100.0, 100.0);
+            shape.set_fills(vec![Fill::Solid(SolidColor(skia::Color::BLUE))]);
+            shape.add_child(red);
+            shape.add_child(panel);
+        }
+        add_solid_rect(&mut pool, red, (0.0, 0.0, 50.0, 100.0), skia::Color::RED);
+        pool.get_mut(&red).unwrap().set_parent(board);
+        {
+            let shape = pool.add_shape(panel);
+            shape.set_parent(board);
+            shape.set_shape_type(Type::Rect(Rect::default()));
+            shape.set_selrect(20.0, 20.0, 80.0, 80.0);
+            shape.set_background_blur(Some(Blur::new(BlurType::BackgroundBlur, false, 16.0)));
+        }
+
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = crate::globals::TestRenderResourcesGuard::install(&mut resources);
+        let raster_scale = 4.0;
+        let mut surface = skia::surfaces::raster_n32_premul((400, 400)).expect("surface");
+        let page = skia::Rect::from_xywh(0.0, 0.0, 100.0, 100.0);
+        {
+            let canvas = surface.canvas();
+            canvas.scale((raster_scale, raster_scale));
+            vector::render_tree_pdf(&mut resources, canvas, &board, &pool, page).expect("render");
+        }
+        let image = surface.image_snapshot();
+        let pixels = image.peek_pixels().expect("pixels");
+        // Just left of the red/blue edge, inside the panel: blurred, it takes
+        // some blue; sharp, it is pure red.
+        let near_edge = pixels.get_color((47 * 4, 50 * 4));
+        assert!(
+            near_edge.b() > 20,
+            "blurred backdrop expected, got {near_edge:?}"
+        );
+        // Outside the panel the page stays sharp.
+        let outside = pixels.get_color((47 * 4, 10 * 4));
+        assert_eq!(outside, skia::Color::RED);
+    }
+
+    #[test]
     fn multi_page_pdf_has_one_page_per_shape() {
         let mut pool = ShapesPool::new();
         let a = uid(1);
