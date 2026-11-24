@@ -1659,6 +1659,73 @@ test.describe("Constraints selects", () => {
   });
 });
 
+test.describe("Shadow type select", () => {
+  test("Shows the shadow type select closed, open and changed", async ({
+    page,
+  }) => {
+    const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(/get\-file\?/, "workspace/get-file-not-empty.json");
+    await workspace.mockRPC(
+      "update-file?id=*",
+      "workspace/update-file-empty.json",
+    );
+    await workspace.goToWorkspace({
+      fileId: "6191cd35-bb1f-81f7-8004-7cc63d087374",
+      pageId: "6191cd35-bb1f-81f7-8004-7cc63d087375",
+    });
+    await workspace.clickLeafLayer("Rectangle");
+    await workspace.rightSidebar
+      .getByRole("button", { name: "Add shadow" })
+      .click();
+
+    const typeSelect = workspace.rightSidebar.getByText("Drop shadow", {
+      exact: true,
+    });
+    await expect(typeSelect).toBeVisible();
+    const sidebarBox = await workspace.rightSidebar.boundingBox();
+    const selectBox = await typeSelect.boundingBox();
+    // The shadow row, with room below it for the open list.
+    const clip = {
+      x: Math.floor(sidebarBox.x),
+      y: Math.floor(selectBox.y) - 16,
+      width: Math.ceil(sidebarBox.width),
+      height: 120,
+    };
+    await page.mouse.move(0, 0);
+    await expect(page).toHaveScreenshot({ clip, ...shot });
+
+    await typeSelect.hover();
+    await expect(page).toHaveScreenshot({ clip, ...shot });
+
+    await typeSelect.click();
+    const inner = workspace.rightSidebar.getByText("Inner shadow", {
+      exact: true,
+    });
+    await expect(inner).toBeVisible();
+    await page.mouse.move(0, 0);
+    await expect(page).toHaveScreenshot({ clip, ...shot });
+
+    await inner.hover();
+    await expect(page).toHaveScreenshot({ clip, ...shot });
+
+    await inner.click();
+    await expect(
+      workspace.rightSidebar.getByText("Inner shadow", { exact: true }),
+    ).toBeVisible();
+    await page.mouse.move(0, 0);
+    await expect(page).toHaveScreenshot({ clip, ...shot });
+
+    // A hidden shadow disables its type select.
+    await workspace.rightSidebar
+      .getByRole("button", { name: "Toggle shadow" })
+      .click();
+    await page.mouse.move(0, 0);
+    await expect(page).toHaveScreenshot({ clip, ...shot });
+  });
+});
+
 test.describe("Shortcuts panel", () => {
   const shot = { maxDiffPixelRatio: 0, threshold: 0 };
 

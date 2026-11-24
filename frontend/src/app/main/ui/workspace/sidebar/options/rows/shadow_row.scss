@@ -55,8 +55,12 @@
   }
 }
 
-.shadow-basic-select {
+.shadow-basic-select-wrapper {
   flex-grow: 1;
+}
+
+// Joined to the options button on its left.
+.shadow-basic-select {
   border-radius: 0 $br-8 $br-8 0;
 }
 
