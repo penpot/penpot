@@ -575,6 +575,58 @@
         (t/is (= (:modified-at file-after-update) (:last-activity-at updated-team)))
         (t/is (not= (:last-activity-at with-file) (:last-activity-at updated-team)))))))
 
+(t/deftest get-owned-teams-detail-returns-owned-teams-with-counts-and-members
+  (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}]
+    (let [profile      (th/create-profile* 1 {:is-active true})
+          member       (th/create-profile* 2 {:is-active true})
+          stranger     (th/create-profile* 3 {:is-active true})
+          team         (th/create-team* 1 {:profile-id (:id profile)})
+          _            (th/create-team-role* {:team-id (:id team)
+                                              :profile-id (:id member)
+                                              :role :editor})
+          project      (th/create-project* 1 {:profile-id (:id profile)
+                                              :team-id (:id team)})
+          _            (th/create-file* 1 {:profile-id (:id profile)
+                                           :project-id (:id project)})
+          empty-team   (th/create-team* 2 {:profile-id (:id profile)})
+          deleted-team (th/create-team* 3 {:profile-id (:id profile)})
+          _            (th/db-update! :team
+                                      {:deleted-at (ct/now)}
+                                      {:id (:id deleted-team)})
+          foreign-team (th/create-team* 4 {:profile-id (:id stranger)})
+          _            (th/create-team-role* {:team-id (:id foreign-team)
+                                              :profile-id (:id profile)
+                                              :role :admin})
+          out          (th/management-command! {::th/type :get-owned-teams-detail
+                                                ::rpc/profile-id (:id profile)})
+          teams        (d/index-by :id (:result out))
+          summarize    (fn [team]
+                         (-> (select-keys team [:name :num-projects :num-files :num-members])
+                             (assoc :member-ids (set (:member-ids team)))))]
+
+      (t/is (th/success? out))
+      (t/is (= #{(:id team) (:id empty-team)} (set (keys teams))))
+      (t/is (= {:name         (:name team)
+                :num-projects 1
+                :num-files    1
+                :num-members  2
+                :member-ids   #{(:id profile) (:id member)}}
+               (summarize (get teams (:id team)))))
+      (t/is (= {:name         (:name empty-team)
+                :num-projects 0
+                :num-files    0
+                :num-members  1
+                :member-ids   #{(:id profile)}}
+               (summarize (get teams (:id empty-team))))))))
+
+(t/deftest get-owned-teams-detail-returns-empty-when-owning-no-teams
+  (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}]
+    (let [profile (th/create-profile* 1 {:is-active true})
+          out     (th/management-command! {::th/type :get-owned-teams-detail
+                                           ::rpc/profile-id (:id profile)})]
+      (t/is (th/success? out))
+      (t/is (= [] (:result out))))))
+
 (t/deftest notify-organization-deletion-prefixes-teams-and-publishes-organization-deleted-event
   ;; --- Deferred organization-summary: nil during setup, filled before RPC ---
   (let [organization-summary-ref (atom nil)]
@@ -1343,6 +1395,88 @@
                       :valid-until (ct/in-future "24h")})
       (t/is (true? (exist!))))))
 
+(t/deftest count-organization-team-invitations-for-non-members-counts-pending-per-team
+  (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}]
+    (let [member       (th/create-profile* 1 {:is-active true :email "member1@example.com"})
+          profile      (th/create-profile* 2 {:is-active true})
+          team-1       (th/create-team* 1 {:profile-id (:id profile)})
+          team-2       (th/create-team* 2 {:profile-id (:id profile)})
+          team-3       (th/create-team* 3 {:profile-id (:id profile)})
+          outside-team (th/create-team* 4 {:profile-id (:id profile)})
+          invite       (fn [team email valid-until]
+                         (th/db-insert! :team-invitation
+                                        {:id (uuid/random)
+                                         :team-id (:id team)
+                                         :org-id nil
+                                         :email-to email
+                                         :created-by (:id profile)
+                                         :role "editor"
+                                         :valid-until valid-until}))]
+
+      (invite team-1 "member1@example.com" (ct/in-future "24h"))
+      (invite team-1 "outsider-a@example.com" (ct/in-future "24h"))
+      (invite team-1 "outsider-b@example.com" (ct/in-future "24h"))
+      (invite team-2 "outsider-c@example.com" (ct/in-future "24h"))
+      (invite team-2 "expired@example.com" (ct/in-past "1h"))
+      (invite outside-team "outsider-d@example.com" (ct/in-future "24h"))
+
+      (let [out (th/management-command!
+                 {::th/type :count-organization-team-invitations-for-non-members
+                  ::rpc/profile-id (:id profile)
+                  :team-ids [(:id team-1) (:id team-2) (:id team-3)]
+                  :member-ids [(:id member)]})]
+        (t/is (th/success? out))
+        (t/is (= {(:id team-1) 2
+                  (:id team-2) 1}
+                 (->> (:result out)
+                      (into {} (map (juxt :team-id :count))))))))))
+
+(t/deftest count-organization-team-invitations-for-non-members-handles-empty-lists
+  (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}]
+    (let [profile      (th/create-profile* 1 {:is-active true})
+          deleted      (th/create-profile* 2 {:is-active true :email "deleted@example.com"})
+          _            (th/db-update! :profile
+                                      {:deleted-at (ct/now)}
+                                      {:id (:id deleted)})
+          team-1       (th/create-team* 1 {:profile-id (:id profile)})
+          team-2       (th/create-team* 2 {:profile-id (:id profile)})
+          invite       (fn [team email]
+                         (th/db-insert! :team-invitation
+                                        {:id (uuid/random)
+                                         :team-id (:id team)
+                                         :org-id nil
+                                         :email-to email
+                                         :created-by (:id profile)
+                                         :role "editor"
+                                         :valid-until (ct/in-future "24h")}))
+          count!       (fn [team-ids member-ids]
+                         (let [out (th/management-command!
+                                    {::th/type :count-organization-team-invitations-for-non-members
+                                     ::rpc/profile-id (:id profile)
+                                     :team-ids team-ids
+                                     :member-ids member-ids})]
+                           (t/is (th/success? out))
+                           (into {} (map (juxt :team-id :count)) (:result out))))
+          all-pending  {(:id team-1) 2
+                        (:id team-2) 1}]
+
+      (invite team-1 "deleted@example.com")
+      (invite team-1 "outsider-a@example.com")
+      (invite team-2 "outsider-b@example.com")
+
+      (t/testing "no team ids give no counts"
+        (t/is (= {} (count! [] [])))
+        (t/is (= {} (count! [] [(:id profile)]))))
+
+      (t/testing "no member ids count every pending invitation"
+        (t/is (= all-pending
+                 (count! [(:id team-1) (:id team-2)] []))))
+
+      (t/testing "member ids without an email count every pending invitation"
+        (t/is (= all-pending
+                 (count! [(:id team-1) (:id team-2)]
+                         [(:id deleted) (uuid/random)])))))))
+
 (t/deftest delete-organization-team-invitations-for-non-members-removes-non-member-invitations
   (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}]
     (let [member1     (th/create-profile* 1 {:is-active true :email "member1@example.com"})
@@ -2070,6 +2204,71 @@
     (with-redefs [eml/send-template (fn [_cfg params] (swap! sent conj params))]
       (th/management-command! params))
     (t/is (empty? @sent))))
+
+(t/deftest send-organization-setup-sso-emails-for-team-emails-people-new-to-the-organization
+  (let [sent (atom [])]
+    (with-mocks [nitrate-mock {:target 'app.nitrate/call
+                               :return (fn [_cfg method _params]
+                                         (case method
+                                           :get-organization-sso {:active true}
+                                           :get-organization-summary {:name "Acme Inc"}
+                                           nil))}
+                 email-mock  {:target 'app.email/send-template
+                              :return (fn [_cfg params] (swap! sent conj params) nil)}]
+      (let [owner           (th/create-profile* 1 {:is-active true})
+            existing-member (th/create-profile* 2 {:is-active true
+                                                   :email "existing@example.com"})
+            new-member      (th/create-profile* 3 {:is-active true
+                                                   :email "new@example.com"})
+            team            (th/create-team* 1 {:profile-id (:id owner)})
+            _               (th/create-team-role* {:team-id (:id team)
+                                                   :profile-id (:id existing-member)
+                                                   :role :editor})
+            _               (th/create-team-role* {:team-id (:id team)
+                                                   :profile-id (:id new-member)
+                                                   :role :editor})
+            _               (th/db-insert! :team-invitation
+                                           {:id (uuid/random)
+                                            :team-id (:id team)
+                                            :org-id nil
+                                            :email-to "external@example.com"
+                                            :created-by (:id owner)
+                                            :role "editor"
+                                            :valid-until (ct/in-future "24h")})
+            out             (th/management-command!
+                             {::th/type :send-organization-setup-sso-emails-for-team
+                              :organization-id (uuid/random)
+                              :team-id (:id team)
+                              :organization-member-ids [(:id owner) (:id existing-member)]})]
+
+        (t/is (th/success? out))
+        (t/is (= #{"new@example.com" "external@example.com"}
+                 (->> @sent (map :to) set)))
+        (t/is (every? #(= "Acme Inc" (:organization-name %)) @sent))))))
+
+(t/deftest send-organization-setup-sso-emails-for-team-skips-email-when-sso-is-not-active
+  (let [sent (atom [])]
+    (with-mocks [nitrate-mock {:target 'app.nitrate/call
+                               :return (fn [_cfg method _params]
+                                         (case method
+                                           :get-organization-sso {:active false}
+                                           nil))}
+                 email-mock  {:target 'app.email/send-template
+                              :return (fn [_cfg params] (swap! sent conj params) nil)}]
+      (let [owner      (th/create-profile* 1 {:is-active true})
+            new-member (th/create-profile* 2 {:is-active true})
+            team       (th/create-team* 1 {:profile-id (:id owner)})
+            _          (th/create-team-role* {:team-id (:id team)
+                                              :profile-id (:id new-member)
+                                              :role :editor})
+            out        (th/management-command!
+                        {::th/type :send-organization-setup-sso-emails-for-team
+                         :organization-id (uuid/random)
+                         :team-id (:id team)
+                         :organization-member-ids [(:id owner)]})]
+
+        (t/is (th/success? out))
+        (t/is (empty? @sent))))))
 
 (t/deftest check-organization-sso-returns-valid-true
   (let [organization-id (uuid/random)
