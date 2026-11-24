@@ -51,6 +51,7 @@
          (fn [event]
            (dom/stop-propagation event)
            (reset! editing* false)
+           (mf/set-ref-val! last-node* nil)
            (when on-blur
              (on-blur event))))
 
