@@ -53,6 +53,17 @@
     (let [selection (.getSelection editor-state)]
       (and selection (not (.isCollapsed selection))))))
 
+(defn wasm-text-range-selected?
+  "True when the WASM editor of the text `id`, in edit mode as `edition`
+  says, has a range of text selected. Leaving edit mode renders the panel
+  again before the editor unmounts and disposes the WASM editor, and
+  nothing renders it after: the edition, cleared first, decides."
+  [id edition]
+  (boolean
+   (and (= id edition)
+        (= id (wasm.api/text-editor-get-active-shape-id))
+        (wasm.api/text-editor-has-selection?))))
+
 (mf/defc options*
   [{:keys [shape libraries file-id page-id]}]
   (let [id      (dm/get-prop shape :id)
@@ -169,8 +180,7 @@
         (boolean
          (cond
            text-editor-wasm?
-           (and (= id (wasm.api/text-editor-get-active-shape-id))
-                (wasm.api/text-editor-has-selection?))
+           (wasm-text-range-selected? id edition)
 
            text-editor-v2?
            (dom-text-range-selected? editor-instance)

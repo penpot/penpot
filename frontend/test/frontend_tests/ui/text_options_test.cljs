@@ -18,6 +18,8 @@
    [app.main.ui.workspace.sidebar.options.menus.text :as text-menu]
    [app.main.ui.workspace.sidebar.options.menus.text-cjk-controls :as tcc]
    [app.main.ui.workspace.sidebar.options.menus.text-language-layout :as tll]
+   [app.main.ui.workspace.sidebar.options.shapes.text :as text-shape-options]
+   [app.render-wasm.api :as wasm.api]
    [app.util.text.content :as tc]
    [app.util.text.layout :as tl]
    [app.util.text.writing-mode :as wm]
@@ -179,6 +181,15 @@
            (str/index-of (render-language-view "ja" {:selection true})
                          "workspace.options.text-options.language-group-layout"))
         "Selected text comes first"))
+
+(t/deftest wasm-editor-left-alive-after-edit-mode-shows-no-text-selection
+  (let [id (random-uuid)]
+    (with-redefs [wasm.api/text-editor-get-active-shape-id (constantly id)
+                  wasm.api/text-editor-has-selection? (constantly true)]
+      (t/is (true? (text-shape-options/wasm-text-range-selected? id id)))
+      (t/is (false? (text-shape-options/wasm-text-range-selected? id nil))
+            "Escape clears the edition before the editor is disposed")
+      (t/is (false? (text-shape-options/wasm-text-range-selected? id (random-uuid)))))))
 
 (t/deftest language-view-shows-ruby-options-only-for-text-with-ruby
   (let [group "workspace.options.text-options.language-group-ruby"]
