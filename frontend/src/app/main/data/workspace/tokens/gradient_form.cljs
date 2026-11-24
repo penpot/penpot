@@ -27,8 +27,10 @@
    [app.util.i18n :refer [tr]]
    [clojure.walk :as walk]
    [cuerdas.core :as str]
+   [tokenscript.core :as tsc]
    [tokenscript.document.dtcg :as tsd]
-   [tokenscript.importers.css :as tsi]))
+   [tokenscript.importers.css :as tsi]
+   [tokenscript.symbols :as sym]))
 
 (def gradient-kinds #{"linear" "radial"})
 
@@ -65,12 +67,12 @@
   (:id (get stops index)))
 
 (defn- percent
-  "Reads the percentage in a position field. Gives nil for a reference or
-  an expression."
+  "Reads the percentage in a position field: the field is a plain number,
+  as tokenscript reads it. Gives nil for a reference or an expression."
   [position]
-  (when (and (string? position)
-             (re-matches #"^\s*-?\d+(?:\.\d+)?\s*$" position))
-    (d/parse-double position)))
+  (let [number (tsc/literal-number position)]
+    (when (sym/number? number)
+      (sym/value number))))
 
 (defn- format-percent
   [offset]
@@ -286,30 +288,22 @@
                    (assoc other :position (:position stop)))
                  stops moved))))
 
-(def ^:private angle-turns
-  "A quarter turn and a full turn in each unit that an angle can have. An
-  angle without a unit is in degrees."
-  {"deg"  {:quarter 90 :full 360}
-   "turn" {:quarter 0.25 :full 1}
-   "grad" {:quarter 100 :full 400}
-   "rad"  {:quarter (/ mth/PI 2) :full (* 2 mth/PI)}})
-
-(def ^:private literal-angle-re
-  "Matches a literal angle as tokenscript reads it. That is a number,
-  `.5` included, with an angle unit in any letter case directly after it
-  and no space between them."
-  #"(?i)^\s*(-?(?:\d+(?:\.\d+)?|\.\d+))(deg|turn|grad|rad)?\s*$")
-
 (defn- parse-angle
-  "Reads the number and the unit of a literal angle (`90`, `45deg`,
-  `0.25turn`, `1rad`, `100grad`). A blank angle gives the default angle.
-  Gives nil for a reference or an expression."
+  "Reads a literal angle (`90`, `45deg`, `0.25turn`, `1rad`, `100grad`)
+  as tokenscript reads it: its number, and its unit when the unit
+  registry converts that unit to degrees. A number without a unit is in
+  degrees. A blank angle gives the default angle. Gives nil for a
+  reference, an expression or a unit that is no angle."
   [angle]
   (if (str/blank? angle)
     {:number wtg/default-angle :unit ""}
-    (when-let [[_ number unit] (re-matches literal-angle-re angle)]
-      {:number (d/parse-double number)
-       :unit (if unit (str/lower unit) "")})))
+    (let [number (tsc/literal-number angle)]
+      (cond
+        (sym/number? number)
+        {:number (sym/value number) :unit ""}
+
+        (some? (tsc/convert-number number "deg"))
+        {:number (sym/value number) :unit (str/lower (:unit number))}))))
 
 (defn rotatable-angle?
   "Checks whether the rotate button can turn `angle`. The button cannot
@@ -317,12 +311,20 @@
   [angle]
   (some? (parse-angle angle)))
 
+(defn- turns
+  "Gives a quarter turn and a full turn in the angle unit `unit`, as the
+  unit registry converts 90 and 360 degrees to it."
+  [unit]
+  (let [from-degrees #(sym/value (tsc/convert-number (sym/number-with-unit % "deg") unit))]
+    {:quarter (from-degrees 90)
+     :full    (from-degrees 360)}))
+
 (defn rotate-angle
   "Turns the angle a quarter turn further, in its own unit. A reference
   or an expression stays as it is."
   [angle]
   (if-let [{:keys [number unit]} (parse-angle angle)]
-    (let [{:keys [quarter full]} (get angle-turns (if (= "" unit) "deg" unit))]
+    (let [{:keys [quarter full]} (turns (if (= "" unit) "deg" unit))]
       (str (mth/precision (mod (+ number quarter) full) 4) unit))
     angle))
 

@@ -44,7 +44,8 @@
 
     - colors: hex strings (alpha as `#rrggbbaa`)
     - `rem` values: pixels (16px root font size), `%` values: fractions
-    - angles in `turn`, `rad` and `grad`: degrees, the same as `deg` angles
+    - angles in `turn`, `rad` and `grad`: degrees, the same as `deg`
+      angles, converted by the unit registry of tokenscript
     - other numbers with unit: the number
     - structured tokens (typography, shadows): maps with keyword keys and
       vectors
@@ -66,10 +67,9 @@
                                   (case (:unit v)
                                     "rem" (* n 16)
                                     "%" (/ n 100)
-                                    "turn" (* n 360)
-                                    "rad" (* n (/ 180 js/Math.PI))
-                                    "grad" (* n 0.9)
-                                    n))
+                                    (if-let [degrees (tsc/convert-number v "deg")]
+                                      (sym/value degrees)
+                                      n)))
       (sym/symbol? v) (sym/value v)
       :else v)))
 
