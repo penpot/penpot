@@ -96,7 +96,7 @@
    :constraints-h           :constraints-group
    :constraints-v           :constraints-group
    :fixed-scroll            :constraints-group
-   :bool-type               :geometry-group
+   :bool-type               :content-group
    :bool-content            :content-group
    :exports                 :exports-group
    :grids                   :grids-group
