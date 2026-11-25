@@ -557,6 +557,22 @@
        (catch :default cause
          (ex/print-throwable cause))))))
 
+(defn ^:export validate-overrides
+  ([] (validate-overrides nil))
+  ([shape-id]
+   (js/console.warn "Validating file with missing overrides check. WARNING: do not repair blindly :missing-touched-groups. There may be false positives. Manually verify all cases.")
+   (let [file       (dsh/lookup-file @st/state)
+         libraries  (get @st/state :files)]
+     (try
+       (->> (if-let [shape-id (some-> shape-id uuid/parse)]
+              (let [page (dm/get-in file [:data :pages-index (get @st/state :current-page-id)])]
+                (cfv/validate-shape shape-id file page libraries {:validate-touched true}))
+              (cfv/validate-file file libraries {:validate-touched true}))
+            (group-by :code)
+            (clj->js))
+       (catch :default cause
+         (ex/print-throwable cause))))))
+
 (defn ^:export validate-schema
   []
   (try
@@ -565,8 +581,8 @@
     (catch :default cause
       (ex/print-throwable cause))))
 
-(defn ^:export repair
-  [reload?]
+(defn- repair*
+  [reload? overrides?]
   (st/emit!
    (ptk/reify ::repair-current-file
      ptk/EffectEvent
@@ -577,7 +593,7 @@
              file     (dsh/lookup-file state)
              libs     (get state :files)
 
-             errors   (cfv/validate-file file libs)
+             errors   (cfv/validate-file file libs {:validate-touched overrides?})
              _        (l/dbg :hint "repair current file" :errors (count errors))
 
              changes  (cfr/repair-file file libs errors)
@@ -596,6 +612,14 @@
                             (dom/reload-current-window)))
                         (fn [cause]
                           (ex/print-throwable cause)))))))))
+
+(defn ^:export repair
+  [reload?]
+  (repair* reload? false))
+
+(defn ^:export repair-overrides
+  [reload?]
+  (repair* reload? true))
 
 (defn ^:export fix-orphan-shapes
   []

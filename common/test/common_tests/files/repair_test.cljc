@@ -17,6 +17,7 @@
    [app.common.files.migrations :as cfm]
    [app.common.files.repair :as cfr]
    [app.common.files.validate :as cfv]
+   [app.common.geom.point :as gpt]
    [app.common.logic.variant-properties :as clvp]
    [app.common.test-helpers.components :as thc]
    [app.common.test-helpers.compositions :as tho]
@@ -43,6 +44,36 @@
    file {}
    (fn [file applied]
      (cfv/validate-file-affected file {} (into applied changes)))))
+
+(defn- validate-touched
+  "Validate the file with the optional check of overrides missing their
+   touched group."
+  [file]
+  (cfv/validate-file file {} {:validate-touched true}))
+
+(defn- repair-until-valid-touched
+  [file]
+  (cfr/repair-file-until-valid
+   file {}
+   (fn [file _] (validate-touched file))))
+
+(defn- set-touched
+  "Set the :touched attribute of the shape with `shape-tag`, bypassing the
+   bookkeeping, to build the broken files this validation detects."
+  [file shape-tag touched]
+  (let [shape   (ths/get-shape file shape-tag)
+        page-id (thf/current-page-id file)]
+    (thf/apply-changes
+     file
+     {:redo-changes [{:type :mod-obj
+                      :page-id page-id
+                      :id (:id shape)
+                      :operations [{:type :set :attr :touched :val touched :ignore-touched true}]}]}
+     :validate? false)))
+
+(defn- remove-touched
+  [file shape-tag]
+  (set-touched file shape-tag nil))
 
 (t/deftest repair-invalid-main-instance-name
   (t/testing "detect and repair a main instance whose name doesn't match the component's name"
@@ -1834,3 +1865,206 @@
       (t/is (nil? (ths/get-shape file' :root1)))
       (t/is (nil? (seq (property-errors result)))))))
 
+
+;; ============================================================
+;; MISSING TOUCHED GROUPS (OPTIONAL VALIDATION)
+;; ============================================================
+
+(defn- simple-component-with-copy
+  []
+  (-> (thf/sample-file :file1 :page-label :page1)
+      (tho/add-simple-component-with-copy :component1
+                                          :main-root
+                                          :main-child
+                                          :copy-root
+                                          :copy-root-params {:children-labels [:copy-child]})))
+
+(defn- sample-fill-image
+  [id & {:keys [keep-aspect-ratio] :or {keep-aspect-ratio true}}]
+  {:fill-opacity 1
+   :fill-image {:id id
+                :name "Image"
+                :width 100
+                :height 100
+                :mtype "image/png"
+                :keep-aspect-ratio keep-aspect-ratio}})
+
+(t/deftest validate-missing-touched-groups-option
+  (t/testing "the check is disabled unless requested"
+    (let [file (-> (simple-component-with-copy)
+                   (tho/update-color :copy-child "#ff0000")
+                   (remove-touched :copy-child))]
+      (t/is (nil? (cfv/validate-file file {})))
+      (t/is (nil? (cfv/validate-file file {} nil)))
+      (t/is (nil? (cfv/validate-file file {} {:validate-touched false})))
+      (t/is (seq (validate-touched file)))
+      (t/is (thrown? #?(:clj Exception :cljs js/Error)
+                     (cfv/validate-file! file {} {:validate-touched true}))))))
+
+(t/deftest validate-missing-touched-groups-clean-copy
+  (t/testing "a copy placed away from its main has no untracked override"
+    (let [file (simple-component-with-copy)]
+      (t/is (nil? (validate-touched file)))))
+
+  (t/testing "a copy with its overrides marked as touched is valid"
+    (let [file (-> (simple-component-with-copy)
+                   (tho/update-color :copy-child "#ff0000"))]
+      (t/is (nil? (validate-touched file))))))
+
+(t/deftest validate-missing-touched-groups-fill
+  (t/testing "an override without its touched group is detected and repaired"
+    (let [file   (-> (simple-component-with-copy)
+                     (tho/update-color :copy-child "#ff0000")
+                     (remove-touched :copy-child))
+          errors (validate-touched file)]
+      (t/is (= [:missing-touched-groups] (mapv :code errors)))
+      (t/is (= #{:fill-group} (get-in errors [0 :args :groups])))
+      (t/is (= (:id (ths/get-shape file :copy-child)) (:shape-id (first errors))))
+
+      (let [result (repair-until-valid-touched file)
+            file'  (:file result)]
+        (t/is (nil? (:errors result)))
+        (t/is (= #{:fill-group} (:touched (ths/get-shape file' :copy-child))))
+        (t/is (nil? (validate-touched file')))))))
+
+(t/deftest validate-missing-touched-groups-fill-image
+  (t/testing "a fill image whose id differs in the copy is not an override"
+    (let [file (-> (simple-component-with-copy)
+                   (ths/update-shape :main-child :fills [(sample-fill-image (uuid/next))])
+                   (ths/update-shape :copy-child :fills [(sample-fill-image (uuid/next))])
+                   (remove-touched :copy-child))]
+      (t/is (nil? (validate-touched file)))))
+
+  (t/testing "a fill without image that differs still needs its touched group"
+    (let [file   (-> (simple-component-with-copy)
+                     (tho/update-color :copy-child "#ff0000")
+                     (remove-touched :copy-child))
+          errors (validate-touched file)]
+      (t/is (= [:missing-touched-groups] (mapv :code errors)))
+      (t/is (= #{:fill-group} (get-in errors [0 :args :groups])))))
+
+  (t/testing "an image fill that differs beyond the id still needs its touched group"
+    (let [file   (-> (simple-component-with-copy)
+                     (ths/update-shape :main-child :fills [(sample-fill-image (uuid/next))])
+                     (ths/update-shape :copy-child :fills [(sample-fill-image (uuid/next)
+                                                                              :keep-aspect-ratio false)])
+                     (remove-touched :copy-child))
+          errors (validate-touched file)]
+      (t/is (= [:missing-touched-groups] (mapv :code errors)))
+      (t/is (= #{:fill-group} (get-in errors [0 :args :groups]))))))
+
+(t/deftest validate-missing-touched-groups-partial
+  (t/testing "only the missing groups are reported and repaired, the others are kept"
+    (let [file   (-> (simple-component-with-copy)
+                     (tho/update-color :copy-child "#ff0000")
+                     (ths/update-shape :copy-child :name "Custom child"))
+          file'  (set-touched file :copy-child #{:name-group})
+          errors (validate-touched file')]
+      (t/is (= #{:name-group} (:touched (ths/get-shape file' :copy-child))))
+      (t/is (= [:missing-touched-groups] (mapv :code errors)))
+      (t/is (= #{:fill-group} (get-in errors [0 :args :groups])))
+
+      (let [result (repair-until-valid-touched file')
+            file'' (:file result)]
+        (t/is (nil? (:errors result)))
+        (t/is (= #{:fill-group :name-group} (:touched (ths/get-shape file'' :copy-child))))
+        (t/is (nil? (validate-touched file'')))))))
+
+(t/deftest validate-missing-touched-groups-ignores-geometry
+  (t/testing "a child moved inside the copy is not reported, because geometry
+              can differ in copies without being an override"
+    (let [file   (-> (simple-component-with-copy)
+                     (tho/move-shape-tree :copy-child (gpt/point 10 10))
+                     (remove-touched :copy-child))
+          child  (ths/get-shape file :copy-child)
+          main   (ths/get-shape file :main-child)]
+      ;; The child is really moved with respect to its main
+      (t/is (not= (:x child) (:x main)))
+      (t/is (nil? (validate-touched file)))
+      (t/is (nil? (:touched child))))))
+
+(t/deftest validate-missing-touched-groups-variant-switch
+  (t/testing "a variant switch keeps the overrides marked as touched"
+    (let [file     (-> (thf/sample-file :file1 :page-label :page1)
+                       (thv/add-variant-with-child :v01 :c01 :m01 :c02 :m02 :r01 :r02
+                                                   {:child1-params {:width 5}
+                                                    :child2-params {:width 15}})
+                       (thc/instantiate-component :c01 :copy01 :children-labels [:copy-r01])
+                       (tho/update-color :copy-r01 "#ff0000")
+                       (tho/swap-component-in-shape :copy01 :c02
+                                                    {:keep-touched? true
+                                                     :new-shape-label :copy01}))
+          child-id (-> (ths/get-shape file :copy01) :shapes first)]
+      (thi/set-id! :copy-r01 child-id)
+
+      (t/is (nil? (validate-touched file)))
+
+      (let [file'  (remove-touched file :copy-r01)
+            errors (validate-touched file')]
+        (t/is (= [:missing-touched-groups] (mapv :code errors)))
+        (t/is (contains? (get-in errors [0 :args :groups]) :fill-group))
+
+        (let [result (repair-until-valid-touched file')]
+          (t/is (nil? (:errors result)))
+          (t/is (nil? (validate-touched (:file result)))))))))
+
+(t/deftest validate-missing-touched-groups-swap
+  (t/testing "swapping a nested copy keeps its overrides marked as touched"
+    (let [file     (-> (thf/sample-file :file1 :page-label :page1)
+                       (tho/add-nested-component-with-copy :component1 :main1-root :main1-child
+                                                           :component2 :main2-root :nested-head
+                                                           :copy2-root
+                                                           :copy2-root-params
+                                                           {:children-labels [:copy-nested-head
+                                                                              :copy-nested-child]})
+                       (tho/update-color :copy-nested-child "#ff0000")
+                       (tho/add-simple-component :component3 :main3-root :main3-child)
+                       (tho/swap-component-in-shape :copy-nested-head :component3
+                                                    {:keep-touched? true
+                                                     :new-shape-label :copy-nested-head}))
+          child-id (-> (ths/get-shape file :copy-nested-head) :shapes first)]
+      (thi/set-id! :copy-nested-child child-id)
+
+      (t/is (nil? (validate-touched file)))
+
+      (let [file'  (remove-touched file :copy-nested-child)
+            errors (validate-touched file')]
+        (t/is (= [:missing-touched-groups] (mapv :code errors)))
+        (t/is (contains? (get-in errors [0 :args :groups]) :fill-group))
+
+        (let [result (repair-until-valid-touched file')]
+          (t/is (nil? (:errors result)))
+          (t/is (nil? (validate-touched (:file result)))))))))
+
+(t/deftest validate-missing-touched-groups-root
+  (t/testing "an override in a top copy root is detected and repaired"
+    (let [file   (-> (simple-component-with-copy)
+                     (ths/update-shape :copy-root :name "Custom")
+                     (remove-touched :copy-root))
+          errors (validate-touched file)]
+      (t/is (= [:missing-touched-groups] (mapv :code errors)))
+      (t/is (= #{:name-group} (get-in errors [0 :args :groups])))
+
+      (let [result (repair-until-valid-touched file)
+            file'  (:file result)]
+        (t/is (nil? (:errors result)))
+        (t/is (= #{:name-group} (:touched (ths/get-shape file' :copy-root))))
+        (t/is (nil? (validate-touched file')))))))
+
+(t/deftest validate-missing-touched-groups-skips-missing-main
+  (t/testing "the check is skipped when the main shape cannot be retrieved"
+    (let [file   (simple-component-with-copy)
+          page   (thf/current-page file)
+          root   (ths/get-shape file :copy-root)
+          file'  (thf/apply-changes
+                  file
+                  {:redo-changes [{:type :mod-obj
+                                   :page-id (:id page)
+                                   :id (:id root)
+                                   :operations [{:type :set :attr :shape-ref
+                                                 :val (uuid/next)
+                                                 :ignore-touched true}]}]}
+                  :validate? false)
+          errors (validate-touched file')]
+      (t/is (some #(= :ref-shape-not-found (:code %)) errors))
+      (t/is (not-any? #(= :missing-touched-groups (:code %)) errors)))))
