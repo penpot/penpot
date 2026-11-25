@@ -15,6 +15,7 @@
    [app.email :as eml]
    [app.http :as-alias http]
    [app.jobs :as jobs]
+   [app.loggers.audit :as audit]
    [app.media.svg :as svg]
    [app.msgbus :as mbus]
    [app.nitrate :as nitrate]
@@ -2644,6 +2645,71 @@
                  (->> role-changes
                       (filter :new-owner-name)
                       (map #(select-keys % [:team-name :new-owner-name])))))))))
+
+(def ^:private real-audit-submit audit/submit)
+
+(t/deftest set-organization-member-viewer-records-the-invitations-it-downgrades
+  ;; A pending invitation whose role the organization owner changes by hand
+  ;; leaves an `update-team-invitation-role` event; the ones this command
+  ;; turns into viewer invitations must leave the same event, tagged with
+  ;; the organization so a team moved before archiving cannot misroute it.
+  (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}
+               mbus-mock    {:target 'app.msgbus/pub! :return nil}]
+    (with-redefs [audit/submit      real-audit-submit
+                  cf/audit-persist? true]
+      (let [org-id       (uuid/random)
+            owner        (th/create-profile* 1 {:is-active true})
+            member       (th/create-profile* 2 {:is-active true :email "member@example.com"})
+            other        (th/create-profile* 3 {:is-active true})
+            editor-team  (th/create-team* 1 {:profile-id (:id other)})
+            admin-team   (th/create-team* 2 {:profile-id (:id other)})
+            viewer-team  (th/create-team* 3 {:profile-id (:id other)})
+            outside-team (th/create-team* 4 {:profile-id (:id other)})
+            _            (insert-team-invitation (:id editor-team) "member@example.com" "editor" (:id other))
+            _            (insert-team-invitation (:id admin-team) "member@example.com" "admin" (:id other))
+            _            (insert-team-invitation (:id viewer-team) "member@example.com" "viewer" (:id other))
+            _            (insert-team-invitation (:id outside-team) "member@example.com" "editor" (:id other))
+            out          (th/management-command! {::th/type :set-organization-member-viewer
+                                                  ::rpc/profile-id (:id owner)
+                                                  :profile-id (:id member)
+                                                  :organization-owner-id (:id owner)
+                                                  :organization-id org-id
+                                                  :team-ids (mapv :id [editor-team admin-team viewer-team])})
+            events       (->> (th/db-exec! ["SELECT * FROM audit_log WHERE name = 'update-team-invitation-role'"])
+                              (mapv #(update % :props db/decode-transit-pgobject)))]
+
+        (t/is (th/success? out))
+        (t/is (= 2 (count events)))
+        (t/is (every? #(= (:id owner) (:profile-id %)) events))
+        (t/is (= #{{:organization-id org-id :team-id (:id editor-team)
+                    :email "member@example.com" :role :viewer}
+                   {:organization-id org-id :team-id (:id admin-team)
+                    :email "member@example.com" :role :viewer}}
+                 (into #{} (map :props) events)))))))
+
+(t/deftest set-organization-member-viewer-records-invitations-without-an-organization
+  ;; An older Nitrate does not send the organization: the event keeps the
+  ;; props of the change made by hand.
+  (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}
+               mbus-mock    {:target 'app.msgbus/pub! :return nil}]
+    (with-redefs [audit/submit      real-audit-submit
+                  cf/audit-persist? true]
+      (let [owner  (th/create-profile* 1 {:is-active true})
+            member (th/create-profile* 2 {:is-active true :email "member@example.com"})
+            other  (th/create-profile* 3 {:is-active true})
+            team   (th/create-team* 1 {:profile-id (:id other)})
+            _      (insert-team-invitation (:id team) "member@example.com" "editor" (:id other))
+            out    (th/management-command! {::th/type :set-organization-member-viewer
+                                            ::rpc/profile-id (:id owner)
+                                            :profile-id (:id member)
+                                            :organization-owner-id (:id owner)
+                                            :team-ids [(:id team)]})
+            events (->> (th/db-exec! ["SELECT * FROM audit_log WHERE name = 'update-team-invitation-role'"])
+                        (mapv #(update % :props db/decode-transit-pgobject)))]
+
+        (t/is (th/success? out))
+        (t/is (= [{:team-id (:id team) :email "member@example.com" :role :viewer}]
+                 (mapv :props events)))))))
 
 (t/deftest set-organization-member-viewer-promotes-an-organization-owner-already-in-the-team
   (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}

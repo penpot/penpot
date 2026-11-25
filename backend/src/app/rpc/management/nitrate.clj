@@ -948,12 +948,16 @@ RETURNING id, deleted_at;")
     WHERE p.id = ?
       AND lower(ti.email_to) = lower(p.email)
       AND ti.team_id = ANY(?)
-      AND ti.role IN ('editor', 'admin')")
+      AND ti.role IN ('editor', 'admin')
+RETURNING ti.team_id, ti.email_to")
 
 (def ^:private schema:set-organization-member-viewer-params
   [:map
    [:profile-id ::sm/uuid]
    [:organization-owner-id ::sm/uuid]
+   ;; Optional so an older Nitrate keeps working; its events then reach
+   ;; the organization the team is in when they are archived.
+   [:organization-id {:optional true} ::sm/uuid]
    [:team-ids [:vector ::sm/uuid]]])
 
 (def ^:private schema:set-organization-member-viewer-result
@@ -977,6 +981,23 @@ RETURNING id, deleted_at;")
                                              :team-id team-id
                                              :profile-id owner-id)))))
 
+(defn- submit-invitation-role-event
+  "Records a pending invitation turned into a viewer invitation with the
+  event and props of the same change made by hand, attributed to the
+  organization owner who asked for it. The organization travels with it:
+  the team could leave it before the event is archived."
+  [cfg {:keys [organization-owner-id organization-id] :as params} {:keys [team-id email-to]}]
+  (when cf/audit-persist?
+    (audit/submit cfg
+                  (-> (audit/event-from-rpc-params params)
+                      (assoc :name "update-team-invitation-role"
+                             :profile-id organization-owner-id
+                             :props (d/without-nils
+                                     {:organization-id organization-id
+                                      :team-id team-id
+                                      :email email-to
+                                      :role :viewer}))))))
+
 (sv/defmethod ::set-organization-member-viewer
   "Limits a member of an organization to viewer in every team of the
   organization: their team roles drop to viewer, the teams they own pass
@@ -989,7 +1010,7 @@ RETURNING id, deleted_at;")
    ::sm/result schema:set-organization-member-viewer-result
    ::db/transaction true
    ::nitrate/sso false}
-  [{:keys [::db/conn ::mbus/msgbus] :as cfg} {:keys [profile-id organization-owner-id team-ids]}]
+  [{:keys [::db/conn ::mbus/msgbus] :as cfg} {:keys [profile-id organization-owner-id team-ids] :as params}]
   (when (= profile-id organization-owner-id)
     (ex/raise :type :validation
               :code :cant-change-organization-owner-role))
@@ -1012,7 +1033,8 @@ RETURNING id, deleted_at;")
                   viewer-flags
                   {:team-id id :profile-id profile-id}))
 
-    (db/exec-one! conn [sql:downgrade-member-team-invitations profile-id team-ids-array])
+    (doseq [invitation (db/exec! conn [sql:downgrade-member-team-invitations profile-id team-ids-array])]
+      (submit-invitation-role-event cfg params invitation))
 
     ;; Deferred past the commit: the member's sessions read the team
     ;; again when told, and a rolled back change must not be announced.
