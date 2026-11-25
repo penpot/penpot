@@ -710,7 +710,7 @@
   no :shape-ref."
   []
   (let [file       (-> (cthf/sample-file :file1 :page-label :page-1)
-                       (cths/add-sample-shape :variant :type :frame :is-variant-container true))
+                       (cths/add-sample-shape :variant :type :frame :name "grid" :is-variant-container true))
         variant-id (cthi/id :variant)]
     (-> file
         (add-grid-with-child :grid-main :rect-main

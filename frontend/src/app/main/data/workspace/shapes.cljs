@@ -110,7 +110,7 @@
   ([ids update-fn
     {:keys [reg-objects? save-undo? stack-undo? attrs ignore-tree page-id
             ignore-touched undo-group with-objects? changed-sub-attr changed-item-index
-            translation? skip-grid-reassignment? skip-component-sync? resize-ids]
+            translation? skip-grid-reassignment? skip-component-sync? resize-ids skip-validation?]
      :or {reg-objects? false
           save-undo? true
           stack-undo? false
@@ -152,7 +152,8 @@
                           :ignore-tree ignore-tree
                           :ignore-touched ignore-touched
                           :with-objects? with-objects?
-                          :skip-grid-reassignment? skip-grid-reassignment?})
+                          :skip-grid-reassignment? skip-grid-reassignment?
+                          :skip-validation? skip-validation?})
                         (cond-> reg-objects? (pcb/resize-parents (or resize-ids ids)))
                         (pcb/set-translation? translation?)
                         (pcb/set-skip-component-sync? skip-component-sync?))))]
@@ -211,7 +212,7 @@
     {:as props
      :keys [reg-objects? save-undo? stack-undo? attrs ignore-tree page-id
             ignore-touched undo-group with-objects? changed-sub-attr changed-item-index translation?
-            skip-grid-reassignment? skip-component-sync? resize-ids]
+            skip-grid-reassignment? skip-component-sync? resize-ids skip-validation? extra-context]
      :or {reg-objects? false
           save-undo? true
           stack-undo? false
@@ -251,7 +252,9 @@
                                                 :ignore-touched ignore-touched
                                                 :with-objects? with-objects?
                                                 :translation? translation?
-                                                :skip-grid-reassignment? skip-grid-reassignment?})
+                                                :skip-grid-reassignment? skip-grid-reassignment?
+                                                :skip-validation? skip-validation?
+                                                :extra-context extra-context})
                    (cond-> undo-group
                      (pcb/set-undo-group undo-group))
                    (pcb/set-translation? translation?)

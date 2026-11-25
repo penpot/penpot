@@ -184,7 +184,7 @@
 (declare go-to-frame-auto)
 
 ;; Applies to the viewer the changes passed as parameters
-;; will not save the data but just modify the data localy
+;; will not save the data but just modify the data locally
 (defn- apply-changes-viewer
   [changes]
   (ptk/reify ::apply-changes-viewer

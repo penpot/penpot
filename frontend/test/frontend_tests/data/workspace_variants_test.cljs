@@ -232,7 +232,7 @@
 ;; ---------------------------------------------------------------------------
 
 (def ^:private apply-local?
-  (ptk/type? :app.main.data.changes/apply-changes-localy))
+  (ptk/type? :app.main.data.changes/apply-changes-locally))
 
 (defn- simple-main-file
   []

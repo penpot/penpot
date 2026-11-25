@@ -292,7 +292,7 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
-      ;; The commit event is responsible to apply the data localy
+      ;; The commit event is responsible to apply the data locally
       ;; and update the persistence internal state with the updated
       ;; file-revn
 

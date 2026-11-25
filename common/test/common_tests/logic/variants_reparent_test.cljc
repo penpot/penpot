@@ -23,7 +23,7 @@
   [file parent-id ids & {:keys [to-index] :or {to-index 0}}]
   (let [page (thf/current-page file)]
     (-> (pcb/empty-changes nil)
-        (pcb/with-page-id (:id page))
+        (pcb/with-page page)
         (pcb/with-objects (:objects page))
         (pcb/with-library-data (:data file))
         (cls/generate-relocate parent-id to-index (set ids)))))
@@ -32,7 +32,8 @@
   [file frame-id ids]
   (let [page    (thf/current-page file)
         objects (:objects page)]
-    (-> (pcb/empty-changes nil (:id page))
+    (-> (pcb/empty-changes nil)
+        (pcb/with-page page)
         (pcb/with-objects objects)
         (pcb/with-library-data (:data file))
         (cls/generate-move-shapes-into-frame frame-id ids objects true))))
