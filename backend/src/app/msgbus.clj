@@ -27,7 +27,8 @@
   (-pub [_ topic message])
   (-purge [_ chans]))
 
-
+(defprotocol ^:private IConfirmedSubscription
+  (-sub-confirmed [_ topic chan result-ch]))
 
 (defn- prefix-topic
   [topic]
@@ -41,6 +42,7 @@
 (declare ^:private redis-unsub)
 (declare ^:private start-io-loop)
 (declare ^:private subscribe-to-topics)
+(declare ^:private subscribe-to-topic-confirmed)
 (declare ^:private unsubscribe-channels)
 
 (defn msgbus?
@@ -113,7 +115,11 @@
 
       (-purge [_ chans]
         (l/debug :hint "purge" :chans (count chans))
-        (send-via executor state unsubscribe-channels cfg chans)))))
+        (send-via executor state unsubscribe-channels cfg chans))
+
+      IConfirmedSubscription
+      (-sub-confirmed [_ topic chan result-ch]
+        (send-via executor state subscribe-to-topic-confirmed cfg topic chan result-ch)))))
 
 (defmethod ig/halt-key! ::msgbus
   [_ instance]
@@ -125,6 +131,14 @@
   (let [topics (into [] (map prefix-topic) (if topic [topic] topics))]
     (-sub instance topics chan)
     nil))
+
+(defn subscribe-confirmed
+  "Subscribes a new local channel to one topic. Offers a boolean to the
+  buffered `result-ch` and closes it once the result is known. True means
+  Redis acknowledged the subscription and the dispatcher can see it."
+  [instance topic chan result-ch]
+  (-sub-confirmed instance (prefix-topic topic) chan result-ch)
+  nil)
 
 (defn pub!
   [instance & {:keys [topic message]}]
@@ -170,6 +184,31 @@
               (update-in state [:topics topic] conj-subscription cfg topic chan))
             state
             topics)))
+
+(defn- complete-subscription
+  [state topic chan result-ch subscribed]
+  (sp/offer! result-ch (and subscribed
+                            (contains? (get-in state [:topics topic]) chan)
+                            (not (sp/closed? chan))))
+  (sp/close! result-ch)
+  state)
+
+(defn- subscribe-to-topic-confirmed
+  [state {:keys [::wrk/executor] bus-state ::state :as cfg} topic chan result-ch]
+  (try
+    ;; Ask Redis even for a topic already in the agent: an earlier
+    ;; fire-and-forget SUBSCRIBE may have failed, or Redis may have reconnected.
+    (let [subscribed (and (not (sp/closed? chan))
+                          (redis-sub cfg topic))]
+      ;; A send from within an agent action runs only after the action
+      ;; commits its state, which is what the dispatcher reads.
+      (send-via executor bus-state complete-subscription topic chan result-ch subscribed)
+      (cond-> state
+        subscribed (assoc-in [:chans chan] [topic])
+        subscribed (update-in [:topics topic] (fnil conj #{}) chan)))
+    (catch Throwable cause
+      (sp/close! result-ch)
+      (throw cause))))
 
 (defn- unsubscribe-channel
   "Auxiliary function responsible on removing a single local
@@ -272,15 +311,17 @@
                :cause cause))))
 
 (defn- redis-sub
-  "Create redis subscription. Blocking operation, intended to be used
-  inside an agent."
+  "Waits for Redis to acknowledge the subscription. Returns false when
+  the command fails. Called inside the message bus agent."
   [{:keys [::sconn] :as cfg} topic]
   (try
     (rds/subscribe sconn [topic])
+    true
     (catch InterruptedException cause
       (throw cause))
     (catch Throwable cause
-      (l/trace :hint "exception on subscribing" :topic topic :cause cause))))
+      (l/trace :hint "exception on subscribing" :topic topic :cause cause)
+      false)))
 
 (defn- redis-unsub
   "Removes redis subscription. Blocking operation, intended to be used
@@ -292,4 +333,3 @@
       (throw cause))
     (catch Throwable cause
       (l/trace :hint "exception on unsubscribing" :topic topic :cause cause))))
-

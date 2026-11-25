@@ -83,6 +83,19 @@
 (t/deftest ^:async invalid-revision-save-response-preserves-the-queue-as-failed
   (await (check-failed-save-response (rx/of {:revn -1}))))
 
+(t/deftest ^:async a-save-acknowledgment-must-match-the-sent-vern
+  (await (check-failed-save-response (rx/of (thp/save-response 0 1)))))
+
+(t/deftest ^:async a-save-acknowledgment-must-have-consecutive-written-rows
+  (let [answer (-> (thp/save-response 0)
+                   (assoc :saved-revn 2)
+                   (assoc-in [:written 0 :revn] 2))]
+    (await (check-failed-save-response (rx/of answer)))))
+
+(t/deftest ^:async an-ordinary-save-acknowledgment-must-include-edit-equality
+  (let [answer (dissoc (thp/save-response 0) :edit-matches-request)]
+    (await (check-failed-save-response (rx/of answer)))))
+
 ;; Retry tests.
 ;;
 ;; Production contract under test: a transient save failure keeps the head
@@ -109,14 +122,13 @@
             (let [page-id (uuid/next)
                   commit  (local-commit file-id {:redo-changes [{:type :mod-page :id page-id :name "Edited"}]
                                                  :undo-changes [{:type :mod-page :id page-id :name "Original"}]})
-                  batch   [(-> (select-keys @commit [:redo-changes :undo-changes])
-                               (assoc :commit-id (:id @commit)))]]
+                  batch   [{:commit-id (:id @commit) :changes (:redo-changes @commit)}]]
               (ptk/emit! store commit ::dps/force-persist)
               (await (async/wait-for-store store #(and (= :saved (get-in @store [:persistence :status]))
                                                        (empty? (get-in @store [:persistence :queue])))
                                            "retry saves the file"))
               (t/is (= [batch batch] (sent-commits requests))
-                    "the retry sends the same id, redo, and undo"))
+                    "the retry sends the same ID and forward changes"))
             (t/is (= :saved (get-in @store [:persistence :status])))
             (t/is (empty? (get-in @store [:persistence :queue])))
             (t/is (nil? (get-in @store [:persistence :attempts]))
@@ -124,7 +136,7 @@
        (fn [_ _]
          (if (= 1 (swap! calls inc))
            (rx/throw (ex-info "offline" {:type :offline}))
-           (rx/of {:revn 1})))))))
+           (rx/of (thp/save-response 0))))))))
 
 (defn- file-reads
   [requests]
@@ -167,7 +179,7 @@
                                            "the retry is scheduled"))
               (rx/push! backoff :tick)
               (await (async/wait-for #(= [file-id file-id] (ids)) "the retry is sent" {:signal requests$}))
-              (rx/push! retry-answer (assoc (thp/rejection (:id @bad)) :lagged []))
+              (rx/push! retry-answer (thp/rejection (:id @bad)))
               (await (async/wait-for #(= #{file-id library} (set (map :id (file-reads requests))))
                                      "both GETs are pending" {:signal requests$}))
               (let [read-for (zipmap (map :id (file-reads requests)) [first-read next-read])]
@@ -181,9 +193,7 @@
                                                   :data (thp/file-data page asset "Saved")}))
               (await (async/wait-for #(= [file-id file-id library] (ids)) "the library save resumes"
                                      {:signal requests$}))
-              (rx/push! next-answer {:revn 0 :saved-revn 1
-                                     :lagged [{:id (uuid/next) :file-id library :revn 1
-                                               :session-id (:session-id @store) :changes (:redo-changes @next)}]})
+              (rx/push! next-answer (thp/save-response 0))
               (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
                                            "both entries settle"))
               (t/is (= [file-id file-id library] (ids)))
@@ -230,7 +240,7 @@
                 (t/is (= token (get-in @store [:persistence :retry-token]))))
               (rx/push! backoff :tick)
               (await (async/wait-for #(= 2 @posts) "the timer starts the retry"))
-              (rx/push! retry-answer {:revn 1})
+              (rx/push! retry-answer (thp/save-response 0))
               (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
                                            "the retry settles"))))))
        (fn [cmd _]
@@ -315,7 +325,10 @@
                   (t/is (apply = (sent-commits requests)) "the retry preserves the commits and their IDs")
                   (t/is (= [2000] @timers) "the read does not restart the backoff budget")
                   (t/is (= 1 (get-in @store [:persistence :attempts])))
-                  (rx/push! retry-answer {:revn 2})
+                  (rx/push! retry-answer (thp/save-response 2))
+                  (await (async/wait-for #(= (if (= :failed-read first) 3 2) (count (file-reads requests)))
+                                         "the uncertain save is read back" {:signal requests$}))
+                  (rx/push! next-read (assoc file :revn 3 :data (thp/file-data page shape "Local")))
                   (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
                                                "the retry settles"))
                   (t/is (= 2 (sent)))
@@ -378,19 +391,23 @@
                                    (:redo-changes @first-edit)
                                    (:changes already)))
                  repair     (row 3 [(thp/rename page-id shape-id "Repaired")])
+                 recovery   (thp/recovery :wait 0 [already])
                  answer     (case outcome
                               :total (assoc (thp/rejection (:id @first-edit) (:id @last-edit))
-                                            :revn 1 :lagged [already])
+                                            :revn 1 :recovery recovery)
                               :partial (assoc (thp/rejection (:id @last-edit))
-                                              :revn 1 :saved-revn 2 :lagged [already retried])
-                              :repaired {:revn 1 :saved-revn 3 :lagged [already retried repair]
+                                              :revn 1 :saved-revn 2 :recovery recovery
+                                              :written [(thp/written-row :edit retried)])
+                              :repaired {:revn 1 :vern 0 :saved-revn 3 :recovery recovery
+                                         :written [(thp/written-row :edit retried)
+                                                   (thp/written-row :repair repair)]
                                          :repair (select-keys repair [:id :revn :changes])}
-                              :late-first {:revn 0 :saved-revn 1 :lagged [retried]}
-                              {:revn 1 :saved-revn 2 :lagged [already retried]})
+                              :late-first (assoc (thp/save-response 0) :written [(thp/written-row :edit retried)])
+                              (assoc (thp/save-response 1) :written [(thp/written-row :edit retried)]
+                                     :recovery recovery))
                  read-revn  (inc (or (:saved-revn answer) (:revn answer)))
                  batch      (mapv (fn [edit]
-                                    (assoc (select-keys @edit [:redo-changes :undo-changes])
-                                           :commit-id (:id @edit)))
+                                    {:commit-id (:id @edit) :changes (:redo-changes @edit)})
                                   [first-edit last-edit])]
              (ptk/emit! store (thp/open-file file-id page-id (thp/file-data page-id shape-id "Second edit"))
                         #(-> %
@@ -409,7 +426,7 @@
              (rx/push! backoff :tick)
              (await (async/wait-for #(= 2 (count (sent-commits requests))) "the retry POST is sent"
                                     {:signal requests$}))
-             (t/is (= [batch batch] (sent-commits requests)) "retry keeps each ID, redo and undo")
+             (t/is (= [batch batch] (sent-commits requests)) "retry keeps each ID and its forward changes")
              (t/is (every? (comp :repair-in-response second)
                            (filter #(= :update-file-v2 (first %)) @requests)))
 
@@ -498,7 +515,7 @@
                                :headers {"content-type" "text/html"}
                                :body "<html><body>Gateway Timeout</body></html>"
                                :uri "https://penpot.example.com/api/main/methods/update-file"})
-          (rx/of {:revn 1}))))))
+          (rx/of (thp/save-response 0)))))))
 
 ;; Variant: the proxy in front of the backend timed out.
 (t/deftest ^:async gateway-timeout-save-is-retried
@@ -529,7 +546,7 @@
       (fn [_ _]
         (if (= 1 (swap! calls inc))
           (rp/handle-response (assoc response :uri "https://penpot.example.com/api/main/methods/update-file"))
-          (rx/of {:revn 1}))))))
+          (rx/of (thp/save-response 0)))))))
 
 ;; Variant: the save waited too long for a concurrency slot (no body).
 (t/deftest ^:async concurrency-limit-save-is-retried
@@ -742,7 +759,7 @@
        (fn [_ _]
          (if (= 1 (swap! calls inc))
            (rx/throw (ex-info "offline" {:type :offline}))
-           (rx/of {:revn @calls})))))))
+           (rx/of (thp/save-response 0))))))))
 
 ;; Scenario: a transient failure raises the reconnect notice; the retry
 ;; then succeeds. The timer is driven by hand so the test observes the
@@ -777,7 +794,7 @@
        (fn [_ _]
          (if (= 1 (swap! calls inc))
            (rx/throw (ex-info "offline" {:type :offline}))
-           (rx/of {:revn 1})))))))
+           (rx/of (thp/save-response 0))))))))
 
 ;; Scenario: every send fails transiently with instant timers. Exhaustion
 ;; takes the terminal path, which hides the reconnect notice explicitly
@@ -822,7 +839,7 @@
             (t/is (= 2 (count @requests)))
             (t/is (= :retrying (get-in @store [:persistence :status])))
             (t/is (= 1 (get-in @store [:persistence :attempts])))
-            (rx/push! @second-s {:revn 1})
+            (rx/push! @second-s (thp/save-response 0))
             (await (async/wait-for-store store #(and (= :saved (get-in @store [:persistence :status]))
                                                      (empty? (get-in @store [:persistence :queue])))
                                          "resumed save lands"))
@@ -929,7 +946,7 @@
          (t/is (= 1 (count @requests)))
          ;; Phase 2 — the save lands, resetting the stall clock; a new
          ;; edit stalls again, over a governor window later.
-         (rx/push! response {:revn 1})
+         (rx/push! response (thp/save-response 0))
          (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
                                       "first save lands"))
          (ptk/emit! store (local-commit file-id) ::dps/force-persist)
@@ -977,7 +994,7 @@
        (fn [_ _]
          (if (= 1 (swap! calls inc))
            (rx/subject)
-           (rx/of {:revn 1})))))))
+           (rx/of (thp/save-response 0))))))))
 
 ;; ---------------------------------------------------------------------------
 ;; slow cycle
@@ -1045,7 +1062,7 @@
        (fn [_ _]
          (if (< (swap! calls inc) 6)
            (rx/throw (ex-info "offline" {:type :offline}))
-           (rx/of {:revn 1})))))))
+           (rx/of (thp/save-response 0))))))))
 
 ;; Scenario: the network stays down past the backoff, so the slow cycle
 ;; takes over. The workspace stays read-only through each slow attempt,
@@ -1079,7 +1096,7 @@
             (t/is (some? (get-in @store [:workspace-global :persistence-lock]))
                   "a slow attempt in flight keeps the lock")
 
-            (rx/push! attempt-s {:revn 1})
+            (rx/push! attempt-s (thp/save-response 0))
             (await (async/wait-for-store store #(nil? (get-in @store [:workspace-global :persistence-lock]))
                                          "the landed save lifts the lock"))
             (t/is (false? (get-in @store [:workspace-global :read-only?]))))))
@@ -1117,7 +1134,7 @@
          (fn [_ _]
            (if (<= (swap! calls inc) 4)
              (rp/handle-response {:status status :body "<html>Gateway error</html>" :uri "/api"})
-             (rx/of {:revn 1}))))))))
+             (rx/of (thp/save-response 0)))))))))
 
 ;; Scenario: a save fails for a reason no attempt can get past. Proves: only
 ;; transport failures arm the slow cycle.
@@ -1265,7 +1282,7 @@
        (fn [_ _]
          (if (< (swap! calls inc) 5)
            (rx/throw (ex-info "offline" {:type :offline}))
-           (rx/of {:revn 1})))))))
+           (rx/of (thp/save-response 0))))))))
 
 ;; Scenario: saves keep failing on a transport error, so the slow cycle
 ;; holds the edit, and the user is made a viewer; the role event comes again
@@ -1337,7 +1354,7 @@
        (fn [_ _]
          (if (= 1 (swap! calls inc))
            (rx/throw (ex-info "offline" {:type :offline}))
-           (rx/of {:revn 1})))))))
+           (rx/of (thp/save-response 0))))))))
 
 ;; Scenario: the user leaves the workspace while a save is in flight, and the
 ;; save then fails on a transport error. No backoff is scheduled, the online
@@ -1377,7 +1394,7 @@
        (fn [_ _]
          (if (= 1 (swap! calls inc))
            first-s
-           (rx/of {:revn 1})))))))
+           (rx/of (thp/save-response 0))))))))
 
 ;; Scenario: the last backoff attempt is in flight when the user leaves the
 ;; workspace, and it fails. The queue halts without arming the slow cycle,
@@ -1416,4 +1433,4 @@
            (cond
              (< n 4) (rx/throw (ex-info "offline" {:type :offline}))
              (= n 4) last-s
-             :else   (rx/of {:revn 1}))))))))
+             :else   (rx/of (thp/save-response 0)))))))))

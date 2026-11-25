@@ -179,7 +179,7 @@
               (t/is (= "rolled-back" (error-code outcome)))
               ;; Keep the save path from hanging the fixture
               (when (seq (get-in @store [:persistence :queue]))
-                (rx/push! response {:revn 1}))))))))))
+                (rx/push! response (thp/save-response 0)))))))))))
 
 (t/deftest ^:async buffer-race-waits-for-commit-not-stale-saved
   (await
@@ -199,7 +199,7 @@
                0)
               (await (async/wait-for #(seq (saves requests))
                                      "force-persist sent the edit"))
-              (rx/push! response {:revn 1})
+              (rx/push! response (thp/save-response 0))
               (let [outcome (await (await-outcome p))]
                 (t/is (contains? outcome :ok)
                       "wait covers the late-buffered commit instead of stale empty :saved"))))))))))
@@ -217,7 +217,7 @@
             (let [p (persist/wait-for-save 5000)]
               (await (async/wait-for #(seq (saves requests))
                                      "force-persist flushed the buffer"))
-              (rx/push! response {:revn 1})
+              (rx/push! response (thp/save-response 0))
               (let [outcome (await (await-outcome p))]
                 (t/is (contains? outcome :ok)
                       "pending work resolves once the save lands"))))))))))
@@ -301,4 +301,4 @@
                                (or (some-> (:error outcome) .-message) "")))
                 (t/is (= "rolled-back" (error-code outcome)))
                 (when (seq (get-in @store [:persistence :queue]))
-                  (rx/push! response {:revn 1})))))))))))
+                  (rx/push! response (thp/save-response 0))))))))))))

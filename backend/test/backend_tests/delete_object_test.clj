@@ -10,6 +10,8 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.jobs :as jobs]
+   [app.rpc :as-alias rpc]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
    [mockery.core :refer [with-mocks]]))
@@ -76,11 +78,11 @@
             project    (th/create-project* 92 {:profile-id (:id profile)
                                                :team-id (:id team)})
             file       (th/create-file* 92 {:profile-id (:id profile)
-                                            :project-id (:id project)})
-            deleted-at (ct/now)]
-        (th/run-task! :delete-object {:object :file
-                                      :id (:id file)
-                                      :deleted-at deleted-at})
+                                            :project-id (:id project)})]
+        (t/is (th/success? (th/command! {::th/type :delete-file
+                                         ::rpc/profile-id (:id profile)
+                                         :id (:id file)})))
+        (th/run-pending-jobs)
         (let [events (cascade-events audit-mock)]
           (t/is (= 1 (count events)))
           (t/is (= "action" (:type (first events))))
@@ -91,6 +93,75 @@
             (t/is (= [] (get-in props [:cascade :project-ids])))
             (t/is (= [(:id file)] (get-in props [:cascade :file-ids])))
             (t/is (= #{(:id team)} (set (:team-ids props))))))))))
+
+(defn- get-deadline
+  [table where]
+  (:deleted-at (th/db-get table where {::db/remove-deleted false})))
+
+(t/deftest queued-file-deletion-matches-a-legacy-timestamp
+  (let [profile   (th/create-profile* 1 {:is-active true})
+        file-id   (:id (th/create-file* 1 {:profile-id (:id profile)
+                                           :project-id (:default-project-id profile)}))
+        requested (ct/inst "2025-10-31T00:00:00.123456789Z")
+        main      {:file-id file-id :id file-id}]
+    ;; The old purge RPC queued the original timestamp rather than the
+    ;; value stored by PostgreSQL, which has microsecond precision.
+    (th/db-update! :file {:deleted-at requested} {:id file-id})
+    (jobs/submit th/*system* {::jobs/name :delete-object
+                              ::jobs/params {:object :file :id file-id :deleted-at requested}})
+    (let [deadline (get-deadline :file {:id file-id})]
+      (t/is (not= requested deadline))
+      (th/run-pending-jobs)
+      (t/is (= deadline (get-deadline :file-data main))))))
+
+(t/deftest project-cascade-dates-retained-revisions-with-the-earliest-deadline
+  (let [profile  (th/create-profile* 1 {:is-active true})
+        project  (th/create-project* 1 {:profile-id (:id profile)
+                                        :team-id (:default-team-id profile)})
+        file-id  (:id (th/create-file* 1 {:profile-id (:id profile)
+                                          :project-id (:id project)}))
+        retained {:file-id file-id :id (uuid/next)}
+        old      {:file-id file-id :id (uuid/next)}
+        snapshot {:file-id file-id :id (uuid/next)}
+        now      (ct/inst "2025-10-31T00:00:00Z")
+        earlier  (ct/plus now (ct/duration {:days 1}))
+        old-date (ct/plus now (ct/duration {:hours 1}))
+        snap-date (ct/plus now (ct/duration {:days 2}))]
+    (th/db-insert! :file-change (assoc retained :kind 2 :retained true :updated-at now))
+    (th/db-insert! :file-data (assoc retained :type "revision" :metadata (db/json {:retained true})))
+    (th/db-insert! :file-change (assoc old :kind 2 :deleted-at old-date))
+    (th/db-insert! :file-data (assoc old :type "revision" :deleted-at old-date))
+    (th/db-insert! :file-change (assoc snapshot :kind 1 :label "System" :deleted-at snap-date))
+    (th/db-insert! :file-data (assoc snapshot :type "snapshot" :deleted-at snap-date))
+    (th/db-update! :file {:deleted-at earlier} {:id file-id})
+    (binding [ct/*clock* (ct/fixed-clock now)]
+      (t/is (th/success? (th/command! {::th/type :delete-project
+                                       ::rpc/profile-id (:id profile)
+                                       :id (:id project)})))
+      (t/is (ct/is-after? (get-deadline :project {:id (:id project)}) earlier))
+      (t/is (nil? (get-deadline :file-change retained)))
+      (t/is (nil? (get-deadline :file-data retained))))
+    (let [job-time (ct/plus now (ct/duration {:minutes 1}))]
+      (binding [ct/*clock* (ct/fixed-clock job-time)]
+        (th/run-pending-jobs))
+      (t/is (= earlier (get-deadline :file {:id file-id})))
+      (t/is (= earlier (get-deadline :file-change retained)))
+      (t/is (= earlier (get-deadline :file-data retained)))
+      (t/is (= job-time (:updated-at (th/db-get :file-change retained {::db/remove-deleted false}))))
+      (t/is (= old-date (get-deadline :file-change old)))
+      (t/is (= old-date (get-deadline :file-data old)))
+      (t/is (= snap-date (get-deadline :file-change snapshot)))
+      (t/is (= snap-date (get-deadline :file-data snapshot))))
+    (binding [ct/*clock* (ct/fixed-clock (ct/plus now (ct/duration {:hours 2})))]
+      (let [out (th/command! {::th/type :permanently-delete-team-files
+                              ::rpc/profile-id (:id profile)
+                              :team-id (:default-team-id profile)
+                              :ids #{file-id}})]
+        (t/is (th/success? out))
+        (th/consume-sse (:result out)))
+      (th/run-pending-jobs)
+      (t/is (= (ct/now) (get-deadline :file-change snapshot)))
+      (t/is (= (ct/now) (get-deadline :file-data snapshot))))))
 
 (t/deftest delete-object-missing-row-emits-nothing
   ;; A cascade over an unknown id marks nothing, so there is nothing to report.

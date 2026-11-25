@@ -60,7 +60,7 @@
   (atom {}))
 
 (defn fetch
-  [{:keys [method uri query headers body mode omit-default-headers credentials]
+  [{:keys [method uri query headers body mode omit-default-headers credentials cache]
     :or {mode :cors
          headers {}
          credentials "same-origin"}}]
@@ -96,6 +96,9 @@
                               :signal signal}
 
            start (perf/timestamp)]
+
+       (when (some? cache)
+         (set! (.-cache ^js params) cache))
 
        (-> (js/fetch (str uri) params)
            (p/then

@@ -12,6 +12,7 @@
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.main.data.common :as dc]
    [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
@@ -29,6 +30,7 @@
    [app.util.mouse :as mse]
    [app.util.object :as obj]
    [app.util.rxops :as rxs]
+   [app.util.websocket :as ws]
    [beicon.v2.core :as rx]
    [clojure.set :as set]
    [potok.v2.core :as ptk]))
@@ -52,6 +54,45 @@
   (and (ptk/type? ::initialize event)
        (= file-id (:file-id (deref event)))))
 
+(def ^:private subscription-ready-timeout-ms 5000)
+
+(defn- resubscribe-file
+  [load-id {:keys [file-id] :as message} retry?]
+  (ptk/reify ::resubscribe-file
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (if (and (= file-id (:current-file-id state))
+               (= load-id (:workspace-load-id state)))
+        (let [subscription-id (uuid/next)
+              ready           (->> stream
+                                   (rx/filter (ptk/type? ::dws/message))
+                                   (rx/map deref)
+                                   (rx/filter (fn [{:keys [type topic] :as msg}]
+                                                (and (= :file-subscription-ready type)
+                                                     (= file-id topic)
+                                                     (= subscription-id (:subscription-id msg)))))
+                                   (rx/map (constantly true)))
+              timeout         (->> (rx/timer subscription-ready-timeout-ms)
+                                   (rx/map (constantly false)))
+              stopper         (rx/filter #(contains? #{::initialize ::finalize
+                                                       ::dw/initialize-workspace ::dw/finalize-workspace
+                                                       ::dws/opened ::dws/initialize ::dws/finalize}
+                                                     (ptk/type %))
+                                         stream)]
+          (->> (rx/merge
+                ;; Listen before sending. Only the first matching ready or
+                ;; timeout can end this attempt, even if both arrive.
+                (->> (rx/merge ready timeout)
+                     (rx/take 1)
+                     (rx/map (fn [ready?]
+                               (cond
+                                 ready? (dps/request-catch-up file-id load-id {:reconnected true})
+                                 retry? (resubscribe-file load-id message false)
+                                 :else (dps/request-catch-up file-id load-id {:force-reload true})))))
+                (rx/of (dws/send (assoc message :subscription-id subscription-id))))
+               (rx/take-until stopper)))
+        (rx/empty)))))
+
 (defn initialize
   "Subscribes to the notifications of `file-id` and its team until the file
   is left or a new subscription starts. A new subscription to the same file
@@ -71,19 +112,22 @@
             profile-id (:profile-id state)
             organization-id (dm/get-in state [:teams team-id :organization :id])
 
-            initmsg    [{:type :subscribe-file
-                         :file-id file-id
-                         :version (obj/get global "penpotVersion")}
-                        {:type :subscribe-team
-                         :team-id team-id}]
+            load-id    (:workspace-load-id state)
+            catch-up?  (and (some? load-id) (contains? cf/flags :file-catch-up))
+            opened?    (volatile! (and catch-up? (some-> (:ws-conn state) ws/open?)))
+            file-msg   {:type :subscribe-file
+                        :file-id file-id
+                        :version (obj/get global "penpotVersion")}
+            team-msg   {:type :subscribe-team
+                        :team-id team-id}
+            subscribe  #(rx/of (dws/send file-msg) (dws/send team-msg))
 
             endmsg     {:type :unsubscribe-file
                         :file-id file-id}
 
             stream     (->> (rx/merge
                              ;; Send the subscription message
-                             (->> (rx/from initmsg)
-                                  (rx/map dws/send))
+                             (subscribe)
 
                              ;; Subscribe to notifications of the subscription
                              (->> stream
@@ -98,11 +142,17 @@
                                                      (= topic organization-id)))))
                                   (rx/map process-message))
 
-                             ;; On reconnect, send again the subscription messages
+                             ;; If the socket was not open at initialization,
+                             ;; the first opened event is the initial subscription.
                              (->> stream
                                   (rx/filter (ptk/type? ::dws/opened))
-                                  (rx/mapcat #(->> (rx/from initmsg)
-                                                   (rx/map dws/send))))
+                                  (rx/mapcat (fn [_]
+                                               (let [reconnect? @opened?]
+                                                 (vreset! opened? true)
+                                                 (if (and catch-up? reconnect?)
+                                                   (rx/of (resubscribe-file load-id file-msg true)
+                                                          (dws/send team-msg))
+                                                   (subscribe))))))
 
                              ;; Emit presence event for current user;
                              ;; this is because websocket server don't
@@ -352,20 +402,21 @@
   (ptk/reify ::handle-file-restored
     ptk/WatchEvent
     (watch [_ state _]
-      (let [curr-file-id    (:current-file-id state)
-            file            (dsh/lookup-file state curr-file-id)
-            curr-vern       (:vern file)]
-
-        (if (and (= file-id curr-file-id)
-                 (not= vern curr-vern))
-          (rx/of (ptk/event ::dw/reload-current-file)
-                 (modal/show :file-restored
-                             {:fullname   (restorer-fullname state profile-id session-id)
-                              :label      label
-                              :date       created-at
-                              ;; Made on the replaced version, so the reload drops them
-                              :unsaved    (boolean (seq (dps/pending-file-changes state file)))}))
-          (rx/empty))))))
+      (if (= file-id (:current-file-id state))
+        (let [details {:fullname (restorer-fullname state profile-id session-id)
+                       :label label
+                       :date created-at}]
+          (if (contains? cf/flags :file-catch-up)
+            ;; The same restore may already have been detected by a read.
+            (rx/of (dps/reconcile-restored-file (assoc details :file-id file-id :vern vern)))
+            (let [file (dsh/lookup-file state file-id)]
+              (if (not= vern (:vern file))
+                (rx/of (ptk/event ::dw/reload-current-file)
+                       (modal/show :file-restored
+                                   ;; Made on the replaced version, so the reload drops them.
+                                   (assoc details :unsaved (boolean (seq (dps/pending-file-changes state file))))))
+                (rx/empty)))))
+        (rx/empty)))))
 
 (def ^:private schema:handle-library-change
   [:map {:title "handle-library-change"}

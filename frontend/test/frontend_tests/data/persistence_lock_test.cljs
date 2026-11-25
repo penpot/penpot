@@ -52,7 +52,7 @@
 
 (defn- saved
   [revn]
-  #(rx/of {:revn revn}))
+  #(rx/of (thp/save-response revn)))
 
 (def ^:private lock
   "The lock a failed save leaves, set by hand."
@@ -170,7 +170,7 @@
          (t/is (= 3 (count @requests)))
          (t/is (= lib-id (get-in (nth @requests 2) [1 :id])))
          (t/is (not (plk/locked? @store)))))
-     (answers (saved 1) server-error (saved 2)))))
+     (answers (saved 0) server-error (saved 1)))))
 
 ;; Scenario: texts without layout data are measured while the workspace is
 ;; locked, as on a reload during the lock. Proves: the derived layout still

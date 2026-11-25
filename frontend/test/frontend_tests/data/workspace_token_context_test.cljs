@@ -19,6 +19,7 @@
    [app.main.data.style-dictionary :as sd]
    [app.main.data.websocket :as dws]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.notifications :as dwntf]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.undo :as dwu]
@@ -80,14 +81,40 @@
     (await (async/wait-for-store store #(= (inc revn) (get-in @store [:files library-id :revn]))
                                  "the library recovery GET installs"))))
 
+(defn- ^:async restore-library
+  [{:keys [store library-id library-page library-shape requests requests$ save read] :as fixture}
+   data preview?]
+  (let [post? (fn [[cmd params]] (and (= cmd :update-file-v2) (= library-id (:id params))))
+        get?  (fn [[cmd params]] (and (= cmd :get-file) (= library-id (:id params))))
+        rows  (mapv (fn [revn] {:id (uuid/next) :revn revn}) [41 42 43])]
+    (ptk/emit! store
+               (dch/commit-changes {:file-id library-id :save-undo? false
+                                    :redo-changes [(thp/rename library-page library-shape "Local save")]
+                                    :undo-changes []})
+               ::dps/force-persist)
+    (await (async/wait-for #(some post? @requests) "the library save starts" {:signal requests$}))
+    (when preview?
+      (await (enter-preview fixture 0.1)))
+    (rx/push! save (assoc (thp/save-response 43 7) :recovery (thp/recovery :reload 40 rows)))
+    (await (async/wait-for #(some get? @requests) "the library save requires a full read" {:signal requests$}))
+    (rx/push! read {:id library-id :vern 3 :revn 45 :data data :is-shared true :modified-at (ct/now)})
+    (await (async/wait-for-store store #(dps/terminal-status? (:persistence @store))
+                                 "the library settles without waiting for its view effects"))
+    (t/is (= 3 (get-in @store [:files library-id :vern])))
+    (t/is (= 1 (count (filter post? @requests))))))
+
 (defn- ^:async with-delayed-token-resolution
   [mode scenario]
-  (let [linked?     (contains? #{:linked :linked-preview} mode)
+  (let [restore?    (contains? #{:restored-linked :restored-linked-preview :restored-linked-unchanged} mode)
+        changed?    (not= :restored-linked-unchanged mode)
+        linked?     (or restore? (contains? #{:linked :linked-preview} mode))
         external?   (or linked? (contains? #{:external :external-preview} mode))
-        preview?    (contains? #{:preview :external-preview :linked-preview} mode)
+        preview?    (contains? #{:preview :external-preview :linked-preview :restored-linked-preview} mode)
         activation? (or (= :activation mode) (and external? (not linked?)))
         history     (rx/subject)
         read        (rx/subject)
+        save        (rx/subject)
+        thumbnails  (rx/subject)
         resolutions (atom [])
         posts       (atom [])
         post$       (rx/subject)
@@ -96,16 +123,18 @@
     (try
       (set! js/fetch
             (fn [url params]
-              (let [post [url (.-method ^js params) (transit/decode-str (.-body ^js params))]]
+              (let [{:keys [revn vern] :as body} (transit/decode-str (.-body ^js params))
+                    post [url (.-method ^js params) body]]
                 (swap! posts conj post)
                 (rx/push! post$ post)
                 (js/Promise.resolve
-                 (js/Response. (transit/encode-str {:revn (:revn (peek post)) :lagged []})
+                 (js/Response. (transit/encode-str (thp/save-response revn vern))
                                #js {:status 200 :headers #js {"content-type" "application/transit+json"}})))))
       (await
        (mock/with-mocks*
          {cf/public-uri     (u/uri "https://penpot.example.com")
-          cf/flags          (disj cf/flags :tokenscript)
+          cf/flags          (cond-> (disj cf/flags :tokenscript)
+                              restore? (disj :file-catch-up))
           sd/resolve-tokens (mock/stub
                              (fn [tokens]
                                (rx/defer
@@ -122,6 +151,8 @@
                     set-id    (uuid/next)
                     other-id  (uuid/next)
                     token-id  (uuid/next)
+                    lib-page  (when restore? (uuid/next))
+                    lib-shape (when restore? (uuid/next))
                     library-id (when external? (uuid/next))
                     tokens    (-> (ctob/make-tokens-lib)
                                   (ctob/add-set (ctob/make-token-set :id set-id :name "Active"))
@@ -144,14 +175,19 @@
                                   data
                                   (update data :tokens-lib ctob/update-token set-id token-id
                                           #(assoc % :value 0.6))))
-                    library   (when external? {:id library-id :tokens-lib tokens})
-                    changed-library (when linked?
+                    library   (when external?
+                                (cond-> {:id library-id :tokens-lib tokens}
+                                  restore? (merge (thp/file-data lib-page lib-shape "Library"))))
+                    changed-library (if (and linked? changed?)
                                       (update library :tokens-lib ctob/update-token set-id token-id
-                                              #(assoc % :value 0.6)))
+                                              #(assoc % :value 0.6))
+                                      library)
                     events    (atom [])
                     fixture   (assoc fixture :page-id page-id :shape-id shape-id :history history
                                      :base-data data :data live-data :read read :posts posts :post$ post$
                                      :resolutions resolutions :events events
+                                     :save save :thumbnails thumbnails :preview preview?
+                                     :library-page lib-page :library-shape lib-shape
                                      :library-id library-id :library library)
                     sub       (rx/subs! #(swap! events conj %) (ptk/input-stream store))]
                 (try
@@ -162,27 +198,35 @@
                                   (assoc-in [:persistence :file-order file-id] (porder/loaded 4 0))
                                   (cond-> external?
                                     (assoc-in [:files library-id]
-                                              {:id library-id :vern 7 :revn 0 :data library
+                                              {:id library-id :vern 7 :revn (if restore? 40 0) :data library
                                                :library-of file-id :synced-at (ct/now) :modified-at (ct/now)})))
                              (dwntf/initialize (uuid/next) file-id))
-                  (when preview?
-                    (await (enter-preview fixture 0.1)))
-                  (if linked?
-                    (await (recover-library fixture 2 changed-library))
-                    (await (recover-file fixture 2 live-data :preview preview? :unmarked external?)))
-                  (when preview?
-                    (t/is (= 0.1 (get-opacity fixture)))
-                    (t/is (empty? @resolutions) "the preview is not a token consumer")
-                    (ptk/emit! store (dwv/exit-preview)))
-                  (t/is (= [0.6] (mapv #(get-in % [:tokens "opacity" :value]) @resolutions))
-                        "the reconciled live file starts token resolution")
+                  (if restore?
+                    (await (restore-library fixture changed-library preview?))
+                    (do
+                      (when preview?
+                        (await (enter-preview fixture 0.1)))
+                      (if linked?
+                        (await (recover-library fixture 2 changed-library))
+                        (await (recover-file fixture 2 live-data :preview preview? :unmarked external?)))
+                      (when preview?
+                        (t/is (= 0.1 (get-opacity fixture)))
+                        (t/is (empty? @resolutions) "the preview is not a token consumer")
+                        (ptk/emit! store (dwv/exit-preview)))
+                      (t/is (= [0.6] (mapv #(get-in % [:tokens "opacity" :value]) @resolutions))
+                            "the reconciled live file starts token resolution")))
                   (await (scenario fixture))
                   (finally (rx/dispose! sub)))))
             (fn [command params]
               (case command
                 :get-file-snapshot (->> history (rx/take 1) (rx/observe-on :async))
                 :get-file (->> read (rx/take 1) (rx/observe-on :async))
-                :update-file-v2 (send-save command params)
+                :get-file-object-thumbnails (if restore?
+                                              (->> thumbnails (rx/take 1) (rx/observe-on :async))
+                                              (rx/empty))
+                :update-file-v2 (if (and restore? (= 7 (:vern params)))
+                                  (->> save (rx/take 1) (rx/observe-on :async))
+                                  (send-save command params))
                 (rx/empty)))))))
       (finally
         (set! js/fetch prior-fetch)))))
@@ -272,7 +316,7 @@
        (t/is (= 1 (count @posts)))
        (let [[url method body] (first @posts)
              [commit]         (:commits body)
-             [change]         (:redo-changes commit)]
+             [change]         (:changes commit)]
          (t/is (= (str "https://penpot.example.com/api/main/methods/update-file-v2?id=" file-id) url))
          (t/is (= "POST" method))
          (t/is (= file-id (:id body)))
@@ -300,7 +344,7 @@
        (t/is (= 1 (count @posts)) "the old calculation must not send another POST")
        (t/is (= [0.2] (for [[_ _ body] @posts
                             commit (:commits body)
-                            change (:redo-changes commit)
+                            change (:changes commit)
                             op (:operations change)
                             :when (= :opacity (:attr op))]
                         (:val op))))))))
@@ -331,7 +375,7 @@
   (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
                                "the consumer save settles"))
   (t/is (= 0.6 (get-opacity fixture)))
-  (t/is (= 1 (count (filter dch/commit? @events))))
+  (t/is (= 1 (count (filter #(and (dch/commit? %) (= file-id (:file-id @%))) @events))))
   (t/is (= [file-id] (mapv #(get-in % [2 :id]) @posts)) "only the consumer is saved"))
 
 (t/deftest ^:async recovery-of-a-private-consumer-propagates-a-new-active-set-from-its-library
@@ -345,6 +389,48 @@
 
 (t/deftest ^:async a-library-recovered-during-preview-propagates-only-after-exit
   (await (with-delayed-token-resolution :linked-preview assert-resolved-opacity-is-saved)))
+
+(defn- ^:async check-restored-library-effects
+  [{:keys [store file-id library-id events requests requests$ thumbnails preview page-id shape-id posts
+           resolutions] :as fixture}
+   changed?]
+  (let [checks #(count (filter (ptk/type? ::dwl/notify-sync-file) @events))
+        fetch? (fn [[cmd params]] (and (= cmd :get-file-object-thumbnails)
+                                       (= params {:file-id library-id :tag "component"})))
+        thumbnail-id (str library-id "/restored-thumbnail")]
+    (await (async/wait-for #(some fetch? @requests) "the library thumbnails are requested" {:signal requests$}))
+    (rx/push! thumbnails {thumbnail-id "restored-thumbnail"})
+    (await (async/wait-for-store store #(get-in @store [:thumbnails thumbnail-id])
+                                 "the library thumbnail refresh installs"))
+    (when preview
+      (t/is (= "Historical" (thp/shape-name store file-id page-id shape-id)))
+      (t/is (= 0.1 (get-opacity fixture)))
+      (t/is (= 0.4 (get-in @store [:workspace-versions :backup :data :pages-index page-id :objects shape-id :opacity])))
+      (t/is (zero? (checks)) "the snapshot does not run the sync check")
+      (t/is (empty? @resolutions) "the snapshot does not resolve tokens")
+      (ptk/emit! store (dwv/exit-preview))
+      (await (async/wait-for-store store #(= "Live" (thp/shape-name store file-id page-id shape-id))
+                                   "Exit restores the live consumer")))
+    (await (async/settle))
+    (t/is (= 1 (checks)))
+    (t/is (= 1 (count (filter fetch? @requests))) "Exit does not fetch library thumbnails again")
+    (t/is (= (if changed? [0.6] []) (mapv #(get-in % [:tokens "opacity" :value]) @resolutions)))
+    (if changed?
+      (do
+        (await (assert-resolved-opacity-is-saved fixture))
+        (t/is (= 4 (get-in @posts [0 2 :vern]))))
+      (do
+        (t/is (= 0.4 (get-opacity fixture)))
+        (t/is (empty? @posts))))))
+
+(t/deftest ^:async a-restored-library-propagates-changed-tokens-to-the-visible-consumer
+  (await (with-delayed-token-resolution :restored-linked #(check-restored-library-effects % true))))
+
+(t/deftest ^:async a-restored-library-checks-sync-without-resolving-unchanged-tokens
+  (await (with-delayed-token-resolution :restored-linked-unchanged #(check-restored-library-effects % false))))
+
+(t/deftest ^:async a-restored-library-propagates-and-checks-sync-once-after-exit
+  (await (with-delayed-token-resolution :restored-linked-preview #(check-restored-library-effects % true))))
 
 (t/deftest ^:async a-late-library-resolution-cannot-save-over-a-newer-recovery
   (await

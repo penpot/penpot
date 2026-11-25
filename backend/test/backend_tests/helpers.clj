@@ -402,9 +402,9 @@
                                                      :file file
                                                      :features (:features file)
                                                      :redo-changes changes
-                                                     :undo-changes []
                                                      :session-id session-id
-                                                     :profile-id profile-id})))))))
+                                                     :profile-id profile-id}
+                                                    :v1)))))))
 
 (defn add-rect-change
   "A change that adds a 10x10 rect `id` to the root of `page-id`."

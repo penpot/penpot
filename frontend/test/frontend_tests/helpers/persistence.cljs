@@ -63,7 +63,7 @@
         store     (ptk/store {:state {:current-file-id file-id
                                       :session-id session-id
                                       :permissions {:can-edit true}
-                                      :files {file-id {:id file-id :revn 0}}}
+                                      :files {file-id {:id file-id :revn 0 :vern 0}}}
                               :on-error #(t/is false (str %))})]
     (mock/with-mocks*
       {rp/cmd!          (mock/stub (fn [cmd params]
@@ -160,7 +160,7 @@
 (defn open-file-with-library
   "`open-file` that also loads library `lib-id` with `lib-data`."
   [file-id lib-id page-id data lib-data]
-  (comp #(assoc-in % [:files lib-id] {:id lib-id :revn 0 :data lib-data})
+  (comp #(assoc-in % [:files lib-id] {:id lib-id :revn 0 :vern 0 :data lib-data})
         (open-file file-id page-id data)))
 
 (defn shape-attr
@@ -181,11 +181,43 @@
      :redo-changes redo-changes
      :tags #{}}))
 
+(defn save-response
+  "An ordinary accepted save with no predecessors after the sent revision."
+  ([revn] (save-response revn 0))
+  ([revn vern]
+   {:revn revn
+    :vern vern
+    :saved-revn (inc revn)
+    :written [{:id (uuid/next) :revn (inc revn) :kind :edit}]
+    :edit-matches-request true
+    :recovery {:mode :none}}))
+
+(defn recovery
+  "Ordered predecessor identities, without the changes from those rows."
+  [mode since rows]
+  {:mode mode
+   :since since
+   :until (:revn (peek rows))
+   :required (mapv #(select-keys % [:id :revn]) rows)})
+
+(defn written-row
+  [kind row]
+  (assoc (select-keys row [:id :revn]) :kind kind))
+
 (defn rejection
   "A save answer that rejects `commit-ids`, the first one failing
   validation."
   [& commit-ids]
   {:revn 0
+   :vern 0
+   :written []
+   :recovery {:mode :none}
    :rejected {:commit-ids (vec commit-ids)
               :failed-commit-id (first commit-ids)
               :error {:type :validation :code :referential-integrity}}})
+
+(defn partial-rejection
+  "A save that wrote its accepted prefix and rejected the remaining commits."
+  [revn & commit-ids]
+  (merge (dissoc (save-response revn) :edit-matches-request)
+         (select-keys (apply rejection commit-ids) [:rejected])))

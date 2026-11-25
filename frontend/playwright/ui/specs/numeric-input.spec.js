@@ -190,7 +190,7 @@ test("BUG 10638 - Invalid padding input on multi-selection must not persist stri
     }
     const body = JSON.parse(request.postData() ?? "{}");
     for (const commit of body["~:commits"] ?? []) {
-      collectLayoutValues(commit["~:redo-changes"]);
+      collectLayoutValues(commit["~:changes"]);
     }
   });
 

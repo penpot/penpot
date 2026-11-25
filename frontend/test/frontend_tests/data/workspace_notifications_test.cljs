@@ -8,10 +8,12 @@
   (:require
    [app.common.files.tokens :as cfo]
    [app.common.time :as ct]
+   [app.common.transit :as transit]
    [app.common.types.shape :as cts]
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.tokens-status :as ctos]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.main.data.changes :as dch]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
@@ -23,7 +25,10 @@
    [app.main.data.workspace.notifications :as dwntf]
    [app.main.data.workspace.tokens.propagation :as dwtp]
    [app.main.data.workspace.versions :as dwv]
+   [app.main.repo :as rp]
+   [app.main.worker :as mw]
    [app.util.i18n :as i18n]
+   [app.util.websocket :as ws]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
    [clojure.datafy :refer [datafy]]
@@ -125,6 +130,203 @@
   [msg]
   (ptk/data-event ::dws/message msg))
 
+(defn- ^:async with-reconnect-subscription
+  [{:keys [flags connected] :or {flags #{:file-catch-up} connected true}} scenario]
+  (let [team-id  (uuid/next)
+        file-id  (uuid/next)
+        load-id  (uuid/next)
+        page-id  (uuid/next)
+        shape-id (uuid/next)
+        file     (with-meta {:id file-id :revn 0 :vern 0 :data (thp/file-data page-id shape-id "Original")}
+                   {::dps/fresh-file-read true})
+        sent     (atom [])
+        timers   (atom [])
+        requests (atom [])
+        response (rx/subject)
+        open     (atom connected)
+        socket   (reify ws/IWebSocket
+                   (-open? [_] @open)
+                   (-send [_ message]
+                     (when @open
+                       (swap! sent conj (transit/decode-str message)))))
+        store    (ptk/store {:state {:current-file-id file-id
+                                     :current-page-id page-id
+                                     :workspace-load-id load-id
+                                     :profile-id (uuid/next)
+                                     :session-id (uuid/next)
+                                     :files {file-id file}
+                                     :ws-conn socket}
+                             :on-error #(t/is false (str %))})]
+    (await
+     (mock/with-mocks*
+       {cf/flags     flags
+        dws/ws-conn  (volatile! socket)
+        rp/cmd!      (mock/stub (fn [command params]
+                                  (swap! requests conj [command params])
+                                  (rx/observe-on :async response)))
+        mw/ask!      (mock/stub (fn [_] (rx/empty)))
+        rx/timer     (mock/stub (fn [_]
+                                  (let [tick (rx/subject)]
+                                    (swap! timers conj tick)
+                                    (rx/observe-on :async tick))))}
+       (try
+         (ptk/emit! store #(dps/file-base-loaded % file) (dwntf/initialize team-id file-id))
+         (await (async/settle))
+         (await (scenario {:store store :file-id file-id :team-id team-id
+                           :page-id page-id :shape-id shape-id :response response
+                           :sent sent :timers timers :open open :requests requests}))
+         (finally
+           (rx/dispose! store)
+           (rx/end! response)))))))
+
+(defn- file-subscriptions
+  [sent]
+  (filterv #(= :subscribe-file (:type %)) @sent))
+
+(defn- ^:async open-websocket
+  [{:keys [store open]}]
+  (reset! open true)
+  (ptk/emit! store (ptk/data-event ::dws/opened {}))
+  (await (async/settle)))
+
+(defn- ^:async deliver-ready
+  [store topic subscription-id]
+  (ptk/emit! store (websocket-message {:type :file-subscription-ready
+                                       :topic topic
+                                       :subscription-id subscription-id}))
+  (await (async/settle)))
+
+(defn- ^:async expire-ready-wait
+  [timers attempt]
+  (when-let [timer (get @timers attempt)]
+    (rx/push! timer 0))
+  (await (async/settle)))
+
+(t/deftest ^:async only-reconnect-requests-a-file-subscription-ready
+  (await
+   (with-reconnect-subscription
+     {:connected false}
+     (^:async fn [{:keys [file-id team-id sent timers] :as fixture}]
+       (t/is (empty? @sent) "the initial send could not reach a closed socket")
+       (await (open-websocket fixture))
+       (t/is (= [{:type :subscribe-file :file-id file-id}
+                 {:type :subscribe-team :team-id team-id}]
+                (mapv #(dissoc % :version) @sent)))
+       (t/is (empty? @timers) "the first socket open does not start a catch-up")
+
+       (await (open-websocket fixture))
+       (t/is (uuid? (:subscription-id (peek (file-subscriptions sent)))))
+       (t/is (= 2 (count (filter #(= :subscribe-team (:type %)) @sent))))
+       (t/is (= 1 (count @timers)))))))
+
+(t/deftest ^:async reconnect-waits-for-ready-to-read-missed-edits
+  (await
+   (with-reconnect-subscription
+     {}
+     (^:async fn [{:keys [store file-id team-id page-id shape-id response sent timers requests] :as fixture}]
+       (await (open-websocket fixture))
+       (let [subscription-id (:subscription-id (peek (file-subscriptions sent)))]
+         (t/is (uuid? subscription-id))
+         (await (deliver-ready store team-id subscription-id))
+         (await (deliver-ready store file-id (uuid/next)))
+         (t/is (empty? @requests) "neither an unrelated topic nor an unrelated ID proves readiness")
+         (await (deliver-ready store file-id subscription-id))
+         (await (deliver-ready store file-id subscription-id))
+         (await (expire-ready-wait timers 0))
+         (t/is (= [[:get-file-changes {:file-id file-id :since 0 :vern 0}]] @requests))
+         (t/is (= 2 (count (file-subscriptions sent))) "ready cancels the retry")
+         (rx/push! response {:vern 0 :head 1 :through 1
+                             :rows [{:id (uuid/next) :revn 1 :session-id (uuid/next)
+                                     :changes [(thp/rename page-id shape-id "Missed peer edit")]}]})
+         (await (async/wait-for-store store #(= 1 (get-in @store [:files file-id :revn]))
+                                      "the missed revision is installed without another peer edit"))
+         (t/is (= "Missed peer edit" (thp/shape-name store file-id page-id shape-id))))))))
+
+(t/deftest ^:async only-the-retry-id-can-prove-readiness-after-the-first-timeout
+  (await
+   (with-reconnect-subscription
+     {}
+     (^:async fn [{:keys [store file-id sent timers requests] :as fixture}]
+       (await (open-websocket fixture))
+       (await (expire-ready-wait timers 0))
+       (let [[_ initial retry] (file-subscriptions sent)
+             first-id          (:subscription-id initial)
+             retry-id          (:subscription-id retry)]
+         (t/is (and (uuid? first-id) (uuid? retry-id) (not= first-id retry-id)))
+         (t/is (= 2 (count (filter #(= :subscribe-team (:type %)) @sent))) "only the file is retried")
+         (await (deliver-ready store file-id first-id))
+         (t/is (empty? @requests) "the first attempt already expired")
+         (await (deliver-ready store file-id retry-id))
+         (await (expire-ready-wait timers 1))
+         (t/is (= [:get-file-changes] (mapv first @requests))))))))
+
+(t/deftest ^:async reconnect-without-ready-falls-back-to-one-full-read
+  (await
+   (with-reconnect-subscription
+     {}
+     (^:async fn [{:keys [store file-id sent timers requests] :as fixture}]
+       (await (open-websocket fixture))
+       (await (expire-ready-wait timers 0))
+       (t/is (empty? @requests) "only a subscription retry is allowed at the first timeout")
+       (await (expire-ready-wait timers 1))
+       (let [[_ initial retry] (file-subscriptions sent)]
+         (t/is (uuid? (:subscription-id retry)))
+         (await (deliver-ready store file-id (:subscription-id initial)))
+         (await (deliver-ready store file-id (:subscription-id retry)))
+         (await (expire-ready-wait timers 1))
+         (t/is (= [file-id] (get-file-reads requests)))
+         (t/is (= [:get-file] (mapv first @requests)))
+         (t/is (= 3 (count (file-subscriptions sent))) "there is no third attempt")
+
+         (await (open-websocket fixture))
+         (t/is (= 4 (count (file-subscriptions sent))))
+         (t/is (not= (:subscription-id retry) (:subscription-id (peek (file-subscriptions sent))))))))))
+
+(t/deftest ^:async reopening-the-same-file-discards-the-old-ready-wait
+  (await
+   (with-reconnect-subscription
+     {}
+     (^:async fn [{:keys [store file-id team-id sent timers requests] :as fixture}]
+       (await (open-websocket fixture))
+       (let [old-id (:subscription-id (peek (file-subscriptions sent)))]
+         (t/is (uuid? old-id))
+         (ptk/emit! store #(assoc % :workspace-load-id (uuid/next))
+                    (dwntf/initialize team-id file-id))
+         (await (async/settle))
+         (await (deliver-ready store file-id old-id))
+         (await (expire-ready-wait timers 0))
+         (t/is (empty? @requests))
+         (t/is (= 3 (count (file-subscriptions sent))))
+         (t/is (nil? (:subscription-id (peek (file-subscriptions sent))))))))))
+
+(t/deftest ^:async a-second-reconnect-supersedes-the-ready-wait
+  (await
+   (with-reconnect-subscription
+     {}
+     (^:async fn [{:keys [store file-id sent timers requests] :as fixture}]
+       (await (open-websocket fixture))
+       (await (open-websocket fixture))
+       (let [[_ earlier later] (file-subscriptions sent)]
+         (t/is (and (uuid? (:subscription-id earlier)) (uuid? (:subscription-id later))))
+         (t/is (not= (:subscription-id earlier) (:subscription-id later)))
+         (await (deliver-ready store file-id (:subscription-id earlier)))
+         (await (expire-ready-wait timers 0))
+         (t/is (empty? @requests))
+         (t/is (= 3 (count (file-subscriptions sent))) "the old timer cannot retry")
+         (await (deliver-ready store file-id (:subscription-id later)))
+         (t/is (= [:get-file-changes] (mapv first @requests))))))))
+
+(t/deftest ^:async reconnect-with-catch-up-disabled-keeps-the-legacy-subscription
+  (await
+   (with-reconnect-subscription
+     {:flags #{}}
+     (^:async fn [{:keys [sent timers] :as fixture}]
+       (await (open-websocket fixture))
+       (t/is (= 2 (count (file-subscriptions sent))))
+       (t/is (not-any? :subscription-id (file-subscriptions sent)))
+       (t/is (= 2 (count (filter #(= :subscribe-team (:type %)) @sent))))
+       (t/is (empty? @timers))))))
+
 (defn- library-effect?
   [event]
   (contains? #{::dwl/library-change-effects ::dwl/notify-sync-file
@@ -149,7 +351,7 @@
   (let [save (rx/subject)]
     (await
      (thp/with-persistence
-       (^:async fn [{:keys [file-id session-id store requests requests$]}]
+       (^:async fn [{:keys [file-id store requests requests$]}]
          (let [team-id     (uuid/next)
                page-id     (uuid/next)
                shape-id    (uuid/next)
@@ -219,9 +421,7 @@
              (let [[[_ params] :as saves] (filter #(= :update-file-v2 (first %)) @requests)]
                (t/is (= 1 (count saves)))
                (t/is (= 1 (:revn params))))
-             (rx/push! save {:revn 1 :saved-revn 2
-                             :lagged [{:id (uuid/next) :file-id file-id :session-id session-id :revn 2
-                                       :changes (:redo-changes @local)}]})
+             (rx/push! save (thp/save-response 1))
              (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
                                           "the local save settles without a reconciliation"))
              (t/is (empty? (get-file-reads requests)))
@@ -1059,6 +1259,29 @@
                                                :session-id (uuid/next)
                                                :vern 2}))]
     (t/is (empty? events))))
+
+(t/deftest ^:async catch-up-routes-a-real-restore-notice-through-persistence
+  (await
+   (mock/with-mocks*
+     {cf/flags                   #{:file-catch-up}
+      dps/reconcile-restored-file #(ptk/data-event ::restore-details %)}
+     (let [file-id    (uuid/next)
+           profile-id (uuid/next)
+           created-at (ct/now)
+           state      {:current-file-id file-id
+                       :files {file-id {:id file-id :vern 1}}
+                       :profiles {profile-id {:id profile-id :fullname "Ada"}}}
+           events     (await (restored-events state {:type :file-restored
+                                                     :file-id file-id
+                                                     :session-id (uuid/next)
+                                                     :profile-id profile-id
+                                                     :vern 2
+                                                     :label "Hand-off v2"
+                                                     :created-at created-at}))]
+       (t/is (= [::restore-details] (mapv ptk/type events))
+             "persistence coordinates reload and notice; neither starts directly")
+       (t/is (= {:file-id file-id :vern 2 :fullname "Ada" :label "Hand-off v2" :date created-at}
+                (some #(when (ptk/type? ::restore-details %) @%) events)))))))
 
 (defn- ^:async subscription-messages
   "Runs `scenario` with a store over `team-id`, `dws/send` and the pointer

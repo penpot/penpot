@@ -22,6 +22,7 @@
    [app.db :as db]
    [app.features.fdata :as fdata]
    [app.features.file-changes :as fchanges]
+   [app.features.file-migrations :as fmigr]
    [app.features.file-snapshots :as fsnap]
    [app.features.logical-deletion :as ldel]
    [app.http.errors :as errors]
@@ -40,6 +41,8 @@
    [app.util.blob :as blob]
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
+   [buddy.core.codecs :as bc]
+   [buddy.core.hash :as bh]
    [clojure.set :as set]
    [cuerdas.core :as str]))
 
@@ -55,6 +58,9 @@
 (declare update-file-data!)
 (declare persist-file!)
 (declare get-file)
+
+(def ^:private catch-up-row-limit 128)
+(def ^:private catch-up-window (ct/duration "24h"))
 
 ;; --- SCHEMA
 
@@ -89,11 +95,22 @@
     [:vector {:min 1}
      [:map {:closed true}
       [:commit-id ::sm/uuid]
-      [:redo-changes [:vector cpc/schema:change]]
-      [:undo-changes [:vector cpc/schema:change]]]]]])
+      [:changes [:vector cpc/schema:change]]]]]])
 
-(def ^:private
-  schema:update-file-result
+(def ^:private schema:rejected-commits
+  [:map
+   [:commit-ids [:vector ::sm/uuid]]
+   [:failed-commit-id ::sm/uuid]
+   ;; The data the failed commit touches was invalid before it
+   [:preexisting-damage {:optional true} :boolean]
+   [:error
+    [:map
+     [:type :keyword]
+     [:code {:optional true} [:maybe :keyword]]
+     [:hint {:optional true} [:maybe :string]]
+     [:details {:optional true} [:vector :any]]]]])
+
+(def ^:private schema:update-file-result
   [:map {:title "update-file-result"}
    ;; The revision the file had before this update
    [:revn {:min 0} ::sm/int]
@@ -107,30 +124,70 @@
       [:revn {:min 0} ::sm/int]
       [:session-id ::sm/uuid]]]]
    ;; Commits not saved: the first one that failed and every later one
-   [:rejected {:optional true}
-    [:map
-     [:commit-ids [:vector ::sm/uuid]]
-     [:failed-commit-id ::sm/uuid]
-     ;; The data the failed commit touches was invalid before it
-     [:preexisting-damage {:optional true} :boolean]
-     [:error
-      [:map
-       [:type :keyword]
-       [:code {:optional true} [:maybe :keyword]]
-       [:hint {:optional true} [:maybe :string]]
-       [:details {:optional true} [:vector :any]]]]]]])
+   [:rejected {:optional true} schema:rejected-commits]])
 
-(def ^:private
-  schema:update-file-v2-result
-  (conj (assoc-in schema:update-file-result [1 :title] "update-file-v2-result")
-        ;; Opt-in only, and only when the request wrote a revision
-        [:saved-revn {:optional true :min 0} ::sm/int]
-        [:media-relinked {:optional true} ::sm/boolean]
-        [:repair {:optional true}
-         [:map
-          [:id ::sm/uuid]
-          [:revn {:min 0} ::sm/int]
-          [:changes [:vector cpc/schema:change]]]]))
+(def ^:private schema:confirmed-row
+  [:map {:closed true}
+   [:revn [::sm/int {:min 0}]]
+   [:id ::sm/uuid]])
+
+(def ^:private schema:save-recovery
+  [:or
+   [:map {:closed true}
+    [:mode [:enum :none :reload]]]
+   [:map {:closed true}
+    [:mode [:enum :wait :catch-up :reload]]
+    [:since [::sm/int {:min 0}]]
+    [:until [::sm/int {:min 0}]]
+    [:required [:vector {:min 1 :max catch-up-row-limit} schema:confirmed-row]]]])
+
+(def ^:private schema:update-file-v2-result
+  [:map {:title "update-file-v2-result" :closed true}
+   ;; The revision the file had before this update
+   [:revn {:min 0} ::sm/int]
+   [:vern {:min 0} ::sm/int]
+   [:written
+    [:vector {:max 2}
+     [:map {:closed true}
+      [:id ::sm/uuid]
+      [:revn {:min 0} ::sm/int]
+      [:kind [:enum :edit :repair]]]]]
+   [:recovery schema:save-recovery]
+   ;; Present only when the request wrote a revision
+   [:saved-revn {:optional true :min 0} ::sm/int]
+   [:edit-matches-request {:optional true} ::sm/boolean]
+   [:media-relinked {:optional true} ::sm/boolean]
+   [:repair {:optional true}
+    [:map
+     [:id ::sm/uuid]
+     [:revn {:min 0} ::sm/int]
+     [:changes [:vector cpc/schema:change]]]]
+   [:rejected {:optional true} schema:rejected-commits]])
+
+(def ^:private schema:get-file-changes
+  [:map {:title "get-file-changes" :closed true}
+   [:file-id ::sm/uuid]
+   [:since [::sm/int {:min 0}]]
+   [:vern [::sm/int {:min 0}]]
+   [:until {:optional true} [::sm/int {:min 0}]]
+   [:confirm-revn {:optional true} [::sm/int {:min 0}]]
+   [:confirm-id {:optional true} ::sm/uuid]])
+
+(def ^:private schema:get-file-changes-result
+  [:or
+   [:map {:closed true}
+    [:head [::sm/int {:min 0}]]
+    [:vern [::sm/int {:min 0}]]
+    [:reload :boolean]]
+   [:map {:closed true}
+    [:head [::sm/int {:min 0}]]
+    [:vern [::sm/int {:min 0}]]
+    [:through [::sm/int {:min 0}]]
+    [:rows [:vector [:merge schema:confirmed-row
+                     [:map
+                      [:session-id ::sm/uuid]
+                      [:changes [:vector cpc/schema:change]]]]]]
+    [:confirmed-row {:optional true} schema:confirmed-row]]])
 
 ;; --- HELPERS
 
@@ -220,18 +277,22 @@
                       groups))))
 
 (defn- commit-params
-  "Flattens the forward changes in edit order for `update-file-v2`.
-  Keeps both lists on each commit until validation selects what to save."
+  "Normalizes `update-file-v2` commits and flattens their changes in edit order."
   [{:keys [commits] :as params}]
-  (assoc params :redo-changes (into [] (mapcat :redo-changes) commits)))
+  (let [groups (mapv (fn [{:keys [commit-id changes]}]
+                       {:commit-id commit-id :redo-changes changes})
+                     commits)]
+    (assoc params
+           :redo-changes (into [] (mapcat :redo-changes) groups)
+           :commits groups)))
 
 (defn- update-file
   "The body of the `update-file` and `update-file-v2` commands. `params`
   carries the changes already normalized: the forward list in
-  `:redo-changes` and the per-commit groups, when present, in `:commits`.
-  Only v2 carries `:undo-changes` on each commit."
+  `:redo-changes` and the per-commit groups, when present, in `:commits`."
   [{:keys [::mtx/metrics ::db/conn] :as cfg}
-   {:keys [::rpc/profile-id id redo-changes] :as params}]
+   {:keys [::rpc/profile-id id redo-changes] :as params}
+   response-version]
 
   (files/check-edition-permissions! conn profile-id id)
   (db/xact-lock! conn id)
@@ -294,7 +355,7 @@
                                   (get :app.http/request)
                                   (errors/request->context))]
       (try
-        (-> (update-file* cfg params)
+        (-> (update-file* cfg params response-version)
             (rph/with-defer #(let [elapsed (tpoint)
                                    timings @(::validation-timings cfg)]
                                (l/dbg :hint "update-file"
@@ -346,7 +407,7 @@
    ::doc/added "1.17"
    ::db/transaction true}
   [cfg params]
-  (update-file cfg (legacy-params params)))
+  (update-file cfg (legacy-params params) :v1))
 
 (sv/defmethod ::update-file-v2
   {::rpc/id-type :file
@@ -370,16 +431,19 @@
   [cfg params]
   ;; The audit log, the webhooks and the telemetry keep the name of the
   ;; command this one replaces.
-  (-> (update-file cfg (commit-params params))
+  (-> (update-file cfg (commit-params params) :v2)
       (rph/with-meta {::audit/name "update-file"})))
+
+(defn- get-redo-digest
+  [data]
+  (bc/bytes->hex (bh/sha256 data)))
 
 (defn- encode-revision
   "The payload stored for a revision: the forward changes of the save and
-  the undo supplied by the client for those changes. The server does not
-  compute or apply that undo."
-  [redo-changes undo-changes]
+  an empty undo list, meaning no inverse was stored."
+  [redo-changes]
   (blob/encode {:redo-changes redo-changes
-                :undo-changes (vec undo-changes)}))
+                :undo-changes []}))
 
 (defn- insert-revision!
   "Writes the revision row of a save and its payload.
@@ -390,51 +454,125 @@
   the readers deployed today, and a later step can read the payload with a
   fallback to the column."
   [{:keys [::db/conn] :as cfg}
-   {:keys [id session-id profile-id created-at deleted-at file-id revn
-           version redo-changes undo-changes]}]
-  (db/insert! conn :file-change
-              {:id id
-               :kind fchanges/revision-kind
-               :session-id session-id
-               :profile-id profile-id
-               :created-at created-at
-               :updated-at created-at
-               :deleted-at deleted-at
-               :file-id file-id
-               :revn revn
-               :version version
-               :changes (blob/encode redo-changes)}
-              {::db/return-keys false})
+   {:keys [id session-id profile-id created-at deleted-at retained file-id revn
+           version redo-changes catch-up-vern]}]
+  (let [redo     (blob/encode redo-changes)
+        metadata (cond-> {}
+                   retained (assoc :retained true)
+                   (some? catch-up-vern) (assoc :catch-up-vern catch-up-vern
+                                                :catch-up-redo-sha256 (get-redo-digest redo)))]
+    (db/insert! conn :file-change
+                {:id id
+                 :kind fchanges/revision-kind
+                 :session-id session-id
+                 :profile-id profile-id
+                 :created-at created-at
+                 :updated-at created-at
+                 :deleted-at deleted-at
+                 :retained retained
+                 :file-id file-id
+                 :revn revn
+                 :version version
+                 :changes redo}
+                {::db/return-keys false})
 
-  (fdata/upsert! cfg {:id id
-                      :file-id file-id
-                      :type "revision"
-                      :created-at created-at
-                      :deleted-at deleted-at
-                      ;; A revision payload is a new row every save
-                      :storage-object-id nil
-                      :data (encode-revision redo-changes undo-changes)}))
+    (fdata/upsert! cfg (cond-> {:id id
+                                :file-id file-id
+                                :type "revision"
+                                :created-at created-at
+                                :deleted-at deleted-at
+                                ;; A revision payload is a new row every save
+                                :storage-object-id nil
+                                :data (encode-revision redo-changes)}
+                         (seq metadata) (assoc :metadata metadata)))))
 
 (defn- save-revisions
-  "Builds the rows in logical revision order. The edit owns its undo and
-  audit id. The repair owns only forward changes and uses the system session."
-  [file-change-id session-id revn redo-changes commits rejected repair]
-  (let [;; Rejection describes a suffix by commit position.
-        commits (cond-> commits
-                  rejected (subvec 0 (- (count commits) (count (:commit-ids rejected)))))
-        edit    {:id file-change-id
-                 :session-id session-id
-                 :redo-changes redo-changes
-                 :undo-changes (into [] (mapcat :undo-changes) (some-> commits rseq))}]
+  "Builds the rows in logical revision order. The edit owns the audit id
+  and the repair uses the system session."
+  [file-change-id session-id revn redo-changes repair]
+  (let [edit {:id file-change-id
+              :kind :edit
+              :session-id session-id
+              :redo-changes redo-changes}]
     (if repair
       (let [fix {:id (uuid/next)
+                 :kind :repair
                  :session-id repair-session-id
-                 :redo-changes (:changes repair)
-                 :undo-changes []}]
+                 :redo-changes (:changes repair)}]
         (if (:after-edit repair)
           [(assoc edit :revn (inc revn)) (assoc fix :revn (+ revn 2))]
           [(assoc fix :revn (inc revn)) (assoc edit :revn (+ revn 2))]))
       [(assoc edit :revn (inc revn))])))
+
+(def ^:private sql:save-predecessors
+  "SELECT s.id, s.revn, s.kind, s.label, s.created_at,
+          (s.deleted_at IS NULL OR s.deleted_at > now()) AS live
+     FROM file_change AS s
+    WHERE s.file_id = ? AND s.revn > ? AND s.revn <= ?
+      AND (s.label IS NULL OR s.kind = ?)
+    ORDER BY s.revn
+    LIMIT ?")
+
+(defn- contiguous-revisions?
+  [since until rows]
+  (and (= (- until since) (count rows))
+       (every? true? (map-indexed (fn [i row] (= (+ since i 1) (:revn row))) rows))))
+
+(defn- revision-candidate?
+  [{:keys [kind label]}]
+  (and (= fchanges/revision-kind kind) (nil? label)))
+
+(defn- recent-revision?
+  [cutoff {:keys [created-at]}]
+  (ct/is-after-or-equal? created-at cutoff))
+
+(defn- get-save-recovery
+  [{:keys [::db/conn ::timestamp]} {:keys [id] since :revn} until edit-matches?]
+  (cond
+    (= since until)
+    {:mode :none}
+
+    (> (- until since) catch-up-row-limit)
+    {:mode :reload}
+
+    :else
+    (let [rows (db/exec! conn [sql:save-predecessors id since until
+                               fchanges/revision-kind (inc catch-up-row-limit)])]
+      ;; A legacy row without a kind must not hide a duplicate. Age and
+      ;; expiry affect recovery but do not erase a complete identity proof.
+      (if (and (contiguous-revisions? since until rows)
+               (every? revision-candidate? rows))
+        (let [cutoff (ct/minus timestamp catch-up-window)
+              mode   (cond
+                       (not-every? #(and (:live %) (recent-revision? cutoff %)) rows)
+                       :reload
+
+                       (not (and edit-matches? (contains? cf/flags :file-catch-up)))
+                       :wait
+
+                       ;; The GET must also prove the one edit just written.
+                       (> (inc (count rows)) catch-up-row-limit)
+                       :reload
+
+                       :else
+                       :catch-up)]
+          {:mode mode
+           :since since
+           :until until
+           :required (mapv #(select-keys % [:id :revn]) rows)})
+        {:mode :reload}))))
+
+(defn- get-update-file-v2-result
+  [cfg {:keys [vern redo-changes] :as params} revn revisions rejected media-relinked]
+  (let [written   (mapv #(select-keys % [:id :revn :kind]) revisions)
+        ordinary? (and (= 1 (count written)) (nil? rejected) (not media-relinked))
+        matches?  (and ordinary? (= redo-changes (:redo-changes (peek revisions))))]
+    (cond-> {:revn revn
+             :vern vern
+             :written written
+             :recovery (get-save-recovery cfg params revn matches?)}
+      (seq written) (assoc :saved-revn (:revn (peek written)))
+      ordinary? (assoc :edit-matches-request matches?))))
 
 (defn- update-file*
   "Internal function, part of the update-file process, that encapsulates
@@ -446,14 +584,18 @@
   Only intended for internal use on this module."
   [{:keys [::db/conn ::timestamp] :as cfg}
    {:keys [profile-id file team features redo-changes commits session-id
-           repair-in-response skip-validate] :as params}]
+           repair-in-response skip-validate] :as params}
+   response-version]
 
   (fdata/with-tracked-pointers cfg (:id file)
 
-    (let [file (assoc file :features
-                      (-> features
-                          (set/difference cfeat/frontend-only-features)
-                          (set/union (:features file))))
+    (let [file-features (-> features
+                            (set/difference cfeat/frontend-only-features)
+                            (set/union (:features file)))
+          can-classify? (and (contains? cf/flags :file-catch-up)
+                             (not (:is-shared file))
+                             (= file-features (:features file)))
+          file          (assoc file :features file-features)
 
           ;; We need to preserve the original revn for the response
           revn
@@ -462,7 +604,9 @@
           file
           (binding [cfeat/*current*  features
                     cfeat/*previous* (:features file)]
-            (update-file-data! (assoc cfg ::repair-in-response repair-in-response) file
+            (update-file-data! (assoc cfg ::repair-in-response repair-in-response
+                                      ::classify-catch-up can-classify?)
+                               file
                                process-changes-and-validate
                                redo-changes commits skip-validate))
 
@@ -470,14 +614,16 @@
           redo-changes   (::redo-changes file)
           rejected       (::rejected file)
           media-relinked (::media-relinked file)
-          file           (dissoc file ::redo-changes ::rejected ::media-relinked)
+          catch-up-vern  (::catch-up-vern file)
+          file           (dissoc file ::redo-changes ::rejected ::media-relinked ::catch-up-vern)
 
           ;; A request whose first commit is rejected leaves the file as is
           saved?   (or (nil? rejected) (seq redo-changes))
           snapshot (when saved? (::snapshot file))
 
-          deleted-at
-          (ct/plus timestamp (ct/duration {:hours 1}))
+          retained   (contains? cf/flags :file-change-retention)
+          deleted-at (when-not retained
+                       (ct/plus timestamp (ct/duration {:hours 1})))
 
           ;; The id of the change row (xlog) goes to the audit event
           ;; too: a consumer that reads the event needs to know what the
@@ -490,7 +636,7 @@
 
           revisions
           (when saved?
-            (save-revisions file-change-id session-id revn redo-changes commits rejected repair))
+            (save-revisions file-change-id session-id revn redo-changes repair))
 
           response-repair
           (when (:after-edit repair)
@@ -538,8 +684,10 @@
                                                  timestamp
                                                  (ct/plus timestamp (ct/duration {:millis i})))
                                    :deleted-at deleted-at
+                                   :retained retained
                                    :file-id (:id file)
-                                   :version (:version file))))
+                                   :version (:version file)
+                                   :catch-up-vern catch-up-vern)))
 
         (persist-file! cfg (dissoc file ::repair))
 
@@ -564,10 +712,9 @@
                                      (not= file-change-id id) (assoc :repaired true)
                                      repair-in-response (assoc :revision-ids [id]))))))))
 
-      (with-meta (cond-> {:revn revn :lagged (get-lagged-changes conn params)}
-                   (and repair-in-response saved?)
-                   (assoc :saved-revn (:revn file))
-
+      (with-meta (cond-> (if (= :v2 response-version)
+                           (get-update-file-v2-result cfg params revn revisions rejected media-relinked)
+                           {:revn revn :lagged (get-lagged-changes conn params)})
                    media-relinked
                    (assoc :media-relinked true)
 
@@ -668,10 +815,10 @@
   same transaction); nothing is written to `file_data` here."
 
   [cfg {:keys [id] :as file} update-fn & args]
-  (let [file (update file :data (fn [data]
-                                  (-> data
-                                      (blob/decode)
-                                      (assoc :id id))))
+  (let [data (blob/decode (:data file))
+        file (assoc file :data (assoc data :id id))
+        cfg  (cond-> cfg
+               (not= id (:id data)) (dissoc ::classify-catch-up))
         libs (delay (bfc/get-resolved-file-libraries cfg file))
 
         need-migration?
@@ -1028,6 +1175,56 @@
   (and (same-entries? (:pages-index a) (:pages-index b))
        (same-entries? (dissoc a :pages-index) (dissoc b :pages-index))))
 
+(defn- ordinary-shape?
+  [objects id]
+  (loop [id id seen #{}]
+    (when-let [shape (get objects id)]
+      (and (= id (:id shape))
+           (not (contains? seen id))
+           (not-any? #(some? (get shape %))
+                     [:component-id :component-file :component-root :main-instance :shape-ref])
+           (or (= id uuid/zero)
+               (let [parent-id (:parent-id shape)
+                     children  (:shapes (get objects parent-id))]
+                 (and (vector? children)
+                      (some #{id} children)
+                      (recur parent-id (conj seen id)))))))))
+
+(defn- get-expected-rename
+  "Apply only the reproducible effect, without the generic change processor."
+  [data {:keys [type id page-id operations] :as change}]
+  (when (and (= :mod-obj type)
+             (= #{:type :id :page-id :operations} (set (keys change)))
+             (uuid? page-id)
+             (not= uuid/zero id)
+             (= 1 (count operations)))
+    (let [{op-type :type :keys [attr val] :as op} (first operations)]
+      (when (and (= :set op-type)
+                 (= :name attr)
+                 (string? val)
+                 (every? #{:type :attr :val :ignore-touched :ignore-geometry} (keys op))
+                 (every? boolean? (vals (select-keys op [:ignore-touched :ignore-geometry]))))
+        (let [objects-path [:pages-index page-id :objects]
+              objects      (get-in data objects-path)
+              shape        (get objects id)
+              children     (:shapes shape)]
+          (when (and (string? (:name shape))
+                     (or (nil? children) (= [] children))
+                     (ordinary-shape? objects id))
+            (assoc-in data (into objects-path [id :name]) val)))))))
+
+(defn- exactly-reproducible-redo?
+  [before after changes]
+  (when (seq changes)
+    (fdata/with-untracked
+      (let [expected (reduce (fn [data change]
+                               (or (get-expected-rename data change)
+                                   (reduced nil)))
+                             before changes)]
+        ;; Compare the whole persisted document, not just the shapes. A save
+        ;; can, for example, remove top-level nils that the client would keep.
+        (and expected (same-data? expected after))))))
+
 (defn- repair-after-edit
   [original edited libs changes errors control]
   (try
@@ -1219,7 +1416,13 @@
 
     (if-let [media-refs (-> @state :media-refs not-empty)]
       (relink-media cfg file media-refs)
-      file)))
+      (cond-> file
+        (and (::classify-catch-up cfg)
+             (not (::file-migrated cfg))
+             (not (::repair file))
+             (not (::rejected file))
+             (exactly-reproducible-redo? (:data original) (:data file) (::redo-changes file)))
+        (assoc ::catch-up-vern (:vern original))))))
 
 (defn- take-snapshot?
   "Defines the rule when file `data` snapshot should be saved."
@@ -1248,6 +1451,160 @@
        (filter :changes)
        (mapv (fn [row]
                (update row :changes blob/decode)))))
+
+(def ^:private catch-up-redo-limit (* 4 1024 1024))
+(def ^:private catch-up-decoded-limit (* 16 1024 1024))
+
+(def ^:private sql:catch-up-head
+  "SELECT f.id, f.revn, f.vern, f.version,
+          fd.metadata -> 'catch-up-boundary' AS boundary
+     FROM file AS f
+     JOIN project AS p ON (p.id = f.project_id AND p.deleted_at IS NULL)
+     JOIN team AS t ON (t.id = p.team_id AND t.deleted_at IS NULL)
+     LEFT JOIN file_data AS fd ON (fd.file_id = f.id AND fd.id = f.id
+                                  AND fd.type = 'main' AND fd.deleted_at IS NULL)
+    WHERE f.id = ? AND f.deleted_at IS NULL")
+
+(def ^:private sql:catch-up-candidates
+  "WITH candidates AS MATERIALIZED (
+     SELECT s.id, s.file_id, s.revn, s.session_id, s.kind, s.label, s.created_at,
+            (s.deleted_at IS NULL OR s.deleted_at > now()) AS live,
+            octet_length(s.changes) AS redo_size
+       FROM file_change AS s
+      WHERE s.file_id = ? AND s.revn > ? AND s.revn <= ?
+        AND (s.label IS NULL OR s.kind = ?)
+      ORDER BY s.revn
+      LIMIT ?
+   )
+   SELECT c.id, c.revn, c.session_id, c.kind, c.label, c.created_at, c.live, c.redo_size,
+          sum(c.redo_size) OVER () <= ? AS within_budget,
+          fd.metadata ->> 'catch-up-vern' AS vern,
+          fd.metadata ->> 'catch-up-redo-sha256' AS digest,
+          fd.type = 'revision'
+          AND (fd.deleted_at IS NULL OR fd.deleted_at > now())
+          AND (CASE fd.backend
+                 WHEN 'db' THEN fd.data IS NOT NULL AND fd.storage_object_id IS NULL
+                 WHEN 'storage' THEN fd.data IS NULL AND EXISTS (
+                   SELECT 1 FROM storage_object AS so
+                    WHERE so.id = fd.storage_object_id
+                      AND so.deleted_at IS NULL AND so.status = 'valid')
+                 ELSE false
+               END) AS payload_ready
+     FROM candidates AS c
+     LEFT JOIN file_data AS fd ON (fd.file_id = c.file_id AND fd.id = c.id)
+    ORDER BY c.revn")
+
+(def ^:private sql:catch-up-redo
+  "SELECT id, changes FROM file_change WHERE file_id = ? AND id = ANY(?)")
+
+(defn- valid-catch-up-boundary?
+  "Only an explicit boundary can prove the current epoch. Restoring a
+  snapshot can assign zero again, so `file.vern = 0` proves nothing alone."
+  [{:keys [boundary vern revn]} since]
+  (let [{kind :kind boundary-vern :vern boundary-revn :revn}
+        (some-> boundary db/decode-json-pgobject)]
+    (and (= vern boundary-vern)
+         (int? boundary-revn)
+         (<= 0 boundary-revn since revn)
+         (case kind
+           "genesis" (zero? boundary-vern)
+           "restore" (pos? boundary-revn)
+           false))))
+
+(defn- eligible-catch-up-row?
+  [vern {:keys [live session-id payload-ready within-budget redo-size digest]
+         row-vern :vern :as row}]
+  (and (revision-candidate? row)
+       live session-id payload-ready within-budget redo-size digest
+       (= (str vern) row-vern)))
+
+(defn- get-catch-up-candidates
+  [conn file-id since through vern confirm-revn confirm-id cutoff]
+  (let [end        (or confirm-revn through)
+        candidates (if (= since end)
+                     []
+                     (db/exec! conn [sql:catch-up-candidates file-id since end
+                                     fchanges/revision-kind (inc catch-up-row-limit) catch-up-redo-limit]))]
+    ;; Do not filter out bad or expired candidates before checking that each
+    ;; revision number has exactly one row.
+    (when (and (contiguous-revisions? since end candidates)
+               (every? #(eligible-catch-up-row? vern %) candidates)
+               (or (nil? confirm-id) (= confirm-id (:id (peek candidates))))
+               ;; The confirmation counts toward every budget and still has
+               ;; to be live, but it isn't one of the missing deltas.
+               (every? #(recent-revision? cutoff %)
+                       (if confirm-id (pop candidates) candidates)))
+      candidates)))
+
+(defn- get-catch-up-rows
+  [conn file-id candidates]
+  (if (empty? candidates)
+    []
+    (let [ids   (db/create-array conn "uuid" (map :id candidates))
+          blobs (into {} (map (juxt :id :changes)) (db/exec! conn [sql:catch-up-redo file-id ids]))]
+      (loop [candidates (seq candidates)
+             limit      catch-up-decoded-limit
+             result     []]
+        (if-let [{:keys [id digest] :as row} (first candidates)]
+          (let [bytes (get blobs id)]
+            ;; Verify the exact bytes against the server's classification
+            ;; before passing any length from the blob to the decoder.
+            (when (and bytes (= digest (get-redo-digest bytes)))
+              (when-let [{:keys [data uncompressed-size]}
+                         (try
+                           (blob/decode-bounded bytes limit)
+                           (catch Exception _ nil))]
+                (recur (next candidates)
+                       (- limit uncompressed-size)
+                       (conj result (assoc (select-keys row [:id :revn :session-id])
+                                           :changes data))))))
+          result)))))
+
+(defn- get-file-changes*
+  [{:keys [::db/conn] :as cfg}
+   {:keys [::rpc/profile-id file-id since until vern confirm-revn confirm-id]}]
+  (files/check-read-permissions! cfg profile-id file-id)
+  (let [{head :revn head-vern :vern :as file}
+        (db/get-with-sql conn [sql:catch-up-head file-id])
+        through (or until head)
+        result  {:head head :vern head-vern}
+        cutoff  (ct/minus (ct/now) catch-up-window)]
+    (or (when (and (contains? cf/flags :file-catch-up)
+                   (= vern head-vern)
+                   (<= since through head)
+                   (or (nil? confirm-revn)
+                       (and (< through confirm-revn)
+                            (= confirm-revn (inc through))
+                            (<= confirm-revn head)))
+                   (<= (- (or confirm-revn through) since) catch-up-row-limit)
+                   (valid-catch-up-boundary? file since)
+                   (not (fmg/need-migration? (fmigr/resolve-applied-migrations cfg file))))
+          (when-let [candidates (get-catch-up-candidates conn file-id since through vern
+                                                         confirm-revn confirm-id cutoff)]
+            (when-let [rows (get-catch-up-rows conn file-id candidates)]
+              (if confirm-id
+                (assoc result :through through :rows (pop rows)
+                       :confirmed-row {:revn confirm-revn :id confirm-id})
+                (assoc result :through through :rows rows)))))
+        (assoc result :reload true))))
+
+(sv/defmethod ::get-file-changes
+  "Read a complete reproducible revision range, or require a full file read."
+  {::doc/added "2.21"
+   ::doc/module :files
+   ::audit/skip true
+   ::rpc/id-type :file
+   ::sm/params schema:get-file-changes
+   ::sm/result schema:get-file-changes-result}
+  [cfg {:keys [confirm-revn confirm-id] :as params}]
+  (when (not= (some? confirm-revn) (some? confirm-id))
+    (ex/raise :type :validation
+              :code :params-validation
+              :hint "confirm-revn and confirm-id must be supplied together"))
+  (-> (db/transact! (::db/pool cfg)
+                    (fn [conn] (get-file-changes* (assoc cfg ::db/conn conn) params))
+                    {:read-only true :isolation :repeatable-read})
+      (rph/with-header "cache-control" "no-store")))
 
 (defn- send-notifications
   [cfg {:keys [team session-id profile-id repair-in-response]} file

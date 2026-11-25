@@ -28,7 +28,6 @@
    [app.main.data.websocket :as dws]
    [app.main.repo :as rp]
    [app.main.router :as rt]
-   [app.main.store :as st]
    [app.util.clipboard :as clipboard]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.sse :as sse]
@@ -963,18 +962,19 @@
             (->> stream
                  (rx/filter sse/end-of-stream?)
                  (rx/map sse/get-payload)
-                 (rx/mapcat (fn [_]
+                 (rx/mapcat (fn [restored-ids]
                               (rx/concat
                                (rx/of (dcm/clear-progress)
-                                      ;; (ntf/success (tr "dashboard.restore-success-notification"))
                                       (fetch-projects team-id)
                                       (fetch-deleted-files team-id)
                                       (fetch-projects team-id))
-                               (on-success))))
-                 (rx/catch (fn [error]
+                               (if (seq restored-ids)
+                                 (on-success restored-ids)
+                                 (on-error)))))
+                 (rx/catch (fn [_]
                              (rx/concat
                               (rx/of (dcm/clear-progress))
-                              (on-error error))))))))))))
+                              (on-error))))))))))))
 
 
 
@@ -990,14 +990,15 @@
             (get state :deleted-files)
 
             on-success
-            (fn []
-              (if (= 1 (count ids))
-                (let [fname (get-in deleted-files [(first ids) :name])]
-                  (rx/of (ntf/success (tr "dashboard.restore-success-notification" fname))))
-                (rx/of (ntf/success (tr "dashboard.restore-files-success-notification" (count ids))))))
+            (fn [restored-ids]
+              (let [restored-count (count restored-ids)]
+                (if (= 1 restored-count)
+                  (let [fname (get-in deleted-files [(first restored-ids) :name])]
+                    (rx/of (ntf/success (tr "dashboard.restore-success-notification" fname))))
+                  (rx/of (ntf/success (tr "dashboard.restore-files-success-notification" restored-count))))))
 
             on-error
-            (fn [_cause]
+            (fn []
               (if (= 1 (count ids))
                 (let [fname (get-in deleted-files [(first ids) :name])]
                   (rx/of (ntf/error (tr "dashboard.errors.error-on-restore-file" fname))))
@@ -1030,10 +1031,11 @@
                        (get state :deleted-files))
 
             on-success
-            #(st/emit! (ntf/success (tr "dashboard.restore-success-notification" name)))
+            (fn [_]
+              (rx/of (ntf/success (tr "dashboard.restore-success-notification" name))))
 
             on-error
-            #(st/emit! (ntf/error (tr "dashboard.errors.error-on-restoring-project" name)))]
+            #(rx/of (ntf/error (tr "dashboard.errors.error-on-restoring-project" name)))]
 
         (rx/of (ev/event
                 {::ev/name "restore-files"

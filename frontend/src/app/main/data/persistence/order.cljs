@@ -105,7 +105,8 @@
   local edit at the corresponding row)."
   [{:keys [latest] :as order} {:keys [revn] :as message}]
   (let [base (message-base message)]
-    (cond-> (update order :latest max revn)
+    (cond-> (assoc (update order :latest max revn)
+                   :incremental-base (and (:incremental-base order) (:catch-up-verified message)))
       (and (= base latest)
            (proven-base? order base)
            (= (- revn base) (count (:revision-ids message))))
@@ -120,46 +121,124 @@
                       (into {} (filter #(> (key %) (- revn history-limit)))
                             (into seen (revision-rows message))))))))
 
-(defn- distinct-interval?
-  [sent target rows]
-  (and (= (- target sent) (count rows))
-       (= (count rows) (count (into #{} (map :id) (mapcat val rows))))
-       (every? (fn [[n revisions]]
-                 (and (<= (inc sent) n target)
-                      (= 1 (count revisions))
-                      (uuid? (:id (first revisions)))))
-               rows)))
+(defn get-catch-up-rows
+  "Verifies the response against revisions applied while it was in flight.
+  Returns only rows still missing, or nil if the range contradicts the view."
+  [{:keys [vern through seen] :as order} since until response]
+  (when (map? response)
+    (let [{end :through :keys [head rows]} response]
+      (when (and (= vern (:vern response))
+                 (not (:reload response))
+                 (proven-base? order (:latest order))
+                 (int? head) (int? end)
+                 (<= since through end head)
+                 (= end (or until head))
+                 (vector? rows)
+                 (<= (count rows) history-limit)
+                 (= (- end since) (count rows))
+                 (= (count rows) (count (into #{} (map :id) rows)))
+                 (every? (fn [[n row]]
+                           (let [revn (:revn row)
+                                 id   (:id row)]
+                             (and (= revn n) (uuid? id) (vector? (:changes row))
+                                  (or (> revn through) (= id (get seen revn))))))
+                         (map vector (range (inc since) (inc end)) rows)))
+        (into [] (filter #(> (:revn %) through)) rows)))))
+
+(defn- rejected-suffix?
+  [commits {:keys [commit-ids failed-commit-id error]}]
+  (and (vector? commit-ids)
+       (<= 1 (count commit-ids) (count commits))
+       (uuid? failed-commit-id)
+       (= failed-commit-id (first commit-ids))
+       (= commit-ids (mapv :commit-id (subvec commits (- (count commits) (count commit-ids)))))
+       (keyword? (:type error))))
+
+(defn- written-rows?
+  [commits {:keys [revn written saved-revn rejected repair media-relinked edit-matches-request] :as answer}]
+  (when (and (vector? written) (<= (count written) 2))
+    (let [accepted (if rejected
+                     (subvec commits 0 (- (count commits) (count (:commit-ids rejected))))
+                     commits)
+          saved?   (or (not rejected) (boolean (some (comp seq :changes) accepted)))
+          kinds    (mapv :kind written)]
+      (and (= saved? (boolean (seq written)))
+           (every? uuid? (map :id written))
+           (= (count written) (count (into #{} (map :id) written)))
+           (= (map :revn written) (range (inc revn) (+ revn 1 (count written))))
+           (or (not (contains? answer :media-relinked)) (boolean? media-relinked))
+           (if saved?
+             (= saved-revn (:revn (peek written)))
+             (not (contains? answer :saved-revn)))
+           (case kinds
+             [:edit :repair]
+             (and (map? repair)
+                  (= (select-keys repair [:id :revn])
+                     (select-keys (peek written) [:id :revn]))
+                  (vector? (:changes repair))
+                  (not media-relinked))
+
+             [:repair :edit]
+             (not (contains? answer :repair))
+
+             ([] [:edit])
+             (not (or (contains? answer :repair) media-relinked))
+
+             false)
+           (if (and (= [:edit] kinds) (not rejected))
+             (boolean? edit-matches-request)
+             (not (contains? answer :edit-matches-request)))))))
+
+(defn valid-save-response?
+  "Checks the POST confirmation against the exact request sent. Recovery
+  evidence is separate: an unusable proof does not undo a confirmed write."
+  [{sent :revn sent-vern :vern :keys [commits]} answer]
+  (when (map? answer)
+    (let [{:keys [revn vern rejected]} answer]
+      (and (int? revn) (<= 0 sent revn)
+           (int? vern) (= sent-vern vern)
+           (or (not (contains? answer :rejected))
+               (and (map? rejected) (rejected-suffix? commits rejected)))
+           (written-rows? commits answer)))))
+
+(defn- get-required-revisions
+  [sent {:keys [revn written recovery]}]
+  (when (map? recovery)
+    (let [{:keys [mode since until required]} recovery]
+      (cond
+        (and (= sent revn) (= {:mode :none} recovery))
+        {}
+
+        (and (contains? #{:wait :catch-up :reload} mode)
+             (= sent since) (= revn until) (< sent revn)
+             (vector? required)
+             (= (- revn sent) (count required))
+             (<= (count required) history-limit)
+             (= (map :revn required) (range (inc sent) (inc revn)))
+             (every? uuid? (map :id required))
+             (= (+ (count required) (count written))
+                (count (into #{} (map :id) (concat required written)))))
+        (into {} (map (juxt :revn :id)) required)))))
 
 (defn rejected-base
-  "The predecessor interval of a fully rejected request, which wrote no
-  row of its own. Nil if the response does not establish that interval."
-  [sent {:keys [revn lagged]}]
-  (let [rows (group-by :revn (filter #(> (:revn %) sent) lagged))]
-    (when (distinct-interval? sent revn rows)
-      {:target revn
-       :required (into {} (map (fn [[n [row]]] [n (:id row)])) rows)})))
+  "The predecessor interval of a rejected request that wrote no row of
+  its own, or nil when the server cannot prove the whole interval."
+  [sent {:keys [revn] :as answer}]
+  (when-let [required (get-required-revisions sent answer)]
+    {:target revn :required required}))
 
 (defn save-revisions
-  "Extracts the required predecessors and the written rows by revision,
-  not by the server's legacy created-at ordering. Returns nil if the
-  response does not describe an unambiguous interval after `sent`."
-  [sent session-id {:keys [revn saved-revn lagged repair]}]
-  (let [edit-revn (if repair (dec saved-revn) saved-revn)
-        target    (dec edit-revn)
-        by-revn   (group-by :revn (filter #(> (:revn %) sent) lagged))
-        row       #(first (get by-revn %))
-        edit      (row edit-revn)
-        repaired  (when repair (row saved-revn))]
-    (when (and (<= sent revn target (inc revn))
-               (if repair (= revn target) true)
-               (distinct-interval? sent saved-revn by-revn)
-               (= session-id (:session-id edit))
-               (or (nil? repair)
-                   (= repair (select-keys repaired [:id :revn :changes]))))
-      {:target target
-       :required (into {} (map (fn [[n [r]]] [n (:id r)]))
-                       (filter #(<= (key %) target) by-revn))
-       :revision-ids (cond-> [(:id edit)] repair (conj (:id repaired)))})))
+  "Proof needed to settle a confirmed edit. A repair written before the
+  edit must also have applied by ID; one written after it applies inline."
+  [sent {:keys [written] :as answer}]
+  (when-let [required (get-required-revisions sent answer)]
+    (let [[first-row second-row] written
+          repair-first (= :repair (:kind first-row))
+          edit         (if repair-first second-row first-row)]
+      {:target (dec (:revn edit))
+       :required (cond-> required repair-first (assoc (:revn first-row) (:id first-row)))
+       :own (select-keys edit [:revn :id])
+       :revision-ids (if repair-first [(:id edit)] (mapv :id written))})))
 
 (defn save-decision
   [{:keys [latest through seen gap]} {:keys [target required]}]

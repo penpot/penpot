@@ -394,8 +394,11 @@
     (watch [_ _ stream]
       (log/debug :hint "fetch bundle" :file-id (dm/str file-id))
 
-      (let [stopper-s (rx/filter (ptk/type? ::finalize-workspace) stream)]
-        (->> (rx/zip (rp/cmd! :get-file {:id file-id :features features})
+      (let [stopper-s (rx/filter (ptk/type? ::finalize-workspace) stream)
+            fresh-read (contains? cf/flags :file-catch-up)
+            params    (cond-> {:id file-id :features features}
+                        fresh-read (with-meta {::rp/cache "no-store"}))]
+        (->> (rx/zip (rp/cmd! :get-file params)
                      (get-file-object-thumbnails file-id))
              (rx/take 1)
              (rx/mapcat
@@ -403,7 +406,8 @@
                 (->> (resolve-file file)
                      (rx/map (fn [file]
                                (log/trace :hint "file resolved" :file-id file-id)
-                               {:file file
+                               {:file (cond-> file
+                                        fresh-read (vary-meta assoc ::dps/fresh-file-read true))
                                 :file-id file-id
                                 :features features
                                 :thumbnails thumbnails})))))
@@ -448,6 +452,18 @@
         :else
         (update state :workspace-global dissoc :read-only?))
       state)))
+
+(defmethod ptk/resolve ::replace-restored-file
+  [_ {:keys [id] :as file}]
+  (ptk/reify ::replace-restored-file
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (clear-version-preview)
+          (assoc-in [:files id] file)
+          (assoc :workspace-undo {})
+          (update :workspace-local dissoc :edition :edit-path)
+          (assoc-in [:workspace-local :selected] (d/ordered-set))))))
 
 (defn initialize-workspace
   [team-id file-id]
@@ -650,11 +666,13 @@
                     (rx/filter dch/commit?)
                     (rx/map deref)
                     (rx/mapcat
-                     (fn [{:keys [save-undo? undo-changes redo-changes undo-group tags stack-undo? selected-before translation?]}]
+                     (fn [{:keys [save-undo? undo-changes redo-changes undo-group tags stack-undo?
+                                  selected-before translation? file-id file-vern]}]
                        (if (and save-undo? (seq undo-changes))
                          (let [entry {:undo-changes undo-changes
                                       :redo-changes redo-changes
                                       :undo-group undo-group
+                                      :origins #{[file-id file-vern undo-group]}
                                       :tags tags
                                       :selected-before selected-before
                                       :translation (boolean translation?)}]

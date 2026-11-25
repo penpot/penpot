@@ -289,13 +289,16 @@
 
 ;; --- MUTATION: Delete Project
 
+(def ^:private sql:mark-project-deleted
+  "UPDATE project
+      SET deleted_at = LEAST(deleted_at, ?::timestamptz)
+    WHERE id = ?
+   RETURNING id, is_default, team_id, name, created_at, modified_at, deleted_at")
+
 (defn- delete-project
   [{:keys [::db/conn] :as cfg} team project-id]
   (let [delay   (ldel/get-deletion-delay team)
-        project (db/update! conn :project
-                            {:deleted-at (ct/in-future delay)}
-                            {:id project-id}
-                            {::db/return-keys true})]
+        project (db/exec-one! conn [sql:mark-project-deleted (ct/in-future delay) project-id])]
 
     (when (:is-default project)
       (ex/raise :type :validation

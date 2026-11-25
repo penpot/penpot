@@ -7,23 +7,20 @@
 (ns backend-tests.file-change-retention-test
   "Retention of `file_change` rows through the file lifecycle.
 
-  A file has two kinds of row. Durable history: the snapshots, which a restore
-  brings back. And ephemeral revisions: the xlog of an edit, born already
-  scheduled for deletion one hour later, which nobody needs once the sessions
-  that were going to read them are gone. The `kind` column tells them apart.
-
-  The invariant under test is that a deletion date is assigned once and never
-  moved: restoring a file must not unmark a revision, and deleting a file must
-  not push a revision's date out to the trash lifetime. When either happens the
-  revision becomes invisible to `objects-gc`, which only looks at rows that
-  carry a date, and it stays in the table for ever."
+  Retained revisions follow a file into and out of the trash. Expiring
+  revisions keep the one-hour schedule they were born with, independent of
+  the trash. Snapshots keep their separate policy."
   (:require
+   [app.binfile.common :as bfc]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as db]
+   [app.features.fdata :as fdata]
    [app.features.file-changes :as fchanges]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
+   [app.tasks.objects-gc :as objects-gc]
    [app.util.blob :as blob]
    [backend-tests.helpers :as th]
    [clojure.test :as t]))
@@ -107,11 +104,208 @@
   [id]
   (th/db-get :file {:id id} {::db/remove-deleted false}))
 
+(defn- get-revision-data
+  [row]
+  (db/run! th/*system*
+           (fn [cfg]
+             (->> (fdata/resolve-file-data cfg row)
+                  :data
+                  blob/decode))))
+
 (defn- restore-file
   [file-id]
   (db/tx-run! th/*system*
               (fn [{:keys [::db/conn]}]
                 (#'files/restore-files conn [file-id]))))
+
+(defn- save-file
+  [command profile file]
+  (let [changes [(th/add-rect-change (first (get-in file [:data :pages])) (uuid/next))]
+        params  {::th/type command
+                 ::rpc/profile-id (:id profile)
+                 :id (:id file)
+                 :session-id (uuid/next)
+                 :revn (:revn file)
+                 :vern (:vern file)
+                 :features (:features file)}
+        params  (if (= :update-file command)
+                  (assoc params :changes changes)
+                  (assoc params :commits [{:commit-id (uuid/next) :changes changes}]))
+        result  (th/command! params)]
+    (t/is (nil? (:error result)))
+    (-> result :result (get (if (= :update-file command) :lagged :written)) peek :id)))
+
+(defn- request-delete
+  [profile file]
+  (let [result (th/command! {::th/type :delete-file
+                             ::rpc/profile-id (:id profile)
+                             :id (:id file)})]
+    (t/is (nil? (:error result)))
+    (th/run-pending-jobs)))
+
+(defn- request-restore
+  [profile file]
+  (let [result (th/command! {::th/type :restore-deleted-team-files
+                             ::rpc/profile-id (:id profile)
+                             :team-id (:default-team-id profile)
+                             :ids #{(:id file)}})]
+    (t/is (nil? (:error result)))
+    (-> result :result th/consume-sse peek peek)))
+
+(t/deftest new-revisions-and-payloads-expire-only-without-retention
+  (binding [ct/*clock* (ct/fixed-clock test-now)]
+    (let [[profile off-file] (create-file 1)
+          [v1-owner v1-file]  (create-file 2)
+          [v2-owner v2-file]  (create-file 3)
+          old-id             (binding [cf/flags (disj cf/flags :file-change-retention)]
+                               (save-file :update-file profile off-file))
+          v1-id              (binding [cf/flags (conj cf/flags :file-change-retention)]
+                               (save-file :update-file v1-owner v1-file))
+          v2-id              (binding [cf/flags (conj cf/flags :file-change-retention)]
+                               (save-file :update-file-v2 v2-owner v2-file))]
+      (t/is (false? (:retained (find-change old-id))))
+      (t/is (not (:retained (fdata/decode-metadata (:metadata (find-file-data (:id off-file) old-id))))))
+      (t/is (= (ct/plus test-now revision-lifetime) (:deleted-at (find-change old-id))))
+      (t/is (= (ct/plus test-now revision-lifetime) (:deleted-at (find-file-data (:id off-file) old-id))))
+      (binding [ct/*clock* (ct/fixed-clock (ct/plus test-now (ct/duration {:hours 2})))]
+        (th/run-task! :objects-gc {}))
+      (t/is (nil? (find-change old-id)))
+      (t/is (nil? (find-file-data (:id off-file) old-id)))
+      (doseq [[file id] [[v1-file v1-id] [v2-file v2-id]]]
+        (let [row     (find-change id)
+              payload (find-file-data (:id file) id)]
+          (t/is (true? (:retained row)))
+          (t/is (nil? (:deleted-at row)))
+          (t/is (true? (:retained (fdata/decode-metadata (:metadata payload)))))
+          (t/is (nil? (:deleted-at payload)))
+          (t/is (seq (:redo-changes (blob/decode (:data payload))))))))))
+
+(t/deftest a-restored-file-keeps-its-offloaded-revision
+  (binding [ct/*clock* (ct/fixed-clock test-now)]
+    (let [[profile file] (create-file 1)
+          file-id        (:id file)
+          revision-id    (binding [cf/flags (conj cf/flags :file-change-retention)]
+                           (save-file :update-file profile file))
+          payload        (blob/decode (:data (find-file-data file-id revision-id)))]
+      (t/is (pos? (:offloaded (th/run-task! :offload-file-data {:file-id file-id}))))
+      (let [offloaded (find-file-data file-id revision-id)]
+        (t/is (= "storage" (:backend offloaded)))
+        (t/is (true? (:retained (fdata/decode-metadata (:metadata offloaded)))))
+        (t/is (= [revision-id] (mapv :id (th/db-query :file-change {:file-id file-id
+                                                                    :kind fchanges/revision-kind}))))
+        (t/is (= payload (get-revision-data offloaded))))
+      (request-delete profile file)
+      (let [deadline (:deleted-at (find-file file-id))]
+        (t/is (= deadline (:deleted-at (find-change revision-id))))
+        (t/is (= deadline (:deleted-at (find-file-data file-id revision-id))))
+        (t/is (= #{file-id} (request-restore profile file)))
+        (binding [ct/*clock* (ct/fixed-clock deadline)]
+          (th/run-task! :objects-gc {})))
+      (let [row      (find-change revision-id)
+            restored (find-file-data file-id revision-id)]
+        (t/is (true? (:retained row)))
+        (t/is (nil? (:deleted-at row)))
+        (t/is (nil? (:deleted-at restored)))
+        (t/is (= payload (get-revision-data restored)))))))
+
+(t/deftest a-restore-admitted-before-expiry-keeps-both-rows-during-gc
+  (binding [ct/*clock* (ct/fixed-clock test-now)]
+    (let [[profile file] (create-file 1)
+          file-id        (:id file)
+          revision-id    (binding [cf/flags (conj cf/flags :file-change-retention)]
+                           (save-file :update-file profile file))
+          payload        (blob/decode (:data (find-file-data file-id revision-id)))
+          restore        @#'files/restore-files
+          admitted       (promise)
+          release        (promise)]
+      (request-delete profile file)
+      (let [deadline (:deleted-at (find-file file-id))]
+        (with-redefs-fn {#'files/restore-files
+                         (fn [conn ids]
+                           (deliver admitted true)
+                           (when (= ::timeout (deref release 15000 ::timeout))
+                             (throw (ex-info "Timed out waiting for GC" {})))
+                           (restore conn ids))}
+          (fn []
+            (let [restoring (future
+                              (binding [ct/*clock* (ct/fixed-clock (ct/minus deadline (ct/duration {:millis 1})))]
+                                (request-restore profile file)))]
+              (try
+                (t/is (= true (deref admitted 10000 ::timeout)))
+                (binding [ct/*clock* (ct/fixed-clock deadline)]
+                  (th/run-task! :objects-gc {}))
+                (t/is (some? (find-change revision-id)))
+                (t/is (some? (find-file-data file-id revision-id)))
+                (finally
+                  (deliver release true)))
+              (t/is (= #{file-id} (deref restoring 10000 ::timeout)))))))
+      (t/is (nil? (:deleted-at (find-file file-id))))
+      (let [restored (find-file-data file-id revision-id)]
+        (t/is (nil? (:deleted-at (find-change revision-id))))
+        (t/is (nil? (:deleted-at restored)))
+        (t/is (= payload (some-> restored :data blob/decode))))
+      (t/is (= 1 (:revn (bfc/get-file th/*system* file-id :realize? true)))))))
+
+(t/deftest gc-at-the-deadline-prevents-restore-before-the-file-row-is-deleted
+  (binding [ct/*clock* (ct/fixed-clock test-now)]
+    (let [[profile file] (create-file 1)
+          file-id        (:id file)
+          revision-id    (binding [cf/flags (conj cf/flags :file-change-retention)]
+                           (save-file :update-file profile file))
+          purge-files    @#'objects-gc/delete-files-chunk
+          rows-deleted   (promise)
+          release        (promise)]
+      (request-delete profile file)
+      (binding [ct/*clock* (ct/fixed-clock (:deleted-at (find-file file-id)))]
+        (with-redefs-fn {#'objects-gc/delete-files-chunk
+                         (fn [cfg ids]
+                           (deliver rows-deleted true)
+                           (when (= ::timeout (deref release 15000 ::timeout))
+                             (throw (ex-info "Timed out waiting for restore" {})))
+                           (purge-files cfg ids))}
+          (fn []
+            (let [collecting (future (th/run-task! :objects-gc {}))]
+              (try
+                (t/is (= true (deref rows-deleted 10000 ::timeout)))
+                (t/is (some? (find-file file-id)))
+                (t/is (nil? (find-change revision-id)))
+                (t/is (nil? (find-file-data file-id revision-id)))
+                (t/is (= #{} (request-restore profile file)))
+                (finally
+                  (deliver release true)))
+              (t/is (map? (deref collecting 10000 ::timeout)))))))
+      (t/is (nil? (find-file file-id))))))
+
+(t/deftest permanent-delete-collects-an-offloaded-revision-and-its-file
+  (binding [ct/*clock* (ct/fixed-clock test-now)]
+    (let [[profile file] (create-file 1)
+          file-id        (:id file)
+          revision-id    (binding [cf/flags (conj cf/flags :file-change-retention)]
+                           (save-file :update-file profile file))]
+      (th/run-task! :offload-file-data {:file-id file-id})
+      (let [storage-id (:storage-object-id (find-file-data file-id revision-id))]
+        (t/is (uuid? storage-id))
+        (request-delete profile file)
+        (binding [ct/*clock* (ct/fixed-clock (ct/plus test-now (ct/duration {:days 1})))]
+          (let [result (th/command! {::th/type :permanently-delete-team-files
+                                     ::rpc/profile-id (:id profile)
+                                     :team-id (:default-team-id profile)
+                                     :ids #{file-id}})]
+            (t/is (nil? (:error result)))
+            (t/is (= #{file-id} (-> result :result th/consume-sse peek peek))))
+          (t/is (= #{} (request-restore profile file)))
+          (th/run-pending-jobs)
+          (t/is (= (ct/now) (:deleted-at (find-change revision-id))))
+          (t/is (= (ct/now) (:deleted-at (find-file-data file-id revision-id))))
+          (th/run-task! :objects-gc {})
+          (t/is (nil? (find-change revision-id)))
+          (t/is (nil? (find-file-data file-id revision-id)))
+          (t/is (nil? (find-file file-id)))
+          (t/is (= #{} (request-restore profile file)))
+          (t/is (some? (:touched-at (th/db-get :storage-object {:id storage-id}))))
+          (th/run-task! :storage-gc-touched {:skip-delay true})
+          (t/is (some? (:deleted-at (th/db-get :storage-object {:id storage-id}
+                                               {::db/remove-deleted false})))))))))
 
 (t/deftest restoring-a-file-leaves-the-revision-schedule-alone
   (binding [ct/*clock* (ct/fixed-clock test-now)]
@@ -169,6 +363,7 @@
                                               :label      "internal/snapshot/1"
                                               :deleted-at system-at})]
 
+      (th/db-update! :file {:deleted-at trash-at} {:id file-id})
       (th/run-task! :delete-object {:object     :file
                                     :deleted-at trash-at
                                     :id         file-id})
@@ -229,9 +424,11 @@
                               {:created-at old-at
                                :deleted-at revision-at})]
 
-      (th/run-task! :delete-object {:object     :file
-                                    :deleted-at (ct/in-future {:days 7})
-                                    :id         file-id})
+      (let [trash-at (ct/in-future {:days 7})]
+        (th/db-update! :file {:deleted-at trash-at} {:id file-id})
+        (th/run-task! :delete-object {:object     :file
+                                      :deleted-at trash-at
+                                      :id         file-id}))
 
       (t/testing "deleting the file leaves the revision schedule alone"
         (t/is (= revision-at (:deleted-at (find-change revision-id))))
@@ -268,6 +465,7 @@
       (insert-file-data file-id rev-id {:created-at old-at :deleted-at rev-at})
       (insert-file-data file-id snap-id {:type "snapshot" :created-at old-at})
 
+      (th/db-update! :file {:deleted-at trash-at} {:id file-id})
       (th/run-task! :delete-object {:object     :file
                                     :deleted-at trash-at
                                     :id         file-id})

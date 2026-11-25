@@ -416,6 +416,78 @@
     (t/is (= 0 (:index (forget undo-state #{g2} 2)))
           "a cut history cannot point past its end")))
 
+(t/deftest replacing-a-library-cuts-a-stacked-action-even-in-redo-history
+  (let [consumer (uuid/next)
+        library  (uuid/next)
+        page-id  (uuid/next)
+        [earlier group stacked later] (repeatedly 4 uuid/next)
+        add      (fn [state name id file-id vern stack?]
+                   (ptk/update (dwu/append-undo (assoc (entry page-id name id)
+                                                       :origins #{[file-id vern id]})
+                                                stack?)
+                               state))
+        state    (-> {}
+                     (add "Earlier" earlier consumer 0 false)
+                     (add "Start group" group consumer 0 false)
+                     (add "Continue group" group consumer 0 false)
+                     (add "Update library" stacked library 19 true)
+                     (add "Later" later consumer 0 false))
+        with-redo (ptk/update (dwu/materialize-undo [] -1) state)
+        cut      (:workspace-undo (dwu/forget-other-file-versions with-redo library 20))]
+    (t/is (= [earlier group group later] (mapv :undo-group (get-in state [:workspace-undo :items]))))
+    (t/is (= [earlier] (mapv :undo-group (:items cut))))
+    (t/is (= -1 (:index cut)) "the retained entry is still in redo history")))
+
+(t/deftest replacing-a-library-discards-an-open-transaction-without-cutting-unrelated-history
+  (let [consumer (uuid/next)
+        library  (uuid/next)
+        page-id  (uuid/next)
+        earlier  (entry page-id "Earlier" (uuid/next))
+        group    (uuid/next)
+        edit     (assoc (entry page-id "Edit two files" group) :origins #{[consumer 0 group] [library 19 group]})
+        tx       (js/Symbol)
+        state    (ptk/update (dwu/append-undo earlier false) {})
+        open     (->> state
+                      (ptk/update (dwu/start-undo-transaction tx))
+                      (ptk/update (dwu/append-undo edit false)))
+        cut      (dwu/forget-other-file-versions open library 20)
+        closed   (ptk/update (dwu/commit-undo-transaction tx) cut)]
+    (t/is (empty? (get-in cut [:workspace-undo :transaction :undo-changes])))
+    (t/is (= group (get-in cut [:workspace-undo :transaction :commit-group])))
+    (t/is (= (get-in state [:workspace-undo :items]) (get-in closed [:workspace-undo :items]))
+          "closing the discarded transaction does not re-add its edits")
+    (t/is (= 0 (get-in closed [:workspace-undo :index])))))
+
+(t/deftest replacing-a-library-cuts-an-action-recorded-in-a-closed-transaction
+  (let [consumer (uuid/next)
+        library  (uuid/next)
+        page-id  (uuid/next)
+        [g1 g2]  (repeatedly 2 uuid/next)
+        local    (assoc (entry page-id "Consumer" g1) :origins #{[consumer 0 g1]})
+        external (assoc (entry page-id "Library" g2) :origins #{[library 19 g2]})
+        tx       (js/Symbol)
+        state    (->> {}
+                      (ptk/update (dwu/start-undo-transaction tx))
+                      (ptk/update (dwu/append-undo local false))
+                      (ptk/update (dwu/append-undo external false))
+                      (ptk/update (dwu/commit-undo-transaction tx)))
+        cut      (:workspace-undo (dwu/forget-other-file-versions state library 20))]
+    (t/is (= 1 (count (get-in state [:workspace-undo :items]))))
+    (t/is (= [0 -1] [(count (:items cut)) (:index cut)]))))
+
+(t/deftest replacing-a-library-keeps-history-of-the-installed-version
+  (let [library (uuid/next)
+        page-id (uuid/next)
+        group   (uuid/next)
+        tx      (js/Symbol)
+        edit    (assoc (entry page-id "Installed version" group) :origins #{[library 19 group]})
+        state   (->> {}
+                     (ptk/update (dwu/append-undo edit false))
+                     (ptk/update (dwu/start-undo-transaction tx))
+                     (ptk/update (dwu/append-undo edit false)))]
+    (t/is (= state (dwu/forget-other-file-versions state library 19))
+          "unaffected undo and an unaffected open transaction stay intact")))
+
 ;; Scenario: the workspace opens and then reloads twice (a peer's restore,
 ;; the rollback fallback), each reload running `initialize-workspace` again
 ;; without leaving the workspace; then one commit is made. Proves: each

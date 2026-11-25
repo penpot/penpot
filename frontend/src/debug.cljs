@@ -668,7 +668,7 @@
                                   (> times 1)  (update-in hook [:faults id :times] dec)
                                   :else        (update hook :faults dissoc id)))))]
     (if-let [{:keys [fault commit]} (get-in old [:faults id])]
-      (update-in params [:commits (min commit (dec (count commits))) :redo-changes]
+      (update-in params [:commits (min commit (dec (count commits))) :changes]
                  conj (save-fault-marker fault))
       params)))
 

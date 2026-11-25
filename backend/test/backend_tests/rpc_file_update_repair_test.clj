@@ -178,8 +178,8 @@
                       opts)))
 
 (defn- commit
-  [redo undo]
-  {:commit-id (uuid/next) :redo-changes redo :undo-changes undo})
+  [changes]
+  {:commit-id (uuid/next) :changes changes})
 
 (defn- create-image
   [file-id]
@@ -195,35 +195,41 @@
   (with-full-repair-flags
     (fn []
       (let [{:keys [file-id page-id shape-b] :as ctx} (setup-file :is-shared true)
-            broken   (break-frame ctx)
-            n        (:revn broken)
-            rename   (set-attr page-id shape-b :name "edited")
-            redo     [{:type :mod-page :id page-id :name "edited page"} rename]
-            undo     [(set-attr page-id shape-b :name "rect")]
-            messages (atom [])
-            audited  (atom nil)
-            session  (uuid/next)
-            out      (with-redefs [audit/submit (fn [_ event] (reset! audited event))
-                                   mbus/pub! (fn [_ & {:keys [message]}]
-                                               (swap! messages conj message))]
-                       (update-file-v2 ctx n [(commit redo undo)] :session-id session))
-            result   (:result out)
-            [u r]    (->> (change-rows file-id)
-                          (filter #(> (:revn %) n))
-                          (sort-by :revn))
-            payload  (fn [row]
-                       (let [payload (th/db-get :file-data {:file-id file-id :id (:id row) :type "revision"}
-                                                {::db/remove-deleted false})]
-                         (t/is (= (:deleted-at row) (:deleted-at payload)))
-                         (blob/decode (:data payload))))
+            broken      (break-frame ctx)
+            n           (:revn broken)
+            rename      (set-attr page-id shape-b :name "edited")
+            redo        [{:type :mod-page :id page-id :name "edited page"} rename]
+            predecessor (peek (change-rows file-id))
+            messages    (atom [])
+            audited     (atom nil)
+            session     (uuid/next)
+            out         (with-redefs [audit/submit (fn [_ event] (reset! audited event))
+                                      mbus/pub! (fn [_ & {:keys [message]}]
+                                                  (swap! messages conj message))]
+                          (binding [cf/flags (conj cf/flags :file-catch-up)]
+                            (update-file-v2 ctx (dec n) [(commit redo)] :session-id session)))
+            result      (:result out)
+            [u r]       (->> (change-rows file-id)
+                             (filter #(> (:revn %) n))
+                             (sort-by :revn))
+            payload     (fn [row]
+                          (let [payload (th/db-get :file-data {:file-id file-id :id (:id row) :type "revision"}
+                                                   {::db/remove-deleted false})]
+                            (t/is (= (:deleted-at row) (:deleted-at payload)))
+                            (blob/decode (:data payload))))
             [file-msg lib-msg] @messages]
         (t/is (th/success? out))
         (t/is (= n (:revn result)))
+        (t/is (= {:mode :wait :since (dec n) :until n
+                  :required [(select-keys predecessor [:id :revn])]}
+                 (:recovery result)))
         (t/is (= (+ n 2) (:saved-revn result)))
         (t/is (= {:id (:id r) :revn (+ n 2) :changes (blob/decode (:changes r))}
                  (:repair result)))
-        (t/is (= [(:id u) (:id r)] (mapv :id (:lagged result))))
-        (t/is (= {:redo-changes redo :undo-changes undo} (payload u)))
+        (t/is (= [{:id (:id u) :revn (inc n) :kind :edit}
+                  {:id (:id r) :revn (+ n 2) :kind :repair}]
+                 (:written result)))
+        (t/is (= {:redo-changes redo :undo-changes []} (payload u)))
         (t/is (= {:redo-changes (get-in result [:repair :changes]) :undo-changes []} (payload r)))
         (t/is (= (:id u) (get-in @audited [:props :file-change-id])))
         (t/is (= 2 (count @messages)))
@@ -268,7 +274,7 @@
                                                                                  {::db/remove-deleted false}))]))
                                                      (throw fault))]
                        (update-file-v2 ctx (:revn broken)
-                                       [(commit [(set-attr page-id shape-b :fills (image-fills image))] [])]))]
+                                       [(commit [(set-attr page-id shape-b :fills (image-fills image))])]))]
         (t/is (identical? fault (:error out)))
         (t/is (= [(+ 2 (:revn broken)) (+ 3 (count before) (count labels)) (+ 2 (count before))]
                  @prepared))
@@ -286,15 +292,15 @@
       (let [{:keys [file-id page-id shape-b] :as ctx} (setup-file)
             broken   (break-frame ctx)
             n        (:revn broken)
-            edit     (commit [(set-attr page-id shape-b :name "edited")] [])
-            repair   cfr/repair-file
+            edit     (commit [(set-attr page-id shape-b :name "edited")])
+            repair   cfr/repair-error
             messages (atom [])]
         (doseq [fault [(java.sql.SQLTransientException. "database unavailable")
                        (java.io.IOException. "fragment stream interrupted")
                        (InterruptedException. "interrupted")
                        (ex-info "fragment not found" {:type :internal :code :fragment-not-found})
                        (ex-info "fragment not found" {:type :not-found :code :object-not-found})]]
-          (let [out (with-redefs [cfr/repair-file (fn [& _] (throw fault))
+          (let [out (with-redefs [cfr/repair-error (fn [& _] (throw fault))
                                   mbus/pub! (fn [_ & {:keys [message]}]
                                               (swap! messages conj message))]
                       (update-file-v2 ctx n [edit]))]
@@ -303,10 +309,10 @@
         (t/testing "even an infrastructure failure in the optional reverse-order repair aborts"
           (let [calls (atom 0)
                 fault (java.io.IOException. "repair stream interrupted")
-                out   (with-redefs [cfr/repair-file (fn [& args]
-                                                      (if (= 2 (swap! calls inc))
-                                                        (throw fault)
-                                                        (apply repair args)))
+                out   (with-redefs [cfr/repair-error (fn [& args]
+                                                       (if (= 2 (swap! calls inc))
+                                                         (throw fault)
+                                                         (apply repair args)))
                                     mbus/pub! (fn [_ & {:keys [message]}]
                                                 (swap! messages conj message))]
                         (update-file-v2 ctx n [edit]))]
@@ -322,16 +328,17 @@
       (let [{:keys [file-id page-id shape-a shape-b] :as ctx} (setup-file)
             broken   (break-frame ctx)
             n        (:revn broken)
-            bad-edit (commit [(set-attr page-id shape-b :frame-id (uuid/next))] [])
+            bad-edit (commit [(set-attr page-id shape-b :frame-id (uuid/next))])
             page-2   (uuid/next)
-            good     (commit [{:type :add-page :id page-2 :name "valid prefix"}] [])
+            good     (commit [{:type :add-page :id page-2 :name "valid prefix"}])
             messages (atom [])]
         (with-redefs [mbus/pub! (fn [_ & {:keys [message]}]
                                   (swap! messages conj message))]
           (t/testing "a rejected first commit leaves the preexisting damage and writes nothing"
             (let [result (:result (update-file-v2 ctx n [bad-edit]))]
               (t/is (= [(:commit-id bad-edit)] (get-in result [:rejected :commit-ids])))
-              (t/is (= #{:revn :lagged :rejected} (set (keys result))))
+              (t/is (= {:revn n :vern 0 :written [] :recovery {:mode :none}}
+                       (dissoc result :rejected)))
               (t/is (empty? @messages))
               (t/is (empty? (filter #(> (:revn %) n) (change-rows file-id))))
               (t/is (not-any? #(= (str "internal/repair/" n) (:label %)) (label-rows file-id)))))
@@ -342,8 +349,8 @@
               (t/is (= [(:commit-id bad-edit)] (get-in result [:rejected :commit-ids])))
               (t/is (= (inc n) (:saved-revn result)))
               (t/is (not (contains? result :repair)))
-              (t/is (= [(select-keys row [:id :revn])]
-                       (mapv #(select-keys % [:id :revn]) (:lagged result))))
+              (t/is (= [{:id (:id row) :revn (inc n) :kind :edit}]
+                       (:written result)))
               (t/is (= [[(:id row)]] (mapv :revision-ids @messages)))
               (t/is (= "valid prefix" (get-in stored [:data :pages-index page-2 :name])))
               (t/is (= [shape-a] (mapv :shape-id (cfv/validate-file stored {})))))))))))
@@ -376,15 +383,16 @@
                                                                  (apply repair args))
                                    mbus/pub! (fn [_ & {:keys [message]}]
                                                (swap! messages conj message))]
-                       (update-file-v2 ctx n [(commit [move] [])]))
+                       (update-file-v2 ctx n [(commit [move])]))
               result (:result out)
               stored (stored-file file-id)]
           (t/is (th/success? out))
           (t/is (= 2 @orders) "both orders are repairable, but the move takes effect only in the control")
           (t/is (= (+ n 2) (:saved-revn result)))
           (t/is (not (contains? result :repair)))
-          (t/is (= [[(:id (first (:lagged result)))] [(:id (second (:lagged result)))]]
-                   (mapv :revision-ids @messages)))
+          (t/is (= [[:repair (inc n)] [:edit (+ n 2)]]
+                   (mapv (juxt :kind :revn) (:written result))))
+          (t/is (= (mapv (comp vector :id) (:written result)) (mapv :revision-ids @messages)))
           (t/is (= [true nil] (mapv :repaired @messages)))
           (t/is (= files-update/repair-session-id (:session-id (first @messages))))
           (t/is (= uuid/zero (get-in stored [:data :pages-index page-id :objects child-id :parent-id])))
@@ -403,7 +411,7 @@
           out        (with-redefs [fdata/load-pointer (fn [cfg file-id fragment-id]
                                                         (swap! loads conj fragment-id)
                                                         (load cfg file-id fragment-id))]
-                       (update-file-v2 ctx (:revn broken) [(commit [(set-attr page-id shape-b :name "edited")] [])]))]
+                       (update-file-v2 ctx (:revn broken) [(commit [(set-attr page-id shape-b :name "edited")])]))]
       (t/is (pmap/pointer-map? pointer))
       (t/is (some? (get-in out [:result :repair])))
       (t/is (not-any? #{(pmap/get-id pointer)} @loads)))))
@@ -476,12 +484,10 @@
              redo      [(set-attr page-id shape-b :fills fills)
                         (set-attr page-id copy :name "renamed copy")
                         (set-attr page-id main :name (:name (get-shape broken main)))]
-             undo      [(set-attr page-id copy :name (:name (get-shape broken copy)))
-                        (set-attr page-id shape-b :fills (:fills (get-shape broken shape-b)))]
              token     (make-session-token profile)
              session   (uuid/next)
              params    {:session-id session :revn n :vern 0 :features cfeat/supported-features
-                        :repair-in-response true :commits [(commit redo undo)]}
+                        :repair-in-response true :commits [(commit redo)]}
              [status result] (http-file-request origin token file-id :update-file-v2 params)
              [get-status recovered] (http-file-request origin token file-id :get-file nil)
              rows      (filterv #(> (:revn %) n) (change-rows file-id))
@@ -494,15 +500,15 @@
              refs      (th/db-query :file-media-object {:file-id file-id})
              linked-id (:id (first refs))]
          (t/is (= 200 status get-status))
-         (t/is (= {:revn n :saved-revn (+ n 2) :media-relinked true}
-                  (dissoc result :lagged)))
+         (t/is (= {:revn n :vern 0 :saved-revn (+ n 2) :media-relinked true :recovery {:mode :none}}
+                  (dissoc result :written)))
          (t/is (= [(inc n) (+ n 2)] (mapv :revn rows)))
          (t/is (= [files-update/repair-session-id session] (mapv :session-id rows)))
-         (t/is (= (mapv :id rows) (mapv :id (:lagged result))))
+         (t/is (= (mapv :id rows) (mapv :id (:written result))))
+         (t/is (= [:repair :edit] (mapv :kind (:written result))))
          (t/is (= (mapv #(blob/decode (:changes %)) rows)
-                  (mapv :changes (:lagged result))
                   (mapv :redo-changes payloads)))
-         (t/is (= [[] undo] (mapv :undo-changes payloads)))
+         (t/is (= [[] []] (mapv :undo-changes payloads)))
          (t/is (= (:data broken) snapshot))
          (t/is (= (:data recovered) (reduce cpc/process-changes snapshot (map :redo-changes payloads))))
          (t/is (= 1 (count refs)))
@@ -525,10 +531,13 @@
              [status result] (http-file-request origin (make-session-token profile) file-id :update-file-v2
                                                 {:session-id (uuid/next) :revn n :vern 0
                                                  :features cfeat/supported-features :repair-in-response true
-                                                 :commits [(commit redo [])]})]
+                                                 :commits [(commit redo)]})
+             edit     (last (change-rows file-id))]
          (t/is (= 200 status))
-         (t/is (= {:revn n :saved-revn (+ n 2)} (dissoc result :lagged)))
-         (t/is (= redo (:changes (peek (:lagged result)))))
+         (t/is (= {:revn n :vern 0 :saved-revn (+ n 2) :recovery {:mode :none}}
+                  (dissoc result :written)))
+         (t/is (= {:id (:id edit) :revn (+ n 2) :kind :edit} (peek (:written result))))
+         (t/is (= redo (blob/decode (:changes edit))))
          (t/is (= [(:id image)] (mapv :id (th/db-query :file-media-object {:file-id file-id})))))))))
 
 (t/deftest transit-audit-timeout-returns-504-after-saving-and-publishing
@@ -545,7 +554,7 @@
              cfg     th/*system*
              publish mbus/pub!
              params  {:session-id (uuid/next) :revn n :vern 0 :features cfeat/supported-features
-                      :repair-in-response true :commits [(commit redo [])]}
+                      :repair-in-response true :commits [(commit redo)]}
              [status result]
              (with-redefs [audit/submit (fn [_ event]
                                           (swap! events conj [:audit (get-in event [:props :revn])])
@@ -591,11 +600,10 @@
              n        (:revn broken)
              move     {:type :mov-objects :page-id page-id :parent-id frame-id :shapes [shape-b]}
              redo     [move]
-             undo     [(assoc move :parent-id uuid/zero)]
              token    (make-session-token profile)
              params   {:session-id (uuid/next) :revn n :vern 0
                        :features cfeat/supported-features :repair-in-response true
-                       :commits [(commit redo undo)]}
+                       :commits [(commit redo)]}
              [status result] (http-file-request origin token file-id :update-file-v2 params)
              [get-status recovered] (http-file-request origin token file-id :get-file nil)
              rows     (->> (change-rows file-id) (filter #(> (:revn %) n)) (sort-by :revn))
@@ -608,14 +616,14 @@
          (t/is (= 200 status get-status))
          (t/is (= (inc n) (:revn (first rows))))
          (t/is (= (+ n 2) (:saved-revn result) (:revn recovered)))
-         (t/is (= (mapv :id rows) (mapv :id (:lagged result))))
+         (t/is (= (mapv :id rows) (mapv :id (:written result))))
          (t/is (= {:id (:id (second rows)) :revn (+ n 2)
                    :changes (:redo-changes (second payloads))}
                   (:repair result)))
-         (t/is (= [{:redo-changes redo :undo-changes undo}
+         (t/is (= [{:redo-changes redo :undo-changes []}
                    {:redo-changes (get-in result [:repair :changes]) :undo-changes []}]
                   payloads))
-         (t/is (> (count (get-in result [:repair :changes])) (count missing)))
+         (t/is (= (count missing) (count (get-in result [:repair :changes]))))
          (t/is (= (:data broken) snap))
          (t/is (= frame-id (get-in recovered [:data :pages-index page-id :objects shape-b :parent-id])))
          (t/is (= (:data recovered)
@@ -629,8 +637,8 @@
      (fn [origin]
        (let [{:keys [profile file-id page-id shape-a shape-b revn]} (setup-file)
              token    (make-session-token profile)
-             accepted (commit [(set-attr page-id shape-a :name "accepted")] [(set-attr page-id shape-a :name "rect")])
-             rejected (commit [(set-attr page-id shape-b :frame-id (uuid/next))] [])
+             accepted (commit [(set-attr page-id shape-a :name "accepted")])
+             rejected (commit [(set-attr page-id shape-b :frame-id (uuid/next))])
              [status result] (http-file-request origin token file-id :update-file-v2
                                                 {:session-id (uuid/next) :revn revn :vern 0
                                                  :features cfeat/supported-features :repair-in-response true
@@ -644,11 +652,11 @@
          (t/is (not (contains? result :repair)))
          (t/is (not (contains? result :media-relinked)))
          (t/is (= [(:commit-id rejected)] (get-in result [:rejected :commit-ids])))
-         (t/is (= (select-keys accepted [:redo-changes :undo-changes]) (blob/decode (:data payload))))
+         (t/is (= {:redo-changes (:changes accepted) :undo-changes []} (blob/decode (:data payload))))
          (t/is (= "accepted" (get-in recovered [:data :pages-index page-id :objects shape-a :name])))
          (t/is (= uuid/zero (get-in recovered [:data :pages-index page-id :objects shape-b :frame-id]))))))))
 
-(t/deftest transit-v1-and-non-opt-in-v2-retain-the-old-contract
+(t/deftest transit-v1-and-non-opt-in-v2-keep-legacy-repair-order
   (with-repair-flags
     (partial
      with-http-router
@@ -667,16 +675,24 @@
                                 :features cfeat/supported-features}
                                (if (= :update-file command)
                                  {:changes redo :repair-in-response true}
-                                 {:commits [(commit redo [])]}))
-                 [status result] (http-file-request origin token file-id command params)]
+                                 {:commits [(commit redo)]}))
+                 [status result] (http-file-request origin token file-id command params)
+                 [r u]  (filterv #(> (:revn %) n) (change-rows file-id))]
              (t/is (= 200 status))
-             (t/is (= #{:revn :lagged} (set (keys result))))
-             (t/is (= [(inc n) (+ n 2)] (mapv :revn (:lagged result))))
-             (t/is (= redo (:changes (peek (:lagged result)))))
+             (if (= :update-file command)
+               (do
+                 (t/is (= #{:revn :lagged} (set (keys result))))
+                 (t/is (= [(inc n) (+ n 2)] (mapv :revn (:lagged result))))
+                 (t/is (= redo (:changes (peek (:lagged result)))))
+                 (t/is (= [files-update/repair-session-id (:session-id params)]
+                          (mapv :session-id (:lagged result)))))
+               (t/is (= {:revn n :vern 0 :saved-revn (+ n 2) :recovery {:mode :none}
+                         :written [{:id (:id r) :revn (inc n) :kind :repair}
+                                   {:id (:id u) :revn (+ n 2) :kind :edit}]}
+                        result)))
+             (t/is (= redo (blob/decode (:changes u))))
              (t/is (not= (:id image) (get-in (stored-file file-id)
-                                             [:data :pages-index page-id :objects shape-b :fills 0 :fill-image :id])))
-             (t/is (= [files-update/repair-session-id (:session-id params)]
-                      (mapv :session-id (:lagged result)))))))))))
+                                             [:data :pages-index page-id :objects shape-b :fills 0 :fill-image :id]))))))))))
 
 (t/deftest repairs-preexisting-frame-not-found
   (with-repair-flags
@@ -705,32 +721,32 @@
       (let [{:keys [profile file-id page-id shape-b] :as ctx} (setup-file)
             broken       (break-frame ctx)
             redo-changes [(set-attr page-id shape-b :name "renamed")]
-            undo-changes [(set-attr page-id shape-b :name "rect")]
-            out          (th/command! {::th/type :update-file-v2
-                                       ::rpc/profile-id (:id profile)
-                                       :id file-id
-                                       :session-id (uuid/next)
-                                       :revn (:revn broken)
-                                       :vern 0
-                                       :features cfeat/supported-features
-                                       :commits [{:commit-id (uuid/next)
-                                                  :redo-changes redo-changes
-                                                  :undo-changes undo-changes}]})
+            out          (binding [cf/flags (conj cf/flags :file-change-retention)]
+                           (update-file-v2 ctx (:revn broken) [(commit redo-changes)]))
             rows         (filterv #(> (:revn %) (:revn broken))
                                   (change-rows file-id))]
         (t/is (th/success? out))
         (t/is (= 2 (count rows)))
-        (doseq [row rows
-                :let [repair? (= files-update/repair-session-id (:session-id row))]]
+        (let [label    (str "internal/repair/" (:revn broken))
+              snapshot (first (filter #(= label (:label %)) (label-rows file-id)))
+              payload  (th/db-get :file-data {:file-id file-id :id (:id snapshot)}
+                                  {::db/remove-deleted false})]
+          (t/is (some? (:deleted-at snapshot)))
+          (t/is (= (:deleted-at snapshot) (:deleted-at payload)))
+          (t/is (false? (:retained snapshot))))
+        (doseq [row rows]
           (let [payload (th/db-get :file-data
                                    {:file-id file-id
                                     :id (:id row)
                                     :type "revision"}
                                    {::db/remove-deleted false})]
             (t/is (some? payload) (str "payload missing for revn " (:revn row)))
-            (t/is (= (:deleted-at row) (:deleted-at payload)))
+            (t/is (true? (:retained row)))
+            (t/is (true? (:retained (fdata/decode-metadata (:metadata payload)))))
+            (t/is (nil? (:deleted-at row)))
+            (t/is (nil? (:deleted-at payload)))
             (t/is (= {:redo-changes (blob/decode (:changes row))
-                      :undo-changes (if repair? [] undo-changes)}
+                      :undo-changes []}
                      (blob/decode (:data payload))))))))))
 
 (t/deftest repairs-preexisting-frame-not-found-with-schema-validation

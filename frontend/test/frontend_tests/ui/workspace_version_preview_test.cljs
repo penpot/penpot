@@ -264,7 +264,7 @@
         flash    errors/flash]
     (await
      (thp/with-persistence
-       (^:async fn [{:keys [file-id session-id requests requests$ store] :as ctx}]
+       (^:async fn [{:keys [file-id requests requests$ store] :as ctx}]
          (let [page-id      (uuid/next)
                shape-id     (uuid/next)
                report-label (tr "labels.download" "report.txt")
@@ -284,13 +284,13 @@
                                            :undo-changes [(thp/rename page-id shape-id "Live")]}))
                rejected     (rename "Rejected")
                accepted     (rename "Saved")
-               repair-row   {:id (uuid/next) :revn 2 :session-id (uuid/next)
+               repair-row   {:id (uuid/next) :revn 2
                              :changes [(thp/set-attr page-id shape-id :opacity 0.7)]}
-               answer       {:revn 0 :saved-revn 2
-                             :repair (select-keys repair-row [:id :revn :changes])
-                             :lagged [{:id (uuid/next) :revn 1 :session-id session-id
-                                       :changes (:redo-changes @accepted)}
-                                      repair-row]}
+               answer       {:revn 0 :vern 0 :saved-revn 2
+                             :repair repair-row
+                             :written [{:id (uuid/next) :revn 1 :kind :edit}
+                                       (thp/written-row :repair repair-row)]
+                             :recovery {:mode :none}}
                sub          (->> (ptk/input-stream store)
                                  (rx/filter (ptk/type? ::ntf/show))
                                  (rx/subs! (fn [_]
@@ -311,7 +311,7 @@
                          (ptk/emit! store rejected ::dps/force-persist)
                          (await (async/wait-for #(= 1 (count (requests-for :update-file-v2)))
                                                 "the first edit is sent" {:signal requests$}))
-                         (rx/push! save (assoc (thp/rejection (:id @rejected)) :lagged []))
+                         (rx/push! save (thp/rejection (:id @rejected)))
                          (await (async/wait-for-store store #(and (saved?) (seq (get-in @store [:notification :links])))
                                                       "the rejected save settles and shows its report")))))
                      (let [report-links (get-in @store [:notification :links])]

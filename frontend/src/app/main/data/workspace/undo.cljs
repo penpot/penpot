@@ -12,6 +12,7 @@
 
    Undo entries:
      - Consist of `:undo-changes`, `:redo-changes`, `:undo-group`, `:tags`, `:translation`
+     - Track each commit's `[file-id vern undo-group]` in `:origins` for restore
      - Can be:
        - `added`: pushes a new entry on top of the undo stack
        - `stacked`: appends undo/redo changes to the last undo item under
@@ -64,6 +65,8 @@
    [:undo-group ::sm/uuid]
    ;; Undo groups of every commit the entry holds
    [:undo-groups {:optional true} [:set ::sm/uuid]]
+   ;; File, version and undo group of each commit the entry holds
+   [:origins {:optional true} [:set [:tuple ::sm/uuid :int ::sm/uuid]]]
    [:tags [:set :keyword]]
    [:selected-before {:optional true} [:maybe [:set ::sm/uuid]]]
    [:selected-after {:optional true} [:maybe [:set ::sm/uuid]]]
@@ -141,7 +144,7 @@
    exists, or creates a new entry if it doesn't. When stacking onto an
    existing entry, the entry's original timestamp is preserved so the
    history panel keeps showing when the action originated. Issue #7660."
-  [state {:keys [undo-changes redo-changes undo-group selected-after translation] :as entry}]
+  [state {:keys [undo-changes redo-changes undo-group origins selected-after translation] :as entry}]
   (let [index (get-in state [:workspace-undo :index] -1)]
     (if (>= index 0)
       (update-in state [:workspace-undo :items index]
@@ -150,13 +153,14 @@
                        (update :undo-changes #(into undo-changes %))
                        (update :redo-changes #(into % redo-changes))
                        (update :undo-groups (fnil conj #{}) undo-group)
+                       (update :origins (fnil into #{}) origins)
                        (update :translation #(and % translation))
                        (assoc :selected-after selected-after))))
       (add-undo-entry state entry))))
 
 (defn- accumulate-undo-entry
   "Extends the current undo transaction with new changes."
-  [state {:keys [undo-changes redo-changes undo-group tags selected-before selected-after translation]}]
+  [state {:keys [undo-changes redo-changes undo-group origins tags selected-before selected-after translation]}]
   (-> state
       (update-in [:workspace-undo :transaction :undo-changes] #(into undo-changes %))
       (update-in [:workspace-undo :transaction :redo-changes] #(into % redo-changes))
@@ -165,6 +169,7 @@
       (cond-> (nil? (get-in state [:workspace-undo :transaction :undo-group]))
         (assoc-in [:workspace-undo :transaction :undo-group] undo-group))
       (update-in [:workspace-undo :transaction :undo-groups] (fnil conj #{}) undo-group)
+      (update-in [:workspace-undo :transaction :origins] (fnil into #{}) origins)
       (cond-> (nil? (get-in state [:workspace-undo :transaction :selected-before]))
         (assoc-in [:workspace-undo :transaction :selected-before] selected-before))
       (assoc-in [:workspace-undo :transaction :selected-after] selected-after)
@@ -294,6 +299,24 @@
                     (assoc :transaction
                            (assoc empty-tx :commit-group (or (:undo-group transaction)
                                                              (:commit-group transaction)))))))))))
+
+(defn forget-other-file-versions
+  "Cuts undo/redo before the first action touching an obsolete version.
+  A stacked commit may have its own group and still be part of the entry's
+  original action. Cut both from their first entry, including redo entries."
+  [state file-id vern]
+  (let [{:keys [items transaction]} (:workspace-undo state)
+        group-of (fn [[id version group]]
+                   (when (and (= file-id id) (not= vern version))
+                     group))
+        groups   (into #{}
+                       (mapcat (fn [{:keys [origins undo-group]}]
+                                 (when-let [affected (seq (keep group-of origins))]
+                                   (cond-> affected undo-group (conj undo-group)))))
+                       (cond-> items transaction (conj transaction)))]
+    (if (seq groups)
+      (ptk/update (forget-undo-groups groups nil) state)
+      state)))
 
 (def reinitialize-undo
   "Clears the undo stack, removing all entries and transactions."

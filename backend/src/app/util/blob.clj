@@ -173,3 +173,28 @@
     (.skip input 6)
     (with-open [^InputStream input (LZ4FrameInputStream. input)]
       (-> input fres/reader fres/read!))))
+
+(defn- check-uncompressed-size
+  [size limit]
+  (when (> size limit)
+    (ex/raise :type :validation
+              :code :blob-too-large
+              :hint "blob uncompressed size exceeds limit")))
+
+(defn decode-bounded
+  "Decode known-good output of `encode`, returning the decoded value and the
+  uncompressed byte count. The caller must verify its provenance before
+  decoding; byte limits alone do not validate Fressian allocation lengths."
+  [^bytes data limit]
+  (with-open [input (DataInputStream. (ByteArrayInputStream. data))]
+    (let [version (.readShort input)
+          size    (.readInt input)]
+      (if (= 5 version)
+        (with-open [decoded (LZ4FrameInputStream. input)]
+          (let [raw  (.readNBytes decoded (int (inc limit)))
+                size (alength raw)]
+            (check-uncompressed-size size limit)
+            {:data (fres/decode raw) :uncompressed-size size}))
+        (do
+          (check-uncompressed-size size limit)
+          {:data (decode data :max-size limit) :uncompressed-size size})))))

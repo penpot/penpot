@@ -182,7 +182,7 @@
 (defn- offload-type-label
   "Coerce a file data type to its label: lowercase, with `other` only
   when there is no type at all. Values are the fixed `file_data.type`
-  values (`main`, `snapshot`, `fragment`)."
+  values (`main`, `snapshot`, `fragment`, `revision`)."
   [type]
   (str/lower (mtx/label type "other")))
 

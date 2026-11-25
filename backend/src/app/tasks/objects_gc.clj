@@ -613,13 +613,24 @@
     ORDER BY deleted_at ASC")
 
 (def ^:private sql:lock-file-data
-  "SELECT file_id, id, type, deleted_at, backend, storage_object_id
-     FROM file_data
-    WHERE (file_id, id) IN (SELECT file_id, id FROM unnest(?::uuid[], ?::uuid[]) AS u(file_id, id))
-      AND deleted_at IS NOT NULL
-      AND deleted_at <= ?
-      FOR UPDATE
-     SKIP LOCKED")
+  "WITH expired_files AS MATERIALIZED (
+     SELECT id FROM file
+      WHERE id = ANY(?::uuid[])
+        AND deleted_at <= ?
+      ORDER BY id
+        FOR UPDATE SKIP LOCKED
+   )
+   SELECT fd.file_id, fd.id, fd.type, fd.deleted_at, fd.backend, fd.storage_object_id
+     FROM file_data AS fd
+    WHERE (fd.file_id, fd.id) IN (SELECT file_id, id FROM unnest(?::uuid[], ?::uuid[]) AS u(file_id, id))
+      AND fd.deleted_at <= ?
+      AND ((fd.type <> 'main'
+            AND (fd.type <> 'revision' OR fd.metadata->'retained' IS DISTINCT FROM 'true'::jsonb)
+            AND NOT (fd.type = 'fragment' AND EXISTS (
+              SELECT 1 FROM file AS f
+               WHERE f.id = fd.file_id AND f.deleted_at = fd.deleted_at)))
+           OR fd.file_id IN (SELECT id FROM expired_files))
+      FOR UPDATE OF fd SKIP LOCKED")
 
 (defn- delete-file-data-chunk
   [cfg rows]
@@ -629,7 +640,11 @@
                   (db/exec-one! conn ["SET LOCAL rules.deletion_protection TO off"])
                   (let [file-ids (db/create-array conn "uuid" (map :file-id rows))
                         ids      (db/create-array conn "uuid" (map :id rows))]
-                    (->> (db/exec! conn [sql:lock-file-data file-ids ids threshold])
+                    ;; Serialize the file's main data, trash-dated fragments
+                    ;; and retained revisions with a trash restore. Normal
+                    ;; fragment expiry and snapshot expiry are independent.
+                    (->> (db/exec! conn [sql:lock-file-data file-ids threshold
+                                         file-ids ids threshold])
                          (reduce (fn [total {:keys [file-id id type deleted-at backend storage-object-id]}]
 
                                    (some->> storage-object-id
@@ -678,13 +693,18 @@
     ORDER BY deleted_at ASC")
 
 (def ^:private sql:lock-file-change
-  "SELECT file_id, id, deleted_at FROM file_change
+  "WITH expired_file AS MATERIALIZED (
+     SELECT id FROM file
+      WHERE id = ?
+        AND deleted_at <= ?
+        FOR UPDATE SKIP LOCKED
+   )
+   SELECT file_id, id, deleted_at FROM file_change
     WHERE file_id = ?
       AND id = ANY(?::uuid[])
-      AND deleted_at IS NOT NULL
       AND deleted_at <= ?
-      FOR UPDATE
-     SKIP LOCKED")
+      AND (NOT retained OR EXISTS (SELECT 1 FROM expired_file))
+      FOR UPDATE SKIP LOCKED")
 
 (defn- delete-file-changes-chunk
   [cfg rows]
@@ -698,7 +718,8 @@
                   (->> (group-by :file-id rows)
                        (mapcat (fn [[file-id file-rows]]
                                  (let [ids (db/create-array conn "uuid" (map :id file-rows))]
-                                   (db/exec! conn [sql:lock-file-change file-id ids threshold]))))
+                                   (db/exec! conn [sql:lock-file-change file-id threshold
+                                                   file-id ids threshold]))))
                        (reduce (fn [total {:keys [id file-id deleted-at]}]
                                  (l/trc :obj "file-change"
                                         :id (str id)

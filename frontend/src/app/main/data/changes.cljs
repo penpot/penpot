@@ -19,6 +19,7 @@
    [app.main.data.helpers :as dsh]
    [app.main.data.persistence.commits :as pcm]
    [app.main.data.persistence.lock :as plk]
+   [app.main.data.persistence.replay :as replay]
    [app.main.data.workspace :as-alias dw]
    [app.main.features :as features]
    [app.main.worker :as mw]
@@ -199,11 +200,20 @@
                    :translation? translation?
                    :skip-component-sync? skip-component-sync?
                    ;; Undo history index an undo or redo commit moved away from
-                   :undo-index undo-index}]
+                   :undo-index undo-index}
+        proof     (volatile! nil)]
 
     (ptk/reify ::commit
       cljs.core/IDeref
-      (-deref [_] commit)
+      (-deref [_] (merge commit @proof))
+
+      ptk/UpdateEvent
+      (update [_ state]
+        (when local?
+          (when-let [base (get-in state [:persistence :file-order file-id :base-id])]
+            (when-let [targets (replay/capture (dsh/lookup-file-data state file-id) commit)]
+              (vreset! proof {:replay-base base :replay-targets targets}))))
+        state)
 
       ptk/WatchEvent
       (watch [_ state _]
@@ -240,11 +250,11 @@
       ptk/UpdateEvent
       (update [_ state]
         (if (dsh/lookup-file-data state file-id)
-          (if-let [{:keys [undo remote redo on-applied separate-steps]}
+          (if-let [{:keys [undo remote remote-steps redo on-applied separate-steps]}
                    (if prepare (prepare state) plan)]
             (let [steps  (if separate-steps
                            (-> (mapv :undo-changes (reverse undo))
-                               (conj (vec remote))
+                               (into (or remote-steps [(vec remote)]))
                                (into (map :redo-changes) redo))
                            [(into [] (mapcat :undo-changes) (reverse undo))
                             (vec remote)

@@ -9,7 +9,7 @@
 
   A revision keeps its metadata row in `file_change` and its content in a
   `file_data` row of type `revision` that shares the id and the deletion
-  schedule. The payload holds the forward changes of the save and their
+  schedule. The payload holds the forward changes of the save and an empty
   inverse; the column `file_change.changes` is still written for the readers
   deployed today."
   (:require
@@ -42,13 +42,12 @@
                       params)))
 
 (defn- commit
-  [redo undo]
-  {:commit-id (uuid/next) :redo-changes redo :undo-changes undo})
+  [changes]
+  {:commit-id (uuid/next) :changes changes})
 
 (defn- add-page-commit
   [page-id name]
-  (commit [{:type :add-page :id page-id :name name}]
-          [{:type :del-page :id page-id}]))
+  (commit [{:type :add-page :id page-id :name name}]))
 
 (defn- set-parent
   [page-id shape-id parent-id]
@@ -90,14 +89,15 @@
                              {::db/remove-deleted false})))
   (t/is (= 0 (:revn (th/db-get :file {:id file-id})))))
 
-(t/deftest stores-the-forward-changes-and-their-inverse-in-the-payload
+(t/deftest stores-the-forward-changes-without-an-inverse-in-the-payload
   (let [[profile file] (create-file)
         commit-1       (add-page-commit (uuid/next) "one")
         commit-2       (add-page-commit (uuid/next) "two")
         out            (update-file :update-file-v2 (:id profile) (:id file)
                                     {:commits [commit-1 commit-2]})
         revision       (revision-row (:id file) 1)
-        payload        (payload-row (:id file) (:id revision))]
+        payload        (payload-row (:id file) (:id revision))
+        redo           (into (:changes commit-1) (:changes commit-2))]
 
     (t/is (nil? (:error out)))
     (t/is (some? revision))
@@ -108,17 +108,14 @@
       (t/is (= (:deleted-at revision) (:deleted-at payload)))
       (t/is (some? (:deleted-at payload))))
 
-    (t/testing "the forward list keeps the order of the commits"
-      (t/is (= (into (:redo-changes commit-1) (:redo-changes commit-2))
-               (:redo-changes (blob/decode (:data payload))))))
+    (t/testing "the payload keeps the forward changes in commit order"
+      (t/is (= redo (:redo-changes (blob/decode (:data payload))))))
 
-    (t/testing "the inverse goes newest commit first"
-      (t/is (= (into (:undo-changes commit-2) (:undo-changes commit-1))
-               (:undo-changes (blob/decode (:data payload))))))
+    (t/testing "no inverse was stored"
+      (t/is (= [] (:undo-changes (blob/decode (:data payload))))))
 
     (t/testing "the column keeps the forward changes for the deployed readers"
-      (t/is (= (into (:redo-changes commit-1) (:redo-changes commit-2))
-               (blob/decode (:changes revision)))))))
+      (t/is (= redo (blob/decode (:changes revision)))))))
 
 (t/deftest stores-only-the-accepted-prefix-in-a-partial-save
   (let [[profile file] (create-file)
@@ -127,12 +124,9 @@
         shape-a        (uuid/next)
         shape-b        (uuid/next)
         commit-1       (commit [(th/add-rect-change page-id shape-a)
-                                (th/add-rect-change page-id shape-b)]
-                               [{:type :del-obj :page-id page-id :id shape-b}
-                                {:type :del-obj :page-id page-id :id shape-a}])
+                                (th/add-rect-change page-id shape-b)])
         commit-2       (add-page-commit (uuid/next) "accepted page")
-        commit-3       (commit [(set-parent page-id shape-a (uuid/next))]
-                               [(set-parent page-id shape-a uuid/zero)])
+        commit-3       (commit [(set-parent page-id shape-a (uuid/next))])
         ;; The same id on both sides of the cut must not affect the selection.
         commit-4       (assoc (add-page-commit (uuid/next) "rejected page")
                               :commit-id (:commit-id commit-1))
@@ -141,15 +135,14 @@
         rejected       (-> out :result :rejected)
         revision       (revision-row file-id 1)
         payload        (blob/decode (:data (payload-row file-id (:id revision))))
-        redo           (into (:redo-changes commit-1) (:redo-changes commit-2))
-        undo           (into (:undo-changes commit-2) (:undo-changes commit-1))]
+        redo           (into (:changes commit-1) (:changes commit-2))]
     (t/is (th/success? out))
     (t/is (= [(:commit-id commit-3) (:commit-id commit-4)] (:commit-ids rejected)))
     (t/is (= (:commit-id commit-3) (:failed-commit-id rejected)))
     (t/is (= :referential-integrity (get-in rejected [:error :code])))
-    (t/is (= redo (:redo-changes payload)))
+    (t/is (= {:redo-changes redo :undo-changes []} payload))
     (t/is (= redo (blob/decode (:changes revision))))
-    (t/is (= undo (:undo-changes payload)))))
+    (t/is (every? #(not= (:id revision) (:commit-id %)) [commit-1 commit-2]))))
 
 (t/deftest writes-no-revision-when-the-first-commit-is-rejected
   (let [[profile file] (create-file)
@@ -157,8 +150,7 @@
         page-id        (first (get-in file [:data :pages]))
         shape-id       (uuid/next)
         commit-1       (commit [(th/add-rect-change page-id shape-id)
-                                (set-parent page-id shape-id (uuid/next))]
-                               [{:type :del-obj :page-id page-id :id shape-id}])
+                                (set-parent page-id shape-id (uuid/next))])
         commit-2       (add-page-commit (uuid/next) "rejected page")
         out            (update-file :update-file-v2 (:id profile) file-id
                                     {:commits [commit-1 commit-2]})
@@ -168,41 +160,6 @@
     (t/is (= (:commit-id commit-1) (:failed-commit-id rejected)))
     (t/is (= :referential-integrity (get-in rejected [:error :code])))
     (assert-no-revision file-id)))
-
-(t/deftest stores-an-empty-inverse-when-the-commits-carry-none
-  (let [[profile file] (create-file)
-        commit         (assoc (add-page-commit (uuid/next) "one")
-                              :undo-changes [])
-        out            (update-file :update-file-v2 (:id profile) (:id file)
-                                    {:commits [commit]})
-        revision       (revision-row (:id file) 1)
-        payload        (payload-row (:id file) (:id revision))]
-
-    (t/is (nil? (:error out)))
-    (t/is (some? payload))
-    (t/is (= {:redo-changes (:redo-changes commit) :undo-changes []}
-             (blob/decode (:data payload))))))
-
-(t/deftest rejects-a-change-that-does-not-conform
-  (let [[profile file] (create-file)
-        commit         {:commit-id (uuid/next)
-                        :redo-changes [{:type :mod-obj}]
-                        :undo-changes []}
-        out            (update-file :update-file-v2 (:id profile) (:id file)
-                                    {:commits [commit]})]
-
-    (t/is (th/ex-of-type? (:error out) :validation))
-    (t/is (nil? (revision-row (:id file) 1)))))
-
-(t/deftest rejects-invalid-undo-before-writing-a-revision
-  (let [[profile file] (create-file)
-        commit         (assoc (add-page-commit (uuid/next) "page")
-                              :undo-changes [{:type :mod-obj}])
-        out            (update-file :update-file-v2 (:id profile) (:id file)
-                                    {:commits [commit]})]
-    (t/is (th/ex-of-type? (:error out) :validation))
-    (t/is (th/ex-of-code? (:error out) :params-validation))
-    (assert-no-revision (:id file))))
 
 (t/deftest the-old-command-stores-no-inverse
   (let [[profile file] (create-file)

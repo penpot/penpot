@@ -42,16 +42,44 @@
     (swap! *cascade* update kind conj id)))
 
 (defn- top-exists?
-  "The cascade marks blindly, so an unknown top id would report phantom
-  rows. Every queue submission and SREPL call names a real row; only
-  check, never change behavior: a missing row just skips the run."
+  "Skip missing team and profile rows before the cascade reports them.
+  File and project handlers check existence when they lock the row."
   [{:keys [::db/conn]} {:keys [object id]}]
-  (let [object (when (some? object) (keyword (name object)))]
-    (if (contains? #{:team :project :file :profile} object)
-      (some? (db/get* conn object {:id id}
-                      {::db/remove-deleted false
-                       ::sql/columns [:id]}))
-      true)))
+  (if (contains? #{:team :profile} object)
+    (some? (db/get* conn object {:id id}
+                    {::db/remove-deleted false
+                     ::sql/columns [:id]}))
+    true))
+
+(defn- earliest-deadline
+  [deadline inherited]
+  (if (and (some? inherited) (ct/is-before? inherited deadline))
+    inherited
+    deadline))
+
+(def ^:private sql:date-file-changes
+  "UPDATE file_change
+      SET deleted_at = ?, updated_at = ?
+    WHERE file_id = ?
+      AND (deleted_at IS NULL
+           OR (deleted_at > ?::timestamptz AND (? OR retained)))")
+
+(def ^:private sql:date-file-data
+  "UPDATE file_data
+      SET deleted_at = ?
+    WHERE file_id = ?
+      AND (deleted_at IS NULL
+           OR (deleted_at > ?::timestamptz
+               AND (? OR type IN ('main', 'fragment')
+                      OR (type = 'revision' AND metadata -> 'retained' = 'true'::jsonb))))")
+
+(defn- date-file-history
+  [conn id deleted-at purge]
+  ;; Retained revisions and their payloads follow the file. Ordinary trash
+  ;; does not alter existing snapshot or ephemeral deadlines. An explicit
+  ;; purge takes all children at once so their foreign keys cannot block it.
+  (db/exec-one! conn [sql:date-file-changes deleted-at (ct/now) id deleted-at purge])
+  (db/exec-one! conn [sql:date-file-data deleted-at id deleted-at purge]))
 
 (defmulti delete-object
   (fn [_ props] (:object props)))
@@ -72,11 +100,10 @@
               {:id id :file-id file-id :type "snapshot"}
               {::db/return-keys false}))
 
-(defmethod delete-object :file
-  [{:keys [::db/conn] :as cfg} {:keys [id deleted-at file-ids]}]
-  (when-let [file (db/get* conn :file {:id id}
-                           {::db/remove-deleted false
-                            ::sql/columns [:id :is-shared]})]
+(defn- delete-file
+  [{:keys [::db/conn] :as cfg} file deleted-at {:keys [file-ids purge]}]
+  (let [{:keys [id is-shared]} file
+        deleted-at (earliest-deadline deleted-at (:deleted-at file))]
 
     (l/trc :obj "file" :id (str id)
            :deleted-at (ct/format-inst deleted-at))
@@ -87,7 +114,7 @@
                 {:id id}
                 {::db/return-keys false})
 
-    (when (and (:is-shared file)
+    (when (and is-shared
                ;; Team deletions skip absorb entirely: every file dies
                ;; in the same cascade, so no survivor can absorb.
                (not *team-deletion*))
@@ -128,26 +155,7 @@
               (finally
                 (db/release! conn sp)))))))
 
-    ;; Mark file change to be deleted, but only the rows that do not carry a
-    ;; date yet. A revision is born already scheduled for deletion one hour
-    ;; later, and rewriting its date here would push it out to the trash
-    ;; lifetime; the collector would still take it, just much later than it
-    ;; should.
-    (db/update! conn :file-change
-                {:deleted-at deleted-at
-                 :updated-at (ct/now)}
-                {:file-id id :deleted-at nil}
-                {::db/return-keys false})
-
-    ;; Mark file data to be deleted, but only the rows that do not carry a date
-    ;; yet, exactly like the file-change rows above. A revision payload is born
-    ;; scheduled for deletion together with its revision; rewriting its date
-    ;; here would keep it in the table for days after the revision it belongs
-    ;; to is gone. A snapshot payload has no date and takes this one.
-    (db/update! conn :file-data
-                {:deleted-at deleted-at}
-                {:file-id id :deleted-at nil}
-                {::db/return-keys false})
+    (date-file-history conn id deleted-at (true? purge))
 
     ;; Mark file media objects to be deleted
     (db/update! conn :file-media-object
@@ -168,28 +176,52 @@
 
     (record :files id)))
 
+(def ^:private sql:lock-file-for-deletion
+  ;; Older purge jobs carry the original request time. Compare it at
+  ;; PostgreSQL's timestamp precision, not the application's precision.
+  "SELECT f.id, f.deleted_at, f.is_shared, p.deleted_at AS project_deleted_at,
+          f.deleted_at = ?::timestamptz AS current_deletion
+     FROM file AS f
+     JOIN project AS p ON (p.id = f.project_id)
+    WHERE f.id = ?
+      FOR UPDATE OF f")
+
+(defmethod delete-object :file
+  [{:keys [::db/conn] :as cfg} {:keys [id deleted-at ::queued] :as params}]
+  (when-let [file (db/exec-one! conn [sql:lock-file-for-deletion deleted-at id])]
+    (when (or (not queued) (:current-deletion file))
+      (delete-file cfg file (earliest-deadline deleted-at (:project-deleted-at file)) params))))
+
+(def ^:private sql:lock-project-files
+  "SELECT id, deleted_at, is_shared
+     FROM file
+    WHERE project_id = ?
+    ORDER BY id
+      FOR UPDATE")
+
 (defmethod delete-object :project
-  [{:keys [::db/conn] :as cfg} {:keys [id deleted-at]}]
-  (l/trc :obj "project" :id (str id)
-         :deleted-at (ct/format-inst deleted-at))
+  [{:keys [::db/conn] :as cfg} {:keys [id deleted-at ::queued]}]
+  (when-let [project (db/get* conn :project {:id id}
+                              {::db/remove-deleted false
+                               ::sql/columns [:deleted-at]
+                               ::sql/for-update true})]
+    (when (or (not queued) (= deleted-at (:deleted-at project)))
+      (let [deleted-at (earliest-deadline deleted-at (:deleted-at project))]
+        (l/trc :obj "project" :id (str id)
+               :deleted-at (ct/format-inst deleted-at))
 
-  (db/update! conn :project
-              {:deleted-at deleted-at}
-              {:id id}
-              {::db/return-keys false})
+        (db/update! conn :project
+                    {:deleted-at deleted-at}
+                    {:id id}
+                    {::db/return-keys false})
 
-  (let [files (db/query conn :file
-                        {:project-id id}
-                        {::db/columns [:id :deleted-at]})]
-    ;; Every file below dies in this run: absorbing a library into
-    ;; them is wasted work, so the files only absorb survivors.
-    (binding [*deleting-file-ids* (into #{} d/xf:map-id files)]
-      (doseq [file files]
-        (delete-object cfg (assoc file
-                                  :object :file
-                                  :deleted-at deleted-at)))))
+        (let [files (db/exec! conn [sql:lock-project-files id])]
+          ;; Avoid absorbing into files that die in the same cascade.
+          (binding [*deleting-file-ids* (into #{} d/xf:map-id files)]
+            (doseq [file files]
+              (delete-file cfg file deleted-at nil))))
 
-  (record :projects id))
+        (record :projects id)))))
 
 (defmethod delete-object :team
   [{:keys [::db/conn] :as cfg} {:keys [id deleted-at]}]
@@ -208,7 +240,8 @@
   (binding [*team-deletion* true]
     (doseq [project (db/query conn :project
                               {:team-id id}
-                              {::db/columns [:id :deleted-at]})]
+                              {::sql/columns [:id]
+                               ::sql/order-by [:id]})]
       (delete-object cfg (assoc project
                                 :object :project
                                 :deleted-at deleted-at))))
@@ -240,6 +273,7 @@
    [:object [:enum :snapshot :team :project :profile :file]]
    [:deleted-at ::ct/inst]
    [:id ::sm/uuid]
+   [:purge {:optional true} :boolean]
    [:file-id {:optional true} ::sm/uuid]
    ;; DEPRECATED: only jobs queued before the cascade owned the
    ;; relations carry it (their RPC already deleted them). Remove once
@@ -284,7 +318,9 @@
   {::jobs/name      :delete-object
    ::jobs/schema    schema:delete-object-params
    ::jobs/handler
-   (fn [_context params]
-     (db/tx-run! cfg execute-delete-object params))
+   (fn [context params]
+     ;; A queued file or project job must match the current mark. Direct
+     ;; SREPL calls and real ancestor cascades can start from live rows.
+     (db/tx-run! cfg execute-delete-object (assoc params ::queued (some? context))))
    ::jobs/decoder   (sm/decoder schema:delete-object-params sm/json-transformer)
    ::jobs/validator (sm/validator schema:delete-object-params)})

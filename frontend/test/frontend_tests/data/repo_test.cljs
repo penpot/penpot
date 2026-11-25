@@ -90,17 +90,23 @@
            fetch    (fn [url ^js opts]
                       (let [uri         (js/URL. url)
                             ^js query   (.-searchParams uri)
-                            body        (.-body opts)]
+                            body        (some-> (.-body opts) transit/decode-str)
+                            path        (.-pathname uri)]
                         (swap! requests conj
-                               {:path (.-pathname uri)
-                                :id (.get query "id")
+                               {:path path
+                                :query (into {} (map vec) (seq (.entries query)))
                                 :method (.-method opts)
+                                :cache (.-cache opts)
                                 :content-type (aget (.-headers opts) "content-type")
-                                :body (when (some? body) (transit/decode-str body))})
+                                :body body})
                         (js/Promise.resolve
                          (if respond
                            (respond (count @requests))
-                           (http/make-transit-response {:revn 4 :lagged []})))))
+                           (http/make-transit-response
+                            (case path
+                              "/api/main/methods/update-file-v2" (thp/save-response (:revn body) (:vern body))
+                              "/api/main/methods/update-file" {:revn 4 :lagged []}
+                              {}))))))
            original (http/install-fetch-mock! fetch)]
        (try
          (await (run requests))
@@ -116,11 +122,25 @@
      :vern 0
      :features #{}
      :commits [{:commit-id (uuid/next)
-                :redo-changes [{:type :mod-page :id page-id :name "First edit"}]
-                :undo-changes []}
+                :changes [{:type :mod-page :id page-id :name "First edit"}]}
                {:commit-id (uuid/next)
-                :redo-changes [{:type :mod-page :id page-id :name "Second edit"}]
-                :undo-changes [{:type :mod-page :id page-id :name "First edit"}]}]}))
+                :changes [{:type :mod-page :id page-id :name "Second edit"}]}]}))
+
+(t/deftest ^:async fresh-get-file-bypasses-the-browser-cache-without-changing-the-query
+  (await
+   (with-captured-requests
+     (^:async fn [requests]
+       (let [id     (uuid/next)
+             params {:id id}]
+         (await (hva/observe (repo/cmd! :get-file (with-meta params {::repo/cache "no-store"}))))
+         (await (hva/observe (repo/cmd! :get-file params)))
+         (t/is (= ["no-store" nil] (mapv :cache @requests))
+               "only the opted-in request sets the Fetch cache mode")
+         (t/is (= (repeat 2 {:path "/api/main/methods/get-file"
+                             :method "GET"
+                             :query {"id" (str id)}})
+                  (mapv #(select-keys % [:path :method :query]) @requests))
+               "the cache option is not an RPC query parameter"))))))
 
 (t/deftest ^:async update-file-v2-posts-transit-with-id-in-query-and-body
   (await
@@ -129,24 +149,29 @@
        (let [params (make-save-params)]
          (await (hva/observe (repo/cmd! :update-file-v2 params)))
          (t/is (= [{:path "/api/main/methods/update-file-v2"
-                    :id (str (:id params))
+                    :query {"id" (str (:id params))}
                     :method "POST"
+                    :cache nil
                     :content-type "application/transit+json"
                     :body params}]
                   @requests)))))))
 
-(t/deftest ^:async a-save-and-its-retry-post-the-same-opt-in-transit-body
+(t/deftest ^:async a-save-and-its-retry-post-only-forward-changes-with-the-same-ids
   (await
    (with-captured-requests
      (^:async fn [requests]
        (let [{:keys [id revn session-id commits] :as params} (make-save-params)
-             edits    (mapv #(thp/local-commit id %) commits)
+             edits    (mapv (fn [{:keys [changes]} previous-name]
+                              (thp/local-commit id {:redo-changes changes
+                                                    :undo-changes [(assoc (first changes) :name previous-name)]}))
+                            commits ["Original" "First edit"])
              payload  (assoc params :repair-in-response true
                              :commits (mapv (fn [commit edit] (assoc commit :commit-id (:id @edit)))
                                             commits edits))
              request  {:path "/api/main/methods/update-file-v2"
-                       :id (str id)
+                       :query {"id" (str id)}
                        :method "POST"
+                       :cache nil
                        :content-type "application/transit+json"
                        :body payload}
              store    (ptk/store {:state {:current-file-id id
@@ -170,29 +195,29 @@
      (fn [n]
        (if (= 1 n)
          (js/Response. "Gateway timeout" #js {:status 504 :headers #js {"content-type" "text/html"}})
-         ;; A response without the new keys still follows the legacy path.
-         (http/make-transit-response {:revn 4 :lagged []}))))))
+         (http/make-transit-response (thp/save-response 3)))))))
 
-(t/deftest ^:async save-fault-marks-only-the-selected-redo-and-unhooks-after-use
+(t/deftest ^:async save-fault-marks-only-the-selected-commit-and-unhooks-after-use
   (await
    (with-captured-requests
      (^:async fn [requests]
        (let [params (make-save-params)
-             legacy {:id (:id params) :changes (get-in params [:commits 0 :redo-changes])}]
+             legacy {:id (:id params) :changes (get-in params [:commits 0 :changes])}]
          (try
            (dbg/failNextSave #js {:fault "validation" :commit 1 :fileId (str (:id params))})
            (await (hva/observe (repo/cmd! :update-file legacy)))
            (t/testing "legacy flat saves keep their query and body even with a fault armed"
              (t/is (= [{:path "/api/main/methods/update-file"
-                        :id (str (:id params))
+                        :query {"id" (str (:id params))}
                         :method "POST"
+                        :cache nil
                         :content-type "application/transit+json"
                         :body legacy}]
                       @requests)))
 
            (await (hva/observe (repo/cmd! :update-file-v2 params)))
-           (t/testing "only the second commit's redo changes"
-             (t/is (= (update-in params [:commits 1 :redo-changes] conj
+           (t/testing "only the second commit's changes are marked"
+             (t/is (= (update-in params [:commits 1 :changes] conj
                                  {:type :set-plugin-data
                                   :object-type :file
                                   :namespace :penpot-debug
@@ -231,7 +256,9 @@
                (finally
                  (dbg/releaseSaves)
                  (await held))))
-           (t/is (= [{:revn 4 :lagged []}] @answers))
+           (t/is (= [{:revn 3 :vern 0 :saved-revn 4 :recovery {:mode :none} :edit-matches-request true}]
+                    (mapv #(dissoc % :written) @answers)))
+           (t/is (uuid? (get-in @answers [0 :written 0 :id])))
            (t/is (identical? original (get (methods repo/cmd!) :update-file-v2))
                  "release restores the exact method table entry")
            (finally

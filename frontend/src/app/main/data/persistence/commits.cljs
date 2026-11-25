@@ -17,7 +17,7 @@
 (def ^:private commit-keys
   "Keys a queue entry keeps of each of its commits."
   [:id :origin :undo-group :redo-changes :undo-changes :remote-seq :undo-index
-   :undo-uncertain :compensation])
+   :undo-uncertain :compensation :replay-base :replay-targets])
 
 (def ^:private saved-keys
   "Keys a saved commit takes from its queue entry."
