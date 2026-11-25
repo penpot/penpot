@@ -239,6 +239,7 @@
          (t/is (mth/close? 37 (gpt/distance (nth (:points board') 0)
                                             (nth (:points board') 3))))))))
 
+;; JS only, for the same reason as reflow-of-a-flat-auto-height-board.
 #?(:cljs
    (t/deftest reflow-of-a-flat-fill-child
      (t/testing "a fill child whose points have no width gets the width of its board"
@@ -251,9 +252,9 @@
                                          :x 1000 :y 500 :width 0.01 :height 20))
              page     (thf/current-page file)
              child-id (thi/id :child)
-             file     (update-in file [:data :pages-index (:id page) :objects child-id :points]
-                                 (fn [_] [(gpt/point 1000 500) (gpt/point 1000 500)
-                                          (gpt/point 1000 520) (gpt/point 1000 520)]))
+             file     (assoc-in file [:data :pages-index (:id page) :objects child-id :points]
+                                [(gpt/point 1000 500) (gpt/point 1000 500)
+                                 (gpt/point 1000 520) (gpt/point 1000 520)])
              objects  (:objects (thf/current-page file))
              child    (get objects child-id)
 
