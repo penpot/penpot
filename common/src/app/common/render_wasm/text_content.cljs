@@ -84,6 +84,15 @@
     ""
     (d/nilv (:ruby span) "")))
 
+(defn- unshown-annotation?
+  "True when `span` annotates its text with a reading or warichu note that
+  is not drawn: a hidden reading, or one its language does not render
+  (`cjk/active-content`)."
+  [span]
+  (or (true? (::cjk/unshown-annotation span))
+      (and (true? (:ruby-hidden span))
+           (cjk/ruby-span? span))))
+
 (defn- encode-text
   "Into an UTF8 buffer. Returns an ArrayBuffer instance."
   [text]
@@ -196,10 +205,13 @@
              (mem/write-u8 dview ruby-align)
              (mem/write-u8 dview ruby-overhang)
              ;; Bit 1 selects Zhuyin; bit 2 joins the span to the reading of
-             ;; the span before it (`cjk/ruby-groups`).
+             ;; the span before it (`cjk/ruby-groups`); bit 3 marks a reading
+             ;; or warichu note that is not drawn: hidden (`span-ruby` leaves
+             ;; it out) or not rendered in the text language.
              (mem/write-u8 dview (bit-or ruby-side
                                          (if (true? (:ruby-zhuyin span)) 2 0)
-                                         (if (cjk/ruby-joins-previous? previous span) 4 0)))
+                                         (if (cjk/ruby-joins-previous? previous span) 4 0)
+                                         (if (unshown-annotation? span) 8 0)))
              ;; Use the former padding bytes; the span header stays the same size.
              (mem/write-u8 dview emphasis-position)
              (mem/write-u8 dview underline-position)

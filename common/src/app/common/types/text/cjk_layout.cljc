@@ -372,13 +372,23 @@
             node
             (get language-dependent-attrs level))))
 
+(defn- active-span
+  "`span` with the CJK attrs of its language `family` only. A span whose
+  reading or warichu note is left out gets `::unshown-annotation`: the
+  annotation still belongs to its text, so typed text stays out of it."
+  [span family]
+  (let [active (keep-language-attrs span family :span)]
+    (cond-> active
+      (and (annotated-span? span) (not (annotated-span? active)))
+      (assoc ::unshown-annotation true))))
+
 (defn- active-paragraph
   [paragraph]
   (let [language (:text-language paragraph)
         family   (language-family language)]
     (cond-> (-> paragraph
                 (d/update-when :children
-                               (partial mapv #(keep-language-attrs % family :span)))
+                               (partial mapv #(active-span % family)))
                 (keep-language-attrs family :paragraph))
       (some? language)
       (assoc :text-language language)

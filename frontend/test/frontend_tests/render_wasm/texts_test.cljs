@@ -470,6 +470,32 @@
     ;; A stored nil reading sends no bytes, as an absent one does.
     (t/is (= 0 (ruby-length (serialized-span {:text "日" :ruby nil}))))))
 
+(t/deftest write-spans-flags-annotations-that-are-not-drawn
+  (let [hidden-bit #(bit-and 8 (span-byte (serialized-span %) :ruby-side))]
+    (t/is (= 8 (hidden-bit {:text "日" :ruby "にち" :ruby-hidden true})))
+    (t/is (= 0 (hidden-bit {:text "日" :ruby "にち" :ruby-hidden false})))
+    ;; Without a reading there is nothing hidden.
+    (t/is (= 0 (hidden-bit {:text "日" :ruby "" :ruby-hidden true})))
+    ;; A reading or note the text language does not render.
+    (t/is (= 8 (hidden-bit {:text "日" ::cjk/unshown-annotation true})))))
+
+(t/deftest merged-spans-flagged-by-wasm-drop-their-reading-and-warichu
+  (let [content (editor-content [{:text "漢字" :ruby "かんじ" :ruby-group "g1"
+                                  :ruby-size "quarter" :font-weight "700"}
+                                 {:text "注" :warichu "warichu"}])
+        result  (text-editor/merge-exported-texts-into-content
+                 content [[{:p 0 :s 0 :d false :t "漢字"}
+                           {:p 0 :s 0 :d true :t "X"}
+                           {:p 0 :s 1 :d true :t "Y"}]])
+        spans   (get-in result [:children 0 :children 0 :children])]
+    (t/is (= ["漢字" "X" "Y"] (mapv :text spans)))
+    (t/is (= ["かんじ" nil nil] (mapv :ruby spans)))
+    (t/is (= ["g1" nil nil] (mapv :ruby-group spans)))
+    (t/is (not-any? #(contains? % :warichu) spans))
+    ;; Style, including how a reading would look, stays.
+    (t/is (= ["700" "700"] (mapv :font-weight (take 2 spans))))
+    (t/is (= "quarter" (:ruby-size (nth spans 1))))))
+
 (t/deftest write-spans-serializes-counted-digits-tcy
   (let [dview (serialized-span {:text "平成31年" :text-combine-upright "digits2"})]
     (t/is (= 3 (span-byte dview :text-combine-upright)))))

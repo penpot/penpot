@@ -1,4 +1,4 @@
-use crate::shapes::{Paragraph, TextContent, TextDirection, TextPositionWithAffinity};
+use crate::shapes::{Paragraph, TextContent, TextDirection, TextPositionWithAffinity, TextSpan};
 use crate::state::TextSelection;
 
 /// Get total character count in a paragraph.
@@ -373,11 +373,12 @@ pub fn insert_text_at_cursor(
     }
 
     if children.len() == 1 && children[0].text.is_empty() {
+        children[0].drop_annotations();
         children[0].set_text(text.to_string());
         return Some(text.chars().count());
     }
 
-    let (span_idx, offset_in_span) = find_text_span_at_offset(para, cursor.offset)?;
+    let (span_idx, offset_in_span) = insertion_point(para, cursor.offset)?;
 
     let children = para.children_mut();
     let span = &mut children[span_idx];
@@ -393,6 +394,50 @@ pub fn insert_text_at_cursor(
     span.set_text(new_text);
 
     Some(cursor.offset + text.chars().count())
+}
+
+/// Span and offset in it where text typed at `char_offset` goes. A reading or
+/// warichu note belongs to the text it annotates, so typed text joins it only
+/// inside its base: at either edge it goes into the unannotated neighbour on
+/// that side, or into a new unannotated span with the same style.
+pub fn insertion_point(para: &mut Paragraph, char_offset: usize) -> Option<(usize, usize)> {
+    let (span_idx, offset_in_span) = find_text_span_at_offset(para, char_offset)?;
+    let children = para.children_mut();
+    let span = &children[span_idx];
+    let span_len = span.text.chars().count();
+
+    if !span.is_annotated() || (offset_in_span > 0 && offset_in_span < span_len) {
+        return Some((span_idx, offset_in_span));
+    }
+
+    if span_len == 0 {
+        children[span_idx].drop_annotations();
+        return Some((span_idx, 0));
+    }
+
+    if offset_in_span == span_len {
+        return match children.get(span_idx + 1) {
+            Some(next) if next.shares_ruby_base_with(span) => Some((span_idx, offset_in_span)),
+            Some(next) if !next.is_annotated() => Some((span_idx + 1, 0)),
+            _ => {
+                let plain = span.unannotated_copy();
+                children.insert(span_idx + 1, plain);
+                Some((span_idx + 1, 0))
+            }
+        };
+    }
+
+    match span_idx.checked_sub(1).map(|idx| &children[idx]) {
+        Some(previous) if span.shares_ruby_base_with(previous) => Some((span_idx, 0)),
+        Some(previous) if !previous.is_annotated() => {
+            Some((span_idx - 1, previous.text.chars().count()))
+        }
+        _ => {
+            let plain = span.unannotated_copy();
+            children.insert(span_idx, plain);
+            Some((span_idx, 0))
+        }
+    }
 }
 
 /// Replace text at cursor position (overtype mode). Replaces N characters where N is the
@@ -419,11 +464,19 @@ pub fn replace_text_at_cursor(
     }
 
     if children.len() == 1 && children[0].text.is_empty() {
+        children[0].drop_annotations();
         children[0].set_text(text.to_string());
         return Some(text_len);
     }
 
-    let (span_idx, offset_in_span) = find_text_span_at_offset(para, cursor.offset)?;
+    // At the end of a span there is nothing of it to replace, so the text
+    // goes where an insertion would.
+    let (span_idx, offset_in_span) = match find_text_span_at_offset(para, cursor.offset)? {
+        (idx, offset) if offset == para.children()[idx].text.chars().count() => {
+            insertion_point(para, cursor.offset)?
+        }
+        found => found,
+    };
 
     let children = para.children_mut();
     let span = &mut children[span_idx];
@@ -476,13 +529,19 @@ pub fn delete_selection_range(text_content: &mut TextContent, selection: &TextSe
 
         paragraphs.drain((start.paragraph + 1)..=end_paragraph);
 
-        let children = paragraphs[start.paragraph].children_mut();
-        let has_content = children.iter().any(|span| !span.text.is_empty());
-        if has_content {
-            children.retain(|span| !span.text.is_empty());
-        } else if children.len() > 1 {
-            children.truncate(1);
-        }
+        drop_empty_spans(paragraphs[start.paragraph].children_mut());
+    }
+}
+
+/// Removes the empty spans of a paragraph. One that is left with no text
+/// keeps its first span as a placeholder, without its reading or warichu
+/// note: the text typed next takes its style but not those.
+fn drop_empty_spans(children: &mut Vec<TextSpan>) {
+    if children.iter().any(|span| !span.text.is_empty()) {
+        children.retain(|span| !span.text.is_empty());
+    } else if let Some(placeholder) = children.first_mut() {
+        placeholder.drop_annotations();
+        children.truncate(1);
     }
 }
 
@@ -557,12 +616,7 @@ pub fn delete_range_in_paragraph(para: &mut Paragraph, start_offset: usize, end_
         }
     }
 
-    let has_content = children.iter().any(|span| !span.text.is_empty());
-    if has_content {
-        children.retain(|span| !span.text.is_empty());
-    } else if !children.is_empty() {
-        children.truncate(1);
-    }
+    drop_empty_spans(children);
 }
 
 /// Delete the character before the cursor. Returns the new cursor position.
@@ -798,9 +852,7 @@ pub fn split_paragraph_at_cursor(
     }
 
     if new_para_children.is_empty() {
-        let mut empty_span = current_span.clone();
-        empty_span.set_text(String::new());
-        new_para_children.push(empty_span);
+        new_para_children.push(current_span.unannotated_copy());
     }
 
     let text_align = para.text_align();
@@ -826,6 +878,7 @@ pub fn split_paragraph_at_cursor(
         let new_text: String = text.chars().take(offset_in_span).collect();
         span.set_text(new_text);
     }
+    drop_empty_spans(children);
 
     let mut new_para = crate::shapes::Paragraph::new(
         text_align,
@@ -1047,5 +1100,190 @@ mod tests {
         let mut content = content(vec![paragraph(&["Añadir"])]);
         delete_selection_range(&mut content, &selection((0, 0), (5, 99)));
         assert_eq!(text_of(&content), "");
+    }
+
+    fn reading(text: &str, ruby: &str) -> TextSpan {
+        TextSpan {
+            ruby: ruby.to_string(),
+            ..span(text)
+        }
+    }
+
+    /// Text and reading of each span of paragraph `index`.
+    fn spans_of(content: &TextContent, index: usize) -> Vec<(String, String)> {
+        content.paragraphs()[index]
+            .children()
+            .iter()
+            .map(|span| (span.text.clone(), span.ruby.clone()))
+            .collect()
+    }
+
+    fn pairs(expected: &[(&str, &str)]) -> Vec<(String, String)> {
+        expected
+            .iter()
+            .map(|(text, ruby)| (text.to_string(), ruby.to_string()))
+            .collect()
+    }
+
+    fn type_at(content: &mut TextContent, paragraph: usize, offset: usize, text: &str) {
+        insert_text_with_newlines(content, &caret(paragraph, offset), text);
+    }
+
+    #[test]
+    fn text_typed_over_a_whole_reading_drops_it() {
+        let mut content = content(vec![Paragraph::new(
+            TextAlign::Left,
+            TextDirection::LTR,
+            None,
+            None,
+            1.2,
+            0.0,
+            vec![reading("漢字", "かんじ"), span("です")],
+        )]);
+        delete_selection_range(&mut content, &selection((0, 0), (0, 4)));
+        type_at(&mut content, 0, 0, "テスト");
+        assert_eq!(spans_of(&content, 0), pairs(&[("テスト", "")]));
+        assert!(content.paragraphs()[0].children()[0].annotations_dropped);
+    }
+
+    #[test]
+    fn text_typed_after_deleting_a_reading_drops_it() {
+        let mut content = content(vec![Paragraph::new(
+            TextAlign::Left,
+            TextDirection::LTR,
+            None,
+            None,
+            1.2,
+            0.0,
+            vec![reading("漢字", "かんじ")],
+        )]);
+        let cursor = delete_char_before(&mut content, &caret(0, 2)).unwrap();
+        delete_char_before(&mut content, &cursor);
+        assert_eq!(spans_of(&content, 0), pairs(&[("", "")]));
+        type_at(&mut content, 0, 0, "テスト");
+        assert_eq!(spans_of(&content, 0), pairs(&[("テスト", "")]));
+    }
+
+    fn reading_paragraph(spans: Vec<TextSpan>) -> TextContent {
+        content(vec![Paragraph::new(
+            TextAlign::Left,
+            TextDirection::LTR,
+            None,
+            None,
+            1.2,
+            0.0,
+            spans,
+        )])
+    }
+
+    #[test]
+    fn text_typed_after_a_reading_joins_the_next_plain_span() {
+        let mut content = reading_paragraph(vec![reading("漢字", "かんじ"), span("です")]);
+        type_at(&mut content, 0, 2, "X");
+        assert_eq!(
+            spans_of(&content, 0),
+            pairs(&[("漢字", "かんじ"), ("Xです", "")])
+        );
+    }
+
+    #[test]
+    fn text_typed_at_the_edges_of_a_reading_gets_its_own_span() {
+        let mut content = reading_paragraph(vec![reading("漢字", "かんじ")]);
+        type_at(&mut content, 0, 2, "X");
+        type_at(&mut content, 0, 0, "Y");
+        assert_eq!(
+            spans_of(&content, 0),
+            pairs(&[("Y", ""), ("漢字", "かんじ"), ("X", "")])
+        );
+        let spans = content.paragraphs()[0].children();
+        assert!(spans[0].annotations_dropped && spans[2].annotations_dropped);
+        assert!(!spans[1].annotations_dropped);
+    }
+
+    #[test]
+    fn text_typed_between_two_readings_stays_out_of_both() {
+        let mut content = reading_paragraph(vec![
+            reading("漢字", "かんじ"),
+            reading("東京", "とうきょう"),
+        ]);
+        type_at(&mut content, 0, 2, "X");
+        assert_eq!(
+            spans_of(&content, 0),
+            pairs(&[("漢字", "かんじ"), ("X", ""), ("東京", "とうきょう")])
+        );
+    }
+
+    #[test]
+    fn text_typed_inside_a_reading_base_keeps_it() {
+        let mut content = reading_paragraph(vec![reading("漢字", "かんじ")]);
+        type_at(&mut content, 0, 1, "X");
+        assert_eq!(spans_of(&content, 0), pairs(&[("漢X字", "かんじ")]));
+
+        // Between two spans of one reading the caret is inside its base.
+        let joined = TextSpan {
+            ruby_joins_previous: true,
+            ..reading("字", "かんじ")
+        };
+        let mut content = reading_paragraph(vec![reading("漢", "かんじ"), joined]);
+        type_at(&mut content, 0, 1, "X");
+        assert_eq!(
+            spans_of(&content, 0),
+            pairs(&[("漢X", "かんじ"), ("字", "かんじ")])
+        );
+    }
+
+    #[test]
+    fn text_typed_after_an_undrawn_annotation_or_warichu_stays_out() {
+        for annotated in [
+            TextSpan {
+                hidden_annotation: true,
+                ..span("漢字")
+            },
+            TextSpan {
+                warichu: true,
+                ..span("注記")
+            },
+        ] {
+            let mut content = reading_paragraph(vec![annotated]);
+            type_at(&mut content, 0, 2, "X");
+            let spans = content.paragraphs()[0].children();
+            assert_eq!(spans.len(), 2);
+            assert!(spans[0].is_annotated());
+            assert!(!spans[1].is_annotated() && spans[1].annotations_dropped);
+            assert_eq!(spans[1].text, "X");
+        }
+    }
+
+    #[test]
+    fn overtyping_at_the_end_of_a_reading_replaces_the_next_text() {
+        let mut content = reading_paragraph(vec![reading("漢字", "かんじ"), span("です")]);
+        replace_text_with_newlines(&mut content, &caret(0, 2), "X");
+        assert_eq!(
+            spans_of(&content, 0),
+            pairs(&[("漢字", "かんじ"), ("Xす", "")])
+        );
+    }
+
+    #[test]
+    fn a_new_paragraph_never_starts_inside_a_reading() {
+        let mut content = reading_paragraph(vec![reading("漢字", "かんじ")]);
+        assert!(split_paragraph_at_cursor(&mut content, &caret(0, 2)));
+        assert_eq!(spans_of(&content, 1), pairs(&[("", "")]));
+
+        let mut content = reading_paragraph(vec![reading("漢字", "かんじ")]);
+        assert!(split_paragraph_at_cursor(&mut content, &caret(0, 0)));
+        assert_eq!(spans_of(&content, 0), pairs(&[("", "")]));
+        assert_eq!(spans_of(&content, 1), pairs(&[("漢字", "かんじ")]));
+    }
+
+    #[test]
+    fn clearing_dropped_annotations_unmarks_every_span() {
+        let mut content = reading_paragraph(vec![reading("漢字", "かんじ")]);
+        type_at(&mut content, 0, 2, "X");
+        content.clear_dropped_annotations();
+        assert!(content.paragraphs()[0]
+            .children()
+            .iter()
+            .all(|span| !span.annotations_dropped));
     }
 }

@@ -607,7 +607,8 @@
     (t/is (not (contains? paragraph :text-orientation)))
     (t/is (= "left" (:text-align paragraph)))
     (t/is (not (contains? paragraph :korean-wrap)))
-    (t/is (= {:text "日本"} (first (:children paragraph))))
+    ;; The reading and note stay with their text, which the editor needs.
+    (t/is (= {:text "日本" ::cjk/unshown-annotation true} (first (:children paragraph))))
     (t/is (not (contains? active :line-adjustment)))
     (t/is (nil? (cjk/active-writing-mode content)))
     (t/is (= content (cjk-content {})) "the stored content keeps every attr")))
@@ -627,7 +628,7 @@
                (span active)))
       (t/is (not (contains? active :line-adjustment))))
     (let [active (cjk/active-content (cjk-content {:text-language "ko"}))]
-      (t/is (= {:text "日本"} (span active)))
+      (t/is (= {:text "日本" ::cjk/unshown-annotation true} (span active)))
       (t/is (= "keep-words" (:korean-wrap (first-paragraph active))))
       (t/is (= "vertical-rl" (:writing-mode (first-paragraph active)))))))
 

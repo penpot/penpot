@@ -149,7 +149,9 @@ pub struct RawTextSpan {
     ruby_size: u8,
     ruby_align: u8,
     ruby_overhang: u8,
-    /// Bit 0: over/under side of normal ruby. Bit 1: Zhuyin.
+    /// Bit 0: over/under side of normal ruby. Bit 1: Zhuyin. Bit 2: joins
+    /// the previous span's reading. Bit 3: the span has a reading or
+    /// warichu note that is not drawn.
     ruby_flags: u8,
     text_emphasis_position: u8,
     text_underline_position: u8,
@@ -226,10 +228,11 @@ impl From<RawTextSpan> for shapes::TextSpan {
         span.ruby_size = RawRubySize::from(value.ruby_size).into();
         span.ruby_align = RawRubyAlign::from(value.ruby_align).into();
         span.ruby_overhang = RawRubyOverhang::from(value.ruby_overhang).into();
-        // Bit 2 joins the span to the reading of the span before it, bit 1
-        // selects Zhuyin and bit 0 retains the existing over/under side.
-        // Reject unknown flags instead of treating corrupt bytes as Zhuyin.
-        let ruby_flags = if value.ruby_flags <= 7 {
+        // Bit 3 marks an annotation that is not drawn, bit 2 joins the span
+        // to the reading of the span before it, bit 1 selects Zhuyin and bit 0
+        // retains the existing over/under side. Reject unknown flags instead
+        // of treating corrupt bytes as Zhuyin.
+        let ruby_flags = if value.ruby_flags <= 15 {
             value.ruby_flags
         } else {
             0
@@ -237,6 +240,7 @@ impl From<RawTextSpan> for shapes::TextSpan {
         span.ruby_side = RawRubySide::from(ruby_flags & 1).into();
         span.ruby_zhuyin = ruby_flags & 2 != 0;
         span.ruby_joins_previous = ruby_flags & 4 != 0;
+        span.hidden_annotation = ruby_flags & 8 != 0;
         span
     }
 }
@@ -549,14 +553,16 @@ mod tests {
     /// layouts.
     #[test]
     fn zhuyin_flags_keep_legacy_side_and_header_size() {
-        for (flags, zhuyin, side, joins) in [
-            (0, false, AnnotationSide::Over, false),
-            (1, false, AnnotationSide::Under, false),
-            (2, true, AnnotationSide::Over, false),
-            (3, true, AnnotationSide::Under, false),
-            (4, false, AnnotationSide::Over, true),
-            (5, false, AnnotationSide::Under, true),
-            (255, false, AnnotationSide::Over, false),
+        for (flags, zhuyin, side, joins, hidden) in [
+            (0, false, AnnotationSide::Over, false, false),
+            (1, false, AnnotationSide::Under, false, false),
+            (2, true, AnnotationSide::Over, false, false),
+            (3, true, AnnotationSide::Under, false, false),
+            (4, false, AnnotationSide::Over, true, false),
+            (5, false, AnnotationSide::Under, true, false),
+            (8, false, AnnotationSide::Over, false, true),
+            (13, false, AnnotationSide::Under, true, true),
+            (255, false, AnnotationSide::Over, false, false),
         ] {
             let mut bytes = [0u8; std::mem::size_of::<RawTextSpan>()];
             bytes[13] = flags;
@@ -564,6 +570,7 @@ mod tests {
             assert_eq!(span.ruby_zhuyin, zhuyin);
             assert_eq!(span.ruby_side, side);
             assert_eq!(span.ruby_joins_previous, joins);
+            assert_eq!(span.hidden_annotation, hidden);
         }
     }
 

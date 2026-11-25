@@ -722,8 +722,10 @@
 
   `:pp` tracks paragraph attrs independently of span styling, including
   when a merge removes all the surviving paragraph's original characters.
+  `:d` marks a span that takes the style of its source span but not its
+  reading or warichu note (`cjk/text-content-attrs`).
 
-  exported  vector of paragraphs, each a vector of `{:pp 0 :p 0 :s 0 :t \"text\"}`
+  exported  vector of paragraphs, each a vector of `{:pp 0 :p 0 :s 0 :d false :t \"text\"}`
   content   existing Penpot content map (root -> paragraph-set -> …)"
   [content exported]
   (let [para-set       (first (get content :children))
@@ -740,11 +742,14 @@
               last-orig-para))
 
         styling-span
-        (fn [orig-para span-idx {:keys [p s]}]
-          (or (get-in orig-paras [p :children s])
-              (get-in orig-para [:children span-idx])
-              (-> orig-para :children last)
-              template-span))
+        (fn [orig-para span-idx {:keys [p s d]}]
+          (let [span (or (get-in orig-paras [p :children s])
+                         (get-in orig-para [:children span-idx])
+                         (-> orig-para :children last)
+                         template-span)]
+            (if (true? d)
+              (apply dissoc span cjk/text-content-attrs)
+              span)))
 
         new-paras
         (mapv (fn [para-idx spans]
@@ -758,7 +763,8 @@
                                  spans)
                            ;; A paragraph with no spans is dropped on the way
                            ;; back to WASM (and fails the content schema).
-                           [(assoc (or template-span {}) :text "")]))))
+                           [(-> (apply dissoc template-span cjk/text-content-attrs)
+                                (assoc :text ""))]))))
               (range (count exported))
               exported)
         new-para-set (assoc para-set :children new-paras)]

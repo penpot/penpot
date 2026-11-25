@@ -1030,11 +1030,14 @@ pub extern "C" fn text_editor_export_content() -> *mut u8 {
                     .replace('\n', "\\n")
                     .replace('\r', "\\r")
                     .replace('\t', "\\t");
+                // `d` asks the host to drop the reading and warichu note of
+                // the span this one takes its style from.
                 span_parts.push(format!(
-                    "{{\"pp\":{},\"p\":{},\"s\":{},\"t\":\"{}\"}}",
+                    "{{\"pp\":{},\"p\":{},\"s\":{},\"d\":{},\"t\":\"{}\"}}",
                     para.source_position(),
                     span.paragraph_position,
                     span.span_position,
+                    span.annotations_dropped,
                     escaped_text
                 ));
             }
@@ -1043,8 +1046,10 @@ pub extern "C" fn text_editor_export_content() -> *mut u8 {
         let json = format!("[{}]", json_parts.join(","));
 
         // The host rebuilds its content tree out of this JSON, so the current
-        // positions are what the next call has to report against.
+        // positions are what the next call has to report against, and the
+        // dropped annotations are gone from it.
         text_content.reset_span_positions();
+        text_content.clear_dropped_annotations();
 
         let mut bytes = json.into_bytes();
         bytes.push(0);

@@ -633,6 +633,16 @@ impl TextContent {
         }
     }
 
+    /// Clears `TextSpan::annotations_dropped` once the host has been told;
+    /// the layout does not depend on it.
+    pub fn clear_dropped_annotations(&mut self) {
+        for paragraph in &mut self.paragraphs {
+            for span in &mut paragraph.children {
+                span.annotations_dropped = false;
+            }
+        }
+    }
+
     pub fn paragraphs(&self) -> &[Paragraph] {
         &self.paragraphs
     }
@@ -2585,6 +2595,10 @@ pub struct TextSpan {
     /// Ruby (furigana) annotation for this span; empty means no ruby.
     pub ruby: String,
     pub ruby_zhuyin: bool,
+    /// The span has a reading or warichu note the host does not draw: a
+    /// hidden reading, or one the text language does not render. `ruby` and
+    /// `warichu` do not hold it then.
+    pub hidden_annotation: bool,
     /// The span continues the reading of the span before it: the frontend
     /// gives the spans of one reading the same group, so their text forms
     /// one base (`Paragraph::ruby_groups`).
@@ -2595,6 +2609,9 @@ pub struct TextSpan {
     pub ruby_side: AnnotationSide,
     /// Warichu (割注): two half-size lines stacked in one column position.
     pub warichu: bool,
+    /// The editor removed the span's reading or warichu note, which the host
+    /// still holds for the span this one takes its style from.
+    pub annotations_dropped: bool,
     pub font_features: FontFeatures,
     pub annotation_clearance: AnnotationClearance,
     pub fills: Vec<shapes::Fill>,
@@ -2624,12 +2641,14 @@ impl Default for TextSpan {
             text_underline_position: TextUnderlinePosition::default(),
             ruby: String::default(),
             ruby_zhuyin: false,
+            hidden_annotation: false,
             ruby_joins_previous: false,
             ruby_size: RubySize::default(),
             ruby_align: RubyAlign::default(),
             ruby_overhang: RubyOverhang::default(),
             ruby_side: AnnotationSide::default(),
             warichu: false,
+            annotations_dropped: false,
             font_features: FontFeatures::default(),
             annotation_clearance: AnnotationClearance::default(),
             fills: vec![],
@@ -2697,6 +2716,33 @@ impl TextSpan {
     /// note replaces the base text, so a reading has nothing to annotate.
     pub fn has_ruby(&self) -> bool {
         !self.warichu && !self.ruby_text().is_empty()
+    }
+
+    /// True when the span annotates its own text with a reading or is a
+    /// warichu note, drawn or not. Both belong to the span's characters.
+    pub fn is_annotated(&self) -> bool {
+        self.warichu || self.hidden_annotation || !self.ruby_text().is_empty()
+    }
+
+    /// Removes the reading and warichu note, keeping the style, and flags the
+    /// span so the host removes them too.
+    pub fn drop_annotations(&mut self) {
+        if !self.is_annotated() {
+            return;
+        }
+        self.ruby.clear();
+        self.hidden_annotation = false;
+        self.ruby_joins_previous = false;
+        self.warichu = false;
+        self.annotations_dropped = true;
+    }
+
+    /// An empty span with this style and no reading or warichu note.
+    pub fn unannotated_copy(&self) -> Self {
+        let mut span = self.clone();
+        span.set_text(String::new());
+        span.drop_annotations();
+        span
     }
 
     /// True when this span continues the reading of `previous`, the span
