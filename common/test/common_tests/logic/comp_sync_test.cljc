@@ -871,6 +871,36 @@
     (t/is (= #{} (changes-attrs sync-changes)))
     (t/is (empty? (:redo-changes sync-changes)))))
 
+(t/deftest test-sync-bool-to-group-keeps-bool-type-in-a-moved-copy
+  ;; A copy with its geometry touched keeps its :type when the main bool
+  ;; becomes a group. :bool-type must stay with it: syncing its removal
+  ;; left a bool without :bool-type, which the backend rejects.
+  (let [;; ==== Setup
+        file         (-> (file-with-bool-component)
+                         (move-shapes [:copy-bool :copy-p1 :copy-p2] (gpt/point 5 0)))
+        page         (thf/current-page file)
+
+        ;; ==== Action
+        updated-file (thf/apply-changes file
+                                        (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                                                    #{(thi/id :main-bool)}
+                                                                    (fn [shape]
+                                                                      (-> shape
+                                                                          (assoc :type :group)
+                                                                          (dissoc :bool-type)
+                                                                          (gsh/update-group-selrect (mapv (d/getf (:objects page)) (:shapes shape)))))
+                                                                    (:objects page)
+                                                                    {}))
+        file'        (thf/apply-changes updated-file (sync-file-changes updated-file))
+
+        ;; ==== Get
+        copy-bool'   (ths/get-shape file' :copy-bool)]
+
+    ;; ==== Check
+    (t/is (= #{:geometry-group} (:touched copy-bool')))
+    (t/is (= :bool (:type copy-bool')))
+    (t/is (= :union (:bool-type copy-bool')))))
+
 (t/deftest test-sync-bool-content-change-inside-main
   ;; Moving only the bool inside its main is a real change and must sync.
   (let [;; ==== Action
