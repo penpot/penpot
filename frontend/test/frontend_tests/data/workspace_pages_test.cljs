@@ -11,6 +11,7 @@
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.ids-map :as cthi]
    [app.common.uuid :as uuid]
+   [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
    [app.main.data.workspace.pages :as dwpg]
    [beicon.v2.core :as rx]
@@ -141,7 +142,7 @@
 (t/deftest ^:async add-page-opens-and-renames-the-new-page
   (let [file-id (uuid/next)
         stream  (rx/subject)
-        event   (dwpg/add-page {:file-id file-id})
+        event   (dwpg/create-page-and-focus {:file-id file-id})
         events  (atom [])
         done    (tha/observe (ptk/watch event {} stream)
                              :on-next #(swap! events conj %))]
@@ -151,7 +152,7 @@
           page-id                   (:id (ev/-data create))]
       (t/is (= ::dwpg/create-page (ptk/type create)))
       (t/is (= :interrupt interrupt))
-      (t/is (= :app.main.data.common/go-to-workspace (ptk/type go-to)))
+      (t/is (= ::dcm/go-to-workspace (ptk/type go-to)))
 
       ;; A page added by someone else initializes first: no rename.
       (rx/push! stream (ptk/data-event ::dwpg/initialized (uuid/next)))
@@ -163,3 +164,24 @@
         (t/is (= 4 (count @events)))
         (t/is (= ::dwpg/start-rename-page-item (ptk/type rename)))
         (t/is (= page-id (get-in state [:workspace-local :page-item])))))))
+
+;; ---------------------------------------------------------------------------
+;; Renaming a page to its current name commits nothing, so the next undo
+;; reverts the last visible change.
+;; ---------------------------------------------------------------------------
+
+(defn- ^:async rename-page-events
+  [store page-id name]
+  (let [events (atom [])]
+    (await (tha/observe (ptk/watch (dwpg/rename-page page-id name) @store (rx/subject))
+                        :on-next #(swap! events conj %)))
+    @events))
+
+(t/deftest ^:async rename-page-to-the-same-name-commits-nothing
+  (let [file    (cthf/sample-file :file1 :page-label :page1)
+        page-id (cthi/id :page1)
+        name    (:name (cthf/get-page file :page1))
+        store   (ths/setup-store file)]
+    (t/is (= [] (await (rename-page-events store page-id name))))
+    (t/is (= [:app.main.data.changes/commit-changes]
+             (map ptk/type (await (rename-page-events store page-id "Renamed")))))))

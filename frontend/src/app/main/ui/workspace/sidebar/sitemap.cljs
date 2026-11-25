@@ -307,7 +307,7 @@
                         (fn [event]
                           (when ^boolean collapsed
                             (on-toggle-collapsed))
-                          (st/emit! (dw/add-page {:file-id file-id}))
+                          (st/emit! (dw/create-page-and-focus {:file-id file-id}))
                           (-> event dom/get-current-target dom/blur!)))
 
         read-only?     (mf/use-ctx ctx/workspace-read-only?)

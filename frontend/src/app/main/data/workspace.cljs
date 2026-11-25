@@ -1805,7 +1805,7 @@
 (dm/export dwpg/initialize-page)
 (dm/export dwpg/finalize-page)
 (dm/export dwpg/create-page)
-(dm/export dwpg/add-page)
+(dm/export dwpg/create-page-and-focus)
 (dm/export dwpg/start-rename-page-item)
 (dm/export dwpg/stop-rename-page-item)
 (dm/export dwpg/duplicate-page)
