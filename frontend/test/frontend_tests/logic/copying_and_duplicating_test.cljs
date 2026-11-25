@@ -657,6 +657,44 @@
       done)))
 
 
+;; Shapes copied from a version before 2.20 hold camelCase svg attrs.
+;; Clipboard data skips the file migrations, so the paste must normalize
+;; them or the closed schema cancels it (issue #13327).
+(t/deftest paste-normalizes-legacy-svg-attrs-in-a-nested-copy
+  (t/async done
+    (mock/with-mocks {uuid/next cthi/next-uuid}
+      (fn [done']
+        (let [file   (-> (cthf/sample-file :file1 :page-label :page-1)
+                         (ctho/add-simple-component :icon :frame-icon :rect-icon)
+                         (ctho/add-frame :frame-card :name "card")
+                         (cthc/instantiate-component :icon :copy-icon :parent-label :frame-card :children-labels [:copy-rect-icon])
+                         (cthc/make-component :card :frame-card)
+                         (cthc/instantiate-component :card :copy-card :children-labels [:copy-card-icon]))
+              page   (cthf/current-page file)
+              shape  (cths/get-shape file :copy-card)
+              pdata  (-> (thp/simulate-copy-shape #{(:id shape)} (:objects page) {(:id file) file} page file #{"components/v2"} 46)
+                         (update :objects update-vals
+                                 (fn [obj]
+                                   (cond-> obj
+                                     (= :rect (:type obj))
+                                     (assoc :svg-attrs {:fill "none" :strokeLinejoin "round"})))))
+              store  (ths/setup-store file)
+              events [(dws/select-shape uuid/zero)
+                      (dw/paste-shapes pdata)]]
+
+          (ths/run-store
+           store done' events
+           (fn [new-state]
+             (let [file'  (ths/get-file-from-state new-state)
+                   page'  (cthf/current-page file')
+                   pasted (->> (vals (:objects page'))
+                               (filter #(= :rect (:type %)))
+                               (remove #(contains? (:objects page) (:id %))))]
+               (t/is (= 1 (count pasted)))
+               (t/is (= {:fill "none" :stroke-linejoin "round"}
+                        (:svg-attrs (first pasted)))))))))
+      done)))
+
 ;; Grid tracks in component copies
 
 (defn- add-grid-with-child
