@@ -491,15 +491,41 @@
   (not (and (:recovering pstate)
             (slow-retry-pending? pstate))))
 
+(defn- error-codes
+  "Sorted distinct codes of the validation details of `error`, or nil."
+  [{:keys [details]}]
+  (some->> (seq details) (keep :code) distinct sort vec not-empty))
+
 (defn- save-failed-event
   "Audit event for a save failure the user is told about, so failed saves
-  can be counted."
-  [{:keys [error queue] :as pstate}]
-  (ev/event {::ev/name "save-failed"
-             :cause-type (:cause-type error)
-             :code (:code error)
-             :retrying (slow-retry-pending? pstate)
-             :queued-commits (count queue)}))
+  can be counted and split by file and by validation code. `props` adds
+  the fields of each kind of failure."
+  [error file-id props]
+  (ev/event (assoc props
+                   ::ev/name "save-failed"
+                   :code (:code error)
+                   :file-id file-id
+                   :error-codes (error-codes error))))
+
+(defn- queue-failed-event
+  "`save-failed` event of a queue halted by `error` in `pstate`."
+  [{:keys [error queue index] :as pstate}]
+  (save-failed-event error
+                     (or (dm/get-in index [(:commit-id error) :file-id])
+                         (:file-id error))
+                     {:cause-type (:cause-type error)
+                      :retrying (slow-retry-pending? pstate)
+                      :queued-commits (count queue)}))
+
+(defn- rejected-event
+  "`save-failed` event of the commits of `file-id` that the server
+  `rejected`: they are undone, so they count as a failed save."
+  [state file-id {:keys [error commit-ids]}]
+  (save-failed-event error file-id
+                     {:cause-type (:type error)
+                      :retrying false
+                      :rejected-commits (count commit-ids)
+                      :queued-commits (count (dm/get-in state [:persistence :queue]))}))
 
 (defn- end-stopped-slow-cycle
   "Clears `:recovering` when the slow cycle no longer resends the failure:
@@ -539,7 +565,7 @@
          (rx/of (ptk/data-event ::error cause)
                 (ntf/hide :tag reconnecting-tag))
          (if (notify-failure? pstate)
-           (rx/of (save-failed-event pstate))
+           (rx/of (queue-failed-event pstate))
            (rx/empty))
          ;; A transport failure that outlasts the backoff can still pass, so
          ;; the queue keeps trying at a slow pace.
@@ -846,7 +872,9 @@
       ptk/WatchEvent
       (watch [it state stream]
         (if-let [plan @plan]
-          (apply-rollback-plan it state stream plan)
+          (rx/concat
+           (rx/of (rejected-event state file-id rejected))
+           (apply-rollback-plan it state stream plan))
           (rx/empty)))
 
       ptk/EffectEvent

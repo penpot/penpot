@@ -1233,12 +1233,49 @@
          (t/is (= 1 (count @events)))
          (t/is (= {:cause-type :validation
                    :code :referential-integrity
+                   :file-id file-id
+                   :error-codes [:missing-slot :parent-not-found]
                    :retrying false
                    :queued-commits 1}
                   (select-keys (first @events)
-                               [:cause-type :code :retrying :queued-commits])))))
+                               [:cause-type :code :file-id :error-codes
+                                :retrying :queued-commits])))))
      (fn [_ _]
-       (rx/throw (ex-info "invalid" {:type :validation :code :referential-integrity}))))))
+       (rx/throw (ex-info "invalid" {:type :validation
+                                     :code :referential-integrity
+                                     :details [{:code :parent-not-found}
+                                               {:code :missing-slot}
+                                               {:code :parent-not-found}]}))))))
+
+;; Scenario: the server keeps the valid commits of a save and rejects one
+;; as invalid data. Proves: the undone commit is counted as a failed save,
+;; with its file and validation codes, while the queue keeps going.
+(t/deftest ^:async a-rejected-commit-emits-a-save-failed-event
+  (await
+   (with-persistence
+     (^:async fn [{:keys [file-id response store]}]
+       (let [events   (save-failed-events store)
+             page-id  (uuid/next)
+             shape-id (uuid/next)
+             commit   (thp/rename-commit file-id page-id shape-id "A" "B")]
+         (ptk/emit! store (thp/open-file file-id page-id (thp/file-data page-id shape-id "B")))
+         (ptk/emit! store commit ::dps/force-persist)
+         (rx/push! response (assoc-in (thp/rejection (:id @commit))
+                                      [:rejected :error :details]
+                                      [{:code :missing-slot}]))
+         (await (async/wait-for #(seq @events) "the event is emitted"))
+         (await (async/settle))
+         (t/is (= 1 (count @events)))
+         (t/is (= {:cause-type :validation
+                   :code :referential-integrity
+                   :file-id file-id
+                   :error-codes [:missing-slot]
+                   :retrying false
+                   :rejected-commits 1}
+                  (select-keys (first @events)
+                               [:cause-type :code :file-id :error-codes
+                                :retrying :rejected-commits])))
+         (t/is (not= :error (get-in @store [:persistence :status]))))))))
 
 ;; Buffered commits.
 
