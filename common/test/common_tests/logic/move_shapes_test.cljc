@@ -217,3 +217,109 @@
     (t/is (nil? (:layout-item-min-w circle')))
     (t/is (nil? (:layout-item-absolute circle')))
     (t/is (nil? (:layout-item-z-index circle')))))
+(defn- add-row-board
+  [file label & {:as attrs}]
+  (tho/add-frame file label
+                 (merge {:layout                 :flex
+                         :layout-flex-dir        :row
+                         :layout-gap-type        :multiple
+                         :layout-gap             {:row-gap 0 :column-gap 0}
+                         :layout-align-items     :start
+                         :layout-justify-content :start
+                         :layout-align-content   :stretch
+                         :layout-wrap-type       :nowrap
+                         :layout-padding-type    :simple
+                         :layout-padding         {:p1 0 :p2 0 :p3 0 :p4 0}}
+                        attrs)))
+
+(defn- relocate
+  [file parent-id to-index ids]
+  (let [page    (thf/current-page file)
+        changes (cls/generate-relocate (-> (pcb/empty-changes nil)
+                                           (pcb/with-page-id (:id page))
+                                           (pcb/with-objects (:objects page)))
+                                       parent-id
+                                       to-index
+                                       ids)]
+    (thf/apply-changes file changes)))
+
+(t/deftest test-relocate-fill-shape-into-hug-board-fixes-the-shape
+  (let [;; ==== Setup
+        file  (-> (thf/sample-file :file1)
+                  (add-row-board :hug
+                                 :width 32 :height 40
+                                 :layout-item-h-sizing :auto
+                                 :layout-item-v-sizing :fix)
+                  (ths/add-sample-shape :inside :parent-label :hug
+                                        :width 32 :height 40
+                                        :layout-item-h-sizing :fix
+                                        :layout-item-v-sizing :fix)
+                  (ths/add-sample-shape :arriving
+                                        :width 32 :height 16
+                                        :layout-item-h-sizing :fill
+                                        :layout-item-v-sizing :fix))
+
+        ;; ==== Action
+        file' (relocate file (thi/id :hug) 0 #{(thi/id :arriving)})
+
+        ;; ==== Check
+        arriving' (ths/get-shape file' :arriving)
+        hug'      (ths/get-shape file' :hug)]
+
+    (t/is (= (thi/id :hug) (:parent-id arriving')))
+    (t/is (= :fix (:layout-item-h-sizing arriving')))
+    (t/is (= 32 (:width arriving')))
+    (t/is (= :auto (:layout-item-h-sizing hug')))))
+
+(t/deftest test-relocate-fill-shape-into-fixed-board-keeps-the-fill
+  (let [file  (-> (thf/sample-file :file1)
+                  (add-row-board :fixed
+                                 :width 100 :height 40
+                                 :layout-item-h-sizing :fix
+                                 :layout-item-v-sizing :fix)
+                  (ths/add-sample-shape :arriving
+                                        :width 32 :height 16
+                                        :layout-item-h-sizing :fill
+                                        :layout-item-v-sizing :fix))
+        file' (relocate file (thi/id :fixed) 0 #{(thi/id :arriving)})]
+
+    (t/is (= :fill (:layout-item-h-sizing (ths/get-shape file' :arriving))))
+    (t/is (= :fix (:layout-item-h-sizing (ths/get-shape file' :fixed))))))
+
+(t/deftest test-relocate-last-sizing-child-out-of-hug-board-fixes-the-board
+  (let [file  (-> (thf/sample-file :file1)
+                  (add-row-board :hug
+                                 :width 64 :height 40
+                                 :layout-item-h-sizing :auto
+                                 :layout-item-v-sizing :fix)
+                  (ths/add-sample-shape :leaving :parent-label :hug
+                                        :width 32 :height 40
+                                        :layout-item-h-sizing :fix
+                                        :layout-item-v-sizing :fix)
+                  (ths/add-sample-shape :staying :parent-label :hug
+                                        :width 32 :height 40
+                                        :layout-item-h-sizing :fill
+                                        :layout-item-v-sizing :fix))
+        file' (relocate file uuid/zero 0 #{(thi/id :leaving)})]
+
+    (t/is (= :fix (:layout-item-h-sizing (ths/get-shape file' :hug))))
+    (t/is (= :fill (:layout-item-h-sizing (ths/get-shape file' :staying))))))
+
+(t/deftest test-relocate-inside-the-same-hug-board-keeps-the-sizing
+  (let [file  (-> (thf/sample-file :file1)
+                  (add-row-board :hug
+                                 :width 64 :height 40
+                                 :layout-item-h-sizing :auto
+                                 :layout-item-v-sizing :fix)
+                  (ths/add-sample-shape :first :parent-label :hug
+                                        :width 32 :height 40
+                                        :layout-item-h-sizing :fix
+                                        :layout-item-v-sizing :fix)
+                  (ths/add-sample-shape :second :parent-label :hug
+                                        :width 32 :height 40
+                                        :layout-item-h-sizing :fix
+                                        :layout-item-v-sizing :fix))
+        file' (relocate file (thi/id :hug) 2 #{(thi/id :first)})]
+
+    (t/is (= :auto (:layout-item-h-sizing (ths/get-shape file' :hug))))
+    (t/is (= :fix (:layout-item-h-sizing (ths/get-shape file' :first))))))

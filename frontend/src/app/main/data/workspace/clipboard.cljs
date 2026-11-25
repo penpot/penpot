@@ -1013,6 +1013,11 @@
                                  (pcb/update-shapes [parent-id]
                                                     #(ctl/add-children-to-cell % selected all-objects drop-cell)))
 
+                  ;; A hug parent cannot give room to a pasted fill shape
+                  changes      (pcb/update-shapes changes selected
+                                                  #(ctl/fix-child-sizing %2 {} %1)
+                                                  {:with-objects? true})
+
                   add-component-to-variant? (and
                                              ;; Any of the shapes is a head
                                              (some ctk/instance-head? orig-shapes)

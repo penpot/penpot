@@ -429,7 +429,17 @@
         target-flex-layout? (ctl/flex-layout? target-frame)
         target-grid-layout? (ctl/grid-layout? target-frame)
 
-        children-ids (concat (:shapes target-frame) selected)
+        ;; Shapes that change frame, as seen from the target frame
+        arriving-ids (->> selected
+                          (remove #(= target-frame-id (get-in objects [% :frame-id])))
+                          (filterv #(contains? objects %)))
+
+        arriving-objects
+        (-> objects
+            (update-in [target-frame-id :shapes] into arriving-ids)
+            (into (map (fn [id]
+                         [id (assoc (get objects id) :parent-id target-frame-id)]))
+                  arriving-ids))
 
         set-parent-ids
         (fn [modif-tree shapes target-frame-id]
@@ -473,20 +483,24 @@
 
               ;; Add the object to the cell
               target-grid-layout?
-              (update-in [target-frame-id :modifiers] add-grid-children-modifiers target-frame-id shapes objects cell-data))))]
+              (update-in [target-frame-id :modifiers] add-grid-children-modifiers target-frame-id shapes objects cell-data))))
 
-    (as-> modif-tree $
-      (reduce update-frame-modifiers $ origin-frame-ids)
-      (cond-> $
-        ;; Set fix position to target frame (horizontal)
-        (and (ctl/flex-layout? objects target-frame-id)
-             (ctl/change-h-sizing? target-frame-id objects children-ids))
-        (update-in [target-frame-id :modifiers] ctm/change-property :layout-item-h-sizing :fix)
+        fix-arriving-sizing
+        (fn [modif-tree id]
+          (let [shape (get arriving-objects id)
+                fixed (ctl/fix-child-sizing arriving-objects {} shape)]
+            (reduce (fn [modif-tree attr]
+                      (cond-> modif-tree
+                        (not= (get shape attr) (get fixed attr))
+                        (update-in [id :modifiers] ctm/change-property attr (get fixed attr))))
+                    modif-tree
+                    [:layout-item-h-sizing :layout-item-v-sizing])))]
 
-        ;; Set fix position to target frame (vertical)
-        (and (ctl/flex-layout? objects target-frame-id)
-             (ctl/change-v-sizing? target-frame-id objects children-ids))
-        (update-in [target-frame-id :modifiers] ctm/change-property :layout-item-v-sizing :fix)))))
+    (cond-> (reduce update-frame-modifiers modif-tree origin-frame-ids)
+      ;; A hug target cannot give room to the fill shapes that arrive, so
+      ;; they are fixed and the target keeps hugging
+      (ctl/any-layout? target-frame)
+      (as-> $ (reduce fix-arriving-sizing $ arriving-ids)))))
 
 (defn modif->js
   [modif-tree objects]

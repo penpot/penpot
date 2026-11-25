@@ -7,10 +7,12 @@
 (ns frontend-tests.plugins.grid-test
   (:require
    [app.common.test-helpers.files :as cthf]
+   [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.store :as st]
    [app.plugins.api :as api]
    [app.plugins.utils :as u]
    [cljs.test :as t :include-macros true]
+   [frontend-tests.helpers.mock :as mock]
    [frontend-tests.helpers.state :as ths]
    [frontend-tests.helpers.wasm :as thw]
    [potok.v2.core :as ptk]))
@@ -62,3 +64,20 @@
                :layout-grid-dir)
         (set! (.-dir grid) "row")
         (t/is (= "row" (.-dir grid)))))))
+
+(defn- emitted-types
+  "Runs `thunk` and returns the `ptk/type` of every event emitted through
+  `st/emit!`."
+  [thunk]
+  (let [events (atom [])]
+    (with-redefs [st/emit! (mock/stub (fn [event] (swap! events conj event)))]
+      (thunk))
+    (mapv ptk/type @events)))
+
+(t/deftest grid-sizing-setters-emit-update-layout-child
+  (thw/with-wasm-mocks*
+    (fn []
+      (let [{:keys [^js grid]} (setup-grid)
+            expected           [::dwsl/update-layout-child]]
+        (t/is (= expected (emitted-types #(set! (.-horizontalSizing grid) "auto"))))
+        (t/is (= expected (emitted-types #(set! (.-verticalSizing grid) "auto"))))))))

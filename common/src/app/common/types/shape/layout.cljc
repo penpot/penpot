@@ -584,9 +584,13 @@
   (and (flex-layout? objects frame-id)
        (auto-height? objects frame-id)
        (or (and (col? objects frame-id)
-                (some (partial fill-height? objects) children-ids))
+                (->> children-ids
+                     (remove (partial position-absolute? objects))
+                     (some (partial fill-height? objects))))
            (and (row? objects frame-id)
-                (every? (partial fill-height? objects) children-ids)))))
+                (->> children-ids
+                     (remove (partial position-absolute? objects))
+                     (every? (partial fill-height? objects)))))))
 
 (defn remove-layout-container-data
   [shape]
@@ -1760,3 +1764,50 @@
     (assoc :layout-item-h-sizing :fix)
     (= (:layout-item-v-sizing shape) :fill)
     (assoc :layout-item-v-sizing :fix)))
+
+(defn fix-child-sizing
+  "Fixes the fill sizing of `shape` that a hug parent (merged with
+  `parent-changes`) would collapse."
+  [objects parent-changes shape]
+
+  (let [parent (-> (cfh/get-parent objects (:id shape))
+                   (d/deep-merge parent-changes))
+
+        auto-width? (auto-width? parent)
+        auto-height? (auto-height? parent)
+        grid? (grid-layout? parent)
+        col? (and (not grid?) (col? parent))
+        row? (and (not grid?) (row? parent))
+
+        all-children (->> parent
+                          :shapes
+                          (map (d/getf objects))
+                          (remove position-absolute?))]
+
+    (cond-> shape
+      ;; A hug grid cannot give room to fill children on that axis
+      (and grid? auto-width? (fill-width? shape))
+      (assoc :layout-item-h-sizing :fix)
+
+      (and grid? auto-height? (fill-height? shape))
+      (assoc :layout-item-v-sizing :fix)
+
+      ;; If the parent is hug width and the direction column
+      ;; change to fixed when ALL children are fill
+      (and col? auto-width? (every? fill-width? all-children))
+      (assoc :layout-item-h-sizing :fix)
+
+      ;; If the parent is hug height and the direction is column
+      ;; change to fixed when ANY children is fill
+      (and col? auto-height? (fill-height? shape))
+      (assoc :layout-item-v-sizing :fix)
+
+      ;; If the parent is hug width and the direction row
+      ;; change to fixed when ANY children is fill
+      (and row? auto-width? (fill-width? shape))
+      (assoc :layout-item-h-sizing :fix)
+
+      ;; If the parent is hug height and the direction row
+      ;; change to fixed when ALL children are fill
+      (and row? auto-height? (every? fill-height? all-children))
+      (assoc :layout-item-v-sizing :fix))))

@@ -1626,11 +1626,22 @@
 
 (defn fit-layout-modifiers
   [objects frame]
-  ;; Set temporaly the auto flag and calculate a reflow to resize and position
+  ;; Set temporaly the auto flag and calculate a reflow to resize and position.
+  ;; Only the fill children that the hug would collapse are fixed in the
+  ;; temporary objects, so they keep their current size.
   (let [objects
         (-> objects
             (assoc-in [(:id frame) :layout-item-h-sizing] :auto)
-            (assoc-in [(:id frame) :layout-item-v-sizing] :auto))]
+            (assoc-in [(:id frame) :layout-item-v-sizing] :auto))
+
+        fix-child
+        (if (ctl/flex-layout? frame)
+          (partial ctl/fix-child-sizing objects {})
+          ctl/toggle-fix-if-auto)
+
+        objects
+        (->> (:shapes frame)
+             (reduce #(update %1 %2 fix-child) objects))]
     (gm/set-objects-modifiers {(:id frame) {:modifiers (ctm/reflow-modifiers)}} objects)))
 
 (defn selected-fit-content

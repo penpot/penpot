@@ -414,6 +414,52 @@
            (t/is (= variant-id (:variant-id comp')))))
        after-commits-idle))))
 
+(defn- fill-main-in-board-file
+  "A main component that is a fill child of a flex board."
+  [sizing]
+  (-> (cthf/sample-file :file1)
+      (tho/add-frame :board
+                     :x 0 :y 0 :width 300 :height 100
+                     :layout :flex
+                     :layout-flex-dir :row)
+      (tho/add-simple-component :c01 :m01 :r01
+                                :root-params {:parent-label :board
+                                              :width 100 :height 80
+                                              :layout-item-h-sizing sizing
+                                              :layout-item-v-sizing :fix})))
+
+(t/deftest transform-in-variant-keeps-a-fill-main-at-its-size
+  (t/async
+    done
+    (let [store (ths/setup-store (fill-main-in-board-file :fill))
+          id    (cthi/id :m01)
+          vid   (uuid/next)]
+      (ths/run-store
+       store done
+       [(dwv/transform-in-variant id vid nil [] false true true)]
+       (fn [state]
+         (let [objects (page-objects (ths/get-file-from-state state))
+               mains   (map objects (:shapes (get objects vid)))]
+           (t/is (= 2 (count mains)))
+           (t/is (every? #(= :fix (:layout-item-h-sizing %)) mains))
+           (t/is (every? #(= 100 (:width %)) mains))))
+       after-commits-idle))))
+
+(t/deftest transform-in-variant-keeps-the-sizing-of-a-fixed-main
+  (t/async
+    done
+    (let [store (ths/setup-store (fill-main-in-board-file :fix))
+          id    (cthi/id :m01)
+          vid   (uuid/next)]
+      (ths/run-store
+       store done
+       [(dwv/transform-in-variant id vid nil [] false true true)]
+       (fn [state]
+         (let [objects (page-objects (ths/get-file-from-state state))
+               mains   (map objects (:shapes (get objects vid)))]
+           (t/is (every? #(= :fix (:layout-item-h-sizing %)) mains))))
+       after-commits-idle))))
+
 (t/deftest transform-in-variant-path-name-validates-after-every-commit
   (t/async
     done

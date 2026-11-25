@@ -471,6 +471,9 @@
         parent      (get objects parent-id)
         all-parents (into #{parent-id} (map #(cfh/get-parent-id objects %)) ids)
         parents     (if ignore-parents? #{parent-id} all-parents)
+        old-parents (disj parents parent-id)
+
+        arriving-ids (remove #(= parent-id (cfh/get-parent-id objects %)) ids)
 
         children-ids (mapcat #(cfh/get-children-ids-with-self objects %) ids)
 
@@ -645,8 +648,15 @@
                                         :constraints-v (gsh/default-constraints-v moved-shape))))
                              {:ignore-touched true})
 
-          ;; Fix the sizing when moving a shape
-          (pcb/update-shapes parents
+          ;; A hug parent cannot give room to a fill shape that arrives, so
+          ;; the shape is fixed and the parent keeps hugging
+          (pcb/update-shapes arriving-ids
+                             (fn [shape objects]
+                               (ctl/fix-child-sizing objects {} shape))
+                             {:with-objects? true})
+
+          ;; A hug parent that loses the children that sized it stops hugging
+          (pcb/update-shapes old-parents
                              (fn [parent]
                                (if (ctl/flex-layout? parent)
                                  (cond-> parent

@@ -159,14 +159,14 @@
          (mf/deps ids)
          (fn [_]
            (st/emit! (dw/trigger-bounding-box-cloaking ids))
-           (on-change ids :hidden true)))
+           (st/emit! (dw/update-shape-flags ids {:hidden true}))))
 
         handle-set-visible
         (mf/use-fn
          (mf/deps ids)
          (fn [_]
            (st/emit! (dw/trigger-bounding-box-cloaking ids))
-           (on-change ids :hidden false)))
+           (st/emit! (dw/update-shape-flags ids {:hidden false}))))
 
         handle-set-blocked
         (mf/use-fn

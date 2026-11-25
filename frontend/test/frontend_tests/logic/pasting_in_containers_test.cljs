@@ -1203,3 +1203,55 @@
            ;; ==== Check
            (t/is (= "#ff0000" (-> rect1' :fills first :fill-color)))))
        stopper))))
+(defn- paste-fill-rect
+  "Pastes a fill-width rect into a board built with `board-attrs` and
+  calls `check` with the pasted rect and the board read back from the file."
+  [board-attrs check]
+  (t/async
+    done
+    (let [file     (-> (cthf/sample-file :file1)
+                       (ctho/add-frame :board (merge {:x 0 :y 0 :width 100 :height 40}
+                                                     board-attrs))
+                       (cths/add-sample-shape :src
+                                              :type :rect
+                                              :x 300 :y 0 :width 32 :height 16
+                                              :layout-item-h-sizing :fill
+                                              :layout-item-v-sizing :fix))
+          store    (ths/setup-store file)
+          page     (cthf/current-page file)
+          pdata    (thp/simulate-copy-shape #{(cthi/id :src)} (:objects page)
+                                            {(:id file) file} page file #{} 67)]
+      (ths/run-store
+       store done
+       [(dws/select-shape (cthi/id :board))
+        (dw/paste-shapes pdata)]
+       (fn [new-state]
+         (let [file'   (ths/get-file-from-state new-state)
+               board'  (cths/get-shape file' :board)
+               pasted' (->> (:shapes board')
+                            (map #(get-in (cthf/current-page file') [:objects %]))
+                            first)]
+           (check pasted' board')))))))
+
+(t/deftest paste-fill-shape-into-hug-board-keeps-its-size
+  (paste-fill-rect {:layout :flex
+                    :layout-flex-dir :row
+                    :layout-item-h-sizing :auto
+                    :layout-item-v-sizing :fix}
+                   (fn [pasted board]
+                     (t/is (= :fix (:layout-item-h-sizing pasted)))
+                     (t/is (= 32 (:width pasted)))
+                     (t/is (= :auto (:layout-item-h-sizing board))))))
+
+(t/deftest paste-fill-shape-into-fixed-board-keeps-fill
+  (paste-fill-rect {:layout :flex
+                    :layout-flex-dir :row
+                    :layout-item-h-sizing :fix
+                    :layout-item-v-sizing :fix}
+                   (fn [pasted _board]
+                     (t/is (= :fill (:layout-item-h-sizing pasted))))))
+
+(t/deftest paste-fill-shape-into-board-without-layout-keeps-sizing
+  (paste-fill-rect {}
+                   (fn [pasted _board]
+                     (t/is (= :fill (:layout-item-h-sizing pasted))))))

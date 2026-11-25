@@ -461,6 +461,9 @@
       (cl/remove-all-fills variant-vec {:color clr/black :opacity 1})
       (when flex? (dwsl/create-layout-from-id variant-id :flex))
       (dwsh/update-shapes variant-vec #(merge % style-props))
+      ;; The container hugs the main, which cannot be fill inside it
+      (when flex?
+        (dwsh/update-shapes [main-instance-id] ctsl/toggle-fix-if-auto))
       (cl/add-stroke variant-vec stroke-props))
 
      (rx/of (define-variant-container variant-id main-instance-id component-id name))

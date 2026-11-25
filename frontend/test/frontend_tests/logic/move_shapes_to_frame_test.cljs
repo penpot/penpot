@@ -11,8 +11,10 @@
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.ids-map :as cthi]
    [app.common.test-helpers.shapes :as cths]
+   [app.common.types.modifiers :as ctm]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
+   [app.main.data.workspace.modifiers :as dwm]
    [app.main.data.workspace.transforms :as dwt]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
@@ -63,3 +65,56 @@
                      (fn [commits file']
                        (t/is (= 1 commits))
                        (t/is (= (:id frame) (:parent-id (cths/get-shape file' :rect1)))))))))
+
+(defn- hug-row-file
+  "A row board hugging its width at the width of its only child, and a fill
+  rect outside of it."
+  []
+  (-> (cthf/sample-file :file1)
+      (ctho/add-frame :hug
+                      :x 0 :y 0 :width 32 :height 40
+                      :layout :flex
+                      :layout-flex-dir :row
+                      :layout-item-h-sizing :auto
+                      :layout-item-v-sizing :fix)
+      (cths/add-sample-shape :inside
+                             :type :rect
+                             :parent-label :hug
+                             :width 32 :height 40
+                             :layout-item-h-sizing :fix
+                             :layout-item-v-sizing :fix)
+      (cths/add-sample-shape :arriving
+                             :type :rect
+                             :x 300 :y 0 :width 32 :height 16
+                             :layout-item-h-sizing :fill
+                             :layout-item-v-sizing :fix)))
+
+;; Scenario: a move ends over a row board that hugs its width at the width of
+;; its children. Proves: the arriving fill shape turns fix, and the board keeps
+;; hugging.
+(t/deftest moving-a-fill-shape-into-a-hug-board-fixes-the-shape
+  (t/async
+    done
+    (count-commits done (hug-row-file)
+                   (dwt/move-shapes-to-frame [(cthi/id :arriving)] (cthi/id :hug) nil nil)
+                   (fn [_ file']
+                     (t/is (= :fix (:layout-item-h-sizing (cths/get-shape file' :arriving))))
+                     (t/is (= :auto (:layout-item-h-sizing (cths/get-shape file' :hug))))))))
+
+;; Scenario: the drag preview of the same move. Proves: it fixes the arriving
+;; shape and leaves the board alone, as the commit does.
+(t/deftest dragging-a-fill-shape-over-a-hug-board-previews-the-fixed-shape
+  (let [file      (hug-row-file)
+        objects   (-> (cthf/current-page file) :objects)
+        arriving  (cthi/id :arriving)
+        hug       (cthi/id :hug)
+        modifiers (fn [tree id]
+                    (->> (get-in tree [id :modifiers :structure-parent])
+                         (filter #(= :change-property (:type %)))
+                         (map (juxt :property :value))
+                         set))
+        tree      (-> (dwm/create-modif-tree [arriving] (ctm/empty))
+                      (dwm/build-change-frame-modifiers objects [arriving] hug 0 nil))]
+    (t/is (contains? (modifiers tree arriving) [:layout-item-h-sizing :fix]))
+    (t/is (not-any? (comp #{:layout-item-h-sizing :layout-item-v-sizing} first)
+                    (modifiers tree hug)))))
