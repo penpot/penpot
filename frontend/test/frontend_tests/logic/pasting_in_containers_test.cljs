@@ -6,6 +6,7 @@
 (ns frontend-tests.logic.pasting-in-containers-test
   (:require
    [app.common.data :as d]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.test-helpers.components :as cthc]
    [app.common.test-helpers.compositions :as ctho]
@@ -15,6 +16,9 @@
    [app.common.test-helpers.variants :as thv]
    [app.common.transit :as transit]
    [app.common.types.component :as ctk]
+   [app.common.types.pages-list :as ctpl]
+   [app.common.types.shape :as cts]
+   [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.groups :as dwgr]
@@ -1103,6 +1107,141 @@
            (t/is (some? svg'))
            (t/is (= (:id board-a) (:frame-id svg')))
            (t/is (= (:id board-a) (:parent-id svg')))
+           (cthf/validate-file! file')))))))
+
+(def ^:private svg-test-data
+  {:name "test.svg"
+   :attrs {:width 100 :height 100}
+   :content [{:tag :rect
+              :attrs {:x "10" :y "10" :width "20" :height "20"}}]})
+
+(defn- find-uploaded-svg
+  [objects]
+  (->> (vals objects)
+       (filter #(= (:name %) "test"))
+       first))
+
+(defn- add-variants-for-svg-upload
+  "Variant set whose board is 100x100 and whose variants leave free space
+  inside it."
+  [file]
+  (let [file  (thv/add-variant file :v01 :c01 :m01 :c02 :m02
+                               :variant1-params {:x 0 :y 0 :width 40 :height 40}
+                               :variant2-params {:x 50 :y 0 :width 40 :height 40})
+        page  (cthf/current-page file)
+        board (cths/get-shape file :v01)
+        board (cts/setup-shape (-> board
+                                   (assoc :x 0 :y 0 :width 100 :height 100)
+                                   (dissoc :selrect :points)))]
+    (update file :data ctpl/update-page (:id page) #(ctst/set-shape % board))))
+
+(defn- check-svg-outside-variant-board
+  [new-state file]
+  (let [file'    (ths/get-file-from-state new-state)
+        objects  (:objects (cthf/current-page file'))
+        svg'     (find-uploaded-svg objects)
+        board-id (:id (cths/get-shape file :v01))
+        board'   (get objects board-id)]
+    (t/is (some? svg'))
+    (t/is (= (:parent-id board') (:parent-id svg')))
+    (t/is (= (:frame-id board') (:frame-id svg')))
+    (t/is (= (set (:shapes board'))
+             #{(:id (cths/get-shape file :m01)) (:id (cths/get-shape file :m02))}))
+    (cthf/validate-file! file')))
+
+(t/deftest svg-upload-with-variants-selected-skips-variant-board
+  "Uploading an SVG with several variants selected places it outside the variant board"
+  (t/async
+    done
+    (let [;; ==== Setup
+          file   (-> (cthf/sample-file :file1)
+                     (add-variants-for-svg-upload))
+          store  (ths/setup-store file)
+
+          ;; ==== Action
+          events [(dws/select-shapes (d/ordered-set (:id (cths/get-shape file :m01))
+                                                    (:id (cths/get-shape file :m02))))
+                  (dwsvg/add-svg-shapes nil svg-test-data (gpt/point 1000 1000) nil)]]
+
+      (ths/run-store
+       store done events
+       (fn [new-state]
+         (check-svg-outside-variant-board new-state file))))))
+
+(t/deftest svg-upload-on-empty-variant-board-area-skips-variant-board
+  "Uploading an SVG on an empty area of a variant board places it outside the board"
+  (t/async
+    done
+    (let [;; ==== Setup
+          file   (-> (cthf/sample-file :file1)
+                     (add-variants-for-svg-upload))
+          store  (ths/setup-store file)
+
+          ;; ==== Action
+          events [(dwsvg/add-svg-shapes nil svg-test-data (gpt/point 80 80) nil)]]
+
+      (ths/run-store
+       store done events
+       (fn [new-state]
+         (check-svg-outside-variant-board new-state file))))))
+
+(t/deftest svg-upload-inside-variant-keeps-variant
+  "Uploading an SVG inside a variant keeps that variant as parent"
+  (t/async
+    done
+    (let [;; ==== Setup
+          file   (-> (cthf/sample-file :file1)
+                     (add-variants-for-svg-upload))
+          store  (ths/setup-store file)
+
+          ;; ==== Action
+          m01    (cths/get-shape file :m01)
+          events [(dwsvg/add-svg-shapes nil svg-test-data (gpt/point 20 20) nil)]]
+
+      (ths/run-store
+       store done events
+       (fn [new-state]
+         (let [;; ==== Get
+               file' (ths/get-file-from-state new-state)
+               svg'  (find-uploaded-svg (:objects (cthf/current-page file')))]
+
+           ;; ==== Check
+           (t/is (some? svg'))
+           (t/is (= (:id m01) (:parent-id svg')))
+           (t/is (= (:id m01) (:frame-id svg')))
+           (cthf/validate-file! file')))))))
+
+(t/deftest svg-upload-on-component-copy-skips-copy
+  "Uploading an SVG on a component copy places it next to the copy"
+  (t/async
+    done
+    (let [;; ==== Setup
+          file   (-> (cthf/sample-file :file1)
+                     (ctho/add-simple-component-with-copy
+                      :c01 :main :main-child :copy
+                      :main-root-params {:width 100 :height 100}))
+          store  (ths/setup-store file)
+
+          ;; ==== Action
+          copy   (cths/get-shape file :copy)
+          events [(dwsvg/add-svg-shapes nil svg-test-data
+                                        (gpt/point (+ (:x copy) 5) (+ (:y copy) 5))
+                                        nil)]]
+
+      (ths/run-store
+       store done events
+       (fn [new-state]
+         (let [;; ==== Get
+               file'    (ths/get-file-from-state new-state)
+               objects  (:objects (cthf/current-page file'))
+               svg'     (find-uploaded-svg objects)
+               copy'    (get objects (:id copy))
+               inside   (cfh/get-children-ids objects (:id copy))]
+
+           ;; ==== Check
+           (t/is (some? svg'))
+           (t/is (= (:parent-id copy') (:parent-id svg')))
+           (t/is (not-any? #(= % (:id svg')) inside))
            (cthf/validate-file! file')))))))
 
 (t/deftest props-paste-with-unloaded-page-is-noop

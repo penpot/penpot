@@ -67,6 +67,7 @@
     :missing-slot
     :shape-ref-cycle
     :main-instance-not-a-variant
+    :variant-container-child-not-main
     :main-instance-invalid-variant-id
     :invalid-variant-properties
     :variant-not-main
@@ -623,6 +624,16 @@
                         (str/ffmt "Variant container % has invalid properties" (:id shape))
                         shape file page))))))
 
+(defn- variant-board-main?
+  "True when `shape` is a main, or is still the main of its live
+   component in this file even though it lost its :main-instance flag."
+  [shape file]
+  (or (ctk/main-instance? shape)
+      (let [component (ctkl/get-component (:data file) (:component-id shape))]
+        (and (some? component)
+             (= (:component-file shape) (:id file))
+             (= (:main-instance-id component) (:id shape))))))
+
 (defn- check-variant-container
   "Shape is a variant container, so:
      -all its children should be variants with variant-id equals to the shape-id
@@ -645,16 +656,25 @@
                     :clean-name clean-path))
     (run! (fn [child-id]
             (when-let [child (get objects child-id)]
-              (if (not (ctk/is-variant? child))
-                (report-error :main-instance-not-a-variant
-                              (str/ffmt "Main instance shape % should be a variant" (:id child))
-                              child file page
-                              :variant-id shape-id)
+              (cond
+                (ctk/is-variant? child)
                 (when (not= (:variant-id child) shape-id)
                   (report-error :main-instance-invalid-variant-id
                                 (str/ffmt "Main instance in variant % should have the variant-id of the container but has %" (:id child) (:variant-id child))
                                 child file page
-                                :variant-id shape-id)))))
+                                :variant-id shape-id))
+
+                (variant-board-main? child file)
+                (report-error :main-instance-not-a-variant
+                              (str/ffmt "Main instance shape % should be a variant" (:id child))
+                              child file page
+                              :variant-id shape-id)
+
+                :else
+                (report-error :variant-container-child-not-main
+                              (str/ffmt "Shape % inside variant container % is not a variant main" (:id child) shape-id)
+                              child file page
+                              :variant-id shape-id))))
           shapes)
     (check-variant-property-set shape file page objects file-data
                                 :compare-label false)))
