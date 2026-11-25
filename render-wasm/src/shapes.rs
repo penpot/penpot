@@ -217,6 +217,10 @@ pub struct Shape {
     pub svg_transform: Option<Matrix>,
     pub ignore_constraints: bool,
     deleted: bool,
+    /// A text of a page being opened whose font is still loading. It is laid
+    /// out but not drawn on the canvas until the frontend clears this, so it
+    /// never shows in a fallback face first. Exports still draw it.
+    awaiting_fonts: bool,
     /// Fills from a cold-load batch, held until text content is uploaded and laid out.
     deferred_batch_fills: Option<Vec<Fill>>,
     /// Strokes from a cold-load batch, applied together with deferred fills.
@@ -324,6 +328,7 @@ impl Shape {
             svg_transform: None,
             ignore_constraints: false,
             deleted: false,
+            awaiting_fonts: false,
             deferred_batch_fills: None,
             deferred_batch_strokes: None,
         }
@@ -483,6 +488,14 @@ impl Shape {
 
     pub fn set_hidden(&mut self, value: bool) {
         self.hidden = value;
+    }
+
+    pub fn set_awaiting_fonts(&mut self, value: bool) {
+        self.awaiting_fonts = value;
+    }
+
+    pub fn awaiting_fonts(&self) -> bool {
+        self.awaiting_fonts
     }
 
     pub fn set_hide_fill_on_export(&mut self, value: bool) {
@@ -2383,6 +2396,20 @@ mod tests {
         } else {
             unreachable!();
         }
+    }
+
+    #[test]
+    fn a_text_keeps_waiting_for_its_font_when_its_content_is_set_again() {
+        let mut shape = any_shape();
+        shape.set_shape_type(Type::Text(TextContent::default()));
+        assert!(!shape.awaiting_fonts());
+
+        shape.set_awaiting_fonts(true);
+        shape.clear_text();
+        assert!(shape.awaiting_fonts());
+
+        shape.set_awaiting_fonts(false);
+        assert!(!shape.awaiting_fonts());
     }
 
     #[test]

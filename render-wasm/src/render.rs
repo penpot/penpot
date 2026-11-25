@@ -1345,6 +1345,12 @@ impl RenderState {
             .any(|child_id| self.shape_visible_in_include_filter(child_id, tree))
     }
 
+    /// A hidden shape paints nothing, and neither does a text still waiting
+    /// for its font, except in an export.
+    fn skips_shape(&self, shape: &Shape) -> bool {
+        shape.hidden || (shape.awaiting_fonts() && self.export_context.is_none())
+    }
+
     /// When an include whitelist is active, only those ids are painted.
     fn shape_should_paint_for_viewer_layer(&self, shape_id: &Uuid) -> bool {
         match &self.include_filter {
@@ -3296,7 +3302,7 @@ impl RenderState {
             let Some(shadow_shape) = tree.get(shadow_shape_id) else {
                 continue;
             };
-            if shadow_shape.hidden {
+            if self.skips_shape(shadow_shape) {
                 continue;
             }
 
@@ -3436,7 +3442,7 @@ impl RenderState {
             let Some(content) = pass.tree.get(&content_id) else {
                 continue;
             };
-            if content.hidden {
+            if self.skips_shape(content) {
                 continue;
             }
             self.render_black_silhouette_subtree(content, children_clip_bounds.clone(), pass)?;
@@ -3504,7 +3510,7 @@ impl RenderState {
             let Some(child) = pass.tree.get(&child_id) else {
                 continue;
             };
-            if child.hidden {
+            if self.skips_shape(child) {
                 continue;
             }
             self.render_black_silhouette_subtree(child, children_clip_bounds.clone(), pass)?;
@@ -3984,7 +3990,7 @@ impl RenderState {
                 let transformed_element: Cow<Shape> = Cow::Borrowed(element);
 
                 // Aggressive early exit: check hidden first (fastest check)
-                if transformed_element.hidden {
+                if self.skips_shape(&transformed_element) {
                     continue;
                 }
 

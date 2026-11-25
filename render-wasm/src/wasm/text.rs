@@ -487,6 +487,19 @@ pub extern "C" fn force_update_shape_text_layout_for(a: u32, b: u32, c: u32, d: 
     });
 }
 
+/// Keeps the text `a b c d` off the canvas while `awaiting` is true: its font
+/// is still loading. See `Shape::awaiting_fonts`.
+#[no_mangle]
+pub extern "C" fn set_shape_awaiting_fonts(a: u32, b: u32, c: u32, d: u32, awaiting: bool) {
+    with_state!(state, {
+        let shape_id = uuid_from_u32_quartet(a, b, c, d);
+        if let Some(shape) = state.shapes.get_mut(&shape_id) {
+            shape.set_awaiting_fonts(awaiting);
+        }
+        state.touch_shape(shape_id);
+    });
+}
+
 const RAW_POSITION_DATA_SIZE: usize = size_of::<shapes::PositionData>();
 
 impl From<[u8; RAW_POSITION_DATA_SIZE]> for shapes::PositionData {

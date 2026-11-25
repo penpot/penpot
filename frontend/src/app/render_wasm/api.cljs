@@ -1665,6 +1665,100 @@
           (mapcat #(get font-index % []))
           pending-faces)))
 
+(defn- set-shape-awaiting-fonts
+  [id awaiting?]
+  (let [buffer (uuid/get-u32 id)]
+    (h/call wasm/internal-module "_set_shape_awaiting_fonts"
+            (aget buffer 0)
+            (aget buffer 1)
+            (aget buffer 2)
+            (aget buffer 3)
+            awaiting?)))
+
+;; Longest time a text of the page being opened stays off the canvas while
+;; its font loads, as the block period of CSS `font-display: block`: past
+;; it, the text shows in a fallback face until the font arrives.
+(def ^:private ^:const FONT_HOLD_TIMEOUT_MS 3000)
+
+;; Texts of the page being opened that WASM keeps off the canvas, each with
+;; the faces it still waits on.
+(defonce ^:private font-holds* (atom {}))
+
+;; Releases the texts of `font-holds*` as their faces arrive or time runs out.
+(defonce ^:private font-holds-subs* (atom nil))
+
+(defn- stop-font-holds
+  []
+  (when-let [subs (first (reset-vals! font-holds-subs* nil))]
+    (rx/dispose! subs)))
+
+(defn- show-held-texts
+  "Draws the held texts `ids` again, laid out anew with the faces WASM holds
+  now. While shapes load, the end of loading lays them out."
+  [ids]
+  (when (and (seq ids) (wasm/live?))
+    (doseq [id ids]
+      (set-shape-awaiting-fonts id false)
+      (when-not @shapes-loading?
+        (f/force-update-text-layout id)))
+    (request-render "held-texts-shown")))
+
+(defn- release-font-holds
+  "Shows the held texts that `update-holds`, a fn of `font-holds*`, drops."
+  [update-holds]
+  (let [[old new] (swap-vals! font-holds* update-holds)]
+    (when (empty? new)
+      (stop-font-holds))
+    (show-held-texts (into [] (remove #(contains? new %)) (keys old)))))
+
+(defn- settle-held-face
+  "`holds` once `face` is stored or has failed: the texts waiting on no other
+  face leave it."
+  [holds face]
+  (reduce-kv (fn [acc id faces]
+               (let [faces (disj faces face)]
+                 (if (empty? faces) acc (assoc acc id faces))))
+             {}
+             holds))
+
+(defn- hold-text-for-fonts
+  "Keeps the text `id` of the page being opened off the canvas until its
+  `faces` are stored or have failed, so it never shows in a fallback face
+  first, the rest of the page showing meanwhile. Past
+  `FONT_HOLD_TIMEOUT_MS` from the first text held, all show."
+  [id faces]
+  (when (seq faces)
+    (set-shape-awaiting-fonts id true)
+    (swap! font-holds* assoc id faces)
+    (when (nil? @font-holds-subs*)
+      (reset! font-holds-subs*
+              (->> (rx/merge
+                    (->> (rx/merge f/font-stored-stream f/font-storage-failed-stream)
+                         (rx/map (fn [face] #(settle-held-face % face))))
+                    (->> (rx/timer FONT_HOLD_TIMEOUT_MS)
+                         (rx/map (constantly (constantly {})))))
+                   (rx/subs! release-font-holds))))))
+
+(defn- clear-font-holds
+  "Drops the holds of the page opened before: its texts are drawn as soon as
+  they are on a page again."
+  []
+  (stop-font-holds)
+  (let [ids (keys (first (reset-vals! font-holds* {})))]
+    (when (wasm/live?)
+      (run! #(set-shape-awaiting-fonts % false) ids))))
+
+(defn- fetch-fonts
+  "Starts the font `fetches` right away, without waiting for the rest of the
+  page: each face reports when it is stored or has failed, and the texts
+  using it are laid out again then."
+  [fetches]
+  (when (seq fetches)
+    (->> (rx/from fetches)
+         (rx/merge-map (fn [{:keys [callback]}]
+                         (if (fn? callback) (callback) (rx/empty))))
+         (rx/subs! noop-fn noop-fn))))
+
 (defn- set-object-host-attrs
   "Host-specific attrs after structural upload (text/svg-raw/grid; optionally
    fills/strokes). When `skip-layout?` is true, flex+layout-item were already in
@@ -1673,7 +1767,10 @@
    only image fetches remain.
 
    Always `use-shape` first: after a multi-shape batch the WASM current shape is
-   the last record in the chunk, not this shape."
+   the last record in the chunk, not this shape.
+
+   Returns the font fetches of a text in `:fonts`, apart from its image
+   fetches, so a page load can start them first."
   [shape skip-layout? & {:keys [skip-fills-strokes?] :or {skip-fills-strokes? false}}]
   (let [id      (dm/get-prop shape :id)
         type    (dm/get-prop shape :type)
@@ -1709,7 +1806,6 @@
           (when is-text? (text-font-face-keys-state text-fonts))
           text-content-pending (when is-text? (upload-text-content id content text-fonts))
           pending-thumbnails (into [] (concat
-                                       text-content-pending
                                        (when is-text? (set-shape-text-images id content true))
                                        (set-shape-fills id fills true write-fills-strokes?)
                                        (set-shape-strokes id strokes true write-fills-strokes?)))
@@ -1717,7 +1813,8 @@
                                  (when is-text? (set-shape-text-images id content false))
                                  (set-shape-fills id fills false write-fills-strokes?)
                                  (set-shape-strokes id strokes false write-fills-strokes?)))]
-      {:thumbnails pending-thumbnails
+      {:fonts (vec text-content-pending)
+       :thumbnails pending-thumbnails
        :full pending-full
        :font-face-keys (or font-face-keys #{})
        :pending-font-face-keys (or pending-font-face-keys #{})})))
@@ -1729,9 +1826,11 @@
     (do
       (perf/begin-measure "set-object")
       (let [prepared (serialize-shape/serialize-shape shape)
-            result (set-object-host-attrs prepared false)]
+            {:keys [fonts] :as result} (set-object-host-attrs prepared false)]
         (perf/end-measure "set-object")
-        result))))
+        (-> result
+            (dissoc :fonts)
+            (update :thumbnails #(into fonts %)))))))
 
 (defn- update-text-layouts
   "Synchronously update text layouts for all shapes and send rect updates
@@ -1882,32 +1981,6 @@
            (rx/tap (fn [_] (force-update-text-layouts text-ids)))
            (rx/ignore)))))
 
-;; Longest wait for the fonts of a page before revealing it, as the block
-;; period of CSS `font-display: block`: past it, its texts show in the
-;; fallback faces until the fonts arrive.
-(def ^:private ^:const FONT_REVEAL_TIMEOUT_MS 3000)
-
-(defn- when-faces-ready
-  "Calls `on-ready` once the faces `text-font-state` waits on are stored or
-  have failed, after relayouting and rendering the texts that use them, or
-  after `FONT_REVEAL_TIMEOUT_MS`. Right away when no face is pending. A
-  page transition begun meanwhile drops the call: its page is gone."
-  [shapes text-font-state on-ready]
-  (let [pending-faces (:pending-faces text-font-state)
-        epoch         @transition-epoch*]
-    (if (empty? pending-faces)
-      (on-ready)
-      (->> (rx/race (rx/concat (await-pending-faces pending-faces) (rx/of :faces))
-                    (rx/map (constantly :timeout) (rx/timer FONT_REVEAL_TIMEOUT_MS)))
-           (rx/take 1)
-           (rx/subs!
-            (fn [result]
-              (when (= epoch @transition-epoch*)
-                (when (and (= :faces result) (wasm/live?))
-                  (relayout-after-fonts! shapes text-font-state)
-                  (request-render "faces-ready"))
-                (on-ready))))))))
-
 (defn process-pending
   [shapes thumbnails full text-font-state on-complete]
   (let [pending-thumbnails
@@ -1980,10 +2053,12 @@
   "Process up to `BATCH_MAX_SHAPES` shapes starting at `start-index`.
 
    Structural attrs are uploaded in one `_set_shapes_batch` FFI per chunk;
-   host-specific attrs (fills/strokes/text/grid/path) stay per-shape.
+   host-specific attrs (fills/strokes/text/grid/path) stay per-shape. The
+   fonts of the chunk start loading at once; with `hold-fonts?`, its texts
+   wait for them off the canvas (see `hold-text-for-fonts`).
 
    Returns {:thumbnails [...] :full [...] :text-font-state {...} :next-index n}"
-  [shapes start-index thumbnails-acc full-acc text-font-state-acc]
+  [shapes start-index thumbnails-acc full-acc text-font-state-acc hold-fonts?]
   (let [total     (count shapes)
         end-index (min total (+ start-index BATCH_MAX_SHAPES))
         chunk     (into [] (subvec (if (vector? shapes) shapes (vec shapes))
@@ -1994,23 +2069,29 @@
                     :include-fills-strokes? true})]
 
     (loop [xs prepared
+           fonts-acc (transient [])
            t-acc (transient thumbnails-acc)
            f-acc (transient full-acc)
            font-state-acc text-font-state-acc]
       (if-let [shape (first xs)]
-        (let [{:keys [thumbnails full font-face-keys pending-font-face-keys]}
+        (let [{:keys [fonts thumbnails full font-face-keys pending-font-face-keys]}
               (set-object-host-attrs shape true :skip-fills-strokes? true)]
+          (when hold-fonts?
+            (hold-text-for-fonts (:id shape) pending-font-face-keys))
           (recur (next xs)
+                 (reduce conj! fonts-acc fonts)
                  (reduce conj! t-acc thumbnails)
                  (reduce conj! f-acc full)
                  (acc-text-font-state font-state-acc
                                       (:id shape)
                                       font-face-keys
                                       pending-font-face-keys)))
-        {:thumbnails (persistent! t-acc)
-         :full (persistent! f-acc)
-         :text-font-state font-state-acc
-         :next-index end-index}))))
+        (do
+          (fetch-fonts (persistent! fonts-acc))
+          {:thumbnails (persistent! t-acc)
+           :full (persistent! f-acc)
+           :text-font-state font-state-acc
+           :next-index end-index})))))
 
 (defn- set-objects-async
   "Asynchronously process shapes in time-budgeted chunks, yielding to the
@@ -2025,7 +2106,8 @@
                    ;; Process one time-budgeted chunk
                    (let [{:keys [thumbnails full text-font-state next-index]}
                          (process-shapes-chunk shapes index
-                                               thumbnails-acc full-acc text-font-state-acc)]
+                                               thumbnails-acc full-acc text-font-state-acc
+                                               (some? on-shapes-ready))]
                      ;; Yield to browser, then continue with next chunk
                      (-> (yield-to-browser)
                          (p/then (fn [_]
@@ -2034,11 +2116,8 @@
                    (do
                      (perf/end-measure "set-objects")
 
-                     ;; Notify that shapes are loaded and tiles rebuilt, once
-                     ;; their fonts are: a text revealed before its font
-                     ;; shows missing glyphs.
-                     (when on-shapes-ready
-                       (when-faces-ready shapes text-font-state-acc on-shapes-ready))
+                     ;; Notify that shapes are loaded and tiles rebuilt
+                     (when on-shapes-ready (on-shapes-ready))
                      (if-not (wasm/live?)
                        (do
                          (end-shapes-loading!)
@@ -2056,9 +2135,15 @@
                          ;; Text layouts must run after _end_loading (they
                          ;; depend on state that is only correct when loading
                          ;; is false).  Each call touch_shape → touched_ids.
+                         ;; A face stored while loading leaves the layout
+                         ;; its text got in the fallback face: lay it out
+                         ;; again, unless still held for another face.
                          (let [text-ids (into [] (comp (filter cfh/text-shape?) (map :id)) shapes)]
                            (when (seq text-ids)
                              (update-text-layouts text-ids)
+                             (force-update-text-layouts
+                              (remove (set (keys @font-holds*))
+                                      (shape-ids-for-pending-fonts text-font-state-acc)))
                              (sync-loaded-text-selrects shapes text-font-state-acc)))
                          (if render-callback
                            (render-callback)
@@ -2066,23 +2151,27 @@
                          (ug/dispatch! (ug/event "penpot:wasm:set-objects"))
                          (resolve nil)
 
-                         ;; Kick off image fetches in the background.
-                         ;; The promise is already resolved so these don't
-                         ;; block the caller.
+                         ;; Kick off image fetches in the background, and
+                         ;; wait for them and for the faces, whose fetches
+                         ;; started with their chunk. The promise is already
+                         ;; resolved so these don't block the caller.
                          (let [pending-thumbnails (d/index-by :key :callback thumbnails-acc)
-                               pending-full       (d/index-by :key :callback full-acc)]
-                           (when (or (seq pending-thumbnails) (seq pending-full))
-                             (->> (rx/concat
-                                   (->> (rx/from (vals pending-thumbnails))
-                                        (rx/merge-map
-                                         (fn [callback]
-                                           (if (fn? callback) (callback) (rx/empty))))
-                                        (rx/reduce conj []))
-                                   (->> (rx/from (vals pending-full))
-                                        (rx/mapcat
-                                         (fn [callback]
-                                           (if (fn? callback) (callback) (rx/empty))))
-                                        (rx/reduce conj [])))
+                               pending-full       (d/index-by :key :callback full-acc)
+                               pending-faces      (:pending-faces text-font-state-acc)]
+                           (when (or (seq pending-thumbnails) (seq pending-full) (seq pending-faces))
+                             (->> (rx/merge
+                                   (rx/concat
+                                    (->> (rx/from (vals pending-thumbnails))
+                                         (rx/merge-map
+                                          (fn [callback]
+                                            (if (fn? callback) (callback) (rx/empty))))
+                                         (rx/reduce conj []))
+                                    (->> (rx/from (vals pending-full))
+                                         (rx/mapcat
+                                          (fn [callback]
+                                            (if (fn? callback) (callback) (rx/empty))))
+                                         (rx/reduce conj [])))
+                                   (await-pending-faces pending-faces))
                                   (rx/subs!
                                    noop-fn
                                    noop-fn
@@ -2145,28 +2234,33 @@
                       {:include-layout? true
                        :include-fills-strokes? true})
         total-shapes (count prepared)
-        {:keys [thumbnails full text-font-state]}
+        {:keys [fonts thumbnails full text-font-state]}
         (loop [index 0
+               fonts-acc (transient [])
                thumbnails-acc (transient [])
                full-acc (transient [])
                font-state-acc empty-text-font-state]
           (if (< index total-shapes)
             (let [shape (nth prepared index)
-                  {:keys [thumbnails full font-face-keys pending-font-face-keys]}
+                  {:keys [fonts thumbnails full font-face-keys pending-font-face-keys]}
                   (set-object-host-attrs shape true :skip-fills-strokes? true)]
+              (when (some? on-shapes-ready)
+                (hold-text-for-fonts (:id shape) pending-font-face-keys))
               (recur (inc index)
+                     (reduce conj! fonts-acc fonts)
                      (reduce conj! thumbnails-acc thumbnails)
                      (reduce conj! full-acc full)
                      (acc-text-font-state font-state-acc
                                           (:id shape)
                                           font-face-keys
                                           pending-font-face-keys)))
-            {:thumbnails (persistent! thumbnails-acc)
+            {:fonts (persistent! fonts-acc)
+             :thumbnails (persistent! thumbnails-acc)
              :full (persistent! full-acc)
              :text-font-state font-state-acc}))]
+    (fetch-fonts fonts)
     (perf/end-measure "set-objects")
-    (when on-shapes-ready
-      (when-faces-ready shapes text-font-state on-shapes-ready))
+    (when on-shapes-ready (on-shapes-ready))
     (when (wasm/live?)
       ;; Rebuild the tile index so _render knows which shapes
       ;; map to which tiles after a page switch.
@@ -2215,10 +2309,12 @@
    Shapes are processed in tree order (parents before children)
    to maintain proper shape reference consistency in WASM.
 
-   on-shapes-ready is an optional callback invoked once shapes are loaded
-   into WASM (and tiles rebuilt for async) and the fonts of their texts are
-   stored, or `FONT_REVEAL_TIMEOUT_MS` passed. It does not wait for images,
-   allowing callers to reveal the page content during transitions."
+   on-shapes-ready is an optional callback invoked right after shapes are
+   loaded into WASM (and tiles rebuilt for async). It fires before image
+   loading begins, allowing callers to reveal the page content during
+   transitions. It also marks the load of a page: a text of the page whose
+   font is still loading stays off the canvas until the font arrives, up to
+   `FONT_HOLD_TIMEOUT_MS` (see `hold-text-for-fonts`)."
   ([objects]
    (set-objects objects nil nil false))
   ([objects render-callback]
@@ -2226,6 +2322,8 @@
   ([objects render-callback on-shapes-ready force-sync]
    (when (wasm/live?)
      (perf/begin-measure "set-objects")
+     (when (some? on-shapes-ready)
+       (clear-font-holds))
      (let [shapes (shapes-in-tree-order objects)
            total-shapes (count shapes)]
        (if (or force-sync (< total-shapes ASYNC_THRESHOLD))
