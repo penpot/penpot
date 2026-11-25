@@ -94,6 +94,11 @@ const DEFAULT_TEXT_CONTENT_SIZE: f32 = 0.01;
 /// auto-width measurements include and Skia `max_intrinsic_width()` does not.
 const PARAGRAPH_SET_MARGIN_RIGHT: f32 = 1.0;
 
+/// Below this on-screen size, glyph rasterization costs more than the specks
+/// it draws. The tile paints letter marks from the cached Skia layout instead.
+/// Tiles are keyed by scale, so zooming in draws the real glyphs.
+pub const TEXT_GLYPH_MIN_DEVICE_PX: f32 = 4.0;
+
 impl TextContentSize {
     pub fn default() -> Self {
         Self {
@@ -547,6 +552,120 @@ impl TextContent {
 
     pub fn set_xywh(&mut self, x: f32, y: f32, w: f32, h: f32) {
         self.bounds = Rect::from_xywh(x, y, w, h);
+    }
+
+    /// Largest span size, in design pixels. `0` when the text has no spans.
+    pub fn max_font_size(&self) -> f32 {
+        let mut max_size = 0.0;
+        for paragraph in &self.paragraphs {
+            for span in paragraph.children() {
+                if span.font_size > max_size {
+                    max_size = span.font_size;
+                }
+            }
+        }
+        max_size
+    }
+
+    /// True when letters at `scale` (zoom × dpr) are still large enough to paint.
+    pub fn glyphs_visible_at_scale(&self, scale: f32) -> bool {
+        self.max_font_size() * scale >= TEXT_GLYPH_MIN_DEVICE_PX
+    }
+
+    /// True when every span fill is solid. Gradients and images keep the glyph
+    /// path — a single mark color cannot stand in for them.
+    pub fn overview_fills_are_solid(&self) -> bool {
+        self.paragraphs
+            .iter()
+            .flat_map(|p| p.children())
+            .all(|span| {
+                !span.fills.is_empty()
+                    && span
+                        .fills
+                        .iter()
+                        .all(|fill| matches!(fill, shapes::Fill::Solid(_)))
+            })
+    }
+
+    /// Letter marks from the cached Skia paragraphs. `None` when there is no
+    /// usable layout yet — the caller must paint real glyphs (and fill the
+    /// cache). Each mark keeps the topmost solid color of its span.
+    pub fn overview_runs(
+        &self,
+        selrect: &Rect,
+        valign: VerticalAlign,
+    ) -> Option<Vec<(Rect, skia::Color)>> {
+        if selrect.width() <= 0.0 || selrect.height() <= 0.0 {
+            return Some(Vec::new());
+        }
+        if self.layout.needs_update() || self.layout_version != self.content_version {
+            return None;
+        }
+
+        let paragraphs = &self.layout.paragraphs;
+        let total_height: f32 = paragraphs
+            .iter()
+            .filter_map(|group| group.first())
+            .map(|p| p.height())
+            .sum();
+        let vertical_offset = vertical_align_offset(selrect.height(), total_height, valign);
+        let origin_x = selrect.x();
+        let mut y_accum = selrect.y() + vertical_offset;
+        let mut runs = Vec::new();
+
+        for (index, group) in paragraphs.iter().enumerate() {
+            let Some(skia_para) = group.first() else {
+                continue;
+            };
+            let Some(model_para) = self.paragraphs.get(index) else {
+                continue;
+            };
+
+            // UTF-16 offsets → grapheme [start, end) and span color.
+            let mut graphemes = Vec::new();
+            let mut utf16 = 0usize;
+            for span in model_para.children() {
+                let color = span.overview_color()?;
+                for grapheme in span.text.graphemes(true) {
+                    let len = grapheme.encode_utf16().count();
+                    let start = utf16;
+                    utf16 += len;
+                    if !grapheme.chars().all(char::is_whitespace) {
+                        graphemes.push((start, utf16, color));
+                    }
+                }
+            }
+
+            for line in skia_para.get_line_metrics() {
+                for &(start, end, color) in &graphemes {
+                    if start < line.start_index || start >= line.end_excluding_whitespaces {
+                        continue;
+                    }
+                    let rects = skia_para.get_rects_for_range(
+                        start..end.min(line.end_index),
+                        RectHeightStyle::Tight,
+                        RectWidthStyle::Tight,
+                    );
+                    let Some(first) = rects.first() else {
+                        continue;
+                    };
+                    let mut box_rect = first.rect;
+                    for next in rects.iter().skip(1) {
+                        box_rect.join(next.rect);
+                    }
+                    if box_rect.width() < 0.05 && box_rect.height() < 0.05 {
+                        continue;
+                    }
+                    let ink_w = (box_rect.width() * OVERVIEW_MARK_RATIO).max(0.4);
+                    let ink_h = (box_rect.height() * OVERVIEW_INK_RATIO).max(0.4);
+                    let ink_x = origin_x + box_rect.left + (box_rect.width() - ink_w) * 0.5;
+                    let ink_y = y_accum + box_rect.top + (box_rect.height() - ink_h) * 0.5;
+                    runs.push((Rect::from_xywh(ink_x, ink_y, ink_w, ink_h), color));
+                }
+            }
+            y_accum += skia_para.height();
+        }
+        Some(runs)
     }
 
     /// Distinct font families referenced by this content's spans, in first-seen
@@ -1767,6 +1886,13 @@ fn capitalize_words(text: &str) -> String {
     result
 }
 
+/// Mark height as a fraction of the tight glyph box.
+const OVERVIEW_INK_RATIO: f32 = 0.62;
+
+/// Mark width as a fraction of the tight glyph box. The rest is the white
+/// between letters.
+const OVERVIEW_MARK_RATIO: f32 = 0.42;
+
 /// Add `text`, pushing every '\t' as a one em wide placeholder.
 /// Ends a paragraph with a zero-size placeholder, so Skia doesn't trim the spaces before it
 /// and measures and paints them.
@@ -1855,6 +1981,23 @@ impl TextSpan {
             Some(&self.fills[self.fills.len() - 1 - layer])
         } else {
             None
+        }
+    }
+
+    /// Topmost solid fill, for overview marks. Gradients and images return
+    /// `None` so the text stays on the glyph path.
+    fn overview_color(&self) -> Option<skia::Color> {
+        if self.fills.is_empty()
+            || self
+                .fills
+                .iter()
+                .any(|fill| !matches!(fill, shapes::Fill::Solid(_)))
+        {
+            return None;
+        }
+        match self.fills.last() {
+            Some(shapes::Fill::Solid(shapes::SolidColor(color))) => Some(*color),
+            _ => None,
         }
     }
 
@@ -2468,6 +2611,195 @@ mod tests {
         let mut content = TextContent::new(bounds, GrowType::Fixed);
         content.add_paragraph(test_paragraph(&["hello"]));
         content
+    }
+
+    fn content_with_font_sizes(sizes: &[f32]) -> TextContent {
+        let mut paragraph = test_paragraph(&["label"]);
+        paragraph.children_mut()[0].font_size = sizes[0];
+        if sizes.len() > 1 {
+            let mut extra = test_paragraph(&["label"]);
+            extra.children_mut()[0].font_size = sizes[1];
+            let mut content =
+                TextContent::new(Rect::from_xywh(0.0, 0.0, 80.0, 20.0), GrowType::Fixed);
+            content.add_paragraph(paragraph);
+            content.add_paragraph(extra);
+            return content;
+        }
+        let mut content = TextContent::new(Rect::from_xywh(0.0, 0.0, 80.0, 20.0), GrowType::Fixed);
+        content.add_paragraph(paragraph);
+        content
+    }
+
+    #[test]
+    fn glyphs_hide_when_the_body_is_under_four_device_pixels() {
+        let content = content_with_font_sizes(&[14.0]);
+        // 14 × 0.2 = 2.8px
+        assert!(!content.glyphs_visible_at_scale(0.2));
+        // 14 × 0.3 = 4.2px
+        assert!(content.glyphs_visible_at_scale(0.3));
+    }
+
+    #[test]
+    fn glyph_visibility_uses_the_largest_span() {
+        let content = content_with_font_sizes(&[12.0, 48.0]);
+        // 48 × 0.1 = 4.8px, even though the other span is 1.2px
+        assert!(content.glyphs_visible_at_scale(0.1));
+        assert_eq!(content.max_font_size(), 48.0);
+    }
+
+    #[test]
+    fn empty_text_has_no_glyphs_to_show() {
+        let content = TextContent::new(Rect::from_xywh(0.0, 0.0, 10.0, 10.0), GrowType::Fixed);
+        assert!(!content.glyphs_visible_at_scale(1.0));
+        assert!(content.overview_fills_are_solid());
+    }
+
+    fn overview_shape(text: &str, align: TextAlign, w: f32, h: f32) -> Shape {
+        let span = TextSpan::new(
+            text.to_string(),
+            FontFamily::new(Uuid::nil(), 400, crate::shapes::FontStyle::Normal),
+            16.0,
+            1.5,
+            0.0,
+            None,
+            None,
+            TextDirection::LTR,
+            400,
+            Uuid::nil(),
+            vec![shapes::Fill::Solid(shapes::SolidColor(skia::Color::BLACK))],
+        );
+        let paragraph = Paragraph::new(align, TextDirection::LTR, None, None, 1.5, 0.0, vec![span]);
+        let mut content = TextContent::new(Rect::from_xywh(0.0, 0.0, w, h), GrowType::Fixed);
+        content.add_paragraph(paragraph);
+        let mut shape = Shape::new(Uuid::nil());
+        shape.set_shape_type(shapes::Type::Text(content));
+        shape.set_selrect(0.0, 0.0, w, h);
+        shape
+    }
+
+    #[test]
+    fn overview_runs_need_a_laid_out_cache() {
+        let content = TextContent::new(Rect::from_xywh(0.0, 0.0, 100.0, 40.0), GrowType::Fixed);
+        assert!(content
+            .overview_runs(
+                &Rect::from_xywh(0.0, 0.0, 100.0, 40.0),
+                crate::shapes::VerticalAlign::Top
+            )
+            .is_none());
+    }
+
+    #[test]
+    fn overview_ink_covers_the_line_not_the_frame() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let shape = overview_shape("Enter a description...", TextAlign::Left, 292.0, 110.0);
+        let content = shape.get_text_content();
+        let selrect = shape.selrect();
+        let runs = content
+            .overview_runs(&selrect, crate::shapes::VerticalAlign::Top)
+            .expect("laid out");
+
+        // One mark per grapheme. "Enter a description..." is 5 + 1 + 14 marks,
+        // with a wider hole at the word space than between letters.
+        assert_eq!(runs.len(), 20);
+        assert!(runs[0].0.height() < 16.0, "height {}", runs[0].0.height());
+        assert!(runs[0].0.x() < 5.0, "x {}", runs[0].0.x());
+        let letter_gap = runs[1].0.x() - runs[0].0.right();
+        let word_gap = runs[5].0.x() - runs[4].0.right();
+        assert!(letter_gap > 0.2, "letter gap {letter_gap}");
+        assert!(word_gap > letter_gap + 1.0, "word gap {word_gap}");
+        assert!(runs[19].0.right() < 220.0, "right {}", runs[19].0.right());
+        assert!(runs[0].0.bottom() < 40.0, "bottom {}", runs[0].0.bottom());
+    }
+
+    #[test]
+    fn overview_ink_treats_an_emoji_as_one_mark() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let shape = overview_shape("hi 👍🏽", TextAlign::Left, 200.0, 40.0);
+        let runs = shape
+            .get_text_content()
+            .overview_runs(&shape.selrect(), crate::shapes::VerticalAlign::Top)
+            .expect("laid out");
+        // "h", "i", and one skin-toned emoji — not one mark per code point.
+        assert_eq!(runs.len(), 3);
+    }
+
+    #[test]
+    fn overview_ink_centers_a_short_line() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let shape = overview_shape("label", TextAlign::Center, 200.0, 80.0);
+        let runs = shape
+            .get_text_content()
+            .overview_runs(&shape.selrect(), crate::shapes::VerticalAlign::Center)
+            .expect("laid out");
+        assert_eq!(runs.len(), 5);
+        assert!(runs[1].0.x() > runs[0].0.right(), "letters touch");
+        let ink = runs[0].0;
+        assert!(ink.x() > 40.0, "x {}", ink.x());
+        assert!(runs[4].0.right() < 160.0, "right {}", runs[4].0.right());
+        assert!(ink.y() > 10.0, "y {}", ink.y());
+        assert!(ink.bottom() < 70.0, "bottom {}", ink.bottom());
+    }
+
+    #[test]
+    fn overview_marks_keep_each_span_color() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let red = skia::Color::from_argb(255, 200, 0, 0);
+        let blue = skia::Color::from_argb(255, 0, 0, 200);
+        let red_span = TextSpan::new(
+            "ab".to_string(),
+            FontFamily::new(Uuid::nil(), 400, crate::shapes::FontStyle::Normal),
+            16.0,
+            1.2,
+            0.0,
+            None,
+            None,
+            TextDirection::LTR,
+            400,
+            Uuid::nil(),
+            vec![shapes::Fill::Solid(shapes::SolidColor(red))],
+        );
+        let blue_span = TextSpan::new(
+            "cd".to_string(),
+            FontFamily::new(Uuid::nil(), 400, crate::shapes::FontStyle::Normal),
+            16.0,
+            1.2,
+            0.0,
+            None,
+            None,
+            TextDirection::LTR,
+            400,
+            Uuid::nil(),
+            vec![shapes::Fill::Solid(shapes::SolidColor(blue))],
+        );
+        let paragraph = Paragraph::new(
+            TextAlign::Left,
+            TextDirection::LTR,
+            None,
+            None,
+            1.2,
+            0.0,
+            vec![red_span, blue_span],
+        );
+        let mut content = TextContent::new(Rect::from_xywh(0.0, 0.0, 200.0, 40.0), GrowType::Fixed);
+        content.add_paragraph(paragraph);
+        let mut shape = Shape::new(Uuid::nil());
+        shape.set_shape_type(shapes::Type::Text(content));
+        shape.set_selrect(0.0, 0.0, 200.0, 40.0);
+
+        let runs = shape
+            .get_text_content()
+            .overview_runs(&shape.selrect(), crate::shapes::VerticalAlign::Top)
+            .expect("laid out");
+        assert_eq!(runs.len(), 4);
+        assert_eq!(runs[0].1, red);
+        assert_eq!(runs[1].1, red);
+        assert_eq!(runs[2].1, blue);
+        assert_eq!(runs[3].1, blue);
+        assert!(shape.get_text_content().overview_fills_are_solid());
     }
 
     #[test]

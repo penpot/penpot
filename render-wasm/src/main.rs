@@ -339,6 +339,7 @@ pub extern "C" fn set_view_end() -> Result<()> {
         if !render_state.options.is_profile_rebuild_tiles() {
             render_state.preserve_target_during_render = true;
         }
+        wasm::text::layout_texts_in_view(state);
         performance::end_measure!("set_view_end");
     });
     Ok(())

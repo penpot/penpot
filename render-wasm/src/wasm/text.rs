@@ -2,12 +2,15 @@ use macros::{wasm_error, ToJs};
 
 use super::{fills::RawFillData, fonts::RawFontStyle};
 
+use crate::globals::{get_render_state, has_render_state};
 use crate::mem::{self, SerializableResult};
 use crate::shapes::{
     self, GrowType, ListStyleType, Shape, TextAlign, TextDecoration, TextDirection, TextTransform,
     Type,
 };
+use crate::state::State;
 use crate::utils::{uuid_from_u32, uuid_from_u32_quartet};
+use crate::uuid::Uuid;
 use crate::{with_current_shape, with_current_shape_mut, with_state};
 
 use crate::error::Error;
@@ -354,11 +357,23 @@ pub extern "C" fn get_text_dimensions() -> *mut u8 {
     let mut ptr = std::ptr::null_mut();
 
     with_current_shape_mut!(state, |shape: &mut Shape| {
+        let show_glyphs = text_is_shown_in_view(shape);
         if let Type::Text(content) = &mut shape.shape_type {
-            let text_content_size = content.update_layout(shape.selrect);
+            let text_content_size = if show_glyphs {
+                content.update_layout(shape.selrect)
+            } else {
+                shapes::TextContentSize::new_with_size(
+                    shape.selrect.width(),
+                    shape.selrect.height(),
+                )
+            };
 
             // Sacar de aqui x, y, width, height
-            let rect = content.content_rect(&shape.selrect, shape.vertical_align);
+            let rect = if show_glyphs {
+                content.content_rect(&shape.selrect, shape.vertical_align)
+            } else {
+                shape.selrect
+            };
 
             let mut bytes = vec![0; 20];
             bytes[0..4].clone_from_slice(&text_content_size.width.to_le_bytes());
@@ -399,14 +414,104 @@ pub extern "C" fn intersect_position_in_shape(
     false
 }
 
-fn update_text_layout(shape: &mut Shape, force: bool) {
+/// Text box meets the current view (plus one tile margin). Export and a
+/// missing render state keep the old eager behavior.
+fn text_in_view(shape: &Shape) -> bool {
+    if !has_render_state() {
+        return true;
+    }
+    let render_state = get_render_state();
+    if render_state.export_context.is_some() {
+        return true;
+    }
+    if !matches!(shape.shape_type, Type::Text(_)) || shape.hidden || shape.deleted() {
+        return false;
+    }
+    let mut area = render_state.viewbox.area;
+    let margin = crate::tiles::TILE_SIZE / render_state.get_scale().max(0.01);
+    area.outset((margin, margin));
+    area.intersects(&shape.selrect)
+}
+
+/// Letters are large enough to read and the box meets the view.
+fn text_is_shown_in_view(shape: &Shape) -> bool {
+    if !text_in_view(shape) {
+        return false;
+    }
+    if !has_render_state() {
+        return true;
+    }
+    let Type::Text(content) = &shape.shape_type else {
+        return false;
+    };
+    content.glyphs_visible_at_scale(get_render_state().get_scale())
+}
+
+/// Returns true when Skia layout actually ran.
+fn update_text_layout(shape: &mut Shape, force: bool) -> bool {
+    // Layout even under the glyph floor so overview marks can use real metrics.
+    let lay_out = text_in_view(shape);
     if let Type::Text(text_content) = &mut shape.shape_type {
         if force {
             text_content.force_next_layout_update();
         }
+        if !lay_out {
+            return false;
+        }
         text_content.update_layout(shape.selrect);
         shape.apply_deferred_batch_paint();
         shape.invalidate_extrect();
+        return true;
+    }
+    false
+}
+
+/// Lay out every text in the current view, including bodies under the glyph
+/// floor. Overview marks need those paragraphs; without them the tile paints
+/// real glyphs instead.
+pub(crate) fn layout_texts_in_view(state: &mut State) {
+    if !has_render_state() {
+        return;
+    }
+    let ids: Vec<Uuid> = {
+        let render_state = get_render_state();
+        if render_state.export_context.is_some() {
+            return;
+        }
+        let mut area = render_state.viewbox.area;
+        let margin = crate::tiles::TILE_SIZE / render_state.get_scale().max(0.01);
+        area.outset((margin, margin));
+        state
+            .shapes
+            .iter()
+            .filter_map(|shape| {
+                if shape.id.is_nil() || shape.hidden || shape.deleted() {
+                    return None;
+                }
+                let Type::Text(content) = &shape.shape_type else {
+                    return None;
+                };
+                if !area.intersects(&shape.selrect) {
+                    return None;
+                }
+                if content.has_usable_paint_layout(shape) {
+                    return None;
+                }
+                Some(shape.id)
+            })
+            .collect()
+    };
+
+    for id in ids {
+        let Some(shape) = state.shapes.get_mut(&id) else {
+            continue;
+        };
+        if let Type::Text(content) = &mut shape.shape_type {
+            content.update_layout(shape.selrect);
+            shape.apply_deferred_batch_paint();
+            shape.invalidate_extrect();
+        }
+        state.touch_shape(id);
     }
 }
 
@@ -421,10 +526,13 @@ pub extern "C" fn update_shape_text_layout() {
 pub extern "C" fn update_shape_text_layout_for(a: u32, b: u32, c: u32, d: u32) {
     with_state!(state, {
         let shape_id = uuid_from_u32_quartet(a, b, c, d);
-        if let Some(shape) = state.shapes.get_mut(&shape_id) {
-            update_text_layout(shape, false);
+        let laid_out = state
+            .shapes
+            .get_mut(&shape_id)
+            .is_some_and(|shape| update_text_layout(shape, false));
+        if laid_out {
+            state.touch_shape(shape_id);
         }
-        state.touch_shape(shape_id);
     });
 }
 
@@ -432,10 +540,13 @@ pub extern "C" fn update_shape_text_layout_for(a: u32, b: u32, c: u32, d: u32) {
 pub extern "C" fn force_update_shape_text_layout_for(a: u32, b: u32, c: u32, d: u32) {
     with_state!(state, {
         let shape_id = uuid_from_u32_quartet(a, b, c, d);
-        if let Some(shape) = state.shapes.get_mut(&shape_id) {
-            update_text_layout(shape, true);
+        let laid_out = state
+            .shapes
+            .get_mut(&shape_id)
+            .is_some_and(|shape| update_text_layout(shape, true));
+        if laid_out {
+            state.touch_shape(shape_id);
         }
-        state.touch_shape(shape_id);
     });
 }
 
