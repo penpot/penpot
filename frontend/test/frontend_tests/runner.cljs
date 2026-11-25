@@ -53,6 +53,7 @@
    [frontend-tests.data.workspace-notifications-test]
    [frontend-tests.data.workspace-pages-test]
    [frontend-tests.data.workspace-path-edition-test]
+   [frontend-tests.data.workspace-position-data-test]
    [frontend-tests.data.workspace-reflow-test]
    [frontend-tests.data.workspace-shape-layout-test]
    [frontend-tests.data.workspace-shortcuts-test]
@@ -300,6 +301,7 @@
    'frontend-tests.data.workspace-notifications-test
    'frontend-tests.data.workspace-pages-test
    'frontend-tests.data.workspace-path-edition-test
+   'frontend-tests.data.workspace-position-data-test
    'frontend-tests.data.workspace-reflow-test
    'frontend-tests.data.workspace-shape-layout-test
    'frontend-tests.data.workspace-shortcuts-test
