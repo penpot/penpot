@@ -732,6 +732,20 @@
           (pcb/with-file-data file-data)
           (pcb/update-shapes [(:id shape)] repair-shape)))))
 
+(defmethod repair-error :variant-container-child-not-main
+  [_ {:keys [shape page-id args]} file-data _]
+  (let [objects   (:objects (ctpl/get-page file-data page-id))
+        board-id  (:variant-id args)
+        parent-id (dm/get-in objects [board-id :parent-id])
+        parent-shapes (:shapes (get objects parent-id))
+        index         (or (some-> (cfh/get-position-on-parent objects board-id) inc)
+                          (count parent-shapes))]
+    (log/debug :hint "repairing shape :variant-container-child-not-main" :id (:id shape) :name (:name shape) :page-id page-id)
+    (log/debug :hint "  -> move shape out of the variant container" :parent-id parent-id :index index)
+    (-> (pcb/empty-changes nil page-id)
+        (pcb/with-file-data file-data)
+        (pcb/change-parent parent-id [shape] index {:allow-altering-copies true}))))
+
 (defmethod repair-error :main-instance-invalid-variant-id
   [_ {:keys [shape page-id args]} file-data _]
   (let [repair-shape

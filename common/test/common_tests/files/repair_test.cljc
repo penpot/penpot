@@ -12,6 +12,7 @@
    generate accurate errors, and that the repair functions return the file to
    a stable state."
   (:require
+   [app.common.data :as d]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.migrations :as cfm]
    [app.common.files.repair :as cfr]
@@ -130,6 +131,96 @@
       (t/is (= variant-id (get-in file' [:data :components deleted-id :objects main-id :variant-id])))
       (t/is (nil? (ths/get-shape-by-id file' main-id)))
       (t/is (nil? (:errors result))))))
+
+(defn- variant-board-with-stray-group
+  [file]
+  (-> file
+      (thv/add-variant :variant1 :component1 :root1 :component2 :root2)
+      (tho/add-group :group1 :parent-label :variant1)
+      (ths/add-sample-shape :child1 :parent-label :group1)))
+
+(t/deftest validate-variant-container-child-not-main
+  (t/testing "a plain shape inside a variant board reports its own code, not a main-instance one"
+    (let [file   (-> (thf/sample-file :file1 :page-label :page1)
+                     (variant-board-with-stray-group))
+          errors (cfv/validate-file file {})
+          error  (first errors)]
+      (t/is (= 1 (count errors)))
+      (t/is (= :variant-container-child-not-main (:code error)))
+      (t/is (= (thi/id :group1) (:id (:shape error))))
+      (t/is (= (thi/id :variant1) (:variant-id (:args error))))
+      (t/is (= (str "Shape " (thi/id :group1)
+                    " inside variant container " (thi/id :variant1)
+                    " is not a variant main")
+               (:hint error)))))
+
+  (t/testing "a variant main that lost :main-instance and :variant-id is still reported as a main"
+    (let [file   (-> (thf/sample-file :file1 :page-label :page1)
+                     (thv/add-variant :variant1 :component1 :root1 :component2 :root2)
+                     (ths/update-shape :root1 :variant-id nil)
+                     (ths/update-shape :root1 :main-instance nil))
+          codes  (->> (cfv/validate-file file {})
+                      (filter #(= (thi/id :root1) (:id (:shape %))))
+                      (map :code)
+                      (set))]
+      (t/is (contains? codes :main-instance-not-a-variant))
+      (t/is (not (contains? codes :variant-container-child-not-main))))))
+
+(t/deftest repair-variant-container-child-not-main
+  (t/testing "a plain group inside a variant board moves out with its children"
+    (let [file    (-> (thf/sample-file :file1 :page-label :page1)
+                      (variant-board-with-stray-group))
+          result  (repair-until-valid file)
+          file'   (:file result)
+          board'  (ths/get-shape file' :variant1)
+          parent' (ths/get-shape-by-id file' (:parent-id board'))
+          group'  (ths/get-shape file' :group1)
+          child'  (ths/get-shape file' :child1)]
+      (t/is (nil? (:errors result)))
+      (t/is (some? group'))
+      (t/is (some? child'))
+      (t/is (= (:parent-id board') (:parent-id group')))
+      (t/is (= (inc (d/index-of (:shapes parent') (:id board')))
+               (d/index-of (:shapes parent') (:id group'))))
+      (t/is (= (:frame-id board') (:frame-id group')))
+      (t/is (= (:frame-id board') (:frame-id child')))
+      (t/is (nil? (:variant-id group')))
+      (t/is (= #{(thi/id :root1) (thi/id :root2)} (set (:shapes board'))))))
+
+  (t/testing "a component copy inside a variant board moves out and nothing is deleted"
+    (let [file    (-> (thf/sample-file :file1 :page-label :page1)
+                      (thv/add-variant :variant1 :component1 :root1 :component2 :root2)
+                      (tho/add-simple-component :component3 :main3 :main3-child)
+                      (thc/instantiate-component :component3 :copy1 :parent-label :variant1))
+          result  (repair-until-valid file)
+          file'   (:file result)
+          board'  (ths/get-shape file' :variant1)
+          copy'   (ths/get-shape file' :copy1)]
+      (t/is (nil? (:errors result)))
+      (t/is (some? copy'))
+      (t/is (= (:parent-id board') (:parent-id copy')))
+      (t/is (= #{(thi/id :root1) (thi/id :root2)} (set (:shapes board'))))
+      (t/is (some? (ths/get-shape file' :main3)))
+      (t/is (some? (ths/get-shape file' :main3-child)))))
+
+  (t/testing "a stray child repair appends when the variant board is missing from its parent's children"
+    (let [file          (-> (thf/sample-file :file1 :page-label :page1)
+                            (variant-board-with-stray-group))
+          page-id       (thf/current-page-id file)
+          board-id      (thi/id :variant1)
+          parent-id     (get-in file [:data :pages-index page-id :objects board-id :parent-id])
+          parent-shapes (get-in file [:data :pages-index page-id :objects parent-id :shapes])
+          error         (first (filter #(= :variant-container-child-not-main (:code %))
+                                       (cfv/validate-file file {})))
+          file          (update-in file [:data :pages-index page-id :objects parent-id :shapes]
+                                   #(d/removev #{board-id} %))
+          changes       (cfr/repair-file file {} [error])
+          file'         (thf/apply-changes file {:redo-changes changes} :validate? false)
+          group'        (ths/get-shape file' :group1)
+          parent'       (ths/get-shape-by-id file' parent-id)]
+      (t/is (= (count (d/removev #{board-id} parent-shapes))
+               (d/index-of (:shapes parent') (:id group'))))
+      (t/is (= parent-id (:parent-id group'))))))
 
 (t/deftest repair-invalid-variant-id-variant-component-bad-id
   (t/testing "detect and repair a variant main whose variant id does not match the container's id"
@@ -1682,4 +1773,3 @@
       (t/is (= [{:name "SizeBig" :value "ab"}] (:variant-properties comp')))
       (t/is (nil? (ths/get-shape file' :root1)))
       (t/is (nil? (seq (property-errors result)))))))
-

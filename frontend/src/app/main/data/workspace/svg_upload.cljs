@@ -13,6 +13,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.files.shapes-builder :as sb]
    [app.common.svg :as csvg]
+   [app.common.types.container :as ctn]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
@@ -102,6 +103,10 @@
                                      (dm/get-in objects [base-id :frame-id])))
 
                parent-id       (if keep-parent? base-id frame-id)
+               parent-id       (:id (ctn/get-first-valid-parent objects parent-id))
+               frame-id        (if (cfh/frame-shape? objects parent-id)
+                                 parent-id
+                                 (dm/get-in objects [parent-id :frame-id]))
 
                [new-shape new-children]
                (sb/create-svg-shapes id svg-data position objects frame-id parent-id selected true)
