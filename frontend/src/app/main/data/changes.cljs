@@ -289,6 +289,44 @@
                (>= index 0))
       (dm/get-in items [index :undo-group]))))
 
+(defn- changed-ids
+  "Ids of the shapes `changes` modify."
+  [changes]
+  (into #{} (keep #(when (= :mod-obj (:type %)) (:id %))) changes))
+
+(defn- applied-action-item
+  "The history entry of the pending undo action `undo-group`, when it is
+   applied (not undone)."
+  [{:keys [items index]} undo-group]
+  (let [items (or items [])
+        index (or index (dec (count items)))]
+    (->> (subvec items 0 (max 0 (inc index)))
+         (filter #(contains? (:undo-groups %) undo-group))
+         (last))))
+
+(defn action-undo-group
+  "The undo group of the pending undo action (see
+   `app.main.data.workspace.undo/start-action`) a commit derived from
+   earlier ones belongs to, given the ids of the shapes it changes: the
+   action whose history entry changed one of them, unless the edit being
+   made (the open transaction or the last history entry) did too. Lets a
+   late commit (a text resized once its font loads, a layout reflown)
+   join the action that caused it rather than an edit made since."
+  [state ids]
+  (let [{:keys [transaction items index actions] :as undo} (:workspace-undo state)]
+    (when (and (seq actions) (seq ids))
+      (let [touches? #(some ids (changed-ids (:redo-changes %)))
+            index    (or index (dec (count items)))
+            last-item (when (>= index 0) (get items index))]
+        (when-not (or (touches? transaction)
+                      (and (some? last-item)
+                           (not-any? (:undo-groups last-item) actions)
+                           (touches? last-item)))
+          (some (fn [undo-group]
+                  (when (some-> (applied-action-item undo undo-group) touches?)
+                    undo-group))
+                actions))))))
+
 (defn commit-changes
   "Schedules a list of changes to execute now, and add the corresponding undo changes to
    the undo stack.
@@ -298,9 +336,10 @@
    - undo-group: if some consecutive changes (or even transactions) share the same
                  undo-group, they will be undone or redone in a single step. Without
                  it, a `stack-undo?` commit that records undo takes the group of
-                 the history entry it is added to, a commit made while an undo
-                 transaction is open joins the transaction's group, and any
-                 other gets a new one.
+                 the pending undo action it derives from (see
+                 `action-undo-group`) or of the history entry it is added to, a
+                 commit made while an undo transaction is open joins the
+                 transaction's group, and any other gets a new one.
    - ignore-save-lock: commit even while the save-failure lock holds. Only for
                  commits that are not user edits: the undo of rolled-back
                  commits and data derived from commits already made.
@@ -343,7 +382,8 @@
                   ;; it was opened with
                   undo-group (or undo-group
                                  (when (and stack-undo? save-undo? (seq undo-changes))
-                                   (get-stacked-undo-group state))
+                                   (or (action-undo-group state (changed-ids rchg))
+                                       (get-stacked-undo-group state)))
                                  (:undo-group tx)
                                  (:commit-group tx)
                                  (uuid/next))]

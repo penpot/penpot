@@ -47,18 +47,26 @@
     (cond-> changes add-undo-group? (assoc :undo-group undo-group))))
 
 (defn update-shapes-buffer-start
-  []
-  (ptk/reify ::update-shapes-buffer-start
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc state ::update-shapes-buffer true))))
+  "Starts buffering `update-shapes`. With `undo-group`, the commits the
+  buffer makes have it."
+  ([]
+   (update-shapes-buffer-start nil))
+  ([{:keys [undo-group]}]
+   (ptk/reify ::update-shapes-buffer-start
+     ptk/UpdateEvent
+     (update [_ state]
+       (cond-> (assoc state ::update-shapes-buffer true)
+         (some? undo-group)
+         (assoc ::update-shapes-buffer-undo-group undo-group))))))
 
 (defn update-shapes-buffer-stop
   []
   (ptk/reify ::update-shapes-buffer-stop
     ptk/UpdateEvent
     (update [_ state]
-      (assoc state ::update-shapes-buffer false))))
+      (-> state
+          (assoc ::update-shapes-buffer false)
+          (dissoc ::update-shapes-buffer-undo-group)))))
 
 (defn- get-buffered-text-reflow-event
   [state page-id ids]
@@ -126,6 +134,7 @@
 
            (let [page-id (or page-id (get state :current-page-id))
                  objects (lookup-changed-objects state page-id)
+                 undo-group (or undo-group (::update-shapes-buffer-undo-group state))
                  text-ids
                  (into #{}
                        (filter #(cfh/text-shape? objects %))
