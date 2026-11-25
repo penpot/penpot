@@ -6,14 +6,21 @@
 
 (ns frontend-tests.plugins.file-test
   (:require
+   [app.common.test-helpers.components :as cthc]
+   [app.common.test-helpers.files :as cthf]
+   [app.common.test-helpers.shapes :as cths]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.main.repo :as rp]
+   [app.main.store :as st]
    [app.plugins.file :as file]
    [app.plugins.register :as r]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
-   [frontend-tests.helpers.mock :as mock]))
+   [frontend-tests.helpers.mock :as mock]
+   [frontend-tests.helpers.state :as ths]))
+
+(def ^:private plugin-id "00000000-0000-0000-0000-000000000000")
 
 (t/deftest file-version-created-at-returns-stored-date
   (let [created-at (js/Date.)
@@ -158,3 +165,37 @@
                   :files {other-id {:id other-id
                                     :features #{"variants/v1" "components/v2"}}}}]
     (t/is (nil? (file/get-file-features state other-id)))))
+
+(defn- library-with-component
+  []
+  (-> (cthf/sample-file :library-file :page-label :library-page)
+      (cths/add-sample-shape :main :type :frame)
+      (cthc/make-component :comp :main)))
+
+(defn- consumer-with-copy
+  [library]
+  (-> (cthf/sample-file :consumer-file :page-label :consumer-page)
+      (cthc/instantiate-component :comp :copy :library library)))
+
+(defn- validation-codes
+  [file libraries]
+  (let [store (ths/setup-store file {:libraries libraries})]
+    (mock/with-mocks*
+      {st/state store}
+      (mapv #(.-code ^js %) (.validate (file/file-proxy plugin-id (:id file)))))))
+
+(t/deftest ^:async file-validate-ignores-data-less-library-entries
+  ;; A dashboard stub of a library that is not linked to the file has no
+  ;; `:data` and no `:library-of`; its copies must not be reported.
+  (let [library (library-with-component)
+        file    (consumer-with-copy library)
+        stub    {:id (:id library) :name "Library"}]
+    (t/is (= [] (await (validation-codes file [stub]))))))
+
+(t/deftest ^:async file-validate-checks-linked-libraries
+  (let [library (library-with-component)
+        file    (consumer-with-copy library)
+        linked  (-> library
+                    (assoc :library-of (:id file))
+                    (assoc-in [:data :components] {}))]
+    (t/is (contains? (set (await (validation-codes file [linked]))) "component-not-found"))))
