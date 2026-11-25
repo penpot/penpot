@@ -16,9 +16,10 @@
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.geom.rect :as grc]
-   [app.common.geom.shapes :as gsh]
+   [app.common.geom.shapes.bounds :as gsb]
    [app.common.uuid :as uuid]
    [app.main.ui.context :as ctx]
+   [app.main.ui.hooks :as hooks]
    [app.main.ui.shapes.circle :as circle]
    [app.main.ui.shapes.image :as image]
    [app.main.ui.shapes.rect :as rect]
@@ -44,17 +45,6 @@
 (def image-wrapper (common/generic-wrapper-factory image/image-shape))
 (def rect-wrapper (common/generic-wrapper-factory rect/rect-shape))
 
-(defn- make-is-frame-overlap
-  [vbox objects]
-  (fn [shape]
-    (let [bounds
-          (if (dm/get-prop shape :show-content)
-            (let [children (->> (cfh/get-children-ids objects (dm/get-prop shape :id))
-                                (map (d/getf objects)))]
-              (gsh/shapes->rect (cons shape children)))
-            (dm/get-prop shape :selrect))]
-      (grc/overlaps-rects? vbox bounds))))
-
 (mf/defc root-shape
   "Draws the root shape of the viewport and recursively all the shapes"
   {::mf/wrap [mf/memo]
@@ -63,25 +53,35 @@
   (let [objects             (obj/get props "objects")
         active-frames       (obj/get props "active-frames")
         disable-thumbnails  (obj/get props "disable-thumbnails")
-        shapes              (cfh/get-immediate-children objects)
+        selected            (obj/get props "selected")
         vbox                (mf/use-ctx ctx/current-vbox)
-
-        frame-overlap? (mf/with-memo [vbox objects]
-                         #(make-is-frame-overlap vbox objects))
-
-        shapes         (mf/with-memo [shapes vbox frame-overlap?]
-                         (cond->> shapes
-                           (some? vbox)
-                           (filter frame-overlap?)))]
+        roots               (mf/with-memo [objects]
+                              (mapv (fn [shape]
+                                      [shape (gsb/get-object-bounds objects shape {:ignore-margin? false})])
+                                    (cfh/get-immediate-children objects)))
+        selected-roots      (mf/with-memo [objects selected]
+                              (into #{} (keep (fn [id]
+                                                (d/seek #(= uuid/zero (cfh/get-parent-id objects %))
+                                                        (cfh/get-parent-ids-seq-with-self objects id))))
+                                    selected))
+        shapes              (hooks/use-equal-memo
+                             (mf/with-memo [roots vbox selected-roots]
+                               (into [] (keep (fn [[shape bounds]]
+                                                (when (or (nil? vbox) (nil? bounds)
+                                                          (contains? selected-roots (:id shape))
+                                                          (grc/overlaps-rects? vbox bounds))
+                                                  shape)))
+                                     roots)))
+        font-shapes         (mf/with-memo [objects shapes]
+                              (into [] (comp (remove cfh/frame-shape?)
+                                             (mapcat #(cfh/get-children-with-self objects (:id %))))
+                                    shapes))]
 
     [:g {:id (dm/str "shape-" uuid/zero)}
      [:& (mf/provider ctx/active-frames) {:value active-frames}
       ;; Render font faces only for shapes that are part of the root
       ;; frame but don't belongs to any other frame.
-      (let [xform (comp
-                   (remove cfh/frame-shape?)
-                   (mapcat #(cfh/get-children-with-self objects (:id %))))]
-        [:> ff/fontfaces-style* {:shapes (into [] xform shapes)}])
+      [:> ff/fontfaces-style* {:shapes font-shapes}]
 
       [:g.frame-children
        (for [shape shapes]

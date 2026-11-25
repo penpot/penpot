@@ -16,9 +16,13 @@
 
 (defonce instance nil)
 
+;; Changes when an update is posted, before an older reply can reach the UI.
+(defonce selection-index-revision (volatile! 0))
+
 (defn init!
   []
   (let [worker (uw/init cf/worker-uri on-error)]
+    (vswap! selection-index-revision inc)
     (uw/ask! worker {:cmd :configure
                      :config {:public-uri cf/public-uri
                               :build-data cf/build-date
@@ -28,12 +32,13 @@
 
 (defn ask!
   ([message]
-   (if instance
-     (uw/ask! instance message)
-     (rx/empty)))
+   (ask! message nil))
   ([message transfer]
    (if instance
-     (uw/ask! instance message transfer)
+     (do
+       (when (#{:index/initialize :index/update} (:cmd message))
+         (vswap! selection-index-revision inc))
+       (uw/ask! instance message transfer))
      (rx/empty))))
 
 (defn emit!

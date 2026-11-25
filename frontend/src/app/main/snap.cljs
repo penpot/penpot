@@ -37,25 +37,19 @@
   "Creates a filter for the snap data. Used to disable certain layouts"
   [layout filter-shapes objects focus]
 
-  (fn [{:keys [type id frame-id]}]
-    (cond
-      (= type :layout)
-      (or (not (contains? layout :display-guides))
-          (not (contains? layout :snap-guides))
-          (and (d/not-empty? focus)
-               (not (contains? focus id))))
-
-      (= type :guide)
-      (or (not (contains? layout :rulers))
-          (not (contains? layout :snap-ruler-guides))
-          (and (d/not-empty? focus)
-               (not (contains? focus frame-id))))
-
-      :else
-      (or (contains? filter-shapes id)
-          (not (contains? layout :dynamic-alignment))
-          (and (d/not-empty? focus)
+  (fn [{:keys [type id frame-id] :as hit}]
+    (or (sp/excluded-snap? layout filter-shapes hit)
+        (and (d/not-empty? focus)
+             (case type
+               :layout (not (contains? focus id))
+               :guide  (not (contains? focus frame-id))
                (not (cpf/is-in-focus? objects focus id)))))))
+
+(defn compact-query
+  "Keep focus checks local and avoid sending large exclusion sets on every move."
+  [mode layout excluded focus]
+  (when (and (empty? focus) (<= (count excluded) 64))
+    {:mode mode :layout layout :excluded excluded}))
 
 (defn- calculate-distance [query-result point coord]
   (->> query-result
@@ -80,18 +74,35 @@
       ;; Otherwise the root frame is the common
       :else zero)))
 
-(defn get-snap-points [page-id frame-id remove-snap? zoom point coord]
-  (let [value (get point coord)
-        vbox @refs/vbox
-        ranges [[(- value (/ 0.5 zoom)) (+ value (/ 0.5 zoom))]]]
-    (->> (mw/ask! {:cmd :index/query-snap
+(defn get-feedback-snaps
+  [page-id frame-id remove-snap? zoom points compact]
+  (let [tolerance (/ 0.5 zoom)
+        ranges    (fn [axis]
+                    (into [] (comp (map axis) (distinct)
+                                   (map #(vector (- % tolerance) (+ % tolerance))))
+                          points))
+        keep-data (remove-from-snap-points remove-snap?)
+        matches   (fn [buckets axis compact?]
+                    (let [buckets (if compact? buckets
+                                      (mapv (fn [[v data]] [v (mapv :pt data)]) (keep-data buckets)))]
+                      (keep (fn [point]
+                              (let [value (axis point)
+                                    found (into #{} (comp (filter (fn [[v _]]
+                                                                    (<= (- value tolerance) v (+ value tolerance))))
+                                                          (mapcat second))
+                                                buckets)]
+                                (when (seq found) [point found axis])))
+                            points)))]
+    (->> (mw/ask! {:cmd :index/query-snap-xy
                    :page-id page-id
                    :frame-id frame-id
-                   :axis coord
-                   :bounds vbox
-                   :ranges ranges})
+                   :bounds @refs/vbox
+                   :compact compact
+                   :x-ranges (ranges :x)
+                   :y-ranges (ranges :y)})
          (rx/take 1)
-         (rx/map (remove-from-snap-points remove-snap?)))))
+         (rx/map (fn [{:keys [x y compact?]}]
+                   (into (vec (matches x :x compact?)) (matches y :y compact?)))))))
 
 (defn- snap-accuracy-ranges
   [points coord zoom]
@@ -107,7 +118,7 @@
       (gpt/to-vec from to))))
 
 (defn- closest-snap
-  [page-id frame-id points remove-snap? zoom]
+  [page-id frame-id points remove-snap? zoom compact]
   (let [vbox @refs/vbox
         x-ranges (snap-accuracy-ranges points :x zoom)
         y-ranges (snap-accuracy-ranges points :y zoom)
@@ -118,11 +129,13 @@
                    :page-id page-id
                    :frame-id frame-id
                    :bounds vbox
+                   :compact compact
                    :x-ranges x-ranges
                    :y-ranges y-ranges})
          (rx/take 1)
-         (rx/map (fn [{:keys [x y]}]
-                   (snap->vector [(gmx (rm x)) (gmy (rm y))]))))))
+         (rx/map (fn [{:keys [x y compact?]}]
+                   (snap->vector [(gmx (if compact? x (rm x)))
+                                  (gmy (if compact? y (rm y)))]))))))
 
 (defn sr-distance [coord sr1 sr2]
   (let [c1 (if (= coord :x) :x1 :y1)
@@ -252,7 +265,7 @@
   (let [frame-id (snap-frame-id shapes)
         filter-shapes (into #{} (map :id shapes))
         remove-snap? (make-remove-snap layout filter-shapes objects focus)]
-    (->> (closest-snap page-id frame-id [point] remove-snap? zoom)
+    (->> (closest-snap page-id frame-id [point] remove-snap? zoom (compact-query :closest layout filter-shapes focus))
          (rx/map #(or % (gpt/point 0 0)))
          (rx/map #(gpt/add point %)))))
 
@@ -281,7 +294,7 @@
              ;; Move the points in the translation vector
              (map #(gpt/add % movev)))]
 
-    (->> (rx/merge (closest-snap page-id frame-id snap-points remove-snap? zoom)
+    (->> (rx/merge (closest-snap page-id frame-id snap-points remove-snap? zoom (compact-query :closest layout filter-shapes focus))
                    (when (contains? layout :dynamic-alignment)
                      (closest-distance-snap page-id shapes objects zoom movev)))
          (rx/reduce combine-snaps-points)

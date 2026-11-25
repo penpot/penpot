@@ -72,10 +72,6 @@
                          (rx/empty)))
              (rx/ignore))))))
 
-(def ^:private xf:map-page-id
-  ;; Component-only changes have no :page-id; keep drops those nils so
-  ;; update-object-indices does not create a nil key in :pages-index.
-  (keep :page-id))
 
 (def ^:private wasm-structural-change-types
   #{:add-obj :mov-objects})
@@ -125,11 +121,20 @@
               redo-changes)
 
             apply-changes
-            (fn [fdata]
-              (let [fdata (cpc/process-changes fdata undo-changes false)
-                    fdata (cpc/process-changes fdata redo-changes false)
-                    pids (into #{} xf:map-page-id redo-changes)]
-                (reduce #(ctst/update-object-indices %1 %2) fdata pids)))]
+            (fn [previous]
+              (let [fdata (cpc/process-changes previous undo-changes false)
+                    fdata (cpc/process-changes fdata redo-changes false)]
+                (reduce-kv
+                 (fn [data page-id changes]
+                   (let [updated (ctst/update-object-indices data page-id)]
+                     (when-not pending
+                       (dsh/reuse-grid-frame-ids
+                        (dm/get-in previous [:pages-index page-id :objects])
+                        (dm/get-in updated [:pages-index page-id :objects])
+                        changes))
+                     updated))
+                 fdata
+                 (dissoc (group-by :page-id redo-changes) nil))))]
 
         (if (and (not ignore-wasm?) (features/active-feature? state "render-wasm/v1"))
           ;; Update the wasm model

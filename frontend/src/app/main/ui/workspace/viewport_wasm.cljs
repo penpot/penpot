@@ -172,6 +172,7 @@
         {:keys [edit-path
                 panning
                 selrect
+                selrect-preview
                 transform
                 highlighted
                 vbox
@@ -269,6 +270,8 @@
 
         ;; STREAMS
         move-stream       (mf/use-memo #(rx/subject))
+        pick-stream       (mf/use-memo #(rx/subject))
+        pointer-release   (mf/use-var nil)
 
         guide-frame       (mf/use-memo
                            (mf/deps @hover-ids base-objects)
@@ -330,7 +333,7 @@
         context-loss-overlay? (mf/deref wasm.api/context-loss-overlay?)
         transition-reveal-rulers? (mf/deref wasm.api/transition-reveal-rulers?)
 
-        on-click          (actions/on-click hover selected edition path-drawing? drawing-tool space? selrect z?)
+        on-click          (actions/on-click hover pick-stream pointer-release edition path-drawing? drawing-tool space? selrect z?)
         on-context-menu   (actions/on-context-menu hover hover-ids read-only?)
         on-double-click   (actions/on-double-click hover hover-ids selected hover-top-frame-id path-drawing? base-objects edition drawing-tool z? read-only?)
 
@@ -342,7 +345,7 @@
         on-pointer-down   (actions/on-pointer-down @hover selected edition drawing-tool text-editing? path-editing? grid-editing?
                                                    path-drawing? create-comment? space? panning z? read-only?)
 
-        on-pointer-up     (actions/on-pointer-up disable-paste-ref)
+        on-pointer-up     (actions/on-pointer-up disable-paste-ref pointer-release)
 
         on-pointer-enter  (actions/on-pointer-enter in-viewport-ref)
         on-pointer-leave  (actions/on-pointer-leave in-viewport-ref)
@@ -635,12 +638,15 @@
       (when (and @canvas-init? show-rulers?)
         (wasm.api/set-rulers-offsets! offset-x offset-y)))
 
-    (with-wasm-effect [@canvas-init? show-rulers?
+    (with-wasm-effect [@canvas-init? show-rulers? transform
                        (some-> ruler-selection :x) (some-> ruler-selection :y)
                        (some-> ruler-selection :width) (some-> ruler-selection :height)]
       (when (and @canvas-init? show-rulers?)
         (wasm.api/set-rulers-selection! ruler-selection)
-        (wasm.api/render-from-backbuffer!)))
+        ;; The scheduled shape frame also paints the updated ruler selection.
+        (when-not (and (contains? #{:move :resize :rotate} transform)
+                       @wasm.api/pending-render)
+          (wasm.api/render-from-backbuffer!))))
 
     ;; Paint background + rulers instantly, before shapes finish loading. Runs
     ;; after the ruler push effects so the WASM ruler state is already set.
@@ -659,10 +665,10 @@
     (hooks/setup-viewport-size vport viewport-ref)
     (hooks/setup-cursor cursor alt? mod? space? panning drawing-tool path-drawing? path-editing? (get path-bar-state :drag-cursor) z? read-only? can-alt-duplicate?)
     (hooks/setup-keyboard alt? mod? space? z? shift?)
-    (hooks/setup-hover-shapes page-id move-stream base-objects selected mod? hover measure-hover
+    (hooks/setup-hover-shapes page-id move-stream pick-stream base-objects selected hover measure-hover
                               hover-ids hover-top-frame-id @hover-disabled? focus zoom show-measures? read-only? transform)
     (hooks/setup-shortcuts path-editing? path-drawing? text-editing? grid-editing?)
-    (hooks/setup-active-frames base-objects hover-ids selected active-frames zoom transform vbox)
+    (hooks/setup-active-frames base-objects hover-ids selected active-frames zoom transform vbox false)
 
     (with-wasm-effect [path-editing? edition @initialized?]
       (when (and path-editing? edition @initialized?)
@@ -675,7 +681,7 @@
             (wasm.api/set-shape-hidden false)
             (wasm.api/request-render "stop-path-edition")))))
 
-    [:div {:class (dm/str @cursor " " (stl/css :viewport)) :style #js {"--zoom" zoom} :data-testid "viewport"}
+    [:div {:class (dm/str @cursor " " (stl/css :viewport)) :data-testid "viewport"}
 
      (cond
        (some? preview-id)
@@ -811,7 +817,7 @@
        (when show-outlines?
          [:> outline/shape-outlines*
           {:objects objects-for-outlines
-           :selected selected
+           :selected (or selrect-preview selected)
            :hover #{(:id @hover) @frame-hover}
            :highlighted highlighted
            :edition edition

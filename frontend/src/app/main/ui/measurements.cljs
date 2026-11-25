@@ -373,6 +373,7 @@
                :ry badge-radius
                :style {:fill badge-bg-color}}]
        [:text {:class (stl/css :badge-text)
+               :style {"--zoom" zoom}
                :x 0
                :y 0
                :text-anchor "middle"

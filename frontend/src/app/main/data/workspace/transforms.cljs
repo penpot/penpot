@@ -835,6 +835,7 @@
              page-id   (:current-page-id state)
              libraries (dsh/lookup-libraries state)
              objects   (dsh/lookup-page-objects state page-id)
+             frame-at  (ctst/make-drag-frame-query objects)
              selected  (dsh/lookup-selected state {:omit-blocked? true})
              ids       (if (nil? ids) selected ids)
              shapes    (into []
@@ -863,21 +864,6 @@
                    (comp (mapcat (partial cfh/get-siblings-ids objects))
                          (filter (partial ctl/any-layout-immediate-child-id? objects)))
                    selected)
-
-             ;; Frame lookups per pointer move only test frames that can be a target
-             frames
-             (ctst/get-frames objects)
-
-             with-target-frames
-             (fn [excluded]
-               (vary-meta objects assoc ::ctst/index-frames
-                          (into [] (remove #(contains? excluded (:id %))) frames)))
-
-             target-objects
-             (with-target-frames exclude-frames)
-
-             target-objects-siblings
-             (with-target-frames exclude-frames-siblings)
 
              position (->> ms/mouse-position
                            (rx/map #(gpt/to-vec from-position %)))
@@ -922,9 +908,8 @@
                       (rx/map
                        (fn [[move-vector mod?]]
                          (let [position         (gpt/add from-position move-vector)
-                               target-frame     (if mod?
-                                                  (ctst/top-nested-frame target-objects position)
-                                                  (ctst/top-nested-frame target-objects-siblings position))
+                               exclude-frames   (if mod? exclude-frames exclude-frames-siblings)
+                               target-frame     (frame-at position exclude-frames)
                                [target-frame _] (ctn/find-valid-parent-and-frame-ids target-frame objects shapes false libraries parent-validation-cache)
                                flex-layout?     (ctl/flex-layout? objects target-frame)
                                grid-layout?     (ctl/grid-layout? objects target-frame)

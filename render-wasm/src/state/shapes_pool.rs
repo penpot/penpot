@@ -315,6 +315,47 @@ impl ShapesPoolImpl {
         }
     }
 
+    /// An identity modifier can request layout reflow. Raster reuse requires a
+    /// single actual translation with no simultaneous layout or parent change.
+    pub(crate) fn single_translation(&self, id: Uuid) -> Option<&Matrix> {
+        if self.modifier_ids() != [id]
+            || !self.structure.is_empty()
+            || !self.scale_content.is_empty()
+        {
+            return None;
+        }
+        self.get_modifier(&id)
+            .filter(|m| m.is_translate() && !m.is_identity())
+    }
+
+    /// The pixel grid propagates the final translation to every descendant. The
+    /// existing root-only path applies that same matrix to the entire subtree.
+    pub(crate) fn rigid_frame_modifier(
+        &self,
+        modifiers: &HashMap<Uuid, Matrix>,
+    ) -> Option<(Uuid, Matrix)> {
+        if modifiers.len() < 2 || !self.structure.is_empty() || !self.scale_content.is_empty() {
+            return None;
+        }
+        let (root, m) = modifiers.iter().find(|(id, _)| {
+            self.get_raw(id).is_some_and(|shape| {
+                shape.parent_id == Some(Uuid::nil())
+                    && shape.clip_content
+                    && matches!(shape.shape_type, shapes::Type::Frame(_))
+            })
+        })?;
+        if !m.is_translate() || m.is_identity() || modifiers.values().any(|other| other != m) {
+            return None;
+        }
+        let descendants =
+            self.collect_inheriting_descendants(self.uuid_to_idx[root], &HashMap::new());
+        (descendants.len() + 1 == modifiers.len()
+            && descendants
+                .iter()
+                .all(|&idx| modifiers.contains_key(&self.shapes[idx].id)))
+        .then_some((*root, *m))
+    }
+
     pub fn set_modifiers(&mut self, modifiers: HashMap<Uuid, skia::Matrix>) {
         let mut ids = Vec::<Uuid>::new();
         let mut modifiers_with_idx = HashMap::with_capacity(modifiers.len());
@@ -467,6 +508,24 @@ impl ShapesPoolImpl {
         modified_uuids
     }
 
+    /// Parents affected solely by changing the z-order or parent of this one leaf.
+    /// Changes that can reflow or restyle other children require the full tile pass.
+    pub fn leaf_reparenting_parents(&self, id: Uuid) -> Option<impl Iterator<Item = Uuid> + '_> {
+        if !self.scale_content.is_empty()
+            || !self.structure.values().flatten().all(|entry| {
+                entry.id == id
+                    && matches!(
+                        entry.entry_type,
+                        shapes::StructureEntryType::AddChild
+                            | shapes::StructureEntryType::RemoveChild
+                    )
+            })
+        {
+            return None;
+        }
+        Some(self.structure.values().flatten().map(|entry| entry.parent))
+    }
+
     /// UUIDs of all shapes that currently have a transform modifier.
     /// Used by the throttled drag path so per-rAF tile invalidation can
     /// be done once with the current modifier set instead of once per
@@ -604,6 +663,71 @@ impl Clone for ShapesPoolImpl {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn only_collapse_a_complete_rigid_clipped_frame() {
+        let mut pool = ShapesPool::new();
+        pool.initialize(4);
+        let [board, child, leaf, other] = std::array::from_fn(|_| Uuid::new_v4());
+        let frame = pool.add_shape(board);
+        frame.set_shape_type(shapes::Type::Frame(Default::default()));
+        frame.parent_id = Some(Uuid::nil());
+        frame.clip_content = true;
+        frame.add_child(child);
+        let group = pool.add_shape(child);
+        group.set_shape_type(shapes::Type::Group(Default::default()));
+        group.parent_id = Some(board);
+        group.add_child(leaf);
+        pool.add_shape(leaf).parent_id = Some(child);
+        pool.add_shape(other).parent_id = Some(Uuid::nil());
+        let motion = Matrix::translate((17.0, -3.0));
+        let all = HashMap::from([(board, motion), (child, motion), (leaf, motion)]);
+        assert_eq!(pool.rigid_frame_modifier(&all), Some((board, motion)));
+        pool.set_modifiers(HashMap::from([(board, Matrix::new_identity())]));
+        assert!(pool.single_translation(board).is_none());
+        pool.set_modifiers(HashMap::from([(board, motion)]));
+        assert_eq!(pool.single_translation(board), Some(&motion));
+        let mut different = all.clone();
+        different.insert(leaf, Matrix::translate((17.0, -2.5)));
+        assert!(pool.rigid_frame_modifier(&different).is_none());
+        different.insert(leaf, motion);
+        different.insert(other, motion);
+        assert!(pool.rigid_frame_modifier(&different).is_none());
+        different.remove(&leaf);
+        assert!(pool.rigid_frame_modifier(&different).is_none());
+        let scaled = all
+            .keys()
+            .map(|&id| (id, Matrix::scale((2.0, 2.0))))
+            .collect();
+        assert!(pool.rigid_frame_modifier(&scaled).is_none());
+        pool.get_mut(&board).unwrap().clip_content = false;
+        assert!(pool.rigid_frame_modifier(&all).is_none());
+        pool.get_mut(&board).unwrap().clip_content = true;
+        pool.set_scale_content(HashMap::from([(child, 1.5)]));
+        assert!(pool.rigid_frame_modifier(&all).is_none());
+    }
+
+    #[test]
+    fn local_reparenting_requires_changes_to_one_leaf_only() {
+        let mut pool = ShapesPool::new();
+        pool.initialize(4);
+        let [old, new, leaf, other] = std::array::from_fn(|_| Uuid::new_v4());
+        for id in [old, new, leaf, other] {
+            pool.add_shape(id);
+        }
+        use shapes::StructureEntryType::{AddChild, RemoveChild};
+        let entry = |kind, parent, id| StructureEntry::new(kind, 0, parent, id, 0.0);
+        pool.set_structure(HashMap::from([
+            (old, vec![entry(RemoveChild, old, leaf)]),
+            (new, vec![entry(AddChild, new, leaf)]),
+        ]));
+        let parents: std::collections::HashSet<_> =
+            pool.leaf_reparenting_parents(leaf).unwrap().collect();
+        assert_eq!(parents, std::collections::HashSet::from([old, new]));
+        assert!(pool.leaf_reparenting_parents(other).is_none());
+        pool.set_scale_content(HashMap::from([(leaf, 1.5)]));
+        assert!(pool.leaf_reparenting_parents(leaf).is_none());
+    }
 
     #[test]
     fn get_mut_refreshes_the_modified_shape() {

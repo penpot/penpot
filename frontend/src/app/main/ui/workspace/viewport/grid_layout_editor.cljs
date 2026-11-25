@@ -1127,6 +1127,7 @@
 
     (when (and (not (:hidden shape)) (not (:blocked shape)))
       [:g.grid-editor {:pointer-events (when view-only "none")
+                       :style {"--zoom" zoom}
                        :on-pointer-down handle-pointer-down}
        [:g.cells
         (for [cell (ctl/get-cells shape {:sort? true})]

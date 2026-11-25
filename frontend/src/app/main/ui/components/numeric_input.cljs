@@ -12,7 +12,6 @@
    [app.main.ui.formats :as fmt]
    [app.main.ui.hooks :as h]
    [app.util.dom :as dom]
-   [app.util.globals :as globals]
    [app.util.keyboard :as kbd]
    [app.util.simple-math :as smt]
    [cljs.core :as c]
@@ -310,10 +309,7 @@
 
     (mf/with-effect [handle-unmount] handle-unmount)
 
-    (mf/with-layout-effect []
-      (let [keys [(events/listen globals/window "pointerdown" on-click)
-                  (events/listen globals/window "click" on-click)]]
-        #(run! events/unlistenByKey keys)))
+    (h/use-focused-click-listeners ref on-click)
 
     (mf/with-layout-effect [handle-mouse-wheel]
       (when-let [node (mf/ref-val ref)]

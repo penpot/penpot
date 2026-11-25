@@ -10,7 +10,6 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
-   [app.common.math :as mth]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
@@ -38,7 +37,7 @@
 (defonce ^:private sidebar-hover-queue (atom {:enter #{} :leave #{}}))
 (defonce ^:private sidebar-hover-pending? (atom false))
 
-(def ^:const default-chunk-size 50)
+(def ^:private rows-per-chunk 8)
 
 (defn- schedule-sidebar-hover-flush []
   (when (compare-and-set! sidebar-hover-pending? false true)
@@ -206,6 +205,47 @@
 
      children]))
 
+(def ^:private expanded-layers (l/derived :expanded refs/workspace-local))
+
+(mf/defc chunk-placeholder*
+  {::mf/private true}
+  [{:keys [items objects node-ref]}]
+  (let [expanded (mf/deref expanded-layers)
+        rows     (mf/with-memo [items objects expanded]
+                   (loop [pending (seq items) n 0]
+                     (if-let [item (first pending)]
+                       (recur (if (get expanded (:id item))
+                                (concat (keep #(get objects %) (:shapes item)) (rest pending))
+                                (rest pending))
+                              (inc n))
+                       n)))]
+    ;; Match the row body and its borders even for offscreen expanded groups.
+    [:div {:ref node-ref :aria-hidden true
+           :style {:block-size (str (* 2.25 rows) "rem")}}]))
+
+(mf/defc layer-chunk*
+  [{:keys [items objects render-item reveal]}]
+  (let [node-ref (mf/use-ref nil)
+        loaded*  (mf/use-state false)
+        loaded?  (deref loaded*)]
+    (mf/with-effect [loaded? reveal]
+      (cond
+        loaded? nil
+        reveal (do (reset! loaded* true) nil)
+        :else
+        (when-let [node (mf/ref-val node-ref)]
+          (let [root (dom/get-parent-with-data node "scroll-container")
+                observer (js/IntersectionObserver.
+                          (fn [entries]
+                            (when (.-isIntersecting ^js (aget entries 0))
+                              (reset! loaded* true)))
+                          #js {:root root :rootMargin "128px 0px"})]
+            (.observe observer node)
+            #(.disconnect observer)))))
+    (if (or loaded? reveal)
+      [:* (map render-item items)]
+      [:> chunk-placeholder* {:items items :objects objects :node-ref node-ref}])))
+
 (mf/defc layer-item*
   {::mf/wrap [mf/memo]}
   [{:keys [index item selected objects rename-id
@@ -273,12 +313,16 @@
         enable-drag       (mf/use-fn #(reset! drag-disabled* false))
         disable-drag      (mf/use-fn #(reset! drag-disabled* true))
 
-        ;; Lazy loading of child elements via IntersectionObserver
-        children-count*   (mf/use-state 0)
-        children-count    (deref children-count*)
-
-        lazy-ref          (mf/use-ref nil)
-        observer-ref      (mf/use-ref nil)
+        ;; Short branches can mount together. Taller branches reserve their
+        ;; scroll space, mounting only nearby rows and the path being revealed.
+        chunked?          (> (count shapes) (* 2 rows-per-chunk))
+        chunks            (mf/with-memo [shapes chunked?]
+                            (when chunked?
+                              (mapv vec (partition-all rows-per-chunk shapes))))
+        reveal-ids        (mf/with-memo [objects selected rename-id chunked?]
+                            (when chunked?
+                              (let [id (or rename-id (when (= 1 (count selected)) (first selected)))]
+                                (when id (conj (set (cfh/get-parent-ids objects id)) id)))))
 
         toggle-collapse
         (mf/use-fn
@@ -463,86 +507,18 @@
                    (st/emit! (dw/start-rename-shape target-id))))))))]
 
     (mf/with-effect [is-selected selected]
-      (let [single? (= (count selected) 1)
-            node              (mf/ref-val name-node-ref)
-            scroll-node       (dom/get-parent-with-data node "scroll-container")
-            parent-node       (dom/get-parent-at node 2)
-            first-child-node  (dom/get-first-child parent-node)
-            scroll-to-middle? (mf/ref-val scroll-middle-ref)
-
-            subid
-            (when (and ^boolean single?
-                       ^boolean is-selected
-                       ^boolean scroll-to-middle?)
-              (ts/schedule
-               100
-               #(when (and node scroll-node)
-                  (let [scroll-distance-ratio (dom/get-scroll-distance-ratio node scroll-node)
-                        scroll-behavior (if (> scroll-distance-ratio 1) "instant" "smooth")]
-                    (dom/scroll-into-view-if-needed! first-child-node #js {:block "center" :behavior scroll-behavior :inline "start"})
-                    (mf/set-ref-val! scroll-middle-ref true)))))]
-
-        #(when (some? subid)
-           (rx/dispose! subid))))
-
-    ;; Setup scroll-driven lazy loading when expanded
-    ;; and ensures selected children are loaded immediately
-    (mf/with-effect [is-expanded shapes selected]
-      (let [total (count shapes)]
-        (if ^boolean is-expanded
-          (let [;; Children are rendered in reverse order, so index 0 in render = last in shapes-vec
-                ;; Find if any selected id is a direct child and get its render index
-                selected-child-render-idx
-                (when (> total default-chunk-size)
-                  (some (fn [sel-id]
-                          (d/index-of-pred shapes #(= (get % :id) sel-id)))
-                        selected))
-
-                ;; Load at least enough to include the selected child plus extra
-                ;; for context (so it can be centered in the scroll view)
-                min-count
-                (if selected-child-render-idx
-                  (+ selected-child-render-idx default-chunk-size)
-                  default-chunk-size)
-
-                current-count
-                @children-count*
-
-                new-count
-                (mth/min total (mth/max current-count default-chunk-size min-count))]
-
-            (reset! children-count* new-count))
-
-          (reset! children-count* 0))))
-
-    ;; Re-observe sentinel whenever children-count changes (sentinel moves)
-    ;; and (shapes item) to reconnect observer after shape changes
-    (mf/with-effect [children-count is-expanded shapes]
-      (let [total       (count shapes)
-            name-node   (mf/ref-val name-node-ref)
-            scroll-node (dom/get-parent-with-data name-node "scroll-container")
-            lazy-node   (mf/ref-val lazy-ref)]
-
-        ;; Setup new observer if there are more children to load
-        (when (and ^boolean is-expanded
-                   ^boolean (< children-count total)
-                   ^boolean scroll-node
-                   ^boolean lazy-node)
-          (let [cb (fn [entries]
-                     (when (and (pos? (alength entries))
-                                (.-isIntersecting ^js (aget entries 0)))
-                       ;; Load next chunk when sentinel intersects
-                       (let [next-count (mth/min total (+ children-count default-chunk-size))]
-                         (reset! children-count* next-count))))
-                observer (js/IntersectionObserver. cb #js {:root scroll-node})]
-            (.observe observer lazy-node)
-            (mf/set-ref-val! observer-ref observer)))
-
-        ;; Disconnect on deps change or unmount; this effect owns the observer
-        (fn []
-          (when-let [obs (mf/ref-val observer-ref)]
-            (.disconnect obs)
-            (mf/set-ref-val! observer-ref nil)))))
+      (when (and is-selected (= (count selected) 1) (mf/ref-val scroll-middle-ref))
+        (let [node (mf/ref-val name-node-ref)
+              scroll-node (dom/get-parent-with-data node "scroll-container")
+              first-child-node (dom/get-first-child (dom/get-parent-at node 2))
+              subid (ts/schedule
+                     100
+                     #(when (and node scroll-node)
+                        (let [ratio (dom/get-scroll-distance-ratio node scroll-node)
+                              behavior (if (> ratio 1) "instant" "smooth")]
+                          (dom/scroll-into-view-if-needed! first-child-node #js {:block "center" :behavior behavior :inline "start"})
+                          (mf/set-ref-val! scroll-middle-ref true))))]
+          #(rx/dispose! subid))))
 
     [:> layer-item-inner*
      {:ref dref
@@ -581,20 +557,26 @@
                       :parent-selected is-selected
                       :sticky-children root-board?)
               :data-testid (dm/str "children-" id)}
-        (for [item (take children-count shapes)]
-          [:> layer-item*
-           {:item item
-            :rename-id rename-id
-            :highlighted highlighted
-            :selected selected
-            :index (unchecked-get item "__$__counter")
-            :objects objects
-            :key (dm/str (get item :id))
-            :is-sortable is-sortable
-            :depth depth
-            :parent-size parent-size
-            :is-component-child is-component-tree}])
-
-        (when (< children-count (count shapes))
-          [:div {:ref lazy-ref
-                 :class (stl/css :lazy-load-sentinel)}])])]))
+        (let [render-item (fn [child]
+                            (mf/html
+                             [:> layer-item*
+                              {:item child
+                               :rename-id rename-id
+                               :highlighted highlighted
+                               :selected selected
+                               :index (unchecked-get child "__$__counter")
+                               :objects objects
+                               :key (dm/str (:id child))
+                               :is-sortable is-sortable
+                               :depth depth
+                               :parent-size parent-size
+                               :is-component-child is-component-tree}]))]
+          (if chunked?
+            (for [items chunks]
+              [:> layer-chunk*
+               {:key (dm/str (:id (first items)))
+                :items items
+                :objects objects
+                :render-item render-item
+                :reveal (boolean (and reveal-ids (some #(contains? reveal-ids (:id %)) items)))}])
+            (map render-item shapes)))])]))

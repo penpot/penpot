@@ -13,6 +13,8 @@
 (def ^:const FRAME_TYPE_VIEWPORT_READY 3) ;; Viewport presented; interest tiles may still be pending
 (def ^:const RENDER_FLAG_SYNC_TILES 4)  ;; Rebuild tile index without ending fast mode (pan/zoom pause)
 
+(def ^:const RENDER_FLAG_REFINE_VIEW 8) ;; Refine visible tiles over the stopped camera preview.
+
 (defonce internal-frame-id nil)
 (defonce internal-frame-type FRAME_TYPE_NONE)
 (defonce internal-module #js {})

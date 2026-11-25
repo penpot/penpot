@@ -37,7 +37,6 @@
    [app.util.timers :as ts]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
-   [goog.events :as events]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
@@ -543,12 +542,13 @@
            (when (<= current-items filtered-objects-total)
              (swap! state* update :num-items + 100))))]
 
-    (mf/with-effect []
-      (let [key1 (events/listen globals/document "keydown" on-key-down)
-            key2 (events/listen globals/document "click" hide-menu)]
+    (mf/with-effect [show-menu? on-key-down hide-menu]
+      (when show-menu?
+        (.addEventListener globals/document "keydown" on-key-down)
+        (.addEventListener globals/document "click" hide-menu)
         (fn []
-          (events/unlistenByKey key1)
-          (events/unlistenByKey key2))))
+          (.removeEventListener globals/document "keydown" on-key-down)
+          (.removeEventListener globals/document "click" hide-menu))))
 
     (mf/with-effect [file-id state]
       (swap! session-search* assoc file-id state))

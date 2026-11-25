@@ -32,6 +32,29 @@
   []
   (mf/useMemo #(js* "\"render-\" + (++~{})" render-id) #js []))
 
+(defn use-focused-click-listeners
+  "Let a focused input handle pointerdown and click outside the field, including
+   canvas clicks that prevent the browser's default focus change."
+  [input-ref on-click]
+  (mf/with-layout-effect [input-ref on-click]
+    (when-let [^js input (mf/ref-val input-ref)]
+      (let [^js win  (.-defaultView (.-ownerDocument input))
+            ;; Commit the focused value before a canvas handler switches the
+            ;; selected shape and replaces the field's change callback.
+            listen   (fn [_]
+                       (.addEventListener win "pointerdown" on-click true)
+                       (.addEventListener win "click" on-click))
+            unlisten (fn [_]
+                       (.removeEventListener win "pointerdown" on-click true)
+                       (.removeEventListener win "click" on-click))]
+        (.addEventListener input "focus" listen)
+        (.addEventListener input "blur" unlisten)
+        (when (dom/active? input) (listen nil))
+        (fn []
+          (.removeEventListener input "focus" listen)
+          (.removeEventListener input "blur" unlisten)
+          (unlisten nil))))))
+
 (defn use-rxsub
   [ob]
   (let [[state reset-state!] (mf/useState #(if (satisfies? IDeref ob) @ob nil))]

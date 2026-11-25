@@ -27,6 +27,7 @@
    [app.main.ui.measurements :as msr]
    [app.main.ui.shapes.export :as use]
    [app.main.ui.workspace.shapes :as shapes]
+   [app.main.ui.workspace.shapes.frame :as ws-frame]
    [app.main.ui.workspace.shapes.path.editor :refer [path-editor*]]
    [app.main.ui.workspace.shapes.text.editor :as editor-v1]
    [app.main.ui.workspace.shapes.text.text-edition-outline :refer [text-edition-outline*]]
@@ -87,6 +88,7 @@
   (let [{:keys [edit-path
                 panning
                 selrect
+                selrect-preview
                 transform
                 highlighted
                 vbox
@@ -104,6 +106,9 @@
         wglobal
 
         vbox'             (mf/use-debounce 100 vbox)
+        render-window     (utils/use-render-window vbox)
+        pan-translation   (when-not picking-color?
+                            (utils/pan-translation vbox' vbox vport))
 
         permissions       (mf/use-ctx ctx/permissions)
         read-only?        (mf/use-ctx ctx/workspace-read-only?)
@@ -115,6 +120,9 @@
         vern              (get file :vern)
         page-id           (get page :id)
         objects           (get page :objects)
+        empty-grid-frames (mf/with-memo [objects]
+                            (into [] (filter #(and (ctl/grid-layout? %) (empty? (:shapes %))))
+                                  (ctt/get-frames objects)))
         background        (get page :background clr/canvas)
 
         base-objects      (ui-hooks/with-focus-objects objects focus)
@@ -168,6 +176,8 @@
 
         ;; STREAMS
         move-stream       (mf/use-memo #(rx/subject))
+        pick-stream       (mf/use-memo #(rx/subject))
+        pointer-release   (mf/use-var nil)
 
         guide-frame       (mf/use-memo
                            (mf/deps @hover-ids base-objects)
@@ -181,6 +191,17 @@
         zoom              (d/check-num zoom 1)
         drawing-tool      (:tool drawing)
         drawing-obj       (:object drawing)
+
+        overview          (ws-frame/use-navigation-overview objects file-id page-id zoom)
+        zoom-preview      (when (and overview vbox' (not= (:width vbox') (:width vbox))
+                                     (contains? @active-frames (:board-id overview))
+                                     (not (or preview-id edition transform drawing-tool picking-color?
+                                              (seq modifiers) (seq text-modifiers) (seq focus)))
+                                     (js/CSS.supports "content-visibility" "hidden"))
+                            overview)
+        camera-transform  (when-not (or zoom-preview edition transform drawing-tool picking-color?)
+                            (utils/zoom-transform vbox' vbox vport))
+        drawing-vbox      (if (or pan-translation zoom-preview camera-transform) vbox' vbox)
 
         selected-frames   (into #{} (map :frame-id) selected-shapes)
 
@@ -212,7 +233,7 @@
 
         mode-inspect?     (= options-mode :inspect)
 
-        on-click          (actions/on-click hover selected edition path-drawing? drawing-tool space? selrect z?)
+        on-click          (actions/on-click hover pick-stream pointer-release edition path-drawing? drawing-tool space? selrect z?)
         on-context-menu   (actions/on-context-menu hover hover-ids read-only?)
         on-double-click   (actions/on-double-click hover hover-ids selected hover-top-frame-id path-drawing? base-objects edition drawing-tool z? read-only?)
 
@@ -224,7 +245,7 @@
         on-pointer-down   (actions/on-pointer-down @hover selected edition drawing-tool text-editing? path-editing? grid-editing?
                                                    path-drawing? create-comment? space? panning z? read-only?)
 
-        on-pointer-up     (actions/on-pointer-up disable-paste-ref)
+        on-pointer-up     (actions/on-pointer-up disable-paste-ref pointer-release)
 
         on-pointer-enter  (actions/on-pointer-enter in-viewport-ref)
         on-pointer-leave  (actions/on-pointer-leave in-viewport-ref)
@@ -331,13 +352,14 @@
     (hooks/setup-viewport-size vport viewport-ref)
     (hooks/setup-cursor cursor alt? mod? space? panning drawing-tool path-drawing? path-editing? (get path-bar-state :drag-cursor) z? read-only? can-alt-duplicate?)
     (hooks/setup-keyboard alt? mod? space? z? shift?)
-    (hooks/setup-hover-shapes page-id move-stream base-objects selected mod? hover measure-hover
+    (hooks/setup-hover-shapes page-id move-stream pick-stream base-objects selected hover measure-hover
                               hover-ids hover-top-frame-id @hover-disabled? focus zoom show-measures? read-only? transform)
     (hooks/setup-viewport-modifiers modifiers base-objects)
     (hooks/setup-shortcuts path-editing? path-drawing? text-editing? grid-editing?)
-    (hooks/setup-active-frames base-objects hover-ids selected active-frames zoom transform vbox)
+    (hooks/setup-active-frames base-objects hover-ids selected active-frames zoom transform vbox
+                               (not (or edition transform drawing-tool picking-color? (seq focus))))
 
-    [:div {:class (stl/css :viewport) :style {"--zoom" zoom} :data-testid "viewport"}
+    [:div {:class (stl/css :viewport) :style {:background-color background} :data-testid "viewport"}
      (cond
        (some? preview-id)
        nil
@@ -387,52 +409,60 @@
         [:> pixel-overlay/pixel-overlay* {:vport vport
                                           :viewport-ref viewport-ref}])]
 
-     [:svg
-      {:id "render"
-       :class (stl/css :render-shapes)
-       :xmlns "http://www.w3.org/2000/svg"
-       :xmlnsXlink "http://www.w3.org/1999/xlink"
-       :xmlns:penpot "https://penpot.app/xmlns"
-       :preserveAspectRatio "xMidYMid meet"
-       :key (dm/str "viewport-svg-" page-id "-" vern)
-       :width (:width vport 0)
-       :height (:height vport 0)
-       :view-box (utils/format-viewbox vbox)
-       :style {:background-color background
-               :pointer-events "none"}
-       :fill "none"}
+     [:div {:class (stl/css :drawing-surface)
+            :style {:content-visibility (when zoom-preview "hidden")}}
+      [:div {:class (stl/css :drawing-camera)
+             :style {:transform camera-transform}}
+       [:svg
+        {:id "render"
+         :class (stl/css :render-shapes)
+         :xmlns "http://www.w3.org/2000/svg"
+         :xmlnsXlink "http://www.w3.org/1999/xlink"
+         :xmlns:penpot "https://penpot.app/xmlns"
+         :preserveAspectRatio "xMidYMid meet"
+         :key (dm/str "viewport-svg-" page-id "-" vern)
+         :width (:width vport 0)
+         :height (:height vport 0)
+         :view-box (utils/format-viewbox drawing-vbox)
+         :style {:background-color background
+                 :transform pan-translation
+                 :pointer-events "none"}
+         :fill "none"}
 
-      [:defs
-       [:linearGradient {:id "frame-placeholder-gradient"}
-        [:animateTransform
-         {:attributeName "gradientTransform"
-          :type "translate"
-          :from "-1 0"
-          :to "1 0"
-          :dur "2s"
-          :repeatCount "indefinite"}]
-        [:stop {:offset "0%" :stop-color (str "color-mix(in srgb-linear, " background " 90%, #777)") :stop-opacity 1}]
-        [:stop {:offset "50%" :stop-color (str "color-mix(in srgb-linear, " background " 80%, #777)") :stop-opacity 1}]
-        [:stop {:offset "100%" :stop-color (str "color-mix(in srgb-linear, " background " 90%, #777)") :stop-opacity 1}]]]
+        [:defs
+         [:linearGradient {:id "frame-placeholder-gradient"}
+          [:stop {:offset "0%" :stop-color (str "color-mix(in srgb-linear, " background " 90%, #777)") :stop-opacity 1}]
+          [:stop {:offset "50%" :stop-color (str "color-mix(in srgb-linear, " background " 80%, #777)") :stop-opacity 1}]
+          [:stop {:offset "100%" :stop-color (str "color-mix(in srgb-linear, " background " 90%, #777)") :stop-opacity 1}]]]
 
-      (when (dbg/enabled? :show-export-metadata)
-        [:> use/export-page* {:page page}])
+        (when (dbg/enabled? :show-export-metadata)
+          [:> use/export-page* {:page page}])
 
       ;; We need a "real" background shape so layer transforms work properly in firefox
-      [:rect {:width (:width vbox 0)
-              :height (:height vbox 0)
-              :x (:x vbox 0)
-              :y (:y vbox 0)
-              :fill background}]
+        [:rect {:width (:width drawing-vbox 0)
+                :height (:height drawing-vbox 0)
+                :x (:x drawing-vbox 0)
+                :y (:y drawing-vbox 0)
+                :fill background}]
 
-      [:& (mf/provider ctx/current-vbox) {:value vbox'}
-       [:& (mf/provider use/include-metadata-ctx) {:value (dbg/enabled? :show-export-metadata)}
+        [:& (mf/provider ctx/current-vbox) {:value render-window}
+         [:& (mf/provider use/include-metadata-ctx) {:value (dbg/enabled? :show-export-metadata)}
         ;; Render root shape
-        [:& shapes/root-shape {:key (str page-id)
-                               :objects render-objects
-                               :active-frames @active-frames
+          [:& shapes/root-shape {:key (str page-id)
+                                 :objects render-objects
+                                 :selected selected
+                                 :active-frames @active-frames
                                ;; disable thumbnails when previewing a version
-                               :disable-thumbnails (some? preview-id)}]]]]
+                                 :disable-thumbnails (some? preview-id)}]]]]]]
+
+     (when zoom-preview
+       [:svg {:class (stl/css :navigation-preview)
+              :aria-hidden true
+              :view-box (utils/format-viewbox vbox)
+              :preserveAspectRatio "xMidYMid meet"}
+        [:image {:href (:uri zoom-preview)
+                 :x (:x zoom-preview) :y (:y zoom-preview)
+                 :width (:width zoom-preview) :height (:height zoom-preview)}]])
 
      [:svg.viewport-controls
       {:xmlns "http://www.w3.org/2000/svg"
@@ -499,7 +529,7 @@
        (when show-outlines?
          [:> outline/shape-outlines*
           {:objects base-objects
-           :selected selected
+           :selected (or selrect-preview selected)
            :hover #{(:id @hover) @frame-hover}
            :highlighted highlighted
            :edition edition
@@ -757,10 +787,8 @@
                        (get base-objects @hover-top-frame-id))
             :view-only (not show-grid-editor?)}])
 
-        (for [frame (ctt/get-frames objects)]
-          (when (and (ctl/grid-layout? frame)
-                     (empty? (:shapes frame))
-                     (not= edition (:id frame))
+        (for [frame empty-grid-frames]
+          (when (and (not= edition (:id frame))
                      (not= @hover-top-frame-id (:id frame)))
             [:& grid-layout/editor
              {:zoom zoom

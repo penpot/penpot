@@ -56,3 +56,31 @@
           position (gpt/point 300 300)
           result   (ctt/top-nested-frame objects position)]
       (t/is (= b-id result)))))
+
+(t/deftest drag-frame-query-matches-rotated-and-clipped-frames
+  (let [parent (uuid/next)
+        child  (uuid/next)
+        points [(gpt/point 75 10) (gpt/point 125 60)
+                (gpt/point 75 110) (gpt/point 25 60)]
+        objects {parent (make-frame parent uuid/zero [child] 0 0 100 100 false)
+                 child  (assoc (make-frame child parent [] 40 25 70 70 false)
+                               :rotation 45 :points points)}
+        query   (ctt/make-drag-frame-query objects)]
+    (doseq [point (concat points [(gpt/point 75 60) (gpt/point 32 32)
+                                  (gpt/point 108 60) (gpt/point 300 300)])
+            excluded [nil #{} #{child} #{parent}]]
+      (t/is (= (ctt/top-nested-frame objects point excluded)
+               (query point excluded))))
+    (t/is (= child (query (gpt/point 75 60) nil)))
+    (t/is (= uuid/zero (query (gpt/point 108 60) nil)))))
+
+(t/deftest drag-frame-query-crosses-cell-boundaries
+  (let [id      (uuid/next)
+        objects {id (make-frame id uuid/zero [] -512 -256 768 512 false)}
+        query   (ctt/make-drag-frame-query objects)]
+    (doseq [x [-513 -512 -256.01 -256 -0.01 0 255.99 256 256.01 -512]
+            y [-256 0 256 257]
+            excluded [nil #{id}]]
+      (let [pt (gpt/point x y)]
+        (t/is (= (ctt/top-nested-frame objects pt excluded)
+                 (query pt excluded)))))))

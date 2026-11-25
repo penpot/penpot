@@ -9,7 +9,7 @@ use crate::render::text;
 use crate::shapes::radius_to_sigma;
 use crate::shapes::{ParagraphBuilderGroup, Shadow, Shape, Stroke, StrokeKind, TextContent, Type};
 use crate::uuid::Uuid;
-use skia_safe::{self as skia, canvas::SaveLayerRec, Paint, Path, Rect};
+use skia_safe::{self as skia, canvas::SaveLayerRec, Contains, Paint, Path, Rect};
 
 // ---------------------------------------------------------------------------
 // Direct frame drop shadows (fast inline blur + filter-surface cache fallback)
@@ -17,6 +17,8 @@ use skia_safe::{self as skia, canvas::SaveLayerRec, Paint, Path, Rect};
 
 pub(crate) struct DropShadowFilterCache {
     entries: HashMap<DropShadowFilterCacheKey, CachedDropShadowFilter>,
+    ellipses: HashMap<EllipseMaskKey, CachedDropShadowFilter>,
+    ellipse_texels: usize,
 }
 
 #[derive(Hash, PartialEq, Eq, Clone, Copy)]
@@ -36,6 +38,101 @@ pub(crate) struct DropShadowFilterCacheKey {
     layer_blur_bits: u32,
 }
 
+/// The shadow silhouette of a filled, unstroked ellipse is black regardless
+/// of its fill. At full filter resolution its geometry is in document space.
+/// Record all inputs that can change the native mask across camera updates.
+#[derive(Hash, PartialEq, Eq)]
+pub(super) struct EllipseMaskKey {
+    device_oval: [u32; 4],
+    local_size: [u32; 2],
+    mask_size: [u32; 2],
+    reflection: [u32; 2],
+    blur: u32,
+    antialias: bool,
+}
+
+impl EllipseMaskKey {
+    pub(super) fn for_render(
+        state: &mut RenderState,
+        shape: &Shape,
+        shadow: &Shadow,
+        bounds: Rect,
+        clips: Option<&super::ClipStack>,
+        target: SurfaceId,
+    ) -> Option<Self> {
+        let transform = &shape.transform;
+        // Once document pixels are magnified, draw their native coverage at
+        // the actual position. Even one rounding level is visible in pixel QA.
+        if state.get_scale() > 1.0
+            || !matches!(shape.shape_type, Type::Circle)
+            || !shape.has_fills()
+            || shape.inherits_fills()
+            || !shape.strokes.is_empty()
+            || transform.has_perspective()
+            || transform.skew_x() != 0.0
+            || transform.skew_y() != 0.0
+            || transform.scale_x().abs() != 1.0
+            || transform.scale_y().abs() != 1.0
+            || state.options.is_debug_visible()
+            || state.options.is_fast_mode()
+            || target == SurfaceId::Export
+            || shadow.blur > state.options.blur_downscale_threshold
+            || !bounds.is_finite()
+            || bounds.is_empty()
+            || bounds.width() > 192.0
+            || bounds.height() > 192.0
+        {
+            return None;
+        }
+        // A nearby or transformed clip can change the silhouette between
+        // zooms. Keep the normal filter path whenever it could affect a texel.
+        let guarded = bounds.with_outset((2.0, 2.0));
+        if !clips.into_iter().flatten().all(|(rect, corners, matrix)| {
+            matrix.is_identity()
+                && match corners {
+                    Some(radii) => skia::RRect::new_rect_radii(*rect, radii).contains(guarded),
+                    None => rect.contains(guarded),
+                }
+        }) {
+            return None;
+        }
+
+        let (w, h) = state.surfaces.filter_size();
+        let canvas = state.surfaces.canvas(SurfaceId::Filter);
+        if bounds.width().ceil() > w as f32
+            || bounds.height().ceil() > h as f32
+            || !canvas.local_to_device_as_3x3().is_identity()
+            || !canvas.is_clip_rect()
+            || canvas.device_clip_bounds() != Some(skia::IRect::from_wh(w, h))
+        {
+            return None;
+        }
+        let aa = shape.should_use_antialias(state.get_scale(), state.options.antialias_threshold);
+        Some(Self::for_shape(shape, shadow, bounds, aa))
+    }
+
+    fn for_shape(shape: &Shape, shadow: &Shadow, bounds: Rect, antialias: bool) -> Self {
+        // The filter canvas starts at unit density with its origin at the
+        // crop's upper left. Mirror the draw_oval CTM and spread exactly.
+        let mut matrix = shape.centered_transform();
+        matrix.pre_translate(shadow.offset);
+        let mut device = skia::Matrix::translate((-bounds.left, -bounds.top));
+        device.pre_concat(&matrix);
+        let spread = shadow.spread.max(0.0);
+        let oval = device
+            .map_rect(shape.selrect.with_outset((spread, spread)))
+            .0;
+        Self {
+            device_oval: [oval.left, oval.top, oval.right, oval.bottom].map(f32::to_bits),
+            local_size: [shape.selrect.width(), shape.selrect.height()].map(f32::to_bits),
+            mask_size: [bounds.width(), bounds.height()].map(f32::to_bits),
+            reflection: [matrix.scale_x(), matrix.scale_y()].map(f32::to_bits),
+            blur: shadow.blur.to_bits(),
+            antialias,
+        }
+    }
+}
+
 pub(crate) struct CachedDropShadowFilter {
     bounds: Rect,
     filter_scale: f32,
@@ -43,6 +140,14 @@ pub(crate) struct CachedDropShadowFilter {
 }
 
 impl CachedDropShadowFilter {
+    pub(super) fn placed_at(&self, bounds: Rect) -> Self {
+        Self {
+            bounds,
+            filter_scale: self.filter_scale,
+            image: self.image.clone(),
+        }
+    }
+
     pub(crate) fn new(bounds: Rect, filter_scale: f32, surface: &mut skia::Surface) -> Self {
         // The reusable filter surface can be viewport-sized. Retaining all of it
         // for every shadow keeps large, mostly transparent textures alive.
@@ -53,9 +158,37 @@ impl CachedDropShadowFilter {
         let height = (bounds.height() * filter_scale)
             .ceil()
             .clamp(1.0, surface.height() as f32) as i32;
-        let image = surface
-            .image_snapshot_with_bounds(skia::IRect::from_wh(width, height))
-            .expect("shadow filter bounds must intersect its surface");
+        let subset = skia::IRect::from_wh(width, height);
+        let info = surface.image_info().with_dimensions((width, height));
+        let owned = surface.direct_context().and_then(|mut ctx| {
+            skia::gpu::surfaces::render_target(
+                &mut ctx,
+                skia::gpu::Budgeted::Yes,
+                &info,
+                None,
+                skia::gpu::SurfaceOrigin::BottomLeft,
+                None,
+                true,
+                false,
+            )
+        });
+        let image = if let Some(mut mask) = owned {
+            // Preserve the filtered bytes exactly. Ganesh owns the mip levels
+            // beside the cropped mask, so each minified blit can reuse them.
+            let mut copy = Paint::default();
+            copy.set_blend_mode(skia::BlendMode::Src);
+            surface.draw(
+                mask.canvas(),
+                (0., 0.),
+                skia::SamplingOptions::default(),
+                Some(&copy),
+            );
+            mask.image_snapshot()
+        } else {
+            surface
+                .image_snapshot_with_bounds(subset)
+                .expect("shadow bounds must intersect the filter surface")
+        };
         Self {
             bounds,
             filter_scale,
@@ -104,11 +237,34 @@ impl DropShadowFilterCache {
     pub fn new() -> Self {
         Self {
             entries: HashMap::default(),
+            ellipses: HashMap::default(),
+            ellipse_texels: 0,
         }
     }
 
-    pub fn clear(&mut self) {
+    pub fn clear_pass(&mut self) {
         self.entries.clear();
+    }
+
+    pub(super) fn clear_ellipses(&mut self) {
+        self.ellipses.clear();
+        self.ellipse_texels = 0;
+    }
+
+    pub(super) fn ellipse(&self, key: &EllipseMaskKey) -> Option<&CachedDropShadowFilter> {
+        self.ellipses.get(key)
+    }
+
+    pub(super) fn store_ellipse(&mut self, key: EllipseMaskKey, mask: CachedDropShadowFilter) {
+        let texels = mask.image.width() as usize * mask.image.height() as usize;
+        // Mask storage is shared across zoom levels and bounded independently
+        // of the document's size. A full cache continues to serve previous hits.
+        const MAX_ENTRIES: usize = 384;
+        const MAX_BASE_TEXELS: usize = 2 * 1024 * 1024;
+        if self.ellipses.len() < MAX_ENTRIES && self.ellipse_texels + texels <= MAX_BASE_TEXELS {
+            self.ellipse_texels += texels;
+            self.ellipses.insert(key, mask);
+        }
     }
 
     pub(crate) fn lookup(&self, key: &DropShadowFilterCacheKey) -> Option<&CachedDropShadowFilter> {
@@ -582,6 +738,36 @@ pub fn render_text_shadows(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn translated_ellipse_masks_match_only_with_identical_filter_pixels() {
+        let mut s = Shape::new(Uuid::nil());
+        s.shape_type = Type::Circle;
+        s.set_selrect(100.25, 123.5, 106.25, 129.5);
+        s.transform = skia::Matrix::scale((1.0, -1.0));
+        let bounds = Rect::from_xywh(90.0, 112.0, 28.0, 30.0);
+        let shadow = Shadow::new(
+            skia::Color::BLACK,
+            3.,
+            1.,
+            (0., 2.),
+            crate::shapes::ShadowStyle::Drop,
+            false,
+        );
+        let key = EllipseMaskKey::for_shape(&s, &shadow, bounds, true);
+        assert!(key != EllipseMaskKey::for_shape(&s, &shadow, bounds, false));
+        let mut changed = shadow;
+        changed.blur = 2.;
+        assert!(key != EllipseMaskKey::for_shape(&s, &changed, bounds, true));
+        s.set_selrect(1100.25, -876.5, 1106.25, -870.5);
+        let shifted = bounds.with_offset((1000., -1000.));
+        assert!(key == EllipseMaskKey::for_shape(&s, &shadow, shifted, true));
+        assert!(
+            key != EllipseMaskKey::for_shape(&s, &shadow, shifted.with_offset((0.25, 0.)), true)
+        );
+        s.set_selrect(1100.25, -876.5, 1107.25, -870.5);
+        assert!(key != EllipseMaskKey::for_shape(&s, &shadow, shifted, true));
+    }
 
     #[test]
     fn cached_shadow_retains_only_its_scaled_bounds() {

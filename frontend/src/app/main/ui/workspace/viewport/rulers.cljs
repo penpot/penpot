@@ -51,19 +51,18 @@
 (defn- calculate-step-size
   [zoom]
   (cond
-    (< 0 zoom 0.008) 10000
-    (< 0.008 zoom 0.015) 5000
-    (< 0.015 zoom 0.04) 2500
-    (< 0.04 zoom 0.07) 1000
-    (< 0.07 zoom 0.2) 500
-    (< 0.2 zoom 0.5) 250
-    (< 0.5 zoom 1) 100
-    (<= 1 zoom 2) 50
-    (< 2 zoom 4) 25
-    (< 4 zoom 6) 10
-    (< 6 zoom 15) 5
-    (< 15 zoom 25) 2
-    (< 25 zoom) 1
+    (< zoom 0.008) 10000
+    (< zoom 0.015) 5000
+    (< zoom 0.04) 2500
+    (< zoom 0.07) 1000
+    (< zoom 0.2) 500
+    (< zoom 0.5) 250
+    (< zoom 1) 100
+    (<= zoom 2) 50
+    (< zoom 4) 25
+    (< zoom 6) 10
+    (< zoom 15) 5
+    (< zoom 25) 2
     :else 1))
 
 (defn get-clip-area

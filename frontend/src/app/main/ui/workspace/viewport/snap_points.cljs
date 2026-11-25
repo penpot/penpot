@@ -50,25 +50,6 @@
           :style {:stroke line-color :stroke-width (str (/ line-width zoom))}
           :opacity line-opacity}])
 
-(defn- get-snap
-  [coord shapes page-id remove-snap zoom]
-  (let [bounds (gsh/shapes->rect shapes)
-        frame-id  (snap/snap-frame-id shapes)]
-
-    (->> (rx/of bounds)
-         (rx/merge-map
-          (fn [bounds]
-            (->> (sp/rect->snap-points bounds)
-                 (map #(vector frame-id %)))))
-
-         (rx/merge-map
-          (fn [[frame-id point]]
-            (->> (snap/get-snap-points page-id frame-id remove-snap zoom point coord)
-                 (rx/map #(mapcat second %))
-                 (rx/map #(map :pt %))
-                 (rx/map #(vector point % coord)))))
-         (rx/reduce conj []))))
-
 (defn- flip
   "Function that reverses the x/y coordinates to their counterpart"
   [coord]
@@ -102,44 +83,37 @@
 
 (mf/defc snap-feedback*
   {::mf/private true}
-  [{:keys [shapes remove-snap zoom modifiers page-id]}]
+  [{:keys [shapes remove-snap zoom modifiers page-id compact]}]
   (let [state (mf/use-state [])
         subject (mf/use-memo #(rx/subject))
 
         ;; We use sets to store points/lines so there are no points/lines repeated
         ;; can cause problems with react keys
-        snap-points (into #{} (mapcat add-point-to-snaps) @state)
-
-        snap-lines (->> (into (process-snap-lines @state :x)
-                              (process-snap-lines @state :y))
-                        (into #{}))]
+        data        (deref state)
+        snap-points (mf/with-memo [data] (into #{} (mapcat add-point-to-snaps) data))
+        snap-lines  (mf/with-memo [data]
+                      (into (set (process-snap-lines data :x))
+                            (process-snap-lines data :y)))]
     (mf/use-effect
      (fn []
        (let [sub (->> subject
                       (rx/switch-map
-                       (fn [{:keys [shapes page-id remove-snap zoom]}]
-                         (->> (get-snap :y shapes page-id remove-snap zoom)
-                              (rx/combine-latest (get-snap :x shapes page-id remove-snap zoom)))))
-
-                      (rx/map
-                       (fn [result]
-                         (apply d/concat-vec (seq result))))
-
-                      (rx/subs!
-                       (fn [data]
-                         (let [rs (filter (fn [[_ snaps _]] (> (count snaps) 0)) data)]
-                           (reset! state rs)))))]
+                       (fn [{:keys [shapes page-id remove-snap zoom compact]}]
+                         (let [points (sp/rect->snap-points (gsh/shapes->rect shapes))]
+                           (snap/get-feedback-snaps page-id (snap/snap-frame-id shapes)
+                                                    remove-snap zoom points compact))))
+                      (rx/subs! #(reset! state %)))]
 
          ;; On unmount callback
          #(rx/dispose! sub))))
 
     (mf/use-effect
-     (mf/deps shapes remove-snap modifiers page-id zoom)
+     (mf/deps shapes remove-snap modifiers page-id zoom compact)
      (fn []
        (rx/push! subject {:shapes shapes
                           :page-id page-id
                           :remove-snap remove-snap
-                          :zoom zoom})))
+                          :zoom zoom :compact compact})))
 
     [:g.snap-feedback
      (for [[from-point to-point] snap-lines]
@@ -173,16 +147,18 @@
         remove-snap
         (mf/use-callback
          (mf/deps remove-snap-base?)
-         (fn [{:keys [type grid] :as snap}]
+         (fn [snap]
            (or (remove-snap-base? snap)
-               (and (= type :layout) (= grid :square))
-               (= type :guide))))
+               (sp/hidden-feedback? snap))))
 
+        compact   (mf/with-memo [layout filter-shapes focus]
+                    (snap/compact-query :feedback layout filter-shapes focus))
         shapes    (if drawing [drawing] shapes)
         frame-id (snap/snap-frame-id shapes)]
     (when-not (ctl/any-layout? objects frame-id)
       [:> snap-feedback* {:shapes shapes
                           :page-id page-id
                           :remove-snap remove-snap
+                          :compact compact
                           :zoom zoom}])))
 

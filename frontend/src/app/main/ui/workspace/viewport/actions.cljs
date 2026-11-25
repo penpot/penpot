@@ -19,10 +19,13 @@
    [app.main.data.workspace.media :as dwm]
    [app.main.data.workspace.path :as dwdp]
    [app.main.data.workspace.specialized-panel :as-alias dwsp]
+   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.streams :as ms]
    [app.main.ui.workspace.sidebar.assets.components :as wsac]
    [app.main.ui.workspace.viewport.viewport-ref :as uwvv]
+   [app.render-wasm.api :as wasm.api]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
    [app.util.dom.normalize-wheel :as nw]
@@ -160,9 +163,9 @@
      (reset! frame-hover nil))))
 
 (defn on-click
-  [hover selected edition drawing-path? drawing-tool space? selrect z?]
+  [hover pick-stream pointer-release edition drawing-path? drawing-tool space? selrect z?]
   (mf/use-callback
-   (mf/deps @hover selected edition drawing-path? drawing-tool @space? selrect @z?)
+   (mf/deps pick-stream @hover edition drawing-path? drawing-tool @space? selrect @z?)
    (fn [event]
      (when (and (nil? selrect)
                 (or (dom/class? (dom/get-target event) "viewport-controls")
@@ -172,19 +175,32 @@
              shift? (kbd/shift? event)
              alt? (kbd/alt? event)
              meta? (kbd/meta? event)
-             hovering? (some? @hover)
              raw-pt (dom/get-client-position event)
-             pt     (uwvv/point->viewport raw-pt)]
+             native (dom/event->native-event event)
+             [pointer-id release-pt] @pointer-release
+             ;; Mouse clicks can lose the fractional CSS pixels preserved by
+             ;; pointerup. At overview zoom that can cross a small text layer.
+             pt (uwvv/point->viewport
+                 (if (and release-pt (pos? (.-detail native))
+                          (or (nil? (.-pointerId native)) (= pointer-id (.-pointerId native)))
+                          (< (js/Math.abs (- (:x release-pt) (:x raw-pt))) 1)
+                          (< (js/Math.abs (- (:y release-pt) (:y raw-pt))) 1))
+                   release-pt raw-pt))]
+         (reset! pointer-release nil)
          (st/emit! (mse/->MouseEvent :click ctrl? shift? alt? meta?))
 
          ;; FIXME: Maybe we can transform this into a cond instead
          ;; of multiple (when)s.
-         (when (and hovering?
-                    (not @space?)
+         (when (and (not @space?)
                     (not edition)
                     (not drawing-path?)
                     (not drawing-tool))
-           (st/emit! (dw/select-shape (:id @hover) shift?)))
+           ;; A modifier click can arrive before the worker has updated the
+           ;; hover outline. Resolve it at the position and mode of the click.
+           (if (and pt (kbd/mod? event))
+             (rx/push! pick-stream {:point pt :shift? shift?})
+             (when-let [id (:id @hover)]
+               (st/emit! (dw/select-shape id shift?)))))
 
          (when (and @z?
                     (not @space?)
@@ -278,7 +294,7 @@
          (st/emit! (dw/show-shape-context-menu {:position position :hover-ids @hover-ids})))))))
 
 (defn on-pointer-up
-  [disable-paste-ref]
+  [disable-paste-ref pointer-release]
   (mf/use-callback
    (fn [event]
      (dom/stop-propagation event)
@@ -294,9 +310,13 @@
            meta? (kbd/meta? native-event)
 
            left-click? (= 1 (.-which native-event))
-           middle-click? (= 2 (.-which native-event))]
+           middle-click? (= 2 (.-which native-event))
+           {:keys [panning zooming]} (:workspace-local @st/state)]
 
        (when left-click?
+         (reset! pointer-release
+                 (when (kbd/mod? native-event)
+                   [(.-pointerId native-event) (dom/get-client-position native-event)]))
          (st/emit! (mse/->MouseEvent :up ctrl? shift? alt? meta?)))
 
        (when middle-click?
@@ -306,8 +326,10 @@
          (mf/set-ref-val! disable-paste-ref true)
          (ts/schedule #(mf/set-ref-val! disable-paste-ref false)))
 
-       (st/emit! (dw/finish-panning)
-                 (dw/finish-zooming))))))
+       ;; A wheel gesture has its own end timer. Releasing an unrelated click
+       ;; must not interrupt its cached view or start a synchronous tile pass.
+       (when panning (st/emit! (dw/finish-panning)))
+       (when zooming (st/emit! (dw/finish-zooming)))))))
 
 (defn on-pointer-enter
   [in-viewport-ref]
@@ -380,25 +402,51 @@
                                        (kbd/meta? event)
                                        delta)))))))
 
+(defn- cancel-wheel-zoom
+  [^js state]
+  (when (pos? (.-zoomRafId state))
+    (ts/cancel-af! (.-zoomRafId state)))
+  (set! (.-zoomRafId state) 0)
+  (set! (.-zoomDeadline state) 0)
+  (set! (.-scale state) 1)
+  (set! (.-zoomPt state) nil))
+
 (defn- schedule-zoom!
-  "Accumulate a compound zoom scale and a cursor point into `state`, scheduling
-  a single requestAnimationFrame flush if one is not already pending.  On the
-  next frame the accumulated scale is applied via `dw/set-zoom` and the state
-  is reset to its idle values."
-  [^js state scale pt]
-  (let [pending? (pos? (.-zoomRafId state))]
+  "Apply a wheel notch over successive display frames. Fine trackpad deltas
+  are already continuous and are applied in the next frame."
+  [^js state scale pt pinch?]
+  (let [now     (js/performance.now)
+        coarse? (and (not pinch?) (> (js/Math.abs (js/Math.log scale)) 0.09))]
     (set! (.-scale state) (* (.-scale state) scale))
     (set! (.-zoomPt state) pt)
-    (when-not pending?
-      (set! (.-zoomRafId state)
-            (ts/raf
-             (fn []
-               (let [s  (.-scale state)
-                     zp (.-zoomPt state)]
-                 (set! (.-scale state) 1)
-                 (set! (.-zoomPt state) nil)
-                 (set! (.-zoomRafId state) 0)
-                 (st/emit! (dw/set-zoom zp s)))))))))
+    (wasm.api/prepare-view-input pinch? pt)
+    (when pinch?
+      (set! (.-zoomDeadline state) 0))
+    (when (and coarse? (features/active-feature? @st/state "render-wasm/v1")
+               (not (.-matches (js/window.matchMedia "(prefers-reduced-motion: reduce)"))))
+      (set! (.-zoomDeadline state) (+ now 100)))
+    (when (zero? (.-zoomRafId state))
+      (set! (.-zoomStamp state) (- now 8))
+      (letfn [(frame []
+                (let [at       (js/performance.now)
+                      previous (.-zoomStamp state)
+                      deadline (.-zoomDeadline state)
+                      portion  (if (>= at deadline)
+                                 1
+                                 (min 1 (/ (max 1 (- at previous)) (max 1 (- deadline previous)))))
+                      scale    (.-scale state)
+                      step     (if (= portion 1) scale (js/Math.pow scale portion))
+                      anchor   (.-zoomPt state)]
+                  (if (= portion 1)
+                    (do
+                      (set! (.-zoomRafId state) 0)
+                      (cancel-wheel-zoom state))
+                    (do
+                      (set! (.-scale state) (/ scale step))
+                      (set! (.-zoomStamp state) at)
+                      (set! (.-zoomRafId state) (ts/raf frame))))
+                  (st/emit! (dw/set-zoom anchor step))))]
+        (set! (.-zoomRafId state) (ts/raf frame))))))
 
 (defn- schedule-scroll!
   "Accumulate scroll deltas into `state`, scheduling a single
@@ -415,6 +463,7 @@
         (set! (.-dx state) (+ (.-dx state) (/ delta-x zoom)))
         (set! (.-dy state) (+ (.-dy state) (/ delta-y zoom)))))
     (when-not pending?
+      (wasm.api/prepare-view-input false)
       (set! (.-rafId state)
             (ts/raf
              (fn []
@@ -427,47 +476,62 @@
                             {:x #(+ % dx)
                              :y #(+ % dy)})))))))))
 
+(defn- chromium-pinch?
+  [^js event]
+  ;; Chromium sets ctrlKey on precise touchpad pinch events even when the
+  ;; keyboard Control key is up. A real Ctrl+wheel keeps its wheel response.
+  (and (.-ctrlKey event) (not @ms/keyboard-ctrl)
+       (zero? (.-deltaMode event)) (zero? (.-deltaX event))
+       (or (cfg/check-browser? :chrome) (cfg/check-browser? :edge))))
+
+(defn- pinch-scale
+  [^js event]
+  ;; Chromium emits one signed 120-unit tick and a log-scale delta per
+  ;; pinch update. Embedded/scaled viewports can scale both DOM values.
+  (let [tick (js/Math.abs (.-wheelDeltaY event))
+        unit (if (pos? tick) (/ 120 tick) 1)]
+    (js/Math.exp (/ (* (- (.-deltaY event)) unit) 100))))
+
 (defn on-mouse-wheel [zoom-ref]
   (let [;; Mutable accumulator for scroll/zoom deltas, throttled to one
         ;; state update per animation frame. This prevents rapid wheel
         ;; events from causing cascading synchronous React re-renders
         ;; that can exceed the maximum update depth.
-        scroll-state (mf/use-ref #js {:dx 0 :dy 0 :rafId 0
-                                      :scale 1 :zoomPt nil :zoomRafId 0})]
+        scroll-state (mf/use-ref #js {:dx 0 :dy 0 :rafId 0 :scale 1
+                                      :zoomPt nil :zoomRafId 0 :zoomDeadline 0})]
+    (mf/with-effect []
+      (let [^js state (mf/ref-val scroll-state)
+            cancel (fn [_] (cancel-wheel-zoom state))]
+        (.addEventListener js/window "pointerdown" cancel true)
+        (.addEventListener js/window "keydown" cancel true)
+        (fn []
+          (.removeEventListener js/window "pointerdown" cancel true)
+          (.removeEventListener js/window "keydown" cancel true)
+          (cancel-wheel-zoom state)
+          (when (pos? (.-rafId state))
+            (ts/cancel-af! (.-rafId state))))))
     (mf/use-callback
      (fn [event]
-       (let [event      (.getBrowserEvent ^js event)
-
-             target     (dom/get-target event)
-             mod?       (kbd/mod? event)
-             ctrl?      (kbd/ctrl? event)
-
-             picking-color?   (= "pixel-overlay" (.-id target))
-             comments-layer?  (dom/is-child? (dom/get-element "comments") target)
-
-             raw-pt     (dom/get-client-position event)
-             pt         (uwvv/point->viewport raw-pt)
-
-             norm-event ^js (nw/normalize-wheel event)
-
-             delta-y    (.-pixelY norm-event)
-             delta-x    (.-pixelX norm-event)
-             delta-zoom (+ delta-y delta-x)
-
-             scale      (+ 1 (mth/abs (* scale-per-pixel delta-zoom)))
-             scale      (if (pos? delta-zoom) (/ 1 scale) scale)]
-
-         (when (or (uwvv/inside-viewport? target) picking-color?)
+       (let [target (dom/get-target event)
+             zoom?  (or (kbd/ctrl? event) (kbd/mod? event))]
+         (when (or (uwvv/inside-viewport? target)
+                   (= "pixel-overlay" (.-id target))
+                   (and zoom? (dom/is-child? (dom/get-element "comments") target)))
            (dom/prevent-default event)
            (dom/stop-propagation event)
-           (if (or ctrl? mod?)
-             (schedule-zoom! (mf/ref-val scroll-state) scale pt)
-             (schedule-scroll! (mf/ref-val scroll-state) (mf/ref-val zoom-ref) event delta-x delta-y)))
-
-         (when (and comments-layer? (or ctrl? mod?))
-           (dom/prevent-default event)
-           (dom/stop-propagation event)
-           (schedule-zoom! (mf/ref-val scroll-state) scale pt)))))))
+           (let [state (mf/ref-val scroll-state)
+                 wheel ^js (nw/normalize-wheel event)
+                 dx    (.-pixelX wheel)
+                 dy    (.-pixelY wheel)]
+             (if zoom?
+               (let [pinch? (chromium-pinch? event)
+                     delta  (+ dx dy)
+                     step   (+ 1 (mth/abs (* scale-per-pixel delta)))
+                     scale  (if pinch? (pinch-scale event) (if (pos? delta) (/ 1 step) step))
+                     pt     (uwvv/point->viewport (dom/get-client-position event))]
+                 (when (not= 1 scale)
+                   (schedule-zoom! state scale pt pinch?)))
+               (schedule-scroll! state (mf/ref-val zoom-ref) event dx dy)))))))))
 
 (defn on-drag-enter
   [comp-inst-ref]

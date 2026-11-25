@@ -13,6 +13,17 @@
    [app.common.geom.shapes :as gsh]
    [app.common.types.shape-tree :as ctst]))
 
+(defn excluded-snap?
+  [layout excluded {:keys [type id]}]
+  (case type
+    :layout (not (and (contains? layout :display-guides) (contains? layout :snap-guides)))
+    :guide  (not (and (contains? layout :rulers) (contains? layout :snap-ruler-guides)))
+    (or (contains? excluded id) (not (contains? layout :dynamic-alignment)))))
+
+(defn hidden-feedback?
+  [{:keys [type grid]}]
+  (or (= type :guide) (and (= type :layout) (= grid :square))))
+
 (defn rect->snap-points
   [rect]
   (when (some? rect)

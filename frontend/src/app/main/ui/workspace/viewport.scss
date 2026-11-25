@@ -20,10 +20,40 @@
   height: 100%;
 }
 
+.drawing-surface,
+.navigation-preview {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.drawing-surface {
+  // Keep the live SVG mounted while scrolling a dense board at detail zoom.
+  contain: layout style paint;
+
+  --zoom: initial;
+}
+
+.drawing-camera {
+  position: absolute;
+  inset: 0;
+  contain: layout style;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
 .render-shapes {
   height: 100%;
+  overflow: visible;
   position: absolute;
   width: 100%;
+  will-change: transform;
+
+  // Zoom-dependent editor controls live in a sibling overlay. Avoid
+  // invalidating the styles of every drawing node when the zoom changes.
+  --zoom: initial;
 }
 
 .viewport-overlays {

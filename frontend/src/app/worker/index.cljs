@@ -10,6 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.files.changes :as ch]
    [app.common.geom.rect :as grc]
+   [app.common.geom.snap :as gs]
    [app.common.logging :as log]
    [app.common.time :as ct]
    [app.common.transit :as t]
@@ -143,12 +144,26 @@
     (run-query-snap index page-id frame-id axis ranges bounds)
     []))
 
-;; Single round-trip for X+Y snap used by `app.main.snap/closest-snap` (e.g. shape drag).
+(defn- compact-snap-results
+  [{:keys [mode layout excluded]} buckets]
+  (let [include? (complement (partial gs/excluded-snap? layout excluded))]
+    (case mode
+      :closest
+      (into [] (keep (fn [[v hits]] (when (some include? hits) [v]))) buckets)
+      :feedback
+      (into [] (keep (fn [[v hits]]
+                       (let [points (into #{} (comp (filter include?) (remove gs/hidden-feedback?) (map :pt)) hits)]
+                         (when (seq points) [v points])))) buckets))))
+
+;; Both axes and all anchors share a single trip through the worker's spatial index.
 (defmethod impl/handler :index/query-snap-xy
-  [{:keys [page-id frame-id bounds x-ranges y-ranges]}]
+  [{:keys [page-id frame-id bounds x-ranges y-ranges compact]}]
   (if-let [index (get @state ::snap)]
-    {:x (run-query-snap index page-id frame-id :x x-ranges bounds)
-     :y (run-query-snap index page-id frame-id :y y-ranges bounds)}
+    (let [x (run-query-snap index page-id frame-id :x x-ranges bounds)
+          y (run-query-snap index page-id frame-id :y y-ranges bounds)]
+      (if (contains? #{:closest :feedback} (:mode compact))
+        {:x (compact-snap-results compact x) :y (compact-snap-results compact y) :compact? true}
+        {:x x :y y}))
     {:x [] :y []}))
 
 ;; FIXME: schema

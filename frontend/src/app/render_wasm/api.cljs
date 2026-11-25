@@ -27,6 +27,7 @@
    [app.common.render-wasm.serializers :as sr]
    [app.common.render-wasm.serializers.color :as sr-clr]
    [app.common.render-wasm.wasm :as wasm]
+   [app.common.thumbnails :as thc]
    [app.common.types.color :as clr]
    [app.common.types.fills :as types.fills]
    [app.common.types.path :as path]
@@ -227,9 +228,29 @@
 (def ^:const GRID-LAYOUT-COLUMN-U8-SIZE 8)
 (def ^:const GRID-LAYOUT-CELL-U8-SIZE 36)
 
-(def ^:const DEBOUNCE_DELAY_MS 100)
+(def ^:const DEBOUNCE_DELAY_MS 240)
+(def ^:private wheel-settle-ms 72)
+(def ^:private fast-pinch-settle-ms 36)
 
 (defonce ^:private view-interaction-active? (atom false))
+(defonce ^:private last-view-pinch? (volatile! false))
+(defonce ^:private pinch-anchor (volatile! nil))
+(defonce ^:private last-pinch-input-at (volatile! 0))
+(defonce ^:private consecutive-fast-inputs (volatile! 0))
+(defonce ^:private slow-tiles-until (volatile! 0))
+(defonce ^:private pinch-refine-after (volatile! 0))
+(defonce ^:private pinch-refine-timer (volatile! nil))
+(defonce ^:private view-finish-timer (volatile! nil))
+
+(defn- cancel-view-finish []
+  (when-let [timer @view-finish-timer]
+    (timers/dispose! timer)
+    (vreset! view-finish-timer nil)))
+
+(defn- cancel-pinch-refinement []
+  (when-let [timer @pinch-refine-timer]
+    (timers/dispose! timer)
+    (vreset! pinch-refine-timer nil)))
 
 ;; Threshold below which we use synchronous processing (no chunking overhead)
 (def ^:const ASYNC_THRESHOLD 100)
@@ -338,14 +359,210 @@
   (or (= wasm/internal-frame-type wasm/FRAME_TYPE_PARTIAL)
       (= wasm/internal-frame-type wasm/FRAME_TYPE_VIEWPORT_READY)))
 
+(defonce ^:private tile-fence (volatile! nil))
+(defonce ^:private previous-tile-fence (volatile! nil))
+(defonce ^:private tile-submitted-at (volatile! 0))
+(defonce ^:private last-camera-at (volatile! 0))
+(defonce ^:private interrupted-tile-work (volatile! false))
+(defonce ^:private short-tile-batches (volatile! 0))
+(defonce ^:private refining-view-tiles (volatile! false))
+(defonce ^:private tile-retry-timer (volatile! nil))
+(def ^:private continuous-input #js {:includeContinuous true})
+
+(defn- cancel-tile-retry []
+  (when-let [timer @tile-retry-timer]
+    (timers/dispose! timer)
+    (vreset! tile-retry-timer nil)))
+
+(defn- release-tile-fence [slot]
+  (when-let [sync @slot]
+    (when-let [^js gl wasm/gl-context]
+      (.deleteSync gl sync))
+    (vreset! slot nil)))
+
+(defn- clear-tile-fence []
+  (release-tile-fence previous-tile-fence)
+  (release-tile-fence tile-fence)
+  (vreset! short-tile-batches 0))
+
+(defn- advance-tile-fence []
+  (release-tile-fence previous-tile-fence)
+  (vreset! previous-tile-fence @tile-fence)
+  (vreset! tile-fence nil))
+
+(defn- browser-input-pending? []
+  (when-let [scheduling (unchecked-get js/navigator "scheduling")]
+    (when-let [^js pending (unchecked-get scheduling "isInputPending")]
+      (.call pending scheduling continuous-input))))
+
+(defonce ^:private frame-preview-page (volatile! nil))
+(defonce ^:private frame-preview-downloads (volatile! nil))
+
+(defn- nearby-frame-previews [state objects file-id page-id vbox]
+  (let [{vx :x vy :y vw :width vh :height} vbox
+        candidate
+        (fn [index id]
+          (let [{:keys [type hidden rotation transform opacity blend-mode show-content
+                        shadow blur strokes flip-x flip-y selrect]} (get objects id)
+                {:keys [x y width height]} selrect]
+            ;; Saved images can include margins for visible overflow, strokes and
+            ;; filters. Only position a thumbnail when its bounds are unambiguous.
+            (when (and (= type :frame) (not hidden) (not show-content)
+                       (not flip-x) (not flip-y) (zero? (or rotation 0))
+                       (or (nil? transform)
+                           (= [1 0 0 1 0 0] (mapv #(get transform %) [:a :b :c :d :e :f])))
+                       (= 1 (or opacity 1)) (= :normal (or blend-mode :normal))
+                       (empty? strokes) (empty? shadow) (nil? blur)
+                       (pos? width) (pos? height))
+              (let [object-id (thc/fmt-object-id file-id page-id id "frame")
+                    raw       (get-in state [:thumbnails object-id :uri])
+                    distance  (+ (/ (mth/abs (- (+ x (/ width 2)) (+ vx (/ vw 2)))) vw)
+                                 (/ (mth/abs (- (+ y (/ height 2)) (+ vy (/ vh 2)))) vh))
+                    visible-w (max 0 (- (min (+ x width) (+ vx vw)) (max x vx)))
+                    visible-h (max 0 (- (min (+ y height) (+ vy vh)) (max y vy)))]
+                (when (and raw (< distance 4))
+                  {:index index :distance distance :rect selrect :id object-id :raw raw
+                   :close-view? (>= (* 4 visible-w visible-h) (* vw vh))
+                   :uri (if (and (string? raw) (str/starts-with? raw "blob:")) raw (cf/resolve-media raw))})))))
+        frames (->> (get-in objects [uuid/zero :shapes])
+                    (keep-indexed candidate)
+                    (sort-by :distance)
+                    (take 4))]
+    ;; At an overview scale the visible vector tiles already cover these boards.
+    ;; Wait until a frame occupies at least a quarter of the viewport.
+    (when (some :close-view? frames)
+      (sort-by :index frames))))
+
+(defn- fetch-frame-preview [uri]
+  (-> (js/fetch uri)
+      (.then (fn [^js response] (when (.-ok response) (.blob response))))
+      (.then (fn [^js blob]
+               (when (and blob (<= (.-size blob) 8388608)) (.arrayBuffer blob))))
+      (.catch (fn [_] nil))))
+
+(defn- prefetch-frame-previews []
+  (let [s @st/state
+        file-id (:current-file-id s)
+        page-id (:current-page-id s)
+        vbox (get-in s [:workspace-local :vbox])
+        key [file-id page-id wasm/gl-context]]
+    (when (and file-id page-id wasm/gl-context (not= key (:key @frame-preview-downloads))
+               (empty? (:workspace-focus-selected s)) (nil? (get-in s [:workspace-global :preview-id]))
+               (pos? (:width vbox)) (pos? (:height vbox)))
+      (let [objects (dsh/lookup-page-objects s file-id page-id)
+            frames (nearby-frame-previews s objects file-id page-id vbox)]
+        (when (seq frames)
+          ;; Start bounded network reads while the first vector viewport is loading.
+          ;; The graphics context is touched only by the idle installer below.
+          (vreset! frame-preview-downloads
+                   {:key key :reads (into {} (map (fn [{:keys [raw uri]}]
+                                                    [raw (fetch-frame-preview uri)])) frames)}))))))
+
+(defn- install-frame-previews [[file-id page-id :as key] objects frames reads]
+  (let [epoch (h/call wasm/internal-module "_frame_preview_epoch")
+        live? (fn []
+                (let [s @st/state]
+                  (and (= key @frame-preview-page) (wasm/live?)
+                       (= file-id (:current-file-id s)) (= page-id (:current-page-id s))
+                       (identical? objects (dsh/lookup-page-objects s file-id page-id))
+                       (= epoch (h/call wasm/internal-module "_frame_preview_epoch")))))]
+    (letfn [(idle [f]
+              (timers/schedule-on-idle
+               (fn []
+                 (when (live?)
+                   (if (or @view-interaction-active? (browser-input-pending?))
+                     (timers/schedule 60 #(idle f))
+                     (f))))))
+            (step [pending]
+              (when-let [{:keys [uri rect id raw]} (first pending)]
+                (-> (or (get reads raw) (fetch-frame-preview uri))
+                    (.then (fn [buffer]
+                             (idle
+                              (fn []
+                                (when (and buffer (= raw (get-in @st/state [:thumbnails id :uri])))
+                                  (let [bytes (js/Uint8Array. buffer)
+                                        ptr (mem/alloc (.-length bytes))]
+                                    (.set (mem/get-heap-u8) bytes ptr)
+                                    (h/call wasm/internal-module "_cache_frame_preview" epoch
+                                            (:x rect) (:y rect) (:width rect) (:height rect))))
+                                (step (next pending))))))
+                    (.catch (fn [_] (idle #(step (next pending))))))))]
+      (idle #(step frames)))))
+
+(defn- prepare-frame-previews []
+  (let [state @st/state
+        file-id (:current-file-id state)
+        page-id (:current-page-id state)
+        vbox (get-in state [:workspace-local :vbox])
+        key [file-id page-id wasm/gl-context]
+        downloads @frame-preview-downloads
+        deferred-width (when (= key (:key downloads)) (:deferred-width downloads))]
+    (when (and file-id page-id wasm/gl-context (not= key @frame-preview-page)
+               (not @page-transition?) (empty? (:workspace-focus-selected state))
+               (nil? (get-in state [:workspace-global :preview-id]))
+               (pos? (:width vbox)) (pos? (:height vbox))
+               (or (nil? deferred-width) (<= (* 1.5 (:width vbox)) deferred-width)))
+      (let [objects (dsh/lookup-page-objects state file-id page-id)
+            frames (nearby-frame-previews state objects file-id page-id vbox)]
+        (if (seq frames)
+          (do
+            (vreset! frame-preview-page key)
+            (vreset! frame-preview-downloads {:key key})
+            (install-frame-previews key objects frames (when (= key (:key downloads)) (:reads downloads))))
+          (vreset! frame-preview-downloads {:key key :deferred-width (:width vbox)}))))))
+
+(defn- tile-gpu-busy? []
+  (when-let [sync @tile-fence]
+    (when-let [^js gl wasm/gl-context]
+      (when (= (.-TIMEOUT_EXPIRED gl) (.clientWaitSync gl sync 0 0))
+        ;; Allow one more short batch after a pinch has stopped. Keep at
+        ;; most two batches outstanding and give input priority immediately.
+        (let [now (js/performance.now)]
+          (or (not @refining-view-tiles)
+              @interrupted-tile-work
+              (< @short-tile-batches 2)
+              (< (- now @last-camera-at) 100)
+              (>= (- now @tile-submitted-at) 26)
+              (browser-input-pending?)
+              (when-let [older @previous-tile-fence]
+                (= (.-TIMEOUT_EXPIRED gl) (.clientWaitSync gl older 0 0)))))))))
+
 (defn- internal-render
   ([]
    (internal-render 0))
   ([timestamp]
    (internal-render timestamp wasm/internal-frame-type))
   ([timestamp flags]
-   (set! wasm/internal-frame-type (h/call wasm/internal-module "_render" timestamp flags))
+   (if (and @refining-view-tiles (= flags wasm/FRAME_TYPE_PARTIAL) (not @interrupted-tile-work))
+     (advance-tile-fence)
+     (clear-tile-fence))
+   (let [refining (or (and @refining-view-tiles (= flags wasm/FRAME_TYPE_PARTIAL))
+                      (and @last-view-pinch? (pos? (bit-and flags wasm/RENDER_FLAG_REFINE_VIEW))))
+         start    (js/performance.now)
+         frame    (try
+                    (h/call wasm/internal-module "_render" timestamp flags)
+                    (catch :default cause
+                      (clear-tile-fence)
+                      (throw cause)))
+         end      (js/performance.now)]
+     (set! wasm/internal-frame-type frame)
+     (when (or (= frame wasm/FRAME_TYPE_VIEWPORT_READY) (= frame wasm/FRAME_TYPE_FULL))
+       (prepare-frame-previews))
+     (vreset! refining-view-tiles (and refining (= frame wasm/FRAME_TYPE_PARTIAL)))
+     (if @refining-view-tiles
+       (vreset! short-tile-batches (if (< (- end start) 10) (min 2 (inc @short-tile-batches)) 0))
+       (clear-tile-fence))
+     ;; Give an immediate follow-up pinch room after a costly pass. A cold
+     ;; shader from an earlier interaction does not predict current GPU load.
+     (when (and (> (- end start) 24) (> (get-dpr) 1))
+       (vreset! slow-tiles-until (+ end 450))))
    (when (needs-more-render-frames?)
+     (when (> (get-dpr) 1)
+       (when-let [^js gl wasm/gl-context]
+         (when-let [sync (.fenceSync gl (.-SYNC_GPU_COMMANDS_COMPLETE gl) 0)]
+           (vreset! tile-fence sync)
+           (vreset! tile-submitted-at (js/performance.now))
+           (.flush gl))))
      (request-render "frame-type-partial"))))
 
 (defn- build-reload-payload
@@ -634,6 +851,11 @@
 (defn- stop-progressive-render!
   "Cancel the pending tile-pass rAF and invalidate any follow-ups it may schedule."
   []
+  (cancel-pinch-refinement)
+  (vreset! pinch-anchor nil)
+  (cancel-tile-retry)
+  (vreset! refining-view-tiles false)
+  (clear-tile-fence)
   (swap! render-seq* inc)
   (when-let [frame-id wasm/internal-frame-id]
     (timers/cancel-af! frame-id)
@@ -646,30 +868,39 @@
   (reset! deferred-render? true))
 
 (defn request-render
-  [_requester]
-  ;; Use `wasm/live?` (not `wasm/ready?`) so reload-internal
-  ;; renders can run while `reloading?` still blocks external mutations.
-  (when (and (wasm/live?) (not @wasm/disable-request-render?))
-    (if @shapes-loading?
-      (register-deferred-render!)
-      (when-not @pending-render
-        (reset! pending-render true)
-        (let [seq-n    @render-seq*
-              frame-id (timers/raf
-                        (fn [ts]
-                          ;; Dropped if `stop-progressive-render!` ran since we scheduled.
-                          (when (= seq-n @render-seq*)
-                            (reset! pending-render false)
-                            (set! wasm/internal-frame-id nil)
-                            (try
-                              (render ts)
-                              (catch :default e
-                                ;; A failed render (e.g. a WASM panic) must not strand an
-                                ;; active page-transition. Force ending of it so the
-                                ;; workspace is shown without a blur.
-                                (end-page-transition!)
-                                (throw e))))))]
-          (set! wasm/internal-frame-id frame-id))))))
+  ([requester]
+   (request-render requester false))
+  ([requester retry-soon?]
+   ;; A reload can schedule internal frames while external writes are blocked.
+   (when (and (wasm/live?) (not @wasm/disable-request-render?))
+     (when-not (= requester "frame-type-partial")
+       (cancel-pinch-refinement)
+       (vreset! refining-view-tiles false)
+       (clear-tile-fence))
+     (if @shapes-loading?
+       (register-deferred-render!)
+       (when-not @pending-render
+         (reset! pending-render true)
+         (let [seq-n @render-seq*
+               run   (fn [ts]
+                       ;; A new camera or a reload invalidates the callback.
+                       (when (= seq-n @render-seq*)
+                         (reset! pending-render false)
+                         (vreset! tile-retry-timer nil)
+                         (set! wasm/internal-frame-id nil)
+                         (try
+                           (if (tile-gpu-busy?)
+                             (request-render "frame-type-partial"
+                                             (and @refining-view-tiles (not (.-hidden js/document))))
+                             (render ts))
+                           (catch :default e
+                             ;; A rendering error must release the page transition.
+                             (end-page-transition!)
+                             (throw e)))))]
+           ;; A busy GPU yields to input before the next fence check.
+           (if retry-soon?
+             (vreset! tile-retry-timer (timers/schedule 4 #(run (js/performance.now))))
+             (set! wasm/internal-frame-id (timers/raf run)))))))))
 
 (defn request-render-preserving-target
   "Like `request-render`, but keeps the previously presented frame on screen
@@ -1438,11 +1669,23 @@
   (when (and (initialized?)
              (not @page-transition?)
              (not @view-interaction-active?))
+    ;; The new camera can display the cached atlas immediately. A tile pass
+    ;; for the old camera can still be queued after the first visible frame.
+    (let [now (js/performance.now)]
+      ;; A new gesture that interrupts visible or offscreen tiles is a burst
+      ;; of navigation. Keep one GPU batch in flight until the user pauses.
+      (vreset! interrupted-tile-work
+               (or (needs-more-render-frames?)
+                   (and @interrupted-tile-work (< (- now @last-camera-at) 1200))))
+      (vreset! last-camera-at now))
+    (stop-progressive-render!)
+    (vreset! last-view-pinch? false)
     (h/call wasm/internal-module "_set_view_start")
     (reset! view-interaction-active? true)))
 
 (defn view-interaction-end!
   []
+  (cancel-view-finish)
   (when (and (initialized?) @view-interaction-active?)
     (perf/begin-measure "render-finish")
     (h/call wasm/internal-module "_set_view_end")
@@ -1455,39 +1698,87 @@
   (let [local (get @st/state :workspace-local)]
     (or (:panning local) (:zooming local))))
 
+(defn- refine-stopped-view []
+  (vreset! pinch-refine-timer nil)
+  (when (and (initialized?) (not @view-interaction-active?))
+    (when-let [{px :x py :y} (when @last-view-pinch? @pinch-anchor)]
+      (when-let [{:keys [x y width height]} (get-in @st/state [:workspace-local :vbox])]
+        ;; Center-out rendering already serves the middle quarter of the viewport.
+        (when (or (> (mth/abs (- px (+ x (/ width 2)))) (/ width 8))
+                  (> (mth/abs (- py (+ y (/ height 2)))) (/ height 8)))
+          (h/call wasm/internal-module "_set_refinement_anchor" px py))))
+    (vreset! pinch-anchor nil)
+    ;; Keep the last presented pixels while full-resolution tiles replace them.
+    (internal-render (js/performance.now) (bit-or wasm/RENDER_FLAG_SYNC_TILES wasm/RENDER_FLAG_REFINE_VIEW))))
+
 (defn finalize-view-interaction!
-  "Ends an in-progress pan/zoom view interaction and triggers a full-quality
-   render. No-ops when no view interaction is active.
+  "Leave fast mode now so edits use full quality. A resumed pinch can cancel a pending tile pass."
+  ([] (finalize-view-interaction! 0))
+  ([delay-ms]
+   (when (and @view-interaction-active? (initialized?))
+     (view-interaction-end!)
+     (if (pos? delay-ms)
+       (vreset! pinch-refine-timer (timers/schedule delay-ms refine-stopped-view))
+       (refine-stopped-view)))))
 
-   `finish-panning` runs on every pointerup, so without this guard we would
-   call `internal-render` (and WASM `reset_canvas`) on plain clicks."
-  []
-  (when (and @view-interaction-active? (initialized?))
-    (view-interaction-end!)
-    ;; Preserve the last presented frame while the new one renders. A plain render
-    ;; goes through WASM `reset_canvas`, which clears to the background and
-    ;; re-rasterizes the viewport tile by tile — a visible flash on zoomed-in
-    ;; views. The content is unchanged across a view-interaction end (only the
-    ;; view moved), so there is nothing to clear; SYNC-TILES sets `preserve_target`
-    ;; and lets the new tiles replace the old frame in place. Zoom-end already did
-    ;; this implicitly (`zoom_changed`); this extends it to pan/resize-triggered
-    ;; ends (e.g. selecting a shape opens the options panel and resizes the
-    ;; viewport), which previously blanked.
-    (internal-render (js/performance.now) wasm/RENDER_FLAG_SYNC_TILES)))
+(defn- finish-quiet-view
+  ([] (finish-quiet-view (+ (js/performance.now) 75)))
+  ([deadline]
+   (vreset! view-finish-timer nil)
+   (when (and (initialized?) @view-interaction-active?)
+     (cond
+       ;; A wheel update may already be queued while the previous camera
+       ;; frame is being presented. Let it cancel this timer before drawing.
+       (and @last-view-pinch? (not @interrupted-tile-work)
+            (< (js/performance.now) deadline) (browser-input-pending?))
+       (vreset! view-finish-timer (timers/schedule 8 #(finish-quiet-view deadline)))
 
-(def render-finish
-  (letfn [(do-render []
-            ;; Check if context is still initialized before executing
-            ;; to prevent errors when navigating quickly
-            (when (initialized?)
-              (if (view-gesture-active?)
-                ;; Pan/zoom pause: render without ending the interaction.
-                (internal-render (js/performance.now) wasm/RENDER_FLAG_SYNC_TILES)
-                (finalize-view-interaction!))))]
-    (fns/debounce do-render DEBOUNCE_DELAY_MS)))
+       (view-gesture-active?)
+       (internal-render (js/performance.now) wasm/RENDER_FLAG_SYNC_TILES)
+
+       :else
+       (finalize-view-interaction! (- @pinch-refine-after (js/performance.now)))))))
+
+(defn render-finish []
+  (cancel-view-finish)
+  (let [delay (cond
+                (view-gesture-active?) DEBOUNCE_DELAY_MS
+                (and @last-view-pinch? (= 2 @consecutive-fast-inputs)) fast-pinch-settle-ms
+                :else wheel-settle-ms)]
+    (vreset! view-finish-timer (timers/schedule delay finish-quiet-view))))
+
+(defn prepare-view-input
+  "Give a queued wheel camera update priority over tiles from the previous view."
+  ([pinch?] (prepare-view-input pinch? nil))
+  ([pinch? point]
+   (when (and (initialized?) (not @page-transition?))
+     (when pinch?
+       (let [now (js/performance.now)
+             gap (- now @last-pinch-input-at)]
+         ;; Two consecutive display-rate intervals distinguish a continuous pinch
+         ;; from a wheel notch or a sparse stream on a busy renderer.
+         (vreset! consecutive-fast-inputs
+                  (if (and @last-view-pinch? (pos? gap) (<= gap 22))
+                    (min 2 (inc @consecutive-fast-inputs))
+                    0))
+         (vreset! last-pinch-input-at now)
+         (when (< now @slow-tiles-until)
+           (vreset! pinch-refine-after (+ now 128)))))
+     (when-not @view-interaction-active?
+       ;; The old tile rAF may precede the camera rAF in the same display frame.
+       (view-interaction-start!)
+       ;; A pointer action or an unmount may cancel the queued wheel update.
+       (render-finish))
+     ;; A pan can lead straight into another pinch. Keep its offscreen fill on
+     ;; the display clock so a between-refresh tile walk cannot delay that input.
+     (vreset! pinch-anchor (when pinch? point))
+     (vreset! last-view-pinch? pinch?))))
 
 (defn set-view-box
   [zoom vbox]
+  (when (and @page-transition?
+             (not= (:current-page-id @st/state) (second (:key @frame-preview-downloads))))
+    (prefetch-frame-previews))
   ;; Frozen during page transition: tile atlas is empty/incomplete and
   ;; render_from_cache would present a blank workspace.
   (if @page-transition?
@@ -1495,6 +1786,7 @@
     (when (initialized?)
       (perf/begin-measure "set-view-box")
       (view-interaction-start!)
+      (vreset! last-camera-at (js/performance.now))
       (h/call wasm/internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
       (perf/end-measure "set-view-box")
 
@@ -1742,6 +2034,13 @@
           (sync-stale-text-selrects! affected-shapes))
         (update-text-layouts text-ids)))))
 
+(defn- request-loaded-assets-render []
+  ;; Loading can finish in the middle of a continuous camera gesture. Its
+  ;; full tile pass would compete with the cached view on the main thread.
+  ;; The existing end-of-gesture render includes the newly loaded resources.
+  (when (or @page-transition? (not @view-interaction-active?))
+    (request-render "images-loaded")))
+
 (defn process-pending
   [shapes thumbnails full text-font-state on-complete]
   (let [pending-thumbnails
@@ -1770,7 +2069,7 @@
             noop-fn
             (fn []
               (relayout-after-fonts! shapes text-font-state)
-              (request-render "images-loaded")
+              (request-loaded-assets-render)
               (when (fn? on-complete) (on-complete)))))
       ;; No pending images — complete immediately.
       (when on-complete (on-complete)))))
@@ -1914,7 +2213,7 @@
                                    noop-fn
                                    (fn []
                                      (relayout-after-fonts! shapes text-font-state-acc)
-                                     (request-render "images-loaded")))))))))))]
+                                     (request-loaded-assets-render)))))))))))]
          (process-next-chunk 0 [] [] empty-text-font-state))))))
 
 
@@ -2051,6 +2350,7 @@
    (set-objects objects render-callback nil false))
   ([objects render-callback on-shapes-ready force-sync]
    (when (wasm/live?)
+     (prefetch-frame-previews)
      (perf/begin-measure "set-objects")
      (let [shapes (shapes-in-tree-order objects)
            total-shapes (count shapes)]
@@ -2178,6 +2478,10 @@
   "Enables interactive rendering for shape transforms when the renderer is ready."
   []
   (when (initialized?)
+    ;; A partially rendered zoom view still has unmodified nodes in its queue.
+    ;; Let the first transform rebuild the visible tiles with the new geometry.
+    (when (needs-more-render-frames?)
+      (stop-progressive-render!))
     (modifiers/set-modifiers-start)))
 
 (defn set-modifiers-end
@@ -2343,6 +2647,12 @@
 (defn- on-webgl-context-lost
   [event]
   (dom/prevent-default event)
+  ;; The lost context has already invalidated its sync objects.
+  (cancel-view-finish)
+  (cancel-pinch-refinement)
+  (vreset! refining-view-tiles false)
+  (cancel-tile-retry)
+  (vreset! tile-fence nil)
   ;; End any in-flight page transition
   (end-page-transition!)
   ;; Keep the last rendered pixels visible while context is lost/recovering.
@@ -2468,6 +2778,13 @@
      (reset! view-interaction-active? false)
 
      ;; Remove listener before losing/deleting context.
+     (cancel-view-finish)
+     (vreset! frame-preview-page nil)
+     (vreset! frame-preview-downloads nil)
+     (vreset! slow-tiles-until 0)
+     (vreset! last-pinch-input-at 0)
+     (vreset! consecutive-fast-inputs 0)
+     (vreset! pinch-refine-after 0)
      (when wasm/canvas
        (.removeEventListener wasm/canvas "webglcontextlost" webgl-context-lost-listener)
        (.removeEventListener wasm/canvas "webglcontextrestored" webgl-context-restored-listener))

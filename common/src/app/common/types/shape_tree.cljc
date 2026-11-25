@@ -10,6 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.common.types.component :as ctk]
@@ -315,11 +316,16 @@
 (defn get-frames-by-position
   ([objects position] (get-frames-by-position objects position nil))
   ([objects position options]
-   (->> (get-frames objects options)
-        (filter #(and ^boolean (some? position)
-                      ^boolean (gsh/has-point? % position)
-                      ^boolean (not (clipped-by-ancestor? objects % position))))
-        (sort-z-index-objects objects))))
+   (let [bounds (::rotated-frame-bounds (meta objects))]
+     (->> (get-frames objects options)
+          (filter (fn [frame]
+                    (and (some? position)
+                         (if-let [rect (and bounds (get bounds (:id frame)))]
+                           (grc/contains-point? rect position)
+                           true)
+                         (gsh/has-point? frame position)
+                         (not (clipped-by-ancestor? objects frame position)))))
+          (sort-z-index-objects objects)))))
 
 (defn top-nested-frame
   "Search for the top nested frame for positioning shapes when moving or creating.
@@ -353,6 +359,40 @@
          (if (nil? child-frame-id)
            (or (:id current-shape) uuid/zero)
            (recur (get objects child-frame-id))))))))
+
+(defn make-drag-frame-query
+  "Reuse nearby frame candidates across pointer moves on an immutable drag snapshot."
+  [objects]
+  (let [frames  (vec (get-frames objects))
+        bounds  (into {}
+                      (keep (fn [{:keys [id rotation points]}]
+                              (when (and (some? rotation) (not (mth/almost-zero? rotation)))
+                                (when-let [rect (grc/points->rect points)]
+                                  [id rect]))))
+                      frames)
+        indexed (vary-meta objects assoc ::index-frames frames ::rotated-frame-bounds bounds)
+        last-cell (volatile! nil)
+        cell-size 256]
+    (fn [position excluded]
+      (if-not position
+        uuid/zero
+        (let [col (mth/floor (/ (:x position) cell-size))
+              row (mth/floor (/ (:y position) cell-size))
+              [prev-col prev-row cached] @last-cell
+              nearby (if (and (= col prev-col) (= row prev-row))
+                       cached
+                       (let [cell (grc/make-rect (* col cell-size) (* row cell-size) cell-size cell-size)
+                             candidates
+                             (filterv (fn [{:keys [id rotation] :as frame}]
+                                        (let [box (if (and rotation (not (mth/almost-zero? rotation)))
+                                                    (get bounds id)
+                                                    frame)]
+                                          (or (nil? box) (grc/overlaps-rects? cell box))))
+                                      frames)
+                             subset (vary-meta indexed assoc ::index-frames candidates)]
+                         (vreset! last-cell [col row subset])
+                         subset))]
+          (top-nested-frame nearby position excluded))))))
 
 (defn get-viewer-frames
   ([objects]

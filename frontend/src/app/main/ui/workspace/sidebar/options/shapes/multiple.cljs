@@ -19,7 +19,6 @@
    [app.common.types.shape.layout :as ctl]
    [app.common.types.text :as txt]
    [app.common.types.token :as tt]
-   [app.common.weak :as weak]
    [app.main.refs :as refs]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-attrs blur-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu*]]
@@ -234,7 +233,7 @@
       :else
       :multiple)))
 
-(defn- same-padding-value?
+(defn- same-value?
   [v1 v2]
   (if (and (number? v1) (number? v2))
     (mth/close? v1 v2)
@@ -242,8 +241,8 @@
 
 (defn- simple-layout-padding?
   [{:keys [p1 p2 p3 p4]}]
-  (and (same-padding-value? p1 p3)
-       (same-padding-value? p2 p4)))
+  (and (same-value? p1 p3)
+       (same-value? p2 p4)))
 
 (defn- promote-simple-layout-padding-type
   [{:keys [layout-padding layout-padding-type] :as values}]
@@ -262,19 +261,40 @@
                         (assoc :layout-padding (merge-layout-padding values shape-values)))]
     (promote-simple-layout-padding-type merged-values)))
 
+(defn- merge-style-values
+  "Update the accumulated fill, stroke or text values for one more shape."
+  [attrs values shape-values]
+  (if (nil? values)
+    {}
+    (reduce (fn [result attr]
+              (let [previous (get result attr ::unset)
+                    value    (get shape-values attr ::unset)]
+                (cond
+                  (or (= previous :multiple) (= value ::unset)) result
+                  (= previous ::unset) (assoc result attr value)
+                  (same-value? previous value) result
+                  :else (assoc result attr :multiple))))
+            values
+            attrs)))
+
+(def ^:private text-readers
+  (into {} (map (fn [group]
+                  [group (attrs/text-attrs-reader txt/default-text-attrs (group->attrs group))]))
+        [:fill :stroke :text]))
+
 (def ^:private content-attrs-cache (js/WeakMap.))
 
 (defn- get-content-attrs
   "Moving a text keeps its `:content`, so the attrs read from it are cached by content."
-  [{:keys [content] :as shape} attrs]
+  [{:keys [content] :as shape} read-attrs]
   (if (some? content)
-    (let [[cached-attrs cached] (.get content-attrs-cache content)]
-      (if (identical? cached-attrs attrs)
+    (let [[cached-reader cached] (.get content-attrs-cache content)]
+      (if (identical? cached-reader read-attrs)
         cached
-        (let [result (attrs/get-text-attrs-multi shape txt/default-text-attrs attrs)]
-          (.set content-attrs-cache content [attrs result])
+        (let [result (read-attrs shape)]
+          (.set content-attrs-cache content [read-attrs result])
           result)))
-    (attrs/get-text-attrs-multi shape txt/default-text-attrs attrs)))
+    (read-attrs shape)))
 
 (defn get-attrs*
   "Given a group of attributes that we want to extract and the shapes to extract them from
@@ -302,13 +322,16 @@
         text-token-attrs
         (into [] (comp (mapcat tt/shape-attr->token-attrs) (distinct)) attrs)
 
+        read-text-attrs
+        (get text-readers attr-group)
+
         merge-attrs
-        (fn [v1 v2]
-          (cond
-            (= attr-group :shadow)           (attrs/get-attrs-multi [v1 v2] attrs shadow-eq shadow-sel)
-            (= attr-group :blur)             (attrs/get-attrs-multi [v1 v2] attrs blur-eq blur-sel)
-            (= attr-group :layout-container) (merge-layout-container-attrs v1 v2 attrs)
-            :else                            (attrs/get-attrs-multi [v1 v2] attrs)))
+        (case attr-group
+          (:fill :stroke :text) (partial merge-style-values attrs)
+          :shadow           (fn [v1 v2] (attrs/get-attrs-multi [v1 v2] attrs shadow-eq shadow-sel))
+          :blur             (fn [v1 v2] (attrs/get-attrs-multi [v1 v2] attrs blur-eq blur-sel))
+          :layout-container (fn [v1 v2] (merge-layout-container-attrs v1 v2 attrs))
+          (fn [v1 v2] (attrs/get-attrs-multi [v1 v2] attrs)))
 
         merge-attr
         (fn [acc applied-tokens t-attr]
@@ -346,7 +369,7 @@
                 result))))
 
         extract-attrs
-        (fn [[ids values token-acc] {:keys [id type applied-tokens] :as shape}]
+        (fn extract-attrs [[ids values token-acc] {:keys [id type applied-tokens] :as shape}]
           (let [read-mode      (get-in type->read-mode [type attr-group])
                 editable-attrs (type->editable-attrs type)]
             (case read-mode
@@ -373,7 +396,7 @@
               (let [shape-attrs (select-keys shape attrs)
 
                     content-attrs
-                    (get-content-attrs shape attrs)
+                    (get-content-attrs shape read-text-attrs)
 
                     new-values
                     (-> values
@@ -387,15 +410,34 @@
 
               :children
               (let [children (->> (:shapes shape []) (map #(get objects %)))
-                    [new-ids new-values tokens] (get-attrs* children objects attr-group)]
+                    [new-ids new-values tokens] (reduce extract-attrs [[] {} {}] children)]
                 [(d/concat-vec ids new-ids) (merge-attrs values new-values) tokens])
 
               [])))]
 
     (reduce extract-attrs [[] {} {}] shapes)))
 
-(def get-attrs
-  (weak/memoize get-attrs*))
+(def ^:private attrs-by-shapes (js/WeakMap.))
+
+(defn get-attrs
+  [shapes objects attr-group]
+  (if (or (nil? objects) (nil? shapes))
+    (get-attrs* shapes objects attr-group)
+    ;; React can retry a deferred render with the same selection and a fresh
+    ;; index of the same immutable children. Compare the indices once, then
+    ;; use identity for the remaining menus without hashing the whole subtree.
+    (let [entry (.get attrs-by-shapes shapes)
+          previous (first entry)
+          same-index? (identical? previous objects)
+          values (when (or same-index? (= previous objects)) (second entry))]
+      (if-some [result (get values attr-group)]
+        (do
+          (when-not same-index?
+            (.set attrs-by-shapes shapes [objects values]))
+          result)
+        (let [result (get-attrs* shapes objects attr-group)]
+          (.set attrs-by-shapes shapes [objects (assoc values attr-group result)])
+          result)))))
 
 (defn- is-bool-descendant?
   [objects selected-shape-ids shape]

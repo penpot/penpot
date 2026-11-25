@@ -118,17 +118,23 @@
 
        (persistent! result)))))
 
+(defn text-attrs-reader
+  "Prepare the text attributes for one menu before visiting the selected shapes."
+  [defaults attrs]
+  (let [root-attrs      (filterv (set txt/root-attrs) attrs)
+        paragraph-attrs (filterv (set txt/paragraph-attrs) attrs)
+        text-node-attrs (filterv (set txt/text-node-attrs) attrs)]
+    (fn [{:keys [content]}]
+      (cond-> defaults
+        (seq root-attrs)
+        (merge (get-attrs-multi (txt/node-seq txt/is-root-node? content) root-attrs))
+        (seq paragraph-attrs)
+        (merge (get-attrs-multi (->> (txt/node-seq txt/is-paragraph-node? content)
+                                     (map #(merge txt/default-list-attrs %)))
+                                paragraph-attrs))
+        (seq text-node-attrs)
+        (merge (get-attrs-multi (txt/node-seq txt/is-text-node? content) text-node-attrs))))))
+
 (defn get-text-attrs-multi
-  "Gets the multi attributes for a text shape. Splits the content by type and gets the attributes depending
-  on the node type"
-  [{:keys [content]} defaults attrs]
-  (let [root-attrs (->> attrs (filter (set txt/root-attrs)))
-        paragraph-attrs (->> attrs (filter (set txt/paragraph-attrs)))
-        text-node-attrs (->> attrs (filter (set txt/text-node-attrs)))]
-    (merge
-     defaults
-     (get-attrs-multi (->> (txt/node-seq txt/is-root-node? content)) root-attrs)
-     (get-attrs-multi (->> (txt/node-seq txt/is-paragraph-node? content)
-                           (map #(merge txt/default-list-attrs %)))
-                      paragraph-attrs)
-     (get-attrs-multi (->> (txt/node-seq txt/is-text-node? content)) text-node-attrs))))
+  [shape defaults attrs]
+  ((text-attrs-reader defaults attrs) shape))

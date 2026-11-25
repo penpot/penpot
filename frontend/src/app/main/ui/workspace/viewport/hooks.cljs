@@ -27,6 +27,7 @@
    [app.main.streams :as ms]
    [app.main.ui.css-cursors :as cur]
    [app.main.ui.hooks :as hooks]
+   [app.main.ui.workspace.shapes.frame :as frame]
    [app.main.ui.workspace.shapes.frame.dynamic-modifiers :as sfd]
    [app.main.ui.workspace.viewport.actions :as actions]
    [app.main.ui.workspace.viewport.utils :as utils]
@@ -53,30 +54,28 @@
         on-mouse-wheel    (actions/on-mouse-wheel zoom-ref)
         on-paste          (actions/on-paste disable-paste-ref in-viewport-ref workspace-read-only?)
         on-pointer-down   (mf/use-fn
-                           (mf/deps drawing-tool drawing-path?)
                            (fn [e]
-                             (let [target  (dom/get-target e)
-                                   parent? (dom/get-parent-with-data target "dont-clear-path")]
-                               (when (and drawing-path? (not parent?))
-                                 (st/emit! (dwe/clear-edition-mode))))))
+                             (when-not (dom/get-parent-with-data (dom/get-target e) "dont-clear-path")
+                               (st/emit! (dwe/clear-edition-mode)))))
         on-blur           (mf/use-fn #(st/emit! (mse/->BlurEvent)))]
 
     (mf/with-effect [drawing-tool drawing-path?]
-      (let [key (events/listen js/window EventType.POINTERDOWN on-pointer-down)]
+      (mf/set-ref-val! disable-paste-ref (= drawing-tool :comments)))
 
-        ;; We need to disable workspace paste when we on comments
-        (if (= drawing-tool :comments)
-          (mf/set-ref-val! disable-paste-ref true)
-          (mf/set-ref-val! disable-paste-ref false))
+    (mf/with-effect [drawing-path? on-pointer-down]
+      (when drawing-path?
+        (.addEventListener js/window "pointerdown" on-pointer-down)
+        #(.removeEventListener js/window "pointerdown" on-pointer-down)))
 
-        #(events/unlistenByKey key)))
+    ;; The camera uses client coordinates. Closure's BrowserEvent also reads
+    ;; offsetX/Y, which can force layout before the first zoom or pan update.
+    (mf/with-layout-effect [on-mouse-wheel]
+      (.addEventListener js/window "wheel" on-mouse-wheel #js {:passive false})
+      #(.removeEventListener js/window "wheel" on-mouse-wheel))
 
     (mf/with-layout-effect [on-key-down on-key-up on-paste workspace-read-only?]
       (let [keys [(events/listen js/document EventType.KEYDOWN on-key-down)
                   (events/listen js/document EventType.KEYUP on-key-up)
-                  ;; bind with passive=false to allow the event to be cancelled
-                  ;; https://stackoverflow.com/a/57582286/3219895
-                  (events/listen js/window EventType.WHEEL on-mouse-wheel #js {:passive false})
                   (events/listen js/window EventType.PASTE on-paste)
                   (events/listen js/window EventType.BLUR on-blur)]]
         (fn []
@@ -181,10 +180,9 @@
                            (dw/increase-zoom)))))))
 
 (defn setup-hover-shapes
-  [page-id move-stream objects selected mod? hover measure-hover hover-ids hover-top-frame-id hover-disabled? focus zoom show-measures? read-only? transform]
+  [page-id move-stream pick-stream objects selected hover measure-hover hover-ids hover-top-frame-id hover-disabled? focus zoom show-measures? read-only? transform]
   (let [;; We use ref so we don't recreate the stream on a change
         zoom-ref (mf/use-ref zoom)
-        mod-ref (mf/use-ref @mod?)
         selected-ref (mf/use-ref selected)
         hover-disabled-ref (mf/use-ref hover-disabled?)
         focus-ref (mf/use-ref focus)
@@ -192,44 +190,73 @@
         read-only-ref (mf/use-ref read-only?)
 
         last-point-ref (mf/use-var nil)
-        mod-str (mf/use-memo #(rx/subject))
+        last-modifier-hit (mf/use-var nil)
+        last-hover-mod? (mf/use-var false)
 
         query-point
         (mf/use-callback
          (mf/deps page-id)
-         (fn [point]
+         (fn [point mod? pick]
            (let [zoom (mf/ref-val zoom-ref)
-                 rect (grc/center->rect point (/ 5 zoom))]
+                 ;; A single modifier transition changes which layers can be
+                 ;; hit at a stationary pointer. It must survive the worker's
+                 ;; coalescing of motion messages for the preceding mode.
+                 enter-mod? (and mod? (not pick) (not @last-hover-mod?))
+                 _ (when-not pick (reset! last-hover-mod? mod?))
+                 query {:cmd :index/query-selection
+                        :page-id page-id
+                        :rect (grc/center->rect point (/ 5 zoom))
+                        :include-frames? true
+                        :clip-children? (not mod?)
+                        :using-selrect? false}
+                 revision @mw/selection-index-revision
+                 hit @last-modifier-hit
+                 ids (cond
+                       (mf/ref-val hover-disabled-ref)
+                       (rx/of [])
 
-             (if (mf/ref-val hover-disabled-ref)
-               (rx/of [])
-               (->> (mw/ask-buffered!
-                     {:cmd :index/query-selection
-                      :page-id page-id
-                      :rect rect
-                      :include-frames? true
-                      :clip-children? (not (mf/ref-val mod-ref))
-                      :using-selrect? false})
-                    ;; When the ask-buffered is canceled returns null. We filter them
-                    ;; to improve the behavior
-                    (rx/filter some?))))))
+                       ;; Only reuse raw spatial hits for the exact query. The
+                       ;; current selection, focus and layer rules still apply.
+                       (and pick (= revision (:revision hit)) (= query (:query hit)))
+                       (rx/of (:ids hit))
+
+                       pick
+                       (mw/ask! query)
+
+                       mod?
+                       (->> (if enter-mod? (mw/ask! query) (mw/ask-buffered! query))
+                            (rx/tap (fn [ids]
+                                      (when (some? ids)
+                                        (reset! last-modifier-hit {:query query :revision revision :ids ids})))))
+
+                       :else
+                       (mw/ask-buffered! query))]
+             (->> ids
+                  (rx/filter some?)
+                  (rx/map (fn [ids] [ids point mod? pick]))))))
 
         over-shapes-stream
-        (mf/with-memo [query-point move-stream mod-str]
-          (->> (rx/merge
-                ;; This stream works to "refresh" the outlines when the control is pressed
-                ;; but the mouse has not been moved from its position.
-                (->> mod-str
-                     (rx/observe-on :async)
-                     (rx/map #(deref last-point-ref))
-                     (rx/filter some?)
-                     (rx/merge-map query-point))
-
-                (->> move-stream
-                     (rx/tap #(reset! last-point-ref %))
-                     (rx/merge-map query-point)))
-
+        (mf/with-memo [query-point move-stream]
+          (->> move-stream
+               (rx/tap #(reset! last-point-ref %))
+               (rx/combine-latest-with ms/keyboard-mod)
+               (rx/switch-map (fn [[point mod?]] (query-point point mod? nil)))
                (rx/share)))
+
+        shape-results
+        (mf/with-memo [query-point over-shapes-stream pick-stream]
+          (let [stopper (->> st/stream
+                             (rx/filter #(or (= % :interrupt)
+                                             (mse/blur-event? %)
+                                             (and (mse/mouse-event? %)
+                                                  (or (mse/mouse-down-event? %)
+                                                      (mse/mouse-double-click-event? %)))
+                                             (and (kbd/keyboard-event? %) (kbd/key-down-event? %)))))]
+            (rx/merge over-shapes-stream
+                      (->> pick-stream
+                           (rx/switch-map (fn [{:keys [point] :as pick}]
+                                            (->> (query-point point true pick)
+                                                 (rx/take-until stopper))))))))
 
         over-shapes-stream-debounced
         (->> over-shapes-stream (rx/debounce 50))]
@@ -238,12 +265,6 @@
     (mf/use-effect
      (mf/deps zoom)
      #(mf/set-ref-val! zoom-ref zoom))
-
-    (mf/use-effect
-     (mf/deps @mod?)
-     (fn []
-       (rx/push! mod-str :update)
-       (mf/set-ref-val! mod-ref @mod?)))
 
     (mf/use-effect
      (mf/deps selected)
@@ -274,12 +295,11 @@
     ;; This ref is a cache of sorted ids. Sorting is expensive so we save the list
     (let [sorted-ids-cache (mf/use-ref {})]
       (hooks/use-stream
-       over-shapes-stream
+       shape-results
        (mf/deps page-id objects show-measures? read-only?)
-       (fn [ids]
+       (fn [[ids point mod? pick]]
          (let [selected   (mf/ref-val selected-ref)
                focus      (mf/ref-val focus-ref)
-               mod?       (mf/ref-val mod-ref)
                cached-ids (mf/ref-val sorted-ids-cache)
 
                make-sorted-ids
@@ -335,7 +355,7 @@
                                 (and (features/active-feature? @st/state "render-wasm/v1")
                                      (cfh/text-shape? (get objects %))
                                      (not (contains? selected %))
-                                     (not (wasm.api/intersect-position-in-shape % @last-point-ref)))))))
+                                     (not (wasm.api/intersect-position-in-shape % point)))))))
 
                remove-measure-xf
                (cond
@@ -381,11 +401,15 @@
                       (filter #(or (empty? focus) (cpf/is-in-focus? objects focus %)))
                       (first)
                       (get objects)))]
-           (reset! hover hover-shape)
-           (reset! measure-hover measure-hover-shape)
-           ;; Skip hover-ids update during drag
-           (when (not= :move (mf/ref-val transform-ref))
-             (reset! hover-ids ids))))
+           (if pick
+             (when-let [id (:id hover-shape)]
+               (st/emit! (dw/select-shape id (:shift? pick))))
+             (do
+               (reset! hover hover-shape)
+               (reset! measure-hover measure-hover-shape)
+               ;; Skip hover-ids update during drag
+               (when (not= :move (mf/ref-val transform-ref))
+                 (reset! hover-ids ids))))))
 
        (fn []
          ;; Clean the cache
@@ -405,7 +429,7 @@
     (and (some? frame) (some? vbox) (gsh/overlaps? frame vbox))))
 
 (defn setup-active-frames
-  [objects hover-ids selected active-frames zoom transform vbox]
+  [objects hover-ids selected active-frames zoom transform vbox use-overviews?]
 
   (let [all-frames             (mf/use-memo (mf/deps objects) #(ctt/get-root-frames-ids objects))
         selected-frames        (mf/use-memo (mf/deps selected) #(->> all-frames (filter selected)))
@@ -425,12 +449,12 @@
          (reset! last-hover-ids (set @hover-ids)))))
 
     (mf/use-effect
-     (mf/deps objects @hover-ids selected zoom transform vbox)
+     (mf/deps objects @hover-ids selected zoom transform vbox use-overviews?)
      (fn []
 
        ;; Rules for active frame:
-       ;; - If zoom < 25% displays thumbnail except when selecting a single frame or a child
-       ;; - We always active the current hovering frame for zoom > 25%
+       ;; A loaded, oversampled bitmap can also back selection outlines.
+       ;; Entering a transform or an editing tool re-enables the live SVG.
        ;; - When zoom > 130% we activate the frames that are inside the vbox
        ;; - If no hovering over any frames we keep the previous active one
        ;; - Check always that the active frames are inside the vbox
@@ -443,17 +467,12 @@
                 ;; Zoom > 130% shows every frame
                 (> zoom 1.3)
 
-                ;; Zoom >= 25% will show frames hovering
-                ;; Also, if we're moving a shape over the frame we need to remove the thumbnail
                 (and
-                 (or (= :move transform) (>= zoom 0.25))
-                 (or (contains? hover-ids? id) (contains? @last-hover-ids id)))
-
-                ;; Otherwise, if it's a selected frame
-                (= id active-selection)
-
-                ;; Or contains a selected shape
-                (contains? selected-shapes-frames id)))
+                 (or (and (or (= :move transform) (>= zoom 0.25))
+                          (or (contains? hover-ids? id) (contains? @last-hover-ids id)))
+                     (= id active-selection)
+                     (contains? selected-shapes-frames id))
+                 (not (and use-overviews? (frame/sharp-overview? (get objects id) zoom))))))
 
              new-active-frames
              (into #{}

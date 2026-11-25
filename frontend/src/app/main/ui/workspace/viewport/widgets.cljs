@@ -263,23 +263,24 @@
   [{:keys [objects base-objects zoom selected focus is-show-artboard-names
            on-frame-enter on-frame-leave on-frame-select]}]
   (let [selected       (or selected #{})
+        base-objects   (or base-objects objects)
         show-id?       (dbg/enabled? :shape-titles)
-        root-frames    (into []
-                             (comp (keep (d/getf objects))
-                                   (filter cfh/frame-shape?)
-                                   (filter #(= uuid/zero (:parent-id %)))
-                                   (remove #(and (ctk/instance-head? %)
-                                                 (not (ctk/main-instance? %)))))
-                             (dm/get-in objects [uuid/zero :shapes]))
-        shapes         (if show-id?
-                         (into []
-                               (comp (keep (d/getf objects))
-                                     (filter (fn [{:keys [id]}]
-                                               (and (not= id uuid/zero)
-                                                    (or (empty? focus) (contains? focus id))))))
-                               (into (set (ctt/get-frames-ids base-objects {:skip-copies? true :ignore-index? true}))
-                                     selected))
-                         root-frames)
+        shapes         (mf/with-memo [objects base-objects selected focus show-id?]
+                         (if show-id?
+                           (into []
+                                 (comp (keep (d/getf objects))
+                                       (filter (fn [{:keys [id]}]
+                                                 (and (not= id uuid/zero)
+                                                      (or (empty? focus) (contains? focus id))))))
+                                 (into (set (ctt/get-frames-ids base-objects {:skip-copies? true :ignore-index? true}))
+                                       selected))
+                           (into []
+                                 (comp (keep (d/getf objects))
+                                       (filter cfh/frame-shape?)
+                                       (filter #(= uuid/zero (:parent-id %)))
+                                       (remove #(and (ctk/instance-head? %)
+                                                     (not (ctk/main-instance? %)))))
+                                 (dm/get-in objects [uuid/zero :shapes]))))
 
         edition        (mf/deref refs/selected-edition)
         grid-edition?  (ctl/grid-layout? objects edition)]

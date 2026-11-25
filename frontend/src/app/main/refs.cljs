@@ -11,7 +11,6 @@
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cph]
    [app.common.files.tokens :as cfo]
-   [app.common.types.shape-tree :as ctt]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.tokens-status :as ctos]
@@ -388,8 +387,8 @@
        (into [] (keep (d/getf objects)) children-ids)))
    workspace-page-objects =))
 
-(def workspace-frames
-  (l/derived ctt/get-frames workspace-page-objects =))
+(def workspace-grid-frames
+  (l/derived dsh/frames-with-visible-grids workspace-page-objects =))
 
 (def workspace-editor
   (l/derived :workspace-editor st/state))

@@ -159,17 +159,10 @@
              :column [:> layout-grid* props]
              :row    [:> layout-grid* props])))])))
 
-(defn has-grid?
-  [{:keys [grids]}]
-  (and (some? grids)
-       (d/not-empty? (->> grids (filter :display)))))
-
 (mf/defc frame-grid*
   {::mf/wrap [mf/memo]}
   [{:keys [zoom transform selected focus vbox clip-rulers] :or {clip-rulers false}}]
-  (let [frames        (mf/deref refs/workspace-frames)
-        frames        (mf/with-memo [frames]
-                        (into [] (filter has-grid?) frames))
+  (let [frames        (mf/deref refs/workspace-grid-frames)
         transforming  (when (some? transform) selected)]
 
     [:g.grid-display {:style {:pointer-events "none"}

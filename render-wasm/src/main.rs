@@ -91,6 +91,7 @@ pub extern "C" fn render(timestamp: i32, flags: u8) -> Result<FrameType> {
                 .continue_render_loop(timestamp)
                 .map_err(|_| Error::RecoverableError("Error rendering".to_string()))?
         } else {
+            render_state.refine_visible_tiles = flags & RenderFlag::RefineView as u8 != 0;
             state
                 .start_render_loop(timestamp)
                 .map_err(|_| Error::RecoverableError("Error rendering".to_string()))?
@@ -287,6 +288,29 @@ pub extern "C" fn set_view(zoom: f32, x: f32, y: f32) -> Result<()> {
     Ok(())
 }
 
+#[no_mangle]
+pub extern "C" fn frame_preview_epoch() -> u32 {
+    get_render_state().frame_preview_epoch
+}
+
+#[no_mangle]
+pub extern "C" fn cache_frame_preview(epoch: u32, x: f32, y: f32, width: f32, height: f32) {
+    let bytes = mem::bytes_or_empty();
+    let state = get_render_state();
+    if state.frame_preview_epoch == epoch {
+        state
+            .surfaces
+            .cache_frame_preview(skia_safe::Rect::from_xywh(x, y, width, height), bytes);
+    }
+}
+
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn set_refinement_anchor(x: f32, y: f32) -> Result<()> {
+    get_render_state().refinement_anchor = Some(skia_safe::Point::new(x, y));
+    Ok(())
+}
+
 #[cfg(feature = "profile-macros")]
 static mut VIEW_INTERACTION_START: i32 = 0;
 
@@ -316,6 +340,7 @@ pub extern "C" fn set_view_end() -> Result<()> {
         let render_state = get_render_state();
         render_state.options.set_fast_mode(false);
         render_state.tile_viewbox.update(&render_state.viewbox);
+        render_state.remember_zoom_out_preview();
 
         if render_state.options.is_profile_rebuild_tiles() {
             state.rebuild_tiles();
@@ -356,6 +381,7 @@ pub extern "C" fn set_modifiers_start() -> Result<()> {
     let render_state = get_render_state();
     render_state.moving_extrects.clear();
     render_state.options.set_fast_mode(true);
+    render_state.reset_edit_damage();
     render_state.options.set_interactive_transform(true);
     performance::end_measure!("set_modifiers_start");
     Ok(())
@@ -372,6 +398,7 @@ pub extern "C" fn set_modifiers_end() -> Result<()> {
     let render_state = get_render_state();
     render_state.moving_extrects.clear();
     render_state.options.set_fast_mode(false);
+    render_state.reset_edit_damage();
     render_state.options.set_interactive_transform(false);
     performance::end_measure!("set_modifiers_end");
     Ok(())
@@ -741,6 +768,12 @@ pub extern "C" fn set_modifiers() -> Result<()> {
     }
 
     with_state!(state, {
+        if get_render_state().options.is_interactive_transform() {
+            if let Some((root, matrix)) = state.shapes.rigid_frame_modifier(&modifiers) {
+                modifiers.clear();
+                modifiers.insert(root, matrix);
+            }
+        }
         state.set_modifiers(modifiers);
         if !get_render_state().options.is_interactive_transform() {
             state.rebuild_modifier_tiles(&ids)?;

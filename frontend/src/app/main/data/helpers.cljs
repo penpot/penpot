@@ -13,7 +13,8 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   [app.common.types.path :as path]))
+   [app.common.types.path :as path]
+   [app.common.types.shape-tree :as ctst]))
 
 (defn lookup-profile
   ([state]
@@ -82,6 +83,40 @@
   ([state file-id page-id]
    (-> (lookup-page state file-id page-id)
        (get :objects))))
+
+(defonce ^:private visible-grid-ids (js/WeakMap.))
+
+(defn- visible-grid-frame?
+  [shape]
+  (boolean (and (cfh/frame-shape? shape)
+                (not (cfh/root? shape))
+                (some :display (:grids shape)))))
+
+(defn frames-with-visible-grids
+  [objects]
+  (if (nil? objects)
+    []
+    (let [ids (or (.get visible-grid-ids objects)
+                  ;; Hit testing uses the same lazy page frame index. Building a
+                  ;; separate sequence here made the first hover decode it again.
+                  (let [ids (into [] (comp (filter visible-grid-frame?) (map :id))
+                                  (ctst/get-frames objects))]
+                    (.set visible-grid-ids objects ids)
+                    ids))]
+      ;; Read the current frame geometry even when its membership is unchanged.
+      (into [] (keep (d/getf objects)) ids))))
+
+(defn reuse-grid-frame-ids
+  [before after changes]
+  (when-let [ids (and before after (.get visible-grid-ids before))]
+    ;; A mod-obj updates one member of the immutable map. Structural changes
+    ;; and pages replaced outside the commit path get a fresh index on demand.
+    (when (every? (fn [{:keys [type id]}]
+                    (and (= type :mod-obj)
+                         (= (visible-grid-frame? (get before id))
+                            (visible-grid-frame? (get after id)))))
+                  changes)
+      (.set visible-grid-ids after ids))))
 
 (defn process-selected
   ([objects selected]

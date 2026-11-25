@@ -11,6 +11,7 @@
    [app.common.geom.shapes.bounds :as gsb]
    [app.common.math :as mth]
    [app.common.thumbnails :as thc]
+   [app.common.uuid :as uuid]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.thumbnails :as dwt]
    [app.main.refs :as refs]
@@ -110,6 +111,49 @@
                      (not (mth/close? height fixed-height 5)))
              (st/emit! (dwt/update-thumbnail file-id page-id frame-id "frame" "check-thumbnail-size"))))))))
 
+;; A wide board can mount thousands of SVG elements on hover. Keep its
+;; already-loaded overview while the bitmap still oversamples the display.
+(defonce ^:private decoded-overviews (js/WeakMap.))
+
+(defn sharp-overview?
+  [shape zoom]
+  (when-let [density (and shape (:density (.get decoded-overviews shape)))]
+    (<= (* zoom (or (.-devicePixelRatio js/window) 1)) (* 0.75 density))))
+
+(defn use-navigation-overview
+  "Return a current, decoded image only when it covers the entire drawing."
+  [objects file-id page-id zoom]
+  (let [ids       (:shapes (get objects uuid/zero))
+        board     (when (= 1 (count ids)) (get objects (first ids)))
+        board-id  (when (and (= :frame (:type board)) (>= (count (:shapes board)) 256)
+                             (not (:hidden board)) (zero? (or (:rotation board) 0))
+                             (contains? #{nil :normal} (:blend-mode board)))
+                    (:id board))
+        thumb-ref (mf/with-memo [board-id file-id page-id]
+                    (refs/workspace-thumbnail-by-id
+                     (when board-id (thc/fmt-object-id file-id page-id board-id "frame"))))
+        current   (mf/deref thumb-ref)
+        overview  (when board-id (.get decoded-overviews board))]
+    (when (and overview (= (:uri overview) (:uri current))
+               (<= (* zoom (or (.-devicePixelRatio js/window) 1)) (* 2 (:density overview))))
+      overview)))
+
+(defn- use-overview-density
+  [shape uri x y width height]
+  (mf/with-effect [shape uri x y width height]
+    (when (and uri (pos? width) (pos? height) (>= (count (:shapes shape)) 256))
+      (let [image (js/Image.)]
+        (set! (.-onload image)
+              (fn []
+                (.set decoded-overviews shape
+                      {:uri uri :x x :y y :width width :height height :board-id (:id shape)
+                       :density (min (/ (.-naturalWidth image) width)
+                                     (/ (.-naturalHeight image) height))})))
+        (set! (.-src image) uri)
+        (fn []
+          (set! (.-onload image) nil)
+          (.delete decoded-overviews shape))))))
+
 (defn root-frame-wrapper-factory
   [shape-wrapper]
   (let [frame-shape (frame-shape-factory shape-wrapper)]
@@ -185,6 +229,7 @@
           (when-let [task (mf/ref-val task-ref)]
             (d/close! task)))
 
+        (use-overview-density shape thumbnail-uri x y width height)
         (fdm/use-dynamic-modifiers objects (mf/ref-val content-ref) modifiers)
         [:& shape-container {:shape shape}
          [:g.frame-container

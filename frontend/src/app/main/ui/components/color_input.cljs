@@ -10,10 +10,8 @@
    [app.common.types.color :as cc]
    [app.main.ui.hooks :as hooks]
    [app.util.dom :as dom]
-   [app.util.globals :as globals]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
-   [goog.events :as events]
    [rumext.v2 :as mf]))
 
 (defn- get-clean-color
@@ -144,11 +142,6 @@
       ;; on-blur event handler
       #(when (mf/ref-val dirty-ref) (handle-blur)))
 
-    (mf/with-layout-effect []
-      (let [key1 (events/listen globals/window "pointerdown" on-click)
-            key2 (events/listen globals/window "click" on-click)]
-        #(do
-           (events/unlistenByKey key1)
-           (events/unlistenByKey key2))))
+    (hooks/use-focused-click-listeners ref on-click)
 
     [:> :input props]))

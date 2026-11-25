@@ -7,7 +7,7 @@
 //! sizes that should look constant on screen are multiplied by
 //! `zoom_inverse = 1.0 / zoom`.
 
-use skia_safe::{self as skia, Color, Font, Paint, PaintStyle, PathFillType, Point, RRect, Rect};
+use skia_safe::{self as skia, Color, Font, Paint, PaintStyle, Point, RRect, Rect};
 
 use crate::render::fonts::FontStore;
 use crate::state::RulerState;
@@ -164,8 +164,8 @@ pub fn render(canvas: &skia::Canvas, viewbox: Viewbox, fonts: &FontStore, state:
 /// Mirrors the SVG `viewport-frame*` pattern:
 /// 1. Stroke the inner rounded rect (this is the visible border between
 ///    the rulers and the canvas; bg fill covers the outer half later).
-/// 2. Fill an `outer ∪ inner` path with even-odd, so only the L-shape
-///    (outer minus inner) gets the bg color. The rounded corners of the
+/// 2. Fill the area between the outer rectangle and the rounded inner
+///    rectangle with the background color. The rounded corners of the
 ///    inner rect carve small bg-color fillets at the four corners of the
 ///    viewport, including the top-left intersection where the two bars
 ///    meet.
@@ -182,17 +182,21 @@ fn draw_background(ctx: &RenderCtx, vw: f32, vh: f32) {
     ctx.canvas.draw_rrect(inner_rrect, &border);
 
     let outer_rect = Rect::from_xywh(ctx.vx, ctx.vy, vw, vh);
-    let mut pb = skia::PathBuilder::new();
-    pb.add_rect(outer_rect, None, None);
-    pb.add_rrect(inner_rrect, None, None);
-    let mut path = pb.detach();
-    path.set_fill_type(PathFillType::EvenOdd);
-
     let mut bg = Paint::default();
     bg.set_anti_alias(true);
     bg.set_style(PaintStyle::Fill);
     bg.set_color(ctx.state.bg_color);
-    ctx.canvas.draw_path(&path, &bg);
+    // RRect normalizes inverted coordinates. When a sidebar leaves less
+    // room than the ruler bar there is no inner viewport to subtract.
+    if inner_rect.is_empty() {
+        ctx.canvas.draw_rect(outer_rect, &bg);
+    } else {
+        // This is the area between two axis-aligned rounded rectangles.
+        // Ganesh can evaluate their coverage on the GPU. A general even-odd
+        // path uploads a viewport-sized alpha mask on every camera update.
+        ctx.canvas
+            .draw_drrect(RRect::new_rect(outer_rect), inner_rrect, &bg);
+    }
 }
 
 fn draw_ticks_x(ctx: &RenderCtx, vw: f32, step: f32, offset: f32) {

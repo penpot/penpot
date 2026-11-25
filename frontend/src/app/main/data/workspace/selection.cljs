@@ -55,7 +55,8 @@
   (ptk/reify ::update-selrect
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:workspace-local :selrect] selrect))))
+      (cond-> (assoc-in state [:workspace-local :selrect] selrect)
+        (nil? selrect) (update :workspace-local dissoc :selrect-preview)))))
 
 (defn handle-area-selection
   [append? remove? ignore-groups?]
@@ -257,6 +258,13 @@
                        (set/union selection append-to-selection))
              (update :workspace-local assoc :last-selected id)))))))
 
+(defn- in-focus
+  [state ids]
+  (let [focus (:workspace-focus-selected state)]
+    (if (d/not-empty? focus)
+      (cpf/filter-not-focus (dsh/lookup-page-objects state) focus ids)
+      ids)))
+
 (defn select-shapes
   [ids]
   (dm/assert!
@@ -269,12 +277,7 @@
 
     ptk/UpdateEvent
     (update [_ state]
-      (let [objects (dsh/lookup-page-objects state)
-            focus (:workspace-focus-selected state)
-            ids (if (d/not-empty? focus)
-                  (cpf/filter-not-focus objects focus ids)
-                  ids)]
-        (assoc-in state [:workspace-local :selected] ids)))
+      (assoc-in state [:workspace-local :selected] (in-focus state ids)))
 
     ptk/WatchEvent
     (watch [_ state _]
@@ -353,7 +356,7 @@
 
 (defn select-shapes-by-current-selrect
   "Sends the current selection rectangle to the worker to compute the selection,
-  and sends its result to select-shapes for storage in the state."
+  previews hits while dragging and commits the final selection on release."
   ([initial-set remove? ignore-groups?]
    (select-shapes-by-current-selrect initial-set remove? ignore-groups? true))
 
@@ -384,7 +387,15 @@
                 (rx/map (if remove?
                           #(apply disj initial-set %)
                           #(into initial-set filter-objs %)))
-                (rx/map select-shapes))
+                (rx/map
+                 (if buffered?
+                   (fn [ids]
+                     (fn [state]
+                       ;; A worker reply can arrive after release or during another drag.
+                       (if (identical? selrect (dm/get-in state [:workspace-local :selrect]))
+                         (assoc-in state [:workspace-local :selrect-preview] (in-focus state ids))
+                         state)))
+                   select-shapes)))
            (rx/empty)))))))
 
 (defn select-inside-group

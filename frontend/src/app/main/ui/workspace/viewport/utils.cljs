@@ -8,9 +8,11 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
    [app.common.math :as mth]
    [app.main.ui.css-cursors :as cur]
-   [app.main.ui.formats :refer [format-number]]))
+   [app.main.ui.formats :refer [format-number]]
+   [rumext.v2 :as mf]))
 
 (defn format-viewbox
   "Format a viewbox to a string"
@@ -19,6 +21,51 @@
           (format-number (:y vbox 0)) " "
           (format-number (:width vbox 0)) " "
           (format-number (:height vbox 0))))
+
+(defn pan-translation
+  "Translate a settled SVG viewBox in screen pixels while its scale is constant."
+  [base vbox vport]
+  (when (and base vbox (not (identical? base vbox))
+             (= (:width base) (:width vbox)) (= (:height base) (:height vbox))
+             (pos? (:width vport)) (pos? (:height vport)))
+    (let [number-at (fn [box k] (js/parseFloat (format-number (get box k 0))))
+          scale     (min (/ (:width vport) (number-at base :width))
+                         (/ (:height vport) (number-at base :height)))
+          dx        (* scale (- (number-at base :x) (number-at vbox :x)))
+          dy        (* scale (- (number-at base :y) (number-at vbox :y)))]
+      (when (and (js/Number.isFinite dx) (js/Number.isFinite dy))
+        (dm/str "translate(" dx "px," dy "px)")))))
+
+(defn zoom-transform
+  "Map the settled SVG to the current xMidYMid meet camera in CSS pixels."
+  [base vbox {vw :width vh :height}]
+  (when (and base vbox (pos? vw) (pos? vh) (not= (:width base) (:width vbox)))
+    (let [n     (fn [box k] (js/parseFloat (format-number (get box k))))
+          bw    (n base :width)
+          bh    (n base :height)
+          w     (n vbox :width)
+          h     (n vbox :height)
+          scale (min (/ vw w) (/ vh h))
+          ratio (/ scale (min (/ vw bw) (/ vh bh)))
+          dx    (+ (* 0.5 (- (* vw (- 1 ratio)) (* scale (- w bw))))
+                   (* scale (- (n base :x) (n vbox :x))))
+          dy    (+ (* 0.5 (- (* vh (- 1 ratio)) (* scale (- h bh))))
+                   (* scale (- (n base :y) (n vbox :y))))]
+      (when (and (<= 0.5 ratio 2) (js/Number.isFinite dx) (js/Number.isFinite dy))
+        (dm/str "matrix(" ratio ",0,0," ratio "," dx "," dy ")")))))
+
+(defn use-render-window
+  "Keep nearby roots mounted across small pans and shrink the window on zoom-in."
+  [{:keys [x y width height] :as vbox}]
+  (let [ref (mf/use-ref nil)
+        old (mf/ref-val ref)]
+    (when (and vbox (pos? width) (pos? height)
+               (or (nil? old) (> (:width old) (* 2 width)) (> (:height old) (* 2 height))
+                   (< x (:x old)) (< y (:y old))
+                   (> (+ x width) (:x2 old)) (> (+ y height) (:y2 old))))
+      (mf/set-ref-val! ref (grc/make-rect (- x (* width 0.25)) (- y (* height 0.25))
+                                          (* width 1.5) (* height 1.5))))
+    (when vbox (mf/ref-val ref))))
 
 (defn get-cursor [cursor]
   (case cursor

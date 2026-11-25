@@ -97,6 +97,23 @@ impl GpuState {
         width: i32,
         height: i32,
     ) -> Result<skia::Surface> {
+        self.create_render_surface(width, height, false)
+    }
+
+    pub(super) fn create_mipmapped_surface(
+        &mut self,
+        width: i32,
+        height: i32,
+    ) -> Result<skia::Surface> {
+        self.create_render_surface(width, height, true)
+    }
+
+    fn create_render_surface(
+        &mut self,
+        width: i32,
+        height: i32,
+        mipmapped: bool,
+    ) -> Result<skia::Surface> {
         let image_info = skia::ImageInfo::new(
             (width, height),
             skia::ColorType::RGBA8888,
@@ -111,7 +128,7 @@ impl GpuState {
             None,
             gpu::SurfaceOrigin::BottomLeft,
             None,
-            false,
+            mipmapped,
             None,
         )
         .ok_or(Error::CriticalError(
