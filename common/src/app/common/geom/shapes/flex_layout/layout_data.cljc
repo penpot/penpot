@@ -60,10 +60,15 @@
         (persistent! (cond-> result (some? line-data) (conj! line-data)))
 
         (let [[child-bounds child] (first children)
+              ;; Zero before the first line: the arithmetic below also
+              ;; runs on the JVM, where nil is not a number
               {:keys [line-min-width line-min-height
                       line-max-width line-max-height
                       num-children
-                      children-data]} line-data
+                      children-data]
+               :or {line-min-width 0 line-min-height 0
+                    line-max-width 0 line-max-height 0
+                    num-children 0}} line-data
 
               child-width      (gpo/width-points child-bounds)
               child-height     (gpo/height-points child-bounds)
