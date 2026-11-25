@@ -27,7 +27,7 @@ export GITHUB_EVENT_PATH="$work/event.json"
 export GITHUB_OUTPUT="$work/request.env"
 export DEFAULT_CLAUDE_MODEL=${CLAUDE_MODEL:-sonnet-5.5} DEFAULT_CLAUDE_EFFORT=${CLAUDE_EFFORT:-default}
 export DEFAULT_COPILOT_MODEL=${COPILOT_MODEL:-claude-sonnet-5.5} DEFAULT_COPILOT_EFFORT=${COPILOT_EFFORT:-default}
-export DEFAULT_GO_MODEL=${OPENCODE_MODEL:-deepseek-v4.1-flash} DEFAULT_GO_EFFORT=${OPENCODE_EFFORT:-default}
+export DEFAULT_GO_MODEL=${OPENCODE_MODEL:-deepseek-v4.1-flash} DEFAULT_GO_EFFORT=${OPENCODE_EFFORT:-high}
 
 jq -n --arg body "$request" --arg user "$(gh api user --jq .login)" --argjson pr "$pr" \
   '{review:{body:$body,user:{login:$user}},pull_request:{number:$pr}}' > "$GITHUB_EVENT_PATH"

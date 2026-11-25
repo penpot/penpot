@@ -57,7 +57,7 @@ jobs:
           DEFAULT_COPILOT_MODEL: ${{ vars.COPILOT_MODEL || 'claude-sonnet-5.5' }}
           DEFAULT_COPILOT_EFFORT: ${{ vars.COPILOT_EFFORT || 'default' }}
           DEFAULT_GO_MODEL: ${{ vars.OPENCODE_MODEL || 'deepseek-v4.1-flash' }}
-          DEFAULT_GO_EFFORT: ${{ vars.OPENCODE_EFFORT || 'default' }}
+          DEFAULT_GO_EFFORT: ${{ vars.OPENCODE_EFFORT || 'high' }}
         run: bash .github/scripts/pr-review/parse-request.sh
 
   opencode:
