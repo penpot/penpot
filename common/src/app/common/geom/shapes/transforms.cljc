@@ -347,10 +347,13 @@
         center    (gco/points->center points)
         selrect   (calculate-selrect points center)
 
+        ;; Keep the previous pair when the new one is not a valid matrix:
+        ;; a shape squashed almost flat far from the origin has an inverse
+        ;; whose values overflow the range the backend accepts.
         [transform inverse]
         (let [transform (calculate-transform points center selrect)
               inverse (when (some? transform) (gmt/inverse transform))]
-          (if (and (some? transform) (some? inverse))
+          (if (and (gmt/valid-matrix? transform) (gmt/valid-matrix? inverse))
             [transform inverse]
             [(:transform shape (gmt/matrix)) (:transform-inverse shape (gmt/matrix))]))
 

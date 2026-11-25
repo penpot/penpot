@@ -271,3 +271,19 @@
       (t/is (true? (:flip-y result)))
       ;; rotation must not be negated when both axes are flipped
       (t/is (mth/close? 30 (:rotation result))))))
+
+(t/deftest squashed-shape-far-from-origin-keeps-a-valid-transform
+  ;; Regression for https://github.com/penpot/penpot/issues/12463.
+  ;; Squashing a path almost flat tens of millions of pixels away from the
+  ;; origin gave an inverse transform beyond the safe range, and the
+  ;; backend rejected the shape.
+  (let [x      -34647600
+        y      -46672500
+        shape  (create-test-shape :path {:content [{:command :move-to :params {:x x :y y}}
+                                                   {:command :line-to :params {:x (+ x 10) :y (+ y 10)}}]})
+        result (gsh/apply-transform shape (gmt/scale-matrix (gpt/point 1 0.000001) (gpt/point x y)))
+        mtx    (gmt/multiply (:transform result) (:transform-inverse result))]
+    (t/is (gmt/valid-matrix? (:transform result)))
+    (t/is (gmt/valid-matrix? (:transform-inverse result)))
+    (t/is (gmt/close? (gmt/matrix) mtx))))
+
