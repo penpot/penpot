@@ -33,21 +33,11 @@
         (mf/use-callback
          (mf/deps typography selected-ids file-id current-file-id)
          (fn []
-           (let [attrs (merge
-                        {:typography-ref-file file-id
-                         :typography-ref-id (:id typography)}
-                        (dissoc typography :id :name))]
-
-             (st/emit! (ev/event
-                        {::ev/name "use-library-typography"
-                         ::ev/origin "text-palette"
-                         :external-library (not= file-id current-file-id)}))
-             (run! #(st/emit!
-                     (dwt/update-text-attrs
-                      {:id %
-                       :editor (get @refs/workspace-editor-state %)
-                       :attrs attrs}))
-                   selected-ids))))]
+           (st/emit! (ev/event
+                      {::ev/name "use-library-typography"
+                       ::ev/origin "text-palette"
+                       :external-library (not= file-id current-file-id)})
+                     (dwt/apply-typography (into #{} selected-ids) typography file-id))))]
     [:div {:on-click handle-click
            :class (stl/css-case :typography-item true
                                 :mid-item (<= size 72)
