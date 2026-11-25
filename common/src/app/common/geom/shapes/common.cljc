@@ -88,14 +88,32 @@
                            ^boolean (mth/nan? (:y p))))
                      points)))
 
-(defn shape->points
-  [{:keys [transform points]}]
-  (if (gmt/unit? transform)
-    ;; Fix problem with precision could skew the shape
-    ;; when there are no transforms the points are the selrect shape
-    (let [p0 (nth points 0) ;; left top
-          p2 (nth points 2) ;; right bottom
-          p1 (gpt/point (:x p2) (:y p0))
-          p3 (gpt/point (:x p0) (:y p2))]
-      [p0 p1 p2 p3])
+(defn- flat-points?
+  [[p0 p1 _ p3]]
+  (or (mth/almost-zero? (gpt/distance p0 p1))
+      (mth/almost-zero? (gpt/distance p0 p3))))
+
+(defn get-board-points
+  "Points of `shape`. A transform that collapses a board leaves its
+  points with a side of length 0, while its selrect keeps the minimum
+  size of 0.01. A layout needs both axes of a board, so in that case
+  the points are rebuilt from the selrect and the transform."
+  [{:keys [type points selrect transform]}]
+  (if (and (= type :frame) (flat-points? points))
+    (transform-points (grc/rect->points selrect)
+                      (grc/rect->center selrect)
+                      (d/nilv transform (gmt/matrix)))
     points))
+
+(defn shape->points
+  [{:keys [transform] :as shape}]
+  (let [points (get-board-points shape)]
+    (if (gmt/unit? transform)
+      ;; Fix problem with precision could skew the shape
+      ;; when there are no transforms the points are the selrect shape
+      (let [p0 (nth points 0) ;; left top
+            p2 (nth points 2) ;; right bottom
+            p1 (gpt/point (:x p2) (:y p0))
+            p3 (gpt/point (:x p0) (:y p2))]
+        [p0 p1 p2 p3])
+      points)))

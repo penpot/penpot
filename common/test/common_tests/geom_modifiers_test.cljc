@@ -8,6 +8,9 @@
   (:require
    [app.common.geom.modifiers :as gm]
    [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
+   [app.common.geom.shapes :as gsh]
+   [app.common.math :as mth]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
@@ -185,3 +188,53 @@
 
       (t/is (some? result))
       (t/is (contains? result rect-id)))))
+
+(defn- flatten-frame
+  "Leave `frame-label` with the geometry a transform leaves when it
+  collapses a board to no height: its points share the same y, while
+  its selrect keeps the minimum height of 0.01."
+  [file frame-label]
+  (let [page     (thf/current-page file)
+        frame-id (thi/id frame-label)]
+    (update-in file [:data :pages-index (:id page) :objects frame-id]
+               (fn [{:keys [x y width] :as frame}]
+                 (let [selrect (grc/make-rect x y width 0.01)]
+                   (assoc frame
+                          :height 0.01
+                          :selrect selrect
+                          :points [(gpt/point x y)
+                                   (gpt/point (+ x width) y)
+                                   (gpt/point (+ x width) y)
+                                   (gpt/point x y)]))))))
+
+;; JS only: on the JVM the flex line builder multiplies the gap by a nil
+;; child count on its first child, so a flex reflow with children throws.
+#?(:cljs
+   (t/deftest reflow-of-a-flat-auto-height-board
+     (t/testing "a board whose points have no height lays out its children inside its width"
+       (let [file    (-> (thf/sample-file :file1)
+                         (add-flex-frame :board :layout :flex :layout-flex-dir :column
+                                         :layout-item-v-sizing :auto
+                                         :layout-padding {:p1 0 :p2 0 :p3 0 :p4 0}
+                                         :layout-gap {:row-gap 0 :column-gap 0}
+                                         :x 1000 :y 500 :width 200 :height 100)
+                         (add-flex-frame :child :parent-label :board
+                                         :layout-item-h-sizing :fill
+                                         :x 1000 :y 500 :width 200 :height 37)
+                         (flatten-frame :board))
+             objects (:objects (thf/current-page file))
+             board   (get objects (thi/id :board))
+             child   (get objects (thi/id :child))
+
+             modif-tree {(:id board) {:modifiers (ctm/reflow-modifiers)}}
+             result     (gm/set-objects-modifiers modif-tree objects)
+
+             board'  (gsh/transform-shape board (get-in result [(:id board) :modifiers]))
+             child'  (gsh/transform-shape child (get-in result [(:id child) :modifiers]))]
+
+         (t/is (mth/close? 200 (:width child')))
+         (t/is (mth/close? 37 (:height child')))
+         (t/is (mth/close? 1000 (:x child')))
+         (t/is (mth/close? 37 (:height board')))
+         (t/is (mth/close? 37 (gpt/distance (nth (:points board') 0)
+                                            (nth (:points board') 3))))))))
