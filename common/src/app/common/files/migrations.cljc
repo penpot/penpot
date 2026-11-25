@@ -2401,26 +2401,8 @@
   ;; anything runs.
   [data _]
   (some-> cfeat/*new* (swap! conj "fdata/shape-data-type"))
-  (letfn [(migrate-defs [defs]
-            (if (map? defs)
-              (d/mapm (fn [_ node] (csvg/normalize-def-node node)) defs)
-              defs))
-
-          (migrate-shape [shape]
-            (-> shape
-                (d/update-when :svg-attrs
-                               (fn [attrs]
-                                 (if (map? attrs)
-                                   (csvg/attrs->kebab-props attrs)
-                                   attrs)))
-                (d/update-when :svg-defs migrate-defs)
-                (d/update-when :svg-viewbox grc/make-rect)
-                (d/update-when :svg-transform gmt/coerce)
-                (cond-> (= :svg-raw (:type shape))
-                  (d/update-when :content csvg/kebabize-content-node))))
-
-          (migrate-container [container]
-            (d/update-when container :objects d/update-vals migrate-shape))]
+  (letfn [(migrate-container [container]
+            (d/update-when container :objects d/update-vals csvg/normalize-shape))]
 
     (-> data
         (update :pages-index d/update-vals migrate-container)

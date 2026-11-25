@@ -10,6 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.common.uuid :as uuid]
@@ -727,6 +728,30 @@
   reads keys outside the whitelist (e.g. `:stroke-style`)."
   [node]
   (normalize-node-tree d/kebab-keys node))
+
+(defn normalize-shape
+  "Brings the svg data of `shape` to the stored convention: `:svg-attrs`
+  and `:svg-defs` through the whitelist + kebab transform, `:svg-viewbox`
+  as a rect, `:svg-transform` as a matrix and svg-raw `:content` with
+  kebab keys. Shapes written by versions before 2.20 hold camelCase keys
+  that the closed schema rejects. Already normalized shapes pass through
+  unchanged."
+  [shape]
+  (-> shape
+      (d/update-when :svg-attrs
+                     (fn [attrs]
+                       (if (map? attrs)
+                         (attrs->kebab-props attrs)
+                         attrs)))
+      (d/update-when :svg-defs
+                     (fn [defs]
+                       (if (map? defs)
+                         (d/mapm (fn [_ node] (normalize-def-node node)) defs)
+                         defs)))
+      (d/update-when :svg-viewbox grc/make-rect)
+      (d/update-when :svg-transform gmt/coerce)
+      (cond-> (= :svg-raw (:type shape))
+        (d/update-when :content kebabize-content-node))))
 
 (defn update-attr-ids
   "Replaces the ids inside a property"

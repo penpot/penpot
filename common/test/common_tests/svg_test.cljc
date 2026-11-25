@@ -97,3 +97,15 @@
   (t/is (= {} (:attrs (svg/normalize-def-node {:tag :g :attrs nil :content []}))))
   (t/is (not (contains? (svg/kebabize-content-node {:tag :g :content []}) :attrs))
         "absent attrs stay absent"))
+
+(t/deftest normalize-shape-kebabizes-legacy-svg-data
+  (let [shape  {:type :svg-raw
+                :svg-attrs {:fill "none" :strokeLinejoin "round"}
+                :svg-defs {"a" {:tag "linearGradient" :attrs {:gradientUnits "userSpaceOnUse"} :content []}}
+                :content {:tag :path :attrs {:strokeWidth "2"} :content []}}
+        result (svg/normalize-shape shape)]
+    (t/is (= {:fill "none" :stroke-linejoin "round"} (:svg-attrs result)))
+    (t/is (= {:gradient-units "userSpaceOnUse"} (get-in result [:svg-defs "a" :attrs])))
+    (t/is (= :linearGradient (get-in result [:svg-defs "a" :tag])))
+    (t/is (= {:stroke-width "2"} (get-in result [:content :attrs])))
+    (t/is (= result (svg/normalize-shape result)) "normalized shapes pass through unchanged")))
