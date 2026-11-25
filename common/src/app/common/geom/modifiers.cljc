@@ -251,12 +251,13 @@
 
         ;; A board sized by its content keeps its own minimum and
         ;; maximum sizes, as the generated CSS does, whether or not it
-        ;; is itself a layout item
+        ;; is itself a layout item. As in CSS, the minimum wins over a
+        ;; smaller maximum
         clamp
         (fn [size min-size max-size]
           (cond-> size
-            (some? min-size) (max min-size)
-            (some? max-size) (min max-size)))
+            (some? max-size) (min max-size)
+            (some? min-size) (max min-size)))
 
         auto-width (when content-bounds
                      (clamp (gpo/width-points content-bounds)

@@ -1264,4 +1264,459 @@ mod tests {
         // Grid takes its size from its tracks; hidden children still count.
         assert_size(auto_frame_size(TestLayout::Grid, Hidden), (200.0, 50.0));
     }
+
+    // ---- Minimum and maximum sizes of a board sized by its content
+
+    /// `(x, y, width, height)`
+    type Xywh = (f32, f32, f32, f32);
+
+    #[derive(Clone, Copy, Default)]
+    struct SizeLimits {
+        min_w: Option<f32>,
+        max_w: Option<f32>,
+        min_h: Option<f32>,
+        max_h: Option<f32>,
+    }
+
+    const NO_LIMITS: SizeLimits = SizeLimits {
+        min_w: None,
+        max_w: None,
+        min_h: None,
+        max_h: None,
+    };
+
+    fn set_size_limits(state: &mut State, id: Uuid, limits: SizeLimits) {
+        let item = shape_mut(state, id).layout_item.as_mut().unwrap();
+        item.min_w = limits.min_w;
+        item.max_w = limits.max_w;
+        item.min_h = limits.min_h;
+        item.max_h = limits.max_h;
+    }
+
+    fn set_flex(
+        state: &mut State,
+        id: Uuid,
+        direction: FlexDirection,
+        wrap_type: WrapType,
+        align_items: AlignItems,
+        justify_content: JustifyContent,
+    ) {
+        shape_mut(state, id).set_flex_layout_data(
+            direction,
+            0.0,
+            0.0,
+            align_items,
+            AlignContent::Start,
+            JustifyItems::Start,
+            justify_content,
+            wrap_type,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+        );
+    }
+
+    /// A grid with one track of `track` on each axis and a single cell holding `child`.
+    fn set_single_cell_grid(
+        state: &mut State,
+        id: Uuid,
+        track: GridTrack,
+        child: Uuid,
+        (align_items, align_content): (AlignItems, AlignContent),
+        (justify_items, justify_content): (JustifyItems, JustifyContent),
+    ) {
+        let shape = shape_mut(state, id);
+        shape.set_grid_layout_data(
+            GridDirection::Row,
+            0.0,
+            0.0,
+            align_items,
+            align_content,
+            justify_items,
+            justify_content,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+        );
+        shape.set_grid_columns(vec![track.clone()]);
+        shape.set_grid_rows(vec![track]);
+        shape.set_grid_cells(vec![GridCell {
+            row: 1,
+            row_span: 1,
+            column: 1,
+            column_span: 1,
+            align_self: None,
+            justify_self: None,
+            shape: Some(child),
+        }]);
+    }
+
+    /// The bounds `(x, y, width, height)` of `id` after the reflow.
+    fn bounds_after(state: &State, result: &[TransformEntry], id: Uuid) -> Xywh {
+        let mut bounds = state.shapes.get_raw(&id).unwrap().bounds();
+        if let Some(entry) = result.iter().find(|e| e.id == id) {
+            bounds = bounds.transform(&entry.transform);
+        }
+        (
+            bounds.min_x(),
+            bounds.min_y(),
+            bounds.width(),
+            bounds.height(),
+        )
+    }
+
+    fn assert_bounds(actual: Xywh, expected: Xywh, what: &str) {
+        let (x, y, w, h) = actual;
+        let (ex, ey, ew, eh) = expected;
+        assert!(
+            is_close_to(x, ex) && is_close_to(y, ey) && is_close_to(w, ew) && is_close_to(h, eh),
+            "{what}: got ({x}, {y}) {w}x{h}, expected ({ex}, {ey}) {ew}x{eh}"
+        );
+    }
+
+    /// Bounds of a 500x300 flex board sized by its content and of its 100x50 child, after reflow.
+    fn auto_flex_bounds(
+        direction: FlexDirection,
+        alignment: (AlignItems, JustifyContent),
+        limits: SizeLimits,
+    ) -> (Xywh, Xywh) {
+        let mut state = State::new();
+        state.shapes.initialize(10);
+        let board = add_shape(&mut state, None, (0.0, 0.0, 500.0, 300.0), TestLayout::Flex);
+        let rect = (10.0, 10.0, 110.0, 60.0);
+        let child = add_shape(&mut state, Some(board), rect, TestLayout::None);
+        let (align_items, justify_content) = alignment;
+        set_flex(
+            &mut state,
+            board,
+            direction,
+            WrapType::NoWrap,
+            align_items,
+            justify_content,
+        );
+        set_size_limits(&mut state, board, limits);
+
+        let result = reflow(&state, board);
+        (
+            bounds_after(&state, &result, board),
+            bounds_after(&state, &result, child),
+        )
+    }
+
+    const START: (AlignItems, JustifyContent) = (AlignItems::Start, JustifyContent::Start);
+    const CENTER: (AlignItems, JustifyContent) = (AlignItems::Center, JustifyContent::Center);
+    const END: (AlignItems, JustifyContent) = (AlignItems::End, JustifyContent::End);
+
+    #[test]
+    fn test_auto_flex_board_keeps_its_min_and_max_sizes() {
+        for direction in [FlexDirection::Row, FlexDirection::Column] {
+            let size = |limits| auto_flex_bounds(direction, START, limits).0;
+
+            assert_bounds(size(NO_LIMITS), (0.0, 0.0, 100.0, 50.0), "content");
+
+            let min = SizeLimits {
+                min_w: Some(200.0),
+                min_h: Some(120.0),
+                ..NO_LIMITS
+            };
+            assert_bounds(size(min), (0.0, 0.0, 200.0, 120.0), "minimum");
+
+            let max = SizeLimits {
+                max_w: Some(60.0),
+                max_h: Some(30.0),
+                ..NO_LIMITS
+            };
+            assert_bounds(size(max), (0.0, 0.0, 60.0, 30.0), "maximum");
+
+            // Limits the content already respects change nothing
+            let loose = SizeLimits {
+                min_w: Some(10.0),
+                max_w: Some(400.0),
+                min_h: Some(10.0),
+                max_h: Some(400.0),
+            };
+            assert_bounds(size(loose), (0.0, 0.0, 100.0, 50.0), "loose limits");
+        }
+    }
+
+    #[test]
+    fn test_auto_flex_board_minimum_wins_over_a_smaller_maximum() {
+        // As in CSS, where `min-width: 200px; max-width: 60px` gives 200px
+        let conflicting = SizeLimits {
+            min_w: Some(200.0),
+            max_w: Some(60.0),
+            min_h: Some(120.0),
+            max_h: Some(30.0),
+        };
+        for direction in [FlexDirection::Row, FlexDirection::Column] {
+            let (board, _) = auto_flex_bounds(direction, START, conflicting);
+            assert_bounds(board, (0.0, 0.0, 200.0, 120.0), "conflicting limits");
+        }
+    }
+
+    #[test]
+    fn test_auto_flex_board_aligns_children_in_its_constrained_size() {
+        let min = SizeLimits {
+            min_w: Some(200.0),
+            min_h: Some(120.0),
+            ..NO_LIMITS
+        };
+        let max = SizeLimits {
+            max_w: Some(60.0),
+            max_h: Some(30.0),
+            ..NO_LIMITS
+        };
+        for direction in [FlexDirection::Row, FlexDirection::Column] {
+            let child = |alignment, limits| auto_flex_bounds(direction, alignment, limits).1;
+
+            assert_bounds(
+                child(START, min),
+                (0.0, 0.0, 100.0, 50.0),
+                "start in minimum",
+            );
+            assert_bounds(
+                child(CENTER, min),
+                (50.0, 35.0, 100.0, 50.0),
+                "center in minimum",
+            );
+            assert_bounds(
+                child(END, min),
+                (100.0, 70.0, 100.0, 50.0),
+                "end in minimum",
+            );
+            assert_bounds(
+                child(CENTER, max),
+                (-20.0, -10.0, 100.0, 50.0),
+                "center in maximum",
+            );
+        }
+    }
+
+    /// Bounds of a wrapping flex board sized by its content and of its two children, after
+    /// reflow: 80x20 children in a row, 20x80 ones in a column.
+    fn auto_wrap_bounds(direction: FlexDirection, limits: SizeLimits) -> (Xywh, Vec<Xywh>) {
+        let mut state = State::new();
+        state.shapes.initialize(10);
+        let board = add_shape(&mut state, None, (0.0, 0.0, 500.0, 300.0), TestLayout::Flex);
+        let (w, h) = if matches!(direction, FlexDirection::Row) {
+            (80.0, 20.0)
+        } else {
+            (20.0, 80.0)
+        };
+        let children: Vec<Uuid> = (0..2)
+            .map(|_| add_shape(&mut state, Some(board), (0.0, 0.0, w, h), TestLayout::None))
+            .collect();
+        set_flex(
+            &mut state,
+            board,
+            direction,
+            WrapType::Wrap,
+            AlignItems::Start,
+            JustifyContent::Start,
+        );
+        set_size_limits(&mut state, board, limits);
+
+        let result = reflow(&state, board);
+        let mut children: Vec<_> = children
+            .iter()
+            .map(|id| bounds_after(&state, &result, *id))
+            .collect();
+        children.sort_by(|a, b| (a.0, a.1).partial_cmp(&(b.0, b.1)).unwrap());
+        (bounds_after(&state, &result, board), children)
+    }
+
+    #[test]
+    fn test_auto_flex_board_wraps_in_its_maximum_main_size() {
+        let row_max = SizeLimits {
+            max_w: Some(100.0),
+            ..NO_LIMITS
+        };
+        let (board, children) = auto_wrap_bounds(FlexDirection::Row, row_max);
+        assert_bounds(board, (0.0, 0.0, 100.0, 40.0), "row board");
+        assert_bounds(children[0], (0.0, 0.0, 80.0, 20.0), "row first child");
+        assert_bounds(children[1], (0.0, 20.0, 80.0, 20.0), "row second child");
+
+        let column_max = SizeLimits {
+            max_h: Some(100.0),
+            ..NO_LIMITS
+        };
+        let (board, children) = auto_wrap_bounds(FlexDirection::Column, column_max);
+        assert_bounds(board, (0.0, 0.0, 40.0, 100.0), "column board");
+        assert_bounds(children[0], (0.0, 0.0, 20.0, 80.0), "column first child");
+        assert_bounds(children[1], (20.0, 0.0, 20.0, 80.0), "column second child");
+
+        // Without a maximum, the children stay on one track
+        let (board, _) = auto_wrap_bounds(FlexDirection::Row, NO_LIMITS);
+        assert_bounds(board, (0.0, 0.0, 160.0, 20.0), "row board without maximum");
+    }
+
+    #[test]
+    fn test_auto_flex_board_across_size_after_wrapping_keeps_its_limits() {
+        // The two tracks need 40, the across size is then limited
+        let max = SizeLimits {
+            max_w: Some(100.0),
+            max_h: Some(30.0),
+            ..NO_LIMITS
+        };
+        let (board, _) = auto_wrap_bounds(FlexDirection::Row, max);
+        assert_bounds(board, (0.0, 0.0, 100.0, 30.0), "maximum across size");
+
+        let min = SizeLimits {
+            max_w: Some(100.0),
+            min_h: Some(60.0),
+            ..NO_LIMITS
+        };
+        let (board, children) = auto_wrap_bounds(FlexDirection::Row, min);
+        assert_bounds(board, (0.0, 0.0, 100.0, 60.0), "minimum across size");
+        assert_bounds(children[1], (0.0, 20.0, 80.0, 20.0), "second track");
+    }
+
+    #[test]
+    fn test_auto_flex_child_board_keeps_conflicting_limits_like_css() {
+        // A board inside a layout gets `min-height` and `max-height` in the generated CSS,
+        // where the minimum wins
+        let mut state = State::new();
+        state.shapes.initialize(10);
+        let parent = add_shape(&mut state, None, (0.0, 0.0, 500.0, 300.0), TestLayout::Flex);
+        let board = add_shape(
+            &mut state,
+            Some(parent),
+            (0.0, 0.0, 100.0, 50.0),
+            TestLayout::Flex,
+        );
+        add_shape(
+            &mut state,
+            Some(board),
+            (0.0, 0.0, 100.0, 50.0),
+            TestLayout::None,
+        );
+        {
+            let item = shape_mut(&mut state, board).layout_item.as_mut().unwrap();
+            item.h_sizing = Sizing::Auto;
+            item.v_sizing = Sizing::Auto;
+        }
+        let conflicting = SizeLimits {
+            min_w: Some(200.0),
+            max_w: Some(60.0),
+            min_h: Some(80.0),
+            max_h: Some(30.0),
+        };
+        set_size_limits(&mut state, board, conflicting);
+
+        let result = reflow(&state, board);
+        assert_bounds(
+            bounds_after(&state, &result, board),
+            (0.0, 0.0, 200.0, 80.0),
+            "board",
+        );
+        assert_bounds(
+            bounds_after(&state, &result, parent),
+            (0.0, 0.0, 200.0, 80.0),
+            "parent sized by the board",
+        );
+    }
+
+    /// Bounds of a 50x50 grid board sized by its content, with one `track` on each axis,
+    /// and of its 50x50 child, after reflow.
+    fn auto_grid_bounds(track: GridTrack, aligned: bool, limits: SizeLimits) -> (Xywh, Xywh) {
+        let mut state = State::new();
+        state.shapes.initialize(10);
+        let board = add_shape(&mut state, None, (0.0, 0.0, 50.0, 50.0), TestLayout::Grid);
+        let rect = (0.0, 0.0, 50.0, 50.0);
+        let child = add_shape(&mut state, Some(board), rect, TestLayout::None);
+        let (align, justify) = if aligned {
+            (
+                (AlignItems::Center, AlignContent::Center),
+                (JustifyItems::Center, JustifyContent::Center),
+            )
+        } else {
+            (
+                (AlignItems::Start, AlignContent::Start),
+                (JustifyItems::Start, JustifyContent::Start),
+            )
+        };
+        set_single_cell_grid(&mut state, board, track, child, align, justify);
+        set_size_limits(&mut state, board, limits);
+
+        let result = reflow(&state, board);
+        (
+            bounds_after(&state, &result, board),
+            bounds_after(&state, &result, child),
+        )
+    }
+
+    const FIXED_50: GridTrack = GridTrack {
+        track_type: GridTrackType::Fixed,
+        value: 50.0,
+    };
+    const ONE_FR: GridTrack = GridTrack {
+        track_type: GridTrackType::Flex,
+        value: 1.0,
+    };
+
+    #[test]
+    fn test_auto_grid_board_keeps_its_min_and_max_sizes() {
+        let size = |limits| auto_grid_bounds(FIXED_50, false, limits).0;
+
+        assert_bounds(size(NO_LIMITS), (0.0, 0.0, 50.0, 50.0), "content");
+
+        let min = SizeLimits {
+            min_w: Some(200.0),
+            min_h: Some(120.0),
+            ..NO_LIMITS
+        };
+        assert_bounds(size(min), (0.0, 0.0, 200.0, 120.0), "minimum");
+
+        let max = SizeLimits {
+            max_w: Some(30.0),
+            max_h: Some(20.0),
+            ..NO_LIMITS
+        };
+        assert_bounds(size(max), (0.0, 0.0, 30.0, 20.0), "maximum");
+
+        let conflicting = SizeLimits {
+            min_w: Some(200.0),
+            max_w: Some(30.0),
+            min_h: Some(120.0),
+            max_h: Some(20.0),
+        };
+        assert_bounds(size(conflicting), (0.0, 0.0, 200.0, 120.0), "conflicting");
+    }
+
+    #[test]
+    fn test_auto_grid_board_places_tracks_in_its_constrained_size() {
+        let min = SizeLimits {
+            min_w: Some(200.0),
+            min_h: Some(120.0),
+            ..NO_LIMITS
+        };
+
+        // Centered 50px tracks: the child is centered in the minimum size
+        let (_, child) = auto_grid_bounds(FIXED_50, true, min);
+        assert_bounds(child, (75.0, 35.0, 50.0, 50.0), "centered fixed tracks");
+
+        // Start tracks stay at the start
+        let (_, child) = auto_grid_bounds(FIXED_50, false, min);
+        assert_bounds(child, (0.0, 0.0, 50.0, 50.0), "start fixed tracks");
+
+        // A 1fr track takes the whole minimum size, the child is centered in its cell
+        let (board, child) = auto_grid_bounds(ONE_FR, true, min);
+        assert_bounds(board, (0.0, 0.0, 200.0, 120.0), "board with 1fr tracks");
+        assert_bounds(child, (75.0, 35.0, 50.0, 50.0), "child in 1fr tracks");
+
+        // Without limits, the 1fr track keeps the size of its content
+        let (board, child) = auto_grid_bounds(ONE_FR, true, NO_LIMITS);
+        assert_bounds(
+            board,
+            (0.0, 0.0, 50.0, 50.0),
+            "board with 1fr tracks, no limits",
+        );
+        assert_bounds(
+            child,
+            (0.0, 0.0, 50.0, 50.0),
+            "child in 1fr tracks, no limits",
+        );
+    }
 }
