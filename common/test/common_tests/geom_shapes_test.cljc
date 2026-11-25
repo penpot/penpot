@@ -320,3 +320,26 @@
                                     (ctm/resize-modifiers (gpt/point 1 -3000) (gpt/point 0 0)))]
     (t/is (close? 30 (get-in result [:selrect :height])))
     (t/is (true? (:flip-y result)))))
+
+(t/deftest flat-text-resized-to-fill-gets-its-width
+  ;; A text whose auto width was measured as 0 has points with no width.
+  ;; A fill layout resizes it by target / 0.01; the result has to be the
+  ;; target width, not a scaled zero.
+  (let [text    (create-test-shape :text {:x 10 :y 0 :width 100 :height 20})
+        selrect (grc/make-rect 10 0 0.01 20)
+        text    (assoc text
+                       :width 0.01
+                       :selrect selrect
+                       :points [(gpt/point 10 0) (gpt/point 10 0) (gpt/point 10 20) (gpt/point 10 20)])
+        result  (gsh/transform-shape text (ctm/resize-modifiers (gpt/point 20000 1) (gpt/point 10 0)))]
+    (t/is (close? 200 (get-in result [:selrect :width])))
+    (t/is (close? 10 (get-in result [:selrect :x])))))
+
+(t/deftest flat-path-keeps-flat-points
+  ;; A straight line is a valid flat path: its points are not rebuilt.
+  (let [line   (-> (create-test-shape :path {:content [{:command :move-to :params {:x 0 :y 10}}
+                                                       {:command :line-to :params {:x 100 :y 10}}]})
+                   (assoc :points [(gpt/point 0 10) (gpt/point 100 10) (gpt/point 100 10) (gpt/point 0 10)]))
+        result (gsh/transform-shape line (ctm/resize-modifiers (gpt/point 1 2) (gpt/point 0 0)))
+        [p0 _ _ p3] (:points result)]
+    (t/is (close? 0 (gpt/distance p0 p3)))))

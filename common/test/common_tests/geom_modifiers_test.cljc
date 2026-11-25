@@ -238,3 +238,29 @@
          (t/is (mth/close? 37 (:height board')))
          (t/is (mth/close? 37 (gpt/distance (nth (:points board') 0)
                                             (nth (:points board') 3))))))))
+
+#?(:cljs
+   (t/deftest reflow-of-a-flat-fill-child
+     (t/testing "a fill child whose points have no width gets the width of its board"
+       (let [file    (-> (thf/sample-file :file1)
+                         (add-flex-frame :board :layout :flex :layout-flex-dir :row
+                                         :layout-padding {:p1 0 :p2 0 :p3 0 :p4 0}
+                                         :layout-gap {:row-gap 0 :column-gap 0}
+                                         :x 1000 :y 500 :width 200 :height 50)
+                         (add-rect-child :child :board :layout-item-h-sizing :fill
+                                         :x 1000 :y 500 :width 0.01 :height 20))
+             page     (thf/current-page file)
+             child-id (thi/id :child)
+             file     (update-in file [:data :pages-index (:id page) :objects child-id :points]
+                                 (fn [_] [(gpt/point 1000 500) (gpt/point 1000 500)
+                                          (gpt/point 1000 520) (gpt/point 1000 520)]))
+             objects  (:objects (thf/current-page file))
+             child    (get objects child-id)
+
+             modif-tree {(thi/id :board) {:modifiers (ctm/reflow-modifiers)}}
+             result     (gm/set-objects-modifiers modif-tree objects)
+             child'     (gsh/transform-shape child (get-in result [child-id :modifiers]))]
+
+         (t/is (mth/close? 200 (:width child')))
+         (t/is (mth/close? 1000 (:x child')))))))
+

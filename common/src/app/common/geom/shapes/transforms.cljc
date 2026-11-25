@@ -339,7 +339,7 @@
   "Given a new set of points transformed, set up the rectangle so it keeps
   its properties. We adjust de x,y,width,height and create a custom transform"
   [shape transform-mtx]
-  (let [base      (gco/get-board-points shape)
+  (let [base      (gco/get-points-with-area shape)
         points    (gco/transform-points base transform-mtx)
 
         shape     (adjust-shape-flips shape base points)
@@ -373,12 +373,12 @@
         (assoc :transform transform)
         (assoc :transform-inverse inverse)
         (assoc :selrect selrect)
-        ;; A board collapsed to no height or width keeps points with the
+        ;; A shape collapsed to no height or width keeps points with the
         ;; area of its selrect, so a later layout still has both axes
-        (assoc :points (gco/get-board-points {:type type
-                                              :points points
-                                              :selrect selrect
-                                              :transform transform}))
+        (assoc :points (gco/get-points-with-area {:type type
+                                                  :points points
+                                                  :selrect selrect
+                                                  :transform transform}))
         (assoc :rotation rotation))))
 
 (defn apply-transform

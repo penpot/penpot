@@ -71,7 +71,7 @@
                 (keep (fn [c]
                         (when-let [b (get bounds (:id c))]
                           [@b c]))))
-           layout-data (gd/calc-layout-data child (gco/get-board-points child) children bounds objects true)
+           layout-data (gd/calc-layout-data child (gco/get-points-with-area child) children bounds objects true)
            auto-bounds (gb/layout-content-bounds bounds child layout-data)]
        (if auto-bounds
          (max (ctl/child-min-height child)

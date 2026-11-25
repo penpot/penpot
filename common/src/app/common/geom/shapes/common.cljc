@@ -93,13 +93,18 @@
   (or (mth/almost-zero? (gpt/distance p0 p1))
       (mth/almost-zero? (gpt/distance p0 p3))))
 
-(defn get-board-points
-  "Points of `shape`. A transform that collapses a board leaves its
+(def ^:private flat-allowed-types
+  "Shapes whose points can be flat: a path or a bool can be a straight
+  line, and a group takes its geometry from its children."
+  #{:path :bool :group})
+
+(defn get-points-with-area
+  "Points of `shape`. A transform that collapses a shape leaves its
   points with a side of length 0, while its selrect keeps the minimum
-  size of 0.01. A layout needs both axes of a board, so in that case
-  the points are rebuilt from the selrect and the transform."
+  size of 0.01. Layouts and later transforms need both axes, so in that
+  case the points are rebuilt from the selrect and the transform."
   [{:keys [type points selrect transform]}]
-  (if (and (= type :frame) (flat-points? points))
+  (if (and (not (contains? flat-allowed-types type)) (flat-points? points))
     (transform-points (grc/rect->points selrect)
                       (grc/rect->center selrect)
                       (d/nilv transform (gmt/matrix)))
@@ -107,7 +112,7 @@
 
 (defn shape->points
   [{:keys [transform] :as shape}]
-  (let [points (get-board-points shape)]
+  (let [points (get-points-with-area shape)]
     (if (gmt/unit? transform)
       ;; Fix problem with precision could skew the shape
       ;; when there are no transforms the points are the selrect shape
