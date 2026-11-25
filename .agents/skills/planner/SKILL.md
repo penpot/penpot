@@ -171,16 +171,20 @@ Valid names match:
 ```
 
 - `review-NN` — a new plan addressing findings of a `review-code` or
-  `review-plan` on already-implemented work. `NN` counts reviews of
-  that parent from `01`. Example: parent
+  `review-plan` on already-implemented work. `NN` counts review rounds of
+  the same implemented work from `01`. Every round is a sibling derived
+  from the original plan, never from a `--review-NN` plan. Example:
   `2026-09-14-paste-before-init-crash.md` →
   `2026-09-14-paste-before-init-crash--review-01.md`,
-  then `--review-02.md`.
+  then `2026-09-14-paste-before-init-crash--review-02.md`, not
+  `...--review-01--review-01.md`.
 - `task-NN-<short-slug>` — sub-plan for task `NN` of a high-level
   roadmap plan. `NN` is the roadmap task number. Example: parent
   `2026-09-20-upload-pipeline-roadmap.md` →
   `2026-09-20-upload-pipeline-roadmap--task-01-chunk-upload.md`.
-  Levels chain: `...--task-02-gc--review-01.md`.
+Task plans may have a review suffix: `...--task-02-gc--review-01.md`.
+Further review rounds remain siblings of that first review plan:
+`...--task-02-gc--review-02.md`.
 
 Never use `v2`, `final`, `new`, or `fix2` as suffixes. Keep the
 optional short slug to 3-4 lowercase hyphen-separated words.
