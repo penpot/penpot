@@ -115,11 +115,9 @@
            (t/is (= {:p1 "dimension.md" :p3 "dimension.md" :row-gap "dimension.md"}
                     (:applied-tokens layout')))
 
-           (t/testing "sets the chosen paddings only"
-             (t/is (= 24 (get-in layout' [:layout-padding :p1])))
-             (t/is (= 24 (get-in layout' [:layout-padding :p3])))
-             (t/is (= (get-in layout [:layout-padding :p2])
-                      (get-in layout' [:layout-padding :p2]))))
+           (t/testing "sets the chosen paddings and leaves the other sides at 0"
+             (t/is (= {:p1 24 :p2 0 :p3 24 :p4 0}
+                      (:layout-padding layout'))))
 
            (t/testing "sets the chosen gap only"
              (t/is (= 24 (get-in layout' [:layout-gap :row-gap])))
