@@ -465,6 +465,22 @@ test("Renders a file with group with text with inherited shadows", async ({
   await expect(workspace.canvas).toHaveScreenshot();
 });
 
+test("Renders a group shadow once for texts and shapes nested in the group", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-nested-group-shadows.json");
+
+  await workspace.goToWorkspace({
+    id: "d82e4cfc-13a6-81e5-8008-fe37087b7263",
+    pageId: "d82e4cfc-13a6-81e5-8008-fe37087b7264",
+  });
+
+  await workspace.waitForFirstRenderWithoutUI();
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
 test.skip("Updates text alignment edition - part 1", async ({ page }) => {
   const workspace = new WasmWorkspacePage(page);
   await workspace.setupEmptyFile();

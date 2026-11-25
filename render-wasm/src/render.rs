@@ -438,7 +438,6 @@ pub(crate) struct RenderState {
     // Frames contained in groups must reset this nested_fills stack pushing a new empty vector.
     pub nested_fills: Vec<Vec<Fill>>,
     pub nested_blurs: Vec<Option<Blur>>, // FIXME: why is this an option?
-    pub nested_shadows: Vec<Vec<Shadow>>,
     /// How far past the current tile shapes can paint into it, in document
     /// units: the walker culls against the tile grown by the last entry. Each
     /// walked frame or group adds its [`Shape::children_reach`]. In a tile
@@ -671,7 +670,6 @@ impl RenderState {
             pending_tiles: PendingTiles::new(),
             nested_fills: vec![],
             nested_blurs: vec![],
-            nested_shadows: vec![],
             group_reach: vec![],
             show_grid: None,
             focus_mode: FocusMode::new(),
@@ -1366,36 +1364,6 @@ impl RenderState {
         self.shape_visible_in_include_filter(shape_id, tree)
     }
 
-    fn get_inherited_drop_shadows(&self) -> Option<Vec<skia_safe::Paint>> {
-        let scale = self.get_scale();
-        let drop_shadows: Vec<&Shadow> = self
-            .nested_shadows
-            .iter()
-            .flat_map(|shadows| shadows.iter())
-            .filter(|shadow| {
-                !shadow.hidden()
-                    && shadow.style() == crate::shapes::ShadowStyle::Drop
-                    && shadow.is_perceptible_at_scale(scale)
-            })
-            .collect();
-
-        if drop_shadows.is_empty() {
-            return None;
-        }
-
-        Some(
-            drop_shadows
-                .into_iter()
-                .map(|shadow| {
-                    let mut paint = skia_safe::Paint::default();
-                    let filter = shadow.get_drop_shadow_filter();
-                    paint.set_image_filter(filter);
-                    paint
-                })
-                .collect(),
-        )
-    }
-
     /// Apply frame clip stack in document space on the given surface bitmask.
     /// Caller must already have those surfaces in doc transform (Fills-style
     /// scale + tile translation, or Current after the same). Hard (non-AA)
@@ -1863,7 +1831,7 @@ impl RenderState {
                         }
                     } else {
                         let shape_scale = self.get_scale();
-                        let mut drop_shadows = if skip_drop_shadows {
+                        let drop_shadows = if skip_drop_shadows {
                             Vec::new()
                         } else {
                             shape
@@ -1876,12 +1844,6 @@ impl RenderState {
                                 })
                                 .collect()
                         };
-
-                        if !skip_drop_shadows {
-                            if let Some(inherited_shadows) = self.get_inherited_drop_shadows() {
-                                drop_shadows.extend(inherited_shadows);
-                            }
-                        }
 
                         let inner_shadows = shape.inner_shadow_paints();
                         let blur_filter = shape.image_filter(1.);
@@ -2499,7 +2461,6 @@ impl RenderState {
         // being incorrectly applied to new frames
         self.nested_fills.clear();
         self.nested_blurs.clear();
-        self.nested_shadows.clear();
         self.group_reach.clear();
 
         // reorder by distance to the center.
@@ -2796,7 +2757,6 @@ impl RenderState {
         let saved_pending_nodes = std::mem::take(&mut self.pending_nodes);
         let saved_nested_fills = std::mem::take(&mut self.nested_fills);
         let saved_nested_blurs = std::mem::take(&mut self.nested_blurs);
-        let saved_nested_shadows = std::mem::take(&mut self.nested_shadows);
         let saved_group_reach = std::mem::take(&mut self.group_reach);
         let saved_ignore_nested_blurs = self.ignore_nested_blurs;
         let saved_preview_mode = self.preview_mode;
@@ -2869,7 +2829,6 @@ impl RenderState {
         self.pending_nodes = saved_pending_nodes;
         self.nested_fills = saved_nested_fills;
         self.nested_blurs = saved_nested_blurs;
-        self.nested_shadows = saved_nested_shadows;
         self.group_reach = saved_group_reach;
         self.ignore_nested_blurs = saved_ignore_nested_blurs;
         self.preview_mode = saved_preview_mode;
@@ -3019,14 +2978,6 @@ impl RenderState {
             let fills = &element.fills;
             self.nested_fills.push(fills.to_vec());
 
-            // A masked group's own shadows are applied to the masked result by
-            // the layer filter below, so descendants must not inherit them.
-            if group.masked {
-                self.nested_shadows.push(Vec::new());
-            } else {
-                self.nested_shadows.push(element.shadows.to_vec());
-            }
-
             if group.masked {
                 // A masked group's blur and shadows are applied as a single
                 // image filter over the whole masked result.
@@ -3156,7 +3107,6 @@ impl RenderState {
                 Type::Frame(_) | Type::Group(_) => {
                     self.nested_fills.pop();
                     self.nested_blurs.pop();
-                    self.nested_shadows.pop();
                     // A masked group pops it after the mask pass instead.
                     if !element.is_masked_group() {
                         self.group_reach.pop();
