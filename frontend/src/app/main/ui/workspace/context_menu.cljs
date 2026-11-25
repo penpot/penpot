@@ -55,6 +55,31 @@
   (dom/prevent-default event)
   (dom/stop-propagation event))
 
+;; Distance in pixels kept between a submenu and the bottom of the window
+(def ^:private submenu-margin 8)
+
+;; Distance in pixels kept between a submenu and the menu it opens from
+(def ^:private submenu-gap 10)
+
+(defn submenu-position
+  "The `{:left :top}` position, in window pixels, of a submenu of size
+  `submenu` (`:width` and `:height`) opened from the entry at `entry`
+  of the menu at `menu` (bounding rects), in a window of size `window`.
+
+  It goes on the right of the menu, or on its left when it would
+  overflow the window, without going past its left edge. It is aligned
+  with the top of the entry, moved up to stay `submenu-margin` above the
+  bottom of the window, and never above `submenu-margin` from its top."
+  [{:keys [menu entry submenu window]}]
+  (let [right (+ (:right menu) submenu-gap)
+        left  (if (> (+ right (:width submenu)) (:width window))
+                (max 0 (- (:left menu) submenu-gap (:width submenu)))
+                right)
+        top   (max submenu-margin
+                   (min (:top entry)
+                        (- (:height window) (:height submenu) submenu-margin)))]
+    {:left left :top top}))
+
 (mf/defc menu-entry*
   {::mf/private true}
   [{:keys [title shortcut shortcut-key on-click on-pointer-enter on-pointer-leave
@@ -74,13 +99,36 @@
            (st/emit! dw/hide-context-menu)
            (when on-click (on-click event))))
 
+        entry-ref (mf/use-ref nil)
+
         on-pointer-enter
         (mf/use-fn
          (fn []
            (mf/set-ref-val! hovering? true)
-           (let [submenu-node (mf/ref-val submenu-ref)]
-             (when (some? submenu-node)
-               (dom/set-css-property! submenu-node "display" "block")))
+           (let [submenu-node (mf/ref-val submenu-ref)
+                 entry-node   (mf/ref-val entry-ref)]
+             ;; Close at once the submenus of the sibling entries, which
+             ;; would otherwise stay open for the delay of their leave
+             (when (some? entry-node)
+               (doseq [node (array-seq (.from js/Array (dom/query-all (dom/get-parent entry-node) ":scope > li > ul")))]
+                 (when-not (identical? node submenu-node)
+                   (dom/set-css-property! node "display" "none"))))
+             (when (and (some? submenu-node) (some? entry-node))
+               ;; Fixed to the window from the entry's position: an
+               ;; absolute submenu would be clipped by its parent
+               ;; submenu, which scrolls, when menus nest more than
+               ;; twice
+               (dom/set-css-property! submenu-node "display" "block")
+               (let [{:keys [left top]}
+                     (submenu-position
+                      {:entry   (dom/get-bounding-rect entry-node)
+                       ;; Beside the menu of the entry, not its entry, which
+                       ;; sits inside the menu's padding and border
+                       :menu    (dom/get-bounding-rect (dom/get-parent entry-node))
+                       :submenu (dom/get-bounding-rect submenu-node)
+                       :window  (dom/get-window-size)})]
+                 (dom/set-css-property! submenu-node "left" (str left "px"))
+                 (dom/set-css-property! submenu-node "top" (str top "px")))))
            (when on-pointer-enter (on-pointer-enter))))
 
         on-pointer-leave
@@ -98,9 +146,7 @@
         set-dom-node
         (mf/use-fn
          (fn [dom]
-           (let [submenu-node (mf/ref-val submenu-ref)]
-             (when (and (some? dom) (some? submenu-node))
-               (dom/set-css-property! submenu-node "top" (str (.-offsetTop dom) "px"))))))]
+           (mf/set-ref-val! entry-ref dom)))]
 
     (mf/use-effect
      (mf/deps on-unmount)
@@ -146,7 +192,7 @@
        (when (> (count children) 1)
          [:ul {:class (stl/css :submenu)
                :ref submenu-ref
-               :style {:display "none" :left 250}
+               :style {:display "none"}
                :on-context-menu prevent-default}
           children])])))
 
