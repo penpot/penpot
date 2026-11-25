@@ -61,6 +61,25 @@
 ;; Distance in pixels kept between a submenu and the menu it opens from
 (def ^:private submenu-gap 10)
 
+(defn submenu-position
+  "The `{:left :top}` position, in window pixels, of a submenu of size
+  `submenu` (`:width` and `:height`) opened from the entry at `entry`
+  of the menu at `menu` (bounding rects), in a window of size `window`.
+
+  It goes on the right of the menu, or on its left when it would
+  overflow the window, without going past its left edge. It is aligned
+  with the top of the entry, moved up to stay `submenu-margin` above the
+  bottom of the window, and never above `submenu-margin` from its top."
+  [{:keys [menu entry submenu window]}]
+  (let [right (+ (:right menu) submenu-gap)
+        left  (if (> (+ right (:width submenu)) (:width window))
+                (max 0 (- (:left menu) submenu-gap (:width submenu)))
+                right)
+        top   (max submenu-margin
+                   (min (:top entry)
+                        (- (:height window) (:height submenu) submenu-margin)))]
+    {:left left :top top}))
+
 (mf/defc menu-entry*
   {::mf/private true}
   [{:keys [title shortcut shortcut-key on-click on-pointer-enter on-pointer-leave
@@ -100,21 +119,14 @@
                ;; submenu, which scrolls, when menus nest more than
                ;; twice
                (dom/set-css-property! submenu-node "display" "block")
-               (let [entry   (dom/get-bounding-rect entry-node)
-                     ;; Beside the menu of the entry, not its entry, which
-                     ;; sits inside the menu's padding and border
-                     menu    (dom/get-bounding-rect (dom/get-parent entry-node))
-                     width   (:width (dom/get-bounding-rect submenu-node))
-                     height  (:height (dom/get-bounding-rect submenu-node))
-                     win-w   (.-innerWidth js/window)
-                     win-h   (.-innerHeight js/window)
-                     right   (+ (:right menu) submenu-gap)
-                     left    (if (> (+ right width) win-w)
-                               (max 0 (- (:left menu) submenu-gap width))
-                               right)
-                     top     (max submenu-margin
-                                  (min (:top entry)
-                                       (- win-h height submenu-margin)))]
+               (let [{:keys [left top]}
+                     (submenu-position
+                      {:entry   (dom/get-bounding-rect entry-node)
+                       ;; Beside the menu of the entry, not its entry, which
+                       ;; sits inside the menu's padding and border
+                       :menu    (dom/get-bounding-rect (dom/get-parent entry-node))
+                       :submenu (dom/get-bounding-rect submenu-node)
+                       :window  (dom/get-window-size)})]
                  (dom/set-css-property! submenu-node "left" (str left "px"))
                  (dom/set-css-property! submenu-node "top" (str top "px")))))
            (when on-pointer-enter (on-pointer-enter))))
