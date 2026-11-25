@@ -59,3 +59,34 @@
     (t/testing "an input takes the tokens of its own types"
       (t/is (= [:spacing] (types :row-gap)))
       (t/is (nil? (types :opacity))))))
+
+(t/deftest pasted-text-test
+  (t/testing "the paste replaces what is selected"
+    (t/is (= "ab-CD-ef" (csu/pasted-text "abXXef" 2 4 "-CD-")))
+    (t/is (= "new" (csu/pasted-text "old" 0 3 "new"))))
+
+  (t/testing "without a selection it goes where the cursor is"
+    (t/is (= "aXb" (csu/pasted-text "ab" 1 1 "X")))
+    (t/is (= "abX" (csu/pasted-text "ab" 2 2 "X")))
+    (t/is (= "X" (csu/pasted-text "" 0 0 "X")))))
+
+(defn- paste-event
+  "A paste event whose clipboard holds `text`. Records the type of data
+  that is asked for in `asked`."
+  [text asked]
+  #js {:clipboardData #js {:getData (fn [type] (reset! asked type) text)}})
+
+(t/deftest converted-paste-value-test
+  (let [input #js {:value "a{x}b" :selectionStart 1 :selectionEnd 4}
+        convert (fn [text] (when (= "css" text) "TOKENSCRIPT"))]
+    (t/testing "the converted plain text of the paste replaces the selection"
+      (let [asked (atom nil)]
+        (t/is (= "aTOKENSCRIPTb" (csu/converted-paste-value convert input (paste-event "css" asked))))
+        (t/is (= "text" @asked))))
+
+    (t/testing "text that is not converted is pasted as it is"
+      (t/is (nil? (csu/converted-paste-value convert input (paste-event "other" (atom nil))))))
+
+    (t/testing "without a conversion or clipboard data nothing is converted"
+      (t/is (nil? (csu/converted-paste-value nil input (paste-event "css" (atom nil)))))
+      (t/is (nil? (csu/converted-paste-value convert input #js {}))))))

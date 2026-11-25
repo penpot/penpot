@@ -371,9 +371,3 @@
   (when-let [converted (tsi/linear-gradient->tokenscript text)]
     (when (not= converted (str/trim text))
       converted)))
-
-(defn pasted-text
-  "Gives the text of a field after `pasted` replaces the selected text,
-  from `start` to `end`."
-  [text start end pasted]
-  (str (subs text 0 start) pasted (subs text end)))

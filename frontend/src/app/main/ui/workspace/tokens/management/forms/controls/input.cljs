@@ -294,8 +294,9 @@
   "Shows a field of a composite token. With `is-tokenscript`, tokenscript
   resolves the field. The fields of gradients need this, because only
   tokenscript resolves gradients. `format-resolved` writes the resolved
-  value in the hint of the field."
-  [{:keys [name tokens token is-tokenscript format-resolved] :rest props}]
+  value in the hint of the field. `convert-paste` gets the text of a
+  paste and gives the text to paste instead, or nil to paste it as it is."
+  [{:keys [name tokens token is-tokenscript format-resolved convert-paste] :rest props}]
 
   (let [form       (mf/use-ctx fc/context)
         input-name name
@@ -329,16 +330,32 @@
         hint
         (deref hint*)
 
-        on-change
+        set-value
         (mf/use-fn
          (mf/deps resolve-stream input-name)
+         (fn [value]
+           (on-composite-input-change form input-name value true)
+           (rx/push! resolve-stream value)))
+
+        on-change
+        (mf/use-fn
+         (mf/deps set-value)
          (fn [event]
-           (let [value (-> event dom/get-target dom/get-input-value)]
-             (on-composite-input-change form input-name value true)
-             (rx/push! resolve-stream value))))
+           (set-value (-> event dom/get-target dom/get-input-value))))
+
+        on-paste
+        (mf/use-fn
+         (mf/deps set-value convert-paste)
+         (fn [event]
+           (let [input (dom/get-target event)]
+             (when-let [value (csu/converted-paste-value convert-paste input event)]
+               (dom/prevent-default event)
+               (dom/set-value! input value)
+               (set-value value)))))
 
         props
         (mf/spread-props props {:on-change on-change
+                                :on-paste on-paste
                                 :default-value value
                                 :variant "comfortable"
                                 :hint-message (:message hint)

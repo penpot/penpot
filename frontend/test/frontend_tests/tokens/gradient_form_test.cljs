@@ -12,7 +12,7 @@
    [app.main.data.workspace.tokens.errors :as wte]
    [app.main.data.workspace.tokens.gradient-form :as wtgf
     :refer [add-stop add-stop-auto converted-paste css->form-value editor-stops
-            marker-stops move-stop pasted-text reorder-stops reverse-stops
+            marker-stops move-stop reorder-stops reverse-stops
             rotate-angle set-stop-opacity with-resolved-colors]]
    [app.main.ui.workspace.tokens.management.forms.controls.input :as controls.input]
    [app.main.ui.workspace.tokens.management.forms.gradient :as gform]
@@ -491,16 +491,6 @@
     (t/is (nil? (converted-paste " linear-gradient(90deg, #ff0000 0%, #0000ff 100%)\n")))
     (t/is (nil? (converted-paste "{gradient.base}")))
     (t/is (nil? (converted-paste "")))))
-
-(t/deftest pasted-text-test
-  (t/testing "the paste replaces what is selected"
-    (t/is (= "ab-CD-ef" (pasted-text "abXXef" 2 4 "-CD-")))
-    (t/is (= "new" (pasted-text "old" 0 3 "new"))))
-
-  (t/testing "without a selection it goes where the cursor is"
-    (t/is (= "aXb" (pasted-text "ab" 1 1 "X")))
-    (t/is (= "abX" (pasted-text "ab" 2 2 "X")))
-    (t/is (= "X" (pasted-text "" 0 0 "X")))))
 
 (t/deftest composite-checks
   (t/testing "a stop referencing the token itself"

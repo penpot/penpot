@@ -27,7 +27,6 @@
    [app.main.ui.workspace.tokens.management.forms.controls :as token.controls]
    [app.main.ui.workspace.tokens.management.forms.generic-form :as generic]
    [app.main.ui.workspace.tokens.management.forms.validators :refer [default-validate-token]]
-   [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
@@ -375,18 +374,12 @@
                    (wtgf/css->form-value reference))
         editable? (some? gradient)
 
-        on-paste
+        convert-paste
         (mf/use-fn
-         (fn [event]
-           (let [input     (dom/get-target event)
-                 converted (wtgf/converted-paste (dom/get-clipboard-text event))]
-             (when (some? converted)
-               (dom/prevent-default event)
-               (reset! converted* converted)
-               (dom/set-input-value input (wtgf/pasted-text (dom/get-value input)
-                                                            (dom/selection-start input)
-                                                            (dom/selection-end input)
-                                                            converted))))))
+         (fn [text]
+           (when-let [converted (wtgf/converted-paste text)]
+             (reset! converted* converted)
+             converted)))
 
         on-edit
         (mf/use-fn
@@ -411,7 +404,7 @@
          :token token
          :tokens tokens
          :is-tokenscript true
-         :on-paste on-paste}]
+         :convert-paste convert-paste}]
 
        ;; The icon of the tab it opens
        (when editable?
