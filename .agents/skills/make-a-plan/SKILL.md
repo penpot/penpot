@@ -23,7 +23,10 @@ stop — this skill needs the build agent to save the plan.
   in place. Once the plan has been implemented and reviewed (post
   `@review-code` findings on committed work), write a new derived plan
   file instead — never rewrite the executed plan. The `planner` skill
-  defines the derived naming (`--review-NN`, `--task-NN`).
+  defines the derived naming (`--review-NN`, `--task-NN`). For another
+  review round on the same implemented work, create the next `--review-NN`
+  sibling from the original plan; never append another review suffix to a
+  review-derived plan.
 - The user says to apply additional review feedback to a still-unimplemented
   plan: apply the agreed changes, flip `Status` to `reviewed`, and append one
   UTC ISO 8601 line to `Review Log`. `review-plan` can also update the plan

@@ -53,6 +53,17 @@ Act as a senior software engineer and perform a thorough code review.
    - **Stop:** end the review without edits. Any direct correction belongs to
      a separate task after the review.
 
+### Do not review a review
+
+Review code changes, not a review report, findings, or a plan derived from
+findings. To verify corrections, follow the procedure below and resume the
+original reviewer against the corrected code and the original findings. If the
+original reviewer cannot be resumed, delegate verification of those corrections
+with the original review context; do not start a fresh review of the review
+report. If the user requests another review round after fixes, review the new
+code changes and keep any resulting plan as the next sibling review round of
+the original plan, not as a child of the previous review plan.
+
 ### Follow-up after implementation
 
 When the user agrees to verify corrections, resume the original reviewer using
