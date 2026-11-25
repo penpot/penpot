@@ -368,12 +368,14 @@
 
 (t/deftest variant-properties-keep-order-past-eight
   (let [names      (mapv #(str "Property " %) (range 1 12))
-        components [{:variant-properties (mapv #(hash-map :name % :value "a") names)}
-                    {:variant-properties (mapv #(hash-map :name % :value "b") names)}]]
+        values     (mapv #(str "Value " %) (range 1 12))
+        components (mapv (fn [value]
+                           {:variant-properties (mapv #(hash-map :name % :value value) names)})
+                         values)]
     (with-redefs [library/get-variant-components (constantly components)]
       (let [proxy (library/variant-proxy plugin-id (uuid/next) (uuid/next))]
         (t/is (= names (vec (.-properties proxy))))
-        (t/is (= ["a" "b"] (vec (.currentValues proxy "Property 9"))))))))
+        (t/is (= values (vec (.currentValues proxy "Property 9"))))))))
 
 (t/deftest variant-rename-property-checks-permission
   (let [plugin-id "test-plugin"
