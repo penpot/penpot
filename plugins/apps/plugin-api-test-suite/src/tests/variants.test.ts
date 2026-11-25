@@ -295,6 +295,28 @@ describe('Variants', () => {
     }
   });
 
+  test('variant properties keep their order past eight', async (ctx) => {
+    const vc = await variantComponent(ctx);
+    const v = vc.variants!;
+    while (v.properties.length < 10) {
+      const before = v.properties.length;
+      v.addProperty();
+      await waitFor(() => v.properties.length > before);
+    }
+    expect(v.properties).toHaveLength(10);
+
+    v.renameProperty(4, 'Middle');
+    await waitFor(() => v.properties[4] === 'Middle');
+    const renamed = [...v.properties];
+    expect(renamed[4]).toBe('Middle');
+    expect(new Set(renamed).size).toBe(10);
+
+    const removed = renamed[8];
+    v.removeProperty(8);
+    await waitFor(() => v.properties.length === 9);
+    expect(v.properties).toEqual(renamed.filter((name) => name !== removed));
+  });
+
   test('addVariant and setVariantProperty mutate the variant', async (ctx) => {
     const vc = await variantComponent(ctx);
     const v = vc.variants;

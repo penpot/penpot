@@ -715,7 +715,7 @@
             (->> (get-variant-components file-id id)
                  (mapcat :variant-properties)
                  (keep :name)
-                 (set)
+                 (distinct)
                  (apply array)))}
 
     :currentValues
@@ -726,7 +726,7 @@
               (->> variant-properties
                    (d/seek #(= (:name %) property)))))
            (keep :value)
-           (set)
+           (distinct)
            (apply array)))
 
     :variantComponents
