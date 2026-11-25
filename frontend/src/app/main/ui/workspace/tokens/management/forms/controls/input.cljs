@@ -324,6 +324,9 @@
             (rx/behavior-subject value)
             (rx/subject)))
 
+        token-sets
+        (csu/use-edit-token-sets (:name token))
+
         hint*
         (mf/use-state {})
 
@@ -374,14 +377,14 @@
                 (mf/spread-props props {:hint-formated true})
                 props)]
 
-    (mf/with-effect [resolve-stream tokens token input-name name token-name is-tokenscript format-resolved]
+    (mf/with-effect [resolve-stream tokens token-sets token input-name name token-name is-tokenscript format-resolved]
       (let [resolve-value (if is-tokenscript
-                            resolve-value-tokenscript
-                            resolve-value)
+                            (partial resolve-value-tokenscript token-sets token token-name)
+                            (partial resolve-value tokens token token-name))
             format-value  (d/nilv format-resolved dwtf/format-token-value)
             subs (->> resolve-stream
                       (rx/debounce 300)
-                      (rx/mapcat (partial resolve-value tokens token token-name))
+                      (rx/mapcat resolve-value)
                       (rx/map (fn [result]
                                 (d/update-when result :error wte/resolve-error-assoc-message)))
 
@@ -490,6 +493,9 @@
             (rx/behavior-subject value)
             (rx/subject)))
 
+        token-sets
+        (csu/use-edit-token-sets (:name token))
+
         hint*
         (mf/use-state {})
 
@@ -522,14 +528,14 @@
           (mf/spread-props props {:hint-formated true})
           props)]
 
-    (mf/with-effect [resolve-stream tokens token input-name index value-subfield token-name is-tokenscript format-resolved]
+    (mf/with-effect [resolve-stream tokens token-sets token input-name index value-subfield token-name is-tokenscript format-resolved]
       (let [resolve-value (if is-tokenscript
-                            resolve-value-tokenscript
-                            resolve-value)
+                            (partial resolve-value-tokenscript token-sets token token-name)
+                            (partial resolve-value tokens token token-name))
             format-value  (d/nilv format-resolved dwtf/format-token-value)
             subs (->> resolve-stream
                       (rx/debounce 300)
-                      (rx/mapcat (partial resolve-value tokens token token-name))
+                      (rx/mapcat resolve-value)
                       (rx/map (fn [result]
                                 (d/update-when result :error wte/resolve-error-assoc-message)))
 
