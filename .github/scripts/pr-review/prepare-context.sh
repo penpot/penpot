@@ -11,7 +11,16 @@ if [[ $GITHUB_EVENT_NAME == issue_comment || $GITHUB_EVENT_NAME == pull_request_
   gh api "$repo/$resource/comments/$comment/reactions" -f content=eyes --silent
 fi
 gh api "$repo/pulls/$PR" --jq '{title,body,base:.base.sha,head:.head.sha}' > "$context/pr.json"
-gh pr diff "$PR" --repo "$GITHUB_REPOSITORY" > "$context/change.diff"
+if ! gh pr diff "$PR" --repo "$GITHUB_REPOSITORY" > "$context/change.diff"; then
+  # GitHub refuses diffs over 20,000 lines. Build the same merge-base diff with git.
+  echo "Building the diff with git."
+  merge_base=$(gh api "$repo/compare/$(jq -r .base "$context/pr.json")...$HEAD_SHA?per_page=1" --jq .merge_base_commit.sha)
+  # Fetch only the two commits in a shallow CI checkout; never make a full clone shallow.
+  depth=()
+  [[ $(git rev-parse --is-shallow-repository) != true ]] || depth=(--depth=1)
+  git fetch --quiet --no-tags "${depth[@]}" "https://github.com/$GITHUB_REPOSITORY.git" "$merge_base" "$HEAD_SHA"
+  git diff "$merge_base" "$HEAD_SHA" > "$context/change.diff"
+fi
 gh api --paginate "$repo/issues/$PR/comments" --jq '.[] | {user:.user.login,body}' > "$context/discussion.jsonl"
 gh api --paginate "$repo/pulls/$PR/reviews" --jq '.[] | {user:.user.login,body,state}' >> "$context/discussion.jsonl"
 gh api --paginate "$repo/pulls/$PR/comments" --jq '.[] | {id,in_reply_to_id,path,line,body}' >> "$context/discussion.jsonl"
