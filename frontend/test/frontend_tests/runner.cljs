@@ -130,6 +130,7 @@
    [frontend-tests.render-wasm.modifiers-test]
    [frontend-tests.render-wasm.process-objects-test]
    [frontend-tests.render-wasm.serialization-test]
+   [frontend-tests.render-wasm.set-objects-async-test]
    [frontend-tests.render-wasm.shape-proxy-test]
    [frontend-tests.render-wasm.stale-text-selrects-test]
    [frontend-tests.render-wasm.text-editor-apply-styles-test]
@@ -375,6 +376,7 @@
    'frontend-tests.render-wasm.fonts-test
    'frontend-tests.render-wasm.process-objects-test
    'frontend-tests.render-wasm.serialization-test
+   'frontend-tests.render-wasm.set-objects-async-test
    'frontend-tests.render-wasm.shape-proxy-test
    'frontend-tests.render-wasm.stale-text-selrects-test
    'frontend-tests.render-wasm.text-editor-apply-styles-test

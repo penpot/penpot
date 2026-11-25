@@ -545,6 +545,11 @@
 
 (defonce pending-render (atom false))
 (defonce shapes-loading? (atom false))
+
+;; Bumped by `clear-canvas`. An async load started under an older value
+;; belongs to a torn-down renderer and stops at its next chunk.
+(defonce ^:private load-generation (atom 0))
+
 (defonce deferred-render? (atom false))
 
 ;; Each `request-render` captures this number. `stop-progressive-render!`
@@ -1846,11 +1851,18 @@
    browser between chunks so the UI stays responsive.
    Returns a promise that resolves when all shapes are processed."
   [shapes render-callback on-shapes-ready]
-  (let [total-shapes (count shapes)]
+  (let [total-shapes (count shapes)
+        generation   @load-generation
+        stale?       #(not= generation @load-generation)]
     (p/create
      (fn [resolve _reject]
        (letfn [(process-next-chunk [index thumbnails-acc full-acc text-font-state-acc]
-                 (if (< index total-shapes)
+                 (cond
+                   ;; The renderer was torn down; the next one has its own load.
+                   (stale?)
+                   (resolve nil)
+
+                   (< index total-shapes)
                    ;; Process one time-budgeted chunk
                    (let [{:keys [thumbnails full text-font-state next-index]}
                          (process-shapes-chunk shapes index
@@ -1860,6 +1872,7 @@
                          (p/then (fn [_]
                                    (process-next-chunk next-index thumbnails full text-font-state)))))
                    ;; All chunks done - finalize
+                   :else
                    (do
                      (perf/end-measure "set-objects")
 
@@ -1913,8 +1926,9 @@
                                    noop-fn
                                    noop-fn
                                    (fn []
-                                     (relayout-after-fonts! shapes text-font-state-acc)
-                                     (request-render "images-loaded")))))))))))]
+                                     (when-not (stale?)
+                                       (relayout-after-fonts! shapes text-font-state-acc)
+                                       (request-render "images-loaded"))))))))))))]
          (process-next-chunk 0 [] [] empty-text-font-state))))))
 
 
@@ -2454,6 +2468,8 @@
    (clear-canvas {}))
   ([{:keys [lose-browser-context?]
      :or {lose-browser-context? true}}]
+   ;; Stop async loads still writing into the renderer torn down here.
+   (swap! load-generation inc)
    (try
      ;; Release GPU objects while the context is still current.
      (free-gpu-resources)
