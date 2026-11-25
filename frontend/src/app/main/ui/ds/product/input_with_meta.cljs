@@ -78,7 +78,9 @@
                                       :on-blur on-stop-edit
                                       :on-key-down handle-key-down})]
 
-    ;; Cleanup: Simulate a blur event
+    ;; Cleanup: simulate a blur only for an edit that never blurred.
+    ;; on-stop-edit clears last-node*, so a finished edit is not replayed
+    ;; when the row unmounts.
     (mf/with-effect [on-blur last-node*]
       (fn []
         (let [input (mf/ref-val last-node*)
