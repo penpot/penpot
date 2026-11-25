@@ -284,10 +284,10 @@
 
 (defn- adjust-shape-flips
   "After some transformations the flip-x/flip-y flags can change we need
-  to check this before adjusting the selrect"
-  [shape points]
-  (let [points' (dm/get-prop shape :points)
-        p0'     (nth points' 0)
+  to check this before adjusting the selrect. `points'` are the points
+  before the transformation and `points` the points after it."
+  [shape points' points]
+  (let [p0'     (nth points' 0)
         p0      (nth points 0)
 
         ;; FIXME: unroll and remove point allocation here
@@ -339,10 +339,10 @@
   "Given a new set of points transformed, set up the rectangle so it keeps
   its properties. We adjust de x,y,width,height and create a custom transform"
   [shape transform-mtx]
-  (let [points    (-> (gco/get-board-points shape)
-                      (gco/transform-points transform-mtx))
+  (let [base      (gco/get-board-points shape)
+        points    (gco/transform-points base transform-mtx)
 
-        shape     (adjust-shape-flips shape points)
+        shape     (adjust-shape-flips shape base points)
 
         center    (gco/points->center points)
         selrect   (calculate-selrect points center)

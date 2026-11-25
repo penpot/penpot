@@ -294,3 +294,29 @@
                                (gsh/transform-points (:points shape) squash)
                                (:points result)))))))
 
+
+(defn- flat-board
+  "A board whose points share the same y, the geometry a transform left
+  when it collapsed a board before #13341. Its selrect keeps the minimum
+  height of 0.01."
+  []
+  (let [board   (create-test-shape :frame {:x 0 :y 0 :width 200 :height 100})
+        selrect (grc/make-rect 0 0 200 0.01)]
+    (assoc board
+           :height 0.01
+           :selrect selrect
+           :points [(gpt/point 0 0) (gpt/point 200 0) (gpt/point 200 0) (gpt/point 0 0)])))
+
+(t/deftest collapsed-board-keeps-points-with-area
+  ;; Regression for https://github.com/penpot/penpot/issues/13341.
+  (let [board  (create-test-shape :frame {:x 0 :y 0 :width 200 :height 100})
+        result (gsh/transform-shape board (ctm/resize-modifiers (gpt/point 1 0) (gpt/point 0 0)))
+        [p0 _ _ p3] (:points result)]
+    (t/is (close? 0.01 (get-in result [:selrect :height])))
+    (t/is (close? (get-in result [:selrect :height]) (gpt/distance p0 p3)))))
+
+(t/deftest flat-board-flipped-vertically-gets-flip-y
+  (let [result (gsh/transform-shape (flat-board)
+                                    (ctm/resize-modifiers (gpt/point 1 -3000) (gpt/point 0 0)))]
+    (t/is (close? 30 (get-in result [:selrect :height])))
+    (t/is (true? (:flip-y result)))))
