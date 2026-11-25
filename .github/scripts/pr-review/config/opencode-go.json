@@ -1,0 +1,18 @@
+{
+  "model": "{env:MODEL}",
+  "small_model": "{env:MODEL}",
+  "enabled_providers": ["opencode-go"],
+  "share": "disabled",
+  "provider": {
+    "opencode-go": {
+      "options": {"apiKey": "{env:OPENCODE_GO_API_KEY}"}
+    }
+  },
+  "instructions": ["{env:RUNNER_TEMP}/review/instructions.md"],
+  "permission": {
+    "edit": "deny",
+    "webfetch": "deny",
+    "external_directory": {"*": "deny", "{env:RUNNER_TEMP}/review/*": "allow"},
+    "bash": "{env:OPENCODE_REVIEW_BASH}"
+  }
+}
