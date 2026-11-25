@@ -200,6 +200,15 @@
       (t/is (= (assoc gradient :stops saved-stops)
                (token-value (assoc form-gradient :reference nil)))))
 
+    (t/testing ".5 is half a percent, as 0.5 is"
+      (t/is (= [".5%" "0.5%"]
+               (->> (-> form-gradient
+                        (assoc-in [:stops 0 :position] ".5")
+                        (assoc-in [:stops 1 :position] "0.5")
+                        (token-value)
+                        (:stops))
+                    (mapv :position)))))
+
     (t/testing "a position that is a reference is kept"
       (t/is (= "{position.end}"
                (-> (assoc-in form-gradient [:stops 1 :position] "{position.end}")
@@ -335,6 +344,12 @@
                (:stops (reverse-stops
                         (assoc value :stops [red {:color "#00ff00" :position "25"} blue]))))))
 
+    (t/testing "a position of .5 is mirrored like any number"
+      (t/is (= [{:color "#0000ff" :position "0"}
+                {:color "#ff0000" :position "99.5"}]
+               (:stops (reverse-stops
+                        (assoc value :stops [(assoc red :position ".5") blue]))))))
+
     (t/testing "with a referenced position the colors swap places"
       (t/is (= [{:color "#0000ff" :position "{position.start}"}
                 {:color "#ff0000" :position "100"}]
@@ -430,11 +445,15 @@
 (t/deftest position-field-hint
   (t/testing "a plain percentage hides what it resolves to"
     (t/is (wtgf/position-hint-hidden? "50"))
-    (t/is (wtgf/position-hint-hidden? " 12.5 ")))
+    (t/is (wtgf/position-hint-hidden? " 12.5 "))
+    (t/is (wtgf/position-hint-hidden? ".5") "a number as tokenscript reads it"))
 
   (t/testing "a reference or an expression shows what it resolves to"
     (t/is (not (wtgf/position-hint-hidden? "{stop.mid}")))
-    (t/is (not (wtgf/position-hint-hidden? "25 + 25")))))
+    (t/is (not (wtgf/position-hint-hidden? "25 + 25"))))
+
+  (t/testing "a percentage written with % is no plain number of the field"
+    (t/is (not (wtgf/position-hint-hidden? "50%")))))
 
 (t/deftest css-gradient
   (t/testing "a linear gradient is the value of the form, as a token holds it"
