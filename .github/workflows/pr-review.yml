@@ -24,6 +24,7 @@ jobs:
         github.event.comment.author_association || github.event.review.author_association) &&
       (startsWith(github.event.comment.body || github.event.review.body, '/claude') ||
        startsWith(github.event.comment.body || github.event.review.body, '/copilot') ||
+       startsWith(github.event.comment.body || github.event.review.body, '/review') ||
        contains(github.event.comment.body || github.event.review.body, '/oc'))
     runs-on: ubuntu-latest
     timeout-minutes: 3
@@ -55,7 +56,7 @@ jobs:
           DEFAULT_CLAUDE_EFFORT: ${{ vars.CLAUDE_EFFORT || 'default' }}
           DEFAULT_COPILOT_MODEL: ${{ vars.COPILOT_MODEL || 'claude-sonnet-5.5' }}
           DEFAULT_COPILOT_EFFORT: ${{ vars.COPILOT_EFFORT || 'default' }}
-          DEFAULT_GO_MODEL: ${{ vars.OPENCODE_MODEL || 'kimi-k3' }}
+          DEFAULT_GO_MODEL: ${{ vars.OPENCODE_MODEL || 'deepseek-v4.1-flash' }}
           DEFAULT_GO_EFFORT: ${{ vars.OPENCODE_EFFORT || 'default' }}
         run: bash .github/scripts/pr-review/parse-request.sh
 

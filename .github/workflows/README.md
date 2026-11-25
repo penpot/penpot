@@ -6,9 +6,9 @@ Start a PR comment with a bare command such as `/claude Review the changed tests
 | --- | --- | --- | --- |
 | Claude Code | `CLAUDE_CODE_OAUTH_TOKEN` from `claude setup-token` (Claude subscription) | `CLAUDE_MODEL`, `CLAUDE_EFFORT` | `/claude-sonnet-5.5-high Review the changed tests.` |
 | Copilot CLI | `COPILOT_GITHUB_TOKEN`, a fine-grained PAT with **Copilot Requests** permission (Copilot seat) | `COPILOT_MODEL`, `COPILOT_EFFORT` | `/copilot-gpt-6.2-sol-high Check the boundary cases.` |
-| OpenCode Go | `OPENCODE_GO_API_KEY` from the OpenCode Go console | `OPENCODE_MODEL`, `OPENCODE_EFFORT` | `/oc-kimi-k3-default Review this PR.` |
+| OpenCode Go | `OPENCODE_GO_API_KEY` from the OpenCode Go console | `OPENCODE_MODEL`, `OPENCODE_EFFORT` | `/oc-deepseek-v4.1-flash-default Review this PR.` |
 
-Set secrets and variables under **Settings → Secrets and variables → Actions**. With the GitHub CLI, use `gh secret set NAME` for a credential or `gh variable set NAME --body VALUE` for a default. Without overrides, Claude and Copilot use Sonnet 5.5 and OpenCode uses Kimi K3, each at its CLI’s default effort. GitHub supplies the token for posting reviews.
+Set secrets and variables under **Settings → Secrets and variables → Actions**. With the GitHub CLI, use `gh secret set NAME` for a credential or `gh variable set NAME --body VALUE` for a default. Without overrides, Claude and Copilot use Sonnet 5.5 and OpenCode uses DeepSeek V4.1 Flash, each at its CLI’s default effort. GitHub supplies the token for posting reviews.
 
 All three reviewers use Serena for code navigation. The CI-only MCP config defines how to start the image’s bundled `serena` in the checked-out project. A shared adapter translates that config for each reviewer. [CI MCP config](../scripts/pr-review/config/mcp.json) · [Adapter](../scripts/pr-review/render-mcp-config.py)
 
@@ -26,7 +26,7 @@ Start with `/copilot` or specify any model enabled for your Copilot seat, such a
 
 ### OpenCode Go
 
-Use `/oc` for a general review or include it in a question, such as `/oc Which test covers this case?`. The command can appear anywhere in the comment and accepts a model and effort, as in `/oc-kimi-k3-default`.
+Use `/oc` for a general review or include it in a question, such as `/oc Which test covers this case?`. The command can appear anywhere in the comment and accepts a model and effort, as in `/oc-deepseek-v4.1-flash-high`. A comment that starts with `/review` runs the same review as `/oc` with the repository defaults.
 
 | Request | OpenCode behavior |
 | --- | --- |

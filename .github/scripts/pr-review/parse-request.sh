@@ -1,11 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
-# Claude and Copilot commands start the comment. OpenCode accepts /oc
+# Claude, Copilot and /review commands start the comment. OpenCode accepts /oc
 # as a whole token anywhere in the body, with or without a model and effort.
 command=$(jq -r '(.comment.body // .review.body // "") |
   if test("^/(claude|copilot)(?=[-\\s]|$)") then capture("^(?<cmd>\\S+)").cmd
+  elif test("^/review(?=\\s|$)") then "/review"
   else [scan("(?:^|\\s)(/oc(?:-[^\\s]+)?)(?=\\s|$)")][0][0] // empty end' "$GITHUB_EVENT_PATH")
 [[ -n $command ]] || exit 0
+# The native OpenCode agent looks for the command as typed, so keep it as the mention.
+mention=$command
+# /review is an alias for /oc with the default OpenCode model and effort.
+[[ $command != /review ]] || command=/oc
 user=$(jq -r '.comment.user.login // .review.user.login' "$GITHUB_EVENT_PATH")
 access=$(gh api "repos/$GITHUB_REPOSITORY/collaborators/$user/permission" --jq .permission)
 case "$access" in admin|maintain|write) ;; *) echo "Write access required."; exit 1 ;; esac
@@ -38,4 +43,4 @@ if [[ $provider == opencode && $GITHUB_EVENT_NAME == issue_comment ]]; then
   native=$(jq -r --arg repo "$GITHUB_REPOSITORY" '.head.repo.full_name == $repo' <<< "$data")
 fi
 printf '%s\n' "provider=$provider" "model=$model" "effort=$effort" "pr=$pr" \
-  "head=$head" "checkout=$checkout" "native=$native" "mention=$command" >> "$GITHUB_OUTPUT"
+  "head=$head" "checkout=$checkout" "native=$native" "mention=$mention" >> "$GITHUB_OUTPUT"
