@@ -8,6 +8,7 @@
   (:require
    [app.common.schema :as sm]
    [app.common.types.color :as cc]
+   [app.common.types.fills :as types.fills]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.colors :as dwc]
@@ -245,3 +246,29 @@
     (t/is (= 2 (count @calls)))
     (t/is (= "#ff0000" (:color (first @calls))))
     (t/is (= image (:image (second @calls))))))
+
+(def ^:private text-image
+  {:id #uuid "00000000-0000-0000-0000-000000000001"
+   :width 100
+   :height 100
+   :mtype "image/png"})
+
+(t/deftest change-text-color-sets-an-image
+  ;; Regression for https://github.com/penpot/penpot/issues/12463.
+  ;; Picking an image in Selected colors for a text left a fill with only
+  ;; :fill-opacity, which the backend rejects as an invalid shape.
+  (let [node   {:text "Night" :fills [{:fill-color "#000000" :fill-opacity 1}]}
+        result (#'dwc/change-text-color {:color "#000000" :opacity 1}
+                                        {:image text-image :opacity 0.9}
+                                        0
+                                        node)]
+    (t/is (= [{:fill-image text-image :fill-opacity 0.9}] (:fills result)))
+    (t/is (sm/validate types.fills/schema:fill (first (:fills result))))))
+
+(t/deftest change-text-color-replaces-an-image
+  (let [node   {:text "Night" :fills [{:fill-image text-image :fill-opacity 1}]}
+        result (#'dwc/change-text-color {:image text-image :opacity 1}
+                                        {:color "#fabada" :opacity 1}
+                                        0
+                                        node)]
+    (t/is (= [{:fill-color "#fabada" :fill-opacity 1}] (:fills result)))))

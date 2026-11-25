@@ -134,6 +134,8 @@
                            :value v}))]
     (into props xf values)))
 
+(declare sanitize-property-value)
+
 (defn path-to-properties
   "From a list of properties and a name with path, assign each token of the
    path as value of a different property"
@@ -141,7 +143,7 @@
    (path-to-properties path properties 0))
   ([path properties min-props]
    (let [cpath          (->> (cpn/split-path path)
-                             (mapv #(or (sanitize-property-text %) "")))
+                             (mapv sanitize-property-value))
          total-props    (max (count cpath) min-props)
          assigned       (mapv #(assoc % :value (nth cpath %2 "")) properties (range))
          ;; Add empty strings to the end of cpath to reach the minimum number of properties
@@ -341,19 +343,23 @@
             taken (map #(nth % idx "") seen)]
         (update-in props [idx :value] #(unique-property-text taken %))))))
 
-(defn sanitize-properties-set
+(defn align-properties-set
   "Sanitize the property vectors of all the variants of one set, given in
    layers-panel order (top first). Every vector gets the same names in the
-   same order, and no two vectors share a value combination. Earlier
-   vectors keep their values."
+   same order. Two vectors may keep the same value combination."
   [props-seq]
   (let [cleaned (mapv sanitize-properties props-seq)
         names   (properties-names cleaned)]
-    (reduce (fn [acc props]
-              (conj acc (unique-values-tuple (align-properties props names)
-                                             (map #(mapv :value %) acc))))
-            []
-            cleaned)))
+    (mapv #(align-properties % names) cleaned)))
+
+(defn sanitize-properties-set
+  "Like `align-properties-set`, and also no two vectors share a value
+   combination. Earlier vectors keep their values."
+  [props-seq]
+  (reduce (fn [acc props]
+            (conj acc (unique-values-tuple props (map #(mapv :value %) acc))))
+          []
+          (align-properties-set props-seq)))
 
 (defn find-index-for-property-name
   "Finds the index of a name in a property map"

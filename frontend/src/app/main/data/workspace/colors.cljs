@@ -642,7 +642,8 @@
     :fill-opacity (:opacity color)
     :fill-color-ref-id (:ref-id color)
     :fill-color-ref-file (:ref-file color)
-    :fill-color-gradient (:gradient color)}))
+    :fill-color-gradient (:gradient color)
+    :fill-image (:image color)}))
 
 (defn- change-text-color
   [old-color new-color index node]

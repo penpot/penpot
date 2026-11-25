@@ -63,6 +63,12 @@
 (def ^:private drifting-geometry-attrs
   #{:x :y :width :height :selrect :points})
 
+;; Constraints where nil means "the default for the shape's placement",
+;; so nil and that default are the same value.
+(def ^:private default-constraints-fns
+  {:constraints-h gsh/default-constraints-h
+   :constraints-v gsh/default-constraints-v})
+
 (defn- position-data-close?
   "Compares text position-data entry by entry: numbers with tolerance,
   every other field (fills, fonts, text) exactly."
@@ -92,6 +98,10 @@
 
           (= :position-data attr)
           (position-data-close? origin-val dest-val)
+
+          (contains? default-constraints-fns attr)
+          (let [default ((get default-constraints-fns attr) dest-shape)]
+            (= (or origin-val default) (or dest-val default)))
 
           :else
           false))))

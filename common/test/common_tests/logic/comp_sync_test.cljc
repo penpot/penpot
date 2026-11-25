@@ -1184,3 +1184,96 @@
       (t/is (= "Group / Subgroup" main-root-name))
       (t/is (= "Group / Subgroup" component-name))
       (t/is (nil? (cfv/validate-file file' {}))))))
+
+(defn- relocate-into
+  "Drags the shape `label` into the board `parent-label`, as the UI does."
+  [file label parent-label]
+  (let [page (thf/current-page file)]
+    (thf/apply-changes file
+                       (cls/generate-relocate (-> (pcb/empty-changes nil)
+                                                  (pcb/with-page-id (:id page))
+                                                  (pcb/with-objects (:objects page)))
+                                              (thi/id parent-label)
+                                              0
+                                              #{(thi/id label)}))))
+
+(defn- constraints-attrs
+  [changes]
+  (into #{} (filter #{:constraints-h :constraints-v}) (changes-attrs changes)))
+
+(defn- file-with-relocated-copy
+  "A component with a copy dragged into a board; the relocation writes
+  explicit default constraints on the copy while the main keeps nil."
+  []
+  (-> (thf/sample-file :file1)
+      (tho/add-simple-component :component1 :main-root :main-child
+                                :child-params {:fills (ths/sample-fills-color :fill-color "#abcdef")})
+      (tho/add-frame :board :x 300 :y 300 :width 200 :height 200)
+      (thc/instantiate-component :component1 :copy-root)
+      (relocate-into :copy-root :board)))
+
+(t/deftest test-sync-keeps-default-constraints-of-relocated-copy
+  (let [;; ==== Setup
+        file         (file-with-relocated-copy)
+
+        ;; ==== Action
+        updated-file (update-fill file :main-child "#fabada")
+        sync-changes (sync-file-changes updated-file)]
+
+    ;; ==== Check
+    (t/is (= :left (:constraints-h (ths/get-shape file :copy-root))))
+    (t/is (nil? (:constraints-h (ths/get-shape file :main-root))))
+    (t/is (contains? (changes-attrs sync-changes) :fills))
+    (t/is (= #{} (constraints-attrs sync-changes)))))
+
+(t/deftest test-no-sync-changes-for-nested-copy-with-default-constraints
+  (let [;; ==== Setup
+        file         (-> (file-with-relocated-copy)
+                         (tho/add-frame :main2-root :x 600 :y 0 :width 300 :height 300)
+                         (relocate-into :copy-root :main2-root)
+                         (thc/make-component :component2 :main2-root)
+                         (thc/instantiate-component :component2 :copy2-root))
+
+        ;; ==== Action
+        updated-file (move-shapes file [:main-root :main-child] (gpt/point 1 0))
+        changes1     (sync-file-changes updated-file)
+        file'        (thf/apply-changes updated-file changes1)
+        changes2     (cll/generate-sync-file-changes (pcb/empty-changes)
+                                                     nil
+                                                     :components
+                                                     (:id file')
+                                                     (thi/id :component2)
+                                                     (:id file')
+                                                     {(:id file') file'}
+                                                     (:id file'))]
+
+    ;; ==== Check
+    (t/is (= #{} (constraints-attrs changes1)))
+    (t/is (empty? (:redo-changes changes2)))))
+
+(t/deftest test-sync-constraints-changed-inside-main
+  ;; An explicit constraint on the main is a real change and must sync.
+  (let [;; ==== Setup
+        file         (-> (thf/sample-file :file1)
+                         (tho/add-frame :main-root :x 0 :y 0 :width 100 :height 100)
+                         (tho/add-rect :main-child :parent-label :main-root :x 10 :y 10
+                                       :width 10 :height 10)
+                         (thc/make-component :component1 :main-root)
+                         (thc/instantiate-component :component1 :copy-root
+                                                    :children-labels [:copy-child]))
+        page         (thf/current-page file)
+
+        ;; ==== Action
+        updated-file (thf/apply-changes
+                      file
+                      (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                                  #{(thi/id :main-child)}
+                                                  #(assoc % :constraints-h :right)
+                                                  (:objects page)
+                                                  {}))
+        sync-changes (sync-file-changes updated-file)
+        file'        (thf/apply-changes updated-file sync-changes)]
+
+    ;; ==== Check
+    (t/is (contains? (constraints-attrs sync-changes) :constraints-h))
+    (t/is (= :right (:constraints-h (ths/get-shape file' :copy-child))))))

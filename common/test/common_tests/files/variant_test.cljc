@@ -109,6 +109,17 @@
              (:variant-properties (thc/get-component file' :c02))))
     (t/is (= "ab (1)" (:variant-name (ths/get-shape file' :m02))))))
 
+(t/deftest test-get-variant-members-props-returns-the-top-member-first
+  ;; :shapes of the board is [m02 m01], so m01 is the top variant.
+  (let [file      (variant-file)
+        page      (thf/current-page file)
+        container (ths/get-shape file :v01)
+        members   (cfv/get-variant-members-props (:data file) (:objects page) container identity)]
+
+    (t/is (= [(thi/id :c01) (thi/id :c02)] (mapv :component-id members)))
+    (t/is (= (:variant-properties (thc/get-component file :c01))
+             (:props (first members))))))
+
 (t/deftest test-sanitize-variant-component
   (let [file      (-> (variant-file)
                       (thc/update-component :c01 {:variant-properties [{:name "Size=Big" :value "a,b"}]}))

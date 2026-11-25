@@ -20,6 +20,7 @@
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
    [app.common.schema :as sm]
+   [app.common.svg :as csvg]
    [app.common.transit :as t]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
@@ -912,7 +913,11 @@
     (ptk/reify ::paste-shapes
       ptk/WatchEvent
       (watch [it state _]
-        (let [file-id      (:current-file-id state)
+        (let [;; Clipboard data skips the file migrations: shapes copied
+              ;; from an older version can hold camelCase svg attrs that
+              ;; the closed schema rejects, which would cancel the paste.
+              pdata        (update pdata :objects d/update-vals csvg/normalize-shape)
+              file-id      (:current-file-id state)
               page-id      (:current-page-id state)
               page         (dsh/lookup-page state file-id page-id)
               page-objects (:objects page)]
