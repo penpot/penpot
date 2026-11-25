@@ -26,6 +26,7 @@ use std::collections::HashSet;
 use std::rc::Rc;
 use unicode_segmentation::UnicodeSegmentation;
 
+use super::text_presentation::{font_families_for, split_presentation_runs, Presentation};
 use super::FontFamily;
 use crate::math::Point;
 use crate::shapes::{self, merge_fills, Shape, Type, VerticalAlign};
@@ -1002,69 +1003,75 @@ impl TextContent {
             let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
             let mut has_text = false;
             for span in paragraph.children() {
-                let text_style = if let Some((layer, image_fill)) = opaque_image_layer {
-                    let mut style = span.to_style(
-                        &self.bounds(),
-                        fallback_fonts,
-                        false,
-                        paragraph.line_height(),
-                    );
-                    let mut paint = paint::Paint::default();
-                    match span.fills_from_bottom(layer) {
-                        Some(shapes::Fill::Image(img)) if img == image_fill => {
-                            paint.set_color(skia::Color::BLACK);
-                            paint.set_alpha(255);
-                        }
-                        _ => {
-                            paint.set_color(skia::Color::TRANSPARENT);
-                        }
-                    }
-                    style.set_foreground_paint(&paint);
-                    style
-                } else if let (Some(layer), Some(skip)) = (fill_layer, skip_image_ids) {
-                    let skip_span = matches!(
-                        span.fills_from_bottom(layer),
-                        Some(shapes::Fill::Image(img)) if skip.contains(&img.id())
-                    );
-                    if skip_span {
-                        let mut style = span.to_style(
-                            &self.bounds(),
-                            fallback_fonts,
-                            false,
-                            paragraph.line_height(),
-                        );
-                        let mut paint = paint::Paint::default();
-                        paint.set_color(skia::Color::TRANSPARENT);
-                        style.set_foreground_paint(&paint);
-                        style
-                    } else {
-                        let remove_alpha =
-                            opaque || (use_shadow.unwrap_or(false) && !span.is_transparent());
-                        span.to_style_with_paint(
-                            &self.bounds(),
-                            fallback_fonts,
-                            remove_alpha,
-                            paragraph.line_height(),
-                            fill_layer,
-                        )
-                    }
-                } else {
-                    let remove_alpha =
-                        opaque || (use_shadow.unwrap_or(false) && !span.is_transparent());
-                    span.to_style_with_paint(
-                        &self.bounds(),
-                        fallback_fonts,
-                        remove_alpha,
-                        paragraph.line_height(),
-                        fill_layer,
-                    )
-                };
                 let text: String = span.apply_text_transform();
                 if !text.is_empty() {
                     has_text = true;
                 }
-                builder.push_style(&text_style);
-                add_text_with_tabs(&mut builder, &text, span.font_size);
+                push_text_with_presentation_styles(
+                    &mut builder,
+                    &text,
+                    span,
+                    fallback_fonts,
+                    || {
+                        if let Some((layer, image_fill)) = opaque_image_layer {
+                            let mut style = span.to_style(
+                                &self.bounds(),
+                                fallback_fonts,
+                                false,
+                                paragraph.line_height(),
+                            );
+                            let mut paint = paint::Paint::default();
+                            match span.fills_from_bottom(layer) {
+                                Some(shapes::Fill::Image(img)) if img == image_fill => {
+                                    paint.set_color(skia::Color::BLACK);
+                                    paint.set_alpha(255);
+                                }
+                                _ => {
+                                    paint.set_color(skia::Color::TRANSPARENT);
+                                }
+                            }
+                            style.set_foreground_paint(&paint);
+                            style
+                        } else if let (Some(layer), Some(skip)) = (fill_layer, skip_image_ids) {
+                            let skip_span = matches!(
+                                span.fills_from_bottom(layer),
+                                Some(shapes::Fill::Image(img)) if skip.contains(&img.id())
+                            );
+                            if skip_span {
+                                let mut style = span.to_style(
+                                    &self.bounds(),
+                                    fallback_fonts,
+                                    false,
+                                    paragraph.line_height(),
+                                );
+                                let mut paint = paint::Paint::default();
+                                paint.set_color(skia::Color::TRANSPARENT);
+                                style.set_foreground_paint(&paint);
+                                style
+                            } else {
+                                let remove_alpha = opaque
+                                    || (use_shadow.unwrap_or(false) && !span.is_transparent());
+                                span.to_style_with_paint(
+                                    &self.bounds(),
+                                    fallback_fonts,
+                                    remove_alpha,
+                                    paragraph.line_height(),
+                                    fill_layer,
+                                )
+                            }
+                        } else {
+                            let remove_alpha =
+                                opaque || (use_shadow.unwrap_or(false) && !span.is_transparent());
+                            span.to_style_with_paint(
+                                &self.bounds(),
+                                fallback_fonts,
+                                remove_alpha,
+                                paragraph.line_height(),
+                                fill_layer,
+                            )
+                        }
+                    },
+                );
             }
             if !has_text {
                 builder.add_text(" ");
@@ -1810,6 +1817,34 @@ pub fn add_text_with_tabs(builder: &mut ParagraphBuilder, text: &str, font_size:
     }
 }
 
+/// Push `text` as presentation runs. `make_style` supplies paint/size; this
+/// overrides `font_families` per run (text vs emoji).
+pub fn push_text_with_presentation_styles<F>(
+    builder: &mut ParagraphBuilder,
+    text: &str,
+    span: &TextSpan,
+    fallback_fonts: &HashSet<String>,
+    mut make_style: F,
+) where
+    F: FnMut() -> skia::textlayout::TextStyle,
+{
+    let primary = format!("{}", span.font_family);
+    let default = default_font();
+    for (kind, run) in split_presentation_runs(text) {
+        let mut style = make_style();
+        let families = font_families_for(
+            kind,
+            primary.clone(),
+            default.clone(),
+            DEFAULT_EMOJI_FONT,
+            fallback_fonts,
+        );
+        style.set_font_families(&families);
+        builder.push_style(&style);
+        add_text_with_tabs(builder, &run, span.font_size);
+    }
+}
+
 /// Filter control characters below U+0020, preserving tabs and line breaks.
 /// Browser-dependent: Firefox drops them, others replace with space.
 fn process_ignored_chars(text: &str, browser: u8) -> String {
@@ -1953,13 +1988,15 @@ impl TextSpan {
         // Trick to avoid showing the text decoration
         style.set_decoration_thickness_multiplier(0.0);
 
-        let mut font_families = vec![
+        // Text presentation stack; emoji runs override this in
+        // push_text_with_presentation_styles.
+        let font_families = font_families_for(
+            Presentation::Text,
             self.serialized_font_family(),
             default_font(),
-            DEFAULT_EMOJI_FONT.to_string(),
-        ];
-
-        font_families.extend(fallback_fonts.iter().cloned());
+            DEFAULT_EMOJI_FONT,
+            fallback_fonts,
+        );
         style.set_font_families(&font_families);
         style.set_font_size(self.font_size);
         style.set_letter_spacing(self.letter_spacing);
