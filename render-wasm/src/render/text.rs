@@ -3,11 +3,11 @@ use crate::{
     error::Result,
     math::{Point, Rect},
     shapes::{
-        add_text_with_tabs, add_trailing_space_anchor, calculate_text_layout_data, set_paint_fill,
-        vertical_align_offset, ListMarker, ListStyleType, Paragraph as TextParagraph,
-        ParagraphBuilderGroup, ParagraphLayout, Stroke, StrokeKind, TextContent,
-        TextDecorationSegment, TextDirection, LIST_MARKER_CENTER_FACTOR, LIST_MARKER_GAP_FACTOR,
-        LIST_MARKER_MIN_RADIUS, LIST_MARKER_RADIUS_FACTOR,
+        add_trailing_space_anchor, calculate_text_layout_data, push_text_with_presentation_styles,
+        set_paint_fill, vertical_align_offset, ListMarker, ListStyleType,
+        Paragraph as TextParagraph, ParagraphBuilderGroup, ParagraphLayout, Stroke, StrokeKind,
+        TextContent, TextDecorationSegment, TextDirection, LIST_MARKER_CENTER_FACTOR,
+        LIST_MARKER_GAP_FACTOR, LIST_MARKER_MIN_RADIUS, LIST_MARKER_RADIUS_FACTOR,
     },
     utils::{get_fallback_fonts, get_font_collection},
 };
@@ -52,14 +52,10 @@ pub fn stroke_paragraph_builder_group_from_text(
                 });
                 let stroke_paint = stroke_paint.clone();
                 let remove_alpha = use_shadow.unwrap_or(false) && !span.is_transparent();
-                let stroke_style = span.to_stroke_style(
-                    &stroke_paint,
-                    fallback_fonts,
-                    remove_alpha,
-                    paragraph.line_height(),
-                );
-                builder.push_style(&stroke_style);
-                add_text_with_tabs(builder, &text, span.font_size);
+                let line_height = paragraph.line_height();
+                push_text_with_presentation_styles(builder, &text, span, fallback_fonts, || {
+                    span.to_stroke_style(&stroke_paint, fallback_fonts, remove_alpha, line_height)
+                });
             }
         }
 

@@ -28,6 +28,7 @@ mod svg_attrs;
 mod svgraw;
 mod text;
 pub mod text_paths;
+mod text_presentation;
 mod transform;
 
 pub use blend::*;

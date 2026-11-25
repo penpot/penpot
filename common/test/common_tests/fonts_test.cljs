@@ -35,3 +35,15 @@
 (t/deftest plain-text-does-not-use-noto-sans-math
   (t/is (not (contains? (fallback-font-ids "Hello world") "gfont-noto-sans-math")))
   (t/is (not (contains? (fallback-font-ids "★ ☀") "gfont-noto-sans-math"))))
+
+(t/deftest text-default-symbols-do-not-count-as-emoji
+  (doseq [text ["♥" "☀" "✔" "★ ☀" "Hello" "❤"]]
+    (t/is (not (cfnt/contains-emoji? text)))))
+
+(t/deftest emoji-presentation-counts-as-emoji
+  (doseq [text ["❤️" "♥️" "✅" "⚡️" "😀"]]
+    (t/is (cfnt/contains-emoji? text))))
+
+(t/deftest text-default-symbols-still-use-symbol-fallbacks
+  (t/is (contains? (fallback-font-ids "♥") "gfont-noto-sans-symbols"))
+  (t/is (contains? (fallback-font-ids "☀") "gfont-noto-sans-symbols")))
