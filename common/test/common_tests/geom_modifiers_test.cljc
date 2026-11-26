@@ -245,3 +245,74 @@
                                           :layout-item-max-h 30})]
       (t/is (mth/close? 70 (:width board)))
       (t/is (mth/close? 80 (:height board))))))
+
+(defn- auto-wrap-board-after-layout
+  "The board `:frame1`, wrapping and sized by its content on both axes,
+  and the positions of its two children relative to it, once its layout
+  runs again: 80 x 20 children in a row, 20 x 80 ones in a column."
+  [flex-dir frame-params]
+  (let [row?     (= flex-dir :row)
+        [w h]    (if row? [80 20] [20 80])
+        file     (-> (thf/sample-file :file1)
+                     (add-flex-frame :frame1 (merge flex-layout-defaults
+                                                    {:layout-flex-dir flex-dir
+                                                     :layout-wrap-type :wrap
+                                                     :layout-item-h-sizing :auto
+                                                     :layout-item-v-sizing :auto}
+                                                    frame-params))
+                     (add-rect-child :rect1 :frame1 {:width w :height h})
+                     (add-rect-child :rect2 :frame1 {:width w :height h}))
+        objects  (:objects (thf/current-page file))
+        result   (gm/set-objects-modifiers {(thi/id :rect1) {:modifiers (ctm/move-modifiers (gpt/point 0 1))}}
+                                           objects)
+        after    (fn [label]
+                   (let [id (thi/id label)]
+                     (gsh/transform-shape (get objects id)
+                                          (get-in result [id :modifiers]))))
+        board    (after :frame1)
+        position (fn [label]
+                   (let [child (after label)]
+                     [(- (:x child) (:x board)) (- (:y child) (:y board))]))]
+    {:board    board
+     :children (sort [(position :rect1) (position :rect2)])}))
+
+(defn- close-positions?
+  [expected actual]
+  (and (= (count expected) (count actual))
+       (every? true? (map (fn [[ex ey] [x y]] (and (mth/close? ex x) (mth/close? ey y)))
+                          expected actual))))
+
+(t/deftest auto-sized-board-wraps-in-its-maximum-main-size
+  (t/testing "A row wraps in its maximum width, its height follows the lines"
+    (let [{:keys [board children]} (auto-wrap-board-after-layout :row {:layout-item-max-w 100})]
+      (t/is (mth/close? 100 (:width board)))
+      (t/is (mth/close? 40 (:height board)))
+      (t/is (close-positions? [[0 0] [0 20]] children))))
+
+  (t/testing "A column wraps in its maximum height, its width follows the lines"
+    (let [{:keys [board children]} (auto-wrap-board-after-layout :column {:layout-item-max-h 100})]
+      (t/is (mth/close? 40 (:width board)))
+      (t/is (mth/close? 100 (:height board)))
+      (t/is (close-positions? [[0 0] [20 0]] children))))
+
+  (t/testing "The height measured on the lines keeps its own limits"
+    (let [{:keys [board]} (auto-wrap-board-after-layout :row {:layout-item-max-w 100
+                                                              :layout-item-max-h 30})]
+      (t/is (mth/close? 100 (:width board)))
+      (t/is (mth/close? 30 (:height board))))
+    (let [{:keys [board children]} (auto-wrap-board-after-layout :row {:layout-item-max-w 100
+                                                                       :layout-item-min-h 60
+                                                                       :layout-align-content :start})]
+      (t/is (mth/close? 100 (:width board)))
+      (t/is (mth/close? 60 (:height board)))
+      (t/is (close-positions? [[0 0] [0 20]] children)))
+    (t/testing "the lines stretch in the minimum height"
+      (let [{:keys [children]} (auto-wrap-board-after-layout :row {:layout-item-max-w 100
+                                                                   :layout-item-min-h 60})]
+        (t/is (close-positions? [[0 0] [0 30]] children)))))
+
+  (t/testing "Without a maximum, the children stay on one line"
+    (let [{:keys [board children]} (auto-wrap-board-after-layout :row {})]
+      (t/is (mth/close? 160 (:width board)))
+      (t/is (mth/close? 20 (:height board)))
+      (t/is (close-positions? [[0 0] [80 0]] children)))))
