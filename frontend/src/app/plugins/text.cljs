@@ -96,15 +96,21 @@
   ;; A range without ruby reports null to plugins.
   (assoc cjk/span-attr-defaults :ruby nil))
 
+(defn- span-cjk-value
+  "Value of the CJK span `attr` of text node `node`, or its default when
+   unset. A blank reading is no reading."
+  [node attr]
+  (let [value (get node attr (get cjk-range-defaults attr))]
+    (if (= attr :ruby) (not-empty value) value)))
+
 (defn- shape-cjk-value
   "Value of a CJK span `attr` over a whole text shape proxy, with unset
    spans at their default: 'mixed' when spans differ."
   [shape-proxy attr]
-  (let [default (get cjk-range-defaults attr)
-        values  (->> (-> shape-proxy u/proxy->shape :content)
-                     (txt/node-seq txt/is-text-node?)
-                     (map #(get % attr default)))]
-    (if (seq values) (u/mixed-value values) default)))
+  (let [values (->> (-> shape-proxy u/proxy->shape :content)
+                    (txt/node-seq txt/is-text-node?)
+                    (map #(span-cjk-value % attr)))]
+    (if (seq values) (u/mixed-value values) (get cjk-range-defaults attr))))
 
 (defn- whole-shape-value
   "Value of a whole-shape paragraph `attr` (writing mode, orientation): the
@@ -115,10 +121,9 @@
 (defn- range-cjk-value
   "Value of a CJK span `attr` over a text range proxy's characters."
   [range-proxy start end attr]
-  (let [default (get cjk-range-defaults attr)]
-    (->> (-> range-proxy u/proxy->shape :content (content-range->text+styles start end))
-         (map #(get % attr default))
-         (u/mixed-value))))
+  (->> (-> range-proxy u/proxy->shape :content (content-range->text+styles start end))
+       (map #(span-cjk-value % attr))
+       (u/mixed-value)))
 
 (defn- range-paragraph-value
   "Value of a paragraph `attr` over the paragraphs a text range proxy

@@ -315,6 +315,23 @@
                   (mf/element fo-text/text-shape* #js {:shape text :grow-type :fixed}))]
       (is (str/includes? markup "font-feature-settings:&quot;palt&quot;")))))
 
+(deftest text-markup-marks-each-paragraph-language
+  (testing "generated markup tags each paragraph with its language"
+    (let [content (update-in ruby-text-content [:children 0 :children] conj
+                             {:type "paragraph"
+                              :children [{:text "Hi" :font-size "20"}]})
+          text    (text-shape content)
+          markup  (html/generate-markup (objects text) [text])]
+      (is (re-find #"<p[^>]* lang=\"ja\"" markup))
+      (is (= 1 (count (re-seq #" lang=" markup)))))))
+
+(deftest foreign-object-text-marks-each-paragraph-language
+  (testing "browser/foreignObject render tags each paragraph with its language"
+    (let [content (assoc-in palt-text-content [:children 0 :children 0 :text-language] "zh-Hant-HK")
+          markup  (rds/renderToStaticMarkup
+                   (mf/element fo-text/text-shape* #js {:shape (text-shape content) :grow-type :fixed}))]
+      (is (re-find #"<p[^>]* lang=\"zh-Hant-HK\"" markup)))))
+
 (deftest text-markup-emits-ruby-annotations
   (testing "generated text markup keeps ruby annotations beside the base text"
     (let [text   (text-shape ruby-text-content)

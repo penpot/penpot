@@ -470,4 +470,288 @@ describe('Text', () => {
     t.characters = 'first line\nsecond line';
     expect(t.characters).toBe('first line\nsecond line');
   });
+
+  describe('CJK', () => {
+    test('a new text reports the CJK defaults', (ctx) => {
+      const t = text(ctx, '日本語');
+      expect(t.lang).toBeNull();
+      expect(t.writingMode).toBe('horizontal-tb');
+      expect(t.textOrientation).toBe('mixed');
+      expect(t.lineAdjustment).toBe('push-in-first');
+      expect(t.textCombineUpright).toBe('none');
+      expect(t.textEmphasis).toBe('none');
+      expect(t.textEmphasisPosition).toBe('auto');
+      expect(t.textUnderlinePosition).toBe('auto');
+      expect(t.warichu).toBe('none');
+      expect(t.fontFeatures).toBe('none');
+      expect(t.annotationClearance).toBe('none');
+      expect(t.ruby).toBeNull();
+      expect(t.rubyHidden).toBe(false);
+      expect(t.rubySize).toBe('half');
+      expect(t.rubyAlign).toBe('space-around');
+      expect(t.rubyOverhang).toBe('auto');
+      expect(t.rubyZhuyin).toBe(false);
+      expect(t.rubySide).toBe('over');
+    });
+
+    test('a new range reports the CJK defaults', (ctx) => {
+      const range = text(ctx, '日本語').getRange(0, 2);
+      expect(range.lang).toBeNull();
+      expect(range.textCombineUpright).toBe('none');
+      expect(range.textEmphasis).toBe('none');
+      expect(range.textEmphasisPosition).toBe('auto');
+      expect(range.textUnderlinePosition).toBe('auto');
+      expect(range.warichu).toBe('none');
+      expect(range.fontFeatures).toBe('none');
+      expect(range.annotationClearance).toBe('none');
+      expect(range.ruby).toBeNull();
+      expect(range.rubyHidden).toBe(false);
+      expect(range.rubySize).toBe('half');
+      expect(range.rubyAlign).toBe('space-around');
+      expect(range.rubyOverhang).toBe('auto');
+      expect(range.rubyZhuyin).toBe(false);
+      expect(range.rubySide).toBe('over');
+    });
+
+    test('lang round-trips and is removed with an empty string or null', (ctx) => {
+      const t = text(ctx, '香港的夜景');
+      t.lang = 'zh-Hant-HK';
+      expect(t.lang).toBe('zh-Hant-HK');
+      t.lang = '';
+      expect(t.lang).toBeNull();
+      t.lang = 'ja';
+      t.lang = null;
+      expect(t.lang).toBeNull();
+    });
+
+    test('lang rejects a value that is not a language tag', (ctx) => {
+      const t = text(ctx, '日本語');
+      expect(() => {
+        t.lang = 'not a tag';
+      }).toThrow();
+      expect(() => {
+        t.getRange(0, 1).lang = 'ja_JP';
+      }).toThrow();
+      expect(t.lang).toBeNull();
+    });
+
+    test('range lang applies to the paragraphs it touches', (ctx) => {
+      const t = text(ctx, '日本\n한국\n中文');
+      t.getRange(3, 5).lang = 'ko';
+      expect(t.getRange(0, 2).lang).toBeNull();
+      expect(t.getRange(3, 4).lang).toBe('ko');
+      expect(t.getRange(4, 5).lang).toBe('ko');
+      expect(t.lang).toBe('mixed');
+      t.getRange(0, t.characters.length).lang = 'ja';
+      expect(t.lang).toBe('ja');
+    });
+
+    test('range align and direction apply to the paragraphs they touch', (ctx) => {
+      const t = text(ctx, '日本語の文\n二行目');
+      t.getRange(1, 2).align = 'right';
+      t.getRange(1, 2).direction = 'rtl';
+      expect(t.getRange(3, 5).align).toBe('right');
+      expect(t.getRange(3, 5).direction).toBe('rtl');
+      expect(t.getRange(6, 8).align).not.toBe('right');
+      expect(t.align).toBe('mixed');
+    });
+
+    test('align accepts distribute on texts and ranges', (ctx) => {
+      const t = text(ctx, '均等割付\n二行目');
+      t.align = 'distribute';
+      expect(t.align).toBe('distribute');
+      t.getRange(5, 7).align = 'left';
+      expect(t.getRange(0, 2).align).toBe('distribute');
+      expect(t.getRange(5, 7).align).toBe('left');
+    });
+
+    test('Chinese annotation properties round-trip on texts', (ctx) => {
+      const t = text(ctx, '美');
+      t.lang = 'zh-Hant-TW';
+      t.textEmphasisPosition = 'under-left';
+      t.textUnderlinePosition = 'left';
+      t.ruby = 'ㄇㄟˇ';
+      t.rubyZhuyin = true;
+      t.rubyHidden = true;
+      expect(t.textEmphasisPosition).toBe('under-left');
+      expect(t.textUnderlinePosition).toBe('left');
+      expect(t.ruby).toBe('ㄇㄟˇ');
+      expect(t.rubyZhuyin).toBe(true);
+      expect(t.rubyHidden).toBe(true);
+    });
+
+    test('Chinese annotation properties round-trip on ranges', (ctx) => {
+      const t = text(ctx, '香港的夜景很美');
+      t.lang = 'zh-Hant-HK';
+      const base = t.getRange(6, 7);
+      base.ruby = 'ㄇㄟˇ';
+      base.rubyZhuyin = true;
+      base.rubyHidden = true;
+      const marks = t.getRange(3, 5);
+      marks.textEmphasis = 'filled-dot';
+      marks.textEmphasisPosition = 'over-right';
+      marks.textUnderlinePosition = 'under-right';
+      expect(base.ruby).toBe('ㄇㄟˇ');
+      expect(base.rubyZhuyin).toBe(true);
+      expect(base.rubyHidden).toBe(true);
+      expect(marks.textEmphasisPosition).toBe('over-right');
+      expect(marks.textUnderlinePosition).toBe('under-right');
+      expect(t.getRange(0, 2).rubyZhuyin).toBe(false);
+    });
+
+    test('every textCombineUpright value round-trips', (ctx) => {
+      const t = text(ctx, '令和7年');
+      for (const value of [
+        'all',
+        'digits',
+        'digits2',
+        'digits3',
+        'none',
+      ] as const) {
+        t.textCombineUpright = value;
+        expect(t.textCombineUpright).toBe(value);
+        t.getRange(2, 3).textCombineUpright = value;
+        expect(t.getRange(2, 3).textCombineUpright).toBe(value);
+      }
+    });
+
+    test('a span property set on part of a text reads mixed', (ctx) => {
+      const t = text(ctx, '日本語の文');
+      t.getRange(0, 3).textEmphasis = 'open-sesame';
+      t.getRange(0, 3).fontFeatures = 'palt';
+      t.getRange(0, 3).rubySize = 'third';
+      expect(t.textEmphasis).toBe('mixed');
+      expect(t.fontFeatures).toBe('mixed');
+      expect(t.rubySize).toBe('mixed');
+      expect(t.getRange(0, 5).textEmphasis).toBe('mixed');
+      expect(t.getRange(3, 5).textEmphasis).toBe('none');
+    });
+
+    test('textOrientation stays a value, not a mixed report', (ctx) => {
+      const t = text(ctx, '縦書き\n二行目');
+      t.writingMode = 'vertical-rl';
+      t.textOrientation = 'upright';
+      expect(t.writingMode).toBe('vertical-rl');
+      expect(t.textOrientation).toBe('upright');
+      t.textOrientation = 'mixed';
+      expect(t.textOrientation).toBe('mixed');
+    });
+
+    test('a reading on part of a text makes the text ruby mixed', (ctx) => {
+      const t = text(ctx, '紅葉の山');
+      t.getRange(0, 2).ruby = 'もみじ';
+      expect(t.getRange(0, 2).ruby).toBe('もみじ');
+      expect(t.getRange(1, 2).ruby).toBe('もみじ');
+      expect(t.getRange(2, 4).ruby).toBeNull();
+      expect(t.ruby).toBe('mixed');
+    });
+
+    test('several readings can be added one after another', (ctx) => {
+      const t = text(ctx, '紅葉の山');
+      t.getRange(0, 2).ruby = 'もみじ';
+      t.getRange(3, 4).ruby = 'やま';
+      expect(t.getRange(0, 2).ruby).toBe('もみじ');
+      expect(t.getRange(3, 4).ruby).toBe('やま');
+      expect(t.getRange(2, 3).ruby).toBeNull();
+    });
+
+    test('a reading is changed or removed on the range it covers', (ctx) => {
+      const t = text(ctx, '日本の山');
+      const base = t.getRange(0, 2);
+      base.ruby = 'にっぽん';
+      base.ruby = 'にほん';
+      expect(base.ruby).toBe('にほん');
+      base.ruby = null;
+      expect(base.ruby).toBeNull();
+
+      const whole = text(ctx, '日本');
+      whole.ruby = 'にほん';
+      expect(whole.ruby).toBe('にほん');
+      whole.ruby = '';
+      expect(whole.ruby).toBeNull();
+    });
+
+    test('a reading or warichu note over several spans is rejected', (ctx) => {
+      const t = text(ctx, '日本語の文');
+      t.getRange(2, 3).textEmphasis = 'filled-dot';
+      expect(() => {
+        t.ruby = 'にほんごのぶん';
+      }).toThrow('single text span');
+      expect(() => {
+        t.warichu = 'warichu';
+      }).toThrow('single text span');
+      expect(() => {
+        t.getRange(0, 4).ruby = 'にほんごの';
+      }).toThrow('single text span');
+      expect(() => {
+        t.getRange(1, 3).warichu = 'warichu';
+      }).toThrow('single text span');
+      expect(t.ruby).toBeNull();
+      expect(t.warichu).toBe('none');
+    });
+
+    test('removing warichu or a reading is allowed over several spans', (ctx) => {
+      const t = text(ctx, '日本語の文');
+      t.getRange(0, 2).warichu = 'warichu';
+      t.getRange(3, 5).ruby = 'のぶん';
+      t.warichu = 'none';
+      t.ruby = null;
+      expect(t.warichu).toBe('none');
+      expect(t.ruby).toBeNull();
+    });
+
+    test('assigning characters drops the readings and notes', (ctx) => {
+      const t = text(ctx, '紅葉');
+      t.ruby = 'もみじ';
+      t.characters = '秋の空\n二行目';
+      expect(t.ruby).toBeNull();
+
+      const note = text(ctx, '割注');
+      note.warichu = 'warichu';
+      note.characters = '新しい文';
+      expect(note.warichu).toBe('none');
+    });
+
+    test('CJK properties reject unknown values', (ctx) => {
+      const t = text(ctx, '日本語');
+      const range = t.getRange(0, 1);
+      const spanProps = [
+        'textCombineUpright',
+        'textEmphasis',
+        'textEmphasisPosition',
+        'textUnderlinePosition',
+        'warichu',
+        'fontFeatures',
+        'annotationClearance',
+        'rubySize',
+        'rubyAlign',
+        'rubyOverhang',
+        'rubySide',
+        'rubyHidden',
+        'rubyZhuyin',
+      ];
+      const textProps = [
+        'writingMode',
+        'textOrientation',
+        'lineAdjustment',
+        ...spanProps,
+      ];
+      for (const prop of textProps) {
+        expect(() => {
+          (t as unknown as Record<string, unknown>)[prop] = 'bogus';
+        }).toThrow();
+      }
+      for (const prop of spanProps) {
+        expect(() => {
+          (range as unknown as Record<string, unknown>)[prop] = 'bogus';
+        }).toThrow();
+      }
+      expect(() => {
+        (range as unknown as Record<string, unknown>)['ruby'] = 42;
+      }).toThrow();
+      expect(t.writingMode).toBe('horizontal-tb');
+      expect(t.textEmphasis).toBe('none');
+      expect(range.ruby).toBeNull();
+    });
+  });
 });

@@ -239,6 +239,26 @@ describe('Shapes', () => {
       expect(paths).toHaveLength(1);
       expect(paths[0].type).toBe('path');
     });
+
+    // Outlining a text needs its laid-out glyphs, which the mocked backend
+    // run does not produce.
+    test.skipIfMocked(
+      'flatten outlines a vertical CJK text once layout settles',
+      async (ctx) => {
+        const t = ctx.penpot.createText('縦書きの文');
+        if (!t) throw new Error('createText returned null');
+        ctx.board.appendChild(t);
+        t.lang = 'ja';
+        t.writingMode = 'vertical-rl';
+        await ctx.penpot.waitForLayoutUpdate();
+
+        const paths = ctx.penpot.flatten([t]);
+        await ctx.penpot.waitForLayoutUpdate();
+        expect(paths).toHaveLength(1);
+        expect(paths[0].id).toBe(t.id);
+        expect(paths[0].type).toBe('path');
+      },
+    );
   });
 
   describe('Align & distribute', () => {

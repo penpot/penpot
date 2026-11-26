@@ -572,7 +572,8 @@
 
 (defn change-text
   "Changes the content of the text shape to use the text as argument. Will use the styles of the
-   first paragraph and text that is present in the shape (and override the rest)"
+   first paragraph and text that is present in the shape (and override the rest). A reading or
+   warichu note annotates its own characters, so the new text drops them."
   [content text & {:as styles}]
   (let [root-styles (select-keys content root-attrs)
 
@@ -580,13 +581,17 @@
         (merge
          default-text-attrs
          styles
-         (select-keys (->> content (node-seq is-paragraph-node?) first) text-all-attrs))
+         (-> (->> content (node-seq is-paragraph-node?) first)
+             (select-keys text-all-attrs)
+             (d/without-keys cjk/text-content-attrs)))
 
         text-style
         (merge
          default-text-attrs
          styles
-         (select-keys (->> content (node-seq is-text-node?) first) text-all-attrs))
+         (-> (->> content (node-seq is-text-node?) first)
+             (select-keys text-all-attrs)
+             (d/without-keys cjk/text-content-attrs)))
 
         paragraph-texts
         (str/split text "\n")

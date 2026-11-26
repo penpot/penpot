@@ -29,6 +29,9 @@
 ### 🩹 Fixes
 
 - **plugins-runtime:** Text range `align` and `direction` apply to the whole paragraphs the range touches and read their values from them. They used to set the range's spans, which nothing draws, and `direction` set a property no renderer reads.
+- **plugins-runtime:** Assigning `characters` no longer copies the reading (`ruby`) or warichu note of the first text span to all the new text.
+- **plugins-runtime:** A text or text range whose reading was removed with `''` reads `ruby` as `null`, not as an empty string.
+- **plugins-runtime:** `generateMarkup` with `type: 'html'` tags each paragraph with its language (`lang`), so browsers pick the localized CJK glyph forms and line-breaking rules.
 - **plugins-runtime:** `flatten()` outlines a text whose font is still loading once the font is in, instead of tracing a fallback font. Until then the returned shape is still a text; `penpot.waitForLayoutUpdate()` waits for the conversion.
 - **plugins-runtime:** Methods that rejected an invalid value with a plain string (`connectLibrary`, file `restore`, `remove`, `pin`, `export`, `findVersions`, `saveVersion`) now reject with an `Error` carrying the same message.
 - **plugin-runtime:** `LibraryComponent.instance()`, `createShapeFromSvg()` and `createShapeFromSvgWithImages()` now create shapes at the page root instead of inside a board at the page origin. Closes #12086.

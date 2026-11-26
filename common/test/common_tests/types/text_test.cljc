@@ -25,6 +25,18 @@
     (t/is (= "distribute"
              (get-in (cttx/change-text content "한글") [:children 0 :children 0 :text-align])))))
 
+(t/deftest change-text-drops-the-annotations-of-the-first-span
+  (let [span    (get-in content-base [:children 0 :children 0 :children 0])
+        content (assoc-in content-base [:children 0 :children 0 :children]
+                          [(assoc span :text "紅葉" :ruby "もみじ" :ruby-group "g1"
+                                  :warichu "warichu" :text-emphasis "filled-dot")
+                           (assoc span :text "の山")])
+        nodes   (->> (cttx/change-text content "秋の空\n二行目")
+                     (cttx/node-seq cttx/is-text-node?))]
+    (t/is (= ["秋の空" "二行目"] (map :text nodes)))
+    (t/is (every? #(not-any? (partial contains? %) cjk/text-content-attrs) nodes))
+    (t/is (every? #(= "filled-dot" (:text-emphasis %)) nodes))))
+
 ;; Normal happy-path changes
 
 (def content-changed-text

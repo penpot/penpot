@@ -95,8 +95,9 @@
   [{:keys [node children shape is-code]}]
   (let [style (when-not is-code (sts/generate-paragraph-styles shape node))
         class (when is-code (:$id node))
-        dir   (:text-direction node "auto")]
-    [:p.paragraph {:style style :dir dir :class class} children]))
+        dir   (:text-direction node "auto")
+        lang  (not-empty (:text-language node))]
+    [:p.paragraph {:style style :dir dir :lang lang :class class} children]))
 
 (declare render-node*)
 

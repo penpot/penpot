@@ -546,10 +546,12 @@
     ],
     "Text": [
       "align",
+      "annotationClearance",
       "applyTypography",
       "characters",
       "direction",
       "fontFamily",
+      "fontFeatures",
       "fontId",
       "fontSize",
       "fontStyle",
@@ -557,32 +559,63 @@
       "fontWeight",
       "getRange",
       "growType",
+      "lang",
       "letterSpacing",
+      "lineAdjustment",
       "lineHeight",
+      "ruby",
+      "rubyAlign",
+      "rubyHidden",
+      "rubyOverhang",
+      "rubySide",
+      "rubySize",
+      "rubyZhuyin",
       "textBounds",
+      "textCombineUpright",
       "textDecoration",
+      "textEmphasis",
+      "textEmphasisPosition",
+      "textOrientation",
       "textTransform",
+      "textUnderlinePosition",
       "type",
-      "verticalAlign"
+      "verticalAlign",
+      "warichu",
+      "writingMode"
     ],
     "TextRange": [
       "align",
+      "annotationClearance",
       "applyTypography",
       "characters",
       "direction",
       "fills",
       "fontFamily",
+      "fontFeatures",
       "fontId",
       "fontSize",
       "fontStyle",
       "fontVariantId",
       "fontWeight",
+      "lang",
       "letterSpacing",
       "lineHeight",
+      "ruby",
+      "rubyAlign",
+      "rubyHidden",
+      "rubyOverhang",
+      "rubySide",
+      "rubySize",
+      "rubyZhuyin",
       "shape",
+      "textCombineUpright",
       "textDecoration",
+      "textEmphasis",
+      "textEmphasisPosition",
       "textTransform",
-      "verticalAlign"
+      "textUnderlinePosition",
+      "verticalAlign",
+      "warichu"
     ],
     "ToggleOverlay": ["type"],
     "TokenBase": [
@@ -8986,6 +9019,114 @@
         "type": null,
         "array": false
       },
+      "lineAdjustment": {
+        "decl": "Text",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "writingMode": {
+        "decl": "Text",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "textOrientation": {
+        "decl": "Text",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "textCombineUpright": {
+        "decl": "Text",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "textEmphasis": {
+        "decl": "Text",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "warichu": {
+        "decl": "Text",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "textEmphasisPosition": {
+        "decl": "Text",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "textUnderlinePosition": {
+        "decl": "Text",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "fontFeatures": {
+        "decl": "Text",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "annotationClearance": {
+        "decl": "Text",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "ruby": {
+        "decl": "Text",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "rubyHidden": {
+        "decl": "Text",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "rubySize": {
+        "decl": "Text",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "rubyAlign": {
+        "decl": "Text",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "rubyOverhang": {
+        "decl": "Text",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "rubyZhuyin": {
+        "decl": "Text",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "rubySide": {
+        "decl": "Text",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "lang": {
+        "decl": "Text",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
       "textBounds": {
         "decl": "Text",
         "kind": "get",
@@ -9535,6 +9676,96 @@
         "array": false
       },
       "textDecoration": {
+        "decl": "TextRange",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "textCombineUpright": {
+        "decl": "TextRange",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "textEmphasis": {
+        "decl": "TextRange",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "warichu": {
+        "decl": "TextRange",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "textEmphasisPosition": {
+        "decl": "TextRange",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "textUnderlinePosition": {
+        "decl": "TextRange",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "fontFeatures": {
+        "decl": "TextRange",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "annotationClearance": {
+        "decl": "TextRange",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "ruby": {
+        "decl": "TextRange",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "rubyHidden": {
+        "decl": "TextRange",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "rubySize": {
+        "decl": "TextRange",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "rubyAlign": {
+        "decl": "TextRange",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "rubyOverhang": {
+        "decl": "TextRange",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "rubyZhuyin": {
+        "decl": "TextRange",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "rubySide": {
+        "decl": "TextRange",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "lang": {
         "decl": "TextRange",
         "kind": "getset",
         "type": null,

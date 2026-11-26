@@ -64,8 +64,9 @@
 (mf/defc render-paragraph*
   [{:keys [node children shape]}]
   (let [style (sts/generate-paragraph-styles shape node)
-        dir   (:text-direction node "auto")]
-    [:p.paragraph {:style style :dir dir} children]))
+        dir   (:text-direction node "auto")
+        lang  (not-empty (:text-language node))]
+    [:p.paragraph {:style style :dir dir :lang lang} children]))
 
 ;; -- Text nodes
 (mf/defc render-node*
