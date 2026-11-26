@@ -982,14 +982,23 @@
   - `:auto-width` → live width and height
   - `:auto-height` → selrect width, live height
   - `:fixed` → selrect for both
+  An axis that fills its layout parent keeps the selrect size.
 
   Nil or non-positive live axes fall back to the committed selrect so a missing
   WASM measure never flashes `0`."
-  [grow-type {:keys [width height]} live]
+  [{:keys [grow-type] :as shape} {:keys [width height]} live]
   (let [lw (when (map? live) (:width live))
         lh (when (map? live) (:height live))]
-    {:width  (if (and (= grow-type :auto-width) (number? lw) (pos? lw)) lw width)
-     :height (if (and (not= grow-type :fixed) (number? lh) (pos? lh)) lh height)}))
+    {:width  (if (and (= grow-type :auto-width)
+                      (not (ctl/fill-width? shape))
+                      (number? lw) (pos? lw))
+               lw
+               width)
+     :height (if (and (not= grow-type :fixed)
+                      (not (ctl/fill-height? shape))
+                      (number? lh) (pos? lh))
+               lh
+               height)}))
 
 (defn shape-with-live-text-dimensions
   "Display-only patch of shape selrect (and :width/:height) from live WASM text
@@ -999,7 +1008,7 @@
   (let [selrect (:selrect shape)
         live    (when (wasm.api/initialized?)
                   (wasm.api/get-text-dimensions (:id shape)))
-        {:keys [width height]} (merge-live-text-dimensions (:grow-type shape) selrect live)]
+        {:keys [width height]} (merge-live-text-dimensions shape selrect live)]
     (if (and (mth/close? width (:width selrect))
              (mth/close? height (:height selrect)))
       shape
