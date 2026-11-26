@@ -85,6 +85,29 @@
     ::mdef/buckets mtx/default-request-histogram-buckets
     ::mdef/type :histogram}
 
+   :update-file-refused
+   {::mdef/name "penpot_rpc_update_file_refused_total"
+    ::mdef/help "update-file and update-file-v2 exceptions from the save body and committed rejection results, by stage, code and outcome. Partial means at least one commit was accepted, even if it wrote no revision. A failed auto-repair also appears in the repair counter."
+    ::mdef/labels ["stage" "code" "outcome"]
+    ::mdef/type :counter}
+
+   :update-file-rejected-commits
+   {::mdef/name "penpot_rpc_update_file_rejected_commits_total"
+    ::mdef/help "Rejected commits in committed update-file and update-file-v2 results, all under the code of the first rejected commit."
+    ::mdef/labels ["code"]
+    ::mdef/type :counter}
+
+   :update-file-soft-failure
+   {::mdef/name "penpot_rpc_update_file_soft_failure_total"
+    ::mdef/help "Soft validation failures in update-file and update-file-v2, by check and bounded reason, excluding bisection retries."
+    ::mdef/labels ["check" "reason"]
+    ::mdef/type :counter}
+
+   :update-file-lagged
+   {::mdef/name "penpot_rpc_update_file_lagged_total"
+    ::mdef/help "update-file and update-file-v2 requests that pass the revision checks with a revn behind the stored head, regardless of whether the save writes a revision."
+    ::mdef/type :counter}
+
    :update-file-repair
    {::mdef/name "penpot_rpc_update_file_repair_total"
     ::mdef/help "update-file auto-repair attempts by outcome (repaired or unrepaired)."

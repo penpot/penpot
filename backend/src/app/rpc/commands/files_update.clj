@@ -53,6 +53,7 @@
 (declare ^:private process-changes-and-validate)
 (declare ^:private take-snapshot?)
 (declare ^:private invalidate-caches!)
+(declare ^:private infrastructure-error?)
 
 ;; PUBLIC API; intended to be used outside of this module
 (declare update-file-data!)
@@ -241,13 +242,60 @@
   [cause]
   (= :referential-integrity (:code (ex-data cause))))
 
+(defn- record-metric
+  "Bisection and callers outside the service can run without metrics."
+  [cfg params]
+  (when (mtx/metrics? (::mtx/metrics cfg))
+    (mtx/run! (mtx/instance cfg) params)))
+
+(defn- data-code
+  "Use only server error codes or types, never exception messages."
+  [{:keys [type code]}]
+  (let [code (or code type)]
+    (if (and (keyword? type) (keyword? code))
+      (name code)
+      "unexpected-error")))
+
+(defn- refusal-code
+  [cause]
+  (if (infrastructure-error? cause)
+    "infrastructure"
+    (data-code (ex-data cause))))
+
+(defn- step-stage
+  "Timings are recorded even when a step raises. Use the last hard step."
+  [timings]
+  (cond
+    (contains? timings :validate-schema-ms)   "schema"
+    (contains? timings :validate-affected-ms) "referential"
+    (contains? timings :process-changes-ms)   "changes"
+    :else                                     "pre-changes"))
+
+(defn- refusal-stage
+  [timings]
+  (or (::failed-stage timings) (step-stage timings)))
+
+(defn- record-refusal
+  [cfg timings code outcome]
+  (record-metric cfg {:id :update-file-refused
+                      :labels [(refusal-stage timings) code outcome]
+                      :inc 1}))
+
+(defn- record-rejection
+  [cfg rejected total]
+  (let [code       (data-code (:error rejected))
+        rejected-n (count (:commit-ids rejected))
+        outcome    (if (= rejected-n total) "refused" "partial")]
+    (record-refusal cfg @(::validation-timings cfg) code outcome)
+    (record-metric cfg {:id :update-file-rejected-commits
+                        :labels [code]
+                        :inc rejected-n})))
+
 (defn- record-repair-outcome
   [cfg outcome]
-  (when-let [metrics (::mtx/metrics cfg)]
-    (when (mtx/metrics? metrics)
-      (mtx/run! metrics {:id :update-file-repair
-                         :labels [(name outcome)]
-                         :inc 1}))))
+  (record-metric cfg {:id :update-file-repair
+                      :labels [(name outcome)]
+                      :inc 1}))
 
 (defn- error-codes
   [errors]
@@ -313,7 +361,9 @@
                      (assoc :file file))
 
         cfg      (assoc cfg ::timestamp (ct/now)
-                        ::validation-timings (atom {}))
+                        ::validation-timings (atom {})
+                        ::incoming-revn (:revn params)
+                        ::stored-revn (:revn file))
 
         tpoint   (ct/tpoint)]
 
@@ -332,6 +382,9 @@
                 :hint "The incoming revision number is greater that stored version."
                 :context {:incoming-revn (:revn params)
                           :stored-revn (:revn file)}))
+
+    (when (< (::incoming-revn cfg) (::stored-revn cfg))
+      (record-metric cfg {:id :update-file-lagged :inc 1}))
 
     ;; When newly computed features does not match exactly with the
     ;; features defined on team row, we update it
@@ -377,6 +430,7 @@
           ;; (`handle-response`), so timings collected before a hard
           ;; validation failure would be lost without this inline log.
           (let [timings @(::validation-timings cfg)]
+            (record-refusal cfg timings (refusal-code cause) "refused")
             (l/dbg :hint "update-file"
                    :file-id (str (:id file))
                    :project-id (str (:project-id file))
@@ -712,6 +766,11 @@
                                      (not= file-change-id id) (assoc :repaired true)
                                      repair-in-response (assoc :revision-ids [id]))))))))
 
+      ;; A rejection result is counted only if this transaction commits,
+      ;; even when the accepted prefix wrote no revision.
+      (when (some? rejected)
+        (db/after-commit #(record-rejection cfg rejected (count commits))))
+
       (with-meta (cond-> (if (= :v2 response-version)
                            (get-update-file-v2-result cfg params revn revisions rejected media-relinked)
                            {:revn revn :lagged (get-lagged-changes conn params)})
@@ -850,30 +909,64 @@
 
     (apply update-fn (cond-> cfg need-migration? (assoc ::file-migrated true)) file args)))
 
+(defn- get-schema-error-path
+  "Get declared keys from the deepest Malli schema path, not instance keys."
+  [cause]
+  (let [{:keys [path type]}
+        (reduce (fn [deepest error]
+                  (if (>= (count (:path error)) (count (:path deepest)))
+                    error
+                    deepest))
+                nil
+                (get-in (ex-data cause) [::sm/explain :errors]))]
+    (when (seq path)
+      ;; Malli appends the document's key to the schema path for extra keys.
+      (let [path (if (= type :malli.core/extra-key) (pop path) path)]
+        (not-empty (filterv keyword? path))))))
+
 (defn- soft-validate-file-schema!
-  [file changes]
+  [cfg file changes]
   (try
     (val/validate-file-schema-affected! file changes)
     (catch Throwable cause
-      (l/error :hint "file schema validation error" :cause cause))))
+      (let [path (get-schema-error-path cause)]
+        (record-metric cfg {:id :update-file-soft-failure
+                            :labels ["schema" (or (some-> path peek name) "unknown")]
+                            :inc 1})
+        (l/error :hint "file schema validation error"
+                 :file-id (str (:id file))
+                 :incoming-revn (::incoming-revn cfg)
+                 :stored-revn (::stored-revn cfg)
+                 :code (refusal-code cause)
+                 :path path
+                 :cause cause)))))
 
 (defn- record-validation-timing
   [cfg step-key step-label elapsed-ms]
-  (when-let [metrics (::mtx/metrics cfg)]
-    (when (mtx/metrics? metrics)
-      (mtx/run! metrics {:id :update-file-validation-timing
-                         :labels [step-label]
-                         :val (double elapsed-ms)})))
+  (record-metric cfg {:id :update-file-validation-timing
+                      :labels [step-label]
+                      :val (double elapsed-ms)})
   (when-let [timings (::validation-timings cfg)]
     (swap! timings assoc step-key elapsed-ms)))
 
 (defn- soft-validate-file!
-  [file libs changes]
+  [cfg file libs changes]
   (try
     (val/validate-file-affected! file libs changes)
     (catch Throwable cause
-      (l/error :hint "file validation error"
-               :cause cause))))
+      (let [{:keys [code page-id shape-id]} (get-in (ex-data cause) [:details 0])
+            reason (if (contains? val/error-codes code) (name code) "unknown")]
+        (record-metric cfg {:id :update-file-soft-failure
+                            :labels ["affected" reason]
+                            :inc 1})
+        (l/error :hint "file validation error"
+                 :file-id (str (:id file))
+                 :incoming-revn (::incoming-revn cfg)
+                 :stored-revn (::stored-revn cfg)
+                 :code reason
+                 :page-id (when (uuid? page-id) (str page-id))
+                 :shape-id (when (uuid? shape-id) (str shape-id))
+                 :cause cause)))))
 
 (defmacro ^:private with-validation-timing
   "Runs `body` and records its time as the validation step `step-key`
@@ -892,11 +985,11 @@
   (binding [pmap/*tracked* nil]
     (when (contains? cf/flags :soft-file-validation)
       (with-validation-timing cfg :soft-validate-affected-ms "soft-validate-affected"
-        (soft-validate-file! file libs changes)))
+        (soft-validate-file! cfg file libs changes)))
 
     (when (contains? cf/flags :soft-file-schema-validation)
       (with-validation-timing cfg :soft-validate-schema-ms "soft-validate-schema"
-        (soft-validate-file-schema! file changes)))
+        (soft-validate-file-schema! cfg file changes)))
 
     (when (and (contains? cf/flags :file-validation)
                (not skip-validate))
@@ -1295,6 +1388,10 @@
   error. If that does not save every change and there are `commits`,
   keeps the longest prefix of them that validates."
   [cfg original file edited libs changes commits skip-validate tracked cause]
+  ;; The repair can time its own schema check. Keep the stage that failed
+  ;; before it or the bisection runs.
+  (when-let [timings (::validation-timings cfg)]
+    (swap! timings #(assoc % ::failed-stage (step-stage %))))
   (let [repaired
         (when (and (change-failure? cause)
                    (referential-integrity-error? cause)
