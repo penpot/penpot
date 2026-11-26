@@ -1651,7 +1651,7 @@ test.describe("Numeric Input and Token Integration Tests", () => {
     // Create a token with a reference value in other set.
     await createToken(
       page,
-      "Dimensions",
+      "Dimension",
       "reference-token",
       "Value",
       "combobox",
@@ -1711,8 +1711,8 @@ test("BUG: 14234, Numeric input token filtering must be case sensitive", async (
   await tokensTabButton.click();
   await unfoldTokenType(tokensSidebar, "dimensions");
 
-  await createToken(page, "Dimensions", "Dim-up", "Value", "combobox", "20");
-  await createToken(page, "Dimensions", "dim-up", "Value", "combobox", "10");
+  await createToken(page, "Dimension", "Dim-up", "Value", "combobox", "20");
+  await createToken(page, "Dimension", "dim-up", "Value", "combobox", "10");
   const measuresSection = page.getByRole("region", {
     name: "shape-measures-section",
   });

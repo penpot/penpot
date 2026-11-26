@@ -1046,7 +1046,7 @@
             :fields [{:label "Sizing"
                       :key :sizing}]}}
    :dimensions
-   {:title "Dimensions"
+   {:title "Dimension"
     :attributes #{:width :height}
     :all-attributes (set/union
                      ctt/spacing-keys
@@ -1056,7 +1056,7 @@
                      ctt/stroke-width-keys)
     :on-update-shape apply-dimensions-token
     :modal {:key :tokens/dimensions
-            :fields [{:label "Dimensions"
+            :fields [{:label "Dimension"
                       :key :dimensions}]}}
 
    :opacity

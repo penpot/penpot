@@ -25,7 +25,7 @@ test.describe("Tokens - creation", () => {
 
     const cases = [
       ["Border Radius", "border radius", "my-token-border-radius"],
-      ["Dimensions", "dimensions", "my-token-dimensions"],
+      ["Dimension", "dimension", "my-token-dimensions"],
       ["Font Size", "font size", "my-token-font-size"],
       ["Letter spacing", "letter spacing", "my-token-letter-spacing"],
       ["Number", "number", "my-token-number"],
@@ -1842,7 +1842,7 @@ test.describe("User can't create groups that clash with token names", () => {
     const cases = [
       ["Border Radius", "rad1.bad", "Value", "10", "combobox"],
       ["Color", "col1.bad", "Value", "red", "textbox"],
-      ["Dimensions", "dim1.bad", "Value", "100", "combobox"],
+      ["Dimension", "dim1.bad", "Value", "100", "combobox"],
       ["Font Size", "fsiz1.bad", "Value", "16", "combobox"],
       ["Font Weight", "wei1.bad", "Value", "400", "combobox"],
       ["Letter Spacing", "lspa1.bad", "Value", "1", "combobox"],
