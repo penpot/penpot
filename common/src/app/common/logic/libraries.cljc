@@ -2061,7 +2061,16 @@
         ;; In case of subinstances, the comparison is always done with the
         ;; near component, because this is that we are syncing with.
         origin-shape (reposition-shape origin-shape origin-root dest-root)
-        touched      (get dest-shape :touched #{})]
+        touched      (get dest-shape :touched #{})
+
+        ;; :type and :bool-type sync with different groups. The copy keeps
+        ;; its own :type when that group is touched, so :bool-type must
+        ;; follow the type the copy ends with, not the main: a bool always
+        ;; keeps one, any other type has none.
+        type-group   (ctk/resolve-sync-group (:type origin-shape) :type)
+        synced-type  (if (and omit-touched? (touched type-group))
+                       (:type dest-shape)
+                       (:type origin-shape))]
 
     (loop [attrs updatable-attrs
            roperations []
@@ -2129,6 +2138,20 @@
 
                     :else
                     (get origin-shape attr)))
+
+                [skip-operations? attr-val]
+                (cond
+                  (not= attr :bool-type)
+                  [skip-operations? attr-val]
+
+                  (not= synced-type :bool)
+                  [false nil]
+
+                  (nil? attr-val)
+                  [true nil]
+
+                  :else
+                  [skip-operations? attr-val])
 
                 ;; If the final attr-value is the actual value, skip
                 skip-operations?
