@@ -1,10 +1,11 @@
 name: "CI: Workflows"
 
-# Static analysis of the GitHub Actions workflows themselves:
+# Static analysis of the GitHub Actions workflows and composite actions:
 # - actionlint: syntax, expressions, runner labels, job/step references,
 #   and shellcheck on every `run:` block.
 # - zizmor: security audits (template injection, dangerous triggers,
-#   credential persistence, ...). Configured in .github/zizmor.yml.
+#   credential persistence, ...). Configured in .github/zizmor.yml. It reads
+#   the workflows and the composite actions under .github/actions.
 
 on:
   pull_request:
@@ -75,4 +76,5 @@ jobs:
           pipx run "zizmor==${ZIZMOR_VERSION}" \
             --config .github/zizmor.yml \
             --format github \
-            .github/workflows
+            .github/workflows \
+            .github/actions

@@ -10,7 +10,7 @@ on:
       - 'render-wasm/**'
 
     types:
-      - opened
+      - labeled
       - synchronize
       - ready_for_review
 
@@ -31,7 +31,13 @@ permissions:
 
 jobs:
   test-render-wasm:
-    if: ${{ !github.event.pull_request.draft }}
+    if: >-
+      ${{
+        !github.event.pull_request.draft &&
+        (github.event_name == 'push' ||
+         contains(github.event.pull_request.labels.*.name, 'ci:run')) &&
+        (github.event.action != 'labeled' || github.event.label.name == 'ci:run')
+      }}
     permissions:
       contents: read
       pull-requests: write  # coverage comment on the PR

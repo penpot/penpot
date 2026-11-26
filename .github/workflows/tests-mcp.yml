@@ -8,7 +8,7 @@ on:
       - main
 
     types:
-      - opened
+      - labeled
       - synchronize
       - ready_for_review
 
@@ -29,7 +29,13 @@ permissions:
 
 jobs:
   test-mcp:
-    if: ${{ !github.event.pull_request.draft }}
+    if: >-
+      ${{
+        !github.event.pull_request.draft &&
+        (github.event_name == 'push' ||
+         contains(github.event.pull_request.labels.*.name, 'ci:run')) &&
+        (github.event.action != 'labeled' || github.event.label.name == 'ci:run')
+      }}
     name: "Test MCP"
     runs-on: penpot-extended-runner
     container: penpotapp/devenv:latest

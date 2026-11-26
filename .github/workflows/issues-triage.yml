@@ -1,0 +1,201 @@
+name: Issues Triage
+
+# The issue half of the old auto-label workflow. Opened issues go to triage;
+# closed issues are routed on the project board by QA requirement. Pull
+# requests are triaged by prs-gate.yml, which runs in the pull request context
+# and needs the App token.
+on:
+  issues:
+    types:
+      - opened
+      - closed
+
+permissions: {}
+
+concurrency:
+  # Keep opened and closed runs apart: a close must not cancel the triage that
+  # adds the issue to the project.
+  group: issues-triage-${{ github.event.issue.number }}-${{ github.event.action }}
+  cancel-in-progress: true
+
+jobs:
+  triage:
+    name: Auto Label Issue
+    # The Renovate Dependency Dashboard does not need triage.
+    if: ${{ github.event.action == 'opened' && github.event.issue.user.login != 'penpot-renovate[bot]' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout the workflow code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: .github/actions
+
+      - name: Generate app token
+        id: app-token
+        uses: ./.github/actions/app-token
+        with:
+          client-id: ${{ secrets.TRIAGE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.TRIAGE_APP_PRIVATE_KEY }}
+          issues: write
+          organization-projects: write
+
+      - name: Label and add to the project board
+        uses: ./.github/actions/project-board-triage
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          content-id: ${{ github.event.issue.node_id }}
+          number: ${{ github.event.issue.number }}
+          label: needs triage
+          status-option-id: f75ad846 # Backlog
+
+  route-closed:
+    name: Route Closed Issue
+    if: ${{ github.event.action == 'closed' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout the workflow code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: .github/actions
+
+      - name: Generate app token
+        id: app-token
+        uses: ./.github/actions/app-token
+        with:
+          client-id: ${{ secrets.TRIAGE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.TRIAGE_APP_PRIVATE_KEY }}
+          organization-projects: write
+
+      # A completed issue is already closed by GitHub. Route its Main project
+      # status according to whether QA needs to verify it.
+      - name: Route the project status
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          ISSUE_NODE_ID: ${{ github.event.issue.node_id }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          STATE_REASON: ${{ github.event.issue.state_reason }}
+          LABELS: ${{ toJSON(github.event.issue.labels.*.name) }}
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            const { owner } = context.repo;
+            const issueId = process.env.ISSUE_NODE_ID;
+            const issueNumber = Number(process.env.ISSUE_NUMBER);
+            const stateReason = process.env.STATE_REASON;
+            const labels = JSON.parse(process.env.LABELS || '[]');
+
+            const PROJECT_NUMBER = 8;
+            const STATUS_FIELD_NAME = 'Status';
+            const QA_LABEL = 'team-qa';
+            const STATUS_WITH_QA = 'Ready for QA';
+            const STATUS_WITHOUT_QA = 'Product Review';
+
+            if (stateReason !== 'completed') {
+              console.log(
+                `Issue #${issueNumber} closed as ${stateReason || 'unknown'}; ` +
+                  'leaving the project status unchanged.'
+              );
+              return;
+            }
+
+            const targetStatus = labels.includes(QA_LABEL)
+              ? STATUS_WITH_QA
+              : STATUS_WITHOUT_QA;
+
+            const projectRes = await github.graphql(
+              `query($owner: String!, $number: Int!) {
+                organization(login: $owner) {
+                  projectV2(number: $number) {
+                    id
+                    fields(first: 100) {
+                      nodes {
+                        ... on ProjectV2SingleSelectField {
+                          id
+                          name
+                          options { id name }
+                        }
+                      }
+                    }
+                  }
+                }
+              }`,
+              { owner, number: PROJECT_NUMBER }
+            );
+
+            const project = projectRes.organization.projectV2;
+            if (!project) {
+              throw new Error(`Could not find project #${PROJECT_NUMBER}.`);
+            }
+
+            const statusField = project.fields.nodes.find(
+              ({ name }) => name === STATUS_FIELD_NAME
+            );
+            const statusOption = statusField?.options.find(
+              ({ name }) => name === targetStatus
+            );
+            if (!statusField || !statusOption) {
+              throw new Error(
+                `Could not find the "${targetStatus}" option in the project status field.`
+              );
+            }
+
+            const itemsRes = await github.graphql(
+              `query($issueId: ID!) {
+                node(id: $issueId) {
+                  ... on Issue {
+                    projectItems(first: 100) {
+                      nodes {
+                        id
+                        project { id }
+                      }
+                    }
+                  }
+                }
+              }`,
+              { issueId }
+            );
+
+            const items = itemsRes.node?.projectItems?.nodes || [];
+            const item = items.find(
+              ({ project: itemProject }) => itemProject.id === project.id
+            );
+            if (!item) {
+              console.log(
+                `Issue #${issueNumber} is not in project #${PROJECT_NUMBER}; ` +
+                  'skipping the status update.'
+              );
+              return;
+            }
+
+            await github.graphql(
+              `mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
+                updateProjectV2ItemFieldValue(
+                  input: {
+                    projectId: $projectId
+                    itemId: $itemId
+                    fieldId: $fieldId
+                    value: { singleSelectOptionId: $optionId }
+                  }
+                ) {
+                  projectV2Item { id }
+                }
+              }`,
+              {
+                projectId: project.id,
+                itemId: item.id,
+                fieldId: statusField.id,
+                optionId: statusOption.id
+              }
+            );
+
+            console.log(
+              `Issue #${issueNumber} closed; project status set to "${targetStatus}".`
+            );

@@ -1,0 +1,129 @@
+name: Pull request context
+description: >-
+  Read the pull request metadata once (state, author, labels, linked issues and
+  their milestones) and expose it as outputs, so every check reuses a single
+  GraphQL query.
+
+inputs:
+  token:
+    description: Token used for the GraphQL query.
+    required: true
+  pr-number:
+    description: Pull request number.
+    required: true
+
+outputs:
+  node_id:
+    description: GraphQL node id of the pull request.
+    value: ${{ steps.query.outputs.node_id }}
+  number:
+    description: Pull request number.
+    value: ${{ steps.query.outputs.number }}
+  is_draft:
+    description: '"true" when the pull request is a draft.'
+    value: ${{ steps.query.outputs.is_draft }}
+  head_ref:
+    description: Head branch name of the pull request.
+    value: ${{ steps.query.outputs.head_ref }}
+  pr_milestone:
+    description: Milestone title of the pull request, or an empty string.
+    value: ${{ steps.query.outputs.pr_milestone }}
+  labels:
+    description: JSON array with the label names of the pull request.
+    value: ${{ steps.query.outputs.labels }}
+  linked_issues:
+    description: >-
+      JSON array of the linked issues, each with number, title, url, milestone
+      and labels.
+    value: ${{ steps.query.outputs.linked_issues }}
+  author_login:
+    description: Login of the pull request author.
+    value: ${{ steps.query.outputs.author_login }}
+  author_type:
+    description: GraphQL type of the author (User, Bot, Mannequin, ...).
+    value: ${{ steps.query.outputs.author_type }}
+
+runs:
+  using: composite
+  steps:
+    - name: Query pull request
+      id: query
+      uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+      env:
+        PR_NUMBER: ${{ inputs.pr-number }}
+      with:
+        github-token: ${{ inputs.token }}
+        script: |
+          const prNumber = Number(process.env.PR_NUMBER);
+          if (!Number.isInteger(prNumber) || prNumber <= 0) {
+            throw new Error(`Invalid pull request number: ${process.env.PR_NUMBER}`);
+          }
+
+          const result = await github.graphql(
+            `query($owner: String!, $repo: String!, $number: Int!) {
+              repository(owner: $owner, name: $repo) {
+                pullRequest(number: $number) {
+                  id
+                  number
+                  isDraft
+                  headRefName
+                  author {
+                    __typename
+                    login
+                  }
+                  milestone {
+                    title
+                  }
+                  labels(first: 100) {
+                    nodes {
+                      name
+                    }
+                  }
+                  closingIssuesReferences(first: 100) {
+                    nodes {
+                      number
+                      title
+                      url
+                      milestone {
+                        title
+                      }
+                      labels(first: 100) {
+                        nodes {
+                          name
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }`,
+            {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              number: prNumber
+            }
+          );
+
+          const pr = result.repository.pullRequest;
+          const names = (nodes) => nodes.map(({ name }) => name);
+
+          core.setOutput('node_id', pr.id);
+          core.setOutput('number', String(pr.number));
+          core.setOutput('is_draft', String(pr.isDraft));
+          core.setOutput('head_ref', pr.headRefName);
+          core.setOutput('pr_milestone', pr.milestone ? pr.milestone.title : '');
+          core.setOutput('labels', JSON.stringify(names(pr.labels.nodes)));
+          core.setOutput(
+            'linked_issues',
+            JSON.stringify(
+              pr.closingIssuesReferences.nodes.map((issue) => ({
+                number: issue.number,
+                title: issue.title,
+                url: issue.url,
+                milestone: issue.milestone ? issue.milestone.title : null,
+                labels: names(issue.labels.nodes)
+              }))
+            )
+          );
+          core.setOutput('author_login', pr.author ? pr.author.login : '');
+          core.setOutput('author_type', pr.author ? pr.author.__typename : '');

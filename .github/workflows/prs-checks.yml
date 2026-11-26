@@ -1,0 +1,191 @@
+name: PRs Checks
+
+# The checks the branch protection ruleset requires. The job names are part of
+# the ruleset contract: do not rename them without updating the ruleset.
+#
+# All of them read the pull request metadata from a single GraphQL query, run
+# by the `context` job.
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - edited
+      - labeled
+      - unlabeled
+      - milestoned
+      - demilestoned
+      - ready_for_review
+      - converted_to_draft
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Pull request number
+        required: true
+        type: number
+
+permissions: {}
+
+concurrency:
+  group: prs-checks-${{ github.event.pull_request.number || inputs.pr_number }}
+  cancel-in-progress: true
+
+jobs:
+  context:
+    name: Read PR context
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
+    outputs:
+      is_draft: ${{ steps.pr.outputs.is_draft }}
+      pr_milestone: ${{ steps.pr.outputs.pr_milestone }}
+      labels: ${{ steps.pr.outputs.labels }}
+      linked_issues: ${{ steps.pr.outputs.linked_issues }}
+    steps:
+      - name: Checkout the workflow code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: .github/actions
+
+      - name: Read pull request context
+        id: pr
+        uses: ./.github/actions/pr-context
+        with:
+          token: ${{ github.token }}
+          pr-number: ${{ github.event.pull_request.number || inputs.pr_number }}
+
+  linked-issue:
+    name: Require Linked Issue
+    needs: context
+    if: ${{ !cancelled() && needs.context.outputs.is_draft != 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Check linked issue
+        env:
+          IS_DRAFT: ${{ needs.context.outputs.is_draft }}
+          LABELS: ${{ needs.context.outputs.labels }}
+          LINKED_ISSUES: ${{ needs.context.outputs.linked_issues }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${IS_DRAFT:-}" ]; then
+            echo '::error::Could not read the pull request context.'
+            exit 1
+          fi
+
+          if jq -e 'any(.[]; . == "no issue required" or . == "pr pt")' >/dev/null <<<"$LABELS"; then
+            echo 'Exempt label found: linked issue check skipped.'
+            exit 0
+          fi
+
+          if [ "$(jq 'length' <<<"$LINKED_ISSUES")" -eq 0 ]; then
+            echo '::error::This pull request must have a linked issue, or an exempt label ("no issue required").'
+            exit 1
+          fi
+
+          echo 'Linked issue(s):'
+          jq -r '.[] | "- #\(.number): \(.title) (\(.url))"' <<<"$LINKED_ISSUES"
+
+  milestone:
+    name: Require Milestone
+    needs: context
+    if: ${{ !cancelled() && needs.context.outputs.is_draft != 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Check milestone
+        env:
+          IS_DRAFT: ${{ needs.context.outputs.is_draft }}
+          PR_MILESTONE: ${{ needs.context.outputs.pr_milestone }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${IS_DRAFT:-}" ]; then
+            echo '::error::Could not read the pull request context.'
+            exit 1
+          fi
+
+          if [ -z "$PR_MILESTONE" ]; then
+            echo '::error::This pull request must have a milestone.'
+            exit 1
+          fi
+
+          echo "Milestone assigned: $PR_MILESTONE"
+
+  linked-milestones:
+    name: Require Milestones on Linked Issues
+    needs: context
+    if: ${{ !cancelled() && needs.context.outputs.is_draft != 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Check linked issues
+        env:
+          IS_DRAFT: ${{ needs.context.outputs.is_draft }}
+          LINKED_ISSUES: ${{ needs.context.outputs.linked_issues }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${IS_DRAFT:-}" ]; then
+            echo '::error::Could not read the pull request context.'
+            exit 1
+          fi
+
+          MISSING="$(jq -r '
+            .[]
+            | select(.milestone == null or .milestone == "")
+            | "- #\(.number): \(.title) (\(.url))"
+          ' <<<"$LINKED_ISSUES")"
+
+          if [ -n "$MISSING" ]; then
+            echo '::error::The following linked issues have no milestone:'
+            echo "$MISSING"
+            exit 1
+          fi
+
+          echo 'All linked issues have a milestone.'
+
+  summary:
+    name: PR Checks
+    needs:
+      - context
+      - linked-issue
+      - milestone
+      - linked-milestones
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Summarize the checks
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          set -euo pipefail
+
+          {
+            echo '### PR checks'
+            echo ''
+            echo '| Check | Result |'
+            echo '| --- | --- |'
+            jq -r 'to_entries[] | "| \(.key) | \(.value.result) |"' <<<"$NEEDS"
+          } >>"$GITHUB_STEP_SUMMARY"
+
+          FAILED="$(jq -r '
+            [to_entries[] | select(.value.result == "failure" or .value.result == "cancelled")]
+            | length
+          ' <<<"$NEEDS")"
+
+          if [ "$FAILED" -gt 0 ]; then
+            echo "::error::${FAILED} check(s) failed."
+            exit 1
+          fi

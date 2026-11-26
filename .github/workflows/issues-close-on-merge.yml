@@ -1,0 +1,140 @@
+name: Close Issues on Merge
+
+# GitHub closes linked issues only when a pull request lands on the default
+# branch. This workflow closes them for merges into any other branch, so the
+# existing Issues Triage workflow can move the board card as usual. It never
+# checks out pull request code.
+on:
+  pull_request_target:
+    types:
+      - closed
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Pull request number
+        required: true
+        type: number
+
+permissions: {}
+
+concurrency:
+  group: issues-close-on-merge-${{ github.event.pull_request.number || inputs.pr_number }}
+  cancel-in-progress: false
+
+jobs:
+  close-linked-issues:
+    name: Close Linked Issues
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      # Only pinned actions run here: neither the pull request code nor the
+      # target branch code reaches the runner.
+      - name: Generate app token
+        id: app-token
+        uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
+        with:
+          client-id: ${{ secrets.TRIAGE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.TRIAGE_APP_PRIVATE_KEY }}
+          permission-issues: write
+          permission-pull-requests: read
+
+      # A GitHub App token, not GITHUB_TOKEN: an issue closed by the latter
+      # would not trigger the route-closed job in issues-triage.yml.
+      - name: Close linked issues
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            const { owner, repo } = context.repo;
+            const prNumber = Number(process.env.PR_NUMBER);
+
+            if (!Number.isInteger(prNumber) || prNumber <= 0) {
+              throw new Error(`Invalid pull request number: ${process.env.PR_NUMBER}`);
+            }
+
+            const result = await github.graphql(
+              `query($owner: String!, $repo: String!, $number: Int!) {
+                repository(owner: $owner, name: $repo) {
+                  pullRequest(number: $number) {
+                    number
+                    merged
+                    baseRefName
+                    closingIssuesReferences(first: 100) {
+                      nodes {
+                        id
+                        number
+                        state
+                        repository { nameWithOwner }
+                      }
+                    }
+                  }
+                }
+              }`,
+              { owner, repo, number: prNumber }
+            );
+
+            const pr = result.repository.pullRequest;
+            if (!pr) {
+              throw new Error(`Could not find pull request #${prNumber}.`);
+            }
+
+            const writeSummary = async (body) => {
+              if (!process.env.GITHUB_STEP_SUMMARY) return;
+              await core.summary
+                .addRaw(`### Pull request #${prNumber}\n\n${body}\n`)
+                .write();
+            };
+
+            if (!pr.merged) {
+              core.info(`PR #${prNumber} was not merged; leaving its issues open.`);
+              await writeSummary('Not merged; no issues closed.');
+              return;
+            }
+
+            if (pr.baseRefName === 'develop') {
+              core.info(`PR #${prNumber} landed on develop; GitHub closes its issues.`);
+              await writeSummary('Merged into `develop`; no issues closed here.');
+              return;
+            }
+
+            const closed = [];
+            const skipped = [];
+
+            for (const issue of pr.closingIssuesReferences.nodes) {
+              const ref = `#${issue.number}`;
+
+              if (issue.state !== 'OPEN') {
+                core.info(`Skipping ${ref}: already ${issue.state.toLowerCase()}.`);
+                skipped.push(`${ref} (already ${issue.state.toLowerCase()})`);
+                continue;
+              }
+
+              if (issue.repository.nameWithOwner !== `${owner}/${repo}`) {
+                core.info(`Skipping ${ref}: linked to ${issue.repository.nameWithOwner}.`);
+                skipped.push(`${ref} (${issue.repository.nameWithOwner})`);
+                continue;
+              }
+
+              await github.graphql(
+                `mutation($issueId: ID!) {
+                  closeIssue(input: {issueId: $issueId, stateReason: COMPLETED}) {
+                    issue { number state stateReason }
+                  }
+                }`,
+                { issueId: issue.id }
+              );
+              core.info(`Closed issue ${ref}.`);
+              closed.push(ref);
+            }
+
+            await writeSummary(
+              [
+                `Merged into \`${pr.baseRefName}\`.`,
+                '',
+                `- Closed: ${closed.length ? closed.join(', ') : 'none'}`,
+                `- Skipped: ${skipped.length ? skipped.join(', ') : 'none'}`
+              ].join('\n')
+            );

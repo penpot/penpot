@@ -14,15 +14,14 @@ rules:
       - plugins-deploy-api-doc.yml
       - plugins-deploy-package.yml
       - plugins-deploy-styles-doc.yml
-  # Accepted: auto-label.yml needs pull_request_target so the GitHub App
-  # secrets are available for PRs from forks. It never checks out or runs
-  # PR code, it only reads ids from the event payload.
-  # prs-pre-validations.yml needs pull_request_target so it can close
-  # PRs from forks. It never checks out or runs PR code either.
+  # Accepted: both workflows need pull_request_target so the GitHub App
+  # secrets are available for pull requests from forks. Neither checks out or
+  # runs PR code; they only read ids from the event payload and call the API.
+  # prs-gate.yml also comments on and closes pull requests.
   dangerous-triggers:
     ignore:
-      - auto-label.yml
-      - prs-pre-validations.yml
+      - prs-gate.yml
+      - issues-close-on-merge.yml
   # Style nudge towards the `$/...` syntax; not worth enforcing.
   self-repository:
     disable: true

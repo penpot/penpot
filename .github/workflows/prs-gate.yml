@@ -1,0 +1,368 @@
+name: PRs Gate
+
+# The gate decides whether the test workflows may run: it adds the `ci:run`
+# label when the pull request is allowed, and it never adds it when the pull
+# request is closed. The test workflows start on `labeled` and require that
+# label, so an invalid public pull request never reaches the runners.
+on:
+  pull_request_target:
+    types:
+      # `labeled` is intentionally absent: the gate and the triage job add
+      # their own labels, and reacting to them would only repeat the work.
+      # `edited` is also absent: a rejected pull request is reopened once its
+      # body links an issue, and `reopened` already covers that case.
+      - opened
+      - reopened
+      - ready_for_review
+      - synchronize
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Pull request number
+        required: true
+        type: number
+
+permissions: {}
+
+concurrency:
+  # One run per pull request. A newer push supersedes an older decision, and
+  # a superseded run must not close the pull request.
+  group: prs-gate-${{ github.event.pull_request.number || inputs.pr_number }}
+  cancel-in-progress: true
+
+jobs:
+  # Decides whether the pull request is allowed. It never runs tests: it only
+  # labels, comments, closes and records the board status.
+  gate:
+    name: Validate PR
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    # Consumed by the triage job.
+    outputs:
+      number: ${{ steps.pr.outputs.number }}
+      node_id: ${{ steps.pr.outputs.node_id }}
+      skip_triage: ${{ steps.classify.outputs.skip_triage }}
+      board_status: ${{ steps.classify.outputs.board_status }}
+      triage_label: ${{ steps.classify.outputs.triage_label }}
+    steps:
+      # Base branch and sparse checkout: only the local actions are needed, so
+      # no pull request code ever reaches the runner. persist-credentials keeps
+      # the token out of .git/config for the rest of the job.
+      - name: Checkout the trusted workflow code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.base.sha || github.sha }}
+          sparse-checkout: .github/actions
+
+      - name: Generate app token
+        id: app-token
+        uses: ./.github/actions/app-token
+        with:
+          client-id: ${{ secrets.TRIAGE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.TRIAGE_APP_PRIVATE_KEY }}
+          issues: write
+          pull-requests: write
+          members: read
+
+      # One GraphQL query for state, author, labels, linked issues and their
+      # milestones. Every check downstream reuses these outputs.
+      - name: Read pull request context
+        id: pr
+        uses: ./.github/actions/pr-context
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          pr-number: ${{ github.event.pull_request.number || inputs.pr_number }}
+
+      # The decision table.
+      - name: Classify the pull request and act
+        id: classify
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
+          IS_DRAFT: ${{ steps.pr.outputs.is_draft }}
+          AUTHOR_LOGIN: ${{ steps.pr.outputs.author_login }}
+          AUTHOR_TYPE: ${{ steps.pr.outputs.author_type }}
+          HEAD_REF: ${{ steps.pr.outputs.head_ref }}
+          LINKED_ISSUES: ${{ steps.pr.outputs.linked_issues }}
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            const { owner, repo } = context.repo;
+            const prNumber = Number(process.env.PR_NUMBER);
+            const authorLogin = process.env.AUTHOR_LOGIN;
+            const linkedIssues = JSON.parse(process.env.LINKED_ISSUES || '[]');
+
+            // The label that opens the test workflows.
+            const CI_LABEL = 'ci:run';
+
+            // Defaults for every outcome. A branch overrides only what applies
+            // to it: triage normally, board status Tech Review, no triage label.
+            core.setOutput('skip_triage', 'false');
+            core.setOutput('board_status', 'tech-review');
+            core.setOutput('triage_label', '');
+
+            const log = (message) => console.log(`PR #${prNumber}: ${message}`);
+
+            // Side effects shared by the branches below.
+            const comment = (body) =>
+              github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: prNumber,
+                body
+              });
+
+            // Allow the pull request and open the tests.
+            const allow = async () => {
+              await github.rest.issues.addLabels({
+                owner,
+                repo,
+                issue_number: prNumber,
+                labels: [CI_LABEL]
+              });
+              log(`added the "${CI_LABEL}" label.`);
+            };
+
+            // Revoke the tests label. A rejected or unverified pull request
+            // must not keep it: a later reopen then adds it again and fires the
+            // "labeled" event that starts the tests.
+            const revoke = async () => {
+              try {
+                await github.rest.issues.removeLabel({
+                  owner,
+                  repo,
+                  issue_number: prNumber,
+                  name: CI_LABEL
+                });
+                log(`removed the "${CI_LABEL}" label.`);
+              } catch (error) {
+                if (error.status !== 404) throw error;
+              }
+            };
+
+            // Drafts are not validated and never open the tests, but they are
+            // still triaged. ready_for_review runs the gate again.
+            if (process.env.IS_DRAFT === 'true') {
+              log('draft; skipping validations and the CI label.');
+              return;
+            }
+
+            // Bots and mannequins skip the validations but may run the tests.
+            const authorType = process.env.AUTHOR_TYPE;
+            if (authorType === 'Bot' || authorType === 'Mannequin') {
+              log(`opened by a ${authorType}; skipping validations.`);
+              await allow();
+              // Only Renovate's GitHub Actions pull request stays out of the
+              // project board; the rest of its pull requests are triaged.
+              const renovateActions =
+                authorLogin === 'penpot-renovate[bot]' &&
+                process.env.HEAD_REF === 'renovate-github-actions';
+              core.setOutput('skip_triage', String(renovateActions));
+              return;
+            }
+
+            // Internal = repository collaborator (any access level, read
+            // included) or organization member. author_association is not
+            // used: it hides private organization membership.
+            //
+            // 404 means no. Any other error is an API failure, never external.
+            const checkApi = async (call, label) => {
+              const attempts = 3;
+              let result = 'failure';
+              for (let attempt = 1; attempt <= attempts; attempt += 1) {
+                try {
+                  await call();
+                  result = 'yes';
+                  break;
+                } catch (error) {
+                  if (error.status === 404) {
+                    result = 'no';
+                    break;
+                  }
+                  log(
+                    `${label} attempt ${attempt}/${attempts} failed: ` +
+                      `${error.status || 'no status'} ${error.message}`
+                  );
+                  if (attempt === attempts) {
+                    break;
+                  }
+                  await new Promise((resolve) => setTimeout(resolve, attempt * 1000));
+                }
+              }
+              return result;
+            };
+
+            const checkAccess = async () => {
+              // Repository access first: it also resolves members that reach
+              // the repository through the organization.
+              const collaborator = await checkApi(
+                () =>
+                  github.rest.repos.checkCollaborator({
+                    owner,
+                    repo,
+                    username: authorLogin
+                  }),
+                'collaborator check'
+              );
+              if (collaborator === 'yes') return 'internal';
+
+              // Covers members without repository access and private
+              // memberships.
+              const member = await checkApi(
+                () =>
+                  github.rest.orgs.checkMembershipForUser({
+                    org: owner,
+                    username: authorLogin
+                  }),
+                'membership check'
+              );
+              if (member === 'yes') return 'internal';
+
+              if (collaborator === 'failure' || member === 'failure') {
+                return 'failure';
+              }
+              return 'external';
+            };
+
+            const access = await checkAccess();
+
+            // API failure: never treat it as external. Comment, do not close,
+            // and hold the tests until a maintainer reviews the pull request.
+            if (access === 'failure') {
+              // A maintainer has to review this one: label it so it shows up
+              // in the triage queue even if the author turns out to be internal.
+              core.setOutput('triage_label', 'needs triage');
+              await comment(
+                [
+                  'Thank you for your contribution to Penpot!',
+                  '',
+                  'We could not verify your access to the repository, so this pull request has not been closed. A maintainer will review it. No action is needed from you.',
+                  '',
+                  'If the problem persists, please leave a comment in this pull request.'
+                ].join('\n')
+              );
+              core.warning(
+                `Could not verify the access of @${authorLogin}. ` +
+                  'The pull request was not closed and the test workflows will not run until a maintainer reviews it.'
+              );
+              await revoke();
+              return;
+            }
+
+            // Confirmed internal author: allow the tests. Only an external
+            // contributor goes through the public rules below.
+            if (access === 'internal') {
+              log(`opened by @${authorLogin}, member or repository collaborator.`);
+              await allow();
+              return;
+            }
+
+            // External contributor: the public rules apply.
+            log(`opened by @${authorLogin}, no organization or repository access.`);
+
+            // A pull request can match several reasons and then receives every
+            // message. An empty list means it is suitable for contributions.
+            const linkedIssuesHave = (name) =>
+              linkedIssues.some((issue) => issue.labels.includes(name));
+            const reasons = [];
+            if (linkedIssues.length === 0) reasons.push('NO_LINKED_ISSUE');
+            if (linkedIssuesHave('needs triage')) reasons.push('NEEDS_TRIAGE');
+            if (linkedIssuesHave('internal')) reasons.push('INTERNAL_ISSUE');
+
+            if (reasons.length === 0) {
+              log('has a suitable linked issue.');
+              // Only a valid pull request from an external contributor gets
+              // the triage label.
+              core.setOutput('triage_label', 'needs triage');
+              await allow();
+              return;
+            }
+
+            // Rejection: comment why, close, and send the board item to
+            // Rejected instead of Tech Review.
+            const GUIDE_FOOTER = [
+              '',
+              'If you are unsure where to start, our [contribution guide](' +
+                'https://github.com/penpot/penpot/blob/develop/CONTRIBUTING.md' +
+                ') explains how we triage issues and when they become open for contributions.'
+            ].join('\n');
+
+            const REASONS = {
+              NO_LINKED_ISSUE: [
+                'Thank you for taking the time to contribute to Penpot!',
+                '',
+                'This pull request was closed automatically because it is not linked to any issue yet. Please open an issue describing the change, or find an existing one, link it to this pull request and reopen it. We will be happy to review it then.'
+              ].join('\n'),
+              NEEDS_TRIAGE: [
+                'Thank you for your interest in improving Penpot.',
+                '',
+                'This pull request was closed automatically because it is linked to an issue labelled `needs triage`. Our product team is still reviewing that issue, so it is not open for contributions yet. Once a maintainer confirms that the issue is ready, please reopen this pull request.'
+              ].join('\n'),
+              INTERNAL_ISSUE: [
+                'Thank you for wanting to help with Penpot.',
+                '',
+                'This pull request was closed automatically because it is linked to an issue labelled `internal`. Internal issues are not open to outside contributions. Please choose an issue that is explicitly open for contributions, or ask in the issue first, and then reopen this pull request.'
+              ].join('\n')
+            };
+
+            const body =
+              reasons.map((reason) => REASONS[reason]).join('\n\n') + GUIDE_FOOTER;
+            await comment(body);
+            await github.rest.pulls.update({
+              owner,
+              repo,
+              pull_number: prNumber,
+              state: 'closed'
+            });
+            await revoke();
+            core.setOutput('board_status', 'rejected');
+            log(`closed: ${reasons.join(', ')}.`);
+
+  triage:
+    name: Auto Label PR
+    needs: gate
+    # Runs for every pull request the gate processed, including the ones it
+    # closed and the drafts. Only Renovate's GitHub Actions pull request and a
+    # failed context read are left out.
+    if: ${{ !cancelled() && needs.gate.outputs.number != '' && needs.gate.outputs.skip_triage != 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      # Same trusted checkout as the gate: base branch, local actions only.
+      - name: Checkout the trusted workflow code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.base.sha || github.sha }}
+          sparse-checkout: .github/actions
+
+      # This job also writes to the project board, so it needs projects:write.
+      - name: Generate app token
+        id: app-token
+        uses: ./.github/actions/app-token
+        with:
+          client-id: ${{ secrets.TRIAGE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.TRIAGE_APP_PRIVATE_KEY }}
+          issues: write
+          pull-requests: write
+          organization-projects: write
+
+      # Label, add the item to the board and set its status. The label is only
+      # set for a valid pull request from an external contributor; the action
+      # skips labelling when it is empty. It is idempotent, so a re-run reuses
+      # the existing item instead of duplicating it, and a reopened pull request
+      # moves back from Rejected.
+      - name: Label and add to the project board
+        uses: ./.github/actions/project-board-triage
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          content-id: ${{ needs.gate.outputs.node_id }}
+          number: ${{ needs.gate.outputs.number }}
+          label: ${{ needs.gate.outputs.triage_label }}
+          # Rejected when the gate closed the pull request, Tech Review otherwise.
+          status-option-id: ${{ needs.gate.outputs.board_status == 'rejected' && '1a6fc5df' || 'b0f45db9' }}

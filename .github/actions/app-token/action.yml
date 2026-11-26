@@ -1,0 +1,47 @@
+name: Triage app token
+description: >-
+  Mint a short-lived GitHub App installation token for the triage app.
+  Callers override the permissions they need; the defaults are read-only.
+
+inputs:
+  client-id:
+    description: Client id of the triage GitHub App.
+    required: true
+  private-key:
+    description: Private key of the triage GitHub App.
+    required: true
+  issues:
+    description: Permission requested for issues.
+    required: false
+    default: read
+  pull-requests:
+    description: Permission requested for pull requests.
+    required: false
+    default: read
+  members:
+    description: Permission requested for organization members.
+    required: false
+    default: read
+  organization-projects:
+    description: Permission requested for organization projects.
+    required: false
+    default: read
+
+outputs:
+  token:
+    description: Installation token for the triage app.
+    value: ${{ steps.token.outputs.token }}
+
+runs:
+  using: composite
+  steps:
+    - name: Generate app token
+      id: token
+      uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
+      with:
+        client-id: ${{ inputs.client-id }}
+        private-key: ${{ inputs.private-key }}
+        permission-issues: ${{ inputs.issues }}
+        permission-pull-requests: ${{ inputs.pull-requests }}
+        permission-members: ${{ inputs.members }}
+        permission-organization-projects: ${{ inputs.organization-projects }}

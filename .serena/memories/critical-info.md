@@ -15,6 +15,7 @@ You are working on the GitHub project `penpot/penpot`, a monorepo.
 - Before a repo-wide pnpm version update → `mem:workflow/updating-pnpm` (workspace layout, `scripts/sync-pnpm-version` flow, the stamp-missing-field and ignored-builds gotchas, verification steps)
 - Before a Node version update → `mem:workflow/updating-node` (the six pin sites in `.nvmrc`, the devenv and image Dockerfiles and the plugins-deploy workflows, the DHI tag and digest rules, what to verify)
 - Before bumping a non-JS dependency pinned in `docker/images/` (JDK, ImageMagick) → `mem:workflow/docker-images`
+- Before adding or editing a `pull_request_target` workflow → `mem:workflow/github-actions` (Actions event policy opt-in, default-branch rule, App secrets and token choice)
 
 # Project modules
 

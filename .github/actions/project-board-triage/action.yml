@@ -1,0 +1,171 @@
+name: Project board triage
+description: >-
+  Apply the triage label, add the issue or pull request to the organization
+  project board and set its status. Shared by the pull request and issue
+  triage workflows.
+
+inputs:
+  token:
+    description: Token with issues, pull requests and organization projects write.
+    required: true
+  content-id:
+    description: GraphQL node id of the issue or pull request.
+    required: true
+  number:
+    description: Issue or pull request number.
+    required: true
+  label:
+    description: Label to apply. Empty to skip labelling.
+    required: false
+    default: ''
+  status-option-id:
+    description: Single select option id of the project status field.
+    required: true
+  project-number:
+    description: Organization project number.
+    required: false
+    default: '8'
+  status-field-id:
+    description: Id of the status field of the organization project.
+    required: false
+    default: PVTSSF_lADOAcyBPM4BV2pqzhRPY48
+  organization:
+    description: '"true" for an organization project, "false" for a user project.'
+    required: false
+    default: 'true'
+
+runs:
+  using: composite
+  steps:
+    - name: Label, add to the project and set the status
+      uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+      env:
+        CONTENT_ID: ${{ inputs.content-id }}
+        NUMBER: ${{ inputs.number }}
+        LABEL: ${{ inputs.label }}
+        STATUS_OPTION_ID: ${{ inputs.status-option-id }}
+        PROJECT_NUMBER: ${{ inputs.project-number }}
+        STATUS_FIELD_ID: ${{ inputs.status-field-id }}
+        IS_ORGANIZATION: ${{ inputs.organization }}
+      with:
+        github-token: ${{ inputs.token }}
+        script: |
+          const { owner, repo } = context.repo;
+          const contentId = process.env.CONTENT_ID;
+          const number = Number(process.env.NUMBER);
+          const label = process.env.LABEL;
+          const statusOptionId = process.env.STATUS_OPTION_ID;
+          const projectNumber = Number(process.env.PROJECT_NUMBER);
+          const statusFieldId = process.env.STATUS_FIELD_ID;
+          const isOrganization = process.env.IS_ORGANIZATION !== 'false';
+
+          if (label) {
+            console.log(`Applying label "${label}" to #${number}...`);
+            await github.rest.issues.addLabels({
+              owner,
+              repo,
+              issue_number: number,
+              labels: [label]
+            });
+          }
+
+          console.log(`Fetching project #${projectNumber}...`);
+          const projectRes = await github.graphql(
+            `query($owner: String!, $number: Int!) {
+              ${isOrganization ? 'organization' : 'user'}(login: $owner) {
+                projectV2(number: $number) {
+                  id
+                }
+              }
+            }`,
+            { owner, number: projectNumber }
+          );
+          const projectId = isOrganization
+            ? projectRes.organization.projectV2.id
+            : projectRes.user.projectV2.id;
+
+          console.log('Adding the item to the project board...');
+          let itemId;
+          try {
+            const addRes = await github.graphql(
+              `mutation($projectId: ID!, $contentId: ID!) {
+                addProjectV2ItemById(input: {projectId: $projectId, contentId: $contentId}) {
+                  item {
+                    id
+                  }
+                }
+              }`,
+              { projectId, contentId }
+            );
+            itemId = addRes.addProjectV2ItemById.item.id;
+          } catch (error) {
+            const messages = [
+              error && error.message,
+              ...(Array.isArray(error && error.errors)
+                ? error.errors.map((e) => e && e.message)
+                : [])
+            ]
+              .filter(Boolean)
+              .join('\n');
+            if (!messages.includes('Content already exists in this project')) {
+              throw error;
+            }
+            console.log('Item already in the project; fetching the existing item...');
+            const existing = await github.graphql(
+              `query($contentId: ID!) {
+                node(id: $contentId) {
+                  ... on Issue {
+                    projectItems(first: 50) {
+                      nodes {
+                        id
+                        project {
+                          id
+                        }
+                      }
+                    }
+                  }
+                  ... on PullRequest {
+                    projectItems(first: 50) {
+                      nodes {
+                        id
+                        project {
+                          id
+                        }
+                      }
+                    }
+                  }
+                }
+              }`,
+              { contentId }
+            );
+            const nodes =
+              (existing.node && existing.node.projectItems && existing.node.projectItems.nodes) || [];
+            const match = nodes.find((node) => node.project.id === projectId);
+            if (!match) {
+              throw new Error(
+                `Item already in a project, but not found in project ${projectId}`
+              );
+            }
+            itemId = match.id;
+          }
+
+          console.log(`Setting the project status for #${number}...`);
+          await github.graphql(
+            `mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
+              updateProjectV2ItemFieldValue(
+                input: {
+                  projectId: $projectId
+                  itemId: $itemId
+                  fieldId: $fieldId
+                  value: {singleSelectOptionId: $optionId}
+                }
+              ) {
+                projectV2Item {
+                  id
+                }
+              }
+            }`,
+            { projectId, itemId, fieldId: statusFieldId, optionId: statusOptionId }
+          );
+
+          console.log('Project board triage completed.');

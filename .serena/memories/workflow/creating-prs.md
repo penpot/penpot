@@ -102,6 +102,7 @@ worked on the branch, using the canonical model ID rules in
 - For each GitHub issue that a PR resolves, run `python3 scripts/gh.py link-issue <ISSUE_NUMBER> <PR_NUMBER>` after creating or editing the PR. Do not rely on `Closes #NNNN` in the body; it is only human-readable context.
 - The command calls `addCloseIssueReferences` and trusts the successful mutation: GitHub does not reliably report mutation-created links back through `closedByPullRequestsReferences(userLinkedOnly: true)`, so the command exits non-zero only when a link target is missing or the mutation fails. It is safe to rerun and also works for an already merged PR. Do not rely on it to keep the issue open: adding `Closes #N` to the body of an already-merged PR closed the issue immediately when tried (#12896 / PR #12067, 2026-11-09).
 - Skip this process for `Relates to #NNNN` and Taiga references, which do not represent a closing relationship.
+- Merges into `develop` close linked issues through GitHub's closing references. Merges into any other branch are closed by `.github/workflows/issues-close-on-merge.yml` with `stateReason: COMPLETED`, which then triggers `issues-triage.yml` to move the board card. It skips issues already closed and issues linked from other repositories; rerun it with `workflow_dispatch` and `pr_number` to recover a missed close.
 
 ## Before Opening
 
