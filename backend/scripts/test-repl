@@ -1,0 +1,124 @@
+#!/usr/bin/env bash
+# A warm JVM for the backend tests: an nREPL server on the test
+# classpath, with the flags CI uses. Meant for the devenv container.
+#
+#   test-repl test [ID ...]   run tests (all backend tests without ID);
+#                             ID is a namespace or a namespace/var
+#   test-repl eval [CODE]     evaluate CODE (or stdin) in the test JVM
+#   test-repl start|stop|status
+#
+# `test` and `eval` start the JVM when nothing listens on the port, and
+# take turns through a lock, because they share one test database.
+# Exit status: 0 on success, 1 on failing tests, an evaluation error or
+# a timeout, 2 when the JVM cannot start.
+
+set -euo pipefail
+
+SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+BACKEND_DIR=$(dirname "$SCRIPT_DIR")
+ROOT_DIR=$(dirname "$BACKEND_DIR")
+
+PORT=${PENPOT_TEST_NREPL_PORT:-6067}
+TIMEOUT=${PENPOT_TEST_REPL_TIMEOUT:-1800}
+LOG=/tmp/penpot-test-repl-$PORT.log
+LOCK=/tmp/penpot-test-repl-$PORT.lock
+
+listening() {
+  (exec 3<>"/dev/tcp/127.0.0.1/$PORT") 2>/dev/null
+}
+
+jvm_pids() {
+  pgrep -f "nrepl.cmdline --bind 127.0.0.1 --port $PORT" || true
+}
+
+nrepl_eval() {
+  if [ ! -d "$ROOT_DIR/node_modules/nrepl-client" ]; then
+    (cd "$ROOT_DIR" && pnpm install --frozen-lockfile >&2)
+  fi
+  node "$ROOT_DIR/scripts/nrepl-eval.mjs" -p "$PORT" -t "$((TIMEOUT * 1000))" "$@"
+}
+
+start_jvm() {
+  listening && return 0
+  echo "[test-repl] starting the test JVM on port $PORT (log: $LOG)" >&2
+  # The JVM must not inherit the lock descriptor, or it keeps the lock.
+  (exec 9>&-
+   cd "$BACKEND_DIR"
+   PENPOT_FLAGS="enable-backend-asserts" nohup clojure \
+     -J-Dlog4j2.configurationFile=log4j2-devenv-repl.xml \
+     -M:dev -m nrepl.cmdline --bind 127.0.0.1 --port "$PORT" \
+     >"$LOG" 2>&1 &)
+  for _ in $(seq 600); do
+    listening && break
+    sleep 0.5
+  done
+  if ! listening; then
+    echo "[test-repl] the test JVM did not start; last lines of $LOG:" >&2
+    tail -20 "$LOG" >&2
+    exit 2
+  fi
+  # Load every namespace now, so the first test run pays only for itself.
+  # The list of reloaded namespaces is noise unless the load fails.
+  local out
+  if ! out=$(nrepl_eval "(let [r (clojure.tools.namespace.repl/refresh)] (when (instance? Throwable r) (throw r)) r)" 2>&1); then
+    echo "$out" >&2
+    exit 1
+  fi
+}
+
+with_lock() {
+  exec 9>"$LOCK"
+  if ! flock -n 9; then
+    echo "[test-repl] waiting for another run to finish" >&2
+    flock 9
+  fi
+  "$@"
+}
+
+run_tests() {
+  local targets=""
+  for id in "$@"; do
+    if [[ ! "$id" =~ ^[A-Za-z0-9.*+!?_/-]+$ ]]; then
+      echo "[test-repl] not a namespace or var: $id" >&2
+      exit 1
+    fi
+    targets+=" '$id"
+  done
+  start_jvm
+  nrepl_eval "(user/run-tests!$targets)"
+}
+
+eval_code() {
+  start_jvm
+  nrepl_eval "$@"
+}
+
+case "${1:-}" in
+  test)
+    shift
+    with_lock run_tests "$@"
+    ;;
+  eval)
+    shift
+    with_lock eval_code "$@"
+    ;;
+  start)
+    with_lock start_jvm
+    ;;
+  stop)
+    pids=$(jvm_pids)
+    if [ -n "$pids" ]; then kill $pids; fi
+    ;;
+  status)
+    if listening; then
+      echo "running on port $PORT"
+    else
+      echo "not running"
+      exit 1
+    fi
+    ;;
+  *)
+    sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'
+    exit 1
+    ;;
+esac
