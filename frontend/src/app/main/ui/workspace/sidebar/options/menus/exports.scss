@@ -4,6 +4,13 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/typography.scss" as *;
+
+// Only for %input-element: the suffix input moves to the DS with the text
+// inputs group.
 @use "refactor/common-refactor.scss" as deprecated;
 @use "../../../sidebar/common/sidebar.scss" as sidebar;
 
@@ -16,7 +23,7 @@
 }
 
 .title-spacing-export {
-  padding-left: deprecated.$s-2;
+  padding-inline-start: px2rem(2);
   margin: 0;
 }
 
@@ -27,16 +34,28 @@
 }
 
 .multiple-exports {
-  @include deprecated.flex-row;
-
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
   grid-column: 1 / span 9;
 
   .label {
-    @extend %mixed-bar;
+    @include use-typography("body-small");
+
+    display: flex;
+    align-items: center;
+    flex-grow: 1;
+    border-radius: $br-8;
+    block-size: $sz-32;
+    padding: var(--sp-s);
+    background-color: var(--color-background-tertiary);
+    color: var(--color-foreground-primary);
   }
 
   .actions {
-    @include deprecated.flex-row;
+    display: flex;
+    align-items: center;
+    gap: var(--sp-xs);
   }
 }
 
@@ -52,39 +71,26 @@
   grid-template-columns: subgrid;
 }
 
-.format-select {
-  grid-column: span 2;
-  padding: 0;
-
-  .dropdown-upwards {
-    bottom: deprecated.$s-36;
-    width: deprecated.$s-80;
-    top: unset;
-  }
-}
-
+.format-select,
 .size-select {
   grid-column: span 2;
   padding: 0;
 
   .dropdown-upwards {
-    bottom: deprecated.$s-36;
-    top: unset;
-    width: deprecated.$s-80;
+    inset-block-start: unset;
+    inset-block-end: px2rem(36);
+    inline-size: px2rem(80);
   }
 }
 
 .suffix-input {
-  grid-column: span 3;
-
   @extend %input-element;
-  @include deprecated.body-small-typography;
+  @include use-typography("body-small");
+
+  grid-column: span 3;
 }
 
 .export-btn {
-  @extend %button-secondary;
-  @include deprecated.uppercase-title-typography;
-
   grid-column: 1 / span 9;
-  height: deprecated.$s-32;
+  justify-content: center;
 }
