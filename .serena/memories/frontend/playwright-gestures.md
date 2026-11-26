@@ -42,6 +42,8 @@ async (page) => {
 }
 ```
 
+For the primary modifier (Ctrl on Linux/Windows, Command on macOS) use `ControlOrMeta`, not `Control`; see `mem:frontend/testing-playwright`.
+
 ## Coordinate Planning
 
 For reliably finding pixel positions of objects, see `mem:frontend/penpot-to-browser-coords`.

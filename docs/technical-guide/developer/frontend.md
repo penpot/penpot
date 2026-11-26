@@ -636,6 +636,19 @@ page.getByText("Penpot is the free open-");
 
 To locate the rest of the elements we continue exploring the list of queries according to the order of priority. If none of the above options match the item, we resort to <code class="language-js">getByTestId</code> as a last resort.
 
+#### Keyboard shortcuts and modifier keys
+
+Penpot maps its shortcuts to the user's OS: <code class="language-js">Ctrl</code> on Linux and Windows, <code class="language-js">Command</code> on macOS. Playwright's Chromium reports the real host OS, so a test that presses a literal <code class="language-js">Control</code> passes on Linux and fails on macOS.
+
+Use <code class="language-js">ControlOrMeta</code> for the primary modifier, both in key presses and in clicks:
+
+```js
+await page.keyboard.press("ControlOrMeta+d");
+await layer.click({ modifiers: ["ControlOrMeta"] });
+```
+
+Keep <code class="language-js">Control</code> only when the app reads the Ctrl key itself on every OS, or when the test records a raw key combination, such as a custom shortcut.
+
 #### Assertions
 
 Assertions use Playwright's <code class="language-js">expect</code> method. Here are some tips for writing your assertions:
