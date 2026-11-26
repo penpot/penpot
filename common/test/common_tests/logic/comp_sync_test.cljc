@@ -23,6 +23,7 @@
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
    [app.common.types.modifiers :as ctm]
+   [app.common.types.path :as path]
    [app.common.types.shape-tree :as ctst]
    [clojure.test :as t]))
 
@@ -870,6 +871,110 @@
     ;; ==== Check
     (t/is (= #{} (changes-attrs sync-changes)))
     (t/is (empty? (:redo-changes sync-changes)))))
+
+(t/deftest test-sync-bool-to-group-keeps-bool-type-in-a-moved-copy
+  ;; A copy with its geometry touched keeps its :type when the main bool
+  ;; becomes a group. :bool-type must stay with it: syncing its removal
+  ;; left a bool without :bool-type, which the backend rejects.
+  (let [;; ==== Setup
+        file         (-> (file-with-bool-component)
+                         (move-shapes [:copy-bool :copy-p1 :copy-p2] (gpt/point 5 0)))
+        page         (thf/current-page file)
+
+        ;; ==== Action
+        updated-file (thf/apply-changes file
+                                        (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                                                    #{(thi/id :main-bool)}
+                                                                    (fn [shape]
+                                                                      (-> shape
+                                                                          (assoc :type :group)
+                                                                          (dissoc :bool-type)
+                                                                          (gsh/update-group-selrect (mapv (d/getf (:objects page)) (:shapes shape)))))
+                                                                    (:objects page)
+                                                                    {}))
+        file'        (thf/apply-changes updated-file (sync-file-changes updated-file))
+
+        ;; ==== Get
+        copy-bool'   (ths/get-shape file' :copy-bool)]
+
+    ;; ==== Check
+    (t/is (= #{:geometry-group} (:touched copy-bool')))
+    (t/is (= :bool (:type copy-bool')))
+    (t/is (= :union (:bool-type copy-bool')))))
+
+(defn- update-shape-with
+  [file label update-fn]
+  (let [page (thf/current-page file)]
+    (thf/apply-changes file
+                       (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                                   #{(thi/id label)}
+                                                   update-fn
+                                                   (:objects page)
+                                                   {}))))
+
+(t/deftest test-sync-bool-type-change-to-a-moved-copy
+  ;; Moving a copy touches its geometry, not its bool operation, so a new
+  ;; operation in the main still reaches it.
+  (let [;; ==== Setup
+        file         (-> (file-with-bool-component)
+                         (move-shapes [:copy-bool :copy-p1 :copy-p2] (gpt/point 5 0)))
+
+        ;; ==== Action
+        updated-file (update-shape-with file :main-bool #(assoc % :bool-type :difference))
+        file'        (thf/apply-changes updated-file (sync-file-changes updated-file))
+
+        ;; ==== Get
+        copy-bool'   (ths/get-shape file' :copy-bool)]
+
+    ;; ==== Check
+    (t/is (= :bool (:type copy-bool')))
+    (t/is (= :difference (:bool-type copy-bool')))))
+
+(t/deftest test-sync-group-to-bool-adds-no-bool-type-to-a-moved-copy
+  ;; A moved copy of a group stays a group when its main becomes a bool,
+  ;; so it must not get the main's :bool-type.
+  (let [;; ==== Setup
+        content      [{:command :move-to :params {:x 10 :y 10}}
+                      {:command :line-to :params {:x 24 :y 10}}
+                      {:command :line-to :params {:x 17 :y 24}}
+                      {:command :close-path}]
+        file         (-> (thf/sample-file :file1)
+                         (tho/add-frame :main-root)
+                         (tho/add-group :main-group :parent-label :main-root)
+                         (ths/add-sample-shape :main-p1 :type :path :parent-label :main-group :content content)
+                         (ths/add-sample-shape :main-p2 :type :path :parent-label :main-group :content content)
+                         (thc/make-component :component1 :main-root)
+                         (thc/instantiate-component :component1 :copy-root {:children-labels [:copy-group :copy-p1 :copy-p2]})
+                         (move-shapes [:copy-group :copy-p1 :copy-p2] (gpt/point 5 0)))
+
+        ;; ==== Action
+        updated-file (update-shape-with file :main-group #(assoc % :type :bool :bool-type :union :content (path/content content)))
+        file'        (thf/apply-changes updated-file (sync-file-changes updated-file))
+
+        ;; ==== Get
+        copy-group'  (ths/get-shape file' :copy-group)]
+
+    ;; ==== Check
+    (t/is (= :group (:type copy-group')))
+    (t/is (not (contains? copy-group' :bool-type)))))
+
+(t/deftest test-sync-keeps-a-bool-type-override-on-a-copy
+  ;; An operation chosen on the copy is an override: a new operation in
+  ;; the main must not replace it.
+  (let [;; ==== Setup
+        file         (-> (file-with-bool-component)
+                         (update-shape-with :copy-bool #(assoc % :bool-type :difference)))
+
+        ;; ==== Action
+        updated-file (update-shape-with file :main-bool #(assoc % :bool-type :intersection))
+        file'        (thf/apply-changes updated-file (sync-file-changes updated-file))
+
+        ;; ==== Get
+        copy-bool'   (ths/get-shape file' :copy-bool)]
+
+    ;; ==== Check
+    (t/is (contains? (:touched copy-bool') :content-group))
+    (t/is (= :difference (:bool-type copy-bool')))))
 
 (t/deftest test-sync-bool-content-change-inside-main
   ;; Moving only the bool inside its main is a real change and must sync.

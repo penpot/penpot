@@ -10,9 +10,9 @@
   It reads the stream from its own cursor and ingests the allowlisted
   events, enriched with the name of their team and the emails of the
   profiles they mention (the admin console shows people, not ids). The
-  events outside the allowlist, and the telemetry shadows, count as
-  skipped for the cursor: they are passed over and never reach the
-  destination.
+  events outside the allowlist, the rows the browser pushed and the
+  telemetry shadows count as skipped for the cursor: they are passed
+  over and never reach the destination.
 
   The allowlist lives here: it is this consumer's contract, not the
   producer's (the producer only inserts rows). The component starts the
@@ -26,7 +26,6 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
-   [app.loggers.audit :as audit]
    [app.loggers.audit.consumers :as consumers]
    [app.metrics :as mtx]
    [app.nitrate :as nitrate]
@@ -35,7 +34,15 @@
 (def event-names
   "The event names the admin console archives. Each consumer owns its
   filter now: the producer only inserts the row, and this consumer
-  decides on read which events concern it."
+  decides on read which events concern it.
+
+  Only rows with `source` \"backend\" are archived. Any signed-in
+  profile can push a row with any of these names through the browser
+  endpoint (`push-audit-events`, `source` \"frontend\") and point it at
+  any organization or member, so a browser row is never evidence that
+  the action happened. Every name here has a backend producer; there is
+  no browser exception. The telemetry shadows are skipped by the same
+  rule."
   #{"accept-organization-invitation"
     "accept-organization-invitation-from"
     "accept-team-invitation"
@@ -224,7 +231,7 @@
   a send failure."
   [cfg rows]
   (let [events   (filterv #(and (contains? event-names (:name %))
-                                (not (audit/telemetry-shadow-source? (:source %))))
+                                (= "backend" (:source %)))
                           rows)
         total    (count rows)
         skipped  (- total (count events))
@@ -258,8 +265,8 @@
 
 (defn- process-chunk
   "Send one chunk to the admin console. Returns {:processed :skipped}:
-  the row outside the allowlist (and the telemetry shadows) count as
-  skipped. Throws on failure, same contract as the nexus one."
+  the rows outside the allowlist, or not recorded by the backend, count
+  as skipped. Throws on failure, same contract as the nexus one."
   [cfg rows]
   (let [decoded (mapv consumers/decode-row rows)
         _       (l/trc :hint "consumer events chunk"

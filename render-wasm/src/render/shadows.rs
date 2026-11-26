@@ -154,14 +154,35 @@ fn spread_inset(spread: f32) -> Option<f32> {
     Some(-spread).filter(|&s| s > 0.0)
 }
 
-fn blur_layer_paint(blur: f32, sigma_scale: f32) -> skia::Paint {
+/// Layer paint for a black shadow mask, blurred by `sigma`. An image mask
+/// keeps its alpha, so the paint tints it black and dilates it by `spread`:
+/// images have no outline to outset.
+pub(crate) fn shadow_mask_paint(sigma: f32, image_mask: bool, spread: f32) -> skia::Paint {
+    let dilate = if image_mask && spread > 0.0 {
+        skia::image_filters::dilate((spread, spread), None, None)
+    } else {
+        None
+    };
+    let filter = if sigma > 0.0 {
+        skia::image_filters::blur((sigma, sigma), None, dilate, None)
+    } else {
+        dilate
+    };
+
     let mut paint = skia::Paint::default();
-    if blur > 0.0 {
-        let sigma = radius_to_sigma(blur) * sigma_scale;
-        paint.set_image_filter(skia::image_filters::blur((sigma, sigma), None, None, None));
+    paint.set_image_filter(filter);
+    if image_mask {
+        paint.set_color_filter(skia::color_filters::blend(
+            skia::Color::BLACK,
+            skia::BlendMode::SrcIn,
+        ));
     }
     paint.set_blend_mode(skia::BlendMode::SrcOver);
     paint
+}
+
+fn blur_layer_paint(blur: f32, sigma_scale: f32) -> skia::Paint {
+    shadow_mask_paint(radius_to_sigma(blur) * sigma_scale, false, 0.0)
 }
 
 fn draw_frame_shadow_rect(

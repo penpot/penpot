@@ -35,7 +35,8 @@
    [cuerdas.core :as str]
    [integrant.core :as ig]
    [mockery.core :refer [with-mocks]]
-   [promesa.exec :as px])
+   [promesa.exec :as px]
+   [yetti.request])
   (:import
    io.prometheus.client.Counter
    io.prometheus.client.Counter$Child
@@ -406,6 +407,47 @@
           (insert-audit-row (:id prof) (str "unrelated-" i)))
         (run-admin-console)
         (t/is (false? (:called? @admin-console-mock)))
+        (t/is (= 0 (unread-count consumer/admin-console)))))))
+
+(def ^:private browser-request
+  (reify
+    yetti.request/IRequest
+    (get-header [_ name]
+      (case name
+        "x-forwarded-for" "127.0.0.44"
+        "x-real-ip" "127.0.0.43"
+        nil))))
+
+(t/deftest consumer-admin-console-skips-allowlisted-names-from-the-browser
+  ;; Any signed-in profile can call the browser endpoint and name any
+  ;; organization in the props. Only the backend records what really
+  ;; happened, so a browser row never reaches an organization's log: it
+  ;; counts as skipped and the cursor passes it.
+  (let [prof  (th/create-profile* 14 {:is-active true})
+        props {:organization-id (str (uuid/next))
+               :member-id (str (uuid/next))}]
+    (th/with-audit-config #{:admin-console}
+      (let [out (th/command!
+                 (with-meta {::th/type :push-audit-events
+                             ::rpc/profile-id (:id prof)
+                             :events [{:name "delete-organization-member"
+                                       :type "action"
+                                       :timestamp (ct/now)
+                                       :props props}]}
+                   {:app.http/request browser-request}))]
+        (t/is (nil? (:error out))))
+      ;; The browser row is really in the buffer: what follows skips it,
+      ;; it is not missing.
+      (t/is (= ["frontend"]
+               (mapv :source (th/db-exec! ["SELECT source FROM audit_log
+                                             WHERE name = 'delete-organization-member'"]))))
+      (insert-audit-row (:id prof) "delete-organization-member" props "backend")
+      (with-mocks [admin-console-mock {:target 'app.nitrate/call :return nil}]
+        (run-admin-console)
+        (t/is (:called? @admin-console-mock))
+        (let [[_ _ params] (:call-args @admin-console-mock)]
+          (t/is (= [["delete-organization-member" "backend"]]
+                   (mapv (juxt :name :source) (:events params)))))
         (t/is (= 0 (unread-count consumer/admin-console)))))))
 
 (t/deftest consumer-admin-console-error-still-lets-nexus-drain

@@ -392,7 +392,10 @@
     (if (empty? tracks)
       min-fr
       (let [{:keys [size type value]} (first tracks)
-            min-fr (if (= type :flex) (max min-fr (/ size value)) min-fr)]
+            ;; A 0fr track takes no free space, so it sets no minimum
+            min-fr (if (and (= type :flex) (pos? value))
+                     (max min-fr (/ size value))
+                     min-fr)]
         (recur (rest tracks) (double min-fr))))))
 
 (defn calc-layout-data
