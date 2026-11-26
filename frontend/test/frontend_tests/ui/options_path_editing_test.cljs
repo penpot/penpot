@@ -13,21 +13,21 @@
    [app.main.ui.workspace.sidebar.options :as options]
    [cljs.test :as t :include-macros true]))
 
-(def ^:private path-editing?
-  @#'options/path-editing?)
+(def ^:private editing-existing-path?
+  @#'options/editing-existing-path?)
 
 (t/deftest path-editing-while-the-path-is-on-the-page
   (let [id        (uuid/next)
         edit-path {id {:edit-mode :move}}
         objects   {id {:id id :type :path}}]
-    (t/is (true? (path-editing? edit-path id objects)))))
+    (t/is (true? (editing-existing-path? edit-path id objects)))))
 
 (t/deftest no-path-editing-when-the-edited-path-left-the-page
   (let [id        (uuid/next)
         edit-path {id {:edit-mode :move}}]
-    (t/is (false? (path-editing? edit-path id {})))))
+    (t/is (false? (editing-existing-path? edit-path id {})))))
 
 (t/deftest no-path-editing-without-edit-state
   (let [id      (uuid/next)
         objects {id {:id id :type :path}}]
-    (t/is (false? (path-editing? {} id objects)))))
+    (t/is (false? (editing-existing-path? {} id objects)))))

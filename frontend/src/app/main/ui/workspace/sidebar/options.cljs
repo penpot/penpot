@@ -115,7 +115,7 @@
           (recur (pop queue) visited)))
       (sequence (keep (d/getf objects)) visited))))
 
-(defn- path-editing?
+(defn- editing-existing-path?
   "Whether the path `edition` is being edited. The shape can leave the
   page while its edit state stays, e.g. deleted by another user or undone;
   then there is no path to edit."
@@ -137,7 +137,7 @@
         (path.state/current-edit-state edit-path edition)
 
         path-editing?
-        (path-editing? edit-path edition objects)
+        (editing-existing-path? edit-path edition objects)
 
         path-content
         (dm/get-in drawing [:object :content])
