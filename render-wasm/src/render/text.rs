@@ -3,11 +3,11 @@ use crate::{
     error::Result,
     math::{Point, Rect},
     shapes::{
-        add_text_with_tabs, calculate_text_layout_data, set_paint_fill, vertical_align_offset,
-        ListMarker, ListStyleType, Paragraph as TextParagraph, ParagraphBuilderGroup,
-        ParagraphLayout, Stroke, StrokeKind, TextContent, TextDecorationSegment, TextDirection,
-        LIST_MARKER_CENTER_FACTOR, LIST_MARKER_GAP_FACTOR, LIST_MARKER_MIN_RADIUS,
-        LIST_MARKER_RADIUS_FACTOR,
+        add_trailing_space_anchor, calculate_text_layout_data, push_text_with_presentation_styles,
+        set_paint_fill, vertical_align_offset, ListMarker, ListStyleType,
+        Paragraph as TextParagraph, ParagraphBuilderGroup, ParagraphLayout, Stroke, StrokeKind,
+        TextContent, TextDecorationSegment, TextDirection, LIST_MARKER_CENTER_FACTOR,
+        LIST_MARKER_GAP_FACTOR, LIST_MARKER_MIN_RADIUS, LIST_MARKER_RADIUS_FACTOR,
     },
     utils::{get_fallback_fonts, get_font_collection},
 };
@@ -29,8 +29,9 @@ pub fn stroke_paragraph_builder_group_from_text(
     let mut paragraph_group = Vec::new();
     let remove_stroke_alpha = use_shadow.unwrap_or(false) && !stroke.is_transparent();
     let mut group_layer_opacity: Option<f32> = None;
+    let anchors = text_content.trailing_space_anchors();
 
-    for paragraph in text_content.paragraphs() {
+    for (index, paragraph) in text_content.paragraphs().iter().enumerate() {
         let mut stroke_paragraphs_map: std::collections::HashMap<usize, ParagraphBuilder> =
             std::collections::HashMap::new();
 
@@ -51,20 +52,21 @@ pub fn stroke_paragraph_builder_group_from_text(
                 });
                 let stroke_paint = stroke_paint.clone();
                 let remove_alpha = use_shadow.unwrap_or(false) && !span.is_transparent();
-                let stroke_style = span.to_stroke_style(
-                    &stroke_paint,
-                    fallback_fonts,
-                    remove_alpha,
-                    paragraph.line_height(),
-                );
-                builder.push_style(&stroke_style);
-                add_text_with_tabs(builder, &text, span.font_size);
+                let line_height = paragraph.line_height();
+                push_text_with_presentation_styles(builder, &text, span, fallback_fonts, || {
+                    span.to_stroke_style(&stroke_paint, fallback_fonts, remove_alpha, line_height)
+                });
             }
         }
 
-        let stroke_paragraphs: Vec<ParagraphBuilder> = (0..stroke_paragraphs_map.len())
+        let mut stroke_paragraphs: Vec<ParagraphBuilder> = (0..stroke_paragraphs_map.len())
             .filter_map(|i| stroke_paragraphs_map.remove(&i))
             .collect();
+        if anchors.get(index).copied().unwrap_or(false) {
+            stroke_paragraphs
+                .iter_mut()
+                .for_each(add_trailing_space_anchor);
+        }
 
         paragraph_group.push(stroke_paragraphs);
     }

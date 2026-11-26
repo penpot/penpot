@@ -8,17 +8,21 @@
   (:require
    [app.common.data :as d]
    [app.common.files.changes-builder :as pcb]
+   [app.common.files.validate :as cfv]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
+   [app.common.path-names :as cpn]
    [app.common.test-helpers.components :as thc]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
    [app.common.types.component :as ctk]
+   [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
+   [app.common.types.modifiers :as ctm]
    [app.common.types.shape-tree :as ctst]
    [clojure.test :as t]))
 
@@ -552,6 +556,330 @@
                                   {(:id file) file}
                                   (:id file)))
 
+(defn- changes-attrs
+  "Set of attrs touched by the :mod-obj changes of a changes map."
+  [changes]
+  (->> (:redo-changes changes)
+       (filter #(= :mod-obj (:type %)))
+       (mapcat :operations)
+       (map :attr)
+       (into #{})))
+
+(defn- file-with-path-component
+  []
+  (let [content [{:command :move-to :params {:x 10.3 :y 10.7}}
+                 {:command :line-to :params {:x 24.3 :y 10.7}}
+                 {:command :line-to :params {:x 17.3 :y 24.7}}
+                 {:command :close-path}]]
+    (-> (thf/sample-file :file1)
+        (tho/add-frame :main-root {:width 107.3 :height 41.7})
+        (ths/add-sample-shape :main-path :type :path :parent-label :main-root :content content)
+        (thc/make-component :component1 :main-root)
+        (thc/instantiate-component :component1 :copy-root {:children-labels [:copy-path]}))))
+
+(t/deftest test-no-sync-changes-when-position-changes-with-float-drift
+  ;; Regression (#12719): geometry in production carries sub-pixel drift
+  ;; and non-integer sizes, so move(+delta) followed by reposition(-delta)
+  ;; does not cancel exactly. A position-only move of the main must still
+  ;; produce no sync changes, and so no "library updated" notification.
+  (let [;; ==== Setup
+        file       (-> (thf/sample-file :file1)
+                       (tho/add-simple-component-with-copy :component1
+                                                           :main-root
+                                                           :main-child
+                                                           :copy-root
+                                                           :main-root-params {:width 107.3 :height 41.7}
+                                                           :main-child-params {:width 33.3 :height 17.7}
+                                                           :copy-root-params {:children-labels [:copy-child]}))
+        page       (thf/current-page file)
+        main-root  (ths/get-shape file :main-root)
+        main-child (ths/get-shape file :main-child)
+        copy-child (ths/get-shape file :copy-child)
+
+        ;; Override on the copy, so it carries touched state
+        changes0   (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                               #{(:id copy-child)}
+                                               (fn [shape]
+                                                 (assoc shape :fills (ths/sample-fills-color :fill-color "#fabada")))
+                                               (:objects page)
+                                               {})
+        file       (thf/apply-changes file changes0)
+        page       (thf/current-page file)
+
+        ;; ==== Action
+        ;; Move the whole main by 1 px plus sub-pixel noise
+        delta      (gpt/point 1.0000123 0.0000071)
+        changes1   (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                               #{(:id main-root) (:id main-child)}
+                                               (fn [shape] (gsh/move shape delta))
+                                               (:objects page)
+                                               {})
+
+        updated-file (thf/apply-changes file changes1)
+
+        sync-changes (cll/generate-sync-file-changes (pcb/empty-changes)
+                                                     nil
+                                                     :components
+                                                     (:id updated-file)
+                                                     (thi/id :component1)
+                                                     (:id updated-file)
+                                                     {(:id updated-file) updated-file}
+                                                     (:id updated-file))]
+
+    ;; ==== Check
+    (t/is (empty? (:redo-changes sync-changes)))))
+
+(t/deftest test-sync-size-change-of-main-child
+  ;; The drift tolerance must not swallow real size edits (>> 0.001).
+  (let [;; ==== Setup
+        file         (-> (thf/sample-file :file1)
+                         (tho/add-simple-component-with-copy :component1
+                                                             :main-root
+                                                             :main-child
+                                                             :copy-root
+                                                             :main-root-params {:width 107.3 :height 41.7}
+                                                             :main-child-params {:width 33.3 :height 17.7}
+                                                             :copy-root-params {:children-labels [:copy-child]}))
+        page         (thf/current-page file)
+
+        ;; ==== Action
+        updated-file (thf/apply-changes file
+                                        (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                                                    #{(thi/id :main-child)}
+                                                                    #(gsh/transform-shape % (ctm/change-size % (+ (:width %) 1) nil))
+                                                                    (:objects page)
+                                                                    {}))
+        attrs        (changes-attrs (sync-file-changes updated-file))]
+
+    ;; ==== Check
+    (t/is (contains? attrs :width))
+    (t/is (contains? attrs :selrect))))
+
+(t/deftest test-sync-text-position-data-change-with-same-xy
+  ;; A change in a text run (here its fill) that keeps x/y must still be
+  ;; synced: position-data is not a drifting geometry attr.
+  (let [;; ==== Setup
+        run         (fn [color]
+                      [{:x 0 :y 0 :width 50 :height 20 :text "hello"
+                        :fills [{:fill-color color :fill-opacity 1}]}])
+        file        (-> (thf/sample-file :file1)
+                        (tho/add-frame-with-text :main-root :main-child "hello")
+                        (thc/make-component :component1 :main-root)
+                        (thc/instantiate-component :component1 :copy-root {:children-labels [:copy-child]}))
+        set-pd      (fn [file color]
+                      (let [page       (thf/current-page file)
+                            main-child (ths/get-shape file :main-child)]
+                        (thf/apply-changes
+                         file
+                         (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                                     #{(:id main-child)}
+                                                     #(assoc % :position-data (run color))
+                                                     (:objects page)
+                                                     {}))))
+
+        file1       (set-pd file "#000000")
+        file2       (thf/apply-changes file1 (sync-file-changes file1))
+        file3       (set-pd file2 "#ff0000")
+
+        ;; ==== Action
+        sync-changes (sync-file-changes file3)]
+
+    ;; ==== Check
+    (t/is (contains? (changes-attrs sync-changes) :position-data))))
+
+(t/deftest test-sync-small-opacity-change
+  ;; The drift tolerance must not swallow real non-geometry changes.
+  (let [;; ==== Setup
+        file       (-> (thf/sample-file :file1)
+                       (tho/add-simple-component-with-copy :component1
+                                                           :main-root
+                                                           :main-child
+                                                           :copy-root
+                                                           :copy-root-params {:children-labels [:copy-child]}))
+        set-opacity (fn [file opacity]
+                      (let [page       (thf/current-page file)
+                            main-child (ths/get-shape file :main-child)]
+                        (thf/apply-changes
+                         file
+                         (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                                     #{(:id main-child)}
+                                                     #(assoc % :opacity opacity)
+                                                     (:objects page)
+                                                     {}))))
+
+        file1      (set-opacity file 1)
+        file2      (thf/apply-changes file1 (sync-file-changes file1))
+        file3      (set-opacity file2 0.9995)
+
+        ;; ==== Action
+        sync-changes (sync-file-changes file3)]
+
+    ;; ==== Check
+    (t/is (contains? (changes-attrs sync-changes) :opacity))))
+
+(t/deftest test-no-sync-changes-when-path-moves-with-float-drift
+  ;; Path content stores absolute coordinates, so it drifts like the other
+  ;; geometry when the main is moved.
+  (let [;; ==== Setup
+        file       (file-with-path-component)
+        page       (thf/current-page file)
+        main-root  (ths/get-shape file :main-root)
+        main-path  (ths/get-shape file :main-path)
+
+        ;; ==== Action
+        changes1   (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                               #{(:id main-root) (:id main-path)}
+                                               #(gsh/move % (gpt/point 1.0000123 0.0000071))
+                                               (:objects page)
+                                               {})
+        updated-file (thf/apply-changes file changes1)]
+
+    ;; ==== Check
+    (t/is (empty? (:redo-changes (sync-file-changes updated-file))))))
+
+(t/deftest test-sync-path-moved-inside-main
+  ;; Moving only the path inside its main is a real change and must sync.
+  (let [;; ==== Setup
+        file       (file-with-path-component)
+        page       (thf/current-page file)
+        main-path  (ths/get-shape file :main-path)
+
+        ;; ==== Action
+        changes1   (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                               #{(:id main-path)}
+                                               #(gsh/move % (gpt/point 1 0))
+                                               (:objects page)
+                                               {})
+        updated-file (thf/apply-changes file changes1)]
+
+    ;; ==== Check
+    (t/is (contains? (changes-attrs (sync-file-changes updated-file)) :content))))
+
+(defn- file-with-bool-component
+  []
+  (let [content [{:command :move-to :params {:x 10.3 :y 10.7}}
+                 {:command :line-to :params {:x 24.3 :y 10.7}}
+                 {:command :line-to :params {:x 17.3 :y 24.7}}
+                 {:command :close-path}]]
+    (-> (thf/sample-file :file1)
+        (tho/add-frame :main-root {:width 107.3 :height 41.7})
+        (ths/add-sample-shape :main-bool :type :bool :bool-type :union :parent-label :main-root :content content)
+        (ths/add-sample-shape :main-p1 :type :path :parent-label :main-bool :content content)
+        (ths/add-sample-shape :main-p2 :type :path :parent-label :main-bool :content content)
+        (thc/make-component :component1 :main-root)
+        (thc/instantiate-component :component1 :copy-root {:children-labels [:copy-bool :copy-p1 :copy-p2]}))))
+
+(defn- move-shapes
+  [file labels delta]
+  (let [page (thf/current-page file)]
+    (thf/apply-changes file
+                       (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                                   (into #{} (map #(thi/id %)) labels)
+                                                   #(gsh/move % delta)
+                                                   (:objects page)
+                                                   {}))))
+
+(t/deftest test-no-sync-changes-when-text-moves-with-float-drift
+  ;; Text position-data moves with the shape and drifts like geometry, so
+  ;; a position-only move of the main must produce no sync changes.
+  (let [;; ==== Setup
+        position-data [{:x 10.3 :y 10.7 :width 33.3 :height 17.7 :text "hello"
+                        :fills [{:fill-color "#000000" :fill-opacity 1}]}]
+        file          (-> (thf/sample-file :file1)
+                          (tho/add-frame-with-text :main-root :main-child "hello")
+                          (thc/make-component :component1 :main-root)
+                          (thc/instantiate-component :component1 :copy-root {:children-labels [:copy-child]}))
+        page          (thf/current-page file)
+        file          (thf/apply-changes file
+                                         (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                                                     #{(thi/id :main-child)}
+                                                                     #(assoc % :position-data position-data)
+                                                                     (:objects page)
+                                                                     {}))
+        file          (thf/apply-changes file (sync-file-changes file))
+
+        ;; ==== Action
+        updated-file  (move-shapes file [:main-root :main-child] (gpt/point 1.0000123 0.0000071))
+        sync-changes  (sync-file-changes updated-file)]
+
+    ;; ==== Check
+    (t/is (= #{} (changes-attrs sync-changes)))
+    (t/is (empty? (:redo-changes sync-changes)))))
+
+(t/deftest test-sync-text-moved-inside-main
+  ;; Moving only the text inside its main is a real change beyond the
+  ;; tolerance and must sync its position-data.
+  (let [;; ==== Setup
+        position-data [{:x 10.3 :y 10.7 :width 33.3 :height 17.7 :text "hello"
+                        :fills [{:fill-color "#000000" :fill-opacity 1}]}]
+        file          (-> (thf/sample-file :file1)
+                          (tho/add-frame-with-text :main-root :main-child "hello")
+                          (thc/make-component :component1 :main-root)
+                          (thc/instantiate-component :component1 :copy-root {:children-labels [:copy-child]}))
+        page          (thf/current-page file)
+        file          (thf/apply-changes file
+                                         (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                                                     #{(thi/id :main-child)}
+                                                                     #(assoc % :position-data position-data)
+                                                                     (:objects page)
+                                                                     {}))
+        file          (thf/apply-changes file (sync-file-changes file))
+
+        ;; ==== Action
+        updated-file  (move-shapes file [:main-child] (gpt/point 5 0))]
+
+    ;; ==== Check
+    (t/is (contains? (changes-attrs (sync-file-changes updated-file)) :position-data))))
+
+(t/deftest test-sync-text-position-data-entry-count-change
+  ;; A text that gains a line keeps its first entry untouched but has one
+  ;; more entry: a length mismatch is a real change and must sync.
+  (let [;; ==== Setup
+        entry         {:x 10.3 :y 10.7 :width 33.3 :height 17.7 :text "hello"
+                       :fills [{:fill-color "#000000" :fill-opacity 1}]}
+        set-pd        (fn [file position-data]
+                        (let [page (thf/current-page file)]
+                          (thf/apply-changes file
+                                             (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                                                         #{(thi/id :main-child)}
+                                                                         #(assoc % :position-data position-data)
+                                                                         (:objects page)
+                                                                         {}))))
+        file          (-> (thf/sample-file :file1)
+                          (tho/add-frame-with-text :main-root :main-child "hello")
+                          (thc/make-component :component1 :main-root)
+                          (thc/instantiate-component :component1 :copy-root {:children-labels [:copy-child]}))
+        file          (set-pd file [entry])
+        file          (thf/apply-changes file (sync-file-changes file))
+
+        ;; ==== Action
+        updated-file  (set-pd file [entry (assoc entry :y 28.7 :text "world")])]
+
+    ;; ==== Check
+    (t/is (contains? (changes-attrs (sync-file-changes updated-file)) :position-data))))
+
+(t/deftest test-no-sync-changes-when-bool-moves-with-float-drift
+  ;; Bool content stores absolute coordinates, so it drifts like path content.
+  (let [;; ==== Action
+        file         (file-with-bool-component)
+        updated-file (move-shapes file
+                                  [:main-root :main-bool :main-p1 :main-p2]
+                                  (gpt/point 1.0000123 0.0000071))
+        sync-changes (sync-file-changes updated-file)]
+
+    ;; ==== Check
+    (t/is (= #{} (changes-attrs sync-changes)))
+    (t/is (empty? (:redo-changes sync-changes)))))
+
+(t/deftest test-sync-bool-content-change-inside-main
+  ;; Moving only the bool inside its main is a real change and must sync.
+  (let [;; ==== Action
+        file         (file-with-bool-component)
+        updated-file (move-shapes file [:main-bool :main-p1 :main-p2] (gpt/point 1 0))]
+
+    ;; ==== Check
+    (t/is (contains? (changes-attrs (sync-file-changes updated-file)) :content))))
+
 (t/deftest test-sync-many-updated-shapes
   ;; The undo changes of a sync used to grow one lazy level per updated
   ;; shape (#12576). Overflowing the stack needs thousands of shapes, which
@@ -795,3 +1123,157 @@
     (t/is (not= (geometry main-group) (geometry main-group')))
     (t/is (= (:shapes main-group) (:shapes main-group'')))
     (t/is (= (geometry main-group) (geometry main-group'')))))
+
+(defn- run-sync-inverse
+  "Run the inverse sync on `shape-tag`, which has been renamed to an
+   unnormalized name, and return the resulting main root and component
+   names, and the updated file."
+  [shape-tag]
+  (let [file       (-> (thf/sample-file :file1)
+                       (tho/add-simple-component-with-copy :component1
+                                                           :main-root
+                                                           :main-child
+                                                           :copy-root)
+                       (tho/change-shape shape-tag #(update % :touched (fnil conj #{}) :name-group))
+                       (ths/update-shape shape-tag :name "Group/Subgroup"))
+        page       (thf/current-page file)
+        container  (ctn/make-container page :page)
+        changes    (-> (pcb/empty-changes)
+                       (pcb/with-container container)
+                       (cll/generate-sync-shape-inverse (:data file)
+                                                        {(:id file) file}
+                                                        container
+                                                        (thi/id shape-tag)))
+        file'      (thf/apply-changes file changes)
+        main-root' (ths/get-shape file' :main-root)
+        component' (ctkl/get-component (:data file') (thi/id :component1))]
+    [(:name main-root')
+     (cpn/merge-path-item (:path component') (:name component'))
+     file']))
+
+(t/deftest test-sync-inverse-normalizes-copy-name
+  (t/testing "syncing an unnormalized copy name keeps the component and its main root matching"
+    (let [file       (-> (thf/sample-file :file1)
+                         (tho/add-simple-component-with-copy :component1
+                                                             :main-root
+                                                             :main-child
+                                                             :copy-root)
+                         (tho/change-shape :copy-root #(update % :touched (fnil conj #{}) :name-group))
+                         (ths/update-shape :copy-root :name "Group/Subgroup"))
+          page       (thf/current-page file)
+          container  (ctn/make-container page :page)
+          changes    (-> (pcb/empty-changes)
+                         (pcb/with-container container)
+                         (cll/generate-sync-shape-inverse (:data file)
+                                                          {(:id file) file}
+                                                          container
+                                                          (thi/id :copy-root)))
+          file'      (thf/apply-changes file changes)
+          main-root' (ths/get-shape file' :main-root)
+          component' (ctkl/get-component (:data file') (thi/id :component1))]
+
+      ;; ==== Check
+      (t/is (= "Group / Subgroup" (:name main-root')))
+      (t/is (= "Group / Subgroup" (cpn/merge-path-item (:path component') (:name component'))))
+      (t/is (nil? (cfv/validate-file file' {}))))))
+
+(t/deftest test-sync-inverse-normalizes-main-name
+  (t/testing "syncing an unnormalized main name keeps the component and the main root matching"
+    (let [[main-root-name component-name file'] (run-sync-inverse :main-root)]
+      ;; ==== Check
+      (t/is (= "Group / Subgroup" main-root-name))
+      (t/is (= "Group / Subgroup" component-name))
+      (t/is (nil? (cfv/validate-file file' {}))))))
+
+(defn- relocate-into
+  "Drags the shape `label` into the board `parent-label`, as the UI does."
+  [file label parent-label]
+  (let [page (thf/current-page file)]
+    (thf/apply-changes file
+                       (cls/generate-relocate (-> (pcb/empty-changes nil)
+                                                  (pcb/with-page-id (:id page))
+                                                  (pcb/with-objects (:objects page)))
+                                              (thi/id parent-label)
+                                              0
+                                              #{(thi/id label)}))))
+
+(defn- constraints-attrs
+  [changes]
+  (into #{} (filter #{:constraints-h :constraints-v}) (changes-attrs changes)))
+
+(defn- file-with-relocated-copy
+  "A component with a copy dragged into a board; the relocation writes
+  explicit default constraints on the copy while the main keeps nil."
+  []
+  (-> (thf/sample-file :file1)
+      (tho/add-simple-component :component1 :main-root :main-child
+                                :child-params {:fills (ths/sample-fills-color :fill-color "#abcdef")})
+      (tho/add-frame :board :x 300 :y 300 :width 200 :height 200)
+      (thc/instantiate-component :component1 :copy-root)
+      (relocate-into :copy-root :board)))
+
+(t/deftest test-sync-keeps-default-constraints-of-relocated-copy
+  (let [;; ==== Setup
+        file         (file-with-relocated-copy)
+
+        ;; ==== Action
+        updated-file (update-fill file :main-child "#fabada")
+        sync-changes (sync-file-changes updated-file)]
+
+    ;; ==== Check
+    (t/is (= :left (:constraints-h (ths/get-shape file :copy-root))))
+    (t/is (nil? (:constraints-h (ths/get-shape file :main-root))))
+    (t/is (contains? (changes-attrs sync-changes) :fills))
+    (t/is (= #{} (constraints-attrs sync-changes)))))
+
+(t/deftest test-no-sync-changes-for-nested-copy-with-default-constraints
+  (let [;; ==== Setup
+        file         (-> (file-with-relocated-copy)
+                         (tho/add-frame :main2-root :x 600 :y 0 :width 300 :height 300)
+                         (relocate-into :copy-root :main2-root)
+                         (thc/make-component :component2 :main2-root)
+                         (thc/instantiate-component :component2 :copy2-root))
+
+        ;; ==== Action
+        updated-file (move-shapes file [:main-root :main-child] (gpt/point 1 0))
+        changes1     (sync-file-changes updated-file)
+        file'        (thf/apply-changes updated-file changes1)
+        changes2     (cll/generate-sync-file-changes (pcb/empty-changes)
+                                                     nil
+                                                     :components
+                                                     (:id file')
+                                                     (thi/id :component2)
+                                                     (:id file')
+                                                     {(:id file') file'}
+                                                     (:id file'))]
+
+    ;; ==== Check
+    (t/is (= #{} (constraints-attrs changes1)))
+    (t/is (empty? (:redo-changes changes2)))))
+
+(t/deftest test-sync-constraints-changed-inside-main
+  ;; An explicit constraint on the main is a real change and must sync.
+  (let [;; ==== Setup
+        file         (-> (thf/sample-file :file1)
+                         (tho/add-frame :main-root :x 0 :y 0 :width 100 :height 100)
+                         (tho/add-rect :main-child :parent-label :main-root :x 10 :y 10
+                                       :width 10 :height 10)
+                         (thc/make-component :component1 :main-root)
+                         (thc/instantiate-component :component1 :copy-root
+                                                    :children-labels [:copy-child]))
+        page         (thf/current-page file)
+
+        ;; ==== Action
+        updated-file (thf/apply-changes
+                      file
+                      (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                                  #{(thi/id :main-child)}
+                                                  #(assoc % :constraints-h :right)
+                                                  (:objects page)
+                                                  {}))
+        sync-changes (sync-file-changes updated-file)
+        file'        (thf/apply-changes updated-file sync-changes)]
+
+    ;; ==== Check
+    (t/is (contains? (constraints-attrs sync-changes) :constraints-h))
+    (t/is (= :right (:constraints-h (ths/get-shape file' :copy-child))))))

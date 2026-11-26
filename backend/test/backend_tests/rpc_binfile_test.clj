@@ -128,7 +128,7 @@
   ;; The imported files are created inside the importer, so the command emits a
   ;; create-file event per file for a local projection.
   (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
-    (with-redefs [cf/flags (conj cf/flags :audit-log)]
+    (th/with-audit-config (conj cf/flags :nexus)
       (let [profile (th/create-profile* 1 {:is-active true})
             team    (th/create-team* 51 {:profile-id (:id profile)})
             project (th/create-project* 51 {:profile-id (:id profile)

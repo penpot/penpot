@@ -1,0 +1,7 @@
+# Composable tests in ClojureScript
+
+- Start in `frontend/test/frontend_tests/composable_tests/`: `comp/sync_test.cljs` has the cases and sweeps; `interpreter.cljs` connects them to the real workspace events. Use the focused frontend runner in `mem:frontend/testing-unit` with `frontend-tests.composable-tests.comp.sync-test`.
+- This harness does not run every `initialize-workspace` subscription. It starts the real component watcher and supplies an undo watcher of its own. When testing behavior beyond the edit, verify the required subscription is wired and probe its effect in the store; a green assertion alone can miss an unwired path.
+- Restore the load-time `st/state` and `st/stream` before each variant. `app.main.refs` remains bound to the original store atom even when another test replaces the vars; edit events sent to a different atom can silently miss propagation.
+- For nested scenarios, track the deepest origin separately from the advancing outer main. Find the target by membership in the `shape-ref` chain, not just its endpoint; anchor it by a parent that survives swap. To test cross-level propagation, build progressive nesting rather than sibling instances.
+- Prefer trailing assertions where a failure must appear in the variant transcript: inline `Test` exceptions can escape the interpreter. Compose independent optionals rather than wrapping a whole sequence in one optional; the interpreter does not flatten that shape.

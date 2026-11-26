@@ -21,6 +21,7 @@
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.time :as ct]
+   [app.common.uri :as u]
    [app.config :as cf]
    [app.db :as db]
    [app.storage :as sto]
@@ -28,9 +29,14 @@
 
 (defn- resource-uri
   "The url a user downloads the artifact from. A string, because the
-  descriptor ends up in the JSON result of the job."
-  [id]
-  (cf/get-public-uri "assets/by-id/" (str id)))
+  descriptor ends up in the JSON result of the job. A base passed by the
+  caller is bound as the effective public URI: the job runs outside the
+  request that created it."
+  [base id]
+  (if (some? base)
+    (binding [cf/config (cf/with-public-uri (u/uri base) cf/config)]
+      (cf/get-public-uri "assets/by-id/" (str id)))
+    (cf/get-public-uri "assets/by-id/" (str id))))
 
 (defn put-resource
   "Store an artifact of a job in the `job-resource` bucket and return the
@@ -42,6 +48,8 @@
                 temporary file or from bytes in memory
   - `:filename` the name the user will see
   - `:mtype`    the content type of the artifact
+  - `:public-uri` the base for the download URI, captured when the job was
+                  created (nil keeps the canonical base)
 
   `profile-id` is the owner of the object: the profile that owns the job,
   for both the package a job consumes and the artifact it produces.
@@ -50,7 +58,7 @@
   row ever references (a crash between the upload and the completion) is
   reclaimed by the storage GC instead of leaking; while a row references
   it, `storage-gc-touched` freezes it."
-  [cfg profile-id {:keys [content filename mtype]}]
+  [cfg profile-id {:keys [content filename mtype public-uri]}]
   (assert (uuid? profile-id) "expected the profile that owns the resource")
   (assert (string? mtype) "expected the content type of the resource")
   (let [storage (sto/resolve cfg)
@@ -61,7 +69,7 @@
                                   :profile-id      profile-id
                                   :content-type    mtype})]
     {:resource-id  (:id object)
-     :resource-uri (resource-uri (:id object))
+     :resource-uri (resource-uri public-uri (:id object))
      :filename     filename
      :mtype        mtype
      :size         (:size object)}))

@@ -14,6 +14,7 @@
    [app.main.data.changes :as dch]
    [app.main.data.comments :as dcmt]
    [app.main.data.fonts :as df]
+   [app.main.data.helpers :as dsh]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.undo :as dwu]
    [beicon.v2.core :as rx]
@@ -21,6 +22,7 @@
    [frontend-tests.helpers.async :as async]
    [frontend-tests.helpers.mock :as mock]
    [frontend-tests.helpers.state :as ths]
+   [frontend-tests.tokens.helpers.state :as tohs]
    [potok.v2.core :as ptk]))
 
 (t/use-fixtures :each {:before cthi/reset-idmap!})
@@ -159,6 +161,177 @@
     (t/is (= 1 (count (get-in state [:workspace-undo :items]))))
     (t/is (= #{g1 g2} (get-in state [:workspace-undo :items 0 :undo-groups])))))
 
+;; Scenario: a commit stacks onto the last history entry. Proves: it takes
+;; that entry's undo group, so the commits it starts (e.g. a component sync)
+;; inherit it, and one undo reverts the whole action.
+(t/deftest a-stacked-commit-takes-the-undo-group-of-its-entry
+  (t/async
+    done
+    (let [group (uuid/next)]
+      (run-commits done
+                   (fn [page-id]
+                     [#(assoc % :workspace-undo {:items [(entry page-id "A" group)] :index 0})
+                      (rename-page page-id "B" :stack-undo? true)])
+                   (fn [groups _]
+                     (t/is (= [group] groups)))))))
+
+;; Scenario: after an undo, the undo index sits below the end of the history
+;; when a commit stacks onto it. Proves: the commit takes the group of the
+;; entry at the index, where `append-undo` stacks it, not the group of the
+;; undone entry at the end.
+(t/deftest a-stacked-commit-after-an-undo-takes-the-group-of-the-entry-at-the-index
+  (t/async
+    done
+    (let [[group-a group-b] (repeatedly 2 uuid/next)]
+      (run-commits done
+                   (fn [page-id]
+                     [#(assoc % :workspace-undo {:items [(entry page-id "A" group-a)
+                                                         (entry page-id "B" group-b)]
+                                                 :index 0})
+                      (rename-page page-id "C" :stack-undo? true)])
+                   (fn [groups _]
+                     (t/is (= [group-a] groups)))))))
+
+;; Scenario: a commit stacks onto an empty undo history. Proves: with no
+;; entry to join, it gets a group of its own.
+(t/deftest a-stacked-commit-on-an-empty-history-gets-its-own-undo-group
+  (t/async
+    done
+    (run-commits done
+                 (fn [page-id]
+                   [#(assoc % :workspace-undo {})
+                    (rename-page page-id "A" :stack-undo? true)])
+                 (fn [[group :as groups] _]
+                   (t/is (= 1 (count groups)))
+                   (t/is (some? group))))))
+
+;; Scenario: the user edits the font size of a main text, which then resizes
+;; itself in its own undo transaction with a stacked commit (`resize-text`).
+;; Proves: the resize takes the group of the user's edit, not the one the
+;; transaction was opened with. Before, the component sync that the resize
+;; starts got a group of its own, and the first Ctrl+Z undid only that sync.
+(t/deftest a-stacked-commit-in-an-empty-transaction-takes-the-group-of-its-entry
+  (t/async
+    done
+    (let [group (uuid/next)
+          tx    (js/Symbol)]
+      (run-commits done
+                   (fn [page-id]
+                     [#(assoc % :workspace-undo {:items [(entry page-id "A" group)] :index 0})
+                      (dwu/start-undo-transaction tx)
+                      (rename-page page-id "B" :stack-undo? true)
+                      (dwu/commit-undo-transaction tx)])
+                   (fn [groups _]
+                     (t/is (= [group] groups)))))))
+
+;; Scenario: an open transaction already holds changes when a stacked commit
+;; arrives. Proves: the stacked commit joins the transaction and its group,
+;; not the group of the last history entry.
+(t/deftest a-stacked-commit-in-a-transaction-with-changes-takes-its-group
+  (t/async
+    done
+    (let [[entry-group tx-group] (repeatedly 2 uuid/next)]
+      (run-commits done
+                   (fn [page-id]
+                     (let [held (entry page-id "B" tx-group)]
+                       [#(assoc % :workspace-undo
+                                {:items       [(entry page-id "A" entry-group)]
+                                 :index       0
+                                 :transaction (select-keys held [:undo-changes :redo-changes :undo-group])})
+                        (rename-page page-id "C" :stack-undo? true)]))
+                   (fn [groups _]
+                     (t/is (= [tx-group] groups)))))))
+
+;; Scenario: an automatic heal commits with `:stack-undo? true` and
+;; `:save-undo? false` (the auto-grow text heals). Proves: it does not take
+;; the group of the user's last action, the rollback unit, since it never
+;; joins that history entry. Inside an empty transaction it takes the
+;; transaction's group.
+(t/deftest a-stacked-commit-without-undo-keeps-its-own-undo-group
+  (t/async
+    done
+    (let [group    (uuid/next)
+          tx       (js/Symbol)
+          tx-group (atom nil)
+          spy      (ptk/reify ::spy-heal-transaction
+                     ptk/EffectEvent
+                     (effect [_ state _]
+                       (reset! tx-group (get-in state [:workspace-undo :transaction :commit-group]))))]
+      (run-commits done
+                   (fn [page-id]
+                     [#(assoc % :workspace-undo {:items [(entry page-id "A" group)] :index 0})
+                      (rename-page page-id "B" :stack-undo? true :save-undo? false)
+                      (dwu/start-undo-transaction tx)
+                      spy
+                      (rename-page page-id "C" :stack-undo? true :save-undo? false)
+                      (dwu/commit-undo-transaction tx)])
+                   (fn [[heal-group tx-heal-group] _]
+                     (t/is (some? heal-group))
+                     (t/is (not= group heal-group))
+                     (t/is (= @tx-group tx-heal-group)))))))
+
+(defn- run-edit-resize-and-sync
+  "Runs the user's edit of a main text (rename to A), its resize in its own
+  undo transaction with a stacked commit (B) and the component sync the
+  resize starts (C), which inherits the resize's group. Then runs
+  `then-events` and calls `check` with the page id and the final state."
+  [done then-events check]
+  (let [file       (cthf/sample-file :file1 :page-label :page1)
+        page-id    (cthf/current-page-id file)
+        store      (ths/setup-store file)
+        last-group (atom nil)
+        sub        (->> (ptk/input-stream store)
+                        (rx/filter dch/commit?)
+                        (rx/subs! #(reset! last-group (:undo-group (deref %)))))
+        tx         (js/Symbol)
+        ;; The component sync: commits with the group of the commit it
+        ;; follows, as `component-changed` does
+        sync       (ptk/reify ::sync
+                     ptk/WatchEvent
+                     (watch [_ _ _]
+                       (rx/of (rename-page page-id "C"
+                                           :undo-changes [{:type :mod-page :id page-id :name "B"}]
+                                           :undo-group @last-group))))]
+    (ths/run-store store done
+                   (concat [(tohs/watch-undo-stack)
+                            (rename-page page-id "A")
+                            (dwu/start-undo-transaction tx)
+                            (rename-page page-id "B"
+                                         :undo-changes [{:type :mod-page :id page-id :name "A"}]
+                                         :stack-undo? true)
+                            (dwu/commit-undo-transaction tx)
+                            sync]
+                           then-events)
+                   (fn [state]
+                     (rx/dispose! sub)
+                     (check page-id state)))))
+
+;; Scenario: the user edits a main text; the text resizes itself in its own
+;; undo transaction with a stacked commit, and that resize starts a component
+;; sync that inherits the resize's group. Proves: one Ctrl+Z reverts the
+;; edit, the resize and the sync. Before, the sync was an undo entry of its
+;; own and the first Ctrl+Z undid only the sync.
+(t/deftest one-undo-reverts-an-edit-its-stacked-resize-and-their-sync
+  (t/async
+    done
+    (run-edit-resize-and-sync done
+                              [dwu/undo]
+                              (fn [page-id state]
+                                (t/is (= 2 (count (get-in state [:workspace-undo :items]))))
+                                (t/is (= -1 (get-in state [:workspace-undo :index])))
+                                (t/is (= "Page 1" (:name (dsh/lookup-page state page-id))))))))
+
+;; Scenario: the same action as above is undone and then redone. Proves: one
+;; redo restores the edit, the resize and the sync together.
+(t/deftest one-redo-restores-an-edit-its-stacked-resize-and-their-sync
+  (t/async
+    done
+    (run-edit-resize-and-sync done
+                              [dwu/undo dwu/redo]
+                              (fn [page-id state]
+                                (t/is (= 1 (get-in state [:workspace-undo :index])))
+                                (t/is (= "C" (:name (dsh/lookup-page state page-id))))))))
+
 ;; Scenario: the user presses Ctrl+Z on a page rename. Proves: the commit it
 ;; makes can be undone (its undo changes redo the rename) and names the index
 ;; the history moved from, so a rollback can put both back.
@@ -267,8 +440,8 @@
                     (ptk/event ::dw/reload-current-file))
          (await (async/settle))
          (ptk/emit! store (rename-page (cthf/current-page-id file) "Renamed"))
-         (await (async/wait-for #(seq (get-in @store [:workspace-undo :items]))
-                                "the commit reaches the undo history"))
+         (await (async/wait-for-store store #(seq (get-in @store [:workspace-undo :items]))
+                                      "the commit reaches the undo history"))
          (await (async/settle))
          (t/is (= 1 (count (get-in @store [:workspace-undo :items]))))
          (finally

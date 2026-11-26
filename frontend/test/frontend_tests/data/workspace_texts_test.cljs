@@ -7,10 +7,14 @@
 (ns frontend-tests.data.workspace-texts-test
   (:require
    [app.common.geom.rect :as grc]
+   [app.common.test-helpers.components :as cthc]
+   [app.common.test-helpers.compositions :as ctho]
    [app.common.test-helpers.files :as cthf]
+   [app.common.test-helpers.ids-map :as cthi]
    [app.common.test-helpers.shapes :as cths]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape :as cts]
+   [app.common.types.shape.text :as ctst]
    [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.texts :as dwt]
@@ -19,7 +23,15 @@
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.state :as ths]
+   [frontend-tests.helpers.wasm :as thw]
    [potok.v2.core :as ptk]))
+
+(t/use-fixtures :each
+  {:before (fn []
+             (cthi/reset-idmap!)
+             (thw/setup-wasm-mocks!))
+   :after  (fn []
+             (thw/teardown-wasm-mocks!))})
 
 ;; ---------------------------------------------------------------------------
 ;; Helpers
@@ -313,6 +325,39 @@
                           (= :app.main.data.workspace.shapes/update-shapes (ptk/type %)))
                     @events))))
 
+;; Scenario: finalize an auto-grow text edit on a component copy under
+;; render-wasm/v1. Proves: content is committed and the auto-resize does
+;; not mark :geometry-group (so later main font-size sync can still size
+;; the box). See #12721.
+(t/deftest finalize-auto-grow-copy-skips-geometry-touched
+  (t/async
+    done
+    (let [file   (-> (cthf/sample-file :file1)
+                     (ctho/add-frame-with-text :main-root :main-child "hello world")
+                     (cthc/make-component :component1 :main-root)
+                     (cthc/instantiate-component :component1 :copy-root
+                                                 {:children-labels [:copy-child]}))
+          copy   (cths/get-shape file :copy-child)
+          copy-id (:id copy)
+          store  (ths/setup-store file)
+          mid    (txt/change-text (:content copy) "typing")
+          final  (txt/change-text (:content copy) "changed")
+          ;; Non-finalize first so session geom is stored; otherwise finalize
+          ;; is treated as a no-op and skips the geometry commit path.
+          events [(dwt/v2-update-text-shape-content copy-id mid :finalize? false)
+                  (dwt/v2-update-text-shape-content copy-id final :finalize? true)]]
+
+      (ths/run-store
+       store done events
+       (fn [new-state]
+         (let [file'  (ths/get-file-from-state new-state)
+               copy'  (cths/get-shape file' :copy-child)
+               text'  (get-in copy' [:content :children 0 :children 0 :children 0 :text])]
+           (t/is (= "changed" text')
+                 "finalize must commit the edited content")
+           (t/is (not (contains? (:touched copy') :geometry-group))
+                 "auto-grow finalize must not mark :geometry-group on a component copy")))))))
+
 (t/deftest add-typography-normalises-float-line-height
   (t/async
     done
@@ -597,6 +642,29 @@
   (t/testing "a non-root content (e.g. paragraph) is left alone"
     (let [node {:type "paragraph" :children []}]
       (t/is (= node (dwt/ensure-valid-text-content node))))))
+
+;; ---------------------------------------------------------------------------
+;; Tests: editor-shape-content (legacy editor commit)
+;; ---------------------------------------------------------------------------
+
+(t/deftest editor-shape-content-drops-nil-paragraph-attrs
+  (t/testing "a nil :text-decoration left in the paragraph data is dropped"
+    (let [exported {:type "root"
+                    :children [{:type "paragraph-set"
+                                :children [{:type "paragraph"
+                                            :key "1gt0a"
+                                            :font-family "sourcesanspro"
+                                            :text-decoration nil
+                                            :typography-ref-id nil
+                                            :children [{:text "hello"
+                                                        :font-family "sourcesanspro"}]}]}]}
+          shape    {:content {:type "root" :vertical-align "center" :children []}}
+          content  (dwt/editor-shape-content exported shape)
+          para     (get-in content [:children 0 :children 0])]
+      (t/is (ctst/valid-content? content))
+      (t/is (not (contains? para :text-decoration)))
+      (t/is (= "sourcesanspro" (:font-family para)))
+      (t/is (= "center" (:vertical-align content))))))
 
 ;; ---------------------------------------------------------------------------
 ;; Tests: merge-live-text-dimensions (Design tab / edition outline)

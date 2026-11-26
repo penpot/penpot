@@ -12,10 +12,12 @@
    [app.config :as cf]
    [app.main.data.auth :as da]
    [app.main.data.event :as ev]
+   [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
    [app.main.data.nitrate :as dnt]
    [app.main.data.notifications :as ntf]
    [app.main.data.workspace :as-alias dw]
+   [app.main.features :as features]
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.main.store :as st]
@@ -410,7 +412,8 @@
               :hint hint
               :href (rt/get-current-href)
               :report report
-              :occurrences occurrences})))
+              :occurrences occurrences
+              :renderer (features/get-active-renderer @st/state)})))
 
 (defn submit-report
   "Report the error report to the audit log subsystem, subject to the
@@ -435,36 +438,90 @@
                     hint
                     occurrences))))
 
+(def ^:private update-loop-observe-ms
+  "Time the scheduler trips are counted after the first one, so the report
+  tells a loop that goes on (many trips) from a long chain of updates that
+  ends (one trip)."
+  5000)
+
+(def ^:private update-loop-stack-lines
+  "Lines kept from the stack of the last trip."
+  25)
+
 (defonce ^:private update-loop-warned-at
   (volatile! 0))
+
+;; The trips counted since the first one of the current report, or nil
+(defonce ^:private update-loop-run
+  (volatile! nil))
+
+(defn- current-stack
+  []
+  (.-stack (js/Error.)))
+
+(defn- stack-head
+  [stack]
+  (some->> (str/lines stack)
+           (take update-loop-stack-lines)
+           (str/join "\n")))
+
+(defn- report-update-loop
+  []
+  (try
+    (when-let [{:keys [rounds trips stack last-stack events objects]} @update-loop-run]
+      (vreset! update-loop-run nil)
+      (let [cause (ex-info "update loop throttled"
+                           (cond-> {:type :internal
+                                    :code :update-loop-throttled
+                                    :rounds rounds
+                                    :trips trips
+                                    :observed-ms update-loop-observe-ms}
+                             (some? objects)
+                             (assoc :page-objects objects)
+
+                             (some? last-stack)
+                             (assoc :last-trip-stack (stack-head last-stack))))]
+        ;; The trace must show where the first trip happened, not this
+        ;; delayed call.
+        (set! (.-stack cause) stack)
+        (when (seq events)
+          (.set in-flight-by-cause cause (in-flight-lines events)))
+        (submit-report :event-name "unhandled-exception"
+                       :hint (ex-message cause)
+                       :report (fn [] (generate-report cause))
+                       :cause cause)))
+    (catch :default _
+      nil)))
 
 (defn on-update-loop
   "Handler for the rumext update scheduler trips: logs the throttled
   update loop and reports it as an unhandled exception with the events
-  being processed, at most once per `report-window-ms`. Runs inside store
-  watchers and effect bodies, so it never throws."
+  being processed, at most once per `report-window-ms`. The report waits
+  `update-loop-observe-ms` and counts the trips meanwhile. Runs inside
+  store watchers and effect bodies, so it never throws."
   [{:keys [rounds]}]
   (try
-    (let [now (inst-ms (ct/now))]
-      (when (>= (- now @update-loop-warned-at) report-window-ms)
-        (vreset! update-loop-warned-at now)
-        (let [events (ptk/in-flight-events st/state)
-              cause  (ex-info "update loop throttled"
-                              {:type :internal
-                               :code :update-loop-throttled
-                               :rounds rounds})]
-          (.warn js/console "[update-scheduler] update loop throttled; in-flight events:"
-                 (into-array (map ptk/repr-event events)))
-          (when (seq events)
-            (.set in-flight-by-cause cause (in-flight-lines events)))
-          ;; Report outside the loop that tripped the scheduler, as an
-          ;; unhandled exception: a throttled loop is an application defect,
-          ;; so it must reach the error reports and alerts, not only audit.
-          (ts/schedule
-           #(submit-report :event-name "unhandled-exception"
-                           :hint (ex-message cause)
-                           :report (fn [] (generate-report cause))
-                           :cause cause)))))
+    (if (some? @update-loop-run)
+      (vswap! update-loop-run #(-> %
+                                   (update :trips inc)
+                                   (assoc :last-stack (current-stack))))
+      (let [now (inst-ms (ct/now))]
+        (when (>= (- now @update-loop-warned-at) report-window-ms)
+          (vreset! update-loop-warned-at now)
+          (let [events (ptk/in-flight-events st/state)]
+            (.warn js/console "[update-scheduler] update loop throttled; in-flight events:"
+                   (into-array (map ptk/repr-event events)))
+            (vreset! update-loop-run
+                     {:rounds rounds
+                      :trips 1
+                      :stack (current-stack)
+                      :events events
+                      :objects (some-> (dsh/lookup-page-objects @st/state) count)})
+            ;; Report outside the loop that tripped the scheduler, as an
+            ;; unhandled exception: a throttled loop is an application
+            ;; defect, so it must reach the error reports and alerts, not
+            ;; only audit.
+            (ts/schedule update-loop-observe-ms report-update-loop)))))
     (catch :default _
       nil)))
 
@@ -736,17 +793,41 @@
       (ex/print-throwable cause :prefix "Unexpected Error")
       (flash :cause cause :type :unhandled))))
 
+(def recoverable-wasm-codes
+  "WASM error codes that show a toast; any other code shows the error page."
+  #{:non-blocking :wasm-reload-context-failure :viewer-canvas-failed})
+
 (defmethod ptk/handle-error :wasm-error
   [error]
   (when-let [cause (::instance error)]
     (ex/print-throwable cause)
-    (let [code (get error :code)]
-      (cond
-        (= code :panic)
-        (st/emit! (rt/assign-exception error))
+    (if (contains? recoverable-wasm-codes (:code error))
+      (flash :type :handled :cause cause)
+      (st/emit! (rt/assign-exception error)))))
 
-        :else
-        (flash :type :handled :cause cause)))))
+(defn- handle-wasm-effect-error
+  [cause]
+  (let [{:keys [type code]} (ex-data cause)]
+    (if (and (= type :wasm-error) (contains? recoverable-wasm-codes code))
+      (on-error cause)
+      (throw cause))))
+
+(defn wrap-wasm-effect
+  "Runs the React effect fn `f` and guards the cleanup fn it returns: a
+  recoverable WASM error goes to `on-error`, any other error is rethrown."
+  [f]
+  (let [result (try
+                 (f)
+                 (catch :default cause
+                   (handle-wasm-effect-error cause)
+                   nil))]
+    (if (fn? result)
+      (fn []
+        (try
+          (result)
+          (catch :default cause
+            (handle-wasm-effect-error cause))))
+      result)))
 
 ;; We receive a explicit authentication error; If the uri is for
 ;; workspace, dashboard, viewer or settings, then assign the exception
@@ -804,11 +885,11 @@
   [{:keys [organization-id team-id] :as error}]
   (when-not @sso-renewal-pending?
     (vreset! sso-renewal-pending? true)
-    (let [dest-url (rt/get-current-href)]
+    (let [query-string (rt/get-current-query-string)]
       (->> (dnt/check-organization-sso
             {:organization-id organization-id
              :team-id team-id
-             :dest-url dest-url})
+             :query-string query-string})
            ;; Release the guard however the check ends, including an
            ;; unsubscription or a completion without a result: a stuck guard
            ;; would silently drop every later rejection.

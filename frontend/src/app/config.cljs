@@ -73,10 +73,26 @@
     :browser
     :webworker))
 
+;; --- Compile-time devenv switch
+;;
+;; Set to true only by the devenv containers (PENPOT_DEVENV=true in
+;; docker-compose.main.yml); production builds leave the default. When true,
+;; the frontend disables the admin-console by default; `enable-admin-console`
+;; in the user's `config.js` re-enables it (user flags parse after the
+;; injected default and the last flag wins).
+(goog-define devenv-mode false)
+
+(defn- apply-devenv-defaults
+  "Prepends the devenv default `disable-admin-console` before the user flags.
+  User flags are parsed after it, so `enable-admin-console` wins."
+  [devenv? flags]
+  (if devenv? (concat [:disable-admin-console] flags) flags))
+
 (defn- parse-flags
   [global]
   (let [flags (obj/get global "penpotFlags" "")
-        flags (sequence (map keyword) (str/words flags))]
+        flags (sequence (map keyword) (str/words flags))
+        flags (apply-devenv-defaults devenv-mode flags)]
     (flags/parse flags/default flags)))
 
 (defn- parse-version
@@ -178,9 +194,44 @@
   ;; all path join operations works as expected.
   (u/ensure-path-slash uri-str))
 
+(defn- normalize-trusted-origin
+  [value]
+  (when-let [[value host]
+             (re-matches #"https?://(\[[0-9a-f:.]+\]|[a-z0-9.-]+)(?::[0-9]+)?"
+                         (str/lower value))]
+    (try
+      (let [url (js/URL. value)]
+        ;; Do not let URL parsing turn a different host spelling into a
+        ;; trusted host, or accept DNS names the backend does not parse.
+        (when (and (= host (.-hostname url))
+                   (or (str/starts-with? host "[")
+                       (re-matches #"[0-9]+(?:\.[0-9]+){3}" host)
+                       (re-matches #"[a-z0-9]+(?:[a-z0-9-]*[a-z0-9])?" host)
+                       (re-matches #"(?:[a-z0-9]+(?:[a-z0-9-]*[a-z0-9])?\.)*[a-z](?:[a-z0-9-]*[a-z0-9])?\.?" host)))
+          (.-origin url)))
+      (catch :default _ nil))))
+
+(defn- decode-trusted-origins
+  [encoded]
+  (when (string? encoded)
+    (try
+      (into #{} (keep normalize-trusted-origin)
+            (str/split (js/atob encoded) #"[ \t\n\r\f\u000b,]+"))
+      (catch :default _ nil))))
+
+(defn- resolve-public-uri
+  [canonical browser-origin encoded-origins]
+  (let [base    (normalize-uri (or canonical browser-origin))
+        origins (decode-trusted-origins encoded-origins)]
+    (if (contains? origins browser-origin)
+      (let [{:keys [scheme host port]} (u/uri browser-origin)]
+        (assoc base :scheme scheme :host host :port port))
+      base)))
+
 (def public-uri
-  (normalize-uri (or (obj/get global "penpotPublicURI")
-                     (obj/get location "origin"))))
+  (resolve-public-uri (obj/get global "penpotPublicURI")
+                      (obj/get location "origin")
+                      (obj/get global "penpotTrustedOrigins")))
 
 (def mcp-ws-uri
   (or (some-> (obj/get global "penpotMcpServerURI") u/uri)
@@ -226,6 +277,65 @@
   []
   (let [f (obj/get global "initializeExternalConfigInfo")]
     (when (fn? f) (f))))
+
+(defn- get-or-create-event-callbacks-map
+  "Return the host-facing Map of event-name → callback(s), creating it
+  on globalThis when absent."
+  []
+  (let [existing (obj/get global "penpotEventCallbacks")]
+    (if (instance? js/Map existing)
+      existing
+      (let [m (js/Map.)]
+        (obj/set! global "penpotEventCallbacks" m)
+        m))))
+
+(defn add-event-callback
+  "Register a callback for a named frontend audit event.
+
+  Hosts (config.js / SaaS shell) call this as
+  `globalThis.penpotAddEventCallback(name, fn)`. Multiple callbacks per
+  name are kept in registration order."
+  [event-name callback]
+  (let [m     (get-or-create-event-callbacks-map)
+        entry (.get m event-name)]
+    (cond
+      (nil? entry)
+      (.set m event-name #js [callback])
+
+      (array? entry)
+      (.push entry callback)
+
+      (fn? entry)
+      (.set m event-name #js [entry callback])
+
+      :else
+      (.set m event-name #js [callback]))
+    nil))
+
+(defn get-event-callbacks
+  "Return the callbacks registered for `event-name`, or nil.
+
+  Accepts a single function or a JS array of functions under that name
+  on `globalThis.penpotEventCallbacks`."
+  [event-name]
+  (let [m (obj/get global "penpotEventCallbacks")]
+    (when (instance? js/Map m)
+      (let [entry (.get m event-name)]
+        (cond
+          (fn? entry)
+          [entry]
+
+          (array? entry)
+          (array-seq entry)
+
+          :else
+          nil)))))
+
+;; Fallback install when the early `js/event-callbacks.js` stub (loaded
+;; before config.js) is missing. Leave a host- or stub-provided function
+;; alone so registrations from config.js stay on the same Map.
+(when-not (fn? (obj/get global "penpotAddEventCallback"))
+  (obj/set! global "penpotAddEventCallback" add-event-callback))
 
 (def mcp-server-url (-> public-uri u/ensure-path-slash (u/join "mcp/stream") str))
 (def mcp-help-center-uri "https://help.penpot.app/mcp/")

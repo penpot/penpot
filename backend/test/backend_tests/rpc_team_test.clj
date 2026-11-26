@@ -1093,6 +1093,112 @@
       (t/is (nil? (:result out)))
       (t/is (nil? res)))))
 
+;; The organization `send-invitations` policy covers the pending invitations
+;; too: changing their role, deleting them and getting their link manage the
+;; same access that sending one grants.
+
+(def ^:private pending-invitation-email "pending@example.com")
+
+(defn- reset-pending-invitation
+  "Leaves one pending `editor` invitation in the team, whatever the previous
+  scenario did to it."
+  [team-id]
+  (db/delete! th/*pool* :team-invitation
+              {:team-id team-id :email-to pending-invitation-email})
+  (db/insert! th/*pool* :team-invitation
+              {:team-id team-id
+               :email-to pending-invitation-email
+               :role "editor"
+               :valid-until (ct/in-future "48h")}))
+
+(defn- get-pending-invitation-role
+  [team-id]
+  (:role (db/get* th/*pool* :team-invitation
+                  {:team-id team-id :email-to pending-invitation-email})))
+
+(defn- organization-with-policy
+  "A team organization lookup that answers with an organization whose
+  `send-invitations` value and attribute restriction answer are the given
+  ones."
+  [owner-id send-invitations restrictions-met]
+  (fn [_params]
+    {:organization {:id (uuid/random)
+                    :name "Acme"
+                    :slug "acme"
+                    :owner-id owner-id
+                    :avatar-bg-url "https://example.com/avatar.svg"
+                    :permissions {:send-invitations send-invitations}
+                    :restrictions-met {:send-invitations restrictions-met}}
+     :is-your-penpot false}))
+
+(defn- organization-lookup-failure
+  [status]
+  (fn [_params]
+    (throw (ex-info "nitrate error" {:type :nitrate-http-error
+                                     :status status}))))
+
+(defn- check-follows-send-invitations-policy
+  "Runs the invitation `command` (a params map without profile, team and
+  email) under each organization policy and checks who may go through."
+  [command]
+  (let [owner   (th/create-profile* 440 {:is-active true})
+        admin   (th/create-profile* 441 {:is-active true})
+        team    (th/create-team* 440 {:profile-id (:id owner)})
+        _       (th/create-team-role* {:team-id (:id team)
+                                       :profile-id (:id admin)
+                                       :role :admin})
+        team-id (:id team)
+
+        execute
+        (fn [profile get-team-organization]
+          (reset-pending-invitation team-id)
+          (with-redefs [cf/flags     (conj cf/flags :admin-console)
+                        nitrate/call (fn [_cfg method params]
+                                       (case method
+                                         :get-team-organization (get-team-organization params)
+                                         nil))]
+            (th/command! (assoc command
+                                ::rpc/profile-id (:id profile)
+                                :team-id team-id
+                                :email pending-invitation-email))))]
+
+    (t/testing "an admin is denied when only team owners may invite"
+      (let [out (execute admin (organization-with-policy (:id owner) "owners" true))]
+        (t/is (= :insufficient-permissions (th/ex-code (:error out))))
+        (t/is (= "editor" (get-pending-invitation-role team-id)))))
+
+    (t/testing "an admin is denied when an attribute restriction leaves them out"
+      (let [out (execute admin (organization-with-policy (:id owner) "ownersAndAdmins" false))]
+        (t/is (= :insufficient-permissions (th/ex-code (:error out))))
+        (t/is (= "editor" (get-pending-invitation-role team-id)))))
+
+    (t/testing "a failed organization lookup denies the admin"
+      (let [out (execute admin (organization-lookup-failure 403))]
+        (t/is (= :nitrate-http-error (th/ex-type (:error out))))
+        (t/is (= "editor" (get-pending-invitation-role team-id)))))
+
+    (t/testing "a team owner is allowed when only team owners may invite"
+      (t/is (th/success? (execute owner (organization-with-policy (:id owner) "owners" true)))))
+
+    (t/testing "an admin is allowed when the policy and the restriction include them"
+      (t/is (th/success? (execute admin (organization-with-policy (:id owner) "ownersAndAdmins" true)))))
+
+    (t/testing "an admin is allowed in a team without organization"
+      (t/is (th/success? (execute admin (organization-lookup-failure 404)))))))
+
+(t/deftest update-team-invitation-role-follows-send-invitations-policy
+  (check-follows-send-invitations-policy
+   {::th/type :update-team-invitation-role
+    :role :admin}))
+
+(t/deftest delete-team-invitation-follows-send-invitations-policy
+  (check-follows-send-invitations-policy
+   {::th/type :delete-team-invitation}))
+
+(t/deftest get-team-invitation-token-follows-send-invitations-policy
+  (check-follows-send-invitations-policy
+   {::th/type :get-team-invitation-token}))
+
 
 (t/deftest get-owned-teams
   (let [profile1 (th/create-profile* 1 {:is-active true})
@@ -1208,6 +1314,127 @@
         (t/is (= :nitrate-unavailable (th/ex-type (:error out))))
         (t/is (= 1 (count @calls)))
         (t/is (= :get-teams-organizations (ffirst @calls)))))))
+
+
+(defn- find-team
+  [teams team-id]
+  (d/seek #(= team-id (:id %)) teams))
+
+(t/deftest get-teams-shows-owner-nitrate-licence-to-every-member
+  (let [member            (th/create-profile* 1 {:is-active true})
+        owner             (th/create-profile* 2 {:is-active true})
+        org-owner         (th/create-profile* 3 {:is-active true})
+        team              (th/create-team* 1 {:profile-id (:id owner)})
+        organization-team (th/create-team* 2 {:profile-id (:id org-owner)})
+        _                 (th/create-team-role* {:team-id (:id team)
+                                                 :profile-id (:id member)
+                                                 :role :editor})
+        _                 (th/create-team-role* {:team-id (:id organization-team)
+                                                 :profile-id (:id member)
+                                                 :role :editor})
+        calls             (atom [])
+        nitrate-call      (fn [_cfg method params]
+                            (swap! calls conj [method params])
+                            (case method
+                              :get-teams-organizations
+                              [{:id (:id organization-team)
+                                :is-your-penpot false
+                                :organization {:id (uuid/random)
+                                               :name "Acme"
+                                               :slug "acme"
+                                               :owner-id (:id org-owner)}}]
+                              :get-subscriptions
+                              [{:profile-id (:id owner) :type "nitrate" :status "trialing"}
+                               {:profile-id (:id org-owner) :type "nitrate" :status "active"}]))
+        params            {::th/type :get-teams
+                           ::rpc/profile-id (:id member)}]
+    (with-redefs [cf/flags (conj cf/flags :admin-console :subscriptions)
+                  nitrate/call nitrate-call]
+      (let [out   (th/command! params)
+            teams (:result out)]
+        (t/is (th/success? out))
+        (t/is (= [:get-teams-organizations :get-subscriptions] (mapv first @calls)))
+        ;; One request with the owners of the teams outside an organization,
+        ;; the member included as owner of its default team.
+        (t/is (= #{(:id owner) (:id member)}
+                 (-> @calls second second :profile-ids set)))
+        (t/is (= {:type "nitrate" :status "trialing"}
+                 (-> (find-team teams (:id team))
+                     :subscription
+                     (select-keys [:type :status]))))
+        ;; A team in an organization keeps the Stripe plan of its owner.
+        (t/is (= "professional"
+                 (-> (find-team teams (:id organization-team)) :subscription :type)))
+        (t/is (= "professional"
+                 (-> (find-team teams (:default-team-id member)) :subscription :type)))))))
+
+(t/deftest get-teams-ignores-owner-nitrate-licence-that-is-not-valid
+  (let [member       (th/create-profile* 1 {:is-active true})
+        owner        (th/create-profile* 2 {:is-active true})
+        team         (th/create-team* 1 {:profile-id (:id owner)})
+        _            (th/create-team-role* {:team-id (:id team)
+                                            :profile-id (:id member)
+                                            :role :editor})
+        nitrate-call (fn [_cfg method _params]
+                       (case method
+                         :get-teams-organizations []
+                         :get-subscriptions [{:profile-id (:id owner)
+                                              :type "nitrate"
+                                              :status "canceled"}]))
+        params       {::th/type :get-teams
+                      ::rpc/profile-id (:id member)}]
+    (with-redefs [cf/flags (conj cf/flags :admin-console :subscriptions)
+                  nitrate/call nitrate-call]
+      (let [out (th/command! params)]
+        (t/is (th/success? out))
+        (t/is (= "professional"
+                 (-> (find-team (:result out) (:id team)) :subscription :type)))))))
+
+(t/deftest get-teams-keeps-stripe-plan-when-owner-licences-fail
+  (let [member       (th/create-profile* 1 {:is-active true})
+        owner        (th/create-profile* 2 {:is-active true})
+        team         (th/create-team* 1 {:profile-id (:id owner)})
+        _            (th/create-team-role* {:team-id (:id team)
+                                            :profile-id (:id member)
+                                            :role :editor})
+        nitrate-call (fn [_cfg method _params]
+                       (case method
+                         :get-teams-organizations []
+                         :get-subscriptions (throw (ex-info "nitrate is down"
+                                                            {:type :nitrate-unavailable}))))
+        params       {::th/type :get-teams
+                      ::rpc/profile-id (:id member)}]
+    (with-redefs [cf/flags (conj cf/flags :admin-console :subscriptions)
+                  nitrate/call nitrate-call]
+      (let [out (th/command! params)]
+        (t/is (th/success? out))
+        (t/is (= "professional"
+                 (-> (find-team (:result out) (:id team)) :subscription :type)))))))
+
+(t/deftest get-team-shows-owner-nitrate-licence-to-a-member
+  (let [member       (th/create-profile* 1 {:is-active true})
+        owner        (th/create-profile* 2 {:is-active true})
+        team         (th/create-team* 1 {:profile-id (:id owner)})
+        _            (th/create-team-role* {:team-id (:id team)
+                                            :profile-id (:id member)
+                                            :role :editor})
+        calls        (atom [])
+        nitrate-call (fn [_cfg method params]
+                       (swap! calls conj [method params])
+                       (case method
+                         :get-team-organization nil
+                         :get-subscriptions [{:profile-id (:id owner)
+                                              :type "nitrate"
+                                              :status "active"}]))
+        params       {::th/type :get-team
+                      ::rpc/profile-id (:id member)
+                      :id (:id team)}]
+    (with-redefs [cf/flags (conj cf/flags :admin-console :subscriptions)
+                  nitrate/call nitrate-call]
+      (let [out (th/command! params)]
+        (t/is (th/success? out))
+        (t/is (= [(:id owner)] (-> (last @calls) second :profile-ids)))
+        (t/is (= "nitrate" (-> out :result :subscription :type)))))))
 
 
 (t/deftest team-deletion-1
@@ -1371,6 +1598,10 @@
           file       (th/create-file* 1 {:profile-id (:id owner)
                                          :project-id (:id proj)})
 
+          ;; Cold storage makes the file map carry the internal pointer, so the
+          ;; response assertion below is meaningful.
+          _          (th/run-task! :offload-file-data {:file-id (:id file)})
+
           data       {::th/type :create-team-access-request
                       ::rpc/profile-id (:id requester)
                       :file-id (:id file)}]
@@ -1383,7 +1614,8 @@
                                      :requester-id (:id requester)})]
         (t/is (th/success? out))
         (t/is (= 1 (:call-count @mock)))
-        (t/is (= 1 (count requests))))
+        (t/is (= 1 (count requests)))
+        (t/is (not (contains? (:result out) :storage-object-id))))
 
       ;; request again fails
       (th/reset-mock! mock)
@@ -2259,7 +2491,7 @@
   ;; Team creation adds the owner through add-profile-to-team!, which used to
   ;; leave no membership event.
   (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
-    (with-redefs [cf/flags (conj cf/flags :audit-log)]
+    (th/with-audit-config (conj cf/flags :nexus)
       (let [owner  (th/create-profile* 1 {:is-active true})
             team   (th/create-team* 21 {:profile-id (:id owner)})
             events (->> (:call-args-list @audit-mock)
@@ -2274,7 +2506,7 @@
   ;; Adding an existing member with on-conflict-do-nothing inserts nothing and
   ;; must not report a membership that already exists.
   (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
-    (with-redefs [cf/flags (conj cf/flags :audit-log)]
+    (th/with-audit-config (conj cf/flags :nexus)
       (let [owner (th/create-profile* 1 {:is-active true})
             team  (th/create-team* 22 {:profile-id (:id owner)})]
         (th/reset-mock! audit-mock)
@@ -2286,7 +2518,7 @@
                                                   {::db/on-conflict-do-nothing? true})))
         (t/is (empty? (:call-args-list @audit-mock)))))))
 
-(t/deftest no-add-team-member-event-without-audit-log
+(t/deftest no-add-team-member-event-without-a-consumer
   (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
     (let [owner  (th/create-profile* 1 {:is-active true})
           _team  (th/create-team* 23 {:profile-id (:id owner)})
@@ -2299,7 +2531,7 @@
   ;; `team_profile_rel` has no role column, so no caller can pass it: the
   ;; emitter derives it from the flags, inverse of permissions-for-role.
   (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
-    (with-redefs [cf/flags (conj cf/flags :audit-log)]
+    (th/with-audit-config (conj cf/flags :nexus)
       (let [owner  (th/create-profile* 1 {:is-active true})
             team   (th/create-team* 26 {:profile-id (:id owner)})
             editor (th/create-profile* 27 {:is-active true})
@@ -2328,7 +2560,7 @@
   ;; Sibling events built by `prepare-rpc-event` carry the request context;
   ;; the hand-built membership event must not lose it when rpc params travel.
   (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
-    (with-redefs [cf/flags (conj cf/flags :audit-log)]
+    (th/with-audit-config (conj cf/flags :nexus)
       (let [owner  (th/create-profile* 1 {:is-active true})
             member (th/create-profile* 2 {:is-active true})
             team   (th/create-team* 30 {:profile-id (:id owner)})]
@@ -2353,7 +2585,7 @@
   ;; With email verification off, inviting an existing profile adds the
   ;; member directly; the event belongs to the inviter, not the member.
   (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
-    (with-redefs [cf/flags #{:audit-log}]
+    (th/with-audit-config #{:nexus}
       (let [owner  (th/create-profile* 1 {:is-active true})
             member (th/create-profile* 2 {:is-active true})
             team   (th/create-team* 31 {:profile-id (:id owner)})]
@@ -2408,7 +2640,7 @@
   ;; the manual event must carry its id for a projection to key it.
   (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}
                email-mock {:target 'app.email/send-template :return nil}]
-    (with-redefs [cf/flags (conj cf/flags :audit-log)]
+    (th/with-audit-config (conj cf/flags :nexus)
       (let [profile (th/create-profile* 1 {:is-active true})
             out     (th/command-raw! {::th/type :create-team-with-invitations
                                       ::rpc/profile-id (:id profile)
@@ -2446,3 +2678,26 @@
                                   :role :owner})
           props (:app.loggers.audit/props (meta out))]
       (t/is (= (:id owner) (:prev-owner-id props))))))
+(t/deftest create-team-invitations-link-base-follows-trusted-origins
+  (let [owner (th/create-profile* 1 {:is-active true})
+        team  (th/create-team* 1 {:profile-id (:id owner)})
+        cases [{:origin "https://alt.example.com"
+                :email "trusted@example.com"
+                :expected "https://alt.example.com"}
+               {:origin "https://evil.example.com"
+                :email "untrusted@example.com"
+                :expected "http://localhost:3449"}]]
+    (doseq [{:keys [origin email expected]} cases]
+      (with-mocks [mock {:target 'app.email/send-template :return nil}]
+        (with-redefs [cf/config (assoc cf/config
+                                       :public-uri "http://localhost:3449"
+                                       :trusted-origins #{"https://alt.example.com"})]
+          (let [data {::th/type :create-team-invitations
+                      ::rpc/profile-id (:id owner)
+                      :team-id (:id team)
+                      :role :editor
+                      :emails [email]}
+                out  (th/command-through-middleware data {:headers {"origin" origin}})
+                sent (-> @mock :call-args-list first second)]
+            (t/is (th/success? out) origin)
+            (t/is (= expected (str (:public-uri sent))) origin)))))))

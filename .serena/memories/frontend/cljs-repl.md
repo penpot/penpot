@@ -1,101 +1,14 @@
-# ClojureScript REPL and Frontend Debugging
+# Live frontend CLJS inspection
 
-Execute code in the live frontend via the Penpot MCP `cljs_repl` tool. For browser-console debugging, the frontend also exports a `debug` JS namespace in development builds.
-
-## Accessing app state
-
-The main store is `app.main.store/state`. It contains workspace metadata, selection, UI state, profile, route, etc. Page objects are not under a `:workspace-data` key; use derived refs.
-
-```clojure
-;; Current selection
-(mapv str (get-in @app.main.store/state [:workspace-local :selected]))
-
-;; Current page objects
-(let [objects @app.main.refs/workspace-page-objects
-      shape (get objects (parse-uuid "some-uuid-here"))]
-  (select-keys shape [:name :type :x :y :width :height :fills :strokes :rotation :opacity :frame-id :parent-id]))
-```
-
-Shape keys use kebab-case keywords. Internal `:rect` corresponds to "rectangle" in the JS Plugin API, and `:frame` corresponds to "board".
-
-Component instance shapes carry `:component-id` and `:component-file` directly; `:component-root` flags the root of an instance. Use `app.common.types.container/get-head-shape` for nearest head and `get-instance-root` for outermost root; they differ for nested instances.
-
-## Navigation recipe
-
-To programmatically open a workspace file, all three ids are required:
-
-```clojure
-(do (require '[app.main.data.common :as dcm])
-    (app.main.store/emit! (dcm/go-to-workspace
-      :team-id (parse-uuid "<team-id>")
-      :file-id (parse-uuid "<file-id>")
-      :page-id (parse-uuid "<page-id>"))))
-```
-
-Get `team-id` from `(:current-team-id @app.main.store/state)`. Get file ids from `(vals (:files @app.main.store/state))`. Get page ids by fetching file data, e.g. through `rp/cmd! :get-file` with current features.
-
-## Reload the live runtime
-
-`(.reload js/location)` (alias `app.util.dom/reload-current-window`) from `cljs_repl` reloads the browser page: clears `set!` runtime patches, re-fetches file state, and is the simplest crash recovery while the repl is live (`mem:frontend/handling-crashes`). To re-fetch only the current file's data without a full page reload, emit `(app.main.store/emit! (potok.v2.core/event :app.main.data.workspace/reload-current-file))`.
-
-## Useful lookup helpers
-
-`app.plugins.utils` contains state lookup helpers that are useful from any CLJS, despite living under `plugins/`:
-
-- `locate-shape`, `locate-objects`, `locate-file`.
-- `locate-component` resolves through the outermost instance root.
-- `locate-head-component` resolves through the nearest component head.
-- `locate-library-component` does direct file-id/component-id lookup.
-
-## Runtime patching with `set!`
-
-Some frontend vars are deliberately mutable escape hatches for runtime instrumentation or circular-dependency patching. From `cljs_repl`, use `set!` for temporary debugging of CLJS vars such as `app.main.errors/reload-file`, `app.main.errors/is-plugin-error?`, `app.main.errors/last-report`, or `app.main.errors/last-exception`. These patches affect only the live browser runtime and disappear on reload or recompilation.
-
-`set!` on `app.main.store/on-event` does nothing at runtime: the store captured the function when it was created. To watch events, subscribe to the store stream and dispose the subscription after:
-
-```clojure
-;; Log non-noisy Potok events temporarily.
-(def sub
-  (beicon.v2.core/subs!
-   (fn [event]
-     (when (potok.v2.core/event? event)
-       (.log js/console (potok.v2.core/repr-event event))))
-   app.main.store/stream))
-;; (beicon.v2.core/dispose! sub)
-```
-
-`cljs_repl` starts every call in `cljs.user`; begin a call with `(in-ns 'my-ns)` to reuse helpers defined in another namespace.
-
-Restore mutable hooks after debugging, or reload the frontend. Use JVM `alter-var-root` only for JVM Clojure; it is not the normal way to patch live CLJS browser vars.
-
-## Browser-console debug namespace
-
-In development, the JS console exposes `debug` helpers from `frontend/src/debug.cljs`:
-
-```javascript
-debug.set_logging("namespace", "debug");
-debug.dump_state();
-debug.dump_buffer();
-debug.get_state(":workspace-local :selected");
-debug.dump_objects();
-debug.dump_object("Rect-1");
-debug.dump_selected();
-debug.dump_tree(true, true);
-```
-
-Visual workspace debug overlays can be toggled with `debug.toggle_debug("bounding-boxes")`, `"group"`, `"events"`, or `"rotation-handler"`; `debug.debug_all()` and `debug.debug_none()` toggle all visual aids.
-
-For temporary source traces, prefer existing logging (`app.common.logging` / `app.util.logging`) or short-lived `prn`, `app.common.pprint/pprint`, `js/console.log`, or `js-debugger` calls. Remove temporary source instrumentation before committing.
-
-## Runtime targeting
-
-`cljs_repl` may connect to the wrong runtime when several are attached, such as workspace plus rasterizer. Verify with `(.-title js/document)`; it should show the workspace file name, not "Penpot - Rasterizer".
-
-To list or target shadow-cljs runtimes, run from `/home/penpot/penpot/frontend`:
+- Use an available CLJS REPL integration or `scripts/nrepl-eval.mjs --frontend` for the running frontend; see `mem:scripts/nrepl-eval` for session reuse and error handling. Tool availability depends on the active client. Penpot MCP `cljs_repl`, when available, starts each call in `cljs.user`.
+- Multiple shadow-cljs runtimes can be attached, including the rasterizer. Check `(.-title js/document)` before inspecting or changing state. From `frontend/`, `shadow.cljs.devtools.api/repl-runtimes` lists runtimes and `cljs-eval` accepts `:client-id`; use command timeouts for a disconnected browser:
 
 ```bash
 printf '(shadow.cljs.devtools.api/repl-runtimes :main)\n' | timeout 10 npx shadow-cljs clj-eval --stdin
 printf '(shadow.cljs.devtools.api/cljs-eval :main "<cljs-code>" {:client-id 5})\n' | timeout 10 npx shadow-cljs clj-eval --stdin
 ```
 
-Use command timeouts so a disconnected browser does not hang the session.
+- Inspect `app.main.store/state` for workspace metadata and selection; use `@app.main.refs/workspace-page-objects` for current page objects. Internal `:rect` and `:frame` correspond to Plugin API rectangle and board. Component head and outermost instance root differ for nested instances; see `mem:common/components`.
+- Navigate with `app.main.data.common/go-to-workspace`, supplying team, file and page IDs explicitly; omitted values can fall back to the current workspace. `app.main.store/emit!` dispatches an event and returns nil, not the watch result. Helpers in `app.plugins.utils` locate shapes, files and components.
+- A store captures `on-event` when created, so replacing the var does not intercept its events. Subscribe to `app.main.store/stream` instead and dispose the subscription. Mutable CLJS hooks can be patched for debugging; restore them or reload afterward. For a temporary RPC spy wrap the target `app.main.repo/cmd!` multimethod's default method and remove the method after use.
+- `(.reload js/location)` clears runtime patches and reloads saved state; it can discard unsaved edits. For crash diagnosis and recovery see `mem:frontend/handling-crashes`; for component and change tracing see `mem:common/components`. Development browser-console commands are defined in `frontend/src/debug.cljs`.

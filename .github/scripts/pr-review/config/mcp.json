@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "serena": {
+      "command": "serena",
+      "args": [
+        "start-mcp-server",
+        "--project", "${PROJECT_ROOT}",
+        "--context", "${SERENA_CONTEXT}",
+        "--enable-web-dashboard", "false",
+        "--open-web-dashboard", "false",
+        "--log-level", "ERROR"
+      ]
+    }
+  }
+}

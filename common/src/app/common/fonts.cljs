@@ -158,8 +158,12 @@
 ;;
 ;; Which scripts/emoji a text uses and which (google) fallback fonts cover them.
 
+;; Color-emoji load: SMP emoji, U+FE0F, and BMP Emoji_Presentation=Yes.
+;; Text-default symbols (♥ ☀ ✔ …) use :symbols / :symbols-2 instead.
+;; SMP arms follow historical emoji blocks used for Color Emoji upload.
+;; BMP arm is Unicode Emoji_Presentation=Yes only (no text-default ❤ U+2764).
 (def ^:private emoji-pattern
-  #"(?:\uD83C[\uDDE6-\uDDFF]\uD83C[\uDDE6-\uDDFF])|(?:\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDEFF])|(?:\uD83E[\uDD00-\uDDFF])|(?:\uD83D[\uDE80-\uDEFF]|\uD83E[\uDC00-\uDCFF])|(?:\uD83E[\uDE70-\uDFFF])|[\u2600-\u26FF\u2700-\u27BF\u2300-\u23FF\u2B00-\u2BFF]")
+  #"(?:\uD83C[\uDDE6-\uDDFF]\uD83C[\uDDE6-\uDDFF])|(?:\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDEFF])|(?:\uD83E[\uDD00-\uDDFF])|(?:\uD83D[\uDE80-\uDEFF]|\uD83E[\uDC00-\uDCFF])|(?:\uD83E[\uDE70-\uDFFF])|\uFE0F|[\u231A\u231B\u23E9-\u23EC\u23F0\u23F3\u25FD\u25FE\u2614\u2615\u2648-\u2653\u267F\u2693\u26A1\u26AA\u26AB\u26BD\u26BE\u26C4\u26C5\u26CE\u26D4\u26EA\u26F2\u26F3\u26F5\u26FA\u26FD\u2705\u270A\u270B\u2728\u274C\u274E\u2753-\u2755\u2757\u2795-\u2797\u27B0\u27BF\u2B1B\u2B1C\u2B50\u2B55]")
 
 (def ^:private unicode-ranges
   {:japanese    #"[\u3040-\u30FF\u31F0-\u31FF\uFF66-\uFF9F]"
@@ -220,9 +224,11 @@
    ;; Letterlike Symbols (ℝ, ℕ, ℃, ™, ...)
    :letterlike  #"[\u2100-\u214F]"})
 
-(defn contains-emoji? [text]
-  (let [result (re-find emoji-pattern text)]
-    (boolean result)))
+(defn contains-emoji?
+  "True when `text` needs Noto Color Emoji. Text-default symbols without
+  U+FE0F do not count; those use :symbols language fallbacks."
+  [text]
+  (boolean (re-find emoji-pattern text)))
 
 (defn collect-used-languages
   [used text]

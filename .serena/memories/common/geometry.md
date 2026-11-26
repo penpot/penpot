@@ -1,0 +1,7 @@
+# Shape geometry and numeric precision
+
+- Shape geometry is redundant: `:x`, `:y`, `:width` and `:height` coexist with `:selrect`, corner `:points` and transform matrices. Keep them coherent after a mutation; rendering and hit testing can read a different representation from the one a caller changed.
+- Use `gsh/move`, `gsh/absolute-move` or `gsh/transform-shape` for geometric edits and `cts/setup-shape` for initialization. An isolated `assoc` or test helper update of `:x` or `:y` can leave `:selrect` and `:points` stale. Prefer production-path change helpers in tests; see `mem:common/testing`.
+- Sub-pixel drift can arise from WASM modifiers and composed transforms, even when JVM fixture setup produces clean values. Include drift in regression tests when the bug depends on it; do not assume exact equality after transformation.
+- Use the appropriate tolerance helper: scalar `app.common.math/close?` defaults to `0.001` and includes the tolerance boundary (`<=`); `gsh/close-attrs?` uses a strict boundary (`<`), while point and matrix namespaces have their own `close?`. Its zipped `:points` and `:position-data` comparisons truncate to the shorter sequence and can treat nil as equal to a vector. For each `:position-data` entry it checks only `:x` and `:y`, not text, fonts or fills. Check lengths and use a suitable comparator for variable-length data.
+- For copy geometry and touched state, move with geometry-preserving helpers first, then assert or set touched as appropriate. Component sync uses a different selective comparison; see `mem:common/components`.

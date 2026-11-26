@@ -6,9 +6,12 @@
 
 (ns backend-tests.config-test
   (:require
+   [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.time :as ct]
+   [app.common.uri :as u]
    [app.config :as cf]
+   [clojure.core :as c]
    [clojure.test :as t]))
 
 (t/deftest tenant-is-normalized-to-lowercase
@@ -74,6 +77,23 @@
                                    :worker-default-parallelism 4)]
       (t/is (= 4 (cf/get :worker-default-parallelism 1))))))
 
+(t/deftest prepared-statement-cache-keys
+  (t/testing "negative sizes are rejected; the threshold takes -1 or non-negatives"
+    (t/is (not (cf/validate-config (assoc cf/config :database-prepared-statement-cache-queries -1))))
+    (t/is (not (cf/validate-config (assoc cf/config :database-prepared-statement-cache-size -1))))
+    (t/is (not (cf/validate-config (assoc cf/config :database-prepared-statement-cache-threshold -2))))
+    (t/is (cf/validate-config (assoc cf/config :database-prepared-statement-cache-threshold -1))))
+  (t/testing "a -1 threshold survives the environment decoding and validation"
+    (let [cfg (merge cf/config
+                     (cf/decode-config {:database-prepared-statement-cache-threshold "-1"}))]
+      (t/is (= -1 (:database-prepared-statement-cache-threshold cfg)))
+      (t/is (cf/validate-config cfg))))
+  (t/testing "a decoded -2 threshold fails validation"
+    (let [cfg (merge cf/config
+                     (cf/decode-config {:database-prepared-statement-cache-threshold "-2"}))]
+      (t/is (= -2 (:database-prepared-statement-cache-threshold cfg)))
+      (t/is (not (cf/validate-config cfg))))))
+
 (t/deftest jobs-user-ttl
   (t/testing "the env value is decoded as a duration"
     (let [decoded (cf/decode-config {:jobs-user-ttl "72h"})]
@@ -86,3 +106,124 @@
   (t/testing "and falls back to a week"
     (with-redefs [cf/config (dissoc cf/config :jobs-user-ttl)]
       (t/is (= (ct/duration {:days 7}) (cf/get-jobs-user-ttl))))))
+
+;; `legacy-db` is read-only: the file data moved to `file_data`, and
+;; `file.data` / `file_change.data` are read-only leftovers. An instance
+;; that keeps it starts healthy and then fails on every save. It is read
+;; as `db` instead, which also serves the legacy rows.
+
+(defn- read-config
+  "`read-config` with the environment replaced by `env`."
+  [env & {:keys [default] :or {default {}}}]
+  (with-redefs [cf/read-env (constantly env)]
+    (cf/read-config :default default)))
+
+(defn- read-config-with-warning
+  "Reads the configuration and collects the warnings it emits. Logging is
+  emitted asynchronously, so the record is awaited (bounded)."
+  [env]
+  (let [records (atom [])]
+    (add-watch l/log-record ::capture
+               (fn [_ _ _ record] (swap! records conj record)))
+    (try
+      (let [config (read-config env)]
+        [(loop [remaining 100]
+           (let [warns (filter #(= :warn (::l/level %)) @records)]
+             (cond
+               (seq warns) warns
+               (zero? remaining) warns
+               :else (do (Thread/sleep 10) (recur (dec remaining))))))
+         config])
+      (finally
+        (remove-watch l/log-record ::capture)))))
+
+(t/deftest read-config-replaces-the-read-only-legacy-db
+  (let [[warns config] (read-config-with-warning {:file-data-backend "legacy-db"})]
+    (t/testing "the configuration writes through db"
+      (t/is (= "db" (c/get config :file-data-backend))))
+    (t/testing "the operator is warned"
+      (t/is (contains? (into #{} (map #(c/get (::l/props %) :hint)) warns)
+                       "file-data-backend=legacy-db is read-only, using db")))))
+
+(t/deftest read-config-keeps-the-writable-back-ends
+  (doseq [backend ["db" "storage"]]
+    (t/testing backend
+      (t/is (= backend (c/get (read-config {:file-data-backend backend})
+                              :file-data-backend))))))
+
+(t/deftest read-config-takes-the-default-back-end
+  (t/is (= "db" (c/get (read-config {} :default cf/default)
+                       :file-data-backend))))
+
+(t/deftest audit-persistence-follows-consumer-flags
+  (t/testing "a consumer flag enables persistence"
+    (t/is (cf/persist-audit-events? #{:nexus}))
+    (t/is (cf/persist-audit-events? #{:admin-console})))
+  (t/testing "other sinks alone do not enable persistence"
+    (doseq [flags [#{} #{:webhooks} #{:telemetry} #{:error-reporting}
+                   #{:audit-log-logger}]]
+      (t/is (not (cf/persist-audit-events? flags)) (str flags))))
+  (t/testing "the boot value is derived from the loaded flags"
+    (t/is (= (cf/persist-audit-events? cf/flags) cf/audit-persist?)))
+  (t/testing "a stale enable-audit-log in the environment is dropped"
+    (let [flags (#'cf/parse-flags {:flags #{"enable-audit-log" "enable-nexus"}})]
+      (t/is (not (contains? flags :audit-log)))
+      (t/is (contains? flags :nexus))
+      (t/is (cf/persist-audit-events? flags)))))
+
+(t/deftest trusted-origins-decodes-from-env-string
+  (t/testing "comma and whitespace separated origins become a set"
+    (let [config (cf/decode-config {:tenant "default"
+                                    :host "localhost"
+                                    :public-uri "http://localhost:3449"
+                                    :trusted-origins "https://a.example.com, https://b.example.com https://c.example.com"})]
+      (t/is (= #{"https://a.example.com" "https://b.example.com" "https://c.example.com"}
+               (:trusted-origins config))))))
+
+(t/deftest get-trusted-origin-checks-normalized-allowlist
+  (with-redefs [cf/config (assoc cf/config :trusted-origins #{"https://alt.example.com"})]
+    (t/testing "exact and normalized matches"
+      (t/is (= "https://alt.example.com" (cf/get-trusted-origin "https://alt.example.com")))
+      (t/is (= "https://alt.example.com" (cf/get-trusted-origin "  HTTPS://Alt.Example.com  "))))
+    (t/testing "nil, blank, unlisted, subdomain and path variants are rejected"
+      (t/is (nil? (cf/get-trusted-origin nil)))
+      (t/is (nil? (cf/get-trusted-origin "")))
+      (t/is (nil? (cf/get-trusted-origin "https://other.example.com")))
+      (t/is (nil? (cf/get-trusted-origin "https://sub.alt.example.com")))
+      (t/is (nil? (cf/get-trusted-origin "https://alt.example.com/penpot"))))))
+
+(t/deftest read-config-prepares-trusted-origins
+  (let [config (read-config
+                {:trusted-origins
+                 (str "null https://alt.example.com/penpot HTTPS://Alt.Example.com:443 "
+                      "https://alt.example.com https://alt.example.com:8443 "
+                      "http://localhost:80 http://internal.example.com:80 "
+                      "https://*.example.com https://user@example.com "
+                      "https://example.com:65536 https://example.com: ftp://example.com")})]
+    (t/is (= #{"https://alt.example.com" "https://alt.example.com:8443"
+               "http://localhost" "http://internal.example.com"}
+             (:trusted-origins config)))
+    (binding [cf/config config]
+      (t/is (= "https://alt.example.com" (cf/get-trusted-origin "HTTPS://alt.example.com:443")))
+      (t/is (= "http://internal.example.com" (cf/get-trusted-origin "http://internal.example.com:80")))
+      (t/is (nil? (cf/get-trusted-origin "https://alt.example.com:9443"))))))
+
+(t/deftest get-trusted-origin-without-configuration
+  (with-redefs [cf/config (assoc cf/config :trusted-origins nil)]
+    (t/is (nil? (cf/get-trusted-origin "https://alt.example.com")))))
+
+(t/deftest with-public-uri-overrides-base
+  (let [config     {:public-uri "http://localhost:3449" :host "localhost"}
+        overridden (cf/with-public-uri "https://alt.example.com" config)]
+    (t/testing "the base keeps the URI type used by the configuration"
+      (t/is (u/uri? (:public-uri overridden)))
+      (t/is (= "alt.example.com" (:host (:public-uri overridden)))))
+    (t/testing "a nil base leaves the config unchanged"
+      (t/is (= config (cf/with-public-uri nil config))))))
+
+(t/deftest get-trusted-origin-checks-bare-origin-shape
+  (binding [cf/config (read-config {:trusted-origins "https://alt.example.com https://[::1]:3449"})]
+    (t/is (= "https://[::1]:3449" (cf/get-trusted-origin "https://[::1]:3449")))
+    (doseq [origin ["alt.example.com" "localhost:3449" "https://alt.example.com/"
+                    "https://alt.example.com?x=1" "https://alt.example.com#frag"]]
+      (t/is (nil? (cf/get-trusted-origin origin)) origin))))

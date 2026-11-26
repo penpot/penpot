@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.shapes-helpers :as cfsh]
+   [app.common.files.validate :as cfv]
    [app.common.geom.point :as gpt]
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
@@ -90,6 +91,37 @@
     (t/is (= (:type root) :frame))
     (t/is (ctk/main-instance? root))
     (t/is (ctk/main-instance-of? (:id root) (:id page) component))))
+
+(t/deftest test-add-component-normalizes-root-name
+  (t/testing "main instance root name matches the component even if the source name is not normalized"
+    (let [;; ==== Setup
+          file   (-> (thf/sample-file :file1)
+                     (ths/add-sample-shape :frame1 :type :frame :name "Group/Subgroup  /  Name"))
+
+          page   (thf/current-page file)
+          frame1 (ths/get-shape file :frame1)
+
+          ;; ==== Action
+          [_ component-id changes]
+          (cll/generate-add-component (pcb/empty-changes)
+                                      [frame1]
+                                      (:objects page)
+                                      (:id page)
+                                      (:id file)
+                                      nil)
+
+          file'     (thf/apply-changes file changes)
+
+          ;; ==== Get
+          component (thc/get-component-by-id file' component-id)
+          root      (ths/get-shape-by-id file' (:main-instance-id component))
+          errors    (cfv/validate-file file' {})]
+
+      ;; ==== Check
+      (t/is (= "Group / Subgroup" (:path component)))
+      (t/is (= "Name" (:name component)))
+      (t/is (= "Group / Subgroup / Name" (:name root)))
+      (t/is (nil? errors)))))
 
 (t/deftest test-add-component-from-several-shapes
   (let [;; ==== Setup
@@ -439,7 +471,7 @@
                                                 page-deleted
                                                 (:objects page-deleted))
 
-        file' (thf/apply-changes file changes)
+        file' (thf/apply-changes file-deleted changes)
 
         ;; ==== Get
         component1'        (thc/get-component file' :component1 :include-deleted? false)
@@ -451,12 +483,20 @@
         saved-objects'     (:objects component1')]
 
     ;; ==== Check
+    (t/is (true? (:deleted (thc/get-component file-deleted :component1 :include-deleted? true))))
+    (t/is (nil? (ths/get-shape file-deleted :main1-root)))
+    (t/is (nil? (ths/get-shape file-deleted :main1-child)))
+    (t/is (some? component1'))
     (t/is (nil? (:deleted component1')))
     (t/is (some? copy1-root'))
     (t/is (some? main1-root'))
     (t/is (some? main1-child'))
     (t/is (ctk/main-instance? main1-root'))
     (t/is (ctk/main-instance-of? (:id main1-root') (:id page) component1'))
+    (t/is (= (:id main1-root') (:parent-id main1-child')))
+    (t/is (some #{(:id main1-child')} (:shapes main1-root')))
+    (t/is (some #{(:id main1-root')}
+                (:shapes (get-in (thf/current-page file') [:objects (:parent-id main1-root')]))))
     (t/is (nil? saved-objects'))))
 
 (t/deftest test-instantiate-component

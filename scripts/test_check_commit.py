@@ -6,7 +6,9 @@ Run with:
     python3 scripts/test_check_commit.py
 
 Covers the commit message rules enforced by scripts/check-commit and documented
-in .serena/memories/workflow/creating-commits.md.
+in .serena/memories/workflow/creating-commits.md: the body line-wrapping
+validator, the Co-authored-by validator (which allows human co-authors and
+rejects AI providers and bots), and message checking from files.
 """
 
 import contextlib
@@ -15,6 +17,7 @@ import importlib.util
 import io
 import os
 import pathlib
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -92,6 +95,14 @@ class BodyLineLengthTests(unittest.TestCase):
         line = "Signed-off-by: Someone With A Long Name <someone@example.com>"
         self.assert_ok(":bug: Fix crash\n\nBody.\n\n" + line + "\n")
 
+    def test_human_co_author_trailer_passes(self):
+        line = (
+            "Co-authored-by: Someone With A Very Long Name "
+            "<someone.with.a.long.address@example.com>"
+        )
+        self.assertGreater(len(line), 80)
+        self.assert_ok(":bug: Fix crash\n\nBody.\n\n" + line + "\n")
+
     def test_unbreakable_token_passes(self):
         line = "a" * 100  # no whitespace to wrap at
         self.assert_ok(":bug: Fix crash\n\n" + line + "\n")
@@ -111,14 +122,16 @@ class BodyLineLengthTests(unittest.TestCase):
         self.assertIn("line 4", error)
 
 
-class ForbiddenTrailerTests(unittest.TestCase):
+class CoAuthorTrailerTests(unittest.TestCase):
+    """Co-authored-by is allowed for humans, forbidden for AI providers/bots."""
+
     def assert_ok(self, message):
-        ok, error = check_commit.check_no_co_authored_by(message)
+        ok, error = check_commit.check_co_authored_by(message)
         self.assertTrue(ok, error)
         self.assertIsNone(error)
 
     def assert_fail(self, message):
-        ok, error = check_commit.check_no_co_authored_by(message)
+        ok, error = check_commit.check_co_authored_by(message)
         self.assertFalse(ok)
         self.assertIsNotNone(error)
         return error
@@ -126,18 +139,107 @@ class ForbiddenTrailerTests(unittest.TestCase):
     def test_body_without_trailer_passes(self):
         self.assert_ok(":bug: Fix crash\n\nBody.\n\nSigned-off-by: Someone <someone@example.com>\n")
 
-    def test_co_authored_by_fails(self):
-        error = self.assert_fail(":bug: Fix crash\n\nBody.\n\nCo-authored-by: Someone <someone@example.com>\n")
-        self.assertIn("Co-authored-by", error)
+    def test_human_co_author_passes(self):
+        self.assert_ok(":bug: Fix crash\n\nBody.\n\nCo-authored-by: Jane Doe <jane@example.com>\n")
 
-    def test_co_authored_by_case_insensitive_fails(self):
-        self.assert_fail(":bug: Fix crash\n\nBody.\n\nco-authored-by: Someone <someone@example.com>\n")
+    def test_human_with_github_noreply_email_passes(self):
+        self.assert_ok(
+            ":bug: Fix crash\n\nBody.\n\n"
+            "Co-authored-by: Jane Doe <1234+jane@users.noreply.github.com>\n"
+        )
+
+    def test_human_whose_email_ends_with_bot_passes(self):
+        # "abbot@" must not count as a "bot@" identity.
+        self.assert_ok(
+            ":bug: Fix crash\n\nBody.\n\n"
+            "Co-authored-by: Jane Abbot <abbot@example.com>\n"
+        )
+
+    def test_claude_fails(self):
+        error = self.assert_fail(
+            ":bug: Fix crash\n\nBody.\n\n"
+            "Co-authored-by: Claude <noreply@anthropic.com>\n"
+        )
+        self.assertIn("Co-authored-by", error)
+        self.assertIn("AI-assisted-by", error)
+
+    def test_cursor_fails(self):
+        self.assert_fail(
+            ":bug: Fix crash\n\nBody.\n\n"
+            "Co-authored-by: Cursor Agent <cursoragent@cursor.com>\n"
+        )
+
+    def test_copilot_fails(self):
+        self.assert_fail(
+            ":bug: Fix crash\n\nBody.\n\n"
+            "Co-authored-by: Copilot <175728472+Copilot@users.noreply.github.com>\n"
+        )
+
+    def test_case_insensitive_fails(self):
+        self.assert_fail(
+            ":bug: Fix crash\n\nBody.\n\nco-authored-by: CHATGPT <x@example.com>\n"
+        )
+
+    def test_bot_identity_fails(self):
+        self.assert_fail(
+            ":bug: Fix crash\n\nBody.\n\n"
+            "Co-authored-by: dependabot[bot] <support@github.com>\n"
+        )
 
     def test_co_authored_by_in_body_fails(self):
-        self.assert_fail(":bug: Fix crash\n\nCo-authored-by: Someone <someone@example.com>\nBody.\n")
+        self.assert_fail(
+            ":bug: Fix crash\n\nCo-authored-by: Gemini <gemini@example.com>\nBody.\n"
+        )
 
     def test_similar_trailer_passes(self):
         self.assert_ok(":bug: Fix crash\n\nBody.\n\nCo-developed-by: Someone <someone@example.com>\n")
+
+
+class AIAssistedTrailerTests(unittest.TestCase):
+    def test_valid_and_absent_trailers(self):
+        for trailer in ("", "AI-assisted-by: gpt-6.1-terra",
+                        "ai-assisted-by: deepseek-v4-flash",
+                        "AI-assisted-by: gpt-6.1-terra\nAI-assisted-by: mimo-v2.5"):
+            with self.subTest(trailer=trailer):
+                ok, error = check_commit.check_ai_assisted_by(":bug: Fix crash\n\n" + trailer)
+                self.assertTrue(ok, error)
+
+    def test_invalid_values_are_reported(self):
+        for value in ("", "openai/gpt-6.1-terra", "GPT-6.1 Terra",
+                      "gpt-6.1-terra extra", "-gpt", "gpt-", "gpt..6", "gpt_6"):
+            with self.subTest(value=value):
+                ok, error = check_commit.check_ai_assisted_by(
+                    ":bug: Fix crash\n\nAI-assisted-by: " + value
+                )
+                self.assertFalse(ok)
+                self.assertIn("line 3", error)
+
+    def test_each_trailer_is_checked_and_all_offenders_reported(self):
+        ok, error = check_commit.check_ai_assisted_by(
+            ":bug: Fix crash\n\nAI-assisted-by: gpt-6.1-terra\n"
+            "AI-assisted-by: openai/gpt-6.1-terra\n"
+            "ai-assisted-by: GPT-6.1 Terra"
+        )
+        self.assertFalse(ok)
+        self.assertIn("line 4", error)
+        self.assertIn("line 5", error)
+
+    def test_cli_rejects_invalid_trailer(self):
+        with tempfile.TemporaryDirectory() as directory:
+            subprocess.run(["git", "init", "-q", directory], check=True)
+            subprocess.run(
+                ["git", "-C", directory, "-c", "user.name=Test",
+                 "-c", "user.email=test@example.com", "commit", "-q",
+                 "--allow-empty", "-m", ":bug: Fix crash",
+                 "-m", "AI-assisted-by: openai/gpt-6.1-terra"],
+                check=True,
+            )
+            result = subprocess.run(
+                [str(SCRIPT_PATH), "-c", "HEAD"], cwd=directory,
+                capture_output=True, text=True, check=False,
+            )
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("AI-assisted-by", result.stderr)
 
 
 class SubjectRulesRegressionTests(unittest.TestCase):

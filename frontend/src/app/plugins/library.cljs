@@ -715,7 +715,7 @@
             (->> (get-variant-components file-id id)
                  (mapcat :variant-properties)
                  (keep :name)
-                 (set)
+                 (distinct)
                  (apply array)))}
 
     :currentValues
@@ -726,7 +726,7 @@
               (->> variant-properties
                    (d/seek #(= (:name %) property)))))
            (keep :value)
-           (set)
+           (distinct)
            (apply array)))
 
     :variantComponents
@@ -1022,7 +1022,8 @@
       (let [file (u/locate-file file-id)
             component (u/locate-library-component file-id id)
             root (ctf/get-component-root (:data file) component)]
-        (when (some? root)
+        ;; A deleted component keeps its root only in its own objects, not on a page
+        (when (and (some? root) (not (:deleted component)))
           (shape/shape-proxy plugin-id file-id (:main-instance-page component) (:id root)))))
 
     :isVariant

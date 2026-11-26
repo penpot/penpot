@@ -17,6 +17,7 @@ use crate::shapes::{
 };
 use crate::state::{ShapesPoolRef, State};
 use crate::uuid::Uuid;
+use crate::{get_render_state, has_render_state};
 
 #[allow(clippy::too_many_arguments)]
 fn propagate_children(
@@ -113,7 +114,7 @@ fn calculate_masked_group_bounds(
     shapes: ShapesPoolRef,
     bounds: &HashMap<Uuid, Bounds>,
 ) -> Option<Bounds> {
-    let mask = shape.mask_id().and_then(|id| shapes.get(id))?;
+    let mask = shape.mask_id().and_then(|id| shapes.get(&id))?;
     Some(bounds.find(mask))
 }
 
@@ -438,6 +439,22 @@ fn propagate_reflow(
     }
 }
 
+fn propagate_nested_reflows(
+    ids: &[Uuid],
+    shapes: ShapesPoolRef,
+    reflown: &HashSet<Uuid>,
+    entries: &mut VecDeque<Modifier>,
+) {
+    for shape in ids.iter().filter_map(|id| shapes.get(id)) {
+        for child_id in shape.all_children_iter(shapes, false, false) {
+            if !reflown.contains(&child_id) && shapes.get(&child_id).is_some_and(Shape::has_layout)
+            {
+                entries.push_back(Modifier::reflow(child_id, false));
+            }
+        }
+    }
+}
+
 fn reflow_shape(
     id: &Uuid,
     state: &State,
@@ -504,6 +521,16 @@ pub fn propagate_modifiers(
     // are transformed in the same pass.
     let mut pending_reflows = HashSet::<Uuid>::new();
 
+    let requested_reflows: Vec<Uuid> = entries
+        .iter()
+        .filter_map(|modifier| match modifier {
+            Modifier::Reflow(id, _) => Some(*id),
+            Modifier::Transform(..) => None,
+        })
+        .collect();
+    let interactive = has_render_state() && get_render_state().options.is_interactive_transform();
+    let mut nested_layouts_queued = interactive || requested_reflows.is_empty();
+
     // We first propagate the transforms to the children and then after
     // recalculate the layouts. The layout can create further transforms that
     // we need to re-propagate.
@@ -563,6 +590,14 @@ pub fn propagate_modifiers(
                 continue;
             }
             reflow_shape(id, state, &mut reflown, &mut entries, &mut bounds_temp)?;
+        }
+
+        // A requested reflow also lays out the layouts below it that kept
+        // their size, so were skipped: a component sync can leave their
+        // children where the layout would not put them.
+        if entries.is_empty() && !nested_layouts_queued {
+            nested_layouts_queued = true;
+            propagate_nested_reflows(&requested_reflows, shapes, &reflown, &mut entries);
         }
     }
 
@@ -926,5 +961,307 @@ mod tests {
 
         assert_eq!(bounds.width(), 4.0);
         assert_eq!(bounds.height(), 4.0);
+    }
+
+    fn add_flex_row(shape: &mut Shape) {
+        shape.set_shape_type(Type::Frame(Frame::default()));
+        shape.set_flex_layout_data(
+            FlexDirection::Row,
+            0.0,
+            0.0,
+            AlignItems::Start,
+            AlignContent::Start,
+            JustifyItems::Start,
+            JustifyContent::Start,
+            WrapType::NoWrap,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+        );
+    }
+
+    fn add_fixed_layout_child(shape: &mut Shape, parent_id: Uuid) {
+        shape.set_parent(parent_id);
+        shape.set_flex_layout_child_data(
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            Sizing::Fix,
+            Sizing::Fix,
+            None,
+            None,
+            None,
+            None,
+            None,
+            false,
+            None,
+        );
+    }
+
+    #[test]
+    fn test_reflow_lays_out_nested_layout_that_keeps_its_size() {
+        let outer_id = Uuid::new_v4();
+        let inner_id = Uuid::new_v4();
+        let child_id = Uuid::new_v4();
+
+        let mut state = State::new();
+        state.shapes.initialize(10);
+        {
+            let child = state.shapes.add_shape(child_id);
+            child.set_selrect(100.0, 0.0, 116.0, 16.0);
+            add_fixed_layout_child(child, inner_id);
+
+            let inner = state.shapes.add_shape(inner_id);
+            add_flex_row(inner);
+            add_fixed_layout_child(inner, outer_id);
+            inner.add_child(child_id);
+            inner.set_selrect(0.0, 0.0, 300.0, 16.0);
+
+            let outer = state.shapes.add_shape(outer_id);
+            add_flex_row(outer);
+            outer.add_child(inner_id);
+            outer.set_selrect(0.0, 0.0, 300.0, 16.0);
+        }
+
+        let entry = TransformEntry::from_input(outer_id, Matrix::new_identity());
+        let result = propagate_modifiers(&state, &[entry], PixelPrecision::Disabled).unwrap();
+
+        let transform = result
+            .iter()
+            .find(|entry| entry.id == child_id)
+            .map(|entry| entry.transform)
+            .expect("the child of the nested layout is laid out");
+
+        let child = state.shapes.get(&child_id).unwrap();
+        let bounds = child.bounds().transform(&transform);
+
+        assert!(is_close_to(bounds.min_x(), 0.0));
+    }
+
+    #[derive(Clone, Copy)]
+    enum TestLayout {
+        None,
+        Flex,
+        Grid,
+    }
+
+    #[derive(Clone, Copy, PartialEq)]
+    enum Child {
+        InFlow,
+        Absolute,
+        Hidden,
+    }
+
+    /// Adds a shape with no gaps or padding: auto-sized at the root, fixed below.
+    fn add_shape(
+        state: &mut State,
+        parent: Option<Uuid>,
+        (left, top, right, bottom): (f32, f32, f32, f32),
+        layout: TestLayout,
+    ) -> Uuid {
+        let id = Uuid::new_v4();
+        let sizing = if parent.is_some() {
+            Sizing::Fix
+        } else {
+            Sizing::Auto
+        };
+        let shape = state.shapes.add_shape(id);
+        if !matches!(layout, TestLayout::None) {
+            shape.set_shape_type(Type::Frame(Frame::default()));
+        }
+        let (align, justify) = (AlignItems::Start, JustifyContent::Start);
+        let (content, items) = (AlignContent::Start, JustifyItems::Start);
+        match layout {
+            TestLayout::Flex => shape.set_flex_layout_data(
+                FlexDirection::Row,
+                0.0,
+                0.0,
+                align,
+                content,
+                items,
+                justify,
+                WrapType::NoWrap,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+            ),
+            TestLayout::Grid => shape.set_grid_layout_data(
+                GridDirection::Row,
+                0.0,
+                0.0,
+                align,
+                content,
+                items,
+                justify,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+            ),
+            TestLayout::None => {}
+        }
+        shape.set_selrect(left, top, right, bottom);
+        shape.set_flex_layout_child_data(
+            0.0, 0.0, 0.0, 0.0, sizing, sizing, None, None, None, None, None, false, None,
+        );
+        if let Some(parent) = parent {
+            shape.set_parent(parent);
+            state.shapes.get_mut(&parent).unwrap().add_child(id);
+        }
+        id
+    }
+
+    fn shape_mut(state: &mut State, id: Uuid) -> &mut Shape {
+        state.shapes.get_mut(&id).unwrap()
+    }
+
+    fn set_absolute(state: &mut State, id: Uuid) {
+        shape_mut(state, id)
+            .layout_item
+            .as_mut()
+            .unwrap()
+            .is_absolute = true;
+    }
+
+    fn rotate(state: &mut State, id: Uuid, degrees: f32) {
+        let (sin, cos) = degrees.to_radians().sin_cos();
+        let shape = shape_mut(state, id);
+        shape.set_rotation(degrees);
+        shape.set_transform(cos, sin, -sin, cos, 0.0, 0.0);
+    }
+
+    /// Reflows every layout above `id`, as a committed text resize does.
+    fn reflow(state: &State, id: Uuid) -> Vec<TransformEntry> {
+        let entry = TransformEntry::from_input(id, Matrix::default());
+        propagate_modifiers(state, &[entry], PixelPrecision::Disabled).unwrap()
+    }
+
+    fn size_after(state: &State, result: &[TransformEntry], id: Uuid) -> (f32, f32) {
+        let mut bounds = state.shapes.get_raw(&id).unwrap().bounds();
+        if let Some(entry) = result.iter().find(|e| e.id == id) {
+            bounds = bounds.transform(&entry.transform);
+        }
+        (bounds.width(), bounds.height())
+    }
+
+    fn assert_size((width, height): (f32, f32), (expected_w, expected_h): (f32, f32)) {
+        assert!(
+            is_close_to(width, expected_w) && is_close_to(height, expected_h),
+            "got {width}x{height}, expected {expected_w}x{expected_h}"
+        );
+    }
+
+    #[test]
+    fn test_rotated_shape_under_absolute_child_of_auto_flex_does_not_collapse() {
+        // Tree from #12763: auto flex > absolute frame > rotated flex row > leaf.
+        for absolute_layout in [TestLayout::Flex, TestLayout::Grid] {
+            let mut state = State::new();
+            state.shapes.initialize(10);
+            let root = (-1545.0, -72.0, 232.0, 824.0);
+            let auto = add_shape(&mut state, None, root, TestLayout::Flex);
+            let frame = (-1399.0, 9.0, 72.75, 763.0);
+            let absolute = add_shape(&mut state, Some(auto), frame, absolute_layout);
+            set_absolute(&mut state, absolute);
+            let row = (-1379.0, 29.0, -1043.0, 83.0);
+            let row = add_shape(&mut state, Some(absolute), row, TestLayout::Flex);
+            let leaf = (-1365.0, 47.0, -1335.0, 64.0);
+            let leaf = add_shape(&mut state, Some(row), leaf, TestLayout::None);
+            rotate(&mut state, row, 0.0915);
+            rotate(&mut state, leaf, 0.0915);
+
+            let result = reflow(&state, leaf);
+
+            for entry in &result {
+                let (width, height) = size_after(&state, &result, entry.id);
+                assert!(width > 1.0 && height > 1.0, "{} collapsed", entry.id);
+            }
+        }
+    }
+
+    #[test]
+    fn test_collapsing_a_rotated_frame_is_a_recoverable_error() {
+        let mut state = State::new();
+        state.shapes.initialize(10);
+        let frame = (0.0, 0.0, 300.0, 100.0);
+        let frame = add_shape(&mut state, None, frame, TestLayout::Flex);
+        let child = add_shape(
+            &mut state,
+            Some(frame),
+            (10.0, 10.0, 50.0, 50.0),
+            TestLayout::None,
+        );
+        set_absolute(&mut state, child);
+        rotate(&mut state, frame, 0.0915);
+
+        // Squash the frame to zero width: its rotated corners end on one line.
+        let entry = TransformEntry::from_input(frame, Matrix::scale((0.0, 1.0)));
+        let result = propagate_modifiers(&state, &[entry], PixelPrecision::Disabled);
+
+        assert!(matches!(
+            result,
+            Err(crate::error::Error::RecoverableError(_))
+        ));
+    }
+
+    /// Size of an auto-size 500x300 frame with one 100x50 child, after reflow.
+    /// Grids get two fixed 100px columns and one fixed 50px row.
+    fn auto_frame_size(layout: TestLayout, child: Child) -> (f32, f32) {
+        let mut state = State::new();
+        state.shapes.initialize(10);
+        let frame = add_shape(&mut state, None, (0.0, 0.0, 500.0, 300.0), layout);
+        let rect = (10.0, 10.0, 110.0, 60.0);
+        let child_id = add_shape(&mut state, Some(frame), rect, TestLayout::None);
+        match child {
+            Child::Absolute => set_absolute(&mut state, child_id),
+            Child::Hidden => shape_mut(&mut state, child_id).set_hidden(true),
+            Child::InFlow => {}
+        }
+        if matches!(layout, TestLayout::Grid) {
+            let column = GridTrack {
+                track_type: GridTrackType::Fixed,
+                value: 100.0,
+            };
+            let row = GridTrack {
+                track_type: GridTrackType::Fixed,
+                value: 50.0,
+            };
+            let shape = shape_mut(&mut state, frame);
+            shape.set_grid_columns(vec![column.clone(), column]);
+            shape.set_grid_rows(vec![row]);
+            if child != Child::Absolute {
+                shape.set_grid_cells(vec![GridCell {
+                    row: 1,
+                    row_span: 1,
+                    column: 1,
+                    column_span: 1,
+                    align_self: None,
+                    justify_self: None,
+                    shape: Some(child_id),
+                }]);
+            }
+        }
+        let result = reflow(&state, frame);
+        size_after(&state, &result, frame)
+    }
+
+    #[test]
+    fn test_auto_flex_size_by_child_kind() {
+        use Child::*;
+        assert_size(auto_frame_size(TestLayout::Flex, InFlow), (100.0, 50.0));
+        assert_size(auto_frame_size(TestLayout::Flex, Absolute), (500.0, 300.0));
+        // Known difference from CLJS, which sizes the frame to hidden children.
+        assert_size(auto_frame_size(TestLayout::Flex, Hidden), (500.0, 300.0));
+    }
+
+    #[test]
+    fn test_auto_grid_size_by_child_kind() {
+        use Child::*;
+        assert_size(auto_frame_size(TestLayout::Grid, InFlow), (200.0, 50.0));
+        assert_size(auto_frame_size(TestLayout::Grid, Absolute), (500.0, 300.0));
+        // Grid takes its size from its tracks; hidden children still count.
+        assert_size(auto_frame_size(TestLayout::Grid, Hidden), (200.0, 50.0));
     }
 }

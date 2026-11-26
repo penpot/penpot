@@ -1,34 +1,20 @@
 You are working on the GitHub project `penpot/penpot`, a monorepo.
 
-# Memory system
+# Cross-cutting guidance
 
-- Memories are the primary project guidance (not docs or other readme files).
-- A section's top-level memory is `<section>/core`. When a section is relevant, read the core memory before focused memories.
 - Edits/stale refs/duplication cleanup: `mem:memory-maintenance`.
 - Cross-cutting testing principles, TDD workflow, and anti-patterns: `mem:testing`.
+- Structured logging conventions (`:hint` casing and fields, log levels): `mem:clojure/logging` — read before adding or changing any log call.
 - Verified Clojure language behaviors that contradict common assumptions (e.g. `int?` covers `Long`; `integer?` is the general predicate): `mem:clojure/idioms` — read before assuming stdlib predicate semantics.
-- Read `mem:clojure/design-rules` (function shape, boundary checks, naming) before writing or modifying Clojure/ClojureScript code — not only when designing a solution or an API.
+- Read `mem:clojure/core` (function shape, boundary checks, naming) before writing or modifying Clojure/ClojureScript code — not only when designing a solution or an API.
+- Align the values of multi-line Clojure/CLJS `let` bindings to the same column.
 - Promises: which call style to use where (`fmap`/`mcat`/`merr` vs `then`/`catch`) and how they bridge to rx: `mem:clojure/promesa` — read before chaining promises or mixing them with observables.
 
 # Development workflow
 
-- Commit/PR/issue creation is **on explicit request only**. Before any of these actions, read the relevant memory — don't infer format from prior examples:
-  - Before `git commit` → `mem:workflow/creating-commits` (subject/body format, 80-char body wrapping enforced by `scripts/check-commit`, `AI-assisted-by: model-name` trailer)
-  - Before `gh issue create` → `mem:workflow/creating-issues` (title derivation, body template, labels, Issue Type)
-  - Before `gh pr create` / `gh pr edit` → `mem:workflow/creating-prs` (title format, body structure, "Note:" line)
-- Before updating `CHANGES.md` → `mem:workflow/updating-changelog` (sources of truth, entry rules, the `:boom:`/`:rocket:` label contracts, pre-flight checks, anomaly report)
 - Before a repo-wide pnpm version update → `mem:workflow/updating-pnpm` (workspace layout, `scripts/sync-pnpm-version` flow, the stamp-missing-field and ignored-builds gotchas, verification steps)
 - Before a Node version update → `mem:workflow/updating-node` (the six pin sites in `.nvmrc`, the devenv and image Dockerfiles and the plugins-deploy workflows, the DHI tag and digest rules, what to verify)
 - Before bumping a non-JS dependency pinned in `docker/images/` (JDK, ImageMagick) → `mem:workflow/docker-images`
-- **Never `git push`, force-push, or modify `git origin`** (or any other remote). The user pushes from their own shell; if a push is required, say so and wait. Never amend a commit that the user has already pushed unless explicitly asked.
-- **Never edit `CHANGES.md` by hand.** The changelog is generated from GitHub milestones during the release process; update it only via `mem:workflow/updating-changelog` (the `update-changelog` skill flow) or on explicit user request.
-- You have access to the GitHub CLI `gh` or corresponding MCP tools.
-- Issues are also managed on Taiga. Read issues using the `read_taiga_issue` tool.
-- Before writing code, analyze the task in depth and describe your plan. If the task is complex, break it down into atomic steps. After making changes, run the applicable lint and format checks for the affected module before considering the work done (per example `mem:backend/core` or `mem:frontend/core`).
-- Align `let` binding values: when a `let` form has multiple bindings spanning several lines, align the value forms to the same column with spaces.
-- If you introduce delimiter errors (mismatched parens/brackets) in Clojure/CLJS files, fix them with `scripts/paren-repair` BEFORE running lint/format checks. See `mem:scripts/paren-repair` for usage.
-- Never run anything that destroys data without explicit permission, including `drop-devenv`, `docker compose down -v`, `docker volume rm ...`. The user's real work lives in the volumes of the shared infra.
-- **Never wait for background work with a sleep.** A long command moved to the background reports its own completion: do not poll it with `sleep 150` (or any other wait) inside a foreground command, and do not re-read its output file to check whether it finished. Keep working on something else, or end the response and wait for the notification.
 
 # Project modules
 
@@ -45,8 +31,6 @@ This is a monorepo. Principles that apply to one module do *not* generally apply
 - `docs/`: documentation site; core workflow and conventions: `mem:docs/core`.
 - `media-processor/`: TypeScript/Node.js HTTP service for image (sharp) and font (FontForge) processing; core conventions: `mem:media-processor/core`.
 
-The memory is structured in a way that you can get the critical information about the module. You can read it from `mem:<MODULE>/core`
-
 # Low-centrality project paths
 
 - `docker/` contains devenv related code, not needed unless specifically instructed. When working on devenv startup, compose layout, instance config (`defaults.env`), tmux session lifecycle, RustFS provisioning, or anything in `manage.sh`'s `*-devenv` commands, read `mem:devenv/core`.
@@ -56,16 +40,16 @@ The memory is structured in a way that you can get the critical information abou
 # Dev Scripts (scripts/)
 
 - `scripts/nrepl-eval.mjs` — Evaluate Clojure/ClojureScript code via nREPL. Supports `--backend` (port 6064) and `--frontend` (port 3447) aliases. See `mem:scripts/nrepl-eval`.
-- `scripts/paren-repair` — Fix mismatched delimiters in Clojure/CLJS files and reformat with cljfmt. Run before lint checks when LLM edits break parens. See `mem:scripts/paren-repair`.
 - `scripts/psql` — PostgreSQL client wrapper with devenv defaults. Companion: `scripts/db-schema` for DDL dumps. See `mem:scripts/psql`.
-- `scripts/taiga.py` — Fetch public issues, user stories, and tasks from the Penpot Taiga project without authentication. See `mem:scripts/taiga`.
-- `scripts/gh.py` — GitHub operations helper: list milestone issues, fetch PR details, compare against CHANGES.md. Requires `gh` CLI. See `mem:scripts/gh`.
+- `scripts/gh.py` — GitHub operations helper: list milestone issues, fetch PR details, compare against CHANGES.md, create issues with their Issue Type, and create PRs with optional issue linking. Requires `gh` CLI. See `mem:scripts/gh`.
+- `scripts/coverage-summary.mjs` and `scripts/coverage-comment.mjs` — Write test coverage summaries and update the coverage PR comment. See `mem:scripts/coverage-reporting`.
+- Before changing coverage summaries or PR comments, read `mem:scripts/coverage-reporting` for metrics, concurrent comment updates, and fork permissions.
 - `scripts/project-anomalies.py` — Main-board anomaly check for a milestone (`check` writes `tmp/<MILESTONE>-ANOMALIES.md`). Bulk resolution via `scripts/gh.py`. See `mem:scripts/project-anomalies`.
-- `scripts/changelog.py` — Changelog checks for `mem:workflow/updating-changelog`: `boom` (generate the `:boom:` section from `breaking change` issues), `check-merged` (PR merge status), `cross-ref` (milestone PRs vs changelog section), `report` (anomaly report to CHANGES-ISSUES.md). Calls `scripts/gh.py` via subprocess. See `mem:scripts/changelog`.
+- Changelog release and audit workflow: `mem:workflow/updating-changelog`.
 - `scripts/error-reports.mjs` — Query error reports via RPC API with token authentication. Supports list/get operations with filtering and pagination. See `mem:scripts/error-reports`.
 - `scripts/clean-node-modules` — Remove stale `node_modules` from all pnpm workspaces (root, modules, member packages). Keeps the shared pnpm store at `<repo>/.pnpm-store` unless `--store`; ignores `external/` and `.opencode/`. Usage and reinstall steps: `mem:workflow/updating-pnpm`.
 - `scripts/setup-opencode` — Install the opencode CLI in-container as a global pnpm package in `$PNPM_HOME`. Not part of the devenv image; see `mem:devenv/core`.
-- `scripts/ci` — CI orchestration script: runs lint, tests, and format checks per module, plus the production build on request (`--build`). Modules: `frontend backend common render-wasm exporter mcp plugins library media-processor`. Logs go to `.ci-logs/`; read the log file on failure. It is the preferred way to run the backend tests, and it exports `PENPOT_FLAGS` with `enable-backend-asserts`, which is what makes `clojure.core/assert` exist in the compiled test code. See `mem:scripts/ci`.
+- `scripts/ci` — Per-module lint, tests and format checks. See `mem:scripts/ci` for flags, logs and the backend assert flag.
 
 # Dependency graph
 
@@ -76,8 +60,6 @@ The memory is structured in a way that you can get the critical information abou
 - Before automating or inspecting Penpot designs through the Plugin API, call the Penpot MCP `high_level_overview` tool.
 - connection between the JavaScript plugin API and the ClojureScript code: `mem:frontend/plugin-api-to-cljs-binding`.
 - executing ClojureScript code in the frontend: `mem:frontend/cljs-repl`.
-- handling Clojure compiler errors, runtime patching and debug helpers: `mem:frontend/handling-errors-and-debugging`.
+- Failed ClojureScript build or stale hot reload: `mem:frontend/compile-diagnostics`.
 
-## Detecting Crashes
-
-The Penpot frontend can crash silently from the JS API's perspective: `execute_code` calls return successfully, but 1-2s later the workspace becomes unusable (Internal Error page). The `execute_code` tool then stops working, but `cljs_repl` still works. Use it to detect a crash via `(some? (:exception @app.main.store/state))`. For details on handling crashes, read memory `mem:frontend/handling-crashes`.
+- Frontend Internal Error or runtime crash: `mem:frontend/handling-crashes` for store inspection and recovery.

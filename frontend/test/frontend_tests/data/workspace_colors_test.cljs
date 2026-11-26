@@ -6,7 +6,10 @@
 
 (ns frontend-tests.data.workspace-colors-test
   (:require
+   [app.common.schema :as sm]
    [app.common.types.color :as cc]
+   [app.common.types.fills :as types.fills]
+   [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.colors :as dwc]
    [app.main.ui.workspace.colorpicker.hsl :as hsl]
@@ -49,6 +52,27 @@
                    (ptk/event? (dwc/add-fill #{uuid/zero} color3 1))))
     (t/is (thrown? js/Error
                    (ptk/event? (dwc/add-fill #{uuid/zero} color4 1))))))
+
+(t/deftest update-shape-stroke-attrs-changes-an-existing-stroke
+  (let [shape {:strokes [{:stroke-color "#000000" :stroke-opacity 1
+                          :stroke-width 1 :stroke-style :solid
+                          :stroke-alignment :inner}]}
+        result (dwc/update-shape-stroke-attrs shape 0 {:stroke-width 4})]
+    (t/is (= {:stroke-color "#000000" :stroke-opacity 1
+              :stroke-width 4 :stroke-style :solid
+              :stroke-alignment :inner}
+             (get-in result [:strokes 0])))))
+
+(t/deftest update-shape-stroke-attrs-creates-a-stroke-with-color
+  ;; Regression for https://github.com/penpot/penpot/issues/12463.
+  ;; A stroke built from style attributes alone has no color, so the
+  ;; backend rejects the shape as invalid.
+  (let [result (dwc/update-shape-stroke-attrs {:type :bool} 0 {:stroke-width 4})
+        stroke (get-in result [:strokes 0])]
+    (t/is (= 1 (count (:strokes result))))
+    (t/is (= "#000000" (:stroke-color stroke)))
+    (t/is (= 4 (:stroke-width stroke)))
+    (t/is (sm/validate cts/schema:stroke stroke))))
 
 
 (t/deftest update-colorpicker-color-skips-add-recent-on-incomplete-image-state
@@ -158,3 +182,93 @@
               :app.main.data.workspace.colors/change-stroke-color   1
               :app.main.data.workspace.undo/commit-undo-transaction 1}
              (frequencies @types)))))
+
+(def ^:private gradient-colorpicker
+  {:type :linear-gradient
+   :editing-stop 0
+   :gradient {:type :linear :start-x 0.5 :start-y 0 :end-x 0.5 :end-y 1 :width 1}
+   :stops [{:color "#000000" :opacity 1 :offset 0}
+           {:color "#000000" :opacity 0 :offset 1}]
+   :current-color {:color "#000000" :opacity 1 :offset 0}})
+
+(t/deftest update-colorpicker-leaves-gradient-tab-on-plain-color
+  ;; Regression for https://github.com/penpot/penpot/issues/12463.
+  ;; Undoing a gradient with the colorpicker open sends a plain color.
+  ;; The colorpicker dropped the stops but stayed in gradient mode, so
+  ;; adding a stop built a gradient without coordinates or colors.
+  (doseq [type [:linear-gradient :radial-gradient]]
+    (t/testing (name type)
+      (let [state  {:colorpicker (assoc gradient-colorpicker :type type)}
+            event  (dwc/update-colorpicker {:color "#000000" :opacity 1})
+            result (:colorpicker (ptk/update event state))]
+        (t/is (= :color (:type result)))
+        (t/is (nil? (:stops result)))
+        (t/is (nil? (:gradient result)))))))
+
+(t/deftest update-colorpicker-switches-to-image-tab-on-image-color
+  (let [state  {:colorpicker gradient-colorpicker}
+        image  {:id uuid/zero :width 10 :height 10 :mtype "image/png"}
+        event  (dwc/update-colorpicker {:image image :opacity 1})
+        result (:colorpicker (ptk/update event state))]
+    (t/is (= :image (:type result)))))
+
+(t/deftest update-colorpicker-keeps-color-tab-on-plain-color
+  (let [state  {:colorpicker {:type :color
+                              :current-color {:color "#000000" :opacity 1}}}
+        event  (dwc/update-colorpicker {:color "#ff0000" :opacity 1})
+        result (:colorpicker (ptk/update event state))]
+    (t/is (= :color (:type result)))
+    (t/is (= "#ff0000" (get-in result [:current-color :color])))))
+
+(t/deftest colorpicker-onchange-runner-skips-invalid-gradient
+  (let [calls  (atom [])
+        runner (#'dwc/colorpicker-onchange-runner #(swap! calls conj %))
+        empty-gradient {:colorpicker {:type :linear-gradient
+                                      :stops [{:offset 0.5}]}}]
+    (ptk/watch runner empty-gradient nil)
+    (t/is (empty? @calls))
+    (ptk/watch runner {:colorpicker gradient-colorpicker} nil)
+    (t/is (= 1 (count @calls)))
+    (t/is (= [{:color "#000000" :opacity 1 :offset 0}
+              {:color "#000000" :opacity 0 :offset 1}]
+             (get-in (first @calls) [:gradient :stops])))))
+
+(t/deftest colorpicker-onchange-runner-applies-plain-and-image-colors
+  ;; The guard only drops invalid gradients: colors without a gradient
+  ;; must still reach `on-change`.
+  (let [calls  (atom [])
+        runner (#'dwc/colorpicker-onchange-runner #(swap! calls conj %))
+        image  {:id uuid/zero :width 10 :height 10 :mtype "image/png"}]
+    (ptk/watch runner {:colorpicker {:type :color
+                                     :current-color {:color "#ff0000" :opacity 1}}} nil)
+    (ptk/watch runner {:colorpicker {:type :image
+                                     :current-color {:image image :opacity 1}}} nil)
+    (t/is (= 2 (count @calls)))
+    (t/is (= "#ff0000" (:color (first @calls))))
+    (t/is (= image (:image (second @calls))))))
+
+(def ^:private text-image
+  {:id #uuid "00000000-0000-0000-0000-000000000001"
+   :width 100
+   :height 100
+   :mtype "image/png"})
+
+(t/deftest change-text-color-sets-an-image
+  ;; Regression for https://github.com/penpot/penpot/issues/12463.
+  ;; Picking an image in Selected colors for a text left a fill with only
+  ;; :fill-opacity, which the backend rejects as an invalid shape.
+  (let [node   {:text "Night" :fills [{:fill-color "#000000" :fill-opacity 1}]}
+        result (#'dwc/change-text-color {:color "#000000" :opacity 1}
+                                        {:image text-image :opacity 0.9}
+                                        0
+                                        node)]
+    (t/is (= [{:fill-image text-image :fill-opacity 0.9}] (:fills result)))
+    (t/is (sm/validate types.fills/schema:fill (first (:fills result))))))
+
+(t/deftest change-text-color-replaces-an-image
+  (let [node   {:text "Night" :fills [{:fill-image text-image :fill-opacity 1}]}
+        result (#'dwc/change-text-color {:image text-image :opacity 1}
+                                        {:color "#fabada" :opacity 1}
+                                        0
+                                        node)]
+    (t/is (= [{:fill-color "#fabada" :fill-opacity 1}] (:fills result)))))

@@ -213,19 +213,20 @@ their rendering backend.
 
 ### Shared state and workers
 
-All instances share one Penpot database and one RustFS bucket; users, teams,
-files, and MCP tokens are visible from every instance. Per-instance Valkey
-keeps msgbus Pub/Sub channels (collab broadcasts, team-org notifications,
-file-summary cache, rate-limit counters) isolated.
+All workspaces share one application database and one RustFS bucket, so
+they see the same users, teams, files, and MCP tokens. They also share a
+Valkey server, but each workspace uses a separate logical database for
+runtime keys. Pub/Sub channels are separated by a workspace-specific tenant
+prefix, not by the Valkey database number.
 
-Background workers (`enable-backend-worker`) run only on ws0 — ws1+ overlays
-disable it. ws1+ RPC handlers still enqueue tasks into the shared Postgres
-`task` table; ws0's dispatcher claims them via `FOR UPDATE SKIP LOCKED` and
-runs them against the shared DB and RustFS. Workers are fire-and-forget:
-`wrk/submit!` inserts a row and returns; RPC handlers never wait on
-completion. The "ws0 only" policy avoids multi-instance worker races (cron
-dedup is best-effort across instances, `wrk/submit!` `dedupe` is racy across
-submitters).
+Backend tests use a separate PostgreSQL database and Valkey logical database
+for each workspace. Use the workspace's `PENPOT_TEST_DATABASE_URI` and
+`PENPOT_TEST_REDIS_URI` rather than pointing tests at the runtime databases.
+
+Jobs are stored in shared PostgreSQL but dispatched by tenant. A worker
+enabled in `ws0` does not pick up jobs submitted under another workspace's
+tenant. If a job stays pending, check the submitting workspace's effective
+worker flags and tenant.
 
 Each workspace is independent and can be started and stopped in any order.
 Shared infrastructure shuts down only when no instances remain running.
@@ -238,7 +239,7 @@ into separate compose projects per runtime instance:
 - `docker/devenv/docker-compose.infra.yml` (Postgres, RustFS, Valkey, mailer,
   LDAP)
   runs under the compose project `penpotdev-infra`.
-- `docker/devenv/docker-compose.main.yml` (one main container + its Valkey)
+- `docker/devenv/docker-compose.main.yml` (one main container)
   runs once per runtime instance under `penpotdev-ws0`, `penpotdev-ws1`, ….
 - Both projects join the external Docker network `penpot_shared`, created
   idempotently by `manage.sh`.
@@ -507,6 +508,14 @@ Some examples of commonly used flags:
 - `enable-login-with-ldap` — enables LDAP login.
 
 The full list of available flags can be found in `common/src/app/common/flags.cljc`.
+
+One flag is off by default in the devenv: the frontend compiles with
+`PENPOT_DEVENV=true` in the development containers, which hides all
+admin-console UI (links, routes, team menu entries) whether or not you created
+a `config.js`. To test the admin-console against a local Nitrate instance,
+reactivate it from your `config.js`: `var penpotFlags = "enable-admin-console";`.
+Your flags are parsed after the injected default, so your entry wins. Production
+builds are unaffected: `PENPOT_DEVENV` only exists in the devenv containers.
 
 After creating or modifying this file, **reload the browser** (no need to restart anything).
 

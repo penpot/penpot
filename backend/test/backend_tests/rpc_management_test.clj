@@ -16,6 +16,7 @@
    [app.db :as db]
    [app.http :as http]
    [app.rpc :as-alias rpc]
+   [app.rpc.commands.management :as management]
    [app.storage :as sto]
    [backend-tests.helpers :as th]
    [backend-tests.storage-test :refer [configure-storage-backend]]
@@ -170,6 +171,39 @@
         ;; Check the total number of files
         (let [rows (th/db-query :file {:project-id (:id project)})]
           (t/is (= 3 (count rows))))))))
+
+(t/deftest duplicate-file-does-not-touch-the-source-storage-object
+  (let [profile (th/create-profile* 1 {:is-active true})
+        project (th/create-project* 1 {:team-id (:default-team-id profile)
+                                       :profile-id (:id profile)})
+        file1   (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:id project)})]
+
+    (th/run-task! :offload-file-data {:file-id (:id file1)})
+    (th/run-task! :storage-gc-touched {:skip-delay true})
+
+    (let [sobject (:storage-object-id (th/db-get :file-data {:file-id (:id file1)
+                                                             :id (:id file1)}))]
+      (t/is (uuid? sobject))
+      (t/is (nil? (:touched-at (th/db-get :storage-object {:id sobject}
+                                          {::db/remove-deleted false}))))
+
+      (let [out (th/command! {::th/type :duplicate-file
+                              ::rpc/profile-id (:id profile)
+                              :file-id (:id file1)})]
+        (t/is (nil? (:error out)))
+        (t/is (not (contains? (:result out) :storage-object-id)))
+
+        (t/testing "duplication does not write to the source object"
+          (t/is (nil? (:touched-at (th/db-get :storage-object {:id sobject}
+                                              {::db/remove-deleted false})))))
+
+        (let [file-id (:id (:result out))
+              row     (th/db-get :file-data {:file-id file-id :id file-id})]
+          (t/testing "the new file does not inherit the source pointer"
+            (t/is (= "db" (:backend row)))
+            (t/is (nil? (:storage-object-id row)))
+            (t/is (bytes? (:data row)))))))))
 
 (t/deftest duplicate-file-with-deleted-relations
   (let [storage (-> (:app.storage/storage th/*system*)
@@ -499,6 +533,71 @@
         (t/is (= (:library-file-id item) (:id file3)))))))
 
 
+(t/deftest move-files-from-multiple-teams-is-rejected
+  ;; A single move carries one origin team in its props: mixed origins
+  ;; are refused before anything moves, and the move event is not
+  ;; submitted. The fixtures are created with the flag off so their own
+  ;; membership events do not pollute the mock.
+  (let [profile  (th/create-profile* 1 {:is-active true})
+        team     (th/create-team* 1 {:profile-id (:id profile)})
+        project1 (th/create-project* 1 {:team-id (:default-team-id profile)
+                                        :profile-id (:id profile)})
+        project2 (th/create-project* 2 {:team-id (:id team)
+                                        :profile-id (:id profile)})
+        file1    (th/create-file* 1 {:profile-id (:id profile)
+                                     :project-id (:id project1)})
+        file3    (th/create-file* 3 {:profile-id (:id profile)
+                                     :project-id (:id project2)})]
+    (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
+      (th/with-audit-config (conj cf/flags :nexus)
+        (let [out   (th/command! {::th/type :move-files
+                                  ::rpc/profile-id (:id profile)
+                                  :project-id (:id project2)
+                                  :ids #{(:id file1) (:id file3)}})
+              error (:error out)]
+          (t/is (th/ex-info? error))
+          (t/is (th/ex-of-type? error :validation))
+          (t/is (th/ex-of-code? error :cant-move-from-multiple-teams))))
+      (t/is (not-any? #(= "move-files" (:name %))
+                      (map second (:call-args-list @audit-mock)))))
+    (t/is (= 1 (count (th/db-query :file {:project-id (:id project1)}))))
+    (t/is (= 1 (count (th/db-query :file {:project-id (:id project2)}))))))
+
+
+(t/deftest move-files-carries-both-teams-in-the-event
+  ;; The event carries the origin and destination team, so a consumer can
+  ;; key on them without joining production tables.
+  (let [profile  (th/create-profile* 1 {:is-active true})
+        team     (th/create-team* 1 {:profile-id (:id profile)})
+        project1 (th/create-project* 1 {:team-id (:default-team-id profile)
+                                        :profile-id (:id profile)})
+        project2 (th/create-project* 2 {:team-id (:id team)
+                                        :profile-id (:id profile)})
+        file     (th/create-file* 1 {:profile-id (:id profile)
+                                     :project-id (:id project1)})
+        raw      (th/command-raw! {::th/type :move-files
+                                   ::rpc/profile-id (:id profile)
+                                   :project-id (:id project2)
+                                   :ids #{(:id file)}})
+        props    (get-in (meta raw) [:app.loggers.audit/props])]
+    (t/is (= (:default-team-id profile) (:source-team-id props)))
+    (t/is (= (:id team) (:dest-team-id props)))))
+
+
+(t/deftest move-project-carries-both-teams-in-the-event
+  (let [profile (th/create-profile* 1 {:is-active true})
+        team    (th/create-team* 2 {:profile-id (:id profile)})
+        project (th/create-project* 1 {:team-id (:default-team-id profile)
+                                       :profile-id (:id profile)})
+        raw     (th/command-raw! {::th/type :move-project
+                                  ::rpc/profile-id (:id profile)
+                                  :project-id (:id project)
+                                  :team-id (:id team)})
+        props   (get-in (meta raw) [:app.loggers.audit/props])]
+    (t/is (= (:default-team-id profile) (:source-team-id props)))
+    (t/is (= (:id team) (:dest-team-id props)))))
+
+
 (t/deftest move-library-to-other-team
   (let [profile  (th/create-profile* 1 {:is-active true})
         team     (th/create-team* 1 {:profile-id (:id profile)})
@@ -566,6 +665,35 @@
       ;; the file2 should not have any link to libraries
       (let [rows (th/db-query :file-library-rel {:file-id (:id file2)})]
         (t/is (zero? (count rows)))))))
+
+(t/deftest move-project-locks-before-validating
+  (let [profile (th/create-profile* 1 {:is-active true})
+        project-id (:default-project-id profile)
+        locked  (promise)
+        release (promise)
+        holder  (future
+                  (db/tx-run! th/*system*
+                              (fn [{:keys [::db/conn]}]
+                                (db/exec-one! conn ["SELECT id FROM project WHERE id = ? FOR NO KEY UPDATE"
+                                                    project-id])
+                                (deliver locked true)
+                                (deref release 10000 ::timeout))))]
+    (try
+      (t/is (= true (deref locked 10000 ::timeout)))
+      (let [error (try
+                    (db/tx-run! th/*system*
+                                (fn [{:keys [::db/conn] :as cfg}]
+                                  (db/exec-one! conn ["SET LOCAL lock_timeout = '100ms'"])
+                                  (management/move-project
+                                   cfg {:profile-id (:id profile)
+                                        :project-id project-id
+                                        :team-id (:default-team-id profile)})))
+                    nil
+                    (catch java.sql.SQLException cause cause))]
+        (t/is (= "55P03" (some-> error .getSQLState))))
+      (finally
+        (deliver release true)
+        (t/is (not= ::timeout (deref holder 10000 ::timeout)))))))
 
 (t/deftest move-project
   (let [profile  (th/create-profile* 1 {:is-active true})
@@ -690,7 +818,7 @@
   ;; The per-file `create-file` events are built by hand, so they do not pass
   ;; through the generic resolver: the command must copy the team id itself.
   (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
-    (with-redefs [cf/flags (conj cf/flags :audit-log)]
+    (th/with-audit-config (conj cf/flags :nexus)
       (let [prof    (th/create-profile* 1 {:is-active true})
             team    (th/create-team* 1 {:profile-id (:id prof)})
             project (th/create-project* 1 {:profile-id (:id prof)
@@ -711,7 +839,7 @@
   ;; The duplicated project and files are created by internal calls, so the
   ;; command emits one create event per entity for a local projection.
   (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
-    (with-redefs [cf/flags (conj cf/flags :audit-log)]
+    (th/with-audit-config (conj cf/flags :nexus)
       (let [profile (th/create-profile* 1 {:is-active true})
             team    (th/create-team* 52 {:profile-id (:id profile)})
             project (th/create-project* 52 {:profile-id (:id profile)

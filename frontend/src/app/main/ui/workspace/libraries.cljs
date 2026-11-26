@@ -33,6 +33,7 @@
    [app.main.ui.components.link-button :as lb]
    [app.main.ui.components.search-bar :refer [search-bar*]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
+   [app.main.ui.components.truncated-text :refer [truncated-text*]]
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
@@ -40,6 +41,7 @@
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.ds.product.empty-state :refer [empty-state*]]
+   [app.main.ui.ds.tooltip.tooltip :refer [tooltip*]]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.tokens.import-from-library]
@@ -158,6 +160,83 @@
       (reduce #(visit %1 %2 nil) $ (sort-by-name (filter root? libraries)))
       (reduce #(visit %1 %2 nil) $ (sort-by-name libraries))
       (first $))))
+
+(defn- linked-users
+  [{:keys [connected-to]} libraries-by-id]
+  (into [] (keep libraries-by-id) connected-to))
+
+(defn- removable-users
+  "The linked libraries to disconnect to release `library`: those that use
+  it, directly or through other libraries, and that either are linked to
+  the file directly or are used by no linked library. A directly linked
+  library stays until it is disconnected, even when another one uses it.
+  Empty when the libraries only use each other in a cycle."
+  [library libraries-by-id]
+  (loop [pending   (linked-users library libraries-by-id)
+         seen      #{(:id library)}
+         removable []]
+    (if-let [user (first pending)]
+      (if (contains? seen (:id user))
+        (recur (rest pending) seen removable)
+        (let [users (linked-users user libraries-by-id)]
+          (recur (into (rest pending) users)
+                 (conj seen (:id user))
+                 (cond-> removable
+                   (or (empty? users) (false? (:is-indirect user)))
+                   (conj user)))))
+      removable)))
+
+(defn library-disconnect-hint
+  "Why a linked library cannot be disconnected from this file, or nil when
+  it can. A library that another linked library uses stays connected as
+  long as that one does. Returns `{:reason :inherited}` for a nested
+  library, with the name of its parent, and `{:reason :used-by}` for a
+  direct one, with the name of the first library by name that uses it.
+
+  Both carry `:removable`, the names of the libraries to disconnect to
+  release this one, sorted by name. The parent can be nested itself, a
+  library can have several parents, and a parent can be linked directly
+  as well. In a cycle nothing is removable, and `:removable` holds the
+  name given in `:library-name`. `libraries-by-id` indexes the linked
+  libraries by id."
+  [{:keys [nested? parent-name] :as library} libraries-by-id]
+  (let [users (linked-users library libraries-by-id)]
+    (when (seq users)
+      (let [library-name (if nested?
+                           parent-name
+                           (->> users (sort-by (comp str/lower :name)) first :name))
+            removable    (->> (removable-users library libraries-by-id)
+                              (map :name)
+                              (sort-by str/lower)
+                              (vec))]
+        {:reason (if nested? :inherited :used-by)
+         :library-name library-name
+         :removable (if (seq removable) removable [library-name])}))))
+
+(defn disconnect-hint-segments
+  "Splits a translated disconnect hint template, which holds two `%s`
+  (the library that keeps this one, then the libraries to disconnect),
+  into `[:text s]` and `[:name s]` segments in reading order, so the UI
+  can highlight the library names. Each of `removable` is its own name
+  segment, separated by `[:text \", \"]`."
+  [template library-name removable]
+  (let [[before between after] (vec (.split ^string template "%s"))
+        names (into []
+                    (comp (map (fn [n] [:name n]))
+                          (interpose [:text ", "]))
+                    removable)]
+    (-> [[:text before] [:name library-name] [:text between]]
+        (into names)
+        (conj [:text after]))))
+
+(mf/defc disconnect-hint-text*
+  {::mf/private true}
+  [{:keys [template library-name removable]}]
+  [:*
+   (for [[idx [kind text]] (map-indexed vector (disconnect-hint-segments template library-name removable))]
+     (if (= kind :name)
+       [:span {:key idx :class (stl/css :library-name-highlight)} text]
+       [:span {:key idx} text]))])
 
 (defn- describe-library
   [components-count graphics-count colors-count typography-count]
@@ -497,7 +576,7 @@
                   :key (dm/str id)
                   :data-testid "library-item"}
             [:div {:class (stl/css :item-content)}
-             [:div {:class (stl/css :item-name)} name]
+             [:> truncated-text* {:as "div" :class (stl/css :item-name) :text name}]
              [:ul {:class (stl/css :item-contents-legacy)}
               (let [summary (get-library-summary data)]
                 [:*
@@ -542,7 +621,7 @@
                   :key (dm/str id)
                   :data-testid "library-item"}
             [:div {:class (stl/css :item-content)}
-             [:div {:class (stl/css :item-name)} name]
+             [:> truncated-text* {:as "div" :class (stl/css :item-name) :text name}]
              [:ul {:class (stl/css :item-contents-legacy)}
               (let [summary (-> (:library-summary library)
                                 (adapt-backend-summary))]
@@ -659,7 +738,7 @@
                   :key (dm/str id)
                   :data-testid "library-item"}
             [:div {:class (stl/css :item-content)}
-             [:div {:class (stl/css :item-name)} name]
+             [:> truncated-text* {:as "div" :class (stl/css :item-name) :text name}]
              [:ul {:class (stl/css :item-contents)}
               (let [summary (-> (:library-summary library)
                                 (adapt-backend-summary))]
@@ -732,9 +811,9 @@
                (map #(assoc % :connected-to (find-connected-to (:id %))))
                (sort-linked-libraries)))
 
-        linked-libraries-ids
+        libraries-by-id
         (mf/with-memo [linked-libraries]
-          (into #{} d/xf:map-id linked-libraries))
+          (d/index-by :id linked-libraries))
 
         unlink-library
         (mf/use-fn
@@ -865,8 +944,10 @@
                        :class       (stl/css :title-spacing-lib)
                        :title-class (stl/css :connected-libraries-title)}]
        (if (seq linked-libraries)
-         (for [{:keys [id name data connected-to nested? parent-name] :as library} linked-libraries]
-           (let [disabled?          (some #(contains? linked-libraries-ids %) connected-to)
+         (for [{:keys [id name data nested? parent-name] :as library} linked-libraries]
+           (let [hint               (library-disconnect-hint library libraries-by-id)
+                 hint-library       (:library-name hint)
+                 hint-removable     (str/join ", " (:removable hint))
                  can-import-tokens? (and (has-tokens? library)
                                          (cfo/editable-tokens? local-library)
                                          (contains? cf/flags :token-import-from-library))]
@@ -875,7 +956,7 @@
                     :key (dm/str id)
                     :data-testid "library-item"}
               [:div {:class (stl/css :item-content)}
-               [:div {:class (stl/css :item-name)} name]
+               [:> truncated-text* {:as "div" :class (stl/css :item-name) :text name}]
                [:ul {:class (stl/css :item-contents)}
                 (let [summary (get-library-summary data)]
                   [:> library-description* {:summary summary :hint-name parent-name}])]]
@@ -904,13 +985,31 @@
                      :variant "secondary"
                      :on-click import-tokens}]))
 
-               [:> icon-button* {:type "button"
-                                 :aria-label (tr "workspace.libraries.unlink-library-btn")
-                                 :icon i/detach
-                                 :data-library-id (dm/str id)
-                                 :variant "secondary"
-                                 :disabled disabled?
-                                 :on-click unlink-library}]]]))
+               (if (some? hint)
+                 [:> tooltip* {:class (stl/css :library-locked)
+                               :tab-index 0
+                               :data-testid "library-locked"
+                               :aria-label (case (:reason hint)
+                                             :inherited (tr "workspace.libraries.connected-through-hint"
+                                                            hint-library hint-removable)
+                                             :used-by (tr "workspace.libraries.used-by"
+                                                          hint-library hint-removable))
+                               :content #(mf/html
+                                          [:> disconnect-hint-text*
+                                           {:template (case (:reason hint)
+                                                        :inherited (tr "workspace.libraries.connected-through-hint")
+                                                        :used-by (tr "workspace.libraries.used-by"))
+                                            :library-name hint-library
+                                            :removable (:removable hint)}])}
+                  [:> icon* {:icon-id (case (:reason hint)
+                                        :inherited i/arrow-up
+                                        :used-by i/info)}]]
+                 [:> icon-button* {:type "button"
+                                   :aria-label (tr "workspace.libraries.unlink-library-btn")
+                                   :icon i/detach
+                                   :data-library-id (dm/str id)
+                                   :variant "secondary"
+                                   :on-click unlink-library}])]]))
          [:div {:class (stl/css :shared-libraries-empty)}
           [:> text* {:class (stl/css :empty-libraries-text)
                      :as "span"
@@ -1019,7 +1118,7 @@
             [:div {:class (stl/css :section-list-item)
                    :key (dm/str id)}
              [:div {:class (stl/css :item-content)}
-              [:div {:class (stl/css :item-name)} name]
+              [:> truncated-text* {:as "div" :class (stl/css :item-name) :text name}]
               [:ul {:class (stl/css :item-contents)}
                (describe-library
                 (count components)

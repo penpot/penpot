@@ -20,6 +20,7 @@
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
    [app.common.schema :as sm]
+   [app.common.svg :as csvg]
    [app.common.transit :as t]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
@@ -70,31 +71,19 @@
    [potok.v2.core :as ptk]
    [promesa.core :as p]))
 
-(defn- advance-shape
-  [file libraries page level-delta head-id objects shape]
-  (let [new-shape-ref (ctf/advance-shape-ref file page libraries shape level-delta {:include-deleted? true})
-        container     (ctn/make-container page :page)
-        ;; The head becomes a root copy, which cannot carry a swap slot, so
-        ;; strip inherited slots only for it. Nested sub-heads keep them so
-        ;; they still pair with the children of the new near main.
-        head?         (= (:id shape) head-id)
-        new-touched   (ctf/get-touched-from-ref-chain-until-target-ref
-                       container libraries shape new-shape-ref :remove-slots? head?)]
-    (cond-> objects
-      (and (some? new-shape-ref) (not= new-shape-ref (:shape-ref shape)))
-      (update (:id shape) assoc :shape-ref new-shape-ref :touched new-touched))))
-
 (defn- advance-copy
+  "Advance the refs of the copy and its children. The head becomes a root
+   copy, which cannot carry a swap slot, so only the head loses the inherited
+   slots. Nested sub-heads keep them so they still pair with the children of
+   the new near main."
   [file libraries page objects shape]
   (if (and (ctk/instance-head? shape) (not (ctk/main-instance? shape)))
-    (let [level-delta (if (nil? (ctk/get-swap-slot shape))
-                        (ctn/get-nesting-level-delta (:objects page) shape uuid/zero)
-                        0)]
-      (if (pos? level-delta)
-        (reduce (partial advance-shape file libraries page level-delta (:id shape))
-                objects
-                (cfh/get-children-with-self objects (:id shape)))
-        objects))
+    (reduce-kv (fn [objects id refs]
+                 (update objects id merge refs))
+               objects
+               (ctf/get-advanced-refs file (ctn/make-container page :page) libraries (:id shape)
+                                      (ctn/get-nesting-level-delta (:objects page) shape uuid/zero)
+                                      shape))
     objects))
 
 (defn advance-copies
@@ -160,10 +149,8 @@
             (let [page-id (:current-page-id state)
                   data    (dsh/lookup-file-data state)
                   objects (-> (dsh/get-page data page-id)
-                              (get :objects))
-
-                  components (cfv/find-variant-components data objects (:id shape))]
-              (into {} (map (juxt :id :variant-properties) components))))
+                              (get :objects))]
+              (cfv/collect-variant-properties data objects shape)))
 
 
           ;; Collects all the items together and split images into a
@@ -179,7 +166,8 @@
               (some? images)
               (update :images into images)
 
-              (ctk/is-variant-container? item)
+              (or (ctk/is-variant-container? item)
+                  (ctk/is-variant-main? item))
               (update :variant-properties merge (collect-variants state item))))
 
           (maybe-translate [shape objects parent-frame-id]
@@ -925,7 +913,11 @@
     (ptk/reify ::paste-shapes
       ptk/WatchEvent
       (watch [it state _]
-        (let [file-id      (:current-file-id state)
+        (let [;; Clipboard data skips the file migrations: shapes copied
+              ;; from an older version can hold camelCase svg attrs that
+              ;; the closed schema rejects, which would cancel the paste.
+              pdata        (update pdata :objects d/update-vals csvg/normalize-shape)
+              file-id      (:current-file-id state)
               page-id      (:current-page-id state)
               page         (dsh/lookup-page state file-id page-id)
               page-objects (:objects page)]
@@ -1193,11 +1185,23 @@
         (rx/of (dwm/upload-media-workspace params))))))
 
 (defn copy-link-to-clipboard
+  "Copy a link to the clipboard. When one or more boards are part of the
+  current selection, the link deep-links to those boards through their
+  ids (`board-id` route param), which are stable across renames and
+  reordering. Otherwise it falls back to the current location."
   []
   (ptk/reify ::copy-link-to-clipboard
     ptk/WatchEvent
-    (watch [_ _ _]
-      (clipboard/to-clipboard (rt/get-current-href)))))
+    (watch [_ state _]
+      (let [board-ids (dws/selected-board-ids (dsh/lookup-page-objects state)
+                                              (dsh/lookup-selected state))
+            link      (or (when (some? board-ids)
+                            (rt/resolve-uri (:router state)
+                                            (rt/lookup-name state)
+                                            (-> (rt/get-params state)
+                                                (assoc :board-id (mapv str board-ids)))))
+                          (rt/get-current-href))]
+        (clipboard/to-clipboard link)))))
 
 (defn copy-id-to-clipboard
   [id]

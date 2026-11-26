@@ -235,14 +235,10 @@
       (let [data (dsh/lookup-file-data state)]
         (with-main-page data {:variant-id variant-id}
           (fn [page-id objects]
-            (let [variant-components   (cfv/find-variant-components data objects variant-id)
-                  properties-empty-pos (->> variant-components
-                                            (mapcat :variant-properties)
-                                            (group-by :name)
+            (let [properties-empty-pos (->> (cfv/extract-properties-values data objects variant-id)
                                             (map-indexed
-                                             (fn [i [_ v]]
-                                               [i (->> v
-                                                       (map :value)
+                                             (fn [i {:keys [value]}]
+                                               [i (->> value
                                                        (remove empty?)
                                                        empty?)]))
                                             (reverse))
@@ -253,7 +249,10 @@
                                         (fn [changes [pos property-empty?]]
                                           (if property-empty?
                                             (-> changes
-                                                (clvp/generate-remove-property variant-id pos))
+                                                ;; Removing a property that is empty everywhere
+                                                ;; cannot make two variants equal: keep any
+                                                ;; duplicate the rename made, so its warning shows.
+                                                (clvp/generate-remove-property variant-id pos :sanitize-set? false))
                                             changes))
                                         changes
                                         properties-empty-pos)

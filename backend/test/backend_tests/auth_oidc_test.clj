@@ -10,9 +10,14 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.time :as ct]
+   [app.common.uri :as u]
    [app.common.uuid :as uuid]
    [app.config :as cf]
+   [app.http :as-alias http]
+   [app.http.middleware :as mw]
    [app.http.session :as session]
+   [app.rpc :as-alias rpc]
+   [app.rpc.commands.nitrate :as nitrate-rpc]
    [app.setup :as-alias setup]
    [app.tokens :as tokens]
    [clojure.test :as t]
@@ -157,6 +162,13 @@
         (t/is (.contains loc "error=auth-error"))
         (t/is (not (.contains loc "hint=")))))))
 
+(t/deftest redirect-with-error-preserves-public-uri-subpath
+  (binding [cf/config {:public-uri "http://localhost:3449/penpot"}]
+    (let [result (#'oidc/redirect-with-error "auth-error")
+          loc    (get-in result [::yres/headers "location"])]
+      (t/is (.contains loc "http://localhost:3449/penpot?screen=auth-login&"))
+      (t/is (.contains loc "error=auth-error")))))
+
 (t/deftest redirect-to-verify-token-builds-verify-url
   (binding [cf/config {:public-uri "http://localhost:3449"}]
     (let [result (#'oidc/redirect-to-verify-token "test-token-value")
@@ -165,10 +177,66 @@
       (t/is (.contains loc "http://localhost:3449?screen=auth-verify-token&"))
       (t/is (.contains loc "token=test-token-value")))))
 
+(t/deftest redirect-to-verify-token-preserves-public-uri-subpath
+  (binding [cf/config {:public-uri "http://localhost:3449/penpot"}]
+    (let [result (#'oidc/redirect-to-verify-token "test-token-value")
+          loc    (get-in result [::yres/headers "location"])]
+      (t/is (.contains loc "http://localhost:3449/penpot?screen=auth-verify-token&")))))
+
 (t/deftest build-redirect-uri-constructs-redirect
   (binding [cf/config {:public-uri "http://localhost:3449"}]
     (t/is (= "http://localhost:3449/api/auth/oidc/callback"
              (#'oidc/build-redirect-uri)))))
+
+(t/deftest build-redirect-uri-preserves-public-uri-subpath
+  (binding [cf/config {:public-uri "http://localhost:3449/penpot"}]
+    (t/is (= "http://localhost:3449/penpot/api/auth/oidc/callback"
+             (#'oidc/build-redirect-uri)))))
+
+(t/deftest build-redirect-uri-with-subpath-and-trailing-slash
+  (binding [cf/config {:public-uri "http://localhost:3449/penpot/"}]
+    (t/is (= "http://localhost:3449/penpot/api/auth/oidc/callback"
+             (#'oidc/build-redirect-uri)))))
+
+(t/deftest redirect-with-error-subpath-screen-query
+  (binding [cf/config {:public-uri "http://localhost:3449/penpot"}]
+    (let [result (#'oidc/redirect-with-error "auth-error" "hint message")
+          loc    (get-in result [::yres/headers "location"])]
+      (t/is (.contains loc "http://localhost:3449/penpot?screen=auth-login&"))
+      (t/is (.contains loc "error=auth-error"))
+      (t/is (.contains loc "hint=hint"))
+      ;; Screen routing lives in the query string, not the fragment
+      (t/is (not (.contains loc "#"))))))
+
+(t/deftest redirect-to-register-subpath
+  (let [test-key (byte-array (map byte (range 32)))
+        cfg      {::setup/props {:tokens-key test-key}}]
+    (binding [cf/config {:public-uri "http://localhost:3449/penpot"}]
+      (let [info     {:email "u@e.com" :fullname "U" :backend "oidc"
+                      :email-verified false :props {}}
+            provider {:type "oidc" :id "oidc"}
+            result   (#'oidc/redirect-to-register cfg info provider)
+            loc      (get-in result [::yres/headers "location"])]
+        (t/is (.contains loc "http://localhost:3449/penpot?screen=auth-register-validate&"))
+        (t/is (.contains loc "token="))))))
+
+(t/deftest redirect-to-register-no-subpath
+  (let [test-key (byte-array (map byte (range 32)))
+        cfg      {::setup/props {:tokens-key test-key}}]
+    (binding [cf/config {:public-uri "http://localhost:3449"}]
+      (let [info     {:email "u@e.com" :fullname "U" :backend "oidc"
+                      :email-verified false :props {}}
+            provider {:type "oidc" :id "oidc"}
+            result   (#'oidc/redirect-to-register cfg info provider)
+            loc      (get-in result [::yres/headers "location"])]
+        (t/is (.contains loc "http://localhost:3449?screen=auth-register-validate&"))
+        (t/is (.contains loc "token="))))))
+
+(t/deftest redirect-to-verify-token-subpath-no-trailing-slash
+  (binding [cf/config {:public-uri "http://localhost:3449/my-app"}]
+    (let [result (#'oidc/redirect-to-verify-token "test-token-value")
+          loc    (get-in result [::yres/headers "location"])]
+      (t/is (.contains loc "http://localhost:3449/my-app?screen=auth-verify-token&")))))
 
 (t/deftest fetch-user-info-returns-decoded-body-on-success
   (let [cfg      {}
@@ -448,6 +516,76 @@
               loc    (redirect-location result)]
           (t/is (.contains loc "error=registration-disabled")))))))
 
+(t/deftest callback-with-invitation-and-no-flags-redirects-to-register
+  ;; Review of #12974: a verifiable invitation issued for the OIDC
+  ;; email acts as a substitute for the SSO registration flags, so the
+  ;; user reaches the register screen instead of the
+  ;; registration-disabled error. The JWT is verified and the email is
+  ;; compared here; the invitation row is revalidated under a row lock
+  ;; in `register-profile`.
+  (let [cfg        (dissoc base-cfg :app.email/blacklist :app.email/whitelist)
+        invitation (tokens/generate cfg {:iss :team-invitation
+                                         :exp (ct/in-future {:hours 1})
+                                         :member-email "u@e.com"})
+        state      (make-state-token cfg {:invitation-token invitation})
+        request    (default-request cfg :state state)]
+    (binding [cf/config {:public-uri "http://localhost:3449"}
+              cf/flags #{}]
+      (with-redefs [app.auth.oidc/resolve-provider (constantly {:type "oidc" :id "oidc"})
+                    app.auth.oidc/get-info         (constantly {:email "u@e.com" :fullname "U"
+                                                                :backend "oidc" :email-verified false
+                                                                :invitation-token invitation
+                                                                :props {}})
+                    app.auth.oidc/get-profile      (constantly nil)]
+        (let [result (#'oidc/callback-handler cfg request)
+              loc    (redirect-location result)
+              claims (tokens/decode cfg (location-token loc))]
+          (t/is (.contains loc "screen=auth-register-validate"))
+          (t/is (.contains loc "token="))
+          (t/is (= :prepared-register (:iss claims))
+                "the redirect token must be a :prepared-register token")
+          (t/is (= invitation (:invitation-token claims))
+                "the invitation token must travel inside the prepared-register claims"))))))
+
+(t/deftest callback-with-invitation-email-mismatch-redirects-to-registration-disabled
+  ;; Review of #12974: an invitation issued for another email must not
+  ;; unlock registration with closed registration.
+  (let [cfg        (dissoc base-cfg :app.email/blacklist :app.email/whitelist)
+        invitation (tokens/generate cfg {:iss :team-invitation
+                                         :exp (ct/in-future {:hours 1})
+                                         :member-email "alice@example.com"})
+        state      (make-state-token cfg {:invitation-token invitation})
+        request    (default-request cfg :state state)]
+    (binding [cf/config {:public-uri "http://localhost:3449"}
+              cf/flags #{}]
+      (with-redefs [app.auth.oidc/resolve-provider (constantly {:type "oidc" :id "oidc"})
+                    app.auth.oidc/get-info         (constantly {:email "attacker@example.com" :fullname "A"
+                                                                :backend "oidc" :email-verified false
+                                                                :invitation-token invitation
+                                                                :props {}})
+                    app.auth.oidc/get-profile      (constantly nil)]
+        (let [result (#'oidc/callback-handler cfg request)
+              loc    (redirect-location result)]
+          (t/is (.contains loc "error=registration-disabled")))))))
+
+(t/deftest callback-with-garbage-invitation-redirects-to-registration-disabled
+  ;; Review of #12974: raw presence is not enough — an unverifiable
+  ;; invitation string must not reach the register screen.
+  (let [cfg     (dissoc base-cfg :app.email/blacklist :app.email/whitelist)
+        state   (make-state-token cfg {:invitation-token "inv-123"})
+        request (default-request cfg :state state)]
+    (binding [cf/config {:public-uri "http://localhost:3449"}
+              cf/flags #{}]
+      (with-redefs [app.auth.oidc/resolve-provider (constantly {:type "oidc" :id "oidc"})
+                    app.auth.oidc/get-info         (constantly {:email "u@e.com" :fullname "U"
+                                                                :backend "oidc" :email-verified false
+                                                                :invitation-token "inv-123"
+                                                                :props {}})
+                    app.auth.oidc/get-profile      (constantly nil)]
+        (let [result (#'oidc/callback-handler cfg request)
+              loc    (redirect-location result)]
+          (t/is (.contains loc "error=registration-disabled")))))))
+
 (t/deftest callback-profile-blocked
   (let [cfg     (dissoc base-cfg :app.email/blacklist :app.email/whitelist)
         state   (make-state-token cfg {})
@@ -482,7 +620,7 @@
   (let [cfg     (dissoc base-cfg :app.email/blacklist :app.email/whitelist)
         state   (make-state-token cfg {})
         request (default-request cfg :state state)]
-    (binding [cf/config {:public-uri "http://localhost:3449"}
+    (binding [cf/config {:public-uri "http://localhost:3449/penpot"}
               cf/flags #{:registration}]
       (with-redefs [app.auth.oidc/resolve-provider (constantly {:type "oidc" :id "oidc"})
                     app.auth.oidc/get-info         (constantly {:email "u@e.com" :fullname "U"
@@ -491,7 +629,7 @@
                     app.auth.oidc/get-profile      (constantly (assoc test-profile :is-active false))]
         (let [result (#'oidc/callback-handler cfg request)
               loc    (redirect-location result)]
-          (t/is (.contains loc "http://localhost:3449?screen=auth-register-validate&"))
+          (t/is (.contains loc "http://localhost:3449/penpot?screen=auth-register-validate&"))
           (t/is (.contains loc "token=")))))))
 
 (t/deftest callback-success-flow
@@ -578,69 +716,73 @@
 (t/deftest organization-sso-callback-success-emits-succeeded
   ;; No session on the request → auth-succeeded only (no token-issued).
   (let [cfg     (dissoc base-cfg :app.email/blacklist :app.email/whitelist)
-        state   (make-state-token cfg {:dest-url "https://penpot.example.com/#/workspace"
+        state   (make-state-token cfg {:dest-url "https://penpot.example.com/?screen=workspace"
                                        :organization-id test-organization-id})
         request (default-request cfg :state state)
         events  (atom [])]
-    (with-redefs [app.nitrate/call                  (constantly {:active true})
-                  app.auth.oidc/prepare-organization-sso-provider (constantly {:type "oidc"})
-                  app.auth.oidc/get-info            (constantly {})
-                  app.loggers.audit/submit          (fn [_cfg event] (swap! events conj event))]
-      (let [result (#'oidc/callback-handler cfg request)]
-        (t/is (= "https://penpot.example.com/#/workspace" (redirect-location result)))
-        (t/is (= ["organization-sso-auth-succeeded"] (mapv :name @events)))
-        (t/is (= test-organization-id (get-in (first @events) [:props :organization-id])))))))
+    (binding [cf/config {:public-uri "https://penpot.example.com"}]
+      (with-redefs [app.nitrate/call                  (constantly {:active true})
+                    app.auth.oidc/prepare-organization-sso-provider (constantly {:type "oidc"})
+                    app.auth.oidc/get-info            (constantly {})
+                    app.loggers.audit/submit          (fn [_cfg event] (swap! events conj event))]
+        (let [result (#'oidc/callback-handler cfg request)]
+          (t/is (= "https://penpot.example.com/?screen=workspace" (redirect-location result)))
+          (t/is (= ["organization-sso-auth-succeeded"] (mapv :name @events)))
+          (t/is (= test-organization-id (get-in (first @events) [:props :organization-id]))))))))
 
 (t/deftest organization-sso-callback-success-with-session-emits-token-issued
   (let [manager (session/inmemory-manager)
         cfg     (assoc (dissoc base-cfg :app.email/blacklist :app.email/whitelist)
                        ::session/manager manager)
-        state   (make-state-token cfg {:dest-url "https://penpot.example.com/#/workspace"
-                                       :organization-id test-organization-id})
+        state   (make-state-token cfg {:dest-url "https://penpot.example.com/?screen=workspace"
+                                       :organization-id test-organization-id
+                                       :profile-id test-profile-id})
         request (default-request cfg :state state)
         events  (atom [])
         sess    {:id (uuid/next)
                  :profile-id test-profile-id
                  :props {}}]
-    (with-redefs [app.nitrate/call                  (constantly {:active true})
-                  app.auth.oidc/prepare-organization-sso-provider (constantly {:type "oidc"})
-                  app.auth.oidc/get-info            (constantly {})
-                  app.http.session/get-session      (constantly sess)
-                  app.loggers.audit/submit          (fn [_cfg event] (swap! events conj event))]
-      (let [result (#'oidc/callback-handler cfg request)
-            names  (mapv :name @events)
-            stored (session/read-session manager (:id sess))]
-        (t/is (= "https://penpot.example.com/#/workspace" (redirect-location result)))
-        (t/is (= ["organization-sso-token-issued"
-                  "organization-sso-auth-succeeded"]
-                 names))
-        (t/is (= test-organization-id
-                 (get-in (first @events) [:props :organization-id])))
-        (t/is (= test-profile-id (:profile-id (first @events))))
-        (t/is (= #{:organization-id}
-                 (set (keys (:props (first @events))))))
-        (t/is (contains? (get-in stored [:props :sso]) test-organization-id))))))
+    (binding [cf/config {:public-uri "https://penpot.example.com"}]
+      (with-redefs [app.nitrate/call                  (constantly {:active true})
+                    app.auth.oidc/prepare-organization-sso-provider (constantly {:type "oidc"})
+                    app.auth.oidc/get-info            (constantly {})
+                    app.http.session/get-session      (constantly sess)
+                    app.loggers.audit/submit          (fn [_cfg event] (swap! events conj event))]
+        (let [result (#'oidc/callback-handler cfg request)
+              names  (mapv :name @events)
+              stored (session/read-session manager (:id sess))]
+          (t/is (= "https://penpot.example.com/?screen=workspace" (redirect-location result)))
+          (t/is (= ["organization-sso-token-issued"
+                    "organization-sso-auth-succeeded"]
+                   names))
+          (t/is (= test-organization-id
+                   (get-in (first @events) [:props :organization-id])))
+          (t/is (= test-profile-id (:profile-id (first @events))))
+          (t/is (= #{:organization-id}
+                   (set (keys (:props (first @events))))))
+          (t/is (contains? (get-in stored [:props :sso]) test-organization-id)))))))
 
 (t/deftest organization-sso-callback-error-emits-failed
   (let [cfg     (dissoc base-cfg :app.email/blacklist :app.email/whitelist)
-        state   (make-state-token cfg {:dest-url "https://penpot.example.com/#/workspace"
+        state   (make-state-token cfg {:dest-url "https://penpot.example.com/?screen=workspace"
                                        :organization-id test-organization-id})
         request (default-request cfg :state state)
         events  (atom [])]
-    (with-redefs [app.nitrate/call                  (fn [_cfg method _params]
-                                                      (case method
-                                                        :get-organization-sso {:active true}
-                                                        :get-organization-summary {:name "Organization"}))
-                  app.auth.oidc/prepare-organization-sso-provider (constantly {:type "oidc"})
-                  app.auth.oidc/get-info            (fn [& _]
-                                                      (ex/raise :type :internal
-                                                                :code :unable-to-retrieve-user-info))
-                  app.loggers.audit/submit          (fn [_cfg event] (swap! events conj event))]
-      (#'oidc/callback-handler cfg request)
-      (t/is (= ["organization-sso-auth-failed"] (mapv :name @events)))
-      (t/is (= {:organization-id test-organization-id
-                :failure-reason "user-info-failed"}
-               (:props (first @events)))))))
+    (binding [cf/config {:public-uri "https://penpot.example.com"}]
+      (with-redefs [app.nitrate/call                  (fn [_cfg method _params]
+                                                        (case method
+                                                          :get-organization-sso {:active true}
+                                                          :get-organization-summary {:name "Organization"}))
+                    app.auth.oidc/prepare-organization-sso-provider (constantly {:type "oidc"})
+                    app.auth.oidc/get-info            (fn [& _]
+                                                        (ex/raise :type :internal
+                                                                  :code :unable-to-retrieve-user-info))
+                    app.loggers.audit/submit          (fn [_cfg event] (swap! events conj event))]
+        (#'oidc/callback-handler cfg request)
+        (t/is (= ["organization-sso-auth-failed"] (mapv :name @events)))
+        (t/is (= {:organization-id test-organization-id
+                  :failure-reason "user-info-failed"}
+                 (:props (first @events))))))))
 
 (t/deftest organization-sso-oauth-error-emits-failed-without-changing-redirect
   (let [cfg     (dissoc base-cfg :app.email/blacklist :app.email/whitelist)
@@ -658,6 +800,157 @@
           (t/is (= {:organization-id test-organization-id
                     :failure-reason "access-denied"}
                    (:props (first @events)))))))))
+
+(t/deftest build-dest-url-builds-the-destination-on-the-public-uri
+  (binding [cf/config {:public-uri "https://penpot.example.com"}]
+    (t/testing "the route is appended to the public uri, separator included"
+      (t/is (= "https://penpot.example.com/?screen=workspace&team-id=0e5f"
+               (oidc/build-dest-url "screen=workspace&team-id=0e5f"))))
+
+    (t/testing "the app base path of the public uri is kept"
+      (binding [cf/config {:public-uri "https://host/penpot"}]
+        (t/is (= "https://host/penpot/?screen=workspace"
+                 (oidc/build-dest-url "screen=workspace")))))
+
+    (t/testing "a blank query string lands on the public uri"
+      (t/is (= "https://penpot.example.com/" (oidc/build-dest-url "")))
+      (t/is (= "https://penpot.example.com/" (oidc/build-dest-url nil))))
+
+    (t/testing "a value without params of its own is not a route"
+      (doseq [query-string ["https://evil.example/"
+                            "//evil.example/x"]]
+        (t/is (= "https://penpot.example.com/"
+                 (oidc/build-dest-url query-string)) query-string)))
+
+    (t/testing "the root of the app keeps its params (invitation, template)"
+      (t/is (= "https://penpot.example.com/?template=xyz"
+               (oidc/build-dest-url "template=xyz"))))
+
+    (t/testing "a value that still carries the separator is trimmed"
+      (t/is (= "https://penpot.example.com/?screen=workspace"
+               (oidc/build-dest-url "?screen=workspace"))))
+
+    (t/testing "control characters never reach the destination"
+      (let [dest (oidc/build-dest-url "screen=x\r\nSet-Cookie: a=b")]
+        (t/is (not (.contains dest "\r")))
+        (t/is (not (.contains dest "\n")))))
+
+    (t/testing "repeated params are kept"
+      (t/is (= "https://penpot.example.com/?a=1&a=2"
+               (oidc/build-dest-url "a=1&a=2"))))))
+
+(def ^:private foreign-dest-urls
+  "Destinations that a naive prefix check would let through: the first one
+   parses the prefix as userinfo, the second one is a look-alike host."
+  ["https://evil.example/"
+   "https://penpot.example.com@evil.example/"
+   "https://penpot.example.com.evil.example/"])
+
+(t/deftest build-organization-sso-auth-redirect-uri-seals-a-server-built-destination
+  (let [cfg      (dissoc base-cfg :app.email/blacklist :app.email/whitelist)
+        provider {:id "oidc"
+                  :type "oidc"
+                  :client-id "client"
+                  :auth-uri "https://idp.example.com/authorize"
+                  :scopes ["openid"]}
+        sso      {:active true
+                  :issuer "https://idp.example.com"
+                  :organization-id test-organization-id}]
+    (binding [cf/config {:public-uri "https://penpot.example.com"}]
+      (doseq [[query-string expected]
+              [["screen=workspace" "https://penpot.example.com/?screen=workspace"]
+               ["template=xyz" "https://penpot.example.com/?template=xyz"]
+               ["https://evil.example/" "https://penpot.example.com/"]
+               ["" "https://penpot.example.com/"]]]
+        (t/testing (str "the destination sealed for " (pr-str query-string))
+          (let [uri    (oidc/build-organization-sso-auth-redirect-uri
+                        cfg sso
+                        :query-string query-string
+                        :organization-id test-organization-id
+                        :profile-id test-profile-id
+                        :provider provider)
+                claims (tokens/decode cfg (-> (u/uri uri)
+                                              :query
+                                              (u/query-string->map)
+                                              :state))]
+            ;; The destination is always composed by the server: the route
+            ;; of the client, never a URL of its own.
+            (t/is (= expected (:dest-url claims)))
+            (t/is (= test-profile-id (:profile-id claims)))))))))
+
+(t/deftest organization-sso-callback-ignores-a-destination-outside-the-public-uri
+  (doseq [dest-url foreign-dest-urls]
+    (t/testing (str "the success path ignores " dest-url)
+      (let [cfg     (dissoc base-cfg :app.email/blacklist :app.email/whitelist)
+            state   (make-state-token cfg {:dest-url dest-url
+                                           :organization-id test-organization-id})
+            request (default-request cfg :state state)]
+        (binding [cf/config {:public-uri "https://penpot.example.com"}]
+          (with-redefs [app.nitrate/call                  (constantly {:active true})
+                        app.auth.oidc/prepare-organization-sso-provider (constantly {:type "oidc"})
+                        app.auth.oidc/get-info            (constantly {})
+                        app.loggers.audit/submit          (constantly nil)]
+            (let [result (#'oidc/callback-handler cfg request)]
+              (t/is (= "https://penpot.example.com/" (redirect-location result))))))))
+
+    (t/testing (str "the error path ignores " dest-url " as well")
+      (let [cfg     (dissoc base-cfg :app.email/blacklist :app.email/whitelist)
+            state   (make-state-token cfg {:dest-url dest-url
+                                           :organization-id test-organization-id})
+            request (default-request cfg :state state)]
+        (binding [cf/config {:public-uri "https://penpot.example.com"}]
+          (with-redefs [app.nitrate/call                  (fn [_cfg method _params]
+                                                            (case method
+                                                              :get-organization-sso {:active true}
+                                                              :get-organization-summary {:name "Organization"}))
+                        app.auth.oidc/prepare-organization-sso-provider (constantly {:type "oidc"})
+                        app.auth.oidc/get-info            (fn [& _]
+                                                            (ex/raise :type :internal
+                                                                      :code :unable-to-retrieve-user-info))
+                        app.loggers.audit/submit          (constantly nil)]
+            (let [result (#'oidc/callback-handler cfg request)
+                  loc    (redirect-location result)]
+              (t/is (not (.contains loc "evil.example")))
+              (t/is (.contains loc "https://penpot.example.com/")))))))))
+
+(t/deftest trusted-dest-url-requires-the-base-path
+  (binding [cf/config {:public-uri "https://host/penpot"}]
+    (t/testing "a destination under the app base path is trusted"
+      (t/is (= "https://host/penpot/?screen=workspace"
+               (#'oidc/trusted-dest-url "https://host/penpot/?screen=workspace"))))
+
+    (t/testing "a destination in another path of the same host is not"
+      (t/is (nil? (#'oidc/trusted-dest-url "https://host/otra/?screen=workspace"))))
+
+    (t/testing "a destination in another host is not"
+      (t/is (nil? (#'oidc/trusted-dest-url "https://otro.example/penpot/?screen=workspace"))))))
+
+(t/deftest organization-sso-callback-does-not-grant-the-sso-entry-to-another-session
+  (let [manager (session/inmemory-manager)
+        cfg     (assoc (dissoc base-cfg :app.email/blacklist :app.email/whitelist)
+                       ::session/manager manager)
+        ;; The state was prepared by another profile: the session that
+        ;; completes the flow must not be granted the organization entry.
+        state   (make-state-token cfg {:dest-url "https://penpot.example.com/?screen=workspace"
+                                       :organization-id test-organization-id
+                                       :profile-id (uuid/random)})
+        request (default-request cfg :state state)
+        events  (atom [])
+        sess    {:id (uuid/next)
+                 :profile-id test-profile-id
+                 :props {}}]
+    (binding [cf/config {:public-uri "https://penpot.example.com"}]
+      (with-redefs [app.nitrate/call                  (constantly {:active true})
+                    app.auth.oidc/prepare-organization-sso-provider (constantly {:type "oidc"})
+                    app.auth.oidc/get-info            (constantly {})
+                    app.http.session/get-session      (constantly sess)
+                    app.loggers.audit/submit          (fn [_cfg event] (swap! events conj event))]
+        (let [result (#'oidc/callback-handler cfg request)
+              stored (session/read-session manager (:id sess))]
+          (t/is (= "https://penpot.example.com/?screen=workspace" (redirect-location result)))
+          (t/is (= ["organization-sso-auth-failed"] (mapv :name @events)))
+          (t/is (= "session-mismatch" (get-in (first @events) [:props :failure-reason])))
+          (t/is (nil? (get-in stored [:props :sso]))))))))
 
 (t/deftest prepare-organization-sso-provider-does-not-skip-ssrf-check
   (t/testing "organization SSO provider must use SSRF protection"
@@ -800,9 +1093,339 @@
                  {:client-id "test-client"
                   :client-secret "test-secret"
                   :issuer "https://wrong-idp.example.com"}
-                 :dest-url "https://localhost:3449/#/dashboard"
+                 :query-string "screen=dashboard"
                  :organization-id #uuid "00000000-0000-0000-0000-000000000001")
                 (catch Throwable t t))]
         (t/is (ex/error? e))
         (t/is (= :validation (:type (ex-data e))))
         (t/is (= :invalid-sso-config (:code (ex-data e))))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; trusted alternate origins
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:private trusted-origin-provider
+  {:id "oidc"
+   :type "oidc"
+   :auth-uri "https://idp.example.com/auth"
+   :client-id "test-client"
+   :scopes ["openid"]})
+
+(t/deftest auth-handler-carries-trusted-origin-in-state
+  (with-redefs [app.auth.oidc/resolve-provider            (constantly trusted-origin-provider)
+                app.loggers.audit/extract-utm-params      (constantly {})
+                app.loggers.audit/get-external-session-id (constantly nil)]
+    (t/testing "trusted origin is stored in the state and used for redirect_uri"
+      (let [request (assoc {:params {}} :app.http/trusted-origin "https://alt.example.com")
+            result  (binding [cf/config {:public-uri "https://alt.example.com"
+                                         :trusted-origins #{"https://alt.example.com"}}]
+                      (#'oidc/auth-handler base-cfg request))
+            uri     (get-in result [::yres/body :redirect-uri])
+            query   (u/query-string->map (:query (u/uri uri)))
+            claims  (tokens/verify base-cfg {:token (:state query) :iss "oidc"})]
+        (t/is (= "https://alt.example.com" (:origin claims)))
+        (t/is (= "https://alt.example.com/api/auth/oidc/callback" (:redirect_uri query)))))
+
+    (t/testing "without a trusted origin no :origin claim is stored"
+      (let [result (binding [cf/config {:public-uri "http://localhost:3449"
+                                        :trusted-origins #{"https://alt.example.com"}}]
+                     (#'oidc/auth-handler base-cfg {:params {}}))
+            uri    (get-in result [::yres/body :redirect-uri])
+            query  (u/query-string->map (:query (u/uri uri)))
+            claims (tokens/verify base-cfg {:token (:state query) :iss "oidc"})]
+        (t/is (not (contains? claims :origin)))
+        (t/is (= "http://localhost:3449/api/auth/oidc/callback" (:redirect_uri query)))))))
+
+(t/deftest build-organization-sso-auth-redirect-uri-stores-trusted-origin
+  (let [sso      {:organization-id test-organization-id
+                  :issuer "https://idp.example.com"
+                  :client-id "test-client"
+                  :client-secret "test-secret"}
+        provider trusted-origin-provider
+        uri      (binding [cf/config {:public-uri "https://alt.example.com"
+                                      :trusted-origins #{"https://alt.example.com"}}]
+                   (oidc/build-organization-sso-auth-redirect-uri
+                    base-cfg sso
+                    :query-string "screen=dashboard"
+                    :organization-id test-organization-id
+                    :provider provider
+                    :origin "https://alt.example.com"))
+        query    (u/query-string->map (:query (u/uri uri)))
+        claims   (tokens/verify base-cfg {:token (:state query) :iss "oidc"})]
+    (t/is (= "https://alt.example.com" (:origin claims)))
+    (t/is (= "https://alt.example.com/?screen=dashboard" (:dest-url claims)))
+    (t/is (= "https://alt.example.com/api/auth/oidc/callback" (:redirect_uri query)))))
+
+(t/deftest callback-applies-stored-trusted-origin
+  (let [cfg     (dissoc base-cfg :app.email/blacklist :app.email/whitelist)
+        seen    (atom nil)
+        state   (make-state-token cfg {:origin "https://alt.example.com"})
+        request (default-request cfg :state state)]
+    (binding [cf/config {:public-uri "http://localhost:3449"
+                         :trusted-origins #{"https://alt.example.com"}}]
+      (with-redefs [app.auth.oidc/resolve-provider        (constantly {:type "oidc" :id "oidc"})
+                    app.auth.oidc/get-info                (fn [_ _ _ _]
+                                                            (reset! seen (cf/get :public-uri))
+                                                            {:email "u@e.com" :fullname "U"
+                                                             :backend "oidc" :email-verified false
+                                                             :props {}})
+                    app.auth.oidc/get-profile             (constantly test-profile)
+                    app.auth.oidc/update-profile-with-info (fn [_ profile _] profile)
+                    app.loggers.audit/submit              (constantly nil)]
+        (let [result (#'oidc/callback-handler cfg request)
+              loc    (redirect-location result)]
+          (t/is (= "https://alt.example.com" (str @seen)))
+          (t/is (.contains loc "https://alt.example.com?screen=auth-verify-token&")))))))
+
+(t/deftest callback-token-exchange-uses-stored-trusted-origin
+  ;; Unlike callback-applies-stored-trusted-origin, this drives the real
+  ;; token exchange (mocking app.http.client/req instead of get-info) so
+  ;; the redirect_uri sent to the provider is asserted, not only the
+  ;; auth-request one and the post-exchange redirect.
+  (let [cfg      (dissoc base-cfg :app.email/blacklist :app.email/whitelist)
+        bodies   (atom [])
+        provider {:type "oidc" :id "oidc"
+                  :user-info-source "userinfo"
+                  :token-uri "https://idp.example.com/token"
+                  :user-uri "https://idp.example.com/userinfo"}
+        state    (make-state-token cfg {:origin "https://alt.example.com"})
+        request  (default-request cfg :state state)]
+    (binding [cf/config {:public-uri "http://localhost:3449"
+                         :trusted-origins #{"https://alt.example.com"}}]
+      (with-redefs [app.auth.oidc/resolve-provider        (constantly provider)
+                    app.auth.oidc/get-profile             (constantly test-profile)
+                    app.auth.oidc/update-profile-with-info (fn [_ profile _] profile)
+                    app.loggers.audit/submit              (constantly nil)]
+        (with-mocks [http-mock {:target 'app.http.client/req
+                                :return (fn [_ request & _]
+                                          (swap! bodies conj request)
+                                          (if (= (:uri request) (:token-uri provider))
+                                            {:status 200
+                                             :body "{\"access_token\":\"at\",\"token_type\":\"Bearer\"}"}
+                                            {:status 200
+                                             :body "{\"email\":\"u@e.com\",\"name\":\"U\"}"}))}]
+          (let [result     (#'oidc/callback-handler cfg request)
+                token-body (->> @bodies
+                                (filter #(= (:uri %) (:token-uri provider)))
+                                (first)
+                                (:body)
+                                (u/query-string->map))]
+            (t/is (= "https://alt.example.com/api/auth/oidc/callback"
+                     (:redirect_uri token-body)))
+            (t/is (.contains (redirect-location result)
+                             "https://alt.example.com?screen=auth-verify-token&"))))))))
+
+(t/deftest callback-token-exchange-keeps-stored-origin-after-removal
+  ;; Mirror of callback-token-exchange-uses-stored-trusted-origin with the
+  ;; origin removed from :trusted-origins: the signed state was trusted when
+  ;; the flow started, so the token exchange still uses it (up to its
+  ;; expiry), matching the documented operator contract.
+  (let [cfg      (dissoc base-cfg :app.email/blacklist :app.email/whitelist)
+        bodies   (atom [])
+        provider {:type "oidc" :id "oidc"
+                  :user-info-source "userinfo"
+                  :token-uri "https://idp.example.com/token"
+                  :user-uri "https://idp.example.com/userinfo"}
+        state    (make-state-token cfg {:origin "https://alt.example.com"})
+        request  (default-request cfg :state state)]
+    (binding [cf/config {:public-uri "http://localhost:3449"
+                         :trusted-origins #{}}]
+      (with-redefs [app.auth.oidc/resolve-provider        (constantly provider)
+                    app.auth.oidc/get-profile             (constantly test-profile)
+                    app.auth.oidc/update-profile-with-info (fn [_ profile _] profile)
+                    app.loggers.audit/submit              (constantly nil)]
+        (with-mocks [http-mock {:target 'app.http.client/req
+                                :return (fn [_ request & _]
+                                          (swap! bodies conj request)
+                                          (if (= (:uri request) (:token-uri provider))
+                                            {:status 200
+                                             :body "{\"access_token\":\"at\",\"token_type\":\"Bearer\"}"}
+                                            {:status 200
+                                             :body "{\"email\":\"u@e.com\",\"name\":\"U\"}"}))}]
+          (let [result     (#'oidc/callback-handler cfg request)
+                token-body (->> @bodies
+                                (filter #(= (:uri %) (:token-uri provider)))
+                                (first)
+                                (:body)
+                                (u/query-string->map))]
+            (t/is (= "https://alt.example.com/api/auth/oidc/callback"
+                     (:redirect_uri token-body)))
+            (t/is (.contains (redirect-location result)
+                             "https://alt.example.com?screen=auth-verify-token&"))))))))
+
+(t/deftest callback-error-uses-stored-trusted-origin
+  (let [cfg     (dissoc base-cfg :app.email/blacklist :app.email/whitelist)
+        state   (make-state-token cfg {:origin "https://alt.example.com"})
+        request (assoc (default-request cfg :state state)
+                       :params {:state state :error "access_denied"})]
+    (binding [cf/config {:public-uri "http://localhost:3449"
+                         :trusted-origins #{"https://alt.example.com"}}]
+      (let [result (#'oidc/callback-handler cfg request)
+            loc    (redirect-location result)]
+        (t/is (.contains loc "https://alt.example.com?screen=auth-login&"))
+        (t/is (.contains loc "error=unable-to-auth"))))))
+
+(t/deftest callback-honors-state-origin-even-when-not-in-config
+  ;; The signed state origin was trusted when the flow started; it is used
+  ;; as-is for the lifetime of the token, even if the operator removed it.
+  (let [cfg     (dissoc base-cfg :app.email/blacklist :app.email/whitelist)
+        state   (make-state-token cfg {:origin "https://alt.example.com"})
+        request (default-request cfg :state state)]
+    (binding [cf/config {:public-uri "http://localhost:3449"
+                         :trusted-origins #{}}]
+      (with-redefs [app.auth.oidc/resolve-provider        (constantly {:type "oidc" :id "oidc"})
+                    app.auth.oidc/get-info                (constantly {:email "u@e.com" :fullname "U"
+                                                                       :backend "oidc" :email-verified false
+                                                                       :props {}})
+                    app.auth.oidc/get-profile             (constantly test-profile)
+                    app.auth.oidc/update-profile-with-info (fn [_ profile _] profile)
+                    app.loggers.audit/submit              (constantly nil)]
+        (let [result (#'oidc/callback-handler cfg request)
+              loc    (redirect-location result)]
+          (t/is (.contains loc "https://alt.example.com?screen=auth-verify-token&")))))))
+
+(t/deftest callback-without-state-redirects-to-canonical-error
+  (let [cfg     (dissoc base-cfg :app.email/blacklist :app.email/whitelist)
+        request {:params {}}]
+    (binding [cf/config {:public-uri "http://localhost:3449"
+                         :trusted-origins #{"https://alt.example.com"}}]
+      (let [result (#'oidc/callback-handler cfg request)
+            loc    (redirect-location result)]
+        (t/is (= 302 (::yres/status result)))
+        (t/is (.contains loc "http://localhost:3449?screen=auth-login&"))
+        (t/is (.contains loc "error=unable-to-auth"))))))
+
+(defn- get-uri-query
+  [uri]
+  (u/query-string->map (:query (u/uri uri))))
+
+(t/deftest oidc-round-trip-preserves-the-alternate-public-subpath
+  (let [cfg            (-> base-cfg
+                           (dissoc :app.email/blacklist :app.email/whitelist)
+                           (assoc ::session/manager (session/inmemory-manager)))
+        provider       (assoc trusted-origin-provider
+                              :user-info-source "userinfo"
+                              :token-uri "https://idp.example.com/token"
+                              :user-uri "https://idp.example.com/userinfo")
+        public-config  {:public-uri "http://localhost:3449/penpot"
+                        :trusted-origins #{"https://alt.example.com"}}
+        authorize      (mw/wrap-trusted-origin (partial #'oidc/auth-handler cfg))
+        callback       (mw/wrap-trusted-origin (partial #'oidc/callback-handler cfg))
+        token-request  (atom nil)]
+    (with-redefs [app.auth.oidc/resolve-provider        (constantly provider)
+                  app.auth.oidc/get-profile             (constantly test-profile)
+                  app.auth.oidc/update-profile-with-info (fn [_ profile _] profile)
+                  app.loggers.audit/submit              (constantly nil)]
+      (with-mocks [http-mock {:target 'app.http.client/req
+                              :return (fn [_ request & _]
+                                        (case (:uri request)
+                                          "https://idp.example.com/token"
+                                          (do (reset! token-request request)
+                                              {:status 200
+                                               :body "{\"access_token\":\"at\",\"token_type\":\"Bearer\"}"})
+
+                                          "https://idp.example.com/userinfo"
+                                          {:status 200
+                                           :body "{\"email\":\"u@e.com\",\"name\":\"U\"}"}))}]
+        (let [auth-response (binding [cf/config public-config]
+                              (authorize {:params {}
+                                          :headers {"x-penpot-origin" "https://alt.example.com"}}))
+              auth-query    (get-uri-query (get-in auth-response [::yres/body :redirect-uri]))
+              state         (:state auth-query)
+              claims        (tokens/verify cfg {:token state :iss "oidc"})
+              request       (default-request cfg :state state)]
+          (t/is (= "https://alt.example.com" (:origin claims)))
+          (t/is (= "https://alt.example.com/penpot/api/auth/oidc/callback"
+                   (:redirect_uri auth-query)))
+
+          (t/testing "the headerless callback uses the same redirect_uri even after alias removal"
+            (binding [cf/config (assoc public-config :trusted-origins #{})]
+              (let [response (callback request)
+                    location (redirect-location response)
+                    token-form (u/query-string->map (:body @token-request))]
+                (t/is (= :post (:method @token-request)))
+                (t/is (= (:redirect_uri auth-query) (:redirect_uri token-form)))
+                (t/is (= 302 (::yres/status response)))
+                (t/is (= "https://alt.example.com/penpot"
+                         (str (assoc (u/uri location) :query nil))))
+                (t/is (= "auth-verify-token" (:screen (get-uri-query location)))))))
+
+          (t/testing "a provider error still redirects under the alias subpath"
+            (binding [cf/config public-config]
+              (let [response (callback (assoc-in request [:params :error] "access_denied"))
+                    location (redirect-location response)]
+                (t/is (= 302 (::yres/status response)))
+                (t/is (= "https://alt.example.com/penpot"
+                         (str (assoc (u/uri location) :query nil))))
+                (t/is (= {:screen "auth-login" :error "unable-to-auth" :hint "access_denied"}
+                         (get-uri-query location))))))
+
+          (t/testing "without state or origin headers the error keeps the canonical subpath"
+            (binding [cf/config public-config]
+              (let [response (callback (update request :params dissoc :state))
+                    location (redirect-location response)]
+                (t/is (= 302 (::yres/status response)))
+                (t/is (= "http://localhost:3449/penpot"
+                         (str (assoc (u/uri location) :query nil))))
+                (t/is (= "auth-login" (:screen (get-uri-query location))))
+                (t/is (= "unable-to-auth" (:error (get-uri-query location))))))))))))
+
+(t/deftest organization-sso-round-trip-preserves-the-alternate-public-subpath
+  (let [manager   (session/inmemory-manager)
+        cfg       (assoc base-cfg ::session/manager manager)
+        sso       {:active true
+                   :organization-id test-organization-id
+                   :issuer "https://idp.example.com"
+                   :client-id "test-client"
+                   :client-secret "test-secret"}
+        params    {::rpc/profile-id test-profile-id
+                   ::rpc/request-at (ct/now)
+                   :organization-id test-organization-id
+                   :query-string "screen=workspace&team-id=0e5f"}
+        start-sso (mw/wrap-trusted-origin
+                   (fn [request]
+                     (nitrate-rpc/sm$check-nitrate-sso
+                      cfg (with-meta params {::http/request request}))))
+        callback  (mw/wrap-trusted-origin (partial #'oidc/callback-handler cfg))
+        events    (atom [])]
+    (binding [cf/config {:public-uri "http://localhost:3449/penpot/"
+                         :trusted-origins #{"https://alt.example.com"}}
+              cf/flags (conj cf/flags :admin-console)]
+      (with-redefs [app.nitrate/organization-access?                (constantly true)
+                    app.nitrate/sso-session-authorized?             (constantly {:authorized false :sso sso})
+                    app.nitrate/call                                (constantly sso)
+                    app.auth.oidc/prepare-organization-sso-provider (constantly trusted-origin-provider)
+                    app.auth.oidc/get-info                          (constantly {})
+                    app.loggers.audit/submit                        (fn [_cfg event] (swap! events conj event))]
+        (let [result      (start-sso {:headers {"origin" "https://alt.example.com"}})
+              auth-query  (get-uri-query (:redirect-uri result))
+              state       (:state auth-query)
+              claims      (tokens/verify cfg {:token state :iss "oidc"})
+              destination (:dest-url claims)
+              sess        {:id (uuid/next) :profile-id test-profile-id :props {}}
+              request     (assoc (default-request cfg :state state) ::session/session sess)]
+          (t/is (false? (:authorized result)))
+          (t/is (= "https://alt.example.com" (:origin claims)))
+          (t/is (= "https://alt.example.com/penpot/api/auth/oidc/callback" (:redirect_uri auth-query)))
+          (t/is (= "https://alt.example.com/penpot/" (str (assoc (u/uri destination) :query nil))))
+          (t/is (= {:screen "workspace" :team-id "0e5f"} (get-uri-query destination)))
+
+          (t/testing "the headerless callback accepts the server-built destination and grants the session entry"
+            (let [response (callback request)
+                  stored   (session/read-session manager (:id sess))]
+              (t/is (= 302 (::yres/status response)))
+              (t/is (= destination (redirect-location response)))
+              (t/is (contains? (get-in stored [:props :sso]) test-organization-id))))
+
+          (t/testing "a different profile returns to the same destination without an SSO entry"
+            (let [other    (assoc sess :id (uuid/next) :profile-id (uuid/next))
+                  response (callback (assoc request ::session/session other))
+                  stored   (session/read-session manager (:id other))]
+              (t/is (= destination (redirect-location response)))
+              (t/is (nil? (get-in stored [:props :sso])))
+              (t/is (= "session-mismatch" (get-in (last @events) [:props :failure-reason])))))
+
+          (t/testing "a legacy destination outside the public subpath falls back to the alias base"
+            (let [legacy   (tokens/generate cfg (assoc claims :dest-url "https://alt.example.com/other/?screen=workspace"))
+                  response (callback (default-request cfg :state legacy))]
+              (t/is (= "https://alt.example.com/penpot/" (redirect-location response))))))))))

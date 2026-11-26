@@ -12,14 +12,19 @@
    [app.binfile.v3 :as v3]
    [app.common.exceptions :as ex]
    [app.common.time :as ct]
+   [app.common.transit :as transit]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
    [app.jobs :as jobs]
-   [app.loggers.audit :as-alias audit]
+   [app.jobs.storage :as js]
+   [app.loggers.audit :as audit]
+   [app.loggers.webhooks :as webhooks]
    [app.rpc :as-alias rpc]
    [app.rpc.climit :as-alias climit]
    [app.rpc.commands.jobs :as cmd-jobs]
+   [app.rpc.commands.management :as management]
+   [app.rpc.commands.projects :as projects]
    [app.rpc.quotes :as-alias quotes]
    [app.storage :as sto]
    [app.storage.tmp :as tmp]
@@ -41,6 +46,8 @@
 (def ^:private fixture
   "A real penpot export, the same fixture the binfile tests read."
   "backend_tests/test_files/svg-attrs-camel-case.penpot")
+
+(def ^:private real-audit-submit audit/submit)
 
 (defn- import-fixture!
   "A file in the default project of the profile, imported from the
@@ -106,6 +113,36 @@
         ;; hang instead of answering: seeing the job pending and no
         ;; artifact produced is what proves the call does not wait
         (t/is (= before (count-storage-objects)))))))
+
+(t/deftest create-export-binfile-job-freezes-the-effective-public-uri
+  (let [profile (th/create-profile* 1)
+        file-id (first (:file-ids (import-fixture! profile)))
+        data    {::th/type       :create-export-binfile-job
+                 ::rpc/profile-id (:id profile)
+                 :params         {:file-ids    #{file-id}
+                                  :export-type :detach-libraries}}
+        out     (binding [cf/config (assoc cf/config
+                                           :public-uri "https://canonical.example.com/penpot"
+                                           :trusted-origins #{"https://alt.example.com"})]
+                  (th/command-through-middleware
+                   data {:headers {"x-penpot-origin" "https://alt.example.com"}}))]
+    (t/is (th/success? out))
+    (let [job      (jobs/get-job th/*system* (:id (:result out)))
+          job-def  (jobs/get-job-def (::jobs/defs th/*system*) :export-binfile)
+          params   (jobs/decode-params job-def (:params job))]
+      (t/is (= "https://alt.example.com/penpot" (:public-uri params))))))
+
+(t/deftest create-export-binfile-job-rejects-client-public-uri
+  (let [profile (th/create-profile* 1)
+        file-id (first (:file-ids (import-fixture! profile)))
+        out     (th/command! {::th/type       :create-export-binfile-job
+                              ::rpc/profile-id (:id profile)
+                              :params         {:file-ids    #{file-id}
+                                               :export-type :detach-libraries
+                                               :public-uri  "https://client.example.com"}})]
+    (t/is (not (th/success? out)))
+    (t/is (= :params-validation (th/ex-code (:error out))))
+    (t/is (zero? (count-jobs)))))
 
 (t/deftest create-export-binfile-job-requires-the-export-type
   ;; the type is part of the contract of the job: a caller that does not
@@ -440,6 +477,7 @@
         (let [job-def (jobs/get-job-def (::jobs/defs th/*system*) :import-binfile)
               params  (jobs/decode-params job-def (:params job))]
           (t/is (= (:default-project-id profile) (:project-id params)))
+          (t/is (= (:default-team-id profile) (:team-id params)))
           (t/is (= "imported" (:name params)))
           (t/is (= 3 (:version params)))
           (t/is (string? (:generated-by params)))))
@@ -447,7 +485,213 @@
       (t/testing "the audit points at the job and the manifest, not the package"
         (let [props (::audit/props (meta (:result out)))]
           (t/is (= (:id result) (:job-id props)))
-          (t/is (= #{:job-id :generated-by :referer} (set (keys props)))))))))
+          (t/is (= (:default-team-id profile) (:team-id props)))
+          (t/is (= #{:job-id :team-id :generated-by :referer} (set (keys props))))
+          (t/is (not (contains? result :team-id))))))))
+
+(t/deftest create-import-binfile-job-rejects-a-client-supplied-team
+  (let [profile    (th/create-profile* 1)
+        session-id (upload-chunked! profile)
+        before     (live-storage-objects)
+        out        (create-import-binfile-job
+                    (:id profile) (:default-project-id profile)
+                    :upload-id session-id
+                    :params {:project-id (:default-project-id profile)
+                             :name "imported"
+                             :team-id (uuid/next)})]
+    (t/is (not (th/success? out)))
+    (t/is (= :params-validation (th/ex-code (:error out))))
+    (t/is (zero? (count-jobs)))
+    (t/is (= before (live-storage-objects)))
+    (t/is (nil? (:deleted-at (session-row session-id))))))
+
+(t/deftest create-import-binfile-job-routes-its-audit-to-the-frozen-team
+  (with-redefs [audit/submit real-audit-submit
+                cf/audit-persist? true
+                cf/webhooks-enabled? true]
+    (let [profile     (th/create-profile* 1)
+          original-id (:default-team-id profile)
+          destination (th/create-team* 1 {:profile-id (:id profile)})
+          original    (th/create-webhook* {:team-id original-id})
+          _           (th/create-webhook* {:team-id (:id destination)})
+          upload-id   (upload-chunked! profile)
+          names       {(uuid/next) "Renamed file"}
+          given       {:project-id (:default-project-id profile) :name names}
+          out         (create-import-binfile-job (:id profile) (:default-project-id profile)
+                                                 :upload-id upload-id :params given)
+          job-id      (:id (:result out))]
+      (t/is (th/success? out))
+      (th/db-update! :project {:team-id (:id destination)}
+                     {:id (:default-project-id profile)})
+      ;; The test system does not install the RPC audit wrapper. Prepare the
+      ;; event after the move, as that wrapper does after the command returns.
+      (let [[mdata _] (get (::rpc/methods th/*system*) :create-import-binfile-job)
+            request   (reify
+                        yetti.request/IRequest
+                        (get-header [_ _] nil)
+                        (remote-addr [_] "127.0.0.1"))
+            params    (with-meta {::rpc/profile-id (:id profile)
+                                  ::rpc/request-id (uuid/next)
+                                  ::rpc/request-at (ct/now)
+                                  :upload-id upload-id
+                                  :params given}
+                        {:app.http/request request})
+            event     (audit/prepare-rpc-event (assoc th/*system* ::rpc/module "main"
+                                                      ::rpc/type "command")
+                                               mdata params (:result out))]
+        (audit/submit th/*system* event))
+      (let [rows  (th/db-exec! ["SELECT * FROM job WHERE name = 'process-webhook-event'"])
+            blobs (map #(db/decode-json-pgobject (:params %)) rows)
+            blob  (first (filter #(= "create-import-binfile-job"
+                                     (:name (transit/decode-str (:event-blob %))))
+                                 blobs))]
+        (t/is (some? blob))
+        (when blob
+          (webhooks/process-event-impl th/*system* blob)
+          (let [deliveries (th/db-exec! ["SELECT * FROM job WHERE name = 'run-webhook'"])
+                params     (map #(db/decode-json-pgobject (:params %)) deliveries)
+                delivery   (first params)
+                payload    (some-> delivery :event transit/decode-str)
+                props      (:props payload)]
+            (t/is (= 1 (count deliveries)))
+            (t/is (= (str (:id original)) (get-in delivery [:config :id])))
+            (t/is (= original-id (:team-id props)))
+            (t/is (= job-id (:job-id props)))
+            (t/is (= (cond-> {:upload-id upload-id
+                              :params given
+                              :team-id original-id
+                              :job-id job-id}
+                       (some? (:generated-by (::audit/props (meta (:result out)))))
+                       (assoc :generated-by (:generated-by (::audit/props (meta (:result out)))))
+                       (some? (:referer (::audit/props (meta (:result out)))))
+                       (assoc :referer (:referer (::audit/props (meta (:result out))))))
+                     props))))))))
+
+(defn- await-concurrent
+  [p]
+  (let [value (deref p 15000 ::timeout)]
+    (when (= ::timeout value)
+      (throw (ex-info "Timed out waiting for concurrent operation" {})))
+    value))
+
+(defn- await-db-blocked
+  [pid]
+  (let [deadline (+ (System/nanoTime) 10000000000)]
+    (loop []
+      (cond
+        (:blocked (db/exec-one! th/*system*
+                                ["SELECT cardinality(pg_blocking_pids(?)) > 0 AS blocked" pid]))
+        true
+        (< (System/nanoTime) deadline) (recur)
+        :else (throw (ex-info "Database operation did not block" {:pid pid}))))))
+
+(t/deftest create-import-after-move-rechecks-permission-and-releases-resource
+  (let [owner       (th/create-profile* 1)
+        actor       (th/create-profile* 2)
+        project     (th/create-project* 1 {:profile-id (:id owner)
+                                           :team-id (:default-team-id owner)})
+        destination (th/create-team* 1 {:profile-id (:id owner)})
+        _           (th/db-insert! :team-profile-rel {:team-id (:default-team-id owner)
+                                                      :profile-id (:id actor)
+                                                      :is-owner false
+                                                      :is-admin false
+                                                      :can-edit true})
+        upload-id   (upload-chunked! actor)
+        before      (live-storage-objects)
+        staged      (promise)
+        proceed     (promise)
+        moved       (promise)
+        release     (promise)
+        create-pid  (promise)
+        put         js/put-resource
+        lock        projects/get-project-for-update]
+    (with-redefs [js/put-resource (fn [& args]
+                                    (let [resource (apply put args)]
+                                      (deliver staged resource)
+                                      (await-concurrent proceed)
+                                      resource))
+                  projects/get-project-for-update
+                  (fn [cfg id]
+                    (when (realized? moved)
+                      (deliver create-pid (:pid (db/exec-one! cfg ["SELECT pg_backend_pid() AS pid"]))))
+                    (lock cfg id))]
+      (let [creating (future (create-import-binfile-job (:id actor) (:id project) :upload-id upload-id))]
+        (try
+          (await-concurrent staged)
+          (let [moving (future
+                         (db/tx-run! th/*system*
+                                     (fn [cfg]
+                                       (management/move-project cfg {:profile-id (:id owner)
+                                                                     :project-id (:id project)
+                                                                     :team-id (:id destination)})
+                                       (deliver moved true)
+                                       (await-concurrent release))))]
+            (try
+              (await-concurrent moved)
+              (deliver proceed true)
+              (t/is (true? (await-db-blocked (await-concurrent create-pid))))
+              (deliver release true)
+              (await-concurrent moving)
+              (let [out (await-concurrent creating)]
+                (t/is (not (th/success? out)))
+                (t/is (= :not-found (th/ex-type (:error out))))
+                (t/is (zero? (count-jobs)))
+                (t/is (= before (live-storage-objects)))
+                (t/is (some? (:deleted-at (session-row upload-id)))))
+              (finally
+                (deliver proceed true)
+                (deliver release true)
+                (await-concurrent moving))))
+          (finally
+            (deliver proceed true)
+            (deliver release true)
+            (await-concurrent creating)))))))
+
+(t/deftest move-waits-for-import-job-submission
+  (let [profile     (th/create-profile* 1)
+        project     (th/create-project* 1 {:profile-id (:id profile)
+                                           :team-id (:default-team-id profile)})
+        destination (th/create-team* 1 {:profile-id (:id profile)})
+        upload-id   (upload-chunked! profile)
+        entered     (promise)
+        release     (promise)
+        move-pid    (promise)
+        submit      jobs/submit]
+    (with-redefs [jobs/submit (fn [cfg params]
+                                (when (= :import-binfile (::jobs/name params))
+                                  (deliver entered true)
+                                  (await-concurrent release))
+                                (submit cfg params))]
+      (let [creating (future (create-import-binfile-job (:id profile) (:id project) :upload-id upload-id))]
+        (try
+          (await-concurrent entered)
+          (let [moving (future
+                         (db/tx-run! th/*system*
+                                     (fn [cfg]
+                                       (deliver move-pid (:pid (db/exec-one! cfg ["SELECT pg_backend_pid() AS pid"])))
+                                       (management/move-project cfg {:profile-id (:id profile)
+                                                                     :project-id (:id project)
+                                                                     :team-id (:id destination)}))))]
+            (try
+              (t/is (true? (await-db-blocked (await-concurrent move-pid))))
+              (deliver release true)
+              (let [out     (await-concurrent creating)
+                    job     (jobs/get-job th/*system* (:id (:result out)))
+                    job-def (jobs/get-job-def (::jobs/defs th/*system*) :import-binfile)
+                    params  (jobs/decode-params job-def (:params job))]
+                (t/is (th/success? out))
+                (t/is (= (:default-team-id profile) (:team-id params)))
+                (t/is (= (:default-team-id profile)
+                         (:team-id (::audit/props (meta (:result out))))))
+                (t/is (some? (:resource-id job))))
+              (await-concurrent moving)
+              (t/is (= (:id destination) (:team-id (th/db-get :project {:id (:id project)}))))
+              (finally
+                (deliver release true)
+                (await-concurrent moving))))
+          (finally
+            (deliver release true)
+            (await-concurrent creating)))))))
 
 (t/deftest create-import-binfile-job-assembles-the-chunks-of-its-upload
   (let [profile    (th/create-profile* 1)

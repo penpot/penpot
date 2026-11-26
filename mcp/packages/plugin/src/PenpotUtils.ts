@@ -186,6 +186,25 @@ export class PenpotUtils {
         return this.findPage((page) => page.name.toLowerCase() === name.toLowerCase());
     }
 
+    /**
+     * Checks whether the new render engine (WebGL, `render-wasm/v1`) draws the open file.
+     * When it returns false, the file renders with the SVG engine.
+     *
+     * @returns true iff the open file has the `render-wasm/v1` feature active
+     * @throws Error if no file is open or the Penpot version does not expose the file features
+     */
+    public static isWasmRenderer(): boolean {
+        const file = penpot.currentFile;
+        if (!file) {
+            throw new Error("No file is open");
+        }
+        const features = file.features;
+        if (!Array.isArray(features)) {
+            throw new Error("This Penpot version does not expose the file features");
+        }
+        return features.includes("render-wasm/v1");
+    }
+
     public static getPageForShape(shape: Shape): Page | null {
         for (const page of penpot.currentFile!.pages) {
             if (page.getShapeById(shape.id)) {
@@ -539,7 +558,7 @@ export class PenpotUtils {
      * @example
      * // Three button variants differing in Size
      * // Given three main components s, m, l (here: the first three main components on the page)
-     * const [s, m, l] = penpot.currentPage.findAllShapes(sh => sh.isMainComponent()).slice(0, 3) as Board[];
+     * const [s, m, l] = PenpotUtils.findShapes(sh => sh.isComponentMainInstance(), penpot.root).slice(0, 3) as Board[];
      * const container = PenpotUtils.createVariantContainer([
      *   { shape: s, properties: { Size: 'Small' } },
      *   { shape: m, properties: { Size: 'Medium' } },

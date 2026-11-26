@@ -5,6 +5,7 @@ import { WebSocket } from "ws";
 import { HEARTBEAT_REQUEST_INTERVAL_MS, PluginBridge } from "./PluginBridge";
 import { PluginTask } from "./PluginTask";
 import type { PenpotMcpServer } from "./PenpotMcpServer";
+import { RequestGuard } from "./RequestGuard";
 
 let bridge: PluginBridge;
 let port = 17_600;
@@ -22,6 +23,7 @@ beforeEach(() => {
             host: "127.0.0.1",
             isMultiUserMode: () => multiUser,
             getSessionContext: () => ({ userToken }),
+            requestGuard: RequestGuard.allowing(["localhost", "127.0.0.1"]),
         } as PenpotMcpServer,
         port,
         1
@@ -202,4 +204,35 @@ test("a task fails at once when its plugin connection closes before answering", 
     );
     // well within the 1s task timeout of these tests
     assert.ok(Date.now() - started < 500);
+});
+
+test("closes a WebSocket opened by a page on a foreign site with a policy violation", async () => {
+    const socket = new WebSocket(`ws://127.0.0.1:${port}?userToken=alice`, {
+        headers: { Origin: "http://attacker.example" },
+    });
+    sockets.push(socket);
+    const [code] = await once(socket, "close", { signal: AbortSignal.timeout(1500) });
+    assert.equal(code, 1008);
+    assert.equal(bridge.getUserConnections("alice"), undefined);
+});
+
+test("closes a WebSocket that reaches the server under a foreign host name", async () => {
+    const socket = new WebSocket(`ws://127.0.0.1:${port}?userToken=alice`, {
+        headers: { Host: `attacker.example:${port}` },
+    });
+    sockets.push(socket);
+    const [code] = await once(socket, "close", { signal: AbortSignal.timeout(1500) });
+    assert.equal(code, 1008);
+});
+
+test("accepts a WebSocket opened by a plugin page served from an allowed host", async () => {
+    const socket = new WebSocket(`ws://127.0.0.1:${port}?userToken=alice`, {
+        headers: { Origin: "http://localhost:4400" },
+    });
+    sockets.push(socket);
+    await once(socket, "open");
+    const initialized = once(socket, "message", { signal: AbortSignal.timeout(1500) });
+    socket.send(JSON.stringify({ type: "initialize", session: { sessionId: "tab", fileId: null, fileName: null } }));
+    const [message] = await initialized;
+    assert.equal(JSON.parse(message.toString()).type, "initialized");
 });

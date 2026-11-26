@@ -37,11 +37,13 @@
                                                  dropdown-menu-item*]]
    [app.main.ui.context :as ctx]
    [app.main.ui.dashboard.subscription :refer [get-subscription-type
-                                               main-menu-power-up*]]
+                                               main-menu-power-up*
+                                               show-main-menu-power-up?]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
    [app.main.ui.hooks.resize :as r]
    [app.plugins.register :as preg]
+   [app.render-wasm.api.webgl :as webgl]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -670,7 +672,7 @@
         (mf/use-fn
          (mf/deps frames)
          (fn [_]
-           (st/emit! (de/show-workspace-export-frames-dialog frames))))
+           (st/emit! (de/show-workspace-export-frames-dialog (reverse frames)))))
 
         on-export-frames-key-down
         (mf/use-fn
@@ -965,8 +967,9 @@
                               (dom/reload-current-window true))
                             (fn [_]
                               (st/emit! (ntf/error (tr "errors.generic"))))))
-             (st/emit! (ev/event {::ev/name ev-name
-                                  ::ev/origin "workspace:menu"})
+             (st/emit! (ev/event (assoc (webgl/get-environment)
+                                        ::ev/name ev-name
+                                        ::ev/origin "workspace:menu"))
                        (ptk/data-event ::ev/force-persist {})))))
 
         open-plugins-manager
@@ -1124,9 +1127,7 @@
        [:> icon* {:icon-id i/arrow-right
                   :class (stl/css :item-arrow)}]]
 
-      (when (or (and (contains? cf/flags :subscriptions)
-                     (not= "enterprise" subscription-type))
-                (contains? cf/flags :admin-console))
+      (when (show-main-menu-power-up? cf/flags subscription-type)
         [:> main-menu-power-up* {:close-sub-menu close-sub-menu}])]
 
      (case selected-sub-menu

@@ -7,24 +7,33 @@
 (ns common-tests.runner
   (:require
    #?(:clj [common-tests.fressian-test])
+   #?(:cljs ["node:fs" :as fs])
    #?(:cljs [app.common.logging :as l])
    #?(:cljs [clojure.string :as str])
    #?(:cljs [clojure.tools.cli :refer [parse-opts]])
    #?(:cljs [common-tests.fonts-test])
+   #?(:cljs [common-tests.render-wasm.modifiers-test])
    #?(:cljs [goog.object :as gobj])
    [clojure.test :as t]
    [common-tests.attrs-test]
    [common-tests.buffer-test]
    [common-tests.colors-test]
+   [common-tests.data-macros-test]
    [common-tests.data-test]
    [common-tests.exceptions-test]
    [common-tests.files-builder-test]
    [common-tests.files-changes-test]
    [common-tests.files-migrations-0025-test]
    [common-tests.files-migrations-0026-test]
+   [common-tests.files-migrations-0033-test]
    [common-tests.files-migrations-0034-test]
    [common-tests.files-migrations-0035-test]
+   [common-tests.files-migrations-0036-test]
+   [common-tests.files-migrations-0037-test]
+   [common-tests.files-migrations-0038-test]
+   [common-tests.files-migrations-0039-test]
    [common-tests.files-migrations-test]
+   [common-tests.files.changes-builder-test]
    [common-tests.files.comp-processors-test]
    [common-tests.files.helpers-test]
    [common-tests.files.page-diff-test]
@@ -32,6 +41,8 @@
    [common-tests.files.shapes-builder-test]
    [common-tests.files.tokens-test]
    [common-tests.files.validate-test]
+   [common-tests.files.variant-test]
+   [common-tests.flags-test]
    [common-tests.geom-align-test]
    [common-tests.geom-bounds-layout-nil-test]
    [common-tests.geom-bounds-map-test]
@@ -81,6 +92,7 @@
    [common-tests.logic.text-touched-test]
    [common-tests.logic.token-apply-test]
    [common-tests.logic.token-test]
+   [common-tests.logic.variants-paste-test]
    [common-tests.logic.variants-reparent-test]
    [common-tests.logic.variants-switch-test]
    [common-tests.logic.variants-test]
@@ -102,6 +114,8 @@
    [common-tests.types.color-test]
    [common-tests.types.components-test]
    [common-tests.types.container-test]
+   [common-tests.types.file-load-component-objects-test]
+   [common-tests.types.file-test]
    [common-tests.types.fill-test]
    [common-tests.types.font-test]
    [common-tests.types.modifiers-test]
@@ -125,20 +139,29 @@
    [common-tests.variant-test]))
 
 (def test-namespaces
-  [#?(:clj 'common-tests.fressian-test)
+  [#?(:cljs 'common-tests.runner)
+   #?(:clj 'common-tests.fressian-test)
    'common-tests.attrs-test
    'common-tests.buffer-test
    'common-tests.colors-test
+   'common-tests.data-macros-test
    'common-tests.data-test
    'common-tests.exceptions-test
    'common-tests.files-builder-test
    #?(:cljs 'common-tests.fonts-test)
+   #?(:cljs 'common-tests.render-wasm.modifiers-test)
    'common-tests.files-changes-test
    'common-tests.files-migrations-0025-test
    'common-tests.files-migrations-0026-test
+   'common-tests.files-migrations-0033-test
    'common-tests.files-migrations-0034-test
    'common-tests.files-migrations-0035-test
+   'common-tests.files-migrations-0036-test
+   'common-tests.files-migrations-0037-test
+   'common-tests.files-migrations-0038-test
+   'common-tests.files-migrations-0039-test
    'common-tests.files-migrations-test
+   'common-tests.files.changes-builder-test
    'common-tests.files.comp-processors-test
    'common-tests.files.helpers-test
    'common-tests.files.page-diff-test
@@ -146,6 +169,8 @@
    'common-tests.files.shapes-builder-test
    'common-tests.files.tokens-test
    'common-tests.files.validate-test
+   'common-tests.files.variant-test
+   'common-tests.flags-test
    'common-tests.geom-align-test
    'common-tests.geom-bounds-layout-nil-test
    'common-tests.geom-bounds-map-test
@@ -195,6 +220,7 @@
    'common-tests.logic.text-touched-test
    'common-tests.logic.token-apply-test
    'common-tests.logic.token-test
+   'common-tests.logic.variants-paste-test
    'common-tests.logic.variants-reparent-test
    'common-tests.logic.variants-switch-test
    'common-tests.logic.variants-test
@@ -216,6 +242,8 @@
    'common-tests.types.color-test
    'common-tests.types.components-test
    'common-tests.types.container-test
+   'common-tests.types.file-load-component-objects-test
+   'common-tests.types.file-test
    'common-tests.types.fill-test
    'common-tests.types.font-test
    'common-tests.types.modifiers-test
@@ -281,14 +309,23 @@
 
      (defn- usage
        [summary]
-       (str "Usage: pnpm run test:js -- [options]\n\n"
+       (str "Usage: pnpm run test -- [options]\n\n"
             "Options:\n"
             summary "\n\n"
             "Focus examples:\n"
-            "  pnpm run test:js -- --focus common-tests.logic.comp-sync-test\n"
-            "  pnpm run test:js -- --focus common-tests.logic.comp-sync-test/test-sync-when-changing-attribute\n\n"
+            "  pnpm run test -- --focus common-tests.logic.comp-sync-test\n"
+            "  pnpm run test -- --focus common-tests.logic.comp-sync-test/test-sync-when-changing-attribute\n\n"
             "Log level example (quiets app logging during the run):\n"
-            "  pnpm run test:js -- --focus common-tests.logic.comp-sync-test --log-level warn"))
+            "  pnpm run test -- --focus common-tests.logic.comp-sync-test --log-level warn"))
+
+     (t/deftest runner-usage-uses-existing-package-scripts
+       (let [package (js/JSON.parse (.readFileSync fs "package.json" "utf8"))
+             scripts (.-scripts package)
+             commands (re-seq #"pnpm run ([\w:-]+)" (usage ""))]
+         (t/is (seq commands))
+         (doseq [[_ command] commands]
+           (t/is (some? (gobj/get scripts command))
+                 (str "Unknown package script in runner help: " command)))))
 
      (defn- fail!
        [message]

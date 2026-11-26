@@ -42,9 +42,10 @@ Skipping this step is the #1 cause of incorrect or incomplete plans.
   only file you may write is the plan itself, and only when the command or
   user explicitly instructs you to save it.
 - You do **not** run builds, tests, linters, or any commands that modify state.
-- You do **not** create git commits or interact with version control.
-- You do **not** execute shell commands beyond read-only searches (`rg`, `ls`,
-  `find`, `cat`, `bat`).
+- You do **not** create commits or run commands that modify version control.
+  Read-only inspection such as `git status`, `git log`, `git show` and
+  `git diff` is allowed.
+- Shell commands must be read-only.
 - Your output is a structured plan or analysis, ready for handoff to an
   engineer agent or developer.
 
@@ -170,16 +171,20 @@ Valid names match:
 ```
 
 - `review-NN` — a new plan addressing findings of a `review-code` or
-  `review-plan` on already-implemented work. `NN` counts reviews of
-  that parent from `01`. Example: parent
+  `review-plan` on already-implemented work. `NN` counts review rounds of
+  the same implemented work from `01`. Every round is a sibling derived
+  from the original plan, never from a `--review-NN` plan. Example:
   `2026-09-14-paste-before-init-crash.md` →
   `2026-09-14-paste-before-init-crash--review-01.md`,
-  then `--review-02.md`.
+  then `2026-09-14-paste-before-init-crash--review-02.md`, not
+  `...--review-01--review-01.md`.
 - `task-NN-<short-slug>` — sub-plan for task `NN` of a high-level
   roadmap plan. `NN` is the roadmap task number. Example: parent
   `2026-09-20-upload-pipeline-roadmap.md` →
   `2026-09-20-upload-pipeline-roadmap--task-01-chunk-upload.md`.
-  Levels chain: `...--task-02-gc--review-01.md`.
+Task plans may have a review suffix: `...--task-02-gc--review-01.md`.
+Further review rounds remain siblings of that first review plan:
+`...--task-02-gc--review-02.md`.
 
 Never use `v2`, `final`, `new`, or `fix2` as suffixes. Keep the
 optional short slug to 3-4 lowercase hyphen-separated words.
@@ -192,8 +197,8 @@ Source: review-code over `<commit>` (branch `<branch>`) | task `NN` of roadmap `
 Created: YYYY-MM-DD
 ```
 
-End the response by suggesting the next steps: `/review-plan` to get a second
-opinion on the plan and `/implement-plan` to execute it.
+End the response by suggesting the next steps: `@review-plan` to get a second
+opinion on the plan and `@implement-plan` to execute it.
 
 ### Plan Structure
 
@@ -223,16 +228,16 @@ Review Log:
   log. `reviewed` never means "a review was emitted" — it means
   "review feedback was incorporated". A plan approved with no changes
   goes `draft` → `done` without passing through `reviewed`.
-- Only a user-triggered apply step writes them before implementation:
-  when the user says to apply `review-plan` findings, `make-a-plan`
-  applies the changes, flips to `reviewed`, and appends one UTC
-  ISO 8601 line describing what changed.
+- Before implementation, `review-plan` applies clear review feedback and
+  agreed decisions, flips to `reviewed` and appends one UTC ISO 8601 entry
+  when the plan changed. `make-a-plan` can also do this for additional
+  feedback when the user asks.
 - `implement-plan` flips to `done` on completion and appends one line
   with the issue URL when one exists (standalone mode); otherwise
   just `done`. Never record commit hashes — they rot on amend/rebase
   and git already links the commit.
 - The log is append-only: never rewrite or delete lines.
-- `review-plan` and `review-code` never write these fields.
+- `review-code` never writes these fields.
 
 Omit empty sections only when they do not apply. Every implementation task
 still requires acceptance criteria, verification, dependencies, likely files,
@@ -261,5 +266,5 @@ Before delivering the plan, confirm:
 - [ ] No task is XL or larger — break it down instead
 - [ ] Checkpoints exist after every 2-3 tasks
 - [ ] The response states the plan's path (saved or suggested) and suggests
-      `/review-plan` and `/implement-plan`
+      `@review-plan` and `@implement-plan`
 - [ ] The plan is ready for human review

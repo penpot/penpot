@@ -27,7 +27,9 @@
    [app.main.data.team :as dtm]
    [app.main.data.websocket :as dws]
    [app.main.repo :as rp]
+   [app.main.router :as rt]
    [app.main.store :as st]
+   [app.util.clipboard :as clipboard]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.sse :as sse]
    [beicon.v2.core :as rx]
@@ -360,6 +362,26 @@
         (->> (rp/cmd! :update-project-pin params)
              (rx/ignore))))))
 
+;; --- EVENT: copy-link
+
+(defn copy-link
+  "Copy the absolute URL of the route `id` with `params` to the
+  clipboard and confirm it with a toast."
+  [id params]
+  (ptk/reify ::copy-link
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [url (rt/resolve-uri (:router state) id params)]
+        (->> (rx/from (clipboard/to-clipboard url))
+             (rx/map (fn [_]
+                       (ntf/success (tr "dashboard.success-copy-link"))))
+             (rx/catch (fn [cause]
+                         (let [message (clipboard/error-message cause)]
+                           (when-not message
+                             (log/error :hint "unable to copy link" :cause cause))
+                           (rx/of (ntf/error (or message (tr "errors.generic"))
+                                             {:timeout ntf/default-timeout}))))))))))
+
 ;; --- EVENT: rename-project
 
 (defn rename-project
@@ -373,7 +395,7 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (let [params {:id id :name name}]
+      (let [params (with-meta {:id id :name name} (meta params))]
         (->> (rp/cmd! :rename-project params)
              (rx/ignore))))))
 
@@ -435,7 +457,7 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (let [params (select-keys params [:id :name])]
+      (let [params (with-meta (select-keys params [:id :name]) (meta params))]
         (->> (rp/cmd! :rename-file params)
              (rx/ignore))))))
 
@@ -460,15 +482,18 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (let [params {:id id :is-shared is-shared}]
+      (let [mdata  (meta params)
+            origin (::ev/origin mdata "dashboard")]
         (rx/concat
-         (->> (rp/cmd! :set-file-shared params)
+         (->> (rp/cmd! :set-file-shared (with-meta {:id id :is-shared is-shared} mdata))
               (rx/ignore))
          (when is-shared
            (->> (rp/cmd! :get-file-summary {:id id})
                 (rx/map (fn [summary]
                           (when (-> summary :variants :count pos?)
-                            (ev/event {::ev/name "set-file-variants-shared" ::ev/origin "dashboard"})))))))))))
+                            (ev/event (merge {::ev/name "set-file-variants-shared"
+                                              ::ev/origin origin}
+                                             (select-keys mdata [::ev/context])))))))))))))
 
 (defn set-file-thumbnail
   [file-id thumbnail-id]
@@ -697,12 +722,17 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- handle-change-team-role
-  [params]
+  [{:keys [team-id] :as params}]
   (ptk/reify ::handle-change-team-role
     ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/of (dcm/change-team-role params)
-             (modal/hide)))))
+    (watch [_ state _]
+      (rx/concat
+       (rx/of (dcm/change-team-role params)
+              (modal/hide))
+       ;; The open members list shows the old role (and, after an
+       ;; ownership transfer, the old owner) until it is fetched again
+       (when (= team-id (:current-team-id state))
+         (rx/of (dtm/fetch-members team-id)))))))
 
 (defn- handle-user-organization-change
   "Handle :user-organization-change websocket messages.

@@ -240,15 +240,26 @@ pub extern "C" fn set_grid_cells() -> Result<()> {
     Ok(())
 }
 
+/// Hover only changes the grid overlay on the UI surface. Re-present the last
+/// frame so the lines update without a tile pass. A full render clears the
+/// canvas and walks every visible tile.
+fn present_grid_overlay() {
+    with_state!(state, {
+        state.present_frame();
+    });
+}
+
 #[no_mangle]
 pub extern "C" fn show_grid(a: u32, b: u32, c: u32, d: u32) {
     let id = uuid_from_u32_quartet(a, b, c, d);
     get_render_state().show_grid = Some(id);
+    present_grid_overlay();
 }
 
 #[no_mangle]
 pub extern "C" fn hide_grid() {
     get_render_state().show_grid = None;
+    present_grid_overlay();
 }
 
 #[no_mangle]

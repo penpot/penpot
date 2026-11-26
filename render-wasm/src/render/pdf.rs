@@ -3,7 +3,7 @@ use std::mem::ManuallyDrop;
 use skia_safe as skia;
 
 use crate::error::{Error, Result};
-use crate::state::ShapesPoolRef;
+use crate::state::{ShapesPoolMutRef, ShapesPoolRef};
 use crate::uuid::Uuid;
 
 use super::vector;
@@ -143,7 +143,7 @@ pub fn export_abort(slot: &mut Option<PdfExportSession>) {
 pub fn render_to_pdf(
     shared: &mut RenderResources,
     id: &Uuid,
-    tree: ShapesPoolRef,
+    tree: ShapesPoolMutRef,
 ) -> Result<Vec<u8>> {
     render_to_pdf_multi(shared, &[*id], tree)
 }
@@ -154,7 +154,7 @@ pub fn render_to_pdf(
 pub fn render_to_pdf_multi(
     shared: &mut RenderResources,
     ids: &[Uuid],
-    tree: ShapesPoolRef,
+    tree: ShapesPoolMutRef,
 ) -> Result<Vec<u8>> {
     if ids.is_empty() {
         return Err(Error::CriticalError(
@@ -164,7 +164,9 @@ pub fn render_to_pdf_multi(
     let mut session = None;
     export_begin(&mut session)?;
     for id in ids {
-        if let Err(err) = export_add_page(&mut session, shared, id, tree) {
+        let page =
+            tree.with_export_root(id, |tree| export_add_page(&mut session, shared, id, tree));
+        if let Err(err) = page {
             export_abort(&mut session);
             return Err(err);
         }
@@ -234,7 +236,7 @@ mod tests {
         let mut resources = RenderResources::try_new_headless().expect("headless resources");
         let _guard = crate::globals::TestRenderResourcesGuard::install(&mut resources);
 
-        let pdf = render_to_pdf_multi(&mut resources, &[a, b], &pool).expect("pdf");
+        let pdf = render_to_pdf_multi(&mut resources, &[a, b], &mut pool).expect("pdf");
         assert!(pdf.starts_with(b"%PDF"), "missing PDF header");
         assert_eq!(page_count(&pdf), 2, "expected two pages");
     }
@@ -270,11 +272,11 @@ mod tests {
 
     #[test]
     fn empty_id_list_is_an_error() {
-        let pool = ShapesPool::new();
+        let mut pool = ShapesPool::new();
         let mut resources = RenderResources::try_new_headless().expect("headless resources");
         let _guard = crate::globals::TestRenderResourcesGuard::install(&mut resources);
 
-        let err = render_to_pdf_multi(&mut resources, &[], &pool).expect_err("empty");
+        let err = render_to_pdf_multi(&mut resources, &[], &mut pool).expect_err("empty");
         assert!(
             matches!(err, Error::CriticalError(_)),
             "empty ids must fail critically: {err:?}"
@@ -295,7 +297,7 @@ mod tests {
         let mut resources = RenderResources::try_new_headless().expect("headless resources");
         let _guard = crate::globals::TestRenderResourcesGuard::install(&mut resources);
 
-        let pdf = render_to_pdf(&mut resources, &id, &pool).expect("pdf");
+        let pdf = render_to_pdf(&mut resources, &id, &mut pool).expect("pdf");
         assert!(pdf.starts_with(b"%PDF"));
         assert_eq!(page_count(&pdf), 1);
     }

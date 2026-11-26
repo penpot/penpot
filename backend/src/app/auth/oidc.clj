@@ -455,8 +455,7 @@
 
 (defn- build-redirect-uri
   []
-  (let [public (u/uri (cf/get :public-uri))]
-    (str (assoc public :path "/api/auth/oidc/callback"))))
+  (cf/get-public-uri "api/auth/oidc/callback"))
 
 (defn build-auth-redirect-uri
   [provider token]
@@ -690,14 +689,112 @@
                     (assoc :query (u/map->query-string params)))]
      (redirect-response uri))))
 
+(defn- public-uri
+  "The configured public URI, parsed, with the app base path normalized with
+  a trailing slash."
+  []
+  (u/ensure-path-slash (u/uri (cf/get :public-uri))))
+
+(defn- public-uri-base
+  "The public URI as a string, with the app base path normalized with a
+  trailing slash. Every URL the server builds starts here, so the app base
+  path is never lost."
+  []
+  (str (public-uri)))
+
 (defn- redirect-with-organization-sso-error
   [{:keys [dest-url organization-id organization-name]}]
-  (-> (str (or dest-url (cf/get :public-uri)))
+  (-> (str (or dest-url (public-uri-base)))
       (u/append-query-param :sso-error true)
       (u/append-query-param :organization-id organization-id)
       (cond-> organization-name
         (u/append-query-param :organization-name organization-name))
       (redirect-response)))
+
+(defn- routable-params?
+  "True when `params` are params of a route: at least one, and no key carries
+  a scheme, a path or a fragment. `screen=workspace&team-id=…` and the root
+  params of the application (`template=…`) qualify; `https://evil.example/`
+  does not."
+  [params]
+  (and (seq params)
+       (every? #(nil? (re-find #"[/:?#]" (name %))) (keys params))))
+
+(defn build-dest-url
+  "Return the absolute URL for `query-string` under the current public URI.
+
+  The query string is the route of the client (`screen=…&params`, and the root
+  of the application may carry only its params, like `template=…`): it does not
+  carry the `?` that separates it from the path, which is put back here, so the
+  destination is always built by the server and the client only picks the route.
+  A value that still comes with the separator is trimmed, so a client bundled
+  before that change keeps its destination.
+
+  The params are parsed and rendered back, so a value that is not a route never
+  becomes a destination: it is ignored with a warning and the user lands on the
+  public URI, which is also where a blank one lands."
+  [query-string]
+  (try
+    (let [base   (public-uri-base)
+          query  (str query-string)
+          route  (if (str/starts-with? query "?")
+                   (subs query 1)
+                   query)
+          params (u/query-string->map route)]
+      (cond
+        (str/blank? query)
+        base
+
+        (not (routable-params? params))
+        (do (l/warn :hint "ignoring a redirect target that is not a route"
+                    :query-string (subs route 0 (min 200 (count route))))
+            base)
+
+        :else
+        (str base "?" (u/map->query-string params))))
+    (catch Exception e
+      ;; The destination must never break the SSO flow: a query string the
+      ;; server cannot parse lands on the public URI instead.
+      (l/warn :hint "could not build the redirect target" :cause e)
+      (public-uri-base))))
+
+(defn- same-origin?
+  "True when `uri` has the same origin as `base`: scheme, host (case
+  insensitive) and port, with the default port made explicit."
+  [uri base]
+  (let [default-port (fn [scheme] (if (= "https" (str/lower (str scheme))) 443 80))
+        port         (fn [u] (or (:port u) (default-port (:scheme u))))]
+    (and (= (str/lower (str (:scheme uri)))
+            (str/lower (str (:scheme base))))
+         (= (str/lower (str (:host uri)))
+            (str/lower (str (:host base))))
+         (= (port uri) (port base)))))
+
+(defn- under-base-path?
+  "True when the path of `uri` is under the base path of `base`."
+  [uri base]
+  (str/starts-with? (str (:path uri)) (:path base)))
+
+(defn- trusted-dest-url
+  "Return `dest-url` when it points inside the current public URI, nil
+  otherwise.
+
+  The destination is built by the server (see `build-dest-url`), but state
+  tokens minted before that was the case may carry any URL, so the callback
+  checks the destination before redirecting to it. The check compares the
+  parsed origin, so neither a userinfo prefix
+  (`https://penpot.example.com@evil.example/`) nor a look-alike host
+  (`https://penpot.example.com.evil.example/`) can pass, and it requires
+  the path to be under the base path of the public URI, so the destination
+  stays inside the application."
+  [dest-url]
+  (when (some? dest-url)
+    (let [dest (try (u/uri (str dest-url)) (catch Exception _ nil))
+          base (public-uri)]
+      (when (and (some? dest)
+                 (same-origin? dest base)
+                 (under-base-path? dest base))
+        (str dest-url)))))
 
 (defn- redirect-to-register
   [cfg info provider]
@@ -915,11 +1012,21 @@
 
 (defn build-organization-sso-auth-redirect-uri
   "Build the OIDC authorization redirect URI for an organization SSO config.
-  Raises if the config is incomplete or OIDC discovery fails."
-  [cfg sso & {:keys [dest-url organization-id provider]}]
+  Raises if the config is incomplete or OIDC discovery fails.
+
+  `query-string` is the route of the client (`screen=…&params`, the query
+  string proper, without its separator): the destination is built here, so it
+  can never point outside the public URI.
+  `profile-id` is the profile that started the flow; it travels in the
+  state token so the callback only grants the organization SSO entry to that
+  very session.
+  `origin` is the trusted alternate origin stamped by the http trusted-origin
+  middleware; it travels in the state token so the callback, a navigation
+  without Origin, can rebuild the links on the same base."
+  [cfg sso & {:keys [query-string organization-id provider profile-id origin]}]
   (let [organization-id (or organization-id (:organization-id sso))
         issuer          (organization-sso-discovery-uri sso)
-        dest-url        (or dest-url (str (cf/get :public-uri)))]
+        dest-url        (build-dest-url query-string)]
     (when-not issuer
       (raise-invalid-sso-config
        :hint "missing issuer"
@@ -929,7 +1036,9 @@
             state-token   (tokens/generate cfg {:iss             "oidc"
                                                 :dest-url        dest-url
                                                 :organization-id organization-id
+                                                :profile-id      profile-id
                                                 :issuer          issuer
+                                                :origin          origin
                                                 :exp             (ct/in-future "4h")})]
         (build-auth-redirect-uri oidc-provider state-token))
       (catch Throwable cause
@@ -1013,6 +1122,11 @@
                   :provider (:id provider)
                   :invitation-token (:invitation-token params)
                   :external-session-id esid
+                  ;; Trusted alternate origin stamped by the http
+                  ;; trusted-origin middleware; carried through the signed
+                  ;; state so the callback (a navigation without Origin)
+                  ;; can rebuild links and the token-exchange redirect_uri.
+                  :origin (:app.http/trusted-origin request)
                   :props props
                   :exp (ct/in-future "4h")}
         state  (tokens/generate cfg (d/without-nils params))
@@ -1024,25 +1138,39 @@
 (defn- organization-sso-callback-handler
   "Handle the organization-SSO branch of the OIDC callback: state carries
   :dest-url — exchange the authorization code with the OIDC provider to
-  verify authentication actually occurred, then redirect back to dest-url."
+  verify authentication actually occurred, then redirect back to dest-url.
+
+  The state also carries the :profile-id that started the flow: only that
+  session is granted the organization SSO entry, so a state prepared by
+  someone else cannot mark the session of the one who completes it."
   [cfg request state code]
-  (let [dest-url (:dest-url state)]
+  (let [dest-url (trusted-dest-url (:dest-url state))]
     (try
       (let [organization-id (:organization-id state)
             sso             (nitrate/call cfg :get-organization-sso {:organization-id organization-id})
             provider        (prepare-organization-sso-provider cfg sso)
             _info           (get-info cfg provider state code)
             session         (session/get-session request)
-            exp             (ct/in-future {:hours 4})]
-        (when (and session organization-id)
-          (let [props (-> (or (:props session) {})
-                          (update :sso assoc organization-id exp))]
-            (session/update-session (::session/manager cfg) (assoc session :props props))
+            exp             (ct/in-future {:hours 4})
+            ;; A state minted before the profile claim existed never
+            ;; matches, and neither does the session of another profile.
+            same-profile?   (and (some? session)
+                                 (some? (:profile-id state))
+                                 (= (:profile-id state) (:profile-id session)))]
+        (if (and (some? session) (not same-profile?))
+          (submit-organization-sso-auth-event
+           cfg request (:profile-id session) organization-id "organization-sso-auth-failed"
+           :failure-reason "session-mismatch")
+          (do
+            (when (and session organization-id)
+              (let [props (-> (or (:props session) {})
+                              (update :sso assoc organization-id exp))]
+                (session/update-session (::session/manager cfg) (assoc session :props props))
+                (submit-organization-sso-auth-event
+                 cfg request (:profile-id session) organization-id "organization-sso-token-issued")))
             (submit-organization-sso-auth-event
-             cfg request (:profile-id session) organization-id "organization-sso-token-issued")))
-        (submit-organization-sso-auth-event
-         cfg request (:profile-id session) organization-id "organization-sso-auth-succeeded")
-        (redirect-response dest-url))
+             cfg request (:profile-id session) organization-id "organization-sso-auth-succeeded")))
+        (redirect-response (or dest-url (public-uri-base))))
       (catch Throwable cause
         (let [{:keys [code]} (ex-data cause)]
           (binding [l/*context* (errors/request->context request)]
@@ -1060,20 +1188,57 @@
         (let [organization-id   (:organization-id state)
               organization-name (:name (nitrate/call cfg :get-organization-summary {:organization-id organization-id}))]
           (redirect-with-organization-sso-error
-           {:dest-url dest-url
+           {:dest-url (or dest-url (public-uri-base))
             :organization-id organization-id
             :organization-name organization-name}))))))
 
-(defn- callback-handler
-  [cfg {:keys [params] :as request}]
+(def oidc-provider-types
+  "Backends authenticating through an OIDC-compatible provider.
+  Only these backends take the SSO registration gate."
+  #{"oidc" "google" "github" "gitlab"})
+
+(defn sso-registration-allowed?
+  "SSO registration is allowed when public registration or explicit
+  OIDC registration is enabled. Shared by the callback gate and the
+  `register-profile` token gate — keep one definition."
+  []
+  (or (contains? cf/flags :registration)
+      (contains? cf/flags :oidc-registration)))
+
+(defn- valid-invitation-for?
+  "Returns true when `invitation-token` is a verifiable
+  `:team-invitation` JWT issued for `email`. Never throws: a garbage
+  token means there is no valid invitation."
+  [cfg invitation-token email]
+  (try
+    (boolean
+     (when (and (some? invitation-token) (some? email))
+       (let [invitation (tokens/verify cfg {:token invitation-token :iss :team-invitation})]
+         (= (profile/clean-email (:member-email invitation))
+            (profile/clean-email email)))))
+    (catch Throwable _ false)))
+
+(defn- parse-state
+  "Verifies the OIDC state token once. Returns `[state failure]` where
+  exactly one of the two is non-nil: the decoded claims on success, or the
+  verification error when the token is missing, invalid or expired."
+  [cfg params]
+  (try
+    [(tokens/verify cfg {:token (:state params) :iss "oidc"}) nil]
+    (catch Throwable cause
+      [nil cause])))
+
+(defn- handle-oidc-callback
+  [cfg {:keys [params] :as request} state failure]
   (if-let [error (get params :error)]
     (do
       (submit-organization-sso-oauth-failed-event cfg request (:state params) error)
       (redirect-with-error "unable-to-auth" error))
     (try
-      (let [code     (get params :code)
-            state    (get params :state)
-            state    (tokens/verify cfg {:token state :iss "oidc"})]
+      (when (some? failure)
+        (throw failure))
+
+      (let [code (get params :code)]
 
         ;; Organization SSO flow: state carries :dest-url — exchange the authorization
         ;; code with the OIDC provider to verify authentication actually occurred.
@@ -1096,8 +1261,8 @@
                 (redirect-with-error "email-domain-not-allowed")
 
                 :else
-                (if (or (contains? cf/flags :registration)
-                        (contains? cf/flags :oidc-registration))
+                (if (or (sso-registration-allowed?)
+                        (valid-invitation-for? cfg (:invitation-token info) (:email info)))
                   (redirect-to-register cfg info provider)
                   (redirect-with-error "registration-disabled")))
 
@@ -1147,6 +1312,17 @@
             (l/wrn :hint "error on process oidc callback" :cause cause)
             (l/err :hint "error on process oidc callback" :cause cause))
           (redirect-with-error "unable-to-auth" (ex-message cause)))))))
+
+(defn- callback-handler
+  "Callback entrypoint. The IdP redirect is a browser navigation that
+  normally carries no Origin, so the http trusted-origin middleware
+  cannot help here; re-apply the trusted origin stored in the signed
+  state for the whole callback (token exchange redirect_uri and every
+  redirect target)."
+  [cfg {:keys [params] :as request}]
+  (let [[state failure] (parse-state cfg params)]
+    (binding [cf/config (cf/with-public-origin (:origin state) cf/config)]
+      (handle-oidc-callback cfg request state failure))))
 
 (def ^:private schema:routes-params
   [:map

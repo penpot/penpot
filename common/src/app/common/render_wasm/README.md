@@ -5,12 +5,12 @@ layouts, memory helpers and serializers that turn Penpot shapes into the buffers
 `render-wasm` consumes.
 
 The workspace drives it from `app.render-wasm.*`, the headless exporter from
-`app.wasm.*` — same code underneath, so the two cannot drift.
+`app.wasm.*`, the renderer benchmarking code from `benches.render-wasm.*`.
 
 Font knowledge is *not* here even though both hosts need it for rendering: it is
 not specific to the wasm backend, so the google fonts catalog (baked from
 `common/resources/fonts/gfonts.*.json`), the bundled builtin family and the
-emoji/script fallback tables live in `app.common.fonts`. Likewise the image-id
+emoji/script fallback tables live in `app.common.fonts`. Likewise, the image-id
 enumeration lives in `app.common.types.shape.images`.
 
 `shared.js` is not here: it is a per-build artifact, so each host compiles

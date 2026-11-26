@@ -48,22 +48,33 @@
    [app.util.dom :as dom]
    [app.util.forms :as uforms]
    [app.util.i18n :as i18n :refer [tr]]
+   [app.util.keyboard :as kbd]
    [app.util.timers :as tm]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
+(defn- nav-in-app
+  "Click handler for a link with href: a plain click navigates inside the
+  app; Ctrl/Cmd-click leaves the browser to open the href in a new tab."
+  [event nav-event]
+  (when-not (kbd/mod? event)
+    (dom/prevent-default event)
+    (st/emit! nav-event)))
+
 (mf/defc header*
   {::mf/wrap [mf/memo]}
   [{:keys [section team profile]}]
-  (let [on-nav-members       (mf/use-fn #(st/emit! (dcm/go-to-dashboard-members)))
-        on-nav-settings      (mf/use-fn #(st/emit! (dcm/go-to-dashboard-settings)))
-        on-nav-invitations   (mf/use-fn #(st/emit! (dcm/go-to-dashboard-invitations)))
-        on-nav-webhooks      (mf/use-fn #(st/emit! (dcm/go-to-dashboard-webhooks)))
+  (let [on-nav-members       (mf/use-fn #(nav-in-app % (dcm/go-to-dashboard-members)))
+        on-nav-settings      (mf/use-fn #(nav-in-app % (dcm/go-to-dashboard-settings)))
+        on-nav-invitations   (mf/use-fn #(nav-in-app % (dcm/go-to-dashboard-invitations)))
+        on-nav-webhooks      (mf/use-fn #(nav-in-app % (dcm/go-to-dashboard-webhooks)))
 
         route                (mf/deref refs/route)
+        router               (mf/deref refs/router)
         invite-email         (-> route :query-params :invite-email)
         team-id              (:id team)
+        section-href         #(rt/resolve-uri router % {:team-id team-id})
 
         members-section?     (= section :dashboard-team-members)
         settings-section?    (= section :dashboard-team-settings)
@@ -110,20 +121,28 @@
        [:li
         [:a {:class (stl/css-case :dashboard-header-link true
                                   :active members-section?)
+             :href (section-href :dashboard-members)
+             :aria-current (when members-section? "page")
              :on-click on-nav-members} (tr "labels.members")]]
        (when is-admin?
          [:li
           [:a {:class (stl/css-case :dashboard-header-link true
                                     :active invitations-section?)
+               :href (section-href :dashboard-invitations)
+               :aria-current (when invitations-section? "page")
                :on-click on-nav-invitations} (tr "labels.invitations")]])
        (when (contains? cfg/flags :webhooks)
          [:li
           [:a {:class (stl/css-case :dashboard-header-link true
                                     :active webhooks-section?)
+               :href (section-href :dashboard-webhooks)
+               :aria-current (when webhooks-section? "page")
                :on-click on-nav-webhooks} (tr "labels.webhooks")]])
        [:li
         [:a {:class (stl/css-case :dashboard-header-link true
                                   :active settings-section?)
+             :href (section-href :dashboard-settings)
+             :aria-current (when settings-section? "page")
              :on-click on-nav-settings} (tr "labels.settings")]]]]
      [:div {:class (stl/css :dashboard-buttons)}
       (when (and is-admin?
@@ -665,7 +684,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (mf/defc invitation-role-selector*
-  [{:keys [role status on-change]}]
+  [{:keys [role status on-change can-invite]}]
   (let [show?   (mf/use-state false)
         label   (cond
                   (= role :owner)  (tr "labels.owner")
@@ -686,7 +705,7 @@
              (on-change role event))))]
 
     [:*
-     (if (= status :pending)
+     (if (and ^boolean can-invite (= status :pending))
        [:button {:class (stl/css :rol-selector :has-priv)
                  :type "button"
                  :aria-haspopup "listbox"
@@ -714,15 +733,17 @@
         (tr "labels.viewer")]]]]))
 
 (defn invitation-link-copyable?
-  "The link of an owner invitation can only be copied by the team owner: an
-  admin cannot create nor promote an owner invitation, so the backend does
-  not mint its token for them."
-  [is-owner? role]
-  (or (not= :owner role) is-owner?))
+  "The link of an invitation invites as much as sending it, so it needs the
+  organization invite policy (`can-invite?`). The link of an owner invitation
+  can only be copied by the team owner: an admin cannot create nor promote an
+  owner invitation, so the backend does not mint its token for them."
+  [can-invite? is-owner? role]
+  (and can-invite?
+       (or (not= :owner role) is-owner?)))
 
 (mf/defc invitation-actions*
   {::mf/private true}
-  [{:keys [invitation team-id is-owner?]}]
+  [{:keys [invitation team-id is-owner? can-invite]}]
   (let [email    (:email invitation)
         copied*  (mf/use-state false)
         copied?  (deref copied*)
@@ -768,7 +789,7 @@
               (-> (dtm/copy-invitation-link params)
                   (with-meta {::ev/origin :team}))))))]
 
-    (when (invitation-link-copyable? is-owner? (:role invitation))
+    (when (invitation-link-copyable? can-invite is-owner? (:role invitation))
       [:> icon-button* {:variant "ghost"
                         :aria-label (tr "labels.copy-invitation-link")
                         :on-click on-copy
@@ -777,7 +798,7 @@
 (mf/defc invitation-row*
   {::mf/wrap [mf/memo]
    ::mf/private true}
-  [{:keys [invitation team-id selected on-select-change is-owner?]}]
+  [{:keys [invitation team-id selected on-select-change is-owner? can-invite]}]
 
   (let [expired? (:expired invitation)
         email    (:email invitation)
@@ -811,24 +832,29 @@
 
     [:div {:class (stl/css :table-row :table-row-invitations)}
      [:div {:class (stl/css :table-field :field-email)}
-      [:div {:class (stl/css :input-wrapper)}
-       [:label
-        [:span {:class (stl/css-case :input-checkbox true
-                                     :global/checked (is-selected? email))}
-         deprecated-icon/status-tick]
+      ;; Selecting an invitation only leads to resending or deleting it, and
+      ;; both need the organization invite policy.
+      (if ^boolean can-invite
+        [:div {:class (stl/css :input-wrapper)}
+         [:label
+          [:span {:class (stl/css-case :input-checkbox true
+                                       :global/checked (is-selected? email))}
+           deprecated-icon/status-tick]
 
-        [:input {:type "checkbox"
-                 :id (dm/str "email-" email)
-                 :data-attr email
-                 :value email
-                 :checked (is-selected? email)
-                 :on-change on-change}]
-        email]]]
+          [:input {:type "checkbox"
+                   :id (dm/str "email-" email)
+                   :data-attr email
+                   :value email
+                   :checked (is-selected? email)
+                   :on-change on-change}]
+          email]]
+        [:div email])]
 
      [:div {:class (stl/css :table-field :field-roles)}
       [:> invitation-role-selector*
        {:role role
         :status status
+        :can-invite can-invite
         :on-change on-change-role}]]
 
      [:div {:class (stl/css :table-field :field-status)}
@@ -838,11 +864,12 @@
       [:> invitation-actions*
        {:invitation invitation
         :team-id team-id
-        :is-owner? is-owner?}]]]))
+        :is-owner? is-owner?
+        :can-invite can-invite}]]]))
 
 (mf/defc empty-invitation-table*
   {::mf/private true}
-  [{:keys [team]}]
+  [{:keys [team can-invite]}]
   (let
    [route                (mf/deref refs/route)
     invite-email         (-> route :query-params :invite-email)
@@ -855,11 +882,22 @@
     [:div {:class (stl/css :empty-invitations)}
      [:div (tr "labels.no-invitations")]
      [:div (tr "labels.no-invitations-gather-people")]
-     [:> button* {:variant "primary"
-                  :class (stl/css :btn-empty-invitations)
-                  :on-click on-invite-member
-                  :data-testid "invite-member"}
-      (tr "dashboard.invite-profile")]]))
+     ;; Same as the header button: disabled with its reason when the
+     ;; organization invite policy leaves the profile out.
+     (let [invite-button (mf/html
+                          [:> button* {:variant "primary"
+                                       :class (stl/css :btn-empty-invitations)
+                                       :on-click on-invite-member
+                                       :disabled (not can-invite)
+                                       :data-testid "invite-member"}
+                           (tr "dashboard.invite-profile")])]
+       (if ^boolean can-invite
+         invite-button
+         [:> tooltip* {:content (tr "dashboard.invite-profile-disabled")
+                       :id "empty-invite-member-disabled-tooltip"
+                       :class (stl/css :empty-invitations-tooltip)
+                       :tab-index 0}
+          invite-button]))]))
 
 (mf/defc invitation-modal
   {::mf/register modal/components
@@ -1224,18 +1262,17 @@
          (tr "dashboard.invitations.no-permission")]]
 
        [:*
-        (when (> (count @selected) 0)
+        ;; Managing the pending invitations (role, resend, delete, link)
+        ;; needs the organization invite policy; the list only needs admin.
+        (when (and can-invite? (> (count @selected) 0))
           [:div {:class (stl/css :invitations-actions)}
            [:div
             (tr "team.invitations-selected" (i18n/c (count @selected)))]
-           ;; Resending goes through the invite command, so it needs the
-           ;; organization invite policy; deleting only needs team admin.
-           (when can-invite?
-             [:div
-              [:> button* {:variant "secondary"
-                           :type "button"
-                           :on-click on-resend}
-               (tr "labels.resend-invitation")]])
+           [:div
+            [:> button* {:variant "secondary"
+                         :type "button"
+                         :on-click on-resend}
+             (tr "labels.resend-invitation")]]
            [:> icon-button* {:on-click on-delete
                              :variant "destructive"
                              :aria-label (tr "labels.delete-invitation")
@@ -1261,13 +1298,14 @@
                                     "arrow-down")
                             :on-click on-order-by-status}]]]
         (if (empty? @invitations)
-          [:> empty-invitation-table* {:team team}]
+          [:> empty-invitation-table* {:team team :can-invite can-invite?}]
           [:div {:class (stl/css :table-rows)}
            (for [invitation @invitations]
              [:> invitation-row*
               {:key (:email invitation)
                :invitation invitation
                :is-owner? is-owner?
+               :can-invite can-invite?
                :team-id team-id
                :selected selected
                :on-select-change on-select-change}])])])]))
@@ -1782,4 +1820,5 @@
           (tr "labels.num-of-files" (i18n/c (:files stats)))]]]
 
        (when (contains? cfg/flags :subscriptions)
-         [:> team* {:is-owner (:is-owner permissions) :team team}])]]]))
+         [:> team* {:is-owner (:is-owner permissions)
+                    :team team}])]]]))

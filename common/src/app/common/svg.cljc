@@ -10,6 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.common.uuid :as uuid]
@@ -673,15 +674,32 @@
               {}
               attrs)))
 
+(defn- drop-non-scalar-values
+  "Removes the entries whose value is not a string, a number or a
+  boolean: the stored schema admits nothing else."
+  [attrs]
+  (reduce-kv (fn [res k v]
+               (if (or (string? v) (number? v) (boolean? v))
+                 res
+                 (dissoc res k)))
+             attrs
+             attrs))
+
 (defn attrs->kebab-props
   "Like `attrs->props` (same whitelist, trim and `:style` parsing) but
   with kebab-case keys, the stored convention for `:svg-attrs` and
-  `:svg-defs` node attrs. Kebab is a fixed point: running it twice
-  returns the same map."
+  `:svg-defs` node attrs. Values that are not scalars, at the top level
+  or inside `:style`, are dropped: files written by old versions hold
+  maps there, which no renderer can use and the closed schema rejects.
+  Kebab is a fixed point: running it twice returns the same map."
   [attrs]
-  (-> attrs
-      (attrs->props)
-      (d/kebab-keys)))
+  (let [props (attrs->props attrs)
+        style (some-> (:style props) (drop-non-scalar-values) (not-empty))]
+    (-> props
+        (dissoc :style)
+        (drop-non-scalar-values)
+        (cond-> (some? style) (assoc :style style))
+        (d/kebab-keys))))
 
 (defn- normalize-node-tree
   "Walks a svg node tree applying `attrs-fn` to every `:attrs` map. Tags
@@ -710,6 +728,30 @@
   reads keys outside the whitelist (e.g. `:stroke-style`)."
   [node]
   (normalize-node-tree d/kebab-keys node))
+
+(defn normalize-shape
+  "Brings the svg data of `shape` to the stored convention: `:svg-attrs`
+  and `:svg-defs` through the whitelist + kebab transform, `:svg-viewbox`
+  as a rect, `:svg-transform` as a matrix and svg-raw `:content` with
+  kebab keys. Shapes written by versions before 2.20 hold camelCase keys
+  that the closed schema rejects. Already normalized shapes pass through
+  unchanged."
+  [shape]
+  (-> shape
+      (d/update-when :svg-attrs
+                     (fn [attrs]
+                       (if (map? attrs)
+                         (attrs->kebab-props attrs)
+                         attrs)))
+      (d/update-when :svg-defs
+                     (fn [defs]
+                       (if (map? defs)
+                         (d/mapm (fn [_ node] (normalize-def-node node)) defs)
+                         defs)))
+      (d/update-when :svg-viewbox grc/make-rect)
+      (d/update-when :svg-transform gmt/coerce)
+      (cond-> (= :svg-raw (:type shape))
+        (d/update-when :content kebabize-content-node))))
 
 (defn update-attr-ids
   "Replaces the ids inside a property"

@@ -7,6 +7,8 @@ set -euo pipefail
 #
 # Uses git name-rev to find the nearest ref (branch/tag) that is an ancestor of
 # HEAD, falling back to a graph walk if name-rev returns the current branch.
+# The ref description is normalized to a local branch name and checked
+# against the local branches before it is printed.
 #
 # Pure local — no remote, no SSH, no network. Works even when the current
 # branch shares its tip commit with the target (not yet diverged).
@@ -17,7 +19,8 @@ set -euo pipefail
 #
 # Exit status:
 #   0 — target found
-#   1 — no target found (orphan commit, no other branches)
+#   1 — no target found (orphan commit, no other branches), or the detected
+#       ref is not a local branch (pass --base explicitly)
 
 verbose=false
 
@@ -39,9 +42,30 @@ done
 
 current=$(git rev-parse --abbrev-ref HEAD)
 
+# git name-rev describes refs, not branch names: "remotes/origin/staging~1",
+# "develop^2~1" and "tags/v2.0" are all possible outputs.
+normalize_ref() {
+  local name="$1"
+  name=${name%%[~^]*}
+  case "$name" in
+    refs/heads/*) name=${name#refs/heads/} ;;
+    heads/*)      name=${name#heads/} ;;
+    remotes/*)
+      name=${name#remotes/}
+      if [[ "$name" == */* ]]; then
+        name=${name#*/}
+      else
+        name=""
+      fi
+      ;;
+    tags/*) name=${name#tags/} ;;
+  esac
+  printf '%s' "$name"
+}
+
 # Use name-rev to find the nearest ref — it has smart tie-breaking
-raw=$(git name-rev --name-only HEAD 2>/dev/null)
-target=${raw%%~[0-9]*}  # strip ~N distance suffix
+raw=$(git name-rev --name-only HEAD 2>/dev/null || true)
+target=$(normalize_ref "$raw")
 
 # If name-rev returned the current branch itself, walk backwards
 if [ "$target" = "$current" ] || [ -z "$target" ]; then
@@ -59,6 +83,16 @@ if [ "$target" = "$current" ] || [ -z "$target" ]; then
     echo "error: unable to determine target branch" >&2
     exit 1
   fi
+fi
+
+target=$(normalize_ref "$target")
+if [ -z "$target" ]; then
+  echo "error: unable to determine target branch" >&2
+  exit 1
+fi
+if ! git show-ref --verify --quiet "refs/heads/$target"; then
+  echo "error: detected base '$target' is not a local branch; pass --base explicitly" >&2
+  exit 1
 fi
 
 if [ "$verbose" = true ]; then

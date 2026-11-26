@@ -14,6 +14,7 @@
    [app.common.geom.rect :as gpr]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
+   [app.main.constants :as mconst]
    [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.viewport-wasm :as dwvw]
@@ -61,7 +62,10 @@
 
                 (or (> (:width srect) width)
                     (> (:height srect) height))
-                (let [srect (gal/adjust-to-viewport size srect {:padding 40 :min-zoom 0.01})
+                (let [srect (gal/adjust-to-viewport size srect
+                                                    {:padding 40
+                                                     :min-zoom 0.01
+                                                     :min-screen-padding mconst/viewport-fit-min-padding})
                       zoom  (/ (:width size) (:width srect))]
 
                   (-> local

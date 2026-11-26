@@ -44,4 +44,19 @@ async (page) => {
 
 ## Coordinate Planning
 
-For reliably finding pixel positions of objects, see `mem:frontend/penpot-to-browser-coords`.
+Playwright mouse coordinates and `getBoundingClientRect()` use viewport CSS pixels, not screen coordinates or device pixels. Read the viewport controls' `viewBox` and rectangle at the time of the gesture; pan, zoom and panels change the mapping. Ruler labels can be frame-relative and are not a substitute for the viewBox.
+
+For a point in Penpot coordinates, compute the browser coordinates inside `page.evaluate()` so the helper does not depend on functions in the Playwright process:
+
+```javascript
+const { x, y } = await page.evaluate(([px, py]) => {
+  const svg = document.querySelector("svg.viewport-controls");
+  const [vx, vy, vw] = svg.getAttribute("viewBox").split(/\s+/).map(Number);
+  const rect = svg.getBoundingClientRect();
+  const zoom = rect.width / vw;
+  return { x: rect.left + (px - vx) * zoom, y: rect.top + (py - vy) * zoom };
+}, [penpotX, penpotY]);
+await page.mouse.click(x, y);
+```
+
+Check that `viewBox` height times the computed zoom approximately matches the rectangle height. Device pixel ratio affects the canvas backing pixels, not this CSS-pixel conversion. For state inspection use `mem:frontend/cljs-repl`.

@@ -57,7 +57,9 @@
 
 (def ^:private schema:pool-options
   [:map {:title "pool-options"}
-   [::connect-timeout {:optional true} ::sm/int]
+   [::connection-timeout {:optional true} ::sm/int]
+   [::idle-timeout {:optional true} ::sm/int]
+   [::max-lifetime {:optional true} ::sm/int]
    [::max-size {:optional true} ::sm/int]
    [::min-size {:optional true} ::sm/int]
    [::name {:optional true} :keyword]
@@ -66,10 +68,22 @@
    [::username {:optional true} :string]
    [::validation-timeout {:optional true} ::sm/int]
    [::read-only {:optional true} ::sm/boolean]
+   ;; pgjdbc prepared statement cache. Absent keys mean the driver
+   ;; defaults; the size is in bytes and is converted to whole MiB for
+   ;; the driver (see create-datasource-config). The threshold is the
+   ;; executions before a statement is server-prepared: 0 stops
+   ;; server-side prepared statements (the cache of parsed queries stays
+   ;; in use) and -1 prepares from the first execution. Any other
+   ;; negative is a typo the driver would clamp to -1, so the schema
+   ;; rejects it.
+   [::prepared-statement-cache-threshold {:optional true} [::sm/int {:min -1}]]
+   [::prepared-statement-cache-queries {:optional true} [::sm/int {:min 0}]]
+   [::prepared-statement-cache-size {:optional true} [::sm/int {:min 0}]]
    [::mtx/metrics ::mtx/metrics]])
 
 (def defaults
   {::name :main
+   ::min-size 0
    ::max-size 60
    ::connection-timeout 30000
    ::validation-timeout 10000
@@ -92,9 +106,11 @@
               :read-only read-only
               :credentials (and (contains? cfg ::username)
                                 (contains? cfg ::password))
-              :min-size (or (::min-size cfg)
-                            (::max-size cfg))
-              :max-size (::max-size cfg))
+              :min-size (::min-size cfg)
+              :max-size (::max-size cfg)
+              :prepared-statement-cache-threshold (::prepared-statement-cache-threshold cfg)
+              :prepared-statement-cache-queries (::prepared-statement-cache-queries cfg)
+              :prepared-statement-cache-size (::prepared-statement-cache-size cfg))
       (create-pool cfg))))
 
 (defmethod ig/halt-key! ::pool
@@ -108,15 +124,27 @@
 
 (def initsql
   (str "SET statement_timeout = 300000;\n"
-       "SET idle_in_transaction_session_timeout = 300000;"))
+       "SET idle_in_transaction_session_timeout = 300000;\n"
+       ;; lets the planner resolve a join between two partitioned tables
+       ;; pairwise, when both are partitioned with the same bounds
+       "SET enable_partitionwise_join = on;"))
+
+;; pgjdbc reads dataSourceProperties through Properties.getProperty, which
+;; drops non-String values silently, so everything is passed as a string.
+;; preparedStatementCacheSizeMiB only accepts a whole-MiB integer: the
+;; configured size (bytes) is converted up, so any positive value keeps the
+;; cache enabled and 0 disables the cache. A query parameter of the same name
+;; in the URI wins over these properties: pgjdbc ignores the Properties value
+;; when the URL carries it.
+(defn- bytes->mib-ceil
+  [bytes]
+  (Math/ceilDiv (long bytes) (* 1024 1024)))
 
 (defn- create-datasource-config
   [{:keys [::uri] :as cfg}]
 
   ;; (app.common.pprint/pprint cfg)
-  (let [config   (HikariConfig.)
-        max-size (::max-size cfg)
-        min-size (or (::min-size cfg) max-size)]
+  (let [config (HikariConfig.)]
     (doto config
       (.setJdbcUrl           (str "jdbc:" uri))
       (.setPoolName          (d/name (::name cfg)))
@@ -126,10 +154,17 @@
       (.setValidationTimeout (::validation-timeout cfg))
       (.setIdleTimeout       (::idle-timeout cfg))
       (.setMaxLifetime       (::max-lifetime cfg))
-      (.setMinimumIdle       min-size)
-      (.setMaximumPoolSize   max-size)
+      (.setMinimumIdle       (::min-size cfg))
+      (.setMaximumPoolSize   (::max-size cfg))
       (.setConnectionInitSql initsql)
       (.setInitializationFailTimeout -1))
+
+    (some->> (::prepared-statement-cache-threshold cfg) (str)
+             (.addDataSourceProperty config "prepareThreshold"))
+    (some->> (::prepared-statement-cache-queries cfg) (str)
+             (.addDataSourceProperty config "preparedStatementCacheQueries"))
+    (some->> (::prepared-statement-cache-size cfg) (bytes->mib-ceil) (str)
+             (.addDataSourceProperty config "preparedStatementCacheSizeMiB"))
 
     (->> (mtx/get-registry (::mtx/metrics cfg))
          (PrometheusMetricsTrackerFactory.)
@@ -648,6 +683,19 @@
          (finally
            (reset! context [])))))))
 
+(defn own-transaction
+  "A cfg for a write that must own its transaction: drops `::db/conn`
+  so the next `tx-run!` opens its own transaction on its own
+  connection, and `::db/read-only` so that transaction is writable
+  even when the caller runs read-only (as the storage scheduler does
+  for its plan cursor). It never joins the transaction of whoever
+  called it; because that transaction joins no other, it owns its
+  after-commit context too, so the write and its metric commit or
+  vanish together and a rollback of the surrounding work can undo
+  neither."
+  [cfg]
+  (dissoc cfg ::conn ::read-only))
+
 (defn tx-run!
   "Run a function in a transaction."
   [system f & params]
@@ -784,6 +832,52 @@
   (let [n   (xact-check-param n)
         row (exec-one! conn ["select pg_try_advisory_xact_lock(?::bigint) as lock" n])]
     (:lock row)))
+
+(defn- check-lock-key
+  "A two-key advisory lock takes int4 keys; anything else (a uuid, a value
+  out of range) would reach the database as an opaque cast error."
+  [n]
+  (if (and (int? n) (<= Integer/MIN_VALUE (long n) Integer/MAX_VALUE))
+    n
+    (throw (IllegalArgumentException. "int4 key required"))))
+
+(defn session-try-lock
+  "Take a session-level advisory lock of two keys without waiting.
+
+  `classid` is the namespace of the lock and `objid` the key inside it.
+  This two-key form lives in its own lock space, apart from the one-key
+  `pg_advisory_lock(bigint)` of `xact-lock!` (the file locks and the setup
+  one): PostgreSQL keys a lock by `objsubid` (1 for one key, 2 for two), so
+  the same numbers in the two forms do not conflict. That is how a
+  subsystem takes a namespace of its own without touching the others.
+
+  Unlike the `xact-*` variants the lock survives the transaction: it lives
+  until `session-unlock` releases it, until the connection is really closed
+  or until the session ends. A pooled connection returned with a lock held
+  keeps it, so the caller must release it; `session-unlock-all` clears
+  whatever a borrowed connection carries."
+  [conn classid objid]
+  (let [row (exec-one! conn ["select pg_try_advisory_lock(?::int, ?::int) as lock"
+                             (check-lock-key classid)
+                             (check-lock-key objid)])]
+    (:lock row)))
+
+(defn session-unlock
+  "Release one two-key session-level advisory lock held by this connection.
+  Answers false when this connection did not hold that lock."
+  [conn classid objid]
+  (let [row (exec-one! conn ["select pg_advisory_unlock(?::int, ?::int) as lock"
+                             (check-lock-key classid)
+                             (check-lock-key objid)])]
+    (:lock row)))
+
+(defn session-unlock-all
+  "Release every session-level advisory lock held by this connection.
+  Used before taking one on a borrowed connection, so a lock some earlier
+  borrower failed to release cannot outlive it."
+  [conn]
+  (exec-one! conn ["select pg_advisory_unlock_all()"])
+  true)
 
 (defn sql-exception?
   [cause]

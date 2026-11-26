@@ -77,8 +77,8 @@
                  component (.component copy)]
              (t/is (true? (get-in @store [:files (:id file) :data :components (thi/id :restorable) :deleted])))
              (.restore component)
-             (await (async/wait-for #(not (get-in @store [:files (:id file) :data :components (thi/id :restorable) :deleted]))
-                                    "component restored"))
+             (await (async/wait-for-store store #(not (get-in @store [:files (:id file) :data :components (thi/id :restorable) :deleted]))
+                                          "component restored"))
              (.restore component)
              (await (async/settle))
              (t/is (= (thi/id :main)
@@ -135,7 +135,7 @@
 (def ^:private component-mutations
   [["remove" #(.remove %)]
    ["duplicate" #(.duplicate %)]
-   ["annotation" #(set! (.-annotation %) "Usage")]])
+   ["annotation" (fn [^js component] (set! (.-annotation component) "Usage"))]])
 
 (t/deftest ^:async component-mutations-check-library-write-permission
   (let [file   (file-with-component)
@@ -202,6 +202,46 @@
            (t/is (thrown-with-msg? js/Error (re-pattern denied) (.updateMain copy)))
            (await (async/settle))
            (t/is (empty? @events))))))))
+
+(t/deftest ^:async main-instance-of-a-deleted-component-is-null
+  (let [file  (file-with-deleted-component)
+        store (ths/setup-store file {:renderer :svg})]
+    (await
+     (mock/with-mocks*
+       {st/state                  store
+        shape/lib-component-proxy library/lib-component-proxy}
+       (let [copy      (shape/shape-proxy plugin-id (:id file) (thi/id :main-page) (thi/id :copy))
+             ^js component (.component copy)]
+         (t/is (some? component))
+         (t/is (nil? (.mainInstance component))))))))
+
+(t/deftest ^:async component-root-of-a-copy-on-another-page-than-its-main
+  (let [file  (-> (cthf/sample-file :file :page-label :main-page)
+                  (cths/add-sample-shape :main :type :frame)
+                  (cths/add-sample-shape :child :parent-label :main)
+                  (cthc/make-component :component :main)
+                  (cthf/add-sample-page :other-page)
+                  (cthc/instantiate-component :component :copy :children-labels [:copy-child]))
+        store (ths/setup-store file {:renderer :svg})]
+    (await
+     (mock/with-mocks*
+       {st/state store}
+       (let [copy-child (shape/shape-proxy plugin-id (:id file) (thi/id :other-page) (thi/id :copy-child))
+             root       (.componentRoot copy-child)]
+         (t/is (= (str (thi/id :copy)) (.-id root)))
+         (t/is (= (str (thi/id :copy)) (.-id (.componentHead copy-child)))))))))
+
+(t/deftest ^:async component-of-a-copy-whose-library-is-missing-is-null
+  (let [file  (-> (file-with-component)
+                  (cths/update-shape :copy :component-file (uuid/next)))
+        store (ths/setup-store file {:renderer :svg})]
+    (await
+     (mock/with-mocks*
+       {st/state                  store
+        shape/lib-component-proxy library/lib-component-proxy}
+       (let [copy (shape/shape-proxy plugin-id (:id file) (thi/id :main-page) (thi/id :copy))]
+         (t/is (nil? (.component copy)))
+         (t/is (= (str (thi/id :copy)) (.-id (.componentRoot copy)))))))))
 
 (t/deftest library-asset-proxies-expose-library-id
   (let [file-id (random-uuid)
@@ -325,6 +365,17 @@
         (t/is (= 1 (count @errors)))
         (t/is (= [plugin-id :removeProperty "Plugin doesn't have 'library:write' permission"]
                  (first @errors)))))))
+
+(t/deftest variant-properties-keep-order-past-eight
+  (let [names      (mapv #(str "Property " %) (range 1 12))
+        values     (mapv #(str "Value " %) (range 1 12))
+        components (mapv (fn [value]
+                           {:variant-properties (mapv #(hash-map :name % :value value) names)})
+                         values)]
+    (with-redefs [library/get-variant-components (constantly components)]
+      (let [proxy (library/variant-proxy plugin-id (uuid/next) (uuid/next))]
+        (t/is (= names (vec (.-properties proxy))))
+        (t/is (= values (vec (.currentValues proxy "Property 9"))))))))
 
 (t/deftest variant-rename-property-checks-permission
   (let [plugin-id "test-plugin"

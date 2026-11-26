@@ -8,6 +8,7 @@
   (:require
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.main.data.changes :as dch]
    [app.main.data.notifications :as ntf]
    [app.main.data.persistence :as dps]
@@ -68,6 +69,57 @@
   (t/is (not (versions/repair-snapshot? {:label "internal/snapshot/20" :created-by "system"})))
   (t/is (not (versions/repair-snapshot? {:label "My version" :created-by "user"})))
   (t/is (not (versions/repair-snapshot? {:created-by "user"}))))
+
+(defn- stored-days
+  [flags team profile]
+  (with-redefs [cf/flags flags]
+    (#'versions-ui/get-versions-stored-days team profile)))
+
+(def ^:private admin-console-flags
+  (conj cf/flags :admin-console))
+
+(def ^:private no-admin-console-flags
+  (disj cf/flags :admin-console))
+
+(t/deftest an-active-nitrate-license-keeps-ninety-days
+  (t/is (= 90 (stored-days admin-console-flags
+                           {:subscription {:type "unlimited" :status "active"}}
+                           {:subscription {:type "nitrate" :status "active"}}))))
+
+(t/deftest an-active-enterprise-license-keeps-ninety-days
+  (t/is (= 90 (stored-days admin-console-flags
+                           {:subscription {:type "unlimited" :status "active"}}
+                           {:subscription {:type "enterprise" :status "active"}}))))
+
+(t/deftest a-canceled-license-leaves-the-team-plan-in-charge
+  (t/is (= 30 (stored-days admin-console-flags
+                           {:subscription {:type "unlimited" :status "active"}}
+                           {:subscription {:type "nitrate" :status "canceled"}}))))
+
+(t/deftest a-license-without-the-admin-console-does-not-count
+  (t/is (= 30 (stored-days no-admin-console-flags
+                           {:subscription {:type "unlimited" :status "active"}}
+                           {:subscription {:type "nitrate" :status "active"}}))))
+
+(t/deftest an-unlimited-team-keeps-thirty-days
+  (t/is (= 30 (stored-days no-admin-console-flags
+                           {:subscription {:type "unlimited" :status "active"}}
+                           {:subscription {:type "professional" :status "active"}}))))
+
+(t/deftest an-enterprise-team-keeps-ninety-days
+  (t/is (= 90 (stored-days no-admin-console-flags
+                           {:subscription {:type "enterprise" :status "active"}}
+                           {:subscription {:type "professional" :status "active"}}))))
+
+(t/deftest a-professional-team-keeps-seven-days
+  (t/is (= 7 (stored-days no-admin-console-flags
+                          {:subscription {:type "professional" :status "active"}}
+                          {:subscription {:type "professional" :status "active"}}))))
+
+(t/deftest a-team-without-a-plan-keeps-seven-days
+  (t/is (= 7 (stored-days no-admin-console-flags
+                          {:subscription {:type nil :status "active"}}
+                          {:subscription {:type "professional" :status "active"}}))))
 
 ;; Scenario: on one day the backend kept two autosaves and the copy from
 ;; before a repair. Proves: the history shows the repair copy as its own
@@ -246,3 +298,74 @@
         (t/is (nil? (get-in result [:workspace-versions :backup]))))
       (finally
         (rx/dispose! sub)))))
+
+;; The snapshot RPC commands require the `file-id` (they use it to prune the
+;; partitions of `file_change`), so every workspace version event sends the
+;; one of the file that is open.
+
+(defn- version-event-request
+  "Run a workspace version event with `file-id` open and `version-id` in the
+  history, and return the `[command params]` of the RPC request it sends."
+  [file-id version-id event]
+  (let [requests (atom [])
+        state    {:current-file-id file-id
+                  :workspace-versions {:data [{:id version-id
+                                               :created-at (ct/now)
+                                               :created-by "system"}]}}]
+    (mock/with-mocks*
+      {rp/cmd! (mock/stub (fn [cmd params]
+                            (swap! requests conj [cmd params])
+                            (rx/of true)))}
+      (->> (ptk/watch event state (rx/empty))
+           (rx/subs! (fn [_])))
+      (first @requests))))
+
+(t/deftest ^:async renaming-a-version-sends-the-current-file-id
+  (let [file-id      (uuid/next)
+        version-id   (uuid/next)
+        [cmd params] (await (version-event-request
+                             file-id version-id
+                             (versions/rename-version version-id "name")))]
+    (t/is (= :update-file-snapshot cmd))
+    (t/is (= version-id (:id params)))
+    (t/is (= file-id (:file-id params)))))
+
+(t/deftest ^:async deleting-a-version-sends-the-current-file-id
+  (let [file-id      (uuid/next)
+        version-id   (uuid/next)
+        [cmd params] (await (version-event-request
+                             file-id version-id
+                             (versions/delete-version version-id)))]
+    (t/is (= :delete-file-snapshot cmd))
+    (t/is (= version-id (:id params)))
+    (t/is (= file-id (:file-id params)))))
+
+(t/deftest ^:async locking-a-version-sends-the-current-file-id
+  (let [file-id      (uuid/next)
+        version-id   (uuid/next)
+        [cmd params] (await (version-event-request
+                             file-id version-id
+                             (versions/lock-version version-id)))]
+    (t/is (= :lock-file-snapshot cmd))
+    (t/is (= version-id (:id params)))
+    (t/is (= file-id (:file-id params)))))
+
+(t/deftest ^:async unlocking-a-version-sends-the-current-file-id
+  (let [file-id      (uuid/next)
+        version-id   (uuid/next)
+        [cmd params] (await (version-event-request
+                             file-id version-id
+                             (versions/unlock-version version-id)))]
+    (t/is (= :unlock-file-snapshot cmd))
+    (t/is (= version-id (:id params)))
+    (t/is (= file-id (:file-id params)))))
+
+(t/deftest ^:async pinning-a-version-sends-the-current-file-id
+  (let [file-id      (uuid/next)
+        version-id   (uuid/next)
+        [cmd params] (await (version-event-request
+                             file-id version-id
+                             (versions/pin-version version-id)))]
+    (t/is (= :update-file-snapshot cmd))
+    (t/is (= version-id (:id params)))
+    (t/is (= file-id (:file-id params)))))

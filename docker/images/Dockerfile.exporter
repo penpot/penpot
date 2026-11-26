@@ -1,4 +1,4 @@
-FROM dhi.io/node:24.22.2-debian13-dev@sha256:8a0d16bac79b130bcc81b372fe3481733fc6089b3ff613ad1f9c6a45e63d0675
+FROM dhi.io/node:24.22.3-debian13-dev@sha256:5b414efd73a6f62652d47c37af11840e806ff64e52ed12cac93556c12d0d14ad
 LABEL maintainer="Penpot <docker@penpot.app>"
 
 ENV LANG=en_US.UTF-8 \
@@ -17,6 +17,7 @@ RUN set -ex; \
       locales \
       ca-certificates \
       gzip \
+      tini \
     ; \
     apt-get clean; \
     rm -rf /var/lib/apt/lists/*; \
@@ -95,17 +96,17 @@ WORKDIR /opt/penpot/exporter
 # pnpm ships as a system binary (same tarball + SHA pin as
 # docker/devenv/Dockerfile); the generated ./setup expects it on PATH.
 # Corepack is gone from Node 25+, so nothing here may use it.
-ARG PNPM_VERSION=12.18.0
+ARG PNPM_VERSION=12.23.0
 RUN set -eux; \
     ARCH="$(dpkg --print-architecture)"; \
     case "${ARCH}" in \
        aarch64|arm64) \
          PNPM_ARCH='arm64'; \
-         PNPM_SHA256='700bd1aa4028465b80e62b7c5bec8455be60bbafaf53a3262a4ab8e2057712ac'; \
+         PNPM_SHA256='dd03f7616625ff8f13d952f641f0864a2300d73d0a751a682737615bd9f9a7a2'; \
          ;; \
        amd64|x86_64) \
          PNPM_ARCH='x64'; \
-         PNPM_SHA256='3726060e236c0db3e7124c0a5af123c840ba0cb76682149b63ea0baf290017c2'; \
+         PNPM_SHA256='b515e29f2ac1adc0fbe63173414a6682827baff24f17e7ad3476821bdef236ac'; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; \
@@ -126,4 +127,5 @@ RUN ./setup && chown -R penpot:penpot /opt/penpot/exporter
 
 USER penpot:penpot
 
+ENTRYPOINT ["/usr/bin/tini", "-s", "--"]
 CMD ["node", "app.js"]

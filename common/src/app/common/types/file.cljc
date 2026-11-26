@@ -95,7 +95,6 @@
 
 (def schema:file-metadata
   [:map {:title "Metadata"}
-   [:storage-ref-id {:optional true} ::sm/uuid]
    [:generated-by {:optional true} :string]
    [:referer {:optional true} :string]])
 
@@ -551,7 +550,7 @@
       (or (= slot-main slot-inst)
           (= (:id shape-main) slot-inst)))))
 
-(defn- find-next-related-swap-shape-id
+(defn find-next-related-swap-shape-id
   "Go up from the chain of references shapes that will eventually lead to the shape
    with swap-slot-id as id. Returns the next shape on the chain"
   [parent swap-slot-id libraries]
@@ -616,16 +615,28 @@
   ([file-data component]
    (load-component-objects file-data component (gpt/point 0 0)))
   ([file-data component delta]
-   (if (and component (empty? (:objects component))) ;; This operation may be called twice, e.g. in an idempotent change
+   ;; nil? not empty?: a missing-main soft-delete stores {}, which must
+   ;; still count as already loaded so render/library callers do not re-enter.
+   (if (and component (nil? (:objects component))) ;; This operation may be called twice, e.g. in an idempotent change
      (let [component-page (get-component-page file-data component)
            page-objects   (:objects component-page)
-           objects        (->> (cons (:main-instance-id component)
-                                     (cfh/get-children-ids page-objects (:main-instance-id component)))
-                               (map #(get page-objects %))
+           ids            (into []
+                                (cons (:main-instance-id component)
+                                      (cfh/get-children-ids page-objects (:main-instance-id component))))
+           ;; Skip ids already gone from the page. Calling gsh/move on nil
+           ;; builds {:selrect nil :points []} and index-by :id stores it
+           ;; under nil, which later fails duplicate-file schema checks.
+           shapes         (into [] (keep #(get page-objects %)) ids)
+           objects        (->> shapes
                                ;; when it is an undo of a cut-paste, we need to undo the movement
                                ;; of the shapes so we need to move them delta
                                (map #(gsh/move % delta))
                                (d/index-by :id))]
+       (when (not= (count shapes) (count ids))
+         (l/wrn :hint "skipping missing shapes when loading component objects"
+                :component-id (str (:id component))
+                :main-instance-id (str (:main-instance-id component))
+                :file-id (str (:id file-data))))
        (assoc component :objects objects))
      component)))
 
@@ -641,7 +652,9 @@
           (ctkl/mark-component-deleted component-id)))))
 
 (defn restore-component
-  "Recover a deleted component and all its shapes and put all this again in place."
+  "Restore a deleted component record, optionally updating its main instance page.
+  Remove the stored objects and, for a variant, take its variant id from the
+  existing main instance shape. This does not restore shapes to the page."
   [file-data component-id page-id]
   (let [update-page?       (not (nil? page-id))
         component          (ctkl/get-component file-data component-id true)
@@ -1272,9 +1285,52 @@
          container container]
     (if (= (:id current) target-ref)
       chain
-      (if-let [ref (find-ref-shape nil container libraries current :with-context? true)]
+      (if-let [ref (find-ref-shape nil container libraries current
+                                   :include-deleted? true
+                                   :with-context? true)]
         (recur (conj chain ref) ref (:container (meta ref)))
         chain))))
+
+(defn get-swap-level
+  "Returns the level (0 is the shape itself) of the first shape in the ref
+   chain of `shape` that has been swapped there, looking at most
+   `max-levels` levels up. Returns `max-levels` if none is found."
+  [container libraries shape max-levels]
+  (loop [level     0
+         current   shape
+         container container]
+    (cond
+      (>= level max-levels)
+      max-levels
+
+      (some? (ctk/get-swap-slot current))
+      level
+
+      :else
+      (if-let [ref (find-ref-shape nil container libraries current
+                                   :include-deleted? true
+                                   :with-context? true)]
+        (recur (inc level) ref (:container (meta ref)))
+        max-levels))))
+
+(defn find-outer-swap
+  "Returns [level slot] for the first shape in the ref chain of `shape`,
+   excluding itself, that has been swapped there (level 1 is the ref shape).
+   Returns nil if the chain ends, or reaches a shape under `base-id`
+   first, so swaps made inside `base-id` are not returned."
+  [container libraries shape base-id]
+  (loop [level     1
+         current   shape
+         container container]
+    (when-let [ref (find-ref-shape nil container libraries current
+                                   :include-deleted? true
+                                   :with-context? true)]
+      (let [ref-container (:container (meta ref))]
+        (when-not (->> (cfh/get-parents-with-self (:objects ref-container) (:id ref))
+                       (some #(= base-id (:id %))))
+          (if-let [slot (ctk/get-swap-slot ref)]
+            [level slot]
+            (recur (inc level) ref ref-container)))))))
 
 (defn get-touched-from-ref-chain-until-target-ref
   "Returns a set with the :touched of all the items on the shape
@@ -1286,3 +1342,46 @@
                        :always       (reduce set/union #{})
                        remove-slots? (remove ctk/swap-slot?))]
     (set/union (or (:touched shape) #{}) (set more-touched))))
+
+(defn get-outer-swaps
+  "Map from id to [level slot] (see `find-outer-swap`) of the nested heads
+   inside the copy `head`, with no swap slot of their own, that were swapped
+   in an outer main, above the main of `head`. This happens when `head` is
+   nested in another copy."
+  [container libraries head]
+  (let [base-id (:id (find-remote-shape container libraries head))]
+    (into {}
+          (keep (fn [shape]
+                  (when (and (ctk/instance-head? shape)
+                             (nil? (ctk/get-swap-slot shape)))
+                    (when-let [outer-swap (find-outer-swap container libraries shape base-id)]
+                      [(:id shape) outer-swap]))))
+          (cfh/get-children (:objects container) (:id head)))))
+
+(defn get-advanced-refs
+  "Map from id to the new :shape-ref and :touched of `shape` and its children,
+   advanced by `level-delta` levels in the ref chain. A nested head swapped in
+   one of the levels dropped advances only up to there, as the swap already
+   points it to the swapped-in main. The swap slots of the chain are removed
+   only for the head `head-id`. A shape whose ref does not change, or whose
+   chain cannot be resolved (e.g. a missing library), is left out."
+  [file container libraries head-id level-delta shape]
+  (let [level-delta (if (ctk/instance-head? shape)
+                      (get-swap-level container libraries shape level-delta)
+                      level-delta)]
+    (if (pos? level-delta)
+      (let [new-shape-ref (advance-shape-ref file container libraries shape level-delta
+                                             :include-deleted? true)
+            refs          (if (and (some? new-shape-ref)
+                                   (not= new-shape-ref (:shape-ref shape)))
+                            {(:id shape)
+                             {:shape-ref new-shape-ref
+                              :touched   (get-touched-from-ref-chain-until-target-ref
+                                          container libraries shape new-shape-ref
+                                          :remove-slots? (= (:id shape) head-id))}}
+                            {})]
+        (reduce #(merge %1 (get-advanced-refs file container libraries head-id level-delta
+                                              (get (:objects container) %2)))
+                refs
+                (:shapes shape)))
+      {})))

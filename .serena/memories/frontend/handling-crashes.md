@@ -1,38 +1,7 @@
-# Frontend Runtime Crash Handling
+# Frontend runtime crash recovery
 
-## Detect a runtime workspace crash
-
-Runtime crashes usually show the Internal Error page with title text "Something bad happened" and class `main_ui_static__download-link`. A common pattern is: changes go through via JS API / `execute_code`, then 1-2s later an `update-file` request reaches the backend and is rejected.
-
-After a crash, `execute_code` can become unusable because no plugin instances are connected and any data in its `storage` is lost, but `cljs_repl` usually still works.
-
-Check crash state:
-
-```clojure
-(some? (:exception @app.main.store/state))
-```
-
-It returns `true` when the Internal Error page is showing and `false` on a healthy workspace or after a successful reload.
-
-## Read the runtime cause
-
-The exception is stored at `(:exception @app.main.store/state)`. Useful keys:
-
-- `:type`, `:code`, `:status`: error class, e.g. `:validation`, `:referential-integrity`, `400`.
-- `:hint`, `:details`: human-readable explanation; `:details` often contains validation problems with `:shape-id`, `:page-id`, `:args`, etc.
-- `:uri`: API endpoint that returned the error, e.g. `update-file`.
-- `:app.main.errors/instance`: underlying JS Error object.
-- `:app.main.errors/trace`: JS stack trace string, usually response-handling path rather than the dispatch site that produced the bad change.
-
-```clojure
-(let [ex (:exception @app.main.store/state)]
-  (select-keys ex [:type :code :status :hint :details :uri]))
-```
-
-For backend validation errors (`:type :validation`), `:details` is usually the most informative field; it identifies the shape and invariant that failed.
-
-## Recover and continue testing
-
-Simplest path when `cljs_repl` is still live (usually true after a crash): reload via repl with `(.reload js/location)` — see `mem:frontend/cljs-repl`. Alternatively via Playwright: find the workspace tab (URL contains `/#/workspace`, title ends `- Penpot`), select it if not current, then `playwright:browser_navigate` to that same URL. Either way, confirm recovery with `(some? (:exception @app.main.store/state))` returning `false`.
-
-For backend-rejected changes, such as validation errors on `update-file`, changes are not persisted. Reload restores the pre-crash state, so it is safe to retry after fixing the cause.
+- For a store exception, inspect `(:exception @app.main.store/state)`: `:type`, `:code`, `:status`, `:hint`, `:details` and `:uri` can identify the failing operation. Validation details can include shape IDs and invariant failures.
+- A React error boundary can display an error without setting the store's `:exception`; a nil value alone does not prove the UI recovered. See `mem:frontend/error-reporting`.
+- If the live REPL is available, `(.reload js/location)` reloads the browser; otherwise select and reload the workspace tab. Confirm both that the workspace renders and that the store exception is clear. For runtime selection see `mem:frontend/cljs-repl`.
+- Before reloading, account for unsaved edits and partial saves: an earlier commit from a rejected batch can already be durable. Review `mem:frontend/workspace-persistence` before retrying edits.
+- In a workspace, `execute_code` waits for save and fails on errors or rollback detected during that wait, but later failures can still occur. Dashboard calls skip the wait when `penpotMgmt` identifies that context; workspace readiness, plugin availability and rollback notice persistence have separate limits: see `mem:mcp/save-and-rollback` and `mem:frontend/plugin-save-events`.

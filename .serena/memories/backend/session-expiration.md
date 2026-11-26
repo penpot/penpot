@@ -16,20 +16,26 @@
 - Tokens issued before `:exp` existed carry no `:exp`; they are still bounded by the GC's `created_at` condition and acquire `:exp` on their next renewal (self-healing, no operator action).
 - `wrap-authz` resolves the session by `(:sid claims)` only; there is no fallback to reading a session by the raw token string.
 - `middleware/wrap-auth` attaches `::http/auth-data` only for `kid=1`/`ver=1` tokens with a configured decoder; anything else stays unauthenticated.
-- Renewal fires when `modified-at` is older than 6h (`default-renewal-max-age`, not configurable). It `UPDATE`s the same row (`modified-at` only) and issues a new token that keeps the original `:exp`.
+- Cookie authentication renews a valid session when `modified-at` is older than 6h (`default-renewal-max-age`, not configurable): it updates the session and issues a new token with the original `:exp`. The bearer authentication branch does not renew the session or issue a renewal cookie.
 - `read-session` does not check age. Idle expiration is enforced on every request by `wrap-authz` (sessions past the idle window authenticate like missing ones and are never renewed); the GC only deletes the rows afterwards.
 
-## GC (`::tasks/gc`, cron `session-gc`, daily)
+## Revocation paths
+
+- Profile deletion → `session/invalidate-all` (all sessions of the profile die).
+- Authenticated password change → `session/invalidate-others` (every session except the caller's dies).
+- Password recovery (`recover-profile`, GHSA-3j2p-qr45-q365) → `session/invalidate-all` inside the same transaction as the password `UPDATE`; there is no current session to preserve, and a captured session must not survive recovery. Sibling of GHSA-mj9f-5cwq-7p3q (logout deletes the current session row).
+
+## GC (`::job-def`, job `:session-gc`, daily)
 
 - Deletes from `http_session_v2` where `modified_at < now - :auth-token-cookie-max-age` **or** `created_at < now - :auth-token-cookie-max-age-absolute`.
 - The two thresholds are separate task params (`::tasks/max-age`, `::tasks/max-age-absolute`) built in `ig/expand-key`; both must be durations.
+- The absolute max-age must be at least the idle max-age; `ig/assert-key` enforces this even when Clojure assertions are disabled. The job has no business params; its thresholds come from the job definition config.
 - Do not collapse the two conditions: `modified_at` alone never collects active sessions; `created_at` alone logs out active users at the idle window.
 
 ## Related lifetimes
 
 - Organization SSO entries in session `:props` (`:sso {org-id exp}`) last 4h, hardcoded in `app.auth.oidc`.
 - Access tokens (`app.rpc.commands.access-token`) have a user-chosen `:expires-at` (Never/30/60/90/180d), independent from HTTP sessions.
-- Cookie `SameSite`/`secure` depend on `:cors`, `:strict-session-cookies`, `:secure-session-cookies`; `parse-flags` auto-adds `:disable-secure-session-cookies` for non-localhost HTTP `public-uri`.
 - Without `PENPOT_SECRET_KEY`, derived subsystem keys change on restart and all sessions/invitations are invalidated.
 - Read-only DB pool: sessions fall back to `inmemory-manager`, lost on restart, no GC.
-- HTTP middleware and cookie/header precedence details: `mem:backend/subtleties`.
+- HTTP middleware and cookie/header precedence details: `mem:backend/http-rpc`.

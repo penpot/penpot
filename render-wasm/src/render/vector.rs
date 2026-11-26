@@ -910,7 +910,7 @@ fn render_masked_children(
                 .bounds(&subtree_bounds)
                 .paint(&mask_paint),
         );
-        render_tree_inner(shared, canvas, mask_id, tree, scale, child_opts)?;
+        render_tree_inner(shared, canvas, &mask_id, tree, scale, child_opts)?;
         canvas.restore(); // mask layer
     }
 

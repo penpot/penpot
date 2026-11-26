@@ -15,18 +15,25 @@
    [app.common.types.token :as ctt]
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.tokens-status :as ctos]
+   [app.main.data.notifications :as ntf]
    [app.main.data.workspace.colors :as dc]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.data.workspace.wasm-text :as dwwt]
+   [app.main.store :as st]
+   [app.util.i18n :refer [tr]]
    [app.util.storage :as storage]
+   [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
    [cuerdas.core :as str]
+   [frontend-tests.helpers.async :as async]
+   [frontend-tests.helpers.mock :as mock]
    [frontend-tests.helpers.pages :as thp]
    [frontend-tests.helpers.state :as ths]
    [frontend-tests.helpers.wasm :as thw]
    [frontend-tests.tokens.helpers.state :as tohs]
-   [frontend-tests.tokens.helpers.tokens :as toht]))
+   [frontend-tests.tokens.helpers.tokens :as toht]
+   [potok.v2.core :as ptk]))
 
 (t/use-fixtures :each
   {:before (fn []
@@ -462,7 +469,7 @@
             events [(dwta/apply-token {:shape-ids [(:id rect-1)]
                                        :attributes #{:width :height}
                                        :token (toht/get-token file "sizing.sm")
-                                       :on-update-shape dwta/apply-dimensions-token})]]
+                                       :on-update-shape dwta/apply-sizing-token})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -1034,6 +1041,34 @@
                              :on-update-shape dwta/update-stroke-width})]
          step2)))))
 
+(t/deftest test-detach-tokens-by-attribute
+  (t/testing "detaching attributes removes whichever token they have, also one missing from the library"
+    (t/async
+      done
+      (let [file   (-> (setup-file-with-tokens)
+                       (ctht/apply-token-to-shape :rect-1 "radius.md" #{:r1 :r2 :r3 :r4} #{:r1 :r2 :r3 :r4} 8)
+                       (ctht/apply-token-to-shape :rect-2 "radius.lg" #{:r1} #{:r1} 16))
+            store  (ths/setup-store file)
+            events [(dwta/unapply-multiple-tokens {:attributes #{:r1 :r2}
+                                                   :shape-ids [(cthi/id :rect-1) (cthi/id :rect-2) (cthi/id :rect-3)]})]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file'   (ths/get-file-from-state new-state)
+                 rect-1' (cths/get-shape file' :rect-1)
+                 rect-2' (cths/get-shape file' :rect-2)]
+             (t/testing "removes the tokens from those attributes only"
+               (t/is (= {:r3 "radius.md" :r4 "radius.md"} (:applied-tokens rect-1')))
+               (t/is (empty? (:applied-tokens rect-2'))))
+
+             (t/testing "keeps the values the tokens had set"
+               (t/is (= 8 (:r1 rect-1')))
+               (t/is (= 16 (:r1 rect-2'))))
+
+             (t/testing "a shape without tokens stays as it is"
+               (t/is (= (:applied-tokens (cths/get-shape file :rect-3))
+                        (:applied-tokens (cths/get-shape file' :rect-3))))))))))))
+
 (t/deftest test-apply-shadow
   (t/testing "applies shadow token and updates the shapes with shadow"
     (t/async
@@ -1337,6 +1372,79 @@
                (t/is (pos? (thw/call-count :get-text-dimensions))))))
          debounce-text-stop)))))
 
+(defn- text-styles
+  "The styles of the first run of text in `shape`."
+  [shape]
+  (->> (txt/content->text+styles (:content shape))
+       (some (fn [[style text]]
+               (when (seq text)
+                 style)))))
+
+(defn- add-font-weight-token
+  [file token-name value]
+  (update-in file [:data :tokens-lib]
+             #(ctob/add-token % (cthi/id :set-a)
+                              (ctob/make-token {:name token-name
+                                                :value value
+                                                :type :font-weight}))))
+
+(defn- ^:async apply-font-weight-token
+  "Applies the font weight token to the text the way the token pill does,
+  and waits until the text has been measured again."
+  [store file token-name]
+  (let [resized (async/observe
+                 (->> (ptk/input-stream store)
+                      (rx/filter (ptk/type? ::dwwt/resize-wasm-text-debounce-commit))
+                      (rx/take 1)))]
+    (ptk/emit! store (dwta/apply-token {:shape-ids [(cthi/id :text-1)]
+                                        :attributes #{:font-weight}
+                                        :token (toht/get-token file token-name)
+                                        :on-update-shape dwta/update-font-weight-interactive}))
+    (await resized)))
+
+(t/deftest ^:async test-apply-font-weight-without-matching-variant
+  (let [file    (-> (setup-file-with-tokens)
+                    (add-font-weight-token "font-weight.thin" "100"))
+        store   (ths/setup-store file)
+        emitted (atom [])]
+    (await (mock/with-mocks*
+             {st/emit! (mock/stub (fn [& events] (swap! emitted into events) nil))}
+             (await (apply-font-weight-token store file "font-weight.thin"))))
+
+    (let [styles (text-styles (cths/get-shape (ths/get-file-from-state @store) :text-1))]
+      (t/testing "keeps the token's weight and uses the closest variant of the font"
+        (t/is (= "100" (:font-weight styles)))
+        (t/is (= "200" (:font-variant-id styles)))))
+
+    (t/testing "warns that the font has no variant for the weight"
+      (t/is (= {:content (tr "workspace.tokens.font-variant-not-found")
+                :type :toast
+                :level :warning}
+               (some #(when (ptk/type? ::ntf/show %)
+                        (-> (ptk/update % {})
+                            :notification
+                            (select-keys [:content :type :level])))
+                     @emitted))))
+
+    (rx/dispose! store)))
+
+(t/deftest ^:async test-apply-font-weight-with-matching-variant
+  (let [file    (-> (setup-file-with-tokens)
+                    (add-font-weight-token "font-weight.light-italic" "300 italic"))
+        store   (ths/setup-store file)
+        emitted (atom [])]
+    (await (mock/with-mocks*
+             {st/emit! (mock/stub (fn [& events] (swap! emitted into events) nil))}
+             (await (apply-font-weight-token store file "font-weight.light-italic"))))
+
+    (let [styles (text-styles (cths/get-shape (ths/get-file-from-state @store) :text-1))]
+      (t/is (= "300" (:font-weight styles)))
+      (t/is (= "italic" (:font-style styles)))
+      (t/is (= "300italic" (:font-variant-id styles))))
+    (t/is (not-any? (ptk/type? ::ntf/show) @emitted))
+
+    (rx/dispose! store)))
+
 (t/deftest test-toggle-token-none
   (t/testing "should apply token to all selected items, where no item has the token applied"
     (t/async
@@ -1540,6 +1648,177 @@
 
              (t/testing "regular shape doesn't get spacing attributes"
                (t/is (nil? (:applied-tokens rect-regular')))))))))))
+
+(def ^:private design-tab-tokens
+  [{:name "color.primary" :value "red" :type :color}
+   {:name "opacity.half" :value "0.5" :type :opacity}
+   {:name "dimensions.lg" :value "100" :type :dimensions}
+   {:name "sizing.min" :value "50" :type :sizing}])
+
+(defn- setup-file-with-design-tab-tokens
+  [& {:as shapes}]
+  (update-in (setup-file-with-tokens shapes)
+             [:data :tokens-lib]
+             #(reduce (fn [lib token]
+                        (ctob/add-token lib (cthi/id :set-a) (ctob/make-token token)))
+                      %
+                      design-tab-tokens)))
+
+(t/deftest test-toggle-token-expands-group
+  (t/testing "toggling a token on a group with expand-with-children applies it to the children"
+    (t/async
+      done
+      (let [file (-> (setup-file-with-design-tab-tokens)
+                     (ctho/add-group :group-1)
+                     (cths/add-sample-shape :rect-in-group-1 :parent-label :group-1)
+                     (cths/add-sample-shape :rect-in-group-2 :parent-label :group-1))
+            store (ths/setup-store file)
+            events [(dwta/toggle-token {:token (toht/get-token file "color.primary")
+                                        :shape-ids [(cthi/id :group-1)]
+                                        :expand-with-children true})]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file' (ths/get-file-from-state new-state)
+                 group-1' (cths/get-shape file' :group-1)
+                 rect-in-group-1' (cths/get-shape file' :rect-in-group-1)
+                 rect-in-group-2' (cths/get-shape file' :rect-in-group-2)]
+             (t/is (= "color.primary" (:fill (:applied-tokens rect-in-group-1'))))
+             (t/is (= "color.primary" (:fill (:applied-tokens rect-in-group-2'))))
+             (t/is (= "#ff0000" (get-in rect-in-group-1' [:fills 0 :fill-color])))
+             (t/is (nil? (:applied-tokens group-1'))))))))))
+
+(t/deftest test-apply-token-from-input-fill-and-stroke
+  (t/testing "the fill and stroke rows apply a color token to their attribute only"
+    (t/async
+      done
+      (let [file (setup-file-with-design-tab-tokens)
+            store (ths/setup-store file)
+            token (toht/get-token file "color.primary")
+            events [(dwta/apply-token-from-input {:token token
+                                                  :attrs #{:fill}
+                                                  :shape-ids [(cthi/id :rect-1)]
+                                                  :expand-with-children true})
+                    (dwta/apply-token-from-input {:token token
+                                                  :attrs #{:stroke-color}
+                                                  :shape-ids [(cthi/id :rect-2)]
+                                                  :expand-with-children true})]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file' (ths/get-file-from-state new-state)
+                 rect-1' (cths/get-shape file' :rect-1)
+                 rect-2' (cths/get-shape file' :rect-2)]
+             (t/testing "fill row"
+               (t/is (= {:fill "color.primary"} (:applied-tokens rect-1')))
+               (t/is (= "#ff0000" (get-in rect-1' [:fills 0 :fill-color]))))
+             (t/testing "stroke row"
+               (t/is (= {:stroke-color "color.primary"} (:applied-tokens rect-2')))
+               (t/is (= "#ff0000" (get-in rect-2' [:strokes 0 :stroke-color])))))))))))
+
+(t/deftest test-apply-token-from-input-keeps-applied-token
+  (t/testing "choosing the token a shape already has keeps it applied, unlike toggling"
+    (t/async
+      done
+      (let [file (-> (setup-file-with-design-tab-tokens)
+                     (toht/apply-token-to-shape :rect-1 "color.primary" #{:fill}))
+            store (ths/setup-store file)
+            events [(dwta/apply-token-from-input {:token (toht/get-token file "color.primary")
+                                                  :attrs #{:fill}
+                                                  :shape-ids [(cthi/id :rect-1)]
+                                                  :expand-with-children true})]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file' (ths/get-file-from-state new-state)
+                 rect-1' (cths/get-shape file' :rect-1)]
+             (t/is (= "color.primary" (:fill (:applied-tokens rect-1'))))
+             (t/is (= "#ff0000" (get-in rect-1' [:fills 0 :fill-color]))))))))))
+
+(t/deftest test-apply-token-from-input-measures-and-opacity
+  (t/testing "the opacity, position and size fields apply the token to their attribute only"
+    (t/async
+      done
+      (let [file (setup-file-with-design-tab-tokens)
+            store (ths/setup-store file)
+            rect-3 (cths/get-shape file :rect-3)
+            events [(dwta/apply-token-from-input {:token (toht/get-token file "opacity.half")
+                                                  :attrs #{:opacity}
+                                                  :shape-ids [(cthi/id :rect-1)]})
+                    (dwta/apply-token-from-input {:token (toht/get-token file "dimensions.lg")
+                                                  :attrs #{:x}
+                                                  :shape-ids [(cthi/id :rect-2)]})
+                    (dwta/apply-token-from-input {:token (toht/get-token file "dimensions.lg")
+                                                  :attrs #{:width}
+                                                  :shape-ids [(cthi/id :rect-3)]})]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file' (ths/get-file-from-state new-state)
+                 rect-1' (cths/get-shape file' :rect-1)
+                 rect-2' (cths/get-shape file' :rect-2)
+                 rect-3' (cths/get-shape file' :rect-3)]
+             (t/testing "opacity"
+               (t/is (= {:opacity "opacity.half"} (:applied-tokens rect-1')))
+               (t/is (= 0.5 (:opacity rect-1'))))
+             (t/testing "position"
+               (t/is (= {:x "dimensions.lg"} (:applied-tokens rect-2')))
+               (t/is (= 100 (:x rect-2'))))
+             (t/testing "size"
+               (t/is (= {:width "dimensions.lg"} (:applied-tokens rect-3')))
+               (t/is (= 100 (:width rect-3')))
+               (t/is (= (:height rect-3) (:height rect-3')))))))))))
+
+(t/deftest test-apply-token-from-input-layout-sizing-limit
+  (t/testing "the min width field of a flex child sets that limit only"
+    (t/async
+      done
+      (let [file (-> (setup-file-with-design-tab-tokens)
+                     (ctho/add-frame-with-child :frame-layout :rect-in-layout
+                                                {:frame-params {:layout :flex}}))
+            store (ths/setup-store file)
+            events [(dwta/apply-token-from-input {:token (toht/get-token file "sizing.min")
+                                                  :attrs #{:layout-item-min-w}
+                                                  :shape-ids [(cthi/id :rect-in-layout)]})]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file' (ths/get-file-from-state new-state)
+                 rect-in-layout' (cths/get-shape file' :rect-in-layout)]
+             (t/is (= {:layout-item-min-w "sizing.min"} (:applied-tokens rect-in-layout')))
+             (t/is (= 50 (:layout-item-min-w rect-in-layout')))
+             (t/is (nil? (:layout-item-max-w rect-in-layout'))))))))))
+
+(t/deftest test-apply-token-on-color-selected
+  (t/testing "a color token chosen in the selection colors goes on each shape's fill or stroke"
+    (t/async
+      done
+      (let [file (setup-file-with-design-tab-tokens)
+            store (ths/setup-store file)
+            operations [{:prop :fill :shape-id (cthi/id :rect-1) :index 0}
+                        {:prop :stroke :shape-id (cthi/id :rect-2) :index 0}
+                        {:prop :content :shape-id (cthi/id :text-1) :index 0}
+                        {:prop :shadow :shape-id (cthi/id :rect-3) :index 0}]
+            events [(dwta/apply-token-on-color-selected operations
+                                                        (toht/get-token file "color.primary"))]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file' (ths/get-file-from-state new-state)
+                 rect-1' (cths/get-shape file' :rect-1)
+                 rect-2' (cths/get-shape file' :rect-2)
+                 rect-3' (cths/get-shape file' :rect-3)
+                 text-1' (cths/get-shape file' :text-1)]
+             (t/testing "fill"
+               (t/is (= {:fill "color.primary"} (:applied-tokens rect-1')))
+               (t/is (= "#ff0000" (get-in rect-1' [:fills 0 :fill-color]))))
+             (t/testing "stroke"
+               (t/is (= {:stroke-color "color.primary"} (:applied-tokens rect-2')))
+               (t/is (= "#ff0000" (get-in rect-2' [:strokes 0 :stroke-color]))))
+             (t/testing "text goes on the fill"
+               (t/is (= {:fill "color.primary"} (:applied-tokens text-1'))))
+             (t/testing "shadows take no color token"
+               (t/is (nil? (:applied-tokens rect-3')))))))))))
 
 (t/deftest test-detach-styles-color
   (t/testing "applying a color token to a shape with color styles should detach the styles"

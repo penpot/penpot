@@ -32,7 +32,11 @@
 }
 
 .submenu {
-  position: absolute;
+  // Placed from its entry when it opens, not clipped by a parent submenu
+  position: fixed;
+
+  // Room for the `submenu-margin` (8px) kept above and below it
+  max-block-size: calc(100vh - px2rem(16));
 }
 
 .menu-item {

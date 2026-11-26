@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.flags :as flags]
+   [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.uri :as u]
@@ -20,7 +21,10 @@
    [cuerdas.core :as str]
    [datoteka.fs :as fs]
    [environ.core :refer [env]]
-   [integrant.core :as ig]))
+   [integrant.core :as ig])
+  (:import
+   java.net.URI
+   java.net.URISyntaxException))
 
 (defmethod ig/init-key :default
   [_ data]
@@ -158,10 +162,22 @@
     [:http-server-io-threads {:optional true} ::sm/int]
     [:http-server-max-worker-threads {:optional true} ::sm/int]
 
+    ;; How often a websocket subscription re-checks that its access still
+    ;; holds. The default lives in `app.http.websocket`, not here.
+    [:subscription-revalidation-interval {:optional true} ::ct/duration]
+
     ;; Explicit CORS allowlist used when the :cors flag is enabled.
     ;; Configured via PENPOT_ALLOWED_ORIGINS as a comma/whitespace
     ;; separated list of origins (e.g. "https://plugins.example.com").
     [:allowed-origins {:optional true} [::sm/set :string]]
+
+    ;; Explicit allowlist of alternate origins the backend may use as the
+    ;; public base for links generated while serving a request whose
+    ;; `Origin` header matches. Configured via PENPOT_TRUSTED_ORIGINS as a
+    ;; comma/whitespace separated list of bare origins
+    ;; (e.g. "https://alt.example.com"). Fail-closed: origins not listed
+    ;; keep using :public-uri.
+    [:trusted-origins {:optional true} [::sm/set :string]]
 
     [:exporter-shared-key {:optional true} :string]
     [:admin-console-shared-key {:optional true} :string]
@@ -240,6 +256,12 @@
     [:database-readonly {:optional true} ::sm/boolean]
     [:database-min-pool-size {:optional true} ::sm/int]
     [:database-max-pool-size {:optional true} ::sm/int]
+    ;; pgjdbc prepared statement cache (see app.db). Size is in bytes and is
+    ;; converted to the whole MiB the driver accepts. Absent keys mean the
+    ;; driver defaults; see docs/technical-guide/configuration.md.
+    [:database-prepared-statement-cache-threshold {:optional true} [::sm/int {:min -1}]]
+    [:database-prepared-statement-cache-queries {:optional true} [::sm/int {:min 0}]]
+    [:database-prepared-statement-cache-size {:optional true} [::sm/int {:min 0}]]
 
     [:quotes-teams-per-profile {:optional true} ::sm/int]
     [:quotes-access-tokens-per-profile {:optional true} ::sm/int]
@@ -385,7 +407,18 @@
                       ;; When telemetry-enabled config is true, add :telemetry flag
                       (true? (c/get config :telemetry-enabled))
                       (conj :enable-telemetry))]
-    (flags/parse flags/default extra-flags (:flags config))))
+    ;; :audit-log is no longer configurable: persistence follows the
+    ;; consumer flags, so a stale enable-audit-log in the environment is
+    ;; dropped instead of lingering in the set as a misleading no-op.
+    (-> (flags/parse flags/default extra-flags (:flags config))
+        (disj :audit-log))))
+
+(defn persist-audit-events?
+  "True when at least one audit-log consumer is enabled. The result is
+  computed once at boot into `audit-persist?`; event paths read that value
+  instead of checking the flags on every event."
+  [flags]
+  (boolean (some #{:nexus :admin-console} flags)))
 
 (defn read-env
   [prefix]
@@ -408,6 +441,70 @@
 (def explain-config
   (sm/explainer schema:config))
 
+(defn- parse-origin
+  [origin]
+  (when (string? origin)
+    (try
+      (let [uri    (URI. (-> origin str/trim str/lower))
+            scheme (.getScheme uri)
+            host   (.getHost uri)
+            port   (.getPort uri)]
+        (when (and (#{"http" "https"} scheme)
+                   (some? host)
+                   (<= -1 port 65535)
+                   (nil? (.getRawUserInfo uri))
+                   (empty? (.getRawPath uri))
+                   (nil? (.getRawQuery uri))
+                   (nil? (.getRawFragment uri))
+                   (not (str/ends-with? (.getRawAuthority uri) ":")))
+          uri))
+      (catch URISyntaxException _ nil))))
+
+(defn- origin-string
+  [^URI uri]
+  (let [scheme (.getScheme uri)
+        port   (.getPort uri)]
+    (str scheme "://" (.getHost uri)
+         (when (and (not= -1 port)
+                    (not= port (if (= scheme "https") 443 80)))
+           (str ":" port)))))
+
+(defn- normalize-origin
+  "Return the canonical string for a bare HTTP(S) origin, or nil."
+  [origin]
+  (some-> origin parse-origin origin-string))
+
+(defn- prepare-trusted-origins
+  [config]
+  (if-some [origins (:trusted-origins config)]
+    (let [parsed (mapv parse-origin origins)]
+      (when (some nil? parsed)
+        (l/wrn :hint "ignoring malformed entries in PENPOT_TRUSTED_ORIGINS (expected http(s)://host[:port])"))
+      (when (some (fn [^URI uri]
+                    (and (some? uri)
+                         (= "http" (.getScheme uri))
+                         (not= "localhost" (.getHost uri))))
+                  parsed)
+        (l/wrn :hint "unencrypted HTTP origins in PENPOT_TRUSTED_ORIGINS; use HTTPS outside localhost"))
+      (assoc config :trusted-origins (into #{} (comp (remove nil?) (map origin-string)) parsed)))
+    config))
+
+(defn- normalize-file-data-backend
+  "The file data moved to `file_data` (migration `0157-migrate-legacy-file-data`), so
+  `file.data` and `file_change.data` are read-only leftovers and the `legacy-db`
+  back end is read-only: a write against it fails on every save. Accepting it would
+  start a healthy instance that cannot save a single file, so it reads as `db`,
+  which serves the legacy rows too. Warn instead of aborting: the operator may
+  still be halfway through the migration."
+  [config]
+  (if (= "legacy-db" (c/get config :file-data-backend))
+    (do
+      (l/warn :hint "file-data-backend=legacy-db is read-only, using db"
+              :file-data-backend "legacy-db"
+              :replacement "db")
+      (assoc config :file-data-backend "db"))
+    config))
+
 (defn read-config
   "Reads the configuration from environment variables and decodes all
   known values."
@@ -415,7 +512,9 @@
   (->> (read-env prefix)
        (merge default)
        (normalize-tenant)
-       (decode-config)))
+       (decode-config)
+       (normalize-file-data-backend)
+       (prepare-trusted-origins)))
 
 (def version
   (v/parse (or (some-> (io/resource "version.txt")
@@ -425,6 +524,10 @@
 
 (defonce ^:dynamic config (read-config :default default))
 (defonce ^:dynamic flags (parse-flags config))
+(defonce ^:dynamic audit-persist? (persist-audit-events? flags))
+(defonce ^:dynamic webhooks-enabled? (contains? flags :webhooks))
+(defonce ^:dynamic telemetry-enabled? (contains? flags :telemetry))
+(defonce ^:dynamic error-reporting-enabled? (contains? flags :error-reporting))
 
 (defn validate!
   "Validate the currently loaded configuration data."
@@ -503,6 +606,31 @@
   []
   (or (c/get config :jobs-user-ttl)
       (ct/duration {:days 7})))
+
+(defn get-trusted-origin
+  "Return the normalized origin if it is in the prepared allowlist."
+  [origin]
+  (when-let [origin (normalize-origin origin)]
+    (when (contains? (:trusted-origins config) origin)
+      origin)))
+
+(defn with-public-origin
+  "Apply a trusted origin to the public URI without replacing its path."
+  [origin config]
+  (if (some? origin)
+    (let [{:keys [scheme host port]} (u/uri origin)]
+      (update config :public-uri
+              #(assoc (u/uri %) :scheme scheme :host host :port port)))
+    config))
+
+(defn with-public-uri
+  "Replace the full :public-uri with an already resolved `base`, as used
+  by export jobs. Leave `config` unchanged when `base` is nil. Use
+  `with-public-origin` to change only the origin and keep the public path."
+  [base config]
+  (if (some? base)
+    (assoc config :public-uri (u/uri base))
+    config))
 
 (defn get
   "A configuration getter. Helps code be more testable."

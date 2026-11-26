@@ -1,35 +1,16 @@
 # Memory Maintenance
 
-## Discovery Model
+## Discovery
 
-- Core principle: progressive discovery through references, building a graph of memories.
-- Initially, agents are provided with the list of all memories (names only).
-- Agents should read `mem:critical-info` as the top-level entry point (graph root).
-  This memory should contain references to other memories covering major project domains.
-  The referenced memories shall, in turn, shall contain references to even more specific memories, and so on.
-  The depth of the graph shall depend on the project complexity.
-- Use topics/folders to group related memories in order to make the content structure explicit.
-  Folders can mirror project structure (e.g. modules like frontend/backend) or topics like debugging, architecture, etc.
-- Memory references must use a mem: prefix inside backticks, e.g. `mem:frontend/core`.
-  The surrounding text should clearly indicate when to read the memory/which content to expect.
-  The text should provide more precise guidance than the memory name alone,
-  i.e. avoid a reference like "frontend debugging and error handling: `mem:frontend/handling-errors-and-debugging` and instead make clear which concrete aspects are covered in the memory.
-- Memories themselves should not contain information about when to read them; this is the responsibility of the referring memory.
+- Start at `mem:critical-info`, then follow the relevant section's `core` and focused references. Group notes by project module or topic.
+- Use backticked `mem:` references. The caller explains when to read the destination and why (e.g. failed shadow-cljs build or stale hot reload → `mem:frontend/compile-diagnostics`). Don't repeat that routing rule inside the destination.
 
-## Style
+## Content and format
 
-Dense agent notes, not prose docs. Prefer invariants, terse bullets.
-Avoid obvious context, rationale, and examples unless they prevent likely mistakes.
-Keep guidance durable and generalizable, not task-local.
-No manual line wrapping: one line per bullet or paragraph, however long. Memories render adapting to the viewport; hard-wrapped lines degrade rendering and diffs.
+- Keep stable, non-obvious guidance: decisions and reasons, cross-file invariants, ordering constraints, and environment or tool traps. Point to code or docs for details already evident there, including comments.
+- Prefer terse bullets. Skip generic advice, one-off task notes, line-level facts and examples that don't prevent a likely mistake.
+- No manual line wrapping: one line per bullet or paragraph. When editing a hard-wrapped memory, unwrap the whole file.
 
-## Add/update threshold
+## Maintenance
 
-Add or update memories only with stable, non-obvious project conventions that avoid complex rediscovery in the future.
-Do not restate what the code already says (comments included): keep only what code cannot represent — decisions and their reasons, cross-file invariants, ordering constraints, environment and tool behavior, and traps that break builds.
-Do not add: quick-read facts; generic language/framework knowledge; one-off task notes; volatile line-level details; behavior likely to change soon.
-
-## Maintenance Actions
-
-- Renaming memories: References are updated automatically if handled via Serena's memory rename tool.
-- Checking for stale memories (e.g. after deletion): Call `serena memories check` for a report.
+- Serena's memory rename tool updates references. After moving or deleting a note, check incoming links and run `serena memories check` when available.

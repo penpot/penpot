@@ -33,7 +33,8 @@ test("User can open a project's options menu from the \"...\" button", async ({
   const menu = page.getByRole("menu");
   await expect(menu.getByTestId("project-rename")).toBeVisible();
   await expect(menu.getByTestId("project-duplicate")).toBeVisible();
-  await expect(menu.getByTestId("project-pin")).toBeVisible();
+  await expect(menu.getByTestId("project-pin")).toHaveText("Pin");
+  await expect(menu.getByTestId("project-copy-link")).toBeVisible();
   await expect(menu.getByTestId("project-delete")).toBeVisible();
   // project-move-to is covered separately below: it only renders once there
   // is at least one other team to move to, which the default single-team
@@ -72,6 +73,64 @@ test("The default Drafts project has a limited options menu", async ({
   await expect(menu.getByTestId("project-pin")).toHaveCount(0);
   await expect(menu.getByTestId("project-move-to")).toHaveCount(0);
   await expect(menu.getByTestId("project-delete")).toHaveCount(0);
+  await expect(menu.getByTestId("project-copy-link")).toBeVisible();
+});
+
+test("User can copy a project's link from the options menu", async ({
+  page,
+}) => {
+  const dashboardPage = new DashboardPage(page);
+  await setupTwoProjects(dashboardPage);
+  await dashboardPage.goToDashboard();
+
+  const row = projectRow(page, "New Project 1");
+  await row.getByTestId("project-options").click();
+  await page.getByTestId("project-copy-link").click();
+
+  await expect(
+    page.getByRole("alert").filter({ hasText: "Link copied to clipboard" }),
+  ).toBeVisible();
+
+  const link = await dashboardPage.copiedLink();
+  expect(`${link.origin}${link.pathname}`).toBe(new URL("/", page.url()).href);
+  expect(link.searchParams.get("screen")).toBe("dashboard-files");
+  expect(link.searchParams.get("team-id")).toBe(DashboardPage.anyTeamId);
+  expect(link.searchParams.get("project-id")).toBe(
+    "e5a24d1b-ef1e-812f-8004-52bab84be6f7",
+  );
+});
+
+test("A pinned project shows Unpin in the options menu", async ({ page }) => {
+  const dashboardPage = new DashboardPage(page);
+  await dashboardPage.mockRPC(
+    "get-projects?team-id=*",
+    "dashboard/get-projects-pinned.json",
+  );
+  await dashboardPage.setupDrafts();
+  await dashboardPage.goToDashboard();
+
+  const row = projectRow(page, "New Project 1");
+  await row.getByTestId("project-options").click();
+
+  await expect(page.getByTestId("project-pin")).toHaveText("Unpin");
+});
+
+test("User can open a pinned project's menu from the sidebar", async ({
+  page,
+}) => {
+  const dashboardPage = new DashboardPage(page);
+  await dashboardPage.mockRPC(
+    "get-projects?team-id=*",
+    "dashboard/get-projects-pinned.json",
+  );
+  await dashboardPage.goToDashboard();
+
+  await page
+    .getByTestId("pinned-projects")
+    .getByText("New Project 1")
+    .click({ button: "right" });
+
+  await expect(page.getByTestId("project-copy-link")).toBeVisible();
 });
 
 test("User can rename a project from the options menu", async ({ page }) => {

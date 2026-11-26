@@ -300,6 +300,16 @@
             (update :workspace-editor-state dissoc id)
             (update :workspace-new-text-shapes disj id))))))
 
+(defn editor-shape-content
+  "The `:content` of the text `shape` after editing it with the legacy
+  editor: the `exported` editor content with the root attrs of the
+  shape. The editor keeps paragraph data as it was set, nil values
+  included, so the result goes through `ensure-valid-text-content` like
+  the other commit paths."
+  [exported shape]
+  (ensure-valid-text-content
+   (d/merge exported (dissoc (:content shape) :children))))
+
 (defn finalize-editor-state
   [id update-name?]
   (ptk/reify ::finalize-editor-state
@@ -316,8 +326,7 @@
               new-shape?   (contains? (:workspace-new-text-shapes state) id)]
           (if (ted/content-has-text? content)
             (if (features/active-feature? state "render-wasm/v1")
-              (let [content  (d/merge (ted/export-content content)
-                                      (dissoc (:content shape) :children))
+              (let [content  (editor-shape-content (ted/export-content content) shape)
                     new-size (dwwt/get-wasm-text-new-size shape content)]
                 (rx/merge
                  (rx/of (update-editor-state shape nil))
@@ -337,8 +346,7 @@
                               (ctm/change-size shape (:width new-size) (:height new-size))))))
                      {:undo-group (when new-shape? id)})))))
 
-              (let [content (d/merge (ted/export-content content)
-                                     (dissoc (:content shape) :children))
+              (let [content   (editor-shape-content (ted/export-content content) shape)
                     modifiers (get-in state [:workspace-text-modifier id])]
                 (rx/merge
                  (rx/of (update-editor-state shape nil))
@@ -853,50 +861,83 @@
 
                     shape))]
 
-          (let [ids (into #{} (filter changed-text?) (keys props))]
-            (rx/of (dwu/start-undo-transaction undo-id)
-                   (dwsh/update-shapes ids update-fn {:with-objects? true
-                                                      :reg-objects? true
-                                                      :stack-undo? true
-                                                      :ignore-touched true})
-                   (ptk/data-event :layout/update {:ids ids})
-                   (dwu/commit-undo-transaction undo-id))))))))
+          (let [changed-ids (into #{} (filter changed-text?) (keys props))
+                ;; Automatic size heals record no undo step, their parents'
+                ;; reflow included, and do not sync to component copies.
+                heal-ids    (into #{}
+                                  (filter (or (::resize-text-no-undo-ids state) #{}))
+                                  changed-ids)
+                ids         (into #{} (remove heal-ids) changed-ids)
+                opts        {:with-objects? true
+                             :reg-objects? true
+                             :stack-undo? true
+                             :ignore-touched true}]
+            (rx/concat
+             (rx/of (dwu/start-undo-transaction undo-id)
+                    (dwsh/update-shapes ids update-fn opts))
+             (if (seq heal-ids)
+               (rx/of (dwsh/update-shapes heal-ids update-fn
+                                          (assoc opts
+                                                 :save-undo? false
+                                                 :skip-component-sync? true)))
+               (rx/empty))
+             (rx/of (ptk/data-event :layout/update {:ids ids}))
+             (if (seq heal-ids)
+               (rx/of (ptk/data-event :layout/update {:ids heal-ids
+                                                      :save-undo? false
+                                                      :skip-component-sync? true}))
+               (rx/empty))
+             (rx/of (dwu/commit-undo-transaction undo-id)))))))))
+
+(defn- track-no-undo-id
+  "Keep `id` in the no-undo set at `key` when `opts` ask for no undo step,
+  drop it otherwise (the latest request for a shape wins)."
+  [state key id opts]
+  (if (false? (:save-undo? opts))
+    (update state key (fnil conj #{}) id)
+    (update state key disj id)))
 
 (defn resize-text
-  [id new-width new-height]
+  "Resize an auto-grow text to its measured size. The requests are batched
+  and committed together; `opts` with `:save-undo? false` commit this one
+  without an undo step."
+  ([id new-width new-height]
+   (resize-text id new-width new-height nil))
+  ([id new-width new-height opts]
+   (let [cur-event   (js/Symbol)
+         reflow-task (wrf/task :text-resize [id])]
+     (ptk/reify ::resize-text
+       ptk/UpdateEvent
+       (update [_ state]
+         (-> state
+             (update ::resize-text-debounce-props (fnil assoc {}) id [new-width new-height])
+             (update ::resize-text-reflow-tasks (fnil conj []) reflow-task)
+             (track-no-undo-id ::resize-text-no-undo-ids id opts)
+             (cond-> (nil? (::resize-text-debounce-event state))
+               (assoc ::resize-text-debounce-event cur-event))))
 
-  (let [cur-event   (js/Symbol)
-        reflow-task (wrf/task :text-resize [id])]
-    (ptk/reify ::resize-text
-      ptk/UpdateEvent
-      (update [_ state]
-        (-> state
-            (update ::resize-text-debounce-props (fnil assoc {}) id [new-width new-height])
-            (update ::resize-text-reflow-tasks (fnil conj []) reflow-task)
-            (cond-> (nil? (::resize-text-debounce-event state))
-              (assoc ::resize-text-debounce-event cur-event))))
-
-      ptk/WatchEvent
-      (watch [_ state stream]
-        (wrf/start! reflow-task)
-        (if (= (::resize-text-debounce-event state) cur-event)
-          (let [stopper (->> stream (rx/filter (ptk/type? ::dw/finalize-workspace)))]
-            (rx/concat
-             (rx/merge
-              (->> stream
-                   (rx/filter (ptk/type? ::resize-text))
-                   (rx/debounce 50)
-                   (rx/take 1)
-                   (rx/map #(commit-resize-text))
-                   (rx/take-until stopper))
-              (rx/of (resize-text id new-width new-height)))
-             (rx/of (fn [state]
-                      (wrf/finish-tasks! (::resize-text-reflow-tasks state))
-                      (dissoc state
-                              ::resize-text-debounce-props
-                              ::resize-text-reflow-tasks
-                              ::resize-text-debounce-event)))))
-          (rx/empty))))))
+       ptk/WatchEvent
+       (watch [_ state stream]
+         (wrf/start! reflow-task)
+         (if (= (::resize-text-debounce-event state) cur-event)
+           (let [stopper (->> stream (rx/filter (ptk/type? ::dw/finalize-workspace)))]
+             (rx/concat
+              (rx/merge
+               (->> stream
+                    (rx/filter (ptk/type? ::resize-text))
+                    (rx/debounce 50)
+                    (rx/take 1)
+                    (rx/map #(commit-resize-text))
+                    (rx/take-until stopper))
+               (rx/of (resize-text id new-width new-height opts)))
+              (rx/of (fn [state]
+                       (wrf/finish-tasks! (::resize-text-reflow-tasks state))
+                       (dissoc state
+                               ::resize-text-debounce-props
+                               ::resize-text-reflow-tasks
+                               ::resize-text-no-undo-ids
+                               ::resize-text-debounce-event)))))
+           (rx/empty)))))))
 
 (defn save-default-font
   [data]
@@ -1041,51 +1082,68 @@
 
     ptk/WatchEvent
     (watch [_ state _]
-      (let [position-data (::update-position-data state)]
-        (rx/of (dwsh/update-shapes
-                (keys position-data)
-                (fn [shape]
-                  (-> shape
-                      (assoc :position-data (get position-data (:id shape)))))
-                {:stack-undo? true :reg-objects? false}))))))
+      (let [position-data (::update-position-data state)
+            ;; Automatic size heals record no undo step and do not sync to
+            ;; component copies.
+            no-undo-ids   (or (::update-position-data-no-undo-ids state) #{})
+            update-fn     (fn [shape]
+                            (-> shape
+                                (assoc :position-data (get position-data (:id shape)))))
+            opts          {:stack-undo? true :reg-objects? false}
+            ids           (into [] (remove no-undo-ids) (keys position-data))
+            heal-ids      (into [] (filter no-undo-ids) (keys position-data))]
+        (rx/concat
+         (rx/of (dwsh/update-shapes ids update-fn opts))
+         (if (seq heal-ids)
+           (rx/of (dwsh/update-shapes heal-ids update-fn
+                                      (assoc opts
+                                             :save-undo? false
+                                             :skip-component-sync? true)))
+           (rx/empty)))))))
 
 (defn update-position-data
-  [id position-data]
+  "Store the measured position-data of a text. The requests are batched and
+  committed together; `opts` with `:save-undo? false` commit this one
+  without an undo step."
+  ([id position-data]
+   (update-position-data id position-data nil))
+  ([id position-data opts]
+   (let [cur-event   (js/Symbol)
+         reflow-task (wrf/task :text-position [id])]
+     (ptk/reify ::update-position-data
+       ptk/UpdateEvent
+       (update [_ state]
+         (let [state (assoc-in state [:workspace-text-modifier id :position-data] position-data)]
+           (-> state
+               (update ::update-position-data-reflow-tasks (fnil conj []) reflow-task)
+               (track-no-undo-id ::update-position-data-no-undo-ids id opts)
+               (cond-> (nil? (::update-position-data-debounce state))
+                 (assoc ::update-position-data-debounce cur-event))
+               (cond-> (some? (::update-position-data-debounce state))
+                 (assoc-in [::update-position-data id] position-data)))))
 
-  (let [cur-event   (js/Symbol)
-        reflow-task (wrf/task :text-position [id])]
-    (ptk/reify ::update-position-data
-      ptk/UpdateEvent
-      (update [_ state]
-        (let [state (assoc-in state [:workspace-text-modifier id :position-data] position-data)]
-          (-> state
-              (update ::update-position-data-reflow-tasks (fnil conj []) reflow-task)
-              (cond-> (nil? (::update-position-data-debounce state))
-                (assoc ::update-position-data-debounce cur-event))
-              (cond-> (some? (::update-position-data-debounce state))
-                (assoc-in [::update-position-data id] position-data)))))
-
-      ptk/WatchEvent
-      (watch [_ state stream]
-        (wrf/start! reflow-task)
-        (if (= (::update-position-data-debounce state) cur-event)
-          (let [stopper (text-work-stopper stream)]
-            (rx/concat
-             (rx/merge
-              (->> stream
-                   (rx/filter (ptk/type? ::update-position-data))
-                   (rx/debounce 50)
-                   (rx/take 1)
-                   (rx/map #(commit-position-data))
-                   (rx/take-until stopper))
-              (rx/of (update-position-data id position-data)))
-             (rx/of (fn [state]
-                      (wrf/finish-tasks! (::update-position-data-reflow-tasks state))
-                      (dissoc state
-                              ::update-position-data-debounce
-                              ::update-position-data
-                              ::update-position-data-reflow-tasks)))))
-          (rx/empty))))))
+       ptk/WatchEvent
+       (watch [_ state stream]
+         (wrf/start! reflow-task)
+         (if (= (::update-position-data-debounce state) cur-event)
+           (let [stopper (text-work-stopper stream)]
+             (rx/concat
+              (rx/merge
+               (->> stream
+                    (rx/filter (ptk/type? ::update-position-data))
+                    (rx/debounce 50)
+                    (rx/take 1)
+                    (rx/map #(commit-position-data))
+                    (rx/take-until stopper))
+               (rx/of (update-position-data id position-data opts)))
+              (rx/of (fn [state]
+                       (wrf/finish-tasks! (::update-position-data-reflow-tasks state))
+                       (dissoc state
+                               ::update-position-data-debounce
+                               ::update-position-data
+                               ::update-position-data-no-undo-ids
+                               ::update-position-data-reflow-tasks)))))
+           (rx/empty)))))))
 
 (defn update-attrs
   [id attrs]
@@ -1216,14 +1274,19 @@
    (assert (or (nil? ids) (and (set? ids) (every? uuid? ids))))
    (ptk/reify ::apply-typography
      ptk/WatchEvent
-     (watch [_ state _]
+     (watch [_ state stream]
        (let [editor-state (:workspace-editor-state state)
+             objects      (dsh/lookup-page-objects state)
              ids          (d/nilv ids (dsh/lookup-selected state))
              attrs        (-> typography
                               (assoc :typography-ref-file file-id)
                               (assoc :typography-ref-id (:id typography))
                               (dissoc :id :name))
-             undo-id (js/Symbol)]
+             auto-ids     (into []
+                                (comp (mapcat #(resolve-text-ids objects %))
+                                      (remove #(= :fixed (:grow-type (get objects %)))))
+                                ids)
+             undo-id      (js/Symbol)]
 
          (rx/concat
           (rx/of (dwu/start-undo-transaction undo-id))
@@ -1231,6 +1294,9 @@
                (rx/map (fn [id]
                          (let [editor (get editor-state id)]
                            (update-text-attrs {:id id :editor editor :attrs attrs})))))
+          ;; WASM does not re-measure on its own; the new font may still be loading.
+          (when (features/active-feature? state "render-wasm/v1")
+            (await-font-resize stream auto-ids))
           (rx/of (dwu/commit-undo-transaction undo-id))))))))
 
 (defn generate-typography-name
@@ -1293,13 +1359,16 @@
 
 (defn- add-geometry-undo-to-commit
   "Adds geometry undo/redo to a commit so undo restores both content and geometry.
-  old-geom and final-geom are maps with :selrect :points and optionally :width :height."
+  old-geom and final-geom are maps with :selrect :points and optionally :width :height.
+  Uses :ignore-touched so auto-grow size from content edit is not a geometry override
+  on component copies (mirrors commit-resize-text)."
   [base objects id old-geom final-geom attrs]
   (let [objects-with-old (update objects id #(merge % old-geom))
         final-shape-fn   (fn [shape] (merge shape final-geom))]
     (-> base
         (pcb/with-objects objects-with-old)
-        (pcb/update-shapes [id] final-shape-fn {:attrs attrs}))))
+        (pcb/update-shapes [id] final-shape-fn {:attrs attrs
+                                                :ignore-touched true}))))
 
 (defn- build-finalize-commit-changes
   "Builds the commit changes for text finalization (content + geometry undo).
@@ -1438,7 +1507,9 @@
               ;; Push the auto-grow geometry to WASM/app state; the commit persists it via `resize-geom`.
               ;; Skipped for a no-op finalize: applying it would record an undo transaction.
               (when (and (some? resize-modifiers) (not finalize-no-op?))
-                (dwm/apply-wasm-modifiers resize-modifiers {:undo-group (when new-shape? id)})))
+                (dwm/apply-wasm-modifiers resize-modifiers
+                                          {:undo-group (when new-shape? id)
+                                           :ignore-touched true})))
 
              (when finalize?
                (rx/concat

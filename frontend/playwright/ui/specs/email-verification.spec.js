@@ -8,34 +8,29 @@ test.beforeEach(async ({ page }) => {
   await RegisterPage.initWithLoggedOutUser(page);
 });
 
-test.describe("Email verification", () => {
-  for (const colorScheme of ["light", "dark"]) {
-    test(`Newly verified account follows the ${colorScheme} system theme`, async ({
-      page,
-    }) => {
-      await page.emulateMedia({ colorScheme });
-      const registerPage = new RegisterPage(page);
-      await registerPage.setupEmailVerificationSuccess();
+test("Verified account follows the system theme and shows it in settings", async ({
+  page,
+}) => {
+  const registerPage = new RegisterPage(page);
 
-      await registerPage.goToVerifyToken();
-      await page.waitForURL(/screen=dashboard/);
-
-      // The dark theme uses the legacy body class "default".
-      await expect(page.locator("body")).toHaveClass(
-        colorScheme === "dark" ? "default" : "light",
-      );
-    });
-  }
-
-  test("Settings > UI Theme shows System theme selected, not blank", async ({
-    page,
-  }) => {
-    const registerPage = new RegisterPage(page);
+  await test.step("follows the dark system theme", async () => {
+    await page.emulateMedia({ colorScheme: "dark" });
     await registerPage.setupEmailVerificationSuccess();
 
     await registerPage.goToVerifyToken();
     await page.waitForURL(/screen=dashboard/);
 
+    // The dark theme uses the legacy body class "default".
+    await expect(page.locator("body")).toHaveClass("default");
+  });
+
+  await test.step("follows a change to the light system theme", async () => {
+    await page.emulateMedia({ colorScheme: "light" });
+
+    await expect(page.locator("body")).toHaveClass("light");
+  });
+
+  await test.step("shows the System theme in settings", async () => {
     await page.goto("/?screen=settings-options");
 
     // The language select is the first combobox on the page, the theme

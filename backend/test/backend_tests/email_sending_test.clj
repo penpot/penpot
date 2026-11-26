@@ -37,6 +37,24 @@
   [result]
   (get-in result [:body "text/plain"]))
 
+(t/deftest password-recovery-renders-links-under-the-public-subpath
+  (doseq [[public-uri expected-base]
+          [["https://canonical.example.com/penpot"  "https://canonical.example.com/penpot"]
+           ["https://canonical.example.com/penpot/" "https://canonical.example.com/penpot"]
+           ["https://alternate.example.com/penpot"  "https://alternate.example.com/penpot"]
+           ["https://alternate.example.com/penpot/" "https://alternate.example.com/penpot"]]]
+    (t/testing public-uri
+      (let [result (emails/render-template "password-recovery"
+                                           {:to "member@example.com"
+                                            :name "Member"
+                                            :token "test-token"
+                                            :public-uri public-uri})
+            html   (get-in result [:body "text/html"])
+            link   (str expected-base "/?screen=auth-recovery&token=test-token")]
+        (t/is (str/includes? (email-text-body result) link))
+        (t/is (str/includes? html (str "href=\"" link "\"")))
+        (t/is (str/includes? html (str "src=\"" expected-base "/images/email/logo-penpot.svg\"")))))))
+
 (defn- invite-email-params
   [organization]
   {:to "invitee@example.com"

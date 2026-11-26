@@ -56,7 +56,7 @@ Penpot uses anonymous telemetries from the self-hosted instances to improve the 
 Consider sharing these anonymous telemetries enabling the corresponding flag:
 
 ```bash
-PENPOT_FLAGS: [...] enable-telemetries
+PENPOT_FLAGS: [...] enable-telemetry
 ```
 
 ## Registration and authentication
@@ -123,11 +123,14 @@ To configure the authentication with third-party auth providers you will need to
 configure Penpot and set the correct callback of your Penpot instance in the auth-provider
 configuration.
 
-The callback has the following format:
+Append `api/auth/oidc/callback` to the public URL with a single `/` between
+them. Register the exact URL, including any configured subpath:
 
-```html
-https://<your_domain>/api/auth/oidc/callback
-```
+- Public URL `https://mycompany.com/`: `https://mycompany.com/api/auth/oidc/callback`
+- Public URL `https://mycompany.com/penpot/`: `https://mycompany.com/penpot/api/auth/oidc/callback`
+
+If you configure [trusted alternate origins](#trusted-alternate-origins), register
+the callback for each alias as well.
 
 #### Google
 
@@ -270,7 +273,11 @@ PENPOT_OIDC_USER_INFO_SOURCE:
 __Since version 2.1.2__
 
 Allows users to register and login with oidc without having to previously
-register with another method.
+register with another method. It also works with password login disabled
+(`disable-login-with-password`): OIDC registration only needs this flag,
+not password login. An invitation link also works as a substitute for
+this flag: an invited user can register with OIDC even with both
+registration flags disabled.
 
 ```bash
 PENPOT_FLAGS: [...] enable-oidc-registration
@@ -409,6 +416,10 @@ Existing bookmarks and integrations that use the previous root URL must be
 updated. You may also configure a redirect from the previous URL. If the scheme
 or hostname changes in addition to the path, review your authentication provider
 callback URLs and cookie settings. Active users may need to sign in again.
+After upgrading, register the callback with the subpath at the identity provider
+even when the scheme and hostname stay the same. For example, register
+`https://mycompany.com/penpot/api/auth/oidc/callback` for
+`https://mycompany.com/penpot/`.
 
 <p class="advice">
     If you plan to serve Penpot under different domain than `localhost` without HTTPS,
@@ -417,6 +428,114 @@ callback URLs and cookie settings. Active users may need to sign in again.
     not work properly under non-https environments, this unsecure configuration
     may limit the usage of Penpot; as an example, the clipboard does not work with HTTP.
 </p>
+
+### Trusted alternate origins
+
+Use `PENPOT_TRUSTED_ORIGINS` to serve the same Penpot installation on more than
+one domain with a single frontend and a common backend. Give both services the
+same list of aliases. With the official Docker Compose file, set the
+canonical URL in the `x-uri` block. The separate `x-trusted-origins` block
+passes the alias list only to the frontend and backend:
+
+```yaml
+x-uri: &penpot-public-uri
+  PENPOT_PUBLIC_URI: https://mycompany.com/penpot/
+
+x-trusted-origins: &penpot-trusted-origins
+  PENPOT_TRUSTED_ORIGINS: "${PENPOT_TRUSTED_ORIGINS:-}"
+```
+
+Set the alias once in your environment or Compose `.env` file:
+
+```dotenv
+PENPOT_TRUSTED_ORIGINS=https://alt.mycompany.com
+```
+
+Set up DNS and TLS for both names. Configure your reverse proxy or Ingress to
+route `https://mycompany.com/penpot/` and `https://alt.mycompany.com/penpot/` to
+the same frontend, without rewriting the path. Follow the [subpath proxy
+requirements](#serve-penpot-from-a-subpath) for both names. This setting does
+not configure the proxy or share browser sessions between the two domains.
+
+**Only list aliases you control.** Penpot can put the alias in sensitive links,
+such as password reset links. Use HTTPS in production.
+
+- Separate entries with commas or whitespace. Each is a bare HTTP(S) origin
+  (`scheme://host[:port]`): no path (not even a trailing slash), query, fragment,
+  credentials, or wildcard. Matching ignores case and surrounding whitespace.
+  HTTPS with or without `:443` matches the same origin, as does HTTP with or
+  without `:80`. Other ports must match exactly. For IPv6, use the origin
+  as the browser reports it, without a path. For example, use
+  `https://[::1]:9443`, not `https://[0:0:0:0:0:0:0:1]:9443`.
+- At startup, the backend warns about and ignores invalid entries. It also logs
+  one warning if the list contains any valid HTTP origin whose hostname is not
+  `localhost`. Those HTTP entries still work; they do not change the secure
+  session cookie flags.
+- The frontend container writes the list to the existing `config.js` as data.
+  At startup, the frontend uses the browser's origin if it matches the list;
+  otherwise it keeps the canonical URL. On a match, only the scheme, host,
+  and port change. Navigation, assets, and API calls keep the path and trailing
+  slash from the configured base.
+- The frontend sends `X-Penpot-Origin` only on Penpot API calls that need to
+  select the public base, including RPC reads that may lack `Origin` and OIDC
+  login requests. It does not add the header to general HTTP requests for
+  fonts, assets, or external URLs. The backend uses `X-Penpot-Origin` if it
+  matches the list, then tries `Origin`. If neither matches, it uses
+  `PENPOT_PUBLIC_URI`. Generated links keep the configured path.
+- This list does not grant cross-origin browser access. With `enable-cors`,
+  `PENPOT_ALLOWED_ORIGINS` separately controls which origins may make CORS
+  requests. Listing an origin in either setting does not add it to the other.
+
+Register the exact OIDC callback URL for the canonical base and for each alias
+at the identity provider. For example, with `PENPOT_PUBLIC_URI` set to
+`https://mycompany.com/penpot/` and `https://alt.mycompany.com` in the list, register
+both `https://mycompany.com/penpot/api/auth/oidc/callback` and
+`https://alt.mycompany.com/penpot/api/auth/oidc/callback`. If you use SSO logout,
+register the post-logout redirect URL as well. The OIDC callback reuses the
+origin from the signed login state and combines it with the configured path.
+Removing an alias does not invalidate state already signed with it; that state
+expires within four hours. The backend can still redirect the user to the
+removed alias, but if the frontend no longer accepts it, the user may need
+to start a new login on the canonical domain. Changing the configured path
+during a login can also require a new login. MCP OAuth always uses the
+canonical base.
+
+Server-sent events (SSE) keep the full base of the request that opened the stream.
+An export requested through a trusted alias saves the full base in the job's
+parameters for the download link. Without an alias, the export worker uses its
+canonical base. Templated emails save the request's base in the template data
+and the worker uses it when it renders the email. Workers that build new links
+without a saved request base use the canonical `PENPOT_PUBLIC_URI`, as do
+server-to-server calls with no matching origin.
+
+#### Upgrade or roll back the `binfile` workers
+
+Before enabling aliases, upgrade every worker that consumes the `binfile` queue.
+Older workers whose export job schema does not accept `public-uri` reject jobs
+that store an alternate public base.
+
+To roll back to those workers, first disable aliases on the frontend and
+all backend instances that accept requests so no new jobs store an alternate
+base. Keep the upgraded workers
+running until all queued or running export jobs with a saved alternate base
+have finished. Removing an alias does not change jobs already submitted.
+
+#### Retire an alternate domain
+
+1. Remove the alias from `PENPOT_TRUSTED_ORIGINS` on the frontend and backend,
+   and apply the new configuration on all instances. Direct users to the
+   canonical URL for new logins and links.
+2. Review pending mail in Penpot and any downstream mail queues. Stop delivery
+   of sensitive links to the retired domain where possible, and reissue links
+   from the canonical URL if users still need them. Queued mail can still
+   contain the old base after you change the setting.
+3. Keep control of the old domain until any sensitive links and in-flight OIDC
+   logins that reference it are no longer valid. Removing the alias does not
+   revoke links or signed state. Cancel invitations you need to invalidate
+   rather than waiting for them to expire. For flows without a supported
+   way to invalidate an individual link, such as password recovery or email
+   verification, wait for the token to expire. Check the lifetime for each
+   flow; there is no single safe waiting period for all links.
 
 ## Email configuration
 
@@ -757,6 +876,52 @@ POSTGRES_USER: penpot
 POSTGRES_PASSWORD: penpot
 ```
 
+#### Connection pool
+
+The backend keeps a pool of database connections. Its size can be tuned with:
+
+```bash
+# Backend
+PENPOT_DATABASE_MIN_POOL_SIZE: 0
+PENPOT_DATABASE_MAX_POOL_SIZE: 60
+```
+
+The values above are the defaults. The pool keeps at least `MIN_POOL_SIZE` idle
+connections open and never opens more than `MAX_POOL_SIZE`, growing only under load
+and closing idle connections after two minutes. A minimum larger than the maximum is
+capped at the maximum.
+
+If the PostgreSQL server is shared with other applications, make sure
+`PENPOT_DATABASE_MAX_POOL_SIZE` plus the connections used by everything else stays below
+the server's `max_connections` (100 by default).
+
+#### Prepared statement cache
+
+__Since version 2.20.0__
+
+The driver keeps two things per connection: a cache of parsed queries and, once a query
+runs enough times, a statement prepared in the server whose plan the server can reuse.
+Both are on by default; you only need these settings to tune them or to turn them off:
+
+```bash
+# Backend
+PENPOT_DATABASE_PREPARED_STATEMENT_CACHE_THRESHOLD: 5
+PENPOT_DATABASE_PREPARED_STATEMENT_CACHE_QUERIES: 256
+PENPOT_DATABASE_PREPARED_STATEMENT_CACHE_SIZE: 5242880
+```
+
+The values above are the driver defaults. `PENPOT_DATABASE_PREPARED_STATEMENT_CACHE_THRESHOLD`
+is how many times a query runs on a connection before the driver prepares it server-side:
+`-1` prepares it from the first execution and forces binary transfer, and `0` stops the
+driver from preparing statements in the server. The cache of parsed queries stays in use
+with the threshold at `0`: the connection caches up to
+`PENPOT_DATABASE_PREPARED_STATEMENT_CACHE_QUERIES` queries, using at most
+`PENPOT_DATABASE_PREPARED_STATEMENT_CACHE_SIZE` bytes per connection (the size is rounded
+up to whole MiB for the driver), and setting either of those two to `0` disables the
+cache. With 60 connections, the ceiling is 60 × the size. Leave a variable unset and the
+driver default applies. A parameter of the same name in `PENPOT_DATABASE_URI`, such as
+`?prepareThreshold=0`, takes precedence over these variables.
+
 ### Storage
 
 Storage refers to storing the user uploaded different objects in Penpot (assets, file data,...).
@@ -814,11 +979,12 @@ These settings are equally useful if you have a Minio storage system.
 
 __Since version 2.11.0__
 
-You can change the default file data storage backend with `PENPOT_FILE_DATA_BACKEND` environment variable. Possible values are:
+You can change the file data storage backend with `PENPOT_FILE_DATA_BACKEND` environment variable. Possible values are:
 
-- `legacy-db`: the current default backend, continues storing the file data of files and snapshots in the same location as previous versions of Penpot (< 2.11.0), this is a conservative default behaviour and will be changed to `db` in next versions.
-- `db`: stores the file data on an specific table (the future default backend).
+- `db`: the default. Stores the file data on an specific table.
 - `storage`: stores the file data using the objects storage system (S3 or FS, depending on which one is configured)
+
+The `legacy-db` value is still accepted as a **read-only** alias for the payloads written by versions before 2.11.0: the backend reads them, but it no longer writes file data there. **If you upgrade a deployment with `PENPOT_FILE_DATA_BACKEND=legacy-db`, remove the variable (or set it to `db`) before the upgrade**: the backend reads `legacy-db` as `db` and logs a warning, so saves keep working, but remove the variable anyway so the deployment does not claim a read-only backend.
 
 This also comes with an additional feature that allows offload the "inactive" files on file storage backend and leaves the database only for the active files. To enable it, you should use the `enable-tiered-file-data-storage` flag and `db` as file data storage backend.
 
@@ -983,6 +1149,33 @@ set, and sends it through the [email configuration](#email-configuration). Each
 email carries the name and email address of the user who sent it, and uses that
 address as reply-to.
 
+#### MCP sign-in
+
+MCP clients with OAuth support can connect with the URL
+`https://<your-penpot-domain>/mcp/stream`, without a key. The client opens Penpot
+in the browser, the user allows access, and Penpot gives the client the user's MCP
+key. This is off by default. Turn it on by setting the public URL of the
+authorization service on the MCP container:
+
+```bash
+# MCP
+PENPOT_MCP_AUTH_URI: https://penpot.example.com/api/mcp/oauth
+```
+
+- `PENPOT_MCP_AUTH_URI`: Your Penpot public URI followed by `/api/mcp/oauth`. It
+  must use HTTPS and have no credentials, query or fragment. When unset, clients
+  must add the key to the URL as `userToken`.
+
+The MCP server must run in multi-user mode, which the official `penpotapp/mcp`
+image does by default. The server does not start if the value is invalid, and it
+logs at startup whether sign-in is on.
+
+The frontend container forwards the sign-in requests to the backend. If your proxy
+sends `/api/` straight to the backend instead, send
+`/.well-known/oauth-authorization-server/api/mcp/oauth` to the backend too.
+
+Clients that already add the key to the URL keep working with sign-in on.
+
 ### Internal resolver
 
 The frontend container resolves the backend, exporter and MCP service names with the
@@ -997,6 +1190,27 @@ PENPOT_INTERNAL_RESOLVER: 127.0.0.11
 - `PENPOT_INTERNAL_RESOLVER`: The DNS server nginx uses to resolve the internal service
   names. Defaults to the nameservers found in `/etc/resolv.conf`. `127.0.0.11` is the
   embedded Docker DNS server; use the address of your own resolver on other setups.
+
+### Nginx workers
+
+The frontend container sizes its nginx workers from the CPUs it can use, its CPU quota or
+its cpuset, when they are fewer than the CPUs of the host. Otherwise it starts one worker
+per CPU of the host. Each worker reserves the memory for all its connections when it
+starts, so tune these if the frontend uses more memory than you expect:
+
+```bash
+# Frontend
+PENPOT_HTTP_SERVER_WORKER_PROCESSES: 2
+PENPOT_HTTP_SERVER_WORKER_CONNECTIONS: 2048
+```
+
+- `PENPOT_HTTP_SERVER_WORKER_PROCESSES`: Number of nginx worker processes, a positive
+  integer or `auto` for one per host CPU. Defaults to the CPUs the container can use, with
+  the quota rounded up, or `auto` when it has no limit.
+- `PENPOT_HTTP_SERVER_WORKER_CONNECTIONS`: Maximum simultaneous connections per worker,
+  a positive integer. Defaults to `65535`, which takes about 30 MB of memory per worker.
+
+The container refuses to start if either value is not valid.
 
 ## Other flags
 

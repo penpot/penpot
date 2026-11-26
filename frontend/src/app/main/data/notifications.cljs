@@ -96,11 +96,14 @@
         (dissoc state :notification)))))
 
 (defn error
-  ([content]
-   (show {:content content
-          :level :error
-          :type :toast
-          :position :fixed})))
+  ([content] (error content {}))
+  ([content {:keys [timeout]}]
+   (show (d/without-nils
+          {:content content
+           :level :error
+           :type :toast
+           :position :fixed
+           :timeout timeout}))))
 
 (defn info
   ([content] (info content {}))

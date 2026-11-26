@@ -55,12 +55,20 @@
                    :fn "_render_shape_svg"})))
 
 (t/deftest get-svg-markup-swallows-wasm-errors
-  (with-redefs [wasm.api/initialized? (constantly true)
-                wasm.api/render-shape-svg (fn [_ _] (wasm-panic))]
-    (t/is (= "" (svg.wasm/get-svg-markup [(uuid/next)]))))
-  (with-redefs [wasm.api/initialized? (constantly true)
-                wasm.api/render-shapes-svg (fn [_ _] (wasm-panic))]
-    (t/is (= "" (svg.wasm/get-svg-markup [(uuid/next) (uuid/next)])))))
+  ;; The helper logs the non-fatal failure with `console.error` and returns
+  ;; empty. This test provokes two panics on purpose, so the dumped exception
+  ;; is noise: silence it for the body, then restore it.
+  (let [console-error (.-error js/console)]
+    (set! (.-error js/console) (fn [& _] nil))
+    (try
+      (with-redefs [wasm.api/initialized? (constantly true)
+                    wasm.api/render-shape-svg (fn [_ _] (wasm-panic))]
+        (t/is (= "" (svg.wasm/get-svg-markup [(uuid/next)]))))
+      (with-redefs [wasm.api/initialized? (constantly true)
+                    wasm.api/render-shapes-svg (fn [_ _] (wasm-panic))]
+        (t/is (= "" (svg.wasm/get-svg-markup [(uuid/next) (uuid/next)]))))
+      (finally
+        (set! (.-error js/console) console-error)))))
 
 (t/deftest get-formatted-svg-markup-safe-on-empty
   (with-redefs [wasm.api/initialized? (constantly false)]

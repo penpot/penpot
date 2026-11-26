@@ -282,20 +282,20 @@ Common tests can also be run in the JavaScript runtime with shadow-cljs. From
 
 ```bash
 # To run all common JavaScript tests once
-pnpm run test:js
+pnpm run test
 
 # Quiet run for non-interactive output
 pnpm run test:quiet
 
 # To run a single common JavaScript tests module
-pnpm run test:quiet -- --focus common-tests.logic.comp-sync-test
+pnpm run test -- --focus common-tests.logic.comp-sync-test
 
 # To run a single common JavaScript test and quiet app-level logging
-pnpm run test:quiet -- --focus common-tests.logic.comp-sync-test/test-sync-when-changing-attribute --log-level warn
+pnpm run test -- --focus common-tests.logic.comp-sync-test/test-sync-when-changing-attribute --log-level warn
 ```
 
 The common JavaScript runner accepts the same forwarded runner arguments through
-<code class="language-text">pnpm run test:js -- ...</code>,
+<code class="language-text">pnpm run test -- ...</code>,
 <code class="language-text">pnpm run test:quiet -- ...</code>, or directly through
 <code class="language-text">node target/tests/test.js ...</code> after
 <code class="language-text">pnpm run build:test</code>. Supported runner arguments
@@ -539,4 +539,3 @@ instead of ids:
 ```
 
 You can see more examples of usage by looking at the existing unit tests.
-

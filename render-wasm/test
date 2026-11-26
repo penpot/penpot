@@ -17,9 +17,25 @@ pushd "$_SCRIPT_DIR" > /dev/null
 node --test scripts/cargo-build.test.cjs || exit $?
 
 setup
-cargo test --bin render_wasm -- --show-output
 
-RESULT=$?
+# With RENDER_WASM_COVERAGE set, the same tests run under cargo-llvm-cov
+# (must be on PATH) and leave lcov, a JSON summary and HTML in
+# target/coverage/.
+if [ -n "${RENDER_WASM_COVERAGE:-}" ]; then
+    rustup component add llvm-tools-preview --toolchain "$RUST_VERSION"
+    _COV_ARGS=(--target "$CARGO_BUILD_TARGET")
+    cargo llvm-cov clean --workspace
+    # Keep going on failure so the reports still get written.
+    RESULT=0
+    cargo llvm-cov --no-report "${_COV_ARGS[@]}" --bin render_wasm -- --show-output || RESULT=$?
+    mkdir -p target/coverage
+    cargo llvm-cov report "${_COV_ARGS[@]}" --lcov --output-path target/coverage/lcov.info
+    cargo llvm-cov report "${_COV_ARGS[@]}" --json --summary-only --output-path target/coverage/summary.json
+    cargo llvm-cov report "${_COV_ARGS[@]}" --html --output-dir target/coverage
+else
+    cargo test --bin render_wasm -- --show-output
+    RESULT=$?
+fi
 popd > /dev/null
 
 exit $RESULT

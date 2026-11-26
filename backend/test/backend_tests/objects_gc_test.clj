@@ -2,14 +2,16 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns backend-tests.objects-gc-test
   (:require
    [app.common.logging :as l]
    [app.common.time :as ct]
+   [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.features.file-changes :as fchanges]
    [app.rpc :as-alias rpc]
    [app.storage :as sto]
    [app.tasks.objects-gc :as ogc]
@@ -72,6 +74,69 @@
 
     (t/is (pos? (:processed result)))
     (t/is (nil? (find-file (:id file))))))
+
+(t/deftest deletes-the-pending-file-changes
+  ;; The pending file changes are locked per file, with a constant `file_id`,
+  ;; so the rows of a file that is pending deletion are gone after the run.
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)})
+
+        _       (th/db-insert! :file-change
+                               {:file-id (:id file)
+                                :kind fchanges/revision-kind
+                                :deleted-at (ct/in-past "10m")})
+
+        result  (th/run-task! :objects-gc {})]
+
+    (t/is (pos? (:processed result)))
+    (t/is (nil? (th/db-get :file-change {:file-id (:id file)}
+                           {::db/remove-deleted false})))))
+
+(t/deftest deletes-the-pending-file-changes-of-several-chunks
+  ;; More pending rows than the chunk size: the plan walks the cursor and each
+  ;; chunk locks its own rows, one query per file, with a constant `file_id`
+  ;; so the planner prunes the partition.
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)})
+        ids     (repeatedly 5 uuid/next)
+        _       (doseq [id ids]
+                  (th/db-insert! :file-change
+                                 {:id id
+                                  :file-id (:id file)
+                                  :kind fchanges/revision-kind
+                                  :deleted-at (ct/in-past "10m")}))
+        result  (th/run-task! :objects-gc {:chunk-size 2})]
+
+    (t/is (pos? (:processed result)))
+    (t/is (empty? (th/db-query :file-change {:file-id (:id file)}
+                               {::db/remove-deleted false})))))
+
+(t/deftest a-chunk-spanning-several-files-deletes-all-of-them
+  ;; The rows of one chunk can belong to different files. Each group is locked
+  ;; with its own `file_id`, and every row is still deleted; buffering the
+  ;; groups instead of locking them would leave them behind.
+  (let [profile (th/create-profile* 1)
+        opts    {:profile-id (:id profile)
+                 :project-id (:default-project-id profile)}
+        files   [(th/create-file* 1 opts)
+                 (th/create-file* 2 opts)]
+
+        _       (doseq [file files]
+                  (dotimes [_ 2]
+                    (th/db-insert! :file-change
+                                   {:file-id (:id file)
+                                    :kind fchanges/revision-kind
+                                    :deleted-at (ct/in-past "10m")})))
+
+        ;; one chunk holds the rows of both files
+        result  (th/run-task! :objects-gc {:chunk-size 4})]
+
+    (t/is (pos? (:processed result)))
+    (doseq [file files]
+      (t/is (empty? (th/db-query :file-change {:file-id (:id file)}
+                                 {::db/remove-deleted false}))))))
 
 (t/deftest profile-cascade-keeps-profile-deletion-date
   ;; The cascade marks the owned rows with the deletion date of the profile,
@@ -141,7 +206,7 @@
   ;; When the GC physically deletes a team, the projection must drop its row,
   ;; so the event carries the purged ids.
   (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
-    (with-redefs [cf/flags (conj cf/flags :audit-log)]
+    (th/with-audit-config (conj cf/flags :nexus)
       (let [profile (th/create-profile* 1 {:is-active true})
             team    (th/create-team* 71 {:profile-id (:id profile)})]
         (th/command! {::th/type :delete-team
@@ -153,8 +218,10 @@
         (th/reset-mock! audit-mock)
         (th/run-task! :objects-gc {:skip-delay true})
         (t/is (nil? (th/db-get :team {:id (:id team)} {::db/remove-deleted false})))
-        (let [events (filter #(contains? (:props %) :team-ids)
+        (let [events (filter #(= #{:team-ids} (set (keys (:props %))))
                              (events-named audit-mock "hard-delete-objects"))]
+          ;; Every chunk carries exactly its own entity key and nothing
+          ;; else: no flat team-ids are resolved after the delete.
           (t/is (= 1 (count events)))
           (let [event (first events)]
             (t/is (= "command" (:type event)))
@@ -163,7 +230,7 @@
 
 (t/deftest gc-emits-hard-delete-objects-for-projects
   (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
-    (with-redefs [cf/flags (conj cf/flags :audit-log)]
+    (th/with-audit-config (conj cf/flags :nexus)
       (let [profile (th/create-profile* 1 {:is-active true})
             team    (th/create-team* 72 {:profile-id (:id profile)})
             project (th/create-project* 72 {:profile-id (:id profile)
@@ -180,12 +247,13 @@
           (t/is (= 1 (count events)))
           (let [event (first events)]
             (t/is (= "command" (:type event)))
+            (t/is (= #{:project-ids} (set (keys (:props event)))))
             (t/is (= [(:id project)] (get-in event [:props :project-ids])))
             (t/is (= "objects-gc" (get-in event [:context :triggered-by])))))))))
 
 (t/deftest gc-emits-hard-delete-objects-for-files
   (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
-    (with-redefs [cf/flags (conj cf/flags :audit-log)]
+    (th/with-audit-config (conj cf/flags :nexus)
       (let [profile (th/create-profile* 1 {:is-active true})
             team    (th/create-team* 73 {:profile-id (:id profile)})
             project (th/create-project* 73 {:profile-id (:id profile)
@@ -204,10 +272,11 @@
           (t/is (= 1 (count events)))
           (let [event (first events)]
             (t/is (= "command" (:type event)))
+            (t/is (= #{:file-ids} (set (keys (:props event)))))
             (t/is (= [(:id file)] (get-in event [:props :file-ids])))
             (t/is (= "objects-gc" (get-in event [:context :triggered-by])))))))))
 
-(t/deftest gc-emits-no-event-without-audit-log-flag
+(t/deftest gc-emits-no-event-without-a-consumer
   ;; The GC must stay silent when the audit log is off, even though the row is
   ;; still purged.
   (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
@@ -222,9 +291,37 @@
       (t/is (nil? (th/db-get :team {:id (:id team)} {::db/remove-deleted false})))
       (t/is (empty? (:call-args-list @audit-mock))))))
 
+(t/deftest gc-deletes-file-data-and-touches-its-storage-object
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)})
+        sobject (sto/put-object! (::sto/storage th/*system*)
+                                 {::sto/content (sto/content "file-data")
+                                  :content-type "application/octet-stream"
+                                  :bucket "file-data"
+                                  :file-id (:id file)
+                                  :id (:id file)})]
+
+    ;; `main` always carries `id = file_id`: mark the real row as deleted
+    ;; instead of inventing a second main row.
+    (th/db-update! :file-data
+                   {:backend "storage"
+                    :data nil
+                    :storage-object-id (:id sobject)
+                    :deleted-at (ct/in-past "30m")}
+                   {:file-id (:id file) :id (:id file)})
+
+    (th/run-task! :objects-gc {})
+
+    (t/testing "the row is purged"
+      (t/is (nil? (th/db-get :file-data {:file-id (:id file) :id (:id file)}))))
+
+    (t/testing "the storage object is touched for the storage GC"
+      (t/is (some? (:touched-at (th/db-get :storage-object {:id (:id sobject)})))))))
+
 (t/deftest gc-emits-events-only-for-committed-chunks
   (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
-    (with-redefs [cf/flags (conj cf/flags :audit-log)]
+    (th/with-audit-config (conj cf/flags :nexus)
       (let [profile     (th/create-profile* 1)
             rolled-back (create-deleted-file! profile 1 (ct/in-past "30m"))
             blocked     (create-deleted-file! profile 2 (ct/in-past "20m"))

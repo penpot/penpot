@@ -6,14 +6,25 @@ import { PluginTask, type AbstractPluginTask } from "../PluginTask";
 import type { RedisBridge, SessionClaim, SessionDiscoveryRequest, SessionDiscoveryResponse } from "../RedisBridge";
 import { UserPenpotConnections } from "../UserPenpotConnections";
 import { MultiInstanceTaskDispatcher } from "./MultiInstanceTaskDispatcher";
-import { SessionDiscoveryError, type TaskDispatchHost } from "./TaskDispatcher";
+import { InvalidDiscoveryResponseError, SessionDiscoveryError, type TaskDispatchHost } from "./TaskDispatcher";
+
+/** Parse failure reported for a discovery reply that the requester cannot read. */
+const INVALID_REPLY_REASON = "sessions[0].fileId: expected string";
+
+/** Reply callbacks registered by one discovery request. */
+interface DiscoveryReplyHandlers {
+    onResponse: (response: SessionDiscoveryResponse) => void;
+    onInvalidResponse: (error: Error) => void;
+}
 
 /** In-memory Pub/Sub transport retaining Redis's per-subscriber delivery count. */
 class RedisNetwork {
     readonly tasks = new Map<string, Map<RedisPeer, (request: PluginTaskRequest) => void>>();
     readonly discovery = new Map<string, Map<RedisPeer, (request: SessionDiscoveryRequest) => void>>();
     readonly taskResponses = new Map<string, (response: PluginTaskResponse<unknown>) => void>();
-    readonly discoveryResponses = new Map<string, (response: SessionDiscoveryResponse) => void>();
+    readonly discoveryResponses = new Map<string, DiscoveryReplyHandlers>();
+    /** reply callbacks of the latest discovery request, kept after its subscription is released. */
+    lastDiscoveryReplyHandlers?: DiscoveryReplyHandlers;
     readonly claims = new Map<string, Map<RedisPeer, (claim: SessionClaim) => void>>();
     failDiscovery = false;
     dropClaims = false;
@@ -25,6 +36,7 @@ class RedisNetwork {
 class RedisPeer {
     replyToDiscovery = true;
     repeatDiscoveryReplies = false;
+    sendInvalidDiscoveryReplies = false;
 
     constructor(readonly network: RedisNetwork) {}
 
@@ -72,9 +84,16 @@ class RedisPeer {
         this.network.discovery.get(token)?.delete(this);
     }
 
-    async sendDiscoveryRequest(token: string, id: string, onResponse: (response: SessionDiscoveryResponse) => void) {
+    async sendDiscoveryRequest(
+        token: string,
+        id: string,
+        onResponse: (response: SessionDiscoveryResponse) => void,
+        onInvalidResponse: (error: Error) => void
+    ) {
         if (this.network.failDiscovery) throw new Error("Redis unavailable for discovery");
-        this.network.discoveryResponses.set(id, onResponse);
+        const handlers = { onResponse, onInvalidResponse };
+        this.network.discoveryResponses.set(id, handlers);
+        this.network.lastDiscoveryReplyHandlers = handlers;
         await this.network.beforeDiscoveryPublish?.();
         const subscribers = this.network.discovery.get(token) ?? new Map();
         for (const [peer, handler] of subscribers) {
@@ -87,7 +106,12 @@ class RedisPeer {
     }
 
     publishDiscoveryResponse(id: string, response: SessionDiscoveryResponse) {
-        this.network.discoveryResponses.get(id)?.(response);
+        const handlers = this.network.discoveryResponses.get(id);
+        if (this.sendInvalidDiscoveryReplies) {
+            handlers?.onInvalidResponse(new Error(INVALID_REPLY_REASON));
+        } else {
+            handlers?.onResponse(response);
+        }
     }
 
     async unsubscribeFromDiscoveryResponses(id: string) {
@@ -244,6 +268,7 @@ test("incomplete discovery never dispatches even when it yields exactly one sess
     slow.redis.replyToDiscovery = false;
     await assert.rejects(new Instance(network).execute("alice"), (error: Error) => {
         assert.ok(error instanceof SessionDiscoveryError);
+        assert.match(error.message, /not every MCP server instance replied within 20ms/);
         assert.match(error.message, /temporary server load.*retry/);
         return true;
     });
@@ -265,7 +290,65 @@ test("duplicate replies from one instance do not substitute for a missing reply"
 test("discovery transport failures use the retryable discovery error", async () => {
     const network = new RedisNetwork();
     network.failDiscovery = true;
-    await assert.rejects(new Instance(network).execute("alice"), SessionDiscoveryError);
+    await assert.rejects(new Instance(network).execute("alice"), (error: Error) => {
+        assert.ok(error instanceof SessionDiscoveryError);
+        assert.match(error.message, /the Redis request failed \(Redis unavailable for discovery\)/);
+        assert.match(error.message, /temporary server load.*retry/);
+        return true;
+    });
+});
+
+test("an invalid reply fails discovery without dispatching even when another instance replies validly", async () => {
+    const network = new RedisNetwork();
+    const responsive = new Instance(network);
+    const otherVersion = new Instance(network);
+    await responsive.connect("alice", "visible");
+    await otherVersion.connect("alice", "unreadable");
+    otherVersion.redis.sendInvalidDiscoveryReplies = true;
+    await assert.rejects(new Instance(network).execute("alice"), (error: Error) => {
+        assert.ok(error instanceof InvalidDiscoveryResponseError);
+        assert.ok(error.message.includes(INVALID_REPLY_REASON));
+        assert.match(error.message, /Retrying will not help/);
+        return true;
+    });
+    assert.deepEqual(responsive.executions, []);
+    assert.deepEqual(otherVersion.executions, []);
+    assert.equal(network.discoveryResponses.size, 0);
+});
+
+test("an invalid reply after discovery settled leaves its outcome unchanged", async () => {
+    const network = new RedisNetwork();
+    const owner = new Instance(network);
+    await owner.connect("alice", "only");
+    const requester = new Instance(network);
+    const sessions = requester.dispatcher.discoverSessions("alice");
+    const late = network.lastDiscoveryReplyHandlers!;
+    assert.deepEqual(
+        (await sessions).map((session) => session.sessionId),
+        ["only"]
+    );
+    late.onInvalidResponse(new Error(INVALID_REPLY_REASON));
+    assert.equal((await requester.execute("alice")).data, "only");
+});
+
+test("closing the dispatcher fails pending discoveries without blaming server load", async () => {
+    const network = new RedisNetwork();
+    const silent = new Instance(network);
+    await silent.connect("alice", "tab");
+    silent.redis.replyToDiscovery = false;
+    const requester = new Instance(network);
+    const rejected = assert.rejects(requester.execute("alice"), (error: Error) => {
+        assert.ok(error instanceof SessionDiscoveryError);
+        assert.match(error.message, /the MCP server is shutting down/);
+        assert.match(error.message, /You can retry the request/);
+        assert.doesNotMatch(error.message, /temporary server load/);
+        return true;
+    });
+    await new Promise<void>((resolve) => setImmediate(resolve));
+    await requester.dispatcher.close();
+    await rejected;
+    assert.deepEqual(silent.executions, []);
+    assert.equal(network.discoveryResponses.size, 0);
 });
 
 test("disconnecting one tab retains discovery and dispatch for the remaining tab", async () => {

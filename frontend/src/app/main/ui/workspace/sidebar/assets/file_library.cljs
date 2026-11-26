@@ -21,6 +21,7 @@
    [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.components.title-bar :refer [title-bar*]]
+   [app.main.ui.components.truncated-text :refer [truncated-text*]]
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
    [app.main.ui.ds.tooltip :refer [tooltip*]]
@@ -117,8 +118,8 @@
                                                  tokens-source-icon])
                                        ;; Do we need to add shared info here?
                                        (mf/html [:div {:class (stl/css :special-title)}
-                                                 [:span {:class (stl/css :special-title-text)}
-                                                  file-name]
+                                                 [:> truncated-text* {:class (stl/css :special-title-text)
+                                                                      :text file-name}]
                                                  tokens-source-icon]))}
       (when-not ^boolean is-local
         [:span {:title (tr "workspace.assets.open-library")}

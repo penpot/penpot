@@ -29,6 +29,7 @@
    [app.loggers.audit :as audit]
    [app.media.svg :as svg]
    [app.media.validation :as media.v]
+   [app.msgbus :as mbus]
    [app.nitrate :as nitrate]
    [app.rpc :as rpc]
    [app.rpc.commands.auth :as auth]
@@ -921,6 +922,124 @@ RETURNING id, deleted_at;")
                                          (count valid-teams-to-transfer)
                                          (count valid-teams-to-exit))))
 
+;; API: set-organization-member-viewer
+
+;; The teams of the organization where the member can still edit: the
+;; ones whose role has to drop to viewer. Default teams stay out: an
+;; organization's "Your Penpot" team is not flagged `is_default` here,
+;; so Nitrate leaves it out of `team-ids`, and this check covers the
+;; profile's own default team.
+(def ^:private sql:get-member-editable-teams
+  "SELECT t.id, t.name, t.photo_id, tpr.is_owner
+     FROM team_profile_rel AS tpr
+     JOIN team AS t ON t.id = tpr.team_id
+    WHERE tpr.profile_id = ?
+      AND t.id = ANY(?)
+      AND t.deleted_at IS NULL
+      AND t.is_default IS FALSE
+      AND tpr.can_edit IS TRUE
+      FOR UPDATE OF tpr")
+
+(def ^:private sql:downgrade-member-team-invitations
+  "UPDATE team_invitation AS ti
+      SET role = 'viewer',
+          updated_at = now()
+     FROM profile AS p
+    WHERE p.id = ?
+      AND lower(ti.email_to) = lower(p.email)
+      AND ti.team_id = ANY(?)
+      AND ti.role IN ('editor', 'admin')")
+
+(def ^:private schema:set-organization-member-viewer-params
+  [:map
+   [:profile-id ::sm/uuid]
+   [:organization-owner-id ::sm/uuid]
+   [:team-ids [:vector ::sm/uuid]]])
+
+(def ^:private schema:set-organization-member-viewer-result
+  [:map
+   [:transferred-teams
+    [:vector [:map
+              [:id ::sm/uuid]
+              [:name ::sm/text]
+              [:photo-url {:optional true} ::sm/uri]]]]])
+
+(defn- assign-team-owner
+  "Makes `owner-id` the owner of the team, adding them to it when they
+  are not a member yet."
+  [{:keys [::db/conn] :as cfg} team-id owner-id]
+  (let [owner-flags (get ctt/permissions-for-role :owner)]
+    (if (db/get* conn :team-profile-rel {:team-id team-id :profile-id owner-id})
+      (db/update! conn :team-profile-rel
+                  owner-flags
+                  {:team-id team-id :profile-id owner-id})
+      (teams/add-profile-to-team! cfg (assoc owner-flags
+                                             :team-id team-id
+                                             :profile-id owner-id)))))
+
+(sv/defmethod ::set-organization-member-viewer
+  "Limits a member of an organization to viewer in every team of the
+  organization: their team roles drop to viewer, the teams they own pass
+  to the organization owner and their pending editor or admin team
+  invitations become viewer invitations. Answers the teams whose
+  ownership moved."
+  {::doc/added "2.20"
+   ::rpc/allowed-shared-keys allowed-shared-key-ids
+   ::sm/params schema:set-organization-member-viewer-params
+   ::sm/result schema:set-organization-member-viewer-result
+   ::db/transaction true
+   ::nitrate/sso false}
+  [{:keys [::db/conn ::mbus/msgbus] :as cfg} {:keys [profile-id organization-owner-id team-ids]}]
+  (when (= profile-id organization-owner-id)
+    (ex/raise :type :validation
+              :code :cant-change-organization-owner-role))
+
+  (let [team-ids-array (db/create-array conn "uuid" team-ids)
+        teams          (db/exec! conn [sql:get-member-editable-teams profile-id team-ids-array])
+        owned-teams    (filterv :is-owner teams)
+        owner-name     (when (seq owned-teams)
+                         (:fullname (db/get conn :profile {:id organization-owner-id})))
+        viewer-flags   (get ctt/permissions-for-role :viewer)]
+
+    ;; The organization owner asked for this from the admin console, so
+    ;; no message goes to their sessions: the dashboard reads the team
+    ;; again the next time they open it.
+    (doseq [{:keys [id]} owned-teams]
+      (assign-team-owner cfg id organization-owner-id))
+
+    (doseq [{:keys [id]} teams]
+      (db/update! conn :team-profile-rel
+                  viewer-flags
+                  {:team-id id :profile-id profile-id}))
+
+    (db/exec-one! conn [sql:downgrade-member-team-invitations profile-id team-ids-array])
+
+    ;; Deferred past the commit: the member's sessions read the team
+    ;; again when told, and a rolled back change must not be announced.
+    ;; The former owner learns who owns the team now; everybody else
+    ;; gets the plain role change.
+    (db/after-commit
+     (fn []
+       (doseq [{:keys [id name is-owner]} teams]
+         (mbus/pub! msgbus
+                    :topic profile-id
+                    :message (cond-> {:type :team-role-change
+                                      :topic profile-id
+                                      :team-id id
+                                      :role :viewer}
+                               is-owner
+                               (assoc :team-name name
+                                      :new-owner-name owner-name))))))
+
+    (when (seq teams)
+      (notifications/notify-permissions-changed cfg profile-id))
+
+    {:transferred-teams
+     (mapv (fn [{:keys [id name photo-id]}]
+             (cond-> {:id id :name name}
+               photo-id (assoc :photo-url (files/resolve-public-uri photo-id))))
+           owned-teams)}))
+
 ;; API: send-renewal-email
 
 (def ^:private schema:send-renewal-email-params
@@ -976,6 +1095,14 @@ RETURNING id, deleted_at;")
                AND email_to <> ALL(?)
          ) AS non_member")
 
+(def ^:private sql:count-non-member-organization-team-invitations
+  "SELECT team_id, COUNT(*) AS count
+     FROM team_invitation
+    WHERE team_id = ANY(?)
+      AND email_to <> ALL(?)
+      AND valid_until > now()
+    GROUP BY team_id")
+
 (def ^:private sql:delete-non-member-organization-team-invitations
   "DELETE FROM team_invitation
     WHERE team_id = ANY(?)
@@ -1019,6 +1146,29 @@ RETURNING id, deleted_at;")
   [cfg params]
   (db/run! cfg (fn [{:keys [::db/conn]}]
                  {:exists (boolean (non-member-organization-team-invitations-exist? conn params))})))
+
+(def ^:private schema:count-organization-team-invitations-for-non-members-result
+  [:vector
+   [:map
+    [:team-id ::sm/uuid]
+    [:count ::sm/int]]])
+
+(sv/defmethod ::count-organization-team-invitations-for-non-members
+  "Count, per team, the pending (not expired) team invitations for
+  emails that are not organization members. Teams without any are left
+  out."
+  {::doc/added "3.0"
+   ::rpc/allowed-shared-keys allowed-shared-key-ids
+   ::sm/params schema:organization-team-invitations-for-non-members-params
+   ::sm/result schema:count-organization-team-invitations-for-non-members-result
+   ::nitrate/sso false}
+  [cfg params]
+  (db/run! cfg (fn [{:keys [::db/conn]}]
+                 (let [{:keys [emails-array teams-array]}
+                       (organization-team-invitations-for-non-members-arrays conn params)]
+                   (db/exec! conn [sql:count-non-member-organization-team-invitations
+                                   teams-array
+                                   emails-array])))))
 
 (sv/defmethod ::delete-organization-team-invitations-for-non-members
   "Delete team invitations for emails that are not organization members."
@@ -1145,20 +1295,33 @@ RETURNING id, deleted_at;")
   [:map
    [:organization-id ::sm/uuid]])
 
+(def ^:private schema:team-detail
+  [:map
+   [:id ::sm/uuid]
+   [:name ::sm/text]
+   [:photo-url {:optional true} ::sm/uri]
+   [:created-at ::sm/inst]
+   [:last-activity-at {:optional true} [:maybe ::sm/inst]]
+   [:owner-profile-id {:optional true} [:maybe ::sm/uuid]]
+   [:owner-name {:optional true} [:maybe ::sm/text]]
+   [:owner-photo-url {:optional true} ::sm/uri]
+   [:num-projects ::sm/int]
+   [:num-files ::sm/int]
+   [:num-members ::sm/int]])
+
 (def ^:private schema:get-teams-detail-result
-  [:vector
-   [:map
-    [:id ::sm/uuid]
-    [:name ::sm/text]
-    [:photo-url {:optional true} ::sm/uri]
-    [:created-at ::sm/inst]
-    [:last-activity-at {:optional true} [:maybe ::sm/inst]]
-    [:owner-profile-id {:optional true} [:maybe ::sm/uuid]]
-    [:owner-name {:optional true} [:maybe ::sm/text]]
-    [:owner-photo-url {:optional true} ::sm/uri]
-    [:num-projects ::sm/int]
-    [:num-files ::sm/int]
-    [:num-members ::sm/int]]])
+  [:vector schema:team-detail])
+
+(defn- get-teams-detail-rows
+  "Detail rows of the given non-empty team ids, with their photo ids
+  resolved to public URLs."
+  [conn team-ids]
+  (let [ids-array (db/create-array conn "uuid" team-ids)]
+    (->> (db/exec! conn [sql:get-teams-detail ids-array])
+         (mapv (fn [{:keys [photo-id owner-photo-id] :as row}]
+                 (cond-> (dissoc row :photo-id :owner-photo-id)
+                   photo-id       (assoc :photo-url       (files/resolve-public-uri photo-id))
+                   owner-photo-id (assoc :owner-photo-url (files/resolve-public-uri owner-photo-id))))))))
 
 (sv/defmethod ::get-teams-detail
   "Get detailed information for all non-deleted teams in an organization,
@@ -1175,12 +1338,51 @@ RETURNING id, deleted_at;")
       []
       (db/run! cfg
                (fn [{:keys [::db/conn]}]
-                 (let [ids-array (db/create-array conn "uuid" team-ids)]
-                   (->> (db/exec! conn [sql:get-teams-detail ids-array])
-                        (mapv (fn [{:keys [photo-id owner-photo-id] :as row}]
-                                (cond-> (dissoc row :photo-id :owner-photo-id)
-                                  photo-id       (assoc :photo-url       (files/resolve-public-uri photo-id))
-                                  owner-photo-id (assoc :owner-photo-url (files/resolve-public-uri owner-photo-id))))))))))))
+                 (get-teams-detail-rows conn team-ids))))))
+
+;; ---- API: get-owned-teams-detail
+
+(def ^:private sql:get-teams-members
+  "SELECT team_id, profile_id
+     FROM team_profile_rel
+    WHERE team_id = ANY(?)")
+
+(def ^:private schema:get-owned-teams-detail-result
+  [:vector
+   (conj schema:team-detail [:member-ids [:vector ::sm/uuid]])])
+
+(defn- get-teams-member-ids
+  "Map of team id to the ids of its members, for the given non-empty
+  team ids."
+  [conn team-ids]
+  (let [ids-array (db/create-array conn "uuid" team-ids)]
+    (reduce (fn [result {:keys [team-id profile-id]}]
+              (update result team-id (fnil conj []) profile-id))
+            {}
+            (db/exec! conn [sql:get-teams-members ids-array]))))
+
+(sv/defmethod ::get-owned-teams-detail
+  "List the non-default, non-deleted teams the current profile owns,
+  with the same details as get-teams-detail plus the ids of their
+  members. Nitrate uses it to offer the teams an organization owner can
+  bring into an organization."
+  {::doc/added "3.0"
+   ::rpc/allowed-shared-keys allowed-shared-key-ids
+   ::sm/params [:map]
+   ::sm/result schema:get-owned-teams-detail-result
+   ::nitrate/sso false}
+  [cfg {:keys [::rpc/profile-id]}]
+  (let [current-user-id (-> (profile/get-profile cfg profile-id) :id)]
+    (db/run! cfg
+             (fn [{:keys [::db/conn]}]
+               (let [team-ids (->> (db/exec! conn [sql:get-teams current-user-id])
+                                   (mapv :id))]
+                 (if (empty? team-ids)
+                   []
+                   (let [member-ids (get-teams-member-ids conn team-ids)]
+                     (mapv (fn [{:keys [id] :as team}]
+                             (assoc team :member-ids (get member-ids id [])))
+                           (get-teams-detail-rows conn team-ids)))))))))
 
 ;; ---- API: check-organization-sso
 
@@ -1232,6 +1434,29 @@ RETURNING id, deleted_at;")
   (notifications/notify-organization-change-sso cfg organization-id)
   (when announce-activation
     (neh/send-organization-setup-sso-emails! cfg organization-id))
+  nil)
+
+;; ---- API: send-organization-setup-sso-emails-for-team
+
+(def ^:private schema:send-organization-setup-sso-emails-for-team
+  [:map
+   [:organization-id ::sm/uuid]
+   [:team-id ::sm/uuid]
+   [:organization-member-ids [:vector ::sm/uuid]]])
+
+(sv/defmethod ::send-organization-setup-sso-emails-for-team
+  "Send the SSO email to the people a team brings into an organization:
+  the team members missing from `organization-member-ids` (the members
+  before the team joined) and the pending team invitees. Does nothing
+  when the organization has no active SSO. Nitrate calls it after adding
+  a team, as add-team-to-organization does when Penpot adds one."
+  {::doc/added "3.0"
+   ::rpc/allowed-shared-keys allowed-shared-key-ids
+   ::sm/params schema:send-organization-setup-sso-emails-for-team
+   ::rpc/auth false}
+  [cfg {:keys [organization-id team-id organization-member-ids]}]
+  (neh/send-organization-setup-sso-emails-for-team!
+   cfg organization-id team-id (set organization-member-ids))
   nil)
 
 ;; ---- API: bulk-create-profiles

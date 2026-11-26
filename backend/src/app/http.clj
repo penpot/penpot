@@ -253,19 +253,27 @@
   [_ params]
   (assert (sm/check schema:router-params params)))
 
+(defn- root-middleware
+  "Middleware chain for routes under the root group. MCP OAuth uses its
+  own chain. Defined as a function so tests can check that the trusted-origin
+  middleware is registered and wraps the middleware that follows it."
+  [cfg]
+  [[mw/server-timing]
+   [mw/trusted-origin]
+   [sec/sec-fetch-metadata]
+   [mw/params]
+   [mw/format-response]
+   [mw/auth {:bearer (partial session/decode-token cfg)
+             :cookie (partial session/decode-token cfg)
+             :token  (partial actoken/decode-token cfg)}]
+   [mw/parse-request (::mtx/metrics cfg)]
+   [mw/errors errors/handle]
+   [mw/restrict-methods]])
+
 (defmethod ig/init-key ::router
   [_ cfg]
   (rr/router
-   [["" {:middleware [[mw/server-timing]
-                      [sec/sec-fetch-metadata]
-                      [mw/params]
-                      [mw/format-response]
-                      [mw/auth {:bearer (partial session/decode-token cfg)
-                                :cookie (partial session/decode-token cfg)
-                                :token  (partial actoken/decode-token cfg)}]
-                      [mw/parse-request (::mtx/metrics cfg)]
-                      [mw/errors errors/handle]
-                      [mw/restrict-methods]]}
+   [["" {:middleware (root-middleware cfg)}
 
      (::mtx/routes cfg)
      (::assets/routes cfg)

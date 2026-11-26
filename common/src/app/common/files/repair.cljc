@@ -12,6 +12,7 @@
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
    [app.common.files.tokens :as cfo]
+   [app.common.files.variant :as cfv]
    [app.common.logging :as log]
    [app.common.path-names :as cpn]
    [app.common.types.component :as ctk]
@@ -25,6 +26,20 @@
 
 (defmulti repair-error
   (fn [code _error _file-data _libraries] code))
+
+(defn- update-component-shapes
+  "Update shapes stored inside a component `:objects` map.
+
+   Emits one `:mod-obj` change per shape, scoped with `:component-id`, instead
+   of rewriting the whole map through a `:mod-component` change. `:ignore-touched`
+   keeps the value the caller computed: no touched group is merged on top."
+  [component objects ids update-fn]
+  (-> (pcb/empty-changes nil)
+      ;; A made container, so `update-shapes` scopes the changes to the
+      ;; component instead of to a page.
+      (pcb/with-container {:id (:id component) :type :component})
+      (pcb/with-objects objects)
+      (pcb/update-shapes ids update-fn {:ignore-touched true})))
 
 (defmethod repair-error :invalid-geometry
   [_ {:keys [shape page-id] :as error} file-data _]
@@ -297,37 +312,49 @@
 
 (defmethod repair-error :ref-shape-not-found
   [_ {:keys [shape page-id] :as error} file-data libraries]
-  (let [lost-main      (let [page (ctpl/get-page file-data page-id)]
-                         (find-lost-main file-data (ctn/get-component-shape (:objects page) shape)))
+  (let [;; An earlier repair of the same pass may have removed the shape, or
+        ;; fixed the reference (e.g. pointed the component back to its main).
+        current        (let [page (ctpl/get-page file-data page-id)]
+                         (get (:objects page) (:id shape)))
 
-        matching-shape (let [page              (ctpl/get-page file-data page-id)
-                             root-shape        (ctn/get-component-shape (:objects page) shape)
-                             component-file    (if (= (:component-file root-shape) (:id file-data))
-                                                 file-data
-                                                 (-> (get libraries (:component-file root-shape)) :data))
-                             component         (when component-file
-                                                 (ctkl/get-component component-file (:component-id root-shape) true))
-                             component-shapes  (ctf/get-component-shapes file-data component)]
+        ref-shape      (when (some? current)
+                         (ctf/find-ref-shape {:id (:id file-data) :data file-data}
+                                             (ctpl/get-page file-data page-id) libraries current
+                                             :include-deleted? true))
 
-                         ;; Check if the shape points to the remote main. If so, reassign to the near main.
-                         (if-let [near-shape-1 (d/seek #(= (:shape-ref %) (:shape-ref shape)) component-shapes)]
-                           near-shape-1
-                           ;; Check if it points to any random shape in the page. If so, try to find a matchng
-                           ;; shape in the near main component.
-                           (when-let [random-shape (ctn/get-shape page (:shape-ref shape))]
-                             (if-let [near-shape-2 (d/seek #(= (:id %) (:shape-ref random-shape)) component-shapes)]
-                               near-shape-2
-                               ;; If not, check if it's a fostered copy and find a direct main.
-                               (let [head-shape        (ctn/get-head-shape (:objects page) shape)
-                                     component-file    (if (= (:component-file head-shape) (:id file-data))
-                                                         file-data
-                                                         (-> (get libraries (:component-file head-shape)) :data))
-                                     component         (when component-file
-                                                         (ctkl/get-component component-file (:component-id head-shape) true))
-                                     component-shapes  (ctf/get-component-shapes file-data component)]
-                                 (if-let [near-shape-3 (d/seek #(= (:id %) (:shape-ref random-shape)) component-shapes)]
-                                   near-shape-3
-                                   nil))))))
+        lost-main      (when (some? current)
+                         (let [page (ctpl/get-page file-data page-id)]
+                           (find-lost-main file-data (ctn/get-component-shape (:objects page) shape))))
+
+        matching-shape (when (some? current)
+                         (let [page              (ctpl/get-page file-data page-id)
+                               root-shape        (ctn/get-component-shape (:objects page) shape)
+                               component-file    (if (= (:component-file root-shape) (:id file-data))
+                                                   file-data
+                                                   (-> (get libraries (:component-file root-shape)) :data))
+                               component         (when component-file
+                                                   (ctkl/get-component component-file (:component-id root-shape) true))
+                               component-shapes  (ctf/get-component-shapes file-data component)]
+
+                           ;; Check if the shape points to the remote main. If so, reassign to the near main.
+                           (if-let [near-shape-1 (d/seek #(= (:shape-ref %) (:shape-ref shape)) component-shapes)]
+                             near-shape-1
+                             ;; Check if it points to any random shape in the page. If so, try to find a matchng
+                             ;; shape in the near main component.
+                             (when-let [random-shape (ctn/get-shape page (:shape-ref shape))]
+                               (if-let [near-shape-2 (d/seek #(= (:id %) (:shape-ref random-shape)) component-shapes)]
+                                 near-shape-2
+                                 ;; If not, check if it's a fostered copy and find a direct main.
+                                 (let [head-shape        (ctn/get-head-shape (:objects page) shape)
+                                       component-file    (if (= (:component-file head-shape) (:id file-data))
+                                                           file-data
+                                                           (-> (get libraries (:component-file head-shape)) :data))
+                                       component         (when component-file
+                                                           (ctkl/get-component component-file (:component-id head-shape) true))
+                                       component-shapes  (ctf/get-component-shapes file-data component)]
+                                   (if-let [near-shape-3 (d/seek #(= (:id %) (:shape-ref random-shape)) component-shapes)]
+                                     near-shape-3
+                                     nil)))))))
         reassign-shape
         (fn [shape]
           (log/debug :hint "  -> reassign shape-ref to" :shape-ref (:id matching-shape))
@@ -343,6 +370,11 @@
     ;; and link to it. If not, detach the shape.
     (log/debug :hint "repairing shape :ref-shape-not-found" :id (:id shape) :name (:name shape) :page-id page-id)
     (cond
+      (or (nil? current) (some? ref-shape))
+      (do
+        (log/debug :hint "  -> shape removed or ref shape found, nothing to repair")
+        (pcb/empty-changes nil page-id))
+
       (some? lost-main)
       (do
         (log/debug :hint "  -> assign main-instance-id" :main-instance-id (:id lost-main))
@@ -414,33 +446,26 @@
         (pcb/update-shapes [(:id shape)] repair-shape))))
 
 (defmethod repair-error :shape-ref-cycle
-  [_ {:keys [shape args] :as error} file-data _]
-  (let [repair-component
-        (fn [component]
-          (let [objects   (:objects component)
-                ;; we only have encounter this on deleted components,
-                ;; so the relevant objects are inside the component
-                to-detach (->> (:cycles-ids args)
-                               (map #(get objects %))
-                               (map #(ctn/get-head-shape objects %))
-                               (map :id)
-                               distinct
-                               (mapcat #(ctn/get-children-in-instance objects %))
-                               (map :id)
-                               set)]
+  [_ {:keys [shape args] :as error} _file-data _]
+  (let [objects   (:objects shape)
+        ;; we only have encounter this on deleted components,
+        ;; so the relevant objects are inside the component
+        to-detach (->> (:cycles-ids args)
+                       (map #(get objects %))
+                       (map #(ctn/get-head-shape objects %))
+                       (map :id)
+                       distinct
+                       (mapcat #(ctn/get-children-in-instance objects %))
+                       (map :id)
+                       set)
 
-            (update component :objects
-                    (fn [objects]
-                      (reduce-kv (fn [acc k v]
-                                   (if (contains? to-detach k)
-                                     (assoc acc k (ctk/detach-shape v))
-                                     (assoc acc k v)))
-                                 {}
-                                 objects)))))]
+        detach-shape
+        (fn [shape]
+          (log/debug :hint "  -> detach shape" :shape-id (:id shape))
+          (ctk/detach-shape shape))]
+
     (log/debug :hint "repairing component :shape-ref-cycle" :id (:id shape) :name (:name shape))
-    (-> (pcb/empty-changes nil nil)
-        (pcb/with-library-data file-data)
-        (pcb/update-component (:id shape) repair-component))))
+    (update-component-shapes shape objects to-detach detach-shape)))
 
 (defmethod repair-error :shape-ref-in-main
   [_ {:keys [shape page-id] :as error} file-data _]
@@ -582,7 +607,7 @@
     (log/debug :hint "repairing component :component-nil-objects-not-allowed" :id (:id component) :name (:name component))
     (-> (pcb/empty-changes nil)
         (pcb/with-library-data file-data)
-        (pcb/update-component (:id component) repair-component))))
+        (pcb/update-component (:id component) repair-component {:objects? true}))))
 
 (defmethod repair-error :non-deleted-component-cannot-have-objects
   [_ {component :shape} file-data _]   ; in this error the :shape argument is the component
@@ -598,7 +623,7 @@
     (log/debug :hint "repairing component :non-deleted-component-cannot-have-objects" :id (:id component) :name (:name component))
     (-> (pcb/empty-changes nil)
         (pcb/with-library-data file-data)
-        (pcb/update-component (:id component) repair-component))))
+        (pcb/update-component (:id component) repair-component {:objects? true}))))
 
 (defmethod repair-error :invalid-text-touched
   [_ {:keys [shape page-id] :as error} file-data _]
@@ -650,7 +675,7 @@
         (pcb/update-shapes (map :id child-with-duplicate) repair-shape))))
 
 (defmethod repair-error :component-duplicate-slot
-  [_ {:keys [shape] :as error} file-data _]
+  [_ {:keys [shape] :as error} _file-data _]
   (let [main-shape            (get-in shape [:objects (:main-instance-id shape)])
         childs                (map #(get (:objects shape) %) (:shapes main-shape))
         childs-with-duplicate (let [result (reduce (fn [[seen duplicates] item]
@@ -662,20 +687,14 @@
                                                    childs)]
                                 (second result))
         duplicated-ids        (set (mapv :id childs-with-duplicate))
-        repair-component
-        (fn [component]
-          (let [objects (reduce-kv (fn [acc k v]
-                                     (if (contains? duplicated-ids k)
-                                       (assoc acc k (ctk/remove-swap-slot v))
-                                       (assoc acc k v)))
-                                   {}
-                                   (:objects component))]
-            (assoc component :objects objects)))]
+        repair-shape
+        (fn [shape]
+          ;; Remove the swap slot
+          (log/debug :hint "  -> remove swap-slot" :child-id (:id shape))
+          (ctk/remove-swap-slot shape))]
 
     (log/debug :hint "repairing component :component-duplicated-slot" :id (:id shape) :name (:name shape))
-    (-> (pcb/empty-changes nil)
-        (pcb/with-library-data file-data)
-        (pcb/update-component (:id shape) repair-component))))
+    (update-component-shapes shape (:objects shape) duplicated-ids repair-shape)))
 
 (defmethod repair-error :missing-slot
   [_ {:keys [shape page-id args] :as error} file-data _]
@@ -695,17 +714,24 @@
 
 (defmethod repair-error :main-instance-not-a-variant
   [_ {:keys [shape page-id args]} file-data _]
-  (let [repair-shape
+  (let [variant-id (:variant-id args)
+        component  (get-in file-data [:components (:component-id args)])
+        repair-shape
         (fn [shape]
-          (let [variant-id (:variant-id args)]
-            ;; Set the desired variant-id
-            (log/debug :hint (str "  -> set variant-id to " variant-id))
-            (assoc shape :variant-id variant-id)))]
+          ;; Set the desired variant-id
+          (log/debug :hint (str "  -> set variant-id to " variant-id))
+          (assoc shape :variant-id variant-id))]
 
     (log/debug :hint "repairing shape :main-instance-not-a-variant" :id (:id shape) :name (:name shape) :page-id page-id)
-    (-> (pcb/empty-changes nil page-id)
-        (pcb/with-file-data file-data)
-        (pcb/update-shapes [(:id shape)] repair-shape))))
+    (if (:deleted component)
+      ;; The main of a deleted component lives in the component's objects
+      (-> (pcb/empty-changes nil)
+          (pcb/with-library-data file-data)
+          (pcb/update-component (:id component)
+                                #(update-in % [:objects (:id shape)] repair-shape)))
+      (-> (pcb/empty-changes nil page-id)
+          (pcb/with-file-data file-data)
+          (pcb/update-shapes [(:id shape)] repair-shape)))))
 
 (defmethod repair-error :main-instance-invalid-variant-id
   [_ {:keys [shape page-id args]} file-data _]
@@ -722,32 +748,98 @@
         (pcb/with-file-data file-data)
         (pcb/update-shapes [(:id shape)] repair-shape))))
 
+(defn- repair-variant-member-changes
+  [file-data member]
+  (let [component      (:component member)
+        props          (:props member)
+        variant-name   (ctv/properties-to-name props)
+        changed?       (cfv/variant-props-changed? component props)
+        main-id        (:main-instance-id component)
+        page-id        (:main-instance-page component)
+        deleted?       (:deleted component)
+        shape          (cfv/get-variant-main-shape file-data component)
+        label-differs? (cfv/variant-main-label-changed? file-data component props)
+        comp-changes
+        (when (or changed?
+                  (and deleted? label-differs?))
+          (log/debug :hint "  -> write variant properties"
+                     :component-id (:id component)
+                     :changed changed?
+                     :label-differs label-differs?)
+          (-> (pcb/empty-changes nil)
+              (pcb/with-library-data file-data)
+              (pcb/update-component
+               (:id component)
+               (fn [component]
+                 (cond-> component
+                   changed?
+                   (assoc :variant-properties props)
+
+                   (and (not deleted?) changed?)
+                   (dissoc :objects)
+
+                   (and deleted? (nil? (:objects component)))
+                   (assoc :objects {})
+
+                   (and deleted?
+                        label-differs?
+                        (map? (get-in component [:objects main-id])))
+                   (assoc-in [:objects main-id :variant-name] variant-name))))))
+        shape-changes
+        (when (and (not deleted?) label-differs? (map? shape))
+          (log/debug :hint "  -> set variant-name" :variant-name variant-name :page-id page-id)
+          (-> (pcb/empty-changes nil page-id)
+              (pcb/with-file-data file-data)
+              (pcb/update-shapes [main-id]
+                                 (fn [shape]
+                                   (assoc shape :variant-name variant-name)))))]
+    (cond-> (or comp-changes (pcb/empty-changes nil))
+      shape-changes (pcb/concat-changes shape-changes))))
+
+(defn- repair-variant-property-set
+  [file-data shape page-id owner-id]
+  (let [objects  (if (some? owner-id)
+                   (get-in file-data [:components owner-id :objects])
+                   (get-in file-data [:pages-index page-id :objects]))
+        ;; An earlier repair of this pass may have changed the board
+        board    (get objects (:id shape) shape)
+        members  (cfv/get-variant-members-props file-data objects board ctv/align-properties-set)]
+    (reduce (fn [changes member]
+              (pcb/concat-changes changes
+                                  (repair-variant-member-changes file-data member)))
+            (pcb/empty-changes nil)
+            members)))
+
+(defn- repair-solo-variant-properties
+  [file-data component]
+  (repair-variant-member-changes
+   file-data
+   {:component component
+    :props     (ctv/sanitize-properties (or (:variant-properties component) []))}))
+
 (defmethod repair-error :invalid-variant-properties
   [_ {:keys [shape page-id args]} file-data _]
-  (let [prop-names (:prop-names args)
+  (log/debug :hint "repairing :invalid-variant-properties" :id (:id shape) :page-id page-id)
+  (if (ctk/is-variant-container? shape)
+    (repair-variant-property-set file-data shape page-id (:component-id args))
+    (repair-solo-variant-properties file-data
+                                    (get-in file-data [:components (:id shape)]))))
 
-        component   (get-in file-data [:components (:component-id shape)])
-        prop-values (into {} (map (juxt :name :value)) (:variant-properties component))
-        properties' (mapv (fn [name] {:name name :value (get prop-values name "")}) prop-names)
-        variant-name (ctv/properties-to-name properties')
-
-        repair-component
-        (fn [component]
-          ;; Rebuild component properties, removing any extra ones and adding missing ones with empty value
-          (log/debug :hint "  -> rebuild properties" :component-id (:id component) :prop-names (str prop-names))
-          (assoc component :variant-properties properties'))
-
-        repair-shape
-        (fn [shape]
-          (log/debug :hint "  -> set variant-name" :variant-name variant-name)
-          (assoc shape :variant-name variant-name))]
-
-    (log/debug :hint "repairing shape :invalid-variant-properties" :id (:id shape) :name (:name shape) :page-id page-id)
+(defmethod repair-error :variant-main-outside-board
+  [_ {:keys [args]} file-data _]
+  ;; Detach the variant, as the editor does when a variant leaves its board.
+  ;; The error comes from the main shape or from its component.
+  (let [component     (get-in file-data [:components (:component-id args)])
+        page-id       (:main-instance-page component)
+        main          (cfv/get-variant-main-shape file-data component)
+        props         (ctv/sanitize-properties (or (:variant-properties component) []))
+        new-name      (ctv/variant-name-to-name
+                       (assoc main :variant-name (ctv/properties-to-name props)))]
+    (log/debug :hint "repairing component :variant-main-outside-board" :id (:id component) :page-id page-id)
     (-> (pcb/empty-changes nil page-id)
         (pcb/with-file-data file-data)
         (pcb/with-library-data file-data)
-        (pcb/update-component (:component-id shape) repair-component)
-        (pcb/update-shapes [(:id shape)] repair-shape))))
+        (cfv/generate-detach-variant main new-name))))
 
 (defmethod repair-error :variant-not-main
   [_ {:keys [shape page-id]} file-data _]
@@ -818,10 +910,29 @@
         (pcb/with-file-data file-data)
         (pcb/update-shapes [(:id shape)] repair-fn))))
 
+(defn- get-rewritten-variant-props
+  "Props the property repair would store for this main. On its board,
+   the props of its member in the board's set, or nil when it is not a
+   qualifying member, so the caller keeps the stored vector. Elsewhere,
+   its own cleaned props. Reads the main as earlier repairs of this pass
+   left it."
+  [file-data shape component page-id]
+  (let [objects (get-in file-data [:pages-index page-id :objects])
+        shape   (get objects (:id shape) shape)
+        parent  (get objects (:parent-id shape))]
+    (if (and (ctk/is-variant-container? parent)
+             (= (:variant-id shape) (:id parent)))
+      (some (fn [member]
+              (when (= (:id component) (:component-id member))
+                (:props member)))
+            (cfv/get-variant-members-props file-data objects parent ctv/align-properties-set))
+      (ctv/sanitize-properties (or (:variant-properties component) [])))))
+
 (defmethod repair-error :variant-main-bad-variant-name
   [_ {:keys [shape page-id]} file-data _]
   (let [component    (get-in file-data [:components (:component-id shape)])
-        variant-name (ctv/properties-to-name (:variant-properties component))
+        props        (get-rewritten-variant-props file-data shape component page-id)
+        variant-name (ctv/properties-to-name (or props (:variant-properties component)))
         repair-fn
         (fn [shape]
           (log/debug :hint "  -> set :variant-name" :variant-name variant-name)
@@ -881,19 +992,29 @@
   (log/error :hint "Unknown error code, don't know how to repair" :code (:code error))
   file)
 
-(defn repair-file
-  [{:keys [data id] :as file} libraries errors]
+(defn- repair-file*
+  "Repair `errors` in `file`. Return `{:data data' :changes redo-changes}`.
+
+  Each repair is built on the data left by the previous ones, so two
+  repairs that write the same component or shape attribute do not undo
+  each other. The `:shape` of each error is still the one taken by the
+  validation."
+  [{:keys [data id]} libraries errors]
   (log/debug :hint "repairing file" :id (str id) :errors (count errors))
-  (let [{:keys [redo-changes]}
-        (reduce (fn [changes error]
-                  (pcb/concat-changes changes
-                                      (repair-error (:code error)
-                                                    error
-                                                    data
-                                                    libraries)))
-                (pcb/empty-changes nil)
-                errors)]
-    redo-changes))
+  (reduce (fn [{:keys [data] :as result} error]
+            (let [{:keys [redo-changes]} (repair-error (:code error) error data libraries)]
+              (cond-> result
+                (seq redo-changes)
+                (-> (assoc :data (cfc/process-changes data redo-changes))
+                    (update :changes into redo-changes)))))
+          {:data data :changes []}
+          errors))
+
+(defn repair-file
+  "Return the redo changes that repair `errors` in `file`. Applied in
+  order to the file data, they give the repaired data."
+  [file libraries errors]
+  (:changes (repair-file* file libraries errors)))
 
 (defn- error-fingerprint
   [errors]
@@ -937,8 +1058,7 @@
                :errors     (not-empty errors)}
 
               :else
-              (let [batch (repair-file file libraries errors)
-                    data' (cfc/process-changes (:data file) batch)]
+              (let [{data' :data batch :changes} (repair-file* file libraries errors)]
                 (if (= data' (:data file))
                   {:file       file
                    :changes    applied

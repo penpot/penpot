@@ -265,16 +265,26 @@
     (dm/str (u/join cf/public-uri "fonts/" asset-id))))
 
 (defn font-stored?
+  "True when the face is already in the WASM font store. Returns nil/false
+  while the GL/WASM context is not live (e.g. mid page-switch teardown), so
+  callers never hit `_is_font_uploaded` against a null resource pool."
   [font-data emoji?]
-  (when-let [id-buffer (uuid/get-u32 (:wasm-id font-data))]
-    (not= 0 (h/call wasm/internal-module "_is_font_uploaded"
-                    (aget id-buffer 0)
-                    (aget id-buffer 1)
-                    (aget id-buffer 2)
-                    (aget id-buffer 3)
-                    (:weight font-data)
-                    (:style font-data)
-                    emoji?))))
+  (when (wasm/live?)
+    (when-let [id-buffer (uuid/get-u32 (:wasm-id font-data))]
+      (not= 0 (h/call wasm/internal-module "_is_font_uploaded"
+                      (aget id-buffer 0)
+                      (aget id-buffer 1)
+                      (aget id-buffer 2)
+                      (aget id-buffer 3)
+                      (:weight font-data)
+                      (:style font-data)
+                      emoji?)))))
+
+(defn font-failed?
+  "Returns true when the face behind `font-key` failed to load, so WASM lays
+  it out with a fallback."
+  [font-key]
+  (contains? @failed-font-data-keys font-key))
 
 (defn font-ready?
   "Returns true when WASM can lay out with the requested face or its fallback."

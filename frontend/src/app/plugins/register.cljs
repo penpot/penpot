@@ -16,6 +16,7 @@
    [app.main.store :as st]
    [app.util.object :as obj]
    [beicon.v2.core :as rx]
+   [cuerdas.core :as str]
    [promesa.core :as p]))
 
 ;; Needs to be here because moving it to `app.main.data.workspace.mcp` will
@@ -28,6 +29,44 @@
     "allow:global" "manage:projects" "manage:teams" "manage:delete"
     ;; Keeps the rollbacks not reported yet across reloads
     "allow:localstorage"})
+
+;; Permissions only granted to plugins that pass `global-allowed?`
+(def global-permissions
+  #{"allow:global" "manage:projects" "manage:teams" "manage:delete"})
+
+;; Loopback hosts that may serve global plugins over any scheme
+(def ^:private trusted-hosts
+  #{"localhost" "127.0.0.1" "[::1]" "::1"})
+
+;; Domains whose https subdomains may serve global plugins
+(def ^:private trusted-domains
+  #{"penpot.dev" "penpot.app"})
+
+(defn- trusted-url?
+  "True when the url host is one of `trusted-hosts`, or the url uses
+  https and its host is a subdomain of one of `trusted-domains`. Hosts
+  are compared ignoring case and a trailing dot."
+  [url]
+  (let [uri  (some-> url u/uri)
+        host (some-> uri :host str/lower (str/rtrim "."))]
+    (or (contains? trusted-hosts host)
+        (and (= "https" (some-> uri :scheme str/lower))
+             (some? host)
+             (boolean (some #(str/ends-with? host (str "." %)) trusted-domains))))))
+
+(defn global-requested?
+  "True when the plugin asks for global scope or a management permission."
+  [{:keys [scope permissions]}]
+  (or (= "global" scope)
+      (boolean (some global-permissions permissions))))
+
+(defn global-allowed?
+  "True when the plugin may run with global scope and use the management
+  API. The feature is still in progress, so only the bundled MCP plugin
+  and plugins served from a trusted url get it."
+  [{:keys [plugin-id host]}]
+  (or (= plugin-id mcp-plugin-id)
+      (trusted-url? host)))
 
 ;; Promise that resolves when plugins runtime is initialized.
 ;; Lives here to avoid circular dependency: workspace.mcp -> app.plugins -> app.plugins.api -> workspace
@@ -121,9 +160,18 @@
           :code code
           :icon icon
           :permissions (into #{} (map str) permissions)})]
-    (if (sm/validate ctp/schema:registry-entry manifest)
-      manifest
-      (.error js/console (clj->js (sm/explain ctp/schema:registry-entry manifest))))))
+    (cond
+      (not (sm/validate ctp/schema:registry-entry manifest))
+      (.error js/console (clj->js (sm/explain ctp/schema:registry-entry manifest)))
+
+      (and (global-requested? manifest)
+           (not (global-allowed? manifest)))
+      (throw (ex-info "Global plugins are not allowed from this host"
+                      {:type ::global-not-allowed
+                       :host origin}))
+
+      :else
+      manifest)))
 
 (defn subscribe-registry!
   "Subscribes f, called with no arguments on every registry change.
@@ -273,13 +321,16 @@
                          (.error js/console "Failed to remove plugin:" err))))))))
 
 (defn has-permission?
-  "True when the plugin was granted `permission`."
+  "True when the plugin was granted `permission`. The permissions in
+  `global-permissions` also need the plugin to pass `global-allowed?`."
   [plugin-id permission]
   (cond
     (= plugin-id "00000000-0000-0000-0000-000000000000") true
     (= plugin-id mcp-plugin-id) (contains? mcp-permissions permission)
-    :else (let [{:keys [permissions]} (dm/get-in @registry [:data plugin-id])]
-            (contains? permissions permission))))
+    :else (let [{:keys [permissions] :as plugin} (dm/get-in @registry [:data plugin-id])]
+            (and (contains? permissions permission)
+                 (or (not (contains? global-permissions permission))
+                     (global-allowed? plugin))))))
 
 (defn- read-only-reason
   "Why plugin writes must fail in `state`, or nil when they can go ahead.

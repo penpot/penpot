@@ -126,13 +126,13 @@ class IssueExcludedTests(unittest.TestCase):
     def test_keeps_a_valid_closed_issue(self):
         self.assertFalse(ch.issue_excluded(self.issue()))
 
-    def test_excludes_open_task_rejected_and_labelled(self):
+    def test_excludes_open_task_rejected_and_no_changelog(self):
         self.assertTrue(ch.issue_excluded(None))
         self.assertTrue(ch.issue_excluded(self.issue(state="OPEN")))
         self.assertTrue(ch.issue_excluded(self.issue(issue_type="Task")))
         self.assertTrue(ch.issue_excluded(self.issue(project_status="Rejected")))
-        self.assertTrue(ch.issue_excluded(self.issue(labels=["release blocker"])))
         self.assertTrue(ch.issue_excluded(self.issue(labels=["no changelog"])))
+        self.assertFalse(ch.issue_excluded(self.issue(labels=["release blocker"])))
 
 
 class RenderBoomEntryTests(unittest.TestCase):
@@ -180,10 +180,18 @@ class ReplaceBoomSectionTests(unittest.TestCase):
         once = ch.replace_boom_section(CHANGES, "2.19.0", [entry])
         self.assertEqual(once, ch.replace_boom_section(once, "2.19.0", [entry]))
 
-    def test_empty_section_keeps_the_heading(self):
+    def test_empty_section_removes_the_heading(self):
         updated = ch.replace_boom_section(CHANGES, "2.19.0", [])
-        self.assertIn(
-            "### :boom: Breaking changes & Deprecations\n\n### :rocket:", updated
+        self.assertNotIn("### :boom: Breaking changes & Deprecations", updated)
+        self.assertIn("### :rocket:", updated)
+
+    def test_empty_entries_do_not_insert_the_subsection(self):
+        without = CHANGES.replace(
+            "### :boom: Breaking changes & Deprecations\n\n- Old entry.\n\n", ""
+        )
+        self.assertEqual(
+            without,
+            ch.replace_boom_section(without, "2.19.0", []),
         )
 
     def test_inserts_the_subsection_when_missing(self):
@@ -325,6 +333,115 @@ class CmdBoomTests(unittest.TestCase):
         self.assertNotIn("Old entry.", updated)
         self.assertIn(":boom: section updated", err)
         self.assertIn("Deploy the new service.", out)
+
+
+class CollectTests(unittest.TestCase):
+    def test_collect_batches_extra_details_and_reuses_them_for_local_checks(self):
+        issues = [
+            {
+                "number": 1,
+                "state": "CLOSED",
+                "issue_type": "Bug",
+                "title": "Change a default",
+                "labels": ["breaking change"],
+                "closing_prs": [10, 11],
+            },
+            {"number": 2, "state": "OPEN", "issue_type": "Task"},
+        ]
+        prs = [
+            {
+                "number": 10,
+                "title": "Change a default",
+                "state": "MERGED",
+                "closing_issues": [1, 3],
+            }
+        ]
+        responses = {
+            (
+                "issues",
+                "2.19.0",
+                "--state",
+                "all",
+                "--include-tasks",
+                "--include-rejected",
+            ): issues,
+            ("prs", "--milestone", "2.19.0", "--state", "all"): prs,
+            ("issue", "1", "3", "4"): [
+                {**issues[0], "body": "", "parent": None},
+                {"number": 3, "milestone": "2.18.0"},
+                {"number": 4, "error": "not_found"},
+            ],
+            ("prs", "11"): [{"number": 11, "state": "OPEN"}],
+            ("comments", "1"): [
+                {"issue": 1, "body": "## Breaking change note\n\nNote."}
+            ],
+            ("advisories", "--patched-version", "2.19.0"): [],
+        }
+        content = (
+            "## 2.19.0\n\n[#4](https://github.com/penpot/penpot/issues/4)\n\n"
+            "## 2.18.0\n\n[#1](https://github.com/penpot/penpot/issues/1)\n"
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            changes = pathlib.Path(tmp) / "CHANGES.md"
+            changes.write_text(content)
+            snapshot_path = pathlib.Path(tmp) / "snapshot.json"
+            args = argparse.Namespace(milestone="2.19.0", changes=str(changes))
+            out = io.StringIO()
+            with (
+                patch.object(
+                    ch, "run_gh_py", side_effect=lambda *a: json.dumps(responses[a])
+                ) as gh,
+                contextlib.redirect_stdout(out),
+            ):
+                ch.cmd_collect(args)
+            snapshot = json.loads(out.getvalue())
+            self.assertCountEqual([call.args for call in gh.call_args_list], responses)
+            self.assertEqual(changes.read_text(), content)
+            self.assertEqual(snapshot["eligible_issues"], [1])
+            self.assertEqual(snapshot["comparison"]["missing_issues"], [])
+            self.assertEqual(
+                snapshot["comparison"]["issues_in_other_versions"], {"1": ["2.18.0"]}
+            )
+            self.assertEqual(snapshot["comparison"]["ineligible_references"], [4])
+            self.assertEqual(snapshot["comparison"]["unlisted_merged_prs"], [10])
+
+            snapshot_path.write_text(out.getvalue())
+            changes.write_text(
+                content.replace(
+                    "## 2.19.0\n\n",
+                    "## 2.19.0\n\n[#10](https://github.com/penpot/penpot/pull/10)\n\n",
+                )
+            )
+            args.snapshot = str(snapshot_path)
+            args.write = False
+            args.output = str(pathlib.Path(tmp) / "report.md")
+            out = io.StringIO()
+            with (
+                patch.object(
+                    ch,
+                    "run_gh_py",
+                    side_effect=AssertionError("unexpected GitHub lookup"),
+                ),
+                contextlib.redirect_stdout(out),
+            ):
+                ch.cmd_boom(args)
+                ch.cmd_security(args)
+                ch.cmd_dev_only_bugs(argparse.Namespace(**vars(args), apply=False))
+                ch.cmd_cross_ref(args)
+                ch.cmd_report(args)
+            self.assertIn("Note.", out.getvalue())
+            self.assertIn("pull/10", out.getvalue())
+            self.assertNotIn("pull/11", out.getvalue())
+            self.assertIn("PRs in milestone but NOT in changelog: 0", out.getvalue())
+            self.assertTrue(pathlib.Path(args.output).is_file())
+
+    def test_snapshot_for_another_milestone_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            snapshot = pathlib.Path(tmp) / "snapshot.json"
+            snapshot.write_text('{"milestone": "2.18.0"}')
+            args = argparse.Namespace(milestone="2.19.0", snapshot=str(snapshot))
+            with self.assertRaisesRegex(SystemExit, "expected milestone 2.19.0"):
+                ch.load_snapshot(args)
 
 
 class ReportTests(unittest.TestCase):
@@ -655,6 +772,117 @@ class CmdSecurityTests(unittest.TestCase):
         self.assertIn("GHSA-J4VC-CMF6-JHR7", err)
         self.assertIn("#8", err)
         self.assertIn("will not be listed", err)
+
+
+def bug(number, body="", parent=None, labels=()):
+    return {
+        "number": number,
+        "title": f"Bug {number}",
+        "state": "CLOSED",
+        "issue_type": "Bug",
+        "labels": list(labels),
+        "body": body,
+        "parent": parent,
+    }
+
+
+class OnlyUnreleasedEnvsTests(unittest.TestCase):
+    def check(self, text):
+        return ch.only_unreleased_envs(text, "2.19.0")
+
+    def test_dev_environments(self):
+        for text in ["HOURLY", "https://hourly.penpot.dev/", "PRE & hourly",
+                     "staging (current)", "develop (2.19.0 unreleased)",
+                     "2.19.0-RC1 (develop)", "2.19.0"]:
+            with self.subTest(text=text):
+                self.assertTrue(self.check(text))
+
+    def test_production_hints(self):
+        for text in ["PRO", "pre/pro/hourly", "develop / staging / main",
+                     "2.18.0-RC5", "2.18.1, 2.19.0-RC1", "self-hosted: 2.17.2",
+                     "design.penpot.app and self-host"]:
+            with self.subTest(text=text):
+                self.assertFalse(self.check(text))
+
+    def test_no_signal(self):
+        for text in ["", "_No response_", "-", "development build"]:
+            with self.subTest(text=text):
+                self.assertFalse(self.check(text))
+
+    def test_released_patch_of_the_same_minor_is_production(self):
+        # 2.19.0/2.19.1 are released versions, not this milestone (2.19.2):
+        # any version other than the milestone itself keeps the bug in.
+        for text in ["2.19.0 and later", "2.19.1", "2.19.0-RC1", "since 2.16"]:
+            with self.subTest(text=text):
+                self.assertFalse(ch.only_unreleased_envs(text, "2.19.2"))
+
+    def test_milestone_version_itself_is_unreleased(self):
+        for text in ["2.19.2", "2.19.2-RC1 (develop)"]:
+            with self.subTest(text=text):
+                self.assertTrue(ch.only_unreleased_envs(text, "2.19.2"))
+
+
+class FindDevOnlyBugsTests(unittest.TestCase):
+    def test_splits_auto_and_suggested(self):
+        issues = [
+            bug(1, parent={"number": 10, "issue_type": "Feature", "milestone": "2.19.0"}),
+            bug(2, parent={"number": 11, "issue_type": "Enhancement", "milestone": "2.19.0"}),
+            bug(3, parent={"number": 12, "issue_type": "EPIC", "milestone": "2.19.0"}),
+            bug(4, parent={"number": 13, "issue_type": "Feature", "milestone": "2.18.0"}),
+            bug(5, body="### Affected versions\n\nhourly\n"),
+            bug(6, body="### Affected versions\n\n2.18.2\n"),
+            bug(7, parent={"number": 10, "issue_type": "Feature", "milestone": "2.19.0"},
+                labels=["no changelog"]),
+            {**bug(8, parent={"number": 10, "issue_type": "Feature", "milestone": "2.19.0"}),
+             "issue_type": "Enhancement"},
+            bug(9, body="### Affected versions\n\n2.18.2\n", labels=["regression"]),
+            bug(10, parent={"number": 10, "issue_type": "Feature", "milestone": "2.19.0"},
+                labels=["release blocker"]),
+            bug(11, body="### Affected versions\n\nhourly\n", labels=["release blocker"]),
+        ]
+        auto, suggested = ch.find_dev_only_bugs("2.19.0", issues)
+        self.assertEqual([e["issue"] for e in auto], [1, 2, 10])
+        self.assertEqual([e["issue"] for e in suggested], [3, 5, 9, 11])
+
+
+class DevOnlyBugsApplyTests(unittest.TestCase):
+    def test_reports_only_successful_edits_if_a_later_edit_fails(self):
+        snapshot = {
+            "dev_only_bugs": {
+                "auto": [
+                    {
+                        "issue": 1,
+                        "issue_title": "First bug",
+                        "reason": "Same milestone",
+                    },
+                    {
+                        "issue": 2,
+                        "issue_title": "Second bug",
+                        "reason": "Same milestone",
+                    },
+                ],
+                "suggested": [],
+            }
+        }
+        args = argparse.Namespace(milestone="2.19.0", apply=True)
+        out = io.StringIO()
+        with (
+            patch.object(ch, "load_snapshot", return_value=snapshot),
+            patch.object(
+                ch.subprocess,
+                "run",
+                side_effect=[None, ch.subprocess.CalledProcessError(1, "gh")],
+            ),
+            contextlib.redirect_stdout(out),
+            self.assertRaisesRegex(SystemExit, r"could not apply .*issues/2"),
+        ):
+            ch.cmd_dev_only_bugs(args)
+
+        self.assertIn(
+            "Applied `no changelog`: https://github.com/penpot/penpot/issues/1",
+            out.getvalue(),
+        )
+        self.assertNotIn("https://github.com/penpot/penpot/issues/2", out.getvalue())
 
 
 if __name__ == "__main__":

@@ -12,6 +12,7 @@
    [app.common.features :as cfeat]
    [app.common.files.helpers :as cfh]
    [app.common.schema :as sm]
+   [app.common.types.file :as ctf]
    [app.config :as cf]
    [app.db :as db]
    [app.features.fdata :as fdata]
@@ -37,8 +38,19 @@
       (update :pages (fn [pages] (filterv #(contains? allowed %) pages)))
       (update :pages-index select-keys allowed)))
 
+(defn- same-file-component-ref?
+  "Whether `shape` references a component of this same file. A reference
+   missing `:component-file` means a same-file reference."
+  [file-id shape]
+  (and (associative? shape)
+       (some? (:component-id shape))
+       (or (nil? (:component-file shape))
+           (= file-id (:component-file shape)))))
+
 (defn- find-library-refs
-  "Return `{lib-id #{component-id}}` referenced by the given shapes."
+  "Return `{lib-id #{component-id}}` referenced by the given shapes.
+   Counterpart of `same-file-refs`, kept for the library side: this one
+   requires a non-nil `:component-file`; same-file references are none."
   [shapes]
   (reduce (fn [acc shape]
             (if (and (map? shape)
@@ -67,10 +79,12 @@
         (cfh/get-children-with-self objects main-instance-id)))))
 
 (defn- collect-used-library-components
-  "Walk the objects of the (already page-scoped) primary file data and of
-   the referenced library components themselves, and return a map of
-   `{lib-id #{component-id}}` with every library component the allowed
-   pages need. Follows nested references to a fixpoint so trimming never
+  "Walk the objects of the primary file data the view-only bundle emits,
+   and of the referenced library components themselves, and return a map
+   of `{lib-id #{component-id}}` with every library component the emitted
+   data needs. The caller passes that data: pages scoped to the link and
+   the already trimmed components map, so deleted components are never
+   walked. Follows nested references to a fixpoint so trimming never
    drops a component that is only reached through another component."
   [primary-data libs-by-id]
   (let [root-shapes (concat (mapcat (comp vals :objects) (vals (:pages-index primary-data)))
@@ -99,6 +113,48 @@
       (assoc-in [:data :pages] [])
       (assoc-in [:data :pages-index] {})
       (update-in [:data :components] select-keys (get used-refs id #{}))))
+
+(defn- same-file-refs
+  "Return the ids of this file's components referenced by `shapes`.
+   Counterpart of `find-library-refs`, which handles the library side.
+   A reference missing `:component-file` means a same-file reference;
+   library references are handled by `trim-library-data` and skipped."
+  [file-id shapes]
+  (into #{}
+        (keep (fn [shape]
+                (when (same-file-component-ref? file-id shape)
+                  (:component-id shape))))
+        shapes))
+
+(defn- referenced-component-ids
+  "Return the ids of the primary file's live components a share-link
+   viewer of `allowed` pages must receive: every live component referenced
+   transitively from those pages. A referenced component that is deleted
+   is neither emitted nor expanded; the bundle never carries stored
+   shapes of deleted components. References are traced through the full
+   realized data — a component's subtree may live on an excluded page —
+   but only the ids are returned; the emitted bundle carries the trimmed
+   map inline. Terminates on cycles."
+  [realized-file allowed]
+  (let [file-id    (:id realized-file)
+        seed-shapes (->> (vals (select-keys (:pages-index (:data realized-file)) allowed))
+                         (mapcat (comp vals :objects)))]
+    (loop [seen    #{}
+           pending (vec (same-file-refs file-id seed-shapes))]
+      (if (empty? pending)
+        seen
+        (let [comp-id   (peek pending)
+              pending'  (pop pending)]
+          (if (contains? seen comp-id)
+            (recur seen pending')
+            (let [component (get-in realized-file [:data :components comp-id])
+                  live?     (and (some? component) (not (:deleted component)))
+                  extra     (when live?
+                              (same-file-refs file-id
+                                              (ctf/get-component-shapes (:data realized-file)
+                                                                        component)))]
+              (recur (if live? (conj seen comp-id) seen)
+                     (into pending' extra)))))))))
 
 (defn obfuscate-email
   "Obfuscate the `email` for share-link members so the viewer only sees a
@@ -129,7 +185,10 @@
 
 (defn- get-view-only-bundle
   [{:keys [::db/conn] :as cfg} {:keys [profile-id file-id share-id ::perms] :as params}]
-  (let [file    (bfc/get-file cfg file-id)
+  (let [;; The storage pointer is internal bookkeeping: this bundle is an RPC
+        ;; response and must not expose it.
+        file    (-> (bfc/get-file cfg file-id)
+                    (bfc/file->response))
 
         project (db/get conn :project
                         {:id (:project-id file)}
@@ -150,27 +209,47 @@
                     (cfeat/check-client-features! (:features params))
                     (cfeat/check-file-features! (:features file)))
 
+        ;; The share-link bundle carries the primary file's components
+        ;; too: reuse the realization the library trim already needs and
+        ;; keep the emitted map inline. The walk may cross onto excluded
+        ;; pages (a retained component's subtree can live there), so the
+        ;; whole file is realized on each share-link bundle request.
+        ;; Pointer-map is operator-enabled and not active in production;
+        ;; revisit if it ships.
+        realized-data
+        (when (= :share-link (:type perms))
+          (fdata/realize-pointers cfg file))
+
         file    (cond-> file
                   (= :share-link (:type perms))
-                  (update :data remove-not-allowed-pages (:pages perms))
+                  (-> (update :data remove-not-allowed-pages (:pages perms))
+                      (assoc-in [:data :components]
+                                (select-keys (:components (:data realized-data))
+                                             (referenced-component-ids realized-data (:pages perms)))))
 
                   :always
                   (update :data select-keys view-only-data-keys))
 
         libs    (->> (bfc/get-file-libraries conn file-id)
                      (mapv (fn [{:keys [id] :as lib}]
-                             (merge lib (bfc/get-file cfg id)))))
+                             (-> (merge lib (bfc/get-file cfg id))
+                                 (bfc/file->response)))))
 
         ;; A share link never grants pages of a linked library, so trim
-        ;; each library to the components the allowed pages reference.
-        ;; File data may hold lazy pointer-mapped pages/components, so
-        ;; realize each file with its own loader before walking it.
-        ;; Membership bundles keep the full libraries.
+        ;; each library to the components the emitted bundle references:
+        ;; pages are scoped to the link and the components map already
+        ;; dropped deleted components, so neither of them seeds library
+        ;; references. The pages must come from the realized file, not
+        ;; from `file`: lazy pointer-mapped pages only load in their own
+        ;; loader. Membership bundles keep the full libraries.
         libs    (if (= :share-link (:type perms))
-                  (let [file'      (fdata/realize-pointers cfg file)
-                        libs'      (mapv #(fdata/realize-pointers cfg %) libs)
-                        libs-by-id (d/index-by :id libs')
-                        used       (collect-used-library-components (:data file') libs-by-id)]
+                  (let [allowed-data (-> realized-data
+                                         (update :data remove-not-allowed-pages (:pages perms))
+                                         (assoc-in [:data :components]
+                                                   (get-in file [:data :components])))
+                        libs'        (mapv #(fdata/realize-pointers cfg %) libs)
+                        libs-by-id   (d/index-by :id libs')
+                        used         (collect-used-library-components (:data allowed-data) libs-by-id)]
                     (mapv #(trim-library-data used %) libs'))
                   libs)
 

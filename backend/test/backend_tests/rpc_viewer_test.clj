@@ -6,12 +6,16 @@
 
 (ns backend-tests.rpc-viewer-test
   (:require
+   [app.binfile.common :as bfc]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.db :as db]
+   [app.features.fdata :as fdata]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.viewer :as viewer]
+   [app.util.pointer-map :as pmap]
    [backend-tests.helpers :as th]
+   [clojure.string :as str]
    [clojure.test :as t]
    [datoteka.fs :as fs]))
 
@@ -910,3 +914,1203 @@
         (t/is (= #{comp-b}
                  (set (keys (get-in by-id [(:id lib2) :data :components])))))
         (t/is (= [] (get-in by-id [(:id lib2) :data :pages])))))))
+
+(t/deftest view-only-bundle-does-not-expose-the-storage-pointer
+  ;; Both the file and its libraries are moved to cold storage, so their file
+  ;; maps carry the internal pointer unless the response strips it.
+  (let [owner    (th/create-profile* 1 {:is-active true})
+        proj-id  (:default-project-id owner)
+        file     (th/create-file* 1 {:profile-id (:id owner)
+                                     :project-id proj-id
+                                     :is-shared false})
+        lib      (th/create-file* 2 {:profile-id (:id owner)
+                                     :project-id proj-id
+                                     :is-shared true})
+        page-id  (get-in file [:data :pages 0])
+        _        (th/link-file-to-library* {:file-id (:id file)
+                                            :library-id (:id lib)})
+        slink    (th/command! {::th/type :create-share-link
+                               ::rpc/profile-id (:id owner)
+                               :file-id (:id file)
+                               :pages #{page-id}
+                               :who-comment "team"
+                               :who-inspect "all"})
+        slink-id (get-in slink [:result :id])]
+
+    (th/run-task! :offload-file-data {:file-id (:id file)})
+    (th/run-task! :offload-file-data {:file-id (:id lib)})
+
+    (let [out    (th/command! {::th/type :get-view-only-bundle
+                               :share-id slink-id
+                               :file-id (:id file)})
+          result (:result out)]
+      (t/is (nil? (:error out)))
+      (t/is (seq (:libraries result)))
+      (t/is (not (contains? (:file result) :storage-object-id)))
+      (t/is (every? #(not (contains? % :storage-object-id))
+                    (:libraries result))))))
+
+(t/deftest share-link-bundle-omits-unreferenced-deleted-component
+  ;; Regression test: a page-A-only share link received the primary
+  ;; file's full :components map, leaking the stored shapes of a deleted
+  ;; component whose main instance lived on the excluded page B.
+  (let [owner   (th/create-profile* 1 {:is-active true})
+        proj-id (:default-project-id owner)
+        file    (th/create-file* 1 {:profile-id (:id owner)
+                                    :project-id proj-id
+                                    :is-shared false})
+        file-id (:id file)
+        page-a  (first (get-in file [:data :pages]))
+        page-b  (uuid/random)
+        shape   (uuid/random)
+        comp    (uuid/random)
+        marker  "SIICA-SYNTHETIC-DELETED"
+
+        _       (update-file! :profile-id (:id owner)
+                              :file-id file-id
+                              :changes [{:type :add-page
+                                         :id page-b
+                                         :page {:id page-b
+                                                :name "Hidden"
+                                                :options {}
+                                                :objects {}}}
+                                        {:type :add-obj
+                                         :page-id page-b
+                                         :id shape
+                                         :parent-id uuid/zero
+                                         :frame-id uuid/zero
+                                         :components-v2 true
+                                         :obj (cts/setup-shape
+                                               {:id shape
+                                                :name marker
+                                                :frame-id uuid/zero
+                                                :parent-id uuid/zero
+                                                :type :rect})}
+                                        {:type :add-component
+                                         :path ""
+                                         :name "retired"
+                                         :main-instance-id shape
+                                         :main-instance-page page-b
+                                         :id comp
+                                         :anotation nil}
+                                        {:type :del-component
+                                         :id comp}])
+
+        slink   (th/command! {::th/type :create-share-link
+                              ::rpc/profile-id (:id owner)
+                              :file-id file-id
+                              :pages #{page-a}
+                              :who-comment "team"
+                              :who-inspect "all"})
+        slink-id (get-in slink [:result :id])]
+
+    (t/testing "share-link viewer does not receive the deleted component"
+      (let [out    (th/command! {::th/type :get-view-only-bundle
+                                 :share-id slink-id
+                                 :file-id file-id})
+            result (:result out)]
+        (t/is (nil? (:error out)))
+        (t/is (not (contains? (get-in result [:file :data :components]) comp)))
+        (t/is (= {} (get-in result [:file :data :components])))
+        (t/is (not (str/includes? (pr-str out) marker)))))
+
+    (t/testing "the excluded page is still absent from the bundle"
+      (let [out    (th/command! {::th/type :get-view-only-bundle
+                                 :share-id slink-id
+                                 :file-id file-id})
+            result (:result out)]
+        (t/is (= [page-a] (get-in result [:file :data :pages])))
+        (t/is (not (contains? (get-in result [:file :data :pages-index]) page-b)))))
+
+    (t/testing "team member still receives the full components map"
+      (let [out  (th/command! {::th/type :get-file
+                               ::rpc/profile-id (:id owner)
+                               :id file-id})
+            comps (get-in out [:result :data :components])]
+        (t/is (nil? (:error out)))
+        (t/is (contains? comps comp))))
+
+    (t/testing "team member bundle keeps the full primary components map"
+      (let [out    (th/command! {::th/type :get-view-only-bundle
+                                 ::rpc/profile-id (:id owner)
+                                 :file-id file-id})
+            result (:result out)
+            comps  (get-in result [:file :data :components])]
+        (t/is (nil? (:error out)))
+        ;; The membership bundle carries lazy values; resolve the
+        ;; components pointer with the file's own loader before checking.
+        (fdata/with-pointers th/*system* file-id
+          (t/is (contains? comps comp)))))))
+
+(t/deftest share-link-bundle-keeps-referenced-components-and-nested-refs
+  ;; Companion to the regression test above: the trim must keep
+  ;; everything an allowed page actually renders. Component X is
+  ;; referenced from page A but its main instance lives on the excluded
+  ;; page B; X's subtree contains an instance of Y. A trim that does not
+  ;; follow the fixpoint drops Y and breaks rendering. W is unreferenced
+  ;; anywhere and must not be kept.
+  (let [owner   (th/create-profile* 1 {:is-active true})
+        proj-id (:default-project-id owner)
+        file    (th/create-file* 1 {:profile-id (:id owner)
+                                    :project-id proj-id
+                                    :is-shared false})
+        file-id (:id file)
+        page-a  (first (get-in file [:data :pages]))
+        page-b  (uuid/random)
+
+        x-main  (uuid/random)
+        y-main  (uuid/random)
+        w-main  (uuid/random)
+        x-child (uuid/random)
+        inst    (uuid/random)
+        comp-x  (uuid/random)
+        comp-y  (uuid/random)
+        comp-w  (uuid/random)
+
+        mk-frame (fn [id parent-id frame-id]
+                   (cts/setup-shape {:id id
+                                     :name (str id)
+                                     :frame-id frame-id
+                                     :parent-id parent-id
+                                     :type :frame}))
+
+        _       (update-file! :profile-id (:id owner)
+                              :file-id file-id
+                              :changes [{:type :add-page
+                                         :id page-b
+                                         :page {:id page-b
+                                                :name "Hidden"
+                                                :options {}
+                                                :objects {}}}
+                                        ;; X's main instance on the excluded page,
+                                        ;; containing an instance of Y.
+                                        {:type :add-obj
+                                         :page-id page-b
+                                         :id x-main
+                                         :parent-id uuid/zero
+                                         :frame-id uuid/zero
+                                         :components-v2 true
+                                         :obj (assoc (mk-frame x-main uuid/zero uuid/zero)
+                                                     :main-instance true
+                                                     :component-root true
+                                                     :component-file file-id
+                                                     :component-id comp-x)}
+                                        {:type :add-obj
+                                         :page-id page-b
+                                         :id x-child
+                                         :parent-id x-main
+                                         :frame-id x-main
+                                         :components-v2 true
+                                         :obj (cts/setup-shape
+                                               {:id x-child
+                                                :name "nested"
+                                                :frame-id x-main
+                                                :parent-id x-main
+                                                :type :frame
+                                                :component-file file-id
+                                                :component-id comp-y})}
+                                        ;; Y's main instance on the allowed page.
+                                        {:type :add-obj
+                                         :page-id page-a
+                                         :id y-main
+                                         :parent-id uuid/zero
+                                         :frame-id uuid/zero
+                                         :components-v2 true
+                                         :obj (assoc (mk-frame y-main uuid/zero uuid/zero)
+                                                     :main-instance true
+                                                     :component-root true
+                                                     :component-file file-id
+                                                     :component-id comp-y)}
+                                        ;; W's main instance on the excluded page;
+                                        ;; referenced nowhere.
+                                        {:type :add-obj
+                                         :page-id page-b
+                                         :id w-main
+                                         :parent-id uuid/zero
+                                         :frame-id uuid/zero
+                                         :components-v2 true
+                                         :obj (assoc (mk-frame w-main uuid/zero uuid/zero)
+                                                     :main-instance true
+                                                     :component-root true
+                                                     :component-file file-id
+                                                     :component-id comp-w)}
+                                        {:type :add-component
+                                         :path ""
+                                         :name "wrapper"
+                                         :main-instance-id x-main
+                                         :main-instance-page page-b
+                                         :id comp-x
+                                         :anotation nil}
+                                        {:type :add-component
+                                         :path ""
+                                         :name "leaf"
+                                         :main-instance-id y-main
+                                         :main-instance-page page-a
+                                         :id comp-y
+                                         :anotation nil}
+                                        {:type :add-component
+                                         :path ""
+                                         :name "unreferenced"
+                                         :main-instance-id w-main
+                                         :main-instance-page page-b
+                                         :id comp-w
+                                         :anotation nil}
+                                        ;; A-page instance of X: the only reference
+                                        ;; reachable from the allowed pages.
+                                        {:type :add-obj
+                                         :page-id page-a
+                                         :id inst
+                                         :parent-id uuid/zero
+                                         :frame-id uuid/zero
+                                         :components-v2 true
+                                         :obj (cts/setup-shape
+                                               {:id inst
+                                                :name "instance"
+                                                :frame-id uuid/zero
+                                                :parent-id uuid/zero
+                                                :type :frame
+                                                :component-file file-id
+                                                :component-id comp-x})}])
+
+        slink   (th/command! {::th/type :create-share-link
+                              ::rpc/profile-id (:id owner)
+                              :file-id file-id
+                              :pages #{page-a}
+                              :who-comment "team"
+                              :who-inspect "all"})
+        slink-id (get-in slink [:result :id])]
+
+    (t/testing "bundle keeps X (referenced from A) and Y (nested ref reached from X)"
+      (let [out    (th/command! {::th/type :get-view-only-bundle
+                                 :share-id slink-id
+                                 :file-id file-id})
+            result (:result out)
+            comps  (get-in result [:file :data :components])]
+        (t/is (nil? (:error out)))
+        (t/is (contains? comps comp-x))
+        (t/is (contains? comps comp-y))
+        (t/is (not (contains? comps comp-w)))))))
+
+(t/deftest share-link-fragment-scope-blocks-components-pointer
+  ;; Regression test: the share-link scope check for get-file-fragment
+  ;; let the file's components fragment through because
+  ;; get-used-pointer-ids collects top-level pointers indiscriminately.
+  (let [owner   (th/create-profile* 1 {:is-active true})
+        owner-id (:id owner)
+        proj-id (:default-project-id owner)
+        file    (th/create-file* 1 {:profile-id owner-id
+                                    :project-id proj-id
+                                    :is-shared false})
+        file-id (:id file)
+        page-a  (first (get-in file [:data :pages]))
+        page-b  (uuid/random)
+        marker  "SIICA-SYNTHETIC-FRAGMENT"
+        shape   (uuid/random)
+        comp    (uuid/random)
+
+        _       (update-file! :profile-id owner-id
+                              :file-id file-id
+                              :changes [{:type :add-page
+                                         :id page-b
+                                         :page {:id page-b
+                                                :name "Excluded"
+                                                :options {}
+                                                :objects {}}}
+                                        {:type :add-obj
+                                         :page-id page-a
+                                         :id shape
+                                         :parent-id uuid/zero
+                                         :frame-id uuid/zero
+                                         :components-v2 true
+                                         :obj (cts/setup-shape
+                                               {:id shape
+                                                :name marker
+                                                :frame-id uuid/zero
+                                                :parent-id uuid/zero
+                                                :type :rect})}
+                                        {:type :add-component
+                                         :path ""
+                                         :name "secret"
+                                         :main-instance-id shape
+                                         :main-instance-page page-a
+                                         :id comp
+                                         :anotation nil}
+                                        {:type :del-component
+                                         :id comp}])
+
+        ;; Enable pointer-map on the file, the way a migration would:
+        ;; wrap the pages and components in pointers and persist them.
+        _       (db/tx-run! th/*system*
+                            (fn [cfg]
+                              (fdata/with-tracked-pointers cfg file-id
+                                (bfc/update-file! cfg
+                                                  (-> (bfc/get-file cfg file-id)
+                                                      (fdata/enable-pointer-map))))))
+
+        comp-ptr-id (db/tx-run! th/*system*
+                                (fn [cfg]
+                                  (pmap/get-id (:components (:data (bfc/get-file cfg file-id))))))
+        page-ptr-id (db/tx-run! th/*system*
+                                (fn [cfg]
+                                  (pmap/get-id (get (:pages-index (:data (bfc/get-file cfg file-id)))
+                                                    page-a))))
+        page-b-ptr-id (db/tx-run! th/*system*
+                                  (fn [cfg]
+                                    (pmap/get-id (get (:pages-index (:data (bfc/get-file cfg file-id)))
+                                                      page-b))))
+
+        stranger (th/create-profile* 2 {:is-active true})
+
+        slink   (th/command! {::th/type :create-share-link
+                              ::rpc/profile-id owner-id
+                              :file-id file-id
+                              :pages #{page-a}
+                              :who-comment "team"
+                              :who-inspect "all"})
+        slink-id (get-in slink [:result :id])]
+
+    (t/testing "stranger with a page-A-only share link cannot read the components fragment"
+      (let [out  (th/command! {::th/type :get-file-fragment
+                               ::rpc/profile-id (:id stranger)
+                               :share-id slink-id
+                               :file-id file-id
+                               :fragment-id comp-ptr-id})
+            err  (:error out)
+            edata (ex-data err)]
+        (t/is (th/ex-info? err))
+        (t/is (= :not-found (:type edata)))))
+
+    (t/testing "the fragment of a page outside the link is denied"
+      (let [out   (th/command! {::th/type :get-file-fragment
+                                ::rpc/profile-id (:id stranger)
+                                :share-id slink-id
+                                :file-id file-id
+                                :fragment-id page-b-ptr-id})
+            err   (:error out)
+            edata (ex-data err)]
+        (t/is (th/ex-info? err))
+        (t/is (= :not-found (:type edata)))))
+
+    (t/testing "the page fragment of an allowed page remains available"
+      (let [out (th/command! {::th/type :get-file-fragment
+                              ::rpc/profile-id (:id stranger)
+                              :share-id slink-id
+                              :file-id file-id
+                              :fragment-id page-ptr-id})]
+        (t/is (nil? (:error out)))
+        (t/is (= page-ptr-id (get-in out [:result :id])))))))
+
+(t/deftest share-link-bundle-omits-unreferenced-deleted-component-when-pointer-mapped
+  ;; Same defect as the regression test above, on a pointer-mapped
+  ;; file: the trim emits the referenced subset inline so the served
+  ;; bundle never carries (nor references) the full components map.
+  (let [owner   (th/create-profile* 1 {:is-active true})
+        proj-id (:default-project-id owner)
+        file    (th/create-file* 1 {:profile-id (:id owner)
+                                    :project-id proj-id
+                                    :is-shared false})
+        file-id (:id file)
+        page-a    (first (get-in file [:data :pages]))
+        page-b    (uuid/random)
+        shape     (uuid/random)
+        comp      (uuid/random)
+        live-main (uuid/random)
+        live-inst (uuid/random)
+        comp-live (uuid/random)
+        marker    "SIICA-SYNTHETIC-DELETED-PM"
+
+        _       (update-file! :profile-id (:id owner)
+                              :file-id file-id
+                              :changes [{:type :add-page
+                                         :id page-b
+                                         :page {:id page-b
+                                                :name "Hidden"
+                                                :options {}
+                                                :objects {}}}
+                                        {:type :add-obj
+                                         :page-id page-b
+                                         :id shape
+                                         :parent-id uuid/zero
+                                         :frame-id uuid/zero
+                                         :components-v2 true
+                                         :obj (cts/setup-shape
+                                               {:id shape
+                                                :name marker
+                                                :frame-id uuid/zero
+                                                :parent-id uuid/zero
+                                                :type :rect})}
+                                        {:type :add-component
+                                         :path ""
+                                         :name "retired"
+                                         :main-instance-id shape
+                                         :main-instance-page page-b
+                                         :id comp
+                                         :anotation nil}
+                                        {:type :del-component
+                                         :id comp}
+                                        ;; A live component referenced from
+                                        ;; the allowed page must still reach
+                                        ;; the bundle inline.
+                                        {:type :add-obj
+                                         :page-id page-a
+                                         :id live-main
+                                         :parent-id uuid/zero
+                                         :frame-id uuid/zero
+                                         :components-v2 true
+                                         :obj (cts/setup-shape
+                                               {:id live-main
+                                                :name "live"
+                                                :frame-id uuid/zero
+                                                :parent-id uuid/zero
+                                                :type :frame
+                                                :main-instance true
+                                                :component-root true
+                                                :component-file file-id
+                                                :component-id comp-live})}
+                                        {:type :add-component
+                                         :path ""
+                                         :name "live"
+                                         :main-instance-id live-main
+                                         :main-instance-page page-a
+                                         :id comp-live
+                                         :anotation nil}
+                                        {:type :add-obj
+                                         :page-id page-a
+                                         :id live-inst
+                                         :parent-id uuid/zero
+                                         :frame-id uuid/zero
+                                         :components-v2 true
+                                         :obj (cts/setup-shape
+                                               {:id live-inst
+                                                :name "live-instance"
+                                                :frame-id uuid/zero
+                                                :parent-id uuid/zero
+                                                :type :frame
+                                                :component-file file-id
+                                                :component-id comp-live})}])
+
+        _       (db/tx-run! th/*system*
+                            (fn [cfg]
+                              (fdata/with-tracked-pointers cfg file-id
+                                (bfc/update-file! cfg
+                                                  (-> (bfc/get-file cfg file-id)
+                                                      (fdata/enable-pointer-map))))))
+
+        slink   (th/command! {::th/type :create-share-link
+                              ::rpc/profile-id (:id owner)
+                              :file-id file-id
+                              :pages #{page-a}
+                              :who-comment "team"
+                              :who-inspect "all"})
+        slink-id (get-in slink [:result :id])]
+
+    (t/testing "bundle emits components inline as a plain map without the deleted component"
+      (let [out    (th/command! {::th/type :get-view-only-bundle
+                                 :share-id slink-id
+                                 :file-id file-id})
+            result (:result out)
+            comps  (get-in result [:file :data :components])]
+        (t/is (nil? (:error out)))
+        (t/is (not (pmap/pointer-map? comps)))
+        (t/is (not (contains? comps comp)))
+        (t/is (not (str/includes? (pr-str out) marker)))
+        (t/is (contains? comps comp-live))))))
+
+(t/deftest share-link-bundle-omits-referenced-deleted-component
+  ;; The share-link bundle never carries a component marked as deleted,
+  ;; even when the allowed page instances it: its stored shapes may
+  ;; hold content of excluded pages. Instances render from the flat
+  ;; page graph; the bundle needs no deleted components at all.
+  (let [owner   (th/create-profile* 1 {:is-active true})
+        proj-id (:default-project-id owner)
+        file    (th/create-file* 1 {:profile-id (:id owner)
+                                    :project-id proj-id
+                                    :is-shared false})
+        file-id (:id file)
+        page-a  (first (get-in file [:data :pages]))
+        page-b  (uuid/random)
+
+        main    (uuid/random)
+        inst    (uuid/random)
+        comp    (uuid/random)
+        marker  "SIICA-SYNTHETIC-REFERENCED"
+
+        _       (update-file! :profile-id (:id owner)
+                              :file-id file-id
+                              :changes [{:type :add-page
+                                         :id page-b
+                                         :page {:id page-b
+                                                :name "Hidden"
+                                                :options {}
+                                                :objects {}}}
+                                        {:type :add-obj
+                                         :page-id page-b
+                                         :id main
+                                         :parent-id uuid/zero
+                                         :frame-id uuid/zero
+                                         :components-v2 true
+                                         :obj (cts/setup-shape
+                                               {:id main
+                                                :name marker
+                                                :frame-id uuid/zero
+                                                :parent-id uuid/zero
+                                                :type :frame
+                                                :main-instance true
+                                                :component-root true
+                                                :component-file file-id
+                                                :component-id comp})}
+                                        {:type :add-component
+                                         :path ""
+                                         :name "retired"
+                                         :main-instance-id main
+                                         :main-instance-page page-b
+                                         :id comp
+                                         :anotation nil}
+                                        {:type :del-component
+                                         :id comp}
+                                        ;; An instance of the deleted
+                                        ;; component on the allowed page.
+                                        {:type :add-obj
+                                         :page-id page-a
+                                         :id inst
+                                         :parent-id uuid/zero
+                                         :frame-id uuid/zero
+                                         :components-v2 true
+                                         :obj (cts/setup-shape
+                                               {:id inst
+                                                :name "instance"
+                                                :frame-id uuid/zero
+                                                :parent-id uuid/zero
+                                                :type :frame
+                                                :component-file file-id
+                                                :component-id comp})}])
+
+        slink   (th/command! {::th/type :create-share-link
+                              ::rpc/profile-id (:id owner)
+                              :file-id file-id
+                              :pages #{page-a}
+                              :who-comment "team"
+                              :who-inspect "all"})
+        slink-id (get-in slink [:result :id])]
+
+    (t/testing "the share bundle omits the referenced deleted component"
+      (let [out    (th/command! {::th/type :get-view-only-bundle
+                                 :share-id slink-id
+                                 :file-id file-id})
+            result (:result out)
+            comps  (get-in result [:file :data :components])]
+        (t/is (nil? (:error out)))
+        (t/is (not (contains? comps comp)))
+        (t/is (not (str/includes? (pr-str out) marker)))))))
+
+(t/deftest share-link-bundle-keeps-mutually-referencing-components
+  ;; Components may reference each other (X contains an instance of Y
+  ;; and Y an instance of X). The reachability fixpoint must terminate
+  ;; and both components must reach the bundle.
+  (let [owner   (th/create-profile* 1 {:is-active true})
+        proj-id (:default-project-id owner)
+        file    (th/create-file* 1 {:profile-id (:id owner)
+                                    :project-id proj-id
+                                    :is-shared false})
+        file-id (:id file)
+        page-a  (first (get-in file [:data :pages]))
+        page-b  (uuid/random)
+
+        x-main  (uuid/random)
+        x-child (uuid/random)
+        y-main  (uuid/random)
+        y-child (uuid/random)
+        inst    (uuid/random)
+        comp-x  (uuid/random)
+        comp-y  (uuid/random)
+
+        mk-frame (fn [id parent-id frame-id extra]
+                   (cts/setup-shape (merge {:id id
+                                            :name (str id)
+                                            :frame-id frame-id
+                                            :parent-id parent-id
+                                            :type :frame}
+                                           extra)))
+
+        _       (update-file! :profile-id (:id owner)
+                              :file-id file-id
+                              :changes [{:type :add-page
+                                         :id page-b
+                                         :page {:id page-b
+                                                :name "Hidden"
+                                                :options {}
+                                                :objects {}}}
+                                        ;; X on the excluded page, containing Y.
+                                        {:type :add-obj
+                                         :page-id page-b
+                                         :id x-main
+                                         :parent-id uuid/zero
+                                         :frame-id uuid/zero
+                                         :components-v2 true
+                                         :obj (mk-frame x-main uuid/zero uuid/zero
+                                                        {:main-instance true
+                                                         :component-root true
+                                                         :component-file file-id
+                                                         :component-id comp-x})}
+                                        {:type :add-obj
+                                         :page-id page-b
+                                         :id x-child
+                                         :parent-id x-main
+                                         :frame-id x-main
+                                         :components-v2 true
+                                         :obj (mk-frame x-child x-main x-main
+                                                        {:component-file file-id
+                                                         :component-id comp-y})}
+                                        ;; Y on the allowed page, containing X.
+                                        {:type :add-obj
+                                         :page-id page-a
+                                         :id y-main
+                                         :parent-id uuid/zero
+                                         :frame-id uuid/zero
+                                         :components-v2 true
+                                         :obj (mk-frame y-main uuid/zero uuid/zero
+                                                        {:main-instance true
+                                                         :component-root true
+                                                         :component-file file-id
+                                                         :component-id comp-y})}
+                                        {:type :add-obj
+                                         :page-id page-a
+                                         :id y-child
+                                         :parent-id y-main
+                                         :frame-id y-main
+                                         :components-v2 true
+                                         :obj (mk-frame y-child y-main y-main
+                                                        {:component-file file-id
+                                                         :component-id comp-x})}
+                                        {:type :add-component
+                                         :path ""
+                                         :name "cross-a"
+                                         :main-instance-id x-main
+                                         :main-instance-page page-b
+                                         :id comp-x
+                                         :anotation nil}
+                                        {:type :add-component
+                                         :path ""
+                                         :name "cross-b"
+                                         :main-instance-id y-main
+                                         :main-instance-page page-a
+                                         :id comp-y
+                                         :anotation nil}
+                                        ;; An instance of X on the allowed page.
+                                        {:type :add-obj
+                                         :page-id page-a
+                                         :id inst
+                                         :parent-id uuid/zero
+                                         :frame-id uuid/zero
+                                         :components-v2 true
+                                         :obj (mk-frame inst uuid/zero uuid/zero
+                                                        {:component-file file-id
+                                                         :component-id comp-x})}])
+
+        slink   (th/command! {::th/type :create-share-link
+                              ::rpc/profile-id (:id owner)
+                              :file-id file-id
+                              :pages #{page-a}
+                              :who-comment "team"
+                              :who-inspect "all"})
+        slink-id (get-in slink [:result :id])]
+
+    (t/testing "bundle terminates and keeps both mutually referencing components"
+      (let [out   (th/command! {::th/type :get-view-only-bundle
+                                :share-id slink-id
+                                :file-id file-id})
+            result (:result out)
+            comps  (get-in result [:file :data :components])]
+        (t/is (nil? (:error out)))
+        (t/is (contains? comps comp-x))
+        (t/is (contains? comps comp-y))))))
+
+(t/deftest share-link-bundle-does-not-expand-through-deleted-component
+  ;; A deleted component stores the shapes of its subtree. A live
+  ;; component referenced only from within those stored shapes is out
+  ;; of scope: the reachability walk does not expand through deleted
+  ;; components, so it stays out of the share-link bundle.
+  (let [owner   (th/create-profile* 1 {:is-active true})
+        proj-id (:default-project-id owner)
+        file    (th/create-file* 1 {:profile-id (:id owner)
+                                    :project-id proj-id
+                                    :is-shared false})
+        file-id (:id file)
+        page-a  (first (get-in file [:data :pages]))
+        page-b  (uuid/random)
+
+        e-main  (uuid/random)
+        main    (uuid/random)
+        nested  (uuid/random)
+        inst    (uuid/random)
+        comp-d  (uuid/random)
+        comp-e  (uuid/random)
+
+        _       (update-file! :profile-id (:id owner)
+                              :file-id file-id
+                              :changes [{:type :add-page
+                                         :id page-b
+                                         :page {:id page-b
+                                                :name "Hidden"
+                                                :options {}
+                                                :objects {}}}
+                                        ;; E: live component, main instance on
+                                        ;; the excluded page; referenced only
+                                        ;; inside deleted D's stored shapes.
+                                        {:type :add-obj
+                                         :page-id page-b
+                                         :id e-main
+                                         :parent-id uuid/zero
+                                         :frame-id uuid/zero
+                                         :components-v2 true
+                                         :obj (cts/setup-shape
+                                               {:id e-main
+                                                :name "live-leaf"
+                                                :frame-id uuid/zero
+                                                :parent-id uuid/zero
+                                                :type :frame
+                                                :main-instance true
+                                                :component-root true
+                                                :component-file file-id
+                                                :component-id comp-e})}
+                                        ;; D: deleted component with an
+                                        ;; instance of E inside.
+                                        {:type :add-obj
+                                         :page-id page-b
+                                         :id main
+                                         :parent-id uuid/zero
+                                         :frame-id uuid/zero
+                                         :components-v2 true
+                                         :obj (cts/setup-shape
+                                               {:id main
+                                                :name "retired"
+                                                :frame-id uuid/zero
+                                                :parent-id uuid/zero
+                                                :type :frame
+                                                :main-instance true
+                                                :component-root true
+                                                :component-file file-id
+                                                :component-id comp-d})}
+                                        {:type :add-obj
+                                         :page-id page-b
+                                         :id nested
+                                         :parent-id main
+                                         :frame-id main
+                                         :components-v2 true
+                                         :obj (cts/setup-shape
+                                               {:id nested
+                                                :name "leaf-instance"
+                                                :frame-id main
+                                                :parent-id main
+                                                :type :frame
+                                                :component-file file-id
+                                                :component-id comp-e})}
+                                        {:type :add-component
+                                         :path ""
+                                         :name "retired"
+                                         :main-instance-id main
+                                         :main-instance-page page-b
+                                         :id comp-d
+                                         :anotation nil}
+                                        {:type :add-component
+                                         :path ""
+                                         :name "leaf"
+                                         :main-instance-id e-main
+                                         :main-instance-page page-b
+                                         :id comp-e
+                                         :anotation nil}
+                                        {:type :del-component
+                                         :id comp-d}
+                                        ;; An instance of D on the allowed page.
+                                        {:type :add-obj
+                                         :page-id page-a
+                                         :id inst
+                                         :parent-id uuid/zero
+                                         :frame-id uuid/zero
+                                         :components-v2 true
+                                         :obj (cts/setup-shape
+                                               {:id inst
+                                                :name "instance"
+                                                :frame-id uuid/zero
+                                                :parent-id uuid/zero
+                                                :type :frame
+                                                :component-file file-id
+                                                :component-id comp-d})}])
+
+        slink   (th/command! {::th/type :create-share-link
+                              ::rpc/profile-id (:id owner)
+                              :file-id file-id
+                              :pages #{page-a}
+                              :who-comment "team"
+                              :who-inspect "all"})
+        slink-id (get-in slink [:result :id])]
+
+    (t/testing "live E, referenced only through deleted D, stays out"
+      (let [out    (th/command! {::th/type :get-view-only-bundle
+                                 :share-id slink-id
+                                 :file-id file-id})
+            result (:result out)
+            comps  (get-in result [:file :data :components])]
+        (t/is (nil? (:error out)))
+        (t/is (not (contains? comps comp-d)))
+        (t/is (not (contains? comps comp-e)))))))
+
+(t/deftest share-link-bundle-drops-library-components-of-deleted-primary-component
+  ;; A deleted primary component keeps its main-instance subtree in
+  ;; `:objects`. A library component instanced only inside those stored
+  ;; shapes is out of scope: the library trim walks the data the bundle
+  ;; emits, whose `:components` map no longer carries deleted components.
+  (let [owner    (th/create-profile* 1 {:is-active true})
+        proj-id  (:default-project-id owner)
+
+        lib      (th/create-file* 1 {:profile-id (:id owner)
+                                     :project-id proj-id
+                                     :is-shared true})
+        lib-id   (:id lib)
+        lib-page (first (get-in lib [:data :pages]))
+
+        l-control (uuid/random)
+        l-live    (uuid/random)
+        l-retired (uuid/random)
+        lc-main   (uuid/random)
+        ll-main   (uuid/random)
+        lr-main   (uuid/random)
+        marker    "SIICA-LIB-RETIRED-REF"
+
+        frame    (fn [id parent frame-id extra]
+                   (cts/setup-shape
+                    (merge {:id id
+                            :name "Board"
+                            :frame-id frame-id
+                            :parent-id parent
+                            :type :frame}
+                           extra)))
+
+        _        (update-file!
+                  :profile-id (:id owner)
+                  :file-id lib-id
+                  :changes [{:type :add-obj
+                             :page-id lib-page
+                             :id lc-main
+                             :parent-id uuid/zero
+                             :frame-id uuid/zero
+                             :components-v2 true
+                             :obj (frame lc-main uuid/zero uuid/zero
+                                         {:main-instance true
+                                          :component-root true
+                                          :component-file lib-id
+                                          :component-id l-control})}
+                            {:type :add-obj
+                             :page-id lib-page
+                             :id ll-main
+                             :parent-id uuid/zero
+                             :frame-id uuid/zero
+                             :components-v2 true
+                             :obj (frame ll-main uuid/zero uuid/zero
+                                         {:main-instance true
+                                          :component-root true
+                                          :component-file lib-id
+                                          :component-id l-live})}
+                            {:type :add-obj
+                             :page-id lib-page
+                             :id lr-main
+                             :parent-id uuid/zero
+                             :frame-id uuid/zero
+                             :components-v2 true
+                             :obj (frame lr-main uuid/zero uuid/zero
+                                         {:main-instance true
+                                          :component-root true
+                                          :component-file lib-id
+                                          :component-id l-retired})}
+                            {:type :add-component
+                             :path ""
+                             :name "control"
+                             :main-instance-id lc-main
+                             :main-instance-page lib-page
+                             :id l-control
+                             :anotation nil}
+                            {:type :add-component
+                             :path ""
+                             :name "live"
+                             :main-instance-id ll-main
+                             :main-instance-page lib-page
+                             :id l-live
+                             :anotation nil}
+                            {:type :add-component
+                             :path ""
+                             :name marker
+                             :main-instance-id lr-main
+                             :main-instance-page lib-page
+                             :id l-retired
+                             :anotation nil}
+                            ;; A retired library component keeps its
+                            ;; stored shapes; no link may receive them.
+                            {:type :del-component
+                             :id l-retired}])
+
+        file     (th/create-file* 2 {:profile-id (:id owner)
+                                     :project-id proj-id
+                                     :is-shared false})
+        file-id  (:id file)
+        page-a   (first (get-in file [:data :pages]))
+        page-b   (uuid/random)
+
+        c-deleted (uuid/random)
+        d-main    (uuid/random)
+        d-live    (uuid/random)
+        d-retired (uuid/random)
+        inst      (uuid/random)
+
+        _        (update-file!
+                  :profile-id (:id owner)
+                  :file-id file-id
+                  :changes [{:type :add-page
+                             :id page-b
+                             :page {:id page-b
+                                    :name "Hidden"
+                                    :options {}
+                                    :objects {}}}
+                            ;; The deleted component's stored subtree
+                            ;; instances both library components.
+                            {:type :add-obj
+                             :page-id page-b
+                             :id d-main
+                             :parent-id uuid/zero
+                             :frame-id uuid/zero
+                             :components-v2 true
+                             :obj (frame d-main uuid/zero uuid/zero
+                                         {:main-instance true
+                                          :component-root true
+                                          :component-file file-id
+                                          :component-id c-deleted})}
+                            {:type :add-obj
+                             :page-id page-b
+                             :id d-live
+                             :parent-id d-main
+                             :frame-id d-main
+                             :components-v2 true
+                             :obj (frame d-live d-main d-main
+                                         {:component-root true
+                                          :component-file lib-id
+                                          :component-id l-live})}
+                            {:type :add-obj
+                             :page-id page-b
+                             :id d-retired
+                             :parent-id d-main
+                             :frame-id d-main
+                             :components-v2 true
+                             :obj (frame d-retired d-main d-main
+                                         {:component-root true
+                                          :component-file lib-id
+                                          :component-id l-retired})}
+                            {:type :add-component
+                             :path ""
+                             :name "retired"
+                             :main-instance-id d-main
+                             :main-instance-page page-b
+                             :id c-deleted
+                             :anotation nil}
+                            {:type :del-component
+                             :id c-deleted}
+                            ;; The only library reference the link grants.
+                            {:type :add-obj
+                             :page-id page-a
+                             :id inst
+                             :parent-id uuid/zero
+                             :frame-id uuid/zero
+                             :components-v2 true
+                             :obj (frame inst uuid/zero uuid/zero
+                                         {:component-root true
+                                          :component-file lib-id
+                                          :component-id l-control})}])
+
+        _        (th/link-file-to-library* {:file-id file-id
+                                            :library-id lib-id})
+
+        slink    (th/command! {::th/type :create-share-link
+                               ::rpc/profile-id (:id owner)
+                               :file-id file-id
+                               :pages #{page-a}
+                               :who-comment "team"
+                               :who-inspect "all"})
+        slink-id (get-in slink [:result :id])]
+
+    (t/testing "the trim keeps only the library component the link references"
+      (let [out    (th/command! {::th/type :get-view-only-bundle
+                                 :share-id slink-id
+                                 :file-id file-id})
+            result (:result out)
+            libs   (:libraries result)
+            comps  (get-in (first libs) [:data :components])]
+        (t/is (nil? (:error out)))
+        (t/is (= 1 (count libs)))
+        (t/is (= #{l-control} (set (keys comps))))
+        (t/is (not (contains? comps l-live)))
+        (t/is (not (contains? comps l-retired)))
+        (t/is (not (str/includes? (pr-str out) marker)))))))
+
+(t/deftest share-link-bundle-full-scope-link-still-lists-pages
+  ;; A link granting every page is the common "public prototype" case:
+  ;; pages are listed, instances render, and even there a deleted
+  ;; component does not travel.
+  (let [owner   (th/create-profile* 1 {:is-active true})
+        proj-id (:default-project-id owner)
+        file    (th/create-file* 1 {:profile-id (:id owner)
+                                    :project-id proj-id
+                                    :is-shared false})
+        file-id (:id file)
+        page-a  (first (get-in file [:data :pages]))
+        page-b  (uuid/random)
+        main    (uuid/random)
+        inst    (uuid/random)
+        comp    (uuid/random)
+
+        _       (update-file! :profile-id (:id owner)
+                              :file-id file-id
+                              :changes [{:type :add-page
+                                         :id page-b
+                                         :page {:id page-b
+                                                :name "Second"
+                                                :options {}
+                                                :objects {}}}
+                                        {:type :add-obj
+                                         :page-id page-b
+                                         :id main
+                                         :parent-id uuid/zero
+                                         :frame-id uuid/zero
+                                         :components-v2 true
+                                         :obj (cts/setup-shape
+                                               {:id main
+                                                :name "retired"
+                                                :frame-id uuid/zero
+                                                :parent-id uuid/zero
+                                                :type :frame
+                                                :main-instance true
+                                                :component-root true
+                                                :component-file file-id
+                                                :component-id comp})}
+                                        {:type :add-component
+                                         :path ""
+                                         :name "retired"
+                                         :main-instance-id main
+                                         :main-instance-page page-b
+                                         :id comp
+                                         :anotation nil}
+                                        {:type :del-component
+                                         :id comp}
+                                        {:type :add-obj
+                                         :page-id page-a
+                                         :id inst
+                                         :parent-id uuid/zero
+                                         :frame-id uuid/zero
+                                         :components-v2 true
+                                         :obj (cts/setup-shape
+                                               {:id inst
+                                                :name "instance"
+                                                :frame-id uuid/zero
+                                                :parent-id uuid/zero
+                                                :type :frame
+                                                :component-file file-id
+                                                :component-id comp})}])
+
+        slink   (th/command! {::th/type :create-share-link
+                              ::rpc/profile-id (:id owner)
+                              :file-id file-id
+                              :pages #{page-a page-b}
+                              :who-comment "team"
+                              :who-inspect "all"})
+        slink-id (get-in slink [:result :id])]
+
+    (t/testing "full-scope link lists both pages; the deleted component does not travel"
+      (let [out    (th/command! {::th/type :get-view-only-bundle
+                                 :share-id slink-id
+                                 :file-id file-id})
+            result (:result out)
+            data   (:file result)]
+        (t/is (nil? (:error out)))
+        (t/is (= #{page-a page-b} (set (get-in data [:data :pages]))))
+        (t/is (contains? (get-in data [:data :pages-index page-a :objects]) inst))
+        (t/is (not (contains? (get-in data [:data :components]) comp)))))))
+
+(t/deftest membership-bundle-with-pointer-map-keeps-components-fragment
+  ;; The share-link restrictions must not leak into the membership path:
+  ;; a member still receives the components pointer and can resolve it.
+  (let [owner   (th/create-profile* 1 {:is-active true})
+        owner-id (:id owner)
+        proj-id (:default-project-id owner)
+        file    (th/create-file* 1 {:profile-id owner-id
+                                    :project-id proj-id
+                                    :is-shared false})
+        file-id (:id file)
+        page-a  (first (get-in file [:data :pages]))
+        shape   (uuid/random)
+        comp    (uuid/random)
+
+        _       (update-file! :profile-id owner-id
+                              :file-id file-id
+                              :changes [{:type :add-obj
+                                         :page-id page-a
+                                         :id shape
+                                         :parent-id uuid/zero
+                                         :frame-id uuid/zero
+                                         :components-v2 true
+                                         :obj (cts/setup-shape
+                                               {:id shape
+                                                :name "live"
+                                                :frame-id uuid/zero
+                                                :parent-id uuid/zero
+                                                :type :frame
+                                                :main-instance true
+                                                :component-root true
+                                                :component-file file-id
+                                                :component-id comp})}
+                                        {:type :add-component
+                                         :path ""
+                                         :name "live"
+                                         :main-instance-id shape
+                                         :main-instance-page page-a
+                                         :id comp
+                                         :anotation nil}])
+
+        _       (db/tx-run! th/*system*
+                            (fn [cfg]
+                              (fdata/with-tracked-pointers cfg file-id
+                                (bfc/update-file! cfg
+                                                  (-> (bfc/get-file cfg file-id)
+                                                      (fdata/enable-pointer-map))))))
+
+        comp-ptr-id (db/tx-run! th/*system*
+                                (fn [cfg]
+                                  (pmap/get-id (:components (:data (bfc/get-file cfg file-id))))))]
+
+    (t/testing "membership bundle carries the components pointer"
+      (let [out   (th/command! {::th/type :get-view-only-bundle
+                                ::rpc/profile-id owner-id
+                                :file-id file-id})
+            comps (get-in out [:result :file :data :components])]
+        (t/is (nil? (:error out)))
+        (t/is (pmap/pointer-map? comps))))
+
+    (t/testing "a member can resolve the components fragment"
+      (let [out (th/command! {::th/type :get-file-fragment
+                              ::rpc/profile-id owner-id
+                              :file-id file-id
+                              :fragment-id comp-ptr-id})]
+        (t/is (nil? (:error out)))
+        (t/is (= comp-ptr-id (get-in out [:result :id])))))))
+
+(t/deftest same-file-component-ref-legacy-shapes
+  ;; Legacy files omit `:component-file` on same-file references; the
+  ;; shared predicate must treat that as a same-file reference and still
+  ;; reject library shapes and plain shapes.
+  (let [file-id  (uuid/random)
+        other-id (uuid/random)
+        legacy   {:component-id (uuid/random)}
+        own      {:component-id (uuid/random) :component-file file-id}
+        library  {:component-id (uuid/random) :component-file other-id}
+        plain    {:name "not-a-component"}]
+
+    (t/is (true? (#'viewer/same-file-component-ref? file-id legacy)))
+    (t/is (true? (#'viewer/same-file-component-ref? file-id own)))
+    (t/is (false? (#'viewer/same-file-component-ref? file-id library)))
+    (t/is (false? (#'viewer/same-file-component-ref? file-id plain)))))

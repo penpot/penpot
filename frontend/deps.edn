@@ -4,7 +4,7 @@
   penpot/common
   {:local/root "../common"}
 
-  org.clojure/clojure {:mvn/version "1.12.6"}
+  org.clojure/clojure {:mvn/version "1.12.7"}
   binaryage/devtools {:mvn/version "RELEASE"}
   metosin/reitit-core {:mvn/version "0.11.0"}
   funcool/okulary {:mvn/version "2022.04.11-16"}
@@ -29,11 +29,6 @@
   {:git/tag "v2.26"
    :git/sha "d726717"
    :git/url "https://github.com/funcool/rumext.git"}
-
-  penpot/tokenscript-interpreter
-  {:git/tag "v0.2.0"
-   :git/sha "20db9b1"
-   :git/url "https://github.com/penpot/tokenscript-interpreter.git"}
 
   instaparse/instaparse {:mvn/version "1.5.0"}
   garden/garden {:git/url "https://github.com/noprompt/garden"

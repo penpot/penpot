@@ -1,42 +1,7 @@
-# render-wasm Architecture and Workflow
+# render-wasm
 
-`render-wasm/`: Rust crate compiled to WebAssembly via Emscripten/Skia; frontend loads generated JS/WASM renderer. FFI/memory/tile behavior: `mem:render-wasm/ffi-rendering-subtleties`.
-
-## Stable Architecture
-
-- Exported functions live around `src/main.rs` / `src/wapi.rs` and are called from ClojureScript bridge namespaces under `frontend/src/app/render_wasm*`.
-- Updates are two-phase: ClojureScript calls exported setters to push shape data, then `render_frame()` performs Skia drawing.
-- Rendering is tile-based and shape data is stored separately from hierarchy.
-
-## Source Areas
-
-- `src/state*`: renderer state structures.
-- `src/render/` and `src/render.rs`: tile/surface render pipeline.
-- `src/shapes/` and `src/shapes.rs`: shape data and Skia drawing.
-- `src/wasm/`, `src/wasm.rs`, `src/mem.rs`: JS/WASM memory and interop helpers.
-- `src/math/` and `src/view.rs`: geometry and viewport helpers.
-
-## Build Environment
-
-`./build` sources `_build_env`, which sets the Emscripten paths and `EMCC_CFLAGS`. The WASM heap starts at 256 MB and uses geometric growth.
-
-- Linux builds require `flock` (util-linux).
-- `build`, target cleanup, and each watch rebuild share `render-wasm/.render-wasm-build.lock` per checkout. The dispatcher for both targets does not hold the lock in its parent process.
-- The lock covers setup, Cargo build, and artifact copy. The watch process releases it while waiting for changes. The operating system releases it on success, error, or signal; the file remains.
-- The lock only coordinates repository scripts. Manual Cargo commands do not take it.
-- Set `RENDER_WASM_LOCK_FILE` to the same path only when separate checkouts intentionally share a `CARGO_TARGET_DIR`.
-- Build output is gitignored and stays untracked everywhere it lands: `frontend/resources/public/js/render-wasm.{js,wasm}` and `frontend/src/app/render_wasm/api/shared.js` from `./build`, plus `exporter/resources/wasm/render-wasm.{js,wasm}` and `exporter/src/app/wasm/shared.js`. Never commit generated JS/WASM; rebuild instead.
-
-## Commands
-
-From `render-wasm/`:
-- Build/copy frontend artifacts: `./build [frontend|export]`; no target builds frontend, then export.
-- Clean one target: `./clean [frontend|export]`; never run root `cargo clean` on the shared `target/`.
-- Watch rebuild: `./watch [frontend|export]`; its initial and change-triggered builds use `./build`.
-- Rust tests: `./test` or `cargo test <name>`.
-- Cross-cutting testing principles and anti-patterns: `mem:testing`.
-- Lint: `./lint`.
-- Format: `./fmt`; check only: `./fmt --check`.
-- `./build`, `./test`, `./lint` and `./fmt` all run `setup`, which selects the Rust version pinned in `_build_env` (skip with `PENPOT_WASM_PREPARED=1`).
-
-Do not change exported WASM function signatures without updating the corresponding frontend bridge and verifying the frontend renderer path.
+- `render-wasm/` compiles the Rust/Skia renderer to WebAssembly. Setters called from the CLJS bridge update shape state; `render_frame` draws it. Change exported signatures together with the frontend bridge.
+- State, error codes and byte-buffer ownership: `mem:render-wasm/ffi`. Shape loading, tile invalidation and rendering: `mem:render-wasm/rendering`.
+- Build commands, artifact locations and lock behavior: `render-wasm/README.md`. Generated JS/WASM and each target's `shared.js` are gitignored; rebuild, never edit or commit them.
+- Build and cleanup scripts share a checkout lock, but manual Cargo commands do not. Checkouts that intentionally share a `CARGO_TARGET_DIR` must use the same `RENDER_WASM_LOCK_FILE`. Never run root `cargo clean` on the shared `target/`; use target-specific cleanup.
+- For lint, native tests and formatting see `mem:scripts/ci`; native coverage excludes wasm-only `cfg` code. Cross-cutting test design: `mem:testing`.

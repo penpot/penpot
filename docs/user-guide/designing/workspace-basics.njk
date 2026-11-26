@@ -81,6 +81,7 @@ desc: Master Penpot's workspace basics! Learn interface navigation, zoom tools, 
 
 <h3>Search and filter layers</h3>
 <p>Reach specific layers with a simple search. You can also filter the layers list per layer type (board, group, mask, component, text, image and shape).</p>
+<p>Press <kbd>Esc</kbd> while you work in the search to close it. If the filters menu is open, the first <kbd>Esc</kbd> closes the menu.</p>
 <figure>
   <video title="Search and filter layers" muted="" playsinline="" controls="" width="auto" poster="/img/layers/layers-search.webp" height="auto">
     <source src="/img/layers/layers-search.mp4" type="video/mp4">
@@ -198,6 +199,11 @@ press <kbd>Shift/⇧</kbd> + left click over the right arrow of a group or a boa
 <p>At your projects Dashboard you will be able to see if you have unread comments inside the files of the team.</p>
 
 
+<h2 id="saving">Saving your changes</h2>
+<p>Penpot saves your changes automatically. The file status in the header shows whether your latest changes are saved.</p>
+<p>If a save fails because the connection is lost or the server is busy, Penpot keeps your changes and retries. While changes can't be saved, editing is disabled so you don't lose more work: a banner over the canvas says <strong>Editing is disabled because changes can’t be saved</strong>. When the save goes through, you can edit again. Keep the tab open until then.</p>
+<p>If saving stops for the session, a message asks you to download the error report and reload the page, or leave the file and open it again. Changes made after the last successful save can't be recovered. Check the <a href="#history">history panel</a> to see the last saved version.</p>
+
 <h2 id="history">File history versions</h2>
 <p>The history panel keeps track of the latest changes on an opened file as well as the different versions of the file, making it easier to track changes, revert to previous states and collaborate.</p>
 
@@ -210,6 +216,7 @@ press <kbd>Shift/⇧</kbd> + left click over the right arrow of a group or a boa
 <figure>
   <img src="/img/workspace-basics/history-view.webp" alt="History versions button" />
 </figure>
+<p>Press <kbd>Esc</kbd> to close the history panel.</p>
 
 <h3>History panel</h3>
 <p>At the History panel, you can save the current version of your file, as well as access previous versions for up to 7 days.</p>
@@ -219,6 +226,7 @@ press <kbd>Shift/⇧</kbd> + left click over the right arrow of a group or a boa
 <figure>
   <img src="/img/workspace-basics/history-restore.webp" alt="Restore versions" />
 </figure>
+<p>Restoring a version changes the file for everyone. People who have the file open see the restored version and a <strong>This file was restored</strong> message that says who restored which version, and that changes made after it are no longer in the file. The message stays until they click <strong>Got it</strong>. If they had changes that were not saved yet, the message tells them those changes couldn't be saved.</p>
 
 <h4>Saved versions</h4>
 <p>You can save the current version of your file by clicking the pin icon at the History tab. This will allow the version to be named and it will add it to your list of versions.</p>
@@ -265,7 +273,7 @@ press <kbd>Shift/⇧</kbd> + left click over the right arrow of a group or a boa
 <h2 id="shortcuts-panel">Shortcuts panel</h2>
 <p>Shortcuts boost your productivity but they are not easy to learn. A handy panel at your workspace will help you with that.</p>
 <p>Display the shortcuts panel at the workspace using the shortcut <kbd>?</kbd> or through the option at the <a href="/user-guide/designing/workspace-basics/#workspace-menu">main menu</a>.</p>
-<p>The categories and a filter will help you to find the shortcut you need.</p>
+<p>The categories and a filter will help you to find the shortcut you need. Press <kbd>Esc</kbd> while you work in the panel to close it.</p>
 <figure>
   <img src="/img/workspace-basics/shortcuts.webp" alt="Shortcuts panel" />
 </figure>
@@ -303,7 +311,8 @@ press <kbd>Shift/⇧</kbd> + left click over the right arrow of a group or a boa
 <p>To set an exact position, double-click the guide pill on the ruler and type a value.</p>
 <p>Right-click a ruler guide to change its color from the preset swatches.</p>
 <p>To <strong>delete ruler guides</strong> drag the guide to the ruler or select the guide and press delete / supr.</p>
-<p>To <strong>show/hide ruler guides</strong> use the same shortcut as for rulers: <kbd>Shift/CMD + Ctrl + R</kbd></p>
+<p>Ruler guides show only while rulers and guides are both visible. To <strong>show/hide ruler guides</strong>, press <kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>R</kbd> (<kbd>⌘</kbd><kbd>⇧</kbd><kbd>R</kbd> on macOS) to toggle rulers, or <kbd>Ctrl</kbd><kbd>'</kbd> (<kbd>⌘</kbd><kbd>'</kbd> on macOS) to toggle guides (this also hides board guides).</p>
+<p>To turn <strong>snap to ruler guides</strong> on or off, press <kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>G</kbd> (<kbd>⌘</kbd><kbd>⇧</kbd><kbd>G</kbd> on macOS).</p>
 <figure>
   <img src="/img/workspace-basics/ruler-guide-pill-edit.webp" alt="Editing a ruler guide position from the guide pill">
 </figure>

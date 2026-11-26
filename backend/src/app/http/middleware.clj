@@ -35,6 +35,30 @@
   {:name ::server-timing
    :compile (constantly ymw/wrap-server-timing)})
 
+(defn- resolve-trusted-origin
+  "Prefer the `x-penpot-origin` header sent by the frontend; fall back to
+  the browser's `origin` header. Both are checked against the same
+  allowlist, so neither can widen the base on its own."
+  [request]
+  (or (cf/get-trusted-origin (yreq/get-header request "x-penpot-origin"))
+      (cf/get-trusted-origin (yreq/get-header request "origin"))))
+
+(defn wrap-trusted-origin
+  "When the request carries a trusted origin, stamp it on the request and
+  bind the config :public-uri to it for the dynamic extent of the request.
+  Otherwise the request is left untouched and the canonical :public-uri
+  is used."
+  [handler]
+  (fn [request]
+    (if-let [origin (resolve-trusted-origin request)]
+      (binding [cf/config (cf/with-public-origin origin cf/config)]
+        (handler (assoc request ::http/trusted-origin origin)))
+      (handler request))))
+
+(def trusted-origin
+  {:name ::trusted-origin
+   :compile (constantly wrap-trusted-origin)})
+
 (def params
   {:name ::params
    :compile (constantly ymw/wrap-params)})
@@ -298,7 +322,7 @@
         (assoc "access-control-allow-credentials" "true")
         (assoc "access-control-allow-methods" "GET,POST,DELETE,OPTIONS,PUT,HEAD,PATCH")
         (assoc "access-control-expose-headers" "content-type, retry-after, x-rate-limit-remaining, x-rate-limit-reset")
-        (assoc "access-control-allow-headers" "x-frontend-version, x-client, content-type, accept"))))
+        (assoc "access-control-allow-headers" "x-frontend-version, x-client, x-penpot-origin, content-type, accept"))))
 
 (defn wrap-cors
   [handler allowed]

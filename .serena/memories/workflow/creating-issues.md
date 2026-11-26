@@ -1,430 +1,51 @@
 # Creating Issues
 
-Create GitHub issues only on explicit request. Use `gh` CLI authenticated to `penpot/penpot`.
+Create or edit issues only when authorized. Follow `AGENTS.md` and use authenticated `gh` for `penpot/penpot`.
 
 ## Title Derivation
 
-Derive the title from the source material (bug report, user feedback, feature request, etc.) — not from any pre-existing title which may be auto-generated or stale.
-
-### Bug titles (descriptive present tense)
-
-Describe the symptom as it appears to the user. Format: `[Where] [present-tense verb] when [condition]`.
-
-- *"Plugin API crashes when setting text fills"*
-- *"Canvas renders glitches when zooming quickly"*
-- *"French Canada locale falls back to French (fr) translations"*
-
-Do **not** start bug titles with "Fix" or any imperative verb — state what's broken, not command a fix.
-
-### Feature / Enhancement titles (imperative mood)
-
-Command what should be built. Format: `[Imperative verb] [what] in/on [where]`.
-
-- *"Add customizable dash and gap length controls to dashed strokes in the sidebar"*
-- *"Show user, timestamp, and hash in the workspace history panel like git commits"*
-
-### Universal rules
-
-- **Include the "where"** — specify the UI location or module (e.g. "in the sidebar", "on the stroke options")
-- **No prefixes** — strip `bug:`, `feature:`, `feat:`, `:bug:`, `:sparkles:`, `[PENPOT FEEDBACK]`, etc.
-- **No emoji** — plain text only
-- **Be specific** — prefer concrete detail over generality
-- **Two problems → cover both** — if the description has two distinct but related issues, capture both joined by "and"
-
-## Metadata
-
-| Field | Rule |
-|-------|------|
-| **Labels** | `community contribution` (PRs from non-core) · `breaking change` when the change breaks compatibility (see below) · skip workflow labels (`backport candidate`, `team-qa`) · do **not** add `bug` or `enhancement` labels (use Issue Type instead) |
-| **Milestone** | Use the current or next planned milestone. Fetch available milestones: `gh api repos/penpot/penpot/milestones --jq '.[].title'`. If unsure, omit. |
-| **Project** | Always `Main` (project number 8). Use `--project "Main"` flag. |
-| **Issue Type** | See Issue Type section below. Cannot be set via `gh issue create` — use GraphQL after creation. |
-
-## Breaking changes
-
-When the issue introduces a breaking change or a deprecation, it is the unit
-`mem:workflow/updating-changelog` turns into a block under
-`### :boom: Breaking changes & Deprecations`. The section is generated from
-the issue (`scripts/changelog.py boom`), so the issue must carry both:
-
-1. The `breaking change` label.
-2. A `## Breaking change note` **comment** (not a body section). Everything
-   after that marker line is copied to the changelog: paragraphs, bullet
-   lists, code blocks and headings are kept (headings are demoted to level 5
-   in `CHANGES.md`). Write it for self-hosters: what changes, what they must
-   do, and what breaks if they do nothing. Keep it short: explain the
-   implications and link the runbook or docs for the detail, never paste the
-   runbook itself. Links must point to a long-lived branch (`staging` or
-   `main`), never to a feature branch.
-
-Post the note as a new comment. Do not add a breaking-change section to the
-issue body and do not hand-write the changelog block. When the issue comes
-from a PR, reuse the text of the PR's breaking-change section.
-Do not hard-wrap the note: one line per paragraph or bullet.
-
-The full changelog rules (sections, exclusions, `:rocket:`, pre-flight and
-anomaly report) live in `mem:workflow/updating-changelog`.
+- Derive the title from the source material, not from a copied or auto-generated title. Use plain text, no emoji or prefixes. Name the affected UI or module, and cover both issues if two related symptoms matter.
+- Bug: present-tense symptom, not an imperative. Example: `Canvas renders glitches when zooming quickly`, not `Fix canvas glitches`.
+- Feature or enhancement: imperative and user-facing. Example: `Add dash and gap controls to stroke options`.
 
 ## Issue Body Template
 
-Write the body to a temp file to avoid shell quoting issues:
+- Bug: `### Description`, `### Steps to reproduce`, `### Expected behavior`, `### Affected versions`. Describe actual behavior in the description; use numbered steps.
+- Feature or enhancement: `### Description`, `### Use case`, `### Affected versions`. Explain what the user can do and why it helps. Don't invent details or versions.
+- Keep each paragraph or list item on one line, as for PR bodies. Put the body in a private temporary file to avoid shell quoting and remove your temporary files afterward.
 
-**Bug template:**
-```markdown
-### Description
+## Metadata
 
-<what breaks, what the user experiences>
+- Project: `Main` (project 8). Use the current or next planned milestone only when clear; issues from PRs inherit the PR milestone, or none. Assign a known milestone on the existing issue with `gh issue edit --milestone`; the creation helper has no milestone option.
+- Labels: `community contribution` for non-core contributions; `breaking change` when compatibility breaks. Don't copy workflow labels (e.g. `team-qa`, `backport candidate`) or use `bug`/`enhancement` labels to encode the Issue Type.
+- Issue Type: `Bug` for broken behavior, `Enhancement` for improvements and ordinary feature requests, `Feature` for feature-level work, and `EPIC` for an umbrella tracking issue. Use `Question` or `Docs` when appropriate and `Task` for other work. Parentage does not decide type: fixing a bug under an epic is still a Bug.
 
-### Steps to reproduce
+## Breaking changes
 
-1. <step 1>
-2. <step 2>
+- Add the `breaking change` label and post a separate comment starting with `## Breaking change note`, not a section in the issue body. Reuse the user-facing note from the PR when available.
+- Explain to self-hosters what changes, what they must do, and what breaks if they do nothing. Link the details on `staging` or `main`, not a feature branch; don't paste the runbook or add issue/PR links the generator supplies. Use one line per paragraph or bullet. See `mem:workflow/updating-changelog` for how the note becomes a generated entry.
 
-### Expected behavior
+## Create, recover and verify
 
-<what should happen instead>
-
-### Affected versions
-
-<version>
-```
-
-**Enhancement template:**
-```markdown
-### Description
-
-<what the user can now do that they couldn't before>
-
-### Use case
-
-<why this is useful, who benefits>
-
-### Affected versions
-
-<version>
-```
-
-Note: do not soft-wrap paragraphs in the body. Each paragraph is a single line in the source; newlines are reserved for structural breaks (section headers, list items, code-block fences, blank-line separators). List items stay on a single line each. GitHub renders single-line paragraphs correctly, and wrapping makes diffs noisy on every small wording change. Same rule applies to PR bodies.
-
-## Creating the Issue
-
-```bash
-cat > /tmp/issue-body.md << 'ISSUE_BODY'
-<body content here>
-ISSUE_BODY
-
-gh issue create \
-  --repo penpot/penpot \
-  --title "<Derived title>" \
-  --label "<label>" \
-  --project "Main" \
-  --body-file /tmp/issue-body.md
-```
-
-Output: `https://github.com/penpot/penpot/issues/<NUMBER>`
-
-## Setting the Issue Type
-
-`gh issue create` can't set Issue Type directly. Use GraphQL after creation.
-
-**Issue Type IDs for penpot/penpot:**
-
-| Type | ID |
-|------|----|
-| Bug | `IT_kwDOAcyBPM4AX5Nb` |
-| Enhancement | `IT_kwDOAcyBPM4B_IQN` |
-| Feature | `IT_kwDOAcyBPM4AX5Nf` |
-| Task | `IT_kwDOAcyBPM4AX5NY` |
-| Question | `IT_kwDOAcyBPM4B_IQj` |
-| Docs | `IT_kwDOAcyBPM4B_IQz` |
-| EPIC | `IT_kwDOAcyBPM4CEMzF` |
-
-**Map:**
-- Bug report (steps to reproduce, expected vs. actual) → Bug
-- Enhancement / new feature → Enhancement
-- Feature/epic → Feature
-- Umbrella/EPIC tracking issue that groups sub-issues → EPIC
-- Docs → Docs
-- None of the above → Task
-
-**Set it:**
-```bash
-ISSUE_ID=$(gh api graphql -f query='
-query { repository(owner: "penpot", name: "penpot") {
-  issue(number: <NUMBER>) { id }
-}}' --jq '.data.repository.issue.id')
-
-gh api graphql -f query='
-mutation {
-  updateIssue(input: {
-    id: "'"$ISSUE_ID"'"
-    issueTypeId: "<TYPE_ID>"
-  }) {
-    issue { number issueType { name } }
-  }
-}'
-```
-
-## Verification
-
-```bash
-gh issue view <NUMBER> --repo penpot/penpot \
-  --json title,labels,milestone,projectItems \
-  --jq '{title, milestone: .milestone.title, labels: [.labels[].name], projects: [.projectItems[].title]}'
-
-gh api graphql -f query='
-query { repository(owner: "penpot", name: "penpot") {
-  issue(number: <NUMBER>) { issueType { name } }
-}}' --jq '.data.repository.issue.issueType.name'
-```
-
-## Cleanup
-
-```bash
-rm -f /tmp/issue-body.md
-```
+1. After authorization, run `python3 scripts/gh.py create-issue --type <type> --title "<title>" --body-file <private-file>` with any intended labels. The helper adds the issue to `Main` and assigns its type. See `mem:scripts/gh` for CLI discovery.
+2. Record the returned number and URL. If the command fails or the result is ambiguous, check whether the issue already exists before retrying. Use the number or URL from the error if present; otherwise search recent issues by the derived title and body. If creation succeeded but type assignment did not, use `ISSUE_TYPE_IDS`, `GQL_ISSUE_NODE_ID_QUERY` and `GQL_UPDATE_ISSUE_TYPE` in `scripts/gh.py` to assign the type to that existing issue. Never create a second one to repair type or linkage.
+3. Apply any separate, authorized edits using the existing number. Verify the title, labels, milestone and `Main` membership with `gh issue view <NUMBER> --repo penpot/penpot --json title,labels,milestone,projectItems`; verify Issue Type on the issue or via GraphQL `repository.issue.issueType.name`. Return the verified URL and disclose any incomplete follow-up.
 
 ## Adding an Issue as a Sub-issue
 
-Sub-issues group work under an umbrella/EPIC issue. `gh issue create` cannot
-link a sub-issue at creation time: create the issue first (normal flow above),
-then link it.
-
-**1. Create the sub-issue** as usual and note its number (`NNNN`).
-
-**2. Get the issue's database id** (the REST `id`, not the `number`):
-
-```bash
-SUB_ID=$(gh api repos/penpot/penpot/issues/NNNN --jq .id)
-```
-
-**3. Link it to the parent** (`PARENT` = umbrella/EPIC issue number):
-
-```bash
-gh api --method POST repos/penpot/penpot/issues/PARENT/sub_issues \
-  -F sub_issue_id=$SUB_ID
-```
-
-Use `-F` (typed field), never `-f`: with `-f` the value is sent as a string
-and the API rejects it with `422 ... /sub_issue_id ... is not of type integer`.
-
-**4. Verify both directions:**
-
-```bash
-gh api repos/penpot/penpot/issues/NNNN/parent --jq '{number, title}'
-gh api repos/penpot/penpot/issues/PARENT/sub_issues --jq '.[] | {number, title}'
-```
-
-Notes:
-
-- The `POST` response is the parent issue and includes `sub_issues_summary`
-  with `total`, `completed` and `percent_completed`, useful to track EPIC
-  progress.
-- A sub-issue has a single parent.
-- Issue Type is independent of the parent relationship: choose it with the
-  normal mapping above (an EPIC child that fixes broken behavior is a Bug,
-  not a Task).
+- Create and verify it first. Read its REST database `id` (not the issue number or GraphQL node ID) with `gh api repos/penpot/penpot/issues/<NUMBER> --jq .id`.
+- Add it to the umbrella issue with `gh api --method POST repos/penpot/penpot/issues/<PARENT>/sub_issues -F sub_issue_id=<DATABASE_ID>`. Use typed `-F`, not `-f`, which sends a string. An issue has one parent; verify both the child's `/parent` and the parent's `/sub_issues`.
 
 ## Creating Issues from PRs
 
-Used when the project board needs an issue as the primary changelog/release
-unit and the PR describes the implementation. The issue is the **WHAT**
-(user-facing), the PR is the **HOW** (implementation).
-
-### Fetch the PR
-
-```bash
-gh pr view <PR_NUMBER> --repo penpot/penpot \
-  --json title,body,author,labels,baseRefName,mergedAt,state,milestone
-```
-
-Identify:
-
-- **WHAT** — user-facing problem or feature. Goes into the issue.
-  Describe symptoms and impact, not internal mechanisms.
-- **HOW** — implementation details. These belong in the PR, not the issue.
-
-### Determine metadata
-
-- **Title:** rewrite from user perspective using the title rules above. Strip
-  leading emoji prefixes (`:bug:`, `:sparkles:`, `:tada:`). Focus on
-  observable behavior.
-- **Labels:** copy `community contribution` if present on the PR.
-- **Milestone:** always copy what's on the PR.
-
-  ```bash
-  gh pr view <PR_NUMBER> --json milestone --jq '.milestone.title'
-  ```
-
-  If the PR has no milestone, create the issue without one.
-- **Project:** `Main`.
-- **Body:** extract the user-facing section (steps to reproduce or feature
-  description). Omit internal details. Use the templates above.
-- **Issue Type:** use the mapping table above (also handles `:bug:` /
-  `:sparkles:` / `:tada:` title prefixes).
-- **Breaking changes:** when the PR body has a breaking-change section, post
-  its user-facing text as a `## Breaking change note` comment on the issue and
-  add the `breaking change` label (see **Breaking changes** above).
-
-### Create the issue
-
-```bash
-cat > /tmp/issue-body.md << 'ISSUE_BODY'
-<body content here>
-ISSUE_BODY
-
-gh issue create \
-  --repo penpot/penpot \
-  --title "<Title>" \
-  --label "community contribution" \  # only if PR has this label
-  --milestone "<milestone>" \
-  --project "Main" \
-  --body-file /tmp/issue-body.md
-```
-
-Output: `https://github.com/penpot/penpot/issues/<NUMBER>`
-
-### Assign to the PR author
-
-```bash
-AUTHOR=$(gh pr view <PR_NUMBER> --repo penpot/penpot --json author --jq '.author.login')
-gh issue edit <ISSUE_NUMBER> --repo penpot/penpot --add-assignee "$AUTHOR"
-```
-
-GitHub only allows assigning users with write permission, org members, or
-users who have already commented on the issue. Assigning an outside
-contributor fails with `422 ... assignees ... invalid`, and `gh issue edit`
-still exits 0 and prints the issue URL. Verify the result and, when the list
-stays empty, skip the assignment:
-
-```bash
-gh api repos/penpot/penpot/issues/<ISSUE_NUMBER> --jq '[.assignees[].login]'
-```
-
-### Set Issue Type and verify
-
-See the **Setting the Issue Type** and **Verification** sections above — the
-GraphQL mutations and `gh issue view` calls are identical regardless of how
-the issue was sourced.
-
-### Link the PR to the issue
-
-Add `Closes #<ISSUE_NUMBER>` to the PR body for readable context, then run the explicit assignment command from `mem:workflow/creating-prs`:
-
-```bash
-python3 scripts/gh.py link-issue <ISSUE_NUMBER> <PR_NUMBER>
-```
-
-The command creates the GitHub Development link by calling `addCloseIssueReferences` and trusts the successful mutation (GitHub does not reliably report mutation-created links back through the API). It is safe to rerun. Do not rely on it to keep the issue open: adding `Closes #N` to the body of an already-merged PR closed the issue immediately when tried (#12896 / PR #12067, 2026-11-09; the timeline shows a cross-reference plus a ClosedEvent with no closer). For changelog units that outcome is fine — a merged fix means a closed issue — but be aware when linking old merged PRs. Do not rely on the body keyword as the assignment operation.
-
-### Clean up
-
-```bash
-rm -f /tmp/issue-body.md /tmp/pr-body.md
-```
-
-### Rules for this flow
-
-- **One issue per PR** — even if a PR fixes multiple things, create a single
-  issue that summarizes the overall change.
-- **Community attribution:** if the PR has the `community contribution`
-  label or the author is not a core team member, add the label to the issue.
-- **Don't put implementation details in the issue body** — the issue is for
-  users, QA, and changelog readers.
-- **Drop the PR's `no issue required` label** once the issue exists: it only
-  marks PRs that need no changelog unit, and it is stale from then on.
+1. Read the PR body, author, labels and milestone. Create one issue for what the user gains or what was broken; leave implementation details in the PR. Apply the shared creation flow, copy the PR milestone when set and post a breaking-change note when needed.
+2. Try assigning the PR author when appropriate. `gh issue edit` can still return success when GitHub refuses an outside assignee; verify via `gh issue view` and skip an ineligible assignment.
+3. For authorized PR edits, put `Closes #<NUMBER>` in the PR body for context and make the explicit Development association using `python3 scripts/gh.py link-issue <NUMBER> <PR>`. Do not treat the body text as proof of the association. Editing an already-merged PR can close the issue; see `mem:workflow/creating-prs` before editing. Drop `no issue required` from the PR once the issue exists.
 
 ## Creating Issues from Draft Body
 
-Used when the user provides a draft body from elsewhere (Taiga story, user
-report, discussion transcript) and there is no PR yet.
-
-### Get the body
-
-Read the draft body from wherever it was provided. If the user gives only a
-vague one-liner, ask them to expand it (steps to reproduce, expected vs.
-actual, use case) before proceeding.
-
-### Derive the title
-
-Apply the title rules in the **Title Derivation** section above. Distinguish
-bug vs. feature from the body content:
-
-- Steps to reproduce + expected vs. actual → bug
-- "would be nice", "add support for", "allow users to" → feature / enhancement
-
-### Choose a body template
-
-Use the bug or enhancement template from the **Issue Body Template** section
-above. Fill in placeholders with the user-provided details. If the body
-doesn't fit either, ask the user which template to use.
-
-### Determine metadata
-
-- **Project:** `Main` (always).
-- **Milestone:** ask the user if not obvious; otherwise omit.
-- **Labels:** usually none for new user-reported issues. Add
-  `community contribution` if the user is a non-team contributor.
-- **Issue Type:** use the mapping table above (bug description → Bug; feature
-  request → Enhancement or Feature).
-
-### Create the issue
-
-```bash
-cat > /tmp/issue-body.md << 'ISSUE_BODY'
-<body content here>
-ISSUE_BODY
-
-gh issue create \
-  --repo penpot/penpot \
-  --title "<Title>" \
-  --label "community contribution" \  # only if applicable
-  --milestone "<milestone>" \        # only if provided
-  --project "Main" \
-  --body-file /tmp/issue-body.md
-```
-
-### Set Issue Type and verify
-
-Same GraphQL mutation and `gh issue view` commands as in the
-**Setting the Issue Type** and **Verification** sections above.
-
-### Clean up
-
-```bash
-rm -f /tmp/issue-body.md
-```
+- Read the draft, not its old title. If a vague report gives no observable behavior or use case, ask for enough detail before creating. Pick the body template and metadata above, then use the shared creation flow.
 
 ## Retitling an Existing Issue
 
-Used when an issue's current title is vague, prefixed, or no longer matches
-the body (e.g. `[PENPOT FEEDBACK]: ...`, `feature: ...`).
-
-### Fetch the issue
-
-```bash
-gh issue view <NUMBER> --repo penpot/penpot --json title,body
-```
-
-### Derive a new title
-
-Read the body (not the current title) and apply the title rules in the
-**Title Derivation** section above.
-
-### Apply the new title
-
-```bash
-gh issue edit <NUMBER> --repo penpot/penpot --title "<NEW TITLE>"
-```
-
-### Confirm
-
-```bash
-gh issue view <NUMBER> --repo penpot/penpot --json title
-```
-
-## See Also
-
-- End-to-end orchestration entry point: the `create-issue` skill at
-  `.agents/skills/create-issue/SKILL.md`. The skill is a thin entry
-  point; this memory is the canonical home for all issue-creation rules.
+- Fetch the existing body, derive the title from its content, and edit only `--title`. Read the title back. Do not change body, metadata or relationships as part of a retitle.

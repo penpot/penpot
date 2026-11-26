@@ -28,6 +28,7 @@ mod svg_attrs;
 mod svgraw;
 mod text;
 pub mod text_paths;
+mod text_presentation;
 mod transform;
 
 pub use blend::*;
@@ -191,6 +192,7 @@ pub struct Shape {
     pub background_blur: Option<Blur>,
     pub opacity: f32,
     pub hidden: bool,
+    pub hide_fill_on_export: bool,
     pub svg: Option<skia::svg::Dom>,
     pub svg_attrs: Option<SvgAttrs>,
     pub shadows: Vec<Shadow>,
@@ -295,6 +297,7 @@ impl Shape {
             vertical_align: VerticalAlign::Top,
             opacity: 1.,
             hidden: false,
+            hide_fill_on_export: false,
             blur: None,
             background_blur: None,
             svg: None,
@@ -464,6 +467,10 @@ impl Shape {
 
     pub fn set_hidden(&mut self, value: bool) {
         self.hidden = value;
+    }
+
+    pub fn set_hide_fill_on_export(&mut self, value: bool) {
+        self.hide_fill_on_export = value;
     }
 
     pub fn svg_transform(&self) -> Option<Matrix> {
@@ -1286,8 +1293,10 @@ impl Shape {
         self.cap_bounds_margin() > 0.0
     }
 
-    pub fn mask_id(&self) -> Option<&Uuid> {
-        self.children.first()
+    pub fn mask_id(&self) -> Option<Uuid> {
+        self.is_masked_group()
+            .then(|| self.children.first().copied())
+            .flatten()
     }
 
     pub fn children_count(&self) -> usize {
@@ -1741,12 +1750,15 @@ impl Shape {
         for st in structure {
             match st.entry_type {
                 StructureEntryType::AddChild => {
-                    if result.is_empty() {
-                        result.insert(st.id);
-                    } else {
-                        let index = usize::min(result.len() - 1, st.index as usize);
-                        result.shift_insert(index, st.id);
-                    }
+                    // Same as `d/insert-at-index`: the index counts the child
+                    // at its old position.
+                    let index = st.index as usize;
+                    let index = match result.get_index_of(&st.id) {
+                        Some(current) if current < index => usize::min(index - 1, result.len() - 1),
+                        Some(_) => index,
+                        None => usize::min(index, result.len()),
+                    };
+                    result.shift_insert(index, st.id);
                 }
                 StructureEntryType::RemoveChild => {
                     to_remove.insert(&st.id);
@@ -1783,6 +1795,11 @@ impl Shape {
             Some(LayoutItem { is_absolute, .. }) => *is_absolute,
             _ => false,
         }
+    }
+
+    /// Whether flex layout places this shape: neither absolute nor hidden.
+    pub fn is_in_flow(&self) -> bool {
+        !self.is_absolute() && !self.hidden()
     }
 
     pub fn z_index(&self) -> i32 {
@@ -1959,20 +1976,26 @@ impl Shape {
         }
     }
 
-    /// How far the masked-group layer filter reaches past the content, in
-    /// document units: the widest drop shadow plus the layer blur.
-    pub fn masked_group_filter_reach(&self) -> f32 {
+    /// How far this frame or group's effects carry its descendants' pixels
+    /// past their own bounds, in document units: a group's widest drop shadow
+    /// (a masked group's layer filter casts it, other groups' texts repeat
+    /// it) plus the layer blur.
+    pub fn children_reach(&self) -> f32 {
         let reach = |filter: Option<skia::ImageFilter>| {
             filter.map_or(0.0, |f| {
                 let r = f.compute_fast_bounds(math::Rect::default());
                 (-r.left).max(-r.top).max(r.right).max(r.bottom)
             })
         };
-        let shadows = self
-            .drop_shadows_visible()
-            .map(|shadow| reach(shadow.get_drop_shadow_filter()))
-            .fold(0.0, f32::max);
-        let blur = self.masked_group_layer_blur().map_or(0.0, |blur| {
+        let shadows = match self.shape_type {
+            Type::Group(_) => self
+                .drop_shadows_visible()
+                .map(|shadow| reach(shadow.get_drop_shadow_filter()))
+                .fold(0.0, f32::max),
+            Type::Frame(_) => 0.0,
+            _ => return 0.0,
+        };
+        let blur = self.visible_layer_blur().map_or(0.0, |blur| {
             let sigma = radius_to_sigma(blur.value);
             reach(skia::image_filters::blur((sigma, sigma), None, None, None))
         });
@@ -2225,6 +2248,48 @@ mod tests {
         Shape::new(Uuid::nil())
     }
 
+    fn add_child(shape: &mut Shape, id: Uuid, index: u32) {
+        shape.apply_structure(&vec![StructureEntry::new(
+            StructureEntryType::AddChild,
+            index,
+            Uuid::nil(),
+            id,
+            0.0,
+        )]);
+    }
+
+    #[test]
+    fn add_child_index_counts_the_child_at_its_old_position() {
+        let ids: Vec<Uuid> = (1..=4).map(|i| Uuid::from_u64_pair(0, i)).collect();
+        let [a, b, c, d] = [ids[0], ids[1], ids[2], ids[3]];
+
+        let cases = [
+            (b, 4, vec![a, c, d, b]),
+            (b, 3, vec![a, c, b, d]),
+            (b, 2, vec![a, b, c, d]),
+            (b, 1, vec![a, b, c, d]),
+            (d, 0, vec![d, a, b, c]),
+        ];
+
+        for (id, index, expected) in cases {
+            let mut shape = any_shape();
+            shape.children = ids.clone();
+            add_child(&mut shape, id, index);
+            assert_eq!(shape.children, expected, "move {id} to {index}");
+        }
+    }
+
+    #[test]
+    fn add_child_inserts_a_new_child_at_the_end() {
+        let ids: Vec<Uuid> = (1..=3).map(|i| Uuid::from_u64_pair(0, i)).collect();
+        let new_id = Uuid::from_u64_pair(0, 9);
+
+        let mut shape = any_shape();
+        shape.children = ids.clone();
+        add_child(&mut shape, new_id, 3);
+        assert_eq!(shape.children, [ids, vec![new_id]].concat());
+    }
+
     #[test]
     fn add_fill_pushes_a_new_fill() {
         let mut shape = any_shape();
@@ -2351,6 +2416,50 @@ mod tests {
         } else {
             unreachable!()
         }
+    }
+
+    #[test]
+    fn children_reach_covers_a_visible_layer_blur_or_group_drop_shadow() {
+        let shape_of = |shape_type| {
+            let mut shape = any_shape();
+            shape.set_shape_type(shape_type);
+            shape
+        };
+        let group = |masked| shape_of(Type::Group(Group { masked }));
+        let frame = |clip| {
+            let mut shape = shape_of(Type::Frame(Frame::default()));
+            shape.clip_content = clip;
+            shape
+        };
+        let rect = || shape_of(Type::Rect(Rect::default()));
+        let blur = |hidden| Some(Blur::new(BlurType::LayerBlur, hidden, 10.0));
+        // (shape, layer blur, drop shadow, reaches)
+        let cases = [
+            (group(false), None, false, false),
+            (group(false), blur(false), false, true),
+            (frame(false), blur(false), false, true),
+            (frame(true), blur(false), false, true),
+            (group(false), blur(true), false, false),
+            (group(false), None, true, true),
+            // A board's shadow is cast by the board, not repeated by children.
+            (frame(false), None, true, false),
+            // A masked group applies both through its layer filter.
+            (group(true), blur(false), true, true),
+            // Only containers have descendants to carry.
+            (rect(), blur(false), true, false),
+        ];
+        for (i, (mut shape, blur, has_shadow, reaches)) in cases.into_iter().enumerate() {
+            shape.set_blur(blur);
+            if has_shadow {
+                shape.add_shadow(drop_shadow(4.0, 0.0, (30.0, 0.0)));
+            }
+            assert_eq!(shape.children_reach() > 0.0, reaches, "case {i}");
+        }
+
+        // A shadow reaches past its offset.
+        let mut shadowed = group(false);
+        shadowed.add_shadow(drop_shadow(4.0, 0.0, (30.0, 0.0)));
+        assert!(shadowed.children_reach() > 30.0);
     }
 
     fn masked_group_with(shadows: Vec<Shadow>, blur: Option<Blur>) -> Shape {
@@ -2551,7 +2660,7 @@ mod tests {
         let content_b = Uuid::new_v4();
         group.children = vec![mask_id, content_a, content_b];
 
-        assert_eq!(group.mask_id(), Some(&mask_id));
+        assert_eq!(group.mask_id(), Some(mask_id));
 
         let content: Vec<Uuid> = group.children_ids_iter(false).copied().collect();
         assert_eq!(content.len(), 2);

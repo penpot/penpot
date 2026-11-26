@@ -1,57 +1,10 @@
-# Common Testing and Verification
+# Common testing
 
-`common/` is CLJC shared code. Tests should cover the relevant runtime(s): JVM for backend/common logic and JS for frontend/exporter behavior. For geometry, component, and file-model changes, JVM tests are common and fast, but JS/browser behavior can differ when WASM modifier math or CLJS-specific state is involved.
-
-## Unit tests
-
-READ `mem:testing` FIRST — it defines the execution discipline (no piping, tee to file, preferred commands) that applies to all CLJS/JS and JVM test runs.
-
-Common tests live under `common/test/common_tests/` and use `clojure.test`.
-They are CLJC and run on both JVM and JS.
-
-From `common/`:
-- Full JVM test run: `clojure -M:dev:test`
-- Full JS test run (always builds, suppressed output): `pnpm run test:quiet`
-- Full JS test run (always builds, build output visible): `pnpm run test`
-- Focus a JVM test namespace: `clojure -M:dev:test --focus common-tests.logic.variants-switch-test`
-- Focus a JVM test var: `clojure -M:dev:test --focus common-tests.logic.variants-switch-test/test-basic-switch`
-- Focus a JS test namespace: `pnpm run test:quiet -- --focus common-tests.logic.comp-sync-test`
-- Focus a JS test var: `pnpm run test:quiet -- --focus common-tests.logic.comp-sync-test/test-sync-when-changing-attribute`
-- Quiet logging during a JS run: append `--log-level warn` (or `trace|debug|info|warn|error`)
-- Build JS test target only (no run): `pnpm run build:test`
-- After `build:test` has been run, run the compiled runner directly: `node target/tests/test.js [--focus ...] [--log-level ...]`.
-
-New common JS test namespaces must be required/listed in `common_tests/runner.cljc`;
-new vars in existing namespaces need no runner change. Multiple JVM `--focus` flags
-compose as a union.
-
-## Test helpers
-
-Helpers live under `common/src/app/common/test_helpers/` and are usually aliased with short `th*` prefixes. Test namespaces using label->uuid helpers should start with `(t/use-fixtures :each thi/test-fixture)` so labels reset between tests.
-
-Useful builders:
-- `thf/sample-file` creates a base file.
-- `tho/add-simple-component` creates a simple component.
-- `thc/instantiate-component` instantiates a component copy.
-- `thv/add-variant-with-child` creates a variant container with two child variants.
-- `thv/add-variant-with-copy` creates variants whose children are component instances.
-
-`add-variant-with-copy` does not accept position params for children; use `gsh/absolute-move` after creation if positions matter.
-
-## Generative sampling caution
-
-- `sg/sample` is unseeded per run. If a test filters samples by type (e.g. keep only `:svg-raw`) then `first` can yield nil on unlucky seeds; `assoc` onto nil builds a typeless map that fails `:multi` dispatch on `:type`. Pin `:seed` in `sg/sample` opts whenever a test depends on a filtered subtype being present (verified seed 42 deals svg-raw shapes on JVM and JS).
-
-## Driving production paths
-
-For shape mutations, prefer production-path helpers such as `cls/generate-update-shapes` plus `thf/apply-changes`. For component swaps with keep-touched behavior, use `tho/swap-component-in-shape` with `{:keep-touched? true}`.
-
-`thf/apply-changes` validates by default and usually gives the most useful invariant failure. Pass `:validate? false` only for intentionally malformed intermediate state.
-
-## Geometry setup caution
-
-For geometry-sensitive tests, read `mem:common/geometry-invariants` before positioning shapes. Use geometry-preserving helpers or production change helpers rather than direct single-field edits.
-
-## Debugging
-
-Use `mem:common/component-debugging-recipes` for shape-tree dumps, undo/change inspection, and temporary live instrumentation recipes.
+- **Read `mem:testing` first** for test design and output discipline. Common tests are CLJC under `common/test/common_tests/`; cover the relevant JVM and JS runtimes. JVM tests alone cannot prove CLJS-specific state or WASM behavior.
+- From the repo root, `./scripts/ci common` runs lint, tests and format. From `common/`, use `clojure -M:dev:test` for JVM tests and `pnpm run test:quiet` for JS tests. Both support focused runs, e.g. `--focus common-tests.logic.comp-sync-test`; repeat `--focus` for multiple JVM selections.
+- JS tests compile before running. Register new namespaces in `common_tests/runner.cljc`; new vars in registered namespaces need no runner change. Direct `node target/tests/test.js` runs the existing build and does not rebuild after edits.
+- JVM coverage uses `clojure -M:dev:test:coverage`; it instruments all configured namespaces, even for a focused run, and is slower. Its lcov, HTML and EMMA form counts go under `target/coverage/`; see `tests.edn` for exclusions.
+- Helpers live under `common/src/app/common/test_helpers/`. Tests using label-to-UUID helpers need `(t/use-fixtures :each thi/test-fixture)` to reset labels between tests. Inspect the builders there rather than recreating common file, component or variant setup.
+- Prefer production-path mutations such as `cls/generate-update-shapes` with `thf/apply-changes`; the latter validates the resulting file by default. Use `:validate? false` only for intentionally malformed intermediate state: it skips file validation, not change-vector validation. For swaps that keep touched state use `tho/swap-component-in-shape` with `{:keep-touched? true}`. `add-variant-with-copy` does not take child position params; move them after creation. For geometry-sensitive setup see `mem:common/geometry`.
+- `sg/sample` is unseeded by default. If a test filters for a subtype, fix the seed and verify the subtype exists; otherwise `first` can yield nil and later produce a typeless shape.
+- For component and referential-integrity debugging see `mem:common/components`.

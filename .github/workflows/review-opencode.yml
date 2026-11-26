@@ -1,0 +1,105 @@
+# Called only after pr-review.yml has parsed the trigger and checked write access.
+# Both paths use the same Go subscription, pinned CLI, Serena and review rules.
+name: OpenCode PR review
+
+on:
+  workflow_call:
+    inputs:
+      pr:       {type: string, required: true}
+      head:     {type: string, required: true}
+      checkout: {type: string, required: true}
+      model:    {type: string, required: true}
+      effort:   {type: string, required: true}
+      mention:  {type: string, required: true}
+      native:   {type: boolean, required: true}
+    secrets:
+      OPENCODE_GO_API_KEY: {required: true}
+
+permissions: {}
+
+jobs:
+  opencode:
+    name: ${{ inputs.model }} / ${{ inputs.effort }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency:
+      group: opencode-review-${{ inputs.pr }}
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    container:
+      image: penpotapp/devenv:latest@sha256:47f60262ec3a3098347eddb7308cf17fe7b4ab53e85cb911693843881b7b3013
+    defaults:
+      run:
+        shell: bash
+        working-directory: project
+    env:
+      PROVIDER: OpenCode
+      MODEL: ${{ inputs.model }}
+      EFFORT: ${{ inputs.effort }}
+      PR: ${{ inputs.pr }}
+      HEAD_SHA: ${{ inputs.head }}
+      CHECKOUT_SHA: ${{ inputs.checkout }}
+      OPENCODE_DISABLE_AUTOUPDATE: 'true'
+      OPENCODE_DISABLE_PROJECT_CONFIG: 'true'
+    steps:
+      # Load the scripts from the base revision, even when reviewing an older PR head.
+      - name: Check out review scripts
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.base.sha || github.sha }}
+          path: ci
+          sparse-checkout: .github/scripts/pr-review
+          persist-credentials: false
+
+      - name: Check out the project to review
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.checkout }}
+          path: project
+          persist-credentials: false
+
+      - name: Configure Serena MCP and install Playwright CLI
+        run: bash ../ci/.github/scripts/pr-review/setup-review-tools.sh
+
+      # The upstream installer tracks latest. Pin the V1 binary that implements
+      # github run; the V2 CLI does not implement that subcommand. --pure keeps
+      # Penpot's interactive V2 plugins out of the V1 review process.
+      - name: Install and configure the OpenCode GitHub CLI
+        run: bash ../ci/.github/scripts/pr-review/setup-opencode.sh
+
+      # Native GitHub mode gathers PR history, processes attachments and posts the
+      # conversation reply itself. A command alone normally summarizes the thread.
+      # Override that prompt only for a lone command so attachments still work.
+      - name: Review the PR with the native GitHub agent
+        if: inputs.native
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          USE_GITHUB_TOKEN: 'true'
+          MENTIONS: ${{ inputs.mention }}
+          OPENCODE_GO_API_KEY: ${{ secrets.OPENCODE_GO_API_KEY }}
+        run: bash ../ci/.github/scripts/pr-review/run-opencode-native.sh
+
+      # V1 replies to inline requests at the top level and rejects submitted review
+      # bodies. Also avoid its automatic checkout of external contributors' branches.
+      - name: Collect the diff, discussion and triggering thread
+        if: ${{ !inputs.native }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash ../ci/.github/scripts/pr-review/prepare-context.sh
+
+      - name: Review the supplied context with OpenCode
+        if: ${{ !inputs.native }}
+        env:
+          OPENCODE_GO_API_KEY: ${{ secrets.OPENCODE_GO_API_KEY }}
+        run: bash ../ci/.github/scripts/pr-review/run-opencode.sh
+
+      # Publishing outside the CLI gives replies the original thread ID (including
+      # replies to replies), and prevents attaching findings to a newer revision.
+      - name: Publish the review or reply in the original thread
+        if: ${{ !inputs.native }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash ../ci/.github/scripts/pr-review/post-review.sh

@@ -75,7 +75,7 @@ export class DashboardPage extends BaseWebSocketPage {
       .getByTestId("dashboard-header")
       .getByRole("heading", { level: 1 });
 
-    this.addProjectButton = page.getByRole("button", { name: "+ NEW PROJECT" });
+    this.addProjectButton = page.getByTestId("new-project-button");
     this.projectName = page.getByText("Project 1");
 
     this.draftsLink = this.sidebar.getByText("Drafts");
@@ -234,6 +234,12 @@ export class DashboardPage extends BaseWebSocketPage {
       "get-team-stats?team-id=*",
       "dashboard/get-team-stats.json",
     );
+  }
+
+  // The clipboard text parsed as a URL, as left by a "Copy link" action.
+  async copiedLink() {
+    const text = await this.page.evaluate(() => navigator.clipboard.readText());
+    return new URL(text);
   }
 
   async goToDashboard() {

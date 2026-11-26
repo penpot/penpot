@@ -5,6 +5,7 @@
 - The Plugin API is a public facade over internal frontend/common data. Do not expect Plugin API property names, value shapes, or behavior boundaries to match internal CLJS attrs or helper APIs; inspect the relevant proxy and internal code path before using Plugin API observations in production internals or tests.
 - `plugins/libs/plugin-types/index.d.ts` contains TypeScript declarations only. Runtime objects are CLJS proxies built under `frontend/src/app/plugins/*.cljs` with `obj/reify`.
 - `shape.cljs` builds shape proxies with hidden ids and per-property CLJS implementations. `library.cljs` builds library proxies such as `LibraryComponentProxy`.
+- A new or changed proxy member needs its type in `plugins/libs/plugin-types/index.d.ts`, a `plugins/CHANGELOG.md` entry and a Plugin API test suite test: see `mem:plugins/core`.
 - `shape.cljs`, `library.cljs`, and related namespaces break circular dependencies with mutable nil vars patched from `app.plugins` at load time. If a proxy constructor appears nil, check the patching path in `frontend/src/app/plugins.cljs`.
 
 ## Key Domain Namespaces
@@ -15,6 +16,9 @@
 ## Runtime initialization and permissions
 
 - The frontend initializes `@penpot/plugins-runtime` only after `features/initialize` and only when feature `plugins/runtime` is active. It also installs the runtime `isPluginError` predicate into frontend error handling.
+- `app.plugins/init-plugins-runtime` returns whether `ɵloadPlugin` was installed. It calls `preg/signal-runtime-ready` even on failure: `workspace.cljs` waits on that promise before `mcp/init`, so skipping it hangs MCP initialization forever.
+- When SES bootstrap fails, `app.plugins` emits one `plugins-runtime-unavailable` telemetry event (with the SES error message), and `app.main.data.plugins/load-plugin!` shows the lazy `plugins.runtime-unavailable` toast when the user opens a plugin. `start-plugin!` (MCP path) stays silent by design.
+- Runtime availability is detected by the existing `(fn? (unchecked-get global "ɵloadPlugin"))` check; do not add a second mechanism.
 - Manifest parsing expands write permissions to read permissions (`content:write` => `content:read`, etc.). Permission checks also allow the all-zero plugin id and the hard-coded MCP plugin id.
 - Manifest URL origin differs by manifest version: v1 clears the path; v2 joins `.` to the plugin URL. Existing plugin ids are reused by matching manifest name and host.
 - The MCP plugin id is defined in `app.plugins.register` to avoid a circular dependency with workspace MCP code.
@@ -31,8 +35,7 @@
 
 ## Events and history
 
-- Plugin listeners are watches on the global store and callbacks are debounced about 10ms. Callback exceptions are caught and logged so plugin code does not crash the app.
+- Most plugin listeners watch the global store and debounce callbacks about 10ms. Callback exceptions are caught and logged so plugin code does not crash the app; rollback uses a separate stream subscription.
 - `selectionchange` callbacks receive arrays of shape id strings, while `filechange`, `pagechange`, and `shapechange` return proxies.
-- `contentsave` fires only when persistence status transitions to `:saved`; it calls the callback with no value.
-- `contentrollback` is not a state watch: it subscribes to `st/stream` for `::dps/rolled-back` (kept in `subscriptions`, disposed by `remove-listener`), not debounced, delivered async so the reverted state is in place. Payload `{fileIds pageIds shapeIds}` from `pcm/rollback-targets` (page shapes only, from the reverted commits' redo changes). When the rollback falls back to reloading the file, `::dps/rolled-back` waits for the reloaded data, so the callback never reads the rejected data. The runtime's `validEvents` must list every event name, or `penpot.on` rejects it; a stale runtime build rejects new events. The MCP plugin forwards these rollbacks with the next task response and the server puts a warning first in that tool response (`RollbackNotices`). Unsent ones survive a tab or plugin reload in `penpot.localStorage` (key `rollbacks/<file-id>`, `LocalStorageRollbackStore`; the MCP manifest in `app.main.data.workspace.mcp` and `mcp/packages/plugin/public/manifest.json` grant `allow:localstorage`, which the runtime checks on access); the entry goes once a response carried them.
+- Save waits, `contentsave` and rollback events: `mem:frontend/plugin-save-events`.
 - Plugin history `undoBlockBegin` creates a workspace undo transaction with a JS `Symbol`; `undoBlockFinish` commits that symbol. Missing finish eventually relies on the workspace transaction timeout.

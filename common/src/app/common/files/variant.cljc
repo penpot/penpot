@@ -6,6 +6,8 @@
 (ns app.common.files.variant
   (:require
    [app.common.data.macros :as dm]
+   [app.common.files.changes-builder :as pcb]
+   [app.common.path-names :as cpn]
    [app.common.types.component :as ctc]
    [app.common.types.components-list :as ctcl]
    [app.common.types.variant :as ctv]))
@@ -28,6 +30,25 @@
         (map #(ctcl/get-component data % true))
         reverse)))
 
+(defn collect-variant-properties
+  "Map of component-id → variant-properties for clipboard copy.
+   Variant container: every related component. Variant main: that
+   component only. Anything else: empty map."
+  [data objects shape]
+  (cond
+    (ctc/is-variant-container? shape)
+    (into {}
+          (map (juxt :id :variant-properties))
+          (find-variant-components data objects (:id shape)))
+
+    (ctc/is-variant-main? shape)
+    (if-let [component (ctcl/get-component data (:component-id shape) true)]
+      {(:id component) (:variant-properties component)}
+      {})
+
+    :else
+    {}))
+
 (defn extract-properties-names
   [shape data]
   (->> shape
@@ -40,7 +61,7 @@
   [data objects variant-id]
   (->> (find-variant-components data objects variant-id)
        (mapcat :variant-properties)
-       (group-by :name)
+       (ctv/group-properties-by-name)
        (mapv (fn [[k v]]
                (let [mdata (reduce merge {} (map meta v))]
                  (with-meta {:name k
@@ -62,6 +83,22 @@
     (and (seq shapes)
          (not= (:main-instance-id component) (last shapes)))))
 
+(defn generate-detach-variant
+  "Add to `changes` the edits that turn the variant main `shape` into a
+   plain component main named `new-name`: drop the variant fields from the
+   shape and its component, and take the component's path and name from
+   `new-name`."
+  [changes shape new-name]
+  (let [[cpath cname] (cpn/split-group-name new-name)]
+    (-> changes
+        (pcb/update-component (:component-id shape)
+                              #(-> (dissoc % :variant-id :variant-properties)
+                                   (assoc :name cname :path cpath))
+                              {:apply-changes-local-library? true})
+        (pcb/update-shapes [(:id shape)]
+                           #(-> (dissoc % :variant-id :variant-name)
+                                (assoc :name new-name))))))
+
 (defn get-primary-variant
   [data component]
   (let [page-id    (:main-instance-page component)
@@ -81,3 +118,108 @@
            :component-id
            (ctcl/get-component data))
       component)))
+
+(defn- variant-main-shape-path
+  "Path in file data to the main shape of `component`: inside the
+   component `:objects` when it is deleted, or on its page. Nil when the
+   component has no main."
+  [component]
+  (let [main-id (:main-instance-id component)
+        page-id (:main-instance-page component)]
+    (cond
+      (and (:deleted component) main-id)
+      [:components (:id component) :objects main-id]
+
+      (and page-id main-id)
+      [:pages-index page-id :objects main-id]
+
+      :else
+      nil)))
+
+(defn get-variant-main-shape
+  "Return the main shape map for `component`, or nil when it is absent."
+  [data component]
+  (some->> (variant-main-shape-path component)
+           (get-in data)))
+
+(defn variant-main-label-changed?
+  "True when the main shape exists and its :variant-name is not
+   `properties-to-name` of `props`."
+  [data component props]
+  (let [shape (get-variant-main-shape data component)]
+    (and (map? shape)
+         (not= (ctv/properties-to-name props)
+               (:variant-name shape)))))
+
+(defn variant-props-changed?
+  "True when the stored `:variant-properties` of `component` differ from
+   `props`. A missing property list counts as empty."
+  [component props]
+  (not= (vec (or (:variant-properties component) []))
+        (vec props)))
+
+(defn- qualifying-variant-member
+  [data objects container child-id]
+  (when-let [child (get objects child-id)]
+    (let [component (get-in data [:components (:component-id child)])]
+      (when (and (ctc/is-variant? child)
+                 (= (:id container) (:variant-id child))
+                 (some? component)
+                 (= (:id container) (:variant-id component)))
+        {:component    component
+         :component-id (:id component)}))))
+
+(defn qualifying-variant-members
+  "Return qualifying members of `container` in `:shapes` order.
+   Each member is {:component component :component-id id}."
+  [data objects container]
+  (into []
+        (keep #(qualifying-variant-member data objects container %))
+        (:shapes container)))
+
+(defn update-variant-properties
+  "Apply `f` to the `:variant-properties` of `component` and write the
+   result to `data`. Also refresh the `:variant-name` of its main shape
+   when it no longer matches. Return `data` unchanged when nothing differs."
+  [data component f]
+  (let [old-props (vec (or (:variant-properties component) []))
+        props     (f old-props)
+        data      (if (= old-props props)
+                    data
+                    (assoc-in data [:components (:id component) :variant-properties] props))]
+    (if (variant-main-label-changed? data component props)
+      (assoc-in data
+                (conj (variant-main-shape-path component) :variant-name)
+                (ctv/properties-to-name props))
+      data)))
+
+(defn get-variant-members-props
+  "Return the qualifying members of `container` in layers-panel order
+   (top first, the reverse of `:shapes`). Each member also gets `:props`,
+   its vector in the result of `f` over all their property vectors. `f`
+   takes and returns a vector of property vectors."
+  [data objects container f]
+  (let [members   (vec (rseq (qualifying-variant-members data objects container)))
+        props-seq (f (mapv #(vec (or (get-in % [:component :variant-properties]) []))
+                           members))]
+    (mapv #(assoc %1 :props %2) members props-seq)))
+
+(defn update-variant-container-properties
+  "Apply `f` to the property vectors of the members of `container`, in
+   layers-panel order, and write each result with
+   `update-variant-properties`. See `get-variant-members-props`."
+  [data objects container f]
+  (reduce (fn [data {:keys [component props]}]
+            (update-variant-properties data component (constantly props)))
+          data
+          (get-variant-members-props data objects container f)))
+
+(defn sanitize-variant-component
+  "Sanitize the properties of one variant component on its own."
+  [data component]
+  (update-variant-properties data component ctv/sanitize-properties))
+
+(defn sanitize-variant-container
+  "Sanitize the properties of every member of `container` as one set."
+  [data objects container]
+  (update-variant-container-properties data objects container ctv/sanitize-properties-set))

@@ -71,12 +71,42 @@ test("User has context menu options for edit file", async ({ page }) => {
   await button.click();
   await button.click({ button: "right" });
 
+  await expect(dashboardPage.page.getByText("open in new tab")).toBeVisible();
   await expect(dashboardPage.page.getByText("rename")).toBeVisible();
   await expect(dashboardPage.page.getByText("duplicate")).toBeVisible();
+  await expect(dashboardPage.page.getByText("copy link")).toBeVisible();
   await expect(
     dashboardPage.page.getByText("add as shared library"),
   ).toBeVisible();
   await expect(dashboardPage.page.getByText("delete")).toBeVisible();
+});
+
+test("User can copy a file's link from the context menu", async ({ page }) => {
+  await DashboardPage.mockRPC(
+    page,
+    "get-all-projects",
+    "dashboard/get-all-projects.json",
+  );
+
+  const dashboardPage = new DashboardPage(page);
+  await dashboardPage.setupDrafts();
+  await dashboardPage.goToDrafts();
+
+  const button = page.getByRole("button", { name: /New File 2/ });
+  await button.click({ button: "right" });
+  await page.getByTestId("file-copy-link").click();
+
+  await expect(
+    page.getByRole("alert").filter({ hasText: "Link copied to clipboard" }),
+  ).toBeVisible();
+
+  const link = await dashboardPage.copiedLink();
+  expect(`${link.origin}${link.pathname}`).toBe(new URL("/", page.url()).href);
+  expect(link.searchParams.get("screen")).toBe("workspace");
+  expect(link.searchParams.get("team-id")).toBe(DashboardPage.anyTeamId);
+  expect(link.searchParams.get("file-id")).toBe(
+    "8b479b80-e02d-8074-8004-4088dc6bfd11",
+  );
 });
 
 test("Multiple elements in context", async ({ page }) => {
@@ -104,6 +134,13 @@ test("Multiple elements in context", async ({ page }) => {
   await expect(page.getByTestId("file-move-multi")).toBeVisible();
   await expect(page.getByTestId("file-binary-export-multi")).toBeVisible();
   await expect(page.getByTestId("file-delete-multi")).toBeVisible();
+  await expect(page.getByTestId("file-copy-link")).toHaveCount(0);
+
+  // A separator splits Move to from the download option.
+  const previous = await page
+    .getByTestId("file-binary-export-multi")
+    .evaluate((el) => el.previousElementSibling?.getAttribute("role"));
+  expect(previous).toBe("separator");
 });
 
 test("User has create file button", async ({ page }) => {
@@ -116,7 +153,9 @@ test("User has create file button", async ({ page }) => {
 test("User has add font button", async ({ page }) => {
   const dashboardPage = new DashboardPage(page);
   await dashboardPage.goToFonts();
-  await expect(dashboardPage.page.getByText("add custom font")).toBeVisible();
+  await expect(
+    dashboardPage.page.getByTestId("add-custom-font"),
+  ).toBeVisible();
 });
 
 test("Bug 9443, Admin can not demote owner", async ({ page }) => {

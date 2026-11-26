@@ -1166,6 +1166,19 @@ export interface Context {
   readonly theme: Theme;
 
   /**
+   * The Penpot instance URL and the current address in the app, in the
+   * dashboard as well as in the workspace. Requires `content:read` permission.
+   *
+   * @example
+   * ```js
+   * const { baseUrl, href, params } = penpot.location;
+   * console.log(baseUrl); // "https://design.penpot.app/"
+   * console.log(params['file-id']);
+   * ```
+   */
+  readonly location: PenpotLocation;
+
+  /**
    * Access to the localStorage proxy
    */
   readonly localStorage: LocalStorage;
@@ -1630,6 +1643,25 @@ export interface Context {
    * rejected with an Error, both on timeout and on an invalid timeout value.
    */
   waitForLayoutUpdate(timeout?: number): Promise<void>;
+
+  /**
+   * This method returns a promise that will be resolved when pending file
+   * changes have been saved to the backend, or when there is nothing to save.
+   * It force-flushes the persistence buffer first when work is pending.
+   * @param timeout Maximum time to wait, in milliseconds. If the timeout
+   * elapses before the save settles, the promise is rejected. Defaults to
+   * 60000; the promise never waits indefinitely.
+   * @return The promise to be resolved when the save has settled. It is
+   * rejected with an Error on save failure, when changes are rolled back
+   * during the wait, on timeout, or on an invalid timeout value. A save
+   * that failed before the call also rejects: with `save-retrying` while
+   * Penpot keeps retrying it, otherwise with the failure code while the
+   * error remains. Recovery may discard unsaved changes. The Error `code`
+   * property tells the cases apart:
+   * `save-timeout`, `rolled-back`, `save-retrying`, or the failure code
+   * (`save-failed` unless the backend gave a more specific one).
+   */
+  waitForSave(timeout?: number): Promise<void>;
 }
 
 /**
@@ -1935,6 +1967,23 @@ export interface File extends PluginData {
    * The `revn` will change for every document update
    */
   readonly revn: number;
+
+  /**
+   * The features of the open file, sorted by name, e.g. `"components/v2"`
+   * or `"variants/v1"`. It also lists the features active in the session,
+   * such as `"render-wasm/v1"` when the new render engine (WebGL) draws the
+   * file. Each read returns a new array.
+   *
+   * Only `penpot.currentFile` answers it: for any other file, such as a
+   * library, or a `File` kept after the user opens another file, it is
+   * `null`.
+   *
+   * @example
+   * ```js
+   * const webgl = penpot.currentFile.features.includes('render-wasm/v1');
+   * ```
+   */
+  readonly features: string[] | null;
 
   /**
    * List all the pages for the current file
@@ -3384,6 +3433,33 @@ export interface LibraryTypography extends LibraryElement {
    * ```
    */
   setFont(font: Font, variant?: FontVariant): void;
+}
+
+/**
+ * The Penpot instance URL and the current address in the app.
+ * Each read of `penpot.location` returns a new snapshot.
+ *
+ * Query params that carry secrets (`share-id`, any param ending in
+ * `token`, `secret` or `password`, and the OAuth params `request`,
+ * `code` and `state`) are left out of `params` and `href`.
+ */
+export interface PenpotLocation {
+  /**
+   * The public URL of the Penpot instance, ending in `/`,
+   * e.g. `"https://design.penpot.app/"`.
+   */
+  readonly baseUrl: string;
+  /**
+   * The URL of the current screen, e.g. the open file and page:
+   * `"https://design.penpot.app/?screen=workspace&team-id=…&file-id=…&page-id=…"`.
+   * Use it to link to what the user is looking at.
+   */
+  readonly href: string;
+  /**
+   * The query params of the current URL, e.g. `screen`, `team-id`,
+   * `file-id` and `page-id`. A param repeated in the URL keeps its last value.
+   */
+  readonly params: Record<string, string>;
 }
 
 /**
@@ -6113,7 +6189,10 @@ export interface Variants {
   currentValues(property: string): string[];
 
   /**
-   * Remove a property of the Variant
+   * Remove a property of the Variant. If several variants end up with the
+   * same values, the top one in the layers panel keeps them and each lower
+   * one gets a numbered value: a " (n)" suffix, or "(n)" when all its
+   * remaining values are empty.
    * @param pos The position of the property to remove
    */
   removeProperty(pos: number): void;

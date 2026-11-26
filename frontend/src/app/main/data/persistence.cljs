@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
+   [app.common.files.changes-merge :as mch]
    [app.common.logging :as log]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
@@ -1301,7 +1302,13 @@
   "One queue entry per file and version: a save carries one version."
   [buffer]
   (->> (rx/from (group-by (juxt :file-id :file-vern) buffer))
-       (rx/map (comp pcm/queue-entry val))))
+       (rx/map (fn [[_ commits]]
+                 (pcm/queue-entry
+                  (mapv (fn [commit]
+                          (-> commit
+                              (update :undo-changes mch/merge-reg-objects)
+                              (update :redo-changes mch/merge-reg-objects)))
+                        commits))))))
 
 (defn- flush-buffer
   "Queues the buffered commits, merged into one queue entry per file."
