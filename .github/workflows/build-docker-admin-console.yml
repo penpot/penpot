@@ -4,39 +4,70 @@ on:
   workflow_dispatch:
     inputs:
       gh_ref:
-        description: 'Name of the branch or ref to build in penpot-nitrate'
+        description: 'Name of the branch or ref to build admin-console from'
         type: string
         required: true
         default: 'develop'
       dispatch_ref:
-        description: 'Branch of penpot-nitrate from which the workflow definition is read'
+        description: 'Branch the admin-console workflow definition is read from'
         type: string
         required: false
         default: 'develop'
       force:
-        description: 'Rebuild and overwrite even if already built'
+        description: 'Rebuild even if this commit was already built'
         type: boolean
         required: false
         default: false
+
+      # preview, platforms and attestations are not exposed here: they change
+      # what gets built, and a manual run should always produce the usual
+      # artefacts. Callers set them through workflow_call.
   workflow_call:
     inputs:
       gh_ref:
-        description: 'Name of the branch or ref to build in penpot-nitrate'
+        description: 'Name of the branch or ref to build admin-console from'
         type: string
         required: true
       dispatch_ref:
-        description: 'Branch of penpot-nitrate from which the workflow definition is read'
+        description: 'Branch the admin-console workflow definition is read from'
         type: string
         required: false
         default: 'develop'
       force:
-        description: 'Rebuild and overwrite even if already built'
+        description: 'Rebuild even if this commit was already built'
         type: boolean
         required: false
         default: false
+      preview:
+        description: >-
+          When true, the images are pushed to the preview registry instead of
+          the usual one.
+        type: boolean
+        required: false
+        default: false
+      platforms:
+        description: >-
+          Architectures to build the images for. Both are needed for anything
+          deployed or published; a preview only needs linux/amd64.
+        type: string
+        required: false
+        default: 'linux/amd64,linux/arm64'
+      attestations:
+        description: >-
+          When true, an SBOM and provenance data are attached to each image.
+          Needed for anything published, and it makes the build slower.
+        type: boolean
+        required: false
+        default: true
+    outputs:
+      image:
+        description: >-
+          Exact reference of the admin-console image, so the caller can
+          deploy that one rather than a branch tag
+        value: ${{ jobs.build-nitrate-docker.outputs.image }}
     secrets:
       ORG_WORKFLOW_TOKEN:
-        description: 'Token with Actions write access on penpot-nitrate'
+        description: 'Token with Actions write access on the admin-console repo'
         required: true
 
 permissions: {}
@@ -44,6 +75,8 @@ permissions: {}
 jobs:
   build-nitrate-docker:
     runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.image.outputs.image }}
     env:
       GH_TOKEN: ${{ secrets.ORG_WORKFLOW_TOKEN }}
       REPO: penpot/penpot-nitrate
@@ -51,8 +84,11 @@ jobs:
       GH_REF: ${{ inputs.gh_ref }}
       DISPATCH_REF: ${{ inputs.dispatch_ref }}
       FORCE: ${{ inputs.force }}
+      PREVIEW: ${{ inputs.preview }}
+      PLATFORMS: ${{ inputs.platforms }}
+      ATTESTATIONS: ${{ inputs.attestations }}
     steps:
-      - name: Trigger nitrate docker build
+      - name: Trigger the admin-console build
         id: dispatch
         run: |
           DISTINCT_ID="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
@@ -61,6 +97,9 @@ jobs:
           gh workflow run "$WORKFLOW" --repo "$REPO" --ref "$DISPATCH_REF" \
             -f gh_ref="$GH_REF" \
             -f force="$FORCE" \
+            -f preview="$PREVIEW" \
+            -f platforms="$PLATFORMS" \
+            -f attestations="$ATTESTATIONS" \
             -f caller_run_id="$DISTINCT_ID" \
             -f caller_run_url="$CALLER_URL"
 
@@ -83,9 +122,9 @@ jobs:
           RUN_URL="https://github.com/$REPO/actions/runs/$RUN_ID"
           echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
           echo "run_url=$RUN_URL" >> "$GITHUB_OUTPUT"
-          echo "::notice title=Nitrate docker build::$RUN_URL"
+          echo "::notice title=admin-console build::$RUN_URL"
 
-      - name: Wait for nitrate docker build
+      - name: Wait for the admin-console build
         env:
           RUN_ID: ${{ steps.dispatch.outputs.run_id }}
         run: |
@@ -93,6 +132,20 @@ jobs:
             --repo "$REPO" \
             --interval 30 \
             --exit-status
+
+      # A dispatched run cannot return outputs, so the admin-console build
+      # leaves the exact image reference in an artifact. Using the branch tag
+      # instead would deploy whatever was pushed there last.
+      - name: Fetch the built image reference
+        id: image
+        env:
+          RUN_ID: ${{ steps.dispatch.outputs.run_id }}
+        run: |
+          gh run download "$RUN_ID" --repo "$REPO" \
+            --name admin-console-build-key --dir ./build-key
+          IMAGE=$(cat ./build-key/build-key.txt)
+          echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
+          echo "::notice title=admin-console image::$IMAGE"
 
       - name: Report result
         if: always() && steps.dispatch.outputs.run_id != ''
@@ -103,7 +156,7 @@ jobs:
           CONCLUSION=$(gh run view "$RUN_ID" \
             --repo "$REPO" --json conclusion --jq '.conclusion')
           {
-            echo "### 🐳 Nitrate docker build"
+            echo "### 🐳 admin-console build"
             echo ""
             echo "- Result: \`${CONCLUSION:-in_progress}\`"
             echo "- Run: ${RUN_URL}"
