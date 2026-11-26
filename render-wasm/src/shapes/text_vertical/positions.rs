@@ -472,19 +472,100 @@ pub fn caret_from_point(layout: &VerticalLayout, x: f32, y: f32) -> Option<(usiz
     ))
 }
 
+/// Caret one column over from `(paragraph, offset)` at the flow position
+/// `y`, in content-local coordinates: the column on the right when
+/// `toward_start`, else the one on the left. Inside a warichu note its other
+/// sub-line comes first; entering a note lands on the sub-line nearest the
+/// caret. None when no column lies that way.
+pub fn caret_column_step(
+    layout: &VerticalLayout,
+    paragraph: usize,
+    offset: usize,
+    upstream: bool,
+    toward_start: bool,
+    y: f32,
+) -> Option<(usize, usize)> {
+    let rect = caret_rect_with_affinity(layout, paragraph, offset, upstream)?;
+    let index = column_at(layout, rect.center_x());
+    let column = &layout.columns[index];
+    let centre = column_base_center(column);
+    let quarter = column.base_width / 4.0;
+    // Warichu carets cover one half of the base band (see `caret_rect`).
+    let first_sub_line = rect.left() >= centre - 0.01;
+    let second_sub_line = rect.right() <= centre + 0.01;
+    if first_sub_line && !toward_start {
+        return caret_from_point(layout, centre - quarter, y);
+    }
+    if second_sub_line && toward_start {
+        return caret_from_point(layout, centre + quarter, y);
+    }
+    let target = if toward_start {
+        index.checked_sub(1)?
+    } else {
+        index + 1
+    };
+    let column = layout.columns.get(target)?;
+    let centre = column_base_center(column);
+    let quarter = column.base_width / 4.0;
+    let x = if toward_start {
+        centre - quarter
+    } else {
+        centre + quarter
+    };
+    caret_from_point(layout, x, y)
+}
+
+/// Caret at the start (`end` false) or the end of the column holding
+/// `(paragraph, offset)`. The end of a column that is not the paragraph's
+/// last is the next column's start: draw it upstream.
+pub fn caret_column_edge(
+    layout: &VerticalLayout,
+    paragraph: usize,
+    offset: usize,
+    upstream: bool,
+    end: bool,
+) -> Option<(usize, usize)> {
+    let rect = caret_rect_with_affinity(layout, paragraph, offset, upstream)?;
+    let index = column_at(layout, rect.center_x());
+    let centre = column_base_center(&layout.columns[index]);
+    let y = if end { f32::MAX } else { f32::MIN };
+    caret_from_point(layout, centre, y)
+}
+
 /// Caret rect for a paragraph-relative Unicode scalar offset, in
 /// content-local coordinates. It spans the column width; its height is the
 /// extent of the character at the offset (overtype carets cover the glyph),
 /// or zero after the last character.
+#[cfg(test)]
 pub fn caret_rect(layout: &VerticalLayout, paragraph: usize, offset: usize) -> Option<Rect> {
+    caret_rect_with_affinity(layout, paragraph, offset, false)
+}
+
+/// `caret_rect`, but an `upstream` offset that starts a column is drawn at
+/// the end of the column before it.
+pub fn caret_rect_with_affinity(
+    layout: &VerticalLayout,
+    paragraph: usize,
+    offset: usize,
+    upstream: bool,
+) -> Option<Rect> {
     let (col_start, _) = *layout.paragraph_columns.get(paragraph)?;
 
     let mut result: Option<Rect> = None;
+    let mut previous_column = None;
     for cell in layout.cells.iter().filter(|c| c.paragraph == paragraph) {
         let (cell_start, cell_end) = cell_scalar_range(layout, cell)?;
         if cell_start > offset {
             continue;
         }
+        if upstream
+            && cell_start == offset
+            && result.is_some()
+            && previous_column != Some(cell.column)
+        {
+            break;
+        }
+        previous_column = Some(cell.column);
         let column = &layout.columns[cell.column];
         let chars = (cell_end - cell_start).max(1);
         let rect = if offset >= cell_end {

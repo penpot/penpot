@@ -221,6 +221,12 @@ impl TextPositionWithAffinity {
         }
     }
 
+    /// True when the position belongs to the end of what comes before it,
+    /// such as the end of a wrapped line rather than the start of the next.
+    pub fn is_upstream(&self) -> bool {
+        self.position_with_affinity.affinity == Affinity::Upstream
+    }
+
     pub fn new_upstream_affinity(paragraph: usize, offset: usize) -> Self {
         Self {
             position_with_affinity: PositionWithAffinity {
@@ -1324,13 +1330,20 @@ impl TextContent {
                     .map_or(0.0, |(plan, model)| plan.x_offset(model, selrect.width()));
                 let para_pt = Point::new(point.x - x_offset, point.y - start_y);
                 if let Some(paragraph) = self.paragraphs().get(paragraph_index) {
-                    if let Some(original_position) =
+                    if let Some((original_position, upstream)) =
                         horizontal_warichu_hit_test(paragraph, layout_paragraph, para_pt)
                     {
-                        return Some(TextPositionWithAffinity::new_downstream_affinity(
-                            paragraph_index,
-                            original_position,
-                        ));
+                        return Some(if upstream {
+                            TextPositionWithAffinity::new_upstream_affinity(
+                                paragraph_index,
+                                original_position,
+                            )
+                        } else {
+                            TextPositionWithAffinity::new_downstream_affinity(
+                                paragraph_index,
+                                original_position,
+                            )
+                        });
                     }
                 }
                 let position_with_affinity =

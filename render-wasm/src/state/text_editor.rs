@@ -3,7 +3,7 @@
 use macros::ToJs;
 
 use crate::shapes::{
-    Fill, FontStyle, TextAlign, TextContent, TextDecoration, TextDirection,
+    Fill, FontStyle, Shape, TextAlign, TextContent, TextDecoration, TextDirection,
     TextPositionWithAffinity, TextTransform, VerticalAlign,
 };
 use crate::uuid::Uuid;
@@ -364,6 +364,10 @@ pub struct TextEditorState {
     pub last_blink_time_ms: f32,
     pub current_styles: TextEditorStyles,
     pending_events: Vec<TextEditorEvent>,
+    /// Position along the line (x, or y in vertical text) that consecutive
+    /// line moves keep, and the caret the last one left; any other caret
+    /// change drops it.
+    line_goal: Option<(f32, TextPositionWithAffinity)>,
 }
 
 impl TextEditorState {
@@ -386,6 +390,7 @@ impl TextEditorState {
             last_blink_time_ms: 0.0,
             pending_events: Vec::new(),
             current_styles: TextEditorStyles::new(),
+            line_goal: None,
         }
     }
 
@@ -883,9 +888,12 @@ impl TextEditorState {
         self.push_event(TextEditorEvent::NeedsLayout);
     }
 
+    /// Moves the caret, or the selection focus when `extend_selection`. Line
+    /// moves and line edges follow the layout of `text_content` in `shape`.
     pub fn move_cursor(
         &mut self,
         text_content: &TextContent,
+        shape: &Shape,
         direction: CursorDirection,
         word_boundary: bool,
         extend_selection: bool,
@@ -950,6 +958,37 @@ impl TextEditorState {
             direction
         };
 
+        // A goal left by the previous line move, if the caret is still there.
+        let goal = self
+            .line_goal
+            .filter(|(_, at)| *at == focus && at.is_upstream() == focus.is_upstream())
+            .map(|(goal, _)| goal);
+        let mut kept_goal = None;
+        let mut line_step = |before: bool| match crate::render::text_editor::caret_line_step(
+            text_content,
+            shape,
+            &focus,
+            before,
+            goal,
+        ) {
+            Some((cursor, goal)) => {
+                kept_goal = Some(goal);
+                cursor
+            }
+            None if before => text_helpers::move_cursor_up(&focus, paragraphs, text_content),
+            None => text_helpers::move_cursor_down(&focus, paragraphs, text_content),
+        };
+        let line_edge = |end: bool| {
+            crate::render::text_editor::caret_line_edge(text_content, shape, &focus, end)
+                .unwrap_or_else(|| {
+                    if end {
+                        text_helpers::move_cursor_line_end(&focus, paragraphs)
+                    } else {
+                        text_helpers::move_cursor_line_start(&focus, paragraphs)
+                    }
+                })
+        };
+
         let new_cursor = match adjusted_direction {
             CursorDirection::Backward => {
                 text_helpers::move_cursor_backward(&focus, paragraphs, word_boundary)
@@ -957,20 +996,17 @@ impl TextEditorState {
             CursorDirection::Forward => {
                 text_helpers::move_cursor_forward(&focus, paragraphs, word_boundary)
             }
-            CursorDirection::LineBefore => {
-                text_helpers::move_cursor_up(&focus, paragraphs, text_content)
-            }
-            CursorDirection::LineAfter => {
-                text_helpers::move_cursor_down(&focus, paragraphs, text_content)
-            }
+            CursorDirection::LineBefore => line_step(true),
+            CursorDirection::LineAfter => line_step(false),
             CursorDirection::LineStart if word_boundary => TextPositionWithAffinity::empty(),
             CursorDirection::LineEnd if word_boundary => text_helpers::move_cursor_line_end(
                 &TextPositionWithAffinity::new_downstream_affinity(paragraphs.len() - 1, 0),
                 paragraphs,
             ),
-            CursorDirection::LineStart => text_helpers::move_cursor_line_start(&focus, paragraphs),
-            CursorDirection::LineEnd => text_helpers::move_cursor_line_end(&focus, paragraphs),
+            CursorDirection::LineStart => line_edge(false),
+            CursorDirection::LineEnd => line_edge(true),
         };
+        self.line_goal = kept_goal.map(|goal| (goal, new_cursor));
 
         if extend_selection {
             self.selection.extend_to(new_cursor);
@@ -1144,7 +1180,13 @@ mod tests {
         editor.selection.set_caret(pos(12));
         editor.selection.extend_to(pos(15));
 
-        editor.move_cursor(&content, CursorDirection::Backward, false, false);
+        editor.move_cursor(
+            &content,
+            &Shape::new(Uuid::nil()),
+            CursorDirection::Backward,
+            false,
+            false,
+        );
 
         assert!(editor.selection.is_collapsed());
         assert_eq!(editor.selection.focus.offset, 12);
@@ -1158,7 +1200,13 @@ mod tests {
         editor.selection.set_caret(pos(11));
         editor.selection.extend_to(pos(9));
 
-        editor.move_cursor(&content, CursorDirection::Forward, false, false);
+        editor.move_cursor(
+            &content,
+            &Shape::new(Uuid::nil()),
+            CursorDirection::Forward,
+            false,
+            false,
+        );
 
         assert!(editor.selection.is_collapsed());
         assert_eq!(editor.selection.focus.offset, 11);
@@ -1170,7 +1218,13 @@ mod tests {
         let mut editor = TextEditorState::new();
         editor.select_all(&content);
 
-        editor.move_cursor(&content, CursorDirection::Backward, false, false);
+        editor.move_cursor(
+            &content,
+            &Shape::new(Uuid::nil()),
+            CursorDirection::Backward,
+            false,
+            false,
+        );
 
         assert!(editor.selection.is_collapsed());
         assert_eq!(editor.selection.focus.offset, 0);
@@ -1182,7 +1236,13 @@ mod tests {
         let mut editor = TextEditorState::new();
         editor.select_all(&content);
 
-        editor.move_cursor(&content, CursorDirection::Forward, false, false);
+        editor.move_cursor(
+            &content,
+            &Shape::new(Uuid::nil()),
+            CursorDirection::Forward,
+            false,
+            false,
+        );
 
         assert!(editor.selection.is_collapsed());
         assert_eq!(editor.selection.focus.offset, 5);
@@ -1195,7 +1255,13 @@ mod tests {
         editor.selection.set_caret(pos(15));
         editor.selection.extend_to(pos(12));
 
-        editor.move_cursor(&content, CursorDirection::Backward, false, true);
+        editor.move_cursor(
+            &content,
+            &Shape::new(Uuid::nil()),
+            CursorDirection::Backward,
+            false,
+            true,
+        );
 
         assert!(editor.selection.is_selection());
         assert_eq!(editor.selection.anchor.offset, 15);
@@ -1208,7 +1274,13 @@ mod tests {
         let mut editor = TextEditorState::new();
         editor.selection.set_caret(pos(3));
 
-        editor.move_cursor(&content, CursorDirection::Backward, false, false);
+        editor.move_cursor(
+            &content,
+            &Shape::new(Uuid::nil()),
+            CursorDirection::Backward,
+            false,
+            false,
+        );
 
         assert!(editor.selection.is_collapsed());
         assert_eq!(editor.selection.focus.offset, 2);

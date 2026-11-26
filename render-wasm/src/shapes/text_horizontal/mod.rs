@@ -42,7 +42,7 @@ use skia_safe::{
         ParagraphBuilder, ParagraphStyle, PlaceholderAlignment, PlaceholderStyle, RectHeightStyle,
         RectWidthStyle, TextBaseline,
     },
-    Canvas, Contains, Font, FontMgr, GlyphId,
+    Canvas, Font, FontMgr, GlyphId,
 };
 
 /// True when a paragraph with layout texts `texts` needs the Japanese passes:

@@ -188,13 +188,13 @@ pub fn move_cursor_forward(
     TextPositionWithAffinity::new_downstream_affinity(para_idx, offset)
 }
 
-/// Move cursor up by one line.
+/// Move cursor to the paragraph before, keeping the offset. Fallback of
+/// `caret_line_step` for text without a layout.
 pub fn move_cursor_up(
     cursor: &TextPositionWithAffinity,
     paragraphs: &[Paragraph],
     _text_content: &TextContent,
 ) -> TextPositionWithAffinity {
-    // TODO: Implement proper line-based navigation using line metrics
     if paragraphs.is_empty() || cursor.paragraph >= paragraphs.len() {
         return *cursor;
     }
@@ -209,13 +209,13 @@ pub fn move_cursor_up(
     }
 }
 
-/// Move cursor down by one line.
+/// Move cursor to the paragraph after, keeping the offset. Fallback of
+/// `caret_line_step` for text without a layout.
 pub fn move_cursor_down(
     cursor: &TextPositionWithAffinity,
     paragraphs: &[Paragraph],
     _text_content: &TextContent,
 ) -> TextPositionWithAffinity {
-    // TODO: Implement proper line-based navigation using line metrics
     if paragraphs.is_empty() || cursor.paragraph >= paragraphs.len() {
         return *cursor;
     }
@@ -231,21 +231,21 @@ pub fn move_cursor_down(
     }
 }
 
-/// Move cursor to start of current line.
+/// Move cursor to the start of its paragraph. Fallback of `caret_line_edge`
+/// for text without a layout.
 pub fn move_cursor_line_start(
     cursor: &TextPositionWithAffinity,
     _paragraphs: &[Paragraph],
 ) -> TextPositionWithAffinity {
-    // TODO: Implement proper line-start using line metrics
     TextPositionWithAffinity::new_downstream_affinity(cursor.paragraph, 0)
 }
 
-/// Move cursor to end of current line.
+/// Move cursor to the end of its paragraph. Fallback of `caret_line_edge`
+/// for text without a layout, and the target of Ctrl+End.
 pub fn move_cursor_line_end(
     cursor: &TextPositionWithAffinity,
     paragraphs: &[Paragraph],
 ) -> TextPositionWithAffinity {
-    // TODO: Implement proper line-end using line metrics
     let char_count = paragraph_char_count(&paragraphs[cursor.paragraph]);
     TextPositionWithAffinity::new_downstream_affinity(cursor.paragraph, char_count)
 }

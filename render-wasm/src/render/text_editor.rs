@@ -1,7 +1,7 @@
 use crate::render::options::RenderOptions;
 use crate::shapes::text_paragraph::LayoutParagraph;
 use crate::shapes::text_vertical;
-use crate::shapes::{vertical_align_offset, Shape, TextContent, Type};
+use crate::shapes::{vertical_align_offset, Shape, TextContent, TextPositionWithAffinity, Type};
 use crate::state::{TextEditorState, TextSelection};
 use crate::view::Viewbox;
 use skia_safe::textlayout::{RectHeightStyle, RectWidthStyle};
@@ -153,11 +153,15 @@ fn vertical_layout_for_shape(
 fn calculate_vertical_cursor_rect(
     text_content: &TextContent,
     shape: &Shape,
-    paragraph: usize,
-    offset: usize,
+    cursor: &TextPositionWithAffinity,
 ) -> Option<Rect> {
     let (layout, origin_x) = vertical_layout_for_shape(text_content, shape);
-    let rect = text_vertical::caret_rect(&layout, paragraph, offset)?;
+    let rect = text_vertical::caret_rect_with_affinity(
+        &layout,
+        cursor.paragraph,
+        cursor.offset,
+        cursor.is_upstream(),
+    )?;
     Some(Rect::from_xywh(
         origin_x + rect.x(),
         rect.y(),
@@ -226,12 +230,7 @@ pub(crate) fn cursor_rect(
     }
 
     if text_content.is_vertical() {
-        return calculate_vertical_cursor_rect(
-            text_content,
-            shape,
-            cursor.paragraph,
-            cursor.offset,
-        );
+        return calculate_vertical_cursor_rect(text_content, shape, &cursor);
     }
 
     let layout_paragraphs: Vec<_> = text_content.layout.paragraphs.iter().flatten().collect();
@@ -244,9 +243,231 @@ pub(crate) fn cursor_rect(
     let plans = text_content.horizontal_plans();
     let plan = plans.get(cursor.paragraph)?;
     let model = &paragraphs[cursor.paragraph];
-    let rect =
-        horizontal_caret_rect_with_offsets(model, laid_out_para, cursor.offset, &plan.offsets);
+    let rect = horizontal_caret_rect_with_offsets(
+        model,
+        laid_out_para,
+        cursor.offset,
+        cursor.is_upstream(),
+        &plan.offsets,
+    );
     Some(rect.with_offset((plan.x_offset(model, shape.selrect.width()), y_offset)))
+}
+
+/// The start (`before`) or the end of the whole text.
+fn text_edge(text_content: &TextContent, before: bool) -> TextPositionWithAffinity {
+    let paragraphs = text_content.paragraphs();
+    if before || paragraphs.is_empty() {
+        return TextPositionWithAffinity::new_downstream_affinity(0, 0);
+    }
+    let last = paragraphs.len() - 1;
+    TextPositionWithAffinity::new_downstream_affinity(last, paragraph_chars(&paragraphs[last]))
+}
+
+fn paragraph_chars(paragraph: &crate::shapes::Paragraph) -> usize {
+    paragraph
+        .children()
+        .iter()
+        .map(|span| span.text.chars().count())
+        .sum()
+}
+
+/// Laid-out horizontal paragraphs with their models and plans, or None
+/// when the text has no layout for every paragraph.
+fn horizontal_parts(
+    text_content: &TextContent,
+) -> Option<(
+    Vec<&LayoutParagraph>,
+    std::rc::Rc<Vec<crate::shapes::HorizontalParagraphPlan>>,
+)> {
+    let layout_paragraphs: Vec<&LayoutParagraph> =
+        text_content.layout.paragraphs.iter().flatten().collect();
+    (layout_paragraphs.len() == text_content.paragraphs().len())
+        .then(|| (layout_paragraphs, text_content.horizontal_plans()))
+}
+
+/// Index of the line of `laid_out` at the paragraph-local `y`, or the
+/// nearest one.
+fn line_at(laid_out: &LayoutParagraph, y: f32) -> Option<usize> {
+    let lines = laid_out.get_line_metrics();
+    let distance = |line: &skia_safe::textlayout::LineMetrics| {
+        let top = (line.baseline - line.ascent) as f32;
+        let bottom = (line.baseline + line.descent) as f32;
+        if y < top {
+            top - y
+        } else if y >= bottom {
+            y - bottom
+        } else {
+            0.0
+        }
+    };
+    (0..lines.len()).min_by(|a, b| distance(&lines[*a]).total_cmp(&distance(&lines[*b])))
+}
+
+/// Caret moved one visual line from `focus`: a line of horizontal text, up
+/// when `before`, or a column of vertical text, to the right when `before`.
+/// `goal` is the position along the line kept from the move before, if any.
+/// Returns the new caret and the goal to keep; a move past the first or
+/// last line goes to the start or end of the text. None without a layout.
+pub(crate) fn caret_line_step(
+    text_content: &TextContent,
+    shape: &Shape,
+    focus: &TextPositionWithAffinity,
+    before: bool,
+    goal: Option<f32>,
+) -> Option<(TextPositionWithAffinity, f32)> {
+    if text_content.is_vertical() {
+        let (layout, _) = vertical_layout_for_shape(text_content, shape);
+        let rect = text_vertical::caret_rect_with_affinity(
+            &layout,
+            focus.paragraph,
+            focus.offset,
+            focus.is_upstream(),
+        )?;
+        let goal = goal.unwrap_or(rect.top());
+        let cursor = text_vertical::caret_column_step(
+            &layout,
+            focus.paragraph,
+            focus.offset,
+            focus.is_upstream(),
+            before,
+            goal,
+        )
+        .map_or_else(
+            || text_edge(text_content, before),
+            |(paragraph, offset)| {
+                TextPositionWithAffinity::new_downstream_affinity(paragraph, offset)
+            },
+        );
+        return Some((cursor, goal));
+    }
+
+    let (layout_paragraphs, plans) = horizontal_parts(text_content)?;
+    let model = text_content.paragraphs().get(focus.paragraph)?;
+    let laid_out = *layout_paragraphs.get(focus.paragraph)?;
+    let plan = plans.get(focus.paragraph)?;
+    let x_offset = plan.x_offset(model, shape.selrect.width());
+    let rect = horizontal_caret_rect_with_offsets(
+        model,
+        laid_out,
+        focus.offset,
+        focus.is_upstream(),
+        &plan.offsets,
+    );
+    let goal = goal.unwrap_or(rect.left() + x_offset);
+
+    // Inside a warichu note, the other sub-line is one line away.
+    if let Some((offset, upstream)) = crate::shapes::horizontal_warichu_step(
+        model,
+        laid_out,
+        focus.offset,
+        focus.is_upstream(),
+        goal - x_offset,
+        !before,
+    ) {
+        let cursor = if upstream {
+            TextPositionWithAffinity::new_upstream_affinity(focus.paragraph, offset)
+        } else {
+            TextPositionWithAffinity::new_downstream_affinity(focus.paragraph, offset)
+        };
+        return Some((cursor, goal));
+    }
+
+    // Every line as (top, bottom) in content coordinates.
+    let mut lines = Vec::new();
+    let mut current = None;
+    let mut paragraph_top = 0.0;
+    for (index, paragraph) in layout_paragraphs.iter().enumerate() {
+        let caret_line = (index == focus.paragraph)
+            .then(|| line_at(paragraph, rect.center_y()))
+            .flatten();
+        for (line_index, line) in paragraph.get_line_metrics().iter().enumerate() {
+            if caret_line == Some(line_index) {
+                current = Some(lines.len());
+            }
+            lines.push((
+                paragraph_top + (line.baseline - line.ascent) as f32,
+                paragraph_top + (line.baseline + line.descent) as f32,
+            ));
+        }
+        paragraph_top += paragraph.height();
+    }
+    let current = current?;
+    let target = if before {
+        current.checked_sub(1)
+    } else {
+        Some(current + 1).filter(|index| *index < lines.len())
+    };
+    let Some(target) = target else {
+        return Some((text_edge(text_content, before), goal));
+    };
+    // Off-center, so a warichu note in that line takes the sub-line next
+    // to the caret: the first going down, the second going up.
+    let (top, bottom) = lines[target];
+    let y = if before {
+        top + (bottom - top) * 0.75
+    } else {
+        top + (bottom - top) * 0.25
+    };
+    let cursor = text_content.get_caret_position_from_shape_coords(
+        &Point::new(goal, y),
+        &shape.selrect,
+        shape.vertical_align(),
+    )?;
+    Some((cursor, goal))
+}
+
+/// Caret at the start of the visual line or column holding `focus`, or at
+/// its end when `end`. The end of a wrapped line or column is upstream, so
+/// the caret stays on it.
+pub(crate) fn caret_line_edge(
+    text_content: &TextContent,
+    shape: &Shape,
+    focus: &TextPositionWithAffinity,
+    end: bool,
+) -> Option<TextPositionWithAffinity> {
+    let model = text_content.paragraphs().get(focus.paragraph)?;
+    let chars = paragraph_chars(model);
+    let at = |offset: usize| {
+        if end && offset < chars {
+            TextPositionWithAffinity::new_upstream_affinity(focus.paragraph, offset)
+        } else {
+            TextPositionWithAffinity::new_downstream_affinity(focus.paragraph, offset)
+        }
+    };
+    if text_content.is_vertical() {
+        let (layout, _) = vertical_layout_for_shape(text_content, shape);
+        let (_, offset) = text_vertical::caret_column_edge(
+            &layout,
+            focus.paragraph,
+            focus.offset,
+            focus.is_upstream(),
+            end,
+        )?;
+        return Some(at(offset));
+    }
+
+    let (layout_paragraphs, plans) = horizontal_parts(text_content)?;
+    let laid_out = *layout_paragraphs.get(focus.paragraph)?;
+    let plan = plans.get(focus.paragraph)?;
+    let rect = horizontal_caret_rect_with_offsets(
+        model,
+        laid_out,
+        focus.offset,
+        focus.is_upstream(),
+        &plan.offsets,
+    );
+    let lines = laid_out.get_line_metrics();
+    let index = line_at(laid_out, rect.center_y())?;
+    let line = &lines[index];
+    let offset = if !end {
+        plan.offsets.builder_to_source(line.start_index)
+    } else if index + 1 < lines.len() {
+        plan.offsets
+            .builder_to_source(line.end_excluding_whitespaces)
+    } else {
+        chars
+    };
+    Some(at(offset))
 }
 
 /// Caret rect at the source character offset `char_pos` of a laid-out
@@ -263,17 +484,23 @@ fn horizontal_caret_rect(
         para,
         laid_out_para,
         char_pos,
+        false,
         &crate::shapes::HorizontalOffsets::new(para),
     )
 }
 
+/// Caret rect at `char_pos` (see `horizontal_caret_rect`). An `upstream`
+/// offset at the start of a wrapped line is drawn at the end of the line
+/// before it.
 fn horizontal_caret_rect_with_offsets(
     para: &crate::shapes::Paragraph,
     laid_out_para: &LayoutParagraph,
     char_pos: usize,
+    upstream: bool,
     offsets: &crate::shapes::HorizontalOffsets,
 ) -> Rect {
-    if let Some(rect) = crate::shapes::horizontal_warichu_caret_rect(para, laid_out_para, char_pos)
+    if let Some(rect) =
+        crate::shapes::horizontal_warichu_caret_rect(para, laid_out_para, char_pos, upstream)
     {
         return rect;
     }
@@ -313,7 +540,21 @@ fn horizontal_caret_rect_with_offsets(
     }
     let start = offsets.source_to_builder(char_pos);
     let end = offsets.source_to_builder(para.next_grapheme_offset(char_pos));
-    match first_rect(start, end) {
+    let rect = first_rect(start, end);
+    if upstream && char_pos > 0 {
+        let previous_start = offsets.source_to_builder(para.prev_grapheme_offset(char_pos));
+        if let (Some(previous), Some(rect)) = (first_rect(previous_start, start), rect) {
+            if previous.top() < rect.top() {
+                return Rect::from_xywh(
+                    previous.right(),
+                    previous.top(),
+                    previous.width(),
+                    previous.height(),
+                );
+            }
+        }
+    }
+    match rect {
         Some(rect) => rect,
         None if char_pos == 0 => default_rect(),
         None => {
@@ -479,6 +720,7 @@ mod tests {
         FontFamily, FontStyle, GrowType, Paragraph, TextAlign, TextDirection, TextSpan,
     };
     use crate::uuid::Uuid;
+    use crate::wasm::text_editor::CursorDirection;
     use skia_safe::textlayout::{
         FontCollection, ParagraphBuilder, ParagraphStyle, TextStyle, TypefaceFontProvider,
     };
@@ -905,5 +1147,253 @@ mod tests {
             assert!((fill.width - stroke.width).abs() < 0.01);
             assert!((fill.left - stroke.left).abs() < 0.01);
         }
+    }
+
+    /// Family of the Japanese test spans.
+    fn japanese() -> FontFamily {
+        FontFamily::new(Uuid::nil(), 700, FontStyle::Normal)
+    }
+
+    /// Headless resources with a Noto Sans JP subset as `japanese()`. Its
+    /// notdef glyph is 1em wide, so every character takes a full em.
+    fn japanese_resources() -> RenderResources {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        resources
+            .fonts
+            .add(
+                japanese(),
+                crate::shapes::text_vertical::test_support::VPAL_TEST_FONT,
+                false,
+                false,
+            )
+            .expect("test font");
+        resources
+    }
+
+    /// A laid-out fixed Japanese text `width` by `height` with one paragraph
+    /// of `spans` (text, warichu), set vertically when `vertical`. Lines are
+    /// taller than the characters, as with the default line height.
+    fn japanese_shape(spans: &[(&str, bool)], width: f32, height: f32, vertical: bool) -> Shape {
+        crate::globals::design_init();
+        let spans = spans
+            .iter()
+            .map(|(text, warichu)| TextSpan {
+                text: text.to_string(),
+                font_family: japanese(),
+                font_size: 20.0,
+                line_height: 1.4,
+                warichu: *warichu,
+                ..TextSpan::default()
+            })
+            .collect();
+        let mut paragraph = Paragraph::new(
+            TextAlign::Left,
+            TextDirection::LTR,
+            None,
+            None,
+            1.0,
+            0.0,
+            spans,
+        );
+        paragraph.set_language("ja".to_owned());
+        if vertical {
+            paragraph.set_writing_mode(crate::shapes::WritingMode::VerticalRl);
+        }
+        let mut content =
+            TextContent::new(Rect::from_xywh(0.0, 0.0, width, height), GrowType::Fixed);
+        content.add_paragraph(paragraph);
+        content.update_layout(Rect::from_xywh(0.0, 0.0, width, height));
+        let mut shape = Shape::new(Uuid::nil());
+        shape.set_shape_type(Type::Text(content));
+        shape.set_selrect(0.0, 0.0, width, height);
+        shape
+    }
+
+    fn content_of(shape: &Shape) -> &TextContent {
+        let Type::Text(content) = &shape.shape_type else {
+            unreachable!()
+        };
+        content
+    }
+
+    /// Caret offset after each key, starting at `start`.
+    fn walk(shape: &Shape, start: usize, keys: Vec<CursorDirection>) -> Vec<usize> {
+        let content = content_of(shape);
+        let mut editor = TextEditorState::new();
+        editor
+            .selection
+            .set_caret(TextPositionWithAffinity::new_downstream_affinity(0, start));
+        keys.into_iter()
+            .map(|key| {
+                editor.move_cursor(content, shape, key, false, false);
+                editor.selection.focus.offset
+            })
+            .collect()
+    }
+
+    fn caret_at(shape: &Shape, position: TextPositionWithAffinity) -> Rect {
+        let mut editor = TextEditorState::new();
+        editor.selection.set_caret(position);
+        cursor_rect(&editor, content_of(shape), shape).expect("caret")
+    }
+
+    #[test]
+    fn up_and_down_move_by_line_and_keep_the_caret_position() {
+        let mut resources = japanese_resources();
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let shape = japanese_shape(
+            &[("あいうえおかきくけこさしすせそ", false)],
+            60.0,
+            200.0,
+            false,
+        );
+        let lines = content_of(&shape).layout.paragraphs[0][0].get_line_metrics();
+        assert!(lines.len() >= 3, "the text wraps into lines");
+        let per_line = lines[0].end_index - lines[0].start_index;
+        use CursorDirection::{LineAfter as Down, LineBefore as Up};
+        assert_eq!(
+            walk(&shape, 1, vec![Down, Down, Up, Up]),
+            vec![1 + per_line, 1 + 2 * per_line, 1 + per_line, 1]
+        );
+        assert_eq!(walk(&shape, 1, vec![Up]), vec![0], "up from the first line");
+    }
+
+    #[test]
+    fn home_and_end_go_to_the_edges_of_the_visual_line() {
+        let mut resources = japanese_resources();
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let shape = japanese_shape(
+            &[("あいうえおかきくけこさしすせそ", false)],
+            60.0,
+            200.0,
+            false,
+        );
+        let lines = content_of(&shape).layout.paragraphs[0][0].get_line_metrics();
+        let per_line = lines[0].end_index - lines[0].start_index;
+        let start = per_line + 1;
+        assert_eq!(
+            walk(&shape, start, vec![CursorDirection::LineStart]),
+            vec![per_line]
+        );
+        assert_eq!(
+            walk(
+                &shape,
+                start,
+                vec![CursorDirection::LineEnd, CursorDirection::LineEnd]
+            ),
+            vec![2 * per_line, 2 * per_line],
+            "End stays at the end of the line"
+        );
+        let end = caret_at(
+            &shape,
+            TextPositionWithAffinity::new_upstream_affinity(0, 2 * per_line),
+        );
+        let middle = caret_at(
+            &shape,
+            TextPositionWithAffinity::new_downstream_affinity(0, start),
+        );
+        assert!(
+            (end.top() - middle.top()).abs() < 0.01 && end.left() > middle.left(),
+            "the line end is drawn on its own line: {end:?} vs {middle:?}"
+        );
+    }
+
+    const NOTE_SPANS: [(&str, bool); 3] = [
+        ("東京の本社（", false),
+        ("二〇二六年に移転した新しい建物", true),
+        ("あ）で会議を行う。", false),
+    ];
+
+    #[test]
+    fn up_and_down_step_between_the_halves_of_a_warichu_note() {
+        let mut resources = japanese_resources();
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let shape = japanese_shape(&NOTE_SPANS, 400.0, 200.0, false);
+        use CursorDirection::{LineAfter as Down, LineBefore as Up};
+        // 6..14 is the first half of the note, 14..21 the second.
+        let steps = walk(&shape, 8, vec![Down, Up]);
+        assert!(
+            (14..=21).contains(&steps[0]),
+            "down from the first half lands in the second: {steps:?}"
+        );
+        assert_eq!(steps[1], 8, "and up comes back");
+    }
+
+    #[test]
+    fn clicks_on_a_warichu_note_keep_to_the_half_under_the_pointer() {
+        let mut resources = japanese_resources();
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let shape = japanese_shape(&NOTE_SPANS, 400.0, 200.0, false);
+        let content = content_of(&shape);
+        let hit = |x: f32, y: f32| {
+            content
+                .get_caret_position_from_shape_coords(
+                    &Point::new(x, y),
+                    &shape.selrect,
+                    crate::shapes::VerticalAlign::Top,
+                )
+                .expect("hit")
+        };
+        let first = caret_at(
+            &shape,
+            TextPositionWithAffinity::new_downstream_affinity(0, 7),
+        );
+        let lines = content.layout.paragraphs[0][0].get_line_metrics();
+        let line_top = (lines[0].baseline - lines[0].ascent) as f32;
+        assert!(line_top < first.top(), "the line is taller than the note");
+        let above = hit(first.center_x(), (line_top + first.top()) / 2.0);
+        assert!(
+            (6..14).contains(&above.offset),
+            "above the first half picks it, got {}",
+            above.offset
+        );
+
+        let last = caret_at(
+            &shape,
+            TextPositionWithAffinity::new_downstream_affinity(0, 13),
+        );
+        let split = hit(last.right() - 0.1, last.center_y());
+        assert_eq!(split.offset, 14);
+        assert!(split.is_upstream(), "the end of the first half is upstream");
+        let caret = caret_at(&shape, split);
+        assert!(
+            (caret.top() - last.top()).abs() < 0.01 && caret.left() >= last.right() - 0.01,
+            "drawn after the half's last character: {caret:?} vs {last:?}"
+        );
+    }
+
+    #[test]
+    fn left_and_right_move_across_vertical_columns() {
+        let mut resources = japanese_resources();
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let shape = japanese_shape(
+            &[("あいうえおかきくけこさしすせそ", false)],
+            200.0,
+            60.0,
+            true,
+        );
+        let layout = content_of(&shape).vertical_layout(&shape.selrect);
+        assert!(layout.columns.len() >= 3, "the text wraps into columns");
+        let per_column = (0..15)
+            .find(|offset| {
+                text_vertical::caret_rect_with_affinity(&layout, 0, *offset, false)
+                    .expect("caret")
+                    .left()
+                    < layout.columns[0].x
+            })
+            .expect("a second column");
+        use CursorDirection::{Backward as Left, Forward as Right};
+        assert_eq!(
+            walk(&shape, 1, vec![Left, Left, Right, Right]),
+            vec![1 + per_column, 1 + 2 * per_column, 1 + per_column, 1]
+        );
+        assert_eq!(
+            walk(&shape, per_column + 1, vec![CursorDirection::LineStart]),
+            vec![per_column]
+        );
+        assert_eq!(
+            walk(&shape, per_column + 1, vec![CursorDirection::LineEnd]),
+            vec![2 * per_column]
+        );
     }
 }

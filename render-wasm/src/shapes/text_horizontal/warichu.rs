@@ -46,13 +46,37 @@ fn horizontal_warichu_boxes<'a>(
     boxes
 }
 
+/// Vertical extent (top, bottom) of the laid-out line that holds `rect`.
+fn line_band(laid_out: &LayoutParagraph, rect: &skia::Rect) -> (f32, f32) {
+    laid_out
+        .get_line_metrics()
+        .iter()
+        .map(|line| {
+            (
+                (line.baseline - line.ascent) as f32,
+                (line.baseline + line.descent) as f32,
+            )
+        })
+        .find(|(top, bottom)| rect.center_y() >= *top && rect.center_y() <= *bottom)
+        .unwrap_or((rect.top(), rect.bottom()))
+}
+
+/// Source offset of the caret for a point on a warichu note, and whether it
+/// is upstream: at the end of the first sub-line, not the start of the
+/// second. The note takes the points over its width across its whole line:
+/// above the note counts as the first sub-line, below it as the second.
 pub(crate) fn horizontal_warichu_hit_test(
     paragraph: &Paragraph,
     laid_out: &LayoutParagraph,
     point: Point,
-) -> Option<usize> {
+) -> Option<(usize, bool)> {
     for (span, source_start, _, rect) in horizontal_warichu_boxes(paragraph, laid_out) {
-        if !rect.contains(&point) {
+        let (band_top, band_bottom) = line_band(laid_out, &rect);
+        if point.x < rect.left()
+            || point.x >= rect.right()
+            || point.y < band_top
+            || point.y >= band_bottom
+        {
             continue;
         }
         let split = warichu_split_chars(&span.apply_text_transform());
@@ -64,16 +88,21 @@ pub(crate) fn horizontal_warichu_hit_test(
             (0, split)
         };
         let fraction = ((point.x - rect.left()) / rect.width().max(0.01)).clamp(0.0, 1.0);
-        let within = (fraction * line_len as f32).round() as usize;
-        return Some(source_start + line_start + within.min(line_len));
+        let within = ((fraction * line_len as f32).round() as usize).min(line_len);
+        let upstream = !second && within == line_len && line_len < total;
+        return Some((source_start + line_start + within, upstream));
     }
     None
 }
 
+/// Caret rect at `source_offset` inside a warichu note, or None outside
+/// every note. The offset where the sub-lines meet is drawn at the end of the
+/// first sub-line when `upstream`, else at the start of the second.
 pub(crate) fn horizontal_warichu_caret_rect(
     paragraph: &Paragraph,
     laid_out: &LayoutParagraph,
     source_offset: usize,
+    upstream: bool,
 ) -> Option<skia::Rect> {
     for (span, source_start, source_end, rect) in horizontal_warichu_boxes(paragraph, laid_out) {
         if source_offset < source_start || source_offset > source_end {
@@ -82,7 +111,8 @@ pub(crate) fn horizontal_warichu_caret_rect(
         let split = warichu_split_chars(&span.apply_text_transform());
         let local = source_offset - source_start;
         let total = source_end - source_start;
-        let (line_start, line_len, top) = if local >= split {
+        let second = local > split || (local == split && !upstream);
+        let (line_start, line_len, top) = if second {
             (split, total - split, rect.top() + rect.height() / 2.0)
         } else {
             (0, split, rect.top())
@@ -97,6 +127,34 @@ pub(crate) fn horizontal_warichu_caret_rect(
         ));
     }
     None
+}
+
+/// Caret moved to the other sub-line of the warichu note holding
+/// `source_offset`, keeping `x`: down from the first sub-line, up from the
+/// second. None when the caret is outside every note or the move leaves it.
+pub(crate) fn horizontal_warichu_step(
+    paragraph: &Paragraph,
+    laid_out: &LayoutParagraph,
+    source_offset: usize,
+    upstream: bool,
+    x: f32,
+    down: bool,
+) -> Option<(usize, bool)> {
+    let caret = horizontal_warichu_caret_rect(paragraph, laid_out, source_offset, upstream)?;
+    let (_, _, _, rect) = horizontal_warichu_boxes(paragraph, laid_out)
+        .into_iter()
+        .find(|(_, start, end, _)| (*start..=*end).contains(&source_offset))?;
+    let second = caret.top() > rect.top() + rect.height() / 4.0;
+    if down == second {
+        return None;
+    }
+    let y = if down {
+        rect.top() + rect.height() * 0.75
+    } else {
+        rect.top() + rect.height() * 0.25
+    };
+    let x = x.clamp(rect.left(), rect.right() - 0.01);
+    horizontal_warichu_hit_test(paragraph, laid_out, Point::new(x, y))
 }
 
 pub(crate) fn horizontal_warichu_range_rects(

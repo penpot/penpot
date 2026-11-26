@@ -45,4 +45,7 @@ pub use paint::{
     paint_glyphs, paint_grid, paint_layout, paint_shadow, paint_shadow_silhouette, paint_stroke,
     paint_text_vertical, paint_text_vertical_with, vertical_text_paths, GlyphOutput,
 };
-pub use positions::{caret_from_point, caret_rect, intersects, position_data, range_rects};
+pub use positions::{
+    caret_column_edge, caret_column_step, caret_from_point, caret_rect_with_affinity, intersects,
+    position_data, range_rects,
+};

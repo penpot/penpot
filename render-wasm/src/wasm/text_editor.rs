@@ -693,6 +693,7 @@ pub extern "C" fn text_editor_move_cursor(
 
         get_text_editor_state().move_cursor(
             text_content,
+            shape,
             direction,
             word_boundary,
             extend_selection,
