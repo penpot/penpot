@@ -44,7 +44,11 @@ pub fn modifier_changes_text_layout(base: &Shape, modifier: &Matrix) -> bool {
     let before = oriented_container_bounds(base);
     let after = before.transform(modifier);
     match text_content.grow_type() {
-        GrowType::AutoWidth => !crate::math::is_close_to(before.height(), after.height()),
+        GrowType::AutoWidth => {
+            !crate::math::is_close_to(before.height(), after.height())
+                || (text_content.fill_width
+                    && !crate::math::is_close_to(before.width(), after.width()))
+        }
         GrowType::AutoHeight | GrowType::Fixed => {
             !crate::math::is_close_to(before.width(), after.width())
         }
@@ -420,6 +424,9 @@ pub struct TextContent {
     content_version: u64,
     layout_version: u64,
     layout_width: Option<f32>,
+    /// The parent layout sizes the width with Fill: auto-width lines are laid
+    /// out at the box width, so alignment and direction act inside the box.
+    fill_width: bool,
     /// Canvas origin used when absolute fill shaders (image/gradient) were baked
     /// into cached Skia paragraphs. Kept across move clones so paint can
     /// translate glyphs + shaders together. See `cached_layout_paint_offset`.
@@ -450,6 +457,7 @@ impl TextContent {
             content_version: 0,
             layout_version: 0,
             layout_width: None,
+            fill_width: false,
             layout_paint_origin: None,
             layout_paint_size: None,
         }
@@ -467,6 +475,7 @@ impl TextContent {
             content_version: 0,
             layout_version: 0,
             layout_width: None,
+            fill_width: self.fill_width,
             layout_paint_origin: None,
             layout_paint_size: None,
         }
@@ -571,6 +580,33 @@ impl TextContent {
             self.grow_type = grow_type;
             self.content_version = self.content_version.wrapping_add(1);
         }
+    }
+
+    pub fn set_fill_width(&mut self, fill_width: bool) {
+        if self.fill_width != fill_width {
+            self.fill_width = fill_width;
+            self.content_version = self.content_version.wrapping_add(1);
+        }
+    }
+
+    /// Width auto-width lines are laid out at in a box of `box_width`.
+    fn auto_width_line_width(&self, content_width: f32, box_width: f32) -> f32 {
+        if self.fill_width {
+            content_width.max(box_width)
+        } else {
+            content_width
+        }
+    }
+
+    /// True when the cached auto-width layout was built for a box of `box_width`.
+    fn auto_width_layout_matches(&self, box_width: f32) -> bool {
+        if !self.fill_width {
+            return true;
+        }
+        let content_width = self.size.width - PARAGRAPH_SET_MARGIN_RIGHT;
+        let line_width = self.auto_width_line_width(content_width, box_width);
+        self.layout_width
+            .is_some_and(|w| (w - line_width).abs() < f32::EPSILON)
     }
 
     /// Compute a tight text rect from laid-out Skia paragraphs using glyph
@@ -728,13 +764,14 @@ impl TextContent {
         let x = selrect.x();
         let mut y = selrect.y();
 
-        let width = if self.grow_type() == GrowType::AutoWidth {
-            self.size.width
+        let auto_width = self.grow_type() == GrowType::AutoWidth;
+        let width = if auto_width {
+            self.get_width(selrect.width())
         } else {
             selrect.width()
         };
 
-        let height = if self.size.width.round() != width.round() {
+        let height = if !auto_width && self.size.width.round() != width.round() {
             self.get_height(width)
         } else {
             self.size.height
@@ -1019,10 +1056,12 @@ impl TextContent {
             })
             .ceil();
 
-        // Re-layout at the intrinsic width (without the HTML margin slack).
+        // Re-layout at the intrinsic width (without the HTML margin slack), or
+        // at the box width when a layout fills it.
+        let line_width = self.auto_width_line_width(content_width, self.bounds.width());
         let mut paragraph_builders = self.paragraph_builder_group_from_text(None);
         let paragraphs =
-            build_paragraphs_from_paragraph_builders(&mut paragraph_builders, content_width);
+            build_paragraphs_from_paragraph_builders(&mut paragraph_builders, line_width);
         let height = paragraphs
             .iter()
             .flatten()
@@ -1092,7 +1131,7 @@ impl TextContent {
 
     pub fn get_width(&self, width: f32) -> f32 {
         if self.grow_type() == GrowType::AutoWidth {
-            self.size.width
+            self.auto_width_line_width(self.size.width, width)
         } else {
             width
         }
@@ -1149,7 +1188,7 @@ impl TextContent {
 
     pub(crate) fn layout_matches_paint_container(&self, shape: &Shape) -> bool {
         if self.grow_type() == GrowType::AutoWidth {
-            return true;
+            return self.auto_width_layout_matches(shape.selrect().width());
         }
         let Some(layout_w) = self.layout_width else {
             return false;
@@ -1201,11 +1240,14 @@ impl TextContent {
         // match the container we are laying out for.
         self.set_xywh(selrect.x(), selrect.y(), selrect.width(), selrect.height());
 
-        // Auto-width ignores selrect width so get-text-dimensions can reuse the cached layout.
-        let layout_matches_container = self.grow_type() == GrowType::AutoWidth
-            || self
-                .layout_width
-                .is_some_and(|w| (w - selrect.width()).abs() < f32::EPSILON);
+        // Auto-width ignores selrect width, unless a layout fills it, so
+        // get-text-dimensions can reuse the cached layout.
+        let layout_matches_container = if self.grow_type() == GrowType::AutoWidth {
+            self.auto_width_layout_matches(selrect.width())
+        } else {
+            self.layout_width
+                .is_some_and(|w| (w - selrect.width()).abs() < f32::EPSILON)
+        };
 
         if !self.layout.needs_update()
             && self.layout_version == self.content_version
@@ -1225,7 +1267,12 @@ impl TextContent {
             }
             GrowType::AutoWidth => {
                 let result = self.text_layout_auto_width();
-                self.layout_width = Some(result.2.width);
+                self.layout_width = Some(if self.fill_width {
+                    let content_width = result.2.width - PARAGRAPH_SET_MARGIN_RIGHT;
+                    self.auto_width_line_width(content_width, selrect.width())
+                } else {
+                    result.2.width
+                });
                 self.set_layout_from_result(result, selrect.width(), selrect.height());
             }
             GrowType::Fixed => {
@@ -1379,6 +1426,7 @@ impl Default for TextContent {
             content_version: 0,
             layout_version: 0,
             layout_width: None,
+            fill_width: false,
             layout_paint_origin: None,
             layout_paint_size: None,
         }
@@ -2517,5 +2565,167 @@ pub(crate) mod tests {
         layout.paragraphs = Rc::new(vec![vec![]]);
         layout.clear();
         assert!(layout.needs_update());
+    }
+
+    fn set_width_sizing(shape: &mut Shape, h_sizing: shapes::Sizing) {
+        shape.set_flex_layout_child_data(
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            h_sizing,
+            shapes::Sizing::Fix,
+            None,
+            None,
+            None,
+            None,
+            None,
+            false,
+            None,
+        );
+    }
+
+    /// A one-line auto-width text laid out in a `box_width` wide box.
+    fn auto_width_text(
+        align: TextAlign,
+        direction: TextDirection,
+        h_sizing: shapes::Sizing,
+        box_width: f32,
+    ) -> Shape {
+        let mut paragraph = test_paragraph(&["hello"]);
+        paragraph.text_align = align;
+        paragraph.text_direction = direction;
+        paragraph.children_mut()[0].text_direction = direction;
+        let bounds = Rect::from_xywh(0.0, 0.0, box_width, 100.0);
+        let mut content = TextContent::new(bounds, GrowType::AutoWidth);
+        content.add_paragraph(paragraph);
+
+        let mut shape = Shape::new(Uuid::nil());
+        set_width_sizing(&mut shape, h_sizing);
+        shape.set_shape_type(shapes::Type::Text(content));
+        shape.set_selrect(0.0, 0.0, box_width, 100.0);
+        shape
+    }
+
+    /// Left edge and width of the first laid-out line.
+    fn first_line(shape: &Shape) -> (f32, f32) {
+        let paragraphs = &shape.get_text_content().layout.paragraphs;
+        let line = &paragraphs[0][0].get_line_metrics()[0];
+        (line.left as f32, line.width as f32)
+    }
+
+    fn assert_close(actual: f32, expected: f32) {
+        assert!(
+            (actual - expected).abs() < 0.5,
+            "got {actual}, expected {expected}"
+        );
+    }
+
+    #[test]
+    fn auto_width_text_with_fill_width_centers_in_its_box() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let shape = auto_width_text(
+            TextAlign::Center,
+            TextDirection::LTR,
+            shapes::Sizing::Fill,
+            300.0,
+        );
+
+        let (left, width) = first_line(&shape);
+        assert!(width < 100.0, "line width {width}");
+        assert_close(left, (300.0 - width) / 2.0);
+    }
+
+    #[test]
+    fn auto_width_text_with_fill_width_aligns_right_in_its_box() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let shape = auto_width_text(
+            TextAlign::Right,
+            TextDirection::LTR,
+            shapes::Sizing::Fill,
+            300.0,
+        );
+
+        let (left, width) = first_line(&shape);
+        assert_close(left + width, 300.0);
+    }
+
+    #[test]
+    fn rtl_auto_width_text_with_fill_width_follows_its_alignment() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        for (align, expected_left) in [(TextAlign::Left, Some(0.0)), (TextAlign::Right, None)] {
+            // The sizing arrives after the text type, as a later layout update.
+            let mut shape = auto_width_text(align, TextDirection::RTL, shapes::Sizing::Fix, 300.0);
+            set_width_sizing(&mut shape, shapes::Sizing::Fill);
+            shape.set_selrect(0.0, 0.0, 300.0, 100.0);
+
+            let (left, width) = first_line(&shape);
+            match expected_left {
+                Some(expected) => assert_close(left, expected),
+                None => assert_close(left + width, 300.0),
+            }
+        }
+    }
+
+    #[test]
+    fn auto_width_text_without_fill_lays_out_at_its_measured_width() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        for direction in [TextDirection::LTR, TextDirection::RTL] {
+            // A box wider than the text, as while deleting characters before
+            // it shrinks.
+            let shape = auto_width_text(TextAlign::Center, direction, shapes::Sizing::Fix, 300.0);
+
+            let (left, _) = first_line(&shape);
+            assert_close(left, 0.0);
+        }
+    }
+
+    #[test]
+    fn auto_width_text_with_fill_width_keeps_its_measured_size() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let fill = auto_width_text(
+            TextAlign::Center,
+            TextDirection::LTR,
+            shapes::Sizing::Fill,
+            300.0,
+        );
+        let fix = auto_width_text(
+            TextAlign::Center,
+            TextDirection::LTR,
+            shapes::Sizing::Fix,
+            300.0,
+        );
+        let fill_text = fill.get_text_content();
+
+        assert_close(fill_text.width(), fix.get_text_content().width());
+        let rect = fill_text.content_rect(&fill.selrect(), VerticalAlign::Top);
+        assert_close(rect.width(), 300.0);
+    }
+
+    #[test]
+    fn resizing_the_width_of_a_fill_auto_width_text_changes_its_layout() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let fill = auto_width_text(
+            TextAlign::Center,
+            TextDirection::LTR,
+            shapes::Sizing::Fill,
+            300.0,
+        );
+        let fix = auto_width_text(
+            TextAlign::Center,
+            TextDirection::LTR,
+            shapes::Sizing::Fix,
+            300.0,
+        );
+        let wider = Matrix::scale((2.0, 1.0));
+
+        assert!(modifier_changes_text_layout(&fill, &wider));
+        assert!(!modifier_changes_text_layout(&fix, &wider));
     }
 }
