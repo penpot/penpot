@@ -1231,10 +1231,25 @@ pub(super) fn render_leaf_content<R: ShapeRenderer + ?Sized>(
 // Private helpers (canvas-only)
 // ---------------------------------------------------------------------------
 
-/// Image spread mask resolution: the PDF raster DPI in points, capped to
-/// `MAX_SPREAD_MASK_SIZE` pixels per side.
-const SPREAD_MASK_PX_PER_UNIT: f32 = 300.0 / 72.0;
+/// Image spread mask resolution on canvases without pixels (PDF): the PDF
+/// raster DPI in points. Every mask is capped to `MAX_SPREAD_MASK_SIZE` pixels
+/// per side.
+const VECTOR_SPREAD_MASK_PX_PER_UNIT: f32 = 300.0 / 72.0;
 const MAX_SPREAD_MASK_SIZE: f32 = 4096.0;
+
+/// Raster canvases get the mask at their own device resolution, which is all
+/// the output can show.
+fn spread_mask_px_per_unit(canvas: &Canvas) -> f32 {
+    if canvas.image_info().color_type() == skia::ColorType::Unknown {
+        return VECTOR_SPREAD_MASK_PX_PER_UNIT;
+    }
+    let device_scale = canvas.local_to_device_as_3x3().max_scale();
+    if device_scale > 0.0 {
+        device_scale
+    } else {
+        VECTOR_SPREAD_MASK_PX_PER_UNIT
+    }
+}
 
 /// Image fills as a drop-shadow silhouette: their alpha, grown by `spread`
 /// with the square dilate the GPU uses. Skia's `dilate` runs as SkSL per pixel
@@ -1252,8 +1267,8 @@ fn draw_image_silhouette(
 
     let mut bounds = shape.selrect;
     bounds.outset((spread, spread));
-    let px_per_unit =
-        SPREAD_MASK_PX_PER_UNIT.min(MAX_SPREAD_MASK_SIZE / bounds.width().max(bounds.height()));
+    let px_per_unit = spread_mask_px_per_unit(canvas)
+        .min(MAX_SPREAD_MASK_SIZE / bounds.width().max(bounds.height()));
     let width = (bounds.width() * px_per_unit).ceil() as i32;
     let height = (bounds.height() * px_per_unit).ceil() as i32;
     if width <= 0 || height <= 0 {
