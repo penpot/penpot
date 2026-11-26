@@ -369,7 +369,11 @@
                 :on-click #(brc/confirm-merge! branch excluded)})}))
 
 (defn- resolve-bar
-  [{:keys [incoming conflicts]}]
+  "The bar while the conflicts are resolved. The choices are always
+  applied to the branch, never merged into main
+  (`dwcp/apply-resolutions`), so anybody who edits the branch can apply
+  them."
+  [{:keys [conflicts]}]
   (let [total    (count (:conflicts conflicts))
         decided  (count (:decided conflicts))
         done?    (and (pos? total) (= total decided))]
@@ -381,11 +385,8 @@
      :detail  (tr "workspace.compare.bar.decided" (str decided) (str total))
      :progress (tr "workspace.compare.bar.decided" (str decided) (str total))
      :exit    {:label (tr "workspace.compare.bar.back") :icon i/arrow-left :on-click on-back}
-     :action  {:label (if incoming
-                        (tr "workspace.compare.bar.apply-update")
-                        (tr "workspace.branches.conflicts.apply"))
-               :icon i/git-merge
-               :merge (not incoming)
+     :action  {:label (tr "workspace.branches.conflicts.apply-to-branch")
+               :icon i/git-branch
                ;; nothing is applied until every conflict has a choice
                :disabled (not done?)
                :on-click on-apply}}))

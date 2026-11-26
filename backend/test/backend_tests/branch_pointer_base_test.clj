@@ -234,6 +234,33 @@
         (t/is (not= (get before page-a) (get after page-a)))
         (t/is (= (get before page-b) (get after page-b)))))))
 
+(t/deftest apply-pins-the-fragments-the-source-holds-after-the-write
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [{:keys [profile-id file-id]} (setup)
+          page-a  (first (:pages (realized-data file-id)))
+          page-b  (uuid/random)
+          _       (update-file! profile-id file-id
+                                [{:type :add-page :id page-b :name "B"}])
+          branch  (create-branch! profile-id file-id "apply")
+          before  (page-pointer-ids (:data (bfc/get-file th/*system* file-id)))]
+      (update-file! profile-id (:branch-file-id branch) [(add-rect page-a)])
+      (let [out (th/command! {::th/type :apply-file-branch
+                              ::rpc/profile-id profile-id
+                              :branch-id (:id branch)})]
+        (t/is (nil? (:error out)))
+        (t/is (= :applied (-> out :result :status))))
+
+      (let [after    (page-pointer-ids (:data (bfc/get-file th/*system* file-id)))
+            base-ids (page-pointer-ids (:data (base-snapshot (:id branch))))]
+        ;; the written page is new, the untouched one keeps its fragment
+        (t/is (not= (get before page-a) (get after page-a)))
+        (t/is (= (get before page-b) (get after page-b)))
+        ;; and the new base names the source's fragments, not copies of its pages
+        (t/is (= after base-ids)))
+
+      (t/is (= (:pages-index (realized-data file-id))
+               (:pages-index (realized-data (:branch-file-id branch))))))))
+
 (defn- rename-shape
   [page-id shape-id name]
   {:type :mod-obj

@@ -1,0 +1,74 @@
+{ /* This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+  Copyright (c) KALEIDOS SUBSIDIARY SL */ }
+
+import { Canvas, Meta } from "@storybook/addon-docs/blocks";
+import * as RadioCards from "./radio_cards.stories";
+
+<Meta title="Controls/Radio Cards" />
+
+# Radio Cards
+
+The `radio-cards*` component lets users pick one option among a few,
+when each option needs a line that says what picking it does. Each
+option is a row as wide as its container, with an icon, a name and a
+description.
+
+When the options fit in a word or an icon and need no explanation, use
+[Radio Buttons](?path=/docs/controls-radio-buttons--docs) instead.
+
+## Variants
+
+### Default
+
+<Canvas of={RadioCards.Default} />
+
+### With a disabled option
+
+A disabled option stays in place and its description says why it cannot
+be picked.
+
+<Canvas of={RadioCards.WithDisabledOption} />
+
+## Usage
+
+```clj
+(ns app.main.ui.foo
+  (:require
+   [app.main.ui.ds.controls.radio-cards :refer [radio-cards*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]))
+
+[:> radio-cards* {:name "review-verdict"
+                  :aria-label "Your review"
+                  :selected verdict
+                  :on-change (fn [value _event] (reset! verdict* value))
+                  :options [{:id "verdict-approved"
+                             :value "approved"
+                             :icon i/tick
+                             :label "Approve"
+                             :description "The changes look good to you"}
+                            {:id "verdict-changes"
+                             :value "changes-requested"
+                             :icon i/triangle-alert
+                             :label "Request changes"
+                             :description "Something needs to be fixed"}]}]
+```
+
+- `name` groups the native radios; `selected` is the value picked.
+- `on-change` receives the value picked and the event.
+- Each option takes an `id`, a `value`, a `label` and, optionally, a
+  `description`, an `icon` and `disabled`.
+- Name the group with `aria-label` or `aria-labelledby`.
+
+## Accessibility
+
+Each option is a native radio inside its label: the arrow keys move the
+choice within the group, the focus shows on the whole row, and the
+accessible name of an option is its label and its description.
+
+## Technical notes
+
+Keep the description to one short line: it says what happens, it is not
+a paragraph of help.

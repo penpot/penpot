@@ -96,7 +96,7 @@
   before it when the canvas has no room left there."
   {::mf/private true}
   [{:keys [comparison rect vbox vport zoom is-review can-preview]}]
-  (let [{:keys [item res attr branch incoming]} comparison
+  (let [{:keys [item res attr branch]} comparison
         attr      (brc/pending-attr item res attr)
         text?     (and (= attr :content) (brc/text-conflict? item))
         branch-nm (:name branch)
@@ -142,8 +142,7 @@
      [:> text* {:as "p" :typography t/body-small :class (stl/css :popover-text)}
       (cond
         can-preview (tr "workspace.compare.popover.hover")
-        incoming    (tr "workspace.compare.popover.applies-update")
-        :else       (tr "workspace.compare.popover.applies-merge"))]]))
+        :else       (tr "workspace.compare.popover.applies-branch"))]]))
 
 ;; --- The bar that goes through the list
 

@@ -94,8 +94,10 @@ test("a change left out stays out of the merge", async ({ page }) => {
       (req.postData() ?? "").includes(BRAND_KEY),
   );
   await banner(page).getByRole("button", { name: "Merge 1 change" }).click();
-  await expect(page.getByText("1 change is left out.")).toBeVisible();
-  await page.getByRole("button", { name: "Merge", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByText("change goes into main")).toBeVisible();
+  await expect(dialog.getByText("change is left out")).toBeVisible();
+  await dialog.getByRole("button", { name: "Merge", exact: true }).click();
   await merge;
 });
 
@@ -133,7 +135,7 @@ test("main's changes are listed apart and update the branch", async ({
   await update;
 });
 
-test("conflicts are decided in the sidebar before they apply", async ({
+test("conflicts are decided in the sidebar and apply to the branch", async ({
   page,
 }) => {
   const workspacePage = new WorkspacePage(page);
@@ -146,7 +148,8 @@ test("conflicts are decided in the sidebar before they apply", async ({
     .click();
   await expect(banner(page).getByText("3 conflicts with main")).toBeVisible();
   await expect(banner(page).getByText("0 of 3 decided")).toBeVisible();
-  const apply = banner(page).getByRole("button", { name: "Apply and merge" });
+  // the choices go to the branch, never straight into main
+  const apply = banner(page).getByRole("button", { name: "Apply to branch" });
   await expect(apply).toBeDisabled();
   await expect(changes(page).getByText("Needs a decision (3)")).toBeVisible();
 
@@ -172,15 +175,15 @@ test("conflicts are decided in the sidebar before they apply", async ({
   await expect(banner(page).getByText("All conflicts decided")).toBeVisible();
   await expect(changes(page).getByText("Decided (3)")).toBeVisible();
 
-  const merge = page.waitForRequest((req) => {
+  const update = page.waitForRequest((req) => {
     const body = req.postData() ?? "";
     return (
-      req.url().includes("merge-file-branch") &&
+      req.url().includes("update-file-branch-from-source") &&
       body.includes("38f2804439b1") &&
       body.includes("38f2804439b2") &&
       body.includes("38f2804439b3")
     );
   });
   await apply.click();
-  await merge;
+  await update;
 });

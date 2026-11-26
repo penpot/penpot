@@ -98,8 +98,8 @@
   dwb/item-key)
 
 (defn get-conflicts
-  "The conflicts to resolve for the branch `branch-id`. The set a merge or
-  an update returned (`attempt`, the `:workspace-branch-conflicts` entry)
+  "The conflicts to resolve for the branch `branch-id`. The set an update
+  from main returned (`attempt`, the `:workspace-branch-conflicts` entry)
   wins over the one of the diff: it is the very set the command matches
   the resolutions against, and the diff can list another one."
   [attempt diff-state branch-id]
@@ -483,11 +483,13 @@
 ;; --- Resolving conflicts
 
 (defn start-resolve
-  "Resolve the conflicts of the comparison on the canvas. With the set a
-  merge or an update just returned in the store
-  (`dwb/open-conflict-resolutions`), those are the ones resolved, in the
-  direction of that attempt; with the branch file not open yet, it opens
-  first and the mode follows (`watch-events`)."
+  "Resolve the conflicts of the branch with main on its canvas. They are
+  always resolved in the direction of an update from main: the choices
+  are applied to the branch, which merges or applies clean afterwards.
+  With the set an update just returned in the store
+  (`dwb/open-conflict-resolutions`), those are the ones resolved; with
+  the branch file not open yet, it opens first and the mode follows
+  (`watch-events`)."
   []
   (ptk/reify ::start-resolve
     ptk/UpdateEvent
@@ -518,10 +520,7 @@
       (let [attempt   (:workspace-branch-conflicts state)
             diff-st   (:workspace-branch-diff state)
             branch    (get-in state [:workspace-compare :branch])
-            direction (case (:mode attempt)
-                        :update :source->branch
-                        :merge  :branch->source
-                        (:direction diff-st :branch->source))]
+            direction :source->branch]
         (cond
           ;; the conflicts belong to a branch that is not the open file
           (and (nil? branch) (uuid? (get-in attempt [:branch :branch-file-id])))
@@ -559,9 +558,10 @@
       (rx/of (dwb/close-conflict-resolutions)))))
 
 (defn apply-resolutions
-  "Merge or update with the choices made for every conflict. The
-  per-change selection and the comment of the merge travel again: the
-  ones of the attempt that returned the conflicts, or the selection of
+  "Apply the choices made for every conflict to the branch, as an update
+  from main: the branch stays, now up to date with main, and the user
+  goes on to merge or apply it. The per-change selection travels again:
+  the one of the attempt that returned the conflicts, or the selection of
   the comparison when the user came from it."
   []
   (ptk/reify ::apply-resolutions
@@ -579,12 +579,8 @@
             excluded  (if (some? attempt)
                         (:excluded attempt)
                         (dwb/diff-excluded diff-st))]
-        (if (= :source->branch (:direction diff-st))
-          (rx/of (dwb/update-branch-from-main branch {:resolutions res
-                                                      :excluded excluded}))
-          (rx/of (dwb/merge-branch branch {:resolutions res
-                                           :comment (:comment attempt)
-                                           :excluded excluded})))))))
+        (rx/of (dwb/update-branch-from-main branch {:resolutions res
+                                                    :excluded excluded}))))))
 
 (defn- resume-resolve
   "Start resolving the conflicts that waited for the branch file to open."
@@ -642,15 +638,21 @@
   Every diff asked for brings the changes of its other direction with it
   (`fetch-other-changes`).
 
-  A merge or an update that returns conflicts takes the user to resolve
-  them. The command can run with main open (from the list of branches),
+  Conflicts to resolve on the branch (`dwb/open-conflict-resolutions`)
+  take the user to resolve them. The command can run with main open (from the list of branches),
   so the conflicts wait in the store while the branch file opens: once
-  its context loads, the mode starts there."
+  its context loads, the mode starts there.
+
+  An apply that keeps the branch open leaves the mode: the changes it
+  showed are in main now, and the branch stays the open file."
   [stopper]
   (ptk/reify ::watch-events
     ptk/WatchEvent
     (watch [_ _ stream]
       (->> (rx/merge
+            (->> stream
+                 (rx/filter (ptk/type? ::dwb/branch-applied))
+                 (rx/map (fn [_] (exit))))
             (->> stream
                  (rx/filter (ptk/type? ::dwb/fetch-branch-diff))
                  (rx/map (fn [_] (fetch-other-changes))))

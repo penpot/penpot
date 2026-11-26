@@ -6691,6 +6691,72 @@ msgstr "Text Transform"
 msgid "workspace.assets.ungroup"
 msgstr "Ungroup"
 
+#: src/app/main/data/workspace/branches.cljs
+msgid "workspace.branches.apply.behind"
+msgstr ""
+"Main has changes this branch is missing. Update the branch from main, then "
+"apply it."
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.apply.behind-hint"
+msgstr "Update this branch from main before you apply its changes."
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.apply.comment-label"
+msgstr "Apply comment"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.apply.conflicts-hint"
+msgstr "Resolve the conflicts on the branch first."
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.apply.confirm-accept"
+msgstr "Apply to main"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.apply.confirm-message"
+msgstr ""
+"Apply the changes of %s to %s? The branch stays open, so you can keep "
+"working on it."
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.apply.confirm-title"
+msgstr "Apply to main"
+
+#: src/app/main/data/workspace/branches.cljs
+msgid "workspace.branches.apply.error"
+msgstr "Could not apply the branch"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.apply.left-out-kept"
+msgid_plural "workspace.branches.apply.left-out-kept"
+msgstr[0] "The change you left out stays on this branch."
+msgstr[1] "The %s changes you left out stay on this branch."
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.apply.mode-apply"
+msgstr "Apply and keep the branch"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.apply.mode-apply-hint"
+msgstr "Main gets the changes and you keep working on this branch."
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.apply.mode-label"
+msgstr "What happens to the branch"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.apply.mode-merge"
+msgstr "Merge and delete the branch"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.apply.mode-merge-hint"
+msgstr "Main gets the changes. The branch and its file are deleted."
+
+#: src/app/main/data/workspace/branches.cljs
+msgid "workspace.branches.apply.success"
+msgstr "Changes applied to main. The branch stays open."
+
 msgid "workspace.branches.archive.message"
 msgstr ""
 "Archive branch \"%s\"? It becomes read-only and leaves the active list. You "
@@ -6944,9 +7010,9 @@ msgstr "false"
 msgid "workspace.branches.compare.value-true"
 msgstr "true"
 
-#: src/app/main/ui/workspace/sidebar/branches.cljs:1534
-msgid "workspace.branches.conflicts.apply"
-msgstr "Apply and merge"
+#: src/app/main/ui/workspace/compare/common.cljs
+msgid "workspace.branches.conflicts.apply-to-branch"
+msgstr "Apply to branch"
 
 #: src/app/main/ui/workspace/sidebar/branches.cljs:1444
 msgid "workspace.branches.conflicts.empty"
@@ -6971,6 +7037,12 @@ msgstr "edited in main and in the branch since the base"
 #: src/app/main/ui/workspace/sidebar/branches.cljs:1134, src/app/main/ui/workspace/sidebar/branches.cljs:1626
 msgid "workspace.branches.conflicts.resolve"
 msgstr "Resolve conflicts"
+
+#: src/app/main/data/workspace/branches.cljs, src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.conflicts.resolve-first"
+msgstr ""
+"This branch has conflicts with main. Resolve them on the branch, then "
+"merge or apply it."
 
 #: src/app/main/ui/workspace/sidebar/branches.cljs:593, src/app/main/ui/workspace/sidebar/branches.cljs:824, src/app/main/ui/workspace/sidebar/branches.cljs:1933
 msgid "workspace.branches.counts.ahead"
@@ -7363,9 +7435,17 @@ msgstr ""
 msgid "workspace.branches.merge.confirm-title"
 msgstr "Merge into main"
 
-#: src/app/main/ui/workspace/sidebar/branches.cljs:378
-msgid "workspace.branches.merge.delete-info"
-msgstr "After merging, this branch and its file will be deleted to free up storage."
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.merge.count-in"
+msgid_plural "workspace.branches.merge.count-in"
+msgstr[0] "change goes into main"
+msgstr[1] "changes go into main"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.merge.count-out"
+msgid_plural "workspace.branches.merge.count-out"
+msgstr[0] "change is left out"
+msgstr[1] "changes are left out"
 
 #: src/app/main/data/workspace/branches.cljs:451, src/app/main/data/workspace/branches.cljs:459
 msgid "workspace.branches.merge.error"
@@ -7401,6 +7481,10 @@ msgstr ""
 
 msgid "workspace.branches.restore.title"
 msgstr "Restore branch"
+
+#: src/app/main/ui/workspace/sidebar/reviews.cljs
+msgid "workspace.branches.reviews.applied"
+msgstr "Applied"
 
 msgid "workspace.branches.reviews.design.empty"
 msgstr "No branch reviews yet"
@@ -11710,18 +11794,6 @@ msgid "workspace.branches.resolve.drops.branch-short"
 msgstr "The branch's %s:"
 
 #: src/app/main/ui/workspace/sidebar/branches.cljs
-msgid "workspace.branches.merge.summary-in"
-msgid_plural "workspace.branches.merge.summary-in"
-msgstr[0] "1 change goes into main."
-msgstr[1] "%s changes go into main."
-
-#: src/app/main/ui/workspace/sidebar/branches.cljs
-msgid "workspace.branches.merge.summary-out"
-msgid_plural "workspace.branches.merge.summary-out"
-msgstr[0] "1 change is left out."
-msgstr[1] "%s changes are left out."
-
-#: src/app/main/ui/workspace/sidebar/branches.cljs
 msgid "workspace.branches.merge.left-out-lost"
 msgid_plural "workspace.branches.merge.left-out-lost"
 msgstr[0] "The change you left out is lost when the branch is deleted."
@@ -12211,7 +12283,6 @@ msgstr "Show changes"
 msgid "workspace.review.toolbar.task"
 msgstr "Create a task"
 
-
 #: src/app/main/ui/workspace/review/tasks.cljs
 msgid "workspace.tasks.actions.assign"
 msgstr "Assign to"
@@ -12615,9 +12686,6 @@ msgstr "Leave out of update"
 msgid "workspace.compare.bar.all-decided"
 msgstr "All conflicts decided"
 
-msgid "workspace.compare.bar.apply-update"
-msgstr "Apply and update"
-
 msgid "workspace.compare.bar.back"
 msgstr "Back to compare"
 
@@ -12674,12 +12742,6 @@ msgstr "Mark as viewed"
 msgid "workspace.compare.navigator.next-pending"
 msgstr "Next pending"
 
-msgid "workspace.compare.popover.applies-merge"
-msgstr "Nothing changes until you apply and merge."
-
-msgid "workspace.compare.popover.applies-update"
-msgstr "Nothing changes until you apply and update."
-
 msgid "workspace.compare.popover.attr"
 msgstr "Both sides changed it. Pick the one to keep."
 
@@ -12724,6 +12786,10 @@ msgstr "Preview - %s after the update"
 
 msgid "workspace.compare.navigator.peek"
 msgstr "%s - hold M to see main"
+
+#: src/app/main/ui/workspace/compare/overlays.cljs
+msgid "workspace.compare.popover.applies-branch"
+msgstr "Nothing changes until you apply your choices to the branch."
 
 msgid "workspace.compare.popover.hover"
 msgstr "Hovering an option previews it on the canvas."

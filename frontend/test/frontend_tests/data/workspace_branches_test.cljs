@@ -14,6 +14,7 @@
    [app.main.data.workspace.branch-reviews :as dwbr]
    [app.main.data.workspace.branches :as dwb]
    [app.main.repo :as rp]
+   [app.util.dom :as dom]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.async :as async]
@@ -49,27 +50,22 @@
   (if (= mode :update) :update-file-branch-from-source :merge-file-branch))
 
 (defn- open-conflicts!
-  "Ask for a `mode` (`:merge` or `:update`) of `branch` and let the conflict
-  answer seed the store, as the compare mode then fetches the diff in the
+  "Ask for an update of `branch` from main and let the conflict answer
+  seed the store, as the compare mode then fetches the diff in the
   direction it resolves (`app.main.data.workspace.compare/start-resolve`)."
-  [store mode branch]
-  (ptk/emit! store (if (= mode :update)
-                     (dwb/update-branch-from-main branch)
-                     (dwb/merge-branch branch)))
-  (ptk/emit! store (dwb/fetch-branch-diff (:id branch)
-                                          (if (= mode :update) :source->branch :branch->source))))
+  [store branch]
+  (ptk/emit! store (dwb/update-branch-from-main branch))
+  (ptk/emit! store (dwb/fetch-branch-diff (:id branch) :source->branch)))
 
 (defn- apply-resolutions!
   "Resolve every conflict to main and apply, as the compare mode does."
-  [store mode branch]
+  [store branch]
   (ptk/emit! store (dwb/set-conflict-resolutions
                     (into {}
                           (map (fn [conflict] [(:id conflict) :source]))
                           (get-in @store [:workspace-branch-conflicts :conflicts]))))
   (let [resolutions (get-in @store [:workspace-branch-diff :resolutions])]
-    (ptk/emit! store (if (= mode :update)
-                       (dwb/update-branch-from-main branch {:resolutions resolutions})
-                       (dwb/merge-branch branch {:resolutions resolutions})))))
+    (ptk/emit! store (dwb/update-branch-from-main branch {:resolutions resolutions}))))
 
 (defn- last-params
   "Params of the last merge or update call recorded in `calls`."
@@ -86,20 +82,17 @@
       (mock/with-mocks
         {rp/cmd! (cmd-stub calls conflict-id)}
         (fn [done']
-          (doseq [mode [:merge :update]]
-            (t/testing (name mode)
-              (let [branch {:id (uuid/next)}
-                    store  (make-store)]
-                (reset! calls [])
-                (open-conflicts! store mode branch)
-                (t/is (= :loading (get-in @store [:workspace-branch-diff :status]))
-                      "the diff fetch has not answered")
-                (apply-resolutions! store mode branch)
-                (let [params (last-params calls mode)]
-                  (t/is (= {conflict-id :source} (:resolutions params)))
-                  (t/is (= conflict-revn (:expected-source-revn params))
-                        "the resolutions carry the revn of the conflict answer"))
-                (rx/dispose! store))))
+          (let [branch {:id (uuid/next)}
+                store  (make-store)]
+            (open-conflicts! store branch)
+            (t/is (= :loading (get-in @store [:workspace-branch-diff :status]))
+                  "the diff fetch has not answered")
+            (apply-resolutions! store branch)
+            (let [params (last-params calls :update)]
+              (t/is (= {conflict-id :source} (:resolutions params)))
+              (t/is (= conflict-revn (:expected-source-revn params))
+                    "the resolutions carry the revn of the conflict answer"))
+            (rx/dispose! store))
           (done'))
         done))))
 
@@ -110,18 +103,15 @@
       (mock/with-mocks
         {rp/cmd! (cmd-stub calls conflict-id)}
         (fn [done']
-          (doseq [mode [:merge :update]]
-            (t/testing (name mode)
-              (let [branch {:id (uuid/next)}
-                    store  (make-store)]
-                (reset! calls [])
-                (open-conflicts! store mode branch)
-                ;; the diff fetch answers, computed at a newer main
-                (ptk/emit! store (dwb/update-branch-diff {:status :loaded
-                                                          :diff {:meta {:source-revn 9}}}))
-                (apply-resolutions! store mode branch)
-                (t/is (= 9 (:expected-source-revn (last-params calls mode))))
-                (rx/dispose! store))))
+          (let [branch {:id (uuid/next)}
+                store  (make-store)]
+            (open-conflicts! store branch)
+            ;; the diff fetch answers, computed at a newer main
+            (ptk/emit! store (dwb/update-branch-diff {:status :loaded
+                                                      :diff {:meta {:source-revn 9}}}))
+            (apply-resolutions! store branch)
+            (t/is (= 9 (:expected-source-revn (last-params calls :update))))
+            (rx/dispose! store))
           (done'))
         done))))
 
@@ -132,25 +122,41 @@
       (mock/with-mocks
         {rp/cmd! (cmd-stub calls conflict-id)}
         (fn [done']
-          (doseq [mode [:merge :update]]
-            (t/testing (name mode)
-              (let [branch {:id (uuid/next)}
-                    store  (make-store)]
-                (reset! calls [])
-                (open-conflicts! store mode branch)
-                (t/is (not (contains? (last-params calls mode) :expected-source-revn))
-                      "the first request has neither resolutions nor a diff")
-                ;; ask again while the diff is loading, with the conflict
-                ;; answer's revn already stored
-                (ptk/emit! store (if (= mode :update)
-                                   (dwb/update-branch-from-main branch)
-                                   (dwb/merge-branch branch)))
-                (let [params (last-params calls mode)]
-                  (t/is (= 2 (count (filter #(= (branch-cmd mode) (first %)) @calls))))
-                  (t/is (not (contains? params :resolutions)))
-                  (t/is (not (contains? params :expected-source-revn))
-                        "the stored revn only travels with resolutions"))
-                (rx/dispose! store))))
+          (let [branch {:id (uuid/next)}
+                store  (make-store)]
+            (open-conflicts! store branch)
+            (t/is (not (contains? (last-params calls :update) :expected-source-revn))
+                  "the first request has neither resolutions nor a diff")
+            ;; ask again while the diff is loading, with the conflict
+            ;; answer's revn already stored
+            (ptk/emit! store (dwb/update-branch-from-main branch))
+            (let [params (last-params calls :update)]
+              (t/is (= 2 (count (filter #(= (branch-cmd :update) (first %)) @calls))))
+              (t/is (not (contains? params :resolutions)))
+              (t/is (not (contains? params :expected-source-revn))
+                    "the stored revn only travels with resolutions"))
+            (rx/dispose! store))
+          (done'))
+        done))))
+
+(t/deftest a-merge-that-meets-conflicts-sends-them-to-the-branch
+  (t/async done
+    (let [calls       (atom [])
+          conflict-id (uuid/next)]
+      (mock/with-mocks
+        {rp/cmd! (cmd-stub calls conflict-id)}
+        (fn [done']
+          (let [branch {:id (uuid/next) :branch-file-id (uuid/next)}
+                store  (make-store)]
+            (ptk/emit! store (dwb/merge-branch branch))
+            (let [attempt (:workspace-branch-conflicts @store)]
+              (t/is (= (:id branch) (:branch-id attempt)))
+              (t/is (= branch (:branch attempt)))
+              (t/is (empty? (:conflicts attempt))
+                    "the merge's set is not kept: the branch resolves its own")
+              (t/is (not (contains? attempt :mode))))
+            (t/is (= :warning (get-in @store [:notification :level])))
+            (rx/dispose! store))
           (done'))
         done))))
 
@@ -240,7 +246,7 @@
           (done'))
         done))))
 
-(t/deftest the-comment-travels-with-the-merge-and-its-conflicts
+(t/deftest the-comment-travels-with-the-merge
   (t/async done
     (let [calls       (atom [])
           conflict-id (uuid/next)]
@@ -252,9 +258,6 @@
             (ptk/emit! store (dwb/merge-branch branch {:comment "  Ships the header  "}))
             (t/is (= "Ships the header" (:comment (last-params calls :merge)))
                   "the comment is trimmed")
-            (t/testing "the conflict answer keeps the comment for the retry"
-              (t/is (= "  Ships the header  "
-                       (get-in @store [:workspace-branch-conflicts :comment]))))
             (t/testing "a blank comment sends no `:comment` at all"
               (ptk/emit! store (dwb/merge-branch branch {:comment "   "}))
               (t/is (not (contains? (last-params calls :merge) :comment))))
@@ -620,3 +623,119 @@
                                     "the failure lands"))
              (t/is (nil? (get-in @store [:workspace-branch-merges :data])))
              (rx/dispose! store)))))
+
+;;; --- Apply a branch to main and keep it open
+
+(def ^:private applied-branch-id (uuid/next))
+(def ^:private applied-branch-file-id (uuid/next))
+(def ^:private applied-main-id (uuid/next))
+
+(def ^:private applied-branch
+  {:id applied-branch-id
+   :branch-file-id applied-branch-file-id
+   :name "feature-login"})
+
+(defn- on-the-applied-branch
+  "The open file is the branch at `revn`."
+  [revn]
+  {:current-file-id applied-branch-file-id
+   :files {applied-branch-file-id {:id applied-branch-file-id :revn revn}}
+   :workspace-branch-context {:file-id applied-branch-file-id
+                              :loaded? true
+                              :info {:id applied-branch-id :behind 0 :ahead 1}}})
+
+(defn- reload-stub
+  "Fake `dom/reload-current-window` that counts the reloads into
+  `reloads`. Multi-arity like the original, which callers invoke through
+  its arity directly."
+  [reloads]
+  (fn
+    ([] (swap! reloads inc))
+    ([_] (swap! reloads inc))))
+
+(defn- apply-stub
+  "Fake `rp/cmd!` for an apply answered with `answer`. Every call is
+  recorded into `calls`."
+  [calls answer]
+  (mock/stub (fn [cmd params]
+               (swap! calls conj [cmd params])
+               (case cmd
+                 :apply-file-branch    answer
+                 :get-file-branch-info (rx/of {:id applied-branch-id :ahead 0 :behind 0})
+                 (rx/empty)))))
+
+(t/deftest ^:async the-apply-sends-the-selection-the-comment-and-the-diff-revn
+  (let [calls    (atom [])
+        excluded #{"color//aaaaaaaa/1"}]
+    (await (mock/with-mocks*
+             {rp/cmd! (apply-stub calls (rx/empty))}
+             (let [store (make-store-with
+                          {:workspace-branch-diff {:branch-id applied-branch-id
+                                                   :diff {:meta {:source-revn 5}}}})]
+               (ptk/emit! store (dwb/apply-branch-to-main applied-branch
+                                                          {:excluded excluded
+                                                           :comment "  First drop  "}))
+               (await (async/wait-for #(seq @calls) "the apply is asked"))
+               (t/is (= [[:apply-file-branch {:branch-id applied-branch-id
+                                              :excluded excluded
+                                              :comment "First drop"
+                                              :expected-source-revn 5}]]
+                        @calls))
+               (rx/dispose! store))))))
+
+(t/deftest ^:async an-apply-that-left-the-branch-as-it-was-keeps-the-user-on-it
+  (let [calls   (atom [])
+        reloads (atom 0)]
+    (await (mock/with-mocks*
+             {rp/cmd! (apply-stub calls (rx/of {:status :applied
+                                                :source-file-id applied-main-id
+                                                :branch-revn 3}))
+              dom/reload-current-window (reload-stub reloads)}
+             (let [store (make-store-with (on-the-applied-branch 3))]
+               (ptk/emit! store (dwb/apply-branch-to-main applied-branch))
+               (await (async/wait-for #(some (comp #{:get-file-branch-info} first) @calls)
+                                      "the branch context is asked again"))
+               (await (async/wait-for #(= 0 (get-in @store [:workspace-branch-context :info :ahead]))
+                                      "the fresh counts land"))
+               (t/is (= 0 @reloads) "the branch did not move, so it is not reloaded")
+               (rx/dispose! store))))))
+
+(t/deftest ^:async an-apply-that-moved-the-branch-reloads-it
+  (let [calls   (atom [])
+        reloads (atom 0)]
+    (await (mock/with-mocks*
+             {rp/cmd! (apply-stub calls (rx/of {:status :applied
+                                                :source-file-id applied-main-id
+                                                :branch-revn 4}))
+              dom/reload-current-window (reload-stub reloads)}
+             (let [store (make-store-with (on-the-applied-branch 3))]
+               (ptk/emit! store (dwb/apply-branch-to-main applied-branch))
+               (await (async/wait-for #(pos? @reloads) "the branch reloads"))
+               (t/is (= 1 @reloads))
+               (rx/dispose! store))))))
+
+(t/deftest ^:async an-apply-with-main-open-reloads-main
+  (let [calls   (atom [])
+        reloads (atom 0)]
+    (await (mock/with-mocks*
+             {rp/cmd! (apply-stub calls (rx/of {:status :applied
+                                                :source-file-id applied-main-id
+                                                :branch-revn 3}))
+              dom/reload-current-window (reload-stub reloads)}
+             (let [store (make-store-with {:current-file-id applied-main-id
+                                           :files {applied-main-id {:id applied-main-id :revn 9}}})]
+               (ptk/emit! store (dwb/apply-branch-to-main applied-branch))
+               (await (async/wait-for #(pos? @reloads) "main reloads"))
+               (t/is (= 1 @reloads))
+               (rx/dispose! store))))))
+
+(t/deftest ^:async an-apply-of-a-branch-behind-its-source-says-so
+  (let [calls (atom [])]
+    (await (mock/with-mocks*
+             {rp/cmd! (apply-stub calls (rx/throw (ex-info "behind" {:type :validation
+                                                                     :code :branch-behind-source})))}
+             (let [store (make-store-with (on-the-applied-branch 3))]
+               (ptk/emit! store (dwb/apply-branch-to-main applied-branch))
+               (await (async/wait-for #(some? (:notification @store)) "a notification shows"))
+               (t/is (= :warning (get-in @store [:notification :level])))
+               (rx/dispose! store))))))

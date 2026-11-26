@@ -6792,6 +6792,72 @@ msgstr "Transformar texto"
 msgid "workspace.assets.ungroup"
 msgstr "Desagrupar"
 
+#: src/app/main/data/workspace/branches.cljs
+msgid "workspace.branches.apply.behind"
+msgstr ""
+"Main tiene cambios que faltan en esta rama. Actualiza la rama desde main y "
+"luego aplica sus cambios."
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.apply.behind-hint"
+msgstr "Actualiza esta rama desde main antes de aplicar sus cambios."
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.apply.comment-label"
+msgstr "Comentario de la aplicación"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.apply.conflicts-hint"
+msgstr "Resuelve antes los conflictos en la rama."
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.apply.confirm-accept"
+msgstr "Aplicar a main"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.apply.confirm-message"
+msgstr ""
+"¿Aplicar los cambios de %s a %s? La rama sigue abierta para que puedas "
+"seguir trabajando en ella."
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.apply.confirm-title"
+msgstr "Aplicar a main"
+
+#: src/app/main/data/workspace/branches.cljs
+msgid "workspace.branches.apply.error"
+msgstr "No se pudo aplicar la rama"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.apply.left-out-kept"
+msgid_plural "workspace.branches.apply.left-out-kept"
+msgstr[0] "El cambio que dejaste fuera se queda en esta rama."
+msgstr[1] "Los %s cambios que dejaste fuera se quedan en esta rama."
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.apply.mode-apply"
+msgstr "Aplicar y mantener la rama"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.apply.mode-apply-hint"
+msgstr "Main recibe los cambios y sigues trabajando en esta rama."
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.apply.mode-label"
+msgstr "Qué pasa con la rama"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.apply.mode-merge"
+msgstr "Fusionar y eliminar la rama"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.apply.mode-merge-hint"
+msgstr "Main recibe los cambios. La rama y su archivo se eliminan."
+
+#: src/app/main/data/workspace/branches.cljs
+msgid "workspace.branches.apply.success"
+msgstr "Cambios aplicados a main. La rama sigue abierta."
+
 msgid "workspace.branches.archive.message"
 msgstr ""
 "¿Archivar la rama \"%s\"? Pasará a ser de solo lectura y saldrá de la lista "
@@ -7045,9 +7111,9 @@ msgstr "no"
 msgid "workspace.branches.compare.value-true"
 msgstr "sí"
 
-#: src/app/main/ui/workspace/sidebar/branches.cljs:1534
-msgid "workspace.branches.conflicts.apply"
-msgstr "Aplicar y fusionar"
+#: src/app/main/ui/workspace/compare/common.cljs
+msgid "workspace.branches.conflicts.apply-to-branch"
+msgstr "Aplicar a la rama"
 
 #: src/app/main/ui/workspace/sidebar/branches.cljs:1444
 msgid "workspace.branches.conflicts.empty"
@@ -7072,6 +7138,12 @@ msgstr "editado en main y en la rama desde la base"
 #: src/app/main/ui/workspace/sidebar/branches.cljs:1134, src/app/main/ui/workspace/sidebar/branches.cljs:1626
 msgid "workspace.branches.conflicts.resolve"
 msgstr "Resolver conflictos"
+
+#: src/app/main/data/workspace/branches.cljs, src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.conflicts.resolve-first"
+msgstr ""
+"Esta rama tiene conflictos con main. Resuelve los conflictos en la rama "
+"antes de fusionar o aplicar sus cambios."
 
 #: src/app/main/ui/workspace/sidebar/branches.cljs:593, src/app/main/ui/workspace/sidebar/branches.cljs:824, src/app/main/ui/workspace/sidebar/branches.cljs:1933
 msgid "workspace.branches.counts.ahead"
@@ -7469,10 +7541,17 @@ msgstr ""
 msgid "workspace.branches.merge.confirm-title"
 msgstr "Fusionar en main"
 
-#: src/app/main/ui/workspace/sidebar/branches.cljs:378
-msgid "workspace.branches.merge.delete-info"
-msgstr ""
-"Tras la fusión, esta rama y su archivo se eliminan para liberar espacio."
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.merge.count-in"
+msgid_plural "workspace.branches.merge.count-in"
+msgstr[0] "cambio va a main"
+msgstr[1] "cambios van a main"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.merge.count-out"
+msgid_plural "workspace.branches.merge.count-out"
+msgstr[0] "cambio se queda fuera"
+msgstr[1] "cambios se quedan fuera"
 
 #: src/app/main/data/workspace/branches.cljs:451, src/app/main/data/workspace/branches.cljs:459
 msgid "workspace.branches.merge.error"
@@ -7508,6 +7587,10 @@ msgstr ""
 
 msgid "workspace.branches.restore.title"
 msgstr "Restaurar rama"
+
+#: src/app/main/ui/workspace/sidebar/reviews.cljs
+msgid "workspace.branches.reviews.applied"
+msgstr "Aplicada"
 
 msgid "workspace.branches.reviews.design.empty"
 msgstr "Todavía no hay revisiones de rama"
@@ -8102,18 +8185,6 @@ msgstr "%s de main:"
 #: src/app/main/ui/workspace/sidebar/branch_compare/conflicts.cljs
 msgid "workspace.branches.resolve.drops.branch-short"
 msgstr "%s de la rama:"
-
-#: src/app/main/ui/workspace/sidebar/branches.cljs
-msgid "workspace.branches.merge.summary-in"
-msgid_plural "workspace.branches.merge.summary-in"
-msgstr[0] "1 cambio pasa a main."
-msgstr[1] "%s cambios pasan a main."
-
-#: src/app/main/ui/workspace/sidebar/branches.cljs
-msgid "workspace.branches.merge.summary-out"
-msgid_plural "workspace.branches.merge.summary-out"
-msgstr[0] "1 cambio se queda fuera."
-msgstr[1] "%s cambios se quedan fuera."
 
 #: src/app/main/ui/workspace/sidebar/branches.cljs
 msgid "workspace.branches.merge.left-out-lost"
@@ -12363,7 +12434,6 @@ msgstr "Ver los cambios"
 msgid "workspace.review.toolbar.task"
 msgstr "Crear una tarea"
 
-
 #: src/app/main/ui/workspace/review/tasks.cljs
 msgid "workspace.tasks.actions.assign"
 msgstr "Asignar a"
@@ -12767,9 +12837,6 @@ msgstr "Dejar fuera de la actualización"
 msgid "workspace.compare.bar.all-decided"
 msgstr "Todos los conflictos decididos"
 
-msgid "workspace.compare.bar.apply-update"
-msgstr "Aplicar y actualizar"
-
 msgid "workspace.compare.bar.back"
 msgstr "Volver a comparar"
 
@@ -12826,12 +12893,6 @@ msgstr "Marcar como visto"
 msgid "workspace.compare.navigator.next-pending"
 msgstr "Siguiente pendiente"
 
-msgid "workspace.compare.popover.applies-merge"
-msgstr "Nada cambia hasta que apliques y fusiones."
-
-msgid "workspace.compare.popover.applies-update"
-msgstr "Nada cambia hasta que apliques y actualices."
-
 msgid "workspace.compare.popover.attr"
 msgstr "Main y la rama lo cambiaron. Elige cuál conservar."
 
@@ -12876,6 +12937,10 @@ msgstr "Vista previa - %s tras la actualización"
 
 msgid "workspace.compare.navigator.peek"
 msgstr "%s - mantén M para ver main"
+
+#: src/app/main/ui/workspace/compare/overlays.cljs
+msgid "workspace.compare.popover.applies-branch"
+msgstr "Nada cambia hasta que apliques tus elecciones a la rama."
 
 msgid "workspace.compare.popover.hover"
 msgstr "Al pasar por una opción se previsualiza en el lienzo."

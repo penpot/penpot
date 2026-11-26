@@ -12,9 +12,11 @@
    [app.config :as cf]
    [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
+   [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
    [app.main.data.persistence :as dwp]
+   [app.main.data.workspace.branch-reviews :as dwbr]
    [app.main.repo :as rp]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
@@ -223,6 +225,10 @@
 
       :invalid-branch-name
       (ntf/warn (tr "workspace.branches.limits.refuse-name"))
+
+      ;; an apply needs the branch up to date with main
+      :branch-behind-source
+      (ntf/warn (tr "workspace.branches.apply.behind"))
 
       ;; the same refusal as the `:unsupported` merge status, raised while
       ;; squashing an update, so it reads the same to a user
@@ -676,37 +682,46 @@
                  (rx/catch (fn [_] (rx/of (set-branch-context file-id nil)))))))))))
 
 (defn open-conflict-resolutions
-  "Seed the store with the conflict set a merge or update just returned.
-  The compare mode reacts to this event and takes the user to resolve
-  them (`app.main.data.workspace.compare/watch-events`).
+  "Seed the store with the conflicts of `branch` with main, to resolve on
+  the branch. The compare mode reacts to this event and takes the user to
+  resolve them in the direction of an update from main
+  (`app.main.data.workspace.compare/watch-events`): the choices are
+  applied to the branch, never merged straight into main, and the branch
+  then merges or applies clean.
 
-  Those conflicts are authoritative while they are resolved: they are the
-  very ones the command's own `resolved?` matches against, while the diff
-  the compare mode fetches on its own is computed in another id space and
-  may list a different set, or none at all.
+  `conflicts` is the set an update from main just returned, when there is
+  one. Those conflicts are authoritative while they are resolved: they
+  are the very ones the command's own `resolved?` matches against, while
+  the diff the compare mode fetches on its own may list a different set.
+  Without them the conflicts of that diff are the ones resolved.
 
   `source-revn` is the source's revn when the command computed those
   conflicts. It is stored with them because the diff fetch can still be in
   flight when the user applies; see `conflict-source-revn`. `excluded` is
-  the per-change selection the attempt was made with and `comment` what
-  the user said about the merge: applying the resolutions sends both
-  again."
-  [{:keys [branch mode conflicts source-revn excluded comment]}]
+  the per-change selection the attempt was made with: applying the
+  resolutions sends it again."
+  [{:keys [branch conflicts source-revn excluded]}]
   (ptk/reify ::open-conflict-resolutions
     ptk/UpdateEvent
     (update [_ state]
       (assoc state :workspace-branch-conflicts
              {:branch-id (:id branch)
               :branch branch
-              :mode mode
               :conflicts (vec conflicts)
               :source-revn source-revn
-              :excluded excluded
-              :comment comment}))))
+              :excluded excluded}))))
+
+(defn resolve-on-branch
+  "Take the user to resolve the conflicts `branch` has with main, on the
+  branch itself: the branch file opens first when another file is open.
+  A merge or an apply that meets conflicts sends the user here, since
+  neither resolves conflicts itself."
+  [branch]
+  (open-conflict-resolutions {:branch branch}))
 
 (defn close-conflict-resolutions
-  "Forget the conflict set of the last merge or update attempt: the user
-  left it unresolved."
+  "Forget the conflict set of the last attempt: the user left it
+  unresolved."
   []
   (ptk/reify ::close-conflict-resolutions
     ptk/UpdateEvent
@@ -719,11 +734,10 @@
 
   Resolving fetches the diff in its own direction, and that fetch
   replaces the loaded diff with a loading state until it answers. The user
-  can resolve every conflict and apply inside that window, so merge and
-  update fall back to this revn: resolutions never leave without the token
-  that lets the server refuse them when the source has moved
-  (`:file-modified`). The source's revn is the same in both directions, so
-  the mode does not matter."
+  can resolve every conflict and apply inside that window, so the update
+  falls back to this revn: resolutions never leave without the token that
+  lets the server refuse them when the source has moved
+  (`:file-modified`)."
   [state branch-id]
   (let [conflicts-st (:workspace-branch-conflicts state)]
     (when (= branch-id (:branch-id conflicts-st))
@@ -778,7 +792,6 @@
                     ;; fetched to compare is computed in another id space, which
                     ;; can disagree with them
                     :conflicts   (rx/of (open-conflict-resolutions {:branch branch
-                                                                    :mode :update
                                                                     :conflicts conflicts
                                                                     :source-revn (:source-revn answer)
                                                                     :excluded excluded}))
@@ -829,8 +842,6 @@
   file, and open clients reload main via the `:file-merged` msgbus event.
 
   Options:
-   - `:resolutions` — optional `{entity-id (:source|:branch)}` map used to
-     resolve conflicts before integrating.
    - `:comment` — what the user says about the merge, kept with its
      record and shown in the reviews dialog.
    - `:notify-assignees` — tell the assignees of the open tasks of the
@@ -839,36 +850,34 @@
      `app.common.files.branch-merge/change-key`) naming the changes the
      user deselected, which the target keeps its own value for.
 
+  A merge never resolves conflicts: when the server finds some, the user
+  is taken to resolve them on the branch (`resolve-on-branch`), and merges
+  or applies once they are gone.
+
   When the current diff in state belongs to this branch, its source revn
-  is sent as `expected-source-revn` so the server refuses to apply
-  resolutions computed against a stale diff (`:file-modified`); in that
-  case the diff is re-fetched and the user is asked to review it again.
-  Resolutions sent before that diff has loaded carry the revn of the
-  conflict answer instead (`conflict-source-revn`). Unresolved conflicts
-  are handed over to be resolved (`open-conflict-resolutions`)."
+  is sent as `expected-source-revn` so the server refuses a merge
+  computed against a stale diff (`:file-modified`); in that case the diff
+  is re-fetched and the user is asked to review it again."
   ([branch] (merge-branch branch nil))
-  ([branch {:keys [resolutions comment excluded notify-assignees]}]
+  ([branch {:keys [comment excluded notify-assignees]}]
    (assert (uuid? (:id branch)) "expected a branch row with a valid `:id`")
    (ptk/reify ::merge-branch
      ptk/WatchEvent
      (watch [_ state _]
        (let [branch-id   (:id branch)
              diff-st     (:workspace-branch-diff state)
-             source-revn (or (when (= branch-id (:branch-id diff-st))
-                               (get-in diff-st [:diff :meta :source-revn]))
-                             (when (seq resolutions)
-                               (conflict-source-revn state branch-id)))]
+             source-revn (when (= branch-id (:branch-id diff-st))
+                           (get-in diff-st [:diff :meta :source-revn]))]
          (rx/concat
           (rx/of (ev/event {::ev/name "merge-branch"}))
           (->> (rp/cmd! :merge-file-branch
                         (cond-> {:branch-id branch-id}
-                          (seq resolutions)  (assoc :resolutions resolutions)
                           (seq excluded)     (assoc :excluded excluded)
                           notify-assignees   (assoc :notify-assignees true)
                           (not (str/blank? comment)) (assoc :comment (str/trim comment))
                           (some? source-revn) (assoc :expected-source-revn source-revn)))
                (rx/mapcat
-                (fn [{:keys [status source-file-id conflicts] :as answer}]
+                (fn [{:keys [status source-file-id]}]
                   (case status
                     ;; the merged result lives in main: take the user there
                     ;; to see it (navigate if elsewhere, hard-reload if
@@ -877,20 +886,107 @@
                     ;; happened server-side.
                     :merged      (rx/of (ntf/success (tr "workspace.branches.merge.success"))
                                         (show-merge-result source-file-id))
-                    :conflicts   (rx/of (open-conflict-resolutions {:branch branch
-                                                                    :mode :merge
-                                                                    :conflicts conflicts
-                                                                    :source-revn (:source-revn answer)
-                                                                    :excluded excluded
-                                                                    :comment comment}))
+                    ;; the conflicts are resolved on the branch, which then
+                    ;; merges clean
+                    :conflicts   (rx/of (ntf/warn (tr "workspace.branches.conflicts.resolve-first"))
+                                        (resolve-on-branch branch))
                     :unsupported (rx/of (ntf/warn (tr "workspace.branches.merge.unsupported")))
                     (rx/of (ntf/error (tr "workspace.branches.merge.error"))))))
                (rx/catch
                 (fn [cause]
                   (if (= :file-modified (:code (ex-data cause)))
                     ;; main moved under our feet: reload the diff so the
-                    ;; user resolves against the current state
+                    ;; user reviews the current state
                     (rx/of (ntf/warn (tr "workspace.branches.merge.main-moved"))
                            (fetch-branch-diff branch-id))
                     (rx/of (refusal-notification cause (tr "workspace.branches.merge.error")))))))))))))
 
+(defn branch-applied
+  "The marker of a branch applied to main that stays open. The compare
+  mode leaves on it (`app.main.data.workspace.compare/watch-events`): the
+  changes it showed are in main now."
+  [branch-id]
+  (ptk/data-event ::branch-applied {:branch-id branch-id}))
+
+(defn- show-apply-result
+  "After applying a branch to main, show the file the user is on as it
+  now stands. Main got the changes, so it reloads when it is the open
+  file. The branch reloads only when the apply had to change it
+  (`branch-revn` moved past the revn it holds); otherwise it stays as it
+  is, and only what describes it is refreshed: its context, the compare
+  mode and a review the apply completed."
+  [{:keys [source-file-id branch-file-id branch-id branch-revn]}]
+  (ptk/reify ::show-apply-result
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [file-id (:current-file-id state)
+            revn    (:revn (dsh/lookup-file state file-id))]
+        (cond
+          (= file-id source-file-id)
+          (rx/of (reload-file-window))
+
+          (and (= file-id branch-file-id)
+               (some? branch-revn)
+               (not= branch-revn revn))
+          (rx/of (reload-file-window))
+
+          :else
+          (rx/concat
+           (rx/of (branch-applied branch-id)
+                  (fetch-branch-context))
+           (if (get-in state [:workspace-pr-preview :pr-id])
+             (rx/of (dwbr/exit-branch-review-preview))
+             (rx/empty))))))))
+
+(defn apply-branch-to-main
+  "Apply `branch` (a branch row/context map with at least `:id`) to main
+  and keep the branch open: main gets its changes, and the branch sits on
+  top of the new main with only what was left out as its own work.
+
+  The branch must be up to date with main (the server refuses with
+  `:branch-behind-source` otherwise), so there are no conflicts to resolve
+  and no resolutions to send.
+
+  Options:
+   - `:comment` — what the user says about the apply, kept with its
+     record and shown in the reviews dialog.
+   - `:excluded` — the per-change selection (change keys,
+     `app.common.files.branch-merge/change-key`) naming the changes the
+     user deselected, which stay on the branch.
+
+  When the current diff in state belongs to this branch, its source revn
+  is sent as `expected-source-revn`, as a merge does; a refusal for a
+  stale diff re-fetches it."
+  ([branch] (apply-branch-to-main branch nil))
+  ([branch {:keys [comment excluded]}]
+   (assert (uuid? (:id branch)) "expected a branch row with a valid `:id`")
+   (ptk/reify ::apply-branch-to-main
+     ptk/WatchEvent
+     (watch [_ state _]
+       (let [branch-id   (:id branch)
+             diff-st     (:workspace-branch-diff state)
+             source-revn (when (= branch-id (:branch-id diff-st))
+                           (get-in diff-st [:diff :meta :source-revn]))]
+         (rx/concat
+          (rx/of (ev/event {::ev/name "apply-branch-to-main"}))
+          (->> (rp/cmd! :apply-file-branch
+                        (cond-> {:branch-id branch-id}
+                          (seq excluded)             (assoc :excluded excluded)
+                          (not (str/blank? comment)) (assoc :comment (str/trim comment))
+                          (some? source-revn)        (assoc :expected-source-revn source-revn)))
+               (rx/mapcat
+                (fn [{:keys [status source-file-id branch-revn]}]
+                  (case status
+                    :applied     (rx/of (ntf/success (tr "workspace.branches.apply.success"))
+                                        (show-apply-result {:source-file-id source-file-id
+                                                            :branch-file-id (:branch-file-id branch)
+                                                            :branch-id branch-id
+                                                            :branch-revn branch-revn}))
+                    :unsupported (rx/of (ntf/warn (tr "workspace.branches.merge.unsupported")))
+                    (rx/of (ntf/error (tr "workspace.branches.apply.error"))))))
+               (rx/catch
+                (fn [cause]
+                  (if (= :file-modified (:code (ex-data cause)))
+                    (rx/of (ntf/warn (tr "workspace.branches.merge.main-moved"))
+                           (fetch-branch-diff branch-id))
+                    (rx/of (refusal-notification cause (tr "workspace.branches.apply.error")))))))))))))

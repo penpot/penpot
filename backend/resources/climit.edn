@@ -162,6 +162,15 @@
  :update-file-branch-from-source/by-profile
  {:permits 1 :queue 2 :timeout 60000}
 
+ ;; An apply is a merge that keeps the branch: the same three documents
+ ;; and the same writes into main, plus a base snapshot and a squash diff
+ ;; for the branch, so it takes the merge's count. Provisional.
+ :apply-file-branch/global
+ {:permits 1 :queue 2 :timeout 60000}
+
+ :apply-file-branch/by-profile
+ {:permits 1 :queue 2 :timeout 60000}
+
  ;; Detach realizes one document plus its libraries and writes the
  ;; payload, which is cheaper than a merge and dearer than the anchor,
  ;; so it admits two where the merge admits one and the anchor admits

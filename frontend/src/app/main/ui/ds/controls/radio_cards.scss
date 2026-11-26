@@ -1,0 +1,89 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS SUBSIDIARY SL
+
+@use "ds/_borders.scss" as *;
+
+.radio-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+  inline-size: 100%;
+}
+
+.card {
+  --card-bg-color: transparent;
+  --card-border-color: var(--color-background-quaternary);
+  --card-fg-color: var(--color-foreground-primary);
+  --card-description-color: var(--color-foreground-secondary);
+
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-m);
+  padding: var(--sp-m);
+  border: $b-1 solid var(--card-border-color);
+  border-radius: $br-8;
+  background-color: var(--card-bg-color);
+  color: var(--card-fg-color);
+  cursor: pointer;
+
+  &:hover {
+    --card-bg-color: var(--color-background-tertiary);
+  }
+
+  &.is-checked {
+    --card-bg-color: var(--color-background-tertiary);
+    --card-border-color: var(--color-accent-primary);
+  }
+
+  // the native radio keeps the focus; the card shows it
+  &:has(.input:focus-visible) {
+    outline: $b-1 solid var(--color-accent-primary);
+    outline-offset: $b-1;
+  }
+
+  &.is-disabled {
+    --card-bg-color: transparent;
+    --card-fg-color: var(--color-foreground-secondary);
+
+    cursor: default;
+  }
+}
+
+// out of sight but still in the tab order and the accessibility tree,
+// so the keyboard and assistive technology use the native radio. It
+// covers the whole card, above its icon and text, so a click anywhere
+// on the card lands on the radio itself
+.input {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  margin: 0;
+  border-radius: inherit;
+  opacity: 0;
+  cursor: inherit;
+}
+
+.icon {
+  flex-shrink: 0;
+  color: var(--card-fg-color);
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xxs);
+  min-inline-size: 0;
+}
+
+.label {
+  color: var(--card-fg-color);
+}
+
+.description {
+  color: var(--card-description-color);
+}
