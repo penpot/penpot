@@ -393,11 +393,14 @@ fn add_text_with_sheds(
             continue;
         }
         let start = *builder_start.get_or_insert_with(|| {
-            builder
-                .paragraph_builder()
-                .get_text()
-                .encode_utf16()
-                .count()
+            let paragraph_builder = builder.paragraph_builder();
+            let start = paragraph_builder.get_text().encode_utf16().count();
+            // `get_text` finalizes the builder, which drops the style block
+            // the caller pushed for this span while it holds no text yet: the
+            // span text would join the block before it, such as a warichu
+            // anchor's near-zero size. Open it again; popped at the end.
+            paragraph_builder.push_style(text_style);
+            start
         });
         builder.add_extra_spacing(start + at, letter_spacing - tracking);
         let mut style = text_style.clone();
@@ -415,6 +418,9 @@ fn add_text_with_sheds(
         &text[piece_start..],
         span.font_size,
     );
+    if builder_start.is_some() {
+        builder.paragraph_builder().pop();
+    }
 }
 
 /// The horizontal passes of one paragraph that layout, painting, position

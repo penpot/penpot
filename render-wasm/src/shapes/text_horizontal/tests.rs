@@ -3063,3 +3063,60 @@ fn mainland_text_in_a_traditional_face_sheds_as_in_hong_kong() {
         "the centred 。 gives up a quarter of its 16px em to 」"
     );
 }
+
+#[test]
+fn push_in_squeeze_keeps_the_character_after_a_warichu_note() {
+    // The squeeze sheds aki inside the span after the note; that span must
+    // keep its own style, not the note's near-zero style anchor.
+    init_state();
+    // Its notdef glyph is 1em wide, so the kanji have their real advances.
+    let family = crate::shapes::FontFamily::new(Uuid::nil(), 700, crate::shapes::FontStyle::Normal);
+    let span = |text: &str| {
+        let mut span = make_span(text, 0.0);
+        span.font_size = 32.0;
+        span.font_family = family;
+        span
+    };
+    let mut note = span("二〇二六年に移転した新しい建物");
+    note.warichu = true;
+    let mut content = super::super::text::TextContent::new(
+        crate::math::Rect::from_xywh(0.0, 0.0, 400.0, 200.0),
+        crate::shapes::GrowType::AutoHeight,
+    );
+    content.set_line_adjustment(LineAdjustment::PushInFirst);
+    content.add_paragraph(make_paragraph(
+        vec![span("東京の本社（"), note, span("あ）で会議を行う。")],
+        0.0,
+    ));
+    let mut shape = crate::shapes::Shape::new(Uuid::nil());
+    shape.set_selrect(0.0, 0.0, 400.0, 200.0);
+    let mut resources =
+        crate::render::RenderResources::try_new_headless().expect("headless resources");
+    resources
+        .fonts
+        .add(
+            family,
+            crate::shapes::text_vertical::test_support::VPAL_TEST_FONT,
+            false,
+            false,
+        )
+        .expect("test font");
+    let _guard = crate::globals::TestRenderResourcesGuard::install(&mut resources);
+
+    let adjustments = content.horizontal_line_adjustments().expect("adjusted");
+    let squeezed = adjustments[0].as_ref().expect("first paragraph");
+    assert!(
+        !squeezed.sheds[2].is_empty(),
+        "the line squeezes after the note"
+    );
+    let data = super::super::text::calculate_position_data(&shape, &content, false);
+
+    let after_note: Vec<_> = data
+        .iter()
+        .filter(|entry| entry.span == 2 && entry.start_pos == 0)
+        .collect();
+    assert!(
+        after_note.iter().any(|entry| entry.width > 16.0),
+        "あ after the note keeps its width: {after_note:?}"
+    );
+}
