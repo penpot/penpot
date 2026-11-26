@@ -20,7 +20,7 @@
    [rumext.v2 :as mf]))
 
 (mf/defc editable-select
-  [{:keys [value type options class on-change placeholder on-blur input-class aria-label] :as params}]
+  [{:keys [value type options class on-change placeholder on-blur input-class aria-label is-nillable] :as params}]
   (let [state* (mf/use-state {:id (uuid/next)
                               :is-open? false
                               :current-value value
@@ -164,6 +164,9 @@
            :ref on-node-load}
      (if (= type "number")
        [:> deprecated-input/numeric-input* {:value (or (some-> current-value value->label) "")
+                                            :min min-val
+                                            :max max-val
+                                            :is-nillable is-nillable
                                             :class input-class
                                             :on-change set-value
                                             :on-focus handle-focus
