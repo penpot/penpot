@@ -295,7 +295,6 @@
   [{:keys [height collapsed on-toggle-collapsed scroll-store]}]
   (let [file           (mf/deref ref:file-with-pages)
         file-id        (get file :id)
-        project-id     (get file :project-id)
         content-ref    (mf/use-ref nil)
 
         on-scroll      (mf/use-fn
@@ -304,10 +303,11 @@
                           (sc/save-scroll! scroll-store [:sitemap file-id] event)))
 
         on-create      (mf/use-fn
-                        (mf/deps file-id project-id)
+                        (mf/deps file-id collapsed on-toggle-collapsed)
                         (fn [event]
-                          (st/emit! (dw/create-page {:file-id file-id
-                                                     :project-id project-id}))
+                          (when ^boolean collapsed
+                            (on-toggle-collapsed))
+                          (st/emit! (dw/create-page-and-focus {:file-id file-id}))
                           (-> event dom/get-current-target dom/blur!)))
 
         read-only?     (mf/use-ctx ctx/workspace-read-only?)
