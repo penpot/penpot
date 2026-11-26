@@ -89,6 +89,8 @@ PENPOT_EMAIL_DOMAIN_WHITELIST: path/to/whitelist.txt
 PENPOT_EMAIL_DOMAIN_BLACKLIST: path/to/blacklist.txt
 ```
 
+Blank lines in these files are ignored. A whitelist file with no domains does not restrict registration unless domains are also set in `PENPOT_REGISTRATION_DOMAIN_WHITELIST`.
+
 __Since version 2.1__
 
 Email whitelisting should be explicitly
@@ -466,6 +468,8 @@ If you are not using SMTP configuration and want to log the emails in the consol
 ```bash
 PENPOT_FLAGS: [...] enable-log-emails
 ```
+
+Email bodies can contain sensitive information, such as verification and password reset links. Use this flag only where access to the logs is restricted.
 
 ## Valkey
 

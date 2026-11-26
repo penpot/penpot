@@ -25,7 +25,10 @@
                      (reduce (fn [result line]
                                (if (str/starts-with? line "#")
                                  result
-                                 (conj result (-> line str/trim str/lower))))
+                                 (let [domain (str/trim line)]
+                                   (if (empty? domain)
+                                     result
+                                     (conj result (str/lower domain))))))
                              #{}
                              (line-seq reader)))]
         (l/inf :hint "initializing email blacklist" :domains (count result))

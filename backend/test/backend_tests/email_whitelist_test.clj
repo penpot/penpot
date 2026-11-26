@@ -39,8 +39,7 @@
                                      :registration-domain-whitelist #{}
                                      :email-domain-whitelist path)]
         (let [cfg {::email/whitelist (init-whitelist)}]
-          ;; Known bug: blank lines are kept as empty domains (issue #13363).
-          (t/is (= #{"allowed.com" "other.com" ""} (::email/whitelist cfg)))
+          (t/is (= #{"allowed.com" "other.com"} (::email/whitelist cfg)))
           (t/is (true? (whitelist/enabled? cfg)))
           (t/is (true? (whitelist/contains? cfg "user@ALLOWED.com")))
           (t/is (false? (whitelist/contains? cfg "user@ignored"))))))))
@@ -76,3 +75,53 @@
     (let [cfg {::email/whitelist (init-whitelist)}]
       (t/is (nil? (::email/whitelist cfg)))
       (t/is (false? (whitelist/enabled? cfg))))))
+
+(t/deftest test-file-ignores-blank-lines
+  (let [file (java.io.File/createTempFile "whitelist" ".txt")]
+    (try
+      (spit file "\n  \t\n# comment\n EXAMPLE.COM \nexample.com\n Other.NET\t\n")
+      (with-redefs [cf/flags #{:email-whitelist}
+                    cf/get   (fn [k]
+                               (case k
+                                 :email-domain-whitelist (.getPath file)
+                                 :registration-domain-whitelist #{}))]
+        (let [domains (ig/init-key ::email/whitelist nil)
+              cfg     {::email/whitelist domains}]
+          (t/is (= #{"example.com" "other.net"} domains))
+          (t/is (true? (whitelist/enabled? cfg)))
+          (t/is (true? (whitelist/contains? cfg "user@EXAMPLE.COM")))
+          (t/is (false? (whitelist/contains? cfg "user@sub.example.com")))))
+      (finally
+        (.delete file)))))
+
+(t/deftest test-blank-only-file-disables-whitelist
+  (let [file (java.io.File/createTempFile "whitelist" ".txt")]
+    (try
+      (spit file "\n \t\n# comment\n")
+      (with-redefs [cf/flags #{:email-whitelist}
+                    cf/get   (fn [k]
+                               (case k
+                                 :email-domain-whitelist (.getPath file)
+                                 :registration-domain-whitelist #{}))]
+        (let [domains (ig/init-key ::email/whitelist nil)]
+          (t/is (nil? domains))
+          (t/is (false? (whitelist/enabled? {::email/whitelist domains})))))
+      (finally
+        (.delete file)))))
+
+(t/deftest test-blank-only-file-preserves-configured-whitelist
+  (let [file (java.io.File/createTempFile "whitelist" ".txt")]
+    (try
+      (spit file "\n \t\n# comment\n")
+      (with-redefs [cf/flags #{:email-whitelist}
+                    cf/get   (fn [k]
+                               (case k
+                                 :email-domain-whitelist (.getPath file)
+                                 :registration-domain-whitelist #{"configured.com"}))]
+        (let [domains (ig/init-key ::email/whitelist nil)
+              cfg     {::email/whitelist domains}]
+          (t/is (= #{"configured.com"} domains))
+          (t/is (true? (whitelist/enabled? cfg)))
+          (t/is (true? (whitelist/contains? cfg "user@configured.com")))))
+      (finally
+        (.delete file)))))
