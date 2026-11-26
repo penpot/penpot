@@ -11,6 +11,7 @@
    [app.common.data.macros :as dm]
    [app.common.math :as mth]
    [app.common.path-names :as cpn]
+   [app.common.types.color :as ctc]
    [app.main.constants :refer [max-input-length]]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
@@ -84,9 +85,7 @@
          (mf/deps color file-id)
          (fn [attrs]
            (let [name  (cpn/merge-path-item (:path color) (:name color))
-                 color (-> attrs
-                           (assoc :id (:id color))
-                           (assoc :name name))]
+                 color (ctc/color->library-color attrs (:id color) name)]
              (st/emit! (dwl/update-color color file-id)))))
 
         delete-color

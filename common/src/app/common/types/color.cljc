@@ -368,6 +368,16 @@
                  :path (get lcolor :path)
                  :name (get lcolor :name))))
 
+(defn color->library-color
+  "Converts a plain color data structure to a library color with the
+  given id and name. A library color cannot reference another one, so
+  the reference to the color it was picked from is dropped."
+  [color id name]
+  (-> color
+      (dissoc :ref-id :ref-file)
+      (assoc :id id)
+      (assoc :name name)))
+
 (defn stroke->color
   [stroke]
   (d/without-nils
