@@ -173,6 +173,7 @@
    [frontend-tests.ui.mcp-authorize-test]
    [frontend-tests.ui.measurements-test]
    [frontend-tests.ui.measures-menu-props-test]
+   [frontend-tests.ui.options-path-editing-test]
    [frontend-tests.ui.organization-team-switch-test]
    [frontend-tests.ui.routes-test]
    [frontend-tests.ui.settings-password-schema-test]
@@ -389,6 +390,7 @@
    'frontend-tests.ui.layout-container-multiple-test
    'frontend-tests.ui.measurements-test
    'frontend-tests.ui.measures-menu-props-test
+   'frontend-tests.ui.options-path-editing-test
    'frontend-tests.ui.organization-team-switch-test
    'frontend-tests.ui.mcp-authorize-test
    'frontend-tests.ui.routes-test
