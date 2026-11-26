@@ -34,8 +34,11 @@ pub fn render_overlay(
         // end of the selection); drawing it would make it toggle on top of the
         // highlight while the selection is held.
         render_selection(canvas, editor_state, text_content, shape);
-    } else if editor_state.has_focus && editor_state.cursor_visible {
-        render_cursor(canvas, zoom, options.dpr, editor_state, text_content, shape);
+    } else if editor_state.has_focus {
+        render_composition(canvas, zoom, options.dpr, editor_state, text_content, shape);
+        if editor_state.cursor_visible {
+            render_cursor(canvas, zoom, options.dpr, editor_state, text_content, shape);
+        }
     }
 
     canvas.restore();
@@ -81,25 +84,99 @@ fn render_cursor(
         );
     }
 
-    let mut paint = Paint::default();
-    paint.set_anti_alias(false);
-    if editor_state.is_overtype_mode {
+    let paint = if editor_state.is_overtype_mode {
+        let mut paint = Paint::default();
+        paint.set_anti_alias(false);
         paint.set_blend_mode(BlendMode::Exclusion);
         paint.set_color(Color::WHITE);
-    } else if editor_state.theme.cursor_invert {
-        // Default (no solid fill to match): a white caret with a Difference
-        // blend renders the inverted color of whatever is behind it.
-        paint.set_blend_mode(BlendMode::Difference);
-        paint.set_color(editor_state.theme.cursor_color);
+        paint
     } else {
-        paint.set_blend_mode(BlendMode::SrcOver);
-        paint.set_color(editor_state.theme.cursor_color);
-    }
+        caret_paint(editor_state)
+    };
 
     let shape_matrix = shape.get_matrix();
     canvas.save();
     canvas.concat(&shape_matrix);
     canvas.draw_rect(cursor_rect, &paint);
+    canvas.restore();
+}
+
+/// Paint of the caret, which also marks the composed text.
+fn caret_paint(editor_state: &TextEditorState) -> Paint {
+    let mut paint = Paint::default();
+    paint.set_anti_alias(false);
+    if editor_state.theme.cursor_invert {
+        // Default (no solid fill to match): a white caret with a Difference
+        // blend renders the inverted color of whatever is behind it.
+        paint.set_blend_mode(BlendMode::Difference);
+    } else {
+        paint.set_blend_mode(BlendMode::SrcOver);
+    }
+    paint.set_color(editor_state.theme.cursor_color);
+    paint
+}
+
+/// Underlines of the text an IME is composing, shape-local: along the bottom
+/// of each line box, or along the left (under) side of each column box in
+/// vertical text. `thickness` is in shape units.
+fn composition_underlines(
+    editor_state: &TextEditorState,
+    text_content: &TextContent,
+    shape: &Shape,
+    thickness: f32,
+) -> Vec<Rect> {
+    let composition = &editor_state.composition;
+    let Some(start) = composition.start.filter(|_| composition.is_composing) else {
+        return Vec::new();
+    };
+    let chars = composition.current.chars().count();
+    if chars == 0 {
+        return Vec::new();
+    }
+    let vertical = text_content.is_vertical();
+    range_rects(
+        (start.paragraph, start.offset),
+        (start.paragraph, start.offset + chars),
+        text_content,
+        shape,
+    )
+    .into_iter()
+    .map(|rect| {
+        if vertical {
+            Rect::from_xywh(rect.left(), rect.top(), thickness, rect.height())
+        } else {
+            Rect::from_xywh(
+                rect.left(),
+                rect.bottom() - thickness,
+                rect.width(),
+                thickness,
+            )
+        }
+    })
+    .collect()
+}
+
+/// Marks the text an IME is composing, not committed yet, with an underline
+/// as thick as the caret, as native text fields do.
+fn render_composition(
+    canvas: &Canvas,
+    zoom: f32,
+    dpr: f32,
+    editor_state: &TextEditorState,
+    text_content: &TextContent,
+    shape: &Shape,
+) {
+    let thickness = editor_state.theme.cursor_width / zoom * dpr;
+    let underlines = composition_underlines(editor_state, text_content, shape, thickness);
+    if underlines.is_empty() {
+        return;
+    }
+    let paint = caret_paint(editor_state);
+    canvas.save();
+    canvas.concat(&shape.get_matrix());
+    for underline in underlines {
+        canvas.draw_rect(underline, &paint);
+    }
     canvas.restore();
 }
 
@@ -1395,5 +1472,33 @@ mod tests {
             walk(&shape, per_column + 1, vec![CursorDirection::LineEnd]),
             vec![2 * per_column]
         );
+    }
+
+    #[test]
+    fn composed_text_is_underlined_until_it_is_committed() {
+        let mut resources = japanese_resources();
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let shape = japanese_shape(&[("わたしは", false)], 400.0, 200.0, false);
+        let content = content_of(&shape);
+        let mut editor = TextEditorState::new();
+        assert!(composition_underlines(&editor, content, &shape, 1.0).is_empty());
+
+        editor.composition.start();
+        editor.composition.update("たし");
+        editor.composition.start = Some(TextPositionWithAffinity::new_downstream_affinity(0, 1));
+        let underlines = composition_underlines(&editor, content, &shape, 1.0);
+        let composed = range_rects((0, 1), (0, 3), content, &shape);
+        assert_eq!(underlines.len(), composed.len());
+        let (underline, text) = (underlines[0], composed[0]);
+        assert!(
+            (underline.left() - text.left()).abs() < 0.01
+                && (underline.width() - text.width()).abs() < 0.01
+                && (underline.bottom() - text.bottom()).abs() < 0.01
+                && (underline.height() - 1.0).abs() < 0.01,
+            "{underline:?} under {text:?}"
+        );
+
+        editor.composition.end();
+        assert!(composition_underlines(&editor, content, &shape, 1.0).is_empty());
     }
 }
