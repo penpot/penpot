@@ -40,28 +40,28 @@
   [(min (k1 selrect) (k2 selrect))
    (max (k1 selrect) (k2 selrect))])
 
-(defn- pair-axis
-  "The axis two selrects are laid out along: :column when they overlap
-  horizontally but not vertically, :row when they overlap vertically
-  but not horizontally, nil otherwise."
-  [a b]
-  (let [x-overlap? (overlaps? (axis-range a :x1 :x2) (axis-range b :x1 :x2))
-        y-overlap? (overlaps? (axis-range a :y1 :y2) (axis-range b :y1 :y2))]
-    (cond
-      (and x-overlap? (not y-overlap?)) :column
-      (and y-overlap? (not x-overlap?)) :row)))
+(defn- chain-along?
+  "Whether `selrects`, ordered along the axis given by `m1` `m2`, follow
+  one another on it without overlapping while each one overlaps the next
+  on the cross axis given by `c1` `c2`. Stops at the first pair that does
+  not."
+  [selrects m1 m2 c1 c2]
+  (->> selrects
+       (sort-by #(min (m1 %) (m2 %)))
+       (partition 2 1)
+       (every? (fn [[a b]]
+                 (and (not (overlaps? (axis-range a m1 m2) (axis-range b m1 m2)))
+                      (overlaps? (axis-range a c1 c2) (axis-range b c1 c2)))))))
 
 (defn- selrects-axis
-  "The axis every pair of `selrects` that is laid out along one agrees
-  on, or nil when no pair is or the pairs disagree."
+  "The axis all of `selrects` are laid out along: :column when they form
+  one chain from top to bottom, :row when they form one from left to
+  right, nil otherwise."
   [selrects]
-  (let [axes (into #{}
-                   (keep (fn [[a b]] (pair-axis a b)))
-                   (for [[idx a] (map-indexed vector selrects)
-                         b       (drop (inc idx) selrects)]
-                     [a b]))]
-    (when (= 1 (count axes))
-      (first axes))))
+  (when (> (count selrects) 1)
+    (cond
+      (chain-along? selrects :y1 :y2 :x1 :x2) :column
+      (chain-along? selrects :x1 :x2 :y1 :y2) :row)))
 
 (defn- direction-along
   "The direction along `axis` that follows `vector`, so the shapes keep

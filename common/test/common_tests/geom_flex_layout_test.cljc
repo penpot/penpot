@@ -211,3 +211,36 @@
   (t/testing "partial overlap"
     (t/is (= {:direction :column-reverse :row-gap 0 :column-gap 0}
              (stack-params [[0 0 100 100] [50 50 100 100]])))))
+
+(t/deftest calculate-params-aligned-pair-does-not-decide-for-a-distant-shape
+  ;; Two boxes stacked in a column and a third one far to the right: the
+  ;; column holds for one pair only, so the centres decide for all three
+  (t/is (= (row :row-reverse 490)
+           (stack-params [[0 0 10 10] [0 20 10 10] [1000 100 10 10]])))
+  (t/is (= (row :row 490)
+           (stack-params [[1000 100 10 10] [0 20 10 10] [0 0 10 10]]))))
+
+(t/deftest calculate-params-early-disagreement-follows-the-centres
+  ;; Two boxes side by side over a column of boxes: neither axis holds
+  (t/is (= (column :column-reverse 10)
+           (stack-params (into [[0 0 100 40] [120 0 100 40]]
+                               (map (fn [i] [0 (* 60 (inc i)) 100 40]))
+                               (range 5))))))
+
+(def ^:private large-count
+  "Enough boxes that checking every pair of them would be slow."
+  5000)
+
+(t/deftest calculate-params-large-column
+  (t/is (= (column :column-reverse 10)
+           (stack-params (mapv (fn [i] [0 (* 20 i) 100 10]) (range large-count))))))
+
+(t/deftest calculate-params-boxes-overlapping-on-both-axes-follow-the-centres
+  ;; They cover each other across, so they are not a column even though
+  ;; they also do down
+  (t/is (= {:direction :row-reverse :row-gap 0 :column-gap 0}
+           (stack-params [[0 0 100 100] [60 10 100 100]]))))
+
+(t/deftest calculate-params-single-shape-is-a-row
+  (t/is (= {:direction :row :row-gap 0 :column-gap 0}
+           (stack-params [[0 0 100 100]]))))
