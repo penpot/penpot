@@ -254,6 +254,11 @@ pub enum Fill {
     Image(ImageFill),
 }
 
+/// Whether `fills` is non-empty and every fill is an image.
+pub fn has_only_image_fills(fills: &[Fill]) -> bool {
+    !fills.is_empty() && fills.iter().all(|fill| matches!(fill, Fill::Image(_)))
+}
+
 impl Fill {
     pub fn opacity(&self) -> f32 {
         match self {

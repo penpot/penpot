@@ -1842,6 +1842,10 @@ impl Shape {
         !self.fills.is_empty()
     }
 
+    pub fn has_only_image_fills(&self) -> bool {
+        has_only_image_fills(&self.fills)
+    }
+
     /// Whether this fill-less leaf paints its group's fills (SVG inheritance,
     /// broken by `fill="none"`).
     pub fn inherits_fills(&self) -> bool {
@@ -2120,14 +2124,19 @@ impl Shape {
     /// (`render_direct_frame_drop_shadow`) instead of filter surfaces and
     /// descendant silhouettes.
     ///
-    /// Requires at least one fill; fill opacity/type does not matter because the fast
-    /// path shadows the frame geometry as a solid mask.
+    /// Requires at least one fill; fill opacity does not matter because the fast
+    /// path shadows the frame geometry as a solid mask. Image-only fills take the
+    /// slow path so children over transparent image areas still cast.
     ///
     /// The fast path draws fill geometry only. On the slow path, visible strokes also
     /// contribute to the shadow silhouette, so frames with outer/center strokes can
-    /// look slightly narrower here. We keep them eligible anyway for performance.
+    /// look slightly narrower here.
     pub fn uses_direct_container_drop_shadow(&self, tree: ShapesPoolRef) -> bool {
         if !self.is_filled_frame() {
+            return false;
+        }
+        // Image fills can have alpha holes; the fast path would skip child silhouettes.
+        if self.has_only_image_fills() {
             return false;
         }
         if self.blend_mode() != BlendMode::default() {
@@ -2149,8 +2158,11 @@ impl Shape {
 
     /// When true, the container's own fill shadow mask is enough and descendant
     /// silhouettes can be skipped (same geometry assumption as the direct path).
+    /// Image-only fills never cover: PNG alpha can leave holes over children.
     pub fn container_fill_covers_shadow_descendants(&self, tree: ShapesPoolRef) -> bool {
-        self.is_filled_frame() && self.descendants_contained_for_frame_shadow(tree, self.selrect())
+        self.is_filled_frame()
+            && !self.has_only_image_fills()
+            && self.descendants_contained_for_frame_shadow(tree, self.selrect())
     }
 
     fn is_filled_frame(&self) -> bool {
@@ -2708,7 +2720,7 @@ mod tests {
     }
 
     #[test]
-    fn frame_with_any_fill_uses_direct_container_drop_shadow() {
+    fn frame_with_solid_fill_uses_direct_container_drop_shadow() {
         for (fill, opacity) in [
             (Fill::Solid(SolidColor(skia::Color::WHITE)), 1.0),
             (
@@ -2720,6 +2732,17 @@ mod tests {
             let frame = pool.get(&frame_id).expect("frame");
             assert!(frame.uses_direct_container_drop_shadow(&pool));
         }
+    }
+
+    #[test]
+    fn frame_with_image_fill_rejects_direct_container_drop_shadow() {
+        let (pool, frame_id) = frame_with_fill_and_child(
+            Fill::Image(ImageFill::new(Uuid::new_v4(), 255, 64, 64, true)),
+            1.0,
+        );
+        let frame = pool.get(&frame_id).expect("frame");
+        assert!(!frame.uses_direct_container_drop_shadow(&pool));
+        assert!(!frame.container_fill_covers_shadow_descendants(&pool));
     }
 
     #[test]
