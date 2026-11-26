@@ -83,6 +83,18 @@
                    [id font])))
     (rx/throw (ex-info "Invalid font family" {:font-family (:font-family item)}))))
 
+(defn- upload-fonts
+  "Uploads the items one after another. Emits `[id font]` for each one;
+  `font` is nil when its upload failed, after showing the error notice."
+  [items]
+  (->> (rx/from items)
+       (rx/mapcat (fn [{:keys [id] :as item}]
+                    (->> (handle-font-upload item)
+                         (rx/catch (fn [cause]
+                                     (st/emit! (ntf/error (upload-error-message item)))
+                                     (js/console.error "Unexpected error on uploading font" cause)
+                                     (rx/of [id nil]))))))))
+
 (mf/defc header*
   {::mf/memo true
    ::mf/private true}
@@ -194,19 +206,14 @@
         (mf/use-fn
          (mf/deps font-vals)
          (fn [_]
-           (->> (rx/from font-vals)
-                (rx/tap #(swap! uploading* conj (:id %)))
-                (rx/mapcat (fn [{:keys [id] :as item}]
-                             (->> (handle-font-upload item)
-                                  (rx/catch (fn [cause]
-                                              (st/emit! (ntf/error (upload-error-message item)))
-                                              (js/console.error "Unexpected error on uploading font" cause)
-                                              (rx/of [id nil]))))))
-
+           (swap! uploading* into (map :id) font-vals)
+           (->> (upload-fonts font-vals)
                 (rx/subs! (fn [[previous-id font]]
-                            (swap! fonts* dissoc previous-id)
                             (swap! uploading* disj previous-id)
+                            ;; A failed font stays in the list, as with a
+                            ;; single upload, so its name can be fixed
                             (when font
+                              (swap! fonts* dissoc previous-id)
                               (st/emit! (df/add-font font))))))))
 
         on-dismis-all
