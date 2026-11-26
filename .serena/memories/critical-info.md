@@ -50,6 +50,7 @@ This is a monorepo. Principles that apply to one module do *not* generally apply
 - `scripts/clean-node-modules` — Remove stale `node_modules` from all pnpm workspaces (root, modules, member packages). Keeps the shared pnpm store at `<repo>/.pnpm-store` unless `--store`; ignores `external/` and `.opencode/`. Usage and reinstall steps: `mem:workflow/updating-pnpm`.
 - `scripts/setup-opencode` — Install the opencode CLI in-container as a global pnpm package in `$PNPM_HOME`. Not part of the devenv image; see `mem:devenv/core`.
 - `scripts/ci` — Per-module lint, tests and format checks. See `mem:scripts/ci` for flags, logs and the backend assert flag.
+- `backend/scripts/test-repl` — Warm backend test JVM for the edit-and-rerun loop; see `mem:backend/testing` for commands and constraints.
 
 # Dependency graph
 

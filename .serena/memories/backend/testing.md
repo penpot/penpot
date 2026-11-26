@@ -6,6 +6,13 @@
 - Use the workspace's existing `PENPOT_TEST_*` database and Redis URIs, not CI values copied from logs. Confirm the destination before changing it; see `mem:devenv/core`. Test databases can have newer migrations, but never drop or recreate one without explicit permission.
 - Redirect test output to a file before inspecting or filtering it. For coverage, `clojure -M:dev:test:coverage` instruments all `app.*` namespaces even on focused runs; it is slower and produces reflection warnings. Output in `target/coverage/` includes lcov, HTML and EMMA form counts; use normal tests for routine checks.
 
+## Warm test JVM
+
+- For the edit-and-rerun loop, run `backend/scripts/test-repl test [ID ...]` inside the devenv container; IDs are namespaces or namespace/var symbols. Without IDs it selects backend test namespaces. From the host, use `docker exec -u penpot -w /home/penpot/penpot/backend penpot-devenv-ws0-main scripts/test-repl test backend-tests.my-ns-test` (use the matching container for other workspaces). MCP exposes `clj_test` and `clj_eval`.
+- The script starts an nREPL JVM on port 6067 by default with `enable-backend-asserts`, reloads changed namespaces and runs `clojure.test` in fixed order. Use `./scripts/ci --test backend` for a cold Kaocha run and CI parity; use Kaocha's `--seed` to replay an order.
+- `test-repl eval '(form)'` evaluates in the same JVM; `start`, `stop` and `status` manage it. Restart after `deps.edn` changes because the classpath is fixed at startup. Never call `(restart)` or `(restart-all)` in this JVM: they start a dev backend inside it. Reloading a namespace discards manually defined vars in it.
+- Test and eval calls take a lock per port to protect the shared test database. Exit status is 0 on success, 1 on test, evaluation or timeout failure, and 2 if the JVM cannot start. `PENPOT_TEST_REPL_TIMEOUT` sets the timeout in seconds (default 1800); `PENPOT_TEST_NREPL_PORT` overrides the port.
+
 ## Test system and helpers
 
 - `backend-tests.helpers` builds the system from `main/system-config` and `main/worker-config`, excluding HTTP, srepl, cron, dispatcher, audit consumer loops and every worker runner. Live runners or consumers race tests that drive jobs or audit passes manually. Keep runner removal by key shape, not a fixed profile list.
