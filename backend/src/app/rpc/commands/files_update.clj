@@ -50,6 +50,7 @@
 (declare ^:private process-changes-and-validate)
 (declare ^:private take-snapshot?)
 (declare ^:private invalidate-caches!)
+(declare ^:private infrastructure-error?)
 
 ;; PUBLIC API; intended to be used outside of this module
 (declare update-file!)
@@ -147,6 +148,110 @@
       (contains? token-change-types type)
       (contains? file-change-types type)))
 
+;; --- METRICS
+
+(defn- record-metric
+  "Record a metric on the cfg's metrics instance. A cfg without one
+  records nothing, so callers outside the service (scripts, tests)
+  work unchanged."
+  [cfg params]
+  (when-let [metrics (::mtx/metrics cfg)]
+    (when (mtx/metrics? metrics)
+      (mtx/run! metrics params))))
+
+(defn- data-code
+  "Bounded label for the error described by the ex-data `data`: its
+  `:code`, or its `:type` when it carries no code. An error without a
+  `:type`, such as an exception without ex-data, is `unexpected-error`,
+  the code `rejection` gives it on the commit path, so one failure is
+  one series whatever the shape of the save.
+
+  Both are keywords written in this codebase, so the label set stays
+  bounded by the source."
+  [data]
+  (let [type (:type data)
+        code (or (:code data) type)]
+    (if (and (keyword? type) (keyword? code))
+      (name code)
+      "unexpected-error")))
+
+(defn- refusal-code
+  "Bounded label for the error that refused a save: `infrastructure` for
+  the failures `infrastructure-error?` matches (database, input-output,
+  interruption, a file fragment that cannot be loaded), which say
+  nothing about the save itself, and the label of `data-code` for any
+  other."
+  [cause]
+  (if (infrastructure-error? cause)
+    "infrastructure"
+    (data-code (ex-data cause))))
+
+(defn- step-stage
+  "Bounded label for the furthest step whose timing `timings` holds.
+  `apply-changes` and `validate-file` record a step's timing in a
+  `finally` form, so the timing is present whether the step completed or
+  raised: the furthest step present is the one that raised, or the last
+  one before the failing step. A step that is off records nothing, so
+  the label does not depend on which validation flags are on.
+
+  `changes` covers the change-application step, the change schema
+  checks included. A failing file version check comes before it and
+  reports `pre-changes`. A failure after validation, such as the write,
+  reports the last validation step that ran."
+  [timings]
+  (cond
+    (contains? timings :validate-schema-ms)   "schema"
+    (contains? timings :validate-affected-ms) "referential"
+    (contains? timings :process-changes-ms)   "changes"
+    :else                                     "pre-changes"))
+
+(defn- record-failed-stage
+  "Record, as `::failed-stage` of the step timings, the stage at which
+  applying and validating all the changes at once failed. The repair and
+  the bisection that follow run steps of their own (the repair times its
+  schema check as `:validate-schema-ms`), and they would otherwise move
+  `step-stage` past the step that refused the save."
+  [cfg]
+  (when-let [timings (::validation-timings cfg)]
+    (swap! timings #(assoc % ::failed-stage (step-stage %)))))
+
+(defn- refusal-stage
+  "Bounded label for the stage a refused save, or a save whose tail was
+  rejected, had reached: the stage `record-failed-stage` recorded at the
+  first failure, or else the furthest step timed (`step-stage`). The
+  retries of `apply-commits` record no timings, so a partial rejection
+  reports the stage of the attempt over the whole change set."
+  [timings]
+  (or (::failed-stage timings)
+      (step-stage timings)))
+
+(defn- record-rejection
+  "Record a save whose `rejected` commits, out of `total`, were not
+  stored.
+
+  `apply-commits` keeps the valid prefix of the commits and rejects the
+  rest without raising, so the refusal counter in the error handler of
+  `update-file` never sees such a save. It is counted once the save is
+  stored, in the same family as a whole refusal: the `outcome` label
+  tells a save that stored nothing (`refused`, which is also what a save
+  of a single rejected commit reports) from one that stored the commits
+  before the first rejected one (`partial`).
+
+  The rejected commits are counted once each, all under the code of the
+  first rejected commit, because the retries report only that error."
+  [cfg rejected total]
+  (let [code    (data-code (:error rejected))
+        stage   (refusal-stage @(::validation-timings cfg))
+        outcome (if (= (count (:commit-ids rejected)) total)
+                  "refused"
+                  "partial")]
+    (record-metric cfg {:id :update-file-refused
+                        :labels [stage code outcome]
+                        :inc 1})
+    (record-metric cfg {:id :update-file-rejected-commits
+                        :labels [code]
+                        :inc (count (:commit-ids rejected))})))
+
 ;; Not a real editor session: file-change messages with this id are
 ;; delivered to every connected session, including the saver.
 (def repair-session-id
@@ -158,11 +263,9 @@
 
 (defn- record-repair-outcome
   [cfg outcome]
-  (when-let [metrics (::mtx/metrics cfg)]
-    (when (mtx/metrics? metrics)
-      (mtx/run! metrics {:id :update-file-repair
-                         :labels [(name outcome)]
-                         :inc 1}))))
+  (record-metric cfg {:id :update-file-repair
+                      :labels [(name outcome)]
+                      :inc 1}))
 
 (defn- error-codes
   [errors]
@@ -219,7 +322,9 @@
                      (assoc :commits commits))
 
         cfg      (assoc cfg ::timestamp (ct/now)
-                        ::validation-timings (atom {}))
+                        ::validation-timings (atom {})
+                        ::incoming-revn (:revn params)
+                        ::stored-revn (:revn file))
 
         tpoint   (ct/tpoint)]
 
@@ -238,6 +343,13 @@
                 :hint "The incoming revision number is greater that stored version."
                 :context {:incoming-revn (:revn params)
                           :stored-revn (:revn file)}))
+
+    ;; The save passed the revision check with a revn behind the stored
+    ;; head: the server accepts it and folds it on top of changes its
+    ;; client had not received.
+    (when (< (::incoming-revn cfg)
+             (::stored-revn cfg))
+      (record-metric cfg {:id :update-file-lagged :inc 1}))
 
     ;; When newly computed features does not match exactly with the
     ;; features defined on team row, we update it
@@ -283,6 +395,13 @@
           ;; (`handle-response`), so timings collected before a hard
           ;; validation failure would be lost without this inline log.
           (let [timings @(::validation-timings cfg)]
+            ;; Nothing of a refused save is stored, whatever the number
+            ;; of commits it carried: the outcome is `refused`.
+            (record-metric cfg {:id :update-file-refused
+                                :labels [(refusal-stage timings)
+                                         (refusal-code cause)
+                                         "refused"]
+                                :inc 1})
             (l/dbg :hint "update-file"
                    :file-id (str (:id file))
                    :project-id (str (:project-id file))
@@ -426,6 +545,13 @@
           (send-repair-notifications cfg params file repair))
         (send-notifications! cfg params file))
 
+      ;; A save whose tail was rejected never raises, so the error
+      ;; handler of `update-file` does not see it. It is counted here,
+      ;; once stored: a step above that raises refuses the whole save,
+      ;; and that handler counts it then, once.
+      (when (some? rejected)
+        (record-rejection cfg rejected (count commits)))
+
       (with-meta (cond-> {:revn revn :lagged (get-lagged-changes conn params)}
                    (some? rejected)
                    (assoc :rejected rejected))
@@ -556,30 +682,77 @@
 
     (apply update-fn cfg file args)))
 
+(defn- deepest-explain-error
+  "The entry of a malli explain whose `:path` is the longest, or nil."
+  [cause]
+  (->> (-> cause ex-data ::sm/explain :errors)
+       (filter #(seq (:path %)))
+       (sort-by #(count (:path %)))
+       last))
+
+(defn- schema-failure-reason
+  "Bounded label for a soft schema failure: the deepest keyword of the
+  `:path` of the deepest explain entry, which is the schema key that
+  failed (`type` for a shape whose type is invalid, `objects` for a nil
+  object map). Indices and other non-keyword path elements are skipped
+  so the label set stays small."
+  [error]
+  (let [key (->> (:path error) (filter keyword?) last)]
+    (if (keyword? key) (name key) "unknown")))
+
+(defn- referential-failure-code
+  "The code of the first error `validate-file-affected!` reported, kept
+  within its closed `error-codes` set, or `:unknown`."
+  [cause]
+  (let [code (-> cause ex-data :details first :code)]
+    (if (contains? val/error-codes code) code :unknown)))
+
 (defn- soft-validate-file-schema!
-  [file changes]
+  [cfg file changes]
   (try
     (val/validate-file-schema-affected! file changes)
     (catch Throwable cause
-      (l/error :hint "file schema validation error" :cause cause))))
+      (let [error (deepest-explain-error cause)]
+        (record-metric cfg {:id :update-file-soft-failure
+                            :labels ["schema" (schema-failure-reason error)]
+                            :inc 1})
+        (l/error :hint "file schema validation error"
+                 :file-id (str (:id file))
+                 :incoming-revn (::incoming-revn cfg)
+                 :stored-revn (::stored-revn cfg)
+                 :code (refusal-code cause)
+                 ;; Schema path and instance path of the deepest explain
+                 ;; entry: keywords, ids, and indices only.
+                 :path (some-> error :path vec)
+                 :in (some-> error :in vec)
+                 :cause cause)))))
 
 (defn- record-validation-timing
   [cfg step-key step-label elapsed-ms]
-  (when-let [metrics (::mtx/metrics cfg)]
-    (when (mtx/metrics? metrics)
-      (mtx/run! metrics {:id :update-file-validation-timing
-                         :labels [step-label]
-                         :val (double elapsed-ms)})))
+  (record-metric cfg {:id :update-file-validation-timing
+                      :labels [step-label]
+                      :val (double elapsed-ms)})
   (when-let [timings (::validation-timings cfg)]
     (swap! timings assoc step-key elapsed-ms)))
 
 (defn- soft-validate-file!
-  [file libs changes]
+  [cfg file libs changes]
   (try
     (val/validate-file-affected! file libs changes)
     (catch Throwable cause
-      (l/error :hint "file validation error"
-               :cause cause))))
+      (let [code  (referential-failure-code cause)
+            error (-> cause ex-data :details first)]
+        (record-metric cfg {:id :update-file-soft-failure
+                            :labels ["affected" (name code)]
+                            :inc 1})
+        (l/error :hint "file validation error"
+                 :file-id (str (:id file))
+                 :incoming-revn (::incoming-revn cfg)
+                 :stored-revn (::stored-revn cfg)
+                 :code (name code)
+                 :page-id (some-> error :page-id str)
+                 :shape-id (some-> error :shape-id str)
+                 :cause cause)))))
 
 (defmacro ^:private with-validation-timing
   "Runs `body` and records its time as the validation step `step-key`
@@ -598,11 +771,11 @@
   (binding [pmap/*tracked* nil]
     (when (contains? cf/flags :soft-file-validation)
       (with-validation-timing cfg :soft-validate-affected-ms "soft-validate-affected"
-        (soft-validate-file! file libs changes)))
+        (soft-validate-file! cfg file libs changes)))
 
     (when (contains? cf/flags :soft-file-schema-validation)
       (with-validation-timing cfg :soft-validate-schema-ms "soft-validate-schema"
-        (soft-validate-file-schema! file changes)))
+        (soft-validate-file-schema! cfg file changes)))
 
     (when (and (contains? cf/flags :file-validation)
                (not skip-validate))
@@ -947,6 +1120,7 @@
             (-> (apply-changes cfg file libs changes skip-validate)
                 (assoc ::changes changes))
             (catch Throwable cause
+              (record-failed-stage cfg)
               (repair-or-reject cfg original file libs changes commits
                                 skip-validate tracked cause))))]
 
