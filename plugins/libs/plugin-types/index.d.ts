@@ -1460,7 +1460,7 @@ export interface Context {
    * ```js
    * const board = penpot.createBoard();
    * let text;
-   * text = penpot.createText();
+   * text = penpot.createText('Hello');
    * // just change the values like this
    * text.growType = 'auto-height';
    * text.fontFamily = 'Work Sans';
@@ -4829,6 +4829,11 @@ export interface Text extends ShapeBase {
    * the default) or `vertical-rl` (vertical columns, right to left). It
    * applies to the whole shape.
    *
+   * In vertical text `growType` works on columns: `auto-width` keeps each
+   * paragraph in one column that never wraps and grows the shape to fit;
+   * `auto-height` keeps the height (the column length) and grows the width
+   * as columns are added; `fixed` wraps columns at the height.
+   *
    * Only Japanese, Chinese and Korean text render it (see `lang`); other text
    * keeps the value and stays horizontal.
    */
@@ -4888,11 +4893,12 @@ export interface Text extends ShapeBase {
   warichu: 'none' | 'warichu' | 'mixed';
 
   /**
-   * Emphasis position in horizontal and vertical text; auto uses the language
-   * default.
+   * Emphasis position: `over`/`under` in horizontal text, `right`/`left` in
+   * vertical text. `auto` (the default) puts Chinese marks under horizontal
+   * text and right of vertical text.
    *
    * Only Chinese text renders it (see `lang`); other languages keep the value
-   * without effect.
+   * without effect, and Japanese marks always sit over or right.
    */
   textEmphasisPosition:
     | 'auto'
@@ -4942,9 +4948,10 @@ export interface Text extends ShapeBase {
   /**
    * Ruby (furigana) annotation text for the base text, as one group reading.
    * Set a string to annotate the whole text, or `null` or `''` to remove it.
-   * Adding a reading to a text with more than one text span is rejected: use
-   * a `TextRange` inside one span. Returns 'mixed' if text spans carry
-   * different ruby values.
+   * Adding a reading to a text with more than one text span (a run of
+   * characters with the same style; styling part of a text splits it) is
+   * rejected: use a `TextRange` inside one span. Returns 'mixed' if text
+   * spans carry different ruby values.
    *
    * Only Japanese and Chinese text render it (see `lang`); other languages
    * keep the value without effect.
@@ -4986,7 +4993,9 @@ export interface Text extends ShapeBase {
 
   /**
    * Set one Han base and one typed Mandarin syllable as upright right-side
-   * Zhuyin.
+   * Zhuyin; `false` by default. The base is one Han character and its `ruby`
+   * one Zhuyin syllable: one to three symbols (ㄅ to ㄩ) and an optional tone
+   * mark (ˉ ˊ ˇ ˋ ˙), e.g. `'ㄇㄟˇ'`. Other readings stay plain ruby.
    *
    * Only Chinese text renders it (see `lang`); other languages keep the value
    * without effect.
@@ -5011,6 +5020,9 @@ export interface Text extends ShapeBase {
    * stored without rules. `null` (the default) applies none; set `null` or
    * `''` to remove it. It belongs to paragraphs: setting it applies
    * to every paragraph. Returns 'mixed' if paragraphs use different values.
+   *
+   * The CJK members (`writingMode`, `ruby`, `textEmphasis`...) render only
+   * in the languages each one names, so set `lang` on every CJK text.
    */
   lang: string | 'mixed' | null;
 
@@ -5151,11 +5163,12 @@ export interface TextRange {
   warichu: 'none' | 'warichu' | 'mixed' | null;
 
   /**
-   * Emphasis position in horizontal and vertical text; auto uses the language
-   * default.
+   * Emphasis position: `over`/`under` in horizontal text, `right`/`left` in
+   * vertical text. `auto` (the default) puts Chinese marks under horizontal
+   * text and right of vertical text.
    *
    * Only Chinese text renders it (see `lang`); other languages keep the value
-   * without effect.
+   * without effect, and Japanese marks always sit over or right.
    */
   textEmphasisPosition:
     | 'auto'
@@ -5205,7 +5218,8 @@ export interface TextRange {
   /**
    * Ruby (furigana) annotation for the text range, as one group reading.
    * Set `null` to remove it. A reading must cover characters of a single
-   * text span; a range that covers several spans is rejected. Returns
+   * text span (a run of characters with the same style; styling part of a
+   * text splits it); a range that covers several spans is rejected. Returns
    * 'mixed' if the range contains different ruby values.
    *
    * Only Japanese and Chinese text render it (see `lang`); other languages
@@ -5249,7 +5263,9 @@ export interface TextRange {
 
   /**
    * Set one Han base and one typed Mandarin syllable as upright right-side
-   * Zhuyin.
+   * Zhuyin; `false` by default. The base is one Han character and its `ruby`
+   * one Zhuyin syllable: one to three symbols (ㄅ to ㄩ) and an optional tone
+   * mark (ˉ ˊ ˇ ˋ ˙), e.g. `'ㄇㄟˇ'`. Other readings stay plain ruby.
    *
    * Only Chinese text renders it (see `lang`); other languages keep the value
    * without effect.
@@ -5275,6 +5291,9 @@ export interface TextRange {
    * `''` to remove it. It belongs to paragraphs: setting it applies
    * to every paragraph the range touches. Returns 'mixed' if those
    * paragraphs use different values.
+   *
+   * The CJK members (`ruby`, `textEmphasis`...) render only in the languages
+   * each one names, so set `lang` on every CJK text.
    */
   lang: string | 'mixed' | null;
 

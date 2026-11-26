@@ -196,6 +196,62 @@ Boards can have layout systems that automatically control the positioning and sp
          - `applyToRange(range: TextRange, variant?: FontVariant)`
   * Further writable properties: `align`, `verticalAlign`, `lineHeight`, `letterSpacing`, `textTransform`, `textDecoration` (see API info)
   * Method `applyTypography(typography: LibraryTypography)`
+  * Assigning `characters` restyles the whole text like its first character (`\n` starts a new paragraph),
+    so set the characters first and style ranges afterwards.
+
+## Japanese, Chinese and Korean (CJK) Text
+
+Texts support East Asian typesetting: vertical writing (縦書き / tategaki), readings above or beside characters
+(ruby: furigana, Pinyin, Zhuyin), emphasis dots (圏点 / bouten), upright digits in vertical text (縦中横 / tate-chu-yoko),
+two-line inline notes (割注 / warichu), and the line-breaking and punctuation-spacing rules of each language.
+  * Start with `lang`, a BCP 47 tag such as `"ja"`, `"zh-Hans"`, `"zh-Hant-TW"`, `"zh-Hant-HK"` or `"ko"`.
+    Each CJK property is drawn only in some languages; in any other language (including no `lang`, the default) its value
+    is kept without effect and no error is raised. So ALWAYS set `lang` on a CJK text. Order does not matter.
+    `lang` belongs to paragraphs: on a `Text` it sets all of them; on a `TextRange`, every paragraph the range touches.
+  * Which languages draw what:
+      - Japanese, Chinese and Korean: `writingMode` (`"vertical-rl"` for vertical columns, right to left), `textOrientation`
+      - Japanese and Chinese: `ruby` and `rubySize`, `rubySide`, `rubyAlign`, `rubyOverhang`, `rubyHidden`; `textEmphasis`; `annotationClearance`
+      - Japanese only: `textCombineUpright` (upright digits/letters in vertical text), `warichu`, `fontFeatures` (`palt`/`vpal`
+        proportional punctuation spacing), `lineAdjustment`
+      - Chinese only: `rubyZhuyin`, `textEmphasisPosition`, `textUnderlinePosition`
+    Latin text cannot be set vertically; to turn it sideways, rotate the shape.
+  * Whole-shape properties, set on the `Text` (no `TextRange` version): `writingMode`, `textOrientation`, `lineAdjustment`.
+  * Character properties, set on the `Text` for all of it or on `text.getRange(start, end)` for part of it:
+    `ruby*`, `textEmphasis`, `textEmphasisPosition`, `textUnderlinePosition`, `textCombineUpright`, `warichu`, `fontFeatures`,
+    `annotationClearance`. Range indices are positions in `characters` (the `\n` between paragraphs counts as one), also in
+    vertical text, so `text.characters.indexOf(word)` finds a word's range.
+  * `textCombineUpright = "digits"` sets each run of up to 4 digits upright as one block; `"all"` does so for the whole range.
+  * `fontFeatures`: `"palt"` for horizontal text, `"vpal"` for vertical text.
+  * A ruby reading or a warichu note annotates its characters as one unit. Set it on a range holding exactly those characters,
+    inside one text span (a run of characters with the same style): a range across a style change, or a whole `Text` with
+    several spans, throws. Annotate before applying other styles that would split the run; each reading becomes its own
+    span, so several readings can be added one after another.
+  * `getRange(i, i + 1).ruby` reads the reading at a character (`null` if none). To change a reading, set `ruby` again on
+    the range it covers.
+  * Readings and emphasis marks sit in the gap between lines; set `annotationClearance = "auto"` to make room for them.
+  * Zhuyin (any Chinese tag): on one Han character, set `ruby` to one Zhuyin syllable and `rubyZhuyin = true`
+    (e.g. 美 with `"ㄇㄟˇ"`). Pinyin, Jyutping and other romanizations are plain `ruby`.
+  * Chinese emphasis marks go under horizontal text by default (`textEmphasisPosition = "auto"`).
+  * `align` also accepts `"distribute"` (characters spread over every line, the last one included); it needs room along
+    the line, so use a fixed size rather than `"auto-width"`.
+  * In vertical text `growType` works on columns: `"auto-width"` keeps each paragraph in one column, growing the shape to fit;
+    `"auto-height"` keeps the height (the column length) and widens the shape as columns are added; `"fixed"` wraps columns at the height.
+  * CJK glyphs fall back to suitable fonts automatically; apply a CJK font from `penpot.fonts` only for a specific look.
+  * Reading a property back only shows it is stored. To check that it is drawn, use `export_shape`.
+  * For the values of each property, call `penpot_api_info` with type `Text` or `TextRange` and the member name.
+
+Example: a vertical Japanese text with a reading, emphasis marks and an upright year.
+```js
+const text = penpot.createText("紅葉の山、2026年の秋");
+text.lang = "ja";
+text.writingMode = "vertical-rl";
+text.growType = "auto-width";
+text.annotationClearance = "auto";
+text.getRange(0, 2).ruby = "もみじ";                 // reading over 紅葉
+text.getRange(3, 4).textEmphasis = "filled-sesame"; // emphasis mark beside 山
+text.textCombineUpright = "digits";                 // 2026 upright as one block
+await text.waitForLayoutUpdate();
+```
 
 # The `penpot` and `penpotUtils` Objects, Exploring Designs
 
