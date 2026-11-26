@@ -396,6 +396,56 @@
                    (mapv :name (:events params)))))
         (t/is (= 0 (unread-count consumer/admin-console)))))))
 
+(t/deftest consumer-admin-console-forwards-organization-role-events
+  ;; The rework of the consumers (#12701) dropped these two names that
+  ;; #13163 had added: the admin console lost every org role change and
+  ;; every team that passed to the organization owner.
+  (let [prof (th/create-profile* 14 {:is-active true})]
+    (with-redefs [cf/flags #{:admin-console}]
+      (with-mocks [admin-console-mock {:target 'app.nitrate/call :return nil}]
+        (insert-audit-row (:id prof) "update-organization-member-role")
+        (insert-audit-row (:id prof) "transfer-team-ownership")
+        (insert-audit-row (:id prof) "unrelated-event")
+        (run-admin-console)
+        (t/is (:called? @admin-console-mock))
+        (let [[_ _ params] (:call-args @admin-console-mock)]
+          (t/is (= ["update-organization-member-role"
+                    "transfer-team-ownership"]
+                   (mapv :name (:events params)))))
+        (t/is (= 0 (unread-count consumer/admin-console)))))))
+
+(t/deftest consumer-admin-console-names-the-member-of-an-org-role-change
+  ;; The org role entry names its member (#873). Nitrate sends the id; the
+  ;; name is filled here, where the profile is loaded anyway, so the role
+  ;; change never waits on a lookup. Only that event gets the name.
+  (let [actor  (th/create-profile* 15 {:is-active true :fullname "Org Owner"})
+        member (th/create-profile* 16 {:is-active true :fullname "Bea Ortiz"})
+        other  (th/create-profile* 17 {:is-active true :fullname "Ana Ruiz"})]
+    (with-redefs [cf/flags #{:admin-console}]
+      (with-mocks [admin-console-mock {:target 'app.nitrate/call :return nil}]
+        (insert-audit-row (:id actor) "update-organization-member-role"
+                          {:member-id (str (:id member))
+                           :previous-value "viewer"
+                           :new-value "editor"})
+        (insert-audit-row (:id actor) "update-organization-member-role"
+                          {:member-id (str (:id member))
+                           :member-name "Already named"})
+        ;; Its email already set, this member is loaded for the name alone.
+        (insert-audit-row (:id actor) "update-organization-member-role"
+                          {:member-id (str (:id other))
+                           :member-email "kept@example.com"})
+        (insert-audit-row (:id actor) "create-organization-invitation"
+                          {:member-id (str (:id member))})
+        (run-admin-console)
+        (let [[_ _ params]                     (:call-args @admin-console-mock)
+              [named kept with-email invite] (mapv :props (:events params))]
+          (t/is (= "Bea Ortiz" (:member-name named)))
+          (t/is (= (:email member) (:member-email named)))
+          (t/is (= "Already named" (:member-name kept)))
+          (t/is (= "Ana Ruiz" (:member-name with-email)))
+          (t/is (= "kept@example.com" (:member-email with-email)))
+          (t/is (not (contains? invite :member-name))))))))
+
 (t/deftest consumer-admin-console-advances-over-non-matching-rows
   ;; A selective consumer that finds nothing must still move: otherwise
   ;; the GC would wait for it forever and the buffer would grow.

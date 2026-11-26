@@ -8,8 +8,9 @@
   "The admin console transport of the audit log consumer.
 
   It reads the stream from its own cursor and ingests the allowlisted
-  events, enriched with the name of their team and the emails of the
-  profiles they mention (the admin console shows people, not ids). The
+  events, enriched with the name of their team, the emails of the
+  profiles they mention and, for an org role change, the member's name
+  (the admin console shows people, not ids). The
   events outside the allowlist, and the telemetry shadows, count as
   skipped for the cursor: they are passed over and never reach the
   destination.
@@ -84,9 +85,11 @@
     "sso-config-tested"
     "success-activate-organization-sso"
     "success-apply-organization-sso-changes"
+    "transfer-team-ownership"
     "unassign-organization-attribute"
     "update-organization-attribute"
     "update-organization-invitation"
+    "update-organization-member-role"
     "update-organization-permissions"
     "update-team-invitation"
     "update-team-invitation-role"
@@ -101,6 +104,20 @@
    :user-id                    :user-email
    :member-id                  :member-email
    :user-who-send-invitation   :user-who-send-invitation-email})
+
+;; Events whose :member-id is also named (:member-name from profile.fullname).
+;; Kept to the events that need it: the org role entry names its member.
+(def ^:private member-named-events
+  #{"update-organization-member-role"})
+
+(defn- collect-member-ids-needing-name
+  [events]
+  (into #{}
+        (keep (fn [{:keys [name props]}]
+                (when (and (contains? member-named-events name)
+                           (not (contains? props :member-name)))
+                  (uuid/coerce (:member-id props)))))
+        events))
 
 (defn- collect-team-ids-needing-name
   [events]
@@ -174,6 +191,18 @@
                        props
                        id->email-prop))))
 
+(defn- maybe-assoc-member-name
+  "Fill-only :member-name from the member's fullname, for the events in
+  `member-named-events`. Omitted when the profile is absent or unnamed."
+  [event profiles]
+  (let [props (:props event)]
+    (if-let [fullname (and (contains? member-named-events (:name event))
+                           (not (contains? props :member-name))
+                           (when-let [id (uuid/coerce (:member-id props))]
+                             (not-empty (:fullname (get profiles id)))))]
+      (assoc-in event [:props :member-name] fullname)
+      event)))
+
 (defn- maybe-assoc-actor-profile
   "Fill-only top-level :profile-email / :profile-name from the event
   actor (:profile-id). Omits keys when the id is missing, zero, the
@@ -202,17 +231,20 @@
      :user-who-send-invitation-email.
   3. Fill missing top-level :profile-email / :profile-name from the
      event actor (:profile-id), including soft-deleted profiles; omit
-     when there is no usable actor id or the value is empty."
+     when there is no usable actor id or the value is empty.
+  4. Fill a missing :member-name for the events in `member-named-events`."
   [{:keys [::db/conn]} events]
   (let [team-ids    (collect-team-ids-needing-name events)
-        profile-ids (into (collect-profile-ids-needing-email events)
-                          (collect-actor-ids-needing-profile events))
+        profile-ids (-> (collect-profile-ids-needing-email events)
+                        (into (collect-actor-ids-needing-profile events))
+                        (into (collect-member-ids-needing-name events)))
         team-names  (load-team-names conn team-ids)
         profiles    (load-profiles conn profile-ids)]
     (mapv (fn [event]
             (-> event
                 (maybe-assoc-team-name team-names)
                 (maybe-assoc-emails profiles)
+                (maybe-assoc-member-name profiles)
                 (maybe-assoc-actor-profile profiles)))
           events)))
 
