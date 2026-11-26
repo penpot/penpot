@@ -433,7 +433,7 @@
          (u/not-valid plugin-id :absolute "Cannot modify a page that is not currently active")
 
          :else
-         (st/emit! (dwsl/update-layout #{id} {:layout-item-absolute value}))))}
+         (st/emit! (dwsl/update-layout-child #{id} {:layout-item-absolute value}))))}
 
     :zIndex
     {:this true

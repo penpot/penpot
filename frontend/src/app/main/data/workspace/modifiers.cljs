@@ -464,10 +464,8 @@
                          (filterv #(contains? child-set %)))
                 children-ids (->> (dm/get-in objects [original-frame :shapes])
                                   (remove (set selected)))
-                h-sizing? (and (ctl/flex-layout? objects original-frame)
-                               (ctl/change-h-sizing? original-frame objects children-ids))
-                v-sizing? (and (ctl/flex-layout? objects original-frame)
-                               (ctl/change-v-sizing? original-frame objects children-ids))]
+                h-sizing? (ctl/change-h-sizing? original-frame objects children-ids)
+                v-sizing? (ctl/change-v-sizing? original-frame objects children-ids)]
             (cond-> modif-tree
               (not= original-frame target-frame-id)
               (-> (modifier-remove-from-parent objects shapes)

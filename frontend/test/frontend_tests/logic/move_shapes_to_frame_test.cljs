@@ -89,6 +89,33 @@
                              :layout-item-h-sizing :fill
                              :layout-item-v-sizing :fix)))
 
+(defn- hug-grid-file
+  "A grid board hugging its width, with a fixed child and a fill sibling."
+  []
+  (-> (cthf/sample-file :file1)
+      (ctho/add-frame :hug
+                      :x 0 :y 0 :width 64 :height 40
+                      :layout :grid
+                      :layout-grid-dir :row
+                      :layout-grid-columns [{:type :flex :value 1}
+                                            {:type :flex :value 1}]
+                      :layout-grid-rows [{:type :flex :value 1}]
+                      :layout-grid-cells {}
+                      :layout-item-h-sizing :auto
+                      :layout-item-v-sizing :fix)
+      (cths/add-sample-shape :leaving
+                             :type :rect
+                             :parent-label :hug
+                             :width 32 :height 40
+                             :layout-item-h-sizing :fix
+                             :layout-item-v-sizing :fix)
+      (cths/add-sample-shape :staying
+                             :type :rect
+                             :parent-label :hug
+                             :width 32 :height 40
+                             :layout-item-h-sizing :fill
+                             :layout-item-v-sizing :fix)))
+
 ;; Scenario: a move ends over a row board that hugs its width at the width of
 ;; its children. Proves: the arriving fill shape turns fix, and the board keeps
 ;; hugging.
@@ -118,3 +145,17 @@
     (t/is (contains? (modifiers tree arriving) [:layout-item-h-sizing :fix]))
     (t/is (not-any? (comp #{:layout-item-h-sizing :layout-item-v-sizing} first)
                     (modifiers tree hug)))))
+
+(t/deftest dragging-a-fixed-child-out-of-a-hug-grid-previews-a-fixed-parent
+  (let [file      (hug-grid-file)
+        objects   (-> (cthf/current-page file) :objects)
+        leaving   (cthi/id :leaving)
+        hug       (cthi/id :hug)
+        modifiers (fn [tree id]
+                    (->> (get-in tree [id :modifiers :structure-parent])
+                         (filter #(= :change-property (:type %)))
+                         (map (juxt :property :value))
+                         set))
+        tree      (-> (dwm/create-modif-tree [leaving] (ctm/empty))
+                      (dwm/build-change-frame-modifiers objects [leaving] uuid/zero 0 nil))]
+    (t/is (contains? (modifiers tree hug) [:layout-item-h-sizing :fix]))))

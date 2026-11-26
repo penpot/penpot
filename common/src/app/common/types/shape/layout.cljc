@@ -568,29 +568,33 @@
 
 (defn change-h-sizing?
   [frame-id objects children-ids]
-  (and (flex-layout? objects frame-id)
-       (auto-width? objects frame-id)
-       (or (and (col? objects frame-id)
-                (->> children-ids
-                     (remove (partial position-absolute? objects))
-                     (every? (partial fill-width? objects))))
-           (and (row? objects frame-id)
-                (->> children-ids
-                     (remove (partial position-absolute? objects))
-                     (some (partial fill-width? objects)))))))
+  (let [grid?        (grid-layout? objects frame-id)
+        flex?        (flex-layout? objects frame-id)
+        children-ids (remove (partial position-absolute? objects) children-ids)]
+    (and (or grid? flex?)
+         (auto-width? objects frame-id)
+         (or (and grid?
+                  (some (partial fill-width? objects) children-ids))
+             (and flex?
+                  (or (and (col? objects frame-id)
+                           (every? (partial fill-width? objects) children-ids))
+                      (and (row? objects frame-id)
+                           (some (partial fill-width? objects) children-ids))))))))
 
 (defn change-v-sizing?
   [frame-id objects children-ids]
-  (and (flex-layout? objects frame-id)
-       (auto-height? objects frame-id)
-       (or (and (col? objects frame-id)
-                (->> children-ids
-                     (remove (partial position-absolute? objects))
-                     (some (partial fill-height? objects))))
-           (and (row? objects frame-id)
-                (->> children-ids
-                     (remove (partial position-absolute? objects))
-                     (every? (partial fill-height? objects)))))))
+  (let [grid?        (grid-layout? objects frame-id)
+        flex?        (flex-layout? objects frame-id)
+        children-ids (remove (partial position-absolute? objects) children-ids)]
+    (and (or grid? flex?)
+         (auto-height? objects frame-id)
+         (or (and grid?
+                  (some (partial fill-height? objects) children-ids))
+             (and flex?
+                  (or (and (col? objects frame-id)
+                           (some (partial fill-height? objects) children-ids))
+                      (and (row? objects frame-id)
+                           (every? (partial fill-height? objects) children-ids))))))))
 
 (defn remove-layout-container-data
   [shape]

@@ -256,7 +256,7 @@
              (add-repaired (:id board) to-hug)))))
    acc
    (->> (vals objects)
-        (filter #(and (ctl/flex-layout? %)
+        (filter #(and (ctl/any-layout? %)
                       (not (ctk/in-component-copy? %))
                       (some (fn [axis] (small? % axis)) axes)))
         (sort-by #(depth objects %) >))))

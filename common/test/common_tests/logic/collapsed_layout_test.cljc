@@ -290,6 +290,42 @@
     (t/is (= :auto (:layout-item-h-sizing (shape result :inner))))
     (t/is (= 1 (count (:position-data text))))))
 
+(t/deftest lays-out-a-collapsed-grid-board-from-stored-text-layout
+  (let [data   {:x 0 :y 0 :width 14 :height 16 :fills [] :text "Input"}
+        file   (-> (thf/sample-file :file1)
+                   (row-frame :row)
+                   (tho/add-frame :grid
+                                  :parent-label :row
+                                  :width 60 :height 30
+                                  :layout :grid
+                                  :layout-grid-dir :row
+                                  :layout-grid-columns [{:type :flex :value 1}]
+                                  :layout-grid-rows [{:type :flex :value 1}]
+                                  :layout-grid-cells {}
+                                  :layout-padding-type :simple
+                                  :layout-padding {:p1 0 :p2 0 :p3 0 :p4 0}
+                                  :layout-item-h-sizing :fix
+                                  :layout-item-v-sizing :fix)
+                   (add-text :text :grid :position-data [data])
+                   (raw-update :grid
+                               (fn [shape]
+                                 (let [cell-id (thi/new-id! :grid-cell)]
+                                   (assoc shape :layout-grid-cells
+                                          {cell-id {:id cell-id
+                                                    :row 1 :column 1
+                                                    :row-span 1 :column-span 1
+                                                    :position :auto
+                                                    :align-self :auto :justify-self :auto
+                                                    :shapes [(thi/id :text)]}}))))
+                   (collapse :grid :width :fix 0.01)
+                   (collapse :text :width :fix 0.01))
+        result (repair file)
+        board  (shape result :grid)
+        text   (shape result :text)]
+    (t/is (repaired? result :grid))
+    (t/is (= [:auto 15.0] [(:layout-item-h-sizing board) (double (:width board))]))
+    (t/is (= [:fix 15.0] [(:layout-item-h-sizing text) (double (:width text))]))))
+
 (t/deftest keeps-the-text-and-the-board-when-the-stored-layout-is-collapsed
   (let [chars  (mapv (fn [i] {:x 0 :y (* i 16) :width 8 :height 16 :fills [] :text "I"}) (range 5))
         result (repair (hug-row-with-fill-board {:position-data chars}))]

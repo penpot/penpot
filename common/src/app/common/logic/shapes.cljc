@@ -658,14 +658,12 @@
           ;; A hug parent that loses the children that sized it stops hugging
           (pcb/update-shapes old-parents
                              (fn [parent]
-                               (if (ctl/flex-layout? parent)
-                                 (cond-> parent
-                                   (ctl/change-h-sizing? (:id parent) objects (:shapes parent))
-                                   (assoc :layout-item-h-sizing :fix)
+                               (cond-> parent
+                                 (ctl/change-h-sizing? (:id parent) objects (:shapes parent))
+                                 (assoc :layout-item-h-sizing :fix)
 
-                                   (ctl/change-v-sizing? (:id parent) objects (:shapes parent))
-                                   (assoc :layout-item-v-sizing :fix))
-                                 parent)))
+                                 (ctl/change-v-sizing? (:id parent) objects (:shapes parent))
+                                 (assoc :layout-item-v-sizing :fix))))
 
           ;; Change the grid cell in a grid layout
           (cond-> (ctl/grid-layout? objects parent-id)

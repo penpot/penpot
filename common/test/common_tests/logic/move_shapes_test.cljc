@@ -305,6 +305,30 @@
     (t/is (= :fix (:layout-item-h-sizing (ths/get-shape file' :hug))))
     (t/is (= :fill (:layout-item-h-sizing (ths/get-shape file' :staying))))))
 
+(t/deftest test-relocate-last-sizing-child-out-of-hug-grid-fixes-the-board
+  (let [file  (-> (thf/sample-file :file1)
+                  (tho/add-frame :hug
+                                 :x 0 :y 0 :width 64 :height 40
+                                 :layout :grid
+                                 :layout-grid-dir :row
+                                 :layout-grid-columns [{:type :flex :value 1}
+                                                       {:type :flex :value 1}]
+                                 :layout-grid-rows [{:type :flex :value 1}]
+                                 :layout-grid-cells {}
+                                 :layout-item-h-sizing :auto
+                                 :layout-item-v-sizing :fix)
+                  (ths/add-sample-shape :leaving :parent-label :hug
+                                        :width 32 :height 40
+                                        :layout-item-h-sizing :fix
+                                        :layout-item-v-sizing :fix)
+                  (ths/add-sample-shape :staying :parent-label :hug
+                                        :width 32 :height 40
+                                        :layout-item-h-sizing :fill
+                                        :layout-item-v-sizing :fix))
+        file' (relocate file uuid/zero 0 #{(thi/id :leaving)})]
+    (t/is (= :fix (:layout-item-h-sizing (ths/get-shape file' :hug))))
+    (t/is (= :fill (:layout-item-h-sizing (ths/get-shape file' :staying))))))
+
 (t/deftest test-relocate-inside-the-same-hug-board-keeps-the-sizing
   (let [file  (-> (thf/sample-file :file1)
                   (add-row-board :hug

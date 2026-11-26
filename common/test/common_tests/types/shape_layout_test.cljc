@@ -1581,6 +1581,32 @@
       (t/is (layout/change-v-sizing? (:id frame) objects
                                      [(:id child-1) (:id child-2) (:id child-3)])))))
 
+(t/deftest grid-change-sizing-tests
+  (t/testing "a hug grid stops hugging when any visible child fills an axis"
+    (let [frame   (make-grid-frame :layout-item-h-sizing :auto
+                                   :layout-item-v-sizing :auto)
+          filled  (make-shape :layout-item-h-sizing :fill
+                              :layout-item-v-sizing :fill)
+          fixed   (make-shape :layout-item-h-sizing :fix
+                              :layout-item-v-sizing :fix)
+          objects {(:id frame) frame
+                   (:id filled) filled
+                   (:id fixed) fixed}
+          children [(:id filled) (:id fixed)]]
+      (t/is (layout/change-h-sizing? (:id frame) objects children))
+      (t/is (layout/change-v-sizing? (:id frame) objects children))))
+
+  (t/testing "hidden fill children do not stop a hug grid from hugging"
+    (let [frame  (make-grid-frame :layout-item-h-sizing :auto
+                                  :layout-item-v-sizing :auto)
+          hidden (make-shape :layout-item-h-sizing :fill
+                             :layout-item-v-sizing :fill
+                             :hidden true)
+          objects {(:id frame) frame
+                   (:id hidden) hidden}]
+      (t/is (not (layout/change-h-sizing? (:id frame) objects [(:id hidden)])))
+      (t/is (not (layout/change-v-sizing? (:id frame) objects [(:id hidden)]))))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; get-cell-by-position
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

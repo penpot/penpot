@@ -58,6 +58,54 @@
                            :layout-item-h-sizing :fix
                            :layout-item-v-sizing :fix)))
 
+(defn- setup-grid-file
+  [filled-hidden? filled-sizing]
+  (-> (cthf/sample-file :file1)
+      (ctho/add-frame :frame
+                      :x 0 :y 0 :width 80 :height 40
+                      :layout :grid
+                      :layout-grid-dir :row
+                      :layout-grid-columns [{:type :flex :value 1}
+                                            {:type :flex :value 1}]
+                      :layout-grid-rows [{:type :flex :value 1}]
+                      :layout-grid-cells {}
+                      :layout-padding-type :simple
+                      :layout-padding {:p1 0 :p2 0 :p3 0 :p4 0}
+                      :layout-gap-type :multiple
+                      :layout-gap {:row-gap 0 :column-gap 0}
+                      :layout-item-h-sizing :auto
+                      :layout-item-v-sizing :fix)
+      (cths/add-sample-shape :fixed
+                             :type :rect
+                             :parent-label :frame
+                             :width 40 :height 20
+                             :layout-item-h-sizing :fix
+                             :layout-item-v-sizing :fix)
+      (cths/add-sample-shape :filled
+                             :type :rect
+                             :parent-label :frame
+                             :width 40 :height 20
+                             :hidden filled-hidden?
+                             :layout-item-h-sizing filled-sizing
+                             :layout-item-v-sizing :fix)
+      (cths/update-shape
+       :frame
+       :layout-grid-cells
+       (let [fixed-cell-id  (cthi/new-id! :fixed-cell)
+             filled-cell-id (cthi/new-id! :filled-cell)]
+         {fixed-cell-id {:id fixed-cell-id
+                         :row 1 :column 1
+                         :row-span 1 :column-span 1
+                         :position :auto
+                         :align-self :auto :justify-self :auto
+                         :shapes [(cthi/id :fixed)]}
+          filled-cell-id {:id filled-cell-id
+                          :row 1 :column 2
+                          :row-span 1 :column-span 1
+                          :position :auto
+                          :align-self :auto :justify-self :auto
+                          :shapes [(cthi/id :filled)]}}))))
+
 (defn- run
   "Runs `events` on a store holding `file` and calls `check` with the file
   read back from the final state."
@@ -76,6 +124,12 @@
 
 (t/deftest delete-the-sizing-child-fixes-the-hug-board
   (run (setup-file false)
+       [(dwsh/delete-shapes #{(cthi/id :fixed)})]
+       (fn [file']
+         (t/is (hug-stopped? file')))))
+
+(t/deftest delete-the-sizing-child-fixes-the-hug-grid
+  (run (setup-grid-file false :fill)
        [(dwsh/delete-shapes #{(cthi/id :fixed)})]
        (fn [file']
          (t/is (hug-stopped? file')))))
@@ -112,6 +166,12 @@
 
 (t/deftest hide-the-sizing-child-fixes-the-hug-board
   (run (setup-file false)
+       [(dwsh/update-shape-flags [(cthi/id :fixed)] {:hidden true})]
+       (fn [file']
+         (t/is (hug-stopped? file')))))
+
+(t/deftest hide-the-sizing-child-fixes-the-hug-grid
+  (run (setup-grid-file false :fill)
        [(dwsh/update-shape-flags [(cthi/id :fixed)] {:hidden true})]
        (fn [file']
          (t/is (hug-stopped? file')))))
@@ -217,6 +277,13 @@
          (t/is (= :fix (:layout-item-h-sizing (cths/get-shape file' :frame))))
          (t/is (= :fill (:layout-item-h-sizing (cths/get-shape file' :hidden)))))))
 
+(t/deftest show-a-child-set-to-fill-while-hidden-fixes-the-hug-grid
+  (run (setup-grid-file true :fix)
+       [(dwsl/update-layout-child [(cthi/id :filled)] {:layout-item-h-sizing :fill})
+        (dwsh/update-shape-flags [(cthi/id :filled)] {:hidden false})]
+       (fn [file']
+         (t/is (hug-stopped? file')))))
+
 (t/deftest plugin-visible-setter-fixes-the-hug-board
   (thw/with-wasm-mocks*
     (fn []
@@ -228,6 +295,23 @@
             ^js shape   (.getShapeById page (str (cthi/id :fixed)))]
         (set! (.-visible shape) false)
         (t/is (hug-stopped? (ths/get-file-from-state @store)))))))
+
+(t/deftest plugin-layout-child-absolute-setter-fixes-the-hug-board
+  (thw/with-wasm-mocks*
+    (fn []
+      (let [file        (setup-file false)
+            store       (ths/setup-store file)
+            ^js context (api/create-context plugin-id)
+            _           (set! st/state store)
+            ^js page    (.-currentPage context)
+            ^js shape   (.getShapeById page (str (cthi/id :fixed)))
+            ^js child   (.-layoutChild shape)]
+        (set! (.-absolute child) true)
+        (let [file'   (ths/get-file-from-state @store)
+              filled  (cths/get-shape file' :filled)]
+          (t/is (hug-stopped? file'))
+          (t/is (true? (:layout-item-absolute (cths/get-shape file' :fixed))))
+          (t/is (= 80 (:width filled))))))))
 
 ;; Deleting more than the direct child
 
