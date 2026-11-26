@@ -73,7 +73,7 @@ test("Updates a text font", async ({ page }) => {
   await workspace.waitForFirstRender();
 
   await workspace.clickLeafLayer("this is a text");
-  await page.keyboard.press("Control+b");
+  await page.keyboard.press("ControlOrMeta+b");
 
   await workspace.hideUI();
 

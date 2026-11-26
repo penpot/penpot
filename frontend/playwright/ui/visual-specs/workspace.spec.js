@@ -204,9 +204,9 @@ test.describe("Design tab", () => {
     await workspace.rectShapeButton.click();
     await workspace.clickWithDragViewportAt(128, 128, 200, 100);
     await workspace.clickLeafLayer("Rectangle");
-    await page.keyboard.press("Control+D");
+    await page.keyboard.press("ControlOrMeta+D");
     await expect(workspace.layers.getByText("Rectangle")).toHaveCount(2);
-    await page.keyboard.press("Control+A");
+    await page.keyboard.press("ControlOrMeta+A");
 
     await expect(
       workspace.rightSidebar.getByRole("button", { name: "Flatten" }),
@@ -308,9 +308,9 @@ test.describe("Design tab", () => {
     await workspace.rectShapeButton.click();
     await workspace.clickWithDragViewportAt(128, 128, 200, 100);
     await workspace.clickLeafLayer("Rectangle");
-    await page.keyboard.press("Control+D");
+    await page.keyboard.press("ControlOrMeta+D");
     await expect(workspace.layers.getByText("Rectangle")).toHaveCount(2);
-    await page.keyboard.press("Control+A");
+    await page.keyboard.press("ControlOrMeta+A");
 
     await expect(
       workspace.rightSidebar.getByRole("button", { name: /^Align left/ }),
@@ -946,7 +946,7 @@ test.describe("Undo history", () => {
     await page.keyboard.press("r");
     await workspace.clickWithDragViewportAt(128, 128, 200, 100);
 
-    await page.keyboard.press("Control+Alt+h");
+    await page.keyboard.press("ControlOrMeta+Alt+h");
     await page.getByRole("tab", { name: "Actions" }).click();
     const panel = page.getByRole("tabpanel", { name: "Actions" });
     const entry = panel.getByText("New rectangle");
@@ -1035,7 +1035,7 @@ test.describe("Plugins", () => {
       await workspace.mockRPC("get-profile", profile);
     }
     await workspace.goToWorkspace();
-    await workspace.page.keyboard.press("Control+Alt+P");
+    await workspace.page.keyboard.press("ControlOrMeta+Alt+P");
   };
 
   test("Shows the plugins manager without plugins", async ({ page }) => {
@@ -1159,7 +1159,7 @@ test.describe("Selected colors", () => {
     });
 
     await workspace.clickToggableLayer("Board");
-    await page.keyboard.press("Control+A");
+    await page.keyboard.press("ControlOrMeta+A");
 
     await expect(
       workspace.rightSidebar.getByRole("button", { name: "More colors" }),
