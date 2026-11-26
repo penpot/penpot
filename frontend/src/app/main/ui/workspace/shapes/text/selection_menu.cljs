@@ -122,6 +122,21 @@
 ;; shows below it.
 (def ^:private icon-room 40)
 
+;; Space kept between the toolbar and the right edge of the viewport.
+(def ^:private edge-room 8)
+
+(defn- keep-inside-viewport
+  "Moves the toolbar `node` left as far as it runs past the right edge of a
+  viewport `viewport-width` wide, from its anchor at `left`, but never past
+  the left edge."
+  [^js node left viewport-width]
+  (dom/unset-css-property! node "translate")
+  (let [start    (+ left (.-offsetLeft node))
+        overflow (- (+ start (.-offsetWidth node) edge-room) viewport-width)
+        shift    (min overflow start)]
+    (when (pos? shift)
+      (dom/set-css-property! node "translate" (dm/str "-" shift "px 0")))))
+
 (mf/defc menu-item*
   "Button with `children` as its icon, before the label, and a caret after
   it when it opens a dropdown, open when `expanded` is true. `active` shows
@@ -387,6 +402,7 @@
         more-open*     (mf/use-state false)
         more-open      (deref more-open*)
         timer-ref      (mf/use-ref nil)
+        menu-ref       (mf/use-ref nil)
 
         engaged?       (or (= view :ruby) emphasis-open)
         open?          (or expanded? engaged?)
@@ -395,6 +411,7 @@
         top            (* (- (:y rect) (:y vbox)) zoom)
         bottom         (* (- (+ (:y rect) (:height rect)) (:y vbox)) zoom)
         below?         (< top icon-room)
+        viewport-width (* (:width vbox) zoom)
         style          (mf/with-memo [right top bottom below?]
                          #js {:left (dm/str right "px")
                               :top  (dm/str (if below? bottom top) "px")})
@@ -453,6 +470,11 @@
     (mf/with-effect [cancel-collapse]
       cancel-collapse)
 
+    ;; Before paint, so the toolbar never shows cut at the edge.
+    (mf/with-layout-effect [open? view more-open emphasis-open right viewport-width]
+      (when-let [node (mf/ref-val menu-ref)]
+        (keep-inside-viewport node right viewport-width)))
+
     [:div {:class (stl/css-case :selection-anchor true
                                 :selection-anchor-below below?)
            :style style
@@ -463,7 +485,8 @@
            :on-pointer-enter expand
            :on-pointer-leave schedule-collapse}
      (if ^boolean open?
-       [:div {:class (stl/css-case :selection-menu true
+       [:div {:ref menu-ref
+              :class (stl/css-case :selection-menu true
                                    :ruby-view (= view :ruby))
               :role "toolbar"
               :aria-label (tr "workspace.text-selection-menu.title")}
