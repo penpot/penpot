@@ -162,3 +162,22 @@
 (t/deftest move-shortcuts-cover-every-direction
   (t/is (= 8 (count (move-shortcuts shortcuts/shortcuts))))
   (t/is (= 8 (count (move-shortcuts path-shortcuts/shortcuts)))))
+
+(def ^:private opacity-shortcut-ids
+  (mapv #(keyword (str "opacity-" %)) (range 10)))
+
+(t/deftest opacity-shortcuts-have-no-key-by-default
+  ;; https://github.com/penpot/penpot/issues/13303: typing a number with a
+  ;; shape selected changed its opacity by accident.
+  (doseq [id opacity-shortcut-ids]
+    (let [shortcut (get shortcuts/shortcuts id)]
+      (t/is (some? shortcut) (str id " still exists"))
+      (t/is (= "" (:command shortcut)) (str id " has no default key"))
+      (t/is (nil? (:tooltip shortcut)) (str id " shows no default key")))))
+
+(t/deftest opacity-shortcuts-take-a-custom-key
+  (let [effective (ds/apply-custom-overrides shortcuts/shortcuts
+                                             {:workspace {:opacity-5 "5"}}
+                                             :workspace)]
+    (t/is (= "5" (get-in effective [:opacity-5 :command])))
+    (t/is (= "" (get-in effective [:opacity-6 :command])))))

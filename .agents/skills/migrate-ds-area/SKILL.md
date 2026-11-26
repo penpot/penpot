@@ -104,6 +104,10 @@ the file: two PRs that both append at the end conflict.
   `[class*='…']`, or `a.or(b)` when the element type changes (raw
   `[class*='menu-btn']` before, `getByRole("button", { name: "Options" })`
   after). Scope `.or()` to the area so it cannot match elsewhere.
+- Press the primary modifier as `ControlOrMeta`, never a literal
+  `Control` (`keyboard.press("ControlOrMeta+d")`,
+  `click({ modifiers: ["ControlOrMeta"] })`): on macOS Penpot binds its
+  shortcuts to Command, so `Control` fails there.
 - Missing data? Add a fixture under `frontend/playwright/data/` and mock
   it (`dashboardPage.mockRPC(...)`, `DashboardPage.mockConfigFlags` for
   flags). Watch for expired or inconsistent fixtures (dates in the past,

@@ -275,7 +275,12 @@ export class WorkspacePage extends BaseWebSocketPage {
 
   async #waitForWebSocketReadiness(pageName) {
     // TODO: find a better event to settle whether the app is ready to receive notifications via ws
-    await expect(this.pageName).toHaveText(pageName, { timeout: 30000 })
+    // The sitemap shows every page of the file: wait for the one we opened.
+    // The anchored match tells "Page 1" from "Page 10".
+    const item = this.pageName.filter({
+      hasText: new RegExp(`^${escapeRegExp(pageName)}$`),
+    });
+    await expect(item).toBeAttached({ timeout: 30000 });
   }
 
   async sendPresenceMessage(fixture) {
