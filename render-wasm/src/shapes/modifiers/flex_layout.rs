@@ -285,7 +285,13 @@ fn initialize_tracks(
         let main_space = layout_axis.main_space();
         let exceeds_main_space = next_main_size > main_space + TRACK_TOLERANCE;
 
-        if !layout_axis.is_auto_main && flex_data.is_wrap() && exceeds_main_space {
+        // A child wider than the main space starts no new track when the current one is
+        // still empty: it would leave an empty track (and a gap) before it
+        if !layout_axis.is_auto_main
+            && flex_data.is_wrap()
+            && exceeds_main_space
+            && !current_track.shapes.is_empty()
+        {
             tracks.push(current_track);
 
             current_track = TrackData {

@@ -1618,6 +1618,63 @@ mod tests {
         );
     }
 
+    #[test]
+    fn test_auto_flex_board_wraps_an_oversized_first_child_without_an_empty_track() {
+        // The maximum makes the main size smaller than the only child: no empty track
+        // (and no gap) before it
+        for direction in [FlexDirection::Row, FlexDirection::Column] {
+            let is_row = matches!(direction, FlexDirection::Row);
+            let mut state = State::new();
+            state.shapes.initialize(10);
+            let board = add_shape(&mut state, None, (0.0, 0.0, 500.0, 300.0), TestLayout::Flex);
+            let (w, h) = if is_row { (120.0, 20.0) } else { (20.0, 120.0) };
+            let child = add_shape(&mut state, Some(board), (0.0, 0.0, w, h), TestLayout::None);
+            shape_mut(&mut state, board).set_flex_layout_data(
+                direction,
+                10.0,
+                10.0,
+                AlignItems::Start,
+                AlignContent::Start,
+                JustifyItems::Start,
+                JustifyContent::Start,
+                WrapType::Wrap,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+            );
+            let limits = if is_row {
+                SizeLimits {
+                    max_w: Some(100.0),
+                    ..NO_LIMITS
+                }
+            } else {
+                SizeLimits {
+                    max_h: Some(100.0),
+                    ..NO_LIMITS
+                }
+            };
+            set_size_limits(&mut state, board, limits);
+
+            let result = reflow(&state, board);
+            let expected_board = if is_row {
+                (0.0, 0.0, 100.0, 20.0)
+            } else {
+                (0.0, 0.0, 20.0, 100.0)
+            };
+            assert_bounds(
+                bounds_after(&state, &result, board),
+                expected_board,
+                "board",
+            );
+            assert_bounds(
+                bounds_after(&state, &result, child),
+                (0.0, 0.0, w, h),
+                "child",
+            );
+        }
+    }
+
     /// Bounds of a 50x50 grid board sized by its content, with one `track` on each axis,
     /// and of its 50x50 child, after reflow.
     fn auto_grid_bounds(track: GridTrack, aligned: bool, limits: SizeLimits) -> (Xywh, Xywh) {
@@ -1655,6 +1712,100 @@ mod tests {
         track_type: GridTrackType::Flex,
         value: 1.0,
     };
+
+    /// Bounds of a 100x100 grid board sized by its content, with a 50px track on the
+    /// constrained axis, a 50% track on the other one, and a 30x30 child filling the
+    /// 50% track, after reflow. `is_column`: the 50% track is a column instead of a row.
+    fn auto_grid_percent_bounds(is_column: bool, limits: SizeLimits) -> (Xywh, Xywh) {
+        let mut state = State::new();
+        state.shapes.initialize(10);
+        let board = add_shape(&mut state, None, (0.0, 0.0, 100.0, 100.0), TestLayout::Grid);
+        let child = add_shape(
+            &mut state,
+            Some(board),
+            (0.0, 0.0, 30.0, 30.0),
+            TestLayout::None,
+        );
+        {
+            let item = shape_mut(&mut state, child).layout_item.as_mut().unwrap();
+            if is_column {
+                item.h_sizing = Sizing::Fill;
+            } else {
+                item.v_sizing = Sizing::Fill;
+            }
+        }
+        let percent = GridTrack {
+            track_type: GridTrackType::Percent,
+            value: 50.0,
+        };
+        let (columns, rows) = if is_column {
+            (percent, FIXED_50)
+        } else {
+            (FIXED_50, percent)
+        };
+        let shape = shape_mut(&mut state, board);
+        shape.set_grid_columns(vec![columns]);
+        shape.set_grid_rows(vec![rows]);
+        shape.set_grid_cells(vec![GridCell {
+            row: 1,
+            row_span: 1,
+            column: 1,
+            column_span: 1,
+            align_self: None,
+            justify_self: None,
+            shape: Some(child),
+        }]);
+        set_size_limits(&mut state, board, limits);
+
+        let result = reflow(&state, board);
+        (
+            bounds_after(&state, &result, board),
+            bounds_after(&state, &result, child),
+        )
+    }
+
+    #[test]
+    fn test_auto_grid_board_keeps_the_tracks_of_its_unconstrained_axis() {
+        // The 50% row measures 50 in the 100 high board, which then gets 50 high: the
+        // second pass, for the minimum width, keeps that row instead of measuring it again
+        // in the new height (25)
+        let min_w = SizeLimits {
+            min_w: Some(200.0),
+            ..NO_LIMITS
+        };
+        let (board, child) = auto_grid_percent_bounds(false, min_w);
+        assert_bounds(board, (0.0, 0.0, 200.0, 50.0), "board, percent row");
+        assert_bounds(
+            child,
+            (0.0, 0.0, 30.0, 50.0),
+            "child filling the percent row",
+        );
+
+        // The same row as without limits
+        let (board, child) = auto_grid_percent_bounds(false, NO_LIMITS);
+        assert_bounds(
+            board,
+            (0.0, 0.0, 50.0, 50.0),
+            "board, percent row, no limits",
+        );
+        assert_bounds(
+            child,
+            (0.0, 0.0, 30.0, 50.0),
+            "child filling the percent row, no limits",
+        );
+
+        let min_h = SizeLimits {
+            min_h: Some(200.0),
+            ..NO_LIMITS
+        };
+        let (board, child) = auto_grid_percent_bounds(true, min_h);
+        assert_bounds(board, (0.0, 0.0, 50.0, 200.0), "board, percent column");
+        assert_bounds(
+            child,
+            (0.0, 0.0, 50.0, 30.0),
+            "child filling the percent column",
+        );
+    }
 
     #[test]
     fn test_auto_grid_board_keeps_its_min_and_max_sizes() {

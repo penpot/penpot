@@ -853,34 +853,36 @@ pub fn reflow_grid_layout(
         scale.pre_translate(-origin);
         scale.pre_concat(parent_transform_inv);
 
-        // When those sizes change the size of the board, its tracks are sized and placed
-        // again in that size, and so are the children in their cells
+        // When those sizes change the size of the board, the tracks of the constrained axes
+        // are sized and placed again in that size, and so are the children in their cells.
+        // The tracks of the other axis keep their sizes, which gave the board its size on
+        // that axis (a percentage would otherwise be measured again in it): they are only
+        // placed again in the new bounds
         let fixed_width = auto_width && (new_width - content_width).abs() > MIN_SIZE;
         let fixed_height = auto_height && (new_height - content_height).abs() > MIN_SIZE;
         let layout_bounds_after = layout_bounds.transform(&scale);
 
         if fixed_width || fixed_height {
             layout_bounds = layout_bounds_after;
-            column_tracks = calculate_sized_tracks(
-                true,
-                auto_width && !fixed_width,
-                layout_data,
-                grid_data,
-                &layout_bounds,
-                &grid_data.cells,
-                shapes,
-                bounds,
-            );
-            row_tracks = calculate_sized_tracks(
-                false,
-                auto_height && !fixed_height,
-                layout_data,
-                grid_data,
-                &layout_bounds,
-                &grid_data.cells,
-                shapes,
-                bounds,
-            );
+            for (is_column, fixed, tracks) in [
+                (true, fixed_width, &mut column_tracks),
+                (false, fixed_height, &mut row_tracks),
+            ] {
+                if fixed {
+                    *tracks = calculate_sized_tracks(
+                        is_column,
+                        false,
+                        layout_data,
+                        grid_data,
+                        &layout_bounds,
+                        &grid_data.cells,
+                        shapes,
+                        bounds,
+                    );
+                } else {
+                    assign_anchors(is_column, layout_data, &layout_bounds, tracks);
+                }
+            }
         }
 
         Some((scale, layout_bounds_after))
