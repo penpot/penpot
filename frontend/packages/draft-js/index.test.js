@@ -98,14 +98,77 @@ describe("addBlurSelectionEntity", () => {
 });
 
 describe("removeBlurSelectionEntity", () => {
-  test("does not throw on stale selection keys and returns state unchanged", () => {
-    const state = makeState();
-    const stale = withSelection(
-      state,
-      makeSelection("missing-start", 0, "missing-end", 3),
+  test.each([
+    ["missing keys", makeSelection("missing-start", 0, "missing-end", 3)],
+    ["invalid offsets", makeSelection("first", 8, "second", 9)],
+  ])("clears entities and preserves history for %s", (_, invalid) => {
+    for (const hasFocus of [true, false]) {
+      const selected = withSelection(
+        makeState(),
+        makeSelection("first", 1, "second", 2),
+      );
+      const blurred = addBlurSelectionEntity(selected);
+      expect(
+        blurred.getCurrentContent().getBlockForKey("first").getEntityAt(1),
+      ).not.toBeNull();
+      const withRedo = EditorState.set(blurred, {
+        redoStack: EditorState.undo(blurred).getRedoStack(),
+      });
+      const stale = EditorState.acceptSelection(
+        withRedo,
+        invalid.set("hasFocus", hasFocus),
+      );
+      const undoStack = stale.getUndoStack();
+      const redoStack = stale.getRedoStack();
+      expect(redoStack.isEmpty()).toBe(false);
+      const expectedBefore = stale.getCurrentContent().getSelectionBefore();
+      const result = removeBlurSelectionEntity(stale);
+      expect(
+        result.getCurrentContent().getBlockForKey("first").getEntityAt(1),
+      ).toBeNull();
+      expect(result.getUndoStack()).toBe(undoStack);
+      expect(result.getRedoStack()).toBe(redoStack);
+      expect(result.getSelection().getHasFocus()).toBe(hasFocus);
+      expect(result.getSelection().getAnchorKey()).toBe("second");
+      expect(result.getSelection().getAnchorOffset()).toBe(5);
+      expect(result.getSelection().isCollapsed()).toBe(true);
+      const undone = EditorState.undo(result);
+      expect(undone.getCurrentContent()).toBe(undoStack.peek());
+      expect(undone.getSelection()).toEqual(expectedBefore);
+      const redone = EditorState.redo(undone);
+      expect(redone.getSelection().getAnchorKey()).toBe("second");
+      expect(redone.getSelection().getAnchorOffset()).toBe(5);
+      expect(redone.getSelection().isCollapsed()).toBe(true);
+      expect(redone.getSelection().getHasFocus()).toBe(hasFocus);
+    }
+  });
+
+  test("uses a valid undo selection when the saved selection is stale", () => {
+    const selected = withSelection(
+      makeState(),
+      makeSelection("first", 1, "second", 2),
     );
-    expect(() => removeBlurSelectionEntity(stale)).not.toThrow();
-    expect(removeBlurSelectionEntity(stale)).toBe(stale);
+    const blurred = addBlurSelectionEntity(selected);
+    const staleSelection = makeSelection("missing", 0, "missing", 1);
+    const content = blurred
+      .getCurrentContent()
+      .set("selectionBefore", staleSelection);
+    const stale = EditorState.acceptSelection(
+      EditorState.set(blurred, { currentContent: content }),
+      staleSelection,
+    );
+    const undone = EditorState.undo(removeBlurSelectionEntity(stale));
+    const selection = undone.getSelection();
+    expect(selection.isCollapsed()).toBe(true);
+    expect(
+      undone.getCurrentContent().getBlockForKey(selection.getAnchorKey()),
+    ).toBeDefined();
+    expect(selection.getAnchorOffset()).toBeLessThanOrEqual(
+      undone
+        .getCurrentContent()
+        .getBlockForKey(selection.getAnchorKey())
+        .getLength(),
+    );
   });
 
   test("clears entities and restores the user selection", () => {
@@ -119,9 +182,8 @@ describe("removeBlurSelectionEntity", () => {
     expect(
       result.getCurrentContent().getBlockForKey("first").getEntityAt(1),
     ).toBeNull();
-    expect(result.getSelection().getAnchorKey()).toBe(
-      blurred.getSelection().getAnchorKey(),
-    );
+    expect(result.getSelection()).toEqual(blurred.getSelection());
+    expect(result.getUndoStack().size).toBe(blurred.getUndoStack().size + 1);
   });
 });
 

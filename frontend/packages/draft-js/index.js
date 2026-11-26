@@ -33,8 +33,7 @@ function isDefined(v) {
 // rebuilds the EditorState with fresh block keys while a delayed on-change
 // still carries the old keys. Applying an entity with such a stale selection
 // crashes inside Draft.js (`getCharacterList` of undefined), taking down the
-// whole workspace. Validate before every `Modifier.applyEntity` call and
-// skip silently: the blur highlight is cosmetic.
+// whole workspace. Validate selections that come from the editor before use.
 function isSelectionInContent(content, selection) {
   if (!content || !selection) return false;
   const blockMap = content.getBlockMap();
@@ -108,8 +107,7 @@ function getSelectAllSelection(state) {
   });
 }
 
-function getCursorInEndPosition(state) {
-  const content = state.getCurrentContent();
+function getCursorInEndPosition(content) {
   const blockMap = content.getBlockMap();
   if (!blockMap || blockMap.isEmpty()) return null;
   const lastBlock = blockMap.last();
@@ -245,7 +243,8 @@ export function removeBlurSelectionEntity(state) {
   const selection = state.getSelection();
 
   let content = state.getCurrentContent();
-  if (!isSelectionInContent(content, selection)) return state;
+  const validSelection = isSelectionInContent(content, selection);
+  const before = content.getSelectionBefore();
 
   try {
     content = Modifier.applyEntity(content, selectionAll, null);
@@ -253,8 +252,22 @@ export function removeBlurSelectionEntity(state) {
     return state;
   }
 
-  state = EditorState.push(state, content, "apply-entity");
-  state = EditorState.forceSelection(state, selection);
+  if (validSelection) {
+    state = EditorState.push(state, content, "apply-entity");
+    state = EditorState.forceSelection(state, selection);
+  } else {
+    const cursor = getCursorInEndPosition(content).set("hasFocus", selection.getHasFocus());
+    const undoContent = state.getUndoStack().peek();
+    const undoSelection = !undoContent || isSelectionInContent(undoContent, before)
+      ? before
+      : getCursorInEndPosition(undoContent);
+    if (!undoSelection) return state;
+    content = content.set("selectionBefore", undoSelection).set("selectionAfter", cursor);
+    state = EditorState.set(state, {currentContent: content});
+    state = cursor.getHasFocus()
+      ? EditorState.forceSelection(state, cursor)
+      : EditorState.acceptSelection(state, cursor);
+  }
 
   return state;
 }
@@ -307,7 +320,7 @@ export function removeInlineStylePrefix(contentState, selectionState, stylePrefi
 }
 
 export function cursorToEnd(state) {
-  const newSelection = getCursorInEndPosition(state);
+  const newSelection = getCursorInEndPosition(state.getCurrentContent());
   if (!newSelection) return state;
 
   let content = state.getCurrentContent();
