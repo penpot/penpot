@@ -167,7 +167,7 @@
 
                 objects)))]
 
-    (fdata/with-pointers cfg id
+    (fdata/with-pointers cfg
       (let [frame     (get-thumbnail-frame data)
             frame-id  (:id frame)
             page-id   (or (:page-id frame)

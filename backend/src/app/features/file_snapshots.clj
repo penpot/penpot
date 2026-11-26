@@ -416,7 +416,7 @@
         ;; loader stays bound while persisting so any page the encode
         ;; path does load keeps working (`enable-objects-map` skips the
         ;; unloaded ones).
-        (fdata/with-pointers cfg file-id
+        (fdata/with-pointers cfg
           (bfc/update-file! cfg file ::bfc/reset-migrations? true))
 
         ;; FIXME: this should be separated functions, we should not have
@@ -501,6 +501,6 @@
                (map (partial fdata/decode-file-data cfg))
                xform)]
 
-    (fdata/with-pointers cfg file-id
+    (fdata/with-pointers cfg
       (->> (db/plan conn [sql:get-snapshots file-id] {:fetch-size 1})
            (transduce xform f init)))))
