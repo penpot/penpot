@@ -1026,7 +1026,12 @@ fn render_container_drop_shadows(
     opts: &TreeOpts,
 ) -> Result<()> {
     let subtree_bounds = element.extrect(tree, scale);
+    let matrix = element.centered_transform();
     for shadow in element.drop_shadows_visible() {
+        // The offset is local to the container, like the GPU frame shadow.
+        let mut shadow = *shadow;
+        let offset = matrix.map_vector(shadow.offset);
+        shadow.offset = (offset.x, offset.y);
         let Some(filter) = shadow.get_drop_shadow_blur_filter() else {
             continue;
         };
@@ -1045,8 +1050,11 @@ fn render_container_drop_shadows(
             if spread > 0.0 {
                 background.to_mut().selrect.outset((spread, spread));
             }
+            canvas.save();
+            canvas.concat(&matrix);
             let mut renderer = VectorRenderer::new(canvas, shared, scale, true);
             renderer.draw_fills(&background, &[Fill::Solid(SolidColor(skia::Color::BLACK))])?;
+            canvas.restore();
         }
 
         let children = children_paint_order(tree, element);
