@@ -327,7 +327,7 @@
           (if (ted/content-has-text? content)
             (if (features/active-feature? state "render-wasm/v1")
               (let [content  (editor-shape-content (ted/export-content content) shape)
-                    new-size (dwwt/get-wasm-text-new-size shape content)]
+                    new-size (dwwt/get-wasm-text-new-size objects shape content)]
                 (rx/merge
                  (rx/of (update-editor-state shape nil))
                  (when (and (not= content (:content shape))
@@ -1332,10 +1332,10 @@
             shape   (get objects id)]
         (if-not (and (some? shape) (cfh/text-shape? shape))
           (rx/empty)
-          (let [new-size  (dwwt/get-wasm-text-new-size shape content)
+          (let [new-size  (dwwt/get-wasm-text-new-size objects shape content)
                 modifiers (when (and (some? new-size)
                                      (not= :fixed (:grow-type shape)))
-                            (dwwt/resize-wasm-text-modifiers shape content))]
+                            (dwwt/resize-wasm-text-modifiers objects shape content))]
             ;; `get-wasm-text-new-size` has the side effect of syncing WASM's internal text
             ;; content/layout. Only non-fixed grow-types need geometry modifiers updates.
             (if (some? modifiers)
@@ -1446,11 +1446,11 @@
                 ;; resize is redundant and, going through the interactive-transform
                 ;; modifier machinery, made auto-width typing very laggy.
                 new-size (when (and finalize? (not= :fixed (:grow-type shape)))
-                           (dwwt/get-wasm-text-new-size shape content))
+                           (dwwt/get-wasm-text-new-size objects shape content))
                 ;; Also compute the resized geometry for the finalize commit; the
                 ;; async `apply-wasm-modifiers` below never updates this `state`.
                 resize-modifiers (when (some? new-size)
-                                   (dwwt/resize-wasm-text-modifiers shape content))
+                                   (dwwt/resize-wasm-text-modifiers objects shape content))
                 resize-geom (when resize-modifiers
                               (-> (gsh/transform-shape shape (get-in resize-modifiers [id :modifiers]))
                                   (select-keys [:selrect :points :width :height])))
@@ -1601,7 +1601,7 @@
                           (ctl/any-layout-descent? objects shape)
                           (not (ctl/position-absolute? (layout-item objects shape))))
             size     (when preview?
-                       (dwwt/get-wasm-text-new-size shape))
+                       (dwwt/get-wasm-text-new-size objects shape))
             previous (or (get-in state [::layout-preview id])
                          (select-keys (:selrect shape) [:width :height]))]
         ;; Modifiers are costly, so skip keystrokes that keep the size.
@@ -1609,7 +1609,7 @@
                  (not (and (mth/close? (:width size) (:width previous))
                            (mth/close? (:height size) (:height previous)))))
           (rx/of #(assoc-in % [::layout-preview id] size)
-                 (dwm/set-wasm-modifiers (dwwt/resize-wasm-text-modifiers shape)
+                 (dwm/set-wasm-modifiers (dwwt/resize-wasm-text-modifiers objects shape)
                                          :interactive? false))
           (rx/empty))))))
 

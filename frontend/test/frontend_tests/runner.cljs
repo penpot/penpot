@@ -62,6 +62,7 @@
    [frontend-tests.data.workspace-variant-rename-test]
    [frontend-tests.data.workspace-variants-test]
    [frontend-tests.data.workspace-versions-test]
+   [frontend-tests.data.workspace-wasm-text-test]
    [frontend-tests.debug-logging-test]
    [frontend-tests.errors-governor-test]
    [frontend-tests.errors-test]
@@ -283,6 +284,7 @@
    'frontend-tests.data.workspace-variant-rename-test
    'frontend-tests.data.workspace-variants-test
    'frontend-tests.data.workspace-versions-test
+   'frontend-tests.data.workspace-wasm-text-test
    'frontend-tests.debug-logging-test
    'frontend-tests.errors-governor-test
    'frontend-tests.errors-test

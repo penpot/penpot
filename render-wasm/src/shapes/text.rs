@@ -2022,7 +2022,7 @@ pub fn calculate_position_data(
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
     use crate::globals::TestRenderResourcesGuard;
     use crate::render::RenderResources;
@@ -2156,7 +2156,7 @@ mod tests {
         );
     }
 
-    fn test_paragraph(texts: &[&str]) -> Paragraph {
+    pub(crate) fn test_paragraph(texts: &[&str]) -> Paragraph {
         let spans = texts
             .iter()
             .map(|text| {

@@ -230,6 +230,18 @@ fn set_pixel_precision(transform: &mut Matrix, bounds: &mut Bounds, snap: SnapGe
     }
 }
 
+/// Which axes of `shape` (width, height) its parent layout sizes with Fill.
+fn layout_fill_axes(shape: &Shape, shapes: ShapesPoolRef) -> (bool, bool) {
+    let in_layout = shape
+        .parent_id
+        .and_then(|id| shapes.get(&id))
+        .is_some_and(|parent| parent.has_layout());
+    (
+        in_layout && shape.is_layout_horizontal_fill(),
+        in_layout && shape.is_layout_vertical_fill(),
+    )
+}
+
 #[allow(clippy::too_many_arguments)]
 fn propagate_transform(
     entry: TransformEntry,
@@ -267,17 +279,27 @@ fn propagate_transform(
                 shape_bounds_after.width(),
                 shape_bounds_after.height(),
             );
+            // A Fill axis belongs to the parent layout: keep the size it gave.
+            let (fill_width, fill_height) = layout_fill_axes(shape, shapes);
             match text_content.grow_type() {
                 GrowType::AutoHeight => {
                     let height_before = text_content.size.height;
-                    let new_height = if width_changed {
+                    let measured_height = if width_changed {
                         let mut clone = text_content.clone();
                         clone.update_layout(resized_selrect);
                         clone.size.height
                     } else {
                         height_before
                     };
-                    if !is_close_to(height_before, new_height) && reflowed_shapes.insert(shape.id) {
+                    let new_height = if fill_height {
+                        shape_bounds_after.height()
+                    } else {
+                        measured_height
+                    };
+                    if !fill_height
+                        && !is_close_to(height_before, measured_height)
+                        && reflowed_shapes.insert(shape.id)
+                    {
                         entries.push_back(Modifier::reflow(shape.id, false));
 
                         if let Some(parent_id) = shape.parent_id {
@@ -300,15 +322,25 @@ fn propagate_transform(
                 GrowType::AutoWidth => {
                     let width_before = text_content.width();
                     let height_before = text_content.size.height;
-                    let (new_width, new_height) = if height_changed {
+                    let (measured_width, measured_height) = if height_changed {
                         let mut clone = text_content.clone();
                         clone.update_layout(resized_selrect);
                         (clone.width(), clone.size.height)
                     } else {
                         (width_before, height_before)
                     };
-                    if (!is_close_to(width_before, new_width)
-                        || !is_close_to(height_before, new_height))
+                    let new_width = if fill_width {
+                        shape_bounds_after.width()
+                    } else {
+                        measured_width
+                    };
+                    let new_height = if fill_height {
+                        shape_bounds_after.height()
+                    } else {
+                        measured_height
+                    };
+                    if ((!fill_width && !is_close_to(width_before, measured_width))
+                        || (!fill_height && !is_close_to(height_before, measured_height)))
                         && reflowed_shapes.insert(shape.id)
                     {
                         entries.push_back(Modifier::reflow(shape.id, false));
@@ -611,7 +643,9 @@ pub fn propagate_modifiers(
 mod tests {
     use super::*;
 
+    use crate::globals::TestRenderResourcesGuard;
     use crate::math::{Matrix, Point};
+    use crate::render::RenderResources;
     use crate::shapes::*;
     use crate::state::ShapesPool;
 
@@ -1263,5 +1297,127 @@ mod tests {
         assert_size(auto_frame_size(TestLayout::Grid, Absolute), (500.0, 300.0));
         // Grid takes its size from its tracks; hidden children still count.
         assert_size(auto_frame_size(TestLayout::Grid, Hidden), (200.0, 50.0));
+    }
+
+    fn add_text_in_layout(
+        state: &mut State,
+        parent: Uuid,
+        grow_type: GrowType,
+        (h_sizing, v_sizing): (Sizing, Sizing),
+        (left, top, right, bottom): (f32, f32, f32, f32),
+    ) -> Uuid {
+        let id = Uuid::new_v4();
+        let mut content =
+            TextContent::new(math::Rect::from_ltrb(left, top, right, bottom), grow_type);
+        content.add_paragraph(crate::shapes::text::tests::test_paragraph(&["hello"]));
+        let shape = state.shapes.add_shape(id);
+        shape.set_shape_type(Type::Text(content));
+        shape.set_selrect(left, top, right, bottom);
+        shape.set_flex_layout_child_data(
+            0.0, 0.0, 0.0, 0.0, h_sizing, v_sizing, None, None, None, None, None, false, None,
+        );
+        shape.set_parent(parent);
+        state.shapes.get_mut(&parent).unwrap().add_child(id);
+        id
+    }
+
+    fn add_flex_frame(
+        state: &mut State,
+        direction: FlexDirection,
+        (left, top, right, bottom): (f32, f32, f32, f32),
+    ) -> Uuid {
+        let id = Uuid::new_v4();
+        let shape = state.shapes.add_shape(id);
+        shape.set_shape_type(Type::Frame(Frame::default()));
+        shape.set_flex_layout_data(
+            direction,
+            0.0,
+            0.0,
+            AlignItems::Start,
+            AlignContent::Start,
+            JustifyItems::Start,
+            JustifyContent::Start,
+            WrapType::NoWrap,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+        );
+        shape.set_selrect(left, top, right, bottom);
+        id
+    }
+
+    fn measured_size(state: &State, id: Uuid) -> (f32, f32) {
+        let text = state.shapes.get_raw(&id).unwrap().get_text_content();
+        (text.width(), text.size.height)
+    }
+
+    #[test]
+    fn test_auto_width_text_keeps_the_fill_width_of_its_layout() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let mut state = State::new();
+        state.shapes.initialize(10);
+        let row = add_flex_frame(&mut state, FlexDirection::Row, (0.0, 0.0, 300.0, 100.0));
+        let text = add_text_in_layout(
+            &mut state,
+            row,
+            GrowType::AutoWidth,
+            (Sizing::Fill, Sizing::Fix),
+            (0.0, 0.0, 50.0, 20.0),
+        );
+        let (measured_w, measured_h) = measured_size(&state, text);
+        assert!(measured_w < 100.0, "measured width {measured_w}");
+
+        let result = reflow(&state, text);
+
+        // The layout owns the width; the text still owns its height.
+        assert_size(size_after(&state, &result, text), (300.0, measured_h));
+    }
+
+    #[test]
+    fn test_auto_height_text_keeps_the_fill_height_of_its_layout() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let mut state = State::new();
+        state.shapes.initialize(10);
+        let column = add_flex_frame(&mut state, FlexDirection::Column, (0.0, 0.0, 100.0, 300.0));
+        let text = add_text_in_layout(
+            &mut state,
+            column,
+            GrowType::AutoHeight,
+            (Sizing::Fix, Sizing::Fill),
+            (0.0, 0.0, 100.0, 20.0),
+        );
+        let (_, measured_h) = measured_size(&state, text);
+        assert!(measured_h < 100.0, "measured height {measured_h}");
+
+        let result = reflow(&state, text);
+
+        assert_size(size_after(&state, &result, text), (100.0, 300.0));
+    }
+
+    #[test]
+    fn test_auto_width_text_with_fill_outside_a_layout_keeps_its_measured_width() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let mut state = State::new();
+        state.shapes.initialize(10);
+        // A plain frame: a stale Fill sizing from an old layout does not count.
+        let frame = add_shape(&mut state, None, (0.0, 0.0, 300.0, 100.0), TestLayout::None);
+        shape_mut(&mut state, frame).set_shape_type(Type::Frame(Frame::default()));
+        let text = add_text_in_layout(
+            &mut state,
+            frame,
+            GrowType::AutoWidth,
+            (Sizing::Fill, Sizing::Fill),
+            (0.0, 0.0, 50.0, 20.0),
+        );
+        let measured = measured_size(&state, text);
+
+        let entry = TransformEntry::from_input(text, Matrix::scale((4.0, 1.0)));
+        let result = propagate_modifiers(&state, &[entry], PixelPrecision::Disabled).unwrap();
+
+        assert_size(size_after(&state, &result, text), measured);
     }
 }
