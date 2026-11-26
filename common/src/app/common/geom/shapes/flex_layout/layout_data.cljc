@@ -60,10 +60,15 @@
         (persistent! (cond-> result (some? line-data) (conj! line-data)))
 
         (let [[child-bounds child] (first children)
+              ;; No line yet on the first child: the accumulators start at 0
+              ;; (JS reads nil as 0 in arithmetic, the JVM throws)
               {:keys [line-min-width line-min-height
                       line-max-width line-max-height
                       num-children
-                      children-data]} line-data
+                      children-data]
+               :or {line-min-width 0 line-min-height 0
+                    line-max-width 0 line-max-height 0
+                    num-children 0}} line-data
 
               child-width      (gpo/width-points child-bounds)
               child-height     (gpo/height-points child-bounds)
@@ -141,7 +146,8 @@
 (defn add-space-to-items
   ;; Distributes the remainder space between the lines
   [prop prop-min prop-max to-share items]
-  (let [num-items (->> items (remove #(mth/close? (get % prop) (get % prop-max))) count)
+  (let [;; A line without a value for `prop` counts as 0 (JS reads nil as 0)
+        num-items       (->> items (remove #(mth/close? (or (get % prop) 0) (get % prop-max))) count)
         per-line-target (/ to-share num-items)]
 
     (loop [items (seq items)
@@ -222,13 +228,14 @@
             num-lines (count layout-lines)
 
             ;; When align-items is stretch we need to adjust the main axis size to grow for the full content
+            ;; (with no lines there is nothing to adjust: the JVM throws on the division by 0, JS gets NaN)
             stretch-width-fix
-            (if (and col? (ctl/content-stretch? parent) (not auto-width?))
+            (if (and col? (ctl/content-stretch? parent) (not auto-width?) (pos? num-lines))
               (/ (- layout-width (* layout-gap-col (dec num-lines)) total-max-width) num-lines)
               0)
 
             stretch-height-fix
-            (if (and row? (ctl/content-stretch? parent) (not auto-height?))
+            (if (and row? (ctl/content-stretch? parent) (not auto-height?) (pos? num-lines))
               (/ (- layout-height (* layout-gap-row (dec num-lines)) total-max-height) num-lines)
               0)
 
@@ -359,7 +366,7 @@
               (and row? space-around?)
               (/ (max layout-gap-col (/ (- width line-width) num-children)) 2)
 
-              (and row? space-between? (not auto-width?))
+              (and row? space-between? (not auto-width?) (> num-children 1))
               (max layout-gap-col (/ (- width line-width) (dec num-children)))
 
               :else
@@ -372,7 +379,7 @@
               (and col? space-around?)
               (/ (max layout-gap-row (/ (- height line-height) num-children)) 2)
 
-              (and col? space-between? (not auto-height?))
+              (and col? space-between? (not auto-height?) (> num-children 1))
               (max layout-gap-row (/ (- height line-height) (dec num-children)))
 
               :else

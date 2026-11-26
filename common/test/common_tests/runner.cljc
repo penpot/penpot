@@ -29,6 +29,7 @@
    [common-tests.files-migrations-0037-test]
    [common-tests.files-migrations-0038-test]
    [common-tests.files-migrations-0039-test]
+   [common-tests.files-migrations-0040-test]
    [common-tests.files-migrations-test]
    [common-tests.files.changes-builder-test]
    [common-tests.files.comp-processors-test]
@@ -43,6 +44,7 @@
    [common-tests.geom-align-test]
    [common-tests.geom-bounds-layout-nil-test]
    [common-tests.geom-bounds-map-test]
+   [common-tests.geom-flex-layout-reflow-test]
    [common-tests.geom-flex-layout-test]
    [common-tests.geom-grid-layout-test]
    [common-tests.geom-grid-test]
@@ -68,6 +70,7 @@
    [common-tests.helpers-test]
    [common-tests.logging-test]
    [common-tests.logic.chained-propagation-test]
+   [common-tests.logic.collapsed-layout-test]
    [common-tests.logic.comp-creation-test]
    [common-tests.logic.comp-detach-with-nested-test]
    [common-tests.logic.comp-flex-interactions-test]
@@ -153,6 +156,7 @@
    'common-tests.files-migrations-0037-test
    'common-tests.files-migrations-0038-test
    'common-tests.files-migrations-0039-test
+   'common-tests.files-migrations-0040-test
    'common-tests.files-migrations-test
    'common-tests.files.changes-builder-test
    'common-tests.files.comp-processors-test
@@ -168,6 +172,7 @@
    'common-tests.geom-bounds-layout-nil-test
    'common-tests.geom-bounds-map-test
    'common-tests.geom-flex-layout-test
+   'common-tests.geom-flex-layout-reflow-test
    'common-tests.geom-grid-layout-test
    'common-tests.geom-grid-test
    'common-tests.geom-image-bounds-resize-test
@@ -192,6 +197,7 @@
    'common-tests.helpers-test
    'common-tests.logging-test
    'common-tests.logic.chained-propagation-test
+   'common-tests.logic.collapsed-layout-test
    'common-tests.logic.comp-creation-test
    'common-tests.logic.comp-detach-with-nested-test
    'common-tests.logic.comp-flex-interactions-test
