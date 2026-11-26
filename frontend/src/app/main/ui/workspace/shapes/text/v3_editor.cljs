@@ -389,6 +389,10 @@
         composition-base-ref (mf/use-ref 0)
         composition-text-ref (mf/use-ref "")
 
+        ;; Where the composition started, when a pending caret style waits for
+        ;; its text; nil otherwise. The commit gives that text the style.
+        composition-start-ref (mf/use-ref nil)
+
         ;; IME cursor offset last read from the DOM selection; nil after a text change.
         synced-offset-ref (mf/use-ref nil)
 
@@ -526,8 +530,13 @@
                             (let [node (mf/ref-val contenteditable-ref)]
                               (or (text-before-selection node)
                                   (count (.-textContent node)))))
-           ;; IME composition supplies its own text; drop any pending caret style.
-           (text-editor/clear-pending-caret-styles!)
+           ;; Keep a pending caret style for the committed text, as plain
+           ;; typing does. Reading the WASM selection leaves the DOM and the
+           ;; store alone, so the IME is not disturbed.
+           (mf/set-ref-val! composition-start-ref
+                            (let [shape-id (text-editor/text-editor-get-active-shape-id)]
+                              (when (some? (text-editor/get-pending-caret-styles shape-id))
+                                (text-editor/selection-start))))
            (text-editor/text-editor-composition-start)))
 
         on-composition-update
@@ -566,9 +575,15 @@
         (mf/use-fn
          (fn [^js event]
            (mf/set-ref-val! composing-ref false)
-           (let [data (or (.-data event) "")]
+           (let [data   (or (.-data event) "")
+                 before (mf/ref-val composition-start-ref)]
+             (mf/set-ref-val! composition-start-ref nil)
              (wasm.api/finish-text-editor-composition data)
-             (sync-wasm-text-editor-content!)
+             ;; Store and DOM writes are safe again: the composition is over.
+             (if (and (some? before) (seq data))
+               (sync-with-pending-caret-styles!
+                (text-editor/text-editor-get-active-shape-id) before)
+               (sync-wasm-text-editor-content!))
              (wasm.api/request-render-preserving-target "text-composition"))
            (reset-input-node (mf/ref-val contenteditable-ref))
            ;; Move the surface onto the caret, now past the committed text.
