@@ -76,6 +76,23 @@
                                    :worker-default-parallelism 4)]
       (t/is (= 4 (cf/get :worker-default-parallelism 1))))))
 
+(t/deftest binfile-import-limit-keys
+  (let [values  {:binfile-import-max-text-entry-size "101"
+                 :binfile-import-max-text-total-size "202"
+                 :binfile-import-max-binary-entry-size "303"
+                 :binfile-import-max-zip-entries "404"}
+        decoded (cf/decode-config values)]
+    (t/is (= {:binfile-import-max-text-entry-size 101
+              :binfile-import-max-text-total-size 202
+              :binfile-import-max-binary-entry-size 303
+              :binfile-import-max-zip-entries 404}
+             decoded))
+    (t/is (cf/validate-config (merge cf/config decoded)))
+    (doseq [key (keys values)]
+      (t/testing (str "non-numeric value for " key)
+        (let [invalid (cf/decode-config (assoc values key "invalid"))]
+          (t/is (not (cf/validate-config (merge cf/config invalid)))))))))
+
 (t/deftest prepared-statement-cache-keys
   (t/testing "negative sizes are rejected; the threshold takes -1 or non-negatives"
     (t/is (not (cf/validate-config (assoc cf/config :database-prepared-statement-cache-queries -1))))
