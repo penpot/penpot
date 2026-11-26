@@ -19,6 +19,7 @@
    [app.main.data.workspace.colors :as dc]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
+   [app.main.data.workspace.tokens.propagation :as dwtp]
    [app.main.data.workspace.wasm-text :as dwwt]
    [app.main.store :as st]
    [app.util.i18n :refer [tr]]
@@ -610,6 +611,94 @@
                (t/is (= (:stroke-width-bottom (:applied-tokens rect-without-stroke')) (:name token-target')))
                (t/is (= (:stroke-width-left (:applied-tokens rect-without-stroke')) (:name token-target')))
                (t/is (= (get-in rect-without-stroke' [:strokes 0 :stroke-width]) 10))))))))))
+
+(defn- setup-file-with-shared-value-tokens
+  "A file whose active set has `tokens`, all resolving to 4, and a shape
+  added by `add-shape-fn` with stored values out of date with them."
+  [tokens add-shape-fn]
+  (-> (ctht/sample-file-with-tokens
+       :lib-fn #(reduce (fn [lib [name type]]
+                          (ctob/add-token lib (cthi/id :set-a)
+                                          (ctob/make-token {:name name :value "4" :type type})))
+                        (-> %
+                            (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :set-a)
+                                                               :name "Set A"))
+                            (ctob/add-theme (ctob/make-token-theme :id (cthi/new-id! :theme-a)
+                                                                   :name "Theme A"
+                                                                   :sets #{"Set A"})))
+                        tokens)
+       :status-fn #(ctos/set-tokens-status % #{(cthi/id :theme-a)} #{(cthi/id :set-a)}))
+      (add-shape-fn)))
+
+(def ^:private out-of-date-radius-and-stroke
+  {:r1 0 :r2 0 :r3 0 :r4 0
+   :strokes [{:stroke-alignment :inner
+              :stroke-style :solid
+              :stroke-color "#000000"
+              :stroke-opacity 1
+              :stroke-width 1}]
+   :applied-tokens {:r1 "radius" :r2 "radius" :r3 "radius" :r4 "radius"
+                    :stroke-width-top "stroke"
+                    :stroke-width-right "stroke"
+                    :stroke-width-bottom "stroke"
+                    :stroke-width-left "stroke"}})
+
+(defn- propagate-and-check
+  [done file check-fn]
+  (tohs/run-store-async
+   (ths/setup-store file) done [(dwtp/propagate-workspace-tokens)]
+   (fn [new-state]
+     (check-fn (ths/get-file-from-state new-state)))))
+
+(t/deftest test-propagate-tokens-sharing-a-value
+  (t/testing "tokens of different types resolved to the same value are all propagated"
+    (t/async
+      done
+      (propagate-and-check
+       done
+       (setup-file-with-shared-value-tokens
+        [["radius" :border-radius] ["stroke" :stroke-width]]
+        #(ctho/add-rect % :rect-1 out-of-date-radius-and-stroke))
+       (fn [file']
+         (let [rect' (cths/get-shape file' :rect-1)]
+           (t/is (= 4 (:r1 rect')))
+           (t/is (= 4 (get-in rect' [:strokes 0 :stroke-width])))))))))
+
+(t/deftest test-propagate-tokens-sharing-a-value-with-dimensions
+  (t/testing "the attributes left once the width and height are set apart are split by action"
+    (t/async
+      done
+      (propagate-and-check
+       done
+       (setup-file-with-shared-value-tokens
+        [["radius" :border-radius] ["stroke" :stroke-width] ["size" :sizing]]
+        #(ctho/add-rect % :rect-1 (-> out-of-date-radius-and-stroke
+                                      (assoc :width 100 :height 100)
+                                      (update :applied-tokens assoc :width "size" :height "size"))))
+       (fn [file']
+         (let [rect' (cths/get-shape file' :rect-1)]
+           (t/is (= 4 (:width rect')))
+           (t/is (= 4 (:height rect')))
+           (t/is (= 4 (:r1 rect')))
+           (t/is (= 4 (get-in rect' [:strokes 0 :stroke-width])))))))))
+
+(t/deftest test-propagate-tokens-sharing-a-value-with-spacing
+  (t/testing "the attributes left once the padding is set apart are split by action"
+    (t/async
+      done
+      (propagate-and-check
+       done
+       (setup-file-with-shared-value-tokens
+        [["radius" :border-radius] ["stroke" :stroke-width] ["pad" :spacing]]
+        #(ctho/add-frame % :frame-1 (-> out-of-date-radius-and-stroke
+                                        (assoc :layout :flex
+                                               :layout-padding {:p1 0 :p2 0 :p3 0 :p4 0})
+                                        (update :applied-tokens assoc :p1 "pad" :p2 "pad" :p3 "pad" :p4 "pad"))))
+       (fn [file']
+         (let [frame' (cths/get-shape file' :frame-1)]
+           (t/is (= {:p1 4 :p2 4 :p3 4 :p4 4} (:layout-padding frame')))
+           (t/is (= 4 (:r1 frame')))
+           (t/is (= 4 (get-in frame' [:strokes 0 :stroke-width])))))))))
 
 (t/deftest test-apply-stroke-width-per-side-new-shape
   (t/testing "applying a stroke-width token to one side of a shape without strokes zeroes the other sides"
