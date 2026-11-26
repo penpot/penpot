@@ -897,6 +897,19 @@ mod tests {
     }
 
     #[test]
+    fn clicks_pick_the_warichu_sub_line_under_the_point() {
+        let content = warichu_content("割注二行説明", 400.0);
+        let layout = layout_content(&content, 400.0);
+        // Offsets 0..3 are the right sub-line, 3..6 the left one.
+        for offset in 0..6 {
+            let rect = caret_rect(&layout, 0, offset).expect("caret rect");
+            let (_, hit) =
+                caret_from_point(&layout, rect.center_x(), rect.top + 0.1).expect("caret");
+            assert_eq!(hit, offset, "a click on the caret at {offset} lands there");
+        }
+    }
+
+    #[test]
     fn caret_round_trip() {
         let text = "あいうえお";
         let content = make_content(&[text], 1000.0);

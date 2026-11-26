@@ -9,6 +9,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
+   [app.common.geom.point :as gpt]
    [app.config :as cf]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace :as dw]
@@ -272,6 +273,14 @@
           (set! (.. wrapper -style -top) ""))
         (assoc rect :vertical? (:vertical? origin))))))
 
+(defn- shape-pointer-position
+  "Position of the pointer `event` relative to the text shape, which WASM
+  hit-tests against. Offsets count from the editor div, which starts at
+  `shift` from the shape: vertical text that grows leaves room on its left
+  for new columns."
+  [^js event shift]
+  (gpt/add (dom/get-offset-position event) shift))
+
 (defn- ime-overlay-padding
   "Space around the text overlay for the hidden vertical IME anchor."
   [vertical? viewport-width]
@@ -372,6 +381,9 @@
         ;; Pointer overlay top-left and width in page space (see `update-ime-caret!`).
         origin-ref (mf/use-ref nil)
 
+        ;; Where the editor div starts relative to the shape (see `shape-pointer-position`).
+        pointer-shift-ref (mf/use-ref nil)
+
         ;; True between compositionstart and compositionend; the surface must not move then.
         composing-ref (mf/use-ref false)
 
@@ -400,7 +412,7 @@
         fallback-families (map (fn [font]
                                  (font-family-from-font-id (:font-id font))) fallback-fonts)
 
-        [{:keys [x y width height ime-width ime-left hit-rect]} transform]
+        [{:keys [x y width height ime-width ime-left hit-rect pointer-shift]} transform]
         (let [dimension (wasm.api/get-text-dimensions shape-id)
               selrect-transform (mf/deref refs/workspace-selrect)
               vbox (mf/deref refs/vbox)
@@ -432,7 +444,8 @@
                   :x x :y y :width overlay-width :height overlay-height
                   :ime-width (+ overlay-width (:right ime-padding))
                   :ime-left (:left ime-padding)
-                  :hit-rect {:x left :y top :width (- right left) :height (- bottom top)})
+                  :hit-rect {:x left :y top :width (- right left) :height (- bottom top)}
+                  :pointer-shift (gpt/point (- x (:x selrect)) (- y (:y selrect))))
            transform])
 
         schedule-ime-caret!
@@ -815,7 +828,7 @@
            (focus-editor!)
            (when-not (secondary-button? event)
              (let [native-event (dom/event->native-event event)
-                   off-pt       (dom/get-offset-position native-event)]
+                   off-pt       (shape-pointer-position native-event (mf/ref-val pointer-shift-ref))]
                ;; Repositioning the caret abandons the pending caret style (also
                ;; covers click and double-click, which fire pointer-down first).
                (text-editor/clear-pending-caret-styles!)
@@ -832,7 +845,7 @@
         (mf/use-fn
          (fn [^js event]
            (let [native-event (dom/event->native-event event)
-                 off-pt       (dom/get-offset-position native-event)]
+                 off-pt       (shape-pointer-position native-event (mf/ref-val pointer-shift-ref))]
              (when-let [pressed-pt (and (primary-button-pressed? native-event)
                                         (mf/ref-val deferred-press-ref))]
                (mf/set-ref-val! deferred-press-ref nil)
@@ -849,7 +862,7 @@
          (fn [^js event]
            (when-not (secondary-button? event)
              (let [native-event (dom/event->native-event event)
-                   off-pt       (dom/get-offset-position native-event)
+                   off-pt       (shape-pointer-position native-event (mf/ref-val pointer-shift-ref))
                    dragging?    (mf/ref-val dragging-ref)]
                (mf/set-ref-val! dragging-ref false)
                (mf/set-ref-val! deferred-press-ref nil)
@@ -865,7 +878,7 @@
          (fn [^js event]
            (when-not (secondary-button? event)
              (let [native-event (dom/event->native-event event)
-                   off-pt       (dom/get-offset-position native-event)]
+                   off-pt       (shape-pointer-position native-event (mf/ref-val pointer-shift-ref))]
                (cond
                  (triple-click? native-event)
                  (do
@@ -889,7 +902,7 @@
         (mf/use-fn
          (fn [^js event]
            (let [native-event (dom/event->native-event event)
-                 off-pt (dom/get-offset-position native-event)]
+                 off-pt (shape-pointer-position native-event (mf/ref-val pointer-shift-ref))]
              (wasm.api/text-editor-select-word-boundary off-pt)
              (ensure-input-caret (mf/ref-val contenteditable-ref))
              (wasm.api/render-text-editor-overlay!)
@@ -907,7 +920,8 @@
              ;; With nothing selected the caret goes where the user pointed, so a
              ;; paste from the menu lands there.
              (when-not has-selection?
-               (let [off-pt (dom/get-offset-position (dom/event->native-event event))]
+               (let [off-pt (shape-pointer-position (dom/event->native-event event)
+                                                    (mf/ref-val pointer-shift-ref))]
                  ;; Moving the caret abandons the pending caret style, as it does
                  ;; on every other path that moves it.
                  (text-editor/clear-pending-caret-styles!)
@@ -950,6 +964,7 @@
 
     ;; Keep the caret-translation origin in sync with the current render.
     (mf/set-ref-val! origin-ref {:x x :y y :width ime-width :vertical? vertical?})
+    (mf/set-ref-val! pointer-shift-ref pointer-shift)
 
     ;; The workspace leaves undo to the active editor. Handle the same events
     ;; for keyboard shortcuts, native history input and workspace menu actions.
