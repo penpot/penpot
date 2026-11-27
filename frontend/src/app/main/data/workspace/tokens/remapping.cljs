@@ -10,10 +10,12 @@
    [app.common.files.changes-builder :as pcb]
    [app.common.files.tokens :as cft]
    [app.common.logging :as log]
+   [app.common.logic.tokens :as clo]
    [app.common.types.container :refer [shapes-seq]]
    [app.common.types.file :refer [object-containers-seq]]
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
+   [app.config :as cf]
    [app.main.data.changes :as dch]
    [app.main.data.helpers :as dh]
    [beicon.v2.core :as rx]
@@ -161,12 +163,18 @@
 
 (defn remap-tokens
   "Main function to remap all token references when a token name changes"
-  [old-token-name new-token-name & {:keys [undo-group]}]
+  [old-token-name new-token-name & {:keys [undo-group scope set-id]}]
   (ptk/reify ::remap-tokens
     ptk/WatchEvent
     (watch [_ state _]
       (let [file-data     (dh/lookup-file-data state)
-            token-changes (build-remap-changes file-data old-token-name new-token-name :undo-group undo-group)]
+            token-changes (if (contains? cf/flags :tokenscript)
+                            (cond-> (-> (pcb/empty-changes)
+                                        (pcb/with-library-data file-data)
+                                        (clo/generate-rename-token-references {old-token-name new-token-name}
+                                                                              {:scope scope :set-id set-id}))
+                              (some? undo-group) (assoc :undo-group undo-group))
+                            (build-remap-changes file-data old-token-name new-token-name :undo-group undo-group))]
         (log/info :hint "token-remapping"
                   :old-name old-token-name
                   :new-name new-token-name)
@@ -199,8 +207,7 @@
     :else
     {:valid? true}))
 
-(defn count-token-references
-  "Count the number of references to a token in the workspace"
+(defn- count-token-references*
   [file-data token-name]
   (let [scan-results (scan-workspace-token-references file-data token-name)]
     (log/info :hint "token-reference-scan"
@@ -209,3 +216,11 @@
               :alias-refs (count (:token-aliases scan-results))
               :total (:total-references scan-results))
     (:total-references scan-results)))
+
+(defn count-token-references
+  "Count the number of references to a token in the workspace"
+  [file-data token-name & {:keys [scope set-id]}]
+  (if (contains? cf/flags :tokenscript)
+    (clo/count-token-references file-data [token-name] {:scope scope :set-id set-id})
+    (count-token-references* file-data token-name)))
+

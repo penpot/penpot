@@ -9,9 +9,11 @@
    [app.common.files.changes :as ch]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.tokens :as cfo]
+   [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.tokens-lib :as ctob]
-   [app.common.types.tokens-status :as ctos]))
+   [app.common.types.tokens-status :as ctos]
+   [tokenscript.processor :as tsp]))
 
 ;; Tokens source
 
@@ -189,6 +191,114 @@
               changes
               sets))
     changes))
+
+;; Token renames
+;;
+;; A token value references other tokens by name. Which tokens a value
+;; references is what tokenscript parses it to, so a rename rewrites the
+;; references themselves, never a matching piece of text. Shapes apply
+;; tokens by name too, in `:applied-tokens`.
+
+(defn- shapes-applying
+  "The shapes of `container` with one of the tokens of `names` applied."
+  [container names]
+  (filter (fn [shape] (some names (vals (:applied-tokens shape))))
+          (ctn/shapes-seq container)))
+
+(defn- generate-rename-applied-tokens
+  [changes file-data renames]
+  (reduce (fn [changes container]
+            (let [ids (map :id (shapes-applying container renames))]
+              (if (seq ids)
+                ;; Each container gets changes of its own, so `with-file-data`
+                ;; finds the objects of that container.
+                (->> (-> (pcb/empty-changes)
+                         (pcb/with-container container)
+                         (pcb/with-file-data file-data)
+                         (pcb/update-shapes ids
+                                            (fn [shape]
+                                              (update shape :applied-tokens update-vals #(get renames % %)))
+                                            {:ignore-touched true}))
+                     (pcb/concat-changes changes))
+                changes)))
+          changes
+          (ctf/object-containers-seq file-data)))
+
+(defn- generate-update-tokens
+  "Sets the tokens of `updates`, `{[set-id token-name] f}`, to `f` of the
+  token, once each."
+  [changes tokens-lib updates]
+  (reduce-kv (fn [changes [set-id token-name] f]
+               (let [token (get (ctob/get-tokens tokens-lib set-id) token-name)]
+                 (pcb/set-token changes set-id (ctob/get-id token)
+                                (ctob/make-token (into {} (f token))))))
+             changes
+             updates))
+
+(defn- token-value-updates
+  "The new values of the tokens that reference a renamed token, in the
+  sets of `scope`."
+  [tokens-lib renames scope]
+  (update-vals (tsp/reference-updates (cfo/get-token-sets tokens-lib) renames
+                                      {:scope scope :token-value :value})
+               (fn [value] #(assoc % :value value))))
+
+(defn generate-rename-token-references
+  "Makes the tokens and shapes that use the tokens of `renames`, old name
+  to new name, use the new names. Token values follow in the sets the
+  rename reaches (`:scope`, see `cfo/rename-scope`, all by default);
+  shapes always follow. A copy keeps its sync with its main."
+  [changes renames {:keys [scope set-id]}]
+  (let [file-data  (pcb/get-library-data changes)
+        tokens-lib (cfo/get-tokens-lib file-data)]
+    (cond-> (generate-rename-applied-tokens changes file-data renames)
+      tokens-lib
+      (generate-update-tokens tokens-lib (token-value-updates tokens-lib renames (cfo/rename-scope file-data scope set-id))))))
+
+(defn generate-rename-tokens
+  "Renames the tokens of the set `set-id`, `renames` old name to new name.
+  The names are checked against the sets the rename reaches (`:scope`,
+  see `cfo/rename-scope`, all by default). With `update-references`, the
+  tokens of those sets and the shapes that use the tokens follow. Throws
+  when a new name collides."
+  [changes set-id renames {:keys [update-references scope]}]
+  (let [file-data  (pcb/get-library-data changes)
+        tokens-lib (cfo/get-tokens-lib file-data)
+        renames    (select-keys renames (keys (ctob/get-tokens tokens-lib set-id)))]
+    (when-let [errors (seq (cfo/token-rename-collisions file-data set-id renames scope))]
+      (throw (ex-info "token rename error: name collision"
+                      {:error :name-collision
+                       :errors (vec errors)})))
+    ;; The library data of `changes` is not updated by the changes, so a
+    ;; token both renamed and referencing a renamed one is set once.
+    (let [name-updates (into {}
+                             (map (fn [[old-name new-name]] [[set-id old-name] #(assoc % :name new-name)]))
+                             renames)
+          updates      (if update-references
+                         (merge-with comp name-updates
+                                     (token-value-updates tokens-lib renames (cfo/rename-scope file-data scope set-id)))
+                         name-updates)]
+      (cond-> (generate-update-tokens changes tokens-lib updates)
+        update-references
+        (generate-rename-applied-tokens file-data renames)))))
+
+(defn count-token-references
+  "How many tokens and applied shape attributes follow a rename of the
+  tokens `names` (see `generate-rename-token-references`)."
+  [file-data names {:keys [scope set-id]}]
+  (let [names      (set names)
+        tokens-lib (cfo/get-tokens-lib file-data)
+        tokens     (if tokens-lib
+                     (count (tsp/referencing-tokens (cfo/get-token-sets tokens-lib) names
+                                                    {:scope (cfo/rename-scope file-data scope set-id)
+                                                     :token-value :value}))
+                     0)
+        attributes (->> (ctf/object-containers-seq file-data)
+                        (mapcat #(shapes-applying % names))
+                        (mapcat (comp vals :applied-tokens))
+                        (filter names)
+                        (count))]
+    (+ tokens attributes)))
 
 ;; Tokens Status
 

@@ -30,6 +30,7 @@
    [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
    [app.main.ui.forms :as fc]
    [app.main.ui.workspace.tokens.management.forms.controls :as token.controls]
+   [app.main.ui.workspace.tokens.management.forms.rename-scope :refer [rename-scope*]]
    [app.main.ui.workspace.tokens.management.forms.validators :refer [default-validate-token]]
    [app.util.dom :as dom]
    [app.util.forms :as fm]
@@ -139,9 +140,17 @@
                                        tokenscript-resolved-active-tokens
                                        resolved-active-tokens))))
 
+        ;; The sets a rename reaches, picked by the user while the name
+        ;; differs from the token's (tokenscript only).
+        scope*          (mf/use-state :all)
+        scope           (deref scope*)
+
         schema
-        (mf/with-memo [tokens-tree-in-selected-set active-tab]
-          (make-schema tokens-tree-in-selected-set active-tab))
+        (mf/with-memo [tokens-tree-in-selected-set active-tab tokenscript? scope tokens-lib]
+          (cond-> (make-schema tokens-tree-in-selected-set active-tab)
+            (and tokenscript? (= action "edit"))
+            (cfo/with-token-rename-check (dh/lookup-file-data @st/state) selected-token-set-id
+              (:name token) scope)))
 
         initial
         (mf/with-memo [token initial]
@@ -165,6 +174,11 @@
                      :initial initial)
 
         general-errors (get-in @form [:extra-errors ""])
+
+        renaming?      (and tokenscript?
+                            (= action "edit")
+                            (cfo/rename-scope-choice? tokens-lib)
+                            (not= (str/trim (get-in @form [:data :name] "")) (:name token)))
 
         on-toggle-tab
         (mf/use-fn
@@ -207,7 +221,7 @@
 
         on-remap-token
         (mf/use-fn
-         (mf/deps token token-type)
+         (mf/deps token token-type scope selected-token-set-id)
          (fn [valid-token new-name old-name description]
            (st/emit!
             (dwtl/toggle-nested-token-path token-type new-name)
@@ -215,7 +229,7 @@
                                {:name new-name
                                 :value (:value valid-token)
                                 :description description})
-            (remap/remap-tokens old-name new-name)
+            (remap/remap-tokens old-name new-name :scope scope :set-id selected-token-set-id)
             (dwtp/propagate-workspace-tokens)
             (modal/hide!))))
 
@@ -233,7 +247,8 @@
 
         on-submit
         (mf/use-fn
-         (mf/deps validate-token token tokens token-type value-subfield value-type active-tab on-remap-token on-rename-token is-create)
+         (mf/deps validate-token token tokens token-type value-subfield value-type active-tab on-remap-token on-rename-token is-create
+                  scope selected-token-set-id)
          (fn [form event]
            (let [name (get-in @form [:clean-data :name])
                  description (get-in @form [:clean-data :description])
@@ -251,7 +266,9 @@
                            file-data (dh/lookup-file-data state)
                            old-name (:name token)
                            is-rename (and (= action "edit") (not= name old-name))
-                           references-count (remap/count-token-references file-data old-name)
+                           references-count (remap/count-token-references file-data old-name
+                                                                          :scope scope
+                                                                          :set-id selected-token-set-id)
                            on-remap #(on-remap-token valid-token name old-name description)
                            on-rename #(on-rename-token valid-token name description)
                            remap-data {:new-name name
@@ -307,6 +324,11 @@
                             :variant "comfortable"
                             :trim true
                             :auto-focus true}]]
+
+       (when renaming?
+         [:div {:class (stl/css :input-row)}
+          [:> rename-scope* {:scope scope
+                             :on-change #(reset! scope* %)}]])
 
        [:div {:class (stl/css :input-row)}
         (case value-type

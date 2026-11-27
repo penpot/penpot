@@ -742,6 +742,26 @@
         (rx/of (dch/commit-changes changes)
                (ptk/data-event ::ev/event {::ev/name "bulk-update-tokens" :type type}))))))
 
+(defn rename-token-group
+  "Renames the group `node` of tokens of `type` in the set to `new-name`,
+  in the sets of `scope` (see `cfo/rename-scope`). With
+  `update-references`, the tokens and shapes that use them follow."
+  [set-id type node new-name & {:keys [update-references scope]}]
+  (dm/assert! (uuid? set-id))
+  (ptk/reify ::rename-token-group
+    ptk/WatchEvent
+    (watch [it state _]
+      (check-editable-tokens! state)
+      (let [data    (dsh/lookup-file-data state)
+            tokens  (ctob/get-tokens (dsh/lookup-tokens-lib state) set-id)
+            renames (ctob/token-group-renames tokens type node new-name)
+            changes (-> (pcb/empty-changes it)
+                        (pcb/with-library-data data)
+                        (clo/generate-rename-tokens set-id renames {:update-references update-references
+                                                                    :scope scope}))]
+        (rx/of (dch/commit-changes changes)
+               (ptk/data-event ::ev/event {::ev/name "bulk-update-tokens" :type type}))))))
+
 (defn delete-token
   [set-id token-id]
   (dm/assert! (uuid? set-id))

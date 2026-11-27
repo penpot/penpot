@@ -9570,6 +9570,22 @@ msgstr "Rename Tokens Group"
 msgid "workspace.tokens.rename-group-name-hint"
 msgstr "Your tokens will automatically be renamed to %s.(suffix).(tokenName)"
 
+#: src/app/main/ui/workspace/tokens/management/forms/rename_scope.cljs:27, src/app/main/ui/workspace/tokens/management/forms/rename_scope.cljs:29
+msgid "workspace.tokens.rename-scope"
+msgstr "Rename in"
+
+#: src/app/main/ui/workspace/tokens/management/forms/rename_scope.cljs:37
+msgid "workspace.tokens.rename-scope-active"
+msgstr "Active sets"
+
+#: src/app/main/ui/workspace/tokens/management/forms/rename_scope.cljs:34
+msgid "workspace.tokens.rename-scope-all"
+msgstr "All sets"
+
+#: src/app/main/ui/workspace/tokens/management/forms/rename_scope.cljs:40
+msgid "workspace.tokens.rename-scope-set"
+msgstr "This set"
+
 #: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:61, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:89, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:127, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:293, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:486, src/app/main/ui/workspace/tokens/management/forms/controls/combobox.cljs:295, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:186, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:321, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:265, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:387, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:511, src/app/main/ui/workspace/tokens/management/token_pill.cljs:158
 msgid "workspace.tokens.resolved-value"
 msgstr "Resolved value: %s"

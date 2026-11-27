@@ -199,48 +199,58 @@
         ;; Rename tokens in bulk affected by a node rename.
         (mf/use-fn
          (mf/deps filter-tokens-by-path-ids selected-token-set-id)
-         (fn [node type new-node-name]
-           (let [old-path (:path node)
-                 new-path (ctob/rename-path node new-node-name)
-                 tokens-in-path-ids (filter-tokens-by-path-ids type old-path)]
+         (fn [node type new-node-name scope]
+           (if (contains? cf/flags :tokenscript)
              (st/emit!
               (modal/hide)
-              (dwtl/bulk-update-tokens selected-token-set-id tokens-in-path-ids type old-path new-path)))))
+              (dwtl/rename-token-group selected-token-set-id type node new-node-name :scope scope))
+             (let [old-path (:path node)
+                   new-path (ctob/rename-path node new-node-name)
+                   tokens-in-path-ids (filter-tokens-by-path-ids type old-path)]
+               (st/emit!
+                (modal/hide)
+                (dwtl/bulk-update-tokens selected-token-set-id tokens-in-path-ids type old-path new-path))))))
 
         bulk-remap-tokens-in-path
         ;; Remap tokens in bulk affected by a node rename.
         ;; It will update the token names and propagate the changes to the workspace.
         (mf/use-fn
          (mf/deps filter-tokens-by-path filter-tokens-by-path-ids selected-token-set-tokens selected-token-set-id)
-         (fn [node type new-node-name]
-           (let [old-path (:path node)
-                 ;; Get tokens in path to remap their names after remapping the node
-                 tokens-by-type (ctob/group-by-type selected-token-set-tokens)
-                 tokens-filtered-by-type (get tokens-by-type type)
-                 tokens-in-path (filter-tokens-by-path tokens-filtered-by-type node)
-                 tokens-in-path-ids (filter-tokens-by-path-ids type old-path)
-                 new-node-path (ctob/rename-path node new-node-name)
-                 new-tokens (map (fn [token]
-                                   (let [new-token-path (ctob/rename-path node token new-node-name)]
-                                     (assoc token :name new-token-path)))
-                                 tokens-in-path)
-                 undo-group (uuid/next)]
+         (fn [node type new-node-name scope]
+           (if (contains? cf/flags :tokenscript)
              (st/emit!
-              (dwtl/bulk-update-tokens selected-token-set-id tokens-in-path-ids type old-path new-node-path :undo-group undo-group)
-              (remap/bulk-remap-tokens tokens-in-path new-tokens :undo-group undo-group)
+              (dwtl/rename-token-group selected-token-set-id type node new-node-name
+                                       :update-references true :scope scope)
               (dwtp/propagate-workspace-tokens)
-              (modal/hide)))))
+              (modal/hide))
+             (let [old-path (:path node)
+                   ;; Get tokens in path to remap their names after remapping the node
+                   tokens-by-type (ctob/group-by-type selected-token-set-tokens)
+                   tokens-filtered-by-type (get tokens-by-type type)
+                   tokens-in-path (filter-tokens-by-path tokens-filtered-by-type node)
+                   tokens-in-path-ids (filter-tokens-by-path-ids type old-path)
+                   new-node-path (ctob/rename-path node new-node-name)
+                   new-tokens (map (fn [token]
+                                     (let [new-token-path (ctob/rename-path node token new-node-name)]
+                                       (assoc token :name new-token-path)))
+                                   tokens-in-path)
+                   undo-group (uuid/next)]
+               (st/emit!
+                (dwtl/bulk-update-tokens selected-token-set-id tokens-in-path-ids type old-path new-node-path :undo-group undo-group)
+                (remap/bulk-remap-tokens tokens-in-path new-tokens :undo-group undo-group)
+                (dwtp/propagate-workspace-tokens)
+                (modal/hide))))))
 
         on-remap-node-warning
         ;; If there are tokens that will be affected by the node rename, we show the remap modal
         (mf/use-fn
          (mf/deps bulk-remap-tokens-in-path bulk-rename-tokens-in-path)
-         (fn [node type new-node-name]
+         (fn [node type new-node-name scope]
            (let [remap-data {:new-name new-node-name
                              :old-name (:name node)
                              :type "node"}
-                 remap-handler #(bulk-remap-tokens-in-path node type new-node-name)
-                 rename-handler #(bulk-rename-tokens-in-path node type new-node-name)]
+                 remap-handler #(bulk-remap-tokens-in-path node type new-node-name scope)
+                 rename-handler #(bulk-rename-tokens-in-path node type new-node-name scope)]
              (st/emit!
               (modal/hide)
               (modal/show :tokens/remapping-confirmation {:remap-data remap-data
@@ -251,20 +261,23 @@
         ;; When user renames a node, we need to check if there are tokens that will be affected by this change.
         ;; If there are, we display the remap modal, otherwise, we rename the tokens directly.
         (mf/use-fn
-         (mf/deps selected-token-set-tokens filter-tokens-by-path on-remap-node-warning bulk-rename-tokens-in-path)
-         (fn [node type new-node-name]
+         (mf/deps selected-token-set-tokens selected-token-set-id filter-tokens-by-path on-remap-node-warning
+                  bulk-rename-tokens-in-path)
+         (fn [node type new-node-name scope]
            (let [state @st/state
                  file-data (dh/lookup-file-data state)
                  tokens-by-type (ctob/group-by-type selected-token-set-tokens)
                  tokens-filtered-by-type (get tokens-by-type type)
                  tokens-in-current-path (filter-tokens-by-path tokens-filtered-by-type node)
                  token-references-count (reduce (fn [count token]
-                                                  (+ count (remap/count-token-references file-data (:name token))))
+                                                  (+ count (remap/count-token-references file-data (:name token)
+                                                                                         :scope scope
+                                                                                         :set-id selected-token-set-id)))
                                                 0
                                                 tokens-in-current-path)]
              (if (> token-references-count 0)
-               (on-remap-node-warning node type new-node-name)
-               (bulk-rename-tokens-in-path node type new-node-name)))))
+               (on-remap-node-warning node type new-node-name scope)
+               (bulk-rename-tokens-in-path node type new-node-name scope)))))
 
         on-duplicate-node
         (fn [node type new-node-name]
@@ -276,20 +289,24 @@
         open-rename-node-modal
         ;; When user renames a node, we display a form modal
         (mf/use-fn
-         (mf/deps selected-token-set-tokens on-rename-node)
+         (mf/deps selected-token-set-tokens selected-token-set-id on-rename-node)
          (fn [node type]
-           (let [on-rename-node-handler #(on-rename-node node type %)]
+           (let [on-rename-node-handler (fn [new-name & [scope]] (on-rename-node node type new-name scope))]
              (st/emit! (modal/show :tokens/rename-node {:node node
+                                                        :type type
+                                                        :set-id selected-token-set-id
                                                         :tokens-in-active-set selected-token-set-tokens
                                                         :on-rename on-rename-node-handler})))))
 
         open-duplicate-node-modal
         (mf/use-fn
-         (mf/deps selected-token-set-tokens on-duplicate-node)
+         (mf/deps selected-token-set-tokens selected-token-set-id on-duplicate-node)
          (fn [node type]
            (let [on-duplicate-node-handler #(on-duplicate-node node type %)]
              (st/emit! (modal/show :tokens/rename-node {:new-node-name (str (:name node) "-copy")
                                                         :node node
+                                                        :type type
+                                                        :set-id selected-token-set-id
                                                         :variant "duplicate"
                                                         :tokens-in-active-set selected-token-set-tokens
                                                         :on-rename on-duplicate-node-handler})))))]
