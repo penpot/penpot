@@ -59,13 +59,17 @@ export function createModal(
   return modal;
 }
 
+/** The smallest a plugin modal gets, by `resizeModal` or by its grip. */
+export const MIN_PLUGIN_WIDTH = 200;
+export const MIN_PLUGIN_HEIGHT = 200;
+
 export function resizeModal(
   modal: PluginModalElement,
   width: number = 335,
   height: number = 590,
 ) {
-  const minPluginWidth = 200;
-  const minPluginHeight = 200;
+  const minPluginWidth = MIN_PLUGIN_WIDTH;
+  const minPluginHeight = MIN_PLUGIN_HEIGHT;
 
   const wrapper = modal.shadowRoot?.querySelector('.wrapper');
   let curX = 0;
